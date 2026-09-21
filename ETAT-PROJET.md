@@ -19,10 +19,11 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   et 2 sont faites : tout est écrit, éprouvé en local, et l'image de production est publiée par
   digest. La question de l'isolation du déploiement est tranchée et consignée dans
   `docs/adr/0034-isolation-du-deploiement.md`. Depuis, trois décisions se sont ajoutées : les
-  sauvegardes ne sont plus effaçables depuis le serveur (ADR 0037), la sonde extérieure quitte
-  GitHub Actions (ADR 0038), et `pnpm test` refuse désormais un test sauté en silence. La phase 3,
-  le déploiement, reste à jouer : elle attend l'inventaire et le coffre, que le dépôt ne livre pas
-  et ne livrera pas, ainsi que les verrous de conservation de la destination de sauvegarde.
+  sauvegardes ne sont plus effaçables depuis le serveur (ADR 0037), la sonde quitte GitHub Actions
+  pour devenir une minuterie de jadwal (ADR 0038), et `pnpm test` refuse désormais un test sauté en
+  silence. `pnpm lint` refuse aussi le tiret cadratin et une liste de chevilles dans les textes que
+  les gens lisent. La phase 3, le déploiement, reste à jouer : elle attend l'inventaire et le coffre,
+  que le dépôt ne livre pas et ne livrera pas.
 
 ## Fait
 
@@ -376,9 +377,12 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   de vie posés chez le stockage, hors d'atteinte de qui prendrait le serveur (ADR 0037). La rétention
   7/4/6 ne vaut plus que pour le disque local.
 - **Supervision** : chaque tâche périodique bat vers un service de supervision extérieur, et c'est
-  lui qui alerte quand un battement n'arrive pas. La sonde `/healthz` a quitté GitHub Actions —
-  ses machines n'ont pas d'IPv6 sortant, et la moitié de la surface publique n'était donc jamais
-  éprouvée du dehors (ADR 0038).
+  lui qui alerte quand un battement n'arrive pas. La sonde `/healthz` a quitté GitHub Actions, dont
+  les machines n'ont pas d'IPv6 sortant : elle est devenue une minuterie de jadwal comme les autres,
+  `jadwal-sonde@4` et `jadwal-sonde@6`, toutes les cinq minutes, par le nom public. Ce qu'elle ne
+  voit pas est écrit dans l'ADR 0038 : elle tourne sur le serveur qu'elle interroge, donc un blocage
+  qui ne toucherait que les visiteurs lui échappe. C'est le **silence** des battements qui couvre
+  l'autre moitié.
 - **Charge** : 20 organisations × 40 cours, saturation vers 50 req/s, zéro erreur de 1 à 100 clients
   simultanés ; 76 Mio au repos, 388 Mio sous charge.
 - **Un défaut trouvé par l'exécution, invisible à la relecture** : les scripts de `packages/db`
@@ -505,10 +509,9 @@ passkeys, paiement.
   jour après chaque échéance. Ils se posent **chez le stockage**, jamais depuis le serveur : c'est
   toute la décision de l'ADR 0037. Le rôle `sauvegarde` refuse de continuer s'il arrive à effacer un
   objet d'essai.
-- **La supervision extérieure.** Un service de battements de cœur, un contrôle par tâche périodique,
-  deux pour la sonde `/healthz` (IPv4 et IPv6), un pour le test de déchiffrement trimestriel ; et une
-  machine tierce, hors de ce serveur, qui interroge `/healthz` toutes les cinq minutes sur les deux
-  piles (ADR 0038). Les adresses de battement sont des jetons : elles vivent dans le coffre, et le
+- **La supervision.** Un service de battements de cœur, dehors, avec un contrôle par tâche
+  périodique, deux pour la sonde `/healthz` (IPv4 et IPv6) et un pour le test de déchiffrement
+  trimestriel. Les adresses de battement sont des jetons : elles vivent dans le coffre, et le
   playbook les écrit dans le fichier d'environnement. Sans elles, les tâches tournent exactement
   pareil et le disent dans leur journal.
 - **L'inventaire Ansible.** `infra/ansible/inventory.ini` n'est plus livré : le copier depuis

@@ -194,6 +194,19 @@ jobs:
           tags: |
             ${{ env.JADWAL_IMAGE_NAME }}:main
             ${{ env.JADWAL_IMAGE_NAME }}:${{ github.sha }}
+          # Trois étiquettes OCI, et trois seulement. Couper l'attestation de provenance a aussi
+          # supprimé ce qui reliait une image à son commit : plus rien dans l'image ne disait d'où
+          # elle venait, et un tiers qui n'a que l'image ne pouvait pas remonter à la source.
+          #
+          # Ces trois-là rétablissent ce lien sans rien publier ailleurs : elles vivent dans la
+          # configuration de l'image, pas dans un journal de transparence public. Ce qui avait motivé
+          # la coupure — le **message** de commit recopié dans un registre public — n'est pas ici :
+          # `revision` est un identifiant, pas une phrase. Ni `title` ni `description`, pour la même
+          # raison : ils viendraient du dépôt et diraient plus que nécessaire.
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.licenses=AGPL-3.0-or-later
           # Le cache du registre : une construction qui ne change que le code applicatif ne
           # réinstalle pas les dépendances.
           cache-from: type=gha
