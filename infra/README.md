@@ -14,21 +14,21 @@ veille. La marche à suivre quand quelque chose ne va pas est dans
 
 ## Ce qu'il y a dedans
 
-| Chemin     | Ce que c'est                                                                                               |
-| ---------- | ---------------------------------------------------------------------------------------------------------- |
-| `ansible/` | Le déploiement : un inventaire d'exemple à copier, un playbook, cinq rôles, un playbook de retrait.        |
-| `compose/` | Les deux conteneurs de production — l'application et sa base — et l'exemple du fichier d'environnement.    |
-| `caddy/`   | Le bloc de site à poser dans le Caddy **de l'hôte**, qui peut servir d'autres sites.                       |
-| `systemd/` | Les sept minuteries, leurs unités, et l’unité d’alerte déclenchée par `OnFailure=`.                        |
-| `scripts/` | Ce que les minuteries lancent : prières, purges, sauvegarde, restauration, veille, sonde, alerte.          |
-| `charge/`  | La mesure de charge : de quoi semer vingt organisations et les interroger. Ne tourne jamais en production. |
+| Chemin     | Ce que c'est                                                                                                                                         |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ansible/` | Le déploiement : un inventaire d'exemple à copier, un playbook, cinq rôles, un playbook de retrait.                                                  |
+| `compose/` | Les deux conteneurs de production — l'application et sa base — et l'exemple du fichier d'environnement.                                              |
+| `caddy/`   | Le bloc de site à poser dans le Caddy **de l'hôte**, qui peut servir d'autres sites.                                                                 |
+| `systemd/` | Six unités de minuterie — celle de la sonde est un modèle, armé une fois par pile — leurs services, et l’unité d’alerte déclenchée par `OnFailure=`. |
+| `scripts/` | Ce que les minuteries lancent : prières, purges, sauvegarde, restauration, veille, sonde, alerte.                                                    |
+| `charge/`  | La mesure de charge : de quoi semer vingt organisations et les interroger. Ne tourne jamais en production.                                           |
 
 ## Le principe, en une phrase
 
 **Tout est additif et réversible.** Le déploiement vise un serveur qui peut héberger d'autres
 applications : il n'y touche donc à rien qui ne soit à jadwal — ni au pare-feu, ni à la
 configuration SSH, ni aux comptes, ni à la configuration générale de la machine. Le playbook ajoute
-des répertoires préfixés `jadwal`, un projet Compose à lui, un réseau Docker à lui, sept minuteries
+des répertoires préfixés `jadwal`, un projet Compose à lui, un réseau Docker à lui, sept minuteries armées
 et un fichier de site. Il ne redémarre aucun service existant. La seule action qui touche quelque
 chose de déjà en fonctionnement est un `reload` de Caddy, et elle est **refusée par défaut** : il
 faut la demander explicitement, après avoir lu le bloc de site qu'on ajoute.
