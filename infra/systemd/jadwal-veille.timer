@@ -2,6 +2,7 @@
 Description=jadwal — veille, toutes les heures
 
 [Timer]
+# `hourly` est déjà indépendant du fuseau : il vaut « à chaque heure pile ».
 OnCalendar=hourly
 Persistent=true
 # Jamais à la minute pile : rien ne gagne à ce que toutes les tâches d'une machine se réveillent

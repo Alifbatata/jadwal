@@ -1,4 +1,5 @@
-# Les sauvegardes : la clé publique, la destination, et de quoi les prouver (ADR 0035).
+# Les sauvegardes : la clé publique, la destination, les verrous, et de quoi les prouver
+# (ADR 0035, ADR 0037).
 ---
 - name: Une clé publique age et une destination sont indispensables
   ansible.builtin.assert:
@@ -46,3 +47,72 @@
       {{ cles.files | map(attribute='path') | list }}. La clé de déchiffrement des sauvegardes ne
       doit jamais être ici : une archive volée chez l'hébergeur doit rester illisible, et une
       archive volée ici aussi.
+
+# ------------------------------------------------------------------------------------------------
+# Les verrous de conservation (ADR 0037)
+#
+# Tout le reste de ce rôle protège les archives d'un vol. Ce bloc-ci les protège d'un **effacement**,
+# et c'est une autre menace : qui obtient root ici obtient le jeton de `rclone`, et un jeton qui sait
+# effacer efface. La parade est chez le stockage — verrou de conservation par préfixe, plus un cycle
+# de vie qui efface un jour après la fin du verrou — et elle ne se pose pas depuis ce serveur.
+#
+# Ce que ce rôle peut faire, et fait : **vérifier qu'elle est bien en place**, en essayant. Un objet
+# d'essai est écrit sous `quotidien/`, puis on tente de l'écraser et de l'effacer ; les deux doivent
+# échouer. L'objet reste ensuite jusqu'à la fin de son verrou — c'est le prix de la preuve, et il est
+# de quelques kilo-octets.
+#
+# `jadwal_verifier_verrous=false` saute cette vérification. Ne l'utiliser que sur une destination qui
+# n'a délibérément pas de verrou : un stockage qui n'en propose pas, ou une instance d'essai.
+# ------------------------------------------------------------------------------------------------
+- name: Les verrous de conservation, éprouvés pour de vrai
+  when: jadwal_verifier_verrous | default(true)
+  become: true
+  block:
+    - name: Un objet d'essai sous quotidien/
+      ansible.builtin.shell: |
+        set -euo pipefail
+        sonde="$(mktemp)"
+        date --utc +%Y-%m-%dT%H:%M:%SZ > "$sonde"
+        nom="quotidien/verrou-eprouve-$(date --utc +%Y-%m-%dT%H%M%SZ).txt"
+        rclone --config {{ jadwal_etc }}/rclone.conf copyto "$sonde" "{{ jadwal_rclone_remote }}/$nom"
+        rm -f "$sonde"
+        echo "$nom"
+      register: sonde
+      changed_when: true
+
+    - name: L'écrasement doit être refusé
+      ansible.builtin.shell: |
+        set -uo pipefail
+        autre="$(mktemp)"
+        echo "un autre contenu" > "$autre"
+        rclone --config {{ jadwal_etc }}/rclone.conf copyto "$autre" \
+          "{{ jadwal_rclone_remote }}/{{ sonde.stdout_lines | last }}"
+        code=$?
+        rm -f "$autre"
+        exit $code
+      register: ecrasement
+      failed_when: false
+      changed_when: false
+
+    - name: L'effacement doit être refusé
+      ansible.builtin.command: >-
+        rclone --config {{ jadwal_etc }}/rclone.conf deletefile
+        {{ jadwal_rclone_remote }}/{{ sonde.stdout_lines | last }}
+      register: effacement
+      failed_when: false
+      changed_when: false
+
+    - name: Le verrou tient, dans les deux sens
+      ansible.builtin.assert:
+        that:
+          - ecrasement.rc != 0
+          - effacement.rc != 0
+        success_msg: >-
+          L'objet d'essai n'a pu être ni écrasé ni effacé avec le jeton de ce serveur : le verrou de
+          conservation est en place. Il disparaîtra tout seul à la fin de sa rétention.
+        fail_msg: >-
+          Avec le jeton de ce serveur, l'objet d'essai a pu être
+          {{ 'écrasé' if ecrasement.rc == 0 else '' }}{{ ' et ' if ecrasement.rc == 0 and effacement.rc == 0 else '' }}{{ 'effacé' if effacement.rc == 0 else '' }}.
+          Les sauvegardes ne sont donc PAS à l'abri de qui prendrait ce serveur : le verrou de
+          conservation n'est pas posé sur le préfixe quotidien/, ou le jeton a plus de droits que
+          prévu. Poser les verrous avant de continuer (ADR 0037).

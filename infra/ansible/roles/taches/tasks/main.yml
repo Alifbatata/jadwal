@@ -26,6 +26,18 @@
     - jadwal-mail.mjs
   become: true
 
+# La règle qui décide où part une archive et sous quel nom (ADR 0037). Elle vit dans son propre
+# paquet, avec ses tests, et elle est jouée sur le serveur par un conteneur jetable tiré de l'image
+# de l'application — l'hôte n'a pas de Node, et n'a pas à en avoir un.
+- name: La règle des destinations de sauvegarde
+  ansible.builtin.copy:
+    src: '{{ playbook_dir }}/../sauvegarde/destinations.mjs'
+    dest: '{{ jadwal_racine }}/scripts/jadwal-destinations.mjs'
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+
 - name: Les unités systemd
   ansible.builtin.copy:
     src: '{{ playbook_dir }}/../systemd/{{ item }}'

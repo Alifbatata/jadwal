@@ -4,7 +4,10 @@ Description=jadwal — sauvegarde, une fois par nuit
 [Timer]
 # 02:15, avant les autres tâches : la sauvegarde doit prendre l'état de la nuit, pas celui d'après
 # les purges. Une purge qui se trompe est alors rattrapable depuis l'archive du matin même.
-OnCalendar=*-*-* 02:15:00
+# En UTC, et pas en heure locale : « le dimanche » et « le 1er » décident du préfixe de
+# conservation chez le stockage (ADR 0037). Une minuterie en heure locale glisse de deux heures au
+# changement d'heure, et une semaine pourrait alors recevoir deux dimanches ou aucun.
+OnCalendar=*-*-* 02:15:00 UTC
 Persistent=true
 RandomizedDelaySec=10m
 AccuracySec=1min
