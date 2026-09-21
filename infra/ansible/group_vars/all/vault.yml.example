@@ -16,7 +16,7 @@
 #
 # La phrase de passe du coffre est à l'exploitant. Elle n'est ni dans le dépôt, ni sur le serveur :
 # elle est saisie au moment de jouer le playbook, ou lue dans un fichier hors du dépôt dont
-# `ansible.cfg` donne le chemin (`~/.jadwal-vault-pass`).
+# `ansible.cfg` donne le chemin (`~/.jadwal-secrets/vault-pass.txt`).
 #
 # Les mots de passe de base de données peuvent être engendrés une fois pour toutes :
 #   openssl rand -hex 24

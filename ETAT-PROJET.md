@@ -16,9 +16,10 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
 - **Étape 7** (heures de prière, couleur d'accent, compteur de vues) : terminée le 2026-09-21.
 - **Étape 8** (heures réelles de la mosquée, iqama, prière du vendredi) : terminée le 2026-09-21.
 - **Étape 9** (finitions, infrastructure en code, mise en production) : **en cours**. Les phases 1
-  et 2 sont faites : tout est écrit et éprouvé en local. La question de l'isolation du déploiement
-  est tranchée et consignée dans `docs/adr/0034-isolation-du-deploiement.md` ; la phase 3, le
-  déploiement, reste à jouer.
+  et 2 sont faites : tout est écrit, éprouvé en local, et l'image de production est publiée par
+  digest. La question de l'isolation du déploiement est tranchée et consignée dans
+  `docs/adr/0034-isolation-du-deploiement.md`. La phase 3, le déploiement, reste à jouer : elle
+  attend l'inventaire et le coffre, que le dépôt ne livre pas et ne livrera pas.
 
 ## Fait
 
@@ -373,6 +374,19 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   importaient `../src/env.ts`, et Node refuse de retirer les types sous `node_modules`. Migrations,
   rôles, prières et purges échouaient tous dans l'image de production. Ils importent désormais
   `@jadwal/db`.
+- **Un contrôle de secrets qui refuse le commit.** `.githooks/pre-commit` passe ce qui est indexé à
+  gitleaks avant chaque commit, et refuse quand il trouve. Il échoue fermé : sans l'outil, pas de
+  commit, parce qu'un contrôle qui s'efface quand il manque ne contrôle rien. `pnpm hooks`
+  l'installe — version épinglée **et** empreinte de l'archive vérifiée. Un crochet local se
+  contourne d'un `--no-verify`, donc la CI le refait sur tout l'historique, et la tâche qui publie
+  l'image attend ce contrôle autant que les tests. `pnpm secrets:test` le met à l'épreuve en tentant
+  de commiter une fausse clé privée, et nettoie derrière lui.
+- **L'attestation de provenance est coupée** (`provenance: false`, `sbom: false`). BuildKit y
+  recopiait le payload complet de l'événement `push`, message de commit compris, dans un registre
+  public. Le déploiement se fait par digest et s'est toujours fait ainsi : rien de ce qui comptait
+  n'est perdu. Addendum à l'ADR 0010.
+- **Rien de propre à une machine n'est livré** : `infra/ansible/inventory.ini` est remplacé par son
+  modèle, et le coffre `ansible-vault` n'est ni dans le dépôt, ni destiné à y entrer.
 - 1 163 tests dans le dépôt. ADR 0034 (`docs/adr/0034-isolation-du-deploiement.md` : isolation du
   déploiement), 0035, 0036 ; `docs/EXPLOITATION.md` ; `docs/CONDITIONS.md` complété (hébergeur,
   pays réel, sous-traitants, `contact@voltia.ch`).
@@ -482,3 +496,8 @@ passkeys, paiement.
   `SUPERVISION_SMTP_USER`, `SUPERVISION_SMTP_PASSWORD` et `SUPERVISION_MAIL_TO`.
 - **L'inventaire Ansible.** `infra/ansible/inventory.ini` n'est plus livré : le copier depuis
   `infra/ansible/inventory.ini.example` et le renseigner. Il est ignoré par git, et c'est voulu.
+- **Le coffre `ansible-vault`.** Le créer à partir de
+  `infra/ansible/group_vars/all/vault.yml.example`, y mettre ses propres valeurs, le chiffrer, et le
+  garder hors du dépôt. `ansible.cfg` lit sa phrase de passe dans
+  `~/.jadwal-secrets/vault-pass.txt`.
+- **Le contrôle de secrets**, sur chaque poste qui commite : `pnpm hooks`, une fois.

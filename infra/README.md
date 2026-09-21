@@ -47,9 +47,16 @@ et la clé SSH de l'exploitant — rien d'autre.
 docker run --rm -it \
   -v "$PWD/infra:/infra" \
   -v "$HOME/.ssh:/root/.ssh:ro" \
-  -v "$HOME/.jadwal-vault-pass:/root/.jadwal-vault-pass:ro" \
+  -v "$HOME/.jadwal-secrets:/root/.jadwal-secrets:ro" \
   -w /infra/ansible \
-  python:3.13-slim sh -c 'pip install --quiet ansible-core && exec bash'
+  python:3.13-slim sh -c '
+    pip install --quiet ansible-core
+    # Un montage Windows expose ses fichiers avec le bit d exécution, et Ansible prend alors le
+    # fichier de phrase de passe pour un script à exécuter : « Exec format error ». On le recopie
+    # sans ce bit, dans un conteneur qui disparaît avec --rm.
+    cp /root/.jadwal-secrets/vault-pass.txt /tmp/p && chmod 600 /tmp/p
+    export ANSIBLE_VAULT_PASSWORD_FILE=/tmp/p
+    exec bash'
 ```
 
 Sous Linux et macOS, `pipx install ansible-core` suffit, et les commandes se lancent depuis
