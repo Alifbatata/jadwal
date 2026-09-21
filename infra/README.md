@@ -45,19 +45,34 @@ et la clé SSH de l'exploitant — rien d'autre.
 
 ```sh
 docker run --rm -it \
-  -v "$PWD/infra:/infra" \
-  -v "$HOME/.ssh:/root/.ssh:ro" \
-  -v "$HOME/.jadwal-secrets:/root/.jadwal-secrets:ro" \
-  -w /infra/ansible \
+  -v "$PWD/infra:/infra:ro" \
+  -v "$HOME/.ssh:/ssh-source:ro" \
+  -v "$HOME/.jadwal-secrets:/secrets:ro" \
   python:3.13-slim sh -c '
+    apt-get -qq update && apt-get -qq install -y openssh-client
     pip install --quiet ansible-core
-    # Un montage Windows expose ses fichiers avec le bit d exécution, et Ansible prend alors le
-    # fichier de phrase de passe pour un script à exécuter : « Exec format error ». On le recopie
-    # sans ce bit, dans un conteneur qui disparaît avec --rm.
-    cp /root/.jadwal-secrets/vault-pass.txt /tmp/p && chmod 600 /tmp/p
+    # Trois pièges d un montage Windows, payés une fois chacun :
+    #
+    #   1. il est inscriptible par tous, et Ansible IGNORE alors ansible.cfg — sans un mot, sinon un
+    #      avertissement. Plus d inventaire, plus d hôte, et un playbook qui ne fait rien ;
+    #   2. il donne le bit d exécution à tout, et Ansible prend le fichier de phrase de passe pour un
+    #      script : « Exec format error » ;
+    #   3. ssh refuse une clé privée que tout le monde peut lire.
+    #
+    # On recopie donc tout dans le conteneur, avec des droits sains. Le conteneur disparaît
+    # avec --rm, et rien n est réécrit côté hôte.
+    cp -r /infra /travail && chmod -R go-w /travail
+    mkdir -p /root/.ssh /root/.ansible/cp
+    cp /ssh-source/* /root/.ssh/ 2>/dev/null || true
+    chmod 700 /root/.ssh && chmod 600 /root/.ssh/*
+    cp /secrets/vault-pass.txt /tmp/p && chmod 600 /tmp/p
     export ANSIBLE_VAULT_PASSWORD_FILE=/tmp/p
-    exec bash'
+    cd /travail/ansible && exec bash'
 ```
+
+Le playbook, lui, se lance depuis `/travail/ansible`. **Les modifications faites dans le conteneur
+ne reviennent pas sur le poste** : c'est une copie, et c'est voulu — on ne déploie pas depuis un
+arbre qu'on vient de modifier sans le relire.
 
 Sous Linux et macOS, `pipx install ansible-core` suffit, et les commandes se lancent depuis
 `infra/ansible/`.
