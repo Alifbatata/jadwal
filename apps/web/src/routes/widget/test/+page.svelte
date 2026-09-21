@@ -34,9 +34,9 @@
 			<p class="petit">
 				Organisation affichée : <code>{data.org}</code>
 				{#if data.disponibles.length > 1}
-					— également disponibles : {data.disponibles
+					(également disponibles : {data.disponibles
 						.filter((autre) => autre !== data.org)
-						.join(', ')}
+						.join(', ')})
 				{/if}
 			</p>
 		{/if}
@@ -103,7 +103,7 @@
 			bonne réponse, et non un message d’erreur sur le site de quelqu’un d’autre.
 		</p>
 		<p>
-			Le contenu de repli, lui, ne s’affiche pas ici — et c’est voulu. L’élément est
+			Le contenu de repli, lui, ne s’affiche pas ici, et c’est voulu. L’élément est
 			<em>défini</em>, donc ses enfants ne sont plus rendus. Pour le voir, il faut couper JavaScript
 			dans le navigateur : c’est exactement le cas qu’il couvre.
 		</p>

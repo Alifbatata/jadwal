@@ -12,7 +12,7 @@
 	};
 </script>
 
-<svelte:head><title>Cours — {data.organisation.name}</title></svelte:head>
+<svelte:head><title>Cours | {data.organisation.name}</title></svelte:head>
 
 <h1>Cours</h1>
 

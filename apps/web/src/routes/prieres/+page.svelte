@@ -55,7 +55,7 @@
 	const lecture = $derived(form?.lecture);
 </script>
 
-<svelte:head><title>Heures de prière — {data.organisation.name}</title></svelte:head>
+<svelte:head><title>Heures de prière | {data.organisation.name}</title></svelte:head>
 
 <h1>Heures de prière</h1>
 
@@ -238,7 +238,7 @@
 	<p class="aide">
 		Les trois sources résolues, dans l’ordre : ce que vous avez <strong>saisi</strong> passe avant
 		ce que vous avez <strong>importé</strong>, qui passe avant le <strong>calcul</strong>. Sous
-		chaque heure, l’iqama quand vous en avez réglé une — c’est elle qui donne l’heure d’un cours «
+		chaque heure, l’iqama quand vous en avez réglé une : c’est elle qui donne l’heure d’un cours «
 		après Maghrib ».
 	</p>
 	{#if servies.length === 0}
@@ -275,7 +275,7 @@
 										<span class="iqama">iqama {String(jour[`${priere}_iqama`]).slice(0, 5)}</span>
 									{/if}
 								{:else}
-									<span class="aide">—</span>
+									<span class="aide">–</span>
 								{/if}
 							</td>
 						{/each}
@@ -291,7 +291,7 @@
 	<p class="aide">
 		Une période, c’est ce que vous imprimez sur votre panneau : un nom, des dates, et pour chaque
 		prière l’heure affichée et l’heure d’iqama. Laissez une heure vide pour que l’import ou le
-		calcul la donne. Laissez la date de fin vide pour « jusqu’à nouvel ordre » — c’est le réglage
+		calcul la donne. Laissez la date de fin vide pour « jusqu’à nouvel ordre » : c’est le réglage
 		d’une mosquée qui pose ses iqamas une fois et n’y revient plus.
 	</p>
 	<p class="aide">
@@ -312,7 +312,7 @@
 			</h3>
 			<p class="aide">
 				Du {periode.fromDate}
-				{periode.toDate ? `au ${periode.toDate}` : '— jusqu’à nouvel ordre'}
+				{periode.toDate ? `au ${periode.toDate}` : '(jusqu’à nouvel ordre)'}
 			</p>
 			{#if periode.needsReview}
 				<p class="avertissement">
@@ -333,14 +333,14 @@
 					{#each data.prieres as priere (priere)}
 						<tr>
 							<th scope="row">{PRAYER_LABELS[priere] ?? priere}</th>
-							<td>{periode.soleil[priere] ?? '—'}</td>
+							<td>{periode.soleil[priere] ?? '–'}</td>
 							<td>
 								{#if periode.iqama[priere].heure}
 									{periode.iqama[priere].heure}
 								{:else if periode.iqama[priere].decalage !== null}
 									+ {periode.iqama[priere].decalage} min
 								{:else}
-									—
+									–
 								{/if}
 							</td>
 						</tr>
@@ -476,8 +476,8 @@
 		<p class="aide">
 			Dates : <code>2027-01-01</code>, <code>01/01/2027</code>, <code>01.01.2027</code> ou
 			<code>1-1-2027</code>. Heures : <code>19:23</code>, <code>9:23</code>,
-			<code>19:23:00</code>, <code>19h23</code> ou <code>7:23 PM</code> — des secondes non nulles sont
-			refusées, parce qu’elles signalent presque toujours une colonne mal alignée.
+			<code>19:23:00</code>, <code>19h23</code> ou <code>7:23 PM</code>. Des secondes non nulles
+			sont refusées, parce qu’elles signalent presque toujours une colonne mal alignée.
 		</p>
 		<p class="aide">
 			Les heures sont locales, dans le fuseau de votre organisation : ne convertissez rien, et ne
@@ -494,7 +494,7 @@
 		<a href={resolve('/prieres/modele.csv')} download>
 			Télécharger un modèle des soixante prochains jours
 		</a>
-		— déjà rempli avec vos réglages actuels. Corrigez ce qui diffère de votre panneau dans un tableur,
+		: déjà rempli avec vos réglages actuels. Corrigez ce qui diffère de votre panneau dans un tableur,
 		puis renvoyez-le ici.
 	</p>
 
@@ -511,8 +511,8 @@
 		<label for="ordre">Si les dates s’écrivent en chiffres seuls</label>
 		<select id="ordre" name="ordre">
 			<option value="auto">Deviner (recommandé)</option>
-			<option value="jour-mois">Jour puis mois — 21/09/2026</option>
-			<option value="mois-jour">Mois puis jour — 09/21/2026</option>
+			<option value="jour-mois">Jour puis mois (21/09/2026)</option>
+			<option value="mois-jour">Mois puis jour (09/21/2026)</option>
 		</select>
 
 		<div class="ligne">
@@ -560,7 +560,7 @@
 
 			{#if lecture.ordreAmbigu}
 				<p class="avertissement" role="alert">
-					Les dates de ce fichier se lisent de deux façons — jour/mois ou mois/jour — et les deux
+					Les dates de ce fichier se lisent de deux façons, jour/mois ou mois/jour, et les deux
 					donnent un calendrier valide. Nous ne devinons pas : choisissez l’ordre ci-dessus, puis
 					relisez le fichier.
 				</p>
@@ -721,7 +721,7 @@
 		</table>
 		<p class="aide">
 			Pour chaque prière, une heure d’iqama <strong>ou</strong> un nombre de minutes après l’heure affichée
-			— jamais les deux. Un décalage suit le soleil tout seul ; une heure fixe ne bouge pas, pas même
+			: jamais les deux. Un décalage suit le soleil tout seul ; une heure fixe ne bouge pas, pas même
 			au changement d’heure, ce qui est voulu.
 		</p>
 

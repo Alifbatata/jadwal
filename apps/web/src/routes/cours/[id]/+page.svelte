@@ -4,7 +4,7 @@
 	let { data, form } = $props();
 </script>
 
-<svelte:head><title>{data.titre} — {data.organisation.name}</title></svelte:head>
+<svelte:head><title>{data.titre} | {data.organisation.name}</title></svelte:head>
 
 <h1>Modifier « {data.titre} »</h1>
 

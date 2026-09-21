@@ -8,7 +8,7 @@
 		"node": ">=24.18.1"
 	},
 	"scripts": {
-		"lint": "prettier --check . && eslint .",
+		"lint": "prettier --check . && eslint . && node scripts/controle-style.mjs",
 		"format": "prettier --write .",
 		"check": "pnpm -r --if-present run check",
 		"test": "node scripts/tests.mjs",
@@ -18,7 +18,8 @@
 		"hooks": "node scripts/installer-hooks.mjs",
 		"secrets:test": "node scripts/eprouver-controle-secrets.mjs",
 		"fuites": "node scripts/controle-fuites.mjs --arbre",
-		"fuites:test": "node scripts/eprouver-garde-fou.mjs"
+		"fuites:test": "node scripts/eprouver-garde-fou.mjs",
+		"style": "node scripts/controle-style.mjs"
 	},
 	"devDependencies": {
 		"@eslint/js": "10.0.1",

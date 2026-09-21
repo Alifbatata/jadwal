@@ -63,7 +63,7 @@
 	}
 </script>
 
-<svelte:head><title>Passkey — jadwal</title></svelte:head>
+<svelte:head><title>Passkey | jadwal</title></svelte:head>
 
 <h1>Votre passkey</h1>
 
@@ -120,7 +120,7 @@
 	<ul>
 		{#each data.passkeys as passkey (passkey.id)}
 			<li>
-				{passkey.name} — enregistrée le {passkey.createdAt}
+				{passkey.name}, enregistrée le {passkey.createdAt}
 				{#if data.hasSuperAdminPowers}
 					<button type="button" onclick={() => supprimer(passkey.id)}>Supprimer</button>
 				{/if}
@@ -129,7 +129,7 @@
 	</ul>
 	<p class="aide">
 		Enregistrez-en plusieurs : perdre son téléphone ne doit pas fermer le service. Si toutes sont
-		perdues, la remise à zéro se fait côté base, par le propriétaire — jamais par une question
+		perdues, la remise à zéro se fait côté base, par le propriétaire, jamais par une question
 		secrète ni par un code envoyé par courriel.
 	</p>
 </section>
