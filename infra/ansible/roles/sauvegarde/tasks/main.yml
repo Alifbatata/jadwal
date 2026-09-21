@@ -75,6 +75,10 @@
     - not ansible_check_mode
   become: true
   block:
+    # `executable: /bin/bash` n'est pas une coquetterie : `ansible.builtin.shell` lance `/bin/sh`,
+    # qui est `dash` sur Debian et Ubuntu, et `dash` ne connaît pas `pipefail` — « Illegal option
+    # -o pipefail », et la tâche échoue avant d'avoir rien fait. Un `--check --diff` ne le voit pas,
+    # parce qu'il saute les tâches `shell`. C'est un vrai déploiement qui l'a trouvé.
     - name: Un objet d'essai sous quotidien/
       ansible.builtin.shell: |
         set -euo pipefail
@@ -84,6 +88,8 @@
         rclone --config {{ jadwal_etc }}/rclone.conf copyto "$sonde" "{{ jadwal_rclone_remote }}/$nom"
         rm -f "$sonde"
         echo "$nom"
+      args:
+        executable: /bin/bash
       register: sonde
       changed_when: true
 
@@ -97,6 +103,8 @@
         code=$?
         rm -f "$autre"
         exit $code
+      args:
+        executable: /bin/bash
       register: ecrasement
       failed_when: false
       changed_when: false

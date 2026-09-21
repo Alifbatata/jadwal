@@ -10,6 +10,42 @@
       Une étiquette bouge : le retour arrière ne rendrait pas forcément ce qui tournait avant.
       Exemple : ansible-playbook jadwal.yml -e jadwal_image=ghcr.io/compte/jadwal@sha256:…
 
+# Un « $ » dans un secret ne traverse pas Docker Compose.
+#
+# Compose interpole le fichier d'environnement : `pa$$e-partout` devient `pa`, **sans erreur**, avec un
+# simple avertissement noyé dans sa sortie. Le conteneur reçoit un secret tronqué, et le service
+# échoue plus tard, ailleurs, pour une raison qui ne ressemble en rien à la cause. Mesuré au
+# déploiement du 2026-09-21 : un mot de passe SMTP de seize caractères en portait treize dans le
+# conteneur, et aucun courriel ne pouvait partir.
+#
+# Échapper ne sauve pas : `$$` répare Compose et casse `docker run --env-file`, qui n'interpole pas
+# et passerait `$$` tel quel — or c'est par là que part le courriel d'alerte. Un même fichier, deux
+# lecteurs, deux règles d'échappement inconciliables.
+#
+# On refuse donc, avant d'avoir rien écrit. C'est la raison pour laquelle les mots de passe engendrés
+# par ce projet sont alphanumériques : voir `group_vars/all/vault.yml.example`.
+- name: Aucun secret ne porte de dollar, que Compose avalerait
+  ansible.builtin.assert:
+    that: "'$' not in item.valeur"
+    fail_msg: >-
+      {{ item.nom }} contient un « $ ». Docker Compose interpole le fichier d'environnement : la
+      valeur arriverait tronquée dans le conteneur, en silence. Choisir un secret sans « $ », le
+      reporter dans le coffre, et rejouer. Rien n'a été écrit.
+    quiet: true
+  loop:
+    - { nom: vault_postgres_password, valeur: '{{ vault_postgres_password }}' }
+    - { nom: vault_db_owner_password, valeur: '{{ vault_db_owner_password }}' }
+    - { nom: vault_db_app_password, valeur: '{{ vault_db_app_password }}' }
+    - { nom: vault_db_superadmin_password, valeur: '{{ vault_db_superadmin_password }}' }
+    - { nom: vault_db_auth_password, valeur: '{{ vault_db_auth_password }}' }
+    - { nom: vault_db_public_password, valeur: '{{ vault_db_public_password }}' }
+    - { nom: vault_better_auth_secret, valeur: '{{ vault_better_auth_secret }}' }
+    - { nom: vault_smtp_password, valeur: '{{ vault_smtp_password }}' }
+  loop_control:
+    label: '{{ item.nom }}'
+  # La valeur ne doit apparaître ni dans la sortie d'Ansible, ni dans le message d'échec.
+  no_log: true
+
 - name: Le fichier Compose
   ansible.builtin.copy:
     src: '{{ playbook_dir }}/../compose/docker-compose.yml'

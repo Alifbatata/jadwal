@@ -15,15 +15,24 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
 - **Étape 6** (widget intégrable, flux par cours, référencement) : terminée le 2026-09-21.
 - **Étape 7** (heures de prière, couleur d'accent, compteur de vues) : terminée le 2026-09-21.
 - **Étape 8** (heures réelles de la mosquée, iqama, prière du vendredi) : terminée le 2026-09-21.
-- **Étape 9** (finitions, infrastructure en code, mise en production) : **en cours**. Les phases 1
-  et 2 sont faites : tout est écrit, éprouvé en local, et l'image de production est publiée par
+- **Étape 9** (finitions, infrastructure en code, mise en production) : **terminée le
+  2026-09-21**. Les phases 1 et 2 : tout est écrit, éprouvé en local, et l'image de production est publiée par
   digest. La question de l'isolation du déploiement est tranchée et consignée dans
   `docs/adr/0034-isolation-du-deploiement.md`. Depuis, trois décisions se sont ajoutées : les
   sauvegardes ne sont plus effaçables depuis le serveur (ADR 0037), la sonde quitte GitHub Actions
   pour devenir une minuterie de jadwal (ADR 0038), et `pnpm test` refuse désormais un test sauté en
   silence. `pnpm lint` refuse aussi le tiret cadratin et une liste de chevilles dans les textes que
-  les gens lisent. La phase 3, le déploiement, reste à jouer : elle attend l'inventaire et le coffre,
-  qui vivent dans `PRIVE/` — le dépôt ne les livre pas et ne les livrera pas.
+  les gens lisent. **La phase 3, le déploiement, est jouée** : jadwal est en ligne depuis le
+  2026-09-21, servi par le Caddy de l'hôte, sonde au vert sur les deux piles, et une archive
+  chiffrée a été envoyée, relue, puis **déchiffrée et restaurée** avec la clé privée de
+  l'exploitant. Il reste à ouvrir le premier compte.
+- **Étape 10** (la mise en ligne) : **terminée le 2026-09-21**. Elle a trouvé cinq défauts qu'aucun
+  `--check` ne pouvait voir, parce qu'un `--check` saute les tâches `shell` et ne lance aucun
+  service. Ils sont corrigés, et chacun porte dans le code la ligne qui dit ce qu'il a coûté :
+  `pipefail` sous `dash`, le rechargement de Caddy conditionné à un changement qui n'arrive jamais
+  au second passage, `pg_dump` sans mot de passe dans son propre conteneur, la clé privée consommée
+  par une commande antérieure avant d'arriver à `age`, et une alerte qui se marquait elle-même en
+  échec après avoir abouti.
 
 ## Fait
 
@@ -432,7 +441,8 @@ tests.
 | 6     | Widget, flux agenda par cours, référencement                       | terminée |
 | 7     | Heures de prière, couleur d'accent, compteur de vues               | terminée |
 | 8     | Heures réelles de la mosquée, iqama, prière du vendredi            | terminée |
-| 9     | Finitions, infrastructure en code, mise en production              | en cours |
+| 9     | Finitions, infrastructure en code, mise en production              | terminée |
+| 10    | Mise en ligne : déploiement réel, sauvegarde et déchiffrement      | terminée |
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
 passkeys, paiement.

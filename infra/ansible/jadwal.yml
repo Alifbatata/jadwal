@@ -33,7 +33,7 @@
           - 'Hôte        : {{ inventory_hostname }} ({{ ansible_host }})'
           - "Image       : {{ jadwal_image | default('(manquante)') }}"
           - 'Domaine     : {{ jadwal_domaine }}'
-          - "Caddy       : {{ 'rechargé' if jadwal_caddy_reload else 'PAS rechargé (bloc posé seulement)' }}"
+          - "Caddy       : {{ 'rechargé' if jadwal_caddy_reload | bool else 'PAS rechargé (bloc posé seulement)' }}"
           - "Sauvegardes : {{ jadwal_rclone_remote | default('(non configurées)') }}"
 
   roles:
@@ -60,4 +60,7 @@
         msg:
           - 'jadwal tourne, image {{ jadwal_image }}'
           - 'Retrait : /opt/jadwal/RETRAIT.txt, ou ansible-playbook retrait.yml'
-          - "{{ 'Caddy rechargé : le service est servi sur https://' ~ jadwal_domaine if jadwal_caddy_reload else 'Caddy non rechargé : relire le bloc de site, puis -e jadwal_caddy_reload=true' }}"
+          # Ce que le playbook a **fait**, pas ce qu'on lui a demandé : la tâche de rechargement est
+          # relue, et non le drapeau qui la déclenche. Un message qui annonce un rechargement qui
+          # n'a pas eu lieu est pire que pas de message.
+          - "{{ 'Caddy rechargé : le service est servi sur https://' ~ jadwal_domaine if (rechargement is defined and not rechargement.skipped | default(false)) else 'Caddy non rechargé : relire le bloc de site, puis -e jadwal_caddy_reload=true' }}"

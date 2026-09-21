@@ -63,7 +63,7 @@ trace "vidange de ${base:-jadwal}, chiffrée pour $destinataire"
 # `--format=custom` : compressé, et restaurable table par table, ce dont le test de restauration a
 # besoin. `--no-owner` et `--no-privileges` sont volontairement absents : les rôles et les politiques
 # RLS font partie de ce qu'on sauvegarde (ADR 0019).
-if ! compose exec -T db pg_dump --username "${utilisateur:-jadwal}" --dbname "${base:-jadwal}" \
+if ! dans_db pg_dump --username "${utilisateur:-jadwal}" --dbname "${base:-jadwal}" \
 	--format=custom | age --recipient "$destinataire" --output "$partiel"; then
 	rm -f "$partiel"
 	echec "la vidange ou le chiffrement a échoué : aucune archive écrite"
