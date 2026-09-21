@@ -316,8 +316,8 @@ export const actions: Actions = {
 	},
 
 	/**
-	 * Dupliquer une période pour l'année suivante. Voir `dupliquerPeriode` : onze jours de décalage,
-	 * et « dates à vérifier » jusqu'à ce qu'un responsable l'enregistre.
+	 * Dupliquer une période pour l'année suivante. Voir `dupliquerPeriode` : mêmes mois et mêmes
+	 * jours un an plus tard, et « dates à vérifier » jusqu'à ce qu'un responsable l'enregistre.
 	 */
 	dupliquerPeriode: async (event) => {
 		const context = await mustAdminister(event);
@@ -326,15 +326,22 @@ export const actions: Actions = {
 		try {
 			const fait = await withSessionOrg(context, async (tx) => {
 				const source = (await readPeriodes(tx)).find((periode) => periode.id === id);
-				if (!source) return false;
-				await dupliquerPeriode(
+				if (!source) return 'absente' as const;
+				const copie = await dupliquerPeriode(
 					tx,
 					{ organizationId: context.organizationId, userId: context.userId },
 					source
 				);
-				return true;
+				return copie === null ? ('sans-equivalent' as const) : ('faite' as const);
 			});
-			if (!fait) return fail(404, { erreur: 'Cette période n’existe plus.' });
+			if (fait === 'absente') return fail(404, { erreur: 'Cette période n’existe plus.' });
+			if (fait === 'sans-equivalent') {
+				return fail(400, {
+					erreur:
+						'Cette période ne couvre que le 29 février, et l’année suivante n’en a pas. ' +
+						'Choisissez vous-même la date qui la remplace.'
+				});
+			}
 		} catch (cause) {
 			if (codeSql(cause) === '23P01') {
 				return fail(400, {

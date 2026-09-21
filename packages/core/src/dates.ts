@@ -121,6 +121,23 @@ export function addDays(date: IsoDate, days: number): IsoDate {
 	return daysToIsoDate(isoDateToDays(date) + days);
 }
 
+/**
+ * The same calendar date one year later: same month, same day.
+ *
+ * Only 29 February has no counterpart in a common year. It becomes 1 March, never 28 February:
+ * clamping backwards would map 28 and 29 February onto the same day, and two intervals that merely
+ * touched would then overlap. Moving forwards keeps distinct dates distinct and keeps their order.
+ */
+export function nextYearSameDate(date: IsoDate): IsoDate {
+	const civil = parseIsoDate(date);
+	if (!civil) throw new TypeError(`Invalid ISO date: ${date}`);
+	const year = civil.year + 1;
+	if (civil.month === 2 && civil.day === 29 && !isLeapYear(year)) {
+		return formatIsoDate({ year, month: 3, day: 1 });
+	}
+	return formatIsoDate({ year, month: civil.month, day: civil.day });
+}
+
 /** Comparaison de deux dates ISO valides (le format canonique se compare comme une chaîne). */
 export function compareIsoDates(a: IsoDate, b: IsoDate): number {
 	return a < b ? -1 : a > b ? 1 : 0;
