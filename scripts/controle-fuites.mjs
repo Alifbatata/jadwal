@@ -12,8 +12,9 @@
  *     node scripts/controle-fuites.mjs --tout         les deux
  *     node scripts/controle-fuites.mjs --pousse       lit l'entrée du crochet pre-push
  *
- * **La liste des termes n'est pas dans ce dépôt, et n'y sera jamais.** Elle vit dans le dépôt privé
- * de l'exploitation ; ce fichier n'en connaît aucun. Son chemin se donne une fois :
+ * **La liste des termes n'est pas dans ce dépôt, et n'y sera jamais.** Elle vit dans `PRIVE/`, le
+ * dossier de celui qui exploite cette instance, ignoré par git ; ce fichier n'en connaît aucun terme.
+ * Son chemin se donne une fois :
  *
  *     git config jadwal.termes-interdits <chemin absolu>
  *
@@ -201,8 +202,8 @@ function main() {
 		process.stderr.write(
 			`\n  Contrôle refusé : la liste des termes interdits est introuvable.\n\n` +
 				(chemin ? `  Chemin configuré : ${chemin}\n\n` : '') +
-				`  Elle vit hors de ce dépôt, dans le dépôt privé de l'exploitation. Une fois :\n\n` +
-				`      git config jadwal.termes-interdits <chemin absolu vers termes-interdits.txt>\n\n` +
+				`  Elle vit dans PRIVE/, le dossier qui ne quitte pas ce poste. Une fois :\n\n` +
+				`      git config jadwal.termes-interdits "<racine du dépôt>/PRIVE/garde-fou/termes-interdits.txt"\n\n` +
 				`  Ce dépôt est public : sans cette liste, rien ne relit ce qui en part.\n\n` +
 				`  Vous contribuez depuis votre propre clone et n'avez aucune infrastructure à\n` +
 				`  protéger ? Dites-le une fois, explicitement :\n\n` +

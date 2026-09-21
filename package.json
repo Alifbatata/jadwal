@@ -19,7 +19,9 @@
 		"secrets:test": "node scripts/eprouver-controle-secrets.mjs",
 		"fuites": "node scripts/controle-fuites.mjs --arbre",
 		"fuites:test": "node scripts/eprouver-garde-fou.mjs",
-		"style": "node scripts/controle-style.mjs"
+		"style": "node scripts/controle-style.mjs",
+		"prive": "node scripts/controle-dossiers-prives.mjs --arbre",
+		"prive:test": "node scripts/eprouver-dossiers-prives.mjs"
 	},
 	"devDependencies": {
 		"@eslint/js": "10.0.1",

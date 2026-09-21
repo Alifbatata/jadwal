@@ -30,6 +30,14 @@ secrets.txt
 # Ce dépôt est public et ne parle que de jadwal — voir CLAUDE.md.
 A_LIVRER/
 
+# Tout ce qui est propre au serveur de celui qui exploite cette instance : son coffre chiffré, son
+# inventaire, ses marches à suivre, ses journaux de séance. Ce dossier ne quitte jamais le poste.
+#
+# Ces deux lignes ne suffisent pas, et c'est voulu : `git add -f` passe outre un `.gitignore`. Le
+# crochet `pre-push` refuse en plus toute poussée qui porterait un fichier de l'un de ces deux
+# dossiers, quelle que soit la façon dont il y est entré.
+PRIVE/
+
 # Journaux et fichiers système
 *.log
 .DS_Store
@@ -45,12 +53,12 @@ Thumbs.db
 # Corbeille de sortie du transport de courriel de développement : rien ne doit y être commité.
 .courriels/
 
-# Le coffre Ansible, déchiffré. Le fichier chiffré ne porte pas ce nom et n'existe pas non plus dans
-# le dépôt : la phrase de passe est à l'exploitant, et rien de secret n'entre ici (étape 9).
+# Les copies de travail du déploiement. L'original de chacune est dans `PRIVE/` — le coffre,
+# l'inventaire, les valeurs propres à l'installation — et ce qui est posé ici ne vit que le temps
+# d'un `ansible-playbook`. Ces lignes sont un filet : sous Windows, le déploiement se joue dans un
+# conteneur jetable et rien n'est jamais posé sur le poste.
 infra/ansible/group_vars/all/vault.yml
-infra/ansible/*.retry
-
-# L'inventaire décrit une machine précise : son adresse, son compte d'administration. Le dépôt ne
-# livre que le modèle ; l'inventaire réel se crée à partir de lui et reste sur le poste.
 infra/ansible/inventory.ini
+infra/ansible/exploitant.yml
+infra/ansible/*.retry
 !infra/ansible/inventory.ini.example

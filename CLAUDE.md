@@ -23,7 +23,10 @@ comme un modèle, pas comme la description d'une machine en service. Il est lég
 serveur _peut_ héberger d'autres applications ; il ne l'est jamais de dire lesquelles.
 
 Tout ce qui est propre à une machine en service — inventaire, adresses, comptes, port, chemins,
-journaux de séance, sorties d'audit — vit hors de ce dépôt, dans un dépôt privé.
+journaux de séance, sorties d'audit — vit dans **`PRIVE/`**, et nulle part ailleurs. C'est le seul
+autre dossier de travail : il est ignoré par git, comme `A_LIVRER/`, et le crochet `pre-push` refuse
+toute poussée qui en emporterait un fichier, **même ajouté avec `git add -f`**. Il n'y a pas de
+second dépôt.
 
 Avant chaque poussée, relire `git diff --staged` en entier avec cette règle en tête. Une fuite
 poussée ne se rattrape pas : elle subsiste dans des journaux et des caches que le dépôt ne contrôle
@@ -61,6 +64,11 @@ pas.
 - `A_LIVRER/RAPPORT_DERNIER.md` : rapport de la dernière étape. **Ignoré par git** : ce dossier ne
   quitte pas le poste, parce qu'un rapport recopie des sorties de commandes et que ces sorties
   parlent de la machine.
+- `PRIVE/` : **tout ce qui est propre au serveur de celui qui exploite cette instance**, et le seul
+  autre dossier de travail. Le coffre chiffré, l'inventaire Ansible réel, la liste des termes
+  interdits, les marches à suivre, les journaux de séance, les archives. **Ignoré par git**, et
+  refusé à la poussée par le crochet `pre-push` même s'il y entre avec `git add -f` — voir
+  `PRIVE/LISEZMOI.md`. Il n'y a pas de second dépôt : ce qui ne doit pas être public vit ici.
 - `.github/` : CI et Dependabot.
 
 ## Commandes (à la racine)
