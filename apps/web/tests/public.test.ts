@@ -306,6 +306,10 @@ describe('ce que le public ne voit pas', () => {
 		expect(inconnue.status).toBe(404);
 		expect(await suspendue.text()).toBe(await inconnue.text());
 
+		// Une erreur de l'API est du JSON, et elle le dit. Sans ce type, elle part en `text/plain`,
+		// et `x-content-type-options: nosniff` autorise alors un client à refuser de la lire.
+		expect(inconnue.headers.get('content-type')).toContain('application/json');
+
 		const page = await fetch(`${origin}/m/${SLUG_SUSPENDUE}`);
 		const pageInconnue = await fetch(`${origin}/m/jamais-existe`);
 		expect(page.status).toBe(404);

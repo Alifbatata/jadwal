@@ -37,10 +37,30 @@ while [ "$#" -gt 0 ]; do
 	esac
 done
 
+# La clé arrive sur l'entrée standard, et il faut la mettre à l'abri **tout de suite**.
+#
+# `--cle /dev/stdin` est la forme qui évite d'écrire la clé privée sur le serveur : elle vient du
+# tube SSH et va directement à `age`. Seulement, entre l'entrée dans ce script et l'appel à `age`,
+# il y a une dizaine de commandes — `docker compose exec -T`, `psql` — et **chacune lit l'entrée
+# standard**. Quand `age` y arrive enfin, il n'y a plus rien : « no secret keys found », suivi d'un
+# `pg_restore` sur un flux vide.
+#
+# On duplique donc l'entrée standard sur le descripteur 9 dès la première ligne utile, puis on
+# branche l'entrée standard sur /dev/null : plus personne ne peut consommer la clé par mégarde, et
+# `age` la lit sur `/dev/fd/9`. Elle reste dans un tube, du poste jusqu'à `age` : elle ne touche
+# jamais le disque du serveur, n'apparaît dans aucun journal et dans aucune ligne de commande.
+#
+# Relevé à la mise en production du 2026-09-21 : la procédure signalait cette forme comme « à
+# éprouver », et elle ne marchait pas.
+if [ "$cle" = "/dev/stdin" ] || [ "$cle" = "-" ]; then
+	exec 9<&0 0</dev/null
+	cle=/dev/fd/9
+fi
+
 base="$(valeur_env POSTGRES_DB)"; base="${base:-jadwal}"
 utilisateur="$(valeur_env POSTGRES_USER)"; utilisateur="${utilisateur:-jadwal}"
 
-psql_base() { compose exec -T db psql --username "$utilisateur" --dbname "$1" --no-align --tuples-only --quiet --set ON_ERROR_STOP=1 "${@:2}"; }
+psql_base() { dans_db psql --username "$utilisateur" --dbname "$1" --no-align --tuples-only --quiet --set ON_ERROR_STOP=1 "${@:2}"; }
 
 # Le relevé qu'on compare : une ligne par table, avec son nombre de lignes et l'état de sa RLS.
 # `query_to_xml` évite d'avoir à construire et à jouer une requête par table depuis le shell.
@@ -75,13 +95,13 @@ if [ -n "$archive" ]; then
 	[ -r "$cle" ] || echec "clé illisible : $cle"
 	trace "restauration de $archive (déchiffrement avec la clé fournie)"
 	age --decrypt --identity "$cle" "$archive" \
-		| compose exec -T db pg_restore --username "$utilisateur" --dbname "$BASE_TEST" --no-owner --exit-on-error \
+		| dans_db pg_restore --username "$utilisateur" --dbname "$BASE_TEST" --no-owner --exit-on-error \
 		|| echec "pg_restore a refusé l'archive : elle n'est pas restaurable"
 else
 	trace "vidange fraîche de $base, restaurée dans $BASE_TEST"
 	avant="$(releve "$base")"
-	compose exec -T db pg_dump --username "$utilisateur" --dbname "$base" --format=custom \
-		| compose exec -T db pg_restore --username "$utilisateur" --dbname "$BASE_TEST" --no-owner --exit-on-error \
+	dans_db pg_dump --username "$utilisateur" --dbname "$base" --format=custom \
+		| dans_db pg_restore --username "$utilisateur" --dbname "$BASE_TEST" --no-owner --exit-on-error \
 		|| echec "la vidange n'est pas restaurable : pg_restore a refusé"
 fi
 
@@ -129,8 +149,20 @@ if [ -z "$archive" ]; then
 else
 	organisations="$(psql_base "$BASE_TEST" --command 'select count(*) from public."organization";')"
 	cours="$(psql_base "$BASE_TEST" --command 'select count(*) from public."course";')"
-	[ "$organisations" -gt 0 ] || echec "l'archive restaurée ne contient aucune organisation"
-	trace "archive restaurée : $organisations organisation(s), $cours cours"
+	vivantes="$(psql_base "$base" --command 'select count(*) from public."organization";')"
+	# Ce qui est refusé, c'est une archive **vide alors que le service ne l'est pas** : là, quelque
+	# chose s'est perdu entre la vidange et le chiffrement, et il faut le savoir tout de suite.
+	#
+	# Exiger un minimum absolu serait faux, et cela a fait échouer ce test à la mise en production :
+	# une instance qui vient d'être déployée n'a aucune organisation, et son archive n'en a donc
+	# aucune non plus. Ce n'est pas un défaut de la chaîne, c'est un service qui commence. Ce que la
+	# chaîne doit prouver — la clé privée ouvre l'archive, `pg_restore` l'accepte, le schéma est
+	# complet, la RLS est forcée, le journal de migrations concorde — est prouvé plus haut, et c'est
+	# cela qui compte.
+	if [ "$vivantes" -gt 0 ] && [ "$organisations" -eq 0 ]; then
+		echec "la base vivante porte $vivantes organisation(s) et l'archive restaurée aucune : archive suspecte"
+	fi
+	trace "archive restaurée : $organisations organisation(s), $cours cours (base vivante : $vivantes)"
 	# Une réussite de ce mode-là, et de lui seul, arme la veille du trimestre.
 	mkdir -p "$JADWAL_ETAT/reussites"
 	date --iso-8601=seconds > "$JADWAL_ETAT/reussites/restauration-complete"

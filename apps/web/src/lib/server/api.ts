@@ -116,9 +116,15 @@ export function publicResponse(
  * client, donc en anglais comme le reste du contrat.
  */
 export function publicError(status: number, code: string, message?: string): Response {
+	const headers = baseHeaders('no-store', undefined);
+	// Le type, sans quoi la réponse part en `text/plain` — c'est ce que `new Response(<chaîne>)`
+	// pose par défaut. Le corps est du JSON, il doit se dire tel. Avec `x-content-type-options:
+	// nosniff` juste au-dessus, un client sérieux a le droit de refuser de le lire, et il a raison.
+	// Relevé sur le service en ligne le 2026-09-21, pas en relecture.
+	headers.set('content-type', 'application/json; charset=utf-8');
 	return new Response(JSON.stringify(message ? { error: code, message } : { error: code }), {
 		status,
-		headers: baseHeaders('no-store', undefined)
+		headers
 	});
 }
 

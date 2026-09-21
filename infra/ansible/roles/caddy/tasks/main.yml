@@ -77,14 +77,25 @@
       Le bloc {{ jadwal_caddy_sites }}/{{ jadwal_domaine }}.caddy est posé et la configuration est
       valide. Caddy n'a PAS été rechargé. Relire le fichier, puis rejouer avec
       -e jadwal_caddy_reload=true pour que jadwal soit servi.
-  when: not jadwal_caddy_reload
+  when: not jadwal_caddy_reload | bool
 
 # Le rechargement, et lui seul. `caddy reload` ne coupe aucune connexion en cours et ne touche pas
 # aux autres sites : c'est la seule action de ce playbook sur un service existant, et l'étape
 # l'autorise nommément, à condition de l'avoir montrée d'abord.
+#
+# La condition est `jadwal_caddy_reload`, et **rien d'autre**. Elle a porté `and bloc.changed`, et
+# c'était un défaut qui rendait la marche à suivre impossible à suivre : le premier passage pose le
+# bloc (`changed`) sans recharger, l'exploitant le relit, et le second passage le trouve inchangé —
+# `bloc.changed` est alors faux, le rechargement est sauté, et jadwal n'est jamais servi. Le
+# playbook l'annonçait pourtant comme fait. Trouvé à la mise en ligne, pas avant.
+#
+# Recharger sans que rien n'ait changé ne coûte rien : Caddy relit sa configuration, ne redémarre
+# pas, et ne coupe aucune connexion. Le drapeau est refusé par défaut : qui le pose demande un
+# rechargement, et l'obtient.
 - name: Rechargement de Caddy
   ansible.builtin.systemd_service:
     name: caddy
     state: reloaded
   become: true
-  when: jadwal_caddy_reload and bloc.changed
+  when: jadwal_caddy_reload | bool
+  register: rechargement

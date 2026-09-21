@@ -44,6 +44,21 @@ compose() {
 	docker compose --file "$JADWAL_COMPOSE" --env-file "$JADWAL_ENV" "$@"
 }
 
+# Un client PostgreSQL — `pg_dump`, `pg_restore`, `psql` — dans le conteneur de la base.
+#
+# **Le mot de passe est lu dans le conteneur**, depuis sa propre variable `POSTGRES_PASSWORD`, et
+# nulle part ailleurs : il ne passe ni par l'environnement de ce script, ni par sa ligne de commande,
+# ni par `ps`, ni par le journal de l'unité. C'est la même règle que pour le reste des secrets.
+#
+# Sans cela, `pg_dump` se connecte à la socket locale de son propre conteneur **sans mot de passe** :
+# l'image officielle de PostgreSQL n'accorde pas `trust` en local, elle demande `scram-sha-256`.
+# `pg_dump` affiche alors « Password: » sur une entrée qui n'existe pas, puis « fe_sendauth: no
+# password supplied », et la sauvegarde échoue. Ce défaut a survécu à tous les `--check` : aucune
+# tâche `shell` ne tourne en mode vérification. C'est la première sauvegarde réelle qui l'a montré.
+dans_db() {
+	compose exec -T db sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" exec "$@"' sh "$@"
+}
+
 # Un battement de cœur vers le service de supervision (ADR 0038).
 #
 # Le renversement est tout l'intérêt : ce n'est plus à celui qui tombe de prévenir qu'il est tombé.
