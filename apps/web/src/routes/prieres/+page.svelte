@@ -300,6 +300,34 @@
 		le Dhuhr.
 	</p>
 
+	<!--
+		« Dupliquer pour l'année suivante » reporte les mêmes dates un an plus tard, parce que les
+		heures de prière suivent le soleil. Une période de Ramadan, elle, suit le calendrier hégirien
+		et recule d'environ onze jours dans l'année civile : la copie est un point de départ, pas une
+		réponse. C'est le seul endroit du service où un malentendu ferait afficher de mauvaises heures
+		pendant un mois entier, et c'est pourquoi cet avertissement est écrit dans les quatre langues
+		du service, alors que le reste de cet écran est en français : le responsable d'une mosquée ne
+		le lit pas forcément.
+	-->
+	<div class="ramadan">
+		<p lang="fr">
+			<strong>Ramadan :</strong> une période de Ramadan avance d’environ onze jours chaque année. La copie
+			garde vos dates telles quelles ; c’est à vous de les redater à la main.
+		</p>
+		<p lang="de">
+			<strong>Ramadan:</strong> Eine Ramadan-Periode verschiebt sich jedes Jahr um etwa elf Tage. Die
+			Kopie behält Ihre Daten unverändert; Sie müssen sie von Hand neu datieren.
+		</p>
+		<p lang="it">
+			<strong>Ramadan:</strong> un periodo di Ramadan si sposta di circa undici giorni ogni anno. La copia
+			mantiene le vostre date invariate; tocca a voi ridatarle a mano.
+		</p>
+		<p lang="ar" dir="rtl">
+			<strong>رمضان:</strong> تتقدّم فترة رمضان نحو أحد عشر يوماً في كل سنة. تحتفظ النسخة بتواريخكم كما
+			هي، وعليكم تعديلها يدوياً.
+		</p>
+	</div>
+
 	{#each data.periodes as periode (periode.id)}
 		<div class="periode">
 			<h3>
@@ -866,6 +894,26 @@
 	.aide {
 		color: #555;
 		font-size: 0.9rem;
+	}
+
+	/* Les quatre langues du service, empilées. Chaque paragraphe porte son `lang`, donc sa coupure
+	   de mots et sa voix de synthèse ; l'arabe porte en plus son `dir`. */
+	.ramadan {
+		margin: 1rem 0;
+		padding: 0.75rem 1rem;
+		border-inline-start: 3px solid #b8860b;
+		background: #fdf8ec;
+		border-radius: 4px;
+	}
+
+	.ramadan p {
+		margin: 0.35rem 0;
+		font-size: 0.9rem;
+		color: #4a3c10;
+	}
+
+	.ramadan p[dir='rtl'] {
+		text-align: right;
 	}
 	.erreur {
 		background: #fee2e2;
