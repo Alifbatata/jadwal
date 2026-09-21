@@ -1,0 +1,52 @@
+# Le bloc de site de jadwal, à poser dans la configuration du Caddy **de l'hôte** (ADR 0034).
+#
+# Ce fichier est **additif** : il décrit un site de plus, il ne touche à aucun autre. Le retirer et
+# recharger Caddy suffit à faire disparaître jadwal sans que les autres sites que ce Caddy peut
+# servir s'en aperçoivent.
+#
+# Il suppose que le Caddyfile de l'hôte contient un `import` d'un répertoire de sites — c'est la
+# disposition la plus courante, et le playbook la vérifie avant de poser ce fichier. Si ce n'est pas
+# le cas, il ne l'installe pas et le dit.
+
+jadwal.voltia.ch {
+	# Le certificat est demandé à Let's Encrypt par Caddy lui-même, comme pour tout site qu'il sert.
+	# Rien à renouveler à la main : c'est Caddy qui s'en occupe, et la veille surveille sa date
+	# d'expiration au cas où il n'y arriverait pas.
+
+	# L'application, sur la boucle locale. Compose n'y publie le port que là : rien d'autre que ce
+	# reverse_proxy ne peut l'atteindre.
+	reverse_proxy 127.0.0.1:3080 {
+		# Caddy **ajoute** son adresse à X-Forwarded-For plutôt que de le remplacer, ce qui est le
+		# comportement correct — et c'est pour cela que l'application lit la **dernière** valeur
+		# (`XFF_DEPTH=1`). Les trois en-têtes ci-dessous sont ceux qu'adapter-node consulte.
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+
+		# Une application qui ne répond plus ne doit pas retenir un visiteur indéfiniment.
+		transport http {
+			dial_timeout 5s
+			response_header_timeout 30s
+		}
+	}
+
+	# Les en-têtes de sécurité sont posés par l'application elle-même, route par route — c'est là
+	# qu'on sait si une page publique accepte d'être encadrée (ADR 0027). Caddy n'en ajoute qu'un,
+	# celui qu'il est le seul à pouvoir poser honnêtement, parce qu'il est le seul à savoir que la
+	# connexion est bien en HTTPS.
+	header {
+		# Deux ans, sous-domaines compris. `preload` n'y est pas : il engage `voltia.ch` tout entier
+		# auprès des navigateurs, et ce n'est pas à jadwal d'en décider.
+		Strict-Transport-Security "max-age=63072000; includeSubDomains"
+		# Caddy annonce sa version dans `Server` ; rien n'oblige à la publier.
+		-Server
+	}
+
+	# Le journal du site, dans un fichier à lui : on lit ce que jadwal a servi, et rien d'autre.
+	log {
+		output file /var/log/caddy/jadwal.voltia.ch.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+		format json
+	}
+}

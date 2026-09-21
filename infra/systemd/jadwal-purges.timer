@@ -1,0 +1,11 @@
+[Unit]
+Description=jadwal — purges de rétention, une fois par nuit
+
+[Timer]
+OnCalendar=*-*-* 03:40:00
+Persistent=true
+RandomizedDelaySec=5m
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

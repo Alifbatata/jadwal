@@ -1,0 +1,44 @@
+{
+	"name": "@jadwal/core",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Logique métier pure de jadwal : récurrence, exceptions, ancrage sur la prière, heures de prière, export ICS.",
+	"license": "AGPL-3.0-or-later",
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./ics": {
+			"types": "./dist/ics/index.d.ts",
+			"default": "./dist/ics/index.js"
+		},
+		"./prayer": {
+			"types": "./dist/prayer/index.d.ts",
+			"default": "./dist/prayer/index.js"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc -p tsconfig.build.json",
+		"check": "tsc -p tsconfig.json",
+		"test": "vitest run --coverage",
+		"test:tz": "node scripts/test-timezones.mjs"
+	},
+	"devDependencies": {
+		"@vitest/coverage-v8": "catalog:",
+		"fast-check": "4.10.0",
+		"ical.js": "2.2.1",
+		"typescript": "catalog:",
+		"vite": "catalog:",
+		"vitest": "catalog:"
+	},
+	"dependencies": {
+		"adhan": "4.4.6",
+		"ical-generator": "11.1.1",
+		"timezones-ical-library": "2.3.2"
+	}
+}

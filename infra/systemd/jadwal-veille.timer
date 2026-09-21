@@ -1,0 +1,13 @@
+[Unit]
+Description=jadwal — veille, toutes les heures
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+# Jamais à la minute pile : rien ne gagne à ce que toutes les tâches d'une machine se réveillent
+# ensemble.
+RandomizedDelaySec=5m
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

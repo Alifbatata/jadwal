@@ -1,0 +1,30 @@
+{
+	"name": "@jadwal/widget",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Custom element <jadwal-widget> : le programme des cours, intégrable par une simple balise script.",
+	"license": "MIT",
+	"type": "module",
+	"files": [
+		"dist",
+		"published"
+	],
+	"exports": {
+		".": "./dist/jadwal-widget.js"
+	},
+	"scripts": {
+		"build": "vite build && node scripts/publish-version.mjs",
+		"prepare": "vite build && node scripts/publish-version.mjs",
+		"check": "tsc -p tsconfig.json",
+		"test": "vitest run",
+		"size": "node scripts/gzip-size.mjs",
+		"integrity": "node scripts/integrity.mjs"
+	},
+	"devDependencies": {
+		"@types/node": "26.5.1",
+		"jsdom": "30.0.1",
+		"typescript": "catalog:",
+		"vite": "catalog:",
+		"vitest": "catalog:"
+	}
+}

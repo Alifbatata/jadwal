@@ -1,0 +1,13 @@
+[Unit]
+Description=jadwal — purges de rétention (journaux, compteur, limiteur, comptes, invitations)
+Documentation=file:/opt/jadwal/docs/EXPLOITATION.md
+Requires=docker.service
+After=docker.service
+OnFailure=jadwal-alerte@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/jadwal/scripts/jadwal-purges.sh
+TimeoutStartSec=1800
+Nice=10
+IOSchedulingClass=idle

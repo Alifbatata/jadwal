@@ -1,0 +1,17 @@
+{
+	"name": "@jadwal/charge",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Mesure de charge de jadwal : semer des données, mesurer les temps de réponse. Ne tourne jamais en production.",
+	"license": "AGPL-3.0-or-later",
+	"type": "module",
+	"scripts": {
+		"semer": "node semer.mjs",
+		"mesurer": "node mesurer.mjs"
+	},
+	"dependencies": {
+		"@jadwal/db": "workspace:*",
+		"postgres": "3.4.9",
+		"uuid": "14.0.2"
+	}
+}

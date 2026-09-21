@@ -1,0 +1,50 @@
+{
+	"name": "@jadwal/db",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Accès aux données de jadwal : schéma Drizzle, migrations, isolation par organisation (RLS).",
+	"license": "AGPL-3.0-or-later",
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./schema": {
+			"types": "./dist/schema/index.d.ts",
+			"default": "./dist/schema/index.js"
+		},
+		"./scripts/*": "./scripts/*"
+	},
+	"files": [
+		"dist",
+		"migrations",
+		"scripts",
+		"src"
+	],
+	"scripts": {
+		"build": "tsc -p tsconfig.build.json",
+		"check": "tsc -p tsconfig.json",
+		"test": "vitest run --coverage",
+		"generate": "drizzle-kit generate",
+		"migrate": "node scripts/migrate.mjs",
+		"seed": "node scripts/seed.mjs",
+		"bootstrap": "node scripts/bootstrap-roles.mjs",
+		"transfer-ownership": "node scripts/transfer-ownership.mjs",
+		"prayer-fill": "node scripts/prayer-fill.mjs"
+	},
+	"dependencies": {
+		"@jadwal/core": "workspace:*",
+		"drizzle-orm": "0.45.2",
+		"postgres": "3.4.9",
+		"uuid": "14.0.2"
+	},
+	"devDependencies": {
+		"@types/node": "26.5.1",
+		"@vitest/coverage-v8": "catalog:",
+		"drizzle-kit": "0.31.10",
+		"typescript": "catalog:",
+		"vite": "catalog:",
+		"vitest": "catalog:"
+	}
+}

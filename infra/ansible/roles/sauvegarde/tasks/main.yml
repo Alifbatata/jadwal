@@ -1,0 +1,48 @@
+# Les sauvegardes : la clé publique, la destination, et de quoi les prouver (ADR 0035).
+---
+- name: Une clé publique age et une destination sont indispensables
+  ansible.builtin.assert:
+    that:
+      - jadwal_age_recipient | length > 0
+      - jadwal_age_recipient.startswith('age1')
+      - jadwal_rclone_remote | length > 0
+    fail_msg: >-
+      jadwal_age_recipient (clé PUBLIQUE age de l'exploitant) et jadwal_rclone_remote
+      (destination hors du serveur) sont tous les deux obligatoires. Sans eux, la tâche de
+      sauvegarde refuse de tourner plutôt que d'écrire une archive en clair ou de la laisser sur
+      place — et le playbook s'arrête ici pour la même raison.
+
+# La configuration de rclone porte les identifiants de la destination. Même régime que le fichier
+# d'environnement : root, 0600, et rien d'autre.
+- name: La configuration de rclone
+  ansible.builtin.copy:
+    dest: '{{ jadwal_etc }}/rclone.conf'
+    content: '{{ vault_rclone_conf }}'
+    owner: root
+    group: root
+    mode: '0600'
+  become: true
+  no_log: true
+
+- name: La destination répond et est accessible en écriture
+  ansible.builtin.command: rclone --config {{ jadwal_etc }}/rclone.conf lsd {{ jadwal_rclone_remote }}
+  register: destination
+  changed_when: false
+  become: true
+
+- name: La clé privée n'est pas sur ce serveur, et on le vérifie
+  ansible.builtin.find:
+    paths: ['{{ jadwal_etc }}', '{{ jadwal_racine }}', '/root']
+    patterns: ['*.age', '*age*key*', 'identity*']
+    recurse: true
+  register: cles
+  become: true
+
+- name: Aucun fichier de clé privée ne traîne
+  ansible.builtin.assert:
+    that: cles.files | length == 0
+    fail_msg: >-
+      Des fichiers qui ressemblent à une clé privée age ont été trouvés sur le serveur :
+      {{ cles.files | map(attribute='path') | list }}. La clé de déchiffrement des sauvegardes ne
+      doit jamais être ici : une archive volée chez l'hébergeur doit rester illisible, et une
+      archive volée ici aussi.

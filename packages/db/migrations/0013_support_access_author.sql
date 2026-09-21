@@ -1,0 +1,1 @@
+ALTER TABLE "support_access" ALTER COLUMN "opened_by" DROP NOT NULL;

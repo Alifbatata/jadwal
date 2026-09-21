@@ -1,0 +1,16 @@
+[Unit]
+Description=jadwal — sauvegarde chiffrée, envoyée hors du serveur
+Documentation=file:/opt/jadwal/docs/EXPLOITATION.md
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+OnFailure=jadwal-alerte@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/jadwal/scripts/jadwal-sauvegarde.sh
+# Une vidange de quelques centaines de mégaoctets, chiffrée et envoyée : une heure est large, et
+# au-delà c'est que quelque chose est bloqué, pas lent.
+TimeoutStartSec=3600
+Nice=10
+IOSchedulingClass=idle

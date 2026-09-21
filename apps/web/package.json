@@ -1,0 +1,39 @@
+{
+	"name": "@jadwal/web",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Application SvelteKit de jadwal : espace des responsables, pages publiques, API, flux ICS.",
+	"license": "AGPL-3.0-or-later",
+	"type": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"start": "node build",
+		"prepare": "svelte-kit sync",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"test": "vitest run"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-node": "5.5.7",
+		"@sveltejs/kit": "2.70.3",
+		"@sveltejs/vite-plugin-svelte": "catalog:",
+		"@types/nodemailer": "8.0.1",
+		"ical.js": "2.2.1",
+		"svelte": "catalog:",
+		"svelte-check": "catalog:",
+		"typescript": "catalog:",
+		"vite": "catalog:",
+		"vitest": "catalog:"
+	},
+	"dependencies": {
+		"@better-auth/passkey": "1.7.4",
+		"@jadwal/core": "workspace:*",
+		"@jadwal/db": "workspace:*",
+		"@jadwal/widget": "workspace:*",
+		"better-auth": "1.7.4",
+		"nodemailer": "10.0.9",
+		"qrcode-generator": "2.0.4",
+		"uuid": "14.0.2"
+	}
+}

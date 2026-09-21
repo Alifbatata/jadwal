@@ -1,0 +1,149 @@
+# jadwal en production (ADR 0034).
+#
+# Ce fichier décrit **deux** conteneurs et rien d'autre. Caddy n'y est pas : c'est celui de l'hôte,
+# qui peut servir d'autres sites, et un second Caddy se disputerait les ports 80 et 443 avec lui.
+#
+# Ce qui est joignable de l'extérieur : rien. L'application publie son port sur la **boucle locale**
+# de l'hôte, où seul Caddy va le chercher ; PostgreSQL n'écoute que sur le réseau Docker de jadwal,
+# qui ne porte aucun autre service.
+#
+# Durcissement, ligne par ligne :
+#   `read_only` — le système de fichiers du conteneur est immuable ; ce qui doit être écrit va dans
+#     un `tmpfs` nommé, donc en mémoire, donc perdu au redémarrage, ce qui est exact pour du
+#     temporaire ;
+#   `cap_drop: [ALL]` — aucune capacité du noyau. PostgreSQL en a besoin d'une, `CHOWN`, pour poser
+#     les droits de son répertoire de données au premier démarrage ;
+#   `no-new-privileges` — un processus du conteneur ne peut plus gagner de droits, même par un
+#     binaire `setuid` ;
+#   `user` — jamais root. L'image de jadwal tourne déjà en `node` (uid 1000) ; PostgreSQL a besoin
+#     de démarrer en root pour préparer son volume, et redescend ensuite sur `postgres` tout seul.
+#
+# Les deux images sont épinglées par digest : `JADWAL_IMAGE` est fourni par le playbook et vaut
+# toujours `ghcr.io/…@sha256:…`, jamais une étiquette mouvante (ADR 0010).
+
+name: jadwal
+
+services:
+  app:
+    image: ${JADWAL_IMAGE:?JADWAL_IMAGE est obligatoire, et doit porter un digest sha256}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      # adapter-node écoute sur toutes les interfaces **du conteneur** ; c'est la publication de
+      # port ci-dessous qui décide de ce que l'hôte expose.
+      HOST: 0.0.0.0
+      PORT: '3000'
+      ORIGIN: ${JADWAL_ORIGIN:?JADWAL_ORIGIN est obligatoire}
+      # L'adresse réelle du visiteur : la dernière valeur de X-Forwarded-For, celle que Caddy vient
+      # d'ajouter. `XFF_DEPTH=1` parce qu'il y a exactement un mandataire devant nous.
+      ADDRESS_HEADER: x-forwarded-for
+      XFF_DEPTH: '1'
+      JADWAL_TRUSTED_PROXIES: ${JADWAL_TRUSTED_PROXIES:-}
+      BODY_SIZE_LIMIT: ${BODY_SIZE_LIMIT:-512K}
+
+      POSTGRES_HOST: db
+      POSTGRES_PORT: '5432'
+      POSTGRES_DB: ${POSTGRES_DB:-jadwal}
+      POSTGRES_USER: ${POSTGRES_USER:-jadwal}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD est obligatoire}
+      JADWAL_DB_OWNER_PASSWORD: ${JADWAL_DB_OWNER_PASSWORD:?obligatoire}
+      JADWAL_DB_APP_PASSWORD: ${JADWAL_DB_APP_PASSWORD:?obligatoire}
+      JADWAL_DB_SUPERADMIN_PASSWORD: ${JADWAL_DB_SUPERADMIN_PASSWORD:?obligatoire}
+      JADWAL_DB_AUTH_PASSWORD: ${JADWAL_DB_AUTH_PASSWORD:?obligatoire}
+      JADWAL_DB_PUBLIC_PASSWORD: ${JADWAL_DB_PUBLIC_PASSWORD:?obligatoire}
+
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?obligatoire}
+      MAIL_TRANSPORT: smtp
+      SMTP_HOST: ${SMTP_HOST:?obligatoire}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:?obligatoire}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:?obligatoire}
+      MAIL_FROM: ${MAIL_FROM:?obligatoire}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-jadwal}
+      MAIL_REPLY_TO: ${MAIL_REPLY_TO:-}
+      # Vide en production : la page d'essai du widget n'a aucune raison d'y être ouverte.
+      JADWAL_WIDGET_TEST_ORG: ${JADWAL_WIDGET_TEST_ORG:-}
+    ports:
+      # **La boucle locale, et elle seule.** Sans `127.0.0.1:`, Docker ouvrirait le port sur toutes
+      # les interfaces et court-circuiterait le pare-feu de l'hôte, qui ne voit pas les règles que
+      # Docker écrit lui-même dans nftables.
+      - '127.0.0.1:${JADWAL_APP_PORT:-3080}:3000'
+    networks: [jadwal]
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      # `node` plutôt que `curl` : l'image ne contient ni curl ni wget, et en ajouter un pour une
+      # sonde reviendrait à agrandir la surface pour la commodité.
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '5'
+
+  db:
+    # PostgreSQL 18.6, même digest que docker-compose.dev.yml et que la CI : la version qui tourne
+    # en production est celle contre laquelle les tests ont tourné.
+    image: postgres:18.6@sha256:86c951e05bf56c93d95d397747fb8820ac76cc3bedb78f43abd83eedbe3666ae
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-jadwal}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD est obligatoire}
+      POSTGRES_DB: ${POSTGRES_DB:-jadwal}
+      # Sans cela, l'image initialise la base en `trust` sur les connexions locales : n'importe quel
+      # processus du conteneur pourrait alors se connecter en superutilisateur sans mot de passe.
+      POSTGRES_INITDB_ARGS: '--auth-host=scram-sha-256 --auth-local=scram-sha-256'
+    # **Aucun port publié.** La base n'est joignable que depuis le réseau `jadwal`, c'est-à-dire
+    # depuis l'application et depuis les tâches qui s'y rattachent le temps d'une commande.
+    networks: [jadwal]
+    volumes:
+      - pgdata:/var/lib/postgresql
+    cap_drop: [ALL]
+    cap_add:
+      # La seule dont l'image ait besoin : elle pose les droits de son répertoire de données au
+      # premier démarrage, puis abandonne root.
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETUID
+      - SETGID
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '5'
+
+networks:
+  jadwal:
+    # Un réseau à nous, que le playbook crée et que rien d'autre ne rejoint. jadwal n'entre dans
+    # aucun réseau qui ne soit à lui, et n'ouvre le sien à personne (ADR 0034).
+    name: jadwal
+
+volumes:
+  pgdata:
+    name: jadwal_pgdata

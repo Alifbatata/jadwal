@@ -1,0 +1,349 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1789921832275,
+      "tag": "0000_bootstrap",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789922238945,
+      "tag": "0001_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789922239945,
+      "tag": "0002_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789924053877,
+      "tag": "0003_strict_checks",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789924363714,
+      "tag": "0004_user_reference_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789924478523,
+      "tag": "0005_membership_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789924479523,
+      "tag": "0006_membership_grants",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789924480523,
+      "tag": "0007_owner_maintenance",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789928187394,
+      "tag": "0008_support_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789928214973,
+      "tag": "0009_membership_self_writes",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789928215973,
+      "tag": "0010_support_access_wiring",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789928216973,
+      "tag": "0011_audit_log_retention",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1789928217973,
+      "tag": "0012_last_org_admin",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1789928383782,
+      "tag": "0013_support_access_author",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1789928384782,
+      "tag": "0014_support_access_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1789928496581,
+      "tag": "0015_support_access_author_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1789928668246,
+      "tag": "0016_auth_and_invitations",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1789928669246,
+      "tag": "0017_auth_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1789928693147,
+      "tag": "0018_user_auth_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789928694147,
+      "tag": "0019_owner_maintenance_new_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1789928695147,
+      "tag": "0020_support_policies_new_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1789928963629,
+      "tag": "0021_session_active_organization",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1789928993591,
+      "tag": "0022_membership_select_self",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1789929166479,
+      "tag": "0023_organization_visible_to_invitee",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1789929167479,
+      "tag": "0024_join_requires_invitation",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1789929238855,
+      "tag": "0025_invitation_accepted_by",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1789929239855,
+      "tag": "0026_join_through_accepted_invitation",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1789929356432,
+      "tag": "0027_superadmin_audit_insert",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1789929357432,
+      "tag": "0028_superadmin_audit_grant",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1789929358432,
+      "tag": "0029_access_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1789931784020,
+      "tag": "0030_invitation_joined",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1789932797063,
+      "tag": "0031_superadmin_reach",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1789932798063,
+      "tag": "0032_auth_role_insert_grant",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1789934454219,
+      "tag": "0033_superadmin_powers",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1789934455219,
+      "tag": "0034_superadmin_grants_and_purges",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1789934530400,
+      "tag": "0035_drop_support_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1789934761964,
+      "tag": "0036_organization_greeting",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1789936535060,
+      "tag": "0037_verification_id_text",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1789938683827,
+      "tag": "0038_public_read",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1789938684827,
+      "tag": "0039_public_grants_and_retention",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1789942665388,
+      "tag": "0040_retention_hold",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1789942666388,
+      "tag": "0041_retention_hold_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1789947031913,
+      "tag": "0042_prayer_and_views",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1789947032913,
+      "tag": "0043_views_and_rate_limit",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1789953294906,
+      "tag": "0044_view_counter_policies",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1789953295906,
+      "tag": "0045_view_counter_function",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1789953593828,
+      "tag": "0046_prayer_periods_and_jumua",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1789953594828,
+      "tag": "0047_prayer_period_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1789960947164,
+      "tag": "0048_period_needs_review",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+# Les tâches périodiques : scripts, unités, minuteries (ADR 0036).
+#
+# systemd plutôt que cron, et plutôt qu'un conteneur ordonnanceur. Les trois raisons, dans l'ordre
+# où elles comptent : une minuterie sait rattraper une exécution manquée (`Persistent=true`), ce que
+# cron ne sait pas ; un échec déclenche `OnFailure=`, c'est-à-dire un courriel, sans qu'aucun script
+# n'ait à penser à le faire ; et le journal de chaque exécution est déjà là, daté, avec son code de
+# sortie, sans fichier de log à faire tourner. Un conteneur ordonnanceur aurait ajouté un troisième
+# conteneur à surveiller pour rendre ce que l'hôte fait déjà.
+---
+- name: Les scripts des tâches
+  ansible.builtin.copy:
+    src: '{{ playbook_dir }}/../scripts/{{ item }}'
+    dest: '{{ jadwal_racine }}/scripts/{{ item }}'
+    owner: root
+    group: root
+    mode: "{{ '0644' if item.endswith('.mjs') else '0755' }}"
+  loop:
+    - jadwal-commun.sh
+    - jadwal-alerte.sh
+    - jadwal-prieres.sh
+    - jadwal-purges.sh
+    - jadwal-sauvegarde.sh
+    - jadwal-retention.sh
+    - jadwal-restauration.sh
+    - jadwal-veille.sh
+    - jadwal-mail.mjs
+  become: true
+
+- name: Les unités systemd
+  ansible.builtin.copy:
+    src: '{{ playbook_dir }}/../systemd/{{ item }}'
+    dest: '/etc/systemd/system/{{ item }}'
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - jadwal-alerte@.service
+    - jadwal-prieres.service
+    - jadwal-prieres.timer
+    - jadwal-purges.service
+    - jadwal-purges.timer
+    - jadwal-sauvegarde.service
+    - jadwal-sauvegarde.timer
+    - jadwal-restauration.service
+    - jadwal-restauration.timer
+    - jadwal-veille.service
+    - jadwal-veille.timer
+  become: true
+  register: unites
+
+# `daemon-reload` relit les fichiers d'unités ; il ne redémarre rien. Aucun service existant n'est
+# touché par cette commande.
+- name: Relecture des unités par systemd
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  become: true
+  when: unites.changed
+
+- name: Les minuteries sont armées
+  ansible.builtin.systemd_service:
+    name: '{{ item }}'
+    enabled: true
+    state: started
+  loop:
+    - jadwal-prieres.timer
+    - jadwal-purges.timer
+    - jadwal-sauvegarde.timer
+    - jadwal-restauration.timer
+    - jadwal-veille.timer
+  become: true
+
+- name: Ce qui est programmé, pour le rapport
+  ansible.builtin.command: systemctl list-timers --all --no-pager 'jadwal-*'
+  register: minuteries
+  changed_when: false
+  become: true
+
+- name: Les prochaines échéances
+  ansible.builtin.debug:
+    var: minuteries.stdout_lines

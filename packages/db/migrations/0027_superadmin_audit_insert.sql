@@ -1,0 +1,1 @@
+CREATE POLICY "audit_log_superadmin_insert" ON "audit_log" AS PERMISSIVE FOR INSERT TO "jadwal_superadmin" WITH CHECK (true);

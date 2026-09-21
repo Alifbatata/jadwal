@@ -1,0 +1,3 @@
+ALTER POLICY "membership_insert" ON "membership" TO jadwal_app WITH CHECK ("membership"."organization_id" = (select jadwal.current_org_id())
+				and "membership"."user_id" = (select jadwal.current_user_id()));--> statement-breakpoint
+ALTER POLICY "membership_update" ON "membership" TO jadwal_app USING ("membership"."organization_id" = (select jadwal.current_org_id())) WITH CHECK ("membership"."organization_id" = (select jadwal.current_org_id()));

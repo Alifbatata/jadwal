@@ -1,0 +1,16 @@
+version: 2
+updates:
+  # L'écosystème npm couvre pnpm (workspace et catalogue lus depuis la racine).
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7

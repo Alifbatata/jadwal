@@ -1,0 +1,9 @@
+---
+# Un changement de fichier Compose ou d'environnement demande une recréation des conteneurs. Rien
+# d'autre sur ce serveur n'est redémarré, jamais : le `--project-directory` et le nom de projet
+# `jadwal` bornent l'action aux deux conteneurs de jadwal.
+- name: relancer jadwal
+  ansible.builtin.command:
+    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/jadwal.env up --detach --remove-orphans
+  become: true
+  changed_when: true

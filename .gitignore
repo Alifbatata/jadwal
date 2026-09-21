@@ -1,0 +1,53 @@
+# Dépendances
+node_modules/
+
+# Sorties de build
+dist/
+build/
+.svelte-kit/
+.vite/
+*.tsbuildinfo
+vite.config.*.timestamp-*
+
+# Tests
+coverage/
+
+# Secrets et configuration locale
+.env
+.env.*
+!.env.example
+
+# Fichiers de secrets déposés à la main sur le poste. Ils ne sont ni commités, ni lus, ni
+# recopiés ailleurs : ils servent à remplir le coffre, puis ils sont effacés.
+secret.txt
+secrets.txt
+*.secret
+*.secrets
+/secrets/
+
+# Les rapports d'étape ne quittent pas le poste. Un rapport recopie les sorties réelles des
+# commandes de vérification, et ces sorties parlent du serveur : comptes, chemins, ports, adresses.
+# Ce dépôt est public et ne parle que de jadwal — voir CLAUDE.md.
+A_LIVRER/
+
+# Journaux et fichiers système
+*.log
+.DS_Store
+Thumbs.db
+
+# Caches d'outils
+.vitest/
+.eslintcache
+
+# Corbeille de sortie du transport de courriel de développement : rien ne doit y être commité.
+.courriels/
+
+# Le coffre Ansible, déchiffré. Le fichier chiffré ne porte pas ce nom et n'existe pas non plus dans
+# le dépôt : la phrase de passe est à l'exploitant, et rien de secret n'entre ici (étape 9).
+infra/ansible/group_vars/all/vault.yml
+infra/ansible/*.retry
+
+# L'inventaire décrit une machine précise : son adresse, son compte d'administration. Le dépôt ne
+# livre que le modèle ; l'inventaire réel se crée à partir de lui et reste sur le poste.
+infra/ansible/inventory.ini
+!infra/ansible/inventory.ini.example

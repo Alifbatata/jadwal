@@ -1,0 +1,31 @@
+# L'inventaire : un hôte, et un seul (ADR 0034).
+#
+# Ce fichier-ci est un MODÈLE. Toutes les valeurs qu'il porte sont des valeurs d'EXEMPLE : elles ne
+# désignent aucune machine réelle. Le copier, puis y écrire les siennes :
+#
+#   cp infra/ansible/inventory.ini.example infra/ansible/inventory.ini
+#
+# `inventory.ini` décrit la machine de celui qui déploie : il est à garder hors du dépôt public.
+#
+# Ce qu'il faut y mettre :
+#
+#   le nom d'hôte      — le domaine sur lequel jadwal sera servi, le même que `jadwal_domaine` dans
+#                        `group_vars/all/main.yml` et que le nom du bloc Caddy ;
+#   `ansible_host`     — l'adresse du serveur, ou son nom DNS si le domaine y pointe déjà ;
+#   `ansible_user`     — le compte d'administration par lequel Ansible se connecte, celui qui peut
+#                        passer root. Ansible ne se connecte jamais en root directement : la
+#                        connexion passe par ce compte, et les tâches qui en ont besoin déclarent
+#                        `become`.
+#
+# Le serveur peut héberger d'autres applications. Ce playbook ne les connaît pas, ne les nomme pas
+# et ne les touche pas : il n'ajoute que ce qui porte le préfixe `jadwal`.
+#
+# Rien de cet inventaire n'est un secret. Les mots de passe et les identifiants sont dans
+# `group_vars/all/vault.yml`, chiffré par `ansible-vault`.
+
+[jadwal]
+jadwal.exemple.tld ansible_host=203.0.113.10
+
+[jadwal:vars]
+ansible_user=deploy
+ansible_python_interpreter=/usr/bin/python3
