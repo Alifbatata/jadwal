@@ -27,7 +27,7 @@
 	const cle = (courseId: string, date: string) => `${courseId}|${date}`;
 </script>
 
-<svelte:head><title>À venir — {data.organisation.name}</title></svelte:head>
+<svelte:head><title>À venir | {data.organisation.name}</title></svelte:head>
 
 <h1>À venir</h1>
 <p class="periode">Du {shortDate(data.from as IsoDate)} au {shortDate(data.to as IsoDate)}</p>
@@ -211,7 +211,7 @@
 		</tbody>
 	</table>
 	<p class="details">
-		Un jour, un type, un nombre : rien d’autre n’est conservé — ni adresse, ni provenance, ni
+		Un jour, un type, un nombre : rien d’autre n’est conservé : ni adresse, ni provenance, ni
 		visiteur. Les robots connus ne sont pas comptés. Ces nombres sont un minimum : une page servie
 		par le cache d’un navigateur ou d’un opérateur ne nous parvient pas. Les abonnements agenda
 		comptent les relevés du calendrier, pas les personnes : un agenda relève tout seul, plusieurs

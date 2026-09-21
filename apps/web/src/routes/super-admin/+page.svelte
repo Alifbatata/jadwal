@@ -9,7 +9,7 @@
 	const STATUTS: Record<string, string> = { active: 'active', suspended: 'suspendue' };
 </script>
 
-<svelte:head><title>Super-admin — jadwal</title></svelte:head>
+<svelte:head><title>Super-admin | jadwal</title></svelte:head>
 
 <h1>Super-admin</h1>
 

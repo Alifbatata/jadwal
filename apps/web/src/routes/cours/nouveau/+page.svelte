@@ -33,7 +33,7 @@
 	};
 </script>
 
-<svelte:head><title>Nouveau cours — {data.organisation.name}</title></svelte:head>
+<svelte:head><title>Nouveau cours | {data.organisation.name}</title></svelte:head>
 
 <h1>Nouveau cours</h1>
 

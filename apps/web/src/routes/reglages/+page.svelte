@@ -16,7 +16,7 @@
 	const rapport = $derived(contraste(couleur, texteSur(couleur)));
 </script>
 
-<svelte:head><title>Réglages — {organisation.name}</title></svelte:head>
+<svelte:head><title>Réglages | {organisation.name}</title></svelte:head>
 
 <h1>Réglages</h1>
 
@@ -41,7 +41,7 @@
 		Contraste du texte sur cette couleur : {rapport.toFixed(2)}:1
 	</p>
 	<p class="aide">
-		Elle sert de fond — sur vos pages publiques, dans le widget et ici. Le texte posé dessus est
+		Elle sert de fond : sur vos pages publiques, dans le widget et ici. Le texte posé dessus est
 		calculé pour rester lisible, donc aucune couleur n’est refusée. Elle n’est jamais la seule
 		indication de quoi que ce soit : une séance annulée le reste sans elle.
 	</p>

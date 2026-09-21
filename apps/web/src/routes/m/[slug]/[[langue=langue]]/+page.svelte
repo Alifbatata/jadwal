@@ -132,18 +132,18 @@
 
 	const titre = $derived(
 		data.vue === 'cours'
-			? `${data.organisation.name} — ${mots.coursesTitle}`
+			? `${data.organisation.name} | ${mots.coursesTitle}`
 			: data.vue === 'mois' && data.premierDuMois
-				? `${data.organisation.name} — ${monthName(data.langue, Number(data.premierDuMois.slice(0, 4)), Number(data.premierDuMois.slice(5, 7)))}`
-				: `${data.organisation.name} — ${mots.weekTitle}`
+				? `${data.organisation.name} | ${monthName(data.langue, Number(data.premierDuMois.slice(0, 4)), Number(data.premierDuMois.slice(5, 7)))}`
+				: `${data.organisation.name} | ${mots.weekTitle}`
 	);
 </script>
 
 <svelte:head>
 	<title>{titre}</title>
-	<meta name="description" content={`${mots.weekTitle} — ${data.organisation.name}`} />
+	<meta name="description" content={`${mots.weekTitle} | ${data.organisation.name}`} />
 	<meta property="og:title" content={data.organisation.name} />
-	<meta property="og:description" content={`${mots.weekTitle} — ${data.organisation.name}`} />
+	<meta property="og:description" content={`${mots.weekTitle} | ${data.organisation.name}`} />
 	<meta property="og:type" content="website" />
 	<meta property="og:site_name" content={data.organisation.name} />
 	<meta property="og:locale" content={data.langue} />

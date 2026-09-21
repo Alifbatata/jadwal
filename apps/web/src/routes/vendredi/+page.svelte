@@ -23,7 +23,7 @@
 	}
 </script>
 
-<svelte:head><title>Prière du vendredi — {data.organisation.name}</title></svelte:head>
+<svelte:head><title>Prière du vendredi | {data.organisation.name}</title></svelte:head>
 
 <h1>Prière du vendredi</h1>
 <p class="aide">Ces sessions remplacent l’heure du Dhuhr du vendredi partout où elle s’affiche.</p>
@@ -122,7 +122,7 @@
 			{#each seancesDe(session.id) as seance (seance.date + seance.status)}
 				<div class="seance" class:barree={seance.status !== 'scheduled'}>
 					<p class="ligne">
-						<strong>{seance.start ?? '—'} – {seance.end ?? '—'}</strong>
+						<strong>{seance.start ?? '–'} – {seance.end ?? '–'}</strong>
 						· {rang(session.jumuaOrder)}
 						· {shortDate(seance.date as IsoDate)}
 						{#if seance.status === 'cancelled'}<span class="marque">annulée</span>{/if}

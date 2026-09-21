@@ -18,7 +18,7 @@
 </script>
 
 <svelte:head>
-	<title>{mots.subscribeTitle} — {data.organisation.name}</title>
+	<title>{mots.subscribeTitle} | {data.organisation.name}</title>
 	<meta name="description" content={mots.subscribeIntro(data.organisation.name)} />
 	<meta property="og:title" content={mots.subscribeTitle} />
 	<meta property="og:description" content={mots.subscribeIntro(data.organisation.name)} />

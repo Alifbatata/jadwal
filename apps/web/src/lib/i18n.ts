@@ -166,7 +166,7 @@ const fr: Dictionnaire = {
 	iphoneText:
 		'Touchez le bouton ci-dessus : votre iPhone propose d’ajouter le calendrier. Si rien ne se passe, ouvrez Réglages, puis Applications, Calendrier, Comptes, Ajouter un compte, Autre, Ajouter un abonnement à un calendrier, et collez l’adresse.',
 	androidText:
-		'Ouvrez Google Agenda sur un ordinateur — l’application du téléphone ne sait pas ajouter un abonnement. Dans Autres agendas, choisissez À partir de l’URL, collez l’adresse, puis ajoutez l’agenda. Il apparaîtra ensuite sur votre téléphone.',
+		'Ouvrez Google Agenda sur un ordinateur : l’application du téléphone ne sait pas ajouter un abonnement. Dans Autres agendas, choisissez À partir de l’URL, collez l’adresse, puis ajoutez l’agenda. Il apparaîtra ensuite sur votre téléphone.',
 	outlookText:
 		'Ouvrez Outlook sur le web, allez dans Calendrier, Ajouter un calendrier, S’abonner à partir du Web, collez l’adresse, donnez-lui un nom, puis importez.',
 	offeredBy: 'Proposé gratuitement par jadwal, un service de Voltia',
@@ -255,7 +255,7 @@ const de: Dictionnaire = {
 	iphoneText:
 		'Tippen Sie auf die Schaltfläche oben: Ihr iPhone bietet an, den Kalender hinzuzufügen. Passiert nichts, öffnen Sie Einstellungen, dann Apps, Kalender, Accounts, Account hinzufügen, Andere, Kalenderabo hinzufügen, und fügen Sie die Adresse ein.',
 	androidText:
-		'Öffnen Sie Google Kalender am Computer — die Telefon-App kann keine Abos hinzufügen. Wählen Sie unter Weitere Kalender die Option Per URL, fügen Sie die Adresse ein und fügen Sie den Kalender hinzu. Danach erscheint er auf Ihrem Telefon.',
+		'Öffnen Sie Google Kalender am Computer: die Telefon-App kann keine Abos hinzufügen. Wählen Sie unter Weitere Kalender die Option Per URL, fügen Sie die Adresse ein und fügen Sie den Kalender hinzu. Danach erscheint er auf Ihrem Telefon.',
 	outlookText:
 		'Öffnen Sie Outlook im Web, gehen Sie zu Kalender, Kalender hinzufügen, Aus dem Internet abonnieren, fügen Sie die Adresse ein, geben Sie einen Namen ein und importieren Sie.',
 	offeredBy: 'Kostenlos bereitgestellt von jadwal, einem Dienst von Voltia',
@@ -344,7 +344,7 @@ const it: Dictionnaire = {
 	iphoneText:
 		'Tocca il pulsante qui sopra: l’iPhone propone di aggiungere il calendario. Se non succede nulla, apri Impostazioni, poi App, Calendario, Account, Aggiungi account, Altro, Aggiungi calendario con iscrizione, e incolla l’indirizzo.',
 	androidText:
-		'Apri Google Calendar da un computer — l’app del telefono non sa aggiungere un’iscrizione. In Altri calendari scegli Da URL, incolla l’indirizzo e aggiungi il calendario. Comparirà poi sul telefono.',
+		'Apri Google Calendar da un computer: l’app del telefono non sa aggiungere un’iscrizione. In Altri calendari scegli Da URL, incolla l’indirizzo e aggiungi il calendario. Comparirà poi sul telefono.',
 	outlookText:
 		'Apri Outlook sul web, vai su Calendario, Aggiungi calendario, Iscriviti dal Web, incolla l’indirizzo, dagli un nome e importa.',
 	offeredBy: 'Offerto gratuitamente da jadwal, un servizio di Voltia',
@@ -433,7 +433,7 @@ const ar: Dictionnaire = {
 	iphoneText:
 		'اضغط الزر أعلاه: سيقترح هاتفك إضافة التقويم. إن لم يحدث شيء، افتح الإعدادات، ثم التطبيقات، التقويم، الحسابات، إضافة حساب، أخرى، إضافة اشتراك تقويم، والصق العنوان.',
 	androidText:
-		'افتح تقويم Google على حاسوب — تطبيق الهاتف لا يضيف الاشتراكات. من التقاويم الأخرى اختر من عنوان URL، الصق العنوان ثم أضف التقويم. سيظهر بعدها على هاتفك.',
+		'افتح تقويم Google على حاسوب: تطبيق الهاتف لا يضيف الاشتراكات. من التقاويم الأخرى اختر من عنوان URL، الصق العنوان ثم أضف التقويم. سيظهر بعدها على هاتفك.',
 	outlookText:
 		'افتح Outlook على الويب، اذهب إلى التقويم، إضافة تقويم، الاشتراك من الويب، الصق العنوان، سمِّه، ثم استورد.',
 	offeredBy: 'مقدَّم مجاناً من jadwal، خدمة من Voltia',

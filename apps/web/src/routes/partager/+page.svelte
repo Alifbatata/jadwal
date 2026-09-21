@@ -2,7 +2,7 @@
 	let { data } = $props();
 </script>
 
-<svelte:head><title>Partager — {data.organisation.name}</title></svelte:head>
+<svelte:head><title>Partager | {data.organisation.name}</title></svelte:head>
 
 <h1>Partager</h1>
 

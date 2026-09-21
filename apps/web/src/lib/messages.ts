@@ -44,9 +44,9 @@ export function weekMessage(
 			const lieu = seance.room ? `, ${seance.room}` : '';
 			const marque =
 				seance.status === 'cancelled'
-					? ' — ANNULÉ'
+					? ' (ANNULÉ)'
 					: seance.status === 'moved_here'
-						? ' — date exceptionnelle'
+						? ' (date exceptionnelle)'
 						: '';
 			lignes.push(`- ${seance.title}, ${heure}${lieu}${marque}`);
 		}

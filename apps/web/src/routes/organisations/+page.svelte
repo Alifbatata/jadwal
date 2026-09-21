@@ -37,7 +37,7 @@
 			<li>
 				<form method="post" action="?/accepter">
 					<input type="hidden" name="invitationId" value={invitation.id} />
-					<span>{invitation.organisation} — {roleLabel[invitation.role]}</span>
+					<span>{invitation.organisation} ({roleLabel[invitation.role]})</span>
 					<button type="submit">Accepter</button>
 				</form>
 			</li>

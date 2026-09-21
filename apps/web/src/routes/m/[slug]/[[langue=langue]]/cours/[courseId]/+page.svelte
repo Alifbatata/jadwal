@@ -42,7 +42,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.cours.title} — {data.organisation.name}</title>
+	<title>{data.cours.title} | {data.organisation.name}</title>
 	<meta name="description" content={partage} />
 	<meta property="og:title" content={data.cours.title} />
 	<meta property="og:description" content={partage} />
