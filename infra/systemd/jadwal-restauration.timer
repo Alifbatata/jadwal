@@ -3,7 +3,8 @@ Description=jadwal — test de restauration, une fois par semaine
 
 [Timer]
 # Dimanche 04:30 : après la sauvegarde et les purges, à l'heure où le service est le moins demandé.
-OnCalendar=Sun *-*-* 04:30:00
+# En UTC, pour la même raison que les autres : voir jadwal-prieres.timer et l ADR 0038.
+OnCalendar=Sun *-*-* 04:30:00 UTC
 Persistent=true
 RandomizedDelaySec=15m
 AccuracySec=1min

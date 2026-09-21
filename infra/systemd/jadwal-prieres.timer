@@ -4,7 +4,9 @@ Description=jadwal — heures de prière, une fois par nuit
 [Timer]
 # 03:10, après la sauvegarde et avant les purges : l'ordre n'a pas d'importance fonctionnelle, mais
 # trois tâches qui démarrent à la même seconde, si.
-OnCalendar=*-*-* 03:10:00
+# En UTC : le contrôle extérieur qui surveille cette tâche a un planning en UTC (ADR 0038), et
+# deux horloges pour une même échéance se contredisent deux fois par an.
+OnCalendar=*-*-* 03:10:00 UTC
 # Une nuit sautée — redémarrage, serveur éteint — est rattrapée au démarrage suivant.
 Persistent=true
 RandomizedDelaySec=5m

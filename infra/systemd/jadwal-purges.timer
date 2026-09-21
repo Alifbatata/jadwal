@@ -2,7 +2,8 @@
 Description=jadwal — purges de rétention, une fois par nuit
 
 [Timer]
-OnCalendar=*-*-* 03:40:00
+# En UTC, pour la même raison que les autres : voir jadwal-prieres.timer et l ADR 0038.
+OnCalendar=*-*-* 03:40:00 UTC
 Persistent=true
 RandomizedDelaySec=5m
 AccuracySec=1min

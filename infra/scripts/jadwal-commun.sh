@@ -29,6 +29,7 @@ trace() {
 
 echec() {
 	trace "ÉCHEC : $*"
+	battement fail "$*"
 	exit 1
 }
 
@@ -41,6 +42,34 @@ valeur_env() {
 
 compose() {
 	docker compose --file "$JADWAL_COMPOSE" --env-file "$JADWAL_ENV" "$@"
+}
+
+# Un battement de cœur vers le service de supervision (ADR 0038).
+#
+# Le renversement est tout l'intérêt : ce n'est plus à celui qui tombe de prévenir qu'il est tombé.
+# Une tâche qui ne se lance plus du tout ne produit aucun échec, donc aucun courriel ; en revanche
+# elle cesse de battre, et c'est le service de supervision qui s'en aperçoit, de dehors.
+#
+# **Un battement ne transporte aucune donnée de la base** : le nom de la tâche, un état, et au plus
+# une ligne technique — un message d'erreur de `pg_dump`, un code HTTP. Jamais un cours, jamais une
+# adresse électronique, jamais un identifiant d'organisation.
+#
+# Il ne fait jamais échouer la tâche : `--max-time` court, erreurs avalées. Une supervision qui
+# casserait ce qu'elle surveille serait pire que pas de supervision. Et si l'adresse manque du
+# fichier d'environnement, on le dit dans le journal et l'on continue : l'instance qui s'auto-héberge
+# n'a pas à installer un service tiers pour faire tourner jadwal.
+battement() {
+	local etat="$1" message="${2:-}" adresse variable
+	variable="JADWAL_PING_$(printf '%s' "$JADWAL_TACHE" | tr '[:lower:]-' '[:upper:]_')"
+	adresse="$(valeur_env "$variable")"
+	if [ -z "$adresse" ]; then
+		trace "$variable absent de $JADWAL_ENV : pas de battement de cœur"
+		return 0
+	fi
+	[ "$etat" = "ok" ] || adresse="$adresse/$etat"
+	curl --silent --show-error --max-time 10 --retry 2 --retry-all-errors \
+		--data-raw "${message:0:500}" --output /dev/null "$adresse" \
+		|| trace "le battement de cœur n'est pas parti (sans conséquence sur la tâche)"
 }
 
 # Une commande Node dans le conteneur de l'application, qui tourne déjà. `exec -T` : pas de pseudo
@@ -57,6 +86,7 @@ reussite() {
 	mkdir -p "$JADWAL_ETAT/reussites"
 	date --iso-8601=seconds > "$JADWAL_ETAT/reussites/$JADWAL_TACHE"
 	trace "réussite enregistrée dans $JADWAL_ETAT/reussites/$JADWAL_TACHE"
+	battement ok "$JADWAL_TACHE : terminé"
 }
 
 # Un courriel à l'exploitant. Le corps arrive sur l'entrée standard.
@@ -82,4 +112,23 @@ courriel() {
 		--read-only --tmpfs /tmp \
 		--cap-drop ALL --security-opt no-new-privileges:true \
 		"$image" node /app/jadwal-mail.mjs "$sujet"
+}
+
+# Où part une archive de sauvegarde, et sous quel nom : un chemin par ligne, `quotidien/` en premier
+# (ADR 0037).
+#
+# La règle vit dans `infra/sauvegarde/destinations.mjs`, où elle est éprouvée par onze tests. Elle
+# est jouée ici par un conteneur jetable tiré de l'image de l'application, comme l'est déjà le
+# courriel d'alerte : l'hôte n'a pas de Node et n'a pas à en avoir un, et surtout la règle n'existe
+# qu'à un seul endroit. La recopier en `date +%u` dans ce fichier-ci reviendrait à entretenir deux
+# versions d'une décision dont une erreur ne se verrait que le jour où une archive manque.
+destinations() {
+	local horodatage="$1" image
+	image="$(valeur_env JADWAL_IMAGE)"
+	[ -n "$image" ] || { trace "JADWAL_IMAGE manque : impossible de nommer l'archive"; return 1; }
+	docker run --rm \
+		--volume "$JADWAL_RACINE/scripts/jadwal-destinations.mjs:/app/jadwal-destinations.mjs:ro" \
+		--read-only --tmpfs /tmp \
+		--cap-drop ALL --security-opt no-new-privileges:true \
+		"$image" node /app/jadwal-destinations.mjs "$horodatage"
 }
