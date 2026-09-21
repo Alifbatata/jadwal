@@ -18,8 +18,11 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
 - **Étape 9** (finitions, infrastructure en code, mise en production) : **en cours**. Les phases 1
   et 2 sont faites : tout est écrit, éprouvé en local, et l'image de production est publiée par
   digest. La question de l'isolation du déploiement est tranchée et consignée dans
-  `docs/adr/0034-isolation-du-deploiement.md`. La phase 3, le déploiement, reste à jouer : elle
-  attend l'inventaire et le coffre, que le dépôt ne livre pas et ne livrera pas.
+  `docs/adr/0034-isolation-du-deploiement.md`. Depuis, trois décisions se sont ajoutées : les
+  sauvegardes ne sont plus effaçables depuis le serveur (ADR 0037), la sonde extérieure quitte
+  GitHub Actions (ADR 0038), et `pnpm test` refuse désormais un test sauté en silence. La phase 3,
+  le déploiement, reste à jouer : elle attend l'inventaire et le coffre, que le dépôt ne livre pas
+  et ne livrera pas, ainsi que les verrous de conservation de la destination de sauvegarde.
 
 ## Fait
 

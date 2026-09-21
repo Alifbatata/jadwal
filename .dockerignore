@@ -9,6 +9,7 @@ node_modules
 **/.svelte-kit
 **/coverage
 **/.vitest
+**/.vitest-resultats.json
 .env
 .env.*
 !.env.example
