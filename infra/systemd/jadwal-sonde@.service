@@ -1,0 +1,28 @@
+[Unit]
+Description=jadwal — sonde, IPv%i
+Documentation=https://github.com/Alifbatata/jadwal/blob/main/docs/adr/0038-sonde-exterieure-hors-de-github-actions.md
+After=network-online.target
+Wants=network-online.target
+
+# Pas de OnFailure= ici, contrairement aux autres tâches, et c'est volontaire : la sonde ne sort
+# jamais en erreur. Un échec part en /fail vers la supervision, qui est dehors. Un courriel de plus
+# toutes les cinq minutes pendant une panne n'apprendrait rien et apprendrait à filtrer.
+
+[Service]
+Type=oneshot
+ExecStart=/opt/jadwal/scripts/jadwal-sonde.sh %i
+# Elle ne lit qu'une variable du fichier d'environnement et ne parle qu'au réseau.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+TimeoutStartSec=180

@@ -14,6 +14,12 @@ jadwal_domaine: jadwal.voltia.ch
 jadwal_origine: 'https://{{ jadwal_domaine }}'
 jadwal_port: 3080
 
+# La sonde interroge `/healthz` par le nom public, sur chaque pile, toutes les cinq minutes
+# (ADR 0038). Une instance qui ne publie pas d'enregistrement AAAA met ceci à `false` : sans cela sa
+# sonde IPv6 échouerait toutes les cinq minutes pour une adresse qui n'existe pas, et elle
+# apprendrait à ignorer ses alertes.
+jadwal_sonde_ipv6: true
+
 # L'image de production, par digest. Le déploiement la remplace en ligne de commande :
 #   ansible-playbook jadwal.yml -e jadwal_image=ghcr.io/…@sha256:…
 # Une étiquette mouvante est refusée par une assertion du rôle `application` : sans digest, un

@@ -1,0 +1,15 @@
+[Unit]
+Description=jadwal — sonde IPv%i, toutes les cinq minutes
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=5min
+AccuracySec=15s
+# Pas de Persistent= : une sonde manquée est manquée. La rejouer au démarrage dirait « ça allait »
+# d'un instant où l'on ne sait pas si ça allait, et c'est exactement ce qu'une sonde ne doit pas
+# faire. C'est d'ailleurs le silence, vu de la supervision, qui dit qu'elle a manqué.
+Persistent=false
+RandomizedDelaySec=20s
+
+[Install]
+WantedBy=timers.target

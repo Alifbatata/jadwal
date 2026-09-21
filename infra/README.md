@@ -19,8 +19,8 @@ veille. La marche à suivre quand quelque chose ne va pas est dans
 | `ansible/` | Le déploiement : un inventaire d'exemple à copier, un playbook, cinq rôles, un playbook de retrait.        |
 | `compose/` | Les deux conteneurs de production — l'application et sa base — et l'exemple du fichier d'environnement.    |
 | `caddy/`   | Le bloc de site à poser dans le Caddy **de l'hôte**, qui peut servir d'autres sites.                       |
-| `systemd/` | Les cinq minuteries, leurs unités, et l'unité d'alerte déclenchée par `OnFailure=`.                        |
-| `scripts/` | Ce que les minuteries lancent : prières, purges, sauvegarde, restauration, veille, alerte.                 |
+| `systemd/` | Les sept minuteries, leurs unités, et l’unité d’alerte déclenchée par `OnFailure=`.                        |
+| `scripts/` | Ce que les minuteries lancent : prières, purges, sauvegarde, restauration, veille, sonde, alerte.          |
 | `charge/`  | La mesure de charge : de quoi semer vingt organisations et les interroger. Ne tourne jamais en production. |
 
 ## Le principe, en une phrase
@@ -28,7 +28,7 @@ veille. La marche à suivre quand quelque chose ne va pas est dans
 **Tout est additif et réversible.** Le déploiement vise un serveur qui peut héberger d'autres
 applications : il n'y touche donc à rien qui ne soit à jadwal — ni au pare-feu, ni à la
 configuration SSH, ni aux comptes, ni à la configuration générale de la machine. Le playbook ajoute
-des répertoires préfixés `jadwal`, un projet Compose à lui, un réseau Docker à lui, cinq minuteries
+des répertoires préfixés `jadwal`, un projet Compose à lui, un réseau Docker à lui, sept minuteries
 et un fichier de site. Il ne redémarre aucun service existant. La seule action qui touche quelque
 chose de déjà en fonctionnement est un `reload` de Caddy, et elle est **refusée par défaut** : il
 faut la demander explicitement, après avoir lu le bloc de site qu'on ajoute.
@@ -103,18 +103,29 @@ La phrase de passe est à l'exploitant. Elle n'est ni dans le dépôt, ni sur le
 
 ## Les tâches périodiques
 
-| Unité                       | Quand             | Ce qu'elle fait                                                               |
-| --------------------------- | ----------------- | ----------------------------------------------------------------------------- |
-| `jadwal-sauvegarde.timer`   | 02:15 UTC         | Vidange, chiffrement `age`, envoi sous `quotidien/`, `hebdo/` et `mensuel/`.  |
-| `jadwal-prieres.timer`      | 03:10             | Recalcule la fenêtre glissante des heures de prière calculées.                |
-| `jadwal-purges.timer`       | 03:40             | Les six purges de rétention.                                                  |
-| `jadwal-restauration.timer` | dimanche 04:30    | Restaure dans une base jetable et compare à la base vivante.                  |
-| `jadwal-veille.timer`       | toutes les heures | Tâches muettes, disque, certificat, archives, verrous, conteneurs, IPv4/IPv6. |
+| Unité                       | Quand                | Ce qu'elle fait                                                               |
+| --------------------------- | -------------------- | ----------------------------------------------------------------------------- |
+| `jadwal-sauvegarde.timer`   | 02:15 UTC            | Vidange, chiffrement `age`, envoi sous `quotidien/`, `hebdo/` et `mensuel/`.  |
+| `jadwal-prieres.timer`      | 03:10 UTC            | Recalcule la fenêtre glissante des heures de prière calculées.                |
+| `jadwal-purges.timer`       | 03:40 UTC            | Les six purges de rétention.                                                  |
+| `jadwal-restauration.timer` | dimanche 04:30 UTC   | Restaure dans une base jetable et compare à la base vivante.                  |
+| `jadwal-veille.timer`       | toutes les heures    | Tâches muettes, disque, certificat, archives, verrous, conteneurs, IPv4/IPv6. |
+| `jadwal-sonde@4.timer`      | toutes les 5 minutes | Interroge `/healthz` par le nom public, en IPv4.                              |
+| `jadwal-sonde@6.timer`      | toutes les 5 minutes | La même chose en IPv6 ; `jadwal_sonde_ipv6: false` la désarme.                |
+
+Tout est en **UTC**, y compris les minuteries : une heure locale glisse de deux heures au changement
+d'heure, et « le dimanche » décide du préfixe de conservation d'une archive (ADR 0037).
 
 Chaque unité porte `OnFailure=jadwal-alerte@%n.service` : un échec envoie un courriel qui contient
 les trente dernières lignes du journal de l'unité. Une tâche qui **cesse de se lancer** ne produit
 aucun échec : c'est la veille qui la remarque, en comparant l'âge de sa dernière réussite au double
 de sa période.
+
+**Les deux sondes font exception : elles n'ont pas d'`OnFailure=` et ne sortent jamais en erreur.**
+Un échec part en `/fail` vers la supervision, qui est dehors. Sans cela, une panne enverrait un
+courriel toutes les cinq minutes en plus de l'alerte, et l'on apprendrait très vite à filtrer les
+deux. Ce que la sonde ne voit pas, et pourquoi le silence compte davantage qu'elle :
+[ADR 0038](../docs/adr/0038-sonde-exterieure-hors-de-github-actions.md).
 
 ```sh
 systemctl list-timers 'jadwal-*'          # les prochaines échéances
