@@ -119,15 +119,6 @@ trace "$copies copie(s) distante(s) écrite(s)"
 
 # La rétention **locale**, et elle seule. Rien n'est effacé à distance : c'est le cycle de vie du
 # stockage qui s'en charge, et c'est ce qui rend les archives hors d'atteinte depuis ce serveur.
-a_garder="$("$ICI/jadwal-retention.sh" "$JADWAL_SAUVEGARDES")"
-for fichier in "$JADWAL_SAUVEGARDES"/jadwal-*.dump.age; do
-	[ -e "$fichier" ] || continue
-	court="$(basename "$fichier")"
-	if ! printf "%s\n" "$a_garder" | grep --quiet --line-regexp --fixed-strings "$court"; then
-		trace "retrait local de $court (hors rétention locale)"
-		rm -f "$fichier" "$fichier.sha256"
-	fi
-done
+"$ICI/jadwal-retention.sh" "$JADWAL_SAUVEGARDES"
 
-trace "$(printf "%s\n" "$a_garder" | grep --count . || true) archive(s) conservée(s) sur le disque local"
 reussite
