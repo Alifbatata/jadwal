@@ -131,9 +131,13 @@ else
 	cours="$(psql_base "$BASE_TEST" --command 'select count(*) from public."course";')"
 	[ "$organisations" -gt 0 ] || echec "l'archive restaurée ne contient aucune organisation"
 	trace "archive restaurée : $organisations organisation(s), $cours cours"
-	# Une réussite de ce mode-là, et de lui seul, arme la veille des quarante jours.
+	# Une réussite de ce mode-là, et de lui seul, arme la veille du trimestre.
 	mkdir -p "$JADWAL_ETAT/reussites"
 	date --iso-8601=seconds > "$JADWAL_ETAT/reussites/restauration-complete"
+	# Et elle bat, de dehors, sur le contrôle trimestriel du déchiffrement (ADR 0038). C'est la
+	# seule épreuve qui va de la clé publique du serveur à la clé privée de l'exploitant : si
+	# personne ne la joue pendant un trimestre, le silence doit s'entendre.
+	JADWAL_TACHE=dechiffrement battement ok "déchiffrement complet vérifié"
 fi
 
 reussite

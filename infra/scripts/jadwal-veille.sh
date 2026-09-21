@@ -26,7 +26,10 @@ JADWAL_TACHE=veille
 JADWAL_SAUVEGARDES="${JADWAL_SAUVEGARDES:-/var/backups/jadwal}"
 SEUIL_DISQUE="${JADWAL_SEUIL_DISQUE:-15}"             # pour cent de place libre
 SEUIL_CERTIFICAT="${JADWAL_SEUIL_CERTIFICAT:-21}"     # jours avant expiration
-SEUIL_RESTAURATION="${JADWAL_SEUIL_RESTAURATION:-40}" # jours depuis la dernière restauration complète
+# Un trimestre, plus la marge de sept jours du contrôle extérieur : la même cadence est annoncée
+# dans docs/EXPLOITATION.md et surveillée par Healthchecks (ADR 0037, ADR 0038). Deux seuils
+# différents pour la même chose finiraient par se contredire.
+SEUIL_RESTAURATION="${JADWAL_SEUIL_RESTAURATION:-97}" # jours depuis la dernière restauration complète
 SEUIL_VERROU="${JADWAL_SEUIL_VERROU:-183}"            # jours qu'un verrou de conservation peut durer
 SILENCE="${JADWAL_SILENCE:-86400}"                    # une même alerte, au plus une fois par jour
 
@@ -185,7 +188,8 @@ else
 fi
 
 # 7. Les deux conteneurs, et la réponse de `/healthz` depuis le serveur lui-même. La sonde
-#    extérieure (GitHub Actions) dit si le service répond au monde ; celle-ci dit si c'est le
+#    extérieure, posée hors de ce serveur (ADR 0038), dit si le service répond au monde ; celle-ci
+#    dit si c'est le
 #    service ou le chemin qui manque, et ce n'est pas la même panne.
 etat="$(compose ps --format '{{.Service}} {{.State}} {{.Health}}' 2> /dev/null || true)"
 if printf '%s\n' "$etat" | grep --quiet --extended-regexp '(exited|restarting|unhealthy)'; then
@@ -210,9 +214,9 @@ fi
 
 # 8. Le service, vu de l'extérieur, en IPv4 **et** en IPv6. Ce n'est pas une répétition du point
 #    précédent : celui-ci passe par le nom public, donc par le DNS, par Caddy et par TLS. Et c'est
-#    le seul endroit où l'IPv6 est éprouvée — les machines de GitHub Actions, qui portent la sonde
-#    extérieure, n'ont pas d'IPv6 sortant (ADR 0036). Le serveur, lui, joint sa propre adresse
-#    publique sans difficulté.
+#    le second endroit où l'IPv6 est éprouvée : la sonde extérieure l'interroge elle aussi, depuis
+#    une machine tierce qui, elle, a bien une IPv6 sortante (ADR 0038). Le serveur, lui, joint sa
+#    propre adresse publique sans difficulté.
 if [ -n "$hote" ] && [ "${origine#https://}" != "$origine" ]; then
 	for famille in 4 6; do
 		if curl --silent --fail --max-time 15 "--ipv$famille" "https://$hote/healthz" > /dev/null; then
