@@ -18,7 +18,7 @@ Pour toute question ou demande : **contact@voltia.ch**.
 Quatre choses, et rien d'autre :
 
 1. **Le programme de vos cours** : titres, descriptions, horaires, salles, intervenants. Ces données
-   sont destinées à être publiques — c'est le but du service.
+   sont destinées à être publiques : c'est le but du service.
 2. **L'adresse électronique des personnes responsables**, et leur nom si elles l'ont donné. C'est la
    seule donnée personnelle du service.
 3. **Un journal des modifications** : qui a changé quoi, et quand. Il permet de revenir en arrière
@@ -37,7 +37,7 @@ réparties entre votre page publique, le widget posé sur votre site, et les abo
 Ce compteur est un nombre, et c'est tout ce qu'il est. Le service conserve, par jour et par type,
 **votre organisation, la date, le type et un nombre**. Il ne conserve ni adresse IP, ni cookie, ni
 page d'où vient le visiteur, ni identifiant, ni heure de la consultation. Il ne peut donc pas dire
-qui a lu votre programme, ni d'où, ni quand dans la journée — et nous non plus.
+qui a lu votre programme, ni d'où, ni quand dans la journée, et nous non plus.
 
 Trois précisions honnêtes :
 
@@ -92,7 +92,7 @@ sans elle, l'assistance n'est pas possible.
 - **La suppression de votre organisation.** Elle efface le programme, les salles, les réglages, les
   adhésions et les invitations. Le journal des modifications suit la durée indiquée plus haut. Une
   suppression est définitive : nous n'avons pas de corbeille. Les sauvegardes chiffrées déjà parties,
-  elles, ne se réécrivent pas — voir plus bas : **181 jours au plus**.
+  elles, ne se réécrivent pas. Voir plus bas : **181 jours au plus**.
 - **Le retrait d'une personne responsable**, depuis l'écran des membres. Une organisation garde
   toujours au moins une personne responsable ; la dernière ne peut pas être retirée sans en nommer
   une autre.
@@ -100,7 +100,7 @@ sans elle, l'assistance n'est pas possible.
 ## Ce que vous acceptez
 
 - Que le programme que vous publiez soit **public** : page, widget, flux agenda.
-- De ne pas publier de données personnelles de tiers dans les champs libres — le nom d'un
+- De ne pas publier de données personnelles de tiers dans les champs libres : le nom d'un
   intervenant est un choix qui vous appartient, et qui l'engage aussi.
 - Que le service soit fourni **sans garantie de disponibilité**. Il est gratuit pour les mosquées et
   tenu par une seule personne.
@@ -124,24 +124,29 @@ sans elle, l'assistance n'est pas possible.
 Trois sous-traitants, et rien d'autre. La loi demande de dire qui ils sont, ce qu'ils font, et dans
 quel pays : les voici, et il n'y a rien de plus.
 
-| Sous-traitant         | Ce qu'il fait                                                         | Pays             |
-| --------------------- | --------------------------------------------------------------------- | ---------------- |
-| Hetzner Online GmbH   | Héberge le serveur qui fait tourner le service, et sa base de données | Finlande         |
-| Cloudflare            | Conserve les sauvegardes, chiffrées                                   | Union européenne |
-| Infomaniak Network SA | Envoie les courriels du service                                       | Suisse           |
+| Sous-traitant                           | Ce qu'il fait                                                         | Où sont les données |
+| --------------------------------------- | --------------------------------------------------------------------- | ------------------- |
+| Hetzner Online GmbH (société allemande) | Héberge le serveur qui fait tourner le service, et sa base de données | Finlande            |
+| Cloudflare, Inc. (société américaine)   | Conserve les sauvegardes, chiffrées                                   | Union européenne    |
+| Infomaniak Network SA (société suisse)  | Envoie les courriels du service                                       | Suisse              |
 
 La Finlande est membre de l'Union européenne. Elle figure à ce titre sur la liste des États dont la
 Suisse reconnaît que la législation assure une protection adéquate des données (annexe 1 de
-l'ordonnance sur la protection des données). Aucun transfert vers un pays tiers n'est nécessaire, et
-il n'y en a aucun.
+l'ordonnance sur la protection des données).
+
+**Cloudflare, Inc. est une société américaine.** Les sauvegardes lui sont confiées dans sa
+juridiction « Union européenne », qui garde les fichiers sur des sites de l'Union et ne les réplique
+pas ailleurs. Nous le disons parce que la société et le lieu de stockage ne sont pas dans le même
+pays, et que vous avez le droit de le savoir sans avoir à le chercher.
 
 **Les sauvegardes sont chiffrées sur le serveur, avant de le quitter.** La clé qui permet de les lire
-n'est jamais sur ce serveur, et n'est jamais chez celui qui les garde : le prestataire de stockage
-détient des fichiers qu'il ne peut pas ouvrir. Elles sont conservées dans l'Union européenne.
+n'est jamais sur ce serveur, et n'est jamais chez celui qui les garde : Cloudflare détient des
+fichiers qu'il ne peut pas ouvrir, et personne chez lui ne peut en lire une ligne, quelle que soit la
+loi qu'on lui oppose.
 
 **Ce que vous effacez reste au plus 181 jours dans ces sauvegardes.** Une suppression est immédiate
-dans le service, mais les sauvegardes déjà parties ne se réécrivent pas — c'est ce qui fait leur
-valeur le jour d'un incident. Au-delà de 181 jours, aucune sauvegarde ne contient plus vos données
+dans le service, mais les sauvegardes déjà parties ne se réécrivent pas, et c'est ce qui fait leur
+valeur le jour d'un incident. Passé 181 jours, aucune sauvegarde ne contient plus vos données
 effacées.
 
 Le code du service est ouvert et peut être auto-hébergé : rien n'oblige une organisation à dépendre
