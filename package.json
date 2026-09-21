@@ -11,12 +11,13 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"check": "pnpm -r --if-present run check",
-		"test": "pnpm -r --if-present run test",
+		"test": "node scripts/tests.mjs",
 		"build": "pnpm -r --if-present run build",
 		"dev": "pnpm --filter @jadwal/web run dev",
 		"test:tz": "pnpm --filter @jadwal/core run test:tz",
 		"hooks": "node scripts/installer-hooks.mjs",
-		"secrets:test": "node scripts/eprouver-controle-secrets.mjs"
+		"secrets:test": "node scripts/eprouver-controle-secrets.mjs",
+		"fuites": "node scripts/controle-fuites.mjs --arbre"
 	},
 	"devDependencies": {
 		"@eslint/js": "10.0.1",

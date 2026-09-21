@@ -25,7 +25,7 @@
 	"scripts": {
 		"build": "tsc -p tsconfig.build.json",
 		"check": "tsc -p tsconfig.json",
-		"test": "vitest run --coverage",
+		"test": "vitest run --coverage --reporter=default --reporter=json --outputFile=.vitest-resultats.json",
 		"test:tz": "node scripts/test-timezones.mjs"
 	},
 	"devDependencies": {

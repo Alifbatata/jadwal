@@ -71,7 +71,8 @@ pnpm install --frozen-lockfile
 pnpm lint                       # prettier --check + eslint sur tout le dépôt
 pnpm format                     # prettier --write
 pnpm check                      # tsc / svelte-check dans chaque paquet
-pnpm test                       # vitest dans chaque paquet
+pnpm test                       # vitest dans chaque paquet, puis un tableau par paquet
+                                # (fichiers, tests, réussis, sautés, échoués) ; un test sauté = rouge
 pnpm build                      # build de chaque paquet
 ```
 

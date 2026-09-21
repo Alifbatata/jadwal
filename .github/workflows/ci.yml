@@ -147,7 +147,8 @@ jobs:
   image:
     name: Build and publish the production image
     # L'image n'est construite que si la chaîne complète est verte : rien ne part sur le registre
-    # avant que les 1 158 tests aient passé et que le contrôle de secrets soit passé lui aussi.
+    # avant que toute la suite ait passé — sans un seul test sauté, `pnpm test` y veille — et que le
+    # contrôle de secrets soit passé lui aussi.
     needs: [ci, secrets]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
