@@ -83,19 +83,21 @@ que les courriels du service.
 
 ### La sonde extérieure, et ce qu'elle ne peut pas faire
 
-La veille sait tout sauf une chose : si le serveur est injoignable, elle est injoignable avec lui. Un
-travail programmé de GitHub Actions interroge donc `https://jadwal.voltia.ch/healthz` toutes les
-quinze minutes, depuis dehors, sans service payant. Deux échecs consécutifs à trente secondes
-d'intervalle avant d'alerter — les exécutions programmées de GitHub sont « au mieux ».
+La veille sait tout sauf une chose : si le serveur est injoignable, elle est injoignable avec lui. Il
+faut donc quelqu'un dehors.
 
-Le courriel part par `curl`, qui parle SMTP et se trouve sur toutes les machines de GitHub. Une
-action tierce du Marketplace ferait dépendre l'alerte d'un dépôt que nous ne contrôlons pas, pour
-envoyer six lignes de texte.
+> **Révisé à l'étape 9 — voir [ADR 0038](0038-sonde-exterieure-hors-de-github-actions.md).** Cette
+> sonde était un travail programmé de GitHub Actions, qui interrogeait `/healthz` toutes les quinze
+> minutes et alertait par SMTP. Elle a été retirée pour une raison dirimante : **les machines de
+> GitHub n'ont pas d'IPv6 sortant**, et la moitié de la surface publique du service n'était donc
+> jamais éprouvée depuis l'extérieur. Elle est remplacée par une sonde sur une machine tierce, qui
+> interroge les deux piles séparément et signale ses succès à un service de supervision — lequel
+> alerte quand un signal n'arrive pas.
 
-**Les machines de GitHub n'ont pas d'IPv6 sortant.** Un `curl -6` y échoue toujours, quelle que soit
-la configuration du serveur. Écrire là un test IPv6 reviendrait à apprendre à tout le monde à ignorer
-cette sonde. L'IPv6 est donc éprouvée par la veille, depuis le serveur, contre sa propre adresse
-publique — ce qui traverse le DNS, Caddy et TLS — et par l'exploitant à la mise en production.
+L'IPv6 reste par ailleurs éprouvée par la veille, depuis le serveur, contre sa propre adresse
+publique — ce qui traverse le DNS, Caddy et TLS. Les deux se complètent : la veille voit ce que
+l'extérieur ne peut pas voir, et l'extérieur voit ce que l'intérieur ne peut pas voir, à savoir
+l'absence.
 
 ## Ce que l'exécution réelle a corrigé
 
@@ -122,9 +124,11 @@ production :
 - Le tri des verrous de conservation « plus vieux que N jours » est fait par
   `retention-hold.mjs list --anciens N`, dans le conteneur, et non par la veille : Node est dans
   l'image, il n'a aucune raison d'être aussi sur l'hôte.
-- La sonde extérieure a besoin de trois secrets de dépôt (`SUPERVISION_SMTP_USER`,
-  `SUPERVISION_SMTP_PASSWORD`, `SUPERVISION_MAIL_TO`). Sans eux, elle ne poste pas de courriel et se
-  contente d'échouer : GitHub prévient alors le propriétaire du dépôt, ce qui est le filet de secours.
+- La sonde extérieure avait besoin de trois secrets de dépôt (`SUPERVISION_SMTP_USER`,
+  `SUPERVISION_SMTP_PASSWORD`, `SUPERVISION_MAIL_TO`) pour envoyer son courriel — c'est-à-dire de
+  confier des identifiants de messagerie à la forge qui héberge le code public. Aucun n'a jamais été
+  posé, et l'alerte n'aurait donc jamais pu partir. Constat qui a pesé dans la révision de
+  l'[ADR 0038](0038-sonde-exterieure-hors-de-github-actions.md).
 
 ## Statut
 
