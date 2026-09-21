@@ -17,6 +17,15 @@
 #                        connexion passe par ce compte, et les tâches qui en ont besoin déclarent
 #                        `become`.
 #
+# Deux variables de plus, à ajouter **si votre machine n'est pas dans le cas ordinaire** :
+#
+#   `ansible_port`                    — si votre serveur SSH n'écoute pas sur le port 22. Ansible ne
+#                                       lit pas votre `~/.ssh/config` pour un hôte désigné par son
+#                                       adresse : sans cette variable, il frappe au 22 et échoue.
+#   `ansible_ssh_private_key_file`    — si la clé à utiliser n'est pas celle par défaut de l'agent.
+#
+# Les deux sont commentées ci-dessous. Ce ne sont pas des secrets : un port et un chemin de fichier.
+#
 # Le serveur peut héberger d'autres applications. Ce playbook ne les connaît pas, ne les nomme pas
 # et ne les touche pas : il n'ajoute que ce qui porte le préfixe `jadwal`.
 #
@@ -29,3 +38,5 @@ jadwal.exemple.tld ansible_host=203.0.113.10
 [jadwal:vars]
 ansible_user=deploy
 ansible_python_interpreter=/usr/bin/python3
+# ansible_port=22
+# ansible_ssh_private_key_file=~/.ssh/id_ed25519

@@ -64,8 +64,15 @@
 # `jadwal_verifier_verrous=false` saute cette vérification. Ne l'utiliser que sur une destination qui
 # n'a délibérément pas de verrou : un stockage qui n'en propose pas, ou une instance d'essai.
 # ------------------------------------------------------------------------------------------------
+#
+# `not ansible_check_mode` : cette vérification **écrit** un objet, et un `--check` n'écrit rien. Sans
+# cette condition, la première tâche est sautée, `sonde.stdout_lines` est vide, et la suivante échoue
+# sur « No last item, sequence was empty » — un `--check --diff` qui s'arrête sur son propre garde-fou
+# au lieu de montrer ce qu'il changerait. Trouvé en le lançant, pas en le relisant.
 - name: Les verrous de conservation, éprouvés pour de vrai
-  when: jadwal_verifier_verrous | default(true)
+  when:
+    - jadwal_verifier_verrous | default(true)
+    - not ansible_check_mode
   become: true
   block:
     - name: Un objet d'essai sous quotidien/

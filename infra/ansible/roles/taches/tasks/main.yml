@@ -75,7 +75,12 @@
   become: true
   when: unites.changed
 
+# `not ansible_check_mode` : en mode vérification, les fichiers d'unités n'ont pas été écrits, et
+# systemd refuse d'armer une minuterie qu'il ne connaît pas — « Could not find the requested
+# service ». Le playbook s'arrêtait donc là, avant d'avoir montré les conteneurs, le bloc de site et
+# les comptes, c'est-à-dire avant l'essentiel de ce qu'un `--check --diff` sert à relire.
 - name: Les minuteries sont armées
+  when: not ansible_check_mode
   ansible.builtin.systemd_service:
     name: '{{ item }}'
     enabled: true
@@ -94,7 +99,9 @@
     name: 'jadwal-sonde@6.timer'
     enabled: false
     state: stopped
-  when: not jadwal_sonde_ipv6
+  when:
+    - not jadwal_sonde_ipv6
+    - not ansible_check_mode
   failed_when: false
   become: true
 

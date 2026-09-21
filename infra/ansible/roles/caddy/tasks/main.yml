@@ -23,11 +23,16 @@
       /etc/caddy/Caddyfile est introuvable. Ce rôle ne suppose rien de la disposition de Caddy sur
       ce serveur : relire l'inventaire, et corriger jadwal_caddy_sites, avant de rejouer.
 
+# `check_mode: false` : cette tâche **lit** un fichier, elle ne change rien, et elle doit donc tourner
+# même en mode vérification. Sans cela, Ansible saute toute tâche `command` pendant un `--check`,
+# `imports.stdout` reste vide, et l'assertion suivante annonce que l'import manque alors qu'il est là.
+# Un `--check --diff` qui s'arrête sur un faux négatif est pire qu'un `--check` qu'on ne joue pas.
 - name: Le Caddyfile importe-t-il un répertoire de sites ?
   ansible.builtin.command: grep -E "^\s*import\s" /etc/caddy/Caddyfile
   register: imports
   changed_when: false
   failed_when: false
+  check_mode: false
   become: true
 
 - name: Sans import, on ne pose rien
