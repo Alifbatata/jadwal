@@ -91,7 +91,8 @@ sans elle, l'assistance n'est pas possible.
   espace.
 - **La suppression de votre organisation.** Elle efface le programme, les salles, les réglages, les
   adhésions et les invitations. Le journal des modifications suit la durée indiquée plus haut. Une
-  suppression est définitive : nous n'avons pas de corbeille.
+  suppression est définitive : nous n'avons pas de corbeille. Les sauvegardes chiffrées déjà parties,
+  elles, ne se réécrivent pas — voir plus bas : **181 jours au plus**.
 - **Le retrait d'une personne responsable**, depuis l'écran des membres. Une organisation garde
   toujours au moins une personne responsable ; la dernière ne peut pas être retirée sans en nommer
   une autre.
@@ -118,37 +119,30 @@ sans elle, l'assistance n'est pas possible.
   pour se protéger d'un abus, mais ce compteur ne retient qu'une empreinte non réversible, effacée
   au bout d'un jour.
 
-## Hébergement
+## Où sont vos données, et qui y touche
 
-**Où sont vos données, précisément.**
+Trois sous-traitants, et rien d'autre. La loi demande de dire qui ils sont, ce qu'ils font, et dans
+quel pays : les voici, et il n'y a rien de plus.
 
-| Ce qui est hébergé               | Chez qui                                    | Où                     |
-| -------------------------------- | ------------------------------------------- | ---------------------- |
-| Le service et sa base de données | Hetzner Online GmbH (serveur privé virtuel) | Helsinki, **Finlande** |
-| Les sauvegardes                  | Infomaniak Network SA                       | **Suisse**             |
-| Les courriels du service         | Infomaniak Network SA                       | **Suisse**             |
-| Le nom de domaine et sa zone DNS | Infomaniak Network SA                       | **Suisse**             |
+| Sous-traitant         | Ce qu'il fait                                                         | Pays             |
+| --------------------- | --------------------------------------------------------------------- | ---------------- |
+| Hetzner Online GmbH   | Héberge le serveur qui fait tourner le service, et sa base de données | Finlande         |
+| Cloudflare            | Conserve les sauvegardes, chiffrées                                   | Union européenne |
+| Infomaniak Network SA | Envoie les courriels du service                                       | Suisse           |
 
 La Finlande est membre de l'Union européenne. Elle figure à ce titre sur la liste des États dont la
 Suisse reconnaît que la législation assure une protection adéquate des données (annexe 1 de
 l'ordonnance sur la protection des données). Aucun transfert vers un pays tiers n'est nécessaire, et
 il n'y en a aucun.
 
-Les sauvegardes quittent le serveur **chiffrées**, et la clé qui permet de les lire n'est jamais sur
-ce serveur : même l'hébergeur des sauvegardes ne peut pas en lire le contenu.
+**Les sauvegardes sont chiffrées sur le serveur, avant de le quitter.** La clé qui permet de les lire
+n'est jamais sur ce serveur, et n'est jamais chez celui qui les garde : le prestataire de stockage
+détient des fichiers qu'il ne peut pas ouvrir. Elles sont conservées dans l'Union européenne.
+
+**Ce que vous effacez reste au plus 181 jours dans ces sauvegardes.** Une suppression est immédiate
+dans le service, mais les sauvegardes déjà parties ne se réécrivent pas — c'est ce qui fait leur
+valeur le jour d'un incident. Au-delà de 181 jours, aucune sauvegarde ne contient plus vos données
+effacées.
 
 Le code du service est ouvert et peut être auto-hébergé : rien n'oblige une organisation à dépendre
 de cette instance.
-
-## Nos sous-traitants
-
-Trois, et rien d'autre :
-
-| Sous-traitant            | Ce qu'il fait                                                                            | Où            |
-| ------------------------ | ---------------------------------------------------------------------------------------- | ------------- |
-| Hetzner Online GmbH      | Héberge le serveur qui fait tourner le service                                           | Finlande (UE) |
-| Infomaniak Network SA    | Envoie les courriels, garde les sauvegardes chiffrées, tient le nom de domaine           | Suisse        |
-| GitHub, Inc. (Microsoft) | Héberge le code source public et vérifie toutes les quinze minutes que le service répond | États-Unis    |
-
-GitHub ne reçoit **aucune** donnée de votre organisation : il interroge une seule adresse publique,
-`https://jadwal.voltia.ch/healthz`, qui ne rend qu'un état de santé sans aucun contenu.
