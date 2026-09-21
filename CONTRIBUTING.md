@@ -29,6 +29,7 @@ contributions les plus utiles à ce stade sont les retours sur `docs/CADRAGE.md`
 ```
 corepack enable
 pnpm install --frozen-lockfile
+pnpm hooks                       # une fois : le contrôle de secrets, avant chaque commit
 pnpm lint
 pnpm check
 pnpm test
@@ -37,6 +38,21 @@ pnpm build
 
 La base de développement se lance avec `docker compose -f docker-compose.dev.yml up -d db` ; les
 tests de `packages/db` en ont besoin (voir `packages/db/README.md`).
+
+`pnpm test` rend compte **par paquet** — fichiers, tests, réussis, sautés, échoués — puis affiche un
+total. Un test sauté rend la main en rouge : un test qui a besoin de PostgreSQL ou de Docker doit
+échouer quand ils manquent, jamais disparaître du décompte. `pnpm secrets:test` fait voir le contrôle
+de secrets refuser un commit, à volonté.
+
+`pnpm hooks` installe aussi un crochet **`pre-push`** : celui qui exploite une instance de jadwal
+peut lui donner la liste des mots qui ne doivent jamais sortir de chez lui — l'adresse de son
+serveur, les autres services qu'il héberge, ses comptes. La liste ne vit pas dans ce dépôt, et le
+crochet refuse de tourner sans elle. **Si vous contribuez depuis votre propre clone**, vous n'avez
+rien de tel à protéger : dites-le une fois, et il se taira.
+
+```
+git config jadwal.termes-interdits aucune
+```
 
 Piège de Vitest : l'option de mise à jour des instantanés accepte une valeur facultative, donc
 `vitest run -u src/x.test.ts` avale le nom du fichier et rejoue toute la suite. Écrire le filtre

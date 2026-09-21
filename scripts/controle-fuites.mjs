@@ -21,6 +21,10 @@
  * **refuse** plutôt que de laisser passer : un garde-fou qui s'efface quand il n'a pas ses données
  * ne garde rien, exactement comme le crochet de secrets refuse sans gitleaks.
  *
+ * Qui contribue depuis son propre clone n'a pas de liste et n'a aucune infrastructure à protéger. Il
+ * le dit une fois, explicitement — `git config jadwal.termes-interdits aucune` — et le contrôle se
+ * tait. Un geste nommé et relisible, pas un `--no-verify` qui efface tous les contrôles à la fois.
+ *
  * Ce qui est trouvé n'est **jamais recopié** dans la sortie : le contrôle affiche le fichier, la
  * ligne et le **numéro** du terme dans la liste. Autrement, refuser une fuite la publierait dans un
  * journal de console, puis dans un rapport, puis dans un cache.
@@ -42,6 +46,9 @@ function grep(args) {
 		throw erreur;
 	}
 }
+
+/** La valeur qui dit « je n'ai pas de liste, et c'est voulu ». Voir plus bas. */
+const AUCUNE = 'aucune';
 
 function cheminDeLaListe() {
 	let configure = '';
@@ -158,13 +165,28 @@ function main() {
 	}
 
 	const chemin = cheminDeLaListe();
+
+	// La sortie explicite. Ce garde-fou protège **l'exploitant de cette instance** d'une fuite de son
+	// infrastructure ; quelqu'un qui contribue depuis son propre clone n'a pas de liste, n'a rien à
+	// protéger, et ne doit pas se heurter à un mur à chaque poussée. Il lui faut un geste conscient,
+	// nommé et relisible — pas un contournement silencieux, et pas non plus un `--no-verify`.
+	if (chemin === AUCUNE) {
+		process.stdout.write(
+			`Garde-fou désactivé par « git config jadwal.termes-interdits ${AUCUNE} ».\n`
+		);
+		return 0;
+	}
+
 	if (!chemin || !existsSync(chemin)) {
 		process.stderr.write(
 			`\n  Contrôle refusé : la liste des termes interdits est introuvable.\n\n` +
 				(chemin ? `  Chemin configuré : ${chemin}\n\n` : '') +
 				`  Elle vit hors de ce dépôt, dans le dépôt privé de l'exploitation. Une fois :\n\n` +
 				`      git config jadwal.termes-interdits <chemin absolu vers termes-interdits.txt>\n\n` +
-				`  Ce dépôt est public : sans cette liste, rien ne relit ce qui en part.\n\n`
+				`  Ce dépôt est public : sans cette liste, rien ne relit ce qui en part.\n\n` +
+				`  Vous contribuez depuis votre propre clone et n'avez aucune infrastructure à\n` +
+				`  protéger ? Dites-le une fois, explicitement :\n\n` +
+				`      git config jadwal.termes-interdits ${AUCUNE}\n\n`
 		);
 		return 1;
 	}
