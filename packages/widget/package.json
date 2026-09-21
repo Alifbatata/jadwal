@@ -16,7 +16,7 @@
 		"build": "vite build && node scripts/publish-version.mjs",
 		"prepare": "vite build && node scripts/publish-version.mjs",
 		"check": "tsc -p tsconfig.json",
-		"test": "vitest run",
+		"test": "vitest run --reporter=default --reporter=json --outputFile=.vitest-resultats.json",
 		"size": "node scripts/gzip-size.mjs",
 		"integrity": "node scripts/integrity.mjs"
 	},

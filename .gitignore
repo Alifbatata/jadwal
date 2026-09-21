@@ -37,6 +37,9 @@ Thumbs.db
 
 # Caches d'outils
 .vitest/
+# Le relevé JSON que chaque paquet écrit pour « pnpm test » : un état de la dernière exécution,
+# pas une source.
+.vitest-resultats.json
 .eslintcache
 
 # Corbeille de sortie du transport de courriel de développement : rien ne doit y être commité.

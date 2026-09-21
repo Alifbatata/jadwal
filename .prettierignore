@@ -6,6 +6,7 @@ pnpm-lock.yaml
 **/build
 **/.svelte-kit
 **/.vitest
+**/.vitest-resultats.json
 **/coverage
 
 # Instantanés et journal écrits par Drizzle Kit : les reformater ferait diverger le prochain
