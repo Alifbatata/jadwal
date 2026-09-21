@@ -23,7 +23,7 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   pour devenir une minuterie de jadwal (ADR 0038), et `pnpm test` refuse désormais un test sauté en
   silence. `pnpm lint` refuse aussi le tiret cadratin et une liste de chevilles dans les textes que
   les gens lisent. La phase 3, le déploiement, reste à jouer : elle attend l'inventaire et le coffre,
-  que le dépôt ne livre pas et ne livrera pas.
+  qui vivent dans `PRIVE/` — le dépôt ne les livre pas et ne les livrera pas.
 
 ## Fait
 
@@ -405,6 +405,19 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
 - 1 163 tests dans le dépôt. ADR 0034 (`docs/adr/0034-isolation-du-deploiement.md` : isolation du
   déploiement), 0035, 0036 ; `docs/EXPLOITATION.md` ; `docs/CONDITIONS.md` complété (hébergeur,
   pays réel, sous-traitants, `contact@voltia.ch`).
+- **Le journal d'accès ne porte plus ni adresse entière ni jeton** (ADR 0039). Le bloc de site
+  tronque l'adresse du visiteur en /24 et /48 partout où elle paraît, retire le jeton de connexion
+  de l'adresse demandée comme de l'en-tête `Referer`, et une tâche de nuit borne la rétention à
+  quatorze jours, fichier courant compris. `pnpm caddy:test` rejoue ce bloc dans un conteneur avec
+  une requête porteuse de quatre secrets et relit la ligne écrite.
+
+**Les scripts bash ne reçoivent pas de campagne de tests**, et c'est une décision, pas un oubli.
+Écrire un cadre de tests pour du shell coûterait plus qu'il ne rendrait sur neuf scripts dont
+l'essentiel du travail est fait par les programmes qu'ils appellent. La règle est autre : **chaque
+script modifié est éprouvé dans un conteneur**, avec sa vraie entrée et sa vraie sortie, et la
+sortie est copiée dans le rapport de l'étape. Ce qui mérite d'être éprouvé pour de bon sort du
+shell — la règle de rétention et celle des destinations vivent dans `@jadwal/sauvegarde`, avec leurs
+tests.
 
 ## Feuille de route
 
@@ -514,10 +527,12 @@ passkeys, paiement.
   trimestriel. Les adresses de battement sont des jetons : elles vivent dans le coffre, et le
   playbook les écrit dans le fichier d'environnement. Sans elles, les tâches tournent exactement
   pareil et le disent dans leur journal.
-- **L'inventaire Ansible.** `infra/ansible/inventory.ini` n'est plus livré : le copier depuis
-  `infra/ansible/inventory.ini.example` et le renseigner. Il est ignoré par git, et c'est voulu.
+- **L'inventaire Ansible.** Le copier depuis `infra/ansible/inventory.ini.example` vers
+  `PRIVE/inventaire/inventory.ini` et le renseigner. `PRIVE/` est ignoré par git, et refusé à la
+  poussée même si un `git add -f` l'y faisait entrer.
 - **Le coffre `ansible-vault`.** Le créer à partir de
-  `infra/ansible/group_vars/all/vault.yml.example`, y mettre ses propres valeurs, le chiffrer, et le
-  garder hors du dépôt. `ansible.cfg` lit sa phrase de passe dans
-  `~/.jadwal-secrets/vault-pass.txt`.
+  `infra/ansible/group_vars/all/vault.yml.example` vers `PRIVE/coffre/vault.yml`, y mettre ses
+  propres valeurs et le chiffrer. `ansible.cfg` lit sa phrase de passe dans
+  `~/.jadwal-secrets/vault-pass.txt`, hors de tout dépôt. La marche à suivre est dans
+  `infra/README.md`.
 - **Le contrôle de secrets**, sur chaque poste qui commite : `pnpm hooks`, une fois.

@@ -1,0 +1,11 @@
+[Unit]
+Description=jadwal — coupe du journal d'accès, quatorze jours gardés
+Documentation=file:/opt/jadwal/docs/EXPLOITATION.md
+OnFailure=jadwal-alerte@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/jadwal/scripts/jadwal-journal-caddy.sh
+TimeoutStartSec=300
+Nice=10
+IOSchedulingClass=idle

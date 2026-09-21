@@ -47,6 +47,12 @@ jadwal_rclone_remote: ''
 jadwal_caddy_sites: /etc/caddy/sites
 jadwal_caddy_reload: false
 
+# Le journal d'accès du site, et la coupe qui le borne à quatorze jours (ADR 0039). Ce chemin doit
+# être **le même** que celui du bloc de site : c'est Caddy qui écrit, et c'est la tâche
+# `jadwal-journal-caddy` qui coupe. Si les deux divergent, la tâche s'arrête en disant que le
+# fichier est introuvable, plutôt que de laisser croire à une rétention qui ne serait pas tenue.
+jadwal_caddy_journal: '/var/log/caddy/{{ jadwal_domaine }}.log'
+
 # Les paquets ajoutés à l'hôte. Trois, et tous nécessaires : `age` chiffre les sauvegardes, `rclone`
 # les envoie, `curl` sert à la veille. `openssl` est déjà là sur toute Debian.
 jadwal_paquets:
