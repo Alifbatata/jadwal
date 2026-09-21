@@ -83,6 +83,26 @@ function lireListe(chemin) {
 }
 
 /**
+ * Ce terme a-t-il le droit d'être là ?
+ *
+ * Une autorisation s'écrit `chemin` — partout — ou `chemin@commit`, et alors dans ce commit-là
+ * seulement. La seconde forme sert à ce qui est **déjà publié** : un terme entré dans l'historique
+ * ne s'en retire qu'en réécrivant, ce qui change les empreintes des commits et orpheline les
+ * étiquettes d'image qui les désignent. Le laisser là où il est, en le nommant commit par commit,
+ * est une décision qui se relit ; taire le terme partout n'en serait pas une.
+ */
+function autorise(terme, chemin, commit) {
+	return terme.autorises.some((permission) => {
+		const [cheminPermis, commitPermis] = permission.split('@');
+		if (cheminPermis !== chemin) return false;
+		if (!commitPermis) return true;
+		// Un préfixe court accepterait trop de commits : sept caractères au moins, comme git.
+		if (commitPermis.length < 7) return false;
+		return commit !== null && commit.startsWith(commitPermis);
+	});
+}
+
+/**
  * Les trouvailles d'un `git grep`, dépouillées de ce qu'elles ont trouvé.
  *
  * `git grep -o` rend `chemin:ligne:trouvaille`, ou `commit:chemin:ligne:trouvaille` quand on lui
@@ -99,7 +119,7 @@ function depouiller(sortie, termes, avecCommit) {
 		const chemin = morceaux.join(':');
 		const terme = termes.find((candidat) => candidat.minuscule === trouvaille.toLowerCase());
 		if (!terme) continue;
-		if (terme.autorises.includes(chemin)) continue;
+		if (autorise(terme, chemin, commit)) continue;
 		trouvailles.push({ commit, chemin, numero, rang: terme.rang });
 	}
 	return trouvailles;
