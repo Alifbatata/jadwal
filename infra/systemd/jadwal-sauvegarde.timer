@@ -1,0 +1,13 @@
+[Unit]
+Description=jadwal — sauvegarde, une fois par nuit
+
+[Timer]
+# 02:15, avant les autres tâches : la sauvegarde doit prendre l'état de la nuit, pas celui d'après
+# les purges. Une purge qui se trompe est alors rattrapable depuis l'archive du matin même.
+OnCalendar=*-*-* 02:15:00
+Persistent=true
+RandomizedDelaySec=10m
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

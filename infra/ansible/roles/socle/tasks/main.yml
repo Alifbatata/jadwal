@@ -1,0 +1,96 @@
+# Le socle : les répertoires, les trois paquets, et rien d'autre (ADR 0034).
+#
+# Ce rôle ne provisionne pas le serveur : il suppose une machine déjà en service, qui peut très bien
+# héberger d'autres applications. On ne touche ni au pare-feu, ni à SSH, ni à Docker, ni à Caddy, ni
+# à aucun compte existant. On vérifie que ce dont jadwal a besoin est là, et on ajoute ce qui manque,
+# sous un préfixe qui dit à qui il appartient.
+---
+- name: Le serveur est bien de la famille Debian
+  ansible.builtin.assert:
+    that: ansible_facts['os_family'] == 'Debian'
+    fail_msg: >-
+      Ce playbook n'a été écrit et éprouvé que pour la famille Debian, dans laquelle Ansible range
+      aussi Ubuntu. Sur autre chose, il faut relire chaque tâche avant de la jouer, pas la forcer.
+
+- name: Docker est présent et répond
+  ansible.builtin.command: docker version --format '{% raw %}{{.Server.Version}}{% endraw %}'
+  register: docker_version
+  changed_when: false
+  become: true
+
+- name: Docker Compose v2 est présent
+  ansible.builtin.command: docker compose version --short
+  register: compose_version
+  changed_when: false
+  become: true
+
+- name: Ce que le serveur fait tourner, pour le rapport
+  ansible.builtin.debug:
+    msg: 'Docker {{ docker_version.stdout }}, Compose {{ compose_version.stdout }}'
+
+# Trois paquets, et la raison de chacun est dans `group_vars/all/main.yml`. `apt` n'installe que ce
+# qui manque et ne redémarre aucun service : c'est additif, et `apt remove` le défait.
+- name: Les paquets dont les tâches périodiques ont besoin
+  ansible.builtin.apt:
+    name: '{{ jadwal_paquets }}'
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+
+# Tout ce qui suit appartient à root et n'est lisible que par root. C'est ce qui isole jadwal de
+# tout compte non privilégié : il n'y a pas de groupe partagé, pas de bit de lecture pour les
+# autres, et aucun de ces chemins n'est monté ailleurs.
+- name: Les répertoires de jadwal
+  ansible.builtin.file:
+    path: '{{ item.chemin }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '{{ item.mode }}'
+  loop:
+    - { chemin: '{{ jadwal_racine }}', mode: '0755' }
+    - { chemin: '{{ jadwal_racine }}/compose', mode: '0755' }
+    - { chemin: '{{ jadwal_racine }}/scripts', mode: '0755' }
+    - { chemin: '{{ jadwal_etc }}', mode: '0700' }
+    - { chemin: '{{ jadwal_etat }}', mode: '0700' }
+    - { chemin: '{{ jadwal_etat }}/reussites', mode: '0700' }
+    - { chemin: '{{ jadwal_etat }}/alertes', mode: '0700' }
+    - { chemin: '{{ jadwal_sauvegardes }}', mode: '0700' }
+  loop_control:
+    label: '{{ item.chemin }}'
+  become: true
+
+# Une trace de ce qui a été posé, et de comment le retirer. Elle est sur le serveur, pas seulement
+# dans le dépôt : celui qui la lira à deux heures du matin n'aura peut-être pas le dépôt sous la
+# main.
+- name: La note de retrait, posée à la racine de jadwal
+  ansible.builtin.copy:
+    dest: '{{ jadwal_racine }}/RETRAIT.txt'
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      Retirer entièrement jadwal de ce serveur, dans cet ordre :
+
+        systemctl disable --now jadwal-prieres.timer jadwal-purges.timer \
+          jadwal-sauvegarde.timer jadwal-restauration.timer jadwal-veille.timer
+        rm -f /etc/systemd/system/jadwal-*.service /etc/systemd/system/jadwal-*.timer
+        systemctl daemon-reload
+
+        rm -f {{ jadwal_caddy_sites }}/{{ jadwal_domaine }}.caddy
+        caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy
+
+        docker compose -f {{ jadwal_racine }}/compose/docker-compose.yml \
+          --env-file {{ jadwal_etc }}/jadwal.env down --volumes
+        docker network rm jadwal 2>/dev/null || true
+
+        rm -rf {{ jadwal_racine }} {{ jadwal_etc }} {{ jadwal_etat }} {{ jadwal_sauvegardes }}
+        apt remove age rclone   # seulement s'ils n'ont pas été installés pour autre chose
+
+      Rien de tout cela ne touche les autres applications de la machine, le pare-feu ni SSH.
+      Le volume de données s'appelle jadwal_pgdata : `down --volumes` l'efface pour de bon.
+      Prendre une sauvegarde avant, ou ne pas passer --volumes.
+
+      Le playbook infra/ansible/retrait.yml fait la même chose, dans le même ordre.
+  become: true

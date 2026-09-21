@@ -1,0 +1,102 @@
+# L'application et sa base : deux conteneurs, un réseau, un volume (ADR 0034).
+---
+- name: Une image, et par digest
+  ansible.builtin.assert:
+    that:
+      - jadwal_image | length > 0
+      - "'@sha256:' in jadwal_image"
+    fail_msg: >-
+      jadwal_image doit être une référence par digest (ghcr.io/…@sha256:…), jamais une étiquette.
+      Une étiquette bouge : le retour arrière ne rendrait pas forcément ce qui tournait avant.
+      Exemple : ansible-playbook jadwal.yml -e jadwal_image=ghcr.io/compte/jadwal@sha256:…
+
+- name: Le fichier Compose
+  ansible.builtin.copy:
+    src: '{{ playbook_dir }}/../compose/docker-compose.yml'
+    dest: '{{ jadwal_racine }}/compose/docker-compose.yml'
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+  notify: relancer jadwal
+
+# Le fichier d'environnement porte tous les secrets du service. 0600 root:root, et rien d'autre :
+# c'est cette ligne qui rend jadwal illisible à tout compte non privilégié.
+# `no_log` empêche Ansible d'en recopier le contenu dans sa propre sortie.
+- name: Le fichier d'environnement
+  ansible.builtin.template:
+    src: jadwal.env.j2
+    dest: '{{ jadwal_etc }}/jadwal.env'
+    owner: root
+    group: root
+    mode: '0600'
+  become: true
+  no_log: true
+  notify: relancer jadwal
+
+# Facultatif : si le paquet GHCR est public, il n'y a aucun identifiant de registre sur ce serveur.
+- name: Ouverture de session sur GHCR, si le paquet est privé
+  ansible.builtin.command:
+    cmd: docker login ghcr.io --username {{ vault_ghcr_user }} --password-stdin
+    stdin: '{{ vault_ghcr_token }}'
+  become: true
+  no_log: true
+  changed_when: false
+  when: vault_ghcr_token | default('') | length > 0
+
+# `docker compose pull` plutôt que la collection `community.docker` : une collection de plus à
+# installer, à figer et à mettre à jour pour une commande que Compose sait faire. Aucune dépendance
+# sans besoin immédiat.
+- name: Tirage des images, au digest demandé
+  ansible.builtin.command:
+    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/jadwal.env pull --quiet
+  become: true
+  register: tirage
+  changed_when: tirage.stderr | length > 0
+
+- name: Démarrage de la pile
+  ansible.builtin.command:
+    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/jadwal.env up --detach --remove-orphans
+  become: true
+  register: demarrage
+  changed_when: "'Started' in demarrage.stderr or 'Created' in demarrage.stderr or 'Recreated' in demarrage.stderr"
+
+- name: La base répond
+  ansible.builtin.command:
+    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/jadwal.env exec -T db pg_isready -h 127.0.0.1
+  become: true
+  register: pret
+  until: pret.rc == 0
+  retries: 30
+  delay: 2
+  changed_when: false
+
+# Les rôles d'abord, les migrations ensuite : les migrations accordent des droits à des rôles qui
+# doivent exister. Les deux sont rejouables — c'est la propriété que l'étape 0 leur a donnée, et
+# c'est elle qui permet de les lancer à chaque déploiement sans y penser.
+- name: Les rôles de la base
+  ansible.builtin.command:
+    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/jadwal.env exec -T app node node_modules/@jadwal/db/scripts/bootstrap-roles.mjs
+  become: true
+  register: roles_base
+  changed_when: "'créé' in roles_base.stdout or 'created' in roles_base.stdout"
+
+- name: Les migrations
+  ansible.builtin.command:
+    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/jadwal.env exec -T app node node_modules/@jadwal/db/scripts/migrate.mjs
+  become: true
+  register: migrations
+  changed_when: "'appliquée' in migrations.stdout or 'applied' in migrations.stdout"
+
+- name: Le service répond sur la boucle locale
+  ansible.builtin.uri:
+    url: 'http://127.0.0.1:{{ jadwal_port }}/healthz'
+    status_code: 200
+  register: sonde
+  until: sonde.status == 200
+  retries: 30
+  delay: 2
+
+- name: Ce qui tourne, pour le rapport
+  ansible.builtin.debug:
+    msg: 'jadwal répond sur 127.0.0.1:{{ jadwal_port }} — image {{ jadwal_image }}'

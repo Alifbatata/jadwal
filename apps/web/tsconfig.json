@@ -1,0 +1,21 @@
+{
+	"extends": "./.svelte-kit/tsconfig.json",
+	"compilerOptions": {
+		"rewriteRelativeImportExtensions": true,
+		"allowJs": true,
+		// Les scripts d'entretien de `@jadwal/db` sont du JavaScript sans annotations, exécuté par
+		// Node avec son retrait de types : les vérifier ici remonterait des erreurs qui n'en sont
+		// pas. Ils sont couverts par les tests du paquet, qui les lancent pour de vrai.
+		"checkJs": false,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"sourceMap": true,
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"moduleResolution": "bundler"
+	}
+	// Les alias de chemins passent par kit.alias, pas par baseUrl/paths :
+	// https://svelte.dev/docs/kit/configuration#alias
+}

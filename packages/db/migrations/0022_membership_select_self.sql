@@ -1,0 +1,2 @@
+ALTER POLICY "membership_select" ON "membership" TO jadwal_app USING ("membership"."organization_id" = (select jadwal.current_org_id())
+				or "membership"."user_id" = (select jadwal.current_user_id()));

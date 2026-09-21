@@ -1,0 +1,13 @@
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+
+# Instantanés ICS : la RFC 5545 impose CRLF ; sans cette règle, eol=lf les convertirait au clone
+# et le test toMatchFileSnapshot échouerait en CI.
+*.ics -text

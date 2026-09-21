@@ -1,0 +1,3708 @@
+{
+  "id": "adffc95a-f67a-454c-b7dd-e9196d394be8",
+  "prevId": "c56a4bdc-105a-4510-9eae-8b0cab8d263e",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.account": {
+      "name": "account",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_id": {
+          "name": "provider_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "access_token": {
+          "name": "access_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refresh_token": {
+          "name": "refresh_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_token": {
+          "name": "id_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "access_token_expires_at": {
+          "name": "access_token_expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refresh_token_expires_at": {
+          "name": "refresh_token_expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope": {
+          "name": "scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password": {
+          "name": "password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "account_user_idx": {
+          "name": "account_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "account_user_fk": {
+          "name": "account_user_fk",
+          "tableFrom": "account",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "account_auth_select": {
+          "name": "account_auth_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_auth"
+          ],
+          "using": "true"
+        },
+        "account_auth_insert": {
+          "name": "account_auth_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_auth"
+          ],
+          "withCheck": "true"
+        },
+        "account_auth_update": {
+          "name": "account_auth_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_auth"
+          ],
+          "using": "true",
+          "withCheck": "true"
+        },
+        "account_auth_delete": {
+          "name": "account_auth_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_auth"
+          ],
+          "using": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.admin_access_log": {
+      "name": "admin_access_log",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "organization_slug": {
+          "name": "organization_slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "route": {
+          "name": "route",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "admin_access_log_created_at_idx": {
+          "name": "admin_access_log_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "admin_access_log_organization_idx": {
+          "name": "admin_access_log_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "admin_access_log_superadmin_select": {
+          "name": "admin_access_log_superadmin_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "true"
+        },
+        "admin_access_log_superadmin_insert": {
+          "name": "admin_access_log_superadmin_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "withCheck": "true"
+        }
+      },
+      "checkConstraints": {
+        "admin_access_log_id_uuid_v7_ck": {
+          "name": "admin_access_log_id_uuid_v7_ck",
+          "value": "(\"admin_access_log\".\"id\"::text ~ '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$') is true"
+        },
+        "admin_access_log_action_ck": {
+          "name": "admin_access_log_action_ck",
+          "value": "(\"admin_access_log\".\"action\" in ('read', 'write', 'magic_link')) is true"
+        },
+        "admin_access_log_route_ck": {
+          "name": "admin_access_log_route_ck",
+          "value": "(length(btrim(\"admin_access_log\".\"route\")) > 0) is true"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.audit_log": {
+      "name": "audit_log",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_table": {
+          "name": "target_table",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_id": {
+          "name": "target_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "before": {
+          "name": "before",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "after": {
+          "name": "after",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "audit_log_organization_created_at_idx": {
+          "name": "audit_log_organization_created_at_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "audit_log_actor_idx": {
+          "name": "audit_log_actor_idx",
+          "columns": [
+            {
+              "expression": "actor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "audit_log_organization_fk": {
+          "name": "audit_log_organization_fk",
+          "tableFrom": "audit_log",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "audit_log_actor_fk": {
+          "name": "audit_log_actor_fk",
+          "tableFrom": "audit_log",
+          "tableTo": "user",
+          "columnsFrom": [
+            "actor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "audit_log_select": {
+          "name": "audit_log_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"audit_log\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "audit_log_insert": {
+          "name": "audit_log_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_app"
+          ],
+          "withCheck": "\"audit_log\".\"organization_id\" = (select jadwal.current_org_id())\n\t\t\t\tand (\"audit_log\".\"actor_id\" is null or exists (select 1 from \"user\" u where u.\"id\" = \"audit_log\".\"actor_id\"))"
+        },
+        "audit_log_superadmin_select": {
+          "name": "audit_log_superadmin_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"audit_log\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "audit_log_superadmin_insert": {
+          "name": "audit_log_superadmin_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "withCheck": "\"audit_log\".\"organization_id\" = (select jadwal.current_org_id())"
+        }
+      },
+      "checkConstraints": {
+        "audit_log_id_uuid_v7_ck": {
+          "name": "audit_log_id_uuid_v7_ck",
+          "value": "(\"audit_log\".\"id\"::text ~ '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$') is true"
+        },
+        "audit_log_action_ck": {
+          "name": "audit_log_action_ck",
+          "value": "(length(btrim(\"audit_log\".\"action\")) > 0) is true"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.course": {
+      "name": "course",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "audience": {
+          "name": "audience",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "teaching_language": {
+          "name": "teaching_language",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "room_id": {
+          "name": "room_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "teacher": {
+          "name": "teacher",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_language": {
+          "name": "source_language",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recurrence_kind": {
+          "name": "recurrence_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recurrence_weekday": {
+          "name": "recurrence_weekday",
+          "type": "smallint[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recurrence_interval": {
+          "name": "recurrence_interval",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recurrence_anchor_date": {
+          "name": "recurrence_anchor_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recurrence_ordinal_weekday": {
+          "name": "recurrence_ordinal_weekday",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recurrence_ordinal": {
+          "name": "recurrence_ordinal",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recurrence_date": {
+          "name": "recurrence_date",
+          "type": "date[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "timing_kind": {
+          "name": "timing_kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "timing_start": {
+          "name": "timing_start",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "timing_end": {
+          "name": "timing_end",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "timing_prayer": {
+          "name": "timing_prayer",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "timing_offset_minutes": {
+          "name": "timing_offset_minutes",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "timing_duration_minutes": {
+          "name": "timing_duration_minutes",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "starts_on": {
+          "name": "starts_on",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ends_on": {
+          "name": "ends_on",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sequence": {
+          "name": "sequence",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "course_organization_idx": {
+          "name": "course_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "course_organization_status_idx": {
+          "name": "course_organization_status_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "course_room_idx": {
+          "name": "course_room_idx",
+          "columns": [
+            {
+              "expression": "room_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "course_updated_by_idx": {
+          "name": "course_updated_by_idx",
+          "columns": [
+            {
+              "expression": "updated_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "course_organization_fk": {
+          "name": "course_organization_fk",
+          "tableFrom": "course",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "course_room_fk": {
+          "name": "course_room_fk",
+          "tableFrom": "course",
+          "tableTo": "room",
+          "columnsFrom": [
+            "room_id",
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id",
+            "organization_id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "course_updated_by_fk": {
+          "name": "course_updated_by_fk",
+          "tableFrom": "course",
+          "tableTo": "user",
+          "columnsFrom": [
+            "updated_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "course_id_organization_uq": {
+          "name": "course_id_organization_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "organization_id"
+          ]
+        }
+      },
+      "policies": {
+        "course_select": {
+          "name": "course_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"course\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "course_insert": {
+          "name": "course_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_app"
+          ],
+          "withCheck": "\"course\".\"organization_id\" = (select jadwal.current_org_id()) and (\"course\".\"updated_by\" is null or exists (select 1 from \"user\" u where u.\"id\" = \"course\".\"updated_by\"))"
+        },
+        "course_update": {
+          "name": "course_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"course\".\"organization_id\" = (select jadwal.current_org_id())",
+          "withCheck": "\"course\".\"organization_id\" = (select jadwal.current_org_id()) and (\"course\".\"updated_by\" is null or exists (select 1 from \"user\" u where u.\"id\" = \"course\".\"updated_by\"))"
+        },
+        "course_delete": {
+          "name": "course_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"course\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "course_superadmin_select": {
+          "name": "course_superadmin_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"course\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "course_superadmin_insert": {
+          "name": "course_superadmin_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "withCheck": "\"course\".\"organization_id\" = (select jadwal.current_org_id()) and (\"course\".\"updated_by\" is null or exists (select 1 from \"user\" u where u.\"id\" = \"course\".\"updated_by\"))"
+        },
+        "course_superadmin_update": {
+          "name": "course_superadmin_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"course\".\"organization_id\" = (select jadwal.current_org_id())",
+          "withCheck": "\"course\".\"organization_id\" = (select jadwal.current_org_id()) and (\"course\".\"updated_by\" is null or exists (select 1 from \"user\" u where u.\"id\" = \"course\".\"updated_by\"))"
+        },
+        "course_superadmin_delete": {
+          "name": "course_superadmin_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"course\".\"organization_id\" = (select jadwal.current_org_id())"
+        }
+      },
+      "checkConstraints": {
+        "course_id_uuid_v7_ck": {
+          "name": "course_id_uuid_v7_ck",
+          "value": "(\"course\".\"id\"::text ~ '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$') is true"
+        },
+        "course_status_ck": {
+          "name": "course_status_ck",
+          "value": "(\"course\".\"status\" in ('draft', 'published', 'archived')) is true"
+        },
+        "course_audience_ck": {
+          "name": "course_audience_ck",
+          "value": "(\"course\".\"audience\" in ('kids', 'youth', 'women', 'adults', 'open')) is true"
+        },
+        "course_teaching_language_ck": {
+          "name": "course_teaching_language_ck",
+          "value": "(cardinality(\"course\".\"teaching_language\") >= 1 and array_position(\"course\".\"teaching_language\", null) is null) is true"
+        },
+        "course_ends_on_ck": {
+          "name": "course_ends_on_ck",
+          "value": "(\"course\".\"ends_on\" is null or \"course\".\"ends_on\" >= \"course\".\"starts_on\") is true"
+        },
+        "course_sequence_ck": {
+          "name": "course_sequence_ck",
+          "value": "(\"course\".\"sequence\" >= 0) is true"
+        },
+        "course_recurrence_kind_ck": {
+          "name": "course_recurrence_kind_ck",
+          "value": "(\"course\".\"recurrence_kind\" in ('weekly', 'monthly', 'dates')) is true"
+        },
+        "course_timing_kind_ck": {
+          "name": "course_timing_kind_ck",
+          "value": "(\"course\".\"timing_kind\" in ('fixed', 'prayer')) is true"
+        },
+        "course_recurrence_shape_ck": {
+          "name": "course_recurrence_shape_ck",
+          "value": "(case \"course\".\"recurrence_kind\"\n\t\t\t\twhen 'weekly' then\n\t\t\t\t\t\"course\".\"recurrence_weekday\" is not null\n\t\t\t\t\tand cardinality(\"course\".\"recurrence_weekday\") between 1 and 7\n\t\t\t\t\tand \"course\".\"recurrence_weekday\" <@ array[1,2,3,4,5,6,7]::smallint[]\n\t\t\t\t\tand jadwal.has_no_duplicate(\"course\".\"recurrence_weekday\")\n\t\t\t\t\tand \"course\".\"recurrence_interval\" in (1, 2)\n\t\t\t\t\tand \"course\".\"recurrence_anchor_date\" is not null\n\t\t\t\t\tand \"course\".\"recurrence_ordinal_weekday\" is null and \"course\".\"recurrence_ordinal\" is null\n\t\t\t\t\tand \"course\".\"recurrence_date\" is null\n\t\t\t\twhen 'monthly' then\n\t\t\t\t\t\"course\".\"recurrence_ordinal_weekday\" between 1 and 7\n\t\t\t\t\tand \"course\".\"recurrence_ordinal\" in (1, 2, 3, 4, -1)\n\t\t\t\t\tand \"course\".\"recurrence_weekday\" is null and \"course\".\"recurrence_interval\" is null\n\t\t\t\t\tand \"course\".\"recurrence_anchor_date\" is null and \"course\".\"recurrence_date\" is null\n\t\t\t\twhen 'dates' then\n\t\t\t\t\t\"course\".\"recurrence_date\" is not null\n\t\t\t\t\tand cardinality(\"course\".\"recurrence_date\") >= 1\n\t\t\t\t\tand jadwal.has_no_duplicate(\"course\".\"recurrence_date\")\n\t\t\t\t\tand \"course\".\"recurrence_weekday\" is null and \"course\".\"recurrence_interval\" is null\n\t\t\t\t\tand \"course\".\"recurrence_anchor_date\" is null and \"course\".\"recurrence_ordinal_weekday\" is null\n\t\t\t\t\tand \"course\".\"recurrence_ordinal\" is null\n\t\t\t\telse false end) is true"
+        },
+        "course_timing_shape_ck": {
+          "name": "course_timing_shape_ck",
+          "value": "(case \"course\".\"timing_kind\"\n\t\t\t\twhen 'fixed' then\n\t\t\t\t\t\"course\".\"timing_start\" is not null and \"course\".\"timing_end\" is not null\n\t\t\t\t\tand \"course\".\"timing_start\" < time '24:00:00' and extract(second from \"course\".\"timing_start\") = 0 and \"course\".\"timing_end\" < time '24:00:00' and extract(second from \"course\".\"timing_end\") = 0\n\t\t\t\t\tand \"course\".\"timing_prayer\" is null and \"course\".\"timing_offset_minutes\" is null\n\t\t\t\t\tand \"course\".\"timing_duration_minutes\" is null\n\t\t\t\twhen 'prayer' then\n\t\t\t\t\t\"course\".\"timing_prayer\" in ('fajr', 'dhuhr', 'asr', 'maghrib', 'isha')\n\t\t\t\t\tand \"course\".\"timing_offset_minutes\" between -120 and 240\n\t\t\t\t\tand \"course\".\"timing_duration_minutes\" between 5 and 1440\n\t\t\t\t\tand \"course\".\"timing_start\" is null and \"course\".\"timing_end\" is null\n\t\t\t\telse false end) is true"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.course_translation": {
+      "name": "course_translation",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "course_id": {
+          "name": "course_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "language": {
+          "name": "language",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "course_translation_course_idx": {
+          "name": "course_translation_course_idx",
+          "columns": [
+            {
+              "expression": "course_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "course_translation_organization_idx": {
+          "name": "course_translation_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "course_translation_organization_language_idx": {
+          "name": "course_translation_organization_language_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "language",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "course_translation_course_fk": {
+          "name": "course_translation_course_fk",
+          "tableFrom": "course_translation",
+          "tableTo": "course",
+          "columnsFrom": [
+            "course_id",
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id",
+            "organization_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "course_translation_course_language_uq": {
+          "name": "course_translation_course_language_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "course_id",
+            "language"
+          ]
+        }
+      },
+      "policies": {
+        "course_translation_select": {
+          "name": "course_translation_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"course_translation\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "course_translation_insert": {
+          "name": "course_translation_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_app"
+          ],
+          "withCheck": "\"course_translation\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "course_translation_update": {
+          "name": "course_translation_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"course_translation\".\"organization_id\" = (select jadwal.current_org_id())",
+          "withCheck": "\"course_translation\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "course_translation_delete": {
+          "name": "course_translation_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"course_translation\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "course_translation_superadmin_select": {
+          "name": "course_translation_superadmin_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"course_translation\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "course_translation_superadmin_insert": {
+          "name": "course_translation_superadmin_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "withCheck": "\"course_translation\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "course_translation_superadmin_update": {
+          "name": "course_translation_superadmin_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"course_translation\".\"organization_id\" = (select jadwal.current_org_id())",
+          "withCheck": "\"course_translation\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "course_translation_superadmin_delete": {
+          "name": "course_translation_superadmin_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"course_translation\".\"organization_id\" = (select jadwal.current_org_id())"
+        }
+      },
+      "checkConstraints": {
+        "course_translation_id_uuid_v7_ck": {
+          "name": "course_translation_id_uuid_v7_ck",
+          "value": "(\"course_translation\".\"id\"::text ~ '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$') is true"
+        },
+        "course_translation_title_ck": {
+          "name": "course_translation_title_ck",
+          "value": "(length(btrim(\"course_translation\".\"title\")) > 0) is true"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.invitation": {
+      "name": "invitation",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "invited_by": {
+          "name": "invited_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resolved_at": {
+          "name": "resolved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "accepted_by": {
+          "name": "accepted_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "invitation_pending_uq": {
+          "name": "invitation_pending_uq",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lower(\"email\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"invitation\".\"status\" = 'pending'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "invitation_organization_idx": {
+          "name": "invitation_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "invitation_email_idx": {
+          "name": "invitation_email_idx",
+          "columns": [
+            {
+              "expression": "lower(\"email\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "invitation_invited_by_idx": {
+          "name": "invitation_invited_by_idx",
+          "columns": [
+            {
+              "expression": "invited_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "invitation_accepted_by_idx": {
+          "name": "invitation_accepted_by_idx",
+          "columns": [
+            {
+              "expression": "accepted_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "invitation_organization_fk": {
+          "name": "invitation_organization_fk",
+          "tableFrom": "invitation",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "invitation_invited_by_fk": {
+          "name": "invitation_invited_by_fk",
+          "tableFrom": "invitation",
+          "tableTo": "user",
+          "columnsFrom": [
+            "invited_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "invitation_accepted_by_fk": {
+          "name": "invitation_accepted_by_fk",
+          "tableFrom": "invitation",
+          "tableTo": "user",
+          "columnsFrom": [
+            "accepted_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "invitation_select": {
+          "name": "invitation_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"invitation\".\"organization_id\" = (select jadwal.current_org_id())\n\t\t\t\tor exists (\n\t\t\t\t\tselect 1 from \"user\" u\n\t\t\t\t\twhere u.\"id\" = (select jadwal.current_user_id()) and lower(u.\"email\") = lower(\"invitation\".\"email\")\n\t\t\t\t)"
+        },
+        "invitation_insert": {
+          "name": "invitation_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_app"
+          ],
+          "withCheck": "\"invitation\".\"organization_id\" = (select jadwal.current_org_id())\n\t\t\t\tand (\"invitation\".\"invited_by\" is null or exists (select 1 from \"user\" u where u.\"id\" = \"invitation\".\"invited_by\"))"
+        },
+        "invitation_update": {
+          "name": "invitation_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"invitation\".\"organization_id\" = (select jadwal.current_org_id())\n\t\t\t\tor exists (\n\t\t\t\t\tselect 1 from \"user\" u\n\t\t\t\t\twhere u.\"id\" = (select jadwal.current_user_id()) and lower(u.\"email\") = lower(\"invitation\".\"email\")\n\t\t\t\t)",
+          "withCheck": "\"invitation\".\"organization_id\" = (select jadwal.current_org_id())\n\t\t\t\tor exists (\n\t\t\t\t\tselect 1 from \"user\" u\n\t\t\t\t\twhere u.\"id\" = (select jadwal.current_user_id()) and lower(u.\"email\") = lower(\"invitation\".\"email\")\n\t\t\t\t)"
+        },
+        "invitation_delete": {
+          "name": "invitation_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"invitation\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "invitation_superadmin_select": {
+          "name": "invitation_superadmin_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"invitation\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "invitation_superadmin_insert": {
+          "name": "invitation_superadmin_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "withCheck": "\"invitation\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "invitation_superadmin_update": {
+          "name": "invitation_superadmin_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"invitation\".\"organization_id\" = (select jadwal.current_org_id())",
+          "withCheck": "\"invitation\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "invitation_superadmin_delete": {
+          "name": "invitation_superadmin_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"invitation\".\"organization_id\" = (select jadwal.current_org_id())"
+        }
+      },
+      "checkConstraints": {
+        "invitation_id_uuid_v7_ck": {
+          "name": "invitation_id_uuid_v7_ck",
+          "value": "(\"invitation\".\"id\"::text ~ '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$') is true"
+        },
+        "invitation_status_ck": {
+          "name": "invitation_status_ck",
+          "value": "(\"invitation\".\"status\" in ('pending', 'accepted', 'joined', 'cancelled')) is true"
+        },
+        "invitation_role_ck": {
+          "name": "invitation_role_ck",
+          "value": "(\"invitation\".\"role\" in ('org_admin', 'editor')) is true"
+        },
+        "invitation_email_ck": {
+          "name": "invitation_email_ck",
+          "value": "(\"invitation\".\"email\" ~ '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$') is true"
+        },
+        "invitation_expires_at_ck": {
+          "name": "invitation_expires_at_ck",
+          "value": "(\"invitation\".\"expires_at\" > \"invitation\".\"created_at\") is true"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.membership": {
+      "name": "membership",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "membership_user_idx": {
+          "name": "membership_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "membership_organization_fk": {
+          "name": "membership_organization_fk",
+          "tableFrom": "membership",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "membership_user_fk": {
+          "name": "membership_user_fk",
+          "tableFrom": "membership",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "membership_organization_user_uq": {
+          "name": "membership_organization_user_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "organization_id",
+            "user_id"
+          ]
+        }
+      },
+      "policies": {
+        "membership_select": {
+          "name": "membership_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"membership\".\"organization_id\" = (select jadwal.current_org_id())\n\t\t\t\tor \"membership\".\"user_id\" = (select jadwal.current_user_id())"
+        },
+        "membership_insert": {
+          "name": "membership_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_app"
+          ],
+          "withCheck": "\"membership\".\"organization_id\" = (select jadwal.current_org_id())\n\t\t\t\tand \"membership\".\"user_id\" = (select jadwal.current_user_id())"
+        },
+        "membership_update": {
+          "name": "membership_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"membership\".\"organization_id\" = (select jadwal.current_org_id())",
+          "withCheck": "\"membership\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "membership_delete": {
+          "name": "membership_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"membership\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "membership_superadmin_select": {
+          "name": "membership_superadmin_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"membership\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "membership_superadmin_insert": {
+          "name": "membership_superadmin_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "withCheck": "\"membership\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "membership_superadmin_update": {
+          "name": "membership_superadmin_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"membership\".\"organization_id\" = (select jadwal.current_org_id())",
+          "withCheck": "\"membership\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "membership_superadmin_delete": {
+          "name": "membership_superadmin_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"membership\".\"organization_id\" = (select jadwal.current_org_id())"
+        }
+      },
+      "checkConstraints": {
+        "membership_id_uuid_v7_ck": {
+          "name": "membership_id_uuid_v7_ck",
+          "value": "(\"membership\".\"id\"::text ~ '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$') is true"
+        },
+        "membership_role_ck": {
+          "name": "membership_role_ck",
+          "value": "(\"membership\".\"role\" in ('org_admin', 'editor')) is true"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.organization": {
+      "name": "organization",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "time_zone": {
+          "name": "time_zone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "accent_color": {
+          "name": "accent_color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'#0f766e'"
+        },
+        "default_language": {
+          "name": "default_language",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "enabled_language": {
+          "name": "enabled_language",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "plan": {
+          "name": "plan",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'free'"
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "organization_slug_uq": {
+          "name": "organization_slug_uq",
+          "columns": [
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "organization_select": {
+          "name": "organization_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"organization\".\"id\" = (select jadwal.current_org_id())\n\t\t\t\tor exists (\n\t\t\t\t\tselect 1 from \"invitation\" i\n\t\t\t\t\tjoin \"user\" u on lower(u.\"email\") = lower(i.\"email\")\n\t\t\t\t\twhere i.\"organization_id\" = \"organization\".\"id\"\n\t\t\t\t\t\tand i.\"status\" = 'pending' and i.\"expires_at\" > now()\n\t\t\t\t\t\tand u.\"id\" = (select jadwal.current_user_id())\n\t\t\t\t)"
+        },
+        "organization_update": {
+          "name": "organization_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"organization\".\"id\" = (select jadwal.current_org_id())",
+          "withCheck": "\"organization\".\"id\" = (select jadwal.current_org_id())"
+        },
+        "organization_superadmin_select": {
+          "name": "organization_superadmin_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "true"
+        },
+        "organization_superadmin_insert": {
+          "name": "organization_superadmin_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "withCheck": "true"
+        },
+        "organization_superadmin_update": {
+          "name": "organization_superadmin_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "true",
+          "withCheck": "true"
+        },
+        "organization_superadmin_delete": {
+          "name": "organization_superadmin_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "true"
+        }
+      },
+      "checkConstraints": {
+        "organization_id_uuid_v7_ck": {
+          "name": "organization_id_uuid_v7_ck",
+          "value": "(\"organization\".\"id\"::text ~ '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$') is true"
+        },
+        "organization_slug_ck": {
+          "name": "organization_slug_ck",
+          "value": "(\"organization\".\"slug\" ~ '^[a-z0-9]+(-[a-z0-9]+)*$') is true"
+        },
+        "organization_accent_color_ck": {
+          "name": "organization_accent_color_ck",
+          "value": "(\"organization\".\"accent_color\" ~ '^#[0-9a-fA-F]{6}$') is true"
+        },
+        "organization_plan_ck": {
+          "name": "organization_plan_ck",
+          "value": "(\"organization\".\"plan\" in ('free', 'sponsored', 'paid')) is true"
+        },
+        "organization_status_ck": {
+          "name": "organization_status_ck",
+          "value": "(\"organization\".\"status\" in ('active', 'suspended')) is true"
+        },
+        "organization_language_ck": {
+          "name": "organization_language_ck",
+          "value": "(cardinality(\"organization\".\"enabled_language\") >= 1 and array_position(\"organization\".\"enabled_language\", null) is null) is true"
+        },
+        "organization_default_language_ck": {
+          "name": "organization_default_language_ck",
+          "value": "(\"organization\".\"default_language\" = any(\"organization\".\"enabled_language\")) is true"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.passkey": {
+      "name": "passkey",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "public_key": {
+          "name": "public_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "credential_id": {
+          "name": "credential_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "counter": {
+          "name": "counter",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "device_type": {
+          "name": "device_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "backed_up": {
+          "name": "backed_up",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "transports": {
+          "name": "transports",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "aaguid": {
+          "name": "aaguid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "passkey_credential_uq": {
+          "name": "passkey_credential_uq",
+          "columns": [
+            {
+              "expression": "credential_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "passkey_user_idx": {
+          "name": "passkey_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "passkey_user_fk": {
+          "name": "passkey_user_fk",
+          "tableFrom": "passkey",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "passkey_auth_select": {
+          "name": "passkey_auth_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_auth"
+          ],
+          "using": "true"
+        },
+        "passkey_auth_insert": {
+          "name": "passkey_auth_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_auth"
+          ],
+          "withCheck": "true"
+        },
+        "passkey_auth_update": {
+          "name": "passkey_auth_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_auth"
+          ],
+          "using": "true",
+          "withCheck": "true"
+        },
+        "passkey_auth_delete": {
+          "name": "passkey_auth_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_auth"
+          ],
+          "using": "true"
+        }
+      },
+      "checkConstraints": {
+        "passkey_id_uuid_v7_ck": {
+          "name": "passkey_id_uuid_v7_ck",
+          "value": "(\"passkey\".\"id\"::text ~ '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$') is true"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.pause": {
+      "name": "pause",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "course_id": {
+          "name": "course_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "from_date": {
+          "name": "from_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "to_date": {
+          "name": "to_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "pause_organization_range_idx": {
+          "name": "pause_organization_range_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "from_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "to_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "pause_course_idx": {
+          "name": "pause_course_idx",
+          "columns": [
+            {
+              "expression": "course_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "pause_created_by_idx": {
+          "name": "pause_created_by_idx",
+          "columns": [
+            {
+              "expression": "created_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "pause_organization_fk": {
+          "name": "pause_organization_fk",
+          "tableFrom": "pause",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "pause_course_fk": {
+          "name": "pause_course_fk",
+          "tableFrom": "pause",
+          "tableTo": "course",
+          "columnsFrom": [
+            "course_id",
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id",
+            "organization_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "pause_created_by_fk": {
+          "name": "pause_created_by_fk",
+          "tableFrom": "pause",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "pause_select": {
+          "name": "pause_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"pause\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "pause_insert": {
+          "name": "pause_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_app"
+          ],
+          "withCheck": "\"pause\".\"organization_id\" = (select jadwal.current_org_id()) and (\"pause\".\"created_by\" is null or exists (select 1 from \"user\" u where u.\"id\" = \"pause\".\"created_by\"))"
+        },
+        "pause_update": {
+          "name": "pause_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"pause\".\"organization_id\" = (select jadwal.current_org_id())",
+          "withCheck": "\"pause\".\"organization_id\" = (select jadwal.current_org_id()) and (\"pause\".\"created_by\" is null or exists (select 1 from \"user\" u where u.\"id\" = \"pause\".\"created_by\"))"
+        },
+        "pause_delete": {
+          "name": "pause_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"pause\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "pause_superadmin_select": {
+          "name": "pause_superadmin_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"pause\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "pause_superadmin_insert": {
+          "name": "pause_superadmin_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "withCheck": "\"pause\".\"organization_id\" = (select jadwal.current_org_id()) and (\"pause\".\"created_by\" is null or exists (select 1 from \"user\" u where u.\"id\" = \"pause\".\"created_by\"))"
+        },
+        "pause_superadmin_update": {
+          "name": "pause_superadmin_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"pause\".\"organization_id\" = (select jadwal.current_org_id())",
+          "withCheck": "\"pause\".\"organization_id\" = (select jadwal.current_org_id()) and (\"pause\".\"created_by\" is null or exists (select 1 from \"user\" u where u.\"id\" = \"pause\".\"created_by\"))"
+        },
+        "pause_superadmin_delete": {
+          "name": "pause_superadmin_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"pause\".\"organization_id\" = (select jadwal.current_org_id())"
+        }
+      },
+      "checkConstraints": {
+        "pause_id_uuid_v7_ck": {
+          "name": "pause_id_uuid_v7_ck",
+          "value": "(\"pause\".\"id\"::text ~ '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$') is true"
+        },
+        "pause_range_ck": {
+          "name": "pause_range_ck",
+          "value": "(\"pause\".\"to_date\" >= \"pause\".\"from_date\") is true"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.prayer_day": {
+      "name": "prayer_day",
+      "schema": "",
+      "columns": {
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fajr": {
+          "name": "fajr",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dhuhr": {
+          "name": "dhuhr",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "asr": {
+          "name": "asr",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "maghrib": {
+          "name": "maghrib",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "isha": {
+          "name": "isha",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "prayer_day_organization_fk": {
+          "name": "prayer_day_organization_fk",
+          "tableFrom": "prayer_day",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "prayer_day_pk": {
+          "name": "prayer_day_pk",
+          "columns": [
+            "organization_id",
+            "date"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "prayer_day_select": {
+          "name": "prayer_day_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"prayer_day\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "prayer_day_insert": {
+          "name": "prayer_day_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_app"
+          ],
+          "withCheck": "\"prayer_day\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "prayer_day_update": {
+          "name": "prayer_day_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"prayer_day\".\"organization_id\" = (select jadwal.current_org_id())",
+          "withCheck": "\"prayer_day\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "prayer_day_delete": {
+          "name": "prayer_day_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"prayer_day\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "prayer_day_superadmin_select": {
+          "name": "prayer_day_superadmin_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"prayer_day\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "prayer_day_superadmin_insert": {
+          "name": "prayer_day_superadmin_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "withCheck": "\"prayer_day\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "prayer_day_superadmin_update": {
+          "name": "prayer_day_superadmin_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"prayer_day\".\"organization_id\" = (select jadwal.current_org_id())",
+          "withCheck": "\"prayer_day\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "prayer_day_superadmin_delete": {
+          "name": "prayer_day_superadmin_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"prayer_day\".\"organization_id\" = (select jadwal.current_org_id())"
+        }
+      },
+      "checkConstraints": {
+        "prayer_day_source_ck": {
+          "name": "prayer_day_source_ck",
+          "value": "(\"prayer_day\".\"source\" in ('import', 'computed')) is true"
+        },
+        "prayer_day_time_ck": {
+          "name": "prayer_day_time_ck",
+          "value": "(\"prayer_day\".\"fajr\" < time '24:00:00' and extract(second from \"prayer_day\".\"fajr\") = 0 and \"prayer_day\".\"dhuhr\" < time '24:00:00' and extract(second from \"prayer_day\".\"dhuhr\") = 0 and \"prayer_day\".\"asr\" < time '24:00:00' and extract(second from \"prayer_day\".\"asr\") = 0\n\t\t\t\tand \"prayer_day\".\"maghrib\" < time '24:00:00' and extract(second from \"prayer_day\".\"maghrib\") = 0 and \"prayer_day\".\"isha\" < time '24:00:00' and extract(second from \"prayer_day\".\"isha\") = 0) is true"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.prayer_settings": {
+      "name": "prayer_settings",
+      "schema": "",
+      "columns": {
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "method": {
+          "name": "method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fajr_adjustment": {
+          "name": "fajr_adjustment",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "dhuhr_adjustment": {
+          "name": "dhuhr_adjustment",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "asr_adjustment": {
+          "name": "asr_adjustment",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "maghrib_adjustment": {
+          "name": "maghrib_adjustment",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "isha_adjustment": {
+          "name": "isha_adjustment",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'import'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "prayer_settings_organization_fk": {
+          "name": "prayer_settings_organization_fk",
+          "tableFrom": "prayer_settings",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "prayer_settings_select": {
+          "name": "prayer_settings_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"prayer_settings\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "prayer_settings_insert": {
+          "name": "prayer_settings_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_app"
+          ],
+          "withCheck": "\"prayer_settings\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "prayer_settings_update": {
+          "name": "prayer_settings_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"prayer_settings\".\"organization_id\" = (select jadwal.current_org_id())",
+          "withCheck": "\"prayer_settings\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "prayer_settings_delete": {
+          "name": "prayer_settings_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"prayer_settings\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "prayer_settings_superadmin_select": {
+          "name": "prayer_settings_superadmin_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"prayer_settings\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "prayer_settings_superadmin_insert": {
+          "name": "prayer_settings_superadmin_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "withCheck": "\"prayer_settings\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "prayer_settings_superadmin_update": {
+          "name": "prayer_settings_superadmin_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"prayer_settings\".\"organization_id\" = (select jadwal.current_org_id())",
+          "withCheck": "\"prayer_settings\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "prayer_settings_superadmin_delete": {
+          "name": "prayer_settings_superadmin_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"prayer_settings\".\"organization_id\" = (select jadwal.current_org_id())"
+        }
+      },
+      "checkConstraints": {
+        "prayer_settings_source_ck": {
+          "name": "prayer_settings_source_ck",
+          "value": "(\"prayer_settings\".\"source\" in ('import', 'computed')) is true"
+        },
+        "prayer_settings_adjustment_ck": {
+          "name": "prayer_settings_adjustment_ck",
+          "value": "(\"prayer_settings\".\"fajr_adjustment\" between -120 and 120\n\t\t\t\tand \"prayer_settings\".\"dhuhr_adjustment\" between -120 and 120\n\t\t\t\tand \"prayer_settings\".\"asr_adjustment\" between -120 and 120\n\t\t\t\tand \"prayer_settings\".\"maghrib_adjustment\" between -120 and 120\n\t\t\t\tand \"prayer_settings\".\"isha_adjustment\" between -120 and 120) is true"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.rate_limit": {
+      "name": "rate_limit",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "count": {
+          "name": "count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_request": {
+          "name": "last_request",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "rate_limit_key_uq": {
+          "name": "rate_limit_key_uq",
+          "columns": [
+            {
+              "expression": "key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "rate_limit_auth_select": {
+          "name": "rate_limit_auth_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_auth"
+          ],
+          "using": "true"
+        },
+        "rate_limit_auth_insert": {
+          "name": "rate_limit_auth_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_auth"
+          ],
+          "withCheck": "true"
+        },
+        "rate_limit_auth_update": {
+          "name": "rate_limit_auth_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_auth"
+          ],
+          "using": "true",
+          "withCheck": "true"
+        },
+        "rate_limit_auth_delete": {
+          "name": "rate_limit_auth_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_auth"
+          ],
+          "using": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.room": {
+      "name": "room",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_order": {
+          "name": "display_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "room_organization_idx": {
+          "name": "room_organization_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "room_organization_fk": {
+          "name": "room_organization_fk",
+          "tableFrom": "room",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "room_id_organization_uq": {
+          "name": "room_id_organization_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "organization_id"
+          ]
+        },
+        "room_organization_name_uq": {
+          "name": "room_organization_name_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "organization_id",
+            "name"
+          ]
+        }
+      },
+      "policies": {
+        "room_select": {
+          "name": "room_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"room\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "room_insert": {
+          "name": "room_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_app"
+          ],
+          "withCheck": "\"room\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "room_update": {
+          "name": "room_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"room\".\"organization_id\" = (select jadwal.current_org_id())",
+          "withCheck": "\"room\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "room_delete": {
+          "name": "room_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"room\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "room_superadmin_select": {
+          "name": "room_superadmin_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"room\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "room_superadmin_insert": {
+          "name": "room_superadmin_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "withCheck": "\"room\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "room_superadmin_update": {
+          "name": "room_superadmin_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"room\".\"organization_id\" = (select jadwal.current_org_id())",
+          "withCheck": "\"room\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "room_superadmin_delete": {
+          "name": "room_superadmin_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"room\".\"organization_id\" = (select jadwal.current_org_id())"
+        }
+      },
+      "checkConstraints": {
+        "room_id_uuid_v7_ck": {
+          "name": "room_id_uuid_v7_ck",
+          "value": "(\"room\".\"id\"::text ~ '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$') is true"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.session": {
+      "name": "session",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ip_address": {
+          "name": "ip_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "active_organization_id": {
+          "name": "active_organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "passkey_verified_at": {
+          "name": "passkey_verified_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "session_token_uq": {
+          "name": "session_token_uq",
+          "columns": [
+            {
+              "expression": "token",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "session_user_idx": {
+          "name": "session_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "session_active_organization_idx": {
+          "name": "session_active_organization_idx",
+          "columns": [
+            {
+              "expression": "active_organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "session_user_fk": {
+          "name": "session_user_fk",
+          "tableFrom": "session",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "session_active_organization_fk": {
+          "name": "session_active_organization_fk",
+          "tableFrom": "session",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "active_organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "session_auth_select": {
+          "name": "session_auth_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_auth"
+          ],
+          "using": "true"
+        },
+        "session_auth_insert": {
+          "name": "session_auth_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_auth"
+          ],
+          "withCheck": "true"
+        },
+        "session_auth_update": {
+          "name": "session_auth_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_auth"
+          ],
+          "using": "true",
+          "withCheck": "true"
+        },
+        "session_auth_delete": {
+          "name": "session_auth_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_auth"
+          ],
+          "using": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.session_exception": {
+      "name": "session_exception",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "course_id": {
+          "name": "course_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "to_date": {
+          "name": "to_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "to_start": {
+          "name": "to_start",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "session_exception_course_idx": {
+          "name": "session_exception_course_idx",
+          "columns": [
+            {
+              "expression": "course_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "session_exception_created_by_idx": {
+          "name": "session_exception_created_by_idx",
+          "columns": [
+            {
+              "expression": "created_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "session_exception_organization_date_idx": {
+          "name": "session_exception_organization_date_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "session_exception_course_fk": {
+          "name": "session_exception_course_fk",
+          "tableFrom": "session_exception",
+          "tableTo": "course",
+          "columnsFrom": [
+            "course_id",
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id",
+            "organization_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "session_exception_created_by_fk": {
+          "name": "session_exception_created_by_fk",
+          "tableFrom": "session_exception",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "session_exception_course_date_uq": {
+          "name": "session_exception_course_date_uq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "course_id",
+            "date"
+          ]
+        }
+      },
+      "policies": {
+        "session_exception_select": {
+          "name": "session_exception_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"session_exception\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "session_exception_insert": {
+          "name": "session_exception_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_app"
+          ],
+          "withCheck": "\"session_exception\".\"organization_id\" = (select jadwal.current_org_id()) and (\"session_exception\".\"created_by\" is null or exists (select 1 from \"user\" u where u.\"id\" = \"session_exception\".\"created_by\"))"
+        },
+        "session_exception_update": {
+          "name": "session_exception_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"session_exception\".\"organization_id\" = (select jadwal.current_org_id())",
+          "withCheck": "\"session_exception\".\"organization_id\" = (select jadwal.current_org_id()) and (\"session_exception\".\"created_by\" is null or exists (select 1 from \"user\" u where u.\"id\" = \"session_exception\".\"created_by\"))"
+        },
+        "session_exception_delete": {
+          "name": "session_exception_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"session_exception\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "session_exception_superadmin_select": {
+          "name": "session_exception_superadmin_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"session_exception\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "session_exception_superadmin_insert": {
+          "name": "session_exception_superadmin_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "withCheck": "\"session_exception\".\"organization_id\" = (select jadwal.current_org_id()) and (\"session_exception\".\"created_by\" is null or exists (select 1 from \"user\" u where u.\"id\" = \"session_exception\".\"created_by\"))"
+        },
+        "session_exception_superadmin_update": {
+          "name": "session_exception_superadmin_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"session_exception\".\"organization_id\" = (select jadwal.current_org_id())",
+          "withCheck": "\"session_exception\".\"organization_id\" = (select jadwal.current_org_id()) and (\"session_exception\".\"created_by\" is null or exists (select 1 from \"user\" u where u.\"id\" = \"session_exception\".\"created_by\"))"
+        },
+        "session_exception_superadmin_delete": {
+          "name": "session_exception_superadmin_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "\"session_exception\".\"organization_id\" = (select jadwal.current_org_id())"
+        }
+      },
+      "checkConstraints": {
+        "session_exception_id_uuid_v7_ck": {
+          "name": "session_exception_id_uuid_v7_ck",
+          "value": "(\"session_exception\".\"id\"::text ~ '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$') is true"
+        },
+        "session_exception_kind_ck": {
+          "name": "session_exception_kind_ck",
+          "value": "(\"session_exception\".\"kind\" in ('cancelled', 'moved')) is true"
+        },
+        "session_exception_shape_ck": {
+          "name": "session_exception_shape_ck",
+          "value": "(case \"session_exception\".\"kind\"\n\t\t\t\twhen 'cancelled' then \"session_exception\".\"to_date\" is null and \"session_exception\".\"to_start\" is null\n\t\t\t\twhen 'moved' then \"session_exception\".\"to_date\" is not null and \"session_exception\".\"to_start\" is not null\n\t\t\t\t\tand \"session_exception\".\"to_start\" < time '24:00:00' and extract(second from \"session_exception\".\"to_start\") = 0\n\t\t\t\telse false end) is true"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.support_access": {
+      "name": "support_access",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "opened_by": {
+          "name": "opened_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "opened_at": {
+          "name": "opened_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "revoked_at": {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "support_access_open_idx": {
+          "name": "support_access_open_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "support_access_opened_by_idx": {
+          "name": "support_access_opened_by_idx",
+          "columns": [
+            {
+              "expression": "opened_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "support_access_organization_fk": {
+          "name": "support_access_organization_fk",
+          "tableFrom": "support_access",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "support_access_opened_by_fk": {
+          "name": "support_access_opened_by_fk",
+          "tableFrom": "support_access",
+          "tableTo": "user",
+          "columnsFrom": [
+            "opened_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "support_access_select": {
+          "name": "support_access_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"support_access\".\"organization_id\" = (select jadwal.current_org_id())"
+        },
+        "support_access_superadmin_select": {
+          "name": "support_access_superadmin_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "true"
+        },
+        "support_access_superadmin_insert": {
+          "name": "support_access_superadmin_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "withCheck": "true"
+        },
+        "support_access_superadmin_update": {
+          "name": "support_access_superadmin_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "true",
+          "withCheck": "true"
+        }
+      },
+      "checkConstraints": {
+        "support_access_id_uuid_v7_ck": {
+          "name": "support_access_id_uuid_v7_ck",
+          "value": "(\"support_access\".\"id\"::text ~ '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$') is true"
+        },
+        "support_access_reason_ck": {
+          "name": "support_access_reason_ck",
+          "value": "(length(btrim(\"support_access\".\"reason\")) >= 10) is true"
+        },
+        "support_access_window_ck": {
+          "name": "support_access_window_ck",
+          "value": "(\"support_access\".\"expires_at\" > \"support_access\".\"opened_at\"\n\t\t\t\tand \"support_access\".\"expires_at\" <= \"support_access\".\"opened_at\" + interval '24 hours') is true"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.user": {
+      "name": "user",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email_verified": {
+          "name": "email_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "image": {
+          "name": "image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_super_admin": {
+          "name": "is_super_admin",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "user_email_uq": {
+          "name": "user_email_uq",
+          "columns": [
+            {
+              "expression": "lower(\"email\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "user_select": {
+          "name": "user_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_app"
+          ],
+          "using": "\"user\".\"id\" = (select jadwal.current_user_id()) or exists (\n\t\t\t\tselect 1 from \"membership\" m\n\t\t\t\twhere m.\"user_id\" = \"user\".\"id\" and m.\"organization_id\" = (select jadwal.current_org_id())\n\t\t\t)"
+        },
+        "user_auth_select": {
+          "name": "user_auth_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_auth"
+          ],
+          "using": "true"
+        },
+        "user_auth_insert": {
+          "name": "user_auth_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_auth"
+          ],
+          "withCheck": "\"user\".\"is_super_admin\" = false"
+        },
+        "user_auth_update": {
+          "name": "user_auth_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_auth"
+          ],
+          "using": "true",
+          "withCheck": "true"
+        },
+        "user_superadmin_select": {
+          "name": "user_superadmin_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_superadmin"
+          ],
+          "using": "true"
+        }
+      },
+      "checkConstraints": {
+        "user_id_uuid_v7_ck": {
+          "name": "user_id_uuid_v7_ck",
+          "value": "(\"user\".\"id\"::text ~ '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$') is true"
+        },
+        "user_email_ck": {
+          "name": "user_email_ck",
+          "value": "(\"user\".\"email\" ~ '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$') is true"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.verification": {
+      "name": "verification",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "identifier": {
+          "name": "identifier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "verification_identifier_idx": {
+          "name": "verification_identifier_idx",
+          "columns": [
+            {
+              "expression": "identifier",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "verification_expires_at_idx": {
+          "name": "verification_expires_at_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "verification_auth_select": {
+          "name": "verification_auth_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "jadwal_auth"
+          ],
+          "using": "true"
+        },
+        "verification_auth_insert": {
+          "name": "verification_auth_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "jadwal_auth"
+          ],
+          "withCheck": "true"
+        },
+        "verification_auth_update": {
+          "name": "verification_auth_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "jadwal_auth"
+          ],
+          "using": "true",
+          "withCheck": "true"
+        },
+        "verification_auth_delete": {
+          "name": "verification_auth_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "jadwal_auth"
+          ],
+          "using": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

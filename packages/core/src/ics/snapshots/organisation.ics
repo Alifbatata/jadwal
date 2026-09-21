@@ -1,0 +1,133 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//jadwal.example//jadwal//FR
+NAME:Communauté de Bienne\, cours\; 2026-2027
+X-WR-CALNAME:Communauté de Bienne\, cours\; 2026-2027
+REFRESH-INTERVAL;VALUE=DURATION:PT1H
+X-PUBLISHED-TTL:PT1H
+X-WR-TIMEZONE:Europe/Zurich
+BEGIN:VTIMEZONE
+TZID:Europe/Zurich
+X-LIC-LOCATION:Europe/Zurich
+LAST-MODIFIED:20260715T220651Z
+BEGIN:DAYLIGHT
+TZNAME:CEST
+TZOFFSETFROM:+0100
+TZOFFSETTO:+0200
+DTSTART:19700329T020000
+RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU
+END:DAYLIGHT
+BEGIN:STANDARD
+TZNAME:CET
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0100
+DTSTART:19701025T030000
+RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:arabic-1@jadwal.example
+SEQUENCE:3
+DTSTAMP:20260920T080000Z
+DTSTART;TZID=Europe/Zurich:20260902T190000
+DTEND;TZID=Europe/Zurich:20260902T210000
+RRULE:FREQ=WEEKLY;INTERVAL=1;WKST=MO;BYDAY=MO,WE;UNTIL=20261216T225959Z
+EXDATE;TZID=Europe/Zurich:20260909T190000,20261005T190000,20261007T190000,
+ 20261012T190000,20261014T190000
+SUMMARY:Arabe\, niveau 1\; العربية 📖
+LOCATION:Salle 2\, Centre culturel\, Bienne
+DESCRIPTION:Manuel : tome 1\, leçons 1 à 5.\nApporter un cahier\; pas de
+  manuel numérique.
+URL;VALUE=URI:https://example.org/cours/arabe-1
+END:VEVENT
+BEGIN:VEVENT
+UID:arabic-1@jadwal.example
+SEQUENCE:3
+DTSTAMP:20260920T080000Z
+DTSTART;TZID=Europe/Zurich:20260915T200000
+DTEND;TZID=Europe/Zurich:20260915T220000
+RECURRENCE-ID;TZID=Europe/Zurich:20260914T190000
+SUMMARY:Arabe\, niveau 1\; العربية 📖
+LOCATION:Salle 2\, Centre culturel\, Bienne
+DESCRIPTION:Manuel : tome 1\, leçons 1 à 5.\nApporter un cahier\; pas de
+  manuel numérique.
+URL;VALUE=URI:https://example.org/cours/arabe-1
+END:VEVENT
+BEGIN:VEVENT
+UID:seminar-2026-09-25@jadwal.example
+SEQUENCE:1
+DTSTAMP:20260920T080000Z
+DTSTART;TZID=Europe/Zurich:20260925T213000
+DTEND;TZID=Europe/Zurich:20260926T003000
+SUMMARY:Séminaire « Fiqh » 🕌
+LOCATION:Salle 1
+DESCRIPTION:Cycle de trois soirées \; la séance se termine après minuit
+ .\nEntrée libre\, inscription conseillée.
+END:VEVENT
+BEGIN:VEVENT
+UID:seminar-2026-10-02@jadwal.example
+SEQUENCE:1
+DTSTAMP:20260920T080000Z
+DTSTART;TZID=Europe/Zurich:20261003T180000
+DTEND;TZID=Europe/Zurich:20261003T210000
+SUMMARY:Séminaire « Fiqh » 🕌
+LOCATION:Salle 1
+DESCRIPTION:Cycle de trois soirées \; la séance se termine après minuit
+ .\nEntrée libre\, inscription conseillée.
+END:VEVENT
+BEGIN:VEVENT
+UID:tafsir-2026-09-18@jadwal.example
+SEQUENCE:2
+DTSTAMP:20260920T080000Z
+DTSTART;TZID=Europe/Zurich:20260918T195500
+DTEND;TZID=Europe/Zurich:20260918T205500
+SUMMARY:Tafsir du vendredi
+LOCATION:Grande salle
+DESCRIPTION:Après maghrib (+15 min)\nSourate Al-Kahf\, versets 1 à 10
+URL;VALUE=URI:https://example.org/cours/tafsir
+END:VEVENT
+BEGIN:VEVENT
+UID:tafsir-2026-09-25@jadwal.example
+SEQUENCE:2
+DTSTAMP:20260920T080000Z
+DTSTART;TZID=Europe/Zurich:20260925T194000
+DTEND;TZID=Europe/Zurich:20260925T204000
+SUMMARY:Tafsir du vendredi
+LOCATION:Grande salle
+DESCRIPTION:Après maghrib (+15 min)\nSourate Al-Kahf\, versets 1 à 10
+URL;VALUE=URI:https://example.org/cours/tafsir
+END:VEVENT
+BEGIN:VEVENT
+UID:tafsir-2026-10-02@jadwal.example
+SEQUENCE:2
+DTSTAMP:20260920T080000Z
+DTSTART;TZID=Europe/Zurich:20261002T192500
+DTEND;TZID=Europe/Zurich:20261002T202500
+SUMMARY:Tafsir du vendredi
+LOCATION:Grande salle
+DESCRIPTION:Après maghrib (+15 min)\nSourate Al-Kahf\, versets 1 à 10
+URL;VALUE=URI:https://example.org/cours/tafsir
+END:VEVENT
+BEGIN:VEVENT
+UID:tafsir-2026-10-30@jadwal.example
+SEQUENCE:2
+DTSTAMP:20260920T080000Z
+DTSTART;TZID=Europe/Zurich:20261030T173000
+DTEND;TZID=Europe/Zurich:20261030T183000
+SUMMARY:Tafsir du vendredi
+LOCATION:Grande salle
+DESCRIPTION:Après maghrib (+15 min)\nSourate Al-Kahf\, versets 1 à 10
+URL;VALUE=URI:https://example.org/cours/tafsir
+END:VEVENT
+BEGIN:VEVENT
+UID:tajwid@jadwal.example
+SEQUENCE:0
+DTSTAMP:20260920T080000Z
+DTSTART;TZID=Europe/Zurich:20260926T100000
+DTEND;TZID=Europe/Zurich:20260926T120000
+RRULE:FREQ=MONTHLY;BYDAY=-1SA
+SUMMARY:Tajwid\, groupe du samedi
+LOCATION:Salle 1
+DESCRIPTION:Règles de récitation \; niveau intermédiaire.
+END:VEVENT
+END:VCALENDAR

@@ -1,0 +1,54 @@
+# Le modèle du coffre. **Ce fichier-ci n'est pas le coffre** : il ne contient aucune valeur vraie, et
+# c'est le seul des deux qui est dans le dépôt.
+#
+# Le vrai fichier s'appelle `vault.yml`, il est à côté de celui-ci, il est chiffré par
+# `ansible-vault`, et `.gitignore` l'exclut du dépôt pour qu'une inattention ne puisse pas l'y
+# amener en clair.
+#
+# Le créer :
+#   cp group_vars/all/vault.yml.example group_vars/all/vault.yml
+#   # y écrire les vraies valeurs
+#   ansible-vault encrypt group_vars/all/vault.yml
+#
+# Le relire ou le modifier ensuite :
+#   ansible-vault view group_vars/all/vault.yml
+#   ansible-vault edit group_vars/all/vault.yml
+#
+# La phrase de passe du coffre est à l'exploitant. Elle n'est ni dans le dépôt, ni sur le serveur :
+# elle est saisie au moment de jouer le playbook, ou lue dans un fichier hors du dépôt dont
+# `ansible.cfg` donne le chemin (`~/.jadwal-vault-pass`).
+#
+# Les mots de passe de base de données peuvent être engendrés une fois pour toutes :
+#   openssl rand -hex 24
+# Alphanumériques, sans ponctuation : ils passent dans un fichier d'environnement Docker et dans les
+# chaînes de connexion sans échappement, et les scripts qui relisent ce fichier ne s'y perdent pas.
+---
+vault_postgres_password: 000000000000000000000000000000000000000000000000
+vault_db_owner_password: 000000000000000000000000000000000000000000000000
+vault_db_app_password: 000000000000000000000000000000000000000000000000
+vault_db_superadmin_password: 000000000000000000000000000000000000000000000000
+vault_db_auth_password: 000000000000000000000000000000000000000000000000
+vault_db_public_password: 000000000000000000000000000000000000000000000000
+
+# `openssl rand -base64 32`
+vault_better_auth_secret: 0000000000000000000000000000000000000000000=
+
+# Le mot de passe de la boîte d'envoi Infomaniak. Il n'a jamais été écrit dans un prompt, ni dans un
+# fichier du dépôt : il est demandé à l'exploitant au moment de la pose, et il finit ici.
+vault_smtp_password: ''
+
+# Le bloc `[remote]` complet de rclone, tel que `rclone config` l'écrit. Il porte les identifiants de
+# la destination de sauvegarde ; il est posé sur le serveur en 0600 root.
+vault_rclone_conf: |
+  [swissbackup]
+  type = swift
+  user = ...
+  key = ...
+  auth = https://swiss-backup...infomaniak.com/identity/v3
+  domain = default
+  tenant = ...
+
+# Facultatif. Si le paquet GHCR est public — et il peut l'être, jadwal est sous AGPL —, il n'y a rien
+# à mettre ici et le serveur n'a aucun identifiant de registre. C'est un secret de moins.
+vault_ghcr_user: ''
+vault_ghcr_token: ''

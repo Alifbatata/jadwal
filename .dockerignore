@@ -1,0 +1,19 @@
+# Ce qui n'a rien à faire dans le contexte de construction : ni l'historique, ni les sorties de
+# build locales, ni les secrets. Un contexte étroit rend la construction reproductible et rapide.
+.git
+.github
+node_modules
+**/node_modules
+**/build
+**/dist
+**/.svelte-kit
+**/coverage
+**/.vitest
+.env
+.env.*
+!.env.example
+A_LIVRER
+docs
+infra
+*.md
+.courriels

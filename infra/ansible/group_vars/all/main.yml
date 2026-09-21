@@ -1,0 +1,49 @@
+# Les variables non secrètes du déploiement (ADR 0034).
+#
+# Tout ce qui est ici est public : des chemins, des ports, des noms. Ce qui ne l'est pas — mots de
+# passe, identifiants SMTP, identifiants de sauvegarde — est dans `vault.yml`, chiffré par
+# `ansible-vault`, et n'apparaît jamais en clair dans le dépôt.
+---
+# Là où jadwal vit sur le serveur. Tout est sous ces quatre chemins, et les retirer retire jadwal.
+jadwal_racine: /opt/jadwal
+jadwal_etc: /etc/jadwal
+jadwal_etat: /var/lib/jadwal
+jadwal_sauvegardes: /var/backups/jadwal
+
+jadwal_domaine: jadwal.voltia.ch
+jadwal_origine: 'https://{{ jadwal_domaine }}'
+jadwal_port: 3080
+
+# L'image de production, par digest. Le déploiement la remplace en ligne de commande :
+#   ansible-playbook jadwal.yml -e jadwal_image=ghcr.io/…@sha256:…
+# Une étiquette mouvante est refusée par une assertion du rôle `application` : sans digest, un
+# retour en arrière ne rendrait pas forcément ce qui tournait avant.
+jadwal_image: ''
+
+# Le courriel. L'adresse d'envoi n'est pas lue ; c'est `reply_to` qui reçoit les réponses.
+jadwal_mail_from: noreply@voltia.ch
+jadwal_mail_from_name: jadwal
+jadwal_mail_reply_to: contact@voltia.ch
+jadwal_alerte_to: contact@voltia.ch
+jadwal_smtp_host: mail.infomaniak.com
+jadwal_smtp_port: 587
+jadwal_smtp_user: noreply@voltia.ch
+
+# Les sauvegardes. La clé publique age est publique par définition ; la privée n'est pas ici, et
+# n'est nulle part sur le serveur (ADR 0035).
+jadwal_age_recipient: ''
+jadwal_rclone_remote: ''
+
+# Caddy. Le rechargement est **refusé par défaut** : la première exécution pose le fichier de site,
+# montre ce qu'il contient et s'arrête là. L'exploitant le lit, puis relance avec
+# `-e jadwal_caddy_reload=true`. Recharger le Caddy d'un hôte qui peut servir d'autres sites
+# sans avoir montré ce qu'on y ajoute serait exactement ce que l'étape interdit.
+jadwal_caddy_sites: /etc/caddy/sites
+jadwal_caddy_reload: false
+
+# Les paquets ajoutés à l'hôte. Trois, et tous nécessaires : `age` chiffre les sauvegardes, `rclone`
+# les envoie, `curl` sert à la veille. `openssl` est déjà là sur toute Debian.
+jadwal_paquets:
+  - age
+  - rclone
+  - curl

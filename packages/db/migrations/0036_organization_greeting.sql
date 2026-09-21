@@ -1,0 +1,2 @@
+ALTER TABLE "organization" ADD COLUMN "greeting" text DEFAULT 'Salam alaykoum' NOT NULL;--> statement-breakpoint
+ALTER TABLE "organization" ADD CONSTRAINT "organization_greeting_ck" CHECK ((length(btrim("organization"."greeting")) > 0) is true);

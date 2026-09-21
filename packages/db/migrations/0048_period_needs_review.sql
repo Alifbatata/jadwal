@@ -1,0 +1,1 @@
+ALTER TABLE "prayer_period" ADD COLUMN "needs_review" boolean DEFAULT false NOT NULL;

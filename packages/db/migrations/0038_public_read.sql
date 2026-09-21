@@ -1,0 +1,7 @@
+CREATE POLICY "course_public_select" ON "course" AS PERMISSIVE FOR SELECT TO "jadwal_public" USING (exists (select 1 from "organization" o where o."id" = "course"."organization_id") and "course"."status" = 'published');--> statement-breakpoint
+CREATE POLICY "course_translation_public_select" ON "course_translation" AS PERMISSIVE FOR SELECT TO "jadwal_public" USING (exists (select 1 from "organization" o where o."id" = "course_translation"."organization_id"));--> statement-breakpoint
+CREATE POLICY "organization_public_select" ON "organization" AS PERMISSIVE FOR SELECT TO "jadwal_public" USING ("organization"."status" = 'active');--> statement-breakpoint
+CREATE POLICY "pause_public_select" ON "pause" AS PERMISSIVE FOR SELECT TO "jadwal_public" USING (exists (select 1 from "organization" o where o."id" = "pause"."organization_id"));--> statement-breakpoint
+CREATE POLICY "prayer_day_public_select" ON "prayer_day" AS PERMISSIVE FOR SELECT TO "jadwal_public" USING (exists (select 1 from "organization" o where o."id" = "prayer_day"."organization_id"));--> statement-breakpoint
+CREATE POLICY "room_public_select" ON "room" AS PERMISSIVE FOR SELECT TO "jadwal_public" USING (exists (select 1 from "organization" o where o."id" = "room"."organization_id"));--> statement-breakpoint
+CREATE POLICY "session_exception_public_select" ON "session_exception" AS PERMISSIVE FOR SELECT TO "jadwal_public" USING (exists (select 1 from "organization" o where o."id" = "session_exception"."organization_id"));

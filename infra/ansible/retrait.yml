@@ -1,0 +1,112 @@
+# Retirer jadwal de ce serveur, entièrement, sans toucher à rien d'autre (ADR 0034).
+#
+# Un déploiement qu'on ne sait pas défaire n'est pas réversible : c'est une promesse. Ce playbook est
+# la promesse tenue, et il est joué une fois pour de vrai à l'étape 9 — sur une installation d'essai,
+# pas sur celle de production.
+#
+#   ansible-playbook retrait.yml                  # laisse le volume de données en place
+#   ansible-playbook retrait.yml -e jadwal_effacer_donnees=true   # efface aussi la base
+#
+# Les paquets `age` et `rclone` ne sont pas retirés : ils ont pu être installés pour autre chose, et
+# désinstaller un paquet partagé n'est pas le contraire d'installer le nôtre.
+---
+- name: jadwal — retrait
+  hosts: jadwal
+  gather_facts: false
+  any_errors_fatal: true
+  vars:
+    jadwal_effacer_donnees: false
+
+  tasks:
+    - name: Les minuteries sont désarmées
+      ansible.builtin.systemd_service:
+        name: '{{ item }}'
+        enabled: false
+        state: stopped
+      loop:
+        - jadwal-prieres.timer
+        - jadwal-purges.timer
+        - jadwal-sauvegarde.timer
+        - jadwal-restauration.timer
+        - jadwal-veille.timer
+      become: true
+      failed_when: false
+
+    - name: Les unités sont retirées
+      ansible.builtin.file:
+        path: '/etc/systemd/system/{{ item }}'
+        state: absent
+      loop:
+        - jadwal-alerte@.service
+        - jadwal-prieres.service
+        - jadwal-prieres.timer
+        - jadwal-purges.service
+        - jadwal-purges.timer
+        - jadwal-sauvegarde.service
+        - jadwal-sauvegarde.timer
+        - jadwal-restauration.service
+        - jadwal-restauration.timer
+        - jadwal-veille.service
+        - jadwal-veille.timer
+      become: true
+
+    - name: systemd relit ses unités
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+      become: true
+
+    - name: Le bloc de site est retiré du Caddy de l'hôte
+      ansible.builtin.file:
+        path: '{{ jadwal_caddy_sites }}/{{ jadwal_domaine }}.caddy'
+        state: absent
+      become: true
+      register: bloc_retire
+
+    - name: La configuration de Caddy reste valide sans jadwal
+      ansible.builtin.command: caddy validate --config /etc/caddy/Caddyfile
+      changed_when: false
+      become: true
+      when: bloc_retire.changed
+
+    - name: Caddy est rechargé, les autres sites intacts
+      ansible.builtin.systemd_service:
+        name: caddy
+        state: reloaded
+      become: true
+      when: bloc_retire.changed
+
+    - name: Les conteneurs sont arrêtés et supprimés
+      ansible.builtin.command:
+        cmd: >-
+          docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml
+          --env-file {{ jadwal_etc }}/jadwal.env down --remove-orphans
+          {{ '--volumes' if jadwal_effacer_donnees else '' }}
+      become: true
+      failed_when: false
+      changed_when: true
+
+    - name: Les fichiers de jadwal sont retirés
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: absent
+      loop:
+        - '{{ jadwal_racine }}'
+        - '{{ jadwal_etc }}'
+        - '{{ jadwal_etat }}'
+      become: true
+
+    - name: Les archives locales, seulement si on efface aussi les données
+      ansible.builtin.file:
+        path: '{{ jadwal_sauvegardes }}'
+        state: absent
+      become: true
+      when: jadwal_effacer_donnees
+
+    - name: Ce qui reste, et ce qu'il faut faire à la main
+      ansible.builtin.debug:
+        msg:
+          - "jadwal est retiré. Les autres applications de la machine, le pare-feu et SSH n'ont pas été touchés."
+          - "{{ 'Le volume jadwal_pgdata a été effacé.' if jadwal_effacer_donnees else 'Le volume jadwal_pgdata est CONSERVÉ : docker volume rm jadwal_pgdata pour le supprimer.' }}"
+          - "{{ 'Les archives locales ont été effacées.' if jadwal_effacer_donnees else 'Les archives locales sont conservées dans ' ~ jadwal_sauvegardes }}"
+          - 'Les archives distantes ne sont jamais touchées par ce playbook.'
+          - 'Les paquets age et rclone restent installés : ils ont pu servir à autre chose.'

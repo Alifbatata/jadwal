@@ -1,0 +1,15 @@
+# Le courriel d'échec, en unité séparée (ADR 0036).
+#
+# `OnFailure=jadwal-alerte@%n.service` : systemd remplace `%n` par le nom de l'unité qui vient
+# d'échouer, et le passe ici comme instance (`%i`). Une unité à part, et pas un `ExecStopPost=`,
+# pour une raison précise : si l'envoi du courriel échoue à son tour, il échoue tout seul, sans
+# rendre l'unité d'origine plus rouge qu'elle n'est déjà, et sans boucler.
+[Unit]
+Description=jadwal — prévenir l'exploitant que %i a échoué
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/jadwal/scripts/jadwal-alerte.sh %i
+# Un courriel qui ne part pas en deux minutes ne partira pas.
+TimeoutStartSec=120

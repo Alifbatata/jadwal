@@ -1,0 +1,46 @@
+#!/usr/bin/env sh
+#
+# Contrôle de secrets, avant chaque commit.
+#
+# Il refuse le commit plutôt que de le laisser passer quand l'outil manque : un contrôle de
+# secrets qui s'efface quand il n'est pas là ne contrôle rien. `pnpm hooks` installe ce qu'il
+# faut et dit quoi faire.
+#
+# Ne relit que ce qui est indexé (`--staged`), donc ni les fichiers ignorés, ni le reste de
+# l'arbre de travail : un fichier de secrets posé à la racine et jamais indexé n'est pas lu.
+set -eu
+
+GITLEAKS=$(git config --get jadwal.gitleaks 2>/dev/null || true)
+if [ -z "${GITLEAKS:-}" ]; then
+	if command -v gitleaks >/dev/null 2>&1; then
+		GITLEAKS=gitleaks
+	else
+		cat >&2 <<'FIN'
+
+  Commit refusé : gitleaks est introuvable.
+
+  Ce dépôt refuse de commiter sans contrôle de secrets. Pour l'installer :
+
+      pnpm hooks
+
+  Il télécharge la version épinglée, vérifie son empreinte, et l'enregistre pour ce dépôt.
+
+FIN
+		exit 1
+	fi
+fi
+
+"$GITLEAKS" git --staged --no-banner --redact --exit-code 1 . || {
+	cat >&2 <<'FIN'
+
+  Commit refusé : gitleaks a trouvé ce qui ressemble à un secret dans ce qui est indexé.
+
+  Les valeurs sont masquées ci-dessus, c'est voulu. Retirez le secret de l'index
+  (`git restore --staged <fichier>`), sortez-le du dépôt, et recommencez.
+
+  Si c'est un faux positif — une valeur d'exemple, une empreinte publique — ajoutez-lui
+  un commentaire `gitleaks:allow` sur la même ligne, et dites-le dans le message de commit.
+
+FIN
+	exit 1
+}

@@ -1,0 +1,13 @@
+[Unit]
+Description=jadwal — test hebdomadaire de restauration dans une base jetable
+Documentation=file:/opt/jadwal/docs/EXPLOITATION.md
+Requires=docker.service
+After=docker.service
+OnFailure=jadwal-alerte@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/jadwal/scripts/jadwal-restauration.sh
+TimeoutStartSec=3600
+Nice=15
+IOSchedulingClass=idle

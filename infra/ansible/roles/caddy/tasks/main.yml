@@ -1,0 +1,85 @@
+# Le bloc de site dans le Caddy de l'hôte (ADR 0034).
+#
+# C'est le seul endroit où ce playbook approche un service déjà en fonctionnement sur la machine.
+# Trois précautions, dans cet ordre :
+#
+#   1. on vérifie que le Caddyfile de l'hôte importe bien un répertoire de sites. S'il ne le fait
+#      pas, on ne pose rien et on le dit : ajouter un `import` à la main dans la configuration d'un
+#      Caddy en service n'est pas une modification additive ;
+#   2. on pose le fichier, et on montre son contenu ;
+#   3. on ne recharge **que** si `jadwal_caddy_reload=true`, c'est-à-dire seulement après que
+#      l'exploitant a lu ce qu'on ajoute. Par défaut, le playbook s'arrête avant le rechargement.
+---
+- name: Le Caddyfile de l'hôte existe
+  ansible.builtin.stat:
+    path: /etc/caddy/Caddyfile
+  register: caddyfile
+  become: true
+
+- name: Sans Caddyfile, on ne devine pas
+  ansible.builtin.assert:
+    that: caddyfile.stat.exists
+    fail_msg: >-
+      /etc/caddy/Caddyfile est introuvable. Ce rôle ne suppose rien de la disposition de Caddy sur
+      ce serveur : relire l'inventaire, et corriger jadwal_caddy_sites, avant de rejouer.
+
+- name: Le Caddyfile importe-t-il un répertoire de sites ?
+  ansible.builtin.command: grep -E "^\s*import\s" /etc/caddy/Caddyfile
+  register: imports
+  changed_when: false
+  failed_when: false
+  become: true
+
+- name: Sans import, on ne pose rien
+  ansible.builtin.assert:
+    that: jadwal_caddy_sites in imports.stdout
+    fail_msg: >-
+      Le Caddyfile de l'hôte n'importe pas {{ jadwal_caddy_sites }} (import relevés :
+      {{ imports.stdout | default('aucun') }}). Ajouter cet import est une modification de la
+      configuration d'un service en fonctionnement : elle est à l'exploitant, pas au playbook.
+      La ligne à ajouter est : import {{ jadwal_caddy_sites }}/*.caddy
+
+- name: Le répertoire des sites
+  ansible.builtin.file:
+    path: '{{ jadwal_caddy_sites }}'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  become: true
+
+- name: Le bloc de site de jadwal
+  ansible.builtin.copy:
+    src: '{{ playbook_dir }}/../caddy/{{ jadwal_domaine }}.caddy'
+    dest: '{{ jadwal_caddy_sites }}/{{ jadwal_domaine }}.caddy'
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+  register: bloc
+  # `--diff` montre exactement ce qui change dans la configuration d'un service partagé.
+  diff: true
+
+- name: La configuration complète est valide, jadwal compris
+  ansible.builtin.command: caddy validate --config /etc/caddy/Caddyfile
+  register: validation
+  changed_when: false
+  become: true
+
+- name: Ce qui sera rechargé, montré avant de l'être
+  ansible.builtin.debug:
+    msg: >-
+      Le bloc {{ jadwal_caddy_sites }}/{{ jadwal_domaine }}.caddy est posé et la configuration est
+      valide. Caddy n'a PAS été rechargé. Relire le fichier, puis rejouer avec
+      -e jadwal_caddy_reload=true pour que jadwal soit servi.
+  when: not jadwal_caddy_reload
+
+# Le rechargement, et lui seul. `caddy reload` ne coupe aucune connexion en cours et ne touche pas
+# aux autres sites : c'est la seule action de ce playbook sur un service existant, et l'étape
+# l'autorise nommément, à condition de l'avoir montrée d'abord.
+- name: Rechargement de Caddy
+  ansible.builtin.systemd_service:
+    name: caddy
+    state: reloaded
+  become: true
+  when: jadwal_caddy_reload and bloc.changed

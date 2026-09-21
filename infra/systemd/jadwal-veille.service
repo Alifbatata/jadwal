@@ -1,0 +1,15 @@
+[Unit]
+Description=jadwal — veille horaire (tâches muettes, disque, certificat, sauvegardes, verrous)
+Documentation=file:/opt/jadwal/docs/EXPLOITATION.md
+After=docker.service network-online.target
+Wants=network-online.target
+# Pas de `Requires=docker.service` : si Docker est tombé, c'est précisément ce que la veille doit
+# pouvoir constater et signaler. Une dépendance dure l'empêcherait de se lancer au pire moment.
+OnFailure=jadwal-alerte@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/jadwal/scripts/jadwal-veille.sh
+TimeoutStartSec=600
+Nice=15
+IOSchedulingClass=idle

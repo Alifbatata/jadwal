@@ -1,0 +1,30 @@
+# Base PostgreSQL de développement. Ne sert qu'à partir de l'étape 2.
+# Variables : voir .env.example (POSTGRES_PASSWORD est obligatoire).
+name: jadwal
+
+services:
+  db:
+    # PostgreSQL 18.6, image officielle épinglée par le digest de son index multi-architecture
+    # (relevé le 2026-09-19 : docker buildx imagetools inspect postgres:18.6). Le digest prime sur le tag.
+    image: postgres:18.6@sha256:86c951e05bf56c93d95d397747fb8820ac76cc3bedb78f43abd83eedbe3666ae
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-jadwal}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD est obligatoire (voir .env.example)}
+      POSTGRES_DB: ${POSTGRES_DB:-jadwal}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      # Depuis PostgreSQL 18, le volume se monte sur /var/lib/postgresql (PGDATA = /var/lib/postgresql/18/docker).
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      # `$$` : dollar littéral pour Compose, développé par le shell du conteneur.
+      # `-h 127.0.0.1` force le TCP : le serveur temporaire d'initialisation n'écoute que sur la socket Unix,
+      # le conteneur n'est donc « healthy » qu'une fois l'initialisation terminée.
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  pgdata:

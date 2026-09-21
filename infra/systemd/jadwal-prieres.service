@@ -1,0 +1,15 @@
+[Unit]
+Description=jadwal — remplissage quotidien des heures de prière calculées
+Documentation=file:/opt/jadwal/docs/EXPLOITATION.md
+Requires=docker.service
+After=docker.service
+OnFailure=jadwal-alerte@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/jadwal/scripts/jadwal-prieres.sh
+TimeoutStartSec=900
+# Une tâche de fond passe après tout le reste : elle ne doit gêner ni le service, ni ce qui
+# tournerait à côté sur la même machine.
+Nice=10
+IOSchedulingClass=idle

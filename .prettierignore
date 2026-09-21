@@ -1,0 +1,22 @@
+# Fichiers de verrouillage
+pnpm-lock.yaml
+
+# Sorties de build et caches
+**/dist
+**/build
+**/.svelte-kit
+**/.vitest
+**/coverage
+
+# Instantanés et journal écrits par Drizzle Kit : les reformater ferait diverger le prochain
+# fichier généré.
+**/migrations/meta
+
+# Versions publiées du widget : servies à jamais, avec leur empreinte d'intégrité (ADR 0005). Les
+# reformater changerait cette empreinte, et le navigateur bloquerait le script chez toutes les
+# mosquées qui ont collé le code verrouillé.
+packages/widget/published
+
+# Jeux de référence copiés tels quels depuis adhan-js (MIT), à un tag précis : les reformater
+# empêcherait de les comparer à l'original.
+packages/core/src/prayer/reference

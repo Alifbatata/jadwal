@@ -1,0 +1,1 @@
+CREATE INDEX "support_access_opened_by_idx" ON "support_access" USING btree ("opened_by");

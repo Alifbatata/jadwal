@@ -1,0 +1,33 @@
+{
+	"name": "jadwal",
+	"private": true,
+	"type": "module",
+	"license": "AGPL-3.0-or-later",
+	"packageManager": "pnpm@12.4.1+sha512.2e81e399d73fe8390dab25e06aa788ab7a5908248d2f5a370f82b481147a6a7a367bf8048f9a6fdb6460f21a66f0542dedb8b94ca2c8723596741920b1656d4c",
+	"engines": {
+		"node": ">=24.18.1"
+	},
+	"scripts": {
+		"lint": "prettier --check . && eslint .",
+		"format": "prettier --write .",
+		"check": "pnpm -r --if-present run check",
+		"test": "pnpm -r --if-present run test",
+		"build": "pnpm -r --if-present run build",
+		"dev": "pnpm --filter @jadwal/web run dev",
+		"test:tz": "pnpm --filter @jadwal/core run test:tz",
+		"hooks": "node scripts/installer-hooks.mjs",
+		"secrets:test": "node scripts/eprouver-controle-secrets.mjs"
+	},
+	"devDependencies": {
+		"@eslint/js": "10.0.1",
+		"eslint": "10.10.0",
+		"eslint-config-prettier": "10.1.8",
+		"eslint-plugin-svelte": "3.23.0",
+		"globals": "17.12.0",
+		"prettier": "3.9.6",
+		"prettier-plugin-svelte": "4.1.1",
+		"svelte": "catalog:",
+		"typescript": "catalog:",
+		"typescript-eslint": "8.70.0"
+	}
+}

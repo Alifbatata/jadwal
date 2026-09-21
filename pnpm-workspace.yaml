@@ -1,0 +1,35 @@
+packages:
+  - apps/*
+  - packages/*
+  # Outils d'exploitation et de mesure. Privés, jamais publiés, exclus de l'image de production par
+  # `.dockerignore` : ils ont un manifeste pour résoudre leurs imports, rien de plus.
+  - infra/*
+
+# Chaîne d'approvisionnement (voir docs/adr/0010-chaine-d-approvisionnement.md)
+# 10080 minutes = 7 jours ; définir minimumReleaseAge active aussi minimumReleaseAgeStrict.
+minimumReleaseAge: 10080
+strictDepBuilds: true
+trustPolicy: no-downgrade
+# chokidar@4.0.3 (tirée par svelte-check) a été publiée sans attestation de provenance alors que
+# 4.0.1 en avait une (4.0.2 non plus) : cas bénin connu, cité en exemple par la doc pnpm de
+# trustPolicyExclude. Exclusion limitée à cette seule version.
+trustPolicyExclude:
+  - 'chokidar@4.0.3'
+blockExoticSubdeps: true
+
+# Depuis pnpm 11, ces réglages se lisent ici et non plus dans .npmrc.
+saveExact: true
+engineStrict: true
+
+# Versions partagées par plusieurs paquets, épinglées exactement une seule fois.
+catalog:
+  '@sveltejs/vite-plugin-svelte': 7.3.0
+  # Doit rester strictement égal à vitest (peerDependency exacte).
+  '@vitest/coverage-v8': 5.0.0
+  svelte: 5.57.0
+  svelte-check: 4.7.6
+  typescript: 6.0.3
+  vite: 8.3.0
+  vitest: 5.0.0
+allowBuilds:
+  esbuild: true

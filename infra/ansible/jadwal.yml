@@ -1,0 +1,63 @@
+# Le déploiement de jadwal sur un serveur qui peut héberger d'autres applications (ADR 0034).
+#
+# Ce que ce playbook fait : il ajoute. Des répertoires préfixés `jadwal`, deux conteneurs dans leur
+# propre projet Compose et leur propre réseau, un fichier de site pour le Caddy de l'hôte, cinq
+# minuteries systemd. Rien d'autre.
+#
+# Ce que ce playbook ne fait pas, et ne fera pas : il ne touche pas au pare-feu, ni à SSH, ni aux
+# comptes existants, ni à Docker lui-même, ni à aucune autre application de la machine. Il ne
+# redémarre rien d'existant. La seule action sur un service en fonctionnement est un `reload` de
+# Caddy, et elle est refusée par défaut : il faut `-e jadwal_caddy_reload=true`, après avoir lu le
+# bloc de site posé.
+#
+# Jouer :
+#   ansible-playbook jadwal.yml -e jadwal_image=ghcr.io/<compte>/jadwal@sha256:<digest>
+#
+# Vérifier sans rien changer :
+#   ansible-playbook jadwal.yml --check --diff -e jadwal_image=…
+#
+# Défaire : infra/ansible/retrait.yml, ou /opt/jadwal/RETRAIT.txt sur le serveur.
+---
+- name: jadwal — déploiement additif et réversible
+  hosts: jadwal
+  gather_facts: true
+  # Une seule machine, mais la consigne vaut d'être écrite : une erreur arrête tout, tout de suite.
+  any_errors_fatal: true
+  vars_files:
+    - group_vars/all/vault.yml
+
+  pre_tasks:
+    - name: Ce que ce playbook va faire, dit avant de le faire
+      ansible.builtin.debug:
+        msg:
+          - 'Hôte        : {{ inventory_hostname }} ({{ ansible_host }})'
+          - "Image       : {{ jadwal_image | default('(manquante)') }}"
+          - 'Domaine     : {{ jadwal_domaine }}'
+          - "Caddy       : {{ 'rechargé' if jadwal_caddy_reload else 'PAS rechargé (bloc posé seulement)' }}"
+          - "Sauvegardes : {{ jadwal_rclone_remote | default('(non configurées)') }}"
+
+  roles:
+    - role: socle
+      tags: [socle]
+    - role: sauvegarde
+      tags: [sauvegarde]
+    - role: application
+      tags: [application]
+    - role: taches
+      tags: [taches]
+    - role: caddy
+      tags: [caddy]
+
+  post_tasks:
+    - name: Le service, vu de la boucle locale
+      ansible.builtin.uri:
+        url: 'http://127.0.0.1:{{ jadwal_port }}/healthz'
+        status_code: 200
+      changed_when: false
+
+    - name: Ce qui a été posé
+      ansible.builtin.debug:
+        msg:
+          - 'jadwal tourne, image {{ jadwal_image }}'
+          - 'Retrait : /opt/jadwal/RETRAIT.txt, ou ansible-playbook retrait.yml'
+          - "{{ 'Caddy rechargé : le service est servi sur https://' ~ jadwal_domaine if jadwal_caddy_reload else 'Caddy non rechargé : relire le bloc de site, puis -e jadwal_caddy_reload=true' }}"
