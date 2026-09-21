@@ -22,10 +22,12 @@ HEBDOMADAIRES="${JADWAL_RETENTION_HEBDOMADAIRES:-4}"
 MENSUELLES="${JADWAL_RETENTION_MENSUELLES:-6}"
 
 # Le jour d'une archive, à partir de son seul nom. `jadwal-2026-09-21T021503Z.dump.age` → 2026-09-21.
+# La fin de ligne est là pour que `sort` voie des lignes et non une seule chaîne ; les substitutions
+# de commande la retirent d'elles-mêmes.
 jour_de() {
 	local reste="${1#jadwal-}"
 	reste="${reste%%.*}"
-	printf '%s' "${reste%%T*}"
+	printf '%s\n' "${reste%%T*}"
 }
 
 noms=()
