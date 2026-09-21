@@ -135,8 +135,12 @@ suivante le redit.
 - **Le mot de passe du rôle applicatif ouvre toutes les organisations, une par une.** La sécurité au
   niveau des lignes cloisonne les requêtes de l'application, pas le rôle qui pose le contexte. Ce
   mot de passe est donc un secret d'hébergement, au même titre que celui de la base (étape 8).
-- **Le chiffrement au repos et les sauvegardes** relèvent de l'hébergement (étape 8). Une sauvegarde
-  volée contient tout.
+- **Le chiffrement au repos** relève de l'hébergement (étape 8). Les sauvegardes, elles, quittent le
+  serveur chiffrées avec une clé publique dont la privée n'est jamais là : une archive volée reste
+  illisible (ADR 0035). Et depuis l'ADR 0037, le serveur ne peut plus **effacer** ce qu'il a envoyé —
+  qui prend le serveur prend la base, pas les sauvegardes des cent quatre-vingts derniers jours.
+  Ce qui reste hors de portée : qui obtient à la fois une archive **et** la clé privée de
+  l'exploitant a tout.
 - **Le déni de service.** La limitation de débit protège les boîtes aux lettres, pas le service.
 - **Une personne responsable malveillante dans sa propre organisation** peut effacer le programme de
   son organisation. Le journal dit qui et quand, et l'état avant permet de revenir en arrière.
