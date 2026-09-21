@@ -17,7 +17,8 @@
 		"test:tz": "pnpm --filter @jadwal/core run test:tz",
 		"hooks": "node scripts/installer-hooks.mjs",
 		"secrets:test": "node scripts/eprouver-controle-secrets.mjs",
-		"fuites": "node scripts/controle-fuites.mjs --arbre"
+		"fuites": "node scripts/controle-fuites.mjs --arbre",
+		"fuites:test": "node scripts/eprouver-garde-fou.mjs"
 	},
 	"devDependencies": {
 		"@eslint/js": "10.0.1",
