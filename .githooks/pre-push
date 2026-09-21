@@ -1,17 +1,26 @@
 #!/usr/bin/env sh
 #
-# Garde-fou contre les fuites, avant chaque poussée.
+# Deux garde-fous avant chaque poussée, dans cet ordre.
 #
-# Ce dépôt est public et ne parle que de jadwal. Le crochet `pre-commit` cherche ce qui *ressemble*
-# à un secret ; celui-ci cherche ce qui *est* interdit ici : l'adresse du serveur, son nom, les
-# autres services qu'il héberge, ses comptes, ses chemins. La liste vit hors de ce dépôt et hors de
-# sa CI — voir `scripts/controle-fuites.mjs`.
+# 1. **Les dossiers privés.** `PRIVE/` et `A_LIVRER/` ne quittent jamais ce poste. `.gitignore` les
+#    couvre, mais `git add -f` passe outre sans un mot : ce contrôle-ci regarde ce que les commits
+#    contiennent vraiment, pas ce que git a le droit d'ignorer. Il passe en premier parce qu'il est
+#    le plus bête et le plus sûr — deux chemins, jamais.
 #
-# Il refuse la poussée plutôt que de la laisser passer quand la liste manque. Une fuite poussée ne
-# se rattrape pas : elle subsiste dans des journaux et des caches que ce dépôt ne contrôle pas.
+# 2. **Les termes interdits.** Ce dépôt est public et ne parle que de jadwal. Le crochet
+#    `pre-commit` cherche ce qui *ressemble* à un secret ; celui-ci cherche ce qui *est* interdit
+#    ici : l'adresse du serveur, son nom, les autres services qu'il héberge, ses comptes, ses
+#    chemins. La liste vit hors du dépôt — voir `scripts/controle-fuites.mjs`.
 #
-# Git passe sur l'entrée standard une ligne par référence poussée ; le contrôle la lit et ne relit
-# que les commits qui partent vraiment.
+# Les deux refusent la poussée plutôt que de la laisser passer quand ce dont ils ont besoin manque.
+# Une fuite poussée ne se rattrape pas : elle subsiste dans des journaux et des caches que ce dépôt
+# ne contrôle pas.
+#
+# Git passe sur l'entrée standard une ligne par référence poussée. Elle ne se lit qu'une fois : on la
+# garde donc dans une variable, et on la redonne à chaque contrôle.
 set -eu
 
-exec node scripts/controle-fuites.mjs --pousse
+REFERENCES="$(cat)"
+
+printf '%s\n' "$REFERENCES" | node scripts/controle-dossiers-prives.mjs --pousse
+printf '%s\n' "$REFERENCES" | node scripts/controle-fuites.mjs --pousse

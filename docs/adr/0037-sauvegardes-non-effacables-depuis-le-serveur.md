@@ -61,8 +61,9 @@ La rétention **locale**, sur le disque du serveur, ne change pas : elle reste t
 ## Ce qui reste hors de ce dépôt
 
 Les verrous et le cycle de vie se posent chez le stockage, et **pas depuis le serveur** : c'est toute
-la décision. Les commandes exactes, le compte et la juridiction vivent dans le dépôt privé de
-l'exploitation. Ce dépôt ne décrit que la forme : trois préfixes, trois durées, et une vérification.
+la décision. Les commandes exactes, le compte et la juridiction sont propres à celui qui exploite une
+instance ; il les garde chez lui, hors de ce dépôt. Ce dépôt ne décrit que la forme : trois préfixes,
+trois durées, et une vérification.
 
 ## La vérification
 

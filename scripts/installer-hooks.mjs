@@ -150,8 +150,8 @@ async function main() {
 	if (!listeLisible) {
 		process.stdout.write(
 			`\nLe crochet pre-push, lui, refusera toute poussée tant que la liste des termes\n` +
-				`interdits ne lui est pas donnée. Elle vit dans le dépôt privé de l'exploitation :\n\n` +
-				`    git config jadwal.termes-interdits <chemin absolu vers termes-interdits.txt>\n`
+				`interdits ne lui est pas donnée. Elle vit dans PRIVE/, qui ne quitte pas ce poste :\n\n` +
+				`    git config jadwal.termes-interdits "${join(racine, 'PRIVE', 'garde-fou', 'termes-interdits.txt')}"\n`
 		);
 	}
 }
