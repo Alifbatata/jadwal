@@ -40,13 +40,17 @@ vault_smtp_password: ''
 # Le bloc `[remote]` complet de rclone, tel que `rclone config` l'écrit. Il porte les identifiants de
 # la destination de sauvegarde ; il est posé sur le serveur en 0600 root.
 vault_rclone_conf: |
-  [swissbackup]
-  type = swift
-  user = ...
-  key = ...
-  auth = https://swiss-backup...infomaniak.com/identity/v3
-  domain = default
-  tenant = ...
+  [sauvegardes]
+  type = s3
+  provider = Cloudflare
+  access_key_id = ...
+  secret_access_key = ...
+  endpoint = https://<compte>.eu.r2.cloudflarestorage.com
+  region = auto
+  acl = private
+  # Le jeton n'a pas le droit de créer un compartiment, et n'en a pas besoin : celui-ci existe
+  # déjà. Sans cette ligne, rclone vérifierait — donc exigerait un droit de plus.
+  no_check_bucket = true
 
 # Facultatif. Si le paquet GHCR est public — et il peut l'être, jadwal est sous AGPL —, il n'y a rien
 # à mettre ici et le serveur n'a aucun identifiant de registre. C'est un secret de moins.

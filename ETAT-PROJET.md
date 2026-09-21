@@ -348,10 +348,13 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   valeur), et Better Auth reçoit ses mandataires de confiance par `JADWAL_TRUSTED_PROXIES`.
   `apps/web/tests/adresse.test.ts` joue le rôle du mandataire et prouve qu'une adresse inventée
   n'atteint jamais le seau.
-- **Dupliquer une période pour l'année suivante** : décalage de onze jours, période marquée « dates à
-  vérifier » jusqu'à ce qu'un responsable l'enregistre une fois. L'écran des périodes ne montre plus
-  que les cinq iqamas, les heures du soleil derrière un dépliant, et une nouvelle période part des
-  valeurs de la précédente.
+- **Dupliquer une période pour l'année suivante** : mêmes mois et mêmes jours, un an plus tard —
+  les heures de prière suivent le soleil, pas le calendrier hégirien. Deux périodes voisines restent
+  jointives, 29 février compris : la date de fin est reportée par son lendemain, de sorte qu'une
+  année bissextile ne laisse aucun jour à découvert et qu'une année commune ne crée aucun
+  chevauchement. La période reste marquée « dates à vérifier » jusqu'à ce qu'un responsable
+  l'enregistre une fois. L'écran des périodes ne montre plus que les cinq iqamas, les heures du
+  soleil derrière un dépliant, et une nouvelle période part des valeurs de la précédente.
 - **Un service de Voltia** : la mention est au pied des pages publiques dans les quatre langues, du
   widget, et des deux courriels, avec `Reply-To: contact@voltia.ch` — la boîte d'envoi n'est pas lue.
 - **`Dockerfile`** : deux étages, images de base épinglées par digest, `pnpm deploy --prod`,
@@ -364,10 +367,15 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   restauration, veille horaire. Un échec prévient par courriel avec le journal de l'unité ; une tâche
   qui cesse de se lancer est repérée par la veille au double de sa période.
 - **Sauvegardes** : vidange chiffrée par `age` sur le tube, envoyée par `rclone`, relue depuis la
-  destination, rétention 7/4/6. La clé privée n'est pas sur le serveur. Les deux modes de
-  restauration ont été joués pour de vrai.
-- **Supervision** : travail programmé GitHub Actions sur `/healthz` toutes les quinze minutes, alerte
-  par `curl` en SMTP, sans service payant.
+  destination. La clé privée n'est pas sur le serveur. Les deux modes de restauration ont été joués
+  pour de vrai. **Depuis l'étape 9, le serveur n'efface plus rien à distance** : trois préfixes
+  (`quotidien/`, `hebdo/`, `mensuel/`), trois verrous de conservation (7, 28, 180 jours) et un cycle
+  de vie posés chez le stockage, hors d'atteinte de qui prendrait le serveur (ADR 0037). La rétention
+  7/4/6 ne vaut plus que pour le disque local.
+- **Supervision** : chaque tâche périodique bat vers un service de supervision extérieur, et c'est
+  lui qui alerte quand un battement n'arrive pas. La sonde `/healthz` a quitté GitHub Actions —
+  ses machines n'ont pas d'IPv6 sortant, et la moitié de la surface publique n'était donc jamais
+  éprouvée du dehors (ADR 0038).
 - **Charge** : 20 organisations × 40 cours, saturation vers 50 req/s, zéro erreur de 1 à 100 clients
   simultanés ; 76 Mio au repos, 388 Mio sous charge.
 - **Un défaut trouvé par l'exécution, invisible à la relecture** : les scripts de `packages/db`
@@ -489,11 +497,17 @@ passkeys, paiement.
 
 ## À poser avant la mise en production
 
-- **La variable de dépôt `SUPERVISION_SMTP_URL`.** Le serveur d'envoi de l'alerte de supervision
-  n'est plus écrit dans le workflow : sans cette variable, l'alerte part vers une valeur de repli
-  qui ne mène nulle part et l'envoi échoue bruyamment. À poser une fois :
-  `gh variable set SUPERVISION_SMTP_URL --body 'smtp://<votre serveur>:587'`, avec les secrets
-  `SUPERVISION_SMTP_USER`, `SUPERVISION_SMTP_PASSWORD` et `SUPERVISION_MAIL_TO`.
+- **Les verrous de conservation de la destination de sauvegarde.** Trois préfixes, trois durées :
+  `quotidien/` 7 jours, `hebdo/` 28 jours, `mensuel/` 180 jours, plus un cycle de vie qui efface un
+  jour après chaque échéance. Ils se posent **chez le stockage**, jamais depuis le serveur : c'est
+  toute la décision de l'ADR 0037. Le rôle `sauvegarde` refuse de continuer s'il arrive à effacer un
+  objet d'essai.
+- **La supervision extérieure.** Un service de battements de cœur, un contrôle par tâche périodique,
+  deux pour la sonde `/healthz` (IPv4 et IPv6), un pour le test de déchiffrement trimestriel ; et une
+  machine tierce, hors de ce serveur, qui interroge `/healthz` toutes les cinq minutes sur les deux
+  piles (ADR 0038). Les adresses de battement sont des jetons : elles vivent dans le coffre, et le
+  playbook les écrit dans le fichier d'environnement. Sans elles, les tâches tournent exactement
+  pareil et le disent dans leur journal.
 - **L'inventaire Ansible.** `infra/ansible/inventory.ini` n'est plus livré : le copier depuis
   `infra/ansible/inventory.ini.example` et le renseigner. Il est ignoré par git, et c'est voulu.
 - **Le coffre `ansible-vault`.** Le créer à partir de

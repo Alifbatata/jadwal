@@ -37,7 +37,7 @@ ascendante à porter et un trousseau à sauvegarder lui-même.
 ### `rclone` plutôt qu'un client spécialisé
 
 Il parle S3, Swift, SFTP, WebDAV et une trentaine d'autres protocoles. La destination peut changer —
-d'Infomaniak Swiss Backup à autre chose — sans qu'une ligne de ce projet change. Sa configuration,
+d'un stockage objet à un autre — sans qu'une ligne de ce projet change. Sa configuration,
 qui porte les identifiants, est en `0600 root` à côté du fichier d'environnement.
 
 Après l'envoi, l'archive est **relue depuis la destination** et son empreinte comparée à la locale.
@@ -78,7 +78,7 @@ migrations identique, et nombre de lignes égal table par table hors tables vola
 
 La dernière ligne, elle, ne pourrit pas : une clé `age` qui ouvrait une archive hier l'ouvre encore
 dans dix ans. Ce qui pourrit, c'est la certitude qu'on a **la bonne** clé et qu'on sait s'en servir.
-D'où le rappel : la veille alerte si la restauration complète n'a plus abouti depuis quarante jours.
+D'où le rappel : la veille alerte si la restauration complète n'a plus abouti depuis quatre-vingt-dix-sept jours, soit un trimestre plus la marge de sept jours du contrôle extérieur (ADR 0037).
 
 Les deux modes ont été joués pour de vrai à l'étape 9, contre l'image de production, avec une paire
 de clés engendrée pour l'occasion. Les sorties sont dans le rapport.
