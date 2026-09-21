@@ -1,0 +1,14 @@
+[Unit]
+Description=jadwal — coupe du journal d'accès, une fois par nuit
+
+[Timer]
+# En UTC, pour la même raison que les autres : voir jadwal-prieres.timer et l ADR 0038. À 00:20,
+# après minuit pour que chaque archive porte une journée entière, et avant les autres tâches de la
+# nuit pour ne pas leur disputer le disque.
+OnCalendar=*-*-* 00:20:00 UTC
+Persistent=true
+RandomizedDelaySec=5m
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

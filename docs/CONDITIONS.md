@@ -29,6 +29,10 @@ Le service n'utilise **aucun cookie de mesure d'audience**, ne fait **aucun suiv
 ne transmet vos données à **aucun tiers** à des fins commerciales. Les visiteurs de votre page
 publique ne sont pas identifiés et ne s'inscrivent à rien.
 
+Le serveur tient un journal technique des requêtes qu'il a servies, où l'adresse du visiteur est
+**tronquée avant d'être écrite**, au point de ne plus désigner personne, où la page d'où il vient
+ne figure pas, et qui est effacé au bout de **quatorze jours**.
+
 ### Le compteur de consultations
 
 Votre espace affiche le nombre de consultations de votre programme sur sept et trente jours,
@@ -61,6 +65,7 @@ ne sait pas sur quelle page vous l'avez collé, puisqu'il ne conserve pas la pro
 | Le compteur de consultations                | 25 mois, puis effacé automatiquement           |
 | Une invitation annulée ou refusée           | 90 jours, puis effacée                         |
 | Un compte sans organisation, inactif        | 12 mois, puis effacé                           |
+| Le journal technique du serveur             | 14 jours, puis effacé automatiquement          |
 | Les traces d'accès internes de l'exploitant | conservées pour répondre à une contestation    |
 
 ## L'accès de l'exploitant à vos données

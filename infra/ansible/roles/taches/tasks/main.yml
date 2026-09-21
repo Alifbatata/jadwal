@@ -24,6 +24,7 @@
     - jadwal-restauration.sh
     - jadwal-veille.sh
     - jadwal-sonde.sh
+    - jadwal-journal-caddy.sh
     - jadwal-mail.mjs
   become: true
 
@@ -64,6 +65,8 @@
     - jadwal-veille.timer
     - jadwal-sonde@.service
     - jadwal-sonde@.timer
+    - jadwal-journal-caddy.service
+    - jadwal-journal-caddy.timer
   become: true
   register: unites
 
@@ -87,7 +90,8 @@
     state: started
   loop: >-
     {{ ['jadwal-prieres.timer', 'jadwal-purges.timer', 'jadwal-sauvegarde.timer',
-        'jadwal-restauration.timer', 'jadwal-veille.timer', 'jadwal-sonde@4.timer']
+        'jadwal-restauration.timer', 'jadwal-veille.timer', 'jadwal-journal-caddy.timer',
+        'jadwal-sonde@4.timer']
        + (['jadwal-sonde@6.timer'] if jadwal_sonde_ipv6 else []) }}
   become: true
 

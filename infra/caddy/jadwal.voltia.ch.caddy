@@ -42,11 +42,56 @@ jadwal.voltia.ch {
 	}
 
 	# Le journal du site, dans un fichier à lui : on lit ce que jadwal a servi, et rien d'autre.
+	#
+	# Un journal d'accès ordinaire est une base de données personnelles qu'on n'a pas voulue :
+	# l'adresse du visiteur, la page qu'il a demandée, et — pour peu qu'une adresse porte un
+	# secret — de quoi ouvrir son compte. `docs/CONDITIONS.md` promet qu'un visiteur ne laisse pas
+	# d'adresse complète ; cette promesse se tient ici, pas ailleurs, parce que Caddy écrit avant
+	# que l'application ne voie quoi que ce soit.
+	#
+	# Ce que `format filter` retire, et pourquoi chaque ligne y est :
+	#
+	#   - **l'adresse du visiteur**, tronquée en /24 et /48 partout où elle paraît : celle que voit
+	#     Caddy (`remote_ip`), celle qu'il a résolue (`client_ip`), et celle que porte l'en-tête
+	#     `X-Forwarded-For`. Un /24 garde de quoi reconnaître un abus, il ne désigne plus personne ;
+	#   - **le jeton de connexion**, dans la requête comme dans le chemin. Le lien magique est un
+	#     mot de passe à usage unique : `?token=…` sur `/api/auth/magic-link/verify` ouvre la
+	#     session de quelqu'un. Deux formes existent, et la même expression couvre les deux ;
+	#   - **l'en-tête `Referer`**, supprimé. Après la redirection du lien magique, le navigateur le
+	#     renvoie avec le jeton dedans : filtrer l'adresse sans filtrer le renvoyeur ne servirait à
+	#     rien. Il dit aussi d'où vient le visiteur, ce que ce service n'a pas à savoir.
+	#
+	# `Cookie`, `Authorization` et `Set-Cookie` ne sont pas dans la liste : Caddy les vide déjà de
+	# lui-même. Vérifié, pas supposé — voir `scripts/eprouver-journal-caddy.mjs`, qui rejoue ce bloc
+	# dans un conteneur et relit la ligne écrite.
 	log {
 		output file /var/log/caddy/jadwal.voltia.ch.log {
 			roll_size 10MiB
-			roll_keep 5
+			# Quatorze jours, et pas un de plus. `roll_keep_for` borne les fichiers déjà roulés ;
+			# le fichier **courant**, lui, n'a aucune borne de temps chez Caddy, qui ne roule qu'à
+			# la taille. C'est la minuterie `jadwal-journal-caddy` qui le coupe chaque nuit, et
+			# l'ADR 0039 dit pourquoi ce n'est pas `logrotate` qui le fait.
+			roll_keep 14
+			roll_keep_for 336h
 		}
-		format json
+		format filter {
+			wrap json
+			fields {
+				request>remote_ip ip_mask {
+					ipv4 24
+					ipv6 48
+				}
+				request>client_ip ip_mask {
+					ipv4 24
+					ipv6 48
+				}
+				request>headers>X-Forwarded-For ip_mask {
+					ipv4 24
+					ipv6 48
+				}
+				request>uri regexp "(token=|/reset-password/)[^&/?]+" "${1}REDACTED"
+				request>headers>Referer delete
+			}
+		}
 	}
 }

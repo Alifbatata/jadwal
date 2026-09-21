@@ -35,7 +35,7 @@ SILENCE="${JADWAL_SILENCE:-86400}"                    # une même alerte, au plu
 
 # Les tâches et leur période, en secondes. L'alerte part au-delà du double : une tâche quotidienne
 # qui saute une nuit a pu tomber sur un redémarrage, deux nuits d'affilée ne sont plus un hasard.
-PERIODES="prieres:86400 purges:86400 sauvegarde:86400 restauration:604800"
+PERIODES="prieres:86400 purges:86400 sauvegarde:86400 restauration:604800 journal-caddy:86400"
 
 alertes=0
 

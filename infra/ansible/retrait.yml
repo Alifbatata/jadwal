@@ -29,6 +29,10 @@
         - jadwal-sauvegarde.timer
         - jadwal-restauration.timer
         - jadwal-veille.timer
+        - jadwal-journal-caddy.timer
+        # Les deux piles de la sonde : chacune est armée séparément (ADR 0038).
+        - jadwal-sonde@4.timer
+        - jadwal-sonde@6.timer
       become: true
       failed_when: false
 
@@ -48,6 +52,10 @@
         - jadwal-restauration.timer
         - jadwal-veille.service
         - jadwal-veille.timer
+        - jadwal-journal-caddy.service
+        - jadwal-journal-caddy.timer
+        - jadwal-sonde@.service
+        - jadwal-sonde@.timer
       become: true
 
     - name: systemd relit ses unités
@@ -100,6 +108,15 @@
         path: '{{ jadwal_sauvegardes }}'
         state: absent
       become: true
+      when: jadwal_effacer_donnees
+
+    # Le journal d'accès et ses coupes datées. Le bloc de site est déjà retiré : Caddy n'écrit plus
+    # ici. Les adresses y sont tronquées depuis l'ADR 0039, mais un journal reste un journal.
+    - name: Le journal d'accès, seulement si on efface aussi les données
+      ansible.builtin.shell:
+        cmd: rm -f -- '{{ jadwal_caddy_journal }}' '{{ jadwal_caddy_journal }}.'*
+      become: true
+      changed_when: true
       when: jadwal_effacer_donnees
 
     - name: Ce qui reste, et ce qu'il faut faire à la main
