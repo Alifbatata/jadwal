@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+#
+# Garde-fou contre les fuites, avant chaque poussée.
+#
+# Ce dépôt est public et ne parle que de jadwal. Le crochet `pre-commit` cherche ce qui *ressemble*
+# à un secret ; celui-ci cherche ce qui *est* interdit ici : l'adresse du serveur, son nom, les
+# autres services qu'il héberge, ses comptes, ses chemins. La liste vit hors de ce dépôt et hors de
+# sa CI — voir `scripts/controle-fuites.mjs`.
+#
+# Il refuse la poussée plutôt que de la laisser passer quand la liste manque. Une fuite poussée ne
+# se rattrape pas : elle subsiste dans des journaux et des caches que ce dépôt ne contrôle pas.
+#
+# Git passe sur l'entrée standard une ligne par référence poussée ; le contrôle la lit et ne relit
+# que les commits qui partent vraiment.
+set -eu
+
+exec node scripts/controle-fuites.mjs --pousse

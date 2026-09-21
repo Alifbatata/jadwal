@@ -121,15 +121,39 @@ async function main() {
 	git('config', 'core.hooksPath', '.githooks');
 
 	// Git sous Windows ignore le bit d'exécution, mais pas sous Linux : on le pose des deux côtés.
-	const crochet = join(git('rev-parse', '--show-toplevel'), '.githooks', 'pre-commit');
-	if (existsSync(crochet)) chmodSync(crochet, 0o755);
+	const racine = git('rev-parse', '--show-toplevel');
+	for (const nom of ['pre-commit', 'pre-push']) {
+		const crochet = join(racine, '.githooks', nom);
+		if (existsSync(crochet)) chmodSync(crochet, 0o755);
+	}
+
+	// Le garde-fou anti-fuite lit une liste de termes qui n'est pas — et ne sera jamais — dans ce
+	// dépôt. On ne devine pas son chemin : on dit seulement s'il est posé, et comment le poser.
+	let liste = '';
+	try {
+		liste = git('config', '--get', 'jadwal.termes-interdits').trim();
+	} catch {
+		// La clé n'existe pas encore.
+	}
+	const listeLisible = liste && existsSync(liste);
 
 	process.stdout.write(
 		`\ncore.hooksPath = .githooks\n` +
-			`jadwal.gitleaks = ${binaire}\n\n` +
+			`jadwal.gitleaks = ${binaire}\n` +
+			`jadwal.termes-interdits = ${liste || '(non posé)'}${
+				liste && !listeLisible ? '  ← introuvable' : ''
+			}\n\n` +
 			`Le crochet pre-commit refusera désormais tout commit qui contient un secret.\n` +
 			`Pour l'éprouver : voir scripts/eprouver-controle-secrets.mjs.\n`
 	);
+
+	if (!listeLisible) {
+		process.stdout.write(
+			`\nLe crochet pre-push, lui, refusera toute poussée tant que la liste des termes\n` +
+				`interdits ne lui est pas donnée. Elle vit dans le dépôt privé de l'exploitation :\n\n` +
+				`    git config jadwal.termes-interdits <chemin absolu vers termes-interdits.txt>\n`
+		);
+	}
 }
 
 await main().catch((erreur) => {
