@@ -12,16 +12,21 @@
       Ce playbook n'a été écrit et éprouvé que pour la famille Debian, dans laquelle Ansible range
       aussi Ubuntu. Sur autre chose, il faut relire chaque tâche avant de la jouer, pas la forcer.
 
+# `check_mode: false` sur les deux : elles **lisent** une version, elles ne changent rien. Sans cela
+# un `--check` les saute, et l'on relit un diff sans savoir si Docker est seulement là — ce qui est
+# la première chose qu'un déploiement suppose.
 - name: Docker est présent et répond
   ansible.builtin.command: docker version --format '{% raw %}{{.Server.Version}}{% endraw %}'
   register: docker_version
   changed_when: false
+  check_mode: false
   become: true
 
 - name: Docker Compose v2 est présent
   ansible.builtin.command: docker compose version --short
   register: compose_version
   changed_when: false
+  check_mode: false
   become: true
 
 - name: Ce que le serveur fait tourner, pour le rapport
