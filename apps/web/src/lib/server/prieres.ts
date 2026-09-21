@@ -6,7 +6,14 @@
 //
 // Rien n'est calculé ici : `@jadwal/core/prayer` le fait, et il est le seul à dépendre d'`adhan`.
 
-import { addDays, todayInZone, type IsoDate, type PrayerDay } from '@jadwal/core';
+import {
+	addDays,
+	compareIsoDates,
+	nextYearSameDate,
+	todayInZone,
+	type IsoDate,
+	type PrayerDay
+} from '@jadwal/core';
 import {
 	computePrayerDay,
 	crossesMidnight,
@@ -298,7 +305,7 @@ export interface PeriodeHoraires {
 	name: string;
 	fromDate: string;
 	toDate: string | null;
-	/** Dates avancées de onze jours par « dupliquer », tant qu'un responsable ne les a pas revues. */
+	/** Dates reportées par « dupliquer », tant qu'un responsable ne les a pas revues. */
 	needsReview: boolean;
 	/** Heures du soleil saisies à la main. Vide : l'import ou le calcul décide. */
 	soleil: Record<Priere, string | null>;
@@ -433,31 +440,63 @@ export async function supprimerPeriode(
 	return true;
 }
 
-/** Onze jours : l'écart moyen entre une année grégorienne et une année lunaire. */
-export const DECALAGE_LUNAIRE = 11;
+/**
+ * Les dates de la même période un an plus tard, ou `null` si elle n'a pas d'équivalent.
+ *
+ * **Les heures de prière suivent le soleil, pas le calendrier hégirien.** Le Maghrib du 1er mars
+ * revient au 1er mars : une période reportée garde donc son mois et son jour, et change seulement
+ * d'année. Une copie avancée de onze jours ferait décrire au soleil une année lunaire, ce qu'il ne
+ * fait pas — et, la copie tombant dans l'année d'origine, elle chevauchait la période source dès
+ * que celle-ci durait plus de onze jours.
+ *
+ * La date de fin suit le **lendemain**, pas elle-même, et c'est tout le soin de cette fonction :
+ * deux périodes voisines restent jointives quelle que soit l'année d'arrivée. Une période qui
+ * s'arrête le 28 février 2027 est suivie par une autre qui commence le 1er mars ; l'année suivante
+ * est bissextile, le 1er mars reste le 1er mars, et la première période s'étend donc jusqu'au
+ * 29 février 2028 au lieu de laisser ce jour à découvert. Dans l'autre sens, une période qui
+ * s'arrête le 29 février 2028 se termine le 28 février 2029, et sa suivante commence le 1er mars.
+ *
+ * Le seul cas sans équivalent est la période réduite au seul 29 février, reportée sur une année
+ * commune : ce jour n'existe pas, la copie serait inversée, et la fonction rend `null`.
+ */
+export function datesAnneeSuivante(
+	fromDate: IsoDate,
+	toDate: IsoDate | null
+): { fromDate: IsoDate; toDate: IsoDate | null } | null {
+	const debut = nextYearSameDate(fromDate);
+	// Une période sans date de fin reste sans date de fin : elle couvre tout ce qui vient après.
+	if (toDate === null) return { fromDate: debut, toDate: null };
+	const fin = addDays(nextYearSameDate(addDays(toDate, 1)), -1);
+	if (compareIsoDates(fin, debut) < 0) return null;
+	return { fromDate: debut, toDate: fin };
+}
 
 /**
- * Duplique une période pour l'année suivante, dates avancées de onze jours.
+ * Duplique une période pour l'année suivante : mêmes mois et mêmes jours, un an plus tard.
  *
- * Ce que le bouton fait, et ce qu'il ne fait pas : il **fait gagner la saisie**, il ne calcule pas
- * une date religieuse. Onze jours est une moyenne, pas une règle ; la vraie date dépend de
- * l'observation et varie d'une fédération à l'autre. La période produite porte donc « dates à
+ * Ce que le bouton fait, et ce qu'il ne fait pas : il **fait gagner la saisie**, il ne décide pas
+ * des heures. Le soleil revient aux mêmes dates, mais d'une minute près il ne revient pas au même
+ * endroit, et une mosquée arrondit ses iqamas à sa façon. La période produite porte donc « dates à
  * vérifier » jusqu'à ce qu'un responsable l'enregistre — c'est-à-dire jusqu'à ce qu'il ait regardé.
  *
- * Le chevauchement n'est pas vérifié ici non plus : la contrainte d'exclusion le refuse, et
- * l'appelant traduit le code `23P01`. Une période sans date de fin ne peut pas être dupliquée sans
- * chevaucher l'originale, et c'est exact — il faut d'abord la clore.
+ * Rend `null` si la période n'a pas d'équivalent l'année suivante (voir `datesAnneeSuivante`).
+ *
+ * Le chevauchement n'est pas vérifié ici : la contrainte d'exclusion le refuse, et l'appelant
+ * traduit le code `23P01`. Une période sans date de fin ne peut pas être dupliquée sans chevaucher
+ * l'originale, et c'est exact — il faut d'abord la clore.
  */
 export async function dupliquerPeriode(
 	tx: Transaction,
 	context: { organizationId: string; userId: string | null },
 	source: PeriodeHoraires
-): Promise<string> {
+): Promise<string | null> {
+	const dates = datesAnneeSuivante(source.fromDate as IsoDate, source.toDate as IsoDate | null);
+	if (!dates) return null;
 	return enregistrerPeriode(tx, context, {
 		id: null,
 		name: `${source.name} (année suivante)`.slice(0, 60),
-		fromDate: addDays(source.fromDate as IsoDate, DECALAGE_LUNAIRE),
-		toDate: source.toDate ? addDays(source.toDate as IsoDate, DECALAGE_LUNAIRE) : null,
+		fromDate: dates.fromDate,
+		toDate: dates.toDate,
 		needsReview: true,
 		soleil: source.soleil,
 		iqama: source.iqama

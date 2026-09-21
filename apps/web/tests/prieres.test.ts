@@ -401,3 +401,140 @@ describe('l’import', () => {
 		).toBeGreaterThanOrEqual(3);
 	});
 });
+
+/**
+ * Dupliquer une période pour l'année suivante.
+ *
+ * Les heures de prière suivent le soleil, pas le calendrier hégirien : le Maghrib du 1er mars
+ * revient au 1er mars. Une copie qui avancerait les dates ferait donc décrire au soleil une année
+ * lunaire, ce qu'il ne fait pas.
+ *
+ * Le piège est le 29 février, et il tient en une phrase : une année bissextile a un jour de plus, et
+ * ce jour doit appartenir à une période. Les deux sens sont éprouvés ici, en chaîne — 2027 (commune)
+ * vers 2028 (bissextile), puis 2028 vers 2029 (commune) — pour qu'aucun des deux ne puisse passer
+ * par hasard.
+ */
+describe('dupliquer une période d’horaires', () => {
+	/** Les cinq heures du soleil, identiques dans toutes les périodes d'essai : ce n'est pas le sujet. */
+	const SOLEIL = { fajr: '06:00', dhuhr: '12:30', asr: '15:00', maghrib: '17:30', isha: '19:00' };
+
+	interface Periode {
+		id: string;
+		nom: string;
+		de: string;
+		a: string | null;
+		aVerifier: boolean;
+	}
+
+	async function poserPeriode(nom: string, de: string, a: string): Promise<string> {
+		const id = newId();
+		await maintenance((tx) =>
+			tx.execute(sql`
+				insert into "prayer_period" ("id", "organization_id", "name", "from_date", "to_date",
+					"needs_review", "fajr", "dhuhr", "asr", "maghrib", "isha")
+				values (${id}, ${organizationId}, ${nom}, ${de}::date, ${a}::date, false,
+					${SOLEIL.fajr}::time, ${SOLEIL.dhuhr}::time, ${SOLEIL.asr}::time,
+					${SOLEIL.maghrib}::time, ${SOLEIL.isha}::time)
+			`)
+		);
+		return id;
+	}
+
+	async function periodes(): Promise<Periode[]> {
+		const lignes = await maintenance(async (tx) =>
+			rows<{
+				id: string;
+				name: string;
+				from_date: string;
+				to_date: string | null;
+				needs_review: boolean;
+			}>(
+				await tx.execute(sql`
+					select "id", "name", "from_date"::text, "to_date"::text, "needs_review"
+					from "prayer_period" where "organization_id" = ${organizationId}
+					order by "from_date"
+				`)
+			)
+		);
+		return lignes.map((ligne) => ({
+			id: String(ligne.id),
+			nom: ligne.name,
+			de: String(ligne.from_date).slice(0, 10),
+			a: ligne.to_date ? String(ligne.to_date).slice(0, 10) : null,
+			aVerifier: ligne.needs_review === true
+		}));
+	}
+
+	/** Les périodes d'une année donnée, dans l'ordre. */
+	async function annee(an: string): Promise<Periode[]> {
+		return (await periodes()).filter((periode) => periode.de.startsWith(an));
+	}
+
+	/** Ni trou ni chevauchement : la fin de l'une est la veille du début de la suivante. */
+	function jointives(liste: Periode[]): void {
+		for (let index = 1; index < liste.length; index += 1) {
+			const avant = liste[index - 1] as Periode;
+			const apres = liste[index] as Periode;
+			expect(avant.a, `${avant.nom} n’a pas de fin`).toBeTruthy();
+			expect(
+				addDays(avant.a as IsoDate, 1),
+				`entre « ${avant.nom} » (fin ${avant.a}) et « ${apres.nom} » (début ${apres.de})`
+			).toBe(apres.de);
+		}
+	}
+
+	async function dupliquer(id: string): Promise<Response> {
+		return postForm('/prieres?/dupliquerPeriode', { periodeId: id });
+	}
+
+	it('reporte une année commune sur une année bissextile sans laisser le 29 février à découvert', async () => {
+		const hiver = await poserPeriode('Hiver 2027', '2027-01-01', '2027-02-28');
+		const reste = await poserPeriode('Reste 2027', '2027-03-01', '2027-12-31');
+		jointives(await annee('2027'));
+
+		expect((await dupliquer(hiver)).status).toBe(200);
+		expect((await dupliquer(reste)).status).toBe(200);
+
+		const copie = await annee('2028');
+		expect(copie.map((periode) => [periode.de, periode.a])).toEqual([
+			['2028-01-01', '2028-02-29'],
+			['2028-03-01', '2028-12-31']
+		]);
+		jointives(copie);
+		// « À vérifier » reste posé : la copie fait gagner la saisie, elle ne décide de rien.
+		expect(copie.every((periode) => periode.aVerifier)).toBe(true);
+		expect(copie.map((periode) => periode.nom)).toEqual([
+			'Hiver 2027 (année suivante)',
+			'Reste 2027 (année suivante)'
+		]);
+	});
+
+	it('reporte une année bissextile sur une année commune sans chevauchement', async () => {
+		const copie = await annee('2028');
+		expect(copie, 'le test précédent doit avoir laissé deux périodes en 2028').toHaveLength(2);
+
+		for (const periode of copie) expect((await dupliquer(periode.id)).status).toBe(200);
+
+		const suite = await annee('2029');
+		expect(suite.map((periode) => [periode.de, periode.a])).toEqual([
+			['2029-01-01', '2029-02-28'],
+			['2029-03-01', '2029-12-31']
+		]);
+		jointives(suite);
+		expect(suite.every((periode) => periode.aVerifier)).toBe(true);
+	});
+
+	it('garde les heures du soleil et l’iqama de la période d’origine', async () => {
+		const [premiere] = await annee('2029');
+		const heures = await maintenance(async (tx) =>
+			rows<{ fajr: string; maghrib: string }>(
+				await tx.execute(sql`
+					select "fajr"::text, "maghrib"::text from "prayer_period"
+					where "id" = ${(premiere as Periode).id}
+				`)
+			)
+		);
+		expect((heures[0] as { fajr: string }).fajr.slice(0, 5)).toBe(SOLEIL.fajr);
+		expect((heures[0] as { maghrib: string }).maghrib.slice(0, 5)).toBe(SOLEIL.maghrib);
+	});
+});

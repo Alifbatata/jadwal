@@ -63,7 +63,7 @@
 {#if form?.periodeEnregistree}<p class="succes" role="status">Période enregistrée.</p>{/if}
 {#if form?.periodeDupliquee}
 	<p class="succes" role="status">
-		Période dupliquée, dates avancées de onze jours. Vérifiez-les, puis enregistrez-la.
+		Période dupliquée aux mêmes dates, un an plus tard. Vérifiez-les, puis enregistrez-la.
 	</p>
 {/if}
 {#if form?.periodeSupprimee}<p class="succes" role="status">Période supprimée.</p>{/if}
@@ -305,7 +305,7 @@
 			<h3>
 				{periode.name}
 				{#if periode.needsReview}
-					<span class="marque" title="Dates avancées de onze jours par la duplication">
+					<span class="marque" title="Dates reportées d’un an par la duplication">
 						dates à vérifier
 					</span>
 				{/if}
@@ -316,9 +316,9 @@
 			</p>
 			{#if periode.needsReview}
 				<p class="avertissement">
-					Ces dates viennent d’une duplication : onze jours ont été ajoutés, ce qui est l’écart
-					moyen entre une année grégorienne et une année lunaire. Vérifiez-les avec votre
-					fédération, corrigez-les si besoin, puis enregistrez : la mention disparaîtra.
+					Ces dates viennent d’une duplication : les mêmes jours, un an plus tard, parce que les
+					heures de prière suivent le soleil et non le calendrier hégirien. Vérifiez-les,
+					corrigez-les si besoin, puis enregistrez : la mention disparaîtra.
 				</p>
 			{/if}
 			<table>

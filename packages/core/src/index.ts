@@ -35,6 +35,7 @@ export {
 	isLocalTime,
 	isoDateToDays,
 	localTimeToMinutes,
+	nextYearSameDate,
 	nthWeekdayOfMonth,
 	parseIsoDate,
 	parseLocalTime,

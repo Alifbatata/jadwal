@@ -19,6 +19,7 @@ import {
 	isLocalTime,
 	isoDateToDays,
 	localTimeToMinutes,
+	nextYearSameDate,
 	nthWeekdayOfMonth,
 	parseIsoDate,
 	parseLocalTime,
@@ -450,6 +451,77 @@ describe('addDays', () => {
 
 	it('throws a TypeError on an invalid date', () => {
 		expect(() => addDays('2026-02-30', 1)).toThrow(TypeError);
+	});
+});
+
+describe('nextYearSameDate', () => {
+	it('keeps the month and the day, and moves the year by one', () => {
+		expect(nextYearSameDate('2027-01-01')).toBe('2028-01-01');
+		expect(nextYearSameDate('2027-03-01')).toBe('2028-03-01');
+		expect(nextYearSameDate('2027-12-31')).toBe('2028-12-31');
+		expect(nextYearSameDate('2027-02-28')).toBe('2028-02-28');
+	});
+
+	it('keeps 29 February when the next year is a leap year', () => {
+		// 2096 is a leap year; 2095 is not. The date exists on both sides here.
+		expect(nextYearSameDate('2095-12-31')).toBe('2096-12-31');
+		expect(nextYearSameDate('2096-02-29')).toBe('2097-03-01');
+	});
+
+	it('moves 29 February to 1 March in a common year, never back to 28 February', () => {
+		// Backwards would map 28 and 29 February onto the same day, and two periods that merely
+		// touched would then overlap. This is the whole reason the direction is forwards.
+		expect(nextYearSameDate('2028-02-29')).toBe('2029-03-01');
+		expect(nextYearSameDate('2028-02-28')).toBe('2029-02-28');
+		expect(nextYearSameDate('2028-02-29')).not.toBe('2029-02-28');
+	});
+
+	it('applies the century rule, not just the four-year one', () => {
+		// 2100 is divisible by four but is not a leap year.
+		expect(nextYearSameDate('2099-02-28')).toBe('2100-02-28');
+		expect(nextYearSameDate('2100-02-28')).toBe('2101-02-28');
+	});
+
+	it('throws a TypeError on an invalid date', () => {
+		expect(() => nextYearSameDate('2026-02-30')).toThrow(TypeError);
+	});
+
+	it('always lands between 365 and 366 days later', () => {
+		fc.assert(
+			fc.property(civilDateArb, ([year, month, day]) => {
+				const date = formatIsoDate({ year, month, day });
+				const ecart = isoDateToDays(nextYearSameDate(date)) - isoDateToDays(date);
+				expect(ecart).toBeGreaterThanOrEqual(365);
+				expect(ecart).toBeLessThanOrEqual(366);
+			}),
+			{ numRuns: NUM_RUNS }
+		);
+	});
+
+	it('never goes backwards: two dates in order stay in order', () => {
+		fc.assert(
+			fc.property(dayArb, fc.integer({ min: 0, max: 400 }), (days, ecart) => {
+				const avant = daysToIsoDate(days);
+				const apres = daysToIsoDate(days + ecart);
+				expect(compareIsoDates(nextYearSameDate(avant), nextYearSameDate(apres))).not.toBe(1);
+			}),
+			{ numRuns: NUM_RUNS }
+		);
+	});
+
+	it('maps two consecutive days to the same day or to consecutive-enough days', () => {
+		// C'est la propriété dont dépend la jointivité des périodes : l'image du lendemain ne
+		// recule jamais, et elle ne saute jamais plus d'un jour de trop — le 29 février inséré.
+		fc.assert(
+			fc.property(dayArb, (days) => {
+				const ecart =
+					isoDateToDays(nextYearSameDate(daysToIsoDate(days + 1))) -
+					isoDateToDays(nextYearSameDate(daysToIsoDate(days)));
+				expect(ecart).toBeGreaterThanOrEqual(0);
+				expect(ecart).toBeLessThanOrEqual(2);
+			}),
+			{ numRuns: NUM_RUNS }
+		);
 	});
 });
 
