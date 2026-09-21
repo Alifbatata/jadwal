@@ -105,7 +105,7 @@ La phrase de passe est à l'exploitant. Elle n'est ni dans le dépôt, ni sur le
 
 | Unité                       | Quand             | Ce qu'elle fait                                                               |
 | --------------------------- | ----------------- | ----------------------------------------------------------------------------- |
-| `jadwal-sauvegarde.timer`   | 02:15             | Vidange, chiffrement `age`, envoi hors du serveur, rétention 7/4/6.           |
+| `jadwal-sauvegarde.timer`   | 02:15 UTC         | Vidange, chiffrement `age`, envoi sous `quotidien/`, `hebdo/` et `mensuel/`.  |
 | `jadwal-prieres.timer`      | 03:10             | Recalcule la fenêtre glissante des heures de prière calculées.                |
 | `jadwal-purges.timer`       | 03:40             | Les six purges de rétention.                                                  |
 | `jadwal-restauration.timer` | dimanche 04:30    | Restaure dans une base jetable et compare à la base vivante.                  |
@@ -134,8 +134,8 @@ destination. La chaîne entière, clé privée comprise, est éprouvée par l'ex
 
 ```sh
 /opt/jadwal/scripts/jadwal-restauration.sh \
-  --archive /var/backups/jadwal/jadwal-2026-09-21.dump.age \
+  --archive /var/backups/jadwal/jadwal-2026-09-21T021503Z.dump.age \
   --cle /chemin/vers/la/cle/privee
 ```
 
-La veille alerte si cela n'a plus abouti depuis quarante jours.
+La veille alerte si cela n'a plus abouti depuis quatre-vingt-dix-sept jours — un trimestre, plus la marge de sept jours du contrôle extérieur (ADR 0037).
