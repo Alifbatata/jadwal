@@ -1,79 +1,62 @@
 #!/usr/bin/env bash
-# « Laquelle de ces archives garde-t-on **sur le disque du serveur** ? » (ADR 0035, ADR 0037)
+# Efface du disque du serveur les archives que la règle de rétention ne désigne pas (ADR 0035, 0037).
 #
-# Sept quotidiennes, quatre hebdomadaires, six mensuelles. La règle est isolée dans ce fichier pour
-# une seule raison : elle se teste. `jadwal-retention.sh <répertoire>` écrit, un par ligne, le nom
-# des archives à garder, et ne supprime rien lui-même. On peut donc la vérifier sur un répertoire
-# jetable rempli de fichiers vides, sans jamais risquer une vraie sauvegarde.
+# **Il ne décide rien.** La règle — sept quotidiennes, quatre hebdomadaires, six mensuelles — vit
+# dans `infra/sauvegarde/retention.mjs`, où elle est éprouvée par onze tests, et elle est jouée par
+# un conteneur jetable tiré de l'image de l'application, comme celle des destinations. Ce script lui
+# donne la liste des noms et efface ce qu'elle ne rend pas.
+#
+# Le partage est celui-là parce qu'il a coûté cher : la règle a passé une nuit ici, en bash, où elle
+# imprimait chaque date sans fin de ligne. `date` recevait quatorze dates collées, répondait
+# « invalid date », et la règle ne gardait plus rien — ce script aurait effacé toutes les archives
+# locales dès la première nuit. Un défaut de ce genre ne se voit pas à la relecture.
 #
 # **Elle ne vaut que pour le disque local.** Depuis l'ADR 0037, le serveur n'efface plus rien à
-# distance : la rétention des archives envoyées est tenue par le stockage, verrou de conservation et
-# cycle de vie, hors d'atteinte d'un attaquant qui aurait pris ce serveur.
+# distance : c'est le cycle de vie du stockage qui s'en charge, hors de sa portée.
 #
-# Le classement est fait sur la **date du nom**, pas sur la date du fichier : une archive recopiée
-# depuis la destination garde son rang. Les noms portent désormais une heure
-# (`jadwal-2026-09-21T021503Z.dump.age`) ; les anciens, sans heure, restent lisibles.
+#     jadwal-retention.sh <répertoire>            efface
+#     jadwal-retention.sh <répertoire> --lister   dit seulement ce qu'il garderait
 
-set -Eeuo pipefail
+# shellcheck source=jadwal-commun.sh
+. "$(dirname "$(readlink -f "$0")")/jadwal-commun.sh"
 
 repertoire="${1:?répertoire attendu}"
-QUOTIDIENNES="${JADWAL_RETENTION_QUOTIDIENNES:-7}"
-HEBDOMADAIRES="${JADWAL_RETENTION_HEBDOMADAIRES:-4}"
-MENSUELLES="${JADWAL_RETENTION_MENSUELLES:-6}"
+mode="${2:-}"
 
-# Le jour d'une archive, à partir de son seul nom. `jadwal-2026-09-21T021503Z.dump.age` → 2026-09-21.
-# La fin de ligne est là pour que `sort` voie des lignes et non une seule chaîne ; les substitutions
-# de commande la retirent d'elles-mêmes.
-jour_de() {
-	local reste="${1#jadwal-}"
-	reste="${reste%%.*}"
-	printf '%s\n' "${reste%%T*}"
-}
-
-noms=()
+noms=""
 while IFS= read -r fichier; do
-	noms+=("$(basename "$fichier")")
+	noms="$noms$(basename "$fichier")
+"
 done < <(find "$repertoire" -maxdepth 1 -name 'jadwal-*.dump.age' | sort)
 
-if [ "${#noms[@]}" -eq 0 ]; then
+if [ -z "$noms" ]; then
+	trace "aucune archive dans $repertoire : rien à faire"
 	exit 0
 fi
 
-# Les jours représentés, du plus récent au plus ancien. Un jour peut porter plusieurs archives : un
-# rattrapage après incident en produit une seconde, et les deux se gardent ou se jettent ensemble.
-jours=()
-while IFS= read -r jour; do
-	jours+=("$jour")
-done < <(for nom in "${noms[@]}"; do jour_de "$nom"; done | sort --reverse --unique)
+a_garder="$(printf '%s' "$noms" | retention)" \
+	|| echec "la règle de rétention n'a pas répondu : rien n'est effacé"
 
-garder=()
+# Une règle qui ne garde rien alors qu'on lui a donné des archives est un défaut, pas une décision.
+# On refuse plutôt que d'effacer : le disque local est le premier endroit où l'on cherche une
+# archive, et le rattrapage depuis le stockage coûte un rapatriement.
+if [ -z "$a_garder" ]; then
+	echec "la règle de rétention n'a désigné aucune archive à garder sur $(printf '%s' "$noms" | grep --count .) : refus d'effacer"
+fi
 
-# Les jours les plus récents, quel que soit leur jour de semaine.
-for jour in "${jours[@]:0:$QUOTIDIENNES}"; do
-	garder+=("$jour")
-done
+if [ "$mode" = "--lister" ]; then
+	printf '%s\n' "$a_garder"
+	exit 0
+fi
 
-# Les dimanches, ensuite : `date +%u` vaut 7 le dimanche.
-restant="$HEBDOMADAIRES"
-for jour in "${jours[@]}"; do
-	[ "$restant" -gt 0 ] || break
-	[ "$(date --date="$jour" +%u)" = 7 ] || continue
-	garder+=("$jour")
-	restant=$((restant - 1))
-done
-
-# Les premiers du mois, enfin.
-restant="$MENSUELLES"
-for jour in "${jours[@]}"; do
-	[ "$restant" -gt 0 ] || break
-	[ "$(date --date="$jour" +%d)" = 01 ] || continue
-	garder+=("$jour")
-	restant=$((restant - 1))
-done
-
-retenus="$(printf '%s\n' "${garder[@]}" | sort --unique)"
-for nom in "${noms[@]}"; do
-	if printf '%s\n' "$retenus" | grep --quiet --line-regexp --fixed-strings "$(jour_de "$nom")"; then
-		printf '%s\n' "$nom"
+efface=0
+while IFS= read -r court; do
+	[ -n "$court" ] || continue
+	if ! printf '%s\n' "$a_garder" | grep --quiet --line-regexp --fixed-strings "$court"; then
+		trace "retrait local de $court (hors rétention locale)"
+		rm -f "$repertoire/$court" "$repertoire/$court.sha256"
+		efface=$((efface + 1))
 	fi
-done
+done <<< "$noms"
+
+trace "$(printf '%s\n' "$a_garder" | grep --count .) archive(s) gardée(s), $efface effacée(s) du disque local"

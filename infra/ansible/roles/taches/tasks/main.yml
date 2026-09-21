@@ -23,19 +23,24 @@
     - jadwal-retention.sh
     - jadwal-restauration.sh
     - jadwal-veille.sh
+    - jadwal-sonde.sh
     - jadwal-mail.mjs
   become: true
 
-# La règle qui décide où part une archive et sous quel nom (ADR 0037). Elle vit dans son propre
-# paquet, avec ses tests, et elle est jouée sur le serveur par un conteneur jetable tiré de l'image
-# de l'application — l'hôte n'a pas de Node, et n'a pas à en avoir un.
-- name: La règle des destinations de sauvegarde
+# Les deux règles des sauvegardes : où part une archive et sous quel nom, et lesquelles on garde
+# sur le disque (ADR 0037). Elles vivent dans leur propre paquet, avec leurs tests, et sont jouées
+# sur le serveur par un conteneur jetable tiré de l'image de l'application — l'hôte n'a pas de Node,
+# et n'a pas à en avoir un.
+- name: Les règles des sauvegardes
   ansible.builtin.copy:
-    src: '{{ playbook_dir }}/../sauvegarde/destinations.mjs'
-    dest: '{{ jadwal_racine }}/scripts/jadwal-destinations.mjs'
+    src: '{{ playbook_dir }}/../sauvegarde/{{ item.src }}'
+    dest: '{{ jadwal_racine }}/scripts/{{ item.dest }}'
     owner: root
     group: root
     mode: '0644'
+  loop:
+    - { src: destinations.mjs, dest: jadwal-destinations.mjs }
+    - { src: retention.mjs, dest: jadwal-retention.mjs }
   become: true
 
 - name: Les unités systemd
@@ -57,6 +62,8 @@
     - jadwal-restauration.timer
     - jadwal-veille.service
     - jadwal-veille.timer
+    - jadwal-sonde@.service
+    - jadwal-sonde@.timer
   become: true
   register: unites
 
@@ -73,12 +80,22 @@
     name: '{{ item }}'
     enabled: true
     state: started
-  loop:
-    - jadwal-prieres.timer
-    - jadwal-purges.timer
-    - jadwal-sauvegarde.timer
-    - jadwal-restauration.timer
-    - jadwal-veille.timer
+  loop: >-
+    {{ ['jadwal-prieres.timer', 'jadwal-purges.timer', 'jadwal-sauvegarde.timer',
+        'jadwal-restauration.timer', 'jadwal-veille.timer', 'jadwal-sonde@4.timer']
+       + (['jadwal-sonde@6.timer'] if jadwal_sonde_ipv6 else []) }}
+  become: true
+
+# Une instance sans IPv6 ne doit pas voir sa sonde IPv6 échouer toutes les cinq minutes pour une
+# adresse qu'elle ne publie pas. Si elle a été armée puis que `jadwal_sonde_ipv6` repasse à faux, on
+# la désarme : un réglage qui ne défait pas ce qu'il a fait n'est pas un réglage.
+- name: La sonde IPv6 est désarmée quand l'instance n'en a pas
+  ansible.builtin.systemd_service:
+    name: 'jadwal-sonde@6.timer'
+    enabled: false
+    state: stopped
+  when: not jadwal_sonde_ipv6
+  failed_when: false
   become: true
 
 - name: Ce qui est programmé, pour le rapport

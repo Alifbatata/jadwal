@@ -132,3 +132,20 @@ destinations() {
 		--cap-drop ALL --security-opt no-new-privileges:true \
 		"$image" node /app/jadwal-destinations.mjs "$horodatage"
 }
+
+# Quelles archives locales garde-t-on ? Les noms arrivent sur l'entrée standard, un par ligne, et
+# ressortent filtrés (ADR 0037).
+#
+# Même mécanique que `destinations` et pour la même raison : la règle n'existe qu'à un seul endroit,
+# `infra/sauvegarde/retention.mjs`, où elle est éprouvée. Elle a passé une nuit en bash, où elle ne
+# gardait rien du tout sans que personne le voie.
+retention() {
+	local image
+	image="$(valeur_env JADWAL_IMAGE)"
+	[ -n "$image" ] || { trace "JADWAL_IMAGE manque : impossible d'appliquer la rétention"; return 1; }
+	docker run --rm --interactive \
+		--volume "$JADWAL_RACINE/scripts/jadwal-retention.mjs:/app/jadwal-retention.mjs:ro" \
+		--read-only --tmpfs /tmp \
+		--cap-drop ALL --security-opt no-new-privileges:true \
+		"$image" node /app/jadwal-retention.mjs
+}
