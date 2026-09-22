@@ -130,14 +130,18 @@ export function describeTiming(timing: TimingView): string {
 		return `de ${(timing.start ?? '').slice(0, 5)} à ${(timing.end ?? '').slice(0, 5)}`;
 	}
 	const priere = PRAYER_LABELS[timing.prayer ?? ''] ?? timing.prayer ?? '';
-	const decalage = timing.offsetMinutes ?? 0;
-	const quand =
-		decalage === 0
-			? `à ${priere}`
-			: decalage > 0
-				? `${decalage} min après ${priere}`
-				: `${Math.abs(decalage)} min avant ${priere}`;
+	const quand = quandParRapportA(priere, timing.offsetMinutes ?? 0);
 	return `${quand}, pendant ${describeDuration(timing.durationMinutes ?? 0)}`;
+}
+
+/**
+ * « à Maghrib », « 15 min après Maghrib », « 15 min avant Maghrib ». Un décalage négatif se dit
+ * « avant », avec sa valeur absolue : l'horaire d'un cours et l'heure de chacune de ses séances le
+ * disent de la même façon, parce qu'ils passent tous deux par ici.
+ */
+function quandParRapportA(priere: string, decalage: number): string {
+	if (decalage === 0) return `à ${priere}`;
+	return decalage > 0 ? `${decalage} min après ${priere}` : `${-decalage} min avant ${priere}`;
 }
 
 /** « 1 h 30 », « 45 min ». */
@@ -157,9 +161,7 @@ export function describeSessionTime(seance: {
 	if (seance.start && seance.end) return `${seance.start} – ${seance.end}`;
 	if (seance.anchor) {
 		const priere = PRAYER_LABELS[seance.anchor.prayer] ?? seance.anchor.prayer;
-		return seance.anchor.offsetMinutes === 0
-			? `à ${priere}`
-			: `${seance.anchor.offsetMinutes} min après ${priere}`;
+		return quandParRapportA(priere, seance.anchor.offsetMinutes);
 	}
 	return 'heure à préciser';
 }

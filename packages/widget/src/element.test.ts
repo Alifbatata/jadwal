@@ -145,6 +145,35 @@ describe('l’enregistrement et les attributs', () => {
 	});
 });
 
+describe('les textes du widget', () => {
+	/** Les trois textes que le widget pose lui-même, dans une langue. */
+	function textes(langue: string): string[] {
+		const element = poser(`org="belvedere" lang="${langue}" base="${ORIGINE}"`);
+		return [
+			cadreDe(element)?.title ?? '',
+			element.shadowRoot?.querySelector('footer a')?.textContent ?? '',
+			element.shadowRoot?.querySelector('footer span')?.textContent ?? ''
+		];
+	}
+
+	it('writes the Arabic as the project lead proofread it, tanwin before the alif', () => {
+		expect(textes('ar')).toEqual([
+			'برنامج الدروس',
+			'عرض البرنامج كاملًا',
+			'مقدَّم مجانًا من jadwal، خدمة من Voltia'
+		]);
+		// Le tanwin se pose sur la lettre qui précède l'alif, jamais sur l'alif : « ـاً » est la
+		// faute que la relecture a trouvée ici, et qu'elle avait déjà trouvée dans la page publique.
+		expect(textes('ar').join(' ')).not.toMatch(/اً/);
+	});
+
+	it('writes no Eastern Arabic or Persian digit, in any language', () => {
+		for (const langue of ['fr', 'de', 'it', 'ar']) {
+			expect(textes(langue).join(' ')).not.toMatch(/[٠-٩۰-۹]/);
+		}
+	});
+});
+
 describe('la hauteur annoncée par le cadre', () => {
 	it('applies a height announced by its own frame', () => {
 		const element = poser(`org="belvedere" base="${ORIGINE}"`);

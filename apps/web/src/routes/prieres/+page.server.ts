@@ -306,7 +306,7 @@ export const actions: Actions = {
 			if (codeSql(cause) === '23P01') {
 				return fail(400, {
 					erreur:
-						'Cette période en chevauche une autre. Fermez d’abord celle qui la précède — une ' +
+						'Cette période en chevauche une autre. Fermez d’abord celle qui la précède. Une ' +
 						'période sans date de fin couvre tout ce qui vient après elle.'
 				});
 			}

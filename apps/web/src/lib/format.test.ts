@@ -139,6 +139,38 @@ describe('l’heure d’une séance', () => {
 		).toBe('15 min après Maghrib');
 	});
 
+	it.each([
+		[-1, '1 min avant Maghrib'],
+		[-2, '2 min avant Maghrib'],
+		[-3, '3 min avant Maghrib'],
+		[-10, '10 min avant Maghrib'],
+		[-11, '11 min avant Maghrib'],
+		[-15, '15 min avant Maghrib'],
+		[-100, '100 min avant Maghrib'],
+		[-120, '120 min avant Maghrib']
+	])(
+		'says « avant » for an offset of %i minutes, as the timing of the course does',
+		(decalage, attendu) => {
+			expect(
+				describeSessionTime({
+					start: null,
+					end: null,
+					anchor: { prayer: 'maghrib', offsetMinutes: decalage }
+				})
+			).toBe(attendu);
+			// La même phrase que l'horaire du cours, tel que la liste des cours et son formulaire le
+			// disent : une séance ne contredit pas le cours dont elle vient.
+			expect(
+				describeTiming({
+					kind: 'prayer',
+					prayer: 'maghrib',
+					offsetMinutes: decalage,
+					durationMinutes: 60
+				})
+			).toBe(`${attendu}, pendant 1 h`);
+		}
+	);
+
 	it('says plainly that the time is unknown rather than showing nothing', () => {
 		expect(describeSessionTime({ start: null, end: null })).toBe('heure à préciser');
 	});

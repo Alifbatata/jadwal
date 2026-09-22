@@ -39,7 +39,10 @@ interface Dictionnaire {
 	readonly movedTo: (date: string) => string;
 	readonly originallyOn: (date: string) => string;
 	readonly after: (prayer: string) => string;
+	/** « 15 min après Maghrib ». Le nombre est positif : le signe est déjà dans le choix du mot. */
 	readonly afterOffset: (offset: number, prayer: string) => string;
+	/** « 15 min avant Maghrib », pour un décalage négatif, donné ici par sa valeur absolue. */
+	readonly beforeOffset: (offset: number, prayer: string) => string;
 	readonly emptyPauseNamed: (reason: string) => string;
 	readonly emptyPause: string;
 	readonly emptyNotPublished: string;
@@ -80,12 +83,29 @@ interface Dictionnaire {
 	readonly androidText: string;
 	readonly outlookText: string;
 	readonly offeredBy: string;
+	/** Le lien du pied vers les conditions d'utilisation, qui n'existent qu'en français. */
+	readonly terms: string;
 	readonly weekTitle: string;
 	readonly coursesTitle: string;
 	readonly sessionCount: (count: number) => string;
 	readonly previousMonth: string;
 	readonly nextMonth: string;
 	readonly shortWeekdays: readonly string[];
+}
+
+/**
+ * L'accord d'un nom arabe avec son nombre, selon les six formes du CLDR (`Intl.PluralRules`) :
+ * zéro, un, deux, puis « few » et « many », lus sur les deux derniers chiffres (de 3 à 10, de 11
+ * à 99 : 103 est « few », 111 est « many »), et « other » pour le reste (100, 101, 102, 200…).
+ *
+ * C'est le seul endroit où l'arabe accorde un nom à un nombre : les minutes de la page, celles du
+ * flux agenda, qui reprend `afterOffset`, et le nombre de séances passent tous par ici. Le nombre
+ * reste en chiffres latins (ADR 0007) : seules les règles viennent d'`Intl`, jamais le formatage.
+ */
+const PLURIEL_ARABE = new Intl.PluralRules('ar');
+
+function selonLeNombre(nombre: number, formes: Record<Intl.LDMLPluralRule, string>): string {
+	return formes[PLURIEL_ARABE.select(nombre)];
 }
 
 const fr: Dictionnaire = {
@@ -127,6 +147,7 @@ const fr: Dictionnaire = {
 	originallyOn: (date) => `Initialement le ${date}`,
 	after: (prayer) => `Après ${prayer}`,
 	afterOffset: (offset, prayer) => `${offset} min après ${prayer}`,
+	beforeOffset: (offset, prayer) => `${offset} min avant ${prayer}`,
 	emptyPauseNamed: (reason) => `Pas de cours cette semaine : ${reason}.`,
 	emptyPause: 'Pas de cours cette semaine : une pause est en cours.',
 	emptyNotPublished: 'Le programme n’est pas encore publié.',
@@ -170,6 +191,7 @@ const fr: Dictionnaire = {
 	outlookText:
 		'Ouvrez Outlook sur le web, allez dans Calendrier, Ajouter un calendrier, S’abonner à partir du Web, collez l’adresse, donnez-lui un nom, puis importez.',
 	offeredBy: 'Proposé gratuitement par jadwal, un service de Voltia',
+	terms: 'Conditions d’utilisation',
 	weekTitle: 'Cours de la semaine',
 	coursesTitle: 'Tous les cours',
 	sessionCount: (count) => (count === 1 ? '1 séance' : `${count} séances`),
@@ -216,6 +238,7 @@ const de: Dictionnaire = {
 	originallyOn: (date) => `Ursprünglich am ${date}`,
 	after: (prayer) => `Nach ${prayer}`,
 	afterOffset: (offset, prayer) => `${offset} Min. nach ${prayer}`,
+	beforeOffset: (offset, prayer) => `${offset} Min. vor ${prayer}`,
 	emptyPauseNamed: (reason) => `Diese Woche kein Unterricht: ${reason}.`,
 	emptyPause: 'Diese Woche kein Unterricht: es läuft eine Pause.',
 	emptyNotPublished: 'Das Programm ist noch nicht veröffentlicht.',
@@ -259,6 +282,7 @@ const de: Dictionnaire = {
 	outlookText:
 		'Öffnen Sie Outlook im Web, gehen Sie zu Kalender, Kalender hinzufügen, Aus dem Internet abonnieren, fügen Sie die Adresse ein, geben Sie einen Namen ein und importieren Sie.',
 	offeredBy: 'Kostenlos bereitgestellt von jadwal, einem Dienst von Voltia',
+	terms: 'Nutzungsbedingungen',
 	weekTitle: 'Kurse dieser Woche',
 	coursesTitle: 'Alle Kurse',
 	sessionCount: (count) => (count === 1 ? '1 Termin' : `${count} Termine`),
@@ -305,6 +329,7 @@ const it: Dictionnaire = {
 	originallyOn: (date) => `Inizialmente il ${date}`,
 	after: (prayer) => `Dopo ${prayer}`,
 	afterOffset: (offset, prayer) => `${offset} min dopo ${prayer}`,
+	beforeOffset: (offset, prayer) => `${offset} min prima di ${prayer}`,
 	emptyPauseNamed: (reason) => `Nessun corso questa settimana: ${reason}.`,
 	emptyPause: 'Nessun corso questa settimana: è in corso una pausa.',
 	emptyNotPublished: 'Il programma non è ancora pubblicato.',
@@ -348,6 +373,7 @@ const it: Dictionnaire = {
 	outlookText:
 		'Apri Outlook sul web, vai su Calendario, Aggiungi calendario, Iscriviti dal Web, incolla l’indirizzo, dagli un nome e importa.',
 	offeredBy: 'Offerto gratuitamente da jadwal, un servizio di Voltia',
+	terms: 'Condizioni d’uso',
 	weekTitle: 'Corsi della settimana',
 	coursesTitle: 'Tutti i corsi',
 	sessionCount: (count) => (count === 1 ? '1 lezione' : `${count} lezioni`),
@@ -357,7 +383,9 @@ const it: Dictionnaire = {
 
 const ar: Dictionnaire = {
 	weekdays: ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'],
-	shortWeekdays: ['إث', 'ثل', 'أر', 'خم', 'جم', 'سب', 'أح'],
+	// Les formes étroites du CLDR (`weekday: 'narrow'`), d'une lettre : l'en-tête de la vue Mois n'a
+	// pas la place de plus. Les formes « short » de l'arabe sont les noms entiers.
+	shortWeekdays: ['ن', 'ث', 'ر', 'خ', 'ج', 'س', 'ح'],
 	months: [
 		'يناير',
 		'فبراير',
@@ -390,10 +418,31 @@ const ar: Dictionnaire = {
 	period: (from, to) => `من ${from} إلى ${to}`,
 	cancelled: 'ملغى',
 	exceptionalDate: 'موعد استثنائي',
-	movedTo: (date) => `أُجّل إلى ${date}`,
-	originallyOn: (date) => `كان في ${date}`,
+	movedTo: (date) => `نُقل إلى ${date}`,
+	originallyOn: (date) => `كان مقرّرًا في ${date}`,
 	after: (prayer) => `بعد ${prayer}`,
-	afterOffset: (offset, prayer) => `بعد ${prayer} بـ ${offset} دقيقة`,
+	// Zéro n'est pas une phrase de minutes : c'est « après » tout court, la phrase de `after`.
+	afterOffset: (offset, prayer) =>
+		selonLeNombre(offset, {
+			zero: `بعد ${prayer}`,
+			one: `بعد ${prayer} بدقيقة واحدة`,
+			two: `بعد ${prayer} بدقيقتين`,
+			few: `بعد ${prayer} بـ${offset} دقائق`,
+			many: `بعد ${prayer} بـ${offset} دقيقة`,
+			other: `بعد ${prayer} بـ${offset} دقيقة`
+		}),
+	// Les formes de « بعد », relues par le chef de projet, avec « قبل » à la place. Zéro n'arrive
+	// jamais ici, un décalage nul se dit par `after` ; la forme n'est là que parce que l'accord en
+	// demande six.
+	beforeOffset: (offset, prayer) =>
+		selonLeNombre(offset, {
+			zero: `قبل ${prayer}`,
+			one: `قبل ${prayer} بدقيقة واحدة`,
+			two: `قبل ${prayer} بدقيقتين`,
+			few: `قبل ${prayer} بـ${offset} دقائق`,
+			many: `قبل ${prayer} بـ${offset} دقيقة`,
+			other: `قبل ${prayer} بـ${offset} دقيقة`
+		}),
 	emptyPauseNamed: (reason) => `لا دروس هذا الأسبوع: ${reason}.`,
 	emptyPause: 'لا دروس هذا الأسبوع: هناك عطلة.',
 	emptyNotPublished: 'لم يُنشر البرنامج بعد.',
@@ -407,7 +456,7 @@ const ar: Dictionnaire = {
 	teacher: 'المدرّس',
 	taughtIn: 'لغة التدريس',
 	jumua: 'صلاة الجمعة',
-	sermonIn: (languages) => `الخطبة بـ${languages}`,
+	sermonIn: (languages) => `لغة الخطبة: ${languages}`,
 	fromTo: (from, to) => `من ${from} إلى ${to}`,
 	datesLabel: 'الفترة',
 	nextSessions: 'الحصص القادمة',
@@ -417,29 +466,38 @@ const ar: Dictionnaire = {
 	subscribe: 'الاشتراك في التقويم',
 	subscribeTitle: 'الاشتراك في التقويم',
 	subscribeIntro: (name) =>
-		`يُضاف برنامج ${name} إلى تقويمك ويتحدّث تلقائيًا، مرة كل ساعة تقريبًا. لا حاجة لإعادة أي إعداد عند تغيّر درس.`,
+		`يُضاف برنامج ${name} إلى تقويمك ويُحدَّث تلقائيًا، مرة كل ساعة تقريبًا. لا حاجة لإعادة أي إعداد عند تغيّر درس.`,
 	subscribeButton: 'أضف إلى تقويمي',
-	subscribeAddress: 'أو انسخ هذا العنوان في تطبيق التقويم:',
+	subscribeAddress: 'أو انسخ هذا العنوان والصقه في تطبيق التقويم:',
 	subscribeWholeTitle: 'البرنامج كاملًا',
 	subscribeOneCourseTitle: 'درس واحد فقط',
 	subscribeOneCourseText:
-		'يمكنك أيضًا إضافة درس واحد فقط. اضغط على اسمه: يُضاف وحده ويتحدّث مثل الباقي. وعنوانه بصيغة https موجود في صفحة الدرس.',
+		'يمكنك أيضًا إضافة درس واحد فقط. اضغط على اسمه: يُضاف وحده ويُحدَّث مثل الباقي. وعنوانه بصيغة https موجود في صفحة الدرس.',
 	subscribeWhole: 'الاشتراك في البرنامج كاملًا',
 	addCourseToCalendar: 'أضف هذا الدرس إلى تقويمي',
-	courseFeedAddress: 'أو انسخ هذا العنوان، وهو لا يحمل إلا هذا الدرس:',
+	courseFeedAddress: 'أو انسخ هذا العنوان، وهو خاص بهذا الدرس وحده:',
 	onIphone: 'على iPhone و iPad',
 	onAndroid: 'على Android',
 	onOutlook: 'على Outlook',
 	iphoneText:
-		'اضغط الزر أعلاه: سيقترح هاتفك إضافة التقويم. إن لم يحدث شيء، افتح الإعدادات، ثم التطبيقات، التقويم، الحسابات، إضافة حساب، أخرى، إضافة اشتراك تقويم، والصق العنوان.',
+		'اضغط على الزر أعلاه: سيقترح هاتفك إضافة التقويم. إن لم يحدث شيء، افتح الإعدادات، ثم التطبيقات، التقويم، الحسابات، إضافة حساب، أخرى، إضافة اشتراك تقويم، والصق العنوان.',
 	androidText:
 		'افتح تقويم Google على حاسوب: تطبيق الهاتف لا يضيف الاشتراكات. من التقاويم الأخرى اختر من عنوان URL، الصق العنوان ثم أضف التقويم. سيظهر بعدها على هاتفك.',
 	outlookText:
 		'افتح Outlook على الويب، اذهب إلى التقويم، إضافة تقويم، الاشتراك من الويب، الصق العنوان، سمِّه، ثم استورد.',
 	offeredBy: 'مقدَّم مجانًا من jadwal، خدمة من Voltia',
+	terms: 'شروط الاستخدام',
 	weekTitle: 'دروس الأسبوع',
 	coursesTitle: 'كل الدروس',
-	sessionCount: (count) => (count === 1 ? 'حصة واحدة' : `${count} حصص`),
+	sessionCount: (count) =>
+		selonLeNombre(count, {
+			zero: 'لا حصص',
+			one: 'حصة واحدة',
+			two: 'حصتان',
+			few: `${count} حصص`,
+			many: `${count} حصة`,
+			other: `${count} حصة`
+		}),
 	previousMonth: 'الشهر السابق',
 	nextMonth: 'الشهر التالي'
 };
@@ -472,6 +530,28 @@ export function dateWithYear(langue: Langue, date: IsoDate): string {
 	if (langue === 'de') return `${civil.day}. ${mois} ${civil.year}`;
 	if (langue === 'fr' && civil.day === 1) return `1er ${mois} ${civil.year}`;
 	return `${civil.day} ${mois} ${civil.year}`;
+}
+
+/**
+ * La balise `<html>` de `src/app.html`, avec ses deux repères. `%lang%` n'est pas un repère de
+ * SvelteKit : c'est celui de sa documentation sur l'accessibilité, remplacé par le hook.
+ */
+const BALISE_HTML = '<html lang="%lang%" dir="%dir%">';
+
+/**
+ * La langue et le sens du document, écrits sur `<html>`. Une page publique donne sa langue ; le reste
+ * du service, qui n'en donne aucune, reste en français, de gauche à droite.
+ *
+ * Sans cela, une page arabe portait `<html lang="fr">` : la page intérieure disait bien `ar`, mais le
+ * `<title>`, lu avant elle, était annoncé comme du français.
+ *
+ * On remplace la balise entière et pas seulement `%lang%` : le texte d'une page est échappé, un
+ * chevron tapé dans une description y devient `&lt;`. La balise ne peut donc venir que du gabarit,
+ * alors que les mots `%lang%` pourraient se trouver dans n'importe quel texte saisi.
+ */
+export function documentDansSaLangue(html: string, langue: Langue | undefined): string {
+	const choisie = langue ?? 'fr';
+	return html.replace(BALISE_HTML, `<html lang="${choisie}" dir="${direction(choisie)}">`);
 }
 
 /** « Octobre 2026 », en tête de la vue Mois. */

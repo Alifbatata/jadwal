@@ -2,7 +2,7 @@
 //
 // Construit par `@jadwal/core/ics`, qui est le seul endroit du projet où une `RRULE` est produite.
 // Ce fichier ne fait que rassembler les entrées et choisir les libellés : un cours ancré sur une
-// prière sort avec « Après Maghrib » en tête de description, puisque son heure change chaque jour.
+// prière sort avec « À Maghrib » en tête de description, puisque son heure change chaque jour.
 
 import { buildCalendar, DEFAULT_HORIZON_DAYS, DEFAULT_PAST_DAYS } from '@jadwal/core/ics';
 import { addDays, todayInZone, type Prayer } from '@jadwal/core';
@@ -19,16 +19,32 @@ import {
 import { appliquerVendredi, sessionsDuVendredi } from './vendredi.js';
 import { publicDatabase } from './public.js';
 import { sql } from '@jadwal/db';
-import { PRAYER_LABELS } from '$lib/format.js';
+import { decalageEnClair, nomPriere } from '$lib/public/affichage.js';
 
-/** Le libellé d'ancrage, dans la langue de la page : c'est la première ligne de la description. */
-const ANCRAGE: Record<Langue, (priere: string, decalage: number) => string> = {
-	fr: (priere, decalage) => (decalage === 0 ? `À ${priere}` : `${decalage} min après ${priere}`),
-	de: (priere, decalage) => (decalage === 0 ? `Zu ${priere}` : `${decalage} Min. nach ${priere}`),
-	it: (priere, decalage) => (decalage === 0 ? `A ${priere}` : `${decalage} min dopo ${priere}`),
-	ar: (priere, decalage) =>
-		decalage === 0 ? `عند ${priere}` : `بعد ${priere} بـ ${decalage} دقيقة`
+/**
+ * Le libellé d'un cours ancré sans décalage : « À Maghrib », là où la page dit « Après Maghrib ».
+ * C'est la seule phrase propre au flux, et elle reste ici.
+ */
+const A_LA_PRIERE: Record<Langue, (priere: string) => string> = {
+	fr: (priere) => `À ${priere}`,
+	de: (priere) => `Zu ${priere}`,
+	it: (priere) => `A ${priere}`,
+	ar: (priere) => `عند ${priere}`
 };
+
+/**
+ * Le libellé d'ancrage, dans la langue de la page : c'est la première ligne de la description.
+ *
+ * La prière est nommée comme la page la nomme, par `nomPriere` : « عند المغرب » dans le flux arabe,
+ * et non plus « عند Maghrib ». Le flux allemand dit donc « Fadschr » et « Ischa », comme la page
+ * allemande. Avec un décalage, le flux reprend la phrase de la page, `decalageEnClair`, au lieu
+ * d'avoir la sienne : « après » ou « avant » selon le signe, et l'arabe accorde ses minutes au
+ * nombre à un seul endroit, `i18n.ts`.
+ */
+export function libelleAncrage(langue: Langue, priere: string, decalage: number): string {
+	const nom = nomPriere(langue, priere);
+	return decalage === 0 ? A_LA_PRIERE[langue](nom) : decalageEnClair(langue, decalage, nom);
+}
 
 export interface AgendaOptions {
 	organisation: OrganisationPublique;
@@ -89,10 +105,11 @@ export async function buildAgenda(options: AgendaOptions): Promise<Agenda | unde
 	const titre = courseId ? (courses[0]?.title ?? '') : null;
 	const ics = buildCalendar({
 		// Le nom du calendrier est ce que l'application d'agenda affiche dans sa liste :
-		// « Association Belvédère » pour tout le programme, « Association Belvédère — Arabe,
+		// « Association Belvédère » pour tout le programme, « Association Belvédère – Arabe,
 		// niveau 1 » pour un cours. Sans le nom de l'organisation, deux abonnements de deux
-		// organisations se ressembleraient.
-		name: titre ? `${organisation.name} — ${titre}` : organisation.name,
+		// organisations se ressembleraient. Un tiret demi-cadratin : ce nom est lu par les abonnés,
+		// et le cadratin n'a pas sa place dans un texte lu par des gens (`pnpm style`).
+		name: titre ? `${organisation.name} – ${titre}` : organisation.name,
 		timeZone: organisation.time_zone,
 		now,
 		uidHost,
@@ -109,7 +126,7 @@ export async function buildAgenda(options: AgendaOptions): Promise<Agenda | unde
 		pauses: pauses.map(toPause),
 		prayerTimes: (date) => prieres.get(date),
 		anchorLabel: (prayer: Prayer, offsetMinutes: number) =>
-			ANCRAGE[langue](PRAYER_LABELS[prayer] ?? prayer, offsetMinutes)
+			libelleAncrage(langue, prayer, offsetMinutes)
 	});
 	return { ics, title: titre };
 }
