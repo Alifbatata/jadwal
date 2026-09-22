@@ -108,6 +108,18 @@ describe('application des migrations', () => {
 		expect(replayable.length, 'migrations marquées rejouables').toBeGreaterThanOrEqual(2);
 
 		const before = await schemaFingerprint(db);
+		// Le relevé des droits de colonne ne doit pas passer à vide : sans lui, l'égalité finale ne
+		// dirait rien des droits qu'un rejeu élargit.
+		expect(
+			before.some((line) => /^\w+\.\w+ jadwal_app UPDATE$/.test(line)),
+			'droits de colonne relevés'
+		).toBe(true);
+		expect(
+			before.some((line) =>
+				line.startsWith('CREATE OR REPLACE FUNCTION jadwal.purge_orphan_accounts()')
+			),
+			'définitions de fonction relevées'
+		).toBe(true);
 		for (const entry of replayable) {
 			const statements = readFileSync(join(migrationsDir, `${entry.tag}.sql`), 'utf8')
 				.split('--> statement-breakpoint')
@@ -143,7 +155,14 @@ async function appliedCount(db: Database): Promise<number> {
 	return Number(row?.count);
 }
 
-/** Empreinte du schéma : tables, colonnes, contraintes, index et politiques. */
+/**
+ * Empreinte du schéma : tables, colonnes, contraintes, index, politiques, et droits de table et de
+ * colonne, et les fonctions du schéma `jadwal` avec leur corps et leurs droits. Sans les droits, un
+ * fichier rejoué qui rend un droit large, que retire une migration plus récente, passerait inaperçu :
+ * c'est le cas de 0012 face à 0053. Sans les fonctions, un fichier rejoué qui remet une définition
+ * qu'une migration plus récente remplace passerait inaperçu de même : c'est le cas de 0034 face à
+ * 0049 et à 0054.
+ */
 async function schemaFingerprint(db: Database): Promise<string[]> {
 	const columns = allRows<{ line: string }>(
 		await db.execute(sql`
@@ -175,5 +194,57 @@ async function schemaFingerprint(db: Database): Promise<string[]> {
 			from pg_policies where schemaname = 'public' order by 1
 		`)
 	);
-	return [...columns, ...constraints, ...indexes, ...policies].map((row) => row.line);
+	// Les droits sont dépliés un par un et triés : un retrait suivi d'un nouvel accord replace
+	// l'entrée en fin de liste sans rien changer au fond, et la liste brute y verrait une différence.
+	// Un droit de colonne retiré laisse parfois une liste vide au lieu de rien : les deux ne donnent
+	// aucune ligne ici.
+	const privileges = allRows<{ line: string }>(
+		await db.execute(sql`
+			select c.relname || ' ' || coalesce(nullif(x.grantee, 0)::regrole::text, 'public') || ' '
+				|| x.privilege_type as line
+			from pg_class c
+			join pg_namespace n on n.oid = c.relnamespace
+			cross join lateral aclexplode(c.relacl) x
+			where n.nspname = 'public' and c.relkind = 'r'
+			union all
+			select c.relname || '.' || a.attname || ' '
+				|| coalesce(nullif(x.grantee, 0)::regrole::text, 'public') || ' ' || x.privilege_type
+			from pg_class c
+			join pg_namespace n on n.oid = c.relnamespace
+			join pg_attribute a on a.attrelid = c.oid
+			cross join lateral aclexplode(a.attacl) x
+			where n.nspname = 'public' and c.relkind = 'r' and a.attnum > 0 and not a.attisdropped
+			order by 1
+		`)
+	);
+	// La définition entière, clauses `SET` et `SECURITY DEFINER` comprises, puis les droits
+	// d'exécution dépliés comme ceux des tables.
+	const functions = allRows<{ line: string }>(
+		await db.execute(sql`
+			select pg_get_functiondef(p.oid) as line
+			from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+			where n.nspname = 'jadwal' order by p.oid::regprocedure::text
+		`)
+	);
+	const functionPrivileges = allRows<{ line: string }>(
+		await db.execute(sql`
+			select p.oid::regprocedure::text || ' '
+				|| coalesce(nullif(x.grantee, 0)::regrole::text, 'public') || ' ' || x.privilege_type
+				as line
+			from pg_proc p
+			join pg_namespace n on n.oid = p.pronamespace
+			cross join lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) x
+			where n.nspname = 'jadwal'
+			order by 1
+		`)
+	);
+	return [
+		...columns,
+		...constraints,
+		...indexes,
+		...policies,
+		...privileges,
+		...functions,
+		...functionPrivileges
+	].map((row) => row.line);
 }
