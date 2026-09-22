@@ -22,8 +22,12 @@
  * Le Markdown du dépôt s'écrit avec des apostrophes droites et des espaces ordinaires, parce que
  * c'est ce qu'on tape. Le rendu, lui, doit être en typographie française : apostrophe courbe, espace
  * fine insécable avant `;` `!` `?`, espace insécable avant `:` et à l'intérieur des guillemets. La
- * transformation est faite ici, au rendu, et jamais dans le fichier source : personne n'a à taper
- * des caractères invisibles pour que le document soit correct.
+ * transformation est faite au rendu, et jamais dans le fichier source : personne n'a à taper des
+ * caractères invisibles pour que le document soit correct.
+ *
+ * Le convertisseur Markdown et cette passe typographique vivent dans
+ * `apps/web/src/lib/conditions/rendu.js`, que la page `/conditions` de l'application importe aussi :
+ * le juriste et les organisations lisent le même rendu, et non deux rendus qui se ressemblent.
  *
  * ## Ce qu'il faut pour le lancer
  *
@@ -48,15 +52,21 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import {
+	dateDeLaVersion,
+	typographier,
+	typographierHtml,
+	versHtml,
+	versionIso
+} from '../apps/web/src/lib/conditions/rendu.js';
+
+// Ses épreuves et le correcteur les importent d'ici depuis l'étape 14 : ils n'ont pas à savoir où
+// le rendu a déménagé.
+export { dateDeLaVersion, typographier, typographierHtml, versHtml, versionIso };
+
 const racine = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SOURCE = join(racine, 'docs', 'CONDITIONS.md');
 const SORTIE = join(racine, 'A_LIVRER', 'CONDITIONS-jadwal-juriste.pdf');
-
-/** La date de la version, lue dans le document : une seule source, jamais deux. */
-export function dateDeLaVersion(markdown) {
-	const trouve = /^Derni[eè]re mise [aà] jour\s*:\s*(.+?)\.?\s*$/m.exec(markdown);
-	return trouve ? trouve[1].trim() : 'sans date';
-}
 
 /**
  * Les points à valider, en français simple. Une question par point, et la raison pour laquelle elle
@@ -80,9 +90,9 @@ export const QUESTIONS = [
 		communication à l'étranger au sens des art. 16 et 17 nLPD ? Des garanties supplémentaires,
 		clauses contractuelles types ou analyse d'impact, sont-elles nécessaires ?<br><br>
 		Un fait à peser dans la réponse : <strong>les sauvegardes sont chiffrées sur le serveur, avant
-		de le quitter</strong>, et la clé qui permet de les lire n'est jamais conservée sur ce serveur,
-		ni chez Cloudflare. Celui qui les détient ne peut pas les ouvrir. Elle n'y passe qu'en mémoire,
-		le temps de vérifier qu'une sauvegarde se relit.`
+		de le quitter</strong>, et la clé qui permet de les lire n'est conservée ni sur ce serveur, ni
+		chez Cloudflare : elle ne passe sur le serveur qu'en mémoire, le temps de vérifier qu'une
+		sauvegarde se relit. Celui qui détient les sauvegardes ne peut pas les ouvrir.`
 	},
 	{
 		titre: 'Une phrase a été retirée, doit-elle revenir ?',
@@ -93,7 +103,7 @@ export const QUESTIONS = [
 	},
 	{
 		titre: 'Le journal technique, et ses quatorze jours',
-		corps: `Le serveur conserve quatorze jours un journal des requêtes servies. L'adresse du
+		corps: `Le serveur conserve au plus quatorze jours un journal des requêtes servies. L'adresse du
 		visiteur y est <strong>tronquée avant d'être écrite</strong>, au point de ne plus désigner
 		personne ; la page d'où il vient n'y figure pas. Cette donnée tronquée reste-t-elle une donnée
 		personnelle ? La durée de quatorze jours est-elle défendable, et faut-il la justifier dans le
@@ -117,12 +127,13 @@ export const QUESTIONS = [
 	},
 	{
 		titre: 'La liste des données personnelles, et ce qu’elle vaut',
-		corps: `Le texte énumère neuf catégories : l'adresse électronique et le nom d'une personne
-		responsable, le lien entre elle et son organisation, l'adresse d'une personne invitée, le
-		journal des modifications, les sessions de connexion, les liens de connexion en attente, les
-		passkeys avec le détail de ce qui en est gardé, une empreinte de l'adresse IP ou de l'adresse
-		électronique, et les traces d'accès de l'exploitant. La liste a été refaite table par table
-		contre le schéma de la base. Est-elle complète au sens de la loi, et la forme de l'énumération
+		corps: `Le texte énumère dix catégories : l'adresse électronique et le nom d'une personne de
+		l'équipe, responsable ou éditeur, le lien entre elle et son organisation, l'adresse d'une
+		personne invitée, le journal des modifications, les sessions de connexion, les liens de
+		connexion en attente, les passkeys avec le détail de ce qui en est gardé, une empreinte de
+		l'adresse IP ou de l'adresse électronique, les traces d'accès de l'exploitant, et l'acceptation
+		de ces conditions : qui, quelle version, quand. La liste a été refaite table par table contre
+		le schéma de la base. Est-elle complète au sens de la loi, et la forme de l'énumération
 		convient-elle ? Le nom d'un intervenant, écrit par l'organisation dans un champ libre et
 		publié, y est traité à part.`
 	},
@@ -142,181 +153,18 @@ export const QUESTIONS = [
 	},
 	{
 		titre: 'Comment ce texte est-il accepté ?',
-		corps: `Il n'existe pas de contrat séparé signé avec chaque organisation. Le texte est publié
-		et l'organisation ouvre son espace. Cette acceptation est-elle suffisante ? Faut-il une case à
-		cocher horodatée, et conserver la version acceptée ?`
+		corps: `Il n'existe pas de contrat signé avec chaque organisation. Chaque personne qui a accès à
+		l'espace d'une organisation, responsable ou éditeur, doit accepter le texte pour y entrer : le
+		service le lui montre en entier, et elle l'accepte d'un clic sur le bouton « J'accepte les
+		conditions d'utilisation ». Le service garde qui a accepté, quelle version et quand ; le
+		moment est noté par la base de données, pas par l'application. Quand le texte change de
+		version, le service redemande l'accord avant de laisser entrer. L'exploitant n'y est pas
+		soumis. L'acceptation est effacée avec l'adhésion, dès que la personne quitte l'organisation.
+		<strong>C'est une acceptation par personne, et non au nom de l'organisation. Elle n'est pas
+		écrite au journal des modifications, et aucune copie n'est envoyée par courriel.</strong>
+		Est-ce suffisant ? Faut-il garder la preuve de l'acceptation plus longtemps que l'adhésion ?`
 	}
 ];
-
-// ------------------------------------------------------------------------------------------------
-// Un convertisseur Markdown réduit à ce que ce document emploie : titres, paragraphes, listes,
-// tableaux, gras, italique, code. Pas de bibliothèque : ce fichier-là est la seule chose à relire
-// pour savoir ce qui est rendu, et le document est connu.
-// ------------------------------------------------------------------------------------------------
-
-const echapper = (texte) =>
-	texte.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-/** Le gras, l'italique, le code et les liens, dans une ligne déjà échappée. */
-function enligne(texte) {
-	return echapper(texte)
-		.replace(/`([^`]+)`/g, '<code>$1</code>')
-		.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-		.replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>')
-		.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
-}
-
-export function versHtml(markdown) {
-	const lignes = markdown.split(/\r?\n/);
-	const sortie = [];
-	let i = 0;
-	let liste = null;
-
-	const fermerListe = () => {
-		if (liste) {
-			sortie.push(`</${liste}>`);
-			liste = null;
-		}
-	};
-
-	while (i < lignes.length) {
-		const ligne = lignes[i];
-
-		if (ligne.trim() === '') {
-			fermerListe();
-			i += 1;
-			continue;
-		}
-
-		const titre = /^(#{1,6})\s+(.*)$/.exec(ligne);
-		if (titre) {
-			fermerListe();
-			const niveau = titre[1].length;
-			sortie.push(`<h${niveau}>${enligne(titre[2])}</h${niveau}>`);
-			i += 1;
-			continue;
-		}
-
-		// Un tableau : une ligne de cellules, puis une ligne de tirets, puis le corps.
-		if (ligne.trim().startsWith('|') && /^\s*\|[\s:|-]+\|\s*$/.test(lignes[i + 1] ?? '')) {
-			fermerListe();
-			const cellules = (l) =>
-				l
-					.trim()
-					.replace(/^\||\|$/g, '')
-					.split('|')
-					.map((c) => c.trim());
-			const entetes = cellules(ligne);
-			i += 2;
-			const corps = [];
-			while (i < lignes.length && lignes[i].trim().startsWith('|')) {
-				corps.push(cellules(lignes[i]));
-				i += 1;
-			}
-			sortie.push('<table>');
-			sortie.push(
-				`<thead><tr>${entetes.map((c) => `<th>${enligne(c)}</th>`).join('')}</tr></thead>`
-			);
-			sortie.push('<tbody>');
-			for (const rangee of corps) {
-				sortie.push(`<tr>${rangee.map((c) => `<td>${enligne(c)}</td>`).join('')}</tr>`);
-			}
-			sortie.push('</tbody></table>');
-			continue;
-		}
-
-		const puce = /^(\s*)([-*]|\d+\.)\s+(.*)$/.exec(ligne);
-		if (puce) {
-			const voulue = /^\d/.test(puce[2]) ? 'ol' : 'ul';
-			if (liste !== voulue) {
-				fermerListe();
-				sortie.push(`<${voulue}>`);
-				liste = voulue;
-			}
-			let contenu = puce[3];
-			// Une puce peut continuer sur les lignes suivantes, indentées.
-			while (i + 1 < lignes.length && /^\s{2,}\S/.test(lignes[i + 1] ?? '')) {
-				i += 1;
-				contenu += ' ' + lignes[i].trim();
-			}
-			sortie.push(`<li>${enligne(contenu)}</li>`);
-			i += 1;
-			continue;
-		}
-
-		// Un paragraphe : jusqu'à la prochaine ligne vide.
-		fermerListe();
-		const morceaux = [ligne.trim()];
-		while (
-			i + 1 < lignes.length &&
-			lignes[i + 1].trim() !== '' &&
-			!/^(#{1,6}\s|\s*[-*]\s|\s*\d+\.\s|\s*\|)/.test(lignes[i + 1])
-		) {
-			i += 1;
-			morceaux.push(lignes[i].trim());
-		}
-		sortie.push(`<p>${enligne(morceaux.join(' '))}</p>`);
-		i += 1;
-	}
-	fermerListe();
-	return sortie.join('\n');
-}
-
-// ------------------------------------------------------------------------------------------------
-// La typographie française, appliquée au rendu et à lui seul.
-// ------------------------------------------------------------------------------------------------
-
-/** Espace fine insécable, celle qui précède le point-virgule, l'exclamation et l'interrogation. */
-const FINE = '\u202f';
-/** Espace insécable, celle qui précède les deux-points et qui borde les guillemets. */
-const INSECABLE = '\u00a0';
-
-/** Applique la typographie à un morceau de texte, hors balises et hors code. */
-export function typographier(texte) {
-	return (
-		texte
-			// L'apostrophe droite devient courbe, sauf dans une entité HTML.
-			.replace(/'/g, '\u2019')
-			// Une espace ordinaire devant ces signes devient fine et insécable.
-			.replace(/ +([;!?])/g, `${FINE}$1`)
-			// Devant les deux-points, l'espace est insécable mais pleine.
-			.replace(/ +:/g, `${INSECABLE}:`)
-			// Les guillemets français serrent leur contenu.
-			.replace(/« +/g, `«${INSECABLE}`)
-			.replace(/ +»/g, `${INSECABLE}»`)
-	);
-}
-
-/**
- * Parcourt le HTML et n'applique la typographie qu'au texte : ni les balises, ni leurs attributs, ni
- * le contenu des `<code>`, où une apostrophe courbe serait une faute.
- */
-export function typographierHtml(html) {
-	let sortie = '';
-	let reste = html;
-	while (reste.length > 0) {
-		const balise = reste.indexOf('<');
-		if (balise < 0) {
-			sortie += typographier(reste);
-			break;
-		}
-		sortie += typographier(reste.slice(0, balise));
-		if (reste.startsWith('<code', balise)) {
-			const fin = reste.indexOf('</code>', balise);
-			const coupe = fin < 0 ? reste.length : fin + '</code>'.length;
-			sortie += reste.slice(balise, coupe);
-			reste = reste.slice(coupe);
-			continue;
-		}
-		const fin = reste.indexOf('>', balise);
-		const coupe = fin < 0 ? reste.length : fin + 1;
-		sortie += reste.slice(balise, coupe);
-		reste = reste.slice(coupe);
-	}
-	return sortie;
-}
-
-// ------------------------------------------------------------------------------------------------
 
 const STYLE = `
 @page { size: A4; margin: 18mm 16mm 22mm 16mm; }
@@ -332,11 +180,19 @@ h2 { font-size: 13pt; margin: 8mm 0 2.5mm; padding-bottom: 1.5mm; border-bottom:
 h3 { font-size: 11pt; margin: 5mm 0 2mm; break-after: avoid; }
 /* Aligné à gauche, jamais justifié : la justification creuse des rivières dans une colonne étroite. */
 p { margin: 0 0 2.5mm; text-align: left; }
-/* Deux lignes au moins de chaque côté d'une coupure de page. Chrome les respecte à l'impression ;
-   le test, lui, le vérifie sur le PDF plutôt que de le croire. */
-p, li { orphans: 2; widows: 2; }
+/* Aucun bloc coupé par une page. orphans et widows n'y suffisent pas : Chrome 153 ne les applique pas
+   à l'impression, et un paragraphe de trois lignes y est coupé 2/1 même avec widows: 3 (essayé à
+   l'étape 16). Seul break-inside: avoid est tenu. Un paragraphe ou une puce passe donc entier à la
+   page suivante, un élément de plusieurs paragraphes se coupe entre eux, et la phrase qui annonce
+   une liste la suit. Le test mesure le résultat dans le PDF plutôt que de le croire. */
+p, li { break-inside: avoid; }
+li:has(> p) { break-inside: auto; }
+p:has(+ ul, + ol) { break-after: avoid; }
 ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
 li { margin-bottom: 1.2mm; text-align: left; }
+/* Un élément de plusieurs paragraphes, celui des passkeys : l'écart qui le suit reste celui
+   d'une puce. */
+li > p:last-child { margin-bottom: 0; }
 code { font-family: "Cascadia Mono", Consolas, monospace; font-size: 9pt; background: #f2f4f6; padding: 0 0.6mm; border-radius: 1mm; }
 a { color: #14171a; text-decoration: none; border-bottom: 0.3pt solid #9aa4ad; }
 table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 9.5pt; break-inside: avoid; }
@@ -541,6 +397,33 @@ export async function imprimer(chemin, sortie, pied) {
 	}
 }
 
+/** La matrice identité, au format des opérateurs PDF : `a b c d e f`. */
+const IDENTITE = [1, 0, 0, 1, 0, 0];
+
+/**
+ * Le produit de deux matrices PDF, la première appliquée d'abord. C'est l'ordre du format : `cm`
+ * pose sa matrice devant la matrice courante, `Td` son déplacement devant la ligne de texte, et la
+ * ligne de texte passe devant la matrice courante pour arriver sur la page.
+ */
+function composer([a, b, c, d, e, f], [a2, b2, c2, d2, e2, f2]) {
+	return [
+		a * a2 + b * c2,
+		a * b2 + b * d2,
+		c * a2 + d * c2,
+		c * b2 + d * d2,
+		e * a2 + f * c2 + e2,
+		e * b2 + f * d2 + f2
+	];
+}
+
+/**
+ * Les jetons d'un flux de contenu : une chaîne entre parenthèses ou en hexadécimal, un nom, un
+ * nombre, un opérateur, un crochet. Ce qui n'en est pas un, les `<<` et `>>` d'un dictionnaire de
+ * balisage, est sauté.
+ */
+const JETON =
+	/\((?:\\[\s\S]|[^\\)])*\)|<[0-9A-Fa-f\s]*>|\/[^\s/[\]()<>{}%]+|[-+]?(?:\d+\.?\d*|\.\d+)|[A-Za-z'"*]+|[[\]]/g;
+
 /**
  * Les lignes de texte de chaque page, lues dans le PDF.
  *
@@ -550,6 +433,20 @@ export async function imprimer(chemin, sortie, pied) {
  * une colonne continue, et `getClientRects()` rend des positions qui ne disent rien des pages. Le
  * PDF, lui, porte un flux de contenu par page, et chaque ligne de texte y pose sa position
  * verticale avec `Td` ou `Tm`. C'est donc le seul endroit où la question a une réponse.
+ *
+ * ## Pourquoi il faut composer les matrices
+ *
+ * La position qu'écrit `Tm` n'est pas une position sur la page : elle est exprimée dans le repère
+ * courant, que chaque `cm` transforme et que `q` et `Q` empilent et dépilent. Chrome retourne l'axe
+ * vertical dès la première ligne du flux, décale le document d'une page à l'autre, et dessine le
+ * pied de page dans un repère à lui. Lu tel quel, `Tm` rendait donc chaque page **de bas en haut**,
+ * pied de page en dernier : jusqu'à l'étape 15, le contrôle « en haut de page » regardait le bas,
+ * et le contrôle « en bas de page » regardait le pied, qu'il écartait pour sa taille. `Td`, lui,
+ * déplace depuis la ligne courante : l'ancien code le prenait pour une position absolue.
+ *
+ * Chaque ligne est donc ramenée sur la page, en points, origine en bas à gauche comme le veut le
+ * format : la position est celle de l'origine du texte par `Tm` puis par la matrice courante, et le
+ * corps est la taille de `Tf` mise à la même échelle (10,5 pour le texte courant).
  *
  * Le pied de page est écarté : il est sur chaque page, il ne dit rien de la mise en pages, et le
  * compter ferait passer une page presque vide pour une page à moitié pleine.
@@ -573,20 +470,43 @@ export function lignesParPage(octets) {
 
 	return flux.map((contenu) => {
 		const lignes = [];
-		let corps = 0;
+		let matrice = IDENTITE;
+		const pile = [];
+		let ligneDeTexte = IDENTITE;
+		let taille = 0;
+		let operandes = [];
 		// Les opérateurs se lisent dans l'ordre : la taille de police courante est celle du dernier
 		// `Tf` rencontré, et c'est elle qui distingue un titre d'une ligne de texte.
-		for (const m of contenu.matchAll(
-			/\/[A-Za-z0-9]+\s+([\d.]+)\s+Tf|([-\d.]+)\s+([-\d.]+)\s+(?:Td|TD)\b|(?:[-\d.]+\s+){4}([-\d.]+)\s+([-\d.]+)\s+Tm\b/g
-		)) {
-			if (m[1] !== undefined) {
-				corps = Number(m[1]);
+		const poser = () => {
+			const surLaPage = composer(ligneDeTexte, matrice);
+			const y = surLaPage[5];
+			// La marge basse est de 22 mm, soit 62 points : en dessous, c'est le pied de page.
+			if (!Number.isFinite(y) || y < 62) return;
+			const corps = taille * Math.hypot(surLaPage[2], surLaPage[3]);
+			lignes.push({ y: Math.round(y * 10) / 10, corps: Math.round(corps * 100) / 100 });
+		};
+		for (const [jeton] of contenu.matchAll(JETON)) {
+			if (/^[-+.\d]/.test(jeton)) {
+				operandes.push(Number(jeton));
 				continue;
 			}
-			const y = Number(m[3] !== undefined ? m[3] : m[5]);
-			// La marge basse est de 22 mm, soit 62 points : en dessous, c'est le pied de page.
-			if (!Number.isFinite(y) || y < 62) continue;
-			lignes.push({ y: Math.round(y * 10) / 10, corps });
+			// Une chaîne, un nom, un tableau : rien qui déplace, mais rien qui efface les nombres
+			// d'avant, puisque `Tf` reçoit son nom de police avant sa taille.
+			if (/^[(<[\]/]/.test(jeton)) continue;
+			const six = operandes.slice(-6);
+			if (jeton === 'q') pile.push(matrice);
+			else if (jeton === 'Q') matrice = pile.pop() ?? IDENTITE;
+			else if (jeton === 'cm' && six.length === 6) matrice = composer(six, matrice);
+			else if (jeton === 'BT') ligneDeTexte = IDENTITE;
+			else if (jeton === 'Tf') taille = operandes.at(-1) ?? taille;
+			else if (jeton === 'Tm' && six.length === 6) {
+				ligneDeTexte = six;
+				poser();
+			} else if ((jeton === 'Td' || jeton === 'TD') && operandes.length >= 2) {
+				ligneDeTexte = composer([1, 0, 0, 1, ...operandes.slice(-2)], ligneDeTexte);
+				poser();
+			}
+			operandes = [];
 		}
 		// Une même ligne peut être posée en plusieurs morceaux, pour du gras ou un lien.
 		const parY = new Map();
@@ -603,36 +523,43 @@ export function lignesParPage(octets) {
 export const LIGNES_MINIMUM_DERNIERE_PAGE = 8;
 
 /**
+ * Passé cet écart, compté en interlignes, deux lignes voisines n'appartiennent plus au même bloc.
+ *
+ * Calibré sur le PDF de l'étape 15, relu par `lignesParPage`. Entre deux lignes voisines du texte
+ * courant, les écarts mesurés sont : 15 pt, l'interligne, 71 fois ; 15,7 à 15,8 pt, une ligne un
+ * peu plus haute dans le même bloc, 3 fois ; 18 à 18,8 pt entre deux puces, 19 fois ; 21,7 à 24 pt
+ * entre deux paragraphes, 19 fois. Dans un bloc, l'écart ne dépasse donc pas 1,05 interligne ;
+ * entre deux blocs, il commence à 1,2. Le seuil est posé au milieu.
+ *
+ * L'ancien seuil était de 1,4 interligne : il ne voyait que la fin d'un paragraphe, jamais celle
+ * d'une puce, dont la marge est plus courte (1,2 mm contre 2,5).
+ */
+export const ECART_ENTRE_DEUX_BLOCS = 1.12;
+
+/**
  * Ce qui cloche dans la mise en pages, ou un tableau vide.
  *
  * Deux défauts, et un seul est évident à l'œil : une dernière page presque vide, et une ligne
  * restée seule en haut ou en bas d'une page.
  *
- * La seconde se mesure par les écarts. Dans un paragraphe, deux lignes sont séparées d'un
- * interligne ; entre deux paragraphes, l'écart est plus grand. Une première ligne de page suivie
- * d'un grand écart est donc la **fin** d'un paragraphe restée seule ; une dernière ligne précédée
- * d'un grand écart en est le **début**. Les titres sont écartés : ils ont leur propre taille, et un
+ * La seconde se mesure par les écarts. Dans un bloc, paragraphe ou puce, deux lignes sont
+ * séparées d'un interligne ; entre deux blocs, l'écart est plus grand. Une première ligne de page
+ * suivie d'un tel écart est donc la **fin** d'un bloc restée seule ; une dernière ligne précédée
+ * d'un tel écart en est le **début**. Les titres sont écartés : ils ont leur propre taille, et un
  * titre en bas de page est déjà empêché par `break-after: avoid`.
+ *
+ * Un bloc d'une seule ligne en haut ou en bas de page est signalé lui aussi : rien, dans les
+ * positions, ne le distingue d'une fin de bloc. Le contrôle préfère une mise en pages refaite pour
+ * rien à une ligne seule qui part chez le juriste.
+ *
+ * `ecart` ne sert qu'à l'épreuve : elle rejoue l'ancien seuil pour montrer ce qu'il laissait passer.
  */
-export function defautsDeMiseEnPages(pages) {
+export function defautsDeMiseEnPages(pages, { ecart = ECART_ENTRE_DEUX_BLOCS } = {}) {
 	const defauts = [];
 	const derniere = pages[pages.length - 1] ?? [];
 	if (derniere.length < LIGNES_MINIMUM_DERNIERE_PAGE) {
 		defauts.push(`la dernière page ne porte que ${derniere.length} ligne(s)`);
 	}
-
-	// L'interligne courant : l'écart le plus fréquent entre deux lignes voisines de même taille.
-	const ecarts = new Map();
-	for (const page of pages) {
-		for (let index = 1; index < page.length; index += 1) {
-			if (page[index].corps !== page[index - 1].corps) continue;
-			const ecart = Math.round(page[index - 1].y - page[index].y);
-			ecarts.set(ecart, (ecarts.get(ecart) ?? 0) + 1);
-		}
-	}
-	const interligne = [...ecarts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 0;
-	if (interligne === 0) return defauts;
-	const seuil = interligne * 1.4;
 
 	const corpsCourant = (() => {
 		const tailles = new Map();
@@ -641,6 +568,19 @@ export function defautsDeMiseEnPages(pages) {
 		}
 		return [...tailles.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 0;
 	})();
+
+	// L'interligne courant : l'écart le plus fréquent entre deux lignes voisines du texte courant.
+	const ecarts = new Map();
+	for (const page of pages) {
+		for (let index = 1; index < page.length; index += 1) {
+			if (page[index].corps !== corpsCourant || page[index - 1].corps !== corpsCourant) continue;
+			const ecart = Math.round((page[index - 1].y - page[index].y) * 10) / 10;
+			ecarts.set(ecart, (ecarts.get(ecart) ?? 0) + 1);
+		}
+	}
+	const interligne = [...ecarts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 0;
+	if (interligne === 0) return defauts;
+	const seuil = interligne * ecart;
 
 	for (const [index, page] of pages.entries()) {
 		if (page.length < 2) continue;
@@ -684,7 +624,11 @@ export function nombreDePages(octets) {
  *
  * Une dernière page presque vide ne se corrige pas en déplaçant un mot : elle tient à la hauteur
  * totale du texte. Trois lignes qui débordent se ramènent en serrant très légèrement, et l'écart
- * est invisible à la lecture — 0,1 point de corps, deux centièmes d'interligne.
+ * est invisible à la lecture : 0,1 point de corps, deux centièmes d'interligne.
+ *
+ * Les lignes seules, elles, ne sont plus l'affaire des variantes : la feuille de style ne laisse
+ * aucun bloc se couper. Il reste un cas, qu'une variante règle en décalant le texte : un bloc d'une
+ * seule ligne en haut ou en bas de page, que `defautsDeMiseEnPages` signale par prudence.
  *
  * L'ordre va du plus discret au plus net. La première qui passe est gardée, et le rapport dit
  * laquelle : une mise en pages choisie en silence serait une mise en pages qu'on ne sait pas
@@ -705,6 +649,9 @@ const VARIANTES = [
 export async function produire({ avecPied = true, variantes = VARIANTES } = {}) {
 	const markdown = readFileSync(SOURCE, 'utf8');
 	const version = dateDeLaVersion(markdown);
+	// La version que l'application enregistrera à chaque acceptation : si elle est illisible, le PDF
+	// n'est pas produit, plutôt que de partir sous une version que personne n'a écrite.
+	versionIso(markdown);
 	mkdirSync(dirname(SORTIE), { recursive: true });
 	const travail = join(racine, 'A_LIVRER', '.conditions-juriste.html');
 

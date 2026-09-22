@@ -22,6 +22,12 @@
  * gabarit est passé. Les deux se perdent en une ligne, et un PDF sans numéros de page se lit très
  * bien jusqu'au moment où il faut désigner un passage.
  *
+ * Deux autres se voient à l'œil, mais seulement si on les cherche. **La liste des données
+ * personnelles** repartait à 1 après les passkeys, à l'étape 15, parce que le convertisseur fermait
+ * la liste à la ligne vide. **Une ligne seule** en haut de la page 6, la fin d'une puce, a franchi
+ * le contrôle de mise en pages de la même étape : il lisait les pages à l'envers et ne voyait que la
+ * fin d'un paragraphe. Chacun a désormais son contrôle, et son témoin.
+ *
  * ## Ce qu'il joue
  *
  * Le document réel, celui de `docs/CONDITIONS.md`, et pas un document inventé : c'est lui qui part.
@@ -48,6 +54,7 @@ import {
 	construire,
 	dateDeLaVersion,
 	defautsDeMiseEnPages,
+	ECART_ENTRE_DEUX_BLOCS,
 	lignesParPage,
 	LIGNES_MINIMUM_DERNIERE_PAGE,
 	nombreDePages,
@@ -91,6 +98,28 @@ function fautesDeComposition(texte) {
 	}
 	for (const trouve of texte.matchAll(/« | »/g)) fautes.push(trouve[0]);
 	return fautes;
+}
+
+/** Pour chaque liste numérotée du rendu, dans l'ordre, le nombre de ses éléments. */
+function listesNumerotees(html) {
+	return [...html.matchAll(/<ol>([\s\S]*?)<\/ol>/g)].map(
+		(liste) => liste[1].match(/<li>/g)?.length ?? 0
+	);
+}
+
+/** Une seule liste numérotée, qui porte chaque élément numéroté de la source. */
+function listeSuivie(source, html) {
+	const numerotes = source.split(/\r?\n/).filter((ligne) => /^\d+\.\s/.test(ligne)).length;
+	const listes = listesNumerotees(html);
+	return {
+		suivie: numerotes > 0 && listes.length === 1 && listes[0] === numerotes,
+		detail: `listes rendues : ${listes.join(' puis ') || 'aucune'} ; éléments numérotés dans la source : ${numerotes}`
+	};
+}
+
+/** Des lignes de texte courant, construites : `n` lignes à un interligne l'une de l'autre. */
+function lignesDeTexte(haut, n, interligne = 15) {
+	return Array.from({ length: n }, (_, index) => ({ y: haut - index * interligne, corps: 10.5 }));
 }
 
 const markdown = readFileSync(SOURCE, 'utf8');
@@ -151,6 +180,12 @@ verifier(
 
 const points = html.split('<div class="point">').length - 1;
 verifier('les dix points pour le juriste sont là', points === 10, `${points} trouvé(s)`);
+const liste = listeSuivie(markdown, html);
+verifier(
+	'la liste des données personnelles se suit d’un bout à l’autre',
+	liste.suivie,
+	liste.detail
+);
 verifier(
 	'la page de garde ne parle plus d’un lieu de culte',
 	!/mosqu|moschee|moschea|مسجد/i.test(html)
@@ -174,6 +209,57 @@ verifier(
 	'le contenu d’un <code> garde ses apostrophes droites',
 	typographierHtml("<p>l'un</p><code>l'autre</code>") ===
 		`<p>l${APOSTROPHE}un</p><code>l'autre</code>`
+);
+
+// Le paragraphe des passkeys sans son retrait : c'est exactement ce que l'ancien convertisseur
+// faisait de lui, et la liste repart à 1.
+const desindente = markdown.replace(/^ {3}(\*\*Ce qui est vrai de toutes\*\*)/m, '$1');
+const coupee = listeSuivie(desindente, construire(desindente));
+verifier(
+	'une liste coupée en deux est vue',
+	desindente !== markdown && !coupee.suivie,
+	desindente === markdown ? 'le paragraphe des passkeys est introuvable' : coupee.detail
+);
+
+process.stdout.write(`\nLes lignes seules, sur des pages construites\n`);
+
+// Une page pleine, qui fixe l'interligne à 15 points, et une dernière page assez garnie : seul le
+// défaut que chaque témoin pose peut alors tomber.
+const pleine = lignesDeTexte(779.7, 40);
+const fin = lignesDeTexte(779.7, 12);
+// Le cas de l'étape 15, relevé dans son PDF : la dernière ligne d'une puce en haut de la page 6,
+// puis 18,8 points jusqu'à la puce suivante, 1,25 interligne.
+const finDePuceEnHaut = [pleine, [{ y: 779.7, corps: 10.5 }, ...lignesDeTexte(760.9, 30)], fin];
+verifier(
+	'la fin d’une puce restée seule en haut est vue',
+	defautsDeMiseEnPages(finDePuceEnHaut).includes('page 2 : une ligne reste seule en haut'),
+	defautsDeMiseEnPages(finDePuceEnHaut).join(' ; ') || 'rien vu'
+);
+verifier(
+	'l’ancien seuil, 1,4 interligne, ne la voyait pas',
+	defautsDeMiseEnPages(finDePuceEnHaut, { ecart: 1.4 }).length === 0,
+	`le seuil est désormais de ${ECART_ENTRE_DEUX_BLOCS.toLocaleString('fr-CH')} interligne`
+);
+const debutDePuceEnBas = [
+	pleine,
+	[...lignesDeTexte(779.7, 30), { y: 779.7 - 29 * 15 - 18.8, corps: 10.5 }],
+	fin
+];
+verifier(
+	'le début d’une puce resté seul en bas est vu',
+	defautsDeMiseEnPages(debutDePuceEnBas).includes('page 2 : une ligne reste seule en bas'),
+	defautsDeMiseEnPages(debutDePuceEnBas).join(' ; ') || 'rien vu'
+);
+// Deux lignes de chaque côté d'un écart de puce : rien à redire, et rien ne doit être dit.
+const puceEntiere = [
+	pleine,
+	[...lignesDeTexte(779.7, 2), ...lignesDeTexte(779.7 - 15 - 18.8, 28)],
+	fin
+];
+verifier(
+	'deux lignes de chaque côté ne sont pas une ligne seule',
+	defautsDeMiseEnPages(puceEntiere).length === 0,
+	defautsDeMiseEnPages(puceEntiere).join(' ; ')
 );
 
 process.stdout.write(`\nLe pied de page\n`);
@@ -231,6 +317,14 @@ try {
 		parPage.length === pages,
 		`${parPage.length} contre ${pages}`
 	);
+	// Le titre du document, 20 points, ouvre la page qui suit la page de garde. Lue à l'envers,
+	// comme jusqu'à l'étape 15, cette page commencerait par sa dernière ligne de texte courant.
+	const pageDuTitre = parPage.findLastIndex((page) => page.some((ligne) => ligne.corps > 18));
+	verifier(
+		'les pages se lisent de haut en bas : le titre du document ouvre sa page',
+		pageDuTitre >= 0 && parPage[pageDuTitre][0].corps > 18,
+		`page ${pageDuTitre + 1}, première ligne de corps ${parPage[pageDuTitre]?.[0]?.corps}`
+	);
 	verifier(
 		`la dernière page porte au moins ${LIGNES_MINIMUM_DERNIERE_PAGE} lignes`,
 		derniere >= LIGNES_MINIMUM_DERNIERE_PAGE,
@@ -243,19 +337,22 @@ try {
 		defauts.join(' ; ')
 	);
 
-	// Le témoin : sans le choix de mise en pages, le défaut revient. Il tient dans le fichier
-	// plutôt que dans un souvenir de séance, parce qu'un contrôle qui n'a jamais échoué ne prouve
-	// rien — et parce que la prochaine personne qui touchera la feuille de style le verra tomber.
-	process.stdout.write(`\nLe témoin : la mise en pages non choisie\n`);
-	const telleQuelle = await produire({ variantes: [['telle quelle', '']] });
+	// Le témoin rendu : une dernière page presque vide, forcée par la feuille de style, doit tomber
+	// au bout de toute la chaîne, Chrome, PDF, lecture et contrôle. Jusqu'à l'étape 15, ce témoin
+	// comptait sur la mise en pages « telle quelle » pour échouer ; elle passe depuis que plus aucun
+	// bloc ne se coupe, et un témoin qui dépend du texte finit toujours par ne plus rien prouver.
+	process.stdout.write(`\nLe témoin : une dernière page presque vide, forcée\n`);
+	const forcee = await produire({
+		variantes: [['dernier paragraphe seul', '.document > :last-child { break-before: page; }']]
+	});
 	process.stdout.write(
-		`      lignes par page : ${telleQuelle.lignes.join(', ')}\n` +
-			`      ${telleQuelle.defauts.join(' ; ') || 'aucun défaut'}\n`
+		`      lignes par page : ${forcee.lignes.join(', ')}\n` +
+			`      ${forcee.defauts.join(' ; ') || 'aucun défaut'}\n`
 	);
 	verifier(
-		'sans le choix, la dernière page est presque vide',
-		telleQuelle.defauts.length > 0,
-		telleQuelle.defauts.length === 0 ? 'le contrôle ne prouve plus rien, le relire' : ''
+		'une dernière page presque vide est vue dans le PDF',
+		forcee.defauts.some((defaut) => defaut.startsWith('la dernière page')),
+		forcee.defauts.length === 0 ? 'le contrôle ne prouve plus rien, le relire' : ''
 	);
 	verifier(
 		'le pied de page ajoute vraiment de l’encre',
