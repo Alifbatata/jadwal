@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { variablesAccent } from '$lib/couleur.js';
 
 	let { data, children } = $props();
@@ -51,7 +52,9 @@
 
 		<header>
 			<a class="marque" href={resolve('/')}>jadwal</a>
-			{#if organisation}
+			<!-- Sans les conditions acceptées, pas de navigation : chacun de ses liens ramènerait à
+			     l'écran d'acceptation (ADR 0044). La déconnexion, elle, reste. -->
+			{#if organisation?.termsAccepted}
 				<nav aria-label="Espace des responsables">
 					<a href={resolve('/')}>À venir</a>
 					<a href={resolve('/cours')}>Cours</a>
@@ -82,6 +85,17 @@
 		<main>
 			{@render children?.()}
 		</main>
+
+		<!-- Le pied commun de la coquille, connexion comprise : le texte que chacun accepte doit se
+		     trouver depuis n'importe quelle page, avant même d'avoir un compte (ADR 0044). -->
+		<footer>
+			<a
+				href={resolve('/conditions')}
+				aria-current={page.url.pathname === '/conditions' ? 'page' : undefined}
+			>
+				Conditions d’utilisation
+			</a>
+		</footer>
 	</div>
 {/if}
 
@@ -136,10 +150,20 @@
 	}
 	header,
 	main,
+	footer,
 	.banniere {
 		max-width: 40rem;
 		margin: 0 auto;
 		padding: 1rem;
+	}
+	footer {
+		border-top: 1px solid #ddd;
+		font-size: 0.9rem;
+	}
+	footer a {
+		min-height: 44px;
+		display: inline-flex;
+		align-items: center;
 	}
 	header {
 		display: flex;

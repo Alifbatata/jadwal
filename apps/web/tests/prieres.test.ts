@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { addDays, roundUpToFiveMinutes, todayInZone, type IsoDate } from '@jadwal/core';
 import { computePrayerDay } from '@jadwal/core/prayer';
 import { createDatabase, newId, sql, withOrg, type DatabaseHandle } from '@jadwal/db';
+import { conditionsAcceptees } from './conditions-acceptees.js';
 
 const origin = inject('origin');
 const outbox = inject('outbox');
@@ -181,6 +182,9 @@ beforeAll(async () => {
 			insert into "membership" ("id", "organization_id", "user_id", "role")
 			values (${newId()}, ${organizationId}, ${userId}, 'org_admin')
 		`);
+		// Les conditions déjà acceptées : ce fichier éprouve les prières, pas la porte de l'espace,
+		// que `conditions.test.ts` éprouve à part (ADR 0044).
+		await tx.execute(conditionsAcceptees(organizationId, userId));
 		// Tous les jours de la semaine : il y a donc une séance chaque jour de la plage regardée.
 		await tx.execute(sql`
 			insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",

@@ -3,6 +3,8 @@
 	const roleLabel = { org_admin: 'responsable', editor: 'éditeur' } as const;
 </script>
 
+<svelte:head><title>Vos organisations | jadwal</title></svelte:head>
+
 <h1>Vos organisations</h1>
 
 {#if form?.erreur}

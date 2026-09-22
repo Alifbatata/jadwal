@@ -10,6 +10,7 @@ import ICAL from 'ical.js';
 import { addDays, isoDateToDays, todayInZone, weekdayFromDays, type IsoDate } from '@jadwal/core';
 import { analyserCalendrier } from '@jadwal/core/prayer';
 import { createDatabase, newId, sql, type DatabaseHandle } from '@jadwal/db';
+import { conditionsAcceptees } from './conditions-acceptees.js';
 
 const origin = inject('origin');
 const outbox = inject('outbox');
@@ -123,6 +124,9 @@ beforeAll(async () => {
 			insert into "membership" ("id", "organization_id", "user_id", "role")
 			values (${newId()}, ${organizationId}, ${userId}, 'org_admin')
 		`);
+		// Les conditions déjà acceptées : ce fichier éprouve le vendredi, pas la porte de l'espace,
+		// que `conditions.test.ts` éprouve à part (ADR 0044).
+		await tx.execute(conditionsAcceptees(organizationId, userId));
 		await tx.execute(sql`
 			insert into "room" ("id", "organization_id", "name", "display_order")
 			values (${salleId}, ${organizationId}, 'Grande salle', 1)
@@ -253,7 +257,11 @@ describe('la saisie à la main et l’iqama', () => {
 			toDate: '2027-06-30'
 		});
 		expect(response.status).toBe(400);
-		expect(await response.text()).toContain('chevauche');
+		// Deux phrases, sans tiret cadratin (`pnpm style`) : le message est lu par un responsable.
+		expect(await response.text()).toContain(
+			'Cette période en chevauche une autre. Fermez d’abord celle qui la précède. Une période ' +
+				'sans date de fin couvre tout ce qui vient après elle.'
+		);
 	});
 
 	it('fait suivre l’iqama au cours du soir, sur la page publique', async () => {
