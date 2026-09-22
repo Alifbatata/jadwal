@@ -1,6 +1,6 @@
 # ADR 0043 : jadwal passe sous licence MIT
 
-> Cette décision **remplace l'ADR 0001**, qui plaçait le dépôt sous AGPL-3.0-or-later avec le widget
+> Cette décision **remplace l'ADR 0001**, qui plaçait le dépôt sous `AGPL-3.0-or-later` avec le widget
 > en MIT. L'ADR 0001 n'est pas réécrit : ce qu'il a décidé, il l'a décidé, et ses raisons valaient
 > pour son moment.
 
@@ -68,7 +68,7 @@ pair facultatif absent, il ne refuse pas d'en lier un présent.
 
 `scripts/elaguer-arbre-de-production.mjs` ne garde donc que ce qu'un `import` résolu par Node peut
 atteindre, en descendant de `package.json` en `package.json` et en ne suivant jamais un pair. Il
-reste **60 paquets et 73 Mio**, et aucune licence à réciprocité : 47 MIT, 4 Apache-2.0, 2 0BSD,
+reste **60 paquets et 73 Mio**, et aucune licence à réciprocité : 47 MIT, 4 Apache-2.0, 2 `0BSD`,
 1 BSD-3-Clause, 1 MIT-0, 1 Unlicense.
 
 **Ce n'est pas une analyse statique des imports**, et un module chargé par un nom calculé lui
@@ -86,6 +86,17 @@ disparaîtraient de ce qui est distribué.
 l'arbre du poste, et livré dans l'image. Il recopie le texte entier de chaque licence, le `NOTICE`
 quand il existe, et — pour une licence à réciprocité par fichier, s'il en revenait une — le lien vers
 le code source.
+
+### Ce qui reste dans l'image, et qu'on garde
+
+`better-auth` emporte six adaptateurs de base de données dont un seul sert : `Prisma`, `Mongo`,
+`Kysely`, mémoire et les autres restent, alors que jadwal parle à PostgreSQL par Drizzle.
+
+Ce sont des dépendances **ordinaires** de `better-auth`, pas des pairs facultatifs : l'élagage
+les garde, et il a raison. Les retirer demanderait de décider qu'on sait mieux que le paquet ce
+dont il a besoin, et de le décider à nouveau à chaque mise à jour. **Ils restent.** Ce qu'ils coûtent est
+du disque, et il se compte en mégaoctets ; ce que coûterait une liste d'exceptions à tenir se
+compte en pannes.
 
 ## Conséquences
 
