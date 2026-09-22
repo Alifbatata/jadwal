@@ -10,6 +10,11 @@
 # tombe là, ou l'inverse.
 #
 # Le conteneur tourne **sans réseau** (`--network none`), ici comme sur le poste.
+#
+# **Pas de cache pour cette image**, et c'est décidé : 430 Mio tirés par passage, sur un flux qui
+# ne se déclenche que lorsqu'un texte change. Un cache demanderait une clé à tenir, une étape de
+# restauration, une étape de sauvegarde, et une panne de plus à comprendre le jour où il se
+# périme. Le temps gagné ne vaut pas cette complexité.
 
 name: Orthographe
 
