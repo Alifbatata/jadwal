@@ -104,6 +104,41 @@ organization_id)` et non le seul `course_id`. Les vérifications d'intégrité r
   écrirait deux fois dans le catalogue des rôles : le bloc est donc sérialisé par un verrou
   consultatif, et n'écrit que si un attribut diffère vraiment.
 
+## Addendum du 2026-09-22 : la modification d'une adhésion est bornée au rôle
+
+La décision ci-dessus retirait au rôle applicatif la création et la modification des adhésions.
+L'étape 3 les lui a rendues (migration 0012) : la création sous la forme « on ne s'attache que
+soi-même, sur invitation » (ADR 0017, migration 0024), et la modification sur toute la ligne, avec
+une politique qui ne vérifie que l'organisation du contexte.
+
+La modification restait donc ouverte. N'importe quel membre, éditrice comprise puisque la base ne
+distingue pas les rôles, pouvait repointer une adhésion de son organisation vers un compte existant
+qui n'a jamais été invité, par exemple la personne responsable d'une autre organisation. La
+vérification de la clé étrangère contourne la sécurité au niveau des lignes et passait ; la
+politique de `user` ouvrait ensuite le courriel de ce compte aux membres de l'organisation. Ce
+document affirme pourtant que cette évasion est fermée. Le même droit servait d'oracle sur les
+acceptations des conditions (ADR 0044) : repointer l'adhésion d'une collègue butait sur la clé des
+acceptations si elle avait accepté, sur celle des comptes sinon, et le message nommait la
+contrainte.
+
+Le code de l'application n'a jamais pris ce chemin : l'écran des membres ne change que le rôle et sa
+date. La relecture adverse de l'étape 16 l'a trouvé, et un test l'a montré avant la correction : une
+éditrice rattachait à son organisation la responsable d'une autre, puis lisait son courriel.
+
+**La migration 0053 ramène le droit de modification du rôle applicatif aux colonnes `role` et
+`updated_at`.** Le refus tombe sur un droit absent, avant qu'une ligne soit examinée et avant toute
+clé : il ne dit rien de ce qui existe. Le déclencheur qui protège la dernière personne responsable
+ne change pas.
+
+**Le super-admin garde la modification de toute la ligne**, par décision (ADR 0025) : il crée déjà
+une adhésion pour qui il veut dans l'organisation où il est entré, et il lit tous les comptes.
+Déplacer une adhésion ne lui ouvre rien de plus.
+
+L'empreinte du schéma que compare le test des migrations compte désormais les droits de table et de
+colonne. Sans eux, le rejeu de la migration 0012, qui rend le droit large, serait passé inaperçu si
+la migration 0053 n'était pas rejouée après elle.
+
 ## Statut
 
-Accepté, 2026-09-20. Étape 2 de la feuille de route (base, RLS, données de démo).
+Accepté, 2026-09-20. Étape 2 de la feuille de route (base, RLS, données de démo) ; complété le
+2026-09-22 (modification d'une adhésion bornée au rôle, voir l'addendum).
