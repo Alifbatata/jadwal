@@ -60,11 +60,11 @@ avant l'option : `vitest run src/x.test.ts -u`.
 
 ## Accord de contribution (CLA)
 
-Toute contribution externe demandera la signature d'un accord de contribution (CLA). La raison est
-simple : le dépôt est sous AGPL-3.0-or-later (sauf le widget, sous MIT), et l'auteur doit pouvoir
-proposer le service sous d'autres conditions à des organisations payantes pour financer le projet,
-qui reste gratuit. Le CLA doit lui donner ce droit, sans retirer aux contributeurs la propriété de
-leur travail ni le caractère libre du code publié.
+Toute contribution externe demandera la signature d'un accord de contribution (CLA). La raison
+tient en deux points. Le dépôt est sous MIT, et l'auteur doit pouvoir proposer le service sous
+d'autres conditions à des organisations payantes pour financer le projet, qui reste gratuit. Et il
+doit pouvoir répondre d'un code dont il connaît la provenance. Le CLA lui donne ce droit sans
+retirer aux contributeurs la propriété de leur travail ni le caractère libre du code publié.
 
 Les modalités précises (texte du CLA, outil de signature) seront fixées avant la première
 contribution externe.

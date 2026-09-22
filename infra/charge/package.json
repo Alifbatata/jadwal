@@ -3,7 +3,7 @@
 	"version": "0.0.0",
 	"private": true,
 	"description": "Mesure de charge de jadwal : semer des données, mesurer les temps de réponse. Ne tourne jamais en production.",
-	"license": "AGPL-3.0-or-later",
+	"license": "MIT",
 	"type": "module",
 	"scripts": {
 		"semer": "node semer.mjs",

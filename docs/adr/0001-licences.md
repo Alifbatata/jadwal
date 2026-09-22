@@ -1,5 +1,8 @@
 # ADR 0001 : Licences
 
+> **Remplacé par l'ADR 0043** : jadwal est sous licence MIT pour tout le dépôt, widget compris.
+> Ce qui suit n'est pas réécrit, et reste exact pour son moment.
+
 ## Contexte
 
 `jadwal` est un projet libre. Le même code sert deux modes de déploiement : un service

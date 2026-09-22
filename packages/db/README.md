@@ -190,4 +190,4 @@ Les tests de catalogue lisent les tables dans `pg_class` et `pg_policy` au lieu 
 table ajoutée plus tard sans RLS forcée, ou une opération accordée sans politique, fait échouer la
 suite sans que personne ait à y penser.
 
-Licence : AGPL-3.0-or-later (voir `LICENSE` à la racine du dépôt).
+Licence : MIT (voir `LICENSE` à la racine du dépôt).

@@ -100,7 +100,7 @@ fonction pour laquelle cette page existe. À reprendre à l'étape 8, avec un es
 - `packages/widget` (MIT) : la définition de l'élément, la pose du cadre, la réception de la
   hauteur, le pied et son lien. La licence MIT garde tout son sens : c'est ce fichier-là qu'un site
   colle.
-- `apps/web` (AGPL-3.0-or-later) : la page publique, son mode intégré et le script d'annonce.
+- `apps/web` : la page publique, son mode intégré et le script d'annonce.
 
 ### Les adresses, et l'empreinte d'intégrité
 

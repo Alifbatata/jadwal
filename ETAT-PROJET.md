@@ -74,7 +74,7 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
 - ESLint (flat config), Prettier, svelte-check, TypeScript strict + `noUncheckedIndexedAccess`, Vitest.
 - CI GitHub Actions (Node 24, corepack, `pnpm install --frozen-lockfile`, lint, check, test, build),
   Dependabot (npm + github-actions, délai de 7 jours).
-- Licences (AGPL-3.0-or-later, MIT pour le widget), README, CONTRIBUTING (CLA), SECURITY,
+- Licences (AGPL-3.0-or-later à l'époque, MIT pour le widget), README, CONTRIBUTING (CLA), SECURITY,
   `docs/CADRAGE.md`, ADR 0000 à 0010, `docs/maquettes.md`, `docker-compose.dev.yml` (PostgreSQL 18,
   digest épinglé).
 
