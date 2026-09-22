@@ -79,7 +79,7 @@ beforeAll(async () => {
 		await tx.execute(sql`
 			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
 				"enabled_language")
-			values (${organizationId}, ${SLUG}, 'Mosquée du compteur', ${FUSEAU}, 'fr', array['fr'])
+			values (${organizationId}, ${SLUG}, 'Association du compteur', ${FUSEAU}, 'fr', array['fr'])
 		`);
 		await tx.execute(sql`
 			insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",
@@ -142,7 +142,7 @@ describe('ce que le compteur distingue', () => {
 		expect(await compteurs()).toEqual(avant);
 	});
 
-	it('n’attribue à une mosquée que ses propres vues', async () => {
+	it('n’attribue à une organisation que ses propres vues', async () => {
 		const ailleurs = async () =>
 			Number(
 				rows<{ count: string }>(

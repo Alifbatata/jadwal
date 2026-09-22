@@ -4,16 +4,16 @@
 
 Chaque organisation choisit une couleur d'accent. Elle existe en base depuis l'étape 2
 (`organization.accent_color`) mais n'était affichée nulle part : les écrans portaient une seule
-teinte, la même pour toutes les mosquées.
+teinte, la même pour toutes les organisations.
 
 Une couleur choisie par quelqu'un d'autre que nous pose un problème que l'on ne peut pas résoudre en
 faisant attention : n'importe quelle couleur peut être choisie, et certaines rendent un texte
 illisible. Trois issues sont possibles.
 
 1. **Refuser** les couleurs de contraste insuffisant à la saisie. C'est ce que font beaucoup de
-   produits. Le responsable d'une mosquée dont la couleur est un jaune vif se voit alors refuser la
-   couleur de sa mosquée, sans comprendre pourquoi, et sans qu'on puisse lui proposer autre chose
-   que « prenez une autre couleur ».
+   produits. Le responsable d'une organisation dont la couleur est un jaune vif se voit alors
+   refuser la couleur de son organisation, sans comprendre pourquoi, et sans qu'on puisse lui
+   proposer autre chose que « prenez une autre couleur ».
 2. **Corriger** la couleur en silence — l'assombrir jusqu'à ce qu'elle passe. Le responsable voit
    alors une couleur qui n'est pas la sienne, et personne ne lui dit pourquoi.
 3. **Changer l'usage de la couleur** pour qu'aucune couleur ne pose problème.
@@ -65,7 +65,7 @@ Une valeur illisible en base — saisie à la main, migration ancienne — vaut 
 
 ## Conséquences
 
-- Une mosquée peut poser la couleur de son panneau, quelle qu'elle soit, sans rien négocier.
+- Une organisation peut poser la couleur de son panneau, quelle qu'elle soit, sans rien négocier.
 - Le texte sur fond d'accent bascule du noir au blanc à `L ≈ 0,1791`. Deux couleurs voisines de ce
   seuil peuvent donc porter des textes de couleurs différentes ; c'est visible et c'est correct.
 - Le mode sombre n'existe pas encore. Quand il existera, `--accent-texte` restera calculé de la même

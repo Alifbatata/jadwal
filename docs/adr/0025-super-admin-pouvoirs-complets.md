@@ -28,7 +28,7 @@ avec son prix, plutôt que de laisser l'ADR 0018 dire le contraire en silence.
 - **Le contexte d'organisation reste obligatoire.** Ce n'est plus une barrière — il entre où il veut
   — c'est un garde-fou : ses politiques restent bornées par `jadwal.current_org_id()`, donc une
   écriture qui viserait une autre organisation que celle où il est entré est refusée par la base.
-  Une bannière lui rappelle à l'écran dans quelle mosquée il travaille. Le risque a changé de
+  Une bannière lui rappelle à l'écran dans quelle organisation il travaille. Le risque a changé de
   nature : ce n'est plus l'accès, c'est la méprise.
 
 ### Ses écritures sont signées, ses lectures ne le sont pas
@@ -55,7 +55,7 @@ en découlent, et elles ne sont pas décoratives :
 
 - **Passkey obligatoire.** Une session ne porte les pouvoirs que si elle a été **ouverte par une
   passkey**. Un lien magique seul ne les donne jamais : une boîte aux lettres compromise ne doit pas
-  suffire à ouvrir toutes les mosquées du service.
+  suffire à ouvrir toutes les organisations du service.
   - **Amorçage.** Enregistrer une passkey depuis une session ordinaire n'est permis que tant que le
     compte n'en a aucune. Dès qu'il en a une, enregistrer ou supprimer exige une session déjà
     prouvée par passkey. Sans cette règle, qui tient la boîte aux lettres enregistrerait la sienne

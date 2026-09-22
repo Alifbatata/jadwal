@@ -13,7 +13,7 @@
 Depuis l'étape 2, le rôle super-admin n'a aucun droit sur les données d'une organisation : il ouvre
 et ferme les organisations, attribue le plan, lit les comptes, et c'est tout. Cette retenue est
 délibérée (ADR 0006 et 0013) : celui qui administre le service n'a pas à lire le programme des cours
-d'une mosquée.
+d'une organisation.
 
 Elle a un coût. « Je ne vois plus mon cours du mardi » est une demande de support qu'on ne peut pas
 instruire sans regarder. La question a été laissée ouverte à la fin de l'étape 2. Deux réponses
@@ -78,8 +78,8 @@ Le super-admin peut ouvrir un **accès de support**, borné et tracé.
   d'insertion n'accepte que les actions de support, et rien qui ressemble à une action de
   responsable. Le journal étant indélébile, une entrée fausse y resterait.
 - Hors fenêtre, il ne lit pas davantage le graphe des adhésions : « qui est responsable de quelle
-  mosquée » est ce que le modèle de menace classe comme sensible, et cela relève de la même fenêtre
-  que le reste. Il voit les organisations et les comptes, pas le lien entre les deux.
+  organisation » est ce que le modèle de menace classe comme sensible, et cela relève de la même
+  fenêtre que le reste. Il voit les organisations et les comptes, pas le lien entre les deux.
 - Un incident qui exigerait une écriture — réparer une donnée corrompue — n'est pas couvert. Il
   relèvera du propriétaire, hors du chemin applicatif, et laissera ses propres traces.
 

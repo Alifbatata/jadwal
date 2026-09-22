@@ -1,9 +1,10 @@
 // La page d'essai d'intégration du widget (ADR 0005).
 //
-// Elle charge le widget exactement comme le ferait le site d'une mosquée : une balise de script,
-// l'adresse versionnée, l'empreinte d'intégrité, et plusieurs éléments côte à côte. C'est le test
-// manuel d'avant chaque publication — celui qu'aucune assertion ne remplace, parce que « la hauteur
-// est juste et il n'y a pas de barre de défilement interne » se voit et ne se mesure pas.
+// Elle charge le widget exactement comme le ferait le site d'une organisation : une balise de
+// script, l'adresse versionnée, l'empreinte d'intégrité, et plusieurs éléments côte à côte. C'est
+// le test manuel d'avant chaque publication — celui qu'aucune assertion ne remplace, parce que
+// « la hauteur est juste et il n'y a pas de barre de défilement interne » se voit et ne se mesure
+// pas.
 //
 // Une honnêteté à garder en tête en la regardant : ici, le cadre est de la **même** origine que la
 // page. La vérification d'origine du widget y passe donc trivialement. Le vrai test d'une autre

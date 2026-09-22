@@ -3,8 +3,8 @@
 **Lien** : `/vendredi`, dans la navigation de l'espace des responsables, entre `Cours` et
 `Partager`.
 
-Un écran distinct de la liste des cours, pour une raison simple : une mosquée y vient deux fois par
-an, au changement de saison, et elle ne doit pas avoir à chercher ses sessions parmi vingt cours.
+Un écran distinct de la liste des cours, pour une raison simple : une organisation y vient deux fois
+par an, au changement de saison, et elle ne doit pas avoir à chercher ses sessions parmi vingt cours.
 Le moteur, lui, est le même — une session du vendredi est un cours d'un autre type (ADR 0033).
 
 ## Structure, de haut en bas
@@ -60,8 +60,8 @@ Ce que le formulaire **ne demande pas**, et pourquoi :
 - **le rythme** : chaque semaine, toujours ;
 - **le public** : `Ouvert à tous`, toujours.
 
-Trois questions qu'une mosquée n'a pas à se poser. Elles sont posées pour un cours parce qu'elles y
-ont un sens ; ici elles n'en ont aucun.
+Trois questions qu'une organisation n'a pas à se poser. Elles sont posées pour un cours parce
+qu'elles y ont un sens ; ici elles n'en ont aucun.
 
 ### Le changement de saison
 

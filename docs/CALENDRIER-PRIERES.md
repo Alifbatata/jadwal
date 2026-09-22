@@ -1,8 +1,8 @@
-# Les heures de prière de votre mosquée
+# Les heures de prière de votre organisation
 
-Ce texte s'adresse à la personne qui tient le programme d'une mosquée. Il répond à trois questions,
-dans cet ordre : **quelle source choisir**, **comment saisir vos heures**, **comment importer un
-calendrier**.
+Ce texte s'adresse à la personne qui tient le programme d'une organisation. Il répond à trois
+questions, dans cet ordre : **quelle source choisir**, **comment saisir vos heures**, **comment
+importer un calendrier**.
 
 Tout se passe dans l'écran **Prières** de votre espace.
 
@@ -24,7 +24,7 @@ Trois sources, et vous pouvez les mélanger. **Celle du haut gagne toujours.**
 | ------------------------- | ---------------------------------------------------------------- | ---------------------------------- |
 | **Vos horaires saisis**   | vous avez un panneau, et ce sont ces heures-là qui font foi      | quelques minutes, deux fois par an |
 | **Un calendrier importé** | votre fédération vous donne un fichier, ou vous tenez un tableur | un fichier CSV                     |
-| **Le calcul**             | vous n'avez ni l'un ni l'autre, ou vous voulez remplir les trous | la position de la mosquée          |
+| **Le calcul**             | vous n'avez ni l'un ni l'autre, ou vous voulez remplir les trous | la position de l'organisation      |
 
 **Le cas le plus courant** : vous saisissez vos iqamas une fois, sans date de fin, et vous laissez le
 calcul donner les heures du soleil. C'est trois minutes de travail, et vous n'y revenez plus.
@@ -55,9 +55,9 @@ Maghrib                    + 5 min
 Isha                       + 10 min
 ```
 
-Dans cet exemple, la mosquée n'a saisi **aucune** heure du soleil : elles viennent du calcul ou de
-l'import. Elle a seulement dit quand elle appelle la prière. C'est le réglage le plus courant, et il
-se fait une fois.
+Dans cet exemple, l'organisation n'a saisi **aucune** heure du soleil : elles viennent du calcul
+ou de l'import. Elle a seulement dit quand elle appelle la prière. C'est le réglage le plus courant,
+et il se fait une fois.
 
 ### L'heure affichée et l'iqama
 
@@ -75,9 +75,9 @@ Quelle forme choisir :
 - **Une heure fixe** ne bouge pas, pas même au changement d'heure de mars et d'octobre. C'est voulu :
   votre panneau ne change pas de lui-même non plus. Vous la corrigerez quand vous le déciderez.
 
-**Vos cours suivent l'iqama.** Un cours « 30 min après Maghrib », dans une mosquée dont l'iqama du
-Maghrib est cinq minutes après le coucher, commence trente minutes après l'iqama — c'est-à-dire
-quand les gens sont dans la salle.
+**Vos cours suivent l'iqama.** Un cours « 30 min après Maghrib », dans une organisation dont
+l'iqama du Maghrib est cinq minutes après le coucher, commence trente minutes après l'iqama —
+c'est-à-dire quand les gens sont dans la salle.
 
 ### La date de fin
 
@@ -173,16 +173,17 @@ sont signalés et non refusés parce qu'ils sont parfois justes : c'est votre ca
 
 ## 4. Le calcul, en dernier recours
 
-Saisissez la position de la mosquée en degrés décimaux, choisissez la méthode, et regardez l'aperçu
-des sept prochains jours **avant** d'enregistrer. Comparez-le à votre panneau : un écart constant de
-quelques minutes se rattrape avec l'ajustement par prière ; un écart variable veut dire que la
-méthode n'est pas la bonne.
+Saisissez la position de l'organisation en degrés décimaux, choisissez la méthode, et regardez
+l'aperçu des sept prochains jours **avant** d'enregistrer. Comparez-le à votre panneau : un écart
+constant de quelques minutes se rattrape avec l'ajustement par prière ; un écart variable veut dire
+que la méthode n'est pas la bonne.
 
 Il n'y a **pas de recherche d'adresse** : le champ de position n'interroge aucun service extérieur,
-et c'est voulu. Les coordonnées de votre mosquée se lisent sur n'importe quelle carte en ligne, en
-faisant un clic droit sur son emplacement.
+et c'est voulu. Les coordonnées de votre organisation se lisent sur n'importe quelle carte en
+ligne, en faisant un clic droit sur son emplacement.
 
-Nous n'appelons jamais Mawaqit, et nous ne le consultons jamais à votre place.
+Nous n'appelons jamais un service tiers de calendrier de prière, et nous n'en consultons aucun à
+votre place.
 
 ## Et le vendredi ?
 

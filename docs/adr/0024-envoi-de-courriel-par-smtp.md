@@ -9,7 +9,7 @@ Trois choses ont fait revenir sur ce choix. Le compte AWS est une dépendance d'
 entière : une facturation, une console, des identifiants de longue durée, et une vérification
 d'identité à refaire dans chaque région. Le paquet installe vingt-quatre dépendances pour envoyer un
 message de quinze lignes. Et l'auto-hébergement, que le cadrage promet dès le départ (ADR 0008),
-demanderait à une mosquée d'ouvrir un compte AWS pour envoyer un lien de connexion.
+demanderait à une organisation d'ouvrir un compte AWS pour envoyer un lien de connexion.
 
 ## Décision
 
@@ -53,7 +53,7 @@ fournisseur s'en charge ; nous gardons la liberté d'en changer.
 
 - Plus aucune trace d'AWS dans le dépôt : ni dépendance, ni variable, ni code, ni documentation.
 - Vingt-quatre paquets en moins, un paquet sans dépendance en plus.
-- L'auto-hébergement n'exige plus qu'un compte de messagerie, ce que toute mosquée a déjà.
+- L'auto-hébergement n'exige plus qu'un compte de messagerie, ce que toute organisation a déjà.
 - Le mot de passe SMTP est un secret d'exploitation de plus. Il ne donne accès qu'à l'envoi, jamais
   à la base.
 - Les tests n'envoient rien : le transport de production est appelé contre un transporteur factice,

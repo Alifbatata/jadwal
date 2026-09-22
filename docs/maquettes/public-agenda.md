@@ -1,7 +1,7 @@
 # Page d'abonnement au calendrier
 
 Le flux agenda est la sortie la plus utile et la moins connue : une fois l'abonnement posé, le
-programme de la mosquée arrive dans le calendrier du téléphone et se met à jour tout seul. Cette
+programme de l'organisation arrive dans le calendrier du téléphone et se met à jour tout seul. Cette
 page existe parce que « copiez cette adresse et collez-la dans votre application de calendrier »
 n'aide personne.
 

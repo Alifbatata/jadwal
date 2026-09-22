@@ -91,7 +91,7 @@ Export agenda :
 import { buildCalendar } from '@jadwal/core/ics';
 
 const ics = buildCalendar({
-	name: 'Cours de la mosquée',
+	name: 'Cours de l’organisation',
 	timeZone: 'Europe/Zurich',
 	now: new Date(), // fourni par l'appelant : DTSTAMP et fenêtre glissante
 	uidHost: 'jadwal.example',

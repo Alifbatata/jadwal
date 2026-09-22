@@ -70,7 +70,7 @@ await sql.begin(async (tx) => {
 		await tx`
 			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
 				"enabled_language")
-			values (${orgId}, ${slug}, ${`Mosquée de charge ${numero}`}, 'Europe/Zurich', 'fr',
+			values (${orgId}, ${slug}, ${`Organisation de charge ${numero}`}, 'Europe/Zurich', 'fr',
 				array['fr','de','it','ar'])
 		`;
 		await tx`
@@ -121,7 +121,7 @@ await sql.begin(async (tx) => {
 			`;
 			await tx`
 				insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
-				values (${uuidv7()}, ${orgId}, ${coursId}, 'fr', ${`Cours ${index + 1} de la mosquée ${numero}`})
+				values (${uuidv7()}, ${orgId}, ${coursId}, 'fr', ${`Cours ${index + 1} de l'organisation ${numero}`})
 			`;
 		}
 	}

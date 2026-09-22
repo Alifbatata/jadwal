@@ -3,7 +3,7 @@
 ## Contexte
 
 `jadwal` produit, à partir d'une seule saisie des responsables, quatre sorties : un widget
-intégrable au site de la mosquée, une page publique par organisation, un flux agenda ICS et des
+intégrable au site de l'organisation, une page publique par organisation, un flux agenda ICS et des
 messages WhatsApp. Le même code sert aux deux modes de déploiement : service hébergé par l'auteur
 ou auto-hébergement par une organisation. Le cadrage (`docs/CADRAGE.md`) découpe la technique en
 quatre parties : une bibliothèque de logique pure (récurrence, exceptions, ancrage sur la prière,

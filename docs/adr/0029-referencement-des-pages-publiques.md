@@ -8,8 +8,8 @@ adresse canonique, et les liens entre versions linguistiques n'existaient que so
 attribut `hreflang` sur les liens du sélecteur de langue — qui n'est **pas** une annotation de
 version linguistique.
 
-Une mosquée qui met son programme en ligne veut qu'on le trouve en cherchant son nom. Le reste du
-service — l'espace des responsables, l'API, les flux — n'a rien à faire dans un index.
+Une organisation qui met son programme en ligne veut qu'on le trouve en cherchant son nom. Le reste
+du service — l'espace des responsables, l'API, les flux — n'a rien à faire dans un index.
 
 ## Décision
 
@@ -26,7 +26,7 @@ Sitemap: <origine>/sitemap.xml
 
 La règle retenue est la plus spécifique, c'est-à-dire la plus longue en octets, et non la première
 ni la dernière : l'ordre des lignes n'a aucune importance, on écrit donc l'ordre le plus lisible.
-`/m/madretsch/fr` tombe sous `Allow: /m/`, `/reglages` sous `Disallow: /`.
+`/m/belvedere/fr` tombe sous `Allow: /m/`, `/reglages` sous `Disallow: /`.
 
 **Un seul groupe `User-agent: *`.** Ajouter un groupe nommé serait un piège : un robot ne retient
 que le groupe le plus spécifique qui le désigne et ignore alors toutes les règles du groupe général.
@@ -81,7 +81,7 @@ Chaque page se canonicalise **dans sa propre langue**, jamais vers le français.
 Pour la langue par défaut d'une organisation, l'adresse canonique est l'adresse **courte**
 `/m/<identifiant>`, et `/m/<identifiant>/<langue par défaut>` s'y rabat. La recommandation habituelle
 est l'inverse — canonicaliser vers l'adresse explicite. Nous faisons le contraire parce que
-l'adresse courte est celle que la mosquée met dans sa bio, dans son groupe WhatsApp et sur son
+l'adresse courte est celle que l'organisation met dans sa bio, dans son groupe WhatsApp et sur son
 affiche : c'est elle qui doit porter le référencement. `x-default` désigne la même adresse.
 
 **Les filtres ne créent pas d'adresse de plus** : `?public=kids`, `?mois=`, `?jour=` réarrangent le
@@ -103,11 +103,11 @@ un autre ne verrait que le `noindex` et la ferait disparaître entièrement.
 
 ## Conséquences
 
-- Une mosquée se trouve en cherchant son nom, dans les quatre langues, avec une adresse par langue
-  partageable telle quelle.
-- Le contenu affiché dans le cadre du widget est attribué à notre domaine, pas à celui de la
-  mosquée. C'est le coût assumé de l'ADR 0005 révisé, et le lien visible du pied du widget est ce
-  qui le compense.
+- Une organisation se trouve en cherchant son nom, dans les quatre langues, avec une adresse par
+  langue partageable telle quelle.
+- Le contenu affiché dans le cadre du widget est attribué à notre domaine, pas à celui de
+  l'organisation. C'est le coût assumé de l'ADR 0005 révisé, et le lien visible du pied du widget
+  est ce qui le compense.
 - Aucun « ping » n'est envoyé à un moteur après une modification : le point de notification des
   plans de site a été supprimé, et une requête vers l'ancien répond `404`. L'annonce se fait par la
   ligne `Sitemap` du `robots.txt`, plus une soumission manuelle en console de webmestre — qui reste

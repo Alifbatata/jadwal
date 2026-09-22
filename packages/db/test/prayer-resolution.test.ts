@@ -226,7 +226,7 @@ describe('l’iqama', () => {
 		});
 	});
 
-	it('fait coexister les deux formes dans une même mosquée', async () => {
+	it('fait coexister les deux formes dans une même organisation', async () => {
 		await vider();
 		await poserJour('2027-07-03', '21:00', 'computed');
 		await poserPeriode('2027-07-03', null, {

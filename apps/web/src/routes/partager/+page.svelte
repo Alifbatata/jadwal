@@ -7,9 +7,10 @@
 <h1>Partager</h1>
 
 <section aria-labelledby="lien-titre">
-	<h2 id="lien-titre">Le lien de la mosquée</h2>
+	<h2 id="lien-titre">Le lien de l’organisation</h2>
 	<p class="details">
-		À mettre partout : bio Instagram, groupe WhatsApp, fiche Mawaqit, affiche. Il ne change jamais.
+		À mettre partout : bio Instagram, groupe WhatsApp, fiche sur un service de calendrier de prière,
+		affiche. Il ne change jamais.
 	</p>
 	<input type="text" readonly value={data.lienPublic} aria-label="Lien public" />
 </section>

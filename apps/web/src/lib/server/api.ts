@@ -11,7 +11,8 @@ import { publicDatabase } from './public.js';
 /**
  * Deux minutes de fraîcheur, puis une journée pendant laquelle un cache peut servir l'ancienne
  * réponse le temps de la revalider. C'est le bon compromis pour un programme de cours : une
- * correction se voit en deux minutes, et une panne du serveur ne blanchit pas la page d'une mosquée.
+ * correction se voit en deux minutes, et une panne du serveur ne blanchit pas la page d'une
+ * organisation.
  */
 export const CACHE_PROGRAMME = 'public, max-age=120, stale-while-revalidate=86400';
 /** Le flux agenda annonce déjà un rafraîchissement d'une heure : le cache dit la même chose. */
@@ -50,8 +51,8 @@ export function clientAddress(event: RequestEvent): string {
 /**
  * Les en-têtes communs à toute réponse publique.
  *
- * CORS ouvert en lecture : le widget de l'étape 6 tourne sur le site d'une mosquée, donc sur une
- * autre origine. Ce que cela ouvre est exactement ce que n'importe qui peut déjà lire en tapant
+ * CORS ouvert en lecture : le widget de l'étape 6 tourne sur le site d'une organisation, donc sur
+ * une autre origine. Ce que cela ouvre est exactement ce que n'importe qui peut déjà lire en tapant
  * l'adresse — il n'y a ni cookie, ni session, ni en-tête d'authentification accepté ici, donc rien
  * qu'un navigateur puisse joindre à la requête à l'insu de son visiteur.
  */
@@ -87,7 +88,7 @@ export interface PublicResponseOptions {
 
 /**
  * Rend une réponse publique, ou un `304` si le client a déjà cette version. Le `304` ne porte pas
- * de corps : c'est tout l'intérêt, et c'est ce qui rend le widget d'une mosquée peu coûteux à
+ * de corps : c'est tout l'intérêt, et c'est ce qui rend le widget d'une organisation peu coûteux à
  * rafraîchir.
  */
 export function publicResponse(

@@ -14,7 +14,7 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
 - **Étape 5** (API publique, pages publiques en 4 langues, flux agenda) : terminée le 2026-09-20.
 - **Étape 6** (widget intégrable, flux par cours, référencement) : terminée le 2026-09-21.
 - **Étape 7** (heures de prière, couleur d'accent, compteur de vues) : terminée le 2026-09-21.
-- **Étape 8** (heures réelles de la mosquée, iqama, prière du vendredi) : terminée le 2026-09-21.
+- **Étape 8** (heures réelles de l'organisation, iqama, prière du vendredi) : terminée le 2026-09-21.
 - **Étape 9** (finitions, infrastructure en code, mise en production) : **terminée le
   2026-09-21**. Les phases 1 et 2 : tout est écrit, éprouvé en local, et l'image de production est publiée par
   digest. La question de l'isolation du déploiement est tranchée et consignée dans
@@ -108,7 +108,7 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   d'audit en insertion seule, contraintes de vérification une par une, suppression en cascade d'une
   organisation, rôle super-admin, migrations écrites à la main vraiment rejouées, et un test de
   catalogue qui parcourt `pg_class` et `pg_policy` sans nommer les tables.
-- Données de démonstration idempotentes (« Mosquée de Madretsch », personnes fictives, adresses en
+- Données de démonstration idempotentes (« Association Belvédère », personnes fictives, adresses en
   `example.test`), relues par `expandOccurrences` et `buildCalendar` pour prouver l'aller-retour
   avec le modèle de l'étape 1.
 - CI : PostgreSQL en service du workflow, épinglé par le même digest que `docker-compose.dev.yml`.
@@ -199,7 +199,7 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   cours, une page d'abonnement au calendrier.
 - **Aucun JavaScript** sur ces pages, et aucune ressource d'un autre domaine — police comprise :
   **10,0 Kio** pour une première visite de la vue Semaine, contre 50 visés.
-- **Le cadre est ouvert pour `/m/**` et pour ces routes seules**, ce qui permet à une mosquée
+- **Le cadre est ouvert pour `/m/**` et pour ces routes seules**, ce qui permet à une organisation
   d'intégrer sa page sans configuration de notre part. La page n'a ni cookie, ni session, ni action :
   il n'y a rien à détourner.
 - **`docs/maquettes/`** : une description écran par écran, écrite **avant** le code. C'est la
@@ -216,10 +216,10 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
 
 - **L'ADR 0005 est révisé : le widget ne redessine plus les trois vues, il pose un cadre qui affiche
   la page publique** et lui donne la hauteur de son contenu. Trois raisons, dans l'ordre : le
-  **confinement** — injecter notre HTML dans la page d'une mosquée le ferait tourner dans son
+  **confinement** — injecter notre HTML dans la page d'une organisation le ferait tourner dans son
   origine, et une faute d'échappement chez nous deviendrait une injection chez elle ; une seule
   implémentation, donc aucune divergence possible avec `/m/<slug>` ; et le poids du fichier chargé
-  sur le site de chaque mosquée.
+  sur le site de chaque organisation.
 - **Le widget est écrit en TypeScript pur**, sans dépendance à l'exécution : **1,71 Kio gzip**
   mesurés, contre 12,48 Kio pour le composant Svelte 5 **vide** de l'étape 0. Svelte n'apportait plus
   que son moteur, puisqu'il n'y a plus rien à rendre. `CLAUDE.md` et `docs/CADRAGE.md` sont corrigés.
@@ -227,7 +227,7 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   `/widget/embed.js` (1 856 octets, 1 009 en gzip). Il fait deux choses : annoncer la hauteur — mesurée
   sur la boîte de bordure de `<html>`, jamais `scrollHeight`, qui ne redescend jamais dans un cadre —
   et naviguer par **remplacement**, parce qu'une navigation ordinaire dans un cadre ajoute une entrée
-  à l'historique du site de la mosquée, mesuré sur Chrome 153. La page **non** intégrée n'a toujours
+  à l'historique du site de l'organisation, mesuré sur Chrome 153. La page **non** intégrée n'a toujours
   aucun script, et le test de l'étape 5 est resté tel quel.
 - **Côté parent, trois vérifications et rien d'autre** : la fenêtre émettrice est celle du cadre,
   l'origine est exactement la sienne par égalité stricte, et la forme du message est la bonne. La
@@ -236,7 +236,7 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   et `/widget/<empreinte>/jadwal-widget.js`, immuable, avec son `integrity` et le `crossorigin` sans
   lequel l'empreinte bloquerait le script au lieu de le protéger. L'écran Partager affiche les deux,
   plus le cadre posé à la main pour un site qui refuse les scripts extérieurs.
-- **Une page d'essai d'intégration**, `/widget/test`, qui imite le site d'une mosquée et charge le
+- **Une page d'essai d'intégration**, `/widget/test`, qui imite le site d'une organisation et charge le
   widget dans six configurations — dont deux côte à côte, l'arabe en RTL, et des attributs absurdes.
 - **Un flux agenda par cours** (ADR 0028), à son propre lien, construit par le **même**
   `buildCalendar` que celui de l'organisation. Le bouton de la page d'un cours pointe dessus en
@@ -259,7 +259,7 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
 - **Filtre par public sur un flux agenda : non**, et la question est fermée (ADR 0028).
 - 978 tests dans le dépôt, dont 78 dans l'application qui lancent un vrai serveur, et 25 sur le
   widget lui-même.
-- `docs/INTEGRATION.md` : la marche à suivre, écrite pour un responsable de mosquée.
+- `docs/INTEGRATION.md` : la marche à suivre, écrite pour une personne responsable.
 - Chaîne complète verte en CI : exécution `35543389374`, commit `9663f3d`.
 
 Étape 7 :
@@ -272,23 +272,24 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   `packages/core/src/prayer/` par une règle ESLint. Vérifié contre **les jeux de référence
   d'`adhan` elle-même**, copiés depuis son dépôt au tag `v4.4.6` : Doha et Londres, à la minute.
 - **Position saisie à la main**, en degrés décimaux : **aucun géocodage**, qui serait un service
-  extérieur interrogé avec l'adresse d'une mosquée. Méthode, école pour l'Asr, règle des latitudes
-  hautes et ajustement par prière, avec un **aperçu à sept jours calculé sur les valeurs en cours de
-  saisie**, avant enregistrement.
+  extérieur interrogé avec l'adresse d'une organisation. Méthode, école pour l'Asr, règle des
+  latitudes hautes et ajustement par prière, avec un **aperçu à sept jours calculé sur les valeurs
+  en cours de saisie**, avant enregistrement.
 - **Le défaut de la règle des latitudes hautes est `middleofthenight`, et il est justifié par un
   calcul** : à 47,14° N, sur trois cent soixante-cinq jours, les trois règles donnent le même
-  résultat — aucune ne mord. Le choix est donc de commodité, il appartient à la mosquée, et l'écran
-  recommande `seventhofthenight` au-delà de 48°.
+  résultat — aucune ne mord. Le choix est donc de commodité, il appartient à l'organisation, et
+  l'écran recommande `seventhofthenight` au-delà de 48°.
 - **Import CSV avec aperçu obligatoire** : nombre de jours, première et dernière date, jours
   manquants, lignes refusées avec numéro et raison. **Rien n'est écrit avant confirmation**, et
   l'aperçu ne range rien côté serveur — la forme normalisée repart au navigateur et est entièrement
   revérifiée au retour. Ordre des prières et dérive d'un jour à l'autre sont **signalés, jamais
   refusés** ; le changement d'heure, qui décale les cinq prières le même jour, est reconnu et ne
   déclenche rien, alors qu'un saut d'une heure sur une seule prière est signalé.
-- **Le format de Mawaqit n'est pas inventé** : le lecteur accepte le format documenté
-  (`docs/CALENDRIER-PRIERES.md`, avec un fichier d'exemple) et les tolérances qu'un tableur impose —
-  marque d'ordre des octets, `;` ou tabulation, guillemets, UTF-16, Windows-1252, cinq écritures de
-  l'heure, quatre des dates, et une colonne de lever du soleil reconnue pour être ignorée.
+- **Le format de calendrier de prière le plus répandu n'est pas inventé** : le lecteur accepte le
+  format documenté (`docs/CALENDRIER-PRIERES.md`, avec un fichier d'exemple) et les tolérances
+  qu'un tableur impose — marque d'ordre des octets, `;` ou tabulation, guillemets, UTF-16,
+  Windows-1252, cinq écritures de l'heure, quatre des dates, et une colonne de lever du soleil
+  reconnue pour être ignorée.
 - **Fenêtre glissante de 401 jours**, remplie à chaque changement de réglage et par une tâche
   quotidienne idempotente (`prayer-fill`, ordonnancée à l'étape 8). Elle n'écrit que ce qui change :
   sans cela, une tâche de nuit ferait retélécharger son calendrier à tout le monde, chaque nuit.
@@ -323,11 +324,11 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
 
 Étape 8 :
 
-- **Les heures réelles de la mosquée passent avant tout** (ADR 0004 complété). Une troisième source,
+- **Les heures réelles de l'organisation passent avant tout** (ADR 0004 complété). Une troisième source,
   la **saisie à la main**, s'ajoute à l'import et au calcul, et gagne sur les deux. Elle prend la
   forme d'une **période** : un nom, une date de début, une date de fin facultative — vide vaut
   « jusqu'à nouvel ordre » — et, pour chaque prière, l'heure affichée et l'heure d'iqama. C'est ce
-  qu'une mosquée imprime sur son panneau, et rien d'autre.
+  qu'une organisation imprime sur son panneau, et rien d'autre.
 - **Deux périodes ne peuvent pas se chevaucher**, et ce n'est pas l'écran qui le vérifie : une
   contrainte d'exclusion de PostgreSQL sur `daterange(from_date, coalesce(to_date, 'infinity'))`,
   donc vraie quel que soit le chemin d'écriture. `btree_gist` est une extension _trusted_ : le
@@ -338,10 +339,10 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   saisi au milieu d'une plage importée au milieu d'une fenêtre calculée.
 - **L'iqama, séparée de l'heure du soleil.** Par prière, une heure fixe **ou** un décalage en
   minutes — jamais les deux, une contrainte l'interdit —, et les deux formes coexistent dans une même
-  mosquée. **Un cours ancré suit l'iqama quand elle existe**, l'heure du soleil sinon : c'est le
+  organisation. **Un cours ancré suit l'iqama quand elle existe**, l'heure du soleil sinon : c'est le
   moment où les gens sont dans la salle.
 - **Une iqama fixe ne bouge pas au changement d'heure**, et le test le dit en toutes lettres pour que
-  personne ne le « corrige » plus tard : le panneau d'une mosquée ne change pas de lui-même.
+  personne ne le « corrige » plus tard : le panneau d'une organisation ne change pas de lui-même.
 - **La prière du vendredi existe** (ADR 0033), par le **même moteur que les cours** : un type sur
   l'objet existant plutôt qu'un second modèle. Récurrence, exceptions, pauses, traductions, flux
   agenda, cache et isolation fonctionnent sans une ligne réécrite ; un second modèle aurait dupliqué
@@ -352,8 +353,8 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   côté responsables. Maquettes écrites **avant** le code.
 - **La Jumu'a remplace le Dhuhr, y compris pour ce qui en dépend** : le vendredi, l'iqama du Dhuhr
   devient l'heure de la **dernière** session, donc un cours « 30 min après Dhuhr » suit la Jumu'a au
-  lieu de s'annoncer pendant que la mosquée prie. L'heure du soleil, elle, n'est pas touchée : c'est
-  un fait, et le fausser serait mentir.
+  lieu de s'annoncer pendant la prière. L'heure du soleil, elle, n'est pas touchée : c'est un fait,
+  et le fausser serait mentir.
 - **Le rôle public n'a plus aucun droit sur le compteur de vues** (ADR 0032 révisé). L'incrément
   passe par une fonction `SECURITY DEFINER` du propriétaire ; un `select` du rôle public échoue
   désormais sur un droit absent, comme sur le journal d'audit. C'était la dernière question ouverte
@@ -362,8 +363,8 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   Un test le relit avec **notre propre lecteur** et exige zéro ligne refusée et zéro avertissement :
   un modèle que notre importateur refuserait serait pire que pas de modèle.
 - 1 158 tests dans le dépôt, dont 236 de la base et 118 de l'application contre un vrai PostgreSQL.
-- ADR 0033 ; ADR 0004 et 0032 complétés ; `docs/CALENDRIER-PRIERES.md` réécrit pour un responsable
-  de mosquée ; `docs/maquettes/public-vendredi.md` et `responsables-vendredi.md` ; `docs/API.md`,
+- ADR 0033 ; ADR 0004 et 0032 complétés ; `docs/CALENDRIER-PRIERES.md` réécrit pour une personne
+  responsable ; `docs/maquettes/public-vendredi.md` et `responsables-vendredi.md` ; `docs/API.md`,
   `docs/INTEGRATION.md` et `docs/CADRAGE.md` mis à jour.
 - Chaîne complète verte en CI : exécution `35553015049`, commit `97536a1`.
 
@@ -502,7 +503,7 @@ tests.
 | 5     | API publique, page publique en 4 langues, flux ICS                 | terminée |
 | 6     | Widget, flux agenda par cours, référencement                       | terminée |
 | 7     | Heures de prière, couleur d'accent, compteur de vues               | terminée |
-| 8     | Heures réelles de la mosquée, iqama, prière du vendredi            | terminée |
+| 8     | Heures réelles de l'organisation, iqama, prière du vendredi        | terminée |
 | 9     | Finitions, infrastructure en code, mise en production              | terminée |
 | 10    | Mise en ligne : déploiement réel, sauvegarde et déchiffrement      | terminée |
 | 11    | Courriel, fausses alertes, IPv6, premier compte super-admin        | terminée |
@@ -529,23 +530,23 @@ passkeys, paiement.
   changements de dernière minute passent par le message WhatsApp généré (étape 4), pas par le flux.
 - Les données de fuseau du flux ICS viennent de `timezones-ical-library` (tzdata 2026c dans la
   2.3.2) : suivre ses publications par Dependabot ; sans effet pour l'Europe.
-- Vérifier que le bloc « Embed Code » du site Odoo de la première mosquée exécute un script externe.
-  La documentation d'Odoo montre un exemple d'iframe et son code source conserve les `<script>` du
-  bloc ; rien n'est établi pour Odoo 19, ni pour les droits du bénévole qui éditera la page, ni pour
-  une éventuelle politique de sécurité du site. Les deux modes de pose sont livrés pour que la
-  réponse, quelle qu'elle soit, ne bloque rien. À trancher sur le vrai site, avant l'étape 8.
+- Vérifier que le bloc « Embed Code » du site Odoo de la première organisation exécute un script
+  externe. La documentation d'Odoo montre un exemple d'iframe et son code source conserve les
+  `<script>` du bloc ; rien n'est établi pour Odoo 19, ni pour les droits du bénévole qui éditera la
+  page, ni pour une éventuelle politique de sécurité du site. Les deux modes de pose sont livrés pour
+  que la réponse, quelle qu'elle soit, ne bloque rien. À trancher sur le vrai site, avant l'étape 8.
 - Le mode intégré n'a pas encore été vu sur un vrai iPhone ni dans Firefox. Deux points à y
   vérifier : la parade `width:1px;min-width:100%` contre l'ancien aplatissement de cadre de WebKit,
   et l'impression d'une page hôte, que Firefox tronque historiquement à la première page.
-- Aucun `sandbox` n'est posé sur le cadre. Il protégerait le site de la mosquée contre notre propre
-  page — scénario étroit — au prix de casser les liens `webcal:` de la page d'abonnement. À reprendre
-  à l'étape 8, avec un essai sur vrai appareil.
+- Aucun `sandbox` n'est posé sur le cadre. Il protégerait le site de l'organisation contre notre
+  propre page — scénario étroit — au prix de casser les liens `webcal:` de la page d'abonnement. À
+  reprendre à l'étape 8, avec un essai sur vrai appareil.
 - La tâche quotidienne de remplissage des heures calculées est écrite et éprouvée, mais **rien ne
   l'ordonnance** : sur une instance en production, la fenêtre glissante avancerait uniquement quand
   un responsable enregistre ses réglages. À poser à l'étape 9, avec la purge du compteur de vues et
   celle du limiteur de débit.
 - Le vendredi, l'iqama du Dhuhr est celle de la **dernière** session de Jumu'a. C'est un choix, pas
-  une évidence : une mosquée pourrait vouloir qu'un cours suive la première. À revoir si un
+  une évidence : une organisation pourrait vouloir qu'un cours suive la première. À revoir si un
   responsable le demande ; d'ici là, un cours à heure fixe le vendredi contourne la question.
 - Une période d'horaires ne connaît pas les mois lunaires : « Ramadan » se saisit en dates civiles,
   et se corrige l'année suivante. Un calendrier hégirien serait une dépendance de plus et une source

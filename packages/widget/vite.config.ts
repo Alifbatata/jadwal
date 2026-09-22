@@ -11,8 +11,8 @@ export default defineConfig({
 			formats: ['iife'],
 			fileName: () => 'jadwal-widget.js'
 		},
-		// Le fichier part sur le site de chaque mosquée : on ne lui joint pas une carte de sources
-		// de plusieurs kilo-octets, et on ne publie pas les commentaires français du dépôt.
+		// Le fichier part sur le site de chaque organisation : on ne lui joint pas une carte de
+		// sources de plusieurs kilo-octets, et on ne publie pas les commentaires français du dépôt.
 		sourcemap: false,
 		target: 'es2022'
 	},

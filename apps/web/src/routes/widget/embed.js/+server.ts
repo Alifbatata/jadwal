@@ -14,13 +14,13 @@
 // voie. La mesure porte sur la boîte de bordure de `<html>` et non sur `scrollHeight`, qui vaut au
 // moins la hauteur de la fenêtre — c'est-à-dire, dans un cadre, au moins ce que le parent vient
 // d'imposer : il ne redescend jamais, et le cadre garderait son vide après un changement de langue.
-// Le destinataire est `'*'` parce que le domaine de la mosquée est inconnu ; la valeur par défaut
-// (notre propre origine) jetterait le message en silence, sans aucune trace en console. Ce qui part
-// est un nombre de pixels, que quiconque voit le cadre connaît déjà.
+// Le destinataire est `'*'` parce que le domaine de l'organisation est inconnu ; la valeur par
+// défaut (notre propre origine) jetterait le message en silence, sans aucune trace en console. Ce
+// qui part est un nombre de pixels, que quiconque voit le cadre connaît déjà.
 //
 // **Le remplacement.** Les navigations d'un contexte imbriqué sont linéarisées dans l'historique du
 // contexte le plus haut : mesuré sur Chrome 153, trois clics dans le cadre et le bouton
-// « précédent » du visiteur ne sort plus de la page de la mosquée. Deux `location.replace()`
+// « précédent » du visiteur ne sort plus de la page de l'organisation. Deux `location.replace()`
 // successifs, eux, n'ajoutent rien. Le prix est assumé et écrit dans `docs/INTEGRATION.md` : il n'y
 // a plus de « précédent » à l'intérieur du widget.
 //

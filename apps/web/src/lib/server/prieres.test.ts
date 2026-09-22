@@ -36,7 +36,7 @@ describe('datesAnneeSuivante', () => {
 
 	it('étend la période d’hiver au 29 février quand l’année d’arrivée est bissextile', () => {
 		// 2027 est commune, 2028 est bissextile. Sans ce report, le 29 février 2028 ne serait
-		// couvert par aucune période, et la mosquée n’aurait pas d’horaire ce jour-là.
+		// couvert par aucune période, et l’organisation n’aurait pas d’horaire ce jour-là.
 		expect(datesAnneeSuivante('2027-01-01', '2027-02-28')).toEqual({
 			fromDate: '2028-01-01',
 			toDate: '2028-02-29'
@@ -78,8 +78,9 @@ describe('datesAnneeSuivante', () => {
 	});
 
 	it('pave l’année d’arrivée sans trou ni chevauchement, sur vingt ans', () => {
-		// La vraie propriété, et la seule qui compte pour une mosquée : ce qui couvrait une année
-		// entière couvre encore l'année entière, bissextile ou non, siècle non bissextile compris.
+		// La vraie propriété, et la seule qui compte pour une organisation : ce qui couvrait une
+		// année entière couvre encore l'année entière, bissextile ou non, siècle non bissextile
+		// compris.
 		for (const annee of [...Array.from({ length: 21 }, (_, pas) => 2024 + pas), 2099, 2100]) {
 			const copies = moisDe(annee).map((periode) => {
 				const copie = datesAnneeSuivante(periode.de, periode.a);

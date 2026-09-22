@@ -174,13 +174,13 @@ describe('les messages prêts à coller', () => {
 	];
 
 	it('opens with the greeting the organisation chose', () => {
-		expect(weekMessage('Assalamu alaykum', 'Mosquée de Bienne', seances)).toContain(
+		expect(weekMessage('Assalamu alaykum', 'Association de Bienne', seances)).toContain(
 			'Assalamu alaykum,'
 		);
 	});
 
 	it('groups by day and marks what is cancelled, instead of hiding it', () => {
-		const message = weekMessage('Salam alaykoum', 'Mosquée de Bienne', seances);
+		const message = weekMessage('Salam alaykoum', 'Association de Bienne', seances);
 		expect(message).toContain('lundi 21 septembre');
 		expect(message).toContain('- Tafsir, 19:00 – 20:30, Salle 1');
 		// Taire une annulation ferait déplacer quelqu'un pour rien : c'est le contraire du but.
@@ -189,7 +189,7 @@ describe('les messages prêts à coller', () => {
 	});
 
 	it('leaves out a session that moved away, since it is announced at its new date', () => {
-		const message = weekMessage('Salam alaykoum', 'Mosquée', [
+		const message = weekMessage('Salam alaykoum', 'Association', [
 			...seances,
 			{
 				date: '2026-09-25' as IsoDate,
@@ -204,7 +204,9 @@ describe('les messages prêts à coller', () => {
 	});
 
 	it('says so plainly when there is nothing at all that week', () => {
-		expect(weekMessage('Salam alaykoum', 'Mosquée', [])).toContain('Aucune séance cette semaine');
+		expect(weekMessage('Salam alaykoum', 'Association', [])).toContain(
+			'Aucune séance cette semaine'
+		);
 	});
 
 	it('always says that the course goes on, when a single session is cancelled', () => {

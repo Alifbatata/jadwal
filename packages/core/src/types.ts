@@ -71,15 +71,15 @@ export interface PrayerDay {
 	maghrib: LocalTime;
 	isha: LocalTime;
 	/**
-	 * Heures d'**iqama** du jour, prière par prière, quand la mosquée les a réglées.
+	 * Heures d'**iqama** du jour, prière par prière, quand l'organisation les a réglées.
 	 *
 	 * Ce n'est pas la même chose que les cinq heures ci-dessus, qui sont celles du soleil. L'iqama
-	 * est l'heure à laquelle la prière est **appelée dans la salle**, et c'est la mosquée qui la
+	 * est l'heure à laquelle la prière est **appelée dans la salle**, et c'est l'organisation qui la
 	 * décide : une heure fixe, ou un décalage après l'heure du soleil. C'est donc elle, et non
 	 * l'heure du soleil, qui dit quand les gens sont là — un cours « après Maghrib » s'ancre
 	 * dessus quand elle existe (ADR 0004, étape 8).
 	 *
-	 * Le tableau est partiel : une mosquée peut régler l'iqama de trois prières et pas des deux
+	 * Le tableau est partiel : une organisation peut régler l'iqama de trois prières et pas des deux
 	 * autres. Une prière absente retombe sur l'heure du soleil.
 	 */
 	iqama?: Partial<Record<Prayer, LocalTime>>;

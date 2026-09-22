@@ -3,12 +3,12 @@
 ## Contexte
 
 Le cadrage promet « une seule saisie » pour quatre sorties. L'espace des responsables est cette
-saisie. Il est utilisé depuis un téléphone, souvent à la mosquée, par deux ou trois personnes qui ne
+saisie. Il est utilisé depuis un téléphone, souvent sur place, par deux ou trois personnes qui ne
 sont pas des informaticiennes et qui ne s'en serviront qu'une fois par semaine — parfois moins.
 
-Trois choses en découlent, et elles décident de tout le reste : les mots doivent être ceux de la
-mosquée, pas ceux de la base ; ce qui est fréquent doit être à un geste ; et rien ne doit dépendre
-de JavaScript, parce qu'un réseau de sous-sol de mosquée n'est pas un réseau de bureau.
+Trois choses en découlent, et elles décident de tout le reste : les mots doivent être ceux de
+l'organisation, pas ceux de la base ; ce qui est fréquent doit être à un geste ; et rien ne doit
+dépendre de JavaScript, parce qu'un réseau de sous-sol n'est pas un réseau de bureau.
 
 ## Décision
 
@@ -27,9 +27,10 @@ annuler la séance de demain, pas relire la fiche d'un cours.
 
 ### Le vocabulaire
 
-Celui de la mosquée : « séance » et non « occurrence », « cours » et non « événement », « public »
-et non « audience », « Maghrib » et non « prayer anchor ». Le rythme s'affiche en phrase — « chaque
-semaine, le lundi et mercredi », « le dernier samedi du mois » — et jamais en règle de récurrence.
+Celui de l'organisation : « séance » et non « occurrence », « cours » et non « événement »,
+« public » et non « audience », « Maghrib » et non « prayer anchor ». Le rythme s'affiche en
+phrase — « chaque semaine, le lundi et mercredi », « le dernier samedi du mois » — et jamais en
+règle de récurrence.
 
 ### Ce que l'écran ne calcule pas
 
@@ -87,14 +88,14 @@ pré-traduction validée par le responsable est dans la feuille de route, pas da
 
 ## Conséquences
 
-- Un responsable peut, depuis un téléphone, créer les cours de sa mosquée, en annuler un, en
+- Un responsable peut, depuis un téléphone, créer les cours de son organisation, en annuler un, en
   déplacer un autre, poser une pause et copier le message de la semaine.
 - L'interface ne peut pas afficher une séance que le cœur n'aurait pas calculée, ni en manquer une :
   c'est le même code qui répond aux quatre sorties du cadrage.
 - Le résumé pendant la saisie est un confort. Il disparaît sans JavaScript, et le formulaire
   fonctionne quand même.
 - Les pauses sont sur l'écran des cours parce que c'est là qu'on a la liste sous les yeux : une
-  pause vise un cours, ou toute la mosquée.
+  pause vise un cours, ou toute l'organisation.
 - L'écran **Partager** montre déjà le lien public et le code à coller, marqués « à venir » tant que
   les étapes 5 et 6 ne sont pas faites. Dire qu'une chose n'existe pas encore vaut mieux que de
   laisser croire qu'elle marche.

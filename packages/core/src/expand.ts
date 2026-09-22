@@ -174,7 +174,7 @@ function computeTimes(
 	const day = prayerTimes(date);
 	// **L'iqama d'abord, l'heure du soleil ensuite.** Un cours « après Maghrib » se tient quand les
 	// gens sont dans la salle, et c'est l'iqama qui le dit ; l'heure du soleil n'est que le repli
-	// quand la mosquée n'en a pas réglé (ADR 0004, étape 8). Le décalage propre au cours s'ajoute
+	// quand l'organisation n'en a pas réglé (ADR 0004, étape 8). Le décalage propre au cours s'ajoute
 	// par-dessus, sans changer de sens.
 	const iqama = day?.iqama?.[timing.prayer];
 	const time = isLocalTime(iqama) ? iqama : day?.[timing.prayer];

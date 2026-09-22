@@ -7,10 +7,10 @@ semaines (un jour) ». En pratique, un même cours a souvent lieu deux ou trois 
 (par exemple le lundi et le mercredi, avec le même titre, le même intervenant et la même salle) ;
 saisir un cours par jour multiplierait les fiches, les traductions et les exceptions.
 
-Par ailleurs, une mosquée interrompt ses cours pendant des périodes entières : vacances scolaires,
-Ramadan, travaux. Une annulation séance par séance serait fastidieuse et source d'oublis, et le
-flux ICS y gagnerait autant d'`EXDATE` que de séances. La même interruption peut concerner un seul
-cours (absence de l'intervenant) ou toute l'organisation.
+Par ailleurs, une organisation interrompt ses cours pendant des périodes entières : vacances
+scolaires, Ramadan, travaux. Une annulation séance par séance serait fastidieuse et source
+d'oublis, et le flux ICS y gagnerait autant d'`EXDATE` que de séances. La même interruption peut
+concerner un seul cours (absence de l'intervenant) ou toute l'organisation.
 
 L'étape 1 implémente la récurrence dans `packages/core` (ADR 0003) et doit trancher ces deux points.
 

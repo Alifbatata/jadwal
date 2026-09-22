@@ -34,9 +34,9 @@
 	let periodeOuverte = $state<string | null>(null);
 
 	/**
-	 * La dernière période saisie. Une période nouvelle part de ses valeurs : une mosquée qui change
-	 * de saison ne resaisit que ce qui change, et dans la plupart des cas rien ne change sauf les
-	 * heures fixes du Fajr et du Dhuhr.
+	 * La dernière période saisie. Une période nouvelle part de ses valeurs : une organisation qui
+	 * change de saison ne resaisit que ce qui change, et dans la plupart des cas rien ne change sauf
+	 * les heures fixes du Fajr et du Dhuhr.
 	 */
 	const derniere = $derived(data.periodes.at(-1) ?? null);
 
@@ -124,7 +124,7 @@
 
 	<form method="post" class="colonne">
 		<fieldset>
-			<legend>Position de la mosquée</legend>
+			<legend>Position de l’organisation</legend>
 			<div class="position">
 				<div>
 					<label for="latitude">Latitude</label>
@@ -150,9 +150,10 @@
 				</div>
 			</div>
 			<p class="aide">
-				En degrés décimaux. Pour les trouver : ouvrez une carte, faites un clic droit sur votre
-				mosquée, puis copiez les deux nombres qui s’affichent. Le premier est la latitude. Nous
-				n’interrogeons aucun service de cartographie : ces deux nombres restent chez nous.
+				En degrés décimaux. Pour les trouver : ouvrez une carte, faites un clic droit sur
+				l’emplacement de votre organisation, puis copiez les deux nombres qui s’affichent. Le
+				premier est la latitude. Nous n’interrogeons aucun service de cartographie : ces deux
+				nombres restent chez nous.
 			</p>
 		</fieldset>
 
@@ -213,7 +214,7 @@
 					/>
 				{/each}
 			</div>
-			<p class="aide">Pour aligner le calcul sur ce que votre mosquée annonce déjà.</p>
+			<p class="aide">Pour aligner le calcul sur ce que votre organisation annonce déjà.</p>
 		</fieldset>
 
 		<label for="source">Source que vous déclarez</label>
@@ -292,7 +293,7 @@
 		Une période, c’est ce que vous imprimez sur votre panneau : un nom, des dates, et pour chaque
 		prière l’heure affichée et l’heure d’iqama. Laissez une heure vide pour que l’import ou le
 		calcul la donne. Laissez la date de fin vide pour « jusqu’à nouvel ordre » : c’est le réglage
-		d’une mosquée qui pose ses iqamas une fois et n’y revient plus.
+		d’une organisation qui pose ses iqamas une fois et n’y revient plus.
 	</p>
 	<p class="aide">
 		Deux périodes ne peuvent pas se chevaucher : fermez celle qui précède avant d’en ouvrir une
@@ -306,8 +307,8 @@
 		et recule d'environ onze jours dans l'année civile : la copie est un point de départ, pas une
 		réponse. C'est le seul endroit du service où un malentendu ferait afficher de mauvaises heures
 		pendant un mois entier, et c'est pourquoi cet avertissement est écrit dans les quatre langues
-		du service, alors que le reste de cet écran est en français : le responsable d'une mosquée ne
-		le lit pas forcément.
+		du service, alors que le reste de cet écran est en français : le responsable d'une organisation
+		ne le lit pas forcément.
 	-->
 	<div class="ramadan">
 		<p lang="fr">
@@ -431,7 +432,7 @@
 		{#if form?.apercuCalcule}
 			<p class="aide">
 				Calculé avec ce que porte le formulaire, <strong>sans rien enregistrer</strong>. Comparez au
-				panneau de votre mosquée, puis cliquez sur « Enregistrer ».
+				panneau de votre organisation, puis cliquez sur « Enregistrer ».
 			</p>
 		{/if}
 		<table>
@@ -708,8 +709,8 @@
 		</div>
 		<p class="aide">Laissez la date de fin vide pour « jusqu’à nouvel ordre ».</p>
 
-		<!-- Les cinq iqamas, et elles seules. C'est ce qu'une mosquée règle vraiment ; les heures du
-		     soleil viennent du calcul ou de l'import dans la quasi-totalité des cas, et les demander
+		<!-- Les cinq iqamas, et elles seules. C'est ce qu'une organisation règle vraiment ; les heures
+		     du soleil viennent du calcul ou de l'import dans la quasi-totalité des cas, et les demander
 		     en premier ferait croire qu'il faut les saisir. -->
 		<table class="saisie">
 			<thead>

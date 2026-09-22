@@ -29,7 +29,7 @@ import {
 import { fillPrayerDays, lastImportedDay, newId, sql, type Transaction } from '@jadwal/db';
 import { record } from './audit.js';
 
-/** Sept jours : ce que le responsable compare au panneau de sa mosquée. */
+/** Sept jours : ce que le responsable compare au panneau de son organisation. */
 export const JOURS_D_APERCU = 7;
 /** Trente jours : le délai à partir duquel un calendrier qui s'épuise est signalé. */
 export const ALERTE_FIN_D_IMPORT = 30;
@@ -115,7 +115,7 @@ export interface JourDApercu extends PrayerDay {
 
 /**
  * Les sept prochains jours, calculés avec les réglages **en cours de saisie**, avant enregistrement.
- * C'est ce que le responsable compare au panneau de sa mosquée avant de valider.
+ * C'est ce que le responsable compare au panneau de son organisation avant de valider.
  */
 export function apercu(settings: PrayerSettings, today: IsoDate): JourDApercu[] {
 	const jours: JourDApercu[] = [];
@@ -476,8 +476,9 @@ export function datesAnneeSuivante(
  *
  * Ce que le bouton fait, et ce qu'il ne fait pas : il **fait gagner la saisie**, il ne décide pas
  * des heures. Le soleil revient aux mêmes dates, mais d'une minute près il ne revient pas au même
- * endroit, et une mosquée arrondit ses iqamas à sa façon. La période produite porte donc « dates à
- * vérifier » jusqu'à ce qu'un responsable l'enregistre — c'est-à-dire jusqu'à ce qu'il ait regardé.
+ * endroit, et une organisation arrondit ses iqamas à sa façon. La période produite porte donc
+ * « dates à vérifier » jusqu'à ce qu'un responsable l'enregistre — c'est-à-dire jusqu'à ce qu'il
+ * ait regardé.
  *
  * Rend `null` si la période n'a pas d'équivalent l'année suivante (voir `datesAnneeSuivante`).
  *

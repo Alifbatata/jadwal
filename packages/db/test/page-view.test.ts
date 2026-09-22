@@ -74,7 +74,7 @@ describe('ce que la table peut contenir', () => {
 			`)
 		);
 		// Ni adresse, ni identifiant, ni agent utilisateur, ni provenance — et **pas d'horodatage**.
-		// Un `created_at` donnerait l'heure de la première vue du jour : dans une mosquée de
+		// Un `created_at` donnerait l'heure de la première vue du jour : dans une organisation de
 		// quartier, l'heure exacte à laquelle une personne a lu la page.
 		expect(colonnes).toEqual([
 			{ column_name: 'organization_id', data_type: 'uuid' },

@@ -3,15 +3,17 @@
 ## Contexte
 
 L'adresse électronique est la seule donnée personnelle du service (ADR 0009), et elle est unique
-pour tout le service : une même personne responsable de deux mosquées n'a qu'un compte. L'étape 2 a
-laissé la question ouverte : « Que voit un responsable d'un compte déjà enregistré ailleurs ? »
+pour tout le service : une même personne responsable de deux organisations n'a qu'un compte.
+L'étape 2 a laissé la question ouverte : « Que voit un responsable d'un compte déjà enregistré
+ailleurs ? »
 
 Le chemin naïf est celui de presque tous les logiciels de gestion d'équipe. On saisit une adresse ;
 si elle correspond à un compte, la personne est ajoutée aussitôt et son nom s'affiche ; sinon un
 courriel d'inscription part. Ce chemin transforme le formulaire d'invitation en oracle : n'importe
-quel responsable d'une mosquée peut savoir si telle adresse a un compte chez nous, et en apprendre
-le nom. Pour un service qui s'adresse à des communautés religieuses, savoir qui est responsable d'une
-mosquée est une information sensible, et ce n'est pas au formulaire d'invitation de la donner.
+quel responsable d'une organisation peut savoir si telle adresse a un compte chez nous, et en
+apprendre le nom. Pour un service qui s'adresse à des communautés religieuses, savoir qui est
+responsable d'une organisation est une information sensible, et ce n'est pas au formulaire
+d'invitation de la donner.
 
 L'étape 2 a déjà fermé la variante base de données de cette fuite : une organisation ne peut plus
 écrire une ligne désignant une personne qu'elle ne voit pas, et l'écriture des adhésions a quitté le
@@ -65,9 +67,9 @@ rôle applicatif. Il reste à décider ce que fait l'application.
 - Le service ne peut pas proposer de complétion d'adresse ni d'annuaire interne. Aucun besoin connu
   n'en demande.
 - Inviter quelqu'un lui ouvre la fiche de l'organisation avant même qu'il accepte. Une invitation
-  envoyée par erreur montre donc le plan de la mosquée à un inconnu. Si cela devenait gênant, il
-  faudrait une vue réduite aux colonnes publiques, pas une politique de plus : c'est un changement
-  de schéma, pas un réglage.
+  envoyée par erreur montre donc le plan de l'organisation à un inconnu. Si cela devenait gênant,
+  il faudrait une vue réduite aux colonnes publiques, pas une politique de plus : c'est un
+  changement de schéma, pas un réglage.
 
 ## Statut
 

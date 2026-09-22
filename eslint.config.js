@@ -14,7 +14,7 @@ export default defineConfig(
 	{
 		// Les versions publiées du widget sont du code déjà construit et minifié, servi tel quel à
 		// jamais avec son empreinte d'intégrité (ADR 0005). Le corriger n'aurait aucun sens : le
-		// corrigé ne serait plus ce que les mosquées reçoivent, et son empreinte ne vaudrait plus.
+		// corrigé ne serait plus ce que les organisations reçoivent, et son empreinte ne vaudrait plus.
 		// De même pour les jeux de référence copiés tels quels depuis adhan-js.
 		ignores: ['packages/widget/published/**', 'packages/core/src/prayer/reference/**']
 	},
@@ -75,7 +75,7 @@ export default defineConfig(
 		rules: { 'svelte/no-navigation-without-resolve': 'off' }
 	},
 	{
-		// La page d'essai du widget imite le site d'une mosquée : ses liens sont ceux qu'un
+		// La page d'essai du widget imite le site d'une organisation : ses liens sont ceux qu'un
 		// responsable colle à la main, écrits tels quels. Les faire passer par `resolve` en ferait
 		// des liens du projet, et l'essai cesserait de ressembler à ce qu'il doit imiter.
 		files: ['apps/web/src/routes/widget/**/*.svelte'],

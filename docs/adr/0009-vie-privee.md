@@ -2,21 +2,21 @@
 
 ## Contexte
 
-`jadwal` publie le programme des cours d'une mosquée à partir d'une seule saisie par ses
+`jadwal` publie le programme des cours d'une organisation à partir d'une seule saisie par ses
 responsables. Le côté public (page publique par organisation, widget, flux ICS, API publique) est
 consulté par des visiteurs qui ne se connectent pas. La V1 ne propose pas d'inscription aux
-cours : une inscription à un cours de mosquée serait une donnée sensible au sens de la nLPD suisse.
+cours : une inscription à un cours pourrait être une donnée sensible au sens de la nLPD suisse.
 
-Les seules personnes connues du système sont les responsables, en pratique 2 à 3 par mosquée, qui
-se connectent par lien magique reçu par mail, sans mot de passe.
+Les seules personnes connues du système sont les responsables, en pratique 2 à 3 par organisation,
+qui se connectent par lien magique reçu par mail, sans mot de passe.
 
 Le même code sert aux deux modes de déploiement : service hébergé par l'auteur, ou
 auto-hébergement par une organisation. Les règles du projet imposent l'absence de télémétrie.
 
 Les heures de prière, nécessaires aux cours ancrés sur une prière, ont deux sources possibles :
-le calendrier annuel CSV exporté par l'organisation depuis son espace Mawaqit, ou un calcul local
-avec la bibliothèque Adhan (MIT), méthode et ajustements par prière réglables par organisation.
-Appeler ou scraper Mawaqit est exclu.
+le calendrier annuel CSV exporté par l'organisation depuis son service de calendrier de prière, ou
+un calcul local avec la bibliothèque Adhan (MIT), méthode et ajustements par prière réglables par
+organisation. Appeler ou scraper un service tiers de calendrier de prière est exclu.
 
 ## Décision
 
@@ -25,8 +25,8 @@ Appeler ou scraper Mawaqit est exclu.
 - Les seules données personnelles du système sont les emails des responsables.
 - L'API publique de `apps/web` est en lecture seule et sans cookie.
 - Le logiciel ne contient aucune télémétrie.
-- Le logiciel n'appelle jamais Mawaqit et ne le scrape jamais. Les heures de prière viennent d'un
-  CSV importé par l'organisation ou d'un calcul local.
+- Le logiciel n'appelle jamais un service tiers de calendrier de prière et ne le scrape jamais.
+  Les heures de prière viennent d'un CSV importé par l'organisation ou d'un calcul local.
 
 ## Conséquences
 
@@ -38,8 +38,9 @@ Appeler ou scraper Mawaqit est exclu.
   lecture seule.
 - Aucune instance, hébergée par l'auteur ou auto-hébergée, ne remonte de télémétrie.
 - Pour les heures de prière (étape 7), l'organisation exporte elle-même son calendrier annuel CSV
-  depuis son espace Mawaqit et l'importe dans `jadwal` ; à défaut, le calcul local avec Adhan
-  s'applique. Cet import ne peut pas être remplacé par un appel à Mawaqit.
+  depuis son service de calendrier de prière et l'importe dans `jadwal` ; à défaut, le calcul local
+  avec Adhan s'applique. Cet import ne peut pas être remplacé par un appel à un service tiers de
+  calendrier de prière.
 - L'inscription aux cours est hors périmètre de la V1. L'introduire, ou ajouter un outil de mesure
   d'audience, reviendrait sur cette décision.
 

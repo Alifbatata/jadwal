@@ -1,7 +1,7 @@
 // `robots.txt` (ADR 0029).
 //
 // Une seule règle autorise, une seule refuse, et la plus spécifique gagne — c'est-à-dire la plus
-// longue en octets, quel que soit l'ordre des lignes. `/m/madretsch/fr` tombe sous `Allow: /m/`
+// longue en octets, quel que soit l'ordre des lignes. `/m/belvedere/fr` tombe sous `Allow: /m/`
 // (quatre octets), `/reglages` sous `Disallow: /` (un octet).
 //
 // Un seul groupe `User-agent: *`. Ajouter un groupe nommé serait un piège : un robot ne retient que

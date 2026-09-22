@@ -4,14 +4,14 @@
 
 `jadwal` est un projet libre. Le même code sert deux modes de déploiement : un service
 hébergé par l'auteur, ou un auto-hébergement par une organisation avec Docker Compose documenté.
-La V1 est gratuite pour les mosquées ; d'autres organisations paieront plus tard.
+La V1 est gratuite ; des offres payantes viendront plus tard.
 
 Le dépôt est un monorepo pnpm (`apps/web`, `packages/core`, `packages/db`, `packages/widget`),
 portée npm `@jadwal/*`, tous les paquets en `private: true`. Le widget se distingue par son mode
 de diffusion : il est compilé en custom element `<jadwal-widget>`, en un seul fichier
 `dist/jadwal-widget.js`, sans dépendance à l'exécution, utilisable avec une simple balise
-`<script>` que les sites des mosquées collent chez eux. Contrainte : un site qui colle ce script
-ne doit avoir aucun doute sur ses obligations.
+`<script>` que les sites des organisations collent chez eux. Contrainte : un site qui colle ce
+script ne doit avoir aucun doute sur ses obligations.
 
 Le projet accepte des contributions externes. L'auteur veut pouvoir financer le projet.
 

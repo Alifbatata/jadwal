@@ -1,6 +1,6 @@
 // Cours : la liste, avec le rythme en clair, et les pauses de l'organisation.
 //
-// Une pause sans cours vaut pour toute la mosquée ; une pause rattachée à un cours n'en suspend
+// Une pause sans cours vaut pour toute l'organisation ; une pause rattachée à un cours n'en suspend
 // qu'un (ADR 0011). Les deux se posent ici, parce que c'est ici qu'on a la liste sous les yeux.
 
 import { fail } from '@sveltejs/kit';
@@ -18,7 +18,7 @@ export const load: PageServerLoad = async (event) => {
 	return withSessionOrg(context, async (tx) => {
 		const settings = await readSettings(tx);
 		// Les cours, et **eux seuls** : les sessions du vendredi ont leur propre écran, où une
-		// mosquée les trouve sans les chercher parmi vingt cours (ADR 0033).
+		// organisation les trouve sans les chercher parmi vingt cours (ADR 0033).
 		const courses = await readCourses(tx, ['draft', 'published', 'archived'], ['course']);
 		const pauses = await readPauses(tx);
 		const titres = new Map(courses.map((course) => [course.id, course.title]));

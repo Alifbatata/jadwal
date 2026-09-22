@@ -1,6 +1,6 @@
-# Mettre le programme des cours sur le site de la mosquée
+# Mettre le programme des cours sur le site de l'organisation
 
-Ce document est écrit pour vous, responsable de la mosquée. Il ne suppose aucune connaissance
+Ce document est écrit pour vous, responsable de l'organisation. Il ne suppose aucune connaissance
 technique. Comptez dix minutes.
 
 À la fin, le programme des cours s'affichera sur votre site, et il se mettra à jour tout seul : vous
@@ -18,12 +18,12 @@ Si vous n'avez pas de site, allez directement au **point 5**.
 3. Descendez jusqu'à **Le code à coller sur votre site**.
 4. Cliquez dans le cadre de texte, sélectionnez tout, et copiez.
 
-Le code ressemble à ceci — le vôtre porte le nom de votre mosquée :
+Le code ressemble à ceci — le vôtre porte le nom de votre organisation :
 
 ```html
 <script src="https://exemple.invalid/widget/jadwal-widget.js"></script>
-<jadwal-widget org="ma-mosquee">
-	<a href="https://exemple.invalid/m/ma-mosquee">Voir le programme des cours</a>
+<jadwal-widget org="mon-organisation">
+	<a href="https://exemple.invalid/m/mon-organisation">Voir le programme des cours</a>
 </jadwal-widget>
 ```
 
@@ -67,7 +67,7 @@ Envoyez ce document et votre code à la personne qui s'occupe du site. Tout ce q
 
 ## 3. Choisissez la langue et la vue de départ
 
-Par défaut, le programme s'affiche dans la langue de votre mosquée, sur la vue **Semaine**. Le
+Par défaut, le programme s'affiche dans la langue de votre organisation, sur la vue **Semaine**. Le
 visiteur peut changer les deux lui-même, comme sur votre page publique.
 
 Pour changer ce qu'il voit **en arrivant**, ajoutez un mot dans la deuxième ligne du code.
@@ -75,7 +75,7 @@ Pour changer ce qu'il voit **en arrivant**, ajoutez un mot dans la deuxième lig
 Pour la langue, ajoutez `lang` :
 
 ```html
-<jadwal-widget org="ma-mosquee" lang="de"></jadwal-widget>
+<jadwal-widget org="mon-organisation" lang="de"></jadwal-widget>
 ```
 
 Les langues possibles sont `fr` (français), `de` (allemand), `it` (italien) et `ar` (arabe).
@@ -83,7 +83,7 @@ Les langues possibles sont `fr` (français), `de` (allemand), `it` (italien) et 
 Pour la vue, ajoutez `view` :
 
 ```html
-<jadwal-widget org="ma-mosquee" view="cours"></jadwal-widget>
+<jadwal-widget org="mon-organisation" view="cours"></jadwal-widget>
 ```
 
 Les vues possibles sont `semaine`, `cours` (tous les cours, groupés par rythme) et `mois`.
@@ -91,13 +91,13 @@ Les vues possibles sont `semaine`, `cours` (tous les cours, groupés par rythme)
 Vous pouvez mettre les deux :
 
 ```html
-<jadwal-widget org="ma-mosquee" lang="ar" view="mois"></jadwal-widget>
+<jadwal-widget org="mon-organisation" lang="ar" view="mois"></jadwal-widget>
 ```
 
 Et vous pouvez n'afficher qu'un public, avec `audience` :
 
 ```html
-<jadwal-widget org="ma-mosquee" audience="kids"></jadwal-widget>
+<jadwal-widget org="mon-organisation" audience="kids"></jadwal-widget>
 ```
 
 Les publics possibles sont `kids` (enfants), `youth` (jeunes), `women` (femmes), `adults` (adultes)
@@ -121,8 +121,8 @@ ressemble à ceci :
 
 ```html
 <iframe
-	src="https://exemple.invalid/m/ma-mosquee"
-	title="Programme des cours — Ma mosquée"
+	src="https://exemple.invalid/m/mon-organisation"
+	title="Programme des cours — Mon organisation"
 	style="width:100%;height:900px;border:0"
 	loading="lazy"
 ></iframe>
@@ -146,16 +146,16 @@ le programme cessera de s'afficher, sans message.
 
 ---
 
-## 5. Si la mosquée n'a pas de site
+## 5. Si l'organisation n'a pas de site
 
 Vous n'avez besoin de rien d'autre que du lien.
 
-1. Dans **Partager**, copiez **Le lien de la mosquée**. Il ressemble à
-   `https://exemple.invalid/m/ma-mosquee`.
+1. Dans **Partager**, copiez **Le lien de l'organisation**. Il ressemble à
+   `https://exemple.invalid/m/mon-organisation`.
 2. Mettez-le partout où les gens vous cherchent :
-   - dans la **bio Instagram** de la mosquée ;
+   - dans la **bio Instagram** de l'organisation ;
    - en **message épinglé** du groupe WhatsApp ;
-   - sur la **fiche Mawaqit** de la mosquée ;
+   - sur la **fiche** de l'organisation dans un service de calendrier de prière ;
    - dans la signature des courriels.
 
 Ce lien ne changera jamais. Il ouvre la même chose que le programme sur un site : les trois vues,
@@ -163,7 +163,7 @@ les quatre langues, l'abonnement au calendrier.
 
 **Le QR code**, dans la même page, est ce même lien sous forme d'image. Téléchargez-le, puis :
 
-- imprimez-le et affichez-le à l'entrée de la mosquée, à hauteur des yeux ;
+- imprimez-le et affichez-le à l'entrée de vos locaux, à hauteur des yeux ;
 - mettez-le sur les affiches des cours ;
 - mettez-le sur les flyers de la rentrée.
 
@@ -196,20 +196,20 @@ visible, et il reste cliquable. Votre page ne casse pas.
 
 ## Régler les heures de prière
 
-Un cours annoncé « après Maghrib » n'a pas d'heure fixe : elle change chaque jour. Tant que la
-mosquée n'a pas dit d'où viennent ses heures de prière, ces cours s'affichent « 45 min après
+Un cours annoncé « après Maghrib » n'a pas d'heure fixe : elle change chaque jour. Tant que
+l'organisation n'a pas dit d'où viennent ses heures de prière, ces cours s'affichent « 45 min après
 Maghrib », sans heure — sur votre site comme sur la page publique.
 
 Pour qu'une heure apparaisse, allez dans **Prières** dans votre espace. Deux possibilités, qui se
 combinent :
 
-- **Importer votre calendrier.** Un fichier CSV, une ligne par jour. C'est la meilleure option si la
-  mosquée affiche ses propres heures sur un panneau : ce sont celles-là qui seront publiées. L'écran
-  vous montre ce qu'il a compris **avant** d'écrire quoi que ce soit, et vous confirmez. Le format
-  est décrit dans [`CALENDRIER-PRIERES.md`](CALENDRIER-PRIERES.md), avec un fichier d'exemple.
-- **Laisser le service calculer.** Saisissez la position de la mosquée en degrés décimaux, choisissez
-  la méthode, et comparez l'aperçu des sept prochains jours au panneau de la mosquée avant
-  d'enregistrer. Si l'écart est constant, l'ajustement par prière le rattrape.
+- **Importer votre calendrier.** Un fichier CSV, une ligne par jour. C'est la meilleure option si
+  l'organisation affiche ses propres heures sur un panneau : ce sont celles-là qui seront publiées.
+  L'écran vous montre ce qu'il a compris **avant** d'écrire quoi que ce soit, et vous confirmez. Le
+  format est décrit dans [`CALENDRIER-PRIERES.md`](CALENDRIER-PRIERES.md), avec un fichier d'exemple.
+- **Laisser le service calculer.** Saisissez la position de l'organisation en degrés décimaux,
+  choisissez la méthode, et comparez l'aperçu des sept prochains jours au panneau de l'organisation
+  avant d'enregistrer. Si l'écart est constant, l'ajustement par prière le rattrape.
 
 Depuis l'étape 8, une troisième source passe **avant les deux autres** : vos horaires **saisis à la
 main**. Une période — un nom, des dates, et pour chaque prière l'heure affichée et l'heure d'iqama —
@@ -230,7 +230,7 @@ Dès qu'une session existe, elle remplace l'heure du Dhuhr du vendredi partout, 
 cours annoncé « après le Dhuhr », qui suit alors la dernière session.
 
 Rien de tout cela n'interroge un service extérieur. Il n'y a pas de recherche d'adresse derrière le
-champ de position, et nous n'appelons jamais Mawaqit.
+champ de position, et nous n'appelons jamais un service tiers de calendrier de prière.
 
 ---
 
@@ -245,5 +245,5 @@ champ de position, et nous n'appelons jamais Mawaqit.
 | « Organisation introuvable »            | Le nom dans `org=` n'est pas le bon. Recopiez le code depuis **Partager**.                |
 | Le programme est vide                   | Aucun cours n'est **publié**. Un brouillon ne s'affiche jamais en public.                 |
 
-Dans tous les cas, le lien de la mosquée (**point 5**) fonctionne, lui, toujours. Mettez-le en
+Dans tous les cas, le lien de l'organisation (**point 5**) fonctionne, lui, toujours. Mettez-le en
 attendant, il ne sera jamais perdu.

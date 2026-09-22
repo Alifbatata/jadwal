@@ -7,7 +7,7 @@
 -- `count = count + 1` lit avant d'écrire. La lecture était bornée par une politique — l'organisation
 -- doit être visible du public — mais elle restait une lecture, et elle portait sur **toutes** les
 -- organisations actives. Ce n'était pas une fuite de donnée personnelle, la table n'en contient
--- aucune, mais une mosquée pouvait en théorie lire les chiffres d'une autre.
+-- aucune, mais une organisation pouvait en théorie lire les chiffres d'une autre.
 --
 -- L'incrément passe désormais par une fonction du propriétaire. Le rôle public n'a plus **aucun**
 -- droit sur la table : son `select` échoue sur un droit absent, avant qu'une ligne soit examinée,

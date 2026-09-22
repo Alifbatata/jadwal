@@ -46,8 +46,8 @@ export const load: PageServerLoad = async (event) => {
 		// défilement interne, dont ce cadre-là a justement besoin.
 		//
 		// `referrerpolicy="no-referrer"` n'est pas décoratif : sans lui, le navigateur enverrait
-		// l'adresse de la page de la mosquée dans l'en-tête `Referer` à chaque affichage. Nous ne
-		// l'écrivons nulle part, mais une promesse se tient mieux quand la donnée n'arrive pas
+		// l'adresse de la page de l'organisation dans l'en-tête `Referer` à chaque affichage. Nous
+		// ne l'écrivons nulle part, mais une promesse se tient mieux quand la donnée n'arrive pas
 		// (ADR 0032). Le widget pose la même règle sur le cadre qu'il crée.
 		codeCadre:
 			`<iframe src="${lienPublic}" title="Programme des cours — ${programme.settings.name}"\n` +

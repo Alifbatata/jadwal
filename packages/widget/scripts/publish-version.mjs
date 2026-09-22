@@ -1,7 +1,7 @@
 // Archive la version construite du widget, pour qu'elle reste servie pour toujours (ADR 0005).
 //
 // Le segment de version d'une adresse immuable est une empreinte du contenu : il change dès que le
-// fichier change. Une mosquée qui a collé l'adresse versionnée — celle qui porte une empreinte
+// fichier change. Une organisation qui a collé l'adresse versionnée — celle qui porte une empreinte
 // d'intégrité — la garde des années. Si nous cessions de servir cette version, son programme
 // disparaîtrait de son site, sans message.
 //

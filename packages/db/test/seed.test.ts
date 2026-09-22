@@ -108,7 +108,7 @@ afterAll(async () => {
 describe('données de démonstration', () => {
 	it('writes one organisation, its rooms, its people and its courses', async () => {
 		// Les autres fichiers de test peuplent la même base : un comptage de table entière resterait
-		// vert avec des données de démonstration amputées. On compte donc chez « madretsch » seule,
+		// vert avec des données de démonstration amputées. On compte donc chez « belvedere » seule,
 		// et on exige les nombres exacts que le script écrit.
 		expect(await demoCounts()).toEqual({
 			membership: 2,
@@ -136,7 +136,7 @@ describe('données de démonstration', () => {
 			await ownerRead(sql`
 				select e.date, e.to_date, e.to_start from "session_exception" e
 				join "organization" o on o.id = e.organization_id
-				where o.slug = 'madretsch' and e.kind = 'moved'
+				where o.slug = 'belvedere' and e.kind = 'moved'
 			`)
 		);
 		expect(moved).toHaveLength(1);
@@ -147,7 +147,7 @@ describe('données de démonstration', () => {
 			await ownerRead(sql`
 				select e.date from "session_exception" e
 				join "organization" o on o.id = e.organization_id
-				where o.slug = 'madretsch' and e.kind = 'cancelled'
+				where o.slug = 'belvedere' and e.kind = 'cancelled'
 			`)
 		);
 		expect(cancelled).toHaveLength(1);
@@ -157,7 +157,7 @@ describe('données de démonstration', () => {
 			await ownerRead(sql`
 				select p.course_id, p.from_date, p.to_date from "pause" p
 				join "organization" o on o.id = p.organization_id
-				where o.slug = 'madretsch' order by p.from_date
+				where o.slug = 'belvedere' order by p.from_date
 			`)
 		);
 		expect(pauses).toHaveLength(2);
@@ -172,7 +172,7 @@ describe('données de démonstration', () => {
 		// changé. On abîme donc la démonstration à la main, sur des colonnes que le script pose
 		// sans les nommer dans sa liste d'insertion, puis on exige qu'elles reviennent.
 		await ownerRead(sql`update "organization" set "status" = 'suspended', "accent_color" = '#ff0000'
-			where "slug" = 'madretsch'`);
+			where "slug" = 'belvedere'`);
 		await ownerRead(sql`update "course" set "status" = 'archived', "sequence" = 7
 			where "organization_id" = ${await demoOrganizationId()}`);
 		await ownerRead(sql`update "prayer_settings"
@@ -197,7 +197,7 @@ describe('données de démonstration', () => {
 				select u.email, u.name from "user" u
 				join "membership" m on m.user_id = u.id
 				join "organization" o on o.id = m.organization_id
-				where o.slug = 'madretsch'
+				where o.slug = 'belvedere'
 			`)
 		);
 		expect(people.length).toBeGreaterThanOrEqual(2);
@@ -323,7 +323,7 @@ async function demoCourses(): Promise<CourseRow[]> {
 		await ownerRead(sql`
 			select c.* from "course" c
 			join "organization" o on o.id = c.organization_id
-			where o.slug = 'madretsch' order by c.id
+			where o.slug = 'belvedere' order by c.id
 		`)
 	);
 }
@@ -348,7 +348,7 @@ async function demoCounts(): Promise<Record<string, number>> {
 /** L'organisation de démonstration. Les autres fichiers de test partagent cette base. */
 async function demoOrganizationId(): Promise<string> {
 	const rows = allRows<{ id: string }>(
-		await ownerRead(sql`select "id" from "organization" where "slug" = 'madretsch'`)
+		await ownerRead(sql`select "id" from "organization" where "slug" = 'belvedere'`)
 	);
 	expect(rows).toHaveLength(1);
 	return rows[0]?.id ?? '';

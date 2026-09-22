@@ -3,7 +3,7 @@
 ## Contexte
 
 L'étape 5 a livré un flux agenda par organisation : `/m/<identifiant>/agenda.ics`. On s'abonne, et
-tout le programme de la mosquée arrive dans le téléphone.
+tout le programme de l'organisation arrive dans le téléphone.
 
 La maquette écrite avant ce code disait autre chose. `docs/maquettes/public-cours.md` place
 « Ajouter à mon agenda » **sur la page de chaque cours**, et le cadrage décrit le détail d'un cours
@@ -11,8 +11,8 @@ avec son propre bouton d'agenda. Ce qui a été livré pointait ce bouton vers l
 l'organisation : le lien existait, mais il ne faisait pas ce qu'il annonçait.
 
 C'est un oubli de conception, pas une simplification : quelqu'un qui suit le cours d'arabe du mardi
-n'a aucune raison de recevoir les quatorze autres cours de la mosquée dans son calendrier, et il ne
-se réabonnera pas si le seul abonnement possible lui remplit son agenda.
+n'a aucune raison de recevoir les quatorze autres cours de l'organisation dans son calendrier, et
+il ne se réabonnera pas si le seul abonnement possible lui remplit son agenda.
 
 ## Décision
 
@@ -34,7 +34,7 @@ s'applique au cours isolé exactement comme aux autres.
 ### Ce que le fichier dit de lui-même
 
 Le nom du calendrier est `<Nom de l'organisation> — <Titre du cours>`. Sans le nom de
-l'organisation, deux abonnements venus de deux mosquées se ressembleraient dans la liste du
+l'organisation, deux abonnements venus de deux organisations se ressembleraient dans la liste du
 téléphone. Le nom de fichier proposé au téléchargement suit le titre du cours, ramené à des
 caractères sûrs ; un titre entièrement en arabe ne laissant rien après ce passage, il retombe alors
 sur le nom de l'organisation plutôt que sur une suite de tirets.
@@ -66,7 +66,7 @@ cours répond au vrai besoin, qui est « je veux celui-là », et il y répond m
 
 ## Conséquences
 
-- Une mosquée peut mettre dans un message le lien d'abonnement d'un seul cours, ce qui est
+- Une organisation peut mettre dans un message le lien d'abonnement d'un seul cours, ce qui est
   exactement ce qu'un groupe WhatsApp de classe demande.
 - Le nombre d'adresses publiques augmente d'une par cours publié. Elles sont bornées par la
   limitation de débit comme le reste, et chacune coûte le même calcul qu'une page de cours.

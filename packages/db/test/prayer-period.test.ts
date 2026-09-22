@@ -1,4 +1,4 @@
-// Les périodes d'horaires : ce que la mosquée saisit elle-même (ADR 0004, étape 8).
+// Les périodes d'horaires : ce que l'organisation saisit elle-même (ADR 0004, étape 8).
 //
 // Le test central de ce fichier est celui du chevauchement. Deux périodes qui se recouvrent
 // rendraient la résolution des heures ambiguë — deux lignes pour la même date, et la réponse
@@ -102,9 +102,9 @@ describe('deux périodes ne se chevauchent jamais', () => {
 		expect(await withOrg(app, ici.id, (tx) => countIn(tx, 'prayer_period'))).toBe(2);
 	});
 
-	it('n’empêche pas deux mosquées d’avoir la même période', async () => {
+	it('n’empêche pas deux organisations d’avoir la même période', async () => {
 		// La contrainte porte sur l'organisation **et** la plage : elle ne doit pas transformer le
-		// calendrier d'une mosquée en contrainte sur celui d'une autre.
+		// calendrier d'une organisation en contrainte sur celui d'une autre.
 		await vider();
 		await vider(ailleurs.id);
 		await poser({ de: '2028-01-01', a: '2028-12-31' });

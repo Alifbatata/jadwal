@@ -68,12 +68,12 @@ describe('l’enregistrement et les attributs', () => {
 
 	it('builds the frame address from the attributes', () => {
 		const element = poser(
-			`org="madretsch" lang="de" view="mois" audience="kids" base="${ORIGINE}"`
+			`org="belvedere" lang="de" view="mois" audience="kids" base="${ORIGINE}"`
 		);
 		const source = cadreDe(element)?.src ?? '';
 		const url = new URL(source);
 		expect(url.origin).toBe(ORIGINE);
-		expect(url.pathname).toBe('/m/madretsch/de');
+		expect(url.pathname).toBe('/m/belvedere/de');
 		expect(url.searchParams.get('vue')).toBe('mois');
 		expect(url.searchParams.get('public')).toBe('kids');
 		// C'est ce paramètre, et lui seul, qui fait charger le script d'annonce de hauteur.
@@ -81,19 +81,19 @@ describe('l’enregistrement et les attributs', () => {
 	});
 
 	it('leaves the language out of the path when none is asked, and the default view out of the query', () => {
-		const element = poser(`org="madretsch" view="semaine" base="${ORIGINE}"`);
+		const element = poser(`org="belvedere" view="semaine" base="${ORIGINE}"`);
 		const url = new URL(cadreDe(element)?.src ?? '');
-		expect(url.pathname).toBe('/m/madretsch');
+		expect(url.pathname).toBe('/m/belvedere');
 		expect(url.searchParams.get('vue')).toBeNull();
 	});
 
 	it('ignores an absurd attribute instead of breaking', () => {
 		const element = poser(
-			`org="madretsch" lang="klingon" view="tableau" audience="chats" min-height="-42" base="${ORIGINE}"`
+			`org="belvedere" lang="klingon" view="tableau" audience="chats" min-height="-42" base="${ORIGINE}"`
 		);
 		const cadre = cadreDe(element);
 		const url = new URL(cadre?.src ?? '');
-		expect(url.pathname).toBe('/m/madretsch');
+		expect(url.pathname).toBe('/m/belvedere');
 		expect(url.searchParams.get('vue')).toBeNull();
 		expect(url.searchParams.get('public')).toBeNull();
 		// La hauteur minimale retombe sur celle du widget, jamais sur une valeur négative.
@@ -101,9 +101,9 @@ describe('l’enregistrement et les attributs', () => {
 	});
 
 	it('names the frame, for someone who navigates with a screen reader', () => {
-		const element = poser(`org="madretsch" base="${ORIGINE}"`);
+		const element = poser(`org="belvedere" base="${ORIGINE}"`);
 		expect(cadreDe(element)?.title).toBe('Programme des cours');
-		const allemand = poser(`org="madretsch" lang="de" base="${ORIGINE}"`);
+		const allemand = poser(`org="belvedere" lang="de" base="${ORIGINE}"`);
 		expect(cadreDe(allemand)?.title).toBe('Kursprogramm');
 	});
 
@@ -115,11 +115,11 @@ describe('l’enregistrement et les attributs', () => {
 	});
 
 	it('carries a discreet footer with a link to the public page', () => {
-		const element = poser(`org="madretsch" base="${ORIGINE}"`);
+		const element = poser(`org="belvedere" base="${ORIGINE}"`);
 		const lien = element.shadowRoot?.querySelector('footer a') as HTMLAnchorElement;
 		expect(lien.textContent).toBe('Voir le programme complet');
 		// Le lien sort du cadre : c'est aussi celui qui reste utile quand le cadre ne s'affiche pas.
-		expect(lien.getAttribute('href')).toBe(`${ORIGINE}/m/madretsch`);
+		expect(lien.getAttribute('href')).toBe(`${ORIGINE}/m/belvedere`);
 		expect(lien.target).toBe('_blank');
 		expect(element.shadowRoot?.querySelector('footer span')?.textContent).toBe(
 			'Proposé gratuitement par jadwal, un service de Voltia'
@@ -130,24 +130,24 @@ describe('l’enregistrement et les attributs', () => {
 		// C'est le mécanisme du repli. L'élément n'a pas de `<slot>`, donc ses enfants ne sont pas
 		// affichés dès qu'il est défini — et ils le sont tant qu'il ne l'est pas, c'est-à-dire
 		// exactement quand le script n'a pas pu s'exécuter chez le visiteur.
-		const element = poser(`org="madretsch" base="${ORIGINE}"`);
+		const element = poser(`org="belvedere" base="${ORIGINE}"`);
 		expect(element.shadowRoot?.querySelector('slot')).toBeNull();
 	});
 
 	it('replaces the frame instead of renavigating it when an attribute changes', () => {
-		const element = poser(`org="madretsch" base="${ORIGINE}"`);
+		const element = poser(`org="belvedere" base="${ORIGINE}"`);
 		const premier = cadreDe(element);
 		element.setAttribute('lang', 'it');
 		const second = cadreDe(element);
-		// Réécrire `src` ajouterait une entrée à l'historique du site de la mosquée.
+		// Réécrire `src` ajouterait une entrée à l'historique du site de l'organisation.
 		expect(second).not.toBe(premier);
-		expect(new URL(second?.src ?? '').pathname).toBe('/m/madretsch/it');
+		expect(new URL(second?.src ?? '').pathname).toBe('/m/belvedere/it');
 	});
 });
 
 describe('la hauteur annoncée par le cadre', () => {
 	it('applies a height announced by its own frame', () => {
-		const element = poser(`org="madretsch" base="${ORIGINE}"`);
+		const element = poser(`org="belvedere" base="${ORIGINE}"`);
 		const cadre = cadreDe(element) as HTMLIFrameElement;
 		const fenetre = brancher(cadre);
 		annoncer({ source: fenetre, height: 940 });
@@ -155,7 +155,7 @@ describe('la hauteur annoncée par le cadre', () => {
 	});
 
 	it('ignores a message from another origin', () => {
-		const element = poser(`org="madretsch" base="${ORIGINE}"`);
+		const element = poser(`org="belvedere" base="${ORIGINE}"`);
 		const cadre = cadreDe(element) as HTMLIFrameElement;
 		const fenetre = brancher(cadre);
 		for (const origine of [
@@ -171,7 +171,7 @@ describe('la hauteur annoncée par le cadre', () => {
 	});
 
 	it('ignores a message from our origin but from another window', () => {
-		const element = poser(`org="madretsch" base="${ORIGINE}"`);
+		const element = poser(`org="belvedere" base="${ORIGINE}"`);
 		const cadre = cadreDe(element) as HTMLIFrameElement;
 		const fenetre = brancher(cadre);
 		// Une régie publicitaire, un chat, un autre cadre de la page : la bonne origine ne suffit pas.
@@ -196,7 +196,7 @@ describe('la hauteur annoncée par le cadre', () => {
 		['message en texte', 'jadwal:height:1'],
 		['message en tableau', ['jadwal:height:1', 900]]
 	])('ignores a message of our own origin with an unexpected shape: %s', (_nom, data) => {
-		const element = poser(`org="madretsch" base="${ORIGINE}"`);
+		const element = poser(`org="belvedere" base="${ORIGINE}"`);
 		const cadre = cadreDe(element) as HTMLIFrameElement;
 		const fenetre = brancher(cadre);
 		annoncer({ source: fenetre, data });
@@ -204,18 +204,18 @@ describe('la hauteur annoncée par le cadre', () => {
 	});
 
 	it('bounds the height, below and above', () => {
-		const element = poser(`org="madretsch" min-height="500" base="${ORIGINE}"`);
+		const element = poser(`org="belvedere" min-height="500" base="${ORIGINE}"`);
 		const cadre = cadreDe(element) as HTMLIFrameElement;
 		const fenetre = brancher(cadre);
 		annoncer({ source: fenetre, height: 10 });
 		expect(cadre.style.height).toBe('500px');
-		// Un message forgé qui rendrait la page de la mosquée inutilisable est plafonné.
+		// Un message forgé qui rendrait la page de l'organisation inutilisable est plafonné.
 		annoncer({ source: fenetre, height: 5_000_000 });
 		expect(cadre.style.height).toBe('20000px');
 	});
 
 	it('does not move for a difference of a pixel or two', () => {
-		const element = poser(`org="madretsch" base="${ORIGINE}"`);
+		const element = poser(`org="belvedere" base="${ORIGINE}"`);
 		const cadre = cadreDe(element) as HTMLIFrameElement;
 		const fenetre = brancher(cadre);
 		annoncer({ source: fenetre, height: 900 });
@@ -228,7 +228,7 @@ describe('la hauteur annoncée par le cadre', () => {
 	});
 
 	it('stops listening once it leaves the page', () => {
-		const element = poser(`org="madretsch" base="${ORIGINE}"`);
+		const element = poser(`org="belvedere" base="${ORIGINE}"`);
 		const cadre = cadreDe(element) as HTMLIFrameElement;
 		const fenetre = brancher(cadre);
 		element.remove();
@@ -240,7 +240,7 @@ describe('la hauteur annoncée par le cadre', () => {
 describe('deux widgets sur la même page', () => {
 	it('keeps each one on its own frame', () => {
 		document.body.innerHTML =
-			`<jadwal-widget id="a" org="madretsch" base="${ORIGINE}"></jadwal-widget>` +
+			`<jadwal-widget id="a" org="belvedere" base="${ORIGINE}"></jadwal-widget>` +
 			`<jadwal-widget id="b" org="bienne" lang="ar" min-height="400" base="${ORIGINE}"></jadwal-widget>`;
 		const premier = document.querySelector('#a') as HTMLElement;
 		const second = document.querySelector('#b') as HTMLElement;
@@ -248,7 +248,7 @@ describe('deux widgets sur la même page', () => {
 		const cadreB = cadreDe(second) as HTMLIFrameElement;
 		const fenetreA = brancher(cadreA);
 		const fenetreB = brancher(cadreB);
-		expect(new URL(cadreA.src).pathname).toBe('/m/madretsch');
+		expect(new URL(cadreA.src).pathname).toBe('/m/belvedere');
 		expect(new URL(cadreB.src).pathname).toBe('/m/bienne/ar');
 
 		annoncer({ source: fenetreA, height: 1100 });

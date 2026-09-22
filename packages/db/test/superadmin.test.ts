@@ -121,7 +121,7 @@ describe('ce que le super-admin écrit', () => {
 
 	it('writes nothing outside the organisation it entered', async () => {
 		// L'écriture porte l'identifiant de B, mais le contexte est celui de A : la politique
-		// refuse. C'est le garde-fou qui empêche de modifier la mauvaise mosquée par inadvertance.
+		// refuse. C'est le garde-fou qui empêche de modifier la mauvaise organisation par inadvertance.
 		const message = await messageOfFailure(() =>
 			withOrg(superAdmin, a.id, (tx) =>
 				tx.execute(sql`
