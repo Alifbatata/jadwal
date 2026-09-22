@@ -52,7 +52,7 @@ vault_rclone_conf: |
   # déjà. Sans cette ligne, rclone vérifierait — donc exigerait un droit de plus.
   no_check_bucket = true
 
-# Facultatif. Si le paquet GHCR est public — et il peut l'être, jadwal est sous AGPL —, il n'y a rien
+# Facultatif. Si le paquet GHCR est public — et il peut l'être, jadwal est sous MIT —, il n'y a rien
 # à mettre ici et le serveur n'a aucun identifiant de registre. C'est un secret de moins.
 vault_ghcr_user: ''
 vault_ghcr_token: ''

@@ -168,8 +168,7 @@ suisse. Seules données personnelles du système : les emails des responsables.
 - Connexion : Better Auth (lien magique, limitation de débit, passkeys pour le super-admin ;
   organisations, invitations et rôles restent à nous, ADR 0016). Mails envoyés par SMTP (ADR 0024).
 - Instance officielle : VPS dédié, Docker Compose, Caddy, sauvegardes quotidiennes.
-- Licences : AGPL-3.0-or-later pour tout le dépôt, sauf `packages/widget` en MIT pour qu'aucun
-  site qui colle le script n'ait de doute sur ses obligations. Contributions externes soumises à
+- Licence : MIT pour tout le dépôt, widget compris (ADR 0043). Contributions externes soumises à
   un CLA.
 
 ## Feuille de route

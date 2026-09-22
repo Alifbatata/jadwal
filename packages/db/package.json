@@ -3,7 +3,7 @@
 	"version": "0.0.0",
 	"private": true,
 	"description": "Accès aux données de jadwal : schéma Drizzle, migrations, isolation par organisation (RLS).",
-	"license": "AGPL-3.0-or-later",
+	"license": "MIT",
 	"type": "module",
 	"exports": {
 		".": {

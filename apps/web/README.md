@@ -171,4 +171,4 @@ La cérémonie WebAuthn, elle, n'existe que dans un navigateur : les tests posen
 directement dans la session, comme le point d'entrée du plugin le ferait, et vérifient d'abord
 qu'une session **sans** cette preuve n'obtient aucun pouvoir.
 
-Licence : AGPL-3.0-or-later (voir `LICENSE` à la racine du dépôt).
+Licence : MIT (voir `LICENSE` à la racine du dépôt).

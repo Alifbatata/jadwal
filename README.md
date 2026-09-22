@@ -61,14 +61,12 @@ Les variables d'environnement sont documentées dans `.env.example`. La base de 
 ## Licence et droits d'auteur
 
 - Titulaire du copyright : Mahmoud Ali Mohamad (Voltia). Le fichier [`COPYRIGHT`](COPYRIGHT) porte la
-  ligne de copyright et l'avis standard recommandé par l'AGPL ; le texte de l'AGPL lui-même n'a pas de
-  ligne de titulaire.
-- Tout le dépôt est sous **AGPL-3.0-or-later** (fichier [`LICENSE`](LICENSE)). Quiconque fait tourner une
-  version modifiée en service réseau doit en proposer le code source aux utilisateurs (section 13 de
-  l'AGPL) ; l'instance officielle affichera un lien vers le dépôt.
-- Le paquet `packages/widget` est sous **MIT** (fichier [`packages/widget/LICENSE`](packages/widget/LICENSE),
-  même titulaire) : c'est le script que les sites des organisations collent chez eux, et aucun site
-  qui le colle ne doit avoir de doute sur ses obligations.
+  ligne de copyright et l'avis MIT.
+- Tout le dépôt est sous **MIT** (fichier [`LICENSE`](LICENSE)), widget compris. Le widget garde une
+  copie du texte dans [`packages/widget/LICENSE`](packages/widget/LICENSE), parce que ce paquet se lit
+  seul par qui colle le script sur son site (ADR 0043).
+- Les licences des composants tiers embarqués dans l'image de production sont dans
+  `LICENCES-TIERCES.md`, engendré à la construction à partir du contenu réel de l'image.
 - Les contributions externes sont soumises à un accord de contribution (CLA), voir
   [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
@@ -92,5 +90,4 @@ single entry: associations, schools, clubs, companies, places of worship. Staff 
 once; out come an embeddable widget, a public page, an ICS calendar feed and ready-to-paste WhatsApp
 messages. The service is free. An optional prayer-times module is available for places of worship,
 switched off by default. The same code runs as a hosted service or self-hosted with Docker Compose.
-Status: under development, not usable yet. Licence: AGPL-3.0-or-later for the repository, MIT for
-`packages/widget`. External contributions require a CLA.
+Status: under development, not usable yet. Licence: MIT. External contributions require a CLA.
