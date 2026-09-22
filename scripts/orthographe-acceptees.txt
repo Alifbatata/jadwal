@@ -1,0 +1,288 @@
+# Les signalements relus et acceptés.
+#
+# Une ligne par cas : `chemin | RÈGLE | texte signalé`. La ligne du fichier n'y est pas, parce
+# qu'elle bouge à chaque réécriture ; le triplet, lui, tient.
+#
+# **Pourquoi cette liste plutôt que des règles coupées.** Couper `ACCORD_SUJET_VERBE` laisserait
+# passer un vrai désaccord ailleurs. Ici la règle reste allumée : seuls les cas écrits ci-dessous
+# sont acceptés, et un cas nouveau fait tomber la commande.
+#
+# Chacun a été lu dans son fichier avant d'entrer ici. Ils se rangent en six familles :
+#
+#   1. **Un bout de code au milieu d'une phrase.** Il est remplacé par le substitut « ceci », qui
+#      est masculin singulier ; « les `package.json` ne contiennent » devient « ceci ne contiennent »,
+#      et l'accord se plaint. Le texte, lui, est juste.
+#   2. **Un tableau ou une maquette.** Une cellule n'est pas une phrase : « cases : français,
+#      allemand » n'a ni sujet ni verbe.
+#   3. **Une notation technique** : `-120..240`, `<=`, `webcal:`, un nom de colonne, un sigle.
+#   4. **Un abrégé de jour ou de mois** : `Sa`, `mer`, `sab`, `min`. Ce sont les formes courtes des
+#      écrans, et elles sont voulues.
+#   5. **Un mot composé allemand** que le dictionnaire suisse ne porte pas : `Kalenderabo`,
+#      `https-Adresse`. Ils sont corrects et compris.
+#   6. **Une suggestion de vocalisation en arabe.** LanguageTool propose d'ajouter des diacritiques ;
+#      les écrans publics n'en mettent pas, par choix (ADR 0007).
+#
+# Retirer une ligne d'ici, c'est redemander à la voir. Ajouter une ligne demande d'avoir lu le texte.
+
+
+# CONTRIBUTING.md
+CONTRIBUTING.md | D_N_E_OU_E | une pull
+CONTRIBUTING.md | MOT_TRAIT_MOT | trunk-based
+
+# apps/web/src/lib/FormulaireCours.svelte
+apps/web/src/lib/FormulaireCours.svelte | FRENCH_WORD_REPEAT_RULE | Rythme Rythme
+apps/web/src/lib/FormulaireCours.svelte | POINT | )
+
+# apps/web/src/lib/i18n.ts
+apps/web/src/lib/i18n.ts | ALLE | Alle
+apps/web/src/lib/i18n.ts | ARABIC_COMMA_PARENTHESIS_WHITESPACE |  .
+apps/web/src/lib/i18n.ts | ARABIC_QM_WHITESPACE |  .
+apps/web/src/lib/i18n.ts | ARABIC_SC_WHITESPACE |  .
+apps/web/src/lib/i18n.ts | AR_DIACRITICS_REPLACE | البرنامج
+apps/web/src/lib/i18n.ts | AR_DIACRITICS_REPLACE | برنامج
+apps/web/src/lib/i18n.ts | AR_HOMOPHONES_REPLACE | الخطبة
+apps/web/src/lib/i18n.ts | AR_SIMPLE_REPLACE | الفترة
+apps/web/src/lib/i18n.ts | DE_PHRASE_REPETITION | Kalender abonnieren Kalender abonnieren
+apps/web/src/lib/i18n.ts | HUNSPELL_RULE_AR | Android
+apps/web/src/lib/i18n.ts | HUNSPELL_RULE_AR | er
+apps/web/src/lib/i18n.ts | HUNSPELL_RULE_AR | إث
+apps/web/src/lib/i18n.ts | MORFOLOGIK_RULE_IT_IT | mer
+apps/web/src/lib/i18n.ts | MORFOLOGIK_RULE_IT_IT | min
+apps/web/src/lib/i18n.ts | MORFOLOGIK_RULE_IT_IT | sab
+apps/web/src/lib/i18n.ts | POINT | Outlook
+apps/web/src/lib/i18n.ts | SWISS_GERMAN_SPELLER_RULE | Kalenderabo
+apps/web/src/lib/i18n.ts | SWISS_GERMAN_SPELLER_RULE | Sa
+apps/web/src/lib/i18n.ts | SWISS_GERMAN_SPELLER_RULE | https-Adresse
+
+# apps/web/src/lib/messages.ts
+apps/web/src/lib/messages.ts | FR_REPEATEDWORDS_NORMALEMENT | normalement
+
+# apps/web/src/lib/server/mail/messages.ts
+apps/web/src/lib/server/mail/messages.ts | TIRET | --
+
+# apps/web/src/routes/+layout.svelte
+apps/web/src/routes/+layout.svelte | JOURS | Vendredi
+
+# apps/web/src/routes/+page.svelte
+apps/web/src/routes/+page.svelte | ACCORD_R_PERS_VERBE | couvrent
+apps/web/src/routes/+page.svelte | ACCORD_R_PERS_VERBE | sont
+apps/web/src/routes/+page.svelte | ETRE_VPPA_OU_ADJ | réglées
+apps/web/src/routes/+page.svelte | OU_LEQUEL | où
+apps/web/src/routes/+page.svelte | POINT | vu
+
+# apps/web/src/routes/connexion/+page.svelte
+apps/web/src/routes/connexion/+page.svelte | PRONOMS_PERSONNELS_MINUSCULE | ceci Vous
+
+# apps/web/src/routes/deconnexion/+page.svelte
+apps/web/src/routes/deconnexion/+page.svelte | PRONOMS_PERSONNELS_MINUSCULE | Déconnexion Vous
+
+# apps/web/src/routes/prieres/+page.svelte
+apps/web/src/routes/prieres/+page.svelte | ACCORD_V_PPA | refusées
+apps/web/src/routes/prieres/+page.svelte | A_A_ACCENT2 | a
+apps/web/src/routes/prieres/+page.svelte | DATE | 01.01.2027
+apps/web/src/routes/prieres/+page.svelte | ESPACE_APRES_POINT | ceci …et
+apps/web/src/routes/prieres/+page.svelte | POINT | »
+apps/web/src/routes/prieres/+page.svelte | POINTS_SUSPENSIONS_SPACE | ceci …
+apps/web/src/routes/prieres/+page.svelte | VPPA_SUJET_INVERSE | servi
+
+# apps/web/src/routes/vendredi/+page.svelte
+apps/web/src/routes/vendredi/+page.svelte | ACCORD_SUJET_VERBE | remplacent
+
+# apps/web/src/routes/widget/test/+page.svelte
+apps/web/src/routes/widget/test/+page.svelte | ESPACE_APRES_POINT | Ajoutez ?org
+apps/web/src/routes/widget/test/+page.svelte | OU_LEQUEL | où
+
+# docs/adr/0001-licences.md
+docs/adr/0001-licences.md | A_ACCENT_A | ceci à
+
+# docs/adr/0002-architecture-monorepo.md
+docs/adr/0002-architecture-monorepo.md | ACCORD_R_PERS_VERBE | contiennent
+docs/adr/0002-architecture-monorepo.md | AGREEMENT_NUMERAL_PLURAL | compilé
+docs/adr/0002-architecture-monorepo.md | A_ACCENT_A | ceci à
+docs/adr/0002-architecture-monorepo.md | MOT_TRAIT_MOT | trunk-based
+
+# docs/adr/0003-modele-de-recurrence.md
+docs/adr/0003-modele-de-recurrence.md | ACCORD_SUJET_VERBE | porte
+docs/adr/0003-modele-de-recurrence.md | AGREEMENT_POSTPONED_ADJ | interdit
+docs/adr/0003-modele-de-recurrence.md | DATTE_DATE | dates
+docs/adr/0003-modele-de-recurrence.md | ETRE_VPPA_OU_ADJ | incluse
+docs/adr/0003-modele-de-recurrence.md | FR_REPEATEDWORDS_EXIGER | exigeant
+docs/adr/0003-modele-de-recurrence.md | LA_LA2 | la
+docs/adr/0003-modele-de-recurrence.md | POINTS_SUSPENSIONS_SPACE | lundi …
+
+# docs/adr/0004-horaires-ancres-sur-une-priere.md
+docs/adr/0004-horaires-ancres-sur-une-priere.md | ACCORD_SUJET_VERBE | dépendrait
+docs/adr/0004-horaires-ancres-sur-une-priere.md | ANNEE_AN | jour de l'année
+docs/adr/0004-horaires-ancres-sur-une-priere.md | DOUBLE_PUNCTUATION | ..
+docs/adr/0004-horaires-ancres-sur-une-priere.md | SA_CA_SE | sa
+docs/adr/0004-horaires-ancres-sur-une-priere.md | SON_SONT | son
+
+# docs/adr/0005-widget.md
+docs/adr/0005-widget.md | P_V_PAS | touche
+docs/adr/0005-widget.md | TIRET | — n'
+
+# docs/adr/0006-connexion-et-roles.md
+docs/adr/0006-connexion-et-roles.md | DE_LE | de le
+
+# docs/adr/0009-vie-privee.md
+docs/adr/0009-vie-privee.md | J_N2 | vraie mot
+
+# docs/adr/0012-dates-civiles-en-chaines.md
+docs/adr/0012-dates-civiles-en-chaines.md | DEUX_POINTS_ESPACE | :
+docs/adr/0012-dates-civiles-en-chaines.md | POINTS_SUSPENSIONS_SPACE | lundi …
+
+# docs/adr/0013-isolation-par-rls-et-contexte-par-transaction.md
+docs/adr/0013-isolation-par-rls-et-contexte-par-transaction.md | ACCORD_QUEL_QUE_SOIT | quelles que soient
+docs/adr/0013-isolation-par-rls-et-contexte-par-transaction.md | ACCORD_R_PERS_VERBE | exigent
+docs/adr/0013-isolation-par-rls-et-contexte-par-transaction.md | A_ACCENT_A | ceci à
+docs/adr/0013-isolation-par-rls-et-contexte-par-transaction.md | PLACE_DE_LA_VIRGULE |  mais
+docs/adr/0013-isolation-par-rls-et-contexte-par-transaction.md | SON_SONT | son
+
+# docs/adr/0014-uuid-v7-generes-par-l-application.md
+docs/adr/0014-uuid-v7-generes-par-l-application.md | FR_COMPOUNDS_ALLER_RETOUR | aller- retour
+docs/adr/0014-uuid-v7-generes-par-l-application.md | TIRET | aller- retour
+
+# docs/adr/0015-journal-d-audit-en-insertion-seule.md
+docs/adr/0015-journal-d-audit-en-insertion-seule.md | PLACE_DE_LA_VIRGULE |  mais
+
+# docs/adr/0016-better-auth-liens-magiques-pas-de-mot-de-passe.md
+docs/adr/0016-better-auth-liens-magiques-pas-de-mot-de-passe.md | D_N_E_OU_E | la lit
+docs/adr/0016-better-auth-liens-magiques-pas-de-mot-de-passe.md | PLACE_DE_LA_VIRGULE |  mais
+
+# docs/adr/0017-invitation-sans-fuite-d-information.md
+docs/adr/0017-invitation-sans-fuite-d-information.md | AUX_AVOIR | voulu
+docs/adr/0017-invitation-sans-fuite-d-information.md | D_N_E_OU_E | la lit
+docs/adr/0017-invitation-sans-fuite-d-information.md | PLACE_DE_LA_VIRGULE |  mais
+docs/adr/0017-invitation-sans-fuite-d-information.md | SUBJ_SUBOR | donnons
+
+# docs/adr/0018-acces-de-support-du-super-admin.md
+docs/adr/0018-acces-de-support-du-super-admin.md | A_A_ACCENT2 | a
+docs/adr/0018-acces-de-support-du-super-admin.md | D_N_E_OU_E | avancer
+docs/adr/0018-acces-de-support-du-super-admin.md | EST_CE_QUE | est ce
+docs/adr/0018-acces-de-support-du-super-admin.md | FR_REPEATEDWORDS_IMPOSER | impose
+
+# docs/adr/0019-proprietaire-non-privilegie.md
+docs/adr/0019-proprietaire-non-privilegie.md | CONFUSION_E_ER | existe
+
+# docs/adr/0020-retention-du-journal-d-audit.md
+docs/adr/0020-retention-du-journal-d-audit.md | REP_PUISQUE | puisque
+
+# docs/adr/0021-espace-des-responsables.md
+docs/adr/0021-espace-des-responsables.md | ACCORD_SUJET_VERBE | inviter
+docs/adr/0021-espace-des-responsables.md | ACCORD_SUJET_VERBE | source
+
+# docs/adr/0024-envoi-de-courriel-par-smtp.md
+docs/adr/0024-envoi-de-courriel-par-smtp.md | FR_REPEATEDWORDS_EXIGER | exige
+
+# docs/adr/0025-super-admin-pouvoirs-complets.md
+docs/adr/0025-super-admin-pouvoirs-complets.md | POINT | côté
+docs/adr/0025-super-admin-pouvoirs-complets.md | QUE_AVOIR | données
+docs/adr/0025-super-admin-pouvoirs-complets.md | QUE_AVOIR | été
+docs/adr/0025-super-admin-pouvoirs-complets.md | REP_SEULEMENT | seulement
+
+# docs/adr/0026-api-publique.md
+docs/adr/0026-api-publique.md | AGREEMENT_POSTPONED_ADJ | ouvert
+docs/adr/0026-api-publique.md | NOMBRES_EN_LETTRES | 120
+docs/adr/0026-api-publique.md | QUOIQUE_QUOI_QUE | quoi que
+docs/adr/0026-api-publique.md | SUBJ_SUBOR | peut
+
+# docs/adr/0027-pages-publiques.md
+docs/adr/0027-pages-publiques.md | FR_REPEATEDWORDS_SOUVENT | souvent
+
+# docs/adr/0029-referencement-des-pages-publiques.md
+docs/adr/0029-referencement-des-pages-publiques.md | FRENCH_WORD_REPEAT_RULE | sous ceci sous ceci
+
+# docs/adr/0030-verrou-de-conservation.md
+docs/adr/0030-verrou-de-conservation.md | PLACE_DE_LA_VIRGULE |  il
+docs/adr/0030-verrou-de-conservation.md | PLACE_DE_LA_VIRGULE |  mais
+docs/adr/0030-verrou-de-conservation.md | PREP_VERBECONJUGUE | disparaît
+docs/adr/0030-verrou-de-conservation.md | SUBJ_SUBOR | veut
+docs/adr/0030-verrou-de-conservation.md | VIRG_NON_TROUVEE |  il
+
+# docs/adr/0031-couleur-d-accent-et-contraste.md
+docs/adr/0031-couleur-d-accent-et-contraste.md | POSER_PROBLEME | problème
+
+# docs/adr/0032-compteur-de-vues-sans-donnee-personnelle.md
+docs/adr/0032-compteur-de-vues-sans-donnee-personnelle.md | ETRE_VPPA_OU_ADJ | partie
+docs/adr/0032-compteur-de-vues-sans-donnee-personnelle.md | N_QUI_EST | partie
+docs/adr/0032-compteur-de-vues-sans-donnee-personnelle.md | OU_LEQUEL | où
+docs/adr/0032-compteur-de-vues-sans-donnee-personnelle.md | SON_SONT | son
+
+# docs/adr/0033-priere-du-vendredi.md
+docs/adr/0033-priere-du-vendredi.md | APOS_ESPACE | l' iqama
+docs/adr/0033-priere-du-vendredi.md | PLACE_DE_LA_VIRGULE |  mais
+
+# docs/adr/0035-sauvegardes-chiffrees.md
+docs/adr/0035-sauvegardes-chiffrees.md | CONFUSION_ER_E_PAR | table
+docs/adr/0035-sauvegardes-chiffrees.md | TACHE | tâche
+
+# docs/adr/0036-taches-periodiques-et-veille.md
+docs/adr/0036-taches-periodiques-et-veille.md | CONFUSION_E_ER | échoue
+docs/adr/0036-taches-periodiques-et-veille.md | OU_LEQUEL | où
+
+# docs/adr/0038-sonde-exterieure-hors-de-github-actions.md
+docs/adr/0038-sonde-exterieure-hors-de-github-actions.md | ACCORD_VERBE_PPA | pareil
+docs/adr/0038-sonde-exterieure-hors-de-github-actions.md | ACCORD_V_PPA | pareil
+docs/adr/0038-sonde-exterieure-hors-de-github-actions.md | CONFUSION_EST_ET | et
+docs/adr/0038-sonde-exterieure-hors-de-github-actions.md | PAS_DE_VIRGULE_STYLE | est dehors, alerte
+docs/adr/0038-sonde-exterieure-hors-de-github-actions.md | PLACE_DE_LA_VIRGULE |  mais
+
+# docs/adr/0039-journal-d-acces-sans-adresse-ni-jeton.md
+docs/adr/0039-journal-d-acces-sans-adresse-ni-jeton.md | QUE_AVOIR | décidé
+
+# docs/adr/0040-conteneur-de-demarrage.md
+docs/adr/0040-conteneur-de-demarrage.md | SE_CE |  c'
+docs/adr/0040-conteneur-de-demarrage.md | TIRET | lui- même
+docs/adr/0040-conteneur-de-demarrage.md | TRAIT_UNION | non privilégiés
+
+# docs/adr/0041-ce-que-la-base-garde-vraiment-d-une-personne.md
+docs/adr/0041-ce-que-la-base-garde-vraiment-d-une-personne.md | PLACE_DE_LA_VIRGULE |  il
+docs/adr/0041-ce-que-la-base-garde-vraiment-d-une-personne.md | VIRG_NON_TROUVEE |  il
+
+# docs/adr/0042-module-des-heures-de-priere.md
+docs/adr/0042-module-des-heures-de-priere.md | ACCORD_QUEL_QUE_SOIT | quel que soit
+
+# docs/adr/0043-licence-mit.md
+docs/adr/0043-licence-mit.md | APOS_ESPACE | d' installer
+
+# docs/maquettes/public-agenda.md
+docs/maquettes/public-agenda.md | POINT | ouvre
+docs/maquettes/public-agenda.md | PRONOMS_PERSONNELS_MINUSCULE | : Vous
+docs/maquettes/public-agenda.md | SE_CE |  c'
+
+# docs/maquettes/public-cours.md
+docs/maquettes/public-cours.md | J_N | Produites côté
+docs/maquettes/public-cours.md | PAS_DE_VERBE_APRES_POSSESSIF_DEMONSTRATIF | ferait
+docs/maquettes/public-cours.md | POINT | texte
+
+# docs/maquettes/public-mois.md
+docs/maquettes/public-mois.md | IL_Y_A_IL | il y a quoi
+docs/maquettes/public-mois.md | MOIS | Octobre
+
+# docs/maquettes/public-semaine.md
+docs/maquettes/public-semaine.md | ACCORD_SUJET_VERBE | cours
+docs/maquettes/public-semaine.md | ACCORD_V_PPA | publiés
+docs/maquettes/public-semaine.md | CONFUSION_E_ER | publiés
+docs/maquettes/public-semaine.md | PLACE_DE_LA_VIRGULE |  mais
+
+# docs/maquettes/public-tous-les-cours.md
+docs/maquettes/public-tous-les-cours.md | PRONOMS_PERSONNELS_MINUSCULE | ceci Il
+docs/maquettes/public-tous-les-cours.md | REP_PUISQUE | puisqu'
+
+# docs/maquettes/public-vendredi.md
+docs/maquettes/public-vendredi.md | FR_REPEATEDWORDS_EXACTEMENT | exactement
+
+# docs/maquettes/responsables-vendredi.md
+docs/maquettes/responsables-vendredi.md | ACCORD_SUJET_VERBE | cases
+docs/maquettes/responsables-vendredi.md | AGREEMENT_POSTPONED_ADJ | facultative
+docs/maquettes/responsables-vendredi.md | VIRG_NON_TROUVEE |  elles
+
+# docs/maquettes/widget.md
+docs/maquettes/widget.md | A_VERBE_INFINITIF | à coller
+docs/maquettes/widget.md | FR_REPEATEDWORDS_ANNONCER | annonce
+docs/maquettes/widget.md | FR_REPEATEDWORDS_ANNONCER | annoncé
+docs/maquettes/widget.md | POINT | nouvelle
+
+# scripts/conditions-pdf.mjs
+scripts/conditions-pdf.mjs | OU | ou
+scripts/conditions-pdf.mjs | PLACE_DE_LA_VIRGULE |  mais

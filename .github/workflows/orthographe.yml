@@ -1,0 +1,85 @@
+# La relecture de tout ce que des gens lisent, par LanguageTool.
+#
+# Un flux à part, et non un travail de plus dans `ci.yml`, pour une raison : GitHub filtre les
+# chemins par **flux**, pas par travail. Ici le filtre est ce qui compte — relire le corpus demande
+# de tirer une image de 430 Mio et de lancer une machine virtuelle Java, et cela n'a aucun sens
+# quand une modification ne touche que du code.
+#
+# L'image est épinglée par empreinte dans `scripts/orthographe.mjs` : la CI et le poste relisent
+# exactement la même version, avec les mêmes règles. Une étiquette mouvante ferait passer ici ce qui
+# tombe là, ou l'inverse.
+#
+# Le conteneur tourne **sans réseau** (`--network none`), ici comme sur le poste.
+
+name: Orthographe
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'README.md'
+      - 'CONTRIBUTING.md'
+      - 'SECURITY.md'
+      - 'apps/web/src/**/*.svelte'
+      - 'apps/web/src/lib/i18n.ts'
+      - 'apps/web/src/lib/messages.ts'
+      - 'apps/web/src/lib/server/mail/messages.ts'
+      - 'scripts/conditions-pdf.mjs'
+      - 'scripts/orthographe.mjs'
+      - 'scripts/dictionnaire-orthographe.txt'
+      - 'scripts/orthographe-acceptees.txt'
+      - '.github/workflows/orthographe.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'README.md'
+      - 'CONTRIBUTING.md'
+      - 'SECURITY.md'
+      - 'apps/web/src/**/*.svelte'
+      - 'apps/web/src/lib/i18n.ts'
+      - 'apps/web/src/lib/messages.ts'
+      - 'apps/web/src/lib/server/mail/messages.ts'
+      - 'scripts/conditions-pdf.mjs'
+      - 'scripts/orthographe.mjs'
+      - 'scripts/dictionnaire-orthographe.txt'
+      - 'scripts/orthographe-acceptees.txt'
+      - '.github/workflows/orthographe.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  orthographe:
+    name: Relire les textes lus par les gens
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+        with:
+          cache: true
+          install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+
+      # `git ls-files` est la source du corpus : sans les dépendances, le script ne démarre pas,
+      # parce qu'il importe la page de garde du PDF depuis `scripts/conditions-pdf.mjs`.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Orthographe
+        run: pnpm orthographe

@@ -61,7 +61,7 @@ export function dateDeLaVersion(markdown) {
  * Les points à valider, en français simple. Une question par point, et la raison pour laquelle elle
  * se pose : un juriste qui reçoit un texte sans savoir ce qui inquiète relit tout à poids égal.
  */
-const QUESTIONS = [
+export const QUESTIONS = [
 	{
 		titre: 'Responsable du traitement, ou sous-traitant ?',
 		corps: `Le texte dit que l'exploitant est <strong>responsable du traitement</strong> au sens de la

@@ -28,7 +28,8 @@
 		"conditions:pdf": "node scripts/conditions-pdf.mjs",
 		"conditions:test": "node scripts/eprouver-conditions-pdf.mjs",
 		"image:test": "node scripts/eprouver-image.mjs",
-		"licences": "node scripts/licences-tierces.mjs"
+		"licences": "node scripts/licences-tierces.mjs",
+		"orthographe": "node scripts/orthographe.mjs"
 	},
 	"devDependencies": {
 		"@eslint/js": "10.0.1",
