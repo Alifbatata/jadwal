@@ -10,6 +10,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { createDatabase, newId, sql, withOrg, type DatabaseHandle } from '@jadwal/db';
 import { emailKey, storedKey } from '../src/lib/server/rate-limit.js';
+import { conditionsAcceptees } from './conditions-acceptees.js';
 
 const origin = inject('origin');
 const secondOrigin = inject('secondOrigin');
@@ -40,6 +41,11 @@ async function outboxMails(): Promise<RecordedEmail[]> {
 async function lastMailTo(email: string): Promise<RecordedEmail | undefined> {
 	const all = await outboxMails();
 	return all.filter((mail) => mail.to === email).at(-1);
+}
+
+/** Le message prêt à coller qu'une action de l'accueil vient de rendre, tel que la page le montre. */
+function messageACopier(html: string): string {
+	return /aria-label="Message à copier"[^>]*>([\s\S]*?)<\/textarea>/.exec(html)?.[1] ?? '';
 }
 
 /** Le lien de connexion contenu dans le dernier message envoyé à cette adresse. */
@@ -227,6 +233,9 @@ beforeAll(async () => {
 			insert into "membership" ("id", "organization_id", "user_id", "role")
 			values (${newId()}, ${organizationId}, ${adminUserId}, 'org_admin')
 		`);
+		// Les conditions déjà acceptées : ce fichier éprouve l'espace, pas son écran d'acceptation,
+		// que `conditions.test.ts` éprouve à part (ADR 0044).
+		await tx.execute(conditionsAcceptees(organizationId, adminUserId));
 		// Un compte connu, rattaché à rien : il sert au test qui compare une adresse connue à une
 		// adresse inconnue, sans déranger la personne responsable.
 		await tx.execute(sql`
@@ -568,6 +577,11 @@ describe('les rôles', () => {
 			cookie
 		);
 		expect(accepted.status).toBe(303);
+		// Sa première entrée dans l'espace passe par les conditions d'utilisation, comme pour toute
+		// personne invitée (ADR 0044) : elle les accepte par le formulaire de l'écran.
+		const conditions = await postForm('/conditions/accepter', {}, cookie);
+		expect(conditions.status).toBe(303);
+		expect(conditions.headers.get('location')).toBe('/');
 
 		// Et une éditrice ne peut pas inviter. Depuis l'étape 4 elle ne voit même plus l'écran :
 		// la route la renvoie à l'accueil avant d'avoir lu le formulaire.
@@ -829,6 +843,130 @@ describe('les pouvoirs du super-admin', () => {
 		// Ses écritures sont signées dans le journal de l'organisation, comme celles d'un
 		// responsable : c'est le contrat de l'ADR 0025.
 		expect(journal.length).toBeGreaterThan(0);
+	});
+
+	it('reads the organisation it entered, and no other, when the instance has several', async () => {
+		// Le rôle du super-admin voit toutes les lignes de `organization` : c'est ce qui lui fait
+		// lister et ouvrir les organisations (ADR 0025). Une lecture de cette table sans filtre ne s'y
+		// arrête donc pas au contexte, et rendait la même ligne dans deux organisations. Trouvé par
+		// le parcours complet : l'invitation envoyée depuis la seconde nommait la première.
+		const suffixe = Date.now().toString(36);
+		const organisations = [
+			{
+				id: newId(),
+				slug: `voisine-${suffixe}`,
+				nom: 'Association voisine',
+				accueil: 'Bonjour les voisins'
+			},
+			{
+				id: newId(),
+				slug: `lointaine-${suffixe}`,
+				nom: 'Association lointaine',
+				accueil: 'Bienvenue de loin'
+			}
+		];
+		await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			for (const organisation of organisations) {
+				await tx.execute(sql`
+					insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+						"enabled_language", "greeting")
+					values (${organisation.id}, ${organisation.slug}, ${organisation.nom}, 'Europe/Zurich',
+						'fr', array['fr'], ${organisation.accueil})
+				`);
+			}
+		});
+
+		const cookie = await signInSuperAdmin();
+		for (const organisation of organisations) {
+			const entre = await postForm(
+				'/super-admin?/entrer',
+				{ organizationId: organisation.id },
+				cookie
+			);
+			expect(entre.status).toBe(303);
+
+			// L'écran Membres, son titre, et l'invitation qui en part.
+			const membres = await (await fetch(`${origin}/membres`, { headers: { cookie } })).text();
+			expect(membres).toContain(`<title>Membres | ${organisation.nom}</title>`);
+			expect(membres).toContain(`<h1>${organisation.nom}</h1>`);
+			const invitee = `invitee-${organisation.slug}@example.test`;
+			const invite = await postForm(
+				'/membres?/inviter',
+				{ email: invitee, role: 'editor' },
+				cookie
+			);
+			expect(invite.status).toBe(200);
+			expect((await lastMailTo(invitee))?.subject).toBe(
+				`Invitation à rejoindre ${organisation.nom} sur jadwal`
+			);
+
+			// Les réglages, que le formulaire préremplit : les enregistrer tels quels aurait écrit
+			// dans cette organisation le nom et la formule d'une autre.
+			const reglages = await (await fetch(`${origin}/reglages`, { headers: { cookie } })).text();
+			expect(reglages).toContain(`value="${organisation.nom}"`);
+			expect(reglages).toContain(`value="${organisation.accueil}"`);
+
+			// Les messages prêts à coller s'ouvrent sur la formule de cette organisation : celui de
+			// la semaine, à l'accueil, et ceux d'une annulation et d'un déplacement.
+			const titre = `Cours de ${organisation.slug}`;
+			const cree = await postForm(
+				'/cours/nouveau',
+				{
+					'title.fr': titre,
+					sourceLanguage: 'fr',
+					audience: 'open',
+					teachingLanguages: 'fr',
+					recurrenceKind: 'weekly',
+					weekdays: '1',
+					interval: '1',
+					timingKind: 'fixed',
+					start: '19:00',
+					end: '20:00',
+					startsOn: '2026-09-07',
+					status: 'published'
+				},
+				cookie
+			);
+			expect(cree.status).toBe(303);
+			const courseId = await ownerHandle.db.transaction(async (tx) => {
+				await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+				const found = await tx.execute<{ id: string }>(sql`
+					select c."id" from "course" c
+					join "course_translation" t on t."course_id" = c."id"
+					where c."organization_id" = ${organisation.id} and t."title" = ${titre}
+				`);
+				return (Array.isArray(found) ? (found[0] as { id: string } | undefined) : undefined)?.id;
+			});
+			expect(courseId).toBeTruthy();
+
+			const accueil = await (await fetch(`${origin}/`, { headers: { cookie } })).text();
+			expect(accueil).toContain(organisation.accueil);
+			const lundi = prochainLundi();
+			const annule = await postForm(
+				'/?/annuler',
+				{ courseId: courseId as string, date: lundi, title: titre },
+				cookie
+			);
+			expect(annule.status).toBe(200);
+			// Le message de l'action seul : la page qui le porte montre aussi celui de la semaine,
+			// qui contient déjà la formule et ferait passer l'assertion sans rien prouver.
+			expect(messageACopier(await annule.text())).toMatch(new RegExp(`^${organisation.accueil}`));
+			const suivant = decalerDe(lundi, 7);
+			const deplace = await postForm(
+				'/?/deplacer',
+				{
+					courseId: courseId as string,
+					date: suivant,
+					toDate: decalerDe(suivant, 1),
+					toStart: '18:00',
+					title: titre
+				},
+				cookie
+			);
+			expect(deplace.status).toBe(200);
+			expect(messageACopier(await deplace.text())).toMatch(new RegExp(`^${organisation.accueil}`));
+		}
 	});
 
 	it('leaves no trace of its reading in the organisation’s journal, and one in its own register', async () => {
@@ -1169,6 +1307,8 @@ describe('l’espace des responsables', () => {
 				insert into "membership" ("id", "organization_id", "user_id", "role")
 				values (${newId()}, ${organizationId}, ${editeur}, 'editor')
 			`);
+			// Acceptées d'avance : ce test éprouve le rôle, pas la porte des conditions.
+			await tx.execute(conditionsAcceptees(organizationId, editeur));
 		});
 		const cookie = await signIn('editeur@example.test');
 		for (const route of ['/reglages', '/membres']) {
@@ -1232,8 +1372,13 @@ describe('l’espace des responsables', () => {
 		expect(html).toContain('integrity=');
 		expect(html).toContain('sha384-');
 		expect(html).toContain('crossorigin=');
-		// Et le cadre posé à la main, pour un site qui refuse les scripts extérieurs.
+		// Et le cadre posé à la main, pour un site qui refuse les scripts extérieurs. Son titre est lu
+		// par les lecteurs d'écran sur le site de l'organisation : un tiret demi-cadratin, pas de
+		// cadratin (`pnpm style`).
 		expect(html).toContain('&lt;iframe src=');
+		const cadre = html.match(/aria-label="Cadre à coller à la main"[^>]*>([^<]*)</)?.[1] ?? '';
+		expect(cadre).toMatch(/title=(?:"|&quot;)Programme des cours – /);
+		expect(cadre).not.toContain('—');
 	});
 
 	it('saves the settings, including the greeting the messages open with', async () => {
@@ -1299,6 +1444,7 @@ describe('le module des heures de prière', () => {
 				insert into "membership" ("id", "organization_id", "user_id", "role")
 				values (${newId()}, ${moduleOrgId}, ${responsable}, 'org_admin')
 			`);
+			await tx.execute(conditionsAcceptees(moduleOrgId, responsable));
 		});
 		moduleCookie = await signIn('module@example.test');
 	});

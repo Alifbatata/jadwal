@@ -2,8 +2,12 @@
 	import { resolve } from '$app/paths';
 	let { data, form } = $props();
 	const roleLabel: Record<string, string> = { org_admin: 'responsable', editor: 'éditeur' };
-	const estResponsable = $derived(data.role === 'org_admin');
+	// Le super-admin administre les membres comme un responsable : le serveur l'accepte
+	// (`mustBeAdmin`, ADR 0025), et l'écran lui cachait le formulaire. Trouvé par le parcours complet.
+	const estResponsable = $derived(data.role === 'org_admin' || data.role === 'superadmin');
 </script>
+
+<svelte:head><title>Membres | {data.organisation.nom}</title></svelte:head>
 
 <h1>{data.organisation.nom}</h1>
 <p><a href={resolve('/organisations')}>Changer d’organisation</a></p>
