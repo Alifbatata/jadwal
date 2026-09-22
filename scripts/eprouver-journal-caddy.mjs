@@ -32,6 +32,14 @@
  * tronquées, et que le chemin demandé, lui, y est resté : un journal qui ne dit plus rien n'est pas
  * un journal filtré, c'est un journal supprimé.
  *
+ * ## La borne des quatorze jours
+ *
+ * Les conditions d'utilisation promettent qu'aucune ligne du journal ne vit plus de quatorze jours.
+ * La coupe de chaque nuit est donc jouée une seconde fois, sur des morceaux datés par `touch -d`
+ * juste avant et juste après la limite, et sur un morceau que **Caddy a vraiment roulé** : ceux-là
+ * aussi doivent partir à temps, et Caddy ne les efface pas de lui-même tant qu'il ne roule pas de
+ * nouveau. Le calcul des pires cas est refait avant, à partir de la minuterie livrée.
+ *
  * ## L'image
  *
  * `caddy:2.11.4` par défaut, parce que c'est la version en service sur le serveur visé : un filtre
@@ -49,6 +57,72 @@ const CONTENEUR = 'jadwal-epreuve-journal';
 
 /** Le fichier de site livré. Le domaine ne sert qu'à le trouver et à nommer son journal. */
 const DOMAINE = process.env['JADWAL_DOMAINE'] ?? 'jadwal.voltia.ch';
+
+/**
+ * La durée promise par `docs/CONDITIONS.md`, et le seuil que `jadwal-journal-caddy.sh` doit en
+ * tirer : un morceau part quand sa dernière écriture a plus de (jours - 2) jours moins douze heures,
+ * soit onze jours et demi. Le calcul est dans l'en-tête du script, et il est refait plus bas.
+ */
+const JOURS = 14;
+const SEUIL = (JOURS - 2) * 24 * 60 - 12 * 60;
+const MINUTES_PAR_JOUR = 24 * 60;
+
+/** Une durée de systemd en minutes, arrondie au-dessus : `5m`, `1min`, `30s`, `2h`. */
+function enMinutes(duree) {
+	const trouve = /^(\d+)\s*(s|sec|m|min|h)$/.exec(duree.trim());
+	if (!trouve) throw new Error(`Durée de systemd que ce test ne sait pas lire : ${duree}`);
+	const nombre = Number(trouve[1]);
+	if (trouve[2] === 'h') return nombre * 60;
+	if (trouve[2] === 's' || trouve[2] === 'sec') return Math.ceil(nombre / 60);
+	return nombre;
+}
+
+/**
+ * Le retard le plus grand d'un passage sur son heure : le délai aléatoire, plus la précision que
+ * systemd s'accorde (une minute quand la minuterie ne dit rien). Lu dans la minuterie livrée, pour
+ * que ce test tombe le jour où quelqu'un allonge le délai sans refaire le calcul.
+ */
+function retardDeLaMinuterie(minuterie) {
+	if (!/^OnCalendar=\*-\*-\* \d\d:\d\d:\d\d UTC$/m.test(minuterie)) {
+		throw new Error('La minuterie de la coupe ne passe plus une fois par nuit, en UTC.');
+	}
+	const valeur = (cle, defaut) => new RegExp(`^${cle}=(.+)$`, 'm').exec(minuterie)?.[1] ?? defaut;
+	return enMinutes(valeur('RandomizedDelaySec', '0s')) + enMinutes(valeur('AccuracySec', '1min'));
+}
+
+/**
+ * Le calcul des pires cas. Un passage par nuit, à l'heure dite plus un retard de 0 à `retard`
+ * minutes, essayé minute par minute. Un morceau porte les lignes écrites entre le passage d'avant
+ * et sa dernière écriture : à la coupe même pour une archive de la coupe, n'importe quand dans la
+ * journée pour un morceau que Caddy a roulé. Il part au premier passage où sa dernière écriture a
+ * plus de `seuil` minutes, et les retards sont choisis pour le faire durer le plus longtemps.
+ *
+ * Rend la vie la plus longue de la plus vieille ligne d'un morceau, en minutes.
+ */
+function pireDesCas(retard, seuil) {
+	let plusLongue = 0;
+	for (let avant = 0; avant <= retard; avant += 1) {
+		const passageAvant = -MINUTES_PAR_JOUR + avant;
+		for (let coupe = 0; coupe <= retard; coupe += 1) {
+			for (let ecriture = passageAvant + 1; ecriture <= coupe; ecriture += 1) {
+				// Le passage où le morceau part forcément : même sans retard, il a passé le seuil.
+				// Avant celui-là, un retard nul suffit à le garder une nuit de plus.
+				let nuit = 1;
+				while (nuit * MINUTES_PAR_JOUR - ecriture <= seuil) nuit += 1;
+				const depart = nuit * MINUTES_PAR_JOUR + retard;
+				plusLongue = Math.max(plusLongue, depart - passageAvant);
+			}
+		}
+	}
+	return plusLongue;
+}
+
+/** `18726` → `13 j 0 h 06`. */
+function duree(minutes) {
+	const jours = Math.floor(minutes / MINUTES_PAR_JOUR);
+	const heures = Math.floor((minutes % MINUTES_PAR_JOUR) / 60);
+	return `${jours} j ${heures} h ${String(minutes % 60).padStart(2, '0')}`;
+}
 
 /**
  * Les quatre secrets de l'épreuve. Ce sont des chaînes inventées ici, jamais des vraies : elles
@@ -119,6 +193,27 @@ function nettoyer() {
 	}
 }
 
+/** Une attente synchrone, sans dépendance : le script reste linéaire et lisible. */
+function patienter(millisecondes) {
+	Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, millisecondes);
+}
+
+/** Attendre que Caddy écoute, sans dormir à l'aveugle. */
+function attendreCaddy() {
+	for (let essai = 0; essai < 50; essai += 1) {
+		try {
+			docker(['exec', CONTENEUR, 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1/'], {
+				stdio: 'pipe'
+			});
+			return;
+		} catch {
+			patienter(100);
+		}
+	}
+	process.stderr.write(docker(['logs', CONTENEUR]) + '\n');
+	throw new Error(`Caddy n’a pas répondu dans le conteneur.`);
+}
+
 const racine = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
 const site = readFileSync(join(racine, 'infra', 'caddy', `${DOMAINE}.caddy`), 'utf8');
 const bloc = blocJournal(site);
@@ -176,23 +271,7 @@ try {
 	docker(['cp', chemin, `${CONTENEUR}:/etc/caddy/Caddyfile`]);
 	docker(['start', CONTENEUR]);
 
-	// Attendre que Caddy écoute, sans dormir à l'aveugle.
-	let pret = false;
-	for (let essai = 0; essai < 50 && !pret; essai += 1) {
-		try {
-			docker(['exec', CONTENEUR, 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1/'], {
-				stdio: 'pipe'
-			});
-			pret = true;
-		} catch {
-			// Une attente synchrone, sans dépendance : le script reste linéaire et lisible.
-			Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
-		}
-	}
-	if (!pret) {
-		process.stderr.write(docker(['logs', CONTENEUR]) + '\n');
-		throw new Error(`Caddy n’a pas répondu dans le conteneur.`);
-	}
+	attendreCaddy();
 
 	// La requête porteuse de secrets. `--header` de busybox wget, une fois par en-tête.
 	const url = `http://127.0.0.1/api/auth/magic-link/verify?token=${SECRETS.jeton}&callbackURL=/organisations`;
@@ -391,6 +470,152 @@ try {
 			!Object.values(SECRETS).some((valeur) => archive.includes(valeur))
 		);
 	}
+
+	// ---------------------------------------------------------------------------------------------
+	// La borne des quatorze jours (`docs/CONDITIONS.md`). D'abord le calcul des pires cas, à partir
+	// de la minuterie livrée ; puis la coupe, jouée une seconde fois sur des morceaux datés juste
+	// avant et juste après la limite, et sur un morceau que Caddy a vraiment roulé.
+	// ---------------------------------------------------------------------------------------------
+	process.stdout.write('La borne des quatorze jours :\n\n');
+
+	const retard = retardDeLaMinuterie(
+		readFileSync(join(racine, 'infra', 'systemd', 'jadwal-journal-caddy.timer'), 'utf8')
+	);
+	const plusLongue = pireDesCas(retard, SEUIL);
+	process.stdout.write(
+		`  Seuil d'effacement : ${SEUIL} minutes (${duree(SEUIL)}). Retard d'un passage sur son ` +
+			`heure : ${retard} minutes au plus.\n` +
+			`  Au pire, la plus vieille ligne d'un morceau vit ${duree(plusLongue)}.\n\n`
+	);
+	verifier(
+		`au pire des retards de la minuterie, aucune ligne ne vit plus de ${JOURS} jours`,
+		plusLongue <= JOURS * MINUTES_PAR_JOUR
+	);
+
+	// Un vrai roulement de Caddy. La coupe écrase au lieu de vider : le fichier courant garde sa
+	// taille, atteint `roll_size` un jour ou l'autre, et Caddy le roule. On l'y amène d'un coup en
+	// ajoutant des lignes vides, puis en redémarrant Caddy, qui reprend la taille du fichier à
+	// l'ouverture et roule à la première écriture.
+	const dossierJournal = journal.slice(0, journal.lastIndexOf('/'));
+	const nomJournal = journal.slice(journal.lastIndexOf('/') + 1);
+	const prefixe = nomJournal.includes('.')
+		? nomJournal.slice(0, nomJournal.lastIndexOf('.'))
+		: nomJournal;
+	docker([
+		'exec',
+		CONTENEUR,
+		'sh',
+		'-c',
+		`head -c 11534336 /dev/zero | tr '\\0' '\\n' >> ${journal}`
+	]);
+	docker(['restart', CONTENEUR]);
+	attendreCaddy();
+	let roules = [];
+	for (let essai = 0; essai < 50; essai += 1) {
+		roules = docker([
+			'exec',
+			CONTENEUR,
+			'sh',
+			'-c',
+			`ls -1 ${dossierJournal}/${prefixe}-* 2>/dev/null || true`
+		])
+			.split('\n')
+			.filter((l) => l.trim().length > 0);
+		if (roules.some((nom) => nom.endsWith('.gz'))) break;
+		patienter(100);
+	}
+	const roule = roules.find((nom) => nom.endsWith('.gz')) ?? roules[0];
+	verifier(`Caddy a roulé le journal : ${roule ?? 'aucun morceau roulé'}`, roule !== undefined);
+	process.stdout.write(`  Morceau roulé par Caddy : ${roule ?? '(aucun)'}\n\n`);
+
+	// Les morceaux, datés par rapport à l'horloge du conteneur, celle que `find` lira.
+	const maintenant = Number(docker(['exec', CONTENEUR, 'date', '+%s']));
+	const iso = (age) => new Date((maintenant - age * 60) * 1000).toISOString();
+	const nomDeCoupe = (age) =>
+		`${journal}.${iso(age).slice(0, 10)}T${iso(age).slice(11, 19).replaceAll(':', '')}Z`;
+	const nomDeCaddy = (dossier, debut, age) =>
+		`${dossier}/${debut}-${iso(age).slice(0, 10)}T${iso(age).slice(11, 19).replaceAll(':', '-')}.000-size.log.gz`;
+
+	const cas = [
+		{
+			// Coupée il y a onze nuits, et aussi vieille que les retards le permettent : elle
+			// porte encore des lignes de moins de treize jours, qui peuvent rester une nuit de plus.
+			quoi: `une archive coupée il y a onze nuits, au plus vieux`,
+			chemin: nomDeCoupe(11 * MINUTES_PAR_JOUR + retard + 1),
+			age: 11 * MINUTES_PAR_JOUR + retard + 1,
+			part: false
+		},
+		{
+			quoi: `une archive juste avant le seuil`,
+			chemin: nomDeCoupe(SEUIL - 5),
+			age: SEUIL - 5,
+			part: false
+		},
+		{
+			quoi: `une archive juste après le seuil`,
+			chemin: nomDeCoupe(SEUIL + 5),
+			age: SEUIL + 5,
+			part: true
+		},
+		{
+			// Coupée il y a douze nuits, et aussi jeune que les retards le permettent. Sa plus
+			// vieille ligne a déjà presque treize jours : gardée cette nuit, l'archive partirait la
+			// suivante, et cette ligne pourrait alors avoir vécu quatorze jours et quelques minutes.
+			quoi: `une archive coupée il y a douze nuits, au plus jeune`,
+			chemin: nomDeCoupe(12 * MINUTES_PAR_JOUR - retard - 1),
+			age: 12 * MINUTES_PAR_JOUR - retard - 1,
+			part: true
+		},
+		{
+			quoi: `le morceau roulé par Caddy, juste après le seuil`,
+			chemin: roule ?? `${dossierJournal}/${prefixe}-introuvable`,
+			age: SEUIL + 5,
+			part: true
+		},
+		{
+			quoi: `un morceau roulé par Caddy, juste avant le seuil`,
+			chemin: nomDeCaddy(dossierJournal, prefixe, SEUIL - 5),
+			age: SEUIL - 5,
+			part: false,
+			copie: roule
+		},
+		{
+			// Le serveur peut porter d'autres sites, dont le journal serait rangé au même endroit.
+			quoi: `l'archive d'un autre site, de trente jours`,
+			chemin: `${dossierJournal}/autre-site.log.2026-08-01T002000Z`,
+			age: 30 * MINUTES_PAR_JOUR,
+			part: false
+		},
+		{
+			quoi: `un morceau roulé du journal d'un autre site, de trente jours`,
+			chemin: nomDeCaddy(dossierJournal, 'autre-site', 30 * MINUTES_PAR_JOUR),
+			age: 30 * MINUTES_PAR_JOUR,
+			part: false
+		}
+	];
+
+	for (const { chemin, age, copie } of cas) {
+		const creer = copie ? `cp '${copie}' '${chemin}'` : `echo borne > '${chemin}'`;
+		docker([
+			'exec',
+			CONTENEUR,
+			'sh',
+			'-c',
+			`{ [ -e '${chemin}' ] || ${creer}; } && touch -d @${maintenant - age * 60} '${chemin}'`
+		]);
+	}
+
+	const secondeCoupe = docker(['exec', CONTENEUR, '/opt/jadwal/scripts/jadwal-journal-caddy.sh']);
+	process.stdout.write(secondeCoupe + '\n\n');
+
+	const restants = docker(['exec', CONTENEUR, 'ls', '-1', dossierJournal])
+		.split('\n')
+		.filter((l) => l.trim().length > 0)
+		.map((nom) => `${dossierJournal}/${nom}`);
+	for (const { quoi, chemin, age, part } of cas) {
+		const reste = restants.includes(chemin);
+		verifier(`${quoi} (${duree(age)}) ${part ? 'part' : 'reste'}`, part ? !reste : reste);
+	}
 } finally {
 	nettoyer();
 	rmSync(dossier, { recursive: true, force: true });
@@ -401,11 +626,13 @@ if (echecs.length > 0) {
 	for (const echec of echecs) process.stderr.write(`  - ${echec}\n`);
 	process.stderr.write(
 		`\nLe journal du site laisse passer ce qu’il ne devrait pas. Corriger le bloc « log » de\n` +
-			`infra/caddy/${DOMAINE}.caddy, puis relancer.\n`
+			`infra/caddy/${DOMAINE}.caddy, ou infra/scripts/jadwal-journal-caddy.sh pour la durée,\n` +
+			`puis relancer.\n`
 	);
 	process.exitCode = 1;
 } else {
 	process.stdout.write(
-		`Les ${verifications} vérifications passent : aucun secret dans le fichier, adresses tronquées, chemin gardé.\n`
+		`Les ${verifications} vérifications passent : aucun secret dans le fichier, adresses tronquées, chemin gardé, ` +
+			`et aucune ligne gardée plus de ${JOURS} jours.\n`
 	);
 }

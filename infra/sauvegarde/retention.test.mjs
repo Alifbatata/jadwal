@@ -5,6 +5,8 @@
 // Le script appelant efface tout ce que la règle ne désigne pas. Le premier test ci-dessous est
 // écrit pour tomber sur ce défaut-là, et pas seulement pour décrire le cas heureux.
 
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { aGarder, jourDe, RETENTION } from './retention.mjs';
 
@@ -125,11 +127,11 @@ describe('aGarder', () => {
 		for (const nom of gardees) expect(QUATORZE).toContain(nom);
 	});
 
-	it('tient la promesse annoncée : 7 jours, 4 dimanches, 6 premiers du mois', () => {
+	it('tient la promesse annoncée : 7 jours, 4 dimanches, 5 premiers du mois', () => {
 		// Deux ans de sauvegardes quotidiennes. La promesse écrite partout dans la documentation est
 		// celle-ci, et ce test la relit telle quelle : les sept derniers jours, les quatre derniers
-		// dimanches, les six derniers premiers du mois. Un jour peut cocher plusieurs cases — le
-		// total gardé est donc au plus dix-sept, et souvent moins.
+		// dimanches, les cinq derniers premiers du mois. Un jour peut cocher plusieurs cases — le
+		// total gardé est donc au plus seize, et souvent moins.
 		const noms = [];
 		const debut = Date.UTC(2025, 0, 1);
 		for (let jour = 0; jour < 730; jour += 1) {
@@ -148,9 +150,57 @@ describe('aGarder', () => {
 		expect(gardes.size).toBeLessThanOrEqual(
 			RETENTION.quotidiennes + RETENTION.hebdomadaires + RETENTION.mensuelles
 		);
-		// Et le huitième jour, le cinquième dimanche et le septième premier du mois sont bien partis.
+		// Et le huitième jour, le cinquième dimanche et le sixième premier du mois sont bien partis.
 		expect(gardes).not.toContain(desc[RETENTION.quotidiennes]);
 		expect(gardes).not.toContain(dimanches[RETENTION.hebdomadaires]);
 		expect(gardes).not.toContain(premiers[RETENTION.mensuelles]);
+	});
+});
+
+describe('la durée de vie d’une archive sur le disque du serveur', () => {
+	it('reste sous les 181 jours promis par les conditions, sur huit ans de vraies nuits', () => {
+		// `docs/CONDITIONS.md` : « Ce que vous effacez reste au plus 181 jours dans ces
+		// sauvegardes ». Une organisation supprimée juste après la sauvegarde d'une nuit reste
+		// dans l'archive de cette nuit tant que la règle la garde. On rejoue donc le serveur : une
+		// archive par nuit, la règle appliquée juste après, et l'on relève l'âge de chaque archive
+		// la nuit où elle part. Huit ans à partir de 2024 : deux années bissextiles, et chaque
+		// suite de mois possible entre deux premiers du mois.
+		//
+		// L'âge est compté en nuits, et doit rester **sous** 181 : la sauvegarde part à 02:15 avec
+		// jusqu'à dix minutes de délai aléatoire, donc une archive gardée 181 nuits pourrait
+		// dépasser les 181 jours de quelques minutes.
+		const JOUR = 86_400_000;
+		const debut = Date.UTC(2024, 0, 1);
+		const nuits = Math.round((Date.UTC(2032, 0, 1) - debut) / JOUR);
+
+		let disque = [];
+		const creee = new Map();
+		let pire = { age: 0, nom: '' };
+		for (let nuit = 0; nuit < nuits; nuit += 1) {
+			const nom = archive(new Date(debut + nuit * JOUR).toISOString().slice(0, 10));
+			creee.set(nom, nuit);
+			const gardees = aGarder([...disque, nom]);
+			for (const partie of disque.filter((ancienne) => !gardees.includes(ancienne))) {
+				const age = nuit - (creee.get(partie) ?? nuit);
+				if (age > pire.age) pire = { age, nom: partie };
+			}
+			disque = gardees;
+		}
+
+		expect(pire.age, `${pire.nom} est restée ${pire.age} nuits sur le disque`).toBeLessThan(181);
+
+		// Et la règle rejouée ici est bien celle que le serveur joue : le script, lancé comme par
+		// `jadwal-retention.sh`, reçoit les noms des quatre cents dernières nuits, sans tri
+		// préalable, et rend la même liste.
+		const script = fileURLToPath(new URL('./retention.mjs', import.meta.url));
+		const recentes = [];
+		for (let nuit = nuits - 400; nuit < nuits; nuit += 1) {
+			recentes.push(archive(new Date(debut + nuit * JOUR).toISOString().slice(0, 10)));
+		}
+		const sortie = execFileSync(process.execPath, [script], {
+			input: recentes.join('\n') + '\n',
+			encoding: 'utf8'
+		});
+		expect(sortie.split('\n').filter(Boolean)).toEqual(aGarder(recentes));
 	});
 });

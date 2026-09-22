@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Efface du disque du serveur les archives que la règle de rétention ne désigne pas (ADR 0035, 0037).
 #
-# **Il ne décide rien.** La règle — sept quotidiennes, quatre hebdomadaires, six mensuelles — vit
-# dans `infra/sauvegarde/retention.mjs`, où elle est éprouvée par onze tests, et elle est jouée par
+# **Il ne décide rien.** La règle — sept quotidiennes, quatre hebdomadaires, cinq mensuelles — vit
+# dans `infra/sauvegarde/retention.mjs`, où elle est éprouvée par douze tests, et elle est jouée par
 # un conteneur jetable tiré de l'image de l'application, comme celle des destinations. Ce script lui
 # donne la liste des noms et efface ce qu'elle ne rend pas.
 #
