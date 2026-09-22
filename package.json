@@ -28,15 +28,18 @@
 		"conditions:pdf": "node scripts/conditions-pdf.mjs",
 		"conditions:test": "node scripts/eprouver-conditions-pdf.mjs",
 		"image:test": "node scripts/eprouver-image.mjs",
+		"parcours:test": "node scripts/eprouver-parcours.mjs",
 		"licences": "node scripts/licences-tierces.mjs",
 		"orthographe": "node scripts/orthographe.mjs"
 	},
 	"devDependencies": {
 		"@eslint/js": "10.0.1",
+		"axe-core": "4.13.0",
 		"eslint": "10.10.0",
 		"eslint-config-prettier": "10.1.8",
 		"eslint-plugin-svelte": "3.23.0",
 		"globals": "17.12.0",
+		"playwright-core": "1.63.0",
 		"prettier": "3.9.6",
 		"prettier-plugin-svelte": "4.1.1",
 		"svelte": "catalog:",
