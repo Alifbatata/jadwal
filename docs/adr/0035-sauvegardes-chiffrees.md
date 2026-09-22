@@ -43,13 +43,20 @@ qui porte les identifiants, est en `0600 root` à côté du fichier d'environnem
 Après l'envoi, l'archive est **relue depuis la destination** et son empreinte comparée à la locale.
 Sans cela, on découvrirait un envoi silencieusement tronqué le jour où on en a besoin.
 
-### La rétention : 7 quotidiennes, 4 hebdomadaires, 6 mensuelles
+### La rétention : 7 quotidiennes, 4 hebdomadaires, 5 mensuelles
 
 Une seule série de fichiers, pas trois copies. La règle décide de ce qui reste : les sept plus
-récentes, les dimanches des quatre dernières semaines, les premiers des six derniers mois. Elle est
+récentes, les dimanches des quatre dernières semaines, les premiers des cinq derniers mois. Elle est
 isolée dans `jadwal-retention.sh`, qui **n'efface rien** et se contente d'écrire les noms à garder —
 ce qui permet de l'éprouver sur un répertoire jetable rempli de fichiers vides. Elle l'a été : sur
-quatre cent une dates, elle en garde seize, et on peut les compter à la main.
+quatre cent une dates, elle en garde quinze, et on peut les compter à la main.
+
+> **Révisé le 2026-09-23 : cinq mensuelles, et non plus six.** Les conditions d'utilisation
+> promettent qu'une donnée effacée ne reste pas plus de 181 jours dans une sauvegarde. Six premiers
+> du mois gardés, c'était jusqu'à 184 jours sur le disque du serveur : deux premiers du mois
+> éloignés de six mois peuvent être séparés de 184 jours, du 1er mars au 1er septembre. Avec cinq,
+> c'est 153 jours au plus. Un test le rejoue sur huit ans de vraies nuits. Le même jour, le script
+> lancé dans un conteneur sur quatre cent une dates en a gardé quinze.
 
 ### La clé privée n'est pas sur le serveur
 
@@ -106,4 +113,4 @@ machine.
 
 Accepté, 2026-09-21. Étape 9 de la feuille de route. Complète l'ADR 0019 (propriétaire non
 privilégié) et l'ADR 0030 (verrou de conservation). Voir l'ADR 0036 pour la programmation et la
-veille.
+veille. Révisé le 2026-09-23 : cinq mensuelles sur le disque du serveur au lieu de six.

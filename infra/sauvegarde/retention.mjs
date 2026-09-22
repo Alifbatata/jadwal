@@ -1,7 +1,7 @@
 /**
  * Quelles archives garde-t-on **sur le disque du serveur** ? (ADR 0035, ADR 0037)
  *
- * Sept quotidiennes, quatre hebdomadaires, six mensuelles. La règle est ici, en Node, et non plus
+ * Sept quotidiennes, quatre hebdomadaires, cinq mensuelles. La règle est ici, en Node, et non plus
  * dans le script qui efface : elle décide, il exécute. Elle a passé une nuit en bash, et ce bash
  * imprimait chaque date sans fin de ligne — quatorze dates collées en une seule chaîne, `date` qui
  * répondait « invalid date », et une règle qui ne gardait plus **rien**. Le script appelant aurait
@@ -18,8 +18,15 @@
  * archives d'un même jour se gardent ou se jettent ensemble.
  */
 
-/** Ce qu'on garde, par défaut. Chaque nombre compte des **jours**, pas des fichiers. */
-export const RETENTION = { quotidiennes: 7, hebdomadaires: 4, mensuelles: 6 };
+/**
+ * Ce qu'on garde, par défaut. Chaque nombre compte des **jours**, pas des fichiers.
+ *
+ * Cinq mensuelles et non six : les conditions d'utilisation promettent qu'une donnée effacée ne
+ * reste pas plus de 181 jours dans une sauvegarde. Deux premiers du mois éloignés de six mois
+ * peuvent être séparés de 184 jours (du 1er mars au 1er septembre) ; avec cinq, une archive reste au
+ * plus 153 jours sur ce disque. Un test le rejoue sur huit ans de vraies nuits.
+ */
+export const RETENTION = { quotidiennes: 7, hebdomadaires: 4, mensuelles: 5 };
 
 /** Le jour d'une archive, d'après son seul nom. `jadwal-2026-09-21T021503Z.dump.age` → 2026-09-21. */
 export function jourDe(nom) {

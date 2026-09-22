@@ -1,7 +1,7 @@
 # 0039 — Le journal d'accès ne porte ni adresse entière ni jeton
 
 - **Statut** : acceptée
-- **Date** : 2026-09-21
+- **Date** : 2026-09-21 ; seuil d'effacement révisé le 2026-09-23 (voir « La rétention »)
 - **Complète** : [ADR 0009](0009-vie-privee.md) (vie privée) et
   [ADR 0034](0034-isolation-du-deploiement.md) (isolation du déploiement).
 
@@ -51,10 +51,10 @@ secrets, et relit la ligne écrite.
 
 ## La rétention : quatorze jours, fichier courant compris
 
-Caddy borne ce qu'il a **déjà roulé** — `roll_keep`, `roll_keep_for` — mais il ne roule qu'à la
-taille. Le fichier courant n'a donc aucune borne de temps : sur un service peu fréquenté, il peut
-porter des mois de lignes avant d'atteindre dix mégaoctets. Une rétention annoncée dans les
-conditions d'utilisation ne peut pas dépendre du trafic.
+Caddy ne roule qu'à la taille, et ne borne ce qu'il a **déjà roulé** — `roll_keep`,
+`roll_keep_for` — qu'au roulement suivant. Le fichier courant n'a donc aucune borne de temps : sur un
+service peu fréquenté, il peut porter des mois de lignes avant d'atteindre dix mégaoctets. Une
+rétention annoncée dans les conditions d'utilisation ne peut pas dépendre du trafic.
 
 `logrotate` ne le résout pas, et cela a été **mesuré** contre la version de Caddy visée :
 
@@ -71,12 +71,27 @@ l'hôte sans que l'exploitant l'ait demandé est exactement ce que l'ADR 0034 s'
 relève la taille, copie ce qui précède cette position dans une archive datée, puis remplit cette
 même zone de retours à la ligne. Le fichier garde sa taille, Caddy garde sa position, les lignes
 écrites entre-temps sont au-delà et restent intactes, et la zone écrasée devient des lignes vides
-que `jq` et `grep` traversent sans broncher. Les archives de plus de quatorze jours sont effacées.
+que `jq` et `grep` traversent sans broncher. Chaque nuit aussi, elle efface les archives dont la
+dernière écriture a plus de onze jours et demi, pour qu'aucune ligne ne vive plus de quatorze jours.
 
 Caddy écrit une ligne entière par appel : la position relevée est toujours une fin de ligne.
 
-`roll_size 10MiB` reste en place comme garde-fou de disque, avec `roll_keep_for 336h` pour que même
-ces roulements-là ne survivent pas à quatorze jours.
+`roll_size 10MiB` reste en place comme garde-fou de disque. `roll_keep_for 336h` ne suffit pas à
+borner ces roulements-là : Caddy ne l'applique qu'au roulement suivant. La tâche de nuit les efface
+donc avec le même seuil que ses propres archives.
+
+> **Révisé le 2026-09-23 : le seuil d'effacement.** Il valait quatorze jours pleins depuis la coupe
+> (`find -mtime +13`). Il oubliait le jour qu'une ligne a déjà passé dans le fichier
+> courant avant la coupe, et le retard de la minuterie, jusqu'à six minutes : au pire, une ligne
+> vivait seize jours. Une archive n'est effacée que par un passage de nuit ; pour qu'aucune ligne
+> ne dépasse quatorze jours, elle doit partir la douzième nuit après sa coupe. Le seuil est donc pris
+> entre la onzième et la douzième nuit : onze jours et demi (`find -mmin +16560`). Au pire, une
+> ligne vit alors treize jours et six minutes. Les morceaux que Caddy roule à la taille n'étaient
+> effacés par rien avant le roulement suivant : mesuré avec Caddy 2.11.4, un morceau roulé de plus
+> de cinquante jours restait en place. Ils suivent désormais le même seuil. Le calcul est dans
+> `jadwal-journal-caddy.sh`, et `pnpm caddy:test` le refait à partir de la minuterie livrée, puis
+> joue la coupe sur des morceaux datés de part et d'autre de la limite, dont un vrai roulement de
+> Caddy.
 
 ## Ce que l'on perd
 

@@ -57,6 +57,8 @@ de l'image de l'application — l'hôte n'a pas de Node, et la règle n'existe q
 
 La rétention **locale**, sur le disque du serveur, ne change pas : elle reste tenue par
 `jadwal-retention.sh`. Ce disque est à nous, il est petit, et ce qui s'y trouve n'est qu'un raccourci.
+Depuis le 2026-09-23, elle garde cinq mensuelles et non plus six : avec six, une archive pouvait y
+rester 184 jours, plus que les 181 annoncés plus bas (voir l'ADR 0035).
 
 ## Ce qui reste hors de ce dépôt
 
