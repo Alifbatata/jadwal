@@ -20,7 +20,7 @@
  * Il ne lit que ce qu'un visiteur ou un responsable peut lire : le corps des documents, le gabarit
  * des écrans, et les chaînes de caractères des modules de messages. **Les commentaires de code et le
  * code lui-même en sont exclus**, et c'est voulu : ils sont écrits pour celui qui reprendra le
- * projet, pas pour la mosquée, et la règle du tiret cadratin n'a aucun sens là où personne ne
+ * projet, pas pour l'organisation, et la règle du tiret cadratin n'a aucun sens là où personne ne
  * recopie rien.
  *
  * Il ne comprend ni le français ni le contexte : il cherche des chaînes. Une phrase creuse écrite
@@ -58,7 +58,10 @@ const SURFACES = [
 	{ motif: 'apps/web/src/**/*.svelte', genre: 'gabarit' },
 	{ motif: 'apps/web/src/lib/i18n.ts', genre: 'chaines' },
 	{ motif: 'apps/web/src/lib/messages.ts', genre: 'chaines' },
-	{ motif: 'apps/web/src/lib/server/mail/messages.ts', genre: 'chaines' }
+	{ motif: 'apps/web/src/lib/server/mail/messages.ts', genre: 'chaines' },
+	// La page de garde du PDF pour le juriste vit dans ce script, et nulle part ailleurs : sans
+	// cette ligne, le seul texte du document que personne ne relirait serait celui-là.
+	{ motif: 'scripts/conditions-pdf.mjs', genre: 'chaines' }
 ];
 
 const racine = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
