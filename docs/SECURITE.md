@@ -119,7 +119,11 @@ suivante le redit.
 ## Ce qui n'est pas couvert
 
 - **Un superutilisateur du serveur PostgreSQL voit tout.** Aucune politique ne s'applique à lui.
-  C'est pourquoi il ne sert qu'à l'amorçage, et jamais à l'application.
+  C'est pourquoi il ne sert qu'à l'amorçage, et jamais à l'application — et depuis l'ADR 0040,
+  ce n'est plus seulement une discipline de code : **le conteneur de l'application ne porte plus son
+  mot de passe**, ni celui du propriétaire du schéma. Les deux vivent dans le fichier d'environnement
+  d'un conteneur de démarrage qui crée les rôles, passe les migrations et s'arrête. Ce que cela
+  n'arrête pas : qui obtient les droits root sur la machine lit ce fichier-là comme les autres.
 - **Un compte super-admin compromis ouvre toutes les organisations, en lecture comme en écriture,
   sans qu'aucune d'elles soit prévenue d'une consultation.** C'est la conséquence directe et assumée
   de l'ADR 0025, et c'est le risque le plus lourd du service. Il ne tient qu'à la passkey : sans

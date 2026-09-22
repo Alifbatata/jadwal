@@ -13,6 +13,8 @@
 . "$(dirname "$(readlink -f "$0")")/jadwal-commun.sh"
 JADWAL_TACHE=purges
 
+# `dans_init` et non `dans_app` : les purges s'exécutent sous le rôle propriétaire, et le conteneur
+# de l'application ne porte plus son mot de passe (ADR 0040).
 trace 'purges de rétention'
-dans_app node node_modules/@jadwal/db/scripts/purge.mjs
+dans_init node node_modules/@jadwal/db/scripts/purge.mjs
 reussite

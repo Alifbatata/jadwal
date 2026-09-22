@@ -10,6 +10,8 @@
 . "$(dirname "$(readlink -f "$0")")/jadwal-commun.sh"
 JADWAL_TACHE=prieres
 
+# `dans_init` et non `dans_app` : `prayer-fill.mjs` écrit sous le rôle propriétaire, et le conteneur
+# de l'application ne porte plus son mot de passe (ADR 0040).
 trace 'remplissage des heures de prière calculées'
-dans_app node node_modules/@jadwal/db/scripts/prayer-fill.mjs
+dans_init node node_modules/@jadwal/db/scripts/prayer-fill.mjs
 reussite

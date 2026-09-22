@@ -66,7 +66,8 @@
     owner: root
     group: root
     mode: '0600'
-  loop: [app, db]
+  # `init` porte les deux mots de passe privilégiés, `app` ne les porte plus (ADR 0040).
+  loop: [app, db, init]
   become: true
   no_log: true
   notify: relancer jadwal
@@ -91,6 +92,13 @@
   register: tirage
   changed_when: tirage.stderr | length > 0
 
+# `up` fait tout l'ordre, et ce n'est plus ce playbook qui le tient (ADR 0040) : la base démarre,
+# Compose attend qu'elle soit saine, `init` crée les rôles puis passe les migrations, Compose attend
+# qu'il ait **réussi**, et l'application démarre alors seulement. Si `init` échoue, cette tâche
+# échoue, et l'application qui tournait déjà continue de tourner.
+#
+# Les deux appels `exec -T app` qui jouaient les rôles et les migrations ont disparu d'ici : ils ne
+# pourraient plus fonctionner, puisque `app.env` ne porte plus les mots de passe qu'il leur faut.
 - name: Démarrage de la pile
   ansible.builtin.command:
     cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/jadwal.env up --detach --remove-orphans
@@ -98,32 +106,30 @@
   register: demarrage
   changed_when: "'Started' in demarrage.stderr or 'Created' in demarrage.stderr or 'Recreated' in demarrage.stderr"
 
-- name: La base répond
+# Ce que le conteneur de démarrage a dit, pour le rapport. Il a déjà rendu la main : on relit son
+# journal, on ne le relance pas.
+- name: Ce que le conteneur de démarrage a fait
   ansible.builtin.command:
-    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/jadwal.env exec -T db pg_isready -h 127.0.0.1
+    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/jadwal.env logs init --no-log-prefix --tail 40
   become: true
-  register: pret
-  until: pret.rc == 0
-  retries: 30
-  delay: 2
+  register: journal_init
   changed_when: false
+  check_mode: false
 
-# Les rôles d'abord, les migrations ensuite : les migrations accordent des droits à des rôles qui
-# doivent exister. Les deux sont rejouables — c'est la propriété que l'étape 0 leur a donnée, et
-# c'est elle qui permet de les lancer à chaque déploiement sans y penser.
-- name: Les rôles de la base
-  ansible.builtin.command:
-    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/jadwal.env exec -T app node node_modules/@jadwal/db/scripts/bootstrap-roles.mjs
-  become: true
-  register: roles_base
-  changed_when: "'créé' in roles_base.stdout or 'created' in roles_base.stdout"
+- name: Les rôles et les migrations, tels que le conteneur de démarrage les a joués
+  ansible.builtin.debug:
+    var: journal_init.stdout_lines
 
-- name: Les migrations
+# `init` a rendu la main : son conteneur doit être arrêté, et arrêté **en 0**. Un conteneur de
+# démarrage encore en marche voudrait dire que Compose n'a pas attendu ce qu'il devait attendre.
+- name: Le conteneur de démarrage s'est bien arrêté
   ansible.builtin.command:
-    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/jadwal.env exec -T app node node_modules/@jadwal/db/scripts/migrate.mjs
+    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/jadwal.env ps --all --format {% raw %}'{{.Service}} {{.State}} {{.ExitCode}}'{% endraw %} init
   become: true
-  register: migrations
-  changed_when: "'appliquée' in migrations.stdout or 'applied' in migrations.stdout"
+  register: etat_init
+  changed_when: false
+  check_mode: false
+  failed_when: etat_init.stdout | trim != 'init exited 0'
 
 - name: Le service répond sur la boucle locale
   ansible.builtin.uri:
