@@ -3,7 +3,7 @@
 Ce texte s'adresse aux organisations qui publient leur programme avec ce service. Il est écrit pour
 être lu, pas pour être opposé.
 
-Dernière mise à jour : 22 septembre 2026.
+Dernière mise à jour : 23 septembre 2026.
 
 ## Qui exploite le service
 
@@ -26,9 +26,9 @@ plus bas, « Ce que vous acceptez ».
 
 ### Les données personnelles, la liste complète
 
-1. **L'adresse électronique des personnes responsables**, et leur nom si elles l'ont donné. C'est
-   la seule identité que le service demande : il n'y a pas de mot de passe, et donc rien d'autre à
-   retenir de vous.
+1. **L'adresse électronique des personnes de votre équipe**, responsables ou éditeurs, et leur nom
+   si elles l'ont donné. C'est la seule identité que le service demande : il n'y a pas de mot de
+   passe, et donc rien d'autre à retenir de vous.
 2. **Le lien entre une personne et votre organisation** : qui est responsable de quoi. Le service ne
    peut pas fonctionner sans, puisque c'est lui qui décide qui voit quoi.
 3. **L'adresse électronique d'une personne invitée**, tant que l'invitation court, même si cette
@@ -54,6 +54,8 @@ plus bas, « Ce que vous acceptez ».
    trop nombreuses. Voir plus bas.
 9. **Les traces d'accès de l'exploitant** : quand il a regardé les données d'une organisation, et
    laquelle. Voir « L'accès de l'exploitant à vos données ».
+10. **L'acceptation de ces conditions** : qui les a acceptées, quelle version du texte, et quand.
+    Voir « Comment ce texte est accepté ».
 
 Le service n'utilise **aucun cookie de mesure d'audience**, ne fait **aucun suivi publicitaire** et
 ne transmet vos données à **aucun tiers** à des fins commerciales. Les visiteurs de votre page
@@ -67,7 +69,7 @@ Une session ouverte ne retient **ni l'adresse IP ni le navigateur** de la person
 
 Le serveur tient un journal des requêtes qu'il a servies, où l'adresse du visiteur est **tronquée
 avant d'être écrite**, au point de ne plus désigner personne, où la page d'où il vient ne figure pas,
-et qui est effacé au bout de **quatorze jours**.
+et dont aucune ligne n'est gardée plus de **quatorze jours**.
 
 ### Le compteur de consultations
 
@@ -94,27 +96,31 @@ ne sait pas sur quelle page vous l'avez collé, puisqu'il ne conserve pas la pro
 
 ## Combien de temps
 
-| Ce qui est conservé                         | Durée                                               | Comment il est effacé         |
-| ------------------------------------------- | --------------------------------------------------- | ----------------------------- |
-| Le programme de vos cours                   | tant que votre organisation utilise le service      | vous l'effacez vous-même      |
-| Le journal des modifications                | 24 mois, puis effacé automatiquement                | règle de la base, chaque nuit |
-| Le compteur de consultations                | 25 mois, puis effacé automatiquement                | règle de la base, chaque nuit |
-| Une invitation qui n'est plus en cours      | 90 jours après sa fin, puis effacée automatiquement | règle de la base, chaque nuit |
-| Un compte sans organisation, inactif        | 12 mois, puis effacé automatiquement                | règle de la base, chaque nuit |
-| Une session de connexion                    | 30 jours sans usage, puis effacée automatiquement   | règle de la base, chaque nuit |
-| Un lien de connexion non utilisé            | 15 minutes, puis effacé automatiquement             | règle de la base, chaque nuit |
-| L'empreinte du compteur de demandes         | un à deux jours, puis effacée automatiquement       | règle de la base, chaque nuit |
-| Les traces d'accès internes de l'exploitant | 24 mois, puis effacées automatiquement              | règle de la base, chaque nuit |
-| Le journal technique du serveur             | 14 jours, puis effacé automatiquement               | fichier découpé chaque nuit   |
+| Ce qui est conservé                         | Durée                                                  | Comment il est effacé             |
+| ------------------------------------------- | ------------------------------------------------------ | --------------------------------- |
+| Le programme de vos cours                   | tant que votre organisation utilise le service         | vous l'effacez vous-même          |
+| L'acceptation de ces conditions             | tant que la personne fait partie de votre organisation | règle de la base, avec l'adhésion |
+| Le journal des modifications                | 24 mois, puis effacé automatiquement                   | règle de la base, chaque nuit     |
+| Le compteur de consultations                | 25 mois, puis effacé automatiquement                   | règle de la base, chaque nuit     |
+| Une invitation qui n'est plus en cours      | 90 jours après sa fin, puis effacée automatiquement    | règle de la base, chaque nuit     |
+| Un compte sans organisation, inactif        | 12 mois au plus, puis effacé automatiquement           | règle de la base, chaque nuit     |
+| Une session de connexion                    | 30 jours sans usage, puis effacée automatiquement      | règle de la base, chaque nuit     |
+| Un lien de connexion non utilisé            | 15 minutes, puis effacé automatiquement                | règle de la base, chaque nuit     |
+| L'empreinte du compteur de demandes         | un à deux jours, puis effacée automatiquement          | règle de la base, chaque nuit     |
+| Les traces d'accès internes de l'exploitant | 24 mois, puis effacées automatiquement                 | règle de la base, chaque nuit     |
+| Le journal technique du serveur             | 14 jours au plus, puis effacé automatiquement          | fichier découpé chaque nuit       |
 
 **Une session en usage se prolonge.** Les trente jours comptent depuis la dernière fois qu'elle a
 servi : tant que vous revenez, elle ne se ferme pas. Un mois sans revenir, et elle part.
 
 Ces durées ne sont pas des intentions. Partout où la troisième colonne dit « règle de la base »,
-l'effacement est porté par une **règle de la base de données** : elle dit ce qui a le droit de partir, et une tâche passe chaque
-nuit pour emporter ce qui a dépassé. Le journal technique du serveur, lui, n'est pas dans la base :
-c'est un fichier, qu'un script découpe chaque nuit et dont il ne garde que les quatorze derniers
-jours.
+l'effacement est porté par une **règle de la base de données** : elle dit ce qui a le droit de
+partir. Là où la colonne ajoute « chaque nuit », une tâche passe chaque nuit pour emporter ce qui a
+dépassé sa durée. L'acceptation de ces conditions, elle, n'attend pas la nuit : la base de données
+l'efface en même temps que l'adhésion, quand la personne est retirée de l'organisation, quand son
+compte est supprimé ou quand l'organisation est supprimée. Le journal technique du serveur, lui,
+n'est pas dans la base : c'est un fichier, qu'un script découpe chaque nuit et dont il ne garde
+aucune ligne plus de quatorze jours.
 
 Une seule exception, et elle se voit : si votre organisation conteste un accès, l'exploitant peut
 poser un verrou qui suspend l'effacement du journal des modifications et de ses propres traces, le
@@ -148,12 +154,27 @@ sans elle, l'assistance n'est pas possible.
 - **La correction** d'une donnée inexacte, que vous pouvez aussi faire vous-même depuis votre
   espace.
 - **La suppression de votre organisation.** Elle efface le programme, les salles, les réglages, les
-  adhésions et les invitations. Le journal des modifications suit la durée indiquée plus haut. Une
-  suppression est définitive : nous n'avons pas de corbeille. Les sauvegardes chiffrées déjà parties,
-  elles, ne se réécrivent pas. Voir plus bas : **181 jours au plus**.
+  adhésions, les acceptations de ces conditions, les invitations, le compteur de consultations et le
+  journal des modifications. Les traces d'accès de l'exploitant gardent leur durée de 24 mois. Une
+  suppression est définitive : nous n'avons pas de corbeille. Les sauvegardes chiffrées déjà
+  parties, elles, ne se réécrivent pas. Voir plus bas : **181 jours au plus**.
 - **Le retrait d'une personne responsable**, depuis l'écran des membres. Une organisation garde
   toujours au moins une personne responsable ; la dernière ne peut pas être retirée sans en nommer
   une autre.
+
+## Comment ce texte est accepté
+
+Chaque personne qui a accès à l'espace de votre organisation, responsable ou éditeur, doit accepter
+ce texte pour y entrer. Le service le lui montre en entier, et elle l'accepte d'un clic sur le
+bouton « J'accepte les conditions d'utilisation ».
+
+Le service garde qui a accepté, quelle version du texte et quand. La version est la date de la
+dernière mise à jour, écrite en tête de ce texte. Le moment est noté par la base de données, pas par
+l'application. Quand le texte change de version, le service demande à nouveau l'accord de chacun
+avant de le laisser entrer.
+
+Cette acceptation est conservée tant que la personne fait partie de votre organisation, et effacée
+avec son adhésion. L'exploitant n'y est pas soumis : c'est lui qui propose ce texte.
 
 ## Ce que vous acceptez
 
