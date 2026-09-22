@@ -22,16 +22,24 @@ import { isMainModule } from './is-main.mjs';
 loadDotEnv();
 
 /**
- * Les six purges, dans l'ordre où elles ont un sens : les journaux d'abord, parce que ce sont eux
- * qui grossissent, les comptes ensuite, parce qu'une invitation résolue doit partir avant le compte
- * qu'elle aurait pu rattacher.
+ * Les huit purges, dans l'ordre où elles ont un sens : les journaux d'abord, parce que ce sont eux
+ * qui grossissent ; les sessions et les vérifications ensuite, parce qu'une session expirée retient
+ * le compte auquel elle appartient ; les comptes en dernier, parce qu'une invitation résolue doit
+ * partir avant le compte qu'elle aurait pu rattacher.
+ *
+ * **L'ordre entre les sessions et les comptes n'est pas indifférent.** `purge_orphan_accounts` exige
+ * `NOT EXISTS (session)` : tant que les sessions expirées n'étaient effacées par rien, une ligne
+ * fantôme suffisait à retenir un compte pour toujours. Les deux défauts se renforçaient, et les
+ * corriger séparément n'aurait rien donné.
  */
 export const PURGES = [
 	['journal d’audit', 'purge_audit_log'],
 	['registre interne du super-admin', 'purge_admin_access_log'],
 	['compteur de vues', 'purge_page_views'],
 	['limiteur de débit', 'purge_rate_limit'],
-	['invitations résolues', 'purge_resolved_invitations'],
+	['sessions expirées', 'purge_expired_sessions'],
+	['vérifications expirées', 'purge_expired_verifications'],
+	['invitations qui ne sont plus en cours', 'purge_resolved_invitations'],
 	['comptes sans organisation', 'purge_orphan_accounts']
 ];
 

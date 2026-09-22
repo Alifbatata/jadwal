@@ -167,14 +167,20 @@ describe('la purge des invitations résolues', () => {
 		}
 	});
 
-	async function invitation(statut: string, joursDepuisResolution: number | null): Promise<string> {
+	async function invitation(
+		statut: string,
+		joursDepuisResolution: number | null,
+		/** Négatif : l'invitation a expiré il y a tant de jours. Positif : elle court encore. */
+		joursJusquaExpiration = -186
+	): Promise<string> {
 		const id = newId();
 		await withMaintenance(owner, (tx) =>
 			tx.execute(sql`
 				insert into "invitation" ("id", "organization_id", "email", "role", "status",
 					"created_at", "expires_at", "resolved_at")
 				values (${id}, ${org.id}, ${`${id}@example.test`}, 'editor', ${statut},
-					now() - interval '200 days', now() - interval '186 days',
+					now() - interval '200 days',
+					now() + make_interval(days => ${joursJusquaExpiration}),
 					${joursDepuisResolution === null ? null : sql`now() - make_interval(days => ${joursDepuisResolution})`})
 			`)
 		);
@@ -191,14 +197,29 @@ describe('la purge des invitations résolues', () => {
 		expect(await existe('invitation', jeune)).toBe(true);
 	});
 
-	it('never removes one that is still pending, however old', async () => {
-		const attente = await invitation('pending', null);
+	it('never removes one that is still pending and still running', async () => {
+		const attente = await invitation('pending', null, 7);
 		await withMaintenance(owner, (tx) =>
 			tx.execute(sql`select jadwal.purge_resolved_invitations()`)
 		);
 		// Une invitation en attente porte une adresse, mais elle sert encore : l'effacer serait
 		// retirer à quelqu'un la porte qu'on vient de lui ouvrir.
 		expect(await existe('invitation', attente)).toBe(true);
+	});
+
+	it('removes one that stayed pending and expired more than ninety days ago', async () => {
+		// Le trou de l'étape 13. La purge ne visait que `status <> 'pending'`, et l'écran des membres
+		// ne liste que `expires_at > now()` : une invitation expirée n'était plus annulable par
+		// personne, et rien ne l'effaçait. Son adresse restait pour toujours.
+		const perimee = await invitation('pending', null, -186);
+		const expireeHier = await invitation('pending', null, -1);
+		await withMaintenance(owner, (tx) =>
+			tx.execute(sql`select jadwal.purge_resolved_invitations()`)
+		);
+		expect(await existe('invitation', perimee), 'expirée depuis 186 jours').toBe(false);
+		// Quatre-vingt-dix jours après la fin, pas avant : une invitation qui vient d'expirer peut
+		// encore être renvoyée, et c'est la même durée que pour celles qu'on annule.
+		expect(await existe('invitation', expireeHier), 'expirée hier').toBe(true);
 	});
 
 	it('falls back on the creation date when nothing recorded a resolution', async () => {
@@ -283,6 +304,105 @@ describe('la purge du registre interne', () => {
 	});
 });
 
+describe('la purge des sessions expirées', () => {
+	async function session(joursJusquaExpiration: number, userId: string): Promise<string> {
+		const id = newId();
+		await withMaintenance(owner, (tx) =>
+			tx.execute(sql`
+				insert into "session" ("id", "user_id", "token", "expires_at")
+				values (${id}, ${userId}, ${newId()}, now() + make_interval(days => ${joursJusquaExpiration}))
+			`)
+		);
+		return id;
+	}
+
+	it('is refused to both application roles, procedure included', async () => {
+		for (const [nom, db] of [
+			['app', app],
+			['superadmin', superAdmin]
+		] as const) {
+			const state = await sqlStateOfFailure(() =>
+				db.execute(sql`select jadwal.purge_expired_sessions()`)
+			);
+			expect(state, nom).toBe(SQLSTATE.insufficientPrivilege);
+		}
+	});
+
+	it('removes an expired session and keeps a live one', async () => {
+		const personne = await compte(`sessions-${newId()}@example.test`, 1);
+		const morte = await session(-1, personne);
+		const vivante = await session(30, personne);
+		await withMaintenance(owner, (tx) => tx.execute(sql`select jadwal.purge_expired_sessions()`));
+		expect(await existe('session', morte), 'expirée hier').toBe(false);
+		expect(await existe('session', vivante), 'expire dans trente jours').toBe(true);
+	});
+
+	it('cannot take a live session even under the maintenance flag', async () => {
+		// La borne est dans une politique, pas seulement dans la procédure : même sous le drapeau
+		// d'entretien, une session qui court ne peut pas partir. Sans cela, une commande tapée par
+		// erreur déconnecterait tout le monde.
+		const personne = await compte(`sessions-vivantes-${newId()}@example.test`, 1);
+		const vivante = await session(30, personne);
+		await withMaintenance(owner, (tx) =>
+			tx.execute(sql`delete from "session" where "id" = ${vivante}`)
+		);
+		expect(await existe('session', vivante)).toBe(true);
+	});
+
+	it('lets an orphan account go once its ghost session is gone', async () => {
+		// Les deux défauts se renforçaient : aucune purge n'effaçait les sessions, et
+		// `purge_orphan_accounts` exige `NOT EXISTS (session)`. Une ligne fantôme retenait donc un
+		// compte pour toujours. Ce test le joue dans l'ordre.
+		const fantome = await compte(`fantome-${newId()}@example.test`, 24);
+		await session(-10, fantome);
+		await withMaintenance(owner, (tx) => tx.execute(sql`select jadwal.purge_orphan_accounts()`));
+		expect(await existe('user', fantome), 'retenu par sa session expirée').toBe(true);
+
+		await withMaintenance(owner, (tx) => tx.execute(sql`select jadwal.purge_expired_sessions()`));
+		await withMaintenance(owner, (tx) => tx.execute(sql`select jadwal.purge_orphan_accounts()`));
+		expect(await existe('user', fantome), 'libéré une fois la session effacée').toBe(false);
+	});
+});
+
+describe('la purge des vérifications expirées', () => {
+	async function verification(joursJusquaExpiration: number): Promise<string> {
+		const id = newId();
+		await withMaintenance(owner, (tx) =>
+			tx.execute(sql`
+				insert into "verification" ("id", "identifier", "value", "expires_at")
+				values (${id}, ${`jeton-${id}`}, ${'{"email":"quelquun@example.test"}'},
+					now() + make_interval(days => ${joursJusquaExpiration}))
+			`)
+		);
+		return id;
+	}
+
+	it('is refused to both application roles, procedure included', async () => {
+		for (const [nom, db] of [
+			['app', app],
+			['superadmin', superAdmin]
+		] as const) {
+			const state = await sqlStateOfFailure(() =>
+				db.execute(sql`select jadwal.purge_expired_verifications()`)
+			);
+			expect(state, nom).toBe(SQLSTATE.insufficientPrivilege);
+		}
+	});
+
+	it('removes an expired verification and keeps a live one', async () => {
+		// Ce que ces lignes portent n'est pas anodin : Better Auth range dans `value` le
+		// `JSON.stringify({ email, name })` du lien magique, **en clair**. La ligne ne partait qu'au
+		// clic ; un lien qu'on ne clique jamais gardait l'adresse sans limite de temps.
+		const morte = await verification(-1);
+		const vivante = await verification(1);
+		await withMaintenance(owner, (tx) =>
+			tx.execute(sql`select jadwal.purge_expired_verifications()`)
+		);
+		expect(await existe('verification', morte), 'expirée hier').toBe(false);
+		expect(await existe('verification', vivante), 'expire demain').toBe(true);
+	});
+});
+
 describe('une organisation sans responsable reste récupérable', () => {
 	it('lets the super-admin name a manager where there is none at all', async () => {
 		// Une organisation nue : le super-admin vient d'en ouvrir une et personne n'y est encore
@@ -294,7 +414,7 @@ describe('une organisation sans responsable reste récupérable', () => {
 			tx.execute(sql`
 				insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
 					"enabled_language")
-				values (${orpheline.id}, ${orpheline.slug}, 'Mosquée orpheline', 'Europe/Zurich', 'fr',
+				values (${orpheline.id}, ${orpheline.slug}, 'Association orpheline', 'Europe/Zurich', 'fr',
 					array['fr'])
 			`)
 		);

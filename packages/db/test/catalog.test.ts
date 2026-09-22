@@ -415,6 +415,8 @@ describe('catalogue : intégrité du schéma', () => {
 			'maintenance',
 			'purge_admin_access_log',
 			'purge_audit_log',
+			'purge_expired_sessions',
+			'purge_expired_verifications',
 			'purge_orphan_accounts',
 			'purge_page_views',
 			'purge_rate_limit',
