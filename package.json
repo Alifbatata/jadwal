@@ -24,7 +24,8 @@
 		"prive:test": "node scripts/eprouver-dossiers-prives.mjs",
 		"caddy:test": "node scripts/eprouver-journal-caddy.mjs",
 		"env:test": "node scripts/eprouver-env-brut.mjs",
-		"veille:test": "node scripts/eprouver-veille-taches.mjs"
+		"veille:test": "node scripts/eprouver-veille-taches.mjs",
+		"conditions:pdf": "node scripts/conditions-pdf.mjs"
 	},
 	"devDependencies": {
 		"@eslint/js": "10.0.1",
