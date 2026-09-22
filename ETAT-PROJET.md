@@ -48,6 +48,17 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   sans quoi `/healthz`, interrogé 576 fois par jour par la sonde, resterait majoritaire dans un
   journal borné à quatorze jours. Et le dépôt se donne une règle de test qu'il n'avait pas :
   **un script qu'aucun test ne lance n'est pas éprouvé**.
+- **Étape 13** (licence MIT, présentation générale, conditions exactes, serveur) : **terminée le
+  2026-09-22**, sauf la licence. jadwal ne s'adresse plus à un seul genre d'organisation : le dépôt,
+  la documentation et l'application parlent d'organisations, et les heures de prière sont devenues un
+  **module optionnel, éteint par défaut** (ADR 0042), tenu dans les deux sens par la base plutôt que
+  par l'écran. Les conditions d'utilisation ont été confrontées au code ligne à ligne : là où le
+  texte était faux, c'est le code qui a changé — une session ne garde plus ni adresse ni navigateur,
+  et trois purges manquaient (ADR 0041).
+- **Le passage en licence MIT est à l'arrêt**, et c'est un point d'arrêt déclaré, pas un oubli :
+  l'image de production embarque `lightningcss` (MPL-2.0), une licence à réciprocité par fichier,
+  tirée par Vite à travers SvelteKit. Rien n'a été touché de la licence tant que ce n'est pas
+  tranché. Voir le rapport de l'étape.
 
 ## Fait
 

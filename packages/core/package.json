@@ -2,7 +2,7 @@
 	"name": "@jadwal/core",
 	"version": "0.0.0",
 	"private": true,
-	"description": "Logique métier pure de jadwal : récurrence, exceptions, ancrage sur la prière, heures de prière, export ICS.",
+	"description": "Logique métier pure de jadwal : récurrence, exceptions, export ICS, et le module optionnel des heures de prière.",
 	"license": "AGPL-3.0-or-later",
 	"type": "module",
 	"exports": {
