@@ -342,21 +342,41 @@ describe('le lien magique', () => {
 		// le corps, et sur le temps.
 		const connue = 'connue@example.test';
 		const inconnue = 'jamais-vue@example.test';
-		const mesures: Record<string, number[]> = { connue: [], inconnue: [] };
 		const corps: Record<string, string> = {};
+
+		const mesurer = async (nom: string, email: string) => {
+			const debut = performance.now();
+			const response = await postForm('/connexion', { email });
+			const duree = performance.now() - debut;
+			corps[nom] = sansNonce(await response.text());
+			expect(response.status, nom).toBe(200);
+			return duree;
+		};
+
 		// Rodage : la première réponse d'un serveur qui vient de démarrer coûte plusieurs fois les
 		// suivantes, et une mesure qui l'inclurait noierait l'écart qu'on cherche.
 		for (const email of [connue, inconnue]) await postForm('/connexion', { email });
-		for (let tour = 0; tour < 30; tour += 1) {
-			for (const [nom, email] of [
-				['connue', connue],
-				['inconnue', inconnue]
-			] as const) {
-				const debut = performance.now();
-				const response = await postForm('/connexion', { email });
-				mesures[nom]?.push(performance.now() - debut);
-				corps[nom] = sansNonce(await response.text());
-				expect(response.status, nom).toBe(200);
+
+		// **Des écarts appariés, et non une différence de médianes.** Les deux mesures d'un tour sont
+		// prises l'une après l'autre, à quelques millisecondes d'intervalle : un ralentissement de la
+		// machine — et une machine d'intégration continue est partagée — les touche toutes les deux
+		// et s'annule dans leur différence. Une différence de médianes, elle, compare deux ensembles
+		// que le bruit a pu décaler séparément, et c'est ainsi qu'on obtient un test qui échoue une
+		// fois sur dix sans que rien n'ait changé. Un test qu'on relance jusqu'à ce qu'il passe ne
+		// prouve plus rien.
+		//
+		// L'ordre du couple alterne, pour qu'un éventuel avantage à « passer en premier » — un cache
+		// tiède, une connexion déjà ouverte — se compense lui aussi.
+		const ecarts: number[] = [];
+		for (let tour = 0; tour < 40; tour += 1) {
+			if (tour % 2 === 0) {
+				const a = await mesurer('connue', connue);
+				const b = await mesurer('inconnue', inconnue);
+				ecarts.push(a - b);
+			} else {
+				const b = await mesurer('inconnue', inconnue);
+				const a = await mesurer('connue', connue);
+				ecarts.push(a - b);
 			}
 		}
 		// Le corps rendu est le même, mot pour mot.
@@ -364,12 +384,12 @@ describe('le lien magique', () => {
 
 		const mediane = (valeurs: number[]) =>
 			[...valeurs].sort((a, b) => a - b)[Math.floor(valeurs.length / 2)] ?? 0;
-		const ecart = Math.abs(mediane(mesures['connue'] ?? []) - mediane(mesures['inconnue'] ?? []));
+		const ecart = Math.abs(mediane(ecarts));
 		// Un seuil absolu, et non une fraction du temps de réponse : une fraction de la moitié
 		// tolérerait huit millisecondes sur des réponses de seize, c'est-à-dire deux allers-retours
 		// vers la base. Une consultation des comptes en coûte un ou deux : le seuil doit être plus
 		// serré qu'elle, pas plus large.
-		expect(ecart, `écart des médianes : ${ecart.toFixed(2)} ms`).toBeLessThan(3);
+		expect(ecart, `écart apparié médian : ${ecart.toFixed(2)} ms`).toBeLessThan(3);
 	});
 });
 
