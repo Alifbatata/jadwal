@@ -127,7 +127,10 @@ describe('données de démonstration', () => {
 			page_view: 0,
 			audit_log: 0,
 			// Les données de démonstration n'ouvrent aucune invitation.
-			invitation: 0
+			invitation: 0,
+			// Ni aucune acceptation des conditions : c'est un geste de la personne, pas une donnée
+			// qu'on sème.
+			terms_acceptance: 0
 		});
 	});
 
