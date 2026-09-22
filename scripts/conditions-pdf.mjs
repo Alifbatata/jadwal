@@ -80,8 +80,9 @@ export const QUESTIONS = [
 		communication à l'étranger au sens des art. 16 et 17 nLPD ? Des garanties supplémentaires,
 		clauses contractuelles types ou analyse d'impact, sont-elles nécessaires ?<br><br>
 		Un fait à peser dans la réponse : <strong>les sauvegardes sont chiffrées sur le serveur, avant
-		de le quitter</strong>, et la clé qui permet de les lire n'est ni sur ce serveur, ni chez
-		Cloudflare. Celui qui les détient ne peut pas les ouvrir.`
+		de le quitter</strong>, et la clé qui permet de les lire n'est jamais conservée sur ce serveur,
+		ni chez Cloudflare. Celui qui les détient ne peut pas les ouvrir. Elle n'y passe qu'en mémoire,
+		le temps de vérifier qu'une sauvegarde se relit.`
 	},
 	{
 		titre: 'Une phrase a été retirée, doit-elle revenir ?',
@@ -116,11 +117,14 @@ export const QUESTIONS = [
 	},
 	{
 		titre: 'La liste des données personnelles, et ce qu’elle vaut',
-		corps: `Le texte énumère six catégories : l'adresse électronique et le nom d'une personne
+		corps: `Le texte énumère neuf catégories : l'adresse électronique et le nom d'une personne
 		responsable, le lien entre elle et son organisation, l'adresse d'une personne invitée, le
-		journal des modifications, les passkeys, et une empreinte de l'adresse IP. Cette liste est-elle
-		complète au sens de la loi, et la forme de l'énumération convient-elle ? Le nom d'un
-		intervenant, écrit par l'organisation dans un champ libre et publié, y est traité à part.`
+		journal des modifications, les sessions de connexion, les liens de connexion en attente, les
+		passkeys avec le détail de ce qui en est gardé, une empreinte de l'adresse IP ou de l'adresse
+		électronique, et les traces d'accès de l'exploitant. La liste a été refaite table par table
+		contre le schéma de la base. Est-elle complète au sens de la loi, et la forme de l'énumération
+		convient-elle ? Le nom d'un intervenant, écrit par l'organisation dans un champ libre et
+		publié, y est traité à part.`
 	},
 	{
 		titre: 'Une empreinte calculée avec une clé secrète',
