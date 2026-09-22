@@ -232,7 +232,7 @@ else
 	alerter "verrous-illisibles" "la liste des verrous de conservation est illisible" \
 		"La commande n'a pas abouti. La veille ne sait donc pas si un verrou traîne depuis trop
 longtemps, et elle ne le saura pas tant que ceci échoue :
-  docker compose -f $JADWAL_COMPOSE --env-file $JADWAL_ENV run --rm --no-deps -T init \\
+  docker compose -f $JADWAL_COMPOSE --env-file $JADWAL_COMPOSE_ENV run --rm --no-deps -T init \\
     node node_modules/@jadwal/db/scripts/retention-hold.mjs list"
 fi
 
@@ -249,7 +249,7 @@ if printf '%s\n' "$etat" | grep --quiet --extended-regexp '(exited|restarting|un
 	alerter "conteneurs" "un conteneur de jadwal ne va pas bien" \
 		"$etat
 
-  docker compose -f $JADWAL_COMPOSE --env-file $JADWAL_ENV logs --tail 50"
+  docker compose -f $JADWAL_COMPOSE --env-file $JADWAL_COMPOSE_ENV logs --tail 50"
 else
 	apaiser "conteneurs"
 fi
@@ -260,7 +260,7 @@ if ! curl --silent --fail --max-time 10 "http://127.0.0.1:$port/healthz" > /dev/
 	alerter "healthz" "/healthz ne répond pas sur la boucle locale" \
 		"http://127.0.0.1:$port/healthz n'a pas rendu 200.
 Le service est en cause, pas Caddy ni le réseau.
-  docker compose -f $JADWAL_COMPOSE --env-file $JADWAL_ENV logs --tail 50 app"
+  docker compose -f $JADWAL_COMPOSE --env-file $JADWAL_COMPOSE_ENV logs --tail 50 app"
 else
 	apaiser "healthz"
 fi
@@ -284,6 +284,61 @@ Si la boucle locale répond et pas celle-ci, la panne est entre Caddy et le rés
   dig +short A $hote ; dig +short AAAA $hote"
 		fi
 	done
+fi
+
+# 9. Ce qui ne regarde pas jadwal, et qu'on surveille quand même — **sur demande seulement**.
+#
+#    `JADWAL_VEILLE_MACHINE` est absent par défaut, et c'est voulu : une instance qui s'auto-héberge
+#    n'a pas à se faire réveiller pour les unités de quelqu'un d'autre, et jadwal ne s'invite pas
+#    dans la surveillance d'une machine qu'il partage (ADR 0034). L'exploitant qui veut cette veille
+#    la demande, dans son inventaire.
+#
+#    Pourquoi elle existe : une unité `oneshot` sans `OnFailure=` échoue en silence. Elle passe, elle
+#    rate, et rien ne le dit — ni au démarrage, ni le lendemain, ni le centième jour. Sur une
+#    machine partagée, jadwal est souvent le seul à passer toutes les heures et à savoir envoyer un
+#    courriel. Le détail de ce qui a motivé ce choix sur une installation donnée n'a pas sa place
+#    ici : il vit dans le dossier privé de l'exploitant.
+if [ "$(valeur_env JADWAL_VEILLE_MACHINE)" = "true" ]; then
+	# 9a. Toute unité en échec, quelle qu'elle soit. Une alerte par unité, et le silence de vingt-
+	#     quatre heures d'`alerter` fait le reste : au plus une par unité et par jour.
+	en_echec="$(systemctl list-units --state=failed --no-legend --plain --no-pager 2> /dev/null \
+		| awk '{print $1}' | grep -v '^$' || true)"
+	vues=""
+	for unite in $en_echec; do
+		cle="unite-$(printf '%s' "$unite" | tr -c 'a-zA-Z0-9' '-')"
+		vues="$vues $cle"
+		alerter "$cle" "l'unité $unite est en échec sur cette machine" \
+			"Cette unité n'appartient pas à jadwal, mais elle est en échec et rien d'autre ne le dit.
+  systemctl status $unite
+  journalctl -u $unite --since '7 days ago'
+Si elle ne sert plus : systemctl disable --now <sa minuterie> puis systemctl reset-failed $unite"
+	done
+	# Une unité réparée doit pouvoir réalerter tout de suite si elle retombe : on efface la marque de
+	# celles qui ne sont plus en échec. Sans cela, une unité qui casse deux fois dans la même journée
+	# ne se signalerait qu'une.
+	for marque in "$JADWAL_ETAT"/alertes/unite-*; do
+		[ -e "$marque" ] || continue
+		nom="$(basename "$marque")"
+		case " $vues " in
+			*" $nom "*) ;;
+			*) apaiser "$nom" ;;
+		esac
+	done
+
+	# 9b. Les capacités de Caddy. Le paquet de l'éditeur ajoute `CAP_NET_ADMIN` à son unité, et une
+	#     mise à jour peut la remettre : le complément systemd qui la retire est un fichier de plus,
+	#     et rien ne garantit qu'il sera encore là demain. Ce contrôle est le seul qui s'en aperçoive.
+	capacites="$(systemctl show caddy --property=AmbientCapabilities --value 2> /dev/null || true)"
+	if [ -n "$capacites" ] && [ "$capacites" != "cap_net_bind_service" ]; then
+		alerter "caddy-capacites" "Caddy porte plus que cap_net_bind_service" \
+			"Capacités effectives : $capacites
+Le paquet de l'éditeur ajoute CAP_NET_ADMIN, qui permet de reconfigurer le réseau de la machine à un
+processus exposé à Internet. Le complément qui la retire a peut-être été écrasé :
+  systemctl cat caddy | tail -20
+  cat /etc/systemd/system/caddy.service.d/override.conf"
+	else
+		apaiser "caddy-capacites"
+	fi
 fi
 
 trace "veille terminée, $alertes alerte(s) envoyée(s)"

@@ -87,7 +87,7 @@
         caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy
 
         docker compose -f {{ jadwal_racine }}/compose/docker-compose.yml \
-          --env-file {{ jadwal_etc }}/jadwal.env down --volumes
+          --env-file {{ jadwal_etc }}/compose.env down --volumes
         docker network rm jadwal 2>/dev/null || true
 
         rm -rf {{ jadwal_racine }} {{ jadwal_etc }} {{ jadwal_etat }} {{ jadwal_sauvegardes }}
