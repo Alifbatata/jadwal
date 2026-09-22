@@ -108,17 +108,23 @@
 
 # Ce que le conteneur de démarrage a dit, pour le rapport. Il a déjà rendu la main : on relit son
 # journal, on ne le relance pas.
+#
+# **Pas de `check_mode: false` ici**, contrairement aux lectures du rôle `caddy`. La différence tient
+# en une phrase : ces deux tâches-ci lisent le **résultat** de « Démarrage de la pile », qu'un
+# `--check` saute. Les forcer à tourner quand même les ferait lire un conteneur qui n'a pas été
+# lancé, et l'assertion du bas échouerait sur une sortie vide — un `--check` qui s'arrête sur un faux
+# négatif est pire qu'un `--check` qu'on ne joue pas.
 - name: Ce que le conteneur de démarrage a fait
   ansible.builtin.command:
     cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/jadwal.env logs init --no-log-prefix --tail 40
   become: true
   register: journal_init
   changed_when: false
-  check_mode: false
 
 - name: Les rôles et les migrations, tels que le conteneur de démarrage les a joués
   ansible.builtin.debug:
     var: journal_init.stdout_lines
+  when: journal_init.stdout_lines is defined
 
 # `init` a rendu la main : son conteneur doit être arrêté, et arrêté **en 0**. Un conteneur de
 # démarrage encore en marche voudrait dire que Compose n'a pas attendu ce qu'il devait attendre.
@@ -128,8 +134,7 @@
   become: true
   register: etat_init
   changed_when: false
-  check_mode: false
-  failed_when: etat_init.stdout | trim != 'init exited 0'
+  failed_when: etat_init.stdout is defined and etat_init.stdout | trim != 'init exited 0'
 
 - name: Le service répond sur la boucle locale
   ansible.builtin.uri:
