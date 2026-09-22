@@ -108,9 +108,15 @@
       -e jadwal_caddy_reload=true pour que jadwal soit servi.
   when: not jadwal_caddy_reload | bool
 
-# Le rechargement, et lui seul. `caddy reload` ne coupe aucune connexion en cours et ne touche pas
-# aux autres sites : c'est la seule action de ce playbook sur un service existant, et l'étape
-# l'autorise nommément, à condition de l'avoir montrée d'abord.
+# Le rechargement, et lui seul. `caddy reload` ne touche pas aux autres sites : c'est la seule action
+# de ce playbook sur un service existant, et l'étape l'autorise nommément, à condition de l'avoir
+# montrée d'abord.
+#
+# **Il n'est pas tout à fait gratuit, contrairement à ce qui était écrit ici.** Mesuré le 2026-09-22,
+# sonde à 200 ms pendant un rechargement de 117 ms : le PID ne change pas, les écouteurs sont gardés,
+# et pourtant **une requête sur cent trente-trois a été coupée** — une socket fermée, 195 ms après la
+# bascule, pas un délai dépassé. Une connexion en cours d'établissement à cette demi-seconde-là peut
+# y passer. C'est peu, c'est plus que zéro, et un visiteur qui tombe dessus recharge.
 #
 # La condition est `jadwal_caddy_reload`, et **rien d'autre**. Elle a porté `and bloc.changed`, et
 # c'était un défaut qui rendait la marche à suivre impossible à suivre : le premier passage pose le
@@ -118,9 +124,9 @@
 # `bloc.changed` est alors faux, le rechargement est sauté, et jadwal n'est jamais servi. Le
 # playbook l'annonçait pourtant comme fait. Trouvé à la mise en ligne, pas avant.
 #
-# Recharger sans que rien n'ait changé ne coûte rien : Caddy relit sa configuration, ne redémarre
-# pas, et ne coupe aucune connexion. Le drapeau est refusé par défaut : qui le pose demande un
-# rechargement, et l'obtient.
+# Recharger sans que rien n'ait changé ne coûte presque rien : Caddy relit sa configuration et ne
+# redémarre pas — au prix de la connexion en cours d'établissement dont il est question plus haut. Le
+# drapeau est refusé par défaut : qui le pose demande un rechargement, et l'obtient.
 - name: Rechargement de Caddy
   ansible.builtin.systemd_service:
     name: caddy
