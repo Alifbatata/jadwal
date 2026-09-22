@@ -55,10 +55,15 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   par l'écran. Les conditions d'utilisation ont été confrontées au code ligne à ligne : là où le
   texte était faux, c'est le code qui a changé — une session ne garde plus ni adresse ni navigateur,
   et trois purges manquaient (ADR 0041).
-- **Le passage en licence MIT est à l'arrêt**, et c'est un point d'arrêt déclaré, pas un oubli :
-  l'image de production embarque `lightningcss` (MPL-2.0), une licence à réciprocité par fichier,
-  tirée par Vite à travers SvelteKit. Rien n'a été touché de la licence tant que ce n'est pas
-  tranché. Voir le rapport de l'étape.
+- **Étape 14** (licence MIT, zéro faute, PDF final) : **terminée le 2026-09-22**. Le point d'arrêt
+  de l'étape 13 est levé, et par la racine : l'image de production ne porte plus aucun outil de
+  construction. Elle passe de 193 paquets et 237 Mio à 60 paquets et 73 Mio, et plus une seule
+  licence à réciprocité. **jadwal est sous licence MIT**, widget compris (ADR 0043), avec un
+  fichier des licences tierces engendré à la construction et livré dans l'image.
+  Tout ce que des gens lisent passe désormais par LanguageTool, en conteneur et hors réseau, en
+  quatre langues : `pnpm orthographe`, et un flux de CI qui le relance quand un texte change. Le
+  PDF pour le juriste ne finit plus sur une page presque vide, et sa mise en pages est mesurée
+  dans le PDF rendu, pas supposée.
 
 ## Fait
 
