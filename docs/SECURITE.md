@@ -6,15 +6,15 @@ Une page. Ce qu'on protège, contre qui, par quelles barrières, et ce qui n'est
 
 Une seule chose est sensible : **l'adresse électronique des responsables** (ADR 0009). Le reste —
 programmes de cours, salles, horaires — est public par destination. S'y ajoutent deux atteintes qui
-ne sont pas des fuites mais des dommages : **effacer ou fausser le programme d'une mosquée**, et
-**apprendre qui est responsable de quelle mosquée**, ce qui est une information sensible pour des
-communautés religieuses.
+ne sont pas des fuites mais des dommages : **effacer ou fausser le programme d'une organisation**,
+et **apprendre qui est responsable de quelle organisation**, ce qui est une information sensible
+pour des communautés religieuses.
 
 ## Contre qui
 
 | Adversaire                                   | Ce qu'il cherche                                          |
 | -------------------------------------------- | --------------------------------------------------------- |
-| Un responsable d'une autre organisation      | lire ou modifier les données d'une mosquée voisine        |
+| Un responsable d'une autre organisation      | lire ou modifier les données d'une organisation voisine   |
 | Un curieux sans compte                       | savoir si telle adresse est responsable quelque part      |
 | Quelqu'un qui a volé une boîte aux lettres   | entrer dans l'espace d'une organisation                   |
 | Un compte applicatif compromis               | lire toutes les organisations, effacer ses propres traces |
@@ -78,14 +78,14 @@ par route, pas de cadre par défaut, protection contre la soumission d'un formul
 site, cookie signé `HttpOnly` `SameSite=Lax`.
 
 **9 bis. Le widget est confiné, et ne reçoit qu'un nombre.** Depuis l'étape 6, le widget d'une
-mosquée ne redessine rien : il pose un cadre vers la page publique (ADR 0005 révisé). Le rendu reste
-donc dans **notre** origine, et une faute d'échappement chez nous ne peut pas devenir une injection
-sur le site d'une mosquée — ce qui serait le risque d'un widget qui injecterait notre HTML dans la
-page hôte. Le seul canal entre les deux est un message qui porte une hauteur en pixels ; le parent
-vérifie la fenêtre émettrice, l'origine par égalité stricte et la forme du message, borne la valeur,
-et ne traite aucun autre type. Le fichier servi porte `Access-Control-Allow-Origin: *` — ce qu'il
-ouvre est un fichier public — et une empreinte d'intégrité est disponible pour les sites qui
-l'exigent, à une adresse versionnée et immuable.
+organisation ne redessine rien : il pose un cadre vers la page publique (ADR 0005 révisé). Le rendu
+reste donc dans **notre** origine, et une faute d'échappement chez nous ne peut pas devenir une
+injection sur le site d'une organisation — ce qui serait le risque d'un widget qui injecterait
+notre HTML dans la page hôte. Le seul canal entre les deux est un message qui porte une hauteur en
+pixels ; le parent vérifie la fenêtre émettrice, l'origine par égalité stricte et la forme du
+message, borne la valeur, et ne traite aucun autre type. Le fichier servi porte
+`Access-Control-Allow-Origin: *` — ce qu'il ouvre est un fichier public — et une empreinte
+d'intégrité est disponible pour les sites qui l'exigent, à une adresse versionnée et immuable.
 
 **10. Le compte super-admin est une clé maîtresse, et rien dans la base ne le contient.** Depuis
 l'étape 4, il lit et écrit dans toutes les organisations, en permanence, et ses consultations ne
@@ -152,8 +152,8 @@ suivante le redit.
   accepte : une politique porte sur des lignes, pas sur des colonnes. Rien de cette ligne n'est une
   donnée personnelle, et le nom sera public dès l'étape 5 (ADR 0017).
 - **L'existence d'un compte reste devinable hors du service** : si une personne est publiquement
-  responsable d'une mosquée, savoir qu'elle a un compte n'apprend rien. Nous protégeons ce que le
-  service révèle, pas ce que le monde sait déjà.
+  responsable d'une organisation, savoir qu'elle a un compte n'apprend rien. Nous protégeons ce que
+  le service révèle, pas ce que le monde sait déjà.
 - **Aucune revue de sécurité externe** n'a eu lieu. Ce document dit ce que nous avons vérifié
   nous-mêmes, par des essais reproductibles, pas ce qu'un auditeur confirmerait.
 

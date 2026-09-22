@@ -3,8 +3,8 @@
 	// (voir docs/maquettes/public-vendredi.md).
 	//
 	// Trois lignes au plus : heure, langues du sermon, salle. C'est l'information la plus cherchée
-	// sur la page d'une mosquée, et celle qui se contredit le plus entre les canaux — elle doit se
-	// lire sans faire défiler et sans cliquer.
+	// sur la page d'une organisation, et celle qui se contredit le plus entre les canaux — elle doit
+	// se lire sans faire défiler et sans cliquer.
 	//
 	// Le bloc décrit le **rythme habituel** et ne porte aucune exception : une session annulée ou
 	// déplacée se lit dans la vue Semaine, là où sont toutes les exceptions. Un bloc qui changerait

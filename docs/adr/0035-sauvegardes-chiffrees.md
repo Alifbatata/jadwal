@@ -2,9 +2,9 @@
 
 ## Contexte
 
-Une mosquée qui publie ses cours sur jadwal y met des mois de saisie : les cours, les traductions,
-les heures de prière tenues à la main, les périodes, les sessions du vendredi. Perdre cela, c'est
-perdre le travail d'une équipe bénévole, et ce n'est pas rattrapable en une soirée.
+Une organisation qui publie ses cours sur jadwal y met des mois de saisie : les cours, les
+traductions, les heures de prière tenues à la main, les périodes, les sessions du vendredi. Perdre
+cela, c'est perdre le travail d'une équipe bénévole, et ce n'est pas rattrapable en une soirée.
 
 Les instantanés que propose un hébergeur ne comptent pas : ils sont dans le même compte, chez le même
 fournisseur, et un compte qu'on perd emporte la machine **et** ses instantanés. On s'en sert pour

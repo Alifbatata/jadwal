@@ -32,8 +32,8 @@ process.stdout.write(
 	`<script src="https://exemple.invalid/widget/${version}/jadwal-widget.js"\n` +
 		`        integrity="${sha384}"\n` +
 		`        crossorigin="anonymous"></script>\n` +
-		`<jadwal-widget org="ma-mosquee">\n` +
-		`  <a href="https://exemple.invalid/m/ma-mosquee">Voir le programme des cours</a>\n` +
+		`<jadwal-widget org="mon-organisation">\n` +
+		`  <a href="https://exemple.invalid/m/mon-organisation">Voir le programme des cours</a>\n` +
 		`</jadwal-widget>\n\n`
 );
 process.stdout.write(

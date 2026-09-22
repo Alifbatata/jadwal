@@ -7,7 +7,8 @@
 // civile, une position et un fuseau IANA, et rend le `PrayerDay` de `LocalTime` que le cœur
 // consomme déjà — exactement la forme que produit aussi l'import CSV.
 //
-// **Ce qu'il ne fait pas.** Aucun appel réseau, aucun service extérieur, jamais Mawaqit (ADR 0009).
+// **Ce qu'il ne fait pas.** Aucun appel réseau, aucun service extérieur, jamais un service de
+// calendrier de prière tiers (ADR 0009).
 // Il ne lit ni l'horloge ni le fuseau de la machine : `currentPrayer()` et `nextPrayer()` d'`adhan`
 // le feraient, ils ne sont pas employés.
 
@@ -24,7 +25,7 @@ import type { IsoDate, LocalTime, PrayerDay } from '../types.js';
 
 /**
  * Les treize méthodes d'`adhan`, telles qu'elle les nomme. `Other` est la porte de sortie d'une
- * mosquée qui publie ses propres angles — elle ne sert à rien tant qu'on ne les expose pas.
+ * organisation qui publie ses propres angles — elle ne sert à rien tant qu'on ne les expose pas.
  */
 export const CALCULATION_METHODS = [
 	'MuslimWorldLeague',
@@ -59,7 +60,7 @@ export const HIGH_LATITUDE_RULES = [
 ] as const;
 export type HighLatitudeRuleName = (typeof HIGH_LATITUDE_RULES)[number];
 
-/** Le décalage en minutes appliqué à chaque prière après le calcul, tel que la mosquée le règle. */
+/** Le décalage en minutes appliqué à chaque prière après le calcul, tel que l'organisation le règle. */
 export interface PrayerAdjustments {
 	fajr: number;
 	dhuhr: number;
@@ -130,7 +131,7 @@ export function isHighLatitudeRule(value: unknown): value is HighLatitudeRuleNam
  * L'heure locale d'un instant, dans un fuseau IANA, en `HH:MM`.
  *
  * `Intl` et non l'objet `Date` : les composantes locales de la machine donneraient une heure fausse
- * partout sauf sur une machine réglée sur le fuseau de la mosquée. `hourCycle: 'h23'` évite le
+ * partout sauf sur une machine réglée sur le fuseau de l'organisation. `hourCycle: 'h23'` évite le
  * « 24:05 » que `hour12: false` produit à minuit dans certaines implémentations.
  */
 function heureLocale(instant: Date, timeZone: string): LocalTime {
@@ -176,7 +177,7 @@ function parametres(settings: PrayerSettings): CalculationParameters {
 	params.madhab = settings.madhab;
 	params.highLatitudeRule = settings.highLatitudeRule;
 	const decalages = settings.adjustments ?? NO_ADJUSTMENTS;
-	// `adjustments` est le champ prévu pour un réglage de mosquée ; `methodAdjustments` appartient à
+	// `adjustments` est le champ prévu pour un réglage d'organisation ; `methodAdjustments` appartient à
 	// la méthode et n'est jamais touché.
 	params.adjustments.fajr = decalages.fajr;
 	params.adjustments.dhuhr = decalages.dhuhr;
@@ -230,7 +231,7 @@ export function computePrayerDay(date: IsoDate, settings: PrayerSettings): Praye
  * Ce n'est pas une curiosité : à Bienne, avec la règle du milieu de la nuit, l'Isha passe minuit
  * vingt-huit jours par an en 2026, du 9 juin au 6 juillet. La ligne du 21 juin porte alors
  * « Isha 00:10 »,
- * qui est bien ce que la mosquée affiche sur son panneau — mais qui désigne le 22 juin. Les écrans
+ * qui est bien ce que l'organisation affiche sur son panneau — mais qui désigne le 22 juin. Les écrans
  * le signalent ; `PrayerDay` ne sait pas le dire, et c'est écrit dans l'ADR 0004.
  */
 export function crossesMidnight(date: IsoDate, settings: PrayerSettings): boolean {

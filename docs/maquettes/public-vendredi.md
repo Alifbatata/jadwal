@@ -1,12 +1,12 @@
 # La prière du vendredi, côté public
 
-C'est l'information la plus cherchée sur la page d'une mosquée, et c'est celle qui se contredit le
-plus entre les canaux. Elle doit se lire sans faire défiler, sans cliquer, et sans se demander
-laquelle des deux sessions est la bonne.
+C'est l'information la plus cherchée sur la page d'une organisation, et c'est celle qui se
+contredit le plus entre les canaux. Elle doit se lire sans faire défiler, sans cliquer, et sans se
+demander laquelle des deux sessions est la bonne.
 
-Une mosquée tient **une, deux, parfois trois sessions** le vendredi, à des heures différentes et
-dans des langues différentes — par exemple une première à 12:10 en arabe et en français, une seconde
-à 13:30 en arabe seulement. Les horaires changent selon la saison.
+Une organisation tient **une, deux, parfois trois sessions** le vendredi, à des heures différentes
+et dans des langues différentes — par exemple une première à 12:10 en arabe et en français, une
+seconde à 13:30 en arabe seulement. Les horaires changent selon la saison.
 
 ## Où le bloc se place
 
@@ -26,7 +26,8 @@ Ordre exact de la page publique, dans les trois vues :
 
 Titre de niveau 2 : `Prière du vendredi`.
 
-Puis **une ligne par session**, dans l'ordre choisi par la mosquée (première, deuxième, troisième) :
+Puis **une ligne par session**, dans l'ordre choisi par l'organisation (première, deuxième,
+troisième) :
 
 ```
 Prière du vendredi
@@ -51,8 +52,8 @@ le détail suit le lien de la session, qui existe comme celui d'un cours.
   date donnerait à croire que la semaine suivante sera différente.
 - **Pas l'heure du Dhuhr.** Quand des sessions existent, elles la remplacent : l'afficher à côté
   ferait exactement la contradiction que ce bloc doit supprimer.
-- **Pas de mention d'absence.** Une mosquée qui n'a pas saisi ses sessions n'a pas de bloc, et rien
-  ne dit qu'il en manque un : un visiteur n'a pas à connaître nos étapes.
+- **Pas de mention d'absence.** Une organisation qui n'a pas saisi ses sessions n'a pas de bloc, et
+  rien ne dit qu'il en manque un : un visiteur n'a pas à connaître nos étapes.
 
 ### Quand une session est annulée ou déplacée
 
@@ -76,8 +77,8 @@ vendredi 25 septembre
 19:10 – 20:10   Tafsir du vendredi   Ouvert à tous · Grande salle
 ```
 
-Le titre est celui que la mosquée a saisi, dans la langue demandée, avec le même repli que pour un
-cours. Le libellé `sermon en …` est le nôtre, traduit dans les quatre langues d'interface : c'est
+Le titre est celui que l'organisation a saisi, dans la langue demandée, avec le même repli que pour
+un cours. Le libellé `sermon en …` est le nôtre, traduit dans les quatre langues d'interface : c'est
 le mot juste, et « langue d'enseignement » ne l'est pas ici.
 
 Répéter les sessions en haut **et** dans le vendredi est voulu : le bloc du haut répond à la question

@@ -1427,10 +1427,10 @@ describe('unreadable prayer times', () => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// L'iqama (étape 8). Ce que la mosquée décide, et qui passe avant l'heure du soleil.
+// L'iqama (étape 8). Ce que l'organisation décide, et qui passe avant l'heure du soleil.
 // ---------------------------------------------------------------------------------------------
 
-describe("anchoring on the mosque's iqama", () => {
+describe("anchoring on the organisation's iqama", () => {
 	/** La table de Bienne, augmentée des iqamas données. */
 	function avecIqama(iqama: Partial<Record<Prayer, LocalTime>>): PrayerTimesLookup {
 		return (date) => {
@@ -1460,14 +1460,14 @@ describe("anchoring on the mosque's iqama", () => {
 	}
 
 	it('prefers the iqama over the sun time', () => {
-		// Le soleil dit 18:50 le 28 mars ; la mosquée appelle la prière à 19:05. Le cours est
+		// Le soleil dit 18:50 le 28 mars ; l'organisation appelle la prière à 19:05. Le cours est
 		// « maghrib + 30 min » : il suit l'iqama, donc 19:35, et non 19:20.
 		expect(heureDe(bienne, '2026-03-28')).toBe('19:20');
 		expect(heureDe(avecIqama({ maghrib: '19:05' }), '2026-03-28')).toBe('19:35');
 	});
 
 	it('falls back to the sun time for a prayer whose iqama is not set', () => {
-		// Une mosquée peut régler l'iqama de trois prières et pas des deux autres : chaque prière
+		// Une organisation peut régler l'iqama de trois prières et pas des deux autres : chaque prière
 		// retombe sur sa propre heure de soleil, indépendamment des autres.
 		const table = avecIqama({ fajr: '06:30', isha: '21:00' });
 		expect(heureDe(table, '2026-03-28')).toBe('19:20');
@@ -1508,9 +1508,9 @@ describe("anchoring on the mosque's iqama", () => {
 	it('does not move a fixed iqama across the change of clock, and that is intended', () => {
 		// **À ne pas « corriger » plus tard.** Le samedi 28 mars le soleil se couche à 18:50 ; le
 		// dimanche 29, l'heure locale a avancé d'une heure et il se couche à 19:52. Une iqama fixée
-		// à 19:15 reste à 19:15 les deux jours : c'est ce qu'affiche le panneau de la mosquée, qui
-		// ne change pas de lui-même. La mosquée corrigera son panneau, et sa période, quand elle
-		// le décidera — ce n'est pas au service de décider à sa place.
+		// à 19:15 reste à 19:15 les deux jours : c'est ce qu'affiche le panneau de l'organisation,
+		// qui ne change pas de lui-même. L'organisation corrigera son panneau, et sa période, quand
+		// elle le décidera — ce n'est pas au service de décider à sa place.
 		const table = avecIqama({ maghrib: '19:15' });
 		expect(heureDe(table, '2026-03-28')).toBe('19:45');
 		expect(heureDe(table, '2026-03-29')).toBe('19:45');

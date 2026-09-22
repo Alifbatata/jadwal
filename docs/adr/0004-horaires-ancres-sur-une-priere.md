@@ -7,7 +7,8 @@ une prière. Un cours « après Maghrib » n'a pas d'heure fixe : l'heure de la 
 jour.
 
 L'organisation peut exporter le calendrier annuel de ses heures de prière, au format CSV, depuis
-son espace Mawaqit. Contrainte : ne jamais appeler ni scraper Mawaqit.
+son service de calendrier de prière. Contrainte : ne jamais appeler ni scraper un service tiers de
+calendrier de prière.
 
 Le flux ICS par organisation exporte les cours à heure fixe en événements récurrents (RRULE).
 L'ancrage sur la prière relève de `packages/core` (TypeScript pur, zéro dépendance à l'exécution,
@@ -20,9 +21,9 @@ très testé). La feuille de route place `core` et ses tests à l'étape 1, et l
   asr, maghrib et isha, avec un décalage en minutes et une durée.
 - À l'affichage, « après Maghrib » passe en premier et l'heure reste indicative.
 - Les heures de prière viennent de l'import du calendrier annuel CSV de l'organisation (export de
-  son espace Mawaqit). À défaut, elles sont calculées avec la bibliothèque Adhan (MIT), la
-  méthode et les ajustements par prière étant réglables par organisation.
-- Nous n'appelons jamais Mawaqit et nous ne le scrapons jamais.
+  son service de calendrier de prière). À défaut, elles sont calculées avec la bibliothèque Adhan
+  (MIT), la méthode et les ajustements par prière étant réglables par organisation.
+- Nous n'appelons jamais un service tiers de calendrier de prière et nous ne le scrapons jamais.
 - Dans le flux ICS, les cours ancrés sur une prière sont exportés en événements datés un par un,
   sur une fenêtre glissante, puisque l'heure change chaque jour.
 
@@ -73,20 +74,20 @@ retour. Un nouvel import remplace les jours qu'il couvre et ne touche à aucun a
 
 Les contrôles : dates valides et non dupliquées, heures valides, ordre des prières respecté, dérive
 d'un jour à l'autre plausible. La dérive et l'ordre sont **signalés, jamais refusés** : le
-calendrier d'une mosquée peut arrondir, avancer l'Isha d'été, ou changer de méthode en cours
+calendrier d'une organisation peut arrondir, avancer l'Isha d'été, ou changer de méthode en cours
 d'année. Le passage à l'heure d'été fait bouger les cinq prières d'une heure le même jour ; ce cas-là
 est reconnu et n'est pas signalé, alors qu'un saut d'une heure sur une seule prière l'est.
 
-Nous n'inventons pas le format de Mawaqit. Le lecteur accepte le format documenté et les tolérances
-qu'un tableur impose en pratique — marque d'ordre des octets, séparateur `;` ou tabulation, guillemets,
-`CRLF`, colonnes nommées en français, en anglais ou en arabe translittéré, heures écrites `19:23`,
-`9:23`, `19:23:00`, `19h23` ou `7:23 PM`. Le jour où l'exploitant fournit un export réel de Mawaqit
-dans `docs/`, le lecteur s'y adaptera en plus.
+Nous n'inventons pas le format de calendrier le plus répandu. Le lecteur accepte le format documenté
+et les tolérances qu'un tableur impose en pratique — marque d'ordre des octets, séparateur `;` ou
+tabulation, guillemets, `CRLF`, colonnes nommées en français, en anglais ou en arabe translittéré,
+heures écrites `19:23`, `9:23`, `19:23:00`, `19h23` ou `7:23 PM`. Le jour où l'exploitant fournit un
+export réel de ce format dans `docs/`, le lecteur s'y adaptera en plus.
 
 **Le calcul.** `adhan` (MIT), la seule dépendance de `packages/core/src/prayer/`. Position saisie à
 la main en degrés décimaux — **aucun géocodage**, qui serait un service extérieur interrogé avec
-l'adresse d'une mosquée (ADR 0009). Méthode parmi les treize qu'`adhan` nomme, école pour l'Asr,
-règle des latitudes hautes, et un ajustement en minutes par prière. Une fenêtre glissante de
+l'adresse d'une organisation (ADR 0009). Méthode parmi les treize qu'`adhan` nomme, école pour
+l'Asr, règle des latitudes hautes, et un ajustement en minutes par prière. Une fenêtre glissante de
 quatre cent un jours — trente en arrière, trois cent soixante-dix en avant — remplie à chaque
 changement de réglage et par une tâche quotidienne idempotente
 (`pnpm --filter @jadwal/db run prayer-fill`, ordonnancée à l'étape 8).
@@ -111,9 +112,9 @@ Le défaut du service est `middleofthenight`, et voici pourquoi. Nous avons calc
 soixante-cinq jours de Bienne avec la méthode de la Ligue islamique mondiale : à cette latitude, la
 règle ne **mord** aucun jour de l'année, c'est-à-dire que les trois règles donnent le même résultat.
 Le choix n'est donc pas un choix d'exactitude, il est un choix de commodité pour les latitudes plus
-hautes, et il appartient à la mosquée — qui en voit la conséquence dans l'aperçu à sept jours avant
-d'enregistrer. Au-delà de 48°, l'écran recommande `seventhofthenight`, qui resserre l'écart entre
-l'Isha et la nuit réelle, et c'est aussi ce que recommande la documentation d'`adhan`.
+hautes, et il appartient à l'organisation — qui en voit la conséquence dans l'aperçu à sept jours
+avant d'enregistrer. Au-delà de 48°, l'écran recommande `seventhofthenight`, qui resserre l'écart
+entre l'Isha et la nuit réelle, et c'est aussi ce que recommande la documentation d'`adhan`.
 
 Limite assumée : à Tromsø, aucune règle ne produit d'heure certains jours d'été. Un jour incomplet
 n'est pas écrit du tout ; il vaut « heure inconnue », et la séance s'affiche « après Maghrib » sans
@@ -137,14 +138,15 @@ c'est délibéré.
 
 #### La saisie à la main, qui passe avant tout
 
-Ce que la mosquée décide elle-même est la vérité. La table `prayer_period` porte ce qu'elle imprime
-sur son panneau : un nom, une date de début, une date de fin **facultative** — vide vaut « jusqu'à
-nouvel ordre » —, et pour chacune des cinq prières l'heure du soleil qu'elle affiche et l'heure
-d'iqama qu'elle appelle.
+Ce que l'organisation décide elle-même est la vérité. La table `prayer_period` porte ce qu'elle
+imprime sur son panneau : un nom, une date de début, une date de fin **facultative** — vide vaut
+« jusqu'à nouvel ordre » —, et pour chacune des cinq prières l'heure du soleil qu'elle affiche et
+l'heure d'iqama qu'elle appelle.
 
 Ce n'est pas une saisie jour par jour : personne ne remplit trois cent soixante-cinq jours. Une
-mosquée qui règle un décalage d'iqama le fait une fois, sans date de fin ; une mosquée qui affiche
-des heures fixes crée deux ou trois périodes par an, exactement comme elle réimprime son panneau.
+organisation qui règle un décalage d'iqama le fait une fois, sans date de fin ; une organisation
+qui affiche des heures fixes crée deux ou trois périodes par an, exactement comme elle réimprime
+son panneau.
 
 **Deux périodes ne peuvent pas se chevaucher**, et ce n'est pas l'écran qui le vérifie : c'est une
 contrainte d'exclusion de PostgreSQL sur `daterange(from_date, coalesce(to_date, 'infinity'), '[]')`,
@@ -163,16 +165,16 @@ partagent. La priorité est donc écrite une seule fois, et un test la vérifie 
 y compris le cas qui les mêle.
 
 L'empreinte de cache des flux agenda compte désormais `prayer_period` : sans cela, changer une iqama
-ne périmerait aucun flux, et la mosquée servirait ses anciennes heures pendant une heure.
+ne périmerait aucun flux, et l'organisation servirait ses anciennes heures pendant une heure.
 
 #### L'iqama, séparée de l'heure du soleil
 
 L'heure du soleil dit quand la prière **entre** ; l'iqama dit quand elle est **appelée dans la
 salle**. Ce ne sont pas les mêmes, et les deux sont conservées et affichées.
 
-Pour chaque prière, la mosquée règle soit une **heure fixe**, soit un **décalage en minutes** après
-l'heure du soleil — jamais les deux, une contrainte l'interdit. Les deux formes coexistent dans une
-même mosquée : Fajr à 06:30, Maghrib cinq minutes après le coucher.
+Pour chaque prière, l'organisation règle soit une **heure fixe**, soit un **décalage en minutes**
+après l'heure du soleil — jamais les deux, une contrainte l'interdit. Les deux formes coexistent
+dans une même organisation : Fajr à 06:30, Maghrib cinq minutes après le coucher.
 
 **L'iqama est dans la période, et non dans les réglages généraux.** Une iqama en heure fixe est
 saisonnière par nature — 06:30 l'hiver ne vaut pas l'été — et la mettre ailleurs aurait obligé à
@@ -195,9 +197,10 @@ d'entre elles (ADR 0033).
 #### Le changement d'heure avec une iqama fixe
 
 Le dimanche de mars, l'heure du soleil recule d'une heure d'un jour à l'autre ; une iqama fixée à
-06:30 **reste à 06:30**. C'est voulu — c'est ce que fait le panneau de la mosquée, qui ne change pas
-de lui-même — et le test le dit en toutes lettres pour que personne ne le « corrige » plus tard. La
-mosquée corrigera sa période quand elle le décidera ; ce n'est pas au service de décider à sa place.
+06:30 **reste à 06:30**. C'est voulu — c'est ce que fait le panneau de l'organisation, qui ne
+change pas de lui-même — et le test le dit en toutes lettres pour que personne ne le « corrige »
+plus tard. L'organisation corrigera sa période quand elle le décidera ; ce n'est pas au service de
+décider à sa place.
 
 ## Conséquences
 
@@ -205,8 +208,8 @@ mosquée corrigera sa période quand elle le décidera ; ce n'est pas au service
   de prière de l'organisation.
 - Les heures affichées pour un cours ancré dépendent des heures de prière disponibles pour
   l'organisation (calendrier importé, sinon calcul avec Adhan) et restent indicatives.
-- Aucun appel à Mawaqit et aucun scraping : les heures de prière viennent d'un fichier importé
-  par l'organisation ou d'un calcul avec Adhan.
+- Aucun appel à un service tiers de calendrier de prière et aucun scraping : les heures de prière
+  viennent d'un fichier importé par l'organisation ou d'un calcul avec Adhan.
 - Les cours ancrés sur une prière ne sont pas exportés en RRULE : le flux ICS contient un
   événement daté par séance, sur une fenêtre glissante.
 - L'ancrage sur la prière fait partie de `packages/core` et de ses tests (étape 1).

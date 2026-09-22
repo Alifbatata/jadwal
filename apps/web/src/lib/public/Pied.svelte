@@ -13,8 +13,8 @@
 <footer>
 	<p><a href={lienAgenda}>{mots.subscribe}</a></p>
 	<!-- En mode intégré, la mention est portée par le pied du widget, juste sous le cadre : elle
-	     appartient alors au site de la mosquée, et non à une page qu'il enferme. L'écrire deux fois
-	     à dix pixels d'écart n'apprendrait rien à personne (ADR 0005). -->
+	     appartient alors au site de l'organisation, et non à une page qu'il enferme. L'écrire deux
+	     fois à dix pixels d'écart n'apprendrait rien à personne (ADR 0005). -->
 	{#if !integre}
 		<p class="mention">{mots.offeredBy}</p>
 	{/if}

@@ -2,8 +2,9 @@
 
 ## Contexte
 
-`jadwal` publie le programme des cours d'une mosquée à partir d'une seule saisie des responsables,
-vers quatre sorties : widget, page publique, flux ICS et messages WhatsApp (voir `docs/CADRAGE.md`).
+`jadwal` publie le programme des cours d'une organisation à partir d'une seule saisie des
+responsables, vers quatre sorties : widget, page publique, flux ICS et messages WhatsApp (voir
+`docs/CADRAGE.md`).
 Deux questions de langue se posent, distinctes l'une de l'autre :
 
 - la langue de l'interface du côté public (libellés, navigation) ;

@@ -49,8 +49,8 @@
 <section aria-labelledby="pauses-titre">
 	<h2 id="pauses-titre">Pauses</h2>
 	<p class="details">
-		Une période sans séance : vacances, Ramadan, travaux. Sans cours choisi, elle vaut pour toute la
-		mosquée.
+		Une période sans séance : vacances, Ramadan, travaux. Sans cours choisi, elle vaut pour toute
+		l’organisation.
 	</p>
 
 	{#if data.pauses.length > 0}
@@ -58,7 +58,7 @@
 			{#each data.pauses as pause (pause.id)}
 				<li>
 					<p class="titre">
-						{pause.course ?? 'Toute la mosquée'}
+						{pause.course ?? 'Toute l’organisation'}
 					</p>
 					<p class="details">
 						Du {shortDate(pause.from as IsoDate)} au {shortDate(pause.to as IsoDate)}
@@ -76,7 +76,7 @@
 	<form method="post" action="?/pause" class="colonne">
 		<label for="pause-course">Cours concerné</label>
 		<select id="pause-course" name="courseId">
-			<option value="">Toute la mosquée</option>
+			<option value="">Toute l’organisation</option>
 			{#each data.courses as course (course.id)}
 				<option value={course.id}>{course.title}</option>
 			{/each}

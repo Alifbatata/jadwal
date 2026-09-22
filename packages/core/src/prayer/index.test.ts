@@ -21,7 +21,7 @@ import {
 import doha from './reference/Doha-Qatar.json' with { type: 'json' };
 import londres from './reference/London-MoonsightingCommittee.json' with { type: 'json' };
 
-/** Bienne, la mosquée de référence du projet. */
+/** Bienne, l'organisation de référence du projet. */
 const BIENNE: PrayerSettings = {
 	latitude: 47.1368,
 	longitude: 7.2468,
@@ -189,7 +189,7 @@ describe('les réglages', () => {
 		expect(recommendedHighLatitudeRule(48.8566)).toBe('seventhofthenight');
 	});
 
-	it('changes the answer when the rule changes, which is why the mosque chooses', () => {
+	it('changes the answer when the rule changes, which is why the organisation chooses', () => {
 		const solstice = '2026-06-21' as IsoDate;
 		const milieu = computePrayerDay(solstice, BIENNE);
 		const septieme = computePrayerDay(solstice, {
@@ -206,7 +206,7 @@ describe('les réglages', () => {
 		);
 	});
 
-	it('shifts every prayer by the minutes the mosque asks for', () => {
+	it('shifts every prayer by the minutes the organisation asks for', () => {
 		const jour = '2026-09-21' as IsoDate;
 		const sans = computePrayerDay(jour, BIENNE);
 		const avec = computePrayerDay(jour, {
@@ -248,7 +248,7 @@ describe('les réglages', () => {
 	it('recognises its own names, and nothing else', () => {
 		expect(isCalculationMethod('MuslimWorldLeague')).toBe(true);
 		expect(isCalculationMethod('muslimworldleague')).toBe(false);
-		expect(isCalculationMethod('Mawaqit')).toBe(false);
+		expect(isCalculationMethod('Inconnue')).toBe(false);
 		expect(isMadhab('hanafi')).toBe(true);
 		expect(isMadhab('maliki')).toBe(false);
 		expect(isHighLatitudeRule('middleofthenight')).toBe(true);

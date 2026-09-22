@@ -72,7 +72,8 @@
 
 <p>
 	Les pouvoirs de super-admin exigent une session ouverte par passkey. Un lien magique seul ne les
-	donne jamais : une boîte aux lettres compromise ne doit pas suffire à ouvrir toutes les mosquées.
+	donne jamais : une boîte aux lettres compromise ne doit pas suffire à ouvrir toutes les
+	organisations.
 </p>
 
 <noscript>

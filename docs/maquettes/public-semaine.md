@@ -1,7 +1,7 @@
 # Vue Semaine
 
-C'est la page d'accueil publique d'une organisation, et la vue par défaut. C'est ce lien que la
-mosquée met dans sa bio Instagram et dans son groupe WhatsApp : il doit répondre à une seule
+C'est la page d'accueil publique d'une organisation, et la vue par défaut. C'est ce lien que
+l'organisation met dans sa bio Instagram et dans son groupe WhatsApp : il doit répondre à une seule
 question, « qu'est-ce qu'il y a cette semaine ? », en un coup d'œil, sur un téléphone.
 
 **Lien** : `/m/<identifiant>` dans la langue par défaut de l'organisation, `/m/<identifiant>/<langue>`
@@ -28,7 +28,7 @@ Un seul paragraphe, et il doit dire **pourquoi** :
 - aucun cours publié : `Le programme n'est pas encore publié.`
 - cours publiés mais aucune séance cette semaine : `Aucune séance cette semaine.`
 
-Ces quatre phrases sont distinctes à dessein. « Aucune séance » quand la mosquée est en vacances
+Ces quatre phrases sont distinctes à dessein. « Aucune séance » quand l'organisation est en vacances
 laisse croire à un oubli ; nommer la pause répond à la question avant qu'elle soit posée.
 
 ## Ce que la vue ne fait pas

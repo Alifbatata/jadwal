@@ -2,14 +2,15 @@
 
 ## Contexte
 
-Une mosquée tient une, deux, parfois trois prières du vendredi, à des heures différentes et dans des
-langues différentes. L'exemple que l'exploitant décrit : une première à 12:10 en arabe et en
-français, une seconde à 13:30 en arabe seulement. Les horaires changent selon la saison.
+Une organisation tient une, deux, parfois trois prières du vendredi, à des heures différentes et
+dans des langues différentes. L'exemple que l'exploitant décrit : une première à 12:10 en arabe et
+en français, une seconde à 13:30 en arabe seulement. Les horaires changent selon la saison.
 
-C'est **l'information la plus cherchée** sur la page d'une mosquée, et c'est celle qui se contredit
-le plus entre les canaux — l'affiche sur la porte, le groupe WhatsApp, la page Facebook, le site.
+C'est **l'information la plus cherchée** sur la page d'une organisation, et c'est celle qui se
+contredit le plus entre les canaux — l'affiche sur la porte, le groupe WhatsApp, la page Facebook,
+le site.
 
-Jusqu'à l'étape 7, le modèle ne la connaissait pas. Une mosquée pouvait créer un « cours » du
+Jusqu'à l'étape 7, le modèle ne la connaissait pas. Une organisation pouvait créer un « cours » du
 vendredi à 12:10, mais rien ne disait que c'était la Jumu'a, rien n'ordonnait deux sessions entre
 elles, et le mot affiché pour ses langues était « enseigné en », qui n'est pas le mot juste.
 
@@ -67,7 +68,7 @@ Quand des sessions existent, l'heure du Dhuhr du vendredi n'est plus affichée s
 pour ce qui en **dépend**, et c'est le point le moins évident de cet ADR.
 
 Un cours annoncé « 30 min après Dhuhr » un vendredi suivrait le Dhuhr astronomique — 12:34 — pendant
-que la mosquée prie à 13:30. Ce serait faux. La règle est donc :
+que l'organisation prie à 13:30. Ce serait faux. La règle est donc :
 
 > Le vendredi, l'**iqama du Dhuhr** est l'heure de la **dernière** session.
 
@@ -94,23 +95,23 @@ Décrit écran par écran dans `docs/maquettes/public-vendredi.md` et
   chaque semaine ne serait plus une réponse, il serait une question de plus.
 - Les sessions apparaissent **aussi** dans la vue Semaine, à leur place dans le vendredi, et dans la
   vue Tous les cours sous leur propre titre, en tête.
-- Dans l'espace des responsables, elles ont leur écran, distinct de la liste des cours : une mosquée
-  y vient deux fois par an, au changement de saison, et elle ne doit pas les chercher parmi vingt
-  cours.
+- Dans l'espace des responsables, elles ont leur écran, distinct de la liste des cours : une
+  organisation y vient deux fois par an, au changement de saison, et elle ne doit pas les chercher
+  parmi vingt cours.
 
 ## Conséquences
 
-- Une mosquée saisit ses sessions une fois et les corrige au changement de saison, comme elle
+- Une organisation saisit ses sessions une fois et les corrige au changement de saison, comme elle
   réimprime son panneau. L'écran lui recommande de **clore** la session et d'en ajouter une nouvelle
   plutôt que d'en modifier l'heure : les vendredis passés gardent alors la leur.
 - `docs/API.md` change : une séance porte `kind`, et une session porte en plus `jumuaOrder` et
   `sermonLanguages`. Un lecteur tiers peut donc les distinguer sans deviner.
 - Le flux agenda contient les sessions comme des événements récurrents ordinaires, à heure fixe :
   aucun traitement particulier, et un abonné les voit apparaître sans rien faire.
-- Un cours du vendredi ancré sur le Dhuhr change d'heure le jour où une mosquée saisit sa première
-  session. C'est voulu, et c'est la correction d'une erreur, pas une régression.
-- La limite : trois sessions au plus. Aucune mosquée connue n'en tient davantage, et la contrainte se
-  relève d'un chiffre le jour où l'une le fait.
+- Un cours du vendredi ancré sur le Dhuhr change d'heure le jour où une organisation saisit sa
+  première session. C'est voulu, et c'est la correction d'une erreur, pas une régression.
+- La limite : trois sessions au plus. Aucune organisation connue n'en tient davantage, et la
+  contrainte se relève d'un chiffre le jour où l'une le fait.
 
 ## Statut
 

@@ -119,9 +119,9 @@ describe('un calendrier valide', () => {
 		});
 	});
 
-	it('recognises the column names a mosque actually writes', () => {
+	it('recognises the column names an organisation actually writes', () => {
 		// Synonymes français et anglais, plus la colonne du lever du soleil, qu'on ignore : l'export
-		// de Mawaqit la contient et notre table n'en a pas.
+		// des logiciels de calendrier de prière la contient et notre table n'en a pas.
 		const texte = [
 			'Jour;Sobh;Chourouk;Dohr;Asr;Maghreb;Icha',
 			'2026-09-21;05:40;07:12;13:20;16:50;19:27;21:00'
@@ -300,7 +300,7 @@ describe('l’ordre jour/mois, tranché sur toute la colonne', () => {
 	});
 
 	it('reads a monthly file whose date column is only a day number', () => {
-		// C'est la forme que Mawaqit exporte : douze fichiers, un par mois. L'année et le mois ne
+		// C'est la forme que ces logiciels exportent : douze fichiers, un par mois. L'année et le mois ne
 		// sont pas dans le fichier — ils viennent de l'écran, jamais du nom du fichier.
 		const texte = [
 			'date,fajr,dhuhr,asr,maghrib,isha',

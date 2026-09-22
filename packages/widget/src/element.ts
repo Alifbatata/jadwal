@@ -1,8 +1,9 @@
-// `<jadwal-widget>` : le programme d'une mosquée, posé sur son propre site (ADR 0005 révisé).
+// `<jadwal-widget>` : le programme d'une organisation, posé sur son propre site (ADR 0005 révisé).
 //
-// Ce fichier est chargé sur le site de chaque mosquée. C'est le point le plus exposé du système, et
-// c'est pourquoi il ne fait qu'une chose : poser un cadre vers la page publique, et lui donner la
-// hauteur de son contenu. Il ne dessine aucune vue, ne lit aucune donnée, n'écrit rien nulle part.
+// Ce fichier est chargé sur le site de chaque organisation. C'est le point le plus exposé du
+// système, et c'est pourquoi il ne fait qu'une chose : poser un cadre vers la page publique, et lui
+// donner la hauteur de son contenu. Il ne dessine aucune vue, ne lit aucune donnée, n'écrit rien
+// nulle part.
 //
 // Aucune bibliothèque. Le widget provisoire de l'étape 0 était un composant Svelte 5 : il pesait
 // 12,48 Kio gzip pour afficher deux mots, parce qu'un moteur de rendu réactif y était embarqué.
@@ -17,11 +18,11 @@ export const TAG_NAME = 'jadwal-widget';
  */
 const MESSAGE = 'jadwal:height:1';
 
-/** Hauteur posée avant la première mesure : de quoi ne pas faire sauter la page de la mosquée. */
+/** Hauteur posée avant la première mesure : de quoi ne pas faire sauter la page de l'organisation. */
 const HAUTEUR_MINIMALE = 320;
 /**
- * Plafond de sécurité. Un cadre de plusieurs centaines de milliers de pixels rendrait la page de la
- * mosquée inutilisable, et c'est exactement ce qu'un message forgé chercherait à obtenir.
+ * Plafond de sécurité. Un cadre de plusieurs centaines de milliers de pixels rendrait la page de
+ * l'organisation inutilisable, et c'est exactement ce qu'un message forgé chercherait à obtenir.
  */
 const HAUTEUR_MAXIMALE = 20000;
 /**
@@ -68,7 +69,7 @@ const MOTS: Record<string, Mots> = {
 /**
  * L'origine du service, déduite de l'adresse du script lui-même.
  *
- * C'est la seule valeur que le widget ne peut pas demander à la mosquée : elle collerait une faute
+ * C'est la seule valeur que le widget ne peut pas demander à l'organisation : elle collerait une faute
  * de frappe une fois sur deux. Le script, lui, sait d'où il vient. Lue au chargement, parce que
  * `document.currentScript` n'a de valeur que pendant l'exécution du script.
  */
@@ -208,7 +209,7 @@ export class JadwalWidget extends HTMLElement {
 		}
 		lien.href = publique;
 
-		// Réécrire `src` d'un cadre existant ajoute une entrée à l'historique du site de la mosquée
+		// Réécrire `src` d'un cadre existant ajoute une entrée à l'historique du site de l'organisation
 		// (mesuré sur Chrome 153). On remplace donc le cadre au lieu de le renavigier.
 		this.#cadre?.remove();
 		const cadre = document.createElement('iframe');

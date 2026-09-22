@@ -1,7 +1,8 @@
 // Le flux agenda d'un seul cours (ADR 0028).
 //
-// La maquette place « ajouter à mon agenda » sur chaque cours, pas seulement sur la mosquée : une
-// personne qui suit le cours d'arabe du mardi n'a pas envie des quinze autres dans son téléphone.
+// La maquette place « ajouter à mon agenda » sur chaque cours, pas seulement sur l'organisation :
+// une personne qui suit le cours d'arabe du mardi n'a pas envie des quinze autres dans son
+// téléphone.
 //
 // Le fichier est construit par le **même** `buildCalendar` que le flux de l'organisation, avec une
 // liste d'un cours. Ce n'est donc pas un second export : il ne peut pas diverger de l'autre, et les

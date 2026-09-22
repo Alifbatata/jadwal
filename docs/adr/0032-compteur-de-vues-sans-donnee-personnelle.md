@@ -2,9 +2,9 @@
 
 ## Contexte
 
-Un responsable de mosquée veut savoir si son programme est lu, et surtout si le widget qu'il a collé
-sur le site de la mosquée fonctionne encore. C'est une question légitime, et c'est la seule que le
-produit ait besoin de trancher.
+Un responsable d'organisation veut savoir si son programme est lu, et surtout si le widget qu'il a
+collé sur le site de l'organisation fonctionne encore. C'est une question légitime, et c'est la
+seule que le produit ait besoin de trancher.
 
 Les réponses habituelles — une mesure d'audience, même « respectueuse de la vie privée » — reposent
 toutes sur quelque chose que nous avons promis de ne pas garder : une adresse IP, un cookie, un
@@ -22,18 +22,18 @@ Une table à quatre colonnes, et seulement quatre :
 
 | colonne           | ce qu'elle porte                     |
 | ----------------- | ------------------------------------ |
-| `organization_id` | la mosquée                           |
+| `organization_id` | l'organisation                       |
 | `day`             | la date **locale de l'organisation** |
 | `kind`            | `page`, `embed` ou `feed`            |
 | `count`           | un nombre                            |
 
 Pas de colonne d'horodatage — **pas même un `created_at`**. Il donnerait l'heure de la première vue
-du jour, et dans une mosquée de quartier, l'heure exacte à laquelle une personne a lu la page.
+du jour, et dans une organisation de quartier, l'heure exacte à laquelle une personne a lu la page.
 `packages/db/test/page-view.test.ts` vérifie la liste des colonnes : une colonne ajoutée par
 inadvertance ferait échouer la suite.
 
 Le jour est la date locale de l'organisation, et non la date UTC : sinon la soirée du vendredi d'une
-mosquée de Bienne tomberait au samedi une partie de l'année.
+organisation de Bienne tomberait au samedi une partie de l'année.
 
 ### Ce qui est lu, puis jeté
 
@@ -77,7 +77,7 @@ rapporterait, et il faudrait la réévaluer chaque semaine.
 
 L'écran d'accueil prévient quand le mode intégré **avait** des vues et n'en a plus depuis sept jours.
 La condition « avait des vues » n'est pas un détail : sans elle, la mention s'afficherait chez toutes
-les mosquées qui n'ont jamais collé le widget.
+les organisations qui n'ont jamais collé le widget.
 
 Et même ainsi, elle ne peut pas distinguer un widget cassé d'un widget retiré volontairement : le
 service n'a aucun signal pour cela, puisqu'il ne lit ni `Referer` ni domaine déclaré. L'écran dit
@@ -91,9 +91,9 @@ gardé en mémoire au-delà de la requête** : il n'y a ni file d'attente, ni ta
 
 **Révision de l'étape 8.** Jusque-là, le rôle public avait `SELECT`, `INSERT` et `UPDATE` sur la
 table, parce qu'un `count = count + 1` lit avant d'écrire. La lecture était bornée par une politique,
-mais elle restait une lecture, et elle portait sur **toutes** les organisations actives : une mosquée
-pouvait en théorie lire les chiffres d'une autre. Aucune donnée personnelle n'était en jeu — la table
-n'en contient pas — mais c'était une question ouverte, et elle est fermée.
+mais elle restait une lecture, et elle portait sur **toutes** les organisations actives : une
+organisation pouvait en théorie lire les chiffres d'une autre. Aucune donnée personnelle n'était en
+jeu — la table n'en contient pas — mais c'était une question ouverte, et elle est fermée.
 
 L'incrément passe désormais par `jadwal.count_view(organisation, jour, type)`, une fonction
 `SECURITY DEFINER` du propriétaire, au `search_path` figé, qui ne sait faire qu'une chose : ses trois
@@ -170,8 +170,8 @@ application ; c'est la relecture de la base après migration qui l'a montré.
 - Un responsable voit trois nombres sur sept et sur trente jours, et une mention quand son widget se
   tait. Il ne verra jamais de pages vues par personne, de provenance, ni de carte du monde : le
   service n'en a pas les données, et c'est le but.
-- Les chiffres sont des minorants, et l'écran le dit. Une mosquée qui compare ses chiffres à ceux
-  d'un autre outil trouvera les nôtres plus bas.
+- Les chiffres sont des minorants, et l'écran le dit. Une organisation qui compare ses chiffres à
+  ceux d'un autre outil trouvera les nôtres plus bas.
 - Le cadre posé à la main dans `/partager` porte `referrerpolicy="no-referrer"`, comme celui que crée
   le widget : nous n'écrivons pas la provenance, mais une promesse se tient mieux quand la donnée
   n'arrive pas.

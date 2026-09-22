@@ -88,9 +88,10 @@ export async function buildAgenda(options: AgendaOptions): Promise<Agenda | unde
 
 	const titre = courseId ? (courses[0]?.title ?? '') : null;
 	const ics = buildCalendar({
-		// Le nom du calendrier est ce que l'application d'agenda affiche dans sa liste : « Mosquée
-		// de Madretsch » pour tout le programme, « Mosquée de Madretsch — Arabe, niveau 1 » pour un
-		// cours. Sans le nom de l'organisation, deux abonnements de deux mosquées se ressembleraient.
+		// Le nom du calendrier est ce que l'application d'agenda affiche dans sa liste :
+		// « Association Belvédère » pour tout le programme, « Association Belvédère — Arabe,
+		// niveau 1 » pour un cours. Sans le nom de l'organisation, deux abonnements de deux
+		// organisations se ressembleraient.
 		name: titre ? `${organisation.name} — ${titre}` : organisation.name,
 		timeZone: organisation.time_zone,
 		now,

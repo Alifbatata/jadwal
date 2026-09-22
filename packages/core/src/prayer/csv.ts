@@ -4,12 +4,12 @@
 // colonnes. Les deux bibliothèques propres du domaine pèsent 270 Kio et 1,6 Mio, pour un besoin qui
 // tient en une cinquantaine de lignes : « aucune dépendance sans besoin immédiat » tranche.
 //
-// **Pourquoi pas « le format Mawaqit ».** Il n'existe publiquement rien qui fixe les colonnes, le
-// séparateur ou l'encodage de son export. Ce qui est établi : c'est du CSV, il se télécharge en
-// **douze fichiers mensuels**, et il contient les cinq prières plus le lever du soleil. Le reste
-// circule sans source. Nous documentons donc **notre** format, et nous rendons le lecteur tolérant
-// par reconnaissance — synonymes de colonnes, séparateur deviné — plutôt que par devinette sur une
-// spécification imaginaire.
+// **Pourquoi pas « le format de calendrier le plus répandu ».** Il n'existe publiquement rien qui
+// fixe les colonnes, le séparateur ou l'encodage de l'export des logiciels de calendrier de prière.
+// Ce qui est établi : c'est du CSV, il se télécharge en **douze fichiers mensuels**, et il contient
+// les cinq prières plus le lever du soleil. Le reste circule sans source. Nous documentons donc
+// **notre** format, et nous rendons le lecteur tolérant par reconnaissance — synonymes de colonnes,
+// séparateur deviné — plutôt que par devinette sur une spécification imaginaire.
 
 import { addDays, isoDateToDays, parseIsoDate } from '../dates.js';
 import type { IsoDate, LocalTime, PrayerDay } from '../types.js';
@@ -108,7 +108,8 @@ const COLONNES: Record<string, readonly string[]> = {
 	asr: ['asr', 'assr', 'aser'],
 	maghrib: ['maghrib', 'maghreb', 'magrib', 'coucher'],
 	isha: ['isha', 'icha', 'ishaa', 'ichaa', 'isya'],
-	// Reconnue pour être **ignorée** : l'export de Mawaqit la contient, notre table n'en a pas.
+	// Reconnue pour être **ignorée** : l'export des logiciels de calendrier de prière la contient,
+	// notre table n'en a pas.
 	shuruq: ['shuruq', 'chourouk', 'sunrise', 'lever', 'shourouq']
 };
 
@@ -172,7 +173,8 @@ function decomposerDate(valeur: string, anneeParDefaut: number | undefined): Dat
 			iso: false
 		};
 	}
-	// Un fichier mensuel de Mawaqit n'a qu'un quantième : l'année et le mois viennent de l'écran.
+	// Un fichier mensuel de ces logiciels n'a qu'un quantième : l'année et le mois viennent de
+	// l'écran.
 	const seul = /^(\d{1,2})$/.exec(propre);
 	if (seul && anneeParDefaut !== undefined) {
 		return { a: 0, b: Number(seul[1]), annee: anneeParDefaut, iso: false };

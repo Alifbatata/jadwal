@@ -3,10 +3,10 @@
 ## Contexte
 
 `jadwal` est alimenté par les responsables d'une organisation : en pratique, 2 à 3 responsables
-par mosquée. Les seules données personnelles du système sont les emails de ces responsables ;
+par organisation. Les seules données personnelles du système sont les emails de ces responsables ;
 côté public, il n'y a aucune donnée personnelle, aucun cookie et aucune inscription aux cours.
 
-La V1 vise les mosquées, gratuitement. Plus tard, d'autres organisations, en payant. Aucun
+La V1 vise les organisations, gratuitement. Le service payant viendra plus tard. Aucun
 paiement n'est codé en V1, mais le modèle doit prévoir dès le départ un plan par organisation et
 la possibilité d'offrir le service à une organisation.
 

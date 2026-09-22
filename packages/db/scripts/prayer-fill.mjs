@@ -43,7 +43,7 @@ export async function fillAllPrayerDays({ overrides = {}, now = new Date() } = {
 	const rapport = [];
 	try {
 		// Le propriétaire n'écrit que sous son drapeau d'entretien (ADR 0019). Une seule transaction
-		// par organisation : une mosquée dont le calcul échoue n'empêche pas les autres d'aboutir.
+		// par organisation : celle dont le calcul échoue n'empêche pas les autres d'aboutir.
 		const organisations = await db.execute(sql`
 			select o."id", o."slug", o."time_zone", s."latitude", s."longitude", s."method",
 				s."madhab", s."high_latitude_rule", s."fajr_adjustment", s."dhuhr_adjustment",

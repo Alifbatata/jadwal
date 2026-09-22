@@ -132,7 +132,7 @@ export async function fillPrayerDays(
  * Le jour où le calendrier importé s'arrête, ou `null` s'il n'y en a aucun.
  *
  * L'écran d'accueil s'en sert pour prévenir trente jours à l'avance : quand l'import s'épuise, le
- * calcul prend le relais sans rien dire, et une mosquée qui tient à ses propres heures doit
+ * calcul prend le relais sans rien dire, et une organisation qui tient à ses propres heures doit
  * l'apprendre avant, pas après.
  */
 export async function lastImportedDay(
@@ -165,7 +165,7 @@ type Priere = (typeof PRIERES)[number];
  * l'import pour toujours. Ici, aucune source n'en détruit une autre, et la priorité tient en un
  * `coalesce` — un seul endroit à lire pour savoir qui gagne.
  *
- * L'iqama est calculée dans la même requête : une heure fixe si la mosquée en a posé une, sinon
+ * L'iqama est calculée dans la même requête : une heure fixe si l'organisation en a posé une, sinon
  * l'heure du soleil **résolue** plus le décalage. `time + interval` repasse par minuit tout seul,
  * ce qu'il faut pour une Isha tardive.
  *
@@ -179,8 +179,8 @@ export function resolvedPrayerDaysQuery(organizationId: string, from: IsoDate, t
 	const colonnes = PRIERES.flatMap((priere) => [
 		sql`${soleil(priere)}::text as ${sql.identifier(priere)}`,
 		// D'où vient l'heure, prière par prière. L'écran des réglages le montre sur sept jours :
-		// une mosquée qui mélange les trois sources doit pouvoir voir laquelle a gagné, sans avoir
-		// à le déduire.
+		// une organisation qui mélange les trois sources doit pouvoir voir laquelle a gagné, sans
+		// avoir à le déduire.
 		sql`case
 			when p.${sql.identifier(priere)} is not null then 'manual'
 			when d.${sql.identifier(priere)} is not null then d."source"

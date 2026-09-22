@@ -1,5 +1,5 @@
 <script lang="ts">
-	// Voir `+page.server.ts` : cette page imite le site d'une mosquée. Elle n'a ni l'en-tête de
+	// Voir `+page.server.ts` : cette page imite le site d'une organisation. Elle n'a ni l'en-tête de
 	// l'espace des responsables, ni celui des pages publiques — c'est tout l'intérêt.
 	let { data } = $props();
 </script>
@@ -14,11 +14,13 @@
 
 <div class="site">
 	<header>
-		<h1>Mosquée d’essai</h1>
+		<h1>Organisation d’essai</h1>
 		<p>
-			Cette page n’appartient pas à jadwal : elle fait semblant d’être le site d’une mosquée, pour
-			qu’on voie le widget dans les conditions où il servira. À vérifier de ses yeux avant chaque
-			publication : la hauteur suit le contenu, il n’y a <strong>aucune barre de défilement</strong>
+			Cette page n’appartient pas à jadwal : elle fait semblant d’être le site d’une organisation,
+			pour qu’on voie le widget dans les conditions où il servira. À vérifier de ses yeux avant
+			chaque publication : la hauteur suit le contenu, il n’y a <strong
+				>aucune barre de défilement</strong
+			>
 			à l’intérieur d’un cadre, et les deux widgets du bas ne se marchent pas dessus.
 		</p>
 		<p class="petit">
@@ -43,7 +45,7 @@
 	</header>
 
 	<section id="essai-1">
-		<h2>1. Le code tel qu’on le donne à une mosquée</h2>
+		<h2>1. Le code tel qu’on le donne à une organisation</h2>
 		<p>Deux lignes, rien d’autre. La vue Semaine, dans la langue de l’organisation.</p>
 		<jadwal-widget org={data.org}>
 			<a href="/m/{data.org}">Voir le programme des cours</a>

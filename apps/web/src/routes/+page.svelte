@@ -54,7 +54,7 @@
 		Votre calendrier importé s’arrête le {shortDate(data.prieres.finDeLImport as IsoDate)}, dans {data
 			.prieres.joursRestants} jours.
 		{#if data.prieres.calculPossible}
-			Le calcul prendra ensuite le relais, avec les réglages de votre mosquée.
+			Le calcul prendra ensuite le relais, avec les réglages de votre organisation.
 		{:else}
 			Après cette date, les séances qui suivent une prière s’afficheront sans heure.
 		{/if}

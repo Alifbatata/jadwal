@@ -11,8 +11,8 @@ site qui exige une empreinte d'intégrité.
 
 ```html
 <script src="https://<hôte>/widget/jadwal-widget.js"></script>
-<jadwal-widget org="ma-mosquee">
-	<a href="https://<hôte>/m/ma-mosquee">Voir le programme des cours</a>
+<jadwal-widget org="mon-organisation">
+	<a href="https://<hôte>/m/mon-organisation">Voir le programme des cours</a>
 </jadwal-widget>
 ```
 
@@ -57,11 +57,11 @@ Le paramètre `?embed=1` est posé par le widget, et par lui seul. Il change tro
 d'autre : le contenu, l'en-tête, les vues, les filtres et les langues sont exactement les mêmes.
 
 1. **Un script**, un seul, `/widget/embed.js`. Il annonce la hauteur, et il fait naviguer par
-   remplacement pour ne pas empiler d'entrées dans l'historique du site de la mosquée.
+   remplacement pour ne pas empiler d'entrées dans l'historique du site de l'organisation.
 2. **Trois règles de style** : plus de barre de défilement interne, une gouttière de barre stable,
    et un contexte de bloc sur le corps pour qu'aucune marge ne sorte de la boîte mesurée.
 3. **La mention `Proposé gratuitement par jadwal` disparaît du pied de la page** : c'est le pied du
-   widget qui la porte, sous le cadre, donc sur le site de la mosquée. L'écrire deux fois à dix
+   widget qui la porte, sous le cadre, donc sur le site de l'organisation. L'écrire deux fois à dix
    pixels d'écart n'apprendrait rien.
 
 Le lien `S'abonner au calendrier` reste, lui, dans le pied de la page.
@@ -75,13 +75,13 @@ Le lien `S'abonner au calendrier` reste, lui, dans le pied de la page.
 - **Il ne prend pas les couleurs du site.** Rien n'est hérité à travers un cadre ; le programme
   s'affiche comme une carte posée sur la page.
 - **Il ne réécrit jamais le `src` d'un cadre existant** : sur un changement d'attribut, il remplace
-  le cadre. Réécrire `src` ajouterait une entrée à l'historique du site de la mosquée.
+  le cadre. Réécrire `src` ajouterait une entrée à l'historique du site de l'organisation.
 
 ## La page d'essai d'intégration
 
 `/widget/test`, servie par le projet, porte `noindex` et n'est liée depuis nulle part. Elle imite le
-site d'une mosquée — une autre police, d'autres couleurs, pas notre en-tête — et charge le widget
-par son adresse versionnée, avec son empreinte et `crossorigin`.
+site d'une organisation — une autre police, d'autres couleurs, pas notre en-tête — et charge le
+widget par son adresse versionnée, avec son empreinte et `crossorigin`.
 
 Six configurations, dans cet ordre : le code ordinaire ; l'allemand sur la vue Tous les cours ;
 l'arabe sur la vue Mois ; deux widgets côte à côte ; des attributs absurdes ; aucun `org`.

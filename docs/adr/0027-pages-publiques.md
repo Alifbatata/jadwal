@@ -2,16 +2,16 @@
 
 ## Contexte
 
-La page publique d'une mosquée est le lien qu'elle met dans sa bio Instagram, dans son groupe
-WhatsApp et sur sa fiche Mawaqit. Elle est ouverte sur un téléphone, souvent sur un réseau mobile,
-par quelqu'un qui veut savoir s'il y a cours ce soir.
+La page publique d'une organisation est le lien qu'elle met dans sa bio Instagram, dans son groupe
+WhatsApp et sur ses autres fiches en ligne. Elle est ouverte sur un téléphone, souvent sur un
+réseau mobile, par quelqu'un qui veut savoir s'il y a cours ce soir.
 
 Le cadrage en fixe le contenu (trois vues, filtres par public, détail déplié sur place) et
 l'ADR 0007 les langues (fr, de, it, ar, l'arabe en RTL complet avec des chiffres latins).
 L'ADR 0009 fixe le reste : aucun cookie, aucun traceur, aucune donnée personnelle côté public.
 
 Trois questions restaient ouvertes : où mettre la langue, combien de JavaScript, et jusqu'où ouvrir
-la politique de cadre pour qu'une mosquée puisse intégrer sa page dans son propre site.
+la politique de cadre pour qu'une organisation puisse intégrer sa page dans son propre site.
 
 ## Décision
 
@@ -44,10 +44,10 @@ démonstration.
 > en mode intégré ». Quand la page est affichée dans le cadre du widget — et seulement alors, par le
 > paramètre `?embed=1` —, elle charge **un** fichier de notre propre origine, qui fait deux choses et
 > pas une de plus : annoncer sa hauteur au cadre, et naviguer par remplacement pour ne pas empiler
-> d'entrées dans l'historique du site de la mosquée. Aucune des deux ne peut se faire autrement :
-> aucune plateforme ne dimensionne un cadre d'un autre domaine, et une navigation ordinaire dans un
-> cadre est mesurément ajoutée à l'historique du haut. La page **non** intégrée n'a toujours aucun
-> script, et un test l'affirme toujours. Les raisons sont dans l'ADR 0005 révisé.
+> d'entrées dans l'historique du site de l'organisation. Aucune des deux ne peut se faire
+> autrement : aucune plateforme ne dimensionne un cadre d'un autre domaine, et une navigation
+> ordinaire dans un cadre est mesurément ajoutée à l'historique du haut. La page **non** intégrée
+> n'a toujours aucun script, et un test l'affirme toujours. Les raisons sont dans l'ADR 0005 révisé.
 
 ### Rien d'un autre domaine, y compris les polices
 
@@ -62,9 +62,9 @@ du tout. C'est structurel plutôt que promis — il n'y a rien à oublier de ne 
 
 `frame-ancestors *` sur `/m/**`, `frame-ancestors 'none'` partout ailleurs.
 
-**Ce que cela ouvre** : n'importe quel site peut afficher la page d'une mosquée dans une iframe.
-C'est précisément l'usage voulu, et il ne demande aucune inscription préalable d'un domaine chez
-nous — une mosquée colle son programme sur son propre site sans nous écrire.
+**Ce que cela ouvre** : n'importe quel site peut afficher la page d'une organisation dans une
+iframe. C'est précisément l'usage voulu, et il ne demande aucune inscription préalable d'un domaine
+chez nous — une organisation colle son programme sur son propre site sans nous écrire.
 
 **Ce que cela n'ouvre pas** : la page n'a ni cookie, ni session, ni formulaire, ni action. Il n'y a
 donc rien à détourner par un clic mal placé, et rien qu'un cadre puisse faire qu'un visiteur ne
@@ -91,7 +91,7 @@ Un cours ancré sur une prière dont l'heure n'est pas connue affiche « Après 
 ## Conséquences
 
 - La page se lit sur un téléphone en réseau lent, et elle se lit entièrement sans JavaScript.
-- Elle s'intègre dans le site d'une mosquée sans configuration de notre côté.
+- Elle s'intègre dans le site d'une organisation sans configuration de notre côté.
 - Elle est indexable : c'est la seule partie du service qui ne porte pas `noindex`.
 - Une page par cours existe pour le partage et pour les moteurs, avec ses métadonnées produites côté
   serveur — et échappées comme le reste : une apostrophe dans un titre ne doit pas plus casser une

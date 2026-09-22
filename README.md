@@ -2,11 +2,27 @@
 
 **Statut : en développement, pas encore utilisable.**
 
-`jadwal` (« horaire » en arabe) permet à une mosquée, puis plus tard à toute organisation, de publier
-le programme de ses cours récurrents à partir d'une seule saisie. Les responsables saisissent une
-fois ; en sortent un widget intégrable au site de la mosquée, une page publique, un flux agenda
-(ICS) et des messages WhatsApp prêts à coller. Gratuit pour les mosquées. Le même code fonctionne
-en service hébergé par l'auteur ou installé par l'organisation sur son propre serveur.
+`jadwal` (« horaire » en arabe) permet à une organisation de publier le programme de ses cours
+récurrents à partir d'une seule saisie. Associations, écoles, clubs, entreprises, lieux de culte :
+toute organisation qui répète un programme et doit le faire savoir.
+
+Les responsables saisissent une fois ; en sortent un widget intégrable au site de l'organisation, une
+page publique, un flux agenda (ICS) et des messages WhatsApp prêts à coller. Le service est gratuit.
+Le même code fonctionne en service hébergé par l'auteur ou installé par l'organisation sur son propre
+serveur.
+
+Ce qu'il sait faire :
+
+- des **cours récurrents** : toutes les semaines, une semaine sur deux, un jour du mois, ou des dates
+  choisies ; avec leurs annulations, leurs déplacements et leurs pauses ;
+- une **page publique** en quatre langues, sans aucun script ni aucune ressource extérieure ;
+- un **widget** à coller sur votre site, en une balise ;
+- un **flux agenda** que chacun peut suivre depuis son téléphone ;
+- des **messages prêts à coller** pour annoncer un changement ;
+- un **compteur de consultations** qui ne retient aucune donnée personnelle ;
+- en option, un **module d'heures de prière** : les horaires d'un lieu de culte, saisis, importés ou
+  calculés, avec l'iqama et la prière du vendredi. Il est désactivé par défaut, et une organisation
+  qui ne l'active pas ne le voit nulle part.
 
 Le cadrage complet est dans [`docs/CADRAGE.md`](docs/CADRAGE.md), les décisions dans
 [`docs/adr/`](docs/adr/), l'état d'avancement dans [`ETAT-PROJET.md`](ETAT-PROJET.md).
@@ -51,8 +67,8 @@ Les variables d'environnement sont documentées dans `.env.example`. La base de 
   version modifiée en service réseau doit en proposer le code source aux utilisateurs (section 13 de
   l'AGPL) ; l'instance officielle affichera un lien vers le dépôt.
 - Le paquet `packages/widget` est sous **MIT** (fichier [`packages/widget/LICENSE`](packages/widget/LICENSE),
-  même titulaire) : c'est le script que les sites des mosquées collent chez eux, et aucun site qui le
-  colle ne doit avoir de doute sur ses obligations.
+  même titulaire) : c'est le script que les sites des organisations collent chez eux, et aucun site
+  qui le colle ne doit avoir de doute sur ses obligations.
 - Les contributions externes sont soumises à un accord de contribution (CLA), voir
   [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
@@ -71,9 +87,10 @@ Les variables d'environnement sont documentées dans `.env.example`. La base de 
 
 ## English summary
 
-`jadwal` ("schedule" in Arabic) lets a mosque, and later any organisation, publish its recurring
-class schedule from a single entry. Staff enter the programme once; out come an embeddable widget,
-a public page, an ICS calendar feed and ready-to-paste WhatsApp messages. Free for mosques. The same
-code runs as a hosted service or self-hosted with Docker Compose. Status: under development, not
-usable yet. Licence: AGPL-3.0-or-later for the repository, MIT for `packages/widget`. External
-contributions require a CLA.
+`jadwal` ("schedule" in Arabic) lets any organisation publish its recurring class schedule from a
+single entry: associations, schools, clubs, companies, places of worship. Staff enter the programme
+once; out come an embeddable widget, a public page, an ICS calendar feed and ready-to-paste WhatsApp
+messages. The service is free. An optional prayer-times module is available for places of worship,
+switched off by default. The same code runs as a hosted service or self-hosted with Docker Compose.
+Status: under development, not usable yet. Licence: AGPL-3.0-or-later for the repository, MIT for
+`packages/widget`. External contributions require a CLA.

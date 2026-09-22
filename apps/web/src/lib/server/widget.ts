@@ -1,4 +1,4 @@
-// Ce que l'application sert au site d'une mosquée : le widget, et le script du mode intégré.
+// Ce que l'application sert au site d'une organisation : le widget, et le script du mode intégré.
 //
 // Les deux fichiers sont incorporés à la construction plutôt que lus sur le disque à chaud. Le
 // serveur de production ne contient que `apps/web/build` : `packages/widget/dist` n'y est pas, et
@@ -48,11 +48,11 @@ export const EMBED_ETAG = `"${createHash('sha256').update(octets(EMBED)).digest(
 /**
  * Toutes les versions déjà publiées, incorporées au serveur à la construction (ADR 0005).
  *
- * **Aucune version publiée n'est jamais retirée.** Une mosquée qui a collé l'adresse immuable — la
- * seule qui porte une empreinte d'intégrité — la garde des années ; cesser de la servir ferait
- * disparaître son programme de son site, sans message. Le dossier `published/` du paquet est donc
- * le registre, il n'est jamais vidé, et `tests/widget.test.ts` le relit pour échouer si l'une de
- * ses versions cessait d'être servie.
+ * **Aucune version publiée n'est jamais retirée.** Une organisation qui a collé l'adresse
+ * immuable — la seule qui porte une empreinte d'intégrité — la garde des années ; cesser de la
+ * servir ferait disparaître son programme de son site, sans message. Le dossier `published/` du
+ * paquet est donc le registre, il n'est jamais vidé, et `tests/widget.test.ts` le relit pour
+ * échouer si l'une de ses versions cessait d'être servie.
  *
  * La version courante s'y ajoute d'elle-même : `pnpm build` du paquet l'archive.
  */
@@ -70,7 +70,7 @@ export const VERSIONS: ReadonlyMap<string, string> = new Map<string, string>([
 	[WIDGET_VERSION, WIDGET]
 ]);
 
-/** Le chemin de l'adresse versionnée, à mettre dans le code que la mosquée colle. */
+/** Le chemin de l'adresse versionnée, à mettre dans le code que l'organisation colle. */
 export function widgetPath(): string {
 	return `/widget/${WIDGET_VERSION}/jadwal-widget.js`;
 }

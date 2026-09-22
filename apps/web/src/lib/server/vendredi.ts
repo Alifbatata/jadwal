@@ -8,7 +8,7 @@
 //
 // Le mécanisme est donc celui de l'étape 8, sans rien d'autre : un cours « après Dhuhr » suit déjà
 // l'iqama quand elle existe. Sans cette substitution, un cours du vendredi s'annoncerait à 12:34
-// pendant que la mosquée prie à 13:30.
+// pendant que l'organisation prie à 13:30.
 //
 // **Quand il y a plusieurs sessions, c'est la dernière qui vaut.** C'est le moment où les gens sont
 // encore là : après la première, une partie de l'assemblée est repartie et la seconde n'a pas

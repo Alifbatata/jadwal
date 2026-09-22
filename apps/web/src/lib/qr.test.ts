@@ -6,7 +6,7 @@
 // l'encodage est juste ; s'ils divergent, l'un des deux a tort et le test le dit.
 //
 // Le décodeur ne couvre que ce dont l'écran a besoin : mode octet, version 1 à 6, un seul bloc de
-// correction. C'est assez pour un lien de mosquée, et ce qui dépasse échoue bruyamment.
+// correction. C'est assez pour un lien d'organisation, et ce qui dépasse échoue bruyamment.
 
 import { describe, expect, it } from 'vitest';
 import { qrMatrix, qrSvg } from './qr.js';
@@ -93,7 +93,7 @@ function decode(matrix: boolean[][]): string[] {
 	);
 }
 
-const LIEN = 'https://jadwal.test/m/madretsch';
+const LIEN = 'https://jadwal.test/m/belvedere';
 
 describe('la matrice', () => {
 	it('carries exactly the text it was given, read back by an independent decoder', () => {

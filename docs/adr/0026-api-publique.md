@@ -4,8 +4,8 @@
 
 Le cadrage promet quatre sorties à partir d'une seule saisie : un widget, une page publique, un flux
 agenda et des messages prêts à coller. Les trois premières lisent les mêmes données. Le widget de
-l'étape 6 tournera sur le site d'une mosquée, donc sur une autre origine, et une mosquée qui
-s'auto-héberge servira la sienne. Il faut donc un contrat, et il faut qu'il tienne.
+l'étape 6 tournera sur le site d'une organisation, donc sur une autre origine, et une organisation
+qui s'auto-héberge servira la sienne. Il faut donc un contrat, et il faut qu'il tienne.
 
 Deux questions se posaient avant d'écrire une seule route.
 
@@ -56,7 +56,7 @@ Toutes les occurrences viennent de `@jadwal/core`. Aucune route ne calcule de da
 `ETag` fort et `Cache-Control` explicite, `304` sur `If-None-Match`. Deux minutes de fraîcheur pour
 le programme, cinq pour les réglages, une heure pour le flux agenda — qui annonce déjà ce
 rafraîchissement dans le fichier —, plus une journée de `stale-while-revalidate` : une panne du
-serveur ne blanchit pas la page d'une mosquée.
+serveur ne blanchit pas la page d'une organisation.
 
 **L'empreinte est calculée à partir des données servies : le plus récent horodatage _et_ le nombre
 de lignes** de chaque table qui alimente la réponse. Le comptage n'est pas une précaution de style :

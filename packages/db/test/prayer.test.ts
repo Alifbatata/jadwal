@@ -81,7 +81,7 @@ describe('les réglages traduits pour le calcul', () => {
 		// Une base modifiée à la main ne doit pas faire tomber la tâche de nuit de toutes les
 		// organisations : la valeur incompréhensible est traitée comme absente.
 		const traduits = toPrayerSettings(
-			reglages({ method: 'Mawaqit', madhab: 'maliki', highLatitudeRule: 'aucune' })
+			reglages({ method: 'Inconnue', madhab: 'maliki', highLatitudeRule: 'aucune' })
 		);
 		expect(traduits).toMatchObject({
 			method: 'MuslimWorldLeague',

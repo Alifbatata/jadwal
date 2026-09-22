@@ -111,8 +111,9 @@ function lienAvecSuffixe(
  *
  * `x-default` désigne la langue par défaut de l'organisation — c'est-à-dire, pour elle, l'adresse
  * courte `/m/<identifiant>`. C'est un choix : la recommandation habituelle est de canonicaliser
- * vers l'adresse explicite `/m/<identifiant>/<langue>`, mais l'adresse courte est celle que la
- * mosquée met dans sa bio et sur son affiche. C'est donc elle qui doit porter le référencement.
+ * vers l'adresse explicite `/m/<identifiant>/<langue>`, mais l'adresse courte est celle que
+ * l'organisation met dans sa bio et sur son affiche. C'est donc elle qui doit porter le
+ * référencement.
  */
 export interface Alternatif {
 	hreflang: string;

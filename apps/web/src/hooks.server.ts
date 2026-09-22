@@ -17,9 +17,9 @@ import { compter } from '$lib/server/vues.js';
  * Les routes que l'on accepte de voir intégrées dans un cadre d'un autre site : les pages publiques
  * d'une organisation, et elles seules (ADR 0027).
  *
- * Ce que cela ouvre : n'importe quel site peut afficher la page d'une mosquée dans une iframe, ce
- * qui est précisément l'usage voulu — une mosquée colle son programme sur son propre site sans
- * attendre que nous inscrivions son domaine quelque part.
+ * Ce que cela ouvre : n'importe quel site peut afficher la page d'une organisation dans une iframe,
+ * ce qui est précisément l'usage voulu — une organisation colle son programme sur son propre site
+ * sans attendre que nous inscrivions son domaine quelque part.
  *
  * Ce que cela n'ouvre pas : la page n'a ni cookie, ni session, ni formulaire, ni action. Il n'y a
  * donc rien à détourner par un clic mal placé, et rien qu'un cadre puisse faire qu'un visiteur ne
@@ -35,14 +35,15 @@ const EMBEDDABLE = /^\/m\/[^/]+/;
  * même pas regardé, donc il n'y a rien à oublier de ne pas lire. Cela évite aussi de construire
  * l'instance de connexion et d'ouvrir une transaction pour une page qui n'en a aucun besoin
  * (ADR 0009, ADR 0027). Le widget compte autant que le reste : il est chargé une fois par visiteur
- * de chaque site de mosquée, et une lecture de session par chargement serait une lecture de trop.
+ * de chaque site d'organisation, et une lecture de session par chargement serait une lecture de
+ * trop.
  */
 const PUBLIC = /^\/(m\/|api\/v1\/|widget\/)/;
 
 /**
  * Les réponses qu'un autre site a le droit d'incorporer. `Cross-Origin-Resource-Policy` n'est
  * vérifié que pour les requêtes sans CORS — c'est-à-dire précisément le code court, sans
- * `crossorigin`, que colle une mosquée. Sans cet en-tête, un site qui impose
+ * `crossorigin`, que colle une organisation. Sans cet en-tête, un site qui impose
  * `Cross-Origin-Embedder-Policy: require-corp` le bloquerait (ADR 0005).
  */
 const CROSS_ORIGIN = /^\/(m\/[^/]+|widget\/)/;

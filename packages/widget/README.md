@@ -1,8 +1,8 @@
 # @jadwal/widget
 
-Le custom element `<jadwal-widget org="...">` à coller sur le site d'une mosquée. Licence MIT (voir
-`LICENSE` dans ce dossier) : un site qui colle le script n'a d'autre obligation que de conserver
-l'avis de copyright et de licence s'il redistribue le fichier.
+Le custom element `<jadwal-widget org="...">` à coller sur le site d'une organisation. Licence MIT
+(voir `LICENSE` dans ce dossier) : un site qui colle le script n'a d'autre obligation que de
+conserver l'avis de copyright et de licence s'il redistribue le fichier.
 
 **Ce fichier ne dessine rien.** Il pose un cadre vers la page publique `/m/<identifiant>` et lui
 donne la hauteur de son contenu. Les vues, les filtres et les quatre langues sont ceux de la page,
@@ -11,15 +11,15 @@ révisé à l'étape 6.
 
 Aucune bibliothèque, aucune dépendance à l'exécution : **1,71 Kio gzip**, mesurés.
 
-Pour un responsable de mosquée, la marche à suivre est dans `docs/INTEGRATION.md`. Ce fichier-ci
+Pour un responsable d'organisation, la marche à suivre est dans `docs/INTEGRATION.md`. Ce fichier-ci
 s'adresse à qui travaille sur le paquet.
 
 ## Le code à coller
 
 ```html
 <script src="https://exemple.invalid/widget/jadwal-widget.js"></script>
-<jadwal-widget org="ma-mosquee">
-	<a href="https://exemple.invalid/m/ma-mosquee">Voir le programme des cours</a>
+<jadwal-widget org="mon-organisation">
+	<a href="https://exemple.invalid/m/mon-organisation">Voir le programme des cours</a>
 </jadwal-widget>
 ```
 
@@ -28,7 +28,7 @@ script n'a pas pu s'exécuter — JavaScript désactivé, script bloqué, emprei
 plus. L'élément n'ayant aucun `<slot>`, ce contenu disparaît dès qu'il est défini.
 
 L'origine du service est déduite de l'adresse du script lui-même : c'est la seule valeur qu'on ne
-peut pas demander à une mosquée sans qu'elle la recopie de travers une fois sur deux.
+peut pas demander à une organisation sans qu'elle la recopie de travers une fois sur deux.
 
 ## Les attributs
 

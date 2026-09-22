@@ -1,19 +1,19 @@
 # API publique de jadwal
 
 Le programme des cours d'une organisation, en lecture seule, en JSON. C'est un **contrat** : le
-widget en dépend, et une mosquée qui s'auto-héberge aussi. Les champs décrits ici ne disparaissent
-pas sans un changement de version.
+widget en dépend, et une organisation qui s'auto-héberge aussi. Les champs décrits ici ne
+disparaissent pas sans un changement de version.
 
 Écrit pour quelqu'un qui n'a pas le code sous les yeux. Les décisions sont dans l'ADR 0026.
 
 ## En deux lignes
 
 ```
-GET https://<hôte>/api/v1/organisations/madretsch/schedule?from=2026-09-21&to=2026-09-27&lang=fr
+GET https://<hôte>/api/v1/organisations/belvedere/schedule?from=2026-09-21&to=2026-09-27&lang=fr
 ```
 
 Pas de clé, pas de compte, pas de cookie. Une organisation est désignée par son **identifiant
-d'URL** (`madretsch`), jamais par un identifiant interne.
+d'URL** (`belvedere`), jamais par un identifiant interne.
 
 ## Ce qui est servi, et ce qui ne l'est jamais
 
@@ -63,18 +63,18 @@ lisible mais supérieure à 366 est **refusée**, avec un message qui dit la bor
 intention, et la borner en silence reviendrait à servir autre chose que ce qui est demandé.
 
 ```
-GET /api/v1/organisations/madretsch/schedule?from=2026-09-01&to=2027-06-30&maxDays=366
+GET /api/v1/organisations/belvedere/schedule?from=2026-09-01&to=2027-06-30&maxDays=366
 ```
 
 ## Les réglages d'affichage
 
-`GET /api/v1/organisations/madretsch`
+`GET /api/v1/organisations/belvedere`
 
 ```json
 {
 	"organization": {
-		"slug": "madretsch",
-		"name": "Mosquée de Madretsch",
+		"slug": "belvedere",
+		"name": "Association Belvédère",
 		"timeZone": "Europe/Zurich",
 		"accentColor": "#0f766e",
 		"languages": ["fr", "de", "it", "ar"],
@@ -96,13 +96,13 @@ GET /api/v1/organisations/madretsch/schedule?from=2026-09-01&to=2027-06-30&maxDa
 
 ## Le programme
 
-`GET /api/v1/organisations/madretsch/schedule?from=2026-09-21&to=2026-09-23`
+`GET /api/v1/organisations/belvedere/schedule?from=2026-09-21&to=2026-09-23`
 
 ```json
 {
 	"organization": {
-		"slug": "madretsch",
-		"name": "Mosquée de Madretsch",
+		"slug": "belvedere",
+		"name": "Association Belvédère",
 		"timeZone": "Europe/Zurich"
 	},
 	"language": "fr",
@@ -179,11 +179,11 @@ pas une annulation : la séance n'existe pas.
 
 ## Les cours
 
-`GET /api/v1/organisations/madretsch/courses`
+`GET /api/v1/organisations/belvedere/courses`
 
 ```json
 {
-	"organization": { "slug": "madretsch", "name": "…", "timeZone": "Europe/Zurich" },
+	"organization": { "slug": "belvedere", "name": "…", "timeZone": "Europe/Zurich" },
 	"language": "fr",
 	"groups": [
 		{
@@ -241,7 +241,7 @@ jour, et elle peut être inconnue.
 
 ### Tout le programme
 
-`GET /m/madretsch/agenda.ics` rend un fichier iCalendar (RFC 5545), en `text/calendar`, avec un nom
+`GET /m/belvedere/agenda.ics` rend un fichier iCalendar (RFC 5545), en `text/calendar`, avec un nom
 de fichier lisible. Les cours à heure fixe sortent en événements récurrents (`RRULE`, `EXDATE` pour
 une annulation ou une pause, `RECURRENCE-ID` pour un déplacement) ; les cours ancrés sur une prière
 et les cours à dates précises sortent séance par séance, sur une fenêtre glissante de 30 jours en
@@ -251,7 +251,7 @@ Le paramètre `lang` s'applique aussi : il choisit la langue des titres et du li
 
 ### Un seul cours
 
-`GET /m/madretsch/agenda/{courseId}.ics` rend le même fichier, pour **un seul cours** : mêmes règles,
+`GET /m/belvedere/agenda/{courseId}.ics` rend le même fichier, pour **un seul cours** : mêmes règles,
 même code, même fenêtre glissante. Le nom du calendrier devient `<Nom de l'organisation> — <Titre du
 cours>`, et le nom de fichier suit le titre du cours.
 
@@ -284,7 +284,7 @@ suppression**, que les horodatages seuls ne verraient pas.
 
 - **120 requêtes par minute et par adresse IP**, compteur partagé entre toutes les instances. Au
   delà : `429` avec un en-tête `Retry-After`. Les fichiers du widget n'y sont pas comptés : ils sont
-  servis de mémoire, sans toucher la base, et une grande mosquée tomberait avant son programme.
+  servis de mémoire, sans toucher la base, et une grande organisation tomberait avant son programme.
 - Plage de dates : 92 jours par défaut, 366 sur demande explicite.
 - `CORS` : `Access-Control-Allow-Origin: *`, méthodes `GET, HEAD, OPTIONS`. **Aucun en-tête
   d'authentification n'est accepté** : il n'y a rien à authentifier, et un navigateur ne peut donc

@@ -2,8 +2,8 @@
 //
 // Ce qu'il écrit : une organisation, un jour, un type, un nombre. **Rien d'autre.** Ni adresse IP,
 // ni cookie, ni `Referer`, ni identifiant de visiteur, ni horodatage — pas même un `created_at`,
-// qui donnerait l'heure de la première vue du jour et, dans une petite mosquée, l'heure exacte à
-// laquelle une personne a lu la page.
+// qui donnerait l'heure de la première vue du jour et, dans une petite organisation, l'heure exacte
+// à laquelle une personne a lu la page.
 //
 // Ce qu'il lit et jette : l'agent utilisateur, pour écarter les robots connus, et deux en-têtes de
 // pré-chargement. Aucune de ces valeurs ne sort de la requête, et aucune n'en dérive quoi que ce
@@ -27,8 +27,8 @@ export type TypeDeVue = 'page' | 'embed' | 'feed';
  *
  * Mesuré contre le jeu `crawler-user-agents` : elle reconnaît 73,6 % de ses instances et 0 % des
  * seize chaînes de vrais navigateurs qui ont servi de contrôle. Les 26 % manqués sont la queue du
- * catalogue — des robots qui ne visitent pas la page d'une mosquée de quartier. Une dépendance de
- * 1 500 expressions régulières coûterait plus cher qu'elle ne rapporterait, et il faudrait la
+ * catalogue — des robots qui ne visitent pas la page d'une organisation de quartier. Une dépendance
+ * de 1 500 expressions régulières coûterait plus cher qu'elle ne rapporterait, et il faudrait la
  * réévaluer chaque semaine.
  */
 const ROBOTS = [
@@ -76,8 +76,8 @@ const ROBOTS = [
 
 /**
  * Les chaînes qui contiennent un fragment de robot sans en être un. `CUBOT` est une marque de
- * téléphones Android bon marché — exactement le public d'une mosquée de quartier — et son agent
- * utilisateur contient « bot ». Sans cette liste, on effacerait ces visiteurs en silence.
+ * téléphones Android bon marché — exactement le public d'une organisation de quartier — et son
+ * agent utilisateur contient « bot ». Sans cette liste, on effacerait ces visiteurs en silence.
  */
 const FAUX_ROBOTS = ['cubot'] as const;
 
@@ -141,11 +141,12 @@ export function vueDe(
  * temps ne peuvent pas se perdre l'une l'autre.
  *
  * Le jour est la date **locale de l'organisation**. Avec la date UTC, la soirée du vendredi d'une
- * mosquée de Bienne tomberait au samedi une partie de l'année.
+ * association de Bienne tomberait au samedi une partie de l'année.
  *
  * Depuis l'étape 8, l'écriture passe par une fonction du propriétaire : le rôle public n'a plus
  * aucun droit sur la table, pas même la lecture qu'un `count + 1` exigeait. Il ne peut donc plus
- * lire les chiffres d'une autre mosquée, ce qui était la dernière question ouverte de l'ADR 0032.
+ * lire les chiffres d'une autre organisation, ce qui était la dernière question ouverte de
+ * l'ADR 0032.
  */
 export async function compter(vue: VueAcompter, now: Date): Promise<void> {
 	const jour = todayInZone(vue.timeZone, now);
@@ -167,7 +168,7 @@ export interface Audience {
 	 * Vrai quand le mode intégré **avait** des vues et n'en a plus depuis sept jours.
 	 *
 	 * La condition « avait des vues » n'est pas un détail : sans elle, l'alerte s'afficherait chez
-	 * toutes les mosquées qui n'ont jamais collé le widget. Et même ainsi, elle ne peut pas
+	 * toutes les organisations qui n'ont jamais collé le widget. Et même ainsi, elle ne peut pas
 	 * distinguer un widget retiré volontairement d'un widget cassé — le service n'a aucun signal
 	 * pour cela, puisqu'il ne lit ni `Referer` ni domaine déclaré. L'écran dit donc les deux
 	 * possibilités plutôt que d'affirmer la mauvaise.

@@ -2,9 +2,10 @@
 // empreinte d'intégrité (ADR 0005).
 //
 // Le segment de version est une empreinte du contenu : il change exactement quand le fichier change.
-// **Toutes les versions déjà publiées restent servies, pour toujours.** Une mosquée qui a collé
-// l'adresse immuable la garde des années ; cesser de la servir ferait disparaître son programme de
-// son site, sans message — une empreinte qui ne correspond plus ne dégrade pas, elle bloque.
+// **Toutes les versions déjà publiées restent servies, pour toujours.** Une organisation qui a
+// collé l'adresse immuable la garde des années ; cesser de la servir ferait disparaître son
+// programme de son site, sans message — une empreinte qui ne correspond plus ne dégrade pas, elle
+// bloque.
 //
 // Une version inventée, elle, n'a jamais existé : elle répond `404`.
 

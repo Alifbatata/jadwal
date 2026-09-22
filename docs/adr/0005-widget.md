@@ -1,9 +1,10 @@
 # ADR 0005 : Widget
 
 > **Révisé le 2026-09-21, à l'étape 6.** La décision d'origine — un composant qui redessine les
-> trois vues dans la page de la mosquée — est remplacée par celle-ci : **le widget pose un cadre qui
-> affiche la page publique**. Le texte d'origine est conservé plus bas, sous « Ce qui a été décidé en
-> 2026-09-19 », parce qu'un ADR qu'on réécrit sans laisser de trace n'apprend rien à personne.
+> trois vues dans la page de l'organisation — est remplacée par celle-ci : **le widget pose un
+> cadre qui affiche la page publique**. Le texte d'origine est conservé plus bas, sous « Ce qui a
+> été décidé en 2026-09-19 », parce qu'un ADR qu'on réécrit sans laisser de trace n'apprend rien
+> à personne.
 
 ## Contexte de la révision
 
@@ -25,33 +26,34 @@ donnée, n'écrit rien nulle part.
 ### Pourquoi, et l'ordre des raisons compte
 
 1. **Le confinement.** C'est la raison décisive, et ce n'est pas celle qu'on cite en premier
-   d'habitude. Injecter notre HTML dans la page de la mosquée le ferait tourner dans **son** origine :
-   une faute d'échappement chez nous deviendrait une injection chez elle. Un cadre enferme toute
-   erreur dans notre origine. Une page publique affiche du texte saisi par des responsables ; tôt ou
-   tard, une faute d'échappement arrivera, et il faut qu'elle reste chez nous.
+   d'habitude. Injecter notre HTML dans la page de l'organisation le ferait tourner dans **son**
+   origine : une faute d'échappement chez nous deviendrait une injection chez elle. Un cadre
+   enferme toute erreur dans notre origine. Une page publique affiche du texte saisi par des
+   responsables ; tôt ou tard, une faute d'échappement arrivera, et il faut qu'elle reste chez nous.
 2. **Une seule implémentation.** Deux rendus des mêmes vues divergent, c'est une certitude et non un
-   risque. Ce que voit le visiteur du site de la mosquée est exactement ce que voient les tests de
-   l'étape 5.
-3. **Le poids.** Le fichier est chargé sur le site de chaque mosquée. Le widget de l'étape 0, un
-   composant Svelte 5 **vide** qui affichait deux mots, pesait 12,48 Kio gzip : c'était le moteur de
-   rendu, pas le composant. Celui-ci pèse **1,71 Kio gzip**, mesurés, parce qu'il n'a plus rien à
-   rendre — et il est donc écrit en TypeScript pur, sans dépendance à l'exécution.
+   risque. Ce que voit le visiteur du site de l'organisation est exactement ce que voient les tests
+   de l'étape 5.
+3. **Le poids.** Le fichier est chargé sur le site de chaque organisation. Le widget de l'étape 0,
+   un composant Svelte 5 **vide** qui affichait deux mots, pesait 12,48 Kio gzip : c'était le
+   moteur de rendu, pas le composant. Celui-ci pèse **1,71 Kio gzip**, mesurés, parce qu'il n'a
+   plus rien à rendre — et il est donc écrit en TypeScript pur, sans dépendance à l'exécution.
 
 ### Ce que cela coûte, et il faut le dire
 
-- **Le contenu n'est pas indexé sur le domaine de la mosquée.** Un moteur de recherche rattache le
-  contenu d'un cadre à l'adresse de son `src`, pas à la page qui l'accueille. La mosquée garde un
-  lien visible vers `/m/<identifiant>`, qui est indexable et qui porte les liens entre langues
-  (ADR 0029). Pour un programme de cours, dont les visiteurs arrivent par un message WhatsApp, une
-  bio Instagram ou un QR code imprimé, c'est un coût faible — mais c'en est un.
+- **Le contenu n'est pas indexé sur le domaine de l'organisation.** Un moteur de recherche rattache
+  le contenu d'un cadre à l'adresse de son `src`, pas à la page qui l'accueille. L'organisation
+  garde un lien visible vers `/m/<identifiant>`, qui est indexable et qui porte les liens entre
+  langues (ADR 0029). Pour un programme de cours, dont les visiteurs arrivent par un message
+  WhatsApp, une bio Instagram ou un QR code imprimé, c'est un coût faible — mais c'en est un.
 - **Rien n'est hérité à travers un cadre** : ni la police du site, ni ses couleurs, ni son thème
   sombre. Le programme s'affiche comme une carte posée sur la page, pas comme une greffe. L'écran
   « Partager » le dit en une phrase au responsable, plutôt que de le lui laisser découvrir.
 - **L'historique du navigateur.** Une navigation ordinaire dans un cadre ajoute une entrée à
   l'historique du **site hôte** : mesuré sur Chrome 153, trois clics dans le widget et le bouton
-  « précédent » du visiteur ne sort plus de la page de la mosquée. C'est le défaut le plus reproché
-  aux intégrations par cadre. Le mode intégré navigue donc **par remplacement** (`location.replace`),
-  ce qui n'ajoute rien — au prix assumé de ne plus avoir de « précédent » à l'intérieur du widget.
+  « précédent » du visiteur ne sort plus de la page de l'organisation. C'est le défaut le plus
+  reproché aux intégrations par cadre. Le mode intégré navigue donc **par remplacement**
+  (`location.replace`), ce qui n'ajoute rien — au prix assumé de ne plus avoir de « précédent » à
+  l'intérieur du widget.
 - **Une ancre interne ne fait rien** dans un cadre dimensionné à son contenu : il n'y a plus rien à
   faire défiler à l'intérieur, et le navigateur ne fait pas défiler la page hôte. Les pages
   publiques n'ont aujourd'hui aucun lien d'ancre ; il ne faut pas en ajouter.
@@ -73,9 +75,9 @@ La page intégrée charge donc **un** script, et seulement quand `?embed=1` est 
   `scrollHeight` : dans un cadre, `scrollHeight` vaut au moins la hauteur de la fenêtre, donc au
   moins ce que le parent vient d'imposer. Il ne redescend jamais, et le cadre garderait son vide
   après un changement de langue.
-- **Le message part vers `'*'`**, parce que le domaine de la mosquée est inconnu et que la valeur
-  par défaut le jetterait en silence. Ce qui part est un nombre de pixels, que quiconque voit le
-  cadre connaît déjà.
+- **Le message part vers `'*'`**, parce que le domaine de l'organisation est inconnu et que la
+  valeur par défaut le jetterait en silence. Ce qui part est un nombre de pixels, que quiconque
+  voit le cadre connaît déjà.
 - **Côté parent, trois vérifications, et rien d'autre n'est traité** : la fenêtre émettrice est
   celle de notre cadre (c'est elle qui fait tout le travail, et qui empêche deux widgets de se
   marcher dessus) ; l'origine est exactement celle du cadre, comparée par égalité stricte
@@ -87,9 +89,9 @@ La page intégrée charge donc **un** script, et seulement quand `?embed=1` est 
 
 ### Pas de `sandbox` sur le cadre, et pourquoi
 
-Un `sandbox` protégerait le site de la mosquée contre notre propre page. Le scénario est étroit —
-il suppose notre page compromise alors que notre script reste honnête — et le coût est réel :
-`allow-same-origin` retiré, l'origine des messages devient `"null"` ; sans `allow-popups` ni
+Un `sandbox` protégerait le site de l'organisation contre notre propre page. Le scénario est
+étroit — il suppose notre page compromise alors que notre script reste honnête — et le coût est
+réel : `allow-same-origin` retiré, l'origine des messages devient `"null"` ; sans `allow-popups` ni
 `allow-downloads`, les liens `webcal:` de la page d'abonnement échouent en silence, or c'est la
 fonction pour laquelle cette page existe. À reprendre à l'étape 8, avec un essai sur vrai appareil.
 
@@ -102,9 +104,9 @@ fonction pour laquelle cette page existe. À reprendre à l'étape 8, avec un es
 
 ### Les adresses, et l'empreinte d'intégrité
 
-- `/widget/jadwal-widget.js` : l'adresse ordinaire, qui reçoit les corrections sans que la mosquée
-  touche à rien. **Aucune empreinte n'est publiée pour elle** : ce serait promettre qu'elle ne
-  change jamais.
+- `/widget/jadwal-widget.js` : l'adresse ordinaire, qui reçoit les corrections sans que
+  l'organisation touche à rien. **Aucune empreinte n'est publiée pour elle** : ce serait promettre
+  qu'elle ne change jamais.
 - `/widget/<empreinte>/jadwal-widget.js` : l'adresse versionnée, immuable, pour les sites qui
   exigent une empreinte d'intégrité. Le segment de version est une empreinte du contenu : il change
   exactement quand le fichier change, sans numéro à incrémenter et sans variable d'environnement à
@@ -112,9 +114,9 @@ fonction pour laquelle cette page existe. À reprendre à l'étape 8, avec un es
 - **Une version publiée est servie pour toujours** (précision de l'étape 7). La décision d'origine
   disait qu'une version « qui n'est plus la nôtre » répondait `404`, en jugeant que c'était le même
   résultat qu'une empreinte périmée. C'est faux, et la différence compte : une empreinte qui ne
-  correspond plus donne un widget cassé sur le site d'une mosquée, que personne ne surveille, et qui
-  ne se répare qu'en modifiant une page à la main. Retirer une version, c'est donc casser
-  volontairement ce qu'on a demandé aux mosquées de coller.
+  correspond plus donne un widget cassé sur le site d'une organisation, que personne ne surveille,
+  et qui ne se répare qu'en modifiant une page à la main. Retirer une version, c'est donc casser
+  volontairement ce qu'on a demandé aux organisations de coller.
 
   Chaque construction archive son fichier dans `packages/widget/published/<empreinte>/`, et le
   serveur sert tout ce qui s'y trouve en plus de la version courante. Le coût est de quelques
@@ -168,12 +170,12 @@ fonction pour laquelle cette page existe. À reprendre à l'étape 8, avec un es
 
 - Un site intègre le widget en collant une balise de script et l'élément ; la licence MIT lui évite
   tout doute sur ses obligations.
-- Ce que voit le visiteur d'un site de mosquée est exactement ce que testent les 24 tests publics de
-  l'étape 5 : il n'y a pas de second rendu à maintenir.
+- Ce que voit le visiteur d'un site d'organisation est exactement ce que testent les 24 tests
+  publics de l'étape 5 : il n'y a pas de second rendu à maintenir.
 - La promesse « aucun JavaScript » de l'ADR 0027 devient « aucun JavaScript, sauf en mode intégré,
   où un cadre ne peut ni se dimensionner ni éviter de polluer l'historique autrement ». Cet ADR est
   amendé en conséquence.
-- Le risque ouvert du cadrage — le bloc « Embed Code » du site Odoo de la première mosquée
+- Le risque ouvert du cadrage — le bloc « Embed Code » du site Odoo de la première organisation
   exécute-t-il un script extérieur ? — n'est pas levé, et il ne se lèvera qu'en essayant sur ce
   site. Les deux modes de pose sont livrés pour que la réponse, quelle qu'elle soit, ne bloque rien.
 - L'ADR 0026 justifiait le CORS ouvert et la limitation de débit par « un widget en appelle trois
