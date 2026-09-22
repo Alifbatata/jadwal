@@ -41,6 +41,22 @@ jadwal.voltia.ch {
 		-Server
 	}
 
+	# `/healthz` ne va pas au journal (ADR 0039 complété). Ce n'est pas du confort : la sonde de
+	# l'ADR 0038 interroge cette adresse toutes les cinq minutes, sur les deux piles, depuis le
+	# serveur lui-même — **576 lignes par jour** qui ne disent rien de personne et qui, sur les
+	# quatorze jours de rétention, seraient largement majoritaires. Un journal où le bruit couvre le
+	# reste est un journal qu'on ne lit plus.
+	#
+	# Ce qui est perdu, et pourquoi c'est acceptable : une panne de la sonde ne se verra plus ici.
+	# Elle se voit ailleurs, et mieux — c'est le silence des battements de cœur que la supervision
+	# extérieure entend, pas une ligne de journal qu'il faudrait aller chercher.
+	#
+	# `log_skip` demande Caddy 2.8.0 ou plus : la directive s'appelait `skip_log` avant, et un
+	# Caddyfile qui la nomme ainsi est **refusé** par une version plus ancienne. Le rôle Ansible
+	# vérifie donc la version avant de poser ce fichier — sans quoi le déploiement remplacerait une
+	# configuration valide par une configuration que Caddy refuse de charger.
+	log_skip /healthz
+
 	# Le journal du site, dans un fichier à lui : on lit ce que jadwal a servi, et rien d'autre.
 	#
 	# Un journal d'accès ordinaire est une base de données personnelles qu'on n'a pas voulue :
