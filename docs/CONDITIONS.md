@@ -1,10 +1,9 @@
 # Conditions d'utilisation
 
-Ce texte s'adresse aux mosquées et aux organisations qui publient leur programme avec ce service.
-Il est écrit pour être lu, pas pour être opposé. **Il doit être relu par un juriste avant la mise en
-ligne.**
+Ce texte s'adresse aux organisations qui publient leur programme avec ce service. Il est écrit pour
+être lu, pas pour être opposé.
 
-Dernière mise à jour : 21 septembre 2026.
+Dernière mise à jour : 22 septembre 2026.
 
 ## Qui exploite le service
 
@@ -15,23 +14,46 @@ Pour toute question ou demande : **contact@voltia.ch**.
 
 ## Ce que le service conserve
 
-Quatre choses, et rien d'autre :
+Le programme que vous publiez, et le strict nécessaire pour vous laisser y accéder.
 
-1. **Le programme de vos cours** : titres, descriptions, horaires, salles, intervenants. Ces données
-   sont destinées à être publiques : c'est le but du service.
-2. **L'adresse électronique des personnes responsables**, et leur nom si elles l'ont donné. C'est la
-   seule donnée personnelle du service.
-3. **Un journal des modifications** : qui a changé quoi, et quand. Il permet de revenir en arrière
-   et de comprendre ce qui s'est passé.
-4. **Un compteur de consultations**, décrit juste en dessous.
+### Ce qui est public, parce que c'est le but
+
+**Le programme de vos cours** : titres, descriptions, horaires, salles, intervenants. Ces données
+sont destinées à être publiques.
+
+Le nom d'un intervenant est une donnée personnelle, et c'est vous qui décidez de l'écrire. Voyez
+plus bas, « Ce que vous acceptez ».
+
+### Les données personnelles, la liste complète
+
+1. **L'adresse électronique des personnes responsables**, et leur nom si elles l'ont donné. C'est
+   la seule identité que le service demande : il n'y a pas de mot de passe, et donc rien d'autre à
+   retenir de vous.
+2. **Le lien entre une personne et votre organisation** : qui est responsable de quoi. Le service ne
+   peut pas fonctionner sans, puisque c'est lui qui décide qui voit quoi.
+3. **L'adresse électronique d'une personne invitée**, tant que l'invitation court, même si cette
+   personne n'ouvre jamais de compte.
+4. **Un journal des modifications** : qui a changé quoi, et quand. Il permet de revenir en arrière et
+   de comprendre ce qui s'est passé.
+5. **Les passkeys** des personnes qui en enregistrent une : la clé publique de l'appareil et son
+   identifiant. Jamais de secret, jamais d'empreinte digitale : ces choses ne quittent pas l'appareil.
+6. **Une empreinte de l'adresse IP**, le temps de compter les demandes trop nombreuses. Voir plus bas.
 
 Le service n'utilise **aucun cookie de mesure d'audience**, ne fait **aucun suivi publicitaire** et
 ne transmet vos données à **aucun tiers** à des fins commerciales. Les visiteurs de votre page
 publique ne sont pas identifiés et ne s'inscrivent à rien.
 
-Le serveur tient un journal technique des requêtes qu'il a servies, où l'adresse du visiteur est
-**tronquée avant d'être écrite**, au point de ne plus désigner personne, où la page d'où il vient
-ne figure pas, et qui est effacé au bout de **quatorze jours**.
+### Ce que le service a cessé de conserver
+
+Une session ouverte ne retient **ni l'adresse IP ni le navigateur** de la personne connectée. Le
+service les enregistrait jusqu'au 22 septembre 2026, sans que ce texte le dise et sans jamais les
+effacer. Les deux ont été retirés, et ce qui restait a été effacé.
+
+### Le journal technique du serveur
+
+Le serveur tient un journal des requêtes qu'il a servies, où l'adresse du visiteur est **tronquée
+avant d'être écrite**, au point de ne plus désigner personne, où la page d'où il vient ne figure pas,
+et qui est effacé au bout de **quatorze jours**.
 
 ### Le compteur de consultations
 
@@ -63,10 +85,20 @@ ne sait pas sur quelle page vous l'avez collé, puisqu'il ne conserve pas la pro
 | Le programme de vos cours                   | tant que votre organisation utilise le service |
 | Le journal des modifications                | 24 mois, puis effacé automatiquement           |
 | Le compteur de consultations                | 25 mois, puis effacé automatiquement           |
-| Une invitation annulée ou refusée           | 90 jours, puis effacée                         |
+| Une invitation qui n'est plus en cours      | 90 jours après sa fin, puis effacée            |
 | Un compte sans organisation, inactif        | 12 mois, puis effacé                           |
+| Une session de connexion                    | 30 jours au plus, puis effacée automatiquement |
+| Un lien de connexion non utilisé            | 15 minutes, puis effacé automatiquement        |
+| L'empreinte du compteur de demandes         | un à deux jours, puis effacée automatiquement  |
 | Le journal technique du serveur             | 14 jours, puis effacé automatiquement          |
-| Les traces d'accès internes de l'exploitant | conservées pour répondre à une contestation    |
+| Les traces d'accès internes de l'exploitant | 24 mois, puis effacées automatiquement         |
+
+Ces durées ne sont pas des intentions : pour chacune, l'effacement est porté par une règle de la base
+de données, et une tâche passe chaque nuit pour emporter ce qui les a dépassées.
+
+Une seule exception, et elle se voit : si votre organisation conteste un accès, l'exploitant peut
+poser un verrou qui suspend l'effacement du journal des modifications et de ses propres traces, le
+temps que la contestation se règle.
 
 ## L'accès de l'exploitant à vos données
 
@@ -80,10 +112,11 @@ Trois précisions, parce qu'elles comptent :
   identité. Vous pouvez les voir et revenir en arrière, exactement comme pour une modification faite
   par une personne de votre équipe.
 - **Ses consultations n'y apparaissent pas.** Si l'exploitant regarde vos données sans rien changer,
-  rien ne vous le signale. Elles sont notées dans un registre interne que l'exploitant conserve, et
-  qui sert à répondre en cas de contestation.
-- **L'accès est protégé par une clé de sécurité matérielle.** Un simple lien reçu par courriel ne
-  suffit jamais à obtenir ces droits, et la session qui les porte dure au plus douze heures.
+  rien ne vous le signale. Elles sont notées dans un registre interne que l'exploitant conserve
+  24 mois, et qui sert à répondre en cas de contestation.
+- **L'accès est protégé par une passkey.** Un simple lien reçu par courriel ne suffit jamais à
+  obtenir ces droits : il faut en plus une passkey enregistrée sur un appareil de l'exploitant. La
+  session qui porte ces droits dure au plus douze heures.
 
 Si cette possibilité d'accès vous pose un problème, dites-le avant d'ouvrir votre organisation :
 sans elle, l'assistance n'est pas possible.
@@ -107,22 +140,25 @@ sans elle, l'assistance n'est pas possible.
 - Que le programme que vous publiez soit **public** : page, widget, flux agenda.
 - De ne pas publier de données personnelles de tiers dans les champs libres : le nom d'un
   intervenant est un choix qui vous appartient, et qui l'engage aussi.
-- Que le service soit fourni **sans garantie de disponibilité**. Il est gratuit pour les mosquées et
-  tenu par une seule personne.
+- Que le service soit fourni **sans garantie de disponibilité**. Il est gratuit et tenu par une
+  seule personne.
 
 ## Ce que nous ne faisons pas
 
 - Nous ne vendons rien, nous ne louons rien, nous ne profilons personne.
 - Nous n'inscrivons personne à un cours : le service ne collecte aucune donnée sur les participants.
-  Une inscription à un cours de mosquée serait une donnée sensible au sens de la nLPD, et c'est pour
-  cela qu'elle n'existe pas ici.
-- Nous n'interrogeons aucun service tiers avec vos données. Les heures de prière viennent du
-  calendrier que vous importez ou d'un calcul fait sur notre serveur, à partir de la position que
-  vous saisissez vous-même. Nous n'appelons jamais Mawaqit, et il n'y a aucun service de
-  localisation derrière le champ de position.
-- Nous ne conservons pas l'adresse IP des visiteurs. Le service compte les demandes trop nombreuses
-  pour se protéger d'un abus, mais ce compteur ne retient qu'une empreinte non réversible, effacée
-  au bout d'un jour.
+  Savoir qui suit quel cours peut révéler une conviction, un état de santé ou une situation
+  familiale, c'est-à-dire une donnée sensible au sens de la nLPD. C'est pour cela que l'inscription
+  n'existe pas ici.
+- Nous n'interrogeons aucun service tiers avec vos données. Les heures de prière, quand une
+  organisation active ce module, viennent du calendrier qu'elle importe, de ce qu'elle saisit à la
+  main, ou d'un calcul fait sur notre serveur à partir de la position qu'elle indique elle-même. Il
+  n'y a aucun service de localisation derrière le champ de position.
+- Nous ne conservons pas l'adresse IP complète des visiteurs. Le service compte les demandes trop
+  nombreuses pour se protéger d'un abus, mais ce compteur ne retient qu'une empreinte calculée avec
+  une clé secrète, effacée au bout d'un à deux jours. Sans cette clé, l'empreinte ne rend pas
+  l'adresse ; avec elle, et il faut un accès au serveur pour l'avoir, une adresse IPv4 pourrait être
+  retrouvée en les essayant toutes. C'est une pseudonymisation, pas un anonymat.
 
 ## Où sont vos données, et qui y touche
 
