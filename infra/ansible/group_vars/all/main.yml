@@ -61,6 +61,16 @@ jadwal_rclone_options: '--s3-no-head'
 jadwal_caddy_sites: /etc/caddy/sites
 jadwal_caddy_reload: false
 
+# La version minimale de Caddy que le bloc de site exige, et **pourquoi ce numéro-là** : la
+# directive `log_skip`, qui garde `/healthz` hors du journal, s'appelait `skip_log` avant la 2.8.0.
+# Une version antérieure ne l'ignore pas poliment — elle refuse le Caddyfile tout entier, donc
+# **tous les sites de l'hôte**. Le rôle `caddy` relève la version et s'arrête avant de poser quoi
+# que ce soit, ce qui est le seul moment où l'on peut encore ne rien casser.
+#
+# Des distributions encore suivies livrent une 2.6.x : l'assertion est donc réelle, pas décorative.
+# Le dépôt officiel de l'éditeur, lui, livre 2.11.4 (ADR 0040).
+jadwal_caddy_minimum: '2.8.0'
+
 # Le journal d'accès du site, et la coupe qui le borne à quatorze jours (ADR 0039). Ce chemin doit
 # être **le même** que celui du bloc de site : c'est Caddy qui écrit, et c'est la tâche
 # `jadwal-journal-caddy` qui coupe. Si les deux divergent, la tâche s'arrête en disant que le

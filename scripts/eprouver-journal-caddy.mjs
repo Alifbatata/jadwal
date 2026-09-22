@@ -24,22 +24,27 @@
  *   - un en-tête `Authorization` ;
  *   - un `X-Forwarded-For` portant une adresse IPv4 publique et une adresse IPv6.
  *
+ * Puis une requête sur `/healthz`, qui doit être **servie** et **absente du journal** : c'est la
+ * sonde, 576 fois par jour, et `log_skip` la garde dehors. Les deux moitiés comptent — un `/healthz`
+ * absent du journal parce que la requête n'est jamais arrivée ne prouverait rien.
+ *
  * Et l'on vérifie qu'aucun des quatre secrets n'est dans le fichier, que les adresses y sont
  * tronquées, et que le chemin demandé, lui, y est resté : un journal qui ne dit plus rien n'est pas
  * un journal filtré, c'est un journal supprimé.
  *
  * ## L'image
  *
- * `caddy:2.6.2` par défaut, parce que c'est la version en service sur le serveur visé : un filtre
+ * `caddy:2.11.4` par défaut, parce que c'est la version en service sur le serveur visé : un filtre
  * qui marche sur la version courante et pas sur celle-là ne protégerait rien. `JADWAL_CADDY_IMAGE`
- * permet d'en éprouver une autre.
+ * permet d'en éprouver une autre — mais pas en deçà de 2.8.0, où `log_skip` s'appelait `skip_log`
+ * et où Caddy refuse le fichier entier plutôt que d'ignorer la directive.
  */
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const IMAGE = process.env['JADWAL_CADDY_IMAGE'] ?? 'caddy:2.6.2';
+const IMAGE = process.env['JADWAL_CADDY_IMAGE'] ?? 'caddy:2.11.4';
 const CONTENEUR = 'jadwal-epreuve-journal';
 
 /** Le fichier de site livré. Le domaine ne sert qu'à le trouver et à nommer son journal. */
@@ -88,6 +93,17 @@ function blocJournal(source) {
 	throw new Error('Le bloc « log » ne se referme pas.');
 }
 
+/**
+ * Les directives `log_skip` du fichier de site, lues **dans le fichier livré** pour la même raison
+ * que le bloc `log` : recopier ici ce qu'on prétend éprouver ne prouverait que la copie.
+ */
+function lignesLogSkip(source) {
+	return source
+		.split(/\r?\n/)
+		.filter((l) => /^\tlog_skip\b/.test(l))
+		.join('\n');
+}
+
 /** Le chemin du journal, tel que le bloc le déclare. */
 function fichierJournal(bloc) {
 	const trouve = /output file (\S+)/.exec(bloc);
@@ -106,7 +122,11 @@ function nettoyer() {
 const racine = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
 const site = readFileSync(join(racine, 'infra', 'caddy', `${DOMAINE}.caddy`), 'utf8');
 const bloc = blocJournal(site);
+const sauts = lignesLogSkip(site);
 const journal = fichierJournal(bloc);
+if (!sauts.includes('/healthz')) {
+	throw new Error('Le fichier de site ne garde plus /healthz hors du journal (log_skip).');
+}
 
 // Le site jetable : il répond, il pose un cookie de session, et il journalise **avec le bloc livré**.
 const caddyfile = `{
@@ -117,6 +137,8 @@ const caddyfile = `{
 :80 {
 	header Set-Cookie "better-auth.session_token=${SECRETS.session}; Path=/; HttpOnly"
 	respond "ok"
+
+${sauts}
 
 ${bloc}
 }
@@ -204,6 +226,18 @@ try {
 		`http://127.0.0.1/api/auth/reset-password/${SECRETS.chemin}`
 	]);
 
+	// La sonde. On lit sa **réponse** : sans cela, un `/healthz` absent du journal parce que la
+	// requête n'est jamais partie passerait pour un filtre qui marche.
+	const reponseSonde = docker([
+		'exec',
+		CONTENEUR,
+		'wget',
+		'-q',
+		'-O',
+		'-',
+		'http://127.0.0.1/healthz'
+	]);
+
 	brut = docker(['exec', CONTENEUR, 'cat', journal]);
 	const lignes = brut
 		.split('\n')
@@ -255,6 +289,12 @@ try {
 		String(ligne.request?.uri ?? '').includes('/api/auth/magic-link/verify')
 	);
 	verifier(`le code de réponse est toujours journalisé`, typeof ligne.status === 'number');
+
+	verifier(`la sonde est bien servie : /healthz répond`, reponseSonde === 'ok');
+	verifier(
+		`et elle ne va pas au journal : aucune ligne pour /healthz`,
+		!lignes.some((l) => String(l.request?.uri ?? '') === '/healthz')
+	);
 
 	// ---------------------------------------------------------------------------------------------
 	// La seconde moitié : la coupe quotidienne, jouée par **le vrai script**, pendant que Caddy tient

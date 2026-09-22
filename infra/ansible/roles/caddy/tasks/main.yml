@@ -44,6 +44,35 @@
       configuration d'un service en fonctionnement : elle est à l'exploitant, pas au playbook.
       La ligne à ajouter est : import {{ jadwal_caddy_sites }}/*.caddy
 
+# La version de Caddy, **avant** de poser quoi que ce soit. Le bloc de site emploie `log_skip`, qui
+# s'appelait `skip_log` avant la 2.8.0 : sur une version antérieure, Caddy ne saute pas la directive
+# inconnue, il **refuse le Caddyfile entier**. Poser le fichier d'abord et découvrir ensuite, ce
+# serait découvrir en ayant déjà coupé tous les sites de l'hôte.
+#
+# `check_mode: false` : cette tâche lit, elle ne change rien, et elle doit tourner même en
+# vérification — sinon l'assertion suivante porterait sur une sortie vide.
+- name: La version de Caddy
+  ansible.builtin.command: caddy version
+  register: caddy_version
+  changed_when: false
+  check_mode: false
+  become: true
+
+- name: Caddy sait garder une requête hors du journal
+  ansible.builtin.assert:
+    that: version_installee is version(jadwal_caddy_minimum, '>=')
+    fail_msg: >-
+      Caddy {{ version_installee | default(caddy_version.stdout | trim) }} est trop ancien : le bloc
+      de site de jadwal emploie « log_skip », qui demande {{ jadwal_caddy_minimum }} ou plus (avant,
+      la directive s'appelait « skip_log »). Une version plus ancienne refuserait le Caddyfile
+      entier, donc tous les sites de cette machine. Rien n'a été écrit. Mettre Caddy à jour depuis le
+      dépôt officiel de l'éditeur avant de rejouer.
+  vars:
+    # `caddy version` rend « v2.11.4 h1:… » chez l'éditeur et « 2.6.2 » tout court chez certaines
+    # distributions : on ne lit que les trois nombres, sans supposer le « v » ni ce qui suit.
+    version_installee: >-
+      {{ caddy_version.stdout | regex_search('([0-9]+\.[0-9]+\.[0-9]+)', '\1') | first | default('0.0.0', true) }}
+
 - name: Le répertoire des sites
   ansible.builtin.file:
     path: '{{ jadwal_caddy_sites }}'
