@@ -2,7 +2,7 @@
 
 Chaque décision structurante du projet est consignée dans un fichier `docs/adr/NNNN-titre.md`,
 numéroté dans l'ordre d'écriture. Une décision n'est jamais modifiée après coup : si elle change,
-un nouvel ADR la remplace et l'ancien passe au statut « Remplacé par ADR NNNN ».
+un nouvel ADR la remplace et l'ancien passe au statut « Remplacé par ADR `NNNN` ».
 
 Un ADR tient sur une page et suit exactement les quatre sections ci-dessous.
 
@@ -21,5 +21,5 @@ plus contraignant, ce qui est reporté à une étape ultérieure de la feuille d
 
 ## Statut
 
-L'un de : « Proposé », « Accepté », « Remplacé par ADR NNNN », « Obsolète », suivi de la date
-(AAAA-MM-JJ) et, si utile, de l'étape de la feuille de route concernée.
+L'un de : « Proposé », « Accepté », « Remplacé par ADR `NNNN` », « Obsolète », suivi de la date
+(`AAAA-MM-JJ`) et, si utile, de l'étape de la feuille de route concernée.

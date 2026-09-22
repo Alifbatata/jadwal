@@ -39,7 +39,7 @@ téléphone. Le nom de fichier proposé au téléchargement suit le titre du cou
 caractères sûrs ; un titre entièrement en arabe ne laissant rien après ce passage, il retombe alors
 sur le nom de l'organisation plutôt que sur une suite de tirets.
 
-Les UID ne changent pas : ce sont ceux du flux d'organisation, `<identifiant du cours>@<hôte>`.
+Les `UID` ne changent pas : ce sont ceux du flux d'organisation, `<identifiant du cours>@<hôte>`.
 Quelqu'un qui s'abonne aux deux verra les mêmes séances deux fois, une fois par calendrier — c'est
 ce que font deux calendriers distincts, et c'est ce qu'il a demandé.
 

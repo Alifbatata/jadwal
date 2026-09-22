@@ -85,7 +85,7 @@ de clés engendrée pour l'occasion. Les sorties sont dans le rapport.
 
 ## Ce que cela ne protège pas, et qu'il faut demander à l'hébergeur
 
-Qui obtient root sur le serveur a les identifiants de `rclone`, donc peut effacer les archives
+Qui obtient `root` sur le serveur a les identifiants de `rclone`, donc peut effacer les archives
 distantes. La parade n'est pas dans ce projet : c'est un compartiment à **verrouillage d'objet** ou
 en écriture seule, du côté de l'hébergeur de sauvegarde. C'est demandé à l'exploitant, et tant que ce
 n'est pas en place, la sauvegarde protège de la panne et du sinistre, pas d'un attaquant qui prend la

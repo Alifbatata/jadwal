@@ -76,32 +76,32 @@ Export agenda (`buildCalendar`, point d'entrée `@jadwal/core/ics`, seul endroit
 dépend de `ical-generator` et d'un fournisseur de `VTIMEZONE` ; l'entrée `@jadwal/core` reste
 sans dépendance à l'exécution, ce qui précise l'ADR 0002) :
 
-- Cours à heure fixe `weekly` ou `monthly` : un seul VEVENT avec `RRULE`
+- Cours à heure fixe `weekly` ou `monthly` : un seul `VEVENT` avec `RRULE`
   (`FREQ=WEEKLY;INTERVAL=n;BYDAY=MO,WE` ou `FREQ=MONTHLY;BYDAY=1SU`, `-1SA`…), `DTSTART` = la
   première vraie occurrence à partir de `startsOn`, `UNTIL` si `endsOn`, heures locales avec
   `TZID` et `VTIMEZONE` présent dans le fichier, `EXDATE` pour les dates annulées et en pause.
-  Séance déplacée : VEVENT séparé, même UID, `RECURRENCE-ID` sur la date d'origine, nouveaux
+  Séance déplacée : `VEVENT` séparé, même `UID`, `RECURRENCE-ID` sur la date d'origine, nouveaux
   `DTSTART` et `DTEND`, sans `EXDATE`. Les `EXDATE` d'un cours sans date de fin sont
   bornées à 400 jours : une pause de plusieurs siècles produirait autrement des millions de valeurs,
   et le flux régénéré à chaque lecture rattrape la pause avant qu'elle ne commence. Un cours avec
   `endsOn` garde toutes ses `EXDATE`. `UNTIL` vise l'instant qui précède le début du jour suivant
-  `endsOn` : « 23:59:59 » n'existe pas dans tous les fuseaux (America/Nuuk change d'heure à 22:00).
-  Quand le fuseau de l'organisation est « UTC », les heures sortent en forme UTC sans TZID et le
-  fichier ne porte pas de VTIMEZONE : les `EXDATE` suivent cette forme.
-- Cours `dates` et cours ancrés sur une prière : un VEVENT par occurrence dans la fenêtre
+  `endsOn` : « 23:59:59 » n'existe pas dans tous les fuseaux (`America/Nuuk` change d'heure à 22:00).
+  Quand le fuseau de l'organisation est « UTC », les heures sortent en forme UTC sans `TZID` et le
+  fichier ne porte pas de `VTIMEZONE` : les `EXDATE` suivent cette forme.
+- Cours `dates` et cours ancrés sur une prière : un `VEVENT` par occurrence dans la fenêtre
   (`pastDays` = 30 et `horizonDays` = 120 par défaut, autour d'« aujourd'hui » dans le fuseau de
   l'organisation). Les annulées sont omises. Pour les ancrés, la `DESCRIPTION` commence par le
   libellé fourni par l'appelant (`anchorLabel`) ; une occurrence sans heure de prière connue est
   omise.
-- UID stables : `<courseId>@<hôte>` pour un récurrent, `<courseId>-<date>@<hôte>` sinon (la date
+- `UID` stables : `<courseId>@<hôte>` pour un récurrent, `<courseId>-<date>@<hôte>` sinon (la date
   d'origine pour une séance déplacée, afin que l'agenda mette l'événement à jour au lieu d'en créer
   un second). `SEQUENCE` = `sequence` du cours, `DTSTAMP` = `now`.
 - Propriétés du calendrier : nom, fuseau, `REFRESH-INTERVAL` et `X-PUBLISHED-TTL` d'une heure,
   toutes écrites avant le premier composant (RFC 5545 §3.6). Pas de `METHOD` : `PUBLISH` exigerait
-  un `ORGANIZER` dans chaque VEVENT (RFC 5546 §3.2.1), qu'un flux d'abonnement n'a pas à déclarer.
+  un `ORGANIZER` dans chaque `VEVENT` (RFC 5546 §3.2.1), qu'un flux d'abonnement n'a pas à déclarer.
   Les règles hebdomadaires portent `WKST=MO` explicitement. Le fichier se termine par un CRLF, et
-  un calendrier sans aucune séance contient tout de même le VTIMEZONE de l'organisation, la
-  grammaire exigeant au moins un composant. Les identifiants repris dans les UID (`uidHost`,
+  un calendrier sans aucune séance contient tout de même le `VTIMEZONE` de l'organisation, la
+  grammaire exigeant au moins un composant. Les identifiants repris dans les `UID` (`uidHost`,
   identifiant de cours) sont refusés s'ils contiennent un caractère à échapper ou s'ils finissent
   par `-AAAA-MM-JJ`, forme réservée aux séances datées.
 - Une séance déplacée vers une date postérieure à `endsOn` (ou antérieure à `startsOn`) a bien

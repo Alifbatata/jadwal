@@ -41,7 +41,7 @@ infra/             déploiement en fichiers : Ansible, Compose, Caddy, systemd, 
 
 ## Commandes
 
-Prérequis : Node 24 (voir `.node-version`), git, corepack (encore distribué avec Node 24 ; la CI, elle,
+Prérequis : Node 24 (voir `.node-version`), git, `corepack` (encore distribué avec Node 24 ; la CI, elle,
 installe pnpm avec l'action officielle `pnpm/setup`). Docker est optionnel jusqu'à l'étape 2.
 
 ```
@@ -60,7 +60,7 @@ Les variables d'environnement sont documentées dans `.env.example`. La base de 
 
 ## Licence et droits d'auteur
 
-- Titulaire du copyright : Mahmoud Ali Mohamad (Voltia). Le fichier [`COPYRIGHT`](COPYRIGHT) porte la
+- Titulaire du copyright : Mahmoud Ali `Mohamad` (Voltia). Le fichier [`COPYRIGHT`](COPYRIGHT) porte la
   ligne de copyright et l'avis MIT.
 - Tout le dépôt est sous **MIT** (fichier [`LICENSE`](LICENSE)), widget compris. Le widget garde une
   copie du texte dans [`packages/widget/LICENSE`](packages/widget/LICENSE), parce que ce paquet se lit

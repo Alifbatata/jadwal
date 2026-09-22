@@ -108,7 +108,7 @@ un autre ne verrait que le `noindex` et la ferait disparaître entièrement.
 - Le contenu affiché dans le cadre du widget est attribué à notre domaine, pas à celui de
   l'organisation. C'est le coût assumé de l'ADR 0005 révisé, et le lien visible du pied du widget
   est ce qui le compense.
-- Aucun « ping » n'est envoyé à un moteur après une modification : le point de notification des
+- Aucun « `ping` » n'est envoyé à un moteur après une modification : le point de notification des
   plans de site a été supprimé, et une requête vers l'ancien répond `404`. L'annonce se fait par la
   ligne `Sitemap` du `robots.txt`, plus une soumission manuelle en console de webmestre — qui reste
   une action manuelle en attente.

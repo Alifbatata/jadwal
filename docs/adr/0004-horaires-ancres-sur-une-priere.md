@@ -10,7 +10,7 @@ L'organisation peut exporter le calendrier annuel de ses heures de prière, au f
 son service de calendrier de prière. Contrainte : ne jamais appeler ni scraper un service tiers de
 calendrier de prière.
 
-Le flux ICS par organisation exporte les cours à heure fixe en événements récurrents (RRULE).
+Le flux ICS par organisation exporte les cours à heure fixe en événements récurrents (`RRULE`).
 L'ancrage sur la prière relève de `packages/core` (TypeScript pur, zéro dépendance à l'exécution,
 très testé). La feuille de route place `core` et ses tests à l'étape 1, et les heures de prière
 (import CSV et Adhan) à l'étape 7. Règle du projet : aucune dépendance sans besoin immédiat.
@@ -34,9 +34,9 @@ très testé). La feuille de route place `core` et ses tests à l'étape 1, et l
 - Les heures de prière sont fournies à l'expansion par une fonction `prayerTimes(date)` qui renvoie
   les cinq heures locales du jour, ou rien si le jour est inconnu ; le cœur ne calcule rien lui-même.
 - Début = heure de la prière + `offsetMinutes`, arrondi aux 5 minutes supérieures ; fin = début +
-  `durationMinutes`. Si la table ne connaît pas ce jour : `start` et `end` à null, `anchor`
+  `durationMinutes`. Si la table ne connaît pas ce jour : `start` et `end` à `null`, `anchor`
   (prière et décalage) présent quand même, pour que l'affichage puisse dire « après Maghrib ».
-- Une heure illisible pour la prière demandée (cellule vide, « 20h00 », valeur absente) vaut heure
+- Une heure illisible pour la prière demandée (cellule vide, « `20h00` », valeur absente) vaut heure
   inconnue, exactement comme un jour absent de la table : la séance sort sans heure au lieu de faire
   échouer l'expansion entière. L'import CSV de l'étape 7 signalera ces cellules à part.
 - Si le début calculé passe minuit, la séance reste rattachée au jour de la prière : `start` est
@@ -49,7 +49,7 @@ très testé). La feuille de route place `core` et ses tests à l'étape 1, et l
 - Une occurrence porte `startDayOffset` et `endDayOffset`, en nombre de jours depuis `date` (0 le
   jour même). Une séance ancrée qui commence après minuit et dure longtemps peut finir le
   surlendemain : `endDayOffset` vaut alors 2, ce qu'un booléen « le lendemain » ne saurait dire.
-- Export ICS : un VEVENT daté par occurrence dans la fenêtre glissante, `DESCRIPTION` commençant par
+- Export ICS : un `VEVENT` daté par occurrence dans la fenêtre glissante, `DESCRIPTION` commençant par
   le libellé fourni par l'appelant, occurrence sans heure connue omise, annulée omise.
 - Les tests utilisent une petite table d'heures de prière pour Bienne, marquée comme données de
   test, autour des changements d'heure de mars et d'octobre : les heures locales « sautent » d'une
@@ -210,7 +210,7 @@ décider à sa place.
   l'organisation (calendrier importé, sinon calcul avec Adhan) et restent indicatives.
 - Aucun appel à un service tiers de calendrier de prière et aucun scraping : les heures de prière
   viennent d'un fichier importé par l'organisation ou d'un calcul avec Adhan.
-- Les cours ancrés sur une prière ne sont pas exportés en RRULE : le flux ICS contient un
+- Les cours ancrés sur une prière ne sont pas exportés en `RRULE` : le flux ICS contient un
   événement daté par séance, sur une fenêtre glissante.
 - L'ancrage sur la prière fait partie de `packages/core` et de ses tests (étape 1).
 - L'import CSV et le calcul avec Adhan sont reportés à l'étape 7. Adhan (MIT) n'est ajouté qu'à

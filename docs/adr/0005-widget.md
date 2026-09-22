@@ -151,12 +151,12 @@ fonction pour laquelle cette page existe. À reprendre à l'étape 8, avec un es
 
 ## Ce qui a été décidé en 2026-09-19 (remplacé)
 
-- Le widget est la balise `<jadwal-widget org="...">`, un custom element compilé depuis Svelte 5,
+- Le widget est la balise `<jadwal-widget org="...">`, un `custom element` compilé depuis Svelte 5,
   avec Shadow DOM.
 - La sortie est un seul fichier JS, `dist/jadwal-widget.js`, utilisable avec une simple balise
   script, sans aucune dépendance à l'exécution.
 - Le widget est servi à une URL versionnée, avec une empreinte SRI pour les sites stricts.
-- L'iframe est le mode de secours.
+- L'`iframe` est le mode de secours.
 - La couleur d'accent est définie par organisation.
 - Le widget rend du texte brut uniquement : aucun HTML saisi n'est rendu.
 - Le widget reprend les trois vues côté public : Semaine (par défaut), Tous les cours (groupés
@@ -175,7 +175,7 @@ fonction pour laquelle cette page existe. À reprendre à l'étape 8, avec un es
 - La promesse « aucun JavaScript » de l'ADR 0027 devient « aucun JavaScript, sauf en mode intégré,
   où un cadre ne peut ni se dimensionner ni éviter de polluer l'historique autrement ». Cet ADR est
   amendé en conséquence.
-- Le risque ouvert du cadrage — le bloc « Embed Code » du site Odoo de la première organisation
+- Le risque ouvert du cadrage — le bloc « `Embed` Code » du site Odoo de la première organisation
   exécute-t-il un script extérieur ? — n'est pas levé, et il ne se lèvera qu'en essayant sur ce
   site. Les deux modes de pose sont livrés pour que la réponse, quelle qu'elle soit, ne bloque rien.
 - L'ADR 0026 justifiait le CORS ouvert et la limitation de débit par « un widget en appelle trois

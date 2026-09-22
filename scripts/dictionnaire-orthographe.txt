@@ -1,21 +1,29 @@
 # Dictionnaire du projet, pour `pnpm orthographe`.
 #
-# Un mot n'entre ici que s'il est **juste** et que le correcteur ne le connaît pas : un nom propre,
-# un terme technique, ou un mot d'une langue qui n'est pas celle du fichier relu. Un mot mal
+# **Il ne contient que de vrais mots** : des noms propres, des termes du métier, et des mots d'une
+# langue citée dans un texte français. Un nom de code, de fichier, de colonne ou de commande n'y
+# entre pas : sa place est entre accents graves dans le document, où il se lit comme du code et où
+# le correcteur ne le relit plus.
+#
+# Un mot n'entre ici que s'il est **juste** et que le correcteur ne le connaît pas. Un mot mal
 # orthographié qu'on ajouterait ici cesserait d'être corrigé pour toujours, dans tous les textes.
 #
 # Un mot par ligne. La comparaison se fait telle quelle et en minuscules.
 
-# --- Le produit, l'exploitant, les gens ---
+# --- Le produit, l'exploitant, les gens, les lieux ---
 jadwal
 Voltia
 Mahmoud
 Alifbatata
 Belvédère
+Hinnant
+Tromsø
 
-# --- Les mots du domaine ---
+# --- Les mots du métier ---
 iqama
-Jumu
+iqamas
+Jumu'a
+Jumu’a
 Fajr
 Dhuhr
 Asr
@@ -23,39 +31,45 @@ Maghrib
 Isha
 Ramadan
 adhan
-nLPD
-RGPD
-LPD
-
-# --- Les briques techniques citées dans les documents ---
-SvelteKit
-Svelte
-PostgreSQL
-Postgres
-Drizzle
-Docker
-Compose
-Caddy
-Ansible
-GitHub
-GHCR
-Cloudflare
-LanguageTool
-Node
-pnpm
-TypeScript
-JavaScript
-Vite
-Vitest
-ESLint
-Prettier
-WebAuthn
 passkey
 passkeys
-ICS
-RRULE
-EXDATE
-VTIMEZONE
+widget
+widgets
+monorepo
+playbook
+
+# --- Les noms de prière, dans les transcriptions que l'import accepte ---
+zuhr
+duhr
+dohr
+dhohr
+subh
+sobh
+isya
+ishaa
+icha
+ichaa
+imsak
+magrib
+maghreb
+fadjr
+fadjer
+assr
+aser
+
+# --- Les sigles ---
+ADR
+AGPL
+CLA
+OCI
+SLSA
+SFTP
+DKIM
+DMARC
+MTA
+HMAC
+GnuPG
+IANA
 RLS
 SQL
 UUID
@@ -75,59 +89,49 @@ HTML
 SVG
 QR
 UTC
+SHA
+SRI
+CDN
+DOM
+ICS
+sRGB
+nLPD
+RGPD
+LPD
+
+# --- Les noms propres des outils et des sociétés ---
+SvelteKit
+Svelte
+PostgreSQL
+Postgres
+Drizzle
+Docker
+Compose
+Caddy
+Ansible
+GitHub
+GHCR
+Cloudflare
+Infomaniak
+LanguageTool
+Node
+pnpm
+TypeScript
+JavaScript
+Vite
+Vitest
+ESLint
+Prettier
+WebAuthn
+BuildKit
 systemd
 rclone
-age
-gzip
-Kio
-Mio
-Gio
-widget
-widgets
 WhatsApp
 Instagram
 Facebook
 Odoo
-iframe
-Shadow
-DOM
-SRI
-CDN
-front
-back
-build
-commit
-commits
-workspace
-monorepo
-lockfile
-digest
-hash
-token
-cookie
-cookies
-timeout
-endpoint
-webhook
-crontab
-oneshot
-sudo
-SSH
-VPS
-uid
-root
-
-# --- Les mots que l'allemand et l'italien des écrans emploient ---
-Organisation
-Kurse
-Woche
-Monat
-Gebet
-Freitagsgebet
-Corsi
-Settimana
-Mese
-Preghiera
+Unlicense
+Monotonic
 
 # --- Mots français que le correcteur ne connaît pas, et qui sont justes ---
 superutilisateur
@@ -150,117 +154,15 @@ rouvrable
 scraper
 scrapons
 scrape
-
-# --- Les sigles et les noms des outils ---
-CLA
-OCI
-SLSA
-SFTP
-DKIM
-DMARC
-MTA
-HMAC
-GnuPG
-IANA
-psql
-cron
-crontab
-nftables
-BuildKit
-Infomaniak
-Unlicense
-0BSD
-Monotonic
-Hinnant
-Mohamad
-peering
-nanoid
-luxon
-dayjs
-undici
-VEVENT
-TZID
-noindex
-leakproof
-nullable
-NOSUPERUSER
-NOREPLICATION
-NOCREATEROLE
-NOCREATEDB
-NOBYPASSRLS
-NULL
-sRGB
-payload
-fixtures
-init
-exec
-map
-ping
-form
-org
-prayer
-Embed
-README
-trunk
-based
-later
-join
-
-# --- Sigles du dépôt et gabarits de dates ---
-ADR
-AGPL
-playbook
-corepack
-npm
-SHA
-element
-analytics
-Caddyfile
-cuid2
+réessai
 authentificateur
-NNNN
-AAAA
-JJ
-HH
-20h00
-19h23
-4xx
-5xx
+peering
 
-# --- Identifiants cités dans la documentation ---
-organization
-moved_here
-moved_away
-cancelled
-anchor
-core
-day
-America
-MuslimWorldLeague
-JADWAL_WIDGET_TEST_ORG
-Tromsø
-
-# --- Les noms de prière, dans les transcriptions que l'import accepte ---
-Jumu'a
-Jumu’a
-iqamas
-zuhr
-duhr
-dohr
-dhohr
-subh
-sobh
-isya
-ishaa
-icha
-ichaa
-imsak
-magrib
-maghreb
-fadjr
-fadjer
-assr
-aser
+# --- Unités et mesures ---
+gzip
+Kio
+Mio
+Gio
 
 # --- Mots allemands et italiens cités dans les documents français ---
 von
@@ -288,6 +190,12 @@ Hand
 Kopie
 Kursprogramm
 Periode
+Organisation
+Kurse
+Woche
+Monat
+Gebet
+Freitagsgebet
 ogni
 giorni
 anno
@@ -307,12 +215,8 @@ ven
 sam
 dim
 di
-
-# --- Codes de langue et mots anglais cites tels quels ---
-fr
-it
-ar
-de
-up
-couldn't
-réessai
+Corsi
+Settimana
+Mese
+Preghiera
+undici

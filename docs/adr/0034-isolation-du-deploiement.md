@@ -24,7 +24,7 @@ ce qui rend le déploiement rejouable, et son retrait sans dégât.
 - **Aucun port ouvert.** L'application publie son port sur `127.0.0.1` uniquement, où seul le
   mandataire va le chercher ; la base n'en publie aucun, et n'est donc joignable que depuis le réseau
   `jadwal`. Le `127.0.0.1:` du fichier Compose n'est pas décoratif : sans lui, Docker écrit ses
-  propres règles dans nftables et **contourne le pare-feu de l'hôte**, qui n'en voit rien. C'est la
+  propres règles dans `nftables` et **contourne le pare-feu de l'hôte**, qui n'en voit rien. C'est la
   faute la plus courante et la plus silencieuse de Docker sur un serveur protégé par un pare-feu.
 - **Des fichiers qui n'appartiennent qu'à `root`.** `/etc/jadwal`, `/var/lib/jadwal` et
   `/var/backups/jadwal` sont en `0700` ; le fichier d'environnement, qui porte tous les secrets du
@@ -90,7 +90,7 @@ production pour de vrai.
   (`age`, `rclone`, `curl`), crée ses répertoires, et pose ses fichiers. Il ne touche ni au pare-feu,
   ni à l'accès distant, ni aux comptes existants, ni à Docker lui-même. Rien de ce qu'il fait ne
   déborde des chemins et des objets préfixés `jadwal`, et `retrait.yml` les reprend un par un.
-- Le rôle `caddy` **refuse d'agir** si le Caddyfile de l'hôte n'importe pas un répertoire de sites.
+- Le rôle `caddy` **refuse d'agir** si le `Caddyfile` de l'hôte n'importe pas un répertoire de sites.
   Ajouter cet `import` est une modification de la configuration d'un service en fonctionnement :
   c'est une décision d'exploitation, prise sciemment, pas une liberté qu'un playbook s'accorde.
 - Ansible ne tourne pas sous Windows. `infra/README.md` donne la commande qui le lance dans un

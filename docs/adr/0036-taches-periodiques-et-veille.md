@@ -15,13 +15,13 @@ promet des durées ; il fallait que quelque chose les tienne.
 **systemd, une minuterie par tâche, `OnFailure=` pour l'échec, et une veille horaire pour le
 silence.**
 
-### systemd plutôt que cron
+### systemd plutôt que `cron`
 
 Trois raisons, dans l'ordre où elles comptent :
 
-1. **`Persistent=true`** rattrape une exécution manquée. Un serveur redémarré à 03:00 rate son cron
+1. **`Persistent=true`** rattrape une exécution manquée. Un serveur redémarré à 03:00 rate son `cron`
    de 03:10 et ne le sait pas. Une minuterie systemd le rejoue au démarrage suivant.
-2. **`OnFailure=`** envoie un courriel sans qu'aucun script n'ait à y penser. Avec cron, chaque
+2. **`OnFailure=`** envoie un courriel sans qu'aucun script n'ait à y penser. Avec `cron`, chaque
    script doit se souvenir de prévenir en cas d'échec — et le jour où il échoue avant d'arriver à ce
    code, il ne prévient personne.
 3. **Le journal existe déjà**, daté, avec le code de sortie, sans fichier de log à faire tourner.
@@ -108,14 +108,14 @@ production :
   affectation dont la substitution de commande échoue fait sortir le script : un serveur qui ne
   présente plus de certificat arrêtait la veille avant les contrôles suivants, au lieu de déclencher
   l'alerte. Corrigé par un `|| true` explicite, commenté à l'endroit où il compte.
-- **`text || boolean` rend `true`/`false` en PostgreSQL**, et non `t`/`f` comme l'affichage de psql.
+- **`text || boolean` rend `true`/`false` en PostgreSQL**, et non `t`/`f` comme l'affichage de `psql`.
   Le contrôle de RLS du test de restauration déclarait donc les vingt et une tables sans RLS, alors
   qu'elles l'avaient toutes. Un test de restauration qui échoue toujours ne vaut pas mieux qu'aucun
   test.
 
 ## Conséquences
 
-- Les unités tournent en root. C'est nécessaire — elles pilotent Docker — et c'est aussi ce qui
+- Les unités tournent en `root`. C'est nécessaire — elles pilotent Docker — et c'est aussi ce qui
   permet de garder `/etc/jadwal/jadwal.env` en `0600 root` : les secrets ne sont lisibles par aucun
   compte non privilégié.
 - Les scripts ne **sourcent jamais** le fichier d'environnement : ils en extraient les quelques

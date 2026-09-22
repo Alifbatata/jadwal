@@ -71,8 +71,8 @@ organization_id)` et non le seul `course_id`. Les vérifications d'intégrité r
   cela, la contrainte de clé étrangère passait pour un identifiant réel et échouait pour un
   identifiant inventé, et l'écart renseignait sur des personnes invisibles.
 - **Une contrainte de vérification ne refuse une ligne que si elle rend FAUX.** Une contrainte qui
-  rend NULL accepte. Or presque tout rend NULL au contact d'une valeur absente : `array_length` d'un
-  tableau vide, une comparaison avec un NULL, un `case` sans branche correspondante. Chaque
+  rend `NULL` accepte. Or presque tout rend `NULL` au contact d'une valeur absente : `array_length` d'un
+  tableau vide, une comparaison avec un `NULL`, un `case` sans branche correspondante. Chaque
   contrainte du schéma est donc close par `is true`, et un test de catalogue échoue si l'une d'elles
   l'oublie.
 - **Le journal d'audit** est en insertion seule : ADR 0015.
@@ -91,7 +91,7 @@ organization_id)` et non le seul `course_id`. Les vérifications d'intégrité r
   visible. Les messages d'erreur remontés à l'interface ne reprennent donc jamais la valeur fautive.
 - Une vue, si le projet en ajoute, devra porter `security_invoker = true` : sinon elle applique les
   droits de son propriétaire et ouvre un passage.
-- Aucune fonction du projet n'est marquée `LEAKPROOF` : une fonction leakproof est évaluée avant le
+- Aucune fonction du projet n'est marquée `LEAKPROOF` : une fonction `leakproof` est évaluée avant le
   filtre de sécurité et verrait les lignes des autres organisations.
 - L'isolation ne protège pas d'un rôle mal configuré : un superutilisateur ou un rôle `BYPASSRLS`
   voit tout, quelles que soient les politiques. Les deux rôles applicatifs sont créés par la
