@@ -45,6 +45,9 @@ Deux modes avec le même code :
 
 - En pratique, 2 à 3 responsables par organisation.
 - Connexion par lien magique reçu par mail, sans mot de passe.
+- Avant d'entrer dans l'espace d'une organisation, chaque personne accepte les conditions
+  d'utilisation, puis chaque nouvelle version du texte. Le super-admin n'y est pas soumis
+  (ADR 0044).
 - Journal des modifications (qui, quoi, quand) avec retour arrière.
 
 ## Cours
@@ -120,7 +123,7 @@ intervenant, lieu, rythme, prochaines dates, « ajouter à mon agenda », « par
 
 ### Langues
 
-- Langues d'interface : fr, de, it, ar, avec RTL complet et chiffres latins en arabe.
+- Langues d'interface : `fr`, `de`, `it`, `ar`, avec RTL complet et chiffres latins en arabe.
 - Contenu : une langue source obligatoire par cours, traductions optionnelles, repli sur la langue source.
 
 ### Flux ICS
@@ -129,8 +132,8 @@ Un flux ICS par organisation, et — depuis l'étape 6 — **un flux par cours**
 construit par le même code (ADR 0028). Pas de filtre par public sur un flux : la question est
 fermée.
 
-- Cours à heure fixe : événements récurrents (RRULE, EXDATE pour une annulation, RECURRENCE-ID
-  pour un déplacement).
+- Cours à heure fixe : événements récurrents (`RRULE`, `EXDATE` pour une annulation,
+  `RECURRENCE-ID` pour un déplacement).
 - Cours ancrés sur une prière : événements datés un par un sur une fenêtre glissante, puisque
   l'heure change chaque jour.
 
@@ -140,34 +143,38 @@ fermée.
 affiche la page publique, et lui donne la hauteur de son contenu.
 
 - Balise `<jadwal-widget org="...">`, Shadow DOM.
-- Zéro dépendance à l'exécution : TypeScript pur, un seul fichier, 1,71 Kio gzip.
+- Zéro dépendance à l'exécution : TypeScript pur, un seul fichier, moins de 2 Kio gzip.
 - Attributs `org`, `lang`, `view`, `audience`, `min-height`.
 - Le cadre **posé à la main** est le mode sans script, pour un site qui les refuse ; sa hauteur est
   alors fixe.
 - URL versionnée avec empreinte SRI pour les sites stricts, et `crossorigin` obligatoire avec elle.
-- Mention discrète « Proposé gratuitement par jadwal » en pied, avec un lien vers la page publique.
+- Mention discrète « Proposé gratuitement par jadwal, un service de Voltia » en pied, avec un lien
+  vers la page publique.
 - La couleur d'accent par organisation reste au contrat de la page publique : c'est elle qui rend.
 
 ### Données personnelles
 
-V1 sans inscription aux cours : aucune donnée personnelle côté public, aucun cookie, aucun
-analytics. Une inscription à un cours pourrait être une donnée sensible au sens de la nLPD
-suisse. Seules données personnelles du système : les emails des responsables.
+V1 sans inscription aux cours : un visiteur n'est pas identifié, ne reçoit aucun cookie, et aucun
+outil de mesure d'audience ne le suit. Une inscription à un cours pourrait être une donnée sensible
+au sens de la nLPD suisse. La liste complète des données personnelles que le service garde, avec
+leur durée, est dans `docs/CONDITIONS.md`.
 
 ## Technique
 
 - `packages/core` : récurrence, exceptions, ancrage sur la prière, export ICS. TypeScript pur,
   très testé (changements d'heure, cinquième semaine du mois, exceptions).
-- `packages/db` : Drizzle + PostgreSQL, RLS par organisation, tests avec un rôle NOBYPASSRLS.
+- `packages/db` : Drizzle + PostgreSQL, RLS par organisation, tests avec un rôle `NOBYPASSRLS`.
 - `apps/web` : SvelteKit. Espace des responsables pensé pour le téléphone, pages publiques rendues
   côté serveur, API publique en lecture seule et sans cookie, flux ICS.
-- `packages/widget` : custom element en TypeScript pur, un seul fichier JS, sans dépendance à
-  l'exécution. Il ne rend aucune vue — il pose un cadre vers la page publique (ADR 0005 révisé).
-- Récurrence stockée en colonnes explicites, pas en chaîne RRULE. Occurrences calculées côté
-  serveur. Le RRULE n'est généré qu'à l'export ICS, avec ical-generator.
+- `packages/widget` : élément personnalisé `<jadwal-widget>` en TypeScript pur, un seul fichier JS,
+  sans dépendance à l'exécution. Il ne rend aucune vue : il pose un cadre vers la page publique
+  (ADR 0005 révisé).
+- Récurrence stockée en colonnes explicites, pas en chaîne `RRULE`. Occurrences calculées côté
+  serveur. Le `RRULE` n'est généré qu'à l'export ICS, avec `ical-generator`.
 - Connexion : Better Auth (lien magique, limitation de débit, passkeys pour le super-admin ;
   organisations, invitations et rôles restent à nous, ADR 0016). Mails envoyés par SMTP (ADR 0024).
-- Instance officielle : VPS dédié, Docker Compose, Caddy, sauvegardes quotidiennes.
+- Instance officielle : Docker Compose derrière Caddy, sauvegardes quotidiennes chiffrées. jadwal
+  n'exige pas une machine à lui : son isolation ne repose pas dessus (ADR 0034).
 - Licence : MIT pour tout le dépôt, widget compris (ADR 0043). Contributions externes soumises à
   un CLA.
 
@@ -193,5 +200,5 @@ super-admin, où elles sont obligatoires : ADR 0025.)
 
 - Vérifier que le bloc d'intégration du constructeur de site utilisé par l'organisation exécute un
   script externe. Sinon, le cadre posé à la main, livré à l'étape 6.
-- `jadwal` est un nom de travail. Le nom public et le domaine sont à choisir avant le lancement.
-- VPS dédié à provisionner à l'étape 9.
+- Le nom de travail `jadwal` est gardé, et le service est servi sur `jadwal.voltia.ch`
+  (tranché à l'étape 9).

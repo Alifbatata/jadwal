@@ -31,6 +31,12 @@ le code est un défaut — de l'un ou de l'autre, et il faut trancher, pas conto
 | `public-vendredi.md`       | le bloc en haut de la page publique, et la place dans les vues |
 | `responsables-vendredi.md` | l'écran des responsables, distinct de la liste des cours       |
 
+## Les conditions d'utilisation (étape 16)
+
+| Fichier                      | Écran                                                                    |
+| ---------------------------- | ------------------------------------------------------------------------ |
+| `responsables-conditions.md` | la page des conditions, ouverte à tous, et l'écran qui les fait accepter |
+
 ## Conventions communes à tous les écrans publics
 
 ### Ce qui ne change jamais
@@ -55,9 +61,15 @@ le code est un défaut — de l'un ou de l'autre, et il faut trancher, pas conto
 
 ### Le pied, identique partout
 
-1. `S'abonner au calendrier` — lien vers la page d'abonnement.
-2. `Proposé gratuitement par jadwal`.
-3. Rien d'autre. Pas de mention légale, pas de compteur, pas de logo.
+1. Une ligne, deux liens séparés par `·` :
+   - `S'abonner au calendrier`, vers la page d'abonnement ;
+   - `Conditions d'utilisation`, vers `/conditions`. Le texte du lien suit la langue de la page
+     (`Nutzungsbedingungen`, `Condizioni d'uso`, `شروط الاستخدام`). La page, elle, n'existe qu'en
+     français, et le lien le dit par `hreflang="fr"`. Il s'ouvre toujours dans un nouvel onglet :
+     `/conditions` refuse d'être encadrée, et la page publique vit souvent dans un cadre, celui du
+     widget ou celui qu'une organisation pose à la main.
+2. `Proposé gratuitement par jadwal, un service de Voltia`.
+3. Rien d'autre. Pas de compteur, pas de logo.
 
 ### Comment une séance s'affiche
 

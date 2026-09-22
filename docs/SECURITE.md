@@ -50,14 +50,22 @@ l'appartenance est revérifiée à chaque requête. Un identifiant d'organisatio
 formulaire, une URL ou un en-tête ne donne rien.
 
 **5. Ce qui n'est pas explicitement autorisé est refusé.** Une contrainte de vérification qui rend
-NULL accepterait la ligne : toutes sont closes par `is true`. Une politique par opération, jamais une
-seule qui les couvre toutes. Une clé étrangère composite, parce que les vérifications d'intégrité
-contournent la sécurité au niveau des lignes.
+`NULL` accepterait la ligne : toutes sont closes par `is true`. Une politique par opération, jamais
+une seule qui les couvre toutes. Une clé étrangère composite, parce que les vérifications
+d'intégrité contournent la sécurité au niveau des lignes. Pour la même raison, le rôle applicatif
+ne modifie d'une adhésion que le rôle et sa date (migration 0053, addendum de l'ADR 0013). Avant,
+un membre pouvait repointer une adhésion de son organisation vers un compte jamais invité, puis lire
+son courriel ; et le nom de la contrainte dans l'erreur disait si une collègue avait accepté les
+conditions. Le refus tombe maintenant sur un droit absent, avant toute clé : il ne dit rien de ce
+qui existe.
 
 **6. Le journal d'audit est en ajout seul**, y compris pour le compte qui l'écrit, et son horodatage
 lui échappe (ADR 0015, 0020). Un compte compromis ne peut pas effacer ses traces, et cela vaut aussi
 pour le super-admin, qui a pourtant tous les autres droits : il y écrit, il n'y récrit rien. Le
-propriétaire, lui, purge sans lire.
+propriétaire, lui, purge sans lire. L'acceptation des conditions suit la même règle : le rôle
+applicatif lit et ajoute ses propres acceptations, sans rien modifier ni supprimer, et le moment est
+posé par la base, jamais par l'application. Le super-admin les lit, sans en écrire aucune. Elles
+partent avec l'adhésion, par la clé en cascade, et par aucun autre chemin (ADR 0044).
 
 **7. Les purges sont bornées, et elles appartiennent au propriétaire.** Journal à vingt-quatre mois,
 invitations résolues à quatre-vingt-dix jours, comptes sans adhésion à douze mois. Aucune n'est
@@ -112,7 +120,7 @@ rien d'autre que lui n'est atteignable. Le **fichier d'environnement**, qui port
 service, est en `0600 root:root` dans un répertoire en `0700` : aucun groupe partagé, aucun bit de
 lecture pour les autres, il est illisible à tout compte non privilégié. Enfin, tout ce que jadwal
 dépose porte son nom, dans des répertoires préfixés, et s'enlève d'un seul geste (ADR 0034). Ce que
-cette barrière n'arrête pas : qui obtient les droits root sur la machine tient le fichier
+cette barrière n'arrête pas : qui obtient les droits `root` sur la machine tient le fichier
 d'environnement, donc les mots de passe de la base — c'est un secret d'hébergement, et la section
 suivante le redit.
 
@@ -123,7 +131,7 @@ suivante le redit.
   ce n'est plus seulement une discipline de code : **le conteneur de l'application ne porte plus son
   mot de passe**, ni celui du propriétaire du schéma. Les deux vivent dans le fichier d'environnement
   d'un conteneur de démarrage qui crée les rôles, passe les migrations et s'arrête. Ce que cela
-  n'arrête pas : qui obtient les droits root sur la machine lit ce fichier-là comme les autres.
+  n'arrête pas : qui obtient les droits `root` sur la machine lit ce fichier-là comme les autres.
 - **Un compte super-admin compromis ouvre toutes les organisations, en lecture comme en écriture,
   sans qu'aucune d'elles soit prévenue d'une consultation.** C'est la conséquence directe et assumée
   de l'ADR 0025, et c'est le risque le plus lourd du service. Il ne tient qu'à la passkey : sans
@@ -162,3 +170,9 @@ suivante le redit.
 Les tests de `packages/db` jouent l'isolation contre un vrai PostgreSQL avec le rôle non privilégié,
 et échouent si une table ajoutée plus tard perd sa protection. Ceux d'`apps/web` lancent un vrai
 serveur et suivent le chemin complet d'une connexion. Aucun n'est simulé.
+
+`pnpm parcours:test` rejoue ce qu'une organisation vit, dans Chrome, sur l'image de production et
+une base neuve lancées par Docker : la passkey du super-admin, l'invitation, les conditions à
+accepter, les cours, la page publique, le widget posé sur une autre origine et le flux agenda. Il
+passe axe sur chaque page traversée, et échoue sur tout problème d'accessibilité d'impact `serious`
+ou `critical`, les deux niveaux les plus graves d'axe.

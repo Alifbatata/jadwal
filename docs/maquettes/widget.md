@@ -44,7 +44,7 @@ réponse, et non un message d'erreur sur le site de quelqu'un d'autre.
 2. **Un pied d'une ligne**, discret, en police du système, à 0,8 rem :
    - `Voir le programme complet` — un lien vers la page publique, qui **sort du cadre** (nouvelle
      fenêtre). C'est lui qu'on imprime, et c'est lui qui reste utile si le cadre ne s'affiche pas ;
-   - `Proposé gratuitement par jadwal`.
+   - `Proposé gratuitement par jadwal, un service de Voltia`.
 
 Le pied est traduit dans les quatre langues, d'après l'attribut `lang`.
 
@@ -60,11 +60,13 @@ d'autre : le contenu, l'en-tête, les vues, les filtres et les langues sont exac
    remplacement pour ne pas empiler d'entrées dans l'historique du site de l'organisation.
 2. **Trois règles de style** : plus de barre de défilement interne, une gouttière de barre stable,
    et un contexte de bloc sur le corps pour qu'aucune marge ne sorte de la boîte mesurée.
-3. **La mention `Proposé gratuitement par jadwal` disparaît du pied de la page** : c'est le pied du
-   widget qui la porte, sous le cadre, donc sur le site de l'organisation. L'écrire deux fois à dix
-   pixels d'écart n'apprendrait rien.
+3. **La mention `Proposé gratuitement par jadwal, un service de Voltia` disparaît du pied de la
+   page** : c'est le pied du widget qui la porte, sous le cadre, donc sur le site de l'organisation.
+   L'écrire deux fois à dix pixels d'écart n'apprendrait rien.
 
-Le lien `S'abonner au calendrier` reste, lui, dans le pied de la page.
+Les deux liens du pied de la page, `S'abonner au calendrier` et `Conditions d'utilisation`, restent
+dans le cadre. Le second s'ouvre dans un nouvel onglet, comme partout : `/conditions` refuse d'être
+encadrée, et `embed.js` laisse passer sans y toucher tout lien qui porte une cible.
 
 ## Ce que le widget ne fait pas
 
