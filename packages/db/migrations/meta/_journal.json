@@ -351,6 +351,13 @@
       "when": 1789960948164,
       "tag": "0049_session_privacy_and_purges",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1790047348164,
+      "tag": "0050_prayer_module",
+      "breakpoints": true
     }
   ]
 }

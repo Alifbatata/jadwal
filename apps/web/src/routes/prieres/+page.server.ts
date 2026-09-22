@@ -22,7 +22,7 @@ import {
 	type OrdreDeDate
 } from '@jadwal/core/prayer';
 import { withSessionOrg } from '$lib/server/context.js';
-import { mustAdminister } from '$lib/server/guard.js';
+import { mustAdministerPrayerModule } from '$lib/server/guard.js';
 import {
 	apercu,
 	effacerImport,
@@ -62,7 +62,7 @@ function position(valeur: FormDataEntryValue | null): number | null {
 }
 
 export const load: PageServerLoad = async (event) => {
-	const context = await mustAdminister(event);
+	const context = await mustAdministerPrayerModule(event);
 	return withSessionOrg(context, async (tx) => {
 		const settings = await readSettings(tx);
 		const reglages = await readReglages(tx);
@@ -79,8 +79,8 @@ export const load: PageServerLoad = async (event) => {
 			apercu: calcul ? apercu(calcul, today) : [],
 			// Les périodes saisies à la main, et les sept prochains jours **tels qu'ils seront
 			// servis** — les trois sources résolues, avec la provenance de chaque heure. C'est ce
-			// qui permet à une mosquée qui mélange les sources de voir laquelle a gagné, sans
-			// avoir à le déduire (ADR 0004, étape 8).
+			// qui permet à une organisation qui mélange les sources de voir laquelle a gagné,
+			// sans avoir à le déduire (ADR 0004, étape 8).
 			periodes: await readPeriodes(tx),
 			// Les sessions du vendredi : ce jour-là, ce sont elles qui tiennent lieu de Dhuhr, et le
 			// tableau ci-dessous doit le dire plutôt que d'afficher une heure que personne ne suit
@@ -100,7 +100,7 @@ export const load: PageServerLoad = async (event) => {
 export const actions: Actions = {
 	/** Calculer les sept prochains jours avec ce que le formulaire porte, sans rien enregistrer. */
 	apercu: async (event) => {
-		const context = await mustAdminister(event);
+		const context = await mustAdministerPrayerModule(event);
 		const form = await event.request.formData();
 		const latitude = position(form.get('latitude'));
 		const longitude = position(form.get('longitude'));
@@ -137,7 +137,7 @@ export const actions: Actions = {
 	},
 
 	enregistrer: async (event) => {
-		const context = await mustAdminister(event);
+		const context = await mustAdministerPrayerModule(event);
 		const form = await event.request.formData();
 		const latitude = position(form.get('latitude'));
 		const longitude = position(form.get('longitude'));
@@ -188,7 +188,7 @@ export const actions: Actions = {
 
 	/** Lire le fichier et montrer ce qu'on en a compris. **Rien n'est écrit.** */
 	lireFichier: async (event) => {
-		await mustAdminister(event);
+		await mustAdministerPrayerModule(event);
 		let form: FormData;
 		try {
 			form = await event.request.formData();
@@ -239,7 +239,7 @@ export const actions: Actions = {
 
 	/** Écrire ce que l'aperçu a montré, et seulement cela. */
 	confirmer: async (event) => {
-		const context = await mustAdminister(event);
+		const context = await mustAdministerPrayerModule(event);
 		const form = await event.request.formData();
 		const jours = deserialiser(String(form.get('aConfirmer') ?? ''));
 		if (jours.length === 0) return fail(400, { erreur: 'Il n’y a rien à enregistrer.' });
@@ -250,14 +250,14 @@ export const actions: Actions = {
 	},
 
 	/**
-	 * Enregistrer une période d'horaires : ce que la mosquée affiche sur son panneau.
+	 * Enregistrer une période d'horaires : ce que l'organisation affiche sur son panneau.
 	 *
 	 * Le chevauchement n'est pas vérifié ici. C'est la contrainte d'exclusion de la base qui le
 	 * refuse, et on attrape son code pour le dire en français : une vérification écrite en double
 	 * finirait par diverger de celle qui compte.
 	 */
 	periode: async (event) => {
-		const context = await mustAdminister(event);
+		const context = await mustAdministerPrayerModule(event);
 		const form = await event.request.formData();
 		const nom = String(form.get('name') ?? '').trim();
 		const de = String(form.get('fromDate') ?? '');
@@ -320,7 +320,7 @@ export const actions: Actions = {
 	 * jours un an plus tard, et « dates à vérifier » jusqu'à ce qu'un responsable l'enregistre.
 	 */
 	dupliquerPeriode: async (event) => {
-		const context = await mustAdminister(event);
+		const context = await mustAdministerPrayerModule(event);
 		const form = await event.request.formData();
 		const id = String(form.get('periodeId') ?? '');
 		try {
@@ -356,7 +356,7 @@ export const actions: Actions = {
 	},
 
 	supprimerPeriode: async (event) => {
-		const context = await mustAdminister(event);
+		const context = await mustAdministerPrayerModule(event);
 		const form = await event.request.formData();
 		const id = String(form.get('periodeId') ?? '');
 		const efface = await withSessionOrg(context, (tx) =>
@@ -368,7 +368,7 @@ export const actions: Actions = {
 
 	/** Retirer les jours importés d'une plage : le calcul reprend aussitôt la main. */
 	effacer: async (event) => {
-		const context = await mustAdminister(event);
+		const context = await mustAdministerPrayerModule(event);
 		const form = await event.request.formData();
 		const de = String(form.get('de') ?? '');
 		const a = String(form.get('a') ?? '');

@@ -5,7 +5,7 @@
 	let { data, children } = $props();
 	const organisation = $derived(data.organisation);
 	const peutAdministrer = $derived(organisation?.role !== 'editor');
-	/** La couleur de la mosquée, et le texte calculé qui va dessus (ADR 0031). */
+	/** La couleur de l'organisation, et le texte calculé qui va dessus (ADR 0031). */
 	const accent = $derived(variablesAccent(organisation?.accentColor));
 </script>
 
@@ -34,14 +34,15 @@
 
 {#if data.cotePublic || data.nu}
 	<!-- Une page publique porte son propre en-tête : elle ne passe pas par la coquille de l'espace
-	     des responsables, qui n'a aucun sens dans l'iframe du site d'une mosquée. La page d'essai du
-	     widget se rend seule pour la même raison : elle doit ressembler au site d'une mosquée. -->
+	     des responsables, qui n'a aucun sens dans l'iframe du site d'une organisation. La page d'essai
+	     du widget se rend seule pour la même raison : elle doit ressembler au site d'une
+	     organisation. -->
 	{@render children?.()}
 {:else}
 	<div style={accent} class="coquille">
 		{#if organisation?.asSuperAdmin}
-			<!-- La bannière n'est pas décorative : elle empêche de modifier la mauvaise mosquée par
-	     inadvertance, ce qui est le risque propre aux pouvoirs de super-admin (ADR 0025). -->
+			<!-- La bannière n'est pas décorative : elle empêche de modifier la mauvaise organisation
+	     par inadvertance, ce qui est le risque propre aux pouvoirs de super-admin (ADR 0025). -->
 			<p class="banniere" role="status">
 				Vous travaillez dans <strong>{organisation.name}</strong> avec vos pouvoirs de super-admin.
 				<a href={resolve('/super-admin')}>Changer d’organisation</a>
@@ -54,11 +55,15 @@
 				<nav aria-label="Espace des responsables">
 					<a href={resolve('/')}>À venir</a>
 					<a href={resolve('/cours')}>Cours</a>
-					<a href={resolve('/vendredi')}>Vendredi</a>
+					{#if organisation.prayerModule}
+						<a href={resolve('/vendredi')}>Vendredi</a>
+					{/if}
 					<a href={resolve('/partager')}>Partager</a>
 					{#if peutAdministrer}
 						<a href={resolve('/membres')}>Membres</a>
-						<a href={resolve('/prieres')}>Prières</a>
+						{#if organisation.prayerModule}
+							<a href={resolve('/prieres')}>Prières</a>
+						{/if}
 						<a href={resolve('/reglages')}>Réglages</a>
 					{/if}
 				</nav>
@@ -100,7 +105,7 @@
 	}
 
 	/* La valeur de repli, pour les écrans qui n'ont aucune organisation en contexte — la connexion,
-	   le choix d'organisation, le super-admin. Une page qui connaît sa mosquée la remplace. */
+	   le choix d'organisation, le super-admin. Une page qui connaît son organisation la remplace. */
 	:global(:root) {
 		--accent: #0f766e;
 		--accent-texte: #ffffff;

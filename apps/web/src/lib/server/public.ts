@@ -77,6 +77,8 @@ export interface OrganisationPublique {
 	accent_color: string;
 	default_language: string;
 	enabled_language: string[];
+	/** Le module des heures de prière de cette organisation (ADR 0042). */
+	prayer_module: boolean;
 	/** Sert au plan de site : la date de ce qu'il décrit, jamais l'heure de la requête (ADR 0029). */
 	updated_at: string;
 }
@@ -97,7 +99,7 @@ export async function findOrganisation(slug: string): Promise<OrganisationPubliq
 	return rows<OrganisationPublique>(
 		await publicDatabase().execute(sql`
 			select "id", "slug", "name", "time_zone", "accent_color", "default_language",
-				"enabled_language", "updated_at"::text as updated_at
+				"enabled_language", "prayer_module", "updated_at"::text as updated_at
 			from "organization" where "slug" = ${slug}
 		`)
 	)[0];
@@ -140,7 +142,8 @@ export async function fingerprint(organizationId: string): Promise<string> {
 				union all
 				-- Depuis l'étape 8, les heures servies ne viennent plus seulement de la table des
 				-- jours : une période saisie à la main les remplace. Sans cette ligne, changer une
-				-- iqama ne périmerait aucun flux agenda, et la mosquée servirait ses anciennes heures.
+				-- iqama ne périmerait aucun flux agenda, et l'organisation servirait ses anciennes
+				-- heures.
 				select max(greatest("updated_at", "created_at")), count(*) from "prayer_period"
 					where "organization_id" = ${organizationId}
 			) as sources
@@ -374,7 +377,12 @@ export async function readPublicProgramme(
 	const courses = await readPublicCourses(organisation.id, langue);
 	const exceptions = await readPublicExceptions(organisation.id, from, to);
 	const pauses = await readPublicPauses(organisation.id);
-	const prayerDays = await readPublicPrayerDays(organisation.id, from, to);
+	// Module éteint : aucune heure de prière n'est lue, donc aucune ne peut paraître (ADR 0042). Le
+	// déclencheur de la migration 0050 garantit déjà qu'aucun cours ancré ni aucune session du
+	// vendredi ne subsiste dans ce cas ; la lecture serait donc inutile, et la sauter le dit.
+	const prayerDays = organisation.prayer_module
+		? await readPublicPrayerDays(organisation.id, from, to)
+		: [];
 
 	// Le vendredi, c'est la Jumu'a qui tient lieu de Dhuhr : l'iqama du Dhuhr devient l'heure de la
 	// dernière session, et un cours ancré dessus la suit (ADR 0033).

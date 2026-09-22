@@ -42,6 +42,8 @@ export interface OrganisationContext extends SignedIn {
 	organizationName: string;
 	/** La couleur d'accent, portée par le contexte pour que la coquille l'ait sans requête de plus. */
 	organizationAccent: string;
+	/** Le module des heures de prière, pour que la navigation sache quoi proposer (ADR 0042). */
+	organizationPrayerModule: boolean;
 	/** `superadmin` quand la personne n'est pas membre mais entre par ses pouvoirs. */
 	role: MembershipRole | 'superadmin';
 	/** Vrai quand la connexion à utiliser est celle du super-admin, pas celle de l'application. */
@@ -120,6 +122,8 @@ export interface Membership {
 	organizationName: string;
 	/** Lue en même temps que le nom : la coquille en a besoin à chaque page (ADR 0031). */
 	organizationAccent: string;
+	/** Lu de même, et pour la même raison : la navigation en dépend (ADR 0042). */
+	organizationPrayerModule: boolean;
 	role: MembershipRole;
 }
 
@@ -142,8 +146,15 @@ export async function membershipsOf(person: SignedIn): Promise<Membership[]> {
 			appDatabase(),
 			{ organizationId, userId: person.userId },
 			async (tx) => {
-				const organisation = firstRow<{ slug: string; name: string; accent_color: string }>(
-					await tx.execute(sql`select "slug", "name", "accent_color" from "organization"`)
+				const organisation = firstRow<{
+					slug: string;
+					name: string;
+					accent_color: string;
+					prayer_module: boolean;
+				}>(
+					await tx.execute(
+						sql`select "slug", "name", "accent_color", "prayer_module" from "organization"`
+					)
 				);
 				const membership = firstRow<{ role: MembershipRole }>(
 					await tx.execute(sql`select "role" from "membership" where "user_id" = ${person.userId}`)
@@ -154,6 +165,7 @@ export async function membershipsOf(person: SignedIn): Promise<Membership[]> {
 							organizationSlug: organisation.slug,
 							organizationName: organisation.name,
 							organizationAccent: organisation.accent_color,
+							organizationPrayerModule: organisation.prayer_module,
 							role: membership.role
 						}
 					: undefined;
@@ -189,9 +201,15 @@ export async function currentOrganisation(person: SignedIn): Promise<Organisatio
 	// Pas membre : reste le chemin du super-admin, qui entre où il veut une fois sa passkey
 	// prouvée. Sans pouvoir, il n'entre nulle part — un lien magique ne suffit pas (ADR 0025).
 	if (!person.hasSuperAdminPowers || !active) return null;
-	const visited = firstRow<{ slug: string; name: string; accent_color: string }>(
+	const visited = firstRow<{
+		slug: string;
+		name: string;
+		accent_color: string;
+		prayer_module: boolean;
+	}>(
 		await superAdminDatabase().execute(
-			sql`select "slug", "name", "accent_color" from "organization" where "id" = ${active}`
+			sql`select "slug", "name", "accent_color", "prayer_module"
+				from "organization" where "id" = ${active}`
 		)
 	);
 	if (!visited) return null;
@@ -201,6 +219,7 @@ export async function currentOrganisation(person: SignedIn): Promise<Organisatio
 		organizationSlug: visited.slug,
 		organizationName: visited.name,
 		organizationAccent: visited.accent_color,
+		organizationPrayerModule: visited.prayer_module,
 		role: 'superadmin',
 		asSuperAdmin: true
 	};

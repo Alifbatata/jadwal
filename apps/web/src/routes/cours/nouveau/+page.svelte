@@ -49,6 +49,7 @@
 	{valeurs}
 	langues={data.langues}
 	salles={data.salles}
+	modulePrieres={data.modulePrieres}
 	action=""
 	libelleBouton="Créer le cours"
 />

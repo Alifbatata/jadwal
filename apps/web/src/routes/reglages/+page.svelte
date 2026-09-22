@@ -22,9 +22,10 @@
 
 {#if form?.erreur}<p class="erreur" role="alert">{form.erreur}</p>{/if}
 {#if form?.enregistre}<p class="succes" role="status">Réglages enregistrés.</p>{/if}
+{#if form?.moduleChange}<p class="succes" role="status">Module mis à jour.</p>{/if}
 
 <form method="post" action="?/enregistrer" class="colonne">
-	<label for="name">Nom de la mosquée</label>
+	<label for="name">Nom de l’organisation</label>
 	<input id="name" name="name" type="text" value={organisation.name} maxlength="120" required />
 
 	<label for="timeZone">Fuseau horaire</label>
@@ -107,7 +108,41 @@
 	</form>
 </section>
 
+<!-- Le seul endroit qui propose le module : pas de bannière, pas de suggestion ailleurs. Une
+     organisation à qui cela ne parle pas n'a rien à refuser (ADR 0042). -->
+<section aria-labelledby="module-titre">
+	<h2 id="module-titre">Heures de prière</h2>
+	{#if organisation.prayer_module}
+		<p>
+			Le module est <strong>allumé</strong>. Votre espace affiche les heures de prière et la prière
+			du vendredi, un cours peut être réglé sur une prière, et votre page publique les montre.
+		</p>
+		<p class="discret">
+			L'éteindre n'efface rien : vos horaires, vos imports et vos sessions du vendredi restent, et
+			tout revient si vous le rallumez.
+		</p>
+		<form method="post" action="?/modulePrieres">
+			<input type="hidden" name="allume" value="non" />
+			<button type="submit">Éteindre le module</button>
+		</form>
+	{:else}
+		<p>
+			Le module est <strong>éteint</strong>. Allumez-le si votre organisation publie des heures de
+			prière, une iqama ou une prière du vendredi, ou si un cours commence après une prière.
+		</p>
+		<form method="post" action="?/modulePrieres">
+			<input type="hidden" name="allume" value="oui" />
+			<button type="submit">Allumer le module</button>
+		</form>
+	{/if}
+</section>
+
 <style>
+	.discret {
+		color: #4b5563;
+		font-size: 0.9rem;
+	}
+
 	.colonne {
 		display: flex;
 		flex-direction: column;

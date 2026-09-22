@@ -256,7 +256,15 @@ export const organization = pgTable(
 		plan: text().notNull().default('free'),
 		status: text().notNull().default('active'),
 		/**
-		 * La formule qui ouvre les messages prêts à coller. Les mosquées ne se saluent pas toutes
+		 * Le module des heures de prière, éteint par défaut (ADR 0042). Il vit ici, et non sur
+		 * `prayer_settings`, parce que la politique publique donne déjà cette ligne à tout le
+		 * monde : la page publique, le widget et l'API le lisent sans jointure ni politique de
+		 * plus. Un déclencheur refuse de l'éteindre tant qu'un cours est ancré sur une prière ou
+		 * qu'une session du vendredi existe (migration 0050).
+		 */
+		prayerModule: boolean('prayer_module').notNull().default(false),
+		/**
+		 * La formule qui ouvre les messages prêts à coller. Les organisations ne se saluent pas toutes
 		 * de la même façon, et personne n'a envie de corriger la même ligne chaque semaine.
 		 */
 		greeting: text().notNull().default('Salam alaykoum'),
@@ -281,7 +289,7 @@ export const organization = pgTable(
 			for: 'select',
 			to: appRole,
 			// Son organisation… et celle qui vous invite : sans cela, une invitation ne pourrait pas
-			// même dire de quelle mosquée elle vient, et personne n'accepterait à l'aveugle
+			// même dire de quelle organisation elle vient, et personne n'accepterait à l'aveugle
 			// (ADR 0017). Une politique porte sur des lignes, pas sur des colonnes : la personne
 			// invitée lit donc la ligne entière — nom, slug, fuseau, couleur, langues, plan, état,
 			// dates — et rien d'autre ne s'ouvre, puisque membres, cours et journal exigent
@@ -484,8 +492,8 @@ export const membership = pgTable(
 			using: sql`${table.organizationId} = ${orgContext}`
 		}),
 		// Le super-admin n'a pas de politique de lecture ici : « qui est responsable de quelle
-		// mosquée » est ce que le modèle de menace classe comme sensible, et cela relève de la même
-		// fenêtre d'accès de support que le reste (ADR 0018). Il lit les organisations et les
+		// organisation » est ce que le modèle de menace classe comme sensible, et cela relève de la
+		// même fenêtre d'accès de support que le reste (ADR 0018). Il lit les organisations et les
 		// comptes, pas le lien entre les deux.
 		// Le super-admin invite, retire et change les rôles dans l'organisation où il est entré
 		// (ADR 0025). Il n'en est membre d'aucune : c'est le contexte, et lui seul, qui le borne.
@@ -838,7 +846,7 @@ export const prayerDay = pgTable(
 		createdAt: createdAt(),
 		/**
 		 * Recalculer un jour le met à jour sur place : sans cet horodatage, l'empreinte de cache des
-		 * flux agenda ne bougerait pas et une mosquée servirait ses anciennes heures pendant une
+		 * flux agenda ne bougerait pas et une organisation servirait ses anciennes heures pendant une
 		 * heure (ADR 0026, étape 7).
 		 */
 		updatedAt: updatedAt()
@@ -867,13 +875,13 @@ export const prayerDay = pgTable(
 // ---------------------------------------------------------------------------------------------
 // Périodes d'horaires (ADR 0004, étape 8)
 //
-// Ce que la mosquée décide elle-même, et qui passe avant tout le reste. Une période est ce qu'elle
-// imprime sur son panneau : un nom, une date de début, une date de fin facultative, et pour chaque
-// prière l'heure du soleil qu'elle affiche **et** l'heure d'iqama qu'elle appelle.
+// Ce que l'organisation décide elle-même, et qui passe avant tout le reste. Une période est ce
+// qu'elle imprime sur son panneau : un nom, une date de début, une date de fin facultative, et pour
+// chaque prière l'heure du soleil qu'elle affiche **et** l'heure d'iqama qu'elle appelle.
 //
 // Ce n'est pas une saisie jour par jour : personne ne remplit trois cent soixante-cinq jours. Une
-// mosquée qui règle un décalage d'iqama le fait une fois, sans date de fin ; une mosquée qui
-// affiche des heures fixes crée deux ou trois périodes par an, comme elle réimprime son panneau.
+// organisation qui règle un décalage d'iqama le fait une fois, sans date de fin ; une organisation
+// qui affiche des heures fixes crée deux ou trois périodes par an, comme elle réimprime son panneau.
 //
 // Deux périodes d'une même organisation ne peuvent pas se chevaucher. C'est une **contrainte
 // d'exclusion** de PostgreSQL, posée par une migration écrite à la main — Drizzle ne sait pas les
@@ -883,7 +891,7 @@ export const prayerPeriod = pgTable(
 	{
 		id: uuid().primaryKey(),
 		organizationId: uuid('organization_id').notNull(),
-		/** Ce que la mosquée écrit sur son panneau : « Hiver 2027 », « Ramadan ». */
+		/** Ce que l'organisation écrit sur son panneau : « Hiver 2027 », « Ramadan ». */
 		name: text().notNull(),
 		fromDate: date('from_date').notNull(),
 		/** Vide vaut « jusqu'à nouvel ordre ». */
@@ -897,7 +905,7 @@ export const prayerPeriod = pgTable(
 		 */
 		needsReview: boolean('needs_review').notNull().default(false),
 
-		/** Heures du soleil affichées par la mosquée. Vide : l'import ou le calcul décide. */
+		/** Heures du soleil affichées par l'organisation. Vide : l'import ou le calcul décide. */
 		fajr: time(),
 		dhuhr: time(),
 		asr: time(),
@@ -980,8 +988,8 @@ export const prayerSettings = pgTable(
 	{
 		organizationId: uuid('organization_id').primaryKey(),
 		/**
-		 * La position de la mosquée, en degrés décimaux, saisie à la main. Aucun géocodage : ce
-		 * serait un service extérieur interrogé avec l'adresse d'une mosquée (ADR 0009).
+		 * La position de l'organisation, en degrés décimaux, saisie à la main. Aucun géocodage : ce
+		 * serait un service extérieur interrogé avec l'adresse d'une organisation (ADR 0009).
 		 */
 		latitude: doublePrecision(),
 		longitude: doublePrecision(),
@@ -1165,11 +1173,11 @@ export const adminAccessLog = pgTable(
 //
 // La raison mérite d'être écrite, parce qu'elle n'est pas évidente : un `created_at` donnerait
 // l'heure de la **première** vue du jour, un `updated_at` celle de la **dernière**. Pour une petite
-// mosquée qui fait une vue par jour, ce serait l'heure exacte à laquelle une personne a lu la page —
-// c'est-à-dire précisément la donnée que ce compteur existe pour ne pas avoir.
+// organisation qui fait une vue par jour, ce serait l'heure exacte à laquelle une personne a lu la
+// page — c'est-à-dire précisément la donnée que ce compteur existe pour ne pas avoir.
 //
 // Le jour est la date **locale de l'organisation**, jamais la date UTC : sinon la soirée du vendredi
-// d'une mosquée de Bienne tomberait au samedi.
+// d'une organisation de Bienne tomberait au samedi.
 // ---------------------------------------------------------------------------------------------
 
 export const pageView = pgTable(

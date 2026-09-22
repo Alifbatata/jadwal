@@ -421,7 +421,9 @@ describe('catalogue : intégrité du schéma', () => {
 			'purge_page_views',
 			'purge_rate_limit',
 			'purge_resolved_invitations',
-			'refuse_last_org_admin'
+			'refuse_last_org_admin',
+			'refuse_prayer_course_without_module',
+			'refuse_prayer_module_off'
 		]);
 		// Une fonction leakproof serait évaluée avant le filtre de sécurité (ADR 0013).
 		expect(functions.filter((row) => row.leakproof)).toEqual([]);

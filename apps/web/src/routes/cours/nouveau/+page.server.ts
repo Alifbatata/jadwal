@@ -13,6 +13,9 @@ export const load: PageServerLoad = async (event) => {
 		const settings = await readSettings(tx);
 		return {
 			organisation: { name: settings.name },
+			// Une clé à elle : `organisation` est déjà posée par cette page et masque celle de la
+			// coquille, où vit le drapeau du module (ADR 0042).
+			modulePrieres: context.organizationPrayerModule,
 			langues: settings.enabled_language,
 			langueParDefaut: settings.default_language,
 			salles: (await readRooms(tx)).map((salle) => ({ id: salle.id, name: salle.name }))

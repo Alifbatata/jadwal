@@ -1,7 +1,7 @@
 # Cadrage de `jadwal`
 
-`jadwal` (« horaire » en arabe) est un service qui permet à une mosquée, puis plus tard à toute
-organisation, de publier le programme de ses cours récurrents à partir d'une seule saisie.
+`jadwal` (« horaire » en arabe) est un service qui permet à une organisation de publier le
+programme de ses cours récurrents à partir d'une seule saisie.
 Ce document fixe le périmètre de la V1. Les décisions structurantes sont détaillées dans les ADR
 (`docs/adr/`). Le nom `jadwal` est un nom de travail.
 
@@ -9,22 +9,22 @@ Ce document fixe le périmètre de la V1. Les décisions structurantes sont dét
 
 ### Problème
 
-Les informations de cours d'une mosquée sont éparpillées et se contredisent entre Instagram,
-Facebook, WhatsApp et Mawaqit.
+Les informations de cours d'une organisation sont éparpillées et se contredisent entre son site,
+ses réseaux sociaux, ses groupes de discussion et les annuaires où elle est inscrite.
 
 ### Solution
 
 Une seule saisie par les responsables, quatre sorties :
 
-1. un **widget** intégrable au site de la mosquée ;
+1. un **widget** intégrable au site de l'organisation ;
 2. une **page publique** par organisation, avec un lien unique à mettre partout ;
 3. un **flux agenda ICS** auquel on s'abonne ;
 4. des **messages WhatsApp** générés : programme de la semaine, annulation, déplacement, nouveau cours.
 
 ### Cible
 
-- V1 : les mosquées, gratuitement.
-- Plus tard : d'autres organisations, en payant.
+- V1 : toute organisation qui donne des cours récurrents, gratuitement.
+- Plus tard : un accès payant.
 - Le modèle prévoit dès le départ un `plan` par organisation et un statut « offert » que seul le
   super-admin peut attribuer. Aucun paiement n'est codé en V1.
 
@@ -43,7 +43,7 @@ Deux modes avec le même code :
 | `org_admin`  | invite et retire les membres de son organisation |
 | `editor`     | saisit et modifie les cours                      |
 
-- En pratique, 2 à 3 responsables par mosquée.
+- En pratique, 2 à 3 responsables par organisation.
 - Connexion par lien magique reçu par mail, sans mot de passe.
 - Journal des modifications (qui, quoi, quand) avec retour arrière.
 
@@ -77,9 +77,14 @@ rythme, horaire.
 
 ### Heures de prière
 
+**Module optionnel, éteint par défaut.** Une organisation qui ne l'allume pas ne voit nulle part
+d'heures de prière : ni dans son espace, ni sur sa page publique, ni dans son widget, ni dans
+l'API, et l'ancrage d'un cours sur une prière ne lui est pas proposé. Celle qui l'allume retrouve
+tout ce qui suit (ADR 0042).
+
 **Trois sources, dans cet ordre de priorité** (ADR 0004, complété à l'étape 8) :
 
-1. **Les horaires saisis par la mosquée**, sous forme de périodes : un nom, des dates, et pour
+1. **Les horaires saisis par l'organisation**, sous forme de périodes : un nom, des dates, et pour
    chaque prière l'heure affichée et l'heure d'**iqama** — une heure fixe ou un décalage en minutes.
    C'est ce qu'elle imprime sur son panneau.
 2. **L'import du calendrier CSV** de l'organisation, avec un modèle téléchargeable prérempli.
@@ -88,9 +93,11 @@ rythme, horaire.
 
 Un cours ancré sur une prière suit l'**iqama** quand elle existe, l'heure du soleil sinon.
 
-Ne jamais appeler ni scraper Mawaqit.
+Ne jamais appeler ni scraper un service tiers de calendrier de prière.
 
 ### Prière du vendredi
+
+Elle fait partie du même module, et suit le même interrupteur.
 
 Une, deux ou trois **sessions**, chacune avec son rang, son heure fixe, sa salle et ses **langues de
 sermon**. Elles passent par le même modèle que les cours (ADR 0033) et apparaissent en haut de la
@@ -144,7 +151,7 @@ affiche la page publique, et lui donne la hauteur de son contenu.
 ### Données personnelles
 
 V1 sans inscription aux cours : aucune donnée personnelle côté public, aucun cookie, aucun
-analytics. Une inscription à un cours de mosquée serait une donnée sensible au sens de la nLPD
+analytics. Une inscription à un cours pourrait être une donnée sensible au sens de la nLPD
 suisse. Seules données personnelles du système : les emails des responsables.
 
 ## Technique
@@ -175,8 +182,9 @@ suisse. Seules données personnelles du système : les emails des responsables.
 5. API publique, page publique en 4 langues, flux ICS.
 6. Widget, fidèle à la maquette, avec page de test d'intégration.
 7. Heures de prière : import CSV et Adhan, couleur d'accent, compteur de vues.
-8. Heures réelles de la mosquée, iqama, prière du vendredi.
-9. Finitions, infrastructure en fichiers, déploiement, pose sur le site de la première mosquée.
+8. Heures réelles de l'organisation, iqama, prière du vendredi.
+9. Finitions, infrastructure en fichiers, déploiement, pose sur le site de la première
+   organisation.
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
 passkeys pour tous les comptes, paiement. (Les passkeys sont arrivées à l'étape 4 pour le seul
@@ -184,7 +192,7 @@ super-admin, où elles sont obligatoires : ADR 0025.)
 
 ## Risques ouverts
 
-- Vérifier que le bloc « Embed Code » du site Odoo de la première mosquée exécute un script
-  externe. Sinon, le cadre posé à la main, livré à l'étape 6.
+- Vérifier que le bloc d'intégration du constructeur de site utilisé par l'organisation exécute un
+  script externe. Sinon, le cadre posé à la main, livré à l'étape 6.
 - `jadwal` est un nom de travail. Le nom public et le domaine sont à choisir avant le lancement.
 - VPS dédié à provisionner à l'étape 9.

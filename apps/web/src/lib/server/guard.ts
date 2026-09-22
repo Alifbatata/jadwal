@@ -4,7 +4,7 @@
 // rôle qu'exige l'écran. Le contexte vient de la session, jamais de l'URL (ADR 0013) ; le rôle est
 // relu à chaque requête, jamais gardé dans un cookie.
 
-import { redirect, type RequestEvent } from '@sveltejs/kit';
+import { error, redirect, type RequestEvent } from '@sveltejs/kit';
 import { currentOrganisation, type OrganisationContext, type SignedIn } from './context.js';
 
 /** Connecté, sinon la page de connexion. */
@@ -30,6 +30,30 @@ export async function mustBeInOrganisation(event: RequestEvent): Promise<Organis
 export async function mustAdminister(event: RequestEvent): Promise<OrganisationContext> {
 	const context = await mustBeInOrganisation(event);
 	if (context.role === 'editor') redirect(303, '/');
+	return context;
+}
+
+/**
+ * Les écrans du module des heures de prière, pour une organisation qui l'a allumé (ADR 0042).
+ *
+ * **404, et non une page vide avec un message.** Une page qui existe pour dire qu'elle n'a rien à
+ * dire reste une page à traduire, à tester et à maintenir. Éteint, le module est absent.
+ *
+ * Le contrôle est ici plutôt qu'à chaque chargement et à chaque action : ces écrans en comptent
+ * dix-huit à eux deux, et un seul oubli laisserait une porte ouverte sans que rien ne le dise.
+ */
+export async function mustHavePrayerModule(event: RequestEvent): Promise<OrganisationContext> {
+	const context = await mustBeInOrganisation(event);
+	if (!context.organizationPrayerModule) error(404, 'Not Found');
+	return context;
+}
+
+/** Les mêmes écrans, quand ils sont réservés aux responsables : les réglages des prières. */
+export async function mustAdministerPrayerModule(
+	event: RequestEvent
+): Promise<OrganisationContext> {
+	const context = await mustAdminister(event);
+	if (!context.organizationPrayerModule) error(404, 'Not Found');
 	return context;
 }
 

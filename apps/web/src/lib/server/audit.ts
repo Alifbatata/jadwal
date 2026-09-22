@@ -21,6 +21,7 @@ export type AuditAction =
 	| 'organization.create'
 	| 'organization.plan'
 	| 'organization.settings'
+	| 'organization.prayer_module'
 	| 'course.create'
 	| 'course.update'
 	| 'course.delete'
