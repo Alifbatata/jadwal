@@ -1,6 +1,10 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
+
 	let { form } = $props();
 </script>
+
+<svelte:head><title>Se connecter | jadwal</title></svelte:head>
 
 <h1>Se connecter</h1>
 
@@ -22,6 +26,12 @@
 	</form>
 {/if}
 
+<!-- Le texte que chacun accepte à sa première entrée dans un espace : il se lit avant d'avoir un
+     compte (ADR 0044). -->
+<p class="conditions">
+	<a href={resolve('/conditions')}>Lire les conditions d’utilisation</a>
+</p>
+
 <style>
 	form {
 		display: grid;
@@ -32,5 +42,8 @@
 	button {
 		font: inherit;
 		padding: 0.5rem;
+	}
+	.conditions {
+		margin-top: 1.5rem;
 	}
 </style>

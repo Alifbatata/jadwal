@@ -14,7 +14,14 @@ node_modules
 .env.*
 !.env.example
 A_LIVRER
+# Ce qui est propre à une machine en service n'entre ni dans l'image, ni dans le contexte de
+# construction, ni donc dans le cache de Docker.
+PRIVE
 docs
 infra
 *.md
 .courriels
+# L'exception, et elle doit rester en dernier : un motif plus bas l'annulerait. Le serveur incorpore
+# les conditions d'utilisation à sa construction (`apps/web/src/lib/server/conditions.ts`) ; sans ce
+# fichier, l'image ne se construit pas.
+!docs/CONDITIONS.md

@@ -13,6 +13,7 @@
 
 import { appDatabase, authDatabase, superAdminDatabase } from './database.js';
 import { auth } from './auth.js';
+import { versionIso as versionDesConditions } from './conditions.js';
 import { MEMBERSHIP_ROLES, newId, sql, withOrg, withUser, type Transaction } from '@jadwal/db';
 
 export type MembershipRole = (typeof MEMBERSHIP_ROLES)[number];
@@ -48,6 +49,12 @@ export interface OrganisationContext extends SignedIn {
 	role: MembershipRole | 'superadmin';
 	/** Vrai quand la connexion à utiliser est celle du super-admin, pas celle de l'application. */
 	asSuperAdmin: boolean;
+	/**
+	 * La personne a accepté la version en cours des conditions d'utilisation dans cette organisation
+	 * (ADR 0044). Tant que c'est faux, la porte de l'espace la renvoie vers `/conditions/accepter`.
+	 * Toujours vrai pour un compte super-admin, membre ou non : l'exploitant n'y est pas soumis.
+	 */
+	termsAccepted: boolean;
 }
 
 function firstRow<T>(result: unknown): T | undefined {
@@ -188,6 +195,29 @@ async function activeOrganizationId(person: SignedIn): Promise<string | null> {
 	return row?.active_organization_id ?? null;
 }
 
+/**
+ * La personne a-t-elle accepté la version en cours des conditions dans cette organisation ?
+ *
+ * Sans requête pour un compte super-admin, même membre : c'est l'exploitant, et c'est lui qui propose
+ * ce texte (ADR 0044). La lecture pose l'organisation **et** la personne : la politique ne montre à
+ * chacun que ses propres acceptations, et l'organisation seule ne verrait rien.
+ */
+async function hasAcceptedTerms(person: SignedIn, organizationId: string): Promise<boolean> {
+	if (person.isSuperAdmin) return true;
+	return withOrg(appDatabase(), { organizationId, userId: person.userId }, async (tx) => {
+		const row = firstRow<{ accepted: boolean }>(
+			await tx.execute(sql`
+				select exists (
+					select 1 from "terms_acceptance"
+					where "organization_id" = ${organizationId}
+						and "user_id" = ${person.userId} and "version" = ${versionDesConditions}
+				) as accepted
+			`)
+		);
+		return row?.accepted === true;
+	});
+}
+
 /** L'organisation choisie pour cette session, si elle en a une et que l'appartenance tient. */
 export async function currentOrganisation(person: SignedIn): Promise<OrganisationContext | null> {
 	const active = await activeOrganizationId(person);
@@ -196,7 +226,14 @@ export async function currentOrganisation(person: SignedIn): Promise<Organisatio
 	const chosen =
 		memberships.find((entry) => entry.organizationId === active) ??
 		(memberships.length === 1 ? memberships[0] : undefined);
-	if (chosen) return { ...person, ...chosen, asSuperAdmin: false };
+	if (chosen) {
+		return {
+			...person,
+			...chosen,
+			asSuperAdmin: false,
+			termsAccepted: await hasAcceptedTerms(person, chosen.organizationId)
+		};
+	}
 
 	// Pas membre : reste le chemin du super-admin, qui entre où il veut une fois sa passkey
 	// prouvée. Sans pouvoir, il n'entre nulle part — un lien magique ne suffit pas (ADR 0025).
@@ -221,7 +258,9 @@ export async function currentOrganisation(person: SignedIn): Promise<Organisatio
 		organizationAccent: visited.accent_color,
 		organizationPrayerModule: visited.prayer_module,
 		role: 'superadmin',
-		asSuperAdmin: true
+		asSuperAdmin: true,
+		// L'exploitant n'accepte pas ses propres conditions (ADR 0044).
+		termsAccepted: true
 	};
 }
 

@@ -1,8 +1,9 @@
 // Ce que chaque route de l'espace des responsables demande avant de faire quoi que ce soit.
 //
-// Une seule porte, trois marches : être connecté, avoir une organisation en contexte, et avoir le
-// rôle qu'exige l'écran. Le contexte vient de la session, jamais de l'URL (ADR 0013) ; le rôle est
-// relu à chaque requête, jamais gardé dans un cookie.
+// Une seule porte, quatre marches : être connecté, avoir une organisation en contexte, avoir accepté
+// la version en cours des conditions d'utilisation (ADR 0044), et avoir le rôle qu'exige l'écran. Le
+// contexte vient de la session, jamais de l'URL (ADR 0013) ; le rôle et l'acceptation sont relus à
+// chaque requête, jamais gardés dans un cookie.
 
 import { error, redirect, type RequestEvent } from '@sveltejs/kit';
 import { currentOrganisation, type OrganisationContext, type SignedIn } from './context.js';
@@ -23,6 +24,23 @@ export async function mustBeInOrganisation(event: RequestEvent): Promise<Organis
 	const context = await currentOrganisation(person);
 	if (!context) redirect(303, '/organisations');
 	event.locals.visited = { id: context.organizationId, slug: context.organizationSlug };
+	// Ici, et non écran par écran : toutes les pages et toutes les actions de l'espace passent par
+	// cette porte, et un seul oubli laisserait entrer sans accord. Tous les rôles s'y arrêtent,
+	// éditeurs compris, puisqu'ils publient aussi ; le super-admin jamais (ADR 0044).
+	if (!context.termsAccepted) redirect(303, '/conditions/accepter');
+	return context;
+}
+
+/**
+ * L'écran d'acceptation des conditions : connecté, une organisation en contexte, **et** des
+ * conditions à accepter. Il ne passe pas par `mustBeInOrganisation`, qui le renverrait vers
+ * lui-même ; une personne qui a déjà accepté cette version retourne à l'accueil de l'espace.
+ */
+export async function mustHaveTermsToAccept(event: RequestEvent): Promise<OrganisationContext> {
+	const person = mustBeSignedIn(event);
+	const context = await currentOrganisation(person);
+	if (!context) redirect(303, '/organisations');
+	if (context.termsAccepted) redirect(303, '/');
 	return context;
 }
 

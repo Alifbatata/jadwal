@@ -53,7 +53,10 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 					// (ADR 0042).
 					prayerModule: context.organizationPrayerModule,
 					role: context.role,
-					asSuperAdmin: context.asSuperAdmin
+					asSuperAdmin: context.asSuperAdmin,
+					// Tant que les conditions ne sont pas acceptées, la navigation n'est pas
+					// affichée : chacun de ses liens ramènerait à l'écran d'acceptation (ADR 0044).
+					termsAccepted: context.termsAccepted
 				}
 			: null
 	};
