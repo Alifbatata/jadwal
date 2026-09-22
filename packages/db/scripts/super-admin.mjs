@@ -103,7 +103,7 @@ export async function grantSuperAdmin({ email, name, overrides = {}, env = proce
 	}
 }
 
-if (isMainModule(import.meta.url)) {
+if (isMainModule(import.meta.filename)) {
 	try {
 		const resultat = await grantSuperAdmin(parseArgs(process.argv.slice(2)));
 		if (resultat.deja) {

@@ -5,6 +5,8 @@
 // politique interdit au rôle d'authentification d'écrire `is_super_admin = true` (migration 0032).
 // Ce test le vérifie aussi, parce que la commande n'a de sens que tant que cette interdiction tient.
 
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { inject } from 'vitest';
 import { sql } from 'drizzle-orm';
@@ -104,6 +106,30 @@ describe('la commande', () => {
 		const resultat = await grantSuperAdmin({ email: email.toUpperCase(), overrides });
 		expect(resultat.deja).toBe(true);
 		expect(await ligne(email)).toHaveLength(1);
+	});
+});
+
+describe('la commande, lancée comme on la lance vraiment', () => {
+	it('fait quelque chose, et le dit, quand on l’appelle en ligne de commande', async () => {
+		// Ce test existe parce que le contraire est arrivé : `isMainModule` recevait une URL là où il
+		// attend un chemin, la garde rendait faux, et la commande **ne faisait rien en sortant en 0**.
+		// Rien dans la sortie, rien dans la base, et un code de retour qui disait que tout allait
+		// bien. Appeler la fonction depuis un test ne l'aurait jamais montré : il faut lancer le
+		// fichier comme l'exploitant le lance.
+		const email = `cli-${Date.now()}@exemple-super-admin.test`;
+		const script = fileURLToPath(new URL('../scripts/super-admin.mjs', import.meta.url));
+		const { status, stdout, stderr } = spawnSync(process.execPath, [script, '--email', email], {
+			encoding: 'utf8',
+			env: { ...process.env, POSTGRES_DB: inject('testDatabase') }
+		});
+
+		expect(stderr, 'la commande ne doit rien écrire sur la sortie d’erreur').toBe('');
+		expect(status, 'la commande doit réussir').toBe(0);
+		expect(stdout, 'la commande doit dire ce qu’elle a fait').toContain(email);
+		expect(stdout).toContain('compte créé');
+
+		const [cree] = await ligne(email);
+		expect(cree?.is_super_admin, 'et l’avoir fait pour de vrai').toBe(true);
 	});
 });
 
