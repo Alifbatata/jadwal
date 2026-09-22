@@ -434,7 +434,10 @@ describe('les quatre langues', () => {
 	});
 
 	it('falls back to the source language without ever saying so', async () => {
-		const allemand = await (await fetch(`${origin}/m/${SLUG}/de`)).text();
+		// La vue « Tous les cours », et non la vue Semaine : « Quinzaine » n'a lieu qu'un mardi sur
+		// deux, et la semaine en cours ne la montre qu'une semaine sur deux. Le test tombait donc un
+		// mercredi sur deux, sans que rien n'ait changé (vu le 2026-09-23).
+		const allemand = await (await fetch(`${origin}/m/${SLUG}/de?vue=cours`)).text();
 		// « Wöchentlich » est traduit ; « Quinzaine » ne l'est pas et sort dans sa langue source.
 		expect(allemand).toContain('Wöchentlich');
 		expect(allemand).toContain('Quinzaine');
@@ -450,9 +453,26 @@ describe('les quatre langues', () => {
 
 	it('links the language versions to each other for search engines', async () => {
 		const html = await (await fetch(`${origin}/m/${SLUG}/cours/${publieId}`)).text();
-		for (const langue of ['fr', 'de', 'it', 'ar']) {
-			expect(html).toContain(`hreflang="${langue}"`);
-		}
+		// Les annotations de version linguistique, et elles seules. Le lien des conditions, au pied
+		// de toute page publique, porte lui aussi `hreflang="fr"` : chercher dans la page entière
+		// laissait passer une version française absente.
+		const versions = Object.fromEntries(
+			[...html.matchAll(/<link\b[^>]*>/g)]
+				.map((trouve) => trouve[0])
+				.filter((balise) => /\srel="alternate"/.test(balise))
+				.map((balise) => [
+					balise.match(/\shreflang="([^"]*)"/)?.[1],
+					balise.match(/\shref="([^"]*)"/)?.[1]
+				])
+		);
+		const adresse = (prefixe: string) => `${origin}/m/${SLUG}${prefixe}/cours/${publieId}`;
+		expect(versions).toEqual({
+			fr: adresse(''),
+			de: adresse('/de'),
+			it: adresse('/it'),
+			ar: adresse('/ar'),
+			'x-default': adresse('')
+		});
 	});
 });
 

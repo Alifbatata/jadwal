@@ -63,81 +63,86 @@
 	style={variablesAccent(data.organisation.accentColor)}
 	data-jadwal-embed={data.integre ? '' : undefined}
 >
-	<p class="fil">
-		<a href={lienVue(adresse)}>{data.organisation.name}</a> ›
-		<a href={lienVue(adresse, { vue: 'cours' })}>{mots.coursesCrumb}</a>
-	</p>
+	<!-- Tout ce qui précède le pied est le contenu de la page, fil d'Ariane et choix de langue
+	     compris : cette page n'a pas d'en-tête propre. Sans ce repère, axe relevait chacun de ses
+	     blocs. -->
+	<main>
+		<p class="fil">
+			<a href={lienVue(adresse)}>{data.organisation.name}</a> ›
+			<a href={lienVue(adresse, { vue: 'cours' })}>{mots.coursesCrumb}</a>
+		</p>
 
-	<h1>{data.cours.title}</h1>
-	<p class="reperes">{reperes}</p>
+		<h1>{data.cours.title}</h1>
+		<p class="reperes">{reperes}</p>
 
-	{#if data.cours.description}
-		<p>{data.cours.description}</p>
-	{/if}
-
-	<dl>
-		{#if data.cours.room}
-			<dt>{mots.place}</dt>
-			<dd>{data.cours.room}</dd>
+		{#if data.cours.description}
+			<p>{data.cours.description}</p>
 		{/if}
-		{#if data.cours.teacher}
-			<dt>{mots.teacher}</dt>
-			<dd>{data.cours.teacher}</dd>
+
+		<dl>
+			{#if data.cours.room}
+				<dt>{mots.place}</dt>
+				<dd>{data.cours.room}</dd>
+			{/if}
+			{#if data.cours.teacher}
+				<dt>{mots.teacher}</dt>
+				<dd>{data.cours.teacher}</dd>
+			{/if}
+			<dt>{mots.taughtIn}</dt>
+			<dd>{languesEnClair(data.langue, data.cours.teachingLanguages)}</dd>
+			{#if data.cours.endsOn}
+				<dt>{mots.datesLabel}</dt>
+				<dd>
+					{mots.fromTo(
+						dateWithYear(data.langue, data.cours.startsOn as IsoDate),
+						dateWithYear(data.langue, data.cours.endsOn as IsoDate)
+					)}
+				</dd>
+			{/if}
+		</dl>
+
+		<h2>{mots.nextSessions}</h2>
+		{#if data.prochaines.length === 0}
+			<p class="vide">{mots.noNextSessions}</p>
+		{:else}
+			<ul>
+				{#each data.prochaines as seance (seance.date + seance.status)}
+					<li class:barree={seance.status === 'cancelled'}>
+						{longDate(data.langue, seance.date as IsoDate)}
+						<span class="heure">{heureDeSeance(data.langue, seance)}</span>
+						{#if seance.status === 'cancelled'}<span class="marque">{mots.cancelled}</span>{/if}
+						{#if seance.status === 'moved_here'}
+							<span class="marque">{mots.exceptionalDate}</span>
+						{/if}
+					</li>
+				{/each}
+			</ul>
 		{/if}
-		<dt>{mots.taughtIn}</dt>
-		<dd>{languesEnClair(data.langue, data.cours.teachingLanguages)}</dd>
-		{#if data.cours.endsOn}
-			<dt>{mots.datesLabel}</dt>
-			<dd>
-				{mots.fromTo(
-					dateWithYear(data.langue, data.cours.startsOn as IsoDate),
-					dateWithYear(data.langue, data.cours.endsOn as IsoDate)
-				)}
-			</dd>
+
+		<p><a class="bouton" href={data.flux.webcal}>{mots.addCourseToCalendar}</a></p>
+		<p class="adresse">{mots.courseFeedAddress}</p>
+		<p class="lien"><code>{data.flux.https}</code></p>
+
+		<p class="liens">
+			<a href={lienAgenda(adresse)}>{mots.subscribeWhole}</a>
+			·
+			<a href={lienVue(adresse)}>{mots.backToProgramme}</a>
+		</p>
+
+		{#if data.langues.length > 1}
+			<nav class="langues" aria-label="Langues">
+				{#each data.langues as autre (autre)}
+					<a
+						href={versLangue(autre)}
+						hreflang={autre}
+						aria-current={autre === data.langue ? 'true' : undefined}
+					>
+						{NOM_DE_LANGUE[autre]}
+					</a>
+				{/each}
+			</nav>
 		{/if}
-	</dl>
-
-	<h2>{mots.nextSessions}</h2>
-	{#if data.prochaines.length === 0}
-		<p class="vide">{mots.noNextSessions}</p>
-	{:else}
-		<ul>
-			{#each data.prochaines as seance (seance.date + seance.status)}
-				<li class:barree={seance.status === 'cancelled'}>
-					{longDate(data.langue, seance.date as IsoDate)}
-					<span class="heure">{heureDeSeance(data.langue, seance)}</span>
-					{#if seance.status === 'cancelled'}<span class="marque">{mots.cancelled}</span>{/if}
-					{#if seance.status === 'moved_here'}
-						<span class="marque">{mots.exceptionalDate}</span>
-					{/if}
-				</li>
-			{/each}
-		</ul>
-	{/if}
-
-	<p><a class="bouton" href={data.flux.webcal}>{mots.addCourseToCalendar}</a></p>
-	<p class="adresse">{mots.courseFeedAddress}</p>
-	<p class="lien"><code>{data.flux.https}</code></p>
-
-	<p class="liens">
-		<a href={lienAgenda(adresse)}>{mots.subscribeWhole}</a>
-		·
-		<a href={lienVue(adresse)}>{mots.backToProgramme}</a>
-	</p>
-
-	{#if data.langues.length > 1}
-		<nav class="langues" aria-label="Langues">
-			{#each data.langues as autre (autre)}
-				<a
-					href={versLangue(autre)}
-					hreflang={autre}
-					aria-current={autre === data.langue ? 'true' : undefined}
-				>
-					{NOM_DE_LANGUE[autre]}
-				</a>
-			{/each}
-		</nav>
-	{/if}
+	</main>
 
 	<Pied langue={data.langue} lienAgenda={lienAgenda(adresse)} integre={data.integre} />
 </div>

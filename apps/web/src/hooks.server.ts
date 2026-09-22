@@ -9,6 +9,7 @@
 import { building } from '$app/environment';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { error, type Handle } from '@sveltejs/kit';
+import { documentDansSaLangue } from '$lib/i18n.js';
 import { auth } from '$lib/server/auth.js';
 import { passkeyCount, recordAdminAccess, signedIn } from '$lib/server/context.js';
 import { compter } from '$lib/server/vues.js';
@@ -101,7 +102,25 @@ export const handle: Handle = async ({ event, resolve }) => {
 	event.locals.person = cotePublic ? null : await signedIn(event.request.headers);
 	if (!cotePublic) await guardPasskeyRoutes(event);
 
-	const response = await svelteKitHandler({ event, resolve, auth: auth(), building });
+	// La langue du document, écrite sur `<html>` une fois la page rendue : la route publique l'a
+	// posée sur `event.locals.langue` pendant son chargement, qui précède le rendu. `locals` est lu
+	// au moment du morceau, pas avant : lu ici, il serait encore vide. Better Auth appelle `resolve`
+	// sans options ; on lui passe donc un `resolve` qui porte déjà la transformation, au lieu de
+	// contourner son chemin.
+	const dansSaLangue: typeof resolve = (evenement, options) =>
+		resolve(evenement, {
+			...options,
+			transformPageChunk: async (morceau) => {
+				const html = (await options?.transformPageChunk?.(morceau)) ?? morceau.html;
+				return documentDansSaLangue(html, evenement.locals.langue);
+			}
+		});
+	const response = await svelteKitHandler({
+		event,
+		resolve: dansSaLangue,
+		auth: auth(),
+		building
+	});
 
 	// Le registre interne : une entrée par requête d'un super-admin en exercice, jamais une par
 	// ligne lue. Il ne va pas dans le journal de l'organisation, qui ne voit pas les consultations.
