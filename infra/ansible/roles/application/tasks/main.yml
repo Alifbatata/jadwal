@@ -53,12 +53,29 @@
   no_log: true
   notify: relancer jadwal
 
+# Ce que Compose lit pour interpoler, et **rien d'autre**. Aucun secret n'y entre.
+#
+# Compose ne se contente pas de lire le fichier qu'on lui donne : il développe les références de
+# variables à l'intérieur de ses valeurs. Tant qu'on lui donnait `jadwal.env`, le « $ » du mot de
+# passe SMTP lui faisait nommer deux de ses caractères dans un avertissement, à chaque appel de
+# chaque tâche. Le fichier que Compose lit ne porte donc plus que l'image, le port et la taille de
+# corps, et il est en 0644 : il n'y a rien à cacher dedans.
+- name: Le fichier d'interpolation de Compose
+  ansible.builtin.template:
+    src: compose.env.j2
+    dest: '{{ jadwal_etc }}/compose.env'
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+  notify: relancer jadwal
+
 # Un fichier par conteneur, et chacun ne porte que ce que son service a besoin de savoir. Compose
 # les lit en `format: raw` : ce qui est écrit ici arrive tel quel dans le conteneur, « $ » compris.
 #
 # `jadwal.env` ci-dessus ne disparaît pas pour autant : c'est lui que lisent les tâches de l'hôte et
-# le conteneur jetable qui envoie les alertes, et c'est lui que Compose lit pour interpoler ce qui
-# n'est pas secret — l'image, le port.
+# le conteneur jetable qui envoie les alertes, par `docker run --env-file`, qui n'interpole rien.
+# Compose, lui, ne le lit plus du tout.
 - name: Les fichiers d'environnement des conteneurs
   ansible.builtin.template:
     src: '{{ item }}.env.j2'
@@ -87,7 +104,7 @@
 # sans besoin immédiat.
 - name: Tirage des images, au digest demandé
   ansible.builtin.command:
-    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/jadwal.env pull --quiet
+    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/compose.env pull --quiet
   become: true
   register: tirage
   changed_when: tirage.stderr | length > 0
@@ -101,7 +118,7 @@
 # pourraient plus fonctionner, puisque `app.env` ne porte plus les mots de passe qu'il leur faut.
 - name: Démarrage de la pile
   ansible.builtin.command:
-    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/jadwal.env up --detach --remove-orphans
+    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/compose.env up --detach --remove-orphans
   become: true
   register: demarrage
   changed_when: "'Started' in demarrage.stderr or 'Created' in demarrage.stderr or 'Recreated' in demarrage.stderr"
@@ -116,7 +133,7 @@
 # négatif est pire qu'un `--check` qu'on ne joue pas.
 - name: Ce que le conteneur de démarrage a fait
   ansible.builtin.command:
-    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/jadwal.env logs init --no-log-prefix --tail 40
+    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/compose.env logs init --no-log-prefix --tail 40
   become: true
   register: journal_init
   changed_when: false
@@ -130,7 +147,7 @@
 # démarrage encore en marche voudrait dire que Compose n'a pas attendu ce qu'il devait attendre.
 - name: Le conteneur de démarrage s'est bien arrêté
   ansible.builtin.command:
-    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/jadwal.env ps --all --format {% raw %}'{{.Service}} {{.State}} {{.ExitCode}}'{% endraw %} init
+    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/compose.env ps --all --format {% raw %}'{{.Service}} {{.State}} {{.ExitCode}}'{% endraw %} init
   become: true
   register: etat_init
   changed_when: false

@@ -87,7 +87,7 @@
       ansible.builtin.command:
         cmd: >-
           docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml
-          --env-file {{ jadwal_etc }}/jadwal.env down --remove-orphans
+          --env-file {{ jadwal_etc }}/compose.env down --remove-orphans
           {{ '--volumes' if jadwal_effacer_donnees else '' }}
       become: true
       failed_when: false

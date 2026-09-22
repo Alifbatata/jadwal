@@ -4,6 +4,6 @@
 # `jadwal` bornent l'action aux deux conteneurs de jadwal.
 - name: relancer jadwal
   ansible.builtin.command:
-    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/jadwal.env up --detach --remove-orphans
+    cmd: docker compose --file {{ jadwal_racine }}/compose/docker-compose.yml --env-file {{ jadwal_etc }}/compose.env up --detach --remove-orphans
   become: true
   changed_when: true

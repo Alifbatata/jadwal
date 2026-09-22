@@ -15,6 +15,8 @@ set -Eeuo pipefail
 JADWAL_RACINE="${JADWAL_RACINE:-/opt/jadwal}"
 JADWAL_ETAT="${JADWAL_ETAT:-/var/lib/jadwal}"
 JADWAL_ENV="${JADWAL_ENV:-/etc/jadwal/jadwal.env}"
+# Ce que Compose lit pour interpoler : ni secret, ni lu par personne d'autre. Voir `compose()`.
+JADWAL_COMPOSE_ENV="${JADWAL_COMPOSE_ENV:-/etc/jadwal/compose.env}"
 JADWAL_COMPOSE="${JADWAL_COMPOSE:-$JADWAL_RACINE/compose/docker-compose.yml}"
 
 # Le nom de la tâche, pour les traces et pour la marque de réussite. Chaque script le pose.
@@ -40,8 +42,20 @@ valeur_env() {
 	sed -n "s/^${cle}=//p" "$JADWAL_ENV" | tail -n1
 }
 
+# Compose, et le fichier qu'il lit pour interpoler.
+#
+# **Ce n'est pas `jadwal.env`, et c'est le point.** Compose ne se contente pas de lire le fichier
+# qu'on lui donne : il développe les références de variables **à l'intérieur de ses valeurs**. Le mot
+# de passe SMTP contient un « $ » ; à chaque appel, Compose y voyait une référence qu'il ne savait pas
+# résoudre, et il la nommait dans un avertissement :
+#
+#     level=warning msg="The \"o4\" variable is not set. Defaulting to a blank string."
+#
+# Deux caractères d'un secret, recopiés dans le journal des unités à chaque passage de chaque tâche,
+# c'est-à-dire toutes les heures. `compose.env` ne porte que l'image, le port et la taille de corps :
+# il n'y a plus rien à y développer.
 compose() {
-	docker compose --file "$JADWAL_COMPOSE" --env-file "$JADWAL_ENV" "$@"
+	docker compose --file "$JADWAL_COMPOSE" --env-file "$JADWAL_COMPOSE_ENV" "$@"
 }
 
 # Un client PostgreSQL — `pg_dump`, `pg_restore`, `psql` — dans le conteneur de la base.
