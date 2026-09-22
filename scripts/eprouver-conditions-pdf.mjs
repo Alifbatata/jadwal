@@ -47,6 +47,9 @@ import { fileURLToPath } from 'node:url';
 import {
 	construire,
 	dateDeLaVersion,
+	defautsDeMiseEnPages,
+	lignesParPage,
+	LIGNES_MINIMUM_DERNIERE_PAGE,
 	nombreDePages,
 	piedDePage,
 	produire,
@@ -219,10 +222,53 @@ try {
 		titreDuPdf(octets)
 	);
 	verifier('le même nombre de pages avec et sans pied', pages === sansPied.pages);
+
+	process.stdout.write(`\nLa mise en pages, lue dans le PDF\n`);
+	const parPage = lignesParPage(octets);
+	const derniere = parPage[parPage.length - 1]?.length ?? 0;
+	verifier(
+		'autant de flux de contenu que de pages',
+		parPage.length === pages,
+		`${parPage.length} contre ${pages}`
+	);
+	verifier(
+		`la dernière page porte au moins ${LIGNES_MINIMUM_DERNIERE_PAGE} lignes`,
+		derniere >= LIGNES_MINIMUM_DERNIERE_PAGE,
+		`${derniere} ligne(s) ; par page : ${parPage.map((page) => page.length).join(', ')}`
+	);
+	const defauts = defautsDeMiseEnPages(parPage);
+	verifier(
+		'aucune ligne ne reste seule en haut ou en bas',
+		defauts.length === 0,
+		defauts.join(' ; ')
+	);
+
+	// Le témoin : sans le choix de mise en pages, le défaut revient. Il tient dans le fichier
+	// plutôt que dans un souvenir de séance, parce qu'un contrôle qui n'a jamais échoué ne prouve
+	// rien — et parce que la prochaine personne qui touchera la feuille de style le verra tomber.
+	process.stdout.write(`\nLe témoin : la mise en pages non choisie\n`);
+	const telleQuelle = await produire({ variantes: [['telle quelle', '']] });
+	process.stdout.write(
+		`      lignes par page : ${telleQuelle.lignes.join(', ')}\n` +
+			`      ${telleQuelle.defauts.join(' ; ') || 'aucun défaut'}\n`
+	);
+	verifier(
+		'sans le choix, la dernière page est presque vide',
+		telleQuelle.defauts.length > 0,
+		telleQuelle.defauts.length === 0 ? 'le contrôle ne prouve plus rien, le relire' : ''
+	);
 	verifier(
 		'le pied de page ajoute vraiment de l’encre',
 		octets.length > sansPied.octets,
 		`${octets.length} contre ${sansPied.octets} octets`
+	);
+	// Le témoin vient d'écrire un PDF mal mis en pages à la place du document livré : on le
+	// refait, avec toutes les variantes, et c'est celui-là qui reste sur le disque.
+	const refait = await produire();
+	verifier(
+		'le document livré est celui qui passe',
+		refait.defauts.length === 0,
+		`mise en pages : ${refait.variante}`
 	);
 } finally {
 	if (sauvegarde && echecs.length > 0 && !existsSync(PDF)) copyFileSync(sauvegarde, PDF);
