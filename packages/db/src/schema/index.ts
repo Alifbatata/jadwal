@@ -1393,6 +1393,105 @@ export const invitation = pgTable(
 );
 
 // ---------------------------------------------------------------------------------------------
+// Acceptation des conditions d'utilisation
+//
+// Une ligne par personne, par organisation et par version, et jamais modifiée : accepter une
+// version nouvelle ajoute une ligne, elle ne réécrit pas l'ancienne. La version est la date de
+// « Dernière mise à jour » de `docs/CONDITIONS.md`, écrite en ISO, celle que le pied du PDF appelle
+// déjà la version.
+//
+// La ligne est rattachée à l'**adhésion**, pas à l'organisation ni au compte séparément : quand la
+// personne quitte l'organisation, que son compte est supprimé ou que l'organisation l'est, l'adhésion
+// part, et l'acceptation avec elle. Aucune purge à écrire, aucune ligne orpheline possible.
+//
+// Insertion seule, comme le journal d'audit (ADR 0015), et l'horodatage appartient au serveur par
+// le même procédé (ADR 0020) : le droit d'insertion est accordé colonne par colonne, sans
+// `accepted_at` (migration 0052). Une acceptation ne peut être ni antidatée ni récrite.
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * Une date civile en ISO, `AAAA-MM-JJ`, qui existe au calendrier : `2026-02-30` est refusé comme
+ * `2026-9-22`. Le `case` fixe l'ordre d'évaluation, qu'un `and` ne garantit pas : la date n'est
+ * construite qu'une fois la forme vérifiée, sans quoi `make_date` lèverait au lieu de refuser, et le
+ * code de l'erreur ne dirait plus « contrainte ». Aucune conversion de texte en date non plus : elle
+ * dépend du réglage `DateStyle`, alors que ce calcul rend le même résultat sur tout serveur.
+ */
+const isIsoDate = (column: SQLWrapper) =>
+	sql`case when ${column} ~ '^[1-9][0-9]{3}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$'
+		then substr(${column}, 9, 2)::integer <= extract(day from
+			(make_date(substr(${column}, 1, 4)::integer, substr(${column}, 6, 2)::integer, 1)
+				+ interval '1 month')::date - 1)
+		else false end`;
+
+export const termsAcceptance = pgTable(
+	'terms_acceptance',
+	{
+		id: uuid().primaryKey(),
+		organizationId: uuid('organization_id').notNull(),
+		userId: uuid('user_id').notNull(),
+		/** La date de « Dernière mise à jour » du document accepté : `2026-09-22`. */
+		version: text().notNull(),
+		/**
+		 * Le moment de l'acceptation, posé par la base. Le rôle applicatif n'a pas le droit de nommer
+		 * cette colonne : la nommer, même avec `default`, est refusé (ADR 0020).
+		 */
+		acceptedAt: timestamp('accepted_at', { withTimezone: true, mode: 'date' })
+			.notNull()
+			.defaultNow()
+	},
+	(table) => [
+		// Vers `membership_organization_user_uq`. La vérification d'une clé étrangère contourne la
+		// sécurité au niveau des lignes, et elle joue dans les deux sens. À l'insertion d'une
+		// acceptation, elle ne révèle rien : la politique impose déjà que la personne et
+		// l'organisation soient celles du contexte. Côté adhésion, elle se déclenche quand la personne
+		// ou l'organisation d'une adhésion change, et le nom de la contrainte dans l'erreur dirait si
+		// cette personne a accepté. Le rôle applicatif ne modifie donc d'une adhésion que le rôle et
+		// sa date (migration 0053). Le super-admin le peut encore, mais il lit déjà les acceptations
+		// de l'organisation où il est entré. `no action` à la modification, jamais `cascade` :
+		// l'acceptation suivrait l'adhésion vers une personne qui n'a rien accepté.
+		foreignKey({
+			columns: [table.organizationId, table.userId],
+			foreignColumns: [membership.organizationId, membership.userId],
+			name: 'terms_acceptance_membership_fk'
+		}).onDelete('cascade'),
+		// Cible de `on conflict` pour l'application, et index de la clé étrangère : elle en est le
+		// début.
+		unique('terms_acceptance_organization_user_version_uq').on(
+			table.organizationId,
+			table.userId,
+			table.version
+		),
+		ck('terms_acceptance_id_uuid_v7_ck', isUuidV7(table.id)),
+		ck('terms_acceptance_version_ck', isIsoDate(table.version)),
+		// Chacun lit et écrit **ses** acceptations, dans l'organisation du contexte. Ni un collègue,
+		// ni une personne responsable : savoir si quelqu'un a accepté ne sert qu'à la porte de
+		// l'espace, qui ne pose jamais que la personne connectée.
+		pgPolicy('terms_acceptance_select', {
+			as: 'permissive',
+			for: 'select',
+			to: appRole,
+			using: sql`${table.organizationId} = ${orgContext} and ${table.userId} = ${userContext}`
+		}),
+		pgPolicy('terms_acceptance_insert', {
+			as: 'permissive',
+			for: 'insert',
+			to: appRole,
+			withCheck: sql`${table.organizationId} = ${orgContext} and ${table.userId} = ${userContext}`
+		}),
+		// Le super-admin lit, dans l'organisation où il est entré, pour répondre à une question sur
+		// un compte. Il n'accepte rien à la place de personne, et ne passe pas par cette porte.
+		pgPolicy('terms_acceptance_superadmin_select', {
+			as: 'permissive',
+			for: 'select',
+			to: superAdminRole,
+			using: sql`${table.organizationId} = ${orgContext}`
+		})
+		// Aucune politique de modification ni de suppression, et aucun droit : le refus tombe avant
+		// qu'une ligne soit examinée. Le rôle public et le rôle de connexion n'ont rien.
+	]
+);
+
+// ---------------------------------------------------------------------------------------------
 // Connexion : les tables de Better Auth (ADR 0016)
 //
 // Elles ne portent pas d'organisation, et il n'y a rien à y cloisonner par organisation. Leur
@@ -1607,6 +1706,7 @@ export const schema = {
 	pageView,
 	retentionHold,
 	invitation,
+	termsAcceptance,
 	session,
 	account,
 	verification,

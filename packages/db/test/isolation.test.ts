@@ -121,9 +121,18 @@ describe('contexte absent, vide ou illisible', () => {
 
 describe('lecture : une organisation ne voit que ses lignes', () => {
 	it('counts only its own rows in every table carrying an organization', async () => {
+		// Le contexte complet, organisation et personne, comme l'application le pose toujours : une
+		// table peut exiger les deux. `terms_acceptance` ne montre à chacun que ses propres lignes, et
+		// l'organisation seule n'y voit rien, ce que `terms-acceptance.test.ts` vérifie.
 		for (const table of tables) {
-			expect(await countVisible(app, a.id, table), `${table} sous A`).toBe(1);
-			expect(await countVisible(app, b.id, table), `${table} sous B`).toBe(1);
+			expect(
+				await countVisible(app, { organizationId: a.id, userId: a.userId }, table),
+				`${table} sous A`
+			).toBe(1);
+			expect(
+				await countVisible(app, { organizationId: b.id, userId: b.userId }, table),
+				`${table} sous B`
+			).toBe(1);
 		}
 	});
 

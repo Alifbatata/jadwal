@@ -128,6 +128,12 @@ export async function seedOrganisation(owner: Database, slug: string): Promise<O
 			insert into "page_view" ("organization_id", "day", "kind", "count")
 			values (${id}, '2026-09-21', 'page', 3)
 		`);
+		// Une acceptation des conditions, pour la même raison. Sa version n'est pas celle des tests
+		// de `terms-acceptance.test.ts`, qui acceptent eux-mêmes et ne doivent pas buter dessus.
+		await tx.execute(sql`
+			insert into "terms_acceptance" ("id", "organization_id", "user_id", "version")
+			values (${newId()}, ${id}, ${userId}, '2026-09-01')
+		`);
 	});
 	return { id, slug, userId };
 }
