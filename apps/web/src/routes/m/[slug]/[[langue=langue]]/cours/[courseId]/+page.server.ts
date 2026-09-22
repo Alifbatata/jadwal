@@ -60,6 +60,9 @@ export const load: PageServerLoad = async (event) => {
 	);
 
 	event.setHeaders({ 'cache-control': CACHE_PROGRAMME });
+	// La langue du document, que le hook écrit sur `<html>` (voir la page du programme). Posée
+	// après la recherche du cours : le 404 d'un cours inconnu reste en français, comme son texte.
+	event.locals.langue = langue;
 	return {
 		canonical: moteur.canonical,
 		alternates: moteur.alternates,

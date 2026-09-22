@@ -21,6 +21,11 @@ declare global {
 			 * réponse. Un seul point d'écriture pour tout le compteur (ADR 0032).
 			 */
 			vue?: import('$lib/server/vues.js').VueAcompter | undefined;
+			/**
+			 * La langue d'une page publique, posée par sa route quand la page va être rendue, et
+			 * écrite par le hook sur `<html>`, avec son sens. Absente, le document est en français.
+			 */
+			langue?: import('$lib/i18n.js').Langue | undefined;
 		}
 	}
 }

@@ -104,6 +104,9 @@ export const load: PageServerLoad = async (event) => {
 			{ vue: vue === 'semaine' ? null : vue }
 		)
 	);
+	// La langue du document, que le hook écrit sur `<html>`. Posée au moment où la page va être
+	// rendue, et pas plus tôt : un 404 levé plus haut reste en français, comme son texte.
+	event.locals.langue = langue;
 	return {
 		canonical: moteur.canonical,
 		alternates: moteur.alternates,

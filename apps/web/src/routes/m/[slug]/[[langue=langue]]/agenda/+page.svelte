@@ -57,39 +57,42 @@
 		{/if}
 	</header>
 
-	<p>{mots.subscribeIntro(data.organisation.name)}</p>
+	<!-- Le contenu principal, entre l'en-tête et le pied : sans lui, axe relevait chaque section. -->
+	<main>
+		<p>{mots.subscribeIntro(data.organisation.name)}</p>
 
-	<section>
-		<h2>{mots.subscribeWholeTitle}</h2>
-		<p><a class="bouton" href={data.webcal}>{mots.subscribeButton}</a></p>
-		<p class="adresse">{mots.subscribeAddress}</p>
-		<p class="lien"><code>{data.https}</code></p>
-	</section>
-
-	{#if data.cours.length > 0}
 		<section>
-			<h2>{mots.subscribeOneCourseTitle}</h2>
-			<p>{mots.subscribeOneCourseText}</p>
-			<ul class="cours">
-				{#each data.cours as cours (cours.id)}
-					<li><a href={cours.webcal}>{cours.title}</a></li>
-				{/each}
-			</ul>
+			<h2>{mots.subscribeWholeTitle}</h2>
+			<p><a class="bouton" href={data.webcal}>{mots.subscribeButton}</a></p>
+			<p class="adresse">{mots.subscribeAddress}</p>
+			<p class="lien"><code>{data.https}</code></p>
 		</section>
-	{/if}
 
-	<section>
-		<h2>{mots.onIphone}</h2>
-		<p>{mots.iphoneText}</p>
-	</section>
-	<section>
-		<h2>{mots.onAndroid}</h2>
-		<p>{mots.androidText}</p>
-	</section>
-	<section>
-		<h2>{mots.onOutlook}</h2>
-		<p>{mots.outlookText}</p>
-	</section>
+		{#if data.cours.length > 0}
+			<section>
+				<h2>{mots.subscribeOneCourseTitle}</h2>
+				<p>{mots.subscribeOneCourseText}</p>
+				<ul class="cours">
+					{#each data.cours as cours (cours.id)}
+						<li><a href={cours.webcal}>{cours.title}</a></li>
+					{/each}
+				</ul>
+			</section>
+		{/if}
+
+		<section>
+			<h2>{mots.onIphone}</h2>
+			<p>{mots.iphoneText}</p>
+		</section>
+		<section>
+			<h2>{mots.onAndroid}</h2>
+			<p>{mots.androidText}</p>
+		</section>
+		<section>
+			<h2>{mots.onOutlook}</h2>
+			<p>{mots.outlookText}</p>
+		</section>
+	</main>
 
 	<Pied langue={data.langue} lienAgenda={lienAgenda(adresse)} integre={data.integre} />
 </div>

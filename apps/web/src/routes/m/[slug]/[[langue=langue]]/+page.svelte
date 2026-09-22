@@ -179,139 +179,149 @@
 		{/snippet}
 	</Entete>
 
-	{#if data.vue === 'semaine'}
-		<p class="periode">
-			{mots.period(
-				longDate(data.langue, data.from as IsoDate),
-				longDate(data.langue, data.to as IsoDate)
-			)}
-		</p>
-		{#if parJour.length === 0}
-			<p class="vide">{messageVide}</p>
-		{/if}
-		{#each parJour as [date, seances] (date)}
-			<section>
-				<h2>
-					{longDate(data.langue, date as IsoDate)}
-					{#if date === data.today}<span class="aujourdhui">{mots.today}</span>{/if}
-				</h2>
-				<ul>
-					{#each seances as seance (seance.courseId + seance.date + seance.status)}
-						<Seance {seance} langue={data.langue} lienCours={versCours} />
-					{/each}
-				</ul>
-			</section>
-		{/each}
-	{:else if data.vue === 'cours'}
-		{#if parRythme.length === 0}
-			<p class="vide">{mots.noCourses}</p>
-		{/if}
-		{#each parRythme as groupe (groupe.rythme)}
-			<section>
-				<h2>{groupe.titre}</h2>
-				{#each groupe.cours as cours (cours.id)}
-					<details id={`cours-${cours.id}`}>
-						<summary>
-							<strong>{cours.title}</strong>
-							<span class="details">
-								{rythmeEnClair(data.langue, cours)} · {horaireEnClair(data.langue, cours)} ·
-								{mots.audiences[cours.audience] ?? cours.audience}
-							</span>
-						</summary>
-						{#if cours.description}<p>{cours.description}</p>{/if}
-						<dl>
-							{#if cours.room}
-								<dt>{mots.place}</dt>
-								<dd>{cours.room}</dd>
-							{/if}
-							{#if cours.teacher}
-								<dt>{mots.teacher}</dt>
-								<dd>{cours.teacher}</dd>
-							{/if}
-							<dt>{mots.taughtIn}</dt>
-							<dd>{languesEnClair(data.langue, cours.teachingLanguages)}</dd>
-						</dl>
-						<p class="details">
-							{mots.nextSessions} :
-							{#if prochaines(cours.id, 3).length === 0}
-								{mots.noNextSessions}
-							{:else}
-								{prochaines(cours.id, 3)
-									.map((seance) => longDate(data.langue, seance.date as IsoDate))
-									.join(', ')}
-							{/if}
-						</p>
-						<p><a href={versCours(cours.id)}>{mots.coursesCrumb}</a></p>
-					</details>
-				{/each}
-			</section>
-		{/each}
-	{:else if data.premierDuMois}
-		<nav class="mois" aria-label={mots.views.month}>
-			<a href={vers({ vue: 'mois', mois: moisPrecedent, jour: null })}>‹ {mots.previousMonth}</a>
-			<strong>
-				{monthName(
-					data.langue,
-					Number(data.premierDuMois.slice(0, 4)),
-					Number(data.premierDuMois.slice(5, 7))
+	<!-- Le contenu principal, entre l'en-tête (`<header>`) et le pied (`<footer>`) : sans lui, rien
+	     de la page n'était dans un repère, et axe le relevait sur chaque vue. -->
+	<main>
+		{#if data.vue === 'semaine'}
+			<p class="periode">
+				{mots.period(
+					longDate(data.langue, data.from as IsoDate),
+					longDate(data.langue, data.to as IsoDate)
 				)}
-			</strong>
-			<a href={vers({ vue: 'mois', mois: moisSuivant, jour: null })}>{mots.nextMonth} ›</a>
-		</nav>
-
-		<table>
-			<thead>
-				<tr>
-					{#each mots.shortWeekdays as jour (jour)}
-						<th scope="col">{jour}</th>
-					{/each}
-				</tr>
-			</thead>
-			<tbody>
-				{#each grille as semaine, index (index)}
-					<tr>
-						{#each semaine as jour (jour.date)}
-							<td
-								class:hors={!jour.dansLeMois}
-								class:courant={jour.date === data.today}
-								aria-current={jour.date === data.today ? 'date' : undefined}
-							>
-								{#if jour.dansLeMois}
-									{#if jour.seances > 0}
-										<a href={vers({ vue: 'mois', jour: jour.date })}>
-											<span class="numero">{Number(jour.date.slice(8, 10))}</span>
-											<span class="compte">{mots.sessionCount(jour.seances)}</span>
-										</a>
-									{:else}
-										<span class="numero">{Number(jour.date.slice(8, 10))}</span>
-									{/if}
-								{/if}
-							</td>
-						{/each}
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-
-		{#if data.seances.length === 0}
-			<p class="vide">{mots.emptyMonth}</p>
-		{/if}
-
-		{#if data.jourChoisi}
-			<section>
-				<h2>{longDate(data.langue, data.jourChoisi as IsoDate)}</h2>
-				{#if seancesDuJour.length === 0}
-					<p class="vide">{mots.emptyDay}</p>
-				{:else}
+			</p>
+			{#if parJour.length === 0}
+				<p class="vide">{messageVide}</p>
+			{/if}
+			{#each parJour as [date, seances] (date)}
+				<section>
+					<h2>
+						{longDate(data.langue, date as IsoDate)}
+						{#if date === data.today}<span class="aujourdhui">{mots.today}</span>{/if}
+					</h2>
 					<ul>
-						{#each seancesDuJour as seance (seance.courseId + seance.date + seance.status)}
+						{#each seances as seance (seance.courseId + seance.date + seance.status)}
 							<Seance {seance} langue={data.langue} lienCours={versCours} />
 						{/each}
 					</ul>
-				{/if}
-			</section>
+				</section>
+			{/each}
+		{:else if data.vue === 'cours'}
+			{#if parRythme.length === 0}
+				<p class="vide">{mots.noCourses}</p>
+			{/if}
+			{#each parRythme as groupe (groupe.rythme)}
+				<section>
+					<h2>{groupe.titre}</h2>
+					{#each groupe.cours as cours (cours.id)}
+						<details id={`cours-${cours.id}`}>
+							<summary>
+								<strong>{cours.title}</strong>
+								<span class="details">
+									{rythmeEnClair(data.langue, cours)} · {horaireEnClair(data.langue, cours)} ·
+									{mots.audiences[cours.audience] ?? cours.audience}
+								</span>
+							</summary>
+							{#if cours.description}<p>{cours.description}</p>{/if}
+							<dl>
+								{#if cours.room}
+									<dt>{mots.place}</dt>
+									<dd>{cours.room}</dd>
+								{/if}
+								{#if cours.teacher}
+									<dt>{mots.teacher}</dt>
+									<dd>{cours.teacher}</dd>
+								{/if}
+								<dt>{mots.taughtIn}</dt>
+								<dd>{languesEnClair(data.langue, cours.teachingLanguages)}</dd>
+							</dl>
+							<p class="details">
+								{mots.nextSessions} :
+								{#if prochaines(cours.id, 3).length === 0}
+									{mots.noNextSessions}
+								{:else}
+									{prochaines(cours.id, 3)
+										.map((seance) => longDate(data.langue, seance.date as IsoDate))
+										.join(', ')}
+								{/if}
+							</p>
+							<p><a href={versCours(cours.id)}>{mots.coursesCrumb}</a></p>
+						</details>
+					{/each}
+				</section>
+			{/each}
+		{:else if data.premierDuMois}
+			<nav class="mois" aria-label={mots.views.month}>
+				<a href={vers({ vue: 'mois', mois: moisPrecedent, jour: null })}>‹ {mots.previousMonth}</a>
+				<strong>
+					{monthName(
+						data.langue,
+						Number(data.premierDuMois.slice(0, 4)),
+						Number(data.premierDuMois.slice(5, 7))
+					)}
+				</strong>
+				<a href={vers({ vue: 'mois', mois: moisSuivant, jour: null })}>{mots.nextMonth} ›</a>
+			</nav>
+
+			<table>
+				<!-- La forme courte se voit, le nom entier s'entend : un lecteur d'écran annonce l'en-tête
+				     avec chaque case, et « ن » ou « Mo » seuls ne disent pas le jour. `abbr` n'y change
+				     rien. La clé est le rang : rien ne garantit qu'une forme courte soit unique. -->
+				<thead>
+					<tr>
+						{#each mots.shortWeekdays as jour, index (index)}
+							<th scope="col">
+								<span aria-hidden="true">{jour}</span>
+								<span class="pour-lecteur">{mots.weekdays[index]}</span>
+							</th>
+						{/each}
+					</tr>
+				</thead>
+				<tbody>
+					{#each grille as semaine, index (index)}
+						<tr>
+							{#each semaine as jour (jour.date)}
+								<td
+									class:hors={!jour.dansLeMois}
+									class:courant={jour.date === data.today}
+									aria-current={jour.date === data.today ? 'date' : undefined}
+								>
+									{#if jour.dansLeMois}
+										{#if jour.seances > 0}
+											<a href={vers({ vue: 'mois', jour: jour.date })}>
+												<span class="numero">{Number(jour.date.slice(8, 10))}</span>
+												<span class="compte">{mots.sessionCount(jour.seances)}</span>
+											</a>
+										{:else}
+											<span class="numero">{Number(jour.date.slice(8, 10))}</span>
+										{/if}
+									{/if}
+								</td>
+							{/each}
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+
+			{#if data.seances.length === 0}
+				<p class="vide">{mots.emptyMonth}</p>
+			{/if}
+
+			{#if data.jourChoisi}
+				<section>
+					<h2>{longDate(data.langue, data.jourChoisi as IsoDate)}</h2>
+					{#if seancesDuJour.length === 0}
+						<p class="vide">{mots.emptyDay}</p>
+					{:else}
+						<ul>
+							{#each seancesDuJour as seance (seance.courseId + seance.date + seance.status)}
+								<Seance {seance} langue={data.langue} lienCours={versCours} />
+							{/each}
+						</ul>
+					{/if}
+				</section>
+			{/if}
 		{/if}
-	{/if}
+	</main>
 
 	<Pied langue={data.langue} lienAgenda={lienAgenda(adresse)} integre={data.integre} />
 </div>
@@ -399,6 +409,19 @@
 		color: #555;
 		font-weight: 600;
 		padding: 0.25rem 0;
+	}
+	/* Hors de la vue, pas hors de l'arbre d'accessibilité : `display: none` ou `visibility: hidden`
+	   le retireraient aux lecteurs d'écran aussi. */
+	.pour-lecteur {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		padding: 0;
+		border: 0;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 	td {
 		border: 1px solid #eee;
