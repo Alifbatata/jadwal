@@ -107,14 +107,14 @@ beforeAll(async () => {
 	await maintenance(async (tx) => {
 		await tx.execute(sql`
 			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
-				"enabled_language")
-			values (${organizationId}, ${SLUG}, 'Mosquée publique', ${FUSEAU}, 'fr',
-				array['fr','de','it','ar'])
+				"enabled_language", "prayer_module")
+			values (${organizationId}, ${SLUG}, 'Association publique', ${FUSEAU}, 'fr',
+				array['fr','de','it','ar'], true)
 		`);
 		await tx.execute(sql`
 			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
 				"enabled_language", "status")
-			values (${suspendueId}, ${SLUG_SUSPENDUE}, 'Mosquée suspendue', ${FUSEAU}, 'fr',
+			values (${suspendueId}, ${SLUG_SUSPENDUE}, 'Association suspendue', ${FUSEAU}, 'fr',
 				array['fr'], 'suspended')
 		`);
 	});
@@ -486,7 +486,7 @@ describe('les pages se lisent sans JavaScript et sans rien d’ailleurs', () => 
 		expect(description).not.toContain('"><script');
 	});
 
-	it('lets a mosque put the page in an iframe, and nothing else of the service', async () => {
+	it('lets an organisation put the page in an iframe, and nothing else of the service', async () => {
 		const publique = await fetch(`${origin}/m/${SLUG}`);
 		expect(publique.headers.get('content-security-policy')).toContain('frame-ancestors *');
 		expect(publique.headers.get('x-frame-options')).toBeNull();

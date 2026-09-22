@@ -46,7 +46,16 @@ export async function withMaintenance<T>(
 	});
 }
 
-/** Crée une organisation complète (salle, cours, traduction, exception, pause, journal) en tant que propriétaire. */
+/**
+ * Crée une organisation complète (salle, cours, traduction, exception, pause, journal) en tant
+ * que propriétaire.
+ *
+ * Son module des heures de prière est **allumé**, parce qu'elle porte des heures importées,
+ * des réglages de calcul et une période d'horaires : éteint, la base refuserait le moindre
+ * cours ancré sur une prière (ADR 0042). C'est la même règle que celle dont la migration 0050
+ * se sert pour rattraper les organisations existantes. Le défaut de la colonne, lui, se vérifie
+ * sur une organisation nue, dans `prayer-module.test.ts`.
+ */
 export async function seedOrganisation(owner: Database, slug: string): Promise<Organisation> {
 	const id = newId();
 	const userId = newId();
@@ -54,8 +63,8 @@ export async function seedOrganisation(owner: Database, slug: string): Promise<O
 	const courseId = newId();
 	await withMaintenance(owner, async (tx) => {
 		await tx.execute(sql`
-			insert into "organization" ("id", "slug", "name", "time_zone", "default_language", "enabled_language")
-			values (${id}, ${slug}, ${`Mosquée ${slug}`}, 'Europe/Zurich', 'fr', array['fr','de'])
+			insert into "organization" ("id", "slug", "name", "time_zone", "default_language", "enabled_language", "prayer_module")
+			values (${id}, ${slug}, ${`Association ${slug}`}, 'Europe/Zurich', 'fr', array['fr','de'], true)
 		`);
 		await tx.execute(sql`
 			insert into "user" ("id", "email", "name") values (${userId}, ${`${slug}@example.test`}, ${`Responsable ${slug}`})

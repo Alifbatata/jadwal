@@ -42,13 +42,16 @@
 		langues,
 		salles,
 		action,
-		libelleBouton
+		libelleBouton,
+		modulePrieres
 	}: {
 		valeurs: Valeurs;
 		langues: string[];
 		salles: { id: string; name: string }[];
 		action: string;
 		libelleBouton: string;
+		/** Le module des heures de prière de l'organisation (ADR 0042). */
+		modulePrieres: boolean;
 	} = $props();
 
 	// Une copie, volontairement figée au premier rendu : le formulaire est la source de vérité de
@@ -230,13 +233,20 @@
 
 	<fieldset>
 		<legend>Horaire</legend>
-		<label for="timingKind">Horaire</label>
-		<select id="timingKind" name="timingKind" bind:value={etat.timingKind}>
-			<option value="fixed">heure fixe</option>
-			<option value="prayer">après une prière</option>
-		</select>
+		<!-- Sans le module, un cours n'a qu'une façon d'avoir une heure, et le choix disparaît
+		     plutôt que de rester grisé : une organisation n'a pas à refuser ce qui ne la concerne
+		     pas (ADR 0042). -->
+		{#if modulePrieres}
+			<label for="timingKind">Horaire</label>
+			<select id="timingKind" name="timingKind" bind:value={etat.timingKind}>
+				<option value="fixed">heure fixe</option>
+				<option value="prayer">après une prière</option>
+			</select>
+		{:else}
+			<input type="hidden" name="timingKind" value="fixed" />
+		{/if}
 
-		{#if etat.timingKind === 'fixed'}
+		{#if !modulePrieres || etat.timingKind === 'fixed'}
 			<label for="start">Début</label>
 			<input id="start" type="time" name="start" bind:value={etat.start} required />
 			<label for="end">Fin</label>

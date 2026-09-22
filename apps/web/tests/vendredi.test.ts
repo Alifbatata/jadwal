@@ -111,9 +111,9 @@ beforeAll(async () => {
 	await maintenance(async (tx) => {
 		await tx.execute(sql`
 			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
-				"enabled_language")
-			values (${organizationId}, ${SLUG}, 'Mosquée du vendredi', ${FUSEAU}, 'fr',
-				array['fr','de','ar'])
+				"enabled_language", "prayer_module")
+			values (${organizationId}, ${SLUG}, 'Association du vendredi', ${FUSEAU}, 'fr',
+				array['fr','de','ar'], true)
 		`);
 		await tx.execute(sql`
 			insert into "user" ("id", "email", "name", "email_verified")
@@ -318,7 +318,7 @@ describe('les sessions du vendredi', () => {
 		expect(bloc[1]).not.toContain('français');
 	});
 
-	it('en montre trois quand la mosquée en tient trois', async () => {
+	it('en montre trois quand l’organisation en tient trois', async () => {
 		await ajouter({ jumuaOrder: '3', start: '14:30', end: '15:10', sermonLanguages: ['de'] });
 		expect(blocDuVendredi(await page(`/m/${SLUG}`))).toHaveLength(3);
 		// Et la troisième repart : les cas suivants en veulent deux.
@@ -493,7 +493,7 @@ describe('le modèle CSV', () => {
 		const texte = await response.text();
 		const lu = analyserCalendrier(texte);
 		// Sans position, les heures sont vides : les soixante lignes sont refusées, ce qui est le
-		// bon message à la mosquée. Ce qui compte ici, c'est que la **forme** passe.
+		// bon message à l'organisation. Ce qui compte ici, c'est que la **forme** passe.
 		expect(lu.separateur).toBe(';');
 		expect(texte.split('\r\n')[0]).toBe('date;fajr;dhuhr;asr;maghrib;isha');
 

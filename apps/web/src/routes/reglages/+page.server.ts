@@ -16,6 +16,26 @@ import type { Actions, PageServerLoad } from './$types.js';
 const LANGUES = ['fr', 'de', 'it', 'ar'] as const;
 const COULEUR = /^#[0-9a-fA-F]{6}$/;
 
+/** Ce que dit l'écran quand le module ne peut pas s'éteindre, sans chiffres à accorder. */
+const RETENU =
+	'Des cours sont réglés sur une heure de prière, ou une prière du vendredi existe. ' +
+	'Changez leur horaire, ou supprimez-les, avant d’éteindre le module.';
+
+/** Ce qui retient le module allumé, en une requête, ou `null` s'il peut s'éteindre (ADR 0042). */
+async function compterCeQuiRetient(
+	tx: Parameters<Parameters<typeof withSessionOrg>[1]>[0]
+): Promise<string | null> {
+	const resultat = await tx.execute(sql`
+		select count(*) as "combien" from "course"
+		where "timing_kind" = 'prayer' or "kind" = 'jumua'
+	`);
+	const brut: unknown = Array.isArray(resultat)
+		? resultat
+		: ((resultat as { rows?: unknown[] }).rows ?? []);
+	const lignes = brut as { combien: number | string }[];
+	return Number(lignes[0]?.combien ?? 0) > 0 ? RETENU : null;
+}
+
 export const load: PageServerLoad = async (event) => {
 	const context = await mustAdminister(event);
 	return withSessionOrg(context, async (tx) => {
@@ -101,6 +121,47 @@ export const actions: Actions = {
 		});
 		if (!ok) return fail(404, { erreur: 'Cette organisation n’existe plus.' });
 		return { enregistre: true };
+	},
+
+	/**
+	 * Le module des heures de prière (ADR 0042).
+	 *
+	 * L'écran compte lui-même ce qui bloque, pour le nommer : la base refuse l'extinction tant
+	 * qu'un cours est ancré sur une prière ou qu'une session du vendredi existe, mais son message
+	 * est celui d'un déclencheur, pas celui qu'on montre à quelqu'un. Le refus de la base reste la
+	 * vérité : il est attrapé plus bas, au cas où la ligne serait créée entre le compte et l'écriture.
+	 */
+	modulePrieres: async (event) => {
+		const context = await mustAdminister(event);
+		const form = await event.request.formData();
+		const allume = String(form.get('allume') ?? '') === 'oui';
+		try {
+			const refus = await withSessionOrg(context, async (tx) => {
+				if (!allume) {
+					const quoi = await compterCeQuiRetient(tx);
+					if (quoi) return quoi;
+				}
+				await tx.execute(sql`
+					update "organization" set "prayer_module" = ${allume}, "updated_at" = now()
+					where "id" = ${context.organizationId}
+				`);
+				await record(tx, context.organizationId, context.userId, {
+					action: 'organization.prayer_module',
+					targetTable: 'organization',
+					targetId: context.organizationId,
+					before: { prayer_module: !allume },
+					after: { prayer_module: allume }
+				});
+				return null;
+			});
+			if (refus) return fail(409, { erreur: refus });
+		} catch (cause) {
+			if (String(cause).includes('prayer_module_still_used')) {
+				return fail(409, { erreur: RETENU });
+			}
+			throw cause;
+		}
+		return { moduleChange: true };
 	},
 
 	ajouterSalle: async (event) => {

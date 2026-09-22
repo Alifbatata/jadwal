@@ -1,9 +1,9 @@
 // La prière du vendredi, côté responsables (ADR 0033, docs/maquettes/responsables-vendredi.md).
 //
-// Un écran distinct de la liste des cours, pour une raison simple : une mosquée y vient deux fois
-// par an, au changement de saison, et elle ne doit pas chercher ses sessions parmi vingt cours. Le
-// moteur, lui, est le même — une session est un `course` d'un autre type, et tout ce qui vaut pour
-// un cours vaut pour elle sans qu'une ligne soit réécrite.
+// Un écran distinct de la liste des cours, pour une raison simple : une organisation y vient deux
+// fois par an, au changement de saison, et elle ne doit pas chercher ses sessions parmi vingt
+// cours. Le moteur, lui, est le même — une session est un `course` d'un autre type, et tout ce qui
+// vaut pour un cours vaut pour elle sans qu'une ligne soit réécrite.
 //
 // Les deux gestes du bas — annuler, déplacer — sont **exactement** ceux de l'écran d'accueil, et
 // passent par la même table d'exceptions.
@@ -14,7 +14,7 @@ import { newId, sql } from '@jadwal/db';
 import { record } from '$lib/server/audit.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { insertCourse, parseJumuaForm, updateCourse } from '$lib/server/courses.js';
-import { mustBeInOrganisation } from '$lib/server/guard.js';
+import { mustHavePrayerModule } from '$lib/server/guard.js';
 import { readCourses, readProgramme, readRooms, readSettings } from '$lib/server/programme.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
@@ -43,7 +43,7 @@ function versSession(course: Awaited<ReturnType<typeof readCourses>>[number]) {
 }
 
 export const load: PageServerLoad = async (event) => {
-	const context = await mustBeInOrganisation(event);
+	const context = await mustHavePrayerModule(event);
 	const maintenant = new Date();
 	return withSessionOrg(context, async (tx) => {
 		const settings = await readSettings(tx);
@@ -82,7 +82,7 @@ export const load: PageServerLoad = async (event) => {
 export const actions: Actions = {
 	/** Ajouter une session, ou en modifier une : le même formulaire, la même vérification. */
 	enregistrer: async (event) => {
-		const context = await mustBeInOrganisation(event);
+		const context = await mustHavePrayerModule(event);
 		const form = await event.request.formData();
 		const courseId = String(form.get('courseId') ?? '');
 		return withSessionOrg(context, async (tx) => {
@@ -109,7 +109,7 @@ export const actions: Actions = {
 
 	/** Publier ou dépublier. Un brouillon ne s'affiche nulle part en public, pas même en haut. */
 	basculer: async (event) => {
-		const context = await mustBeInOrganisation(event);
+		const context = await mustHavePrayerModule(event);
 		const form = await event.request.formData();
 		const courseId = String(form.get('courseId') ?? '');
 		const vers = String(form.get('vers') ?? '') === 'published' ? 'published' : 'draft';
@@ -130,7 +130,7 @@ export const actions: Actions = {
 	},
 
 	supprimer: async (event) => {
-		const context = await mustBeInOrganisation(event);
+		const context = await mustHavePrayerModule(event);
 		const form = await event.request.formData();
 		const courseId = String(form.get('courseId') ?? '');
 		await withSessionOrg(context, async (tx) => {
@@ -148,7 +148,7 @@ export const actions: Actions = {
 
 	/** Annuler une session ce vendredi-là. Les autres vendredis ne changent pas. */
 	annuler: async (event) => {
-		const context = await mustBeInOrganisation(event);
+		const context = await mustHavePrayerModule(event);
 		const form = await event.request.formData();
 		const courseId = String(form.get('courseId') ?? '');
 		const date = String(form.get('date') ?? '');
@@ -173,7 +173,7 @@ export const actions: Actions = {
 	},
 
 	deplacer: async (event) => {
-		const context = await mustBeInOrganisation(event);
+		const context = await mustHavePrayerModule(event);
 		const form = await event.request.formData();
 		const courseId = String(form.get('courseId') ?? '');
 		const date = String(form.get('date') ?? '');
@@ -202,7 +202,7 @@ export const actions: Actions = {
 	},
 
 	retablir: async (event) => {
-		const context = await mustBeInOrganisation(event);
+		const context = await mustHavePrayerModule(event);
 		const form = await event.request.formData();
 		const courseId = String(form.get('courseId') ?? '');
 		const date = String(form.get('date') ?? '');

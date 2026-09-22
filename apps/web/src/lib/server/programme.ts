@@ -107,6 +107,8 @@ export interface OrganisationSettings {
 	default_language: string;
 	enabled_language: string[];
 	greeting: string;
+	/** Le module des heures de prière, éteint par défaut (ADR 0042). */
+	prayer_module: boolean;
 }
 
 function rows<T>(result: unknown): T[] {
@@ -199,7 +201,7 @@ export async function readSettings(tx: Transaction): Promise<OrganisationSetting
 	const found = rows<OrganisationSettings>(
 		await tx.execute(sql`
 			select "id", "slug", "name", "time_zone", "accent_color", "default_language",
-				"enabled_language", "greeting"
+				"enabled_language", "greeting", "prayer_module"
 			from "organization"
 		`)
 	)[0];

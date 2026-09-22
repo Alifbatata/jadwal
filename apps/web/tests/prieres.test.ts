@@ -1,5 +1,5 @@
-// Les heures de prière, de bout en bout : un responsable pose la position de sa mosquée, voit les
-// sept prochains jours, importe un calendrier, et le cours « après Maghrib » affiche enfin une
+// Les heures de prière, de bout en bout : un responsable pose la position de son organisation, voit
+// les sept prochains jours, importe un calendrier, et le cours « après Maghrib » affiche enfin une
 // heure sur la page publique (ADR 0004).
 //
 // Rien n'est simulé : vrai serveur, vraie base, vrais formulaires sans JavaScript, vrai fichier
@@ -169,8 +169,9 @@ beforeAll(async () => {
 	await maintenance(async (tx) => {
 		await tx.execute(sql`
 			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
-				"enabled_language")
-			values (${organizationId}, ${SLUG}, 'Mosquée de Bienne', ${FUSEAU}, 'fr', array['fr'])
+				"enabled_language", "prayer_module")
+			values (${organizationId}, ${SLUG}, 'Association de Bienne', ${FUSEAU}, 'fr', array['fr'],
+				true)
 		`);
 		await tx.execute(sql`
 			insert into "user" ("id", "email", "name", "email_verified")

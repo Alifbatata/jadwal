@@ -20,6 +20,7 @@
 	valeurs={data.valeurs}
 	langues={data.langues}
 	salles={data.salles}
+	modulePrieres={data.modulePrieres}
 	action=""
 	libelleBouton="Enregistrer"
 />

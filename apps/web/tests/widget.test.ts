@@ -91,9 +91,9 @@ beforeAll(async () => {
 	await maintenance((tx) =>
 		tx.execute(sql`
 			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
-				"enabled_language")
-			values (${organizationId}, ${SLUG}, 'Mosquée du widget', ${FUSEAU}, 'fr',
-				array['fr','de','it','ar'])
+				"enabled_language", "prayer_module")
+			values (${organizationId}, ${SLUG}, 'Association du widget', ${FUSEAU}, 'fr',
+				array['fr','de','it','ar'], true)
 		`)
 	);
 	hebdoId = await poserCours({
@@ -165,7 +165,7 @@ describe('le fichier du widget', () => {
 	});
 
 	it('never stops serving a version it has published', async () => {
-		// Le registre est le dossier du paquet, et c'est lui qui fait foi : une mosquée qui a collé
+		// Le registre est le dossier du paquet, et c'est lui qui fait foi : une organisation qui a collé
 		// une adresse immuable la garde des années. Ce test lit le dossier — il n'énumère rien à la
 		// main — et échoue donc si une version publiée cessait d'être servie.
 		const registre = join(racine(), 'packages', 'widget', 'published');
@@ -301,9 +301,9 @@ describe('le flux agenda d’un seul cours', () => {
 		expect(titres).toContain('Arabe du mardi');
 		expect(titres).not.toContain('Tafsir après Maghrib');
 		expect(titres).not.toContain('Brouillon du widget');
-		// Le nom du calendrier dit de quelle mosquée et de quel cours il s'agit.
+		// Le nom du calendrier dit de quelle organisation et de quel cours il s'agit.
 		expect(composant.getFirstPropertyValue('x-wr-calname')).toBe(
-			'Mosquée du widget — Arabe du mardi'
+			'Association du widget — Arabe du mardi'
 		);
 
 		const evenement = evenements.find(
@@ -459,7 +459,7 @@ describe('le référencement', () => {
 		// Jamais vers la version française : une page se canonicalise dans sa propre langue.
 		expect(arabe).toContain(`<link rel="canonical" href="${origin}/m/${SLUG}/ar"`);
 		// L'adresse explicite de la langue par défaut se rabat sur l'adresse courte, qui est celle
-		// que la mosquée met sur ses affiches.
+		// que l'organisation met sur ses affiches.
 		const explicite = await texte(`${origin}/m/${SLUG}/fr`);
 		expect(explicite).toContain(`<link rel="canonical" href="${origin}/m/${SLUG}"`);
 		// Et les filtres ne créent pas d'adresse de plus.

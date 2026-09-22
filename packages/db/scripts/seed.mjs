@@ -47,8 +47,8 @@ const ID = {
 };
 
 const ORGANIZATION = {
-	slug: 'madretsch',
-	name: 'Mosquée de Madretsch',
+	slug: 'belvedere',
+	name: 'Association Belvédère',
 	timeZone: 'Europe/Zurich',
 	defaultLanguage: 'fr',
 	languages: ['fr', 'de', 'it', 'ar']
@@ -58,14 +58,14 @@ const ORGANIZATION = {
 const PEOPLE = [
 	{
 		id: ID.adminUser,
-		email: 'responsable@madretsch.example.test',
+		email: 'responsable@belvedere.example.test',
 		name: 'Amina Cherif (personne fictive)',
 		membership: ID.adminMembership,
 		role: 'org_admin'
 	},
 	{
 		id: ID.editorUser,
-		email: 'secretariat@madretsch.example.test',
+		email: 'secretariat@belvedere.example.test',
 		name: 'Yusuf Berger (personne fictive)',
 		membership: ID.editorMembership,
 		role: 'editor'
@@ -164,7 +164,7 @@ const COURSES = [
 		}
 	},
 	// Deux sessions du vendredi, en deux langues différentes : c'est le cas décrit par l'exploitant,
-	// et c'est l'information la plus cherchée sur la page d'une mosquée (ADR 0033).
+	// et c'est l'information la plus cherchée sur la page d'une organisation (ADR 0033).
 	{
 		id: ID.jumuaFirst,
 		kind: 'jumua',
@@ -203,9 +203,9 @@ const COURSES = [
 ];
 
 /**
- * Une période d'horaires saisie à la main : ce que la mosquée affiche sur son panneau (ADR 0004,
+ * Une période d'horaires saisie à la main : ce que l'organisation affiche sur son panneau (ADR 0004,
  * étape 8). Sans date de fin — « jusqu'à nouvel ordre » —, avec deux iqamas en heure fixe et trois
- * en décalage, pour que les deux formes coexistent comme dans une vraie mosquée.
+ * en décalage, pour que les deux formes coexistent comme dans une vraie organisation.
  */
 const AUTUMN_PERIOD = {
 	id: ID.autumnPeriod,
@@ -250,15 +250,18 @@ export async function seed(overrides = {}, env = process.env) {
 			// mises à jour rendraient « 0 ligne » sans rien dire.
 			await tx`set local jadwal.maintenance = 'on'`;
 			await tx`
-				insert into "organization" ("id", "slug", "name", "time_zone", "default_language", "enabled_language", "plan")
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language", "enabled_language", "plan", "prayer_module")
 				values (${ID.organization}, ${ORGANIZATION.slug}, ${ORGANIZATION.name}, ${ORGANIZATION.timeZone},
-					${ORGANIZATION.defaultLanguage}, ${ORGANIZATION.languages}, 'sponsored')
+					${ORGANIZATION.defaultLanguage}, ${ORGANIZATION.languages}, 'sponsored', true)
 				on conflict ("id") do update set
 					"slug" = excluded."slug", "name" = excluded."name", "time_zone" = excluded."time_zone",
 					"accent_color" = excluded."accent_color",
 					"default_language" = excluded."default_language",
 					"enabled_language" = excluded."enabled_language", "plan" = excluded."plan",
-					"status" = excluded."status", "updated_at" = now()
+					"status" = excluded."status",
+					-- Les données de démonstration portent un cours ancré sur le Maghrib et deux sessions
+					-- du vendredi : sans le module, la base les refuse (ADR 0042).
+					"prayer_module" = excluded."prayer_module", "updated_at" = now()
 			`;
 			for (const person of PEOPLE) {
 				await tx`

@@ -211,10 +211,13 @@ beforeAll(async () => {
 	await ownerHandle.db.transaction(async (tx) => {
 		await tx.execute(sql`set local jadwal.maintenance = 'on'`);
 		await tx.execute(sql`
+			-- Le module des heures de prière est allumé : cette organisation crée des cours ancrés
+			-- sur une prière, que la base refuserait sinon (ADR 0042). Les tests du module l’éteignent
+			-- eux-mêmes, et le rallument après.
 			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
-				"enabled_language")
+				"enabled_language", "prayer_module")
 			values (${organizationId}, 'acces', 'Association d’essai', 'Europe/Zurich', 'fr',
-				array['fr'])
+				array['fr'], true)
 		`);
 		await tx.execute(sql`
 			insert into "user" ("id", "email", "name", "email_verified")
@@ -1265,5 +1268,173 @@ describe('l’espace des responsables', () => {
 			cookie
 		);
 		expect(faux.status).toBe(400);
+	});
+});
+
+describe('le module des heures de prière', () => {
+	// Une organisation à elle seule, et une personne responsable qui n'appartient qu'à elle.
+	//
+	// L'organisation d'essai du fichier ne peut pas servir : d'autres tests y laissent des cours
+	// ancrés sur une prière, et la base refuse alors d'éteindre le module — ce qui est exactement ce
+	// qu'elle doit faire. Éprouver l'extinction demande donc un endroit où rien ne s'y appuie.
+	let moduleOrgId: string;
+	let moduleCookie: string;
+
+	beforeAll(async () => {
+		moduleOrgId = newId();
+		const responsable = newId();
+		await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			await tx.execute(sql`
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+					"enabled_language")
+				values (${moduleOrgId}, 'acces-module', 'Association du module', 'Europe/Zurich', 'fr',
+					array['fr'])
+			`);
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "name", "email_verified")
+				values (${responsable}, 'module@example.test', 'Responsable du module', true)
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${moduleOrgId}, ${responsable}, 'org_admin')
+			`);
+		});
+		moduleCookie = await signIn('module@example.test');
+	});
+
+	/** Pose l'interrupteur directement en base : l'état de départ n'est pas ce que le test éprouve. */
+	async function poserModule(allume: boolean): Promise<void> {
+		await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			await tx.execute(sql`
+				update "organization" set "prayer_module" = ${allume} where "id" = ${moduleOrgId}
+			`);
+		});
+	}
+
+	async function moduleAllume(): Promise<boolean> {
+		return ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			const result = await tx.execute(sql`
+				select "prayer_module" from "organization" where "id" = ${moduleOrgId}
+			`);
+			const brut: unknown = Array.isArray(result)
+				? result
+				: ((result as { rows?: unknown[] }).rows ?? []);
+			const lignes = brut as { prayer_module: boolean }[];
+			return lignes[0]?.prayer_module ?? false;
+		});
+	}
+
+	/** Les trois adresses du module : ses deux écrans et son modèle de fichier. */
+	const ADRESSES = ['/prieres', '/vendredi', '/prieres/modele.csv'];
+
+	it('répond 404 sur chacune de ses adresses quand il est éteint', async () => {
+		await poserModule(false);
+		for (const adresse of ADRESSES) {
+			const page = await fetch(`${origin}${adresse}`, {
+				headers: { cookie: moduleCookie },
+				redirect: 'manual'
+			});
+			expect(page.status, adresse).toBe(404);
+		}
+	});
+
+	it('les ouvre toutes quand il est allumé', async () => {
+		await poserModule(true);
+		for (const adresse of ADRESSES) {
+			const page = await fetch(`${origin}${adresse}`, {
+				headers: { cookie: moduleCookie },
+				redirect: 'manual'
+			});
+			expect(page.status, adresse).toBe(200);
+		}
+	});
+
+	it('refuse aussi ses actions, et pas seulement ses pages', async () => {
+		await poserModule(false);
+		// Une action d'écriture, envoyée à la main : l'écran qui la porte n'existe pas, mais rien
+		// n'empêche de poster à son adresse.
+		// `enregistrer` est une vraie action de cet écran : un nom inventé rendrait 404 tout seul,
+		// et le test passerait sans rien prouver. Mesuré : avec un nom inventé, il passait même le
+		// contrôle du module retiré.
+		const envoi = await postForm(
+			'/vendredi?/enregistrer',
+			{ jumuaOrder: '1', start: '12:10', end: '13:00', startsOn: '2026-09-04' },
+			moduleCookie
+		);
+		expect(envoi.status).toBe(404);
+	});
+
+	it('disparaît de la navigation quand il est éteint, et revient quand il est allumé', async () => {
+		await poserModule(false);
+		const eteint = await (
+			await fetch(`${origin}/cours`, { headers: { cookie: moduleCookie } })
+		).text();
+		expect(eteint).not.toContain('>Prières<');
+		expect(eteint).not.toContain('>Vendredi<');
+
+		await poserModule(true);
+		const allume = await (
+			await fetch(`${origin}/cours`, { headers: { cookie: moduleCookie } })
+		).text();
+		expect(allume).toContain('>Prières<');
+		expect(allume).toContain('>Vendredi<');
+	});
+
+	it('ne propose pas l’ancrage sur une prière dans le formulaire d’un cours', async () => {
+		await poserModule(false);
+		const eteint = await (
+			await fetch(`${origin}/cours/nouveau`, { headers: { cookie: moduleCookie } })
+		).text();
+		expect(eteint).not.toContain('après une prière');
+
+		await poserModule(true);
+		const allume = await (
+			await fetch(`${origin}/cours/nouveau`, { headers: { cookie: moduleCookie } })
+		).text();
+		expect(allume).toContain('après une prière');
+	});
+
+	it('s’allume et s’éteint depuis les réglages', async () => {
+		await poserModule(false);
+		expect(
+			(await postForm('/reglages?/modulePrieres', { allume: 'oui' }, moduleCookie)).status
+		).toBe(200);
+		expect(await moduleAllume()).toBe(true);
+
+		expect(
+			(await postForm('/reglages?/modulePrieres', { allume: 'non' }, moduleCookie)).status
+		).toBe(200);
+		expect(await moduleAllume()).toBe(false);
+	});
+
+	it('refuse de s’éteindre tant qu’une prière du vendredi existe', async () => {
+		await poserModule(true);
+		const session = newId();
+		await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			await tx.execute(sql`
+				insert into "course" (
+					"id", "organization_id", "kind", "jumua_order", "status", "audience",
+					"teaching_language", "source_language", "recurrence_kind", "recurrence_weekday",
+					"recurrence_interval", "recurrence_anchor_date", "timing_kind", "timing_start",
+					"timing_end", "starts_on"
+				) values (
+					${session}, ${moduleOrgId}, 'jumua', 1, 'published', 'open', array['fr'], 'fr',
+					'weekly', array[5]::smallint[], 1, '2026-09-04', 'fixed', '12:10', '13:00', '2026-09-04'
+				)
+			`);
+		});
+
+		const refus = await postForm('/reglages?/modulePrieres', { allume: 'non' }, moduleCookie);
+		expect(refus.status).toBe(409);
+		expect(await moduleAllume()).toBe(true);
+
+		await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			await tx.execute(sql`delete from "course" where "id" = ${session}`);
+		});
 	});
 });

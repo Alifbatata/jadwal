@@ -3,14 +3,14 @@ import type { LayoutServerLoad } from './$types.js';
 
 /**
  * Le côté public ne porte rien de l'espace des responsables : ni en-tête, ni navigation, ni adresse
- * de compte. Une page de mosquée s'affiche dans l'iframe d'un autre site (ADR 0027) ; y faire
+ * de compte. Une page d'organisation s'affiche dans l'iframe d'un autre site (ADR 0027) ; y faire
  * apparaître « jadwal » et un bouton de déconnexion n'aurait aucun sens.
  */
 const PUBLIC = /^\/(m\/|api\/v1\/)/;
 /**
  * Les pages qui se rendent seules, sans la coquille des responsables et sans être publiques : la
- * page d'essai du widget, qui doit ressembler au site d'une mosquée et non au nôtre. Elle garde en
- * revanche son `noindex`, comme tout ce qui n'est pas `/m/**` (ADR 0029).
+ * page d'essai du widget, qui doit ressembler au site d'une organisation et non au nôtre. Elle
+ * garde en revanche son `noindex`, comme tout ce qui n'est pas `/m/**` (ADR 0029).
  */
 const NUES = /^\/widget\//;
 
@@ -46,9 +46,12 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 			? {
 					name: context.organizationName,
 					slug: context.organizationSlug,
-					// La coquille des responsables prend la couleur de la mosquée, comme ses pages
-					// publiques : c'est la même organisation (ADR 0031).
+					// La coquille des responsables prend la couleur de l'organisation, comme ses
+					// pages publiques : c'est la même organisation (ADR 0031).
 					accentColor: context.organizationAccent,
+					// La navigation ne propose pas ce qui n'existe pas pour cette organisation
+					// (ADR 0042).
+					prayerModule: context.organizationPrayerModule,
 					role: context.role,
 					asSuperAdmin: context.asSuperAdmin
 				}
