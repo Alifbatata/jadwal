@@ -265,6 +265,39 @@ const PASSAGES = [
 		// C'est le cas que l'ancienne version ratait : elle prenait « rien à signaler ».
 		attendu: ['[verrous-illisibles] ALERTE'],
 		interdit: ['[verrous] ALERTE']
+	},
+	{
+		nom: 'une unité étrangère est en échec, et l’option est éteinte',
+		verrous: 'vide',
+		machine: false,
+		unites: 'oui',
+		// Une instance qui s'auto-héberge ne se fait pas réveiller pour les unités d'autrui.
+		attendu: [],
+		interdit: ['ALERTE']
+	},
+	{
+		nom: 'une unité étrangère est en échec, et l’option est allumée',
+		verrous: 'vide',
+		machine: true,
+		unites: 'oui',
+		attendu: ['exemple-oneshot.service est en échec'],
+		interdit: []
+	},
+	{
+		nom: 'Caddy porte une capacité de trop, et l’option est allumée',
+		verrous: 'vide',
+		machine: true,
+		capacites: 'cap_net_bind_service cap_net_admin',
+		attendu: ['[caddy-capacites] ALERTE'],
+		interdit: []
+	},
+	{
+		nom: 'Caddy ne porte que ce qu’il faut',
+		verrous: 'vide',
+		machine: true,
+		capacites: 'cap_net_bind_service',
+		attendu: [],
+		interdit: ['ALERTE']
 	}
 ];
 
@@ -274,7 +307,16 @@ const dossier2 = mkdtempSync(join(tmpdir(), 'jadwal-veille-script-'));
 const DOUBLURES = {
 	systemctl: `#!/bin/sh
 # Une minuterie chargée, active, jamais déclenchée : la veille ne doit rien reprocher.
+#
+# Deux réponses de plus, pour la veille au-delà de jadwal : la liste des unités en échec de la
+# machine, et les capacités de Caddy. Les deux sont pilotées par l'environnement du passage.
 case "$*" in
+  *AmbientCapabilities*) echo "\${JADWAL_EPREUVE_CAPACITES:-cap_net_bind_service}" ;;
+  list-units*)
+    if [ "\${JADWAL_EPREUVE_UNITES:-non}" = "oui" ]; then
+      echo "exemple-oneshot.service loaded failed failed Une unite d exemple"
+    fi
+    ;;
   *LoadState*)      echo loaded ;;
   *ActiveState*)    echo active ;;
   *LastTriggerUSec*) echo "" ;;
@@ -347,12 +389,26 @@ try {
 		// partiraient et masqueraient ce qu'on cherche à mesurer.
 		'touch /var/backups/jadwal/jadwal-2026-09-22T000000Z.dump.age',
 		'date --iso-8601=seconds > /var/lib/jadwal/reussites/restauration-complete',
-		// Les trois passages, chacun avec sa situation, chacun dans son propre état.
-		...PASSAGES.map(
-			(passage, index) =>
+		// Ce que Compose lit pour interpoler. Il ne porte aucun secret, et c'est tout son objet : le
+		// fichier que Compose lit ne doit rien contenir qu'il puisse essayer de développer.
+		"printf 'JADWAL_IMAGE=exemple/jadwal@sha256:0000\\nJADWAL_APP_PORT=3080\\n' > /etc/jadwal/compose.env",
+		// Chaque passage, avec sa situation, dans son propre état. La ligne `JADWAL_VEILLE_MACHINE`
+		// est réécrite à chaque fois : c'est une option, et son absence est un cas à éprouver.
+		...PASSAGES.map((passage, index) => {
+			const env = [
+				`JADWAL_EPREUVE_VERROUS=${passage.verrous}`,
+				`JADWAL_EPREUVE_UNITES=${passage.unites ?? 'non'}`,
+				`JADWAL_EPREUVE_CAPACITES='${passage.capacites ?? 'cap_net_bind_service'}'`
+			].join(' ');
+			const machine = passage.machine
+				? "printf 'JADWAL_VEILLE_MACHINE=true\\n' >> /etc/jadwal/jadwal.env"
+				: "grep -v '^JADWAL_VEILLE_MACHINE=' /etc/jadwal/jadwal.env > /tmp/e && mv /tmp/e /etc/jadwal/jadwal.env";
+			return (
 				`echo "=== ${index} ==="; rm -rf /var/lib/jadwal/alertes; ` +
-				`JADWAL_EPREUVE_VERROUS=${passage.verrous} /opt/jadwal/scripts/jadwal-veille.sh 2>&1 || true`
-		)
+				`cp /doublures/jadwal.env /etc/jadwal/jadwal.env; ${machine}; ` +
+				`${env} /opt/jadwal/scripts/jadwal-veille.sh 2>&1 || true`
+			);
+		})
 	].join('\n');
 
 	writeFileSync(join(dossier2, 'preparation.sh'), preparation, 'utf8');
