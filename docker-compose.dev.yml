@@ -1,6 +1,16 @@
 # Base PostgreSQL de développement. Ne sert qu'à partir de l'étape 2.
 # Variables : voir .env.example (POSTGRES_PASSWORD est obligatoire).
-name: jadwal
+#
+# **`jadwal-dev`, et surtout pas `jadwal`.** Ce fichier s'appelait `jadwal`, comme le projet Compose
+# de production : son volume prenait donc le nom `jadwal_pgdata`, qui est exactement celui de la
+# base de production. Compose ne refuse pas cette collision, il avertit et attache le volume
+# existant. Mesuré le 2026-09-22, en répétant le déploiement sur un poste : deux serveurs PostgreSQL
+# ont tourné vingt-huit secondes sur le même répertoire de données, le second a réécrit
+# `postmaster.pid`, et en partant l'a effacé, ce que le premier a fini par remarquer en s'arrêtant
+# sur-le-champ. Rien n'a été perdu, et rien ne le garantissait.
+#
+# `infra/sauvegarde/compose.test.mjs` compare les deux fichiers et échoue si les noms se rejoignent.
+name: jadwal-dev
 
 services:
   db:
