@@ -1,7 +1,11 @@
 # jadwal en production (ADR 0034).
 #
-# Ce fichier décrit **deux** conteneurs et rien d'autre. Caddy n'y est pas : c'est celui de l'hôte,
+# Ce fichier décrit **trois** services et rien d'autre. Caddy n'y est pas : c'est celui de l'hôte,
 # qui peut servir d'autres sites, et un second Caddy se disputerait les ports 80 et 443 avec lui.
+#
+# Deux des trois tournent en permanence — l'application et sa base. Le troisième, `init`, vit
+# quelques secondes au démarrage, fait ce qui demande des droits sur la base, et s'arrête
+# (ADR 0040).
 #
 # Ce qui est joignable de l'extérieur : rien. L'application publie son port sur la **boucle locale**
 # de l'hôte, où seul Caddy va le chercher ; PostgreSQL n'écoute que sur le réseau Docker de jadwal,
@@ -24,12 +28,86 @@
 name: jadwal
 
 services:
+  # Le conteneur de démarrage (ADR 0040).
+  #
+  # **Il existe pour que l'application n'ait plus à porter les deux mots de passe qui contournent la
+  # sécurité par ligne.** Créer un rôle PostgreSQL demande le superutilisateur ; jouer une migration
+  # demande le propriétaire du schéma. Ces deux pouvoirs vivaient jusqu'ici en permanence dans
+  # l'environnement du conteneur exposé à Internet, alors qu'ils ne servent que quelques secondes au
+  # démarrage. Qui prenait la main sur l'application les trouvait, et lisait alors toutes les
+  # organisations d'un coup — ce que l'ADR 0013 et l'ADR 0019 passent leur temps à empêcher.
+  #
+  # Même image que l'application, parce que c'est elle qui porte `@jadwal/db`, ses migrations et ses
+  # scripts. Une seconde image n'aurait rien apporté qu'un second digest à suivre.
+  #
+  # Il est **rejouable** : `bootstrap-roles.mjs` répare un rôle qui aurait dérivé, `migrate.mjs` ne
+  # rejoue jamais une migration déjà appliquée. Le relancer n'a donc aucune conséquence visible.
+  #
+  # C'est aussi par lui que passent les commandes d'exploitant qui touchent à ces rôles :
+  #
+  #     docker compose run --rm --no-deps -T init node node_modules/@jadwal/db/scripts/super-admin.mjs --email …
+  #
+  # `--no-deps` n'est pas du confort. Mesuré sur Compose 5.1.4 : une base saine et en marche n'est
+  # **pas** redémarrée par un `run` — Compose se contente de l'attendre. Mais dès que le fichier
+  # Compose du disque ne correspond plus à l'empreinte du conteneur, `run` **recrée** la dépendance.
+  # Entre le moment où le playbook copie un nouveau `docker-compose.yml` et le moment où il fait
+  # `up`, une tâche périodique qui appellerait `init` sans `--no-deps` recréerait donc le conteneur
+  # PostgreSQL de production, à trois heures du matin, sans que personne l'ait demandé.
+  init:
+    image: ${JADWAL_IMAGE:?JADWAL_IMAGE est obligatoire, et doit porter un digest sha256}
+    # **Jamais `unless-stopped`.** Un conteneur qui s'arrête normalement en fin de travail serait
+    # relancé sans fin par cette politique, et l'on verrait les migrations tourner en boucle.
+    restart: 'no'
+    depends_on:
+      db:
+        condition: service_healthy
+    # Le seul fichier qui porte encore `POSTGRES_PASSWORD` et `JADWAL_DB_OWNER_PASSWORD`. Il porte
+    # aussi les mots de passe des cinq rôles applicatifs, parce que `bootstrap-roles.mjs` les pose.
+    # Même `format: raw` que les autres, pour la même raison : deux lecteurs d'un même fichier
+    # doivent le lire pareil.
+    env_file:
+      - path: /etc/jadwal/init.env
+        format: raw
+    environment:
+      NODE_ENV: production
+      POSTGRES_HOST: db
+      POSTGRES_PORT: '5432'
+    # Les rôles d'abord, les migrations ensuite : les migrations accordent des droits à des rôles
+    # qui doivent exister. `set -e` pour qu'un échec du premier n'enchaîne pas sur le second — sans
+    # lui, un rôle manquant se solderait par une migration qui échoue plus loin, sur un message qui
+    # ne dit pas la cause.
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        node node_modules/@jadwal/db/scripts/bootstrap-roles.mjs
+        node node_modules/@jadwal/db/scripts/migrate.mjs
+    networks: [jadwal]
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '5'
+
   app:
     image: ${JADWAL_IMAGE:?JADWAL_IMAGE est obligatoire, et doit porter un digest sha256}
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
+      # **L'application ne démarre pas tant que `init` n'a pas réussi.** Ce n'est pas l'ordre des
+      # tâches du playbook qui le garantit, c'est Compose : la propriété tient aussi quand quelqu'un
+      # tape `docker compose up` à la main sur le serveur. Si `init` échoue, `up` échoue, et
+      # l'application qui tournait déjà continue de tourner — un déploiement raté ne coupe rien.
+      init:
+        condition: service_completed_successfully
     # **`format: raw`, et ce n'est pas un détail.**
     #
     # Sans lui, Compose interpole le fichier : un `$` y ouvre une référence à une variable, une
@@ -47,6 +125,11 @@ services:
     # Chaque service a **son** fichier, écrit par le playbook : un conteneur ne reçoit que ce qui le
     # concerne. L'application n'a pas à voir les adresses de battement de cœur, la base n'a pas à
     # voir le secret de session.
+    #
+    # Ce fichier-ci ne porte **ni `POSTGRES_PASSWORD`, ni `JADWAL_DB_OWNER_PASSWORD`** depuis
+    # l'ADR 0040 : ils sont partis dans `init.env`. L'application n'en a jamais eu besoin — elle
+    # n'ouvre de connexion que sous `app`, `superadmin`, `auth` et `public` —, et
+    # `apps/web/tests/roles-de-base.test.ts` tombe si un jour elle en demande un autre.
     env_file:
       - path: /etc/jadwal/app.env
         format: raw

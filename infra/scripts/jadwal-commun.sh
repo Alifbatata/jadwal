@@ -89,8 +89,32 @@ battement() {
 
 # Une commande Node dans le conteneur de l'application, qui tourne déjà. `exec -T` : pas de pseudo
 # terminal, sinon la sortie arrive dans le journal truffée de retours chariot.
+#
+# Ce conteneur n'a **que** les rôles applicatifs : ni le superutilisateur de PostgreSQL, ni le
+# propriétaire du schéma (ADR 0040). Ce qui a besoin de l'un des deux passe par `dans_init`.
 dans_app() {
 	compose exec -T app "$@"
+}
+
+# Une commande Node avec les deux mots de passe privilégiés (ADR 0040) : le superutilisateur de
+# PostgreSQL et le propriétaire du schéma.
+#
+# `run` et non `exec`, parce que le conteneur de démarrage **ne tourne pas** : il a fait son travail
+# au déploiement et s'est arrêté. `run` en tire un neuf de la même image, avec `init.env`, le temps
+# d'une commande.
+#
+#   `--rm`      sinon un conteneur mort s'accumule à chaque passage de chaque tâche ;
+#   `--no-deps` **le point qui compte.** Mesuré : un `run` ne redémarre pas une dépendance saine,
+#               mais il la **recrée** dès que le fichier Compose du disque a changé. Entre la copie
+#               d'un nouveau fichier Compose par le playbook et le `up` qui suit, une tâche
+#               périodique sans `--no-deps` recréerait le conteneur PostgreSQL de production ;
+#   `-T`        pas de pseudo terminal, sinon la sortie arrive truffée de retours chariot.
+#
+# C'est plus cher qu'un `exec` — un conteneur à créer plutôt qu'un processus à lancer — et c'est le
+# prix assumé pour que le service exposé à Internet ne porte plus ces deux mots de passe. Les tâches
+# qui en ont besoin passent une fois par jour, et la veille une fois par heure.
+dans_init() {
+	compose run --rm --no-deps -T init "$@"
 }
 
 # L'instant que systemd rend pour une propriété de date, en secondes depuis l'époque.

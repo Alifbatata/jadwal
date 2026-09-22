@@ -230,12 +230,191 @@ try {
 	rmSync(dossier, { recursive: true, force: true });
 }
 
+// -------------------------------------------------------------------------------------------------
+// La seconde moitié : **le script lui-même**, lancé comme systemd le lance.
+//
+// La règle du dépôt, écrite à l'étape 12 : un script qu'aucun test ne *lance* n'est pas éprouvé.
+// `verdict_tache` est une fonction, et jusqu'ici c'est tout ce que ce fichier éprouvait ; le script
+// qui l'appelle, lui, n'était jamais exécuté. Il l'est maintenant, dans un conteneur, avec des
+// doublures pour ce qui n'existe pas là — `systemctl`, `docker`, `curl`, `openssl` — et de vrais
+// fichiers pour le reste.
+//
+// Ce qu'il fallait attraper : un contrôle qui **se tait quand il n'a pas pu contrôler**. La liste des
+// verrous de conservation se terminait par `|| true` ; une commande en échec rendait une sortie vide,
+// la sortie vide voulait dire « rien à signaler », et la veille annonçait pour toujours qu'aucun
+// verrou ne traîne sans jamais avoir regardé.
+// -------------------------------------------------------------------------------------------------
+
+/** Les situations jouées par le script entier, et ce qu'il doit en dire. */
+const PASSAGES = [
+	{
+		nom: 'tout va bien : aucune alerte',
+		verrous: 'vide',
+		attendu: [],
+		interdit: ['ALERTE']
+	},
+	{
+		nom: 'un verrou dure depuis plus de six mois',
+		verrous: 'un-vieux',
+		attendu: ['[verrous] ALERTE'],
+		interdit: []
+	},
+	{
+		nom: 'la liste des verrous est illisible : la commande échoue',
+		verrous: 'echec',
+		// C'est le cas que l'ancienne version ratait : elle prenait « rien à signaler ».
+		attendu: ['[verrous-illisibles] ALERTE'],
+		interdit: ['[verrous] ALERTE']
+	}
+];
+
+const dossier2 = mkdtempSync(join(tmpdir(), 'jadwal-veille-script-'));
+
+/** Les doublures, écrites ici pour qu'on lise dans ce fichier ce que le script croit trouver. */
+const DOUBLURES = {
+	systemctl: `#!/bin/sh
+# Une minuterie chargée, active, jamais déclenchée : la veille ne doit rien reprocher.
+case "$*" in
+  *LoadState*)      echo loaded ;;
+  *ActiveState*)    echo active ;;
+  *LastTriggerUSec*) echo "" ;;
+  "is-active"*)     exit 1 ;;
+  *)                exit 0 ;;
+esac
+`,
+	curl: `#!/bin/sh
+# Battements de cœur, /healthz et le nom public : tout répond.
+exit 0
+`,
+	openssl: `#!/bin/sh
+# Un certificat valable encore longtemps.
+case "$1" in
+  x509) echo "notAfter=Dec 20 20:37:41 2026 GMT" ;;
+  *)    echo "" ;;
+esac
+exit 0
+`,
+	docker: `#!/bin/sh
+# Ce que le script demande vraiment à Docker, et rien de plus.
+case "$*" in
+  *"retention-hold.mjs list"*)
+    case "$JADWAL_EPREUVE_VERROUS" in
+      vide)     exit 0 ;;
+      un-vieux) echo "verrou abcdef posé le 2026-01-01 pour « litige »"; exit 0 ;;
+      echec)    echo "Error: No such service: init" >&2; exit 1 ;;
+    esac
+    ;;
+  *"compose ps"*)
+    printf 'app running healthy\\ndb running healthy\\n'; exit 0 ;;
+  run*)
+    # Le conteneur jetable qui envoie un courriel : on note le sujet, on n'envoie rien.
+    for a in "$@"; do echo "$a"; done | tail -n 1 >> /tmp/courriels.txt
+    cat > /dev/null
+    exit 0 ;;
+esac
+exit 0
+`
+};
+
+try {
+	process.stdout.write(`\nLa veille elle-même, lancée dans ${IMAGE} comme systemd la lance.\n\n`);
+
+	for (const [nom, source] of Object.entries(DOUBLURES)) {
+		writeFileSync(join(dossier2, nom), source, 'utf8');
+	}
+	// Le fichier d'environnement du serveur, réduit à ce que la veille y lit. Aucun secret.
+	writeFileSync(
+		join(dossier2, 'jadwal.env'),
+		[
+			'JADWAL_ORIGIN=https://exemple.test',
+			'JADWAL_APP_PORT=3080',
+			'JADWAL_IMAGE=exemple/jadwal@sha256:0000',
+			'JADWAL_ALERTE_TO=exploitant@exemple.test',
+			''
+		].join('\n'),
+		'utf8'
+	);
+
+	const preparation = [
+		'set -e',
+		'mkdir -p /opt/jadwal/scripts /etc/jadwal /var/lib/jadwal/reussites /var/backups/jadwal /usr/local/bin',
+		'cp /doublures/jadwal.env /etc/jadwal/jadwal.env',
+		'cp /doublures/systemctl /doublures/docker /doublures/curl /doublures/openssl /usr/local/bin/',
+		'chmod 0755 /usr/local/bin/systemctl /usr/local/bin/docker /usr/local/bin/curl /usr/local/bin/openssl',
+		'cp /scripts/jadwal-commun.sh /scripts/jadwal-veille.sh /opt/jadwal/scripts/',
+		'chmod 0755 /opt/jadwal/scripts/jadwal-veille.sh',
+		// Une archive fraîche et une restauration récente : sans elles, deux alertes légitimes
+		// partiraient et masqueraient ce qu'on cherche à mesurer.
+		'touch /var/backups/jadwal/jadwal-2026-09-22T000000Z.dump.age',
+		'date --iso-8601=seconds > /var/lib/jadwal/reussites/restauration-complete',
+		// Les trois passages, chacun avec sa situation, chacun dans son propre état.
+		...PASSAGES.map(
+			(passage, index) =>
+				`echo "=== ${index} ==="; rm -rf /var/lib/jadwal/alertes; ` +
+				`JADWAL_EPREUVE_VERROUS=${passage.verrous} /opt/jadwal/scripts/jadwal-veille.sh 2>&1 || true`
+		)
+	].join('\n');
+
+	writeFileSync(join(dossier2, 'preparation.sh'), preparation, 'utf8');
+
+	const sortie = execFileSync(
+		'docker',
+		[
+			'run',
+			'--rm',
+			'--volume',
+			`${dossier2.replaceAll('\\', '/')}:/doublures:ro`,
+			'--volume',
+			`${join(racine, 'infra', 'scripts').replaceAll('\\', '/')}:/scripts:ro`,
+			IMAGE,
+			'bash',
+			'/doublures/preparation.sh'
+		],
+		{ encoding: 'utf8' }
+	);
+
+	const blocs = sortie.split(/^=== (\d+) ===$/m);
+	const parPassage = new Map();
+	for (let i = 1; i < blocs.length; i += 2) {
+		parPassage.set(Number(blocs[i]), blocs[i + 1] ?? '');
+	}
+
+	process.stdout.write(`${'situation'.padEnd(52)} ce que la veille en dit\n`);
+	for (const [index, passage] of PASSAGES.entries()) {
+		const bloc = parPassage.get(index) ?? '';
+		const alertes = bloc
+			.split('\n')
+			.filter((l) => l.includes('ALERTE'))
+			.map((l) => l.replace(/^\S+\s/, '').trim());
+		process.stdout.write(
+			`${passage.nom.padEnd(52)} ${alertes.length === 0 ? 'aucune alerte' : alertes.join(' | ')}\n`
+		);
+		if (bloc === '') {
+			echecs.push(`${passage.nom} : le script n’a rien écrit — il ne s’est pas exécuté`);
+			continue;
+		}
+		if (!bloc.includes('veille terminée')) {
+			echecs.push(`${passage.nom} : la veille ne va pas jusqu’au bout`);
+		}
+		for (const attendu of passage.attendu) {
+			if (!bloc.includes(attendu)) echecs.push(`${passage.nom} : « ${attendu} » attendu, absent`);
+		}
+		for (const interdit of passage.interdit) {
+			if (bloc.includes(interdit))
+				echecs.push(`${passage.nom} : « ${interdit} » ne devait pas être là`);
+		}
+	}
+} finally {
+	rmSync(dossier2, { recursive: true, force: true });
+}
+
 if (echecs.length > 0) {
 	process.stderr.write(`\nCe qui a échoué :\n`);
 	for (const echec of echecs) process.stderr.write(`  - ${echec}\n`);
 	process.exitCode = 1;
 } else {
 	process.stdout.write(
-		`\nLes ${CAS.length} situations rendent le verdict attendu : une installation fraîche ne réveille personne, un passage raté si.\n`
+		`\nLes ${CAS.length} situations rendent le verdict attendu, et les ${PASSAGES.length} passages du script entier` +
+			` disent ce qu'ils doivent dire — y compris quand un contrôle n'a pas pu contrôler.\n`
 	);
 }

@@ -12,7 +12,7 @@
 #   — la date d'expiration du certificat, vue depuis le réseau et non depuis la configuration ;
 #   — la présence d'une archive de sauvegarde récente ;
 #   — les verrous de conservation posés depuis plus de six mois ;
-#   — l'état des deux conteneurs et la réponse de `/healthz` sur la boucle locale ;
+#   — l'état des conteneurs de service et la réponse de `/healthz` sur la boucle locale ;
 #   — la réponse du nom public en IPv4 et en IPv6, seule épreuve de l'IPv6 dont nous disposions.
 #
 # Elle n'envoie **pas** le même courriel toutes les heures : une alerte déjà envoyée dans les
@@ -208,23 +208,43 @@ fi
 # 6. Les verrous de conservation posés depuis trop longtemps. Un verrou suspend une purge : oublié,
 #    il garde indéfiniment des données qui auraient dû partir, c'est-à-dire exactement ce que la
 #    politique de rétention promet de ne pas faire (ADR 0030).
-vieux="$(dans_app node node_modules/@jadwal/db/scripts/retention-hold.mjs list --anciens "$SEUIL_VERROU" 2> /dev/null || true)"
-if [ -n "$vieux" ]; then
-	alerter "verrous" "un verrou de conservation dure depuis plus de six mois" \
-		"$vieux
+#
+#    `dans_init` : le relevé passe par le rôle propriétaire (ADR 0040).
+#
+#    Le `|| true` qui terminait cette ligne a disparu, et ce n'est pas un détail de style. Il avalait
+#    l'échec de la commande : une commande qui échoue rend une sortie vide, une sortie vide prenait
+#    la branche « rien à signaler », et la veille affirmait alors **pour toujours** qu'aucun verrou ne
+#    traîne — sans jamais avoir regardé. Un contrôle qui se tait quand il n'a pas pu contrôler est
+#    pire que pas de contrôle, parce qu'on croit l'avoir.
+if vieux="$(dans_init node node_modules/@jadwal/db/scripts/retention-hold.mjs list --anciens "$SEUIL_VERROU" 2> /dev/null)"; then
+	apaiser "verrous-illisibles"
+	if [ -n "$vieux" ]; then
+		alerter "verrous" "un verrou de conservation dure depuis plus de six mois" \
+			"$vieux
 
 Un verrou suspend la purge du journal d'audit et du registre interne de son organisation.
 Le lever quand le litige est clos :
-  docker compose exec -T app node node_modules/@jadwal/db/scripts/retention-hold.mjs lift <identifiant>"
+  docker compose run --rm --no-deps -T init node node_modules/@jadwal/db/scripts/retention-hold.mjs lift <identifiant>"
+	else
+		apaiser "verrous"
+	fi
 else
-	apaiser "verrous"
+	alerter "verrous-illisibles" "la liste des verrous de conservation est illisible" \
+		"La commande n'a pas abouti. La veille ne sait donc pas si un verrou traîne depuis trop
+longtemps, et elle ne le saura pas tant que ceci échoue :
+  docker compose -f $JADWAL_COMPOSE --env-file $JADWAL_ENV run --rm --no-deps -T init \\
+    node node_modules/@jadwal/db/scripts/retention-hold.mjs list"
 fi
 
-# 7. Les deux conteneurs, et la réponse de `/healthz` depuis le serveur lui-même. La sonde
+# 7. Les conteneurs de service, et la réponse de `/healthz` depuis le serveur lui-même. La sonde
 #    extérieure, posée hors de ce serveur (ADR 0038), dit si le service répond au monde ; celle-ci
 #    dit si c'est le
 #    service ou le chemin qui manque, et ce n'est pas la même panne.
-etat="$(compose ps --format '{{.Service}} {{.State}} {{.Health}}' 2> /dev/null || true)"
+#    `--all` et non le défaut : sans lui, un conteneur arrêté ne figure simplement pas dans la
+#    liste, et une application à terre passerait pour une liste sans `exited`. On demande donc tout,
+#    et l'on retire `init` — le conteneur de démarrage a **vocation** à être arrêté (ADR 0040), et
+#    c'est le déploiement qui vérifie qu'il s'est arrêté en 0.
+etat="$(compose ps --all --format '{{.Service}} {{.State}} {{.Health}}' 2> /dev/null | grep -v '^init ' || true)"
 if printf '%s\n' "$etat" | grep --quiet --extended-regexp '(exited|restarting|unhealthy)'; then
 	alerter "conteneurs" "un conteneur de jadwal ne va pas bien" \
 		"$etat
