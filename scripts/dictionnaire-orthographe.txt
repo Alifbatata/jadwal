@@ -28,6 +28,9 @@ Dhuhr
 Asr
 Maghrib
 Isha
+# Fajr et Isha dans la transcription allemande, celle qu'affiche la page publique en allemand.
+Fadschr
+Ischa
 Ramadan
 adhan
 passkey
@@ -57,6 +60,7 @@ assr
 aser
 
 # --- Les sigles ---
+ACME
 ADR
 AGPL
 CLA
@@ -129,6 +133,8 @@ WhatsApp
 Instagram
 Facebook
 Odoo
+Jimdo
+iCalendar
 Unlicense
 Monotonic
 

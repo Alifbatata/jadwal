@@ -61,7 +61,17 @@ const SURFACES = [
 	{ motif: 'apps/web/src/lib/server/mail/messages.ts', genre: 'chaines' },
 	// La page de garde du PDF pour le juriste vit dans ce script, et nulle part ailleurs : sans
 	// cette ligne, le seul texte du document que personne ne relirait serait celui-là.
-	{ motif: 'scripts/conditions-pdf.mjs', genre: 'chaines' }
+	{ motif: 'scripts/conditions-pdf.mjs', genre: 'chaines' },
+	// Les deux documents écrits pour une personne responsable, qui les suit pas à pas. Les autres
+	// documents de `docs/` (API, cadrage, exploitation, sécurité, maquettes) s'adressent aux
+	// développeurs et à l'exploitant : ils n'y sont pas.
+	{ motif: 'docs/INTEGRATION.md', genre: 'document' },
+	{ motif: 'docs/CALENDRIER-PRIERES.md', genre: 'document' },
+	// Les phrases de la page publique, du flux agenda et du widget qui ne passent pas par `i18n.ts`.
+	// Ce sont les trois modules que le correcteur relit aussi, langue par langue.
+	{ motif: 'apps/web/src/lib/public/affichage.ts', genre: 'chaines' },
+	{ motif: 'apps/web/src/lib/server/agenda.ts', genre: 'chaines' },
+	{ motif: 'packages/widget/src/element.ts', genre: 'chaines' }
 ];
 
 const racine = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
