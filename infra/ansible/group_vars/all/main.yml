@@ -13,12 +13,23 @@ jadwal_sauvegardes: /var/backups/jadwal
 jadwal_domaine: jadwal.voltia.ch
 jadwal_origine: 'https://{{ jadwal_domaine }}'
 jadwal_port: 3080
+# La taille maximale d'un corps de requête. Le fichier Compose l'interpole ; elle n'est pas secrète,
+# et elle vit donc dans `compose.env` avec l'image et le port.
+jadwal_body_size_limit: 512K
 
 # La sonde interroge `/healthz` par le nom public, sur chaque pile, toutes les cinq minutes
 # (ADR 0038). Une instance qui ne publie pas d'enregistrement AAAA met ceci à `false` : sans cela sa
 # sonde IPv6 échouerait toutes les cinq minutes pour une adresse qui n'existe pas, et elle
 # apprendrait à ignorer ses alertes.
 jadwal_sonde_ipv6: true
+
+# La veille regarde-t-elle au-delà de jadwal ?
+#
+# `false` par défaut, et c'est voulu : une instance qui s'auto-héberge n'a pas à se faire réveiller
+# pour les unités de quelqu'un d'autre, et jadwal ne s'invite pas dans la surveillance d'une machine
+# qu'il partage (ADR 0034). Mis à `true`, la veille alerte sur toute unité en échec de la machine, et
+# si Caddy porte une capacité de plus que celle d'ouvrir les ports.
+jadwal_veille_machine: false
 
 # L'image de production, par digest. Le déploiement la remplace en ligne de commande :
 #   ansible-playbook jadwal.yml -e jadwal_image=ghcr.io/…@sha256:…
