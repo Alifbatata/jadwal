@@ -35,9 +35,25 @@ plus bas, « Ce que vous acceptez ».
    personne n'ouvre jamais de compte.
 4. **Un journal des modifications** : qui a changé quoi, et quand. Il permet de revenir en arrière et
    de comprendre ce qui s'est passé.
-5. **Les passkeys** des personnes qui en enregistrent une : la clé publique de l'appareil et son
-   identifiant. Jamais de secret, jamais d'empreinte digitale : ces choses ne quittent pas l'appareil.
-6. **Une empreinte de l'adresse IP**, le temps de compter les demandes trop nombreuses. Voir plus bas.
+5. **Les sessions de connexion** : quel compte, depuis quand, jusqu'à quand, et la dernière
+   organisation choisie quand la personne en a plusieurs. C'est ce qui vous garde connecté d'une
+   page à l'autre.
+6. **Les liens de connexion en attente** : l'adresse à laquelle le lien est parti, tant qu'il court.
+   Le lien lui-même n'est pas conservé en clair.
+7. **Les passkeys** des personnes qui en enregistrent une. Le service garde le nom que vous lui
+   donnez, sa clé publique, son identifiant, un compteur d'usage, le type d'appareil, le fait
+   qu'elle soit copiée ailleurs que sur cet appareil, les moyens par lesquels elle se présente,
+   l'identifiant du modèle d'authentificateur, et la date d'enregistrement.
+
+   **Ce qui est vrai de toutes** : le service ne reçoit jamais le secret de la passkey, ni une
+   empreinte digitale, ni un visage. Une passkey **synchronisée** est en revanche recopiée par votre
+   trousseau sur vos autres appareils : cela se passe entre vous et le fabricant de votre appareil,
+   et le service ne fait qu'en enregistrer le fait.
+
+8. **Une empreinte de l'adresse IP ou de l'adresse électronique**, le temps de compter les demandes
+   trop nombreuses. Voir plus bas.
+9. **Les traces d'accès de l'exploitant** : quand il a regardé les données d'une organisation, et
+   laquelle. Voir « L'accès de l'exploitant à vos données ».
 
 Le service n'utilise **aucun cookie de mesure d'audience**, ne fait **aucun suivi publicitaire** et
 ne transmet vos données à **aucun tiers** à des fins commerciales. Les visiteurs de votre page
@@ -78,21 +94,27 @@ ne sait pas sur quelle page vous l'avez collé, puisqu'il ne conserve pas la pro
 
 ## Combien de temps
 
-| Ce qui est conservé                         | Durée                                          |
-| ------------------------------------------- | ---------------------------------------------- |
-| Le programme de vos cours                   | tant que votre organisation utilise le service |
-| Le journal des modifications                | 24 mois, puis effacé automatiquement           |
-| Le compteur de consultations                | 25 mois, puis effacé automatiquement           |
-| Une invitation qui n'est plus en cours      | 90 jours après sa fin, puis effacée            |
-| Un compte sans organisation, inactif        | 12 mois, puis effacé                           |
-| Une session de connexion                    | 30 jours au plus, puis effacée automatiquement |
-| Un lien de connexion non utilisé            | 15 minutes, puis effacé automatiquement        |
-| L'empreinte du compteur de demandes         | un à deux jours, puis effacée automatiquement  |
-| Le journal technique du serveur             | 14 jours, puis effacé automatiquement          |
-| Les traces d'accès internes de l'exploitant | 24 mois, puis effacées automatiquement         |
+| Ce qui est conservé                         | Durée                                               | Comment il est effacé         |
+| ------------------------------------------- | --------------------------------------------------- | ----------------------------- |
+| Le programme de vos cours                   | tant que votre organisation utilise le service      | vous l'effacez vous-même      |
+| Le journal des modifications                | 24 mois, puis effacé automatiquement                | règle de la base, chaque nuit |
+| Le compteur de consultations                | 25 mois, puis effacé automatiquement                | règle de la base, chaque nuit |
+| Une invitation qui n'est plus en cours      | 90 jours après sa fin, puis effacée automatiquement | règle de la base, chaque nuit |
+| Un compte sans organisation, inactif        | 12 mois, puis effacé automatiquement                | règle de la base, chaque nuit |
+| Une session de connexion                    | 30 jours sans usage, puis effacée automatiquement   | règle de la base, chaque nuit |
+| Un lien de connexion non utilisé            | 15 minutes, puis effacé automatiquement             | règle de la base, chaque nuit |
+| L'empreinte du compteur de demandes         | un à deux jours, puis effacée automatiquement       | règle de la base, chaque nuit |
+| Les traces d'accès internes de l'exploitant | 24 mois, puis effacées automatiquement              | règle de la base, chaque nuit |
+| Le journal technique du serveur             | 14 jours, puis effacé automatiquement               | fichier découpé chaque nuit   |
 
-Ces durées ne sont pas des intentions : pour chacune, l'effacement est porté par une règle de la base
-de données, et une tâche passe chaque nuit pour emporter ce qui les a dépassées.
+**Une session en usage se prolonge.** Les trente jours comptent depuis la dernière fois qu'elle a
+servi : tant que vous revenez, elle ne se ferme pas. Un mois sans revenir, et elle part.
+
+Ces durées ne sont pas des intentions. Partout où la troisième colonne dit « règle de la base »,
+l'effacement est porté par une **règle de la base de données** : elle dit ce qui a le droit de partir, et une tâche passe chaque
+nuit pour emporter ce qui a dépassé. Le journal technique du serveur, lui, n'est pas dans la base :
+c'est un fichier, qu'un script découpe chaque nuit et dont il ne garde que les quatorze derniers
+jours.
 
 Une seule exception, et elle se voit : si votre organisation conteste un accès, l'exploitant peut
 poser un verrou qui suspend l'effacement du journal des modifications et de ses propres traces, le
@@ -136,8 +158,8 @@ sans elle, l'assistance n'est pas possible.
 ## Ce que vous acceptez
 
 - Que le programme que vous publiez soit **public** : page, widget, flux agenda.
-- De ne pas publier de données personnelles de tiers dans les champs libres : le nom d'un
-  intervenant est un choix qui vous appartient, et qui l'engage aussi.
+- De ne publier des données personnelles d'autres personnes dans les champs libres, comme le nom
+  d'un intervenant, **qu'avec leur accord**.
 - Que le service soit fourni **sans garantie de disponibilité**. Il est gratuit et tenu par une
   seule personne.
 
@@ -179,9 +201,13 @@ pas ailleurs. Nous le disons parce que la société et le lieu de stockage ne so
 pays, et que vous avez le droit de le savoir sans avoir à le chercher.
 
 **Les sauvegardes sont chiffrées sur le serveur, avant de le quitter.** La clé qui permet de les lire
-n'est jamais sur ce serveur, et n'est jamais chez celui qui les garde : Cloudflare détient des
-fichiers qu'il ne peut pas ouvrir, et personne chez lui ne peut en lire une ligne, quelle que soit la
-loi qu'on lui oppose.
+**n'est jamais conservée sur ce serveur**, et n'est jamais chez celui qui les garde : Cloudflare
+détient des fichiers qu'il ne peut pas ouvrir, et personne chez lui ne peut en lire une ligne, quelle
+que soit la loi qu'on lui oppose.
+
+La nuance compte, et la voici : pour vérifier qu'une sauvegarde se relit vraiment, l'exploitant
+envoie la clé au serveur le temps d'un essai, où elle ne passe qu'en mémoire. Elle n'est écrite
+nulle part, et elle repart avec le processus.
 
 **Ce que vous effacez reste au plus 181 jours dans ces sauvegardes.** Une suppression est immédiate
 dans le service, mais les sauvegardes déjà parties ne se réécrivent pas, et c'est ce qui fait leur
