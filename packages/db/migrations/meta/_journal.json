@@ -372,6 +372,13 @@
       "when": 1790098879138,
       "tag": "0052_terms_acceptance_hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1790098880138,
+      "tag": "0053_membership_update_role_only",
+      "breakpoints": true
     }
   ]
 }
