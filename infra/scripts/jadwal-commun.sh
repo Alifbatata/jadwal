@@ -93,6 +93,75 @@ dans_app() {
 	compose exec -T app "$@"
 }
 
+# L'instant que systemd rend pour une propriété de date, en secondes depuis l'époque.
+#
+# `systemctl show --property=LastTriggerUSec --value` ne rend **pas** des microsecondes, malgré son
+# nom : systemd 255 imprime une date lisible — `Tue 2026-09-22 00:23:30 UTC` — et une **chaîne vide**
+# quand la minuterie ne s'est jamais déclenchée. `--timestamp=unix` n'y change rien.
+#
+# Relevé sur la machine, après avoir vu cinq tâches déclarées « jamais déclenchées » alors que
+# `systemctl list-timers` en montrait une qui venait de tourner. Lire une propriété, ce n'est pas
+# deviner son format d'après son nom.
+#
+# Les trois cas, et rien d'autre : vide (jamais), un nombre (des microsecondes, systemd plus ancien),
+# une date (on la fait traduire). Ce qui ne se lit pas rend 0, c'est-à-dire « jamais » : mieux vaut
+# se taire que de reprocher à une tâche une heure qu'on n'a pas su lire.
+epoch_systemd() {
+	local valeur="${1-}"
+	case "$valeur" in
+		'' | 'n/a') printf '0\n'; return ;;
+		*[!0-9]*) ;;
+		*) printf '%s\n' "$((valeur / 1000000))"; return ;;
+	esac
+	date --date="$valeur" +%s 2>/dev/null || printf '0\n'
+}
+
+# Une tâche périodique est-elle muette, et faut-il s'en inquiéter ?
+#
+# **La question n'est pas « quand a-t-elle réussi pour la dernière fois », mais « a-t-elle réussi
+# depuis la dernière fois qu'elle aurait dû ».** C'est systemd qui sait quand la minuterie s'est
+# déclenchée ; le script n'a pas à recopier une période, qui finirait par contredire l'`OnCalendar`
+# de l'unité.
+#
+# Ce qui a motivé cette fonction : le soir de la mise en ligne, trois alertes sont parties une demi-
+# heure après l'installation, pour trois tâches dont la minuterie ne s'était simplement pas encore
+# déclenchée. L'alerte était exacte et inutile, et c'est ainsi qu'on apprend à ignorer ses alertes.
+#
+#     verdict_tache <charge> <activite> <declenchement> <reussite> <maintenant> <en_cours> <grace>
+#
+# `declenchement` et `reussite` sont des secondes depuis l'époque, **0 voulant dire « jamais »**.
+# `en_cours` vaut `oui` quand le service tourne à cet instant. La fonction ne lit rien, n'écrit rien
+# et ne décide de rien d'autre : elle rend un mot.
+#
+#     absente | inactive | sans-reussite   → il faut alerter
+#     jamais  | en-cours | ok              → il n'y a rien à dire
+verdict_tache() {
+	local charge="$1" activite="$2" declenchement="$3" reussite="$4" maintenant="$5" en_cours="$6" grace="$7"
+
+	# Une minuterie qu'on ne trouve plus, ou qui ne tournera plus, est un vrai problème : elle ne se
+	# déclenchera jamais, donc aucun des contrôles suivants ne se déclencherait non plus.
+	[ "$charge" = "loaded" ] || { printf 'absente\n'; return; }
+	[ "$activite" = "active" ] || { printf 'inactive\n'; return; }
+
+	# Jamais déclenchée depuis l'installation : il n'y a rien à reprocher à une tâche dont l'heure
+	# n'est pas encore venue.
+	[ "$declenchement" -gt 0 ] || { printf 'jamais\n'; return; }
+
+	# Réussi depuis le dernier déclenchement : tout va bien.
+	#
+	# `-lt` et non `-le` : une tâche brève écrit sa marque **dans la seconde même** du déclenchement,
+	# et les deux instants sont alors égaux. Les juger dans le mauvais sens revient à déclarer qu'elle
+	# n'a pas abouti — ce qui s'est vu sur la coupe du journal, qui prend moins d'une seconde.
+	[ "$reussite" -lt "$declenchement" ] || { printf 'ok\n'; return; }
+
+	# Pas encore réussi, mais la tâche tourne en ce moment, ou vient d'être déclenchée : on lui
+	# laisse le temps de finir. La veille repasse dans une heure.
+	[ "$en_cours" != "oui" ] || { printf 'en-cours\n'; return; }
+	[ $((maintenant - declenchement)) -gt "$grace" ] || { printf 'en-cours\n'; return; }
+
+	printf 'sans-reussite\n'
+}
+
 # La marque de réussite : un fichier par tâche, qui contient la date de la dernière fois où elle est
 # allée jusqu'au bout. C'est ce que la veille relit pour dire « cette tâche n'a plus abouti depuis
 # trop longtemps » — une tâche qui ne se lance plus du tout ne produit aucun échec, donc aucune

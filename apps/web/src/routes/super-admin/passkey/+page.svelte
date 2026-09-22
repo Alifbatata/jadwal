@@ -24,8 +24,11 @@
 			const { error } = await authClient.passkey.addPasskey({ name: 'Cet appareil' });
 			if (error) throw new Error(error.message ?? 'refusé');
 			etat = 'repos';
-			message =
-				'Passkey enregistrée. Déconnectez-vous puis reconnectez-vous avec elle pour obtenir vos pouvoirs.';
+			// Pas de déconnexion : le bouton « Se connecter avec une passkey » apparaît juste en
+			// dessous dès que les données sont relues, et c'est lui qui donne les pouvoirs à cette
+			// session. L'écran a longtemps demandé de sortir puis de revenir — une marche de plus
+			// pour rien, et la première chose qu'on lit après avoir enregistré sa passkey.
+			message = 'Passkey enregistrée. Connectez-vous avec elle, ci-dessous, sans quitter la page.';
 			await invalidateAll();
 		} catch (erreur) {
 			etat = 'echec';

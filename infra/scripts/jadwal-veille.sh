@@ -33,9 +33,14 @@ SEUIL_RESTAURATION="${JADWAL_SEUIL_RESTAURATION:-97}" # jours depuis la dernièr
 SEUIL_VERROU="${JADWAL_SEUIL_VERROU:-183}"            # jours qu'un verrou de conservation peut durer
 SILENCE="${JADWAL_SILENCE:-86400}"                    # une même alerte, au plus une fois par jour
 
-# Les tâches et leur période, en secondes. L'alerte part au-delà du double : une tâche quotidienne
-# qui saute une nuit a pu tomber sur un redémarrage, deux nuits d'affilée ne sont plus un hasard.
-PERIODES="prieres:86400 purges:86400 sauvegarde:86400 restauration:604800 journal-caddy:86400"
+# Les tâches qui laissent une marque de réussite. Leur période n'est **pas** écrite ici, et c'est
+# voulu : c'est systemd qui sait quand chaque minuterie s'est déclenchée, et une période recopiée
+# dans ce script finirait par contredire l'`OnCalendar` de l'unité sans que personne s'en aperçoive.
+TACHES="prieres purges sauvegarde restauration journal-caddy"
+
+# Le temps qu'on laisse à une tâche déclenchée pour aboutir avant de s'en inquiéter. La veille
+# repasse toutes les heures : une tâche qui n'a pas fini au bout d'une heure a un problème.
+GRACE_TACHE="${JADWAL_GRACE_TACHE:-3600}"
 
 alertes=0
 
@@ -63,29 +68,57 @@ apaiser() {
 	rm -f "$JADWAL_ETAT/alertes/$1"
 }
 
-# 1. Les tâches qui ne se lancent plus.
-for entree in $PERIODES; do
-	tache="${entree%%:*}"
-	periode="${entree##*:}"
+# 1. Les tâches qui ne se lancent plus, ou qui se lancent sans aboutir.
+#
+# La comparaison se fait entre la marque de réussite et le **dernier déclenchement de la minuterie
+# selon systemd**. Une installation fraîche ne dit donc rien : tant que la minuterie ne s'est jamais
+# déclenchée, il n'y a rien à reprocher. La décision elle-même est dans `verdict_tache`, au socle
+# commun, où elle est éprouvée cas par cas.
+maintenant="$(date +%s)"
+for tache in $TACHES; do
+	minuterie="jadwal-$tache.timer"
 	marque="$JADWAL_ETAT/reussites/$tache"
-	if [ ! -f "$marque" ]; then
-		alerter "tache-$tache" "la tâche $tache n'a jamais abouti" \
-			"Aucune marque de réussite dans $marque.
-La tâche n'a peut-être jamais été lancée depuis l'installation.
-  systemctl status jadwal-$tache.timer
+
+	charge="$(systemctl show "$minuterie" --property=LoadState --value 2>/dev/null || true)"
+	activite="$(systemctl show "$minuterie" --property=ActiveState --value 2>/dev/null || true)"
+	# `LastTriggerUSec` porte mal son nom : systemd en rend une date lisible, et une chaîne vide
+	# quand la minuterie ne s'est jamais déclenchée. `epoch_systemd` s'en occupe. `Persistent=true`
+	# fait survivre cette date à un redémarrage.
+	declenchement="$(epoch_systemd "$(systemctl show "$minuterie" --property=LastTriggerUSec --value 2>/dev/null || true)")"
+	en_cours=non
+	systemctl is-active --quiet "jadwal-$tache.service" 2>/dev/null && en_cours=oui
+	reussite=0
+	[ ! -f "$marque" ] || reussite="$(stat --format=%Y "$marque")"
+
+	verdict="$(verdict_tache "$charge" "$activite" "$declenchement" "$reussite" \
+		"$maintenant" "$en_cours" "$GRACE_TACHE")"
+
+	case "$verdict" in
+		absente)
+			alerter "tache-$tache" "la minuterie de $tache a disparu" \
+				"systemctl ne connaît plus $minuterie : la tâche ne se déclenchera plus jamais.
+  ls -l /etc/systemd/system/jadwal-*
+  ansible-playbook jadwal.yml --tags taches -e jadwal_image=<le digest qui tourne>"
+			;;
+		inactive)
+			alerter "tache-$tache" "la minuterie de $tache est $activite" \
+				"$minuterie existe mais ne tournera pas.
+  systemctl status $minuterie
+  systemctl enable --now $minuterie"
+			;;
+		sans-reussite)
+			alerter "tache-$tache" "la tâche $tache s'est déclenchée sans aboutir" \
+				"Dernier déclenchement : $(date --iso-8601=seconds --date=@"$declenchement").
+$([ "$reussite" -gt 0 ] && printf 'Dernière réussite : %s' "$(cat "$marque")" || printf "Aucune réussite depuis l'installation.")
+  journalctl -u jadwal-$tache.service --since '3 days ago'
   systemctl start jadwal-$tache.service"
-		continue
-	fi
-	age=$(($(date +%s) - $(stat --format=%Y "$marque")))
-	if [ "$age" -gt $((periode * 2)) ]; then
-		alerter "tache-$tache" "la tâche $tache n'a plus abouti depuis $((age / 3600)) h" \
-			"Dernière réussite : $(cat "$marque")
-Période attendue : $((periode / 3600)) h. Le seuil d'alerte est le double.
-  systemctl list-timers 'jadwal-*'
-  journalctl -u jadwal-$tache.service --since '3 days ago'"
-	else
-		apaiser "tache-$tache"
-	fi
+			;;
+		*)
+			# `jamais`, `en-cours`, `ok` : rien à dire, et l'alerte précédente peut repartir.
+			apaiser "tache-$tache"
+			trace "$tache : $verdict"
+			;;
+	esac
 done
 
 # 2. La restauration complète, celle que l'exploitant joue avec sa clé privée. Elle n'est pas

@@ -34,6 +34,34 @@ JADWAL_TACHE=sauvegarde
 
 JADWAL_SAUVEGARDES="${JADWAL_SAUVEGARDES:-/var/backups/jadwal}"
 RCLONE_CONF="${RCLONE_CONF:-/etc/jadwal/rclone.conf}"
+
+# `--s3-no-head` : ne pas relire l'objet après l'avoir écrit.
+#
+# **Mesuré**, pas supposé. Chaque envoi produisait deux `ERROR : NotImplemented (501)` réussis à la
+# seconde tentative. Le détail des échanges HTTP le dit :
+#
+#     HEAD /…/verrou-eprouve-….txt                      404   (il n'existe pas encore)
+#     PUT  /…/verrou-eprouve-….txt                      200   (l'envoi RÉUSSIT)
+#     HEAD /…/verrou-eprouve-….txt?versionId=7e5f…      501   ← l'erreur
+#     (seconde tentative) HEAD sans versionId           200   « unchanged, skipping »
+#
+# L'envoi réussit du premier coup. Ce qui échoue, c'est la relecture que rclone fait ensuite **par
+# identifiant de version**, que cette destination n'implémente pas. La seconde tentative n'envoie
+# donc rien : elle constate que l'objet est déjà là et passe.
+#
+# Deux conséquences, et la seconde compte plus que la première :
+#
+#   1. deux lignes `ERROR` par nuit qui ne signalaient rien — et deux erreurs qu'on apprend à ne
+#      plus lire sont deux erreurs qu'on ne lira pas le jour où elles comptent ;
+#   2. **le code de retour de rclone ne voulait plus rien dire.** Un envoi parfaitement réussi
+#      sortait en échec. C'est ce code que la preuve des verrous interroge pour affirmer qu'un
+#      écrasement a été refusé : elle pouvait donc conclure « le verrou tient » alors que l'objet
+#      venait d'être écrasé.
+#
+# Rien n'est perdu à ne pas relire : ce script vérifie lui-même chaque copie distante, en la
+# relisant **en entier** et en comparant son empreinte SHA-256 à celle de l'archive locale. C'est
+# une vérification plus forte que celle qu'on retire.
+RCLONE_OPTIONS="${RCLONE_OPTIONS:---s3-no-head}"
 ICI="$(dirname "$(readlink -f "$0")")"
 
 destinataire="$(valeur_env JADWAL_AGE_RECIPIENT)"
@@ -92,15 +120,15 @@ copies=0
 while IFS= read -r chemin; do
 	[ -n "$chemin" ] || continue
 	trace "envoi vers $distant/$chemin"
-	rclone --config "$RCLONE_CONF" copyto "$final" "$distant/$chemin" \
+	rclone $RCLONE_OPTIONS --config "$RCLONE_CONF" copyto "$final" "$distant/$chemin" \
 		|| echec "l'envoi de $chemin a échoué : l'archive est restée sur le serveur"
-	rclone --config "$RCLONE_CONF" copyto "$final.sha256" "$distant/$chemin.sha256" \
+	rclone $RCLONE_OPTIONS --config "$RCLONE_CONF" copyto "$final.sha256" "$distant/$chemin.sha256" \
 		|| echec "l'empreinte de $chemin n'a pas pu être envoyée"
 	copies=$((copies + 1))
 
 	# Relecture immédiate : la destination rend-elle bien ce qu'on vient d'y mettre ? Sans cela, on
 	# découvrirait un envoi silencieusement tronqué le jour où on en a besoin.
-	distante="$(rclone --config "$RCLONE_CONF" hashsum sha256 "$distant/$chemin" 2>/dev/null | cut -d" " -f1 || true)"
+	distante="$(rclone $RCLONE_OPTIONS --config "$RCLONE_CONF" hashsum sha256 "$distant/$chemin" 2>/dev/null | cut -d" " -f1 || true)"
 	if [ -n "$distante" ]; then
 		[ "$distante" = "$empreinte" ] || echec "l'archive distante $chemin diffère : $distante au lieu de $empreinte"
 		trace "empreinte distante identique à la locale"
@@ -108,7 +136,7 @@ while IFS= read -r chemin; do
 		# Tous les stockages ne savent pas calculer une empreinte à distance — R2, par exemple, rend
 		# « hash unsupported ». On relit alors l'objet en entier, et l'on compare octet par octet.
 		trace "la destination ne calcule pas d'empreinte : relecture complète"
-		relue="$(rclone --config "$RCLONE_CONF" cat "$distant/$chemin" | sha256sum | cut -d" " -f1)"
+		relue="$(rclone $RCLONE_OPTIONS --config "$RCLONE_CONF" cat "$distant/$chemin" | sha256sum | cut -d" " -f1)"
 		[ "$relue" = "$empreinte" ] || echec "la relecture de $chemin diffère : $relue"
 		trace "relecture identique"
 	fi

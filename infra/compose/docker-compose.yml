@@ -30,42 +30,43 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # **`format: raw`, et ce n'est pas un détail.**
+    #
+    # Sans lui, Compose interpole le fichier : un `$` y ouvre une référence à une variable, une
+    # référence introuvable devient une chaîne vide, et les espaces de bordure disparaissent. Le
+    # conteneur reçoit alors un secret amputé — **sans erreur**, avec un avertissement noyé dans la
+    # sortie — et le service échoue plus tard, ailleurs, pour une raison qui ne ressemble en rien à
+    # la cause. Mesuré à la mise en ligne : un mot de passe arrivait tronqué, et aucun courriel ne
+    # pouvait partir.
+    #
+    # `format: raw` fait lire le fichier à Compose comme `docker run --env-file` le lit, et c'est
+    # ce qu'il faut : le même fichier a deux lecteurs, ils doivent le lire pareil. Il demande
+    # Compose 2.30.0 ou plus. `pnpm env:test` le vérifie dans des conteneurs jetables, et tombe
+    # quand on l'enlève.
+    #
+    # Chaque service a **son** fichier, écrit par le playbook : un conteneur ne reçoit que ce qui le
+    # concerne. L'application n'a pas à voir les adresses de battement de cœur, la base n'a pas à
+    # voir le secret de session.
+    env_file:
+      - path: /etc/jadwal/app.env
+        format: raw
     environment:
+      # Ce qui n'est **pas** un secret reste ici : rien de ce qui suit ne peut être abîmé par
+      # l'interpolation, et le lire dans ce fichier vaut mieux que d'aller le chercher ailleurs.
       NODE_ENV: production
       # adapter-node écoute sur toutes les interfaces **du conteneur** ; c'est la publication de
       # port ci-dessous qui décide de ce que l'hôte expose.
       HOST: 0.0.0.0
       PORT: '3000'
-      ORIGIN: ${JADWAL_ORIGIN:?JADWAL_ORIGIN est obligatoire}
       # L'adresse réelle du visiteur : la dernière valeur de X-Forwarded-For, celle que Caddy vient
       # d'ajouter. `XFF_DEPTH=1` parce qu'il y a exactement un mandataire devant nous.
       ADDRESS_HEADER: x-forwarded-for
       XFF_DEPTH: '1'
-      JADWAL_TRUSTED_PROXIES: ${JADWAL_TRUSTED_PROXIES:-}
       BODY_SIZE_LIMIT: ${BODY_SIZE_LIMIT:-512K}
 
       POSTGRES_HOST: db
       POSTGRES_PORT: '5432'
-      POSTGRES_DB: ${POSTGRES_DB:-jadwal}
-      POSTGRES_USER: ${POSTGRES_USER:-jadwal}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD est obligatoire}
-      JADWAL_DB_OWNER_PASSWORD: ${JADWAL_DB_OWNER_PASSWORD:?obligatoire}
-      JADWAL_DB_APP_PASSWORD: ${JADWAL_DB_APP_PASSWORD:?obligatoire}
-      JADWAL_DB_SUPERADMIN_PASSWORD: ${JADWAL_DB_SUPERADMIN_PASSWORD:?obligatoire}
-      JADWAL_DB_AUTH_PASSWORD: ${JADWAL_DB_AUTH_PASSWORD:?obligatoire}
-      JADWAL_DB_PUBLIC_PASSWORD: ${JADWAL_DB_PUBLIC_PASSWORD:?obligatoire}
-
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?obligatoire}
       MAIL_TRANSPORT: smtp
-      SMTP_HOST: ${SMTP_HOST:?obligatoire}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USER: ${SMTP_USER:?obligatoire}
-      SMTP_PASSWORD: ${SMTP_PASSWORD:?obligatoire}
-      MAIL_FROM: ${MAIL_FROM:?obligatoire}
-      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-jadwal}
-      MAIL_REPLY_TO: ${MAIL_REPLY_TO:-}
-      # Vide en production : la page d'essai du widget n'a aucune raison d'y être ouverte.
-      JADWAL_WIDGET_TEST_ORG: ${JADWAL_WIDGET_TEST_ORG:-}
     ports:
       # **La boucle locale, et elle seule.** Sans `127.0.0.1:`, Docker ouvrirait le port sur toutes
       # les interfaces et court-circuiterait le pare-feu de l'hôte, qui ne voit pas les règles que
@@ -103,13 +104,11 @@ services:
     # en production est celle contre laquelle les tests ont tourné.
     image: postgres:18.6@sha256:86c951e05bf56c93d95d397747fb8820ac76cc3bedb78f43abd83eedbe3666ae
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-jadwal}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD est obligatoire}
-      POSTGRES_DB: ${POSTGRES_DB:-jadwal}
-      # Sans cela, l'image initialise la base en `trust` sur les connexions locales : n'importe quel
-      # processus du conteneur pourrait alors se connecter en superutilisateur sans mot de passe.
-      POSTGRES_INITDB_ARGS: '--auth-host=scram-sha-256 --auth-local=scram-sha-256'
+    # Lu tel quel, pour la même raison que celui de l'application. Ce fichier-ci ne porte que les
+    # quatre variables de PostgreSQL : la base n'a rien à savoir du reste.
+    env_file:
+      - path: /etc/jadwal/db.env
+        format: raw
     # **Aucun port publié.** La base n'est joignable que depuis le réseau `jadwal`, c'est-à-dire
     # depuis l'application et depuis les tâches qui s'y rattachent le temps d'une commande.
     networks: [jadwal]
