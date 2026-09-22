@@ -62,8 +62,16 @@ export const load: PageServerLoad = async (event) => {
 	}));
 };
 
+/**
+ * Le nom de l'organisation en contexte. Filtré ici : le super-admin voit toutes les organisations,
+ * et l'invitation envoyée depuis la seconde nommait la première (`readSettings` le dit aussi).
+ */
 async function organisationName(tx: Parameters<Parameters<typeof withSessionOrg>[1]>[0]) {
-	const found = rows<{ name: string }>(await tx.execute(sql`select "name" from "organization"`));
+	const found = rows<{ name: string }>(
+		await tx.execute(
+			sql`select "name" from "organization" where "id" = (select jadwal.current_org_id())`
+		)
+	);
 	return found[0]?.name ?? '';
 }
 

@@ -196,13 +196,20 @@ export function toPause(row: PauseRow): Pause {
 	return { from: isoDate(row.from_date), to: isoDate(row.to_date), ...course };
 }
 
-/** Les réglages de l'organisation en contexte. Une requête. */
+/**
+ * Les réglages de l'organisation en contexte. Une requête.
+ *
+ * Le filtre sur le contexte est écrit ici, et non laissé à la sécurité au niveau des lignes : le
+ * rôle du super-admin voit **toutes** les organisations (ADR 0025), et sans lui la première venue
+ * répondait pour celle où il est entré. Trouvé par le parcours complet (étape 16).
+ */
 export async function readSettings(tx: Transaction): Promise<OrganisationSettings> {
 	const found = rows<OrganisationSettings>(
 		await tx.execute(sql`
 			select "id", "slug", "name", "time_zone", "accent_color", "default_language",
 				"enabled_language", "greeting", "prayer_module"
 			from "organization"
+			where "id" = (select jadwal.current_org_id())
 		`)
 	)[0];
 	if (!found) throw new Error('aucune organisation dans le contexte courant');

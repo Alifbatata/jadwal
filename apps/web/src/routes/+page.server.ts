@@ -111,7 +111,8 @@ export const actions: Actions = {
 				after: { date, kind: 'cancelled' }
 			});
 			const settings = await tx.execute<{ greeting: string }>(
-				sql`select "greeting" from "organization"`
+				// Filtré sur le contexte : le super-admin voit toutes les organisations (`readSettings`).
+				sql`select "greeting" from "organization" where "id" = (select jadwal.current_org_id())`
 			);
 			const greeting =
 				(Array.isArray(settings) ? (settings[0] as { greeting: string } | undefined) : undefined)
@@ -149,7 +150,8 @@ export const actions: Actions = {
 				after: { date, toDate, toStart }
 			});
 			const settings = await tx.execute<{ greeting: string }>(
-				sql`select "greeting" from "organization"`
+				// Filtré sur le contexte : le super-admin voit toutes les organisations (`readSettings`).
+				sql`select "greeting" from "organization" where "id" = (select jadwal.current_org_id())`
 			);
 			const greeting =
 				(Array.isArray(settings) ? (settings[0] as { greeting: string } | undefined) : undefined)
