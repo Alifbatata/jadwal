@@ -211,8 +211,10 @@ beforeAll(async () => {
 	await ownerHandle.db.transaction(async (tx) => {
 		await tx.execute(sql`set local jadwal.maintenance = 'on'`);
 		await tx.execute(sql`
-			insert into "organization" ("id", "slug", "name", "time_zone", "default_language", "enabled_language")
-			values (${organizationId}, 'acces', 'Mosquée d’essai', 'Europe/Zurich', 'fr', array['fr'])
+			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+				"enabled_language")
+			values (${organizationId}, 'acces', 'Association d’essai', 'Europe/Zurich', 'fr',
+				array['fr'])
 		`);
 		await tx.execute(sql`
 			insert into "user" ("id", "email", "name", "email_verified")
@@ -281,6 +283,46 @@ describe('le lien magique', () => {
 		const { status, cookie } = await followMagicLink(lien as string);
 		expect(status, 'le lien doit rediriger, pas échouer').toBe(302);
 		expect(cookie, 'la session doit être posée').toBeTruthy();
+	});
+
+	it('opens a session that keeps neither the address nor the browser', async () => {
+		// `docs/CONDITIONS.md` promet qu'une organisation ne laisse qu'une adresse électronique.
+		// Ce n'était pas vrai : Better Auth range `ipAddress` et `userAgent` dans chaque session,
+		// sans rien demander, et le durcissement de l'étape 9 les avait même rendus exacts. Rien ne
+		// les effaçait ensuite — aucune purge ne visait la table des sessions.
+		//
+		// La requête porte donc **exprès** une adresse et un navigateur reconnaissables : sans eux,
+		// le test passerait aussi sur un serveur qui les enregistre fidèlement, faute de matière.
+		const email = 'sans-trace@example.test';
+		const MARQUEUR_AGENT = 'marqueur-navigateur-6f1c2e';
+		const MARQUEUR_ADRESSE = '198.51.100.77';
+		await resetRateLimit();
+		await postForm('/connexion', { email });
+		const link = await magicLinkFor(email);
+		const reponse = await fetch(link as string, {
+			redirect: 'manual',
+			headers: { 'user-agent': MARQUEUR_AGENT, 'x-forwarded-for': MARQUEUR_ADRESSE }
+		});
+		expect(
+			sessionCookie(reponse),
+			'la connexion doit aboutir, sinon rien n’est prouvé'
+		).toBeTruthy();
+
+		const rows = await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			return tx.execute<{ ip_address: string | null; user_agent: string | null }>(
+				sql`select "ip_address", "user_agent" from "session"`
+			);
+		});
+		const sessions = (Array.isArray(rows) ? rows : []) as {
+			ip_address: string | null;
+			user_agent: string | null;
+		}[];
+		expect(sessions.length, 'une session au moins doit exister').toBeGreaterThan(0);
+		for (const ligne of sessions) {
+			expect(ligne.ip_address ?? '', 'colonne ip_address').toBe('');
+			expect(ligne.user_agent ?? '', 'colonne user_agent').toBe('');
+		}
 	});
 
 	it('gives the link the fifteen minutes it promises, not the five of the default', async () => {
@@ -472,7 +514,7 @@ describe('la session et le contexte d’organisation', () => {
 		const page = await fetch(`${origin}/membres`, { headers: { cookie } });
 		expect(page.status).toBe(200);
 		const html = await page.text();
-		expect(html).toContain('Mosquée d’essai');
+		expect(html).toContain('Association d’essai');
 
 		// Une autre organisation, dont cette personne n'est pas membre.
 		const autre = newId();
@@ -480,7 +522,7 @@ describe('la session et le contexte d’organisation', () => {
 			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
 			await tx.execute(sql`
 				insert into "organization" ("id", "slug", "name", "time_zone", "default_language", "enabled_language")
-				values (${autre}, 'voisine', 'Mosquée voisine', 'Europe/Zurich', 'fr', array['fr'])
+				values (${autre}, 'voisine', 'Association voisine', 'Europe/Zurich', 'fr', array['fr'])
 			`);
 		});
 
@@ -490,7 +532,7 @@ describe('la session et le contexte d’organisation', () => {
 		const parUrl = await fetch(`${origin}/membres?organizationId=${autre}`, {
 			headers: { cookie, 'x-organization-id': autre }
 		});
-		expect(await parUrl.text()).not.toContain('Mosquée voisine');
+		expect(await parUrl.text()).not.toContain('Association voisine');
 	});
 
 	it('refuses to serve the members page to someone who is not signed in', async () => {
@@ -624,12 +666,12 @@ describe('l’espace du super-admin', () => {
 		const slug = `essai-${Date.now().toString(36)}`;
 		const opened = await postForm(
 			'/super-admin?/ouvrir',
-			{ slug, name: 'Mosquée ouverte', timeZone: 'Europe/Zurich' },
+			{ slug, name: 'Association ouverte', timeZone: 'Europe/Zurich' },
 			cookie
 		);
 		expect(opened.status).toBe(200);
 		expect(await (await fetch(`${origin}/super-admin`, { headers: { cookie } })).text()).toContain(
-			'Mosquée ouverte'
+			'Association ouverte'
 		);
 
 		// Le changement de plan, que le titre promettait sans l'exercer.
@@ -747,8 +789,8 @@ describe('les pouvoirs du super-admin', () => {
 
 		const page = await fetch(`${origin}/`, { headers: { cookie } });
 		const html = await page.text();
-		expect(html).toContain('Mosquée d’essai');
-		// La bannière : elle empêche de modifier la mauvaise mosquée par inadvertance.
+		expect(html).toContain('Association d’essai');
+		// La bannière : elle empêche de modifier la mauvaise organisation par inadvertance.
 		expect(html).toContain('pouvoirs de super-admin');
 
 		const created = await postForm(
@@ -1062,7 +1104,7 @@ describe('l’espace des responsables', () => {
 		expect(actions).toContain('exception.restore');
 	});
 
-	it('puts a pause on the whole mosque, and records it', async () => {
+	it('puts a pause on the whole organisation, and records it', async () => {
 		const cookie = await signIn('responsable@example.test');
 		const posee = await postForm(
 			'/cours?/pause',
@@ -1071,7 +1113,7 @@ describe('l’espace des responsables', () => {
 		);
 		expect(posee.status).toBe(200);
 		const page = await fetch(`${origin}/cours`, { headers: { cookie } });
-		expect(await page.text()).toContain('Toute la mosquée');
+		expect(await page.text()).toContain('Toute l’organisation');
 
 		const traces = await withOrg(
 			appHandle.db,
@@ -1141,7 +1183,7 @@ describe('l’espace des responsables', () => {
 			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
 			await tx.execute(sql`
 				insert into "organization" ("id", "slug", "name", "time_zone", "default_language", "enabled_language")
-				values (${voisine}, ${`voisine-${Date.now().toString(36)}`}, 'Mosquée d’à côté',
+				values (${voisine}, ${`voisine-${Date.now().toString(36)}`}, 'Association d’à côté',
 					'Europe/Zurich', 'fr', array['fr'])
 			`);
 		});
@@ -1196,7 +1238,7 @@ describe('l’espace des responsables', () => {
 		const enregistre = await postForm(
 			'/reglages?/enregistrer',
 			{
-				name: 'Mosquée d’essai',
+				name: 'Association d’essai',
 				timeZone: 'Europe/Zurich',
 				accentColor: '#0f766e',
 				greeting: 'Assalamu alaykum',
@@ -1213,7 +1255,7 @@ describe('l’espace des responsables', () => {
 		const faux = await postForm(
 			'/reglages?/enregistrer',
 			{
-				name: 'Mosquée d’essai',
+				name: 'Association d’essai',
 				timeZone: 'Europe/Nulle-Part',
 				accentColor: '#0f766e',
 				greeting: 'Salam',

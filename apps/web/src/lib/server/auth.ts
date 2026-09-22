@@ -111,6 +111,34 @@ export function createAuth(env: NodeJS.ProcessEnv = process.env) {
 			// plafond de douze heures d'une session de super-admin de mordre à chaque requête.
 			cookieCache: { enabled: false }
 		},
+		// **Une session ne garde ni adresse IP ni navigateur** (étape 13).
+		//
+		// Better Auth écrit les deux sans rien demander : `createSession` fait
+		// `ipAddress: getIP(headers, options) || ''` et `userAgent: headers?.get('user-agent') || ''`.
+		// Le durcissement de l'étape 9 les a même rendus exacts — en déclarant les mandataires de
+		// confiance, on lui a appris à résoudre la vraie adresse du visiteur. Rien ne les effaçait
+		// ensuite : une session dont le navigateur a été fermé n'est jamais représentée, donc jamais
+		// nettoyée, et sa ligne restait avec son adresse.
+		//
+		// `docs/CONDITIONS.md` promet qu'une organisation ne laisse qu'une adresse électronique. Ce
+		// n'était pas vrai, et c'est le code qui avait tort.
+		//
+		// Pourquoi ce crochet plutôt que `advanced.ipAddress.disableIpTracking` : cette option-là
+		// coupe la résolution de l'adresse **partout**, y compris pour le limiteur de débit, qui
+		// retomberait sur un seau partagé — tout le monde punirait tout le monde. Ici, l'adresse est
+		// résolue, elle sert à limiter les abus le temps de la requête, et elle n'est pas rangée.
+		//
+		// Et pour le navigateur, il n'y a pas d'option du tout : `headers?.get('user-agent') || ''`
+		// est inconditionnel dans Better Auth. Ce crochet est le seul levier documenté.
+		databaseHooks: {
+			session: {
+				create: {
+					before: async (session) => ({
+						data: { ...session, ipAddress: '', userAgent: '' }
+					})
+				}
+			}
+		},
 		advanced: {
 			// Les identifiants sont des UUID v7 produits par l'application, comme partout ailleurs
 			// dans le schéma (ADR 0014).
