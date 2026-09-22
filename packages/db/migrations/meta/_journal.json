@@ -379,6 +379,13 @@
       "when": 1790098880138,
       "tag": "0053_membership_update_role_only",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1790098881138,
+      "tag": "0054_orphan_accounts_live_invitation",
+      "breakpoints": true
     }
   ]
 }

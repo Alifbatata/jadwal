@@ -128,6 +128,57 @@ describe('la purge des comptes sans adhésion', () => {
 		expect(await existe('user', attendu)).toBe(true);
 	});
 
+	it('lets an old account go once the invitation naming it has expired', async () => {
+		// Une invitation en attente mais expirée ne peut plus être acceptée, et pourtant elle
+		// retenait le compte : elle n'est purgée que quatre-vingt-dix jours après sa fin, soit
+		// quatorze jours de validité et quatre-vingt-dix de plus au-delà des douze mois que
+		// `docs/CONDITIONS.md` promet. Seule une invitation qui court encore garde le compte :
+		// quelqu'un attend cette personne.
+		const adressePerimee = `perimee-${newId()}@example.test`;
+		const adresseEnCours = `en-cours-${newId()}@example.test`;
+		const oublie = await compte(adressePerimee, 24);
+		const attendu = await compte(adresseEnCours, 24);
+		const perimee = newId();
+		await withMaintenance(owner, (tx) =>
+			tx.execute(sql`
+				insert into "invitation" ("id", "organization_id", "email", "role", "created_at",
+					"expires_at")
+				values
+					(${perimee}, ${org.id}, ${adressePerimee.toUpperCase()}, 'editor',
+						now() - interval '15 days', now() - interval '1 day'),
+					(${newId()}, ${org.id}, ${adresseEnCours.toUpperCase()}, 'editor',
+						now() - interval '13 days', now() + interval '1 day')
+			`)
+		);
+		await withMaintenance(owner, (tx) => tx.execute(sql`select jadwal.purge_orphan_accounts()`));
+		expect(await existe('user', oublie), 'invitation expirée hier').toBe(false);
+		expect(await existe('user', attendu), 'invitation qui court encore un jour').toBe(true);
+		// L'invitation, elle, suit sa propre règle : quatre-vingt-dix jours après sa fin.
+		expect(await existe('invitation', perimee), 'invitation expirée, gardée').toBe(true);
+	});
+
+	it('stays an invoker procedure, with its search path pinned, that no login role can call', async () => {
+		// Une nouvelle définition remplace la clause `SET` avec le reste : l'oublier rendrait la
+		// procédure au chemin de recherche de l'appelant, sans qu'aucun test d'effacement ne le voie.
+		const fonction = firstRow<{ definer: boolean; config: string[] | null }>(
+			await owner.execute(sql`
+				select p.prosecdef as definer, p.proconfig as config
+				from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+				where n.nspname = 'jadwal' and p.proname = 'purge_orphan_accounts'
+			`)
+		);
+		expect(fonction?.definer).toBe(false);
+		expect(fonction?.config).toEqual(['search_path=public, pg_temp']);
+		const appelants = allRows<{ role: string }>(
+			await owner.execute(sql`
+				select r.rolname as role from pg_roles r
+				where r.rolname in ('jadwal_app', 'jadwal_superadmin', 'jadwal_auth', 'jadwal_public')
+					and has_function_privilege(r.oid, 'jadwal.purge_orphan_accounts()', 'EXECUTE')
+			`)
+		);
+		expect(appelants).toEqual([]);
+	});
+
 	it('never removes a super-admin account, whatever its age', async () => {
 		const id = newId();
 		await withMaintenance(owner, (tx) =>

@@ -1,9 +1,10 @@
 // Les purges, toutes, en une commande (ADR 0036).
 //
-// Chaque rétention est portée par une **politique de suppression**, pas par ce script : les
-// procédures `jadwal.purge_*()` suppriment sans clause de restriction, et c'est la base qui décide
-// ce qui peut partir. Ce fichier ne fait que les appeler, dans l'ordre, et dire combien de lignes
-// chacune a emportées.
+// Aucune rétention n'est portée par ce script. Six le sont par une **politique de suppression** : leur
+// procédure `jadwal.purge_*()` supprime sans clause de restriction, et c'est la base qui décide ce
+// qui peut partir. Les deux autres, les invitations et les comptes sans organisation, portent leur
+// borne dans la procédure elle-même (le README du paquet dit pourquoi). Ce fichier ne fait que les
+// appeler, dans l'ordre, et dire combien de lignes chacune a emportées.
 //
 // Idempotent par construction : relancé dans la minute, il ne supprime plus rien et le dit.
 //
@@ -24,8 +25,8 @@ loadDotEnv();
 /**
  * Les huit purges, dans l'ordre où elles ont un sens : les journaux d'abord, parce que ce sont eux
  * qui grossissent ; les sessions et les vérifications ensuite, parce qu'une session expirée retient
- * le compte auquel elle appartient ; les comptes en dernier, parce qu'une invitation résolue doit
- * partir avant le compte qu'elle aurait pu rattacher.
+ * le compte auquel elle appartient ; les comptes en dernier, parce que tout ce qui
+ * précède peut encore les retenir.
  *
  * **L'ordre entre les sessions et les comptes n'est pas indifférent.** `purge_orphan_accounts` exige
  * `NOT EXISTS (session)` : tant que les sessions expirées n'étaient effacées par rien, une ligne
