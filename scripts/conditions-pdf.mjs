@@ -42,6 +42,7 @@
  * ici : ce document dit l'hébergeur et le pays des données, rien de plus.
  */
 import { spawn } from 'node:child_process';
+import { inflateSync } from 'node:zlib';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -327,6 +328,9 @@ h2 { font-size: 13pt; margin: 8mm 0 2.5mm; padding-bottom: 1.5mm; border-bottom:
 h3 { font-size: 11pt; margin: 5mm 0 2mm; break-after: avoid; }
 /* Aligné à gauche, jamais justifié : la justification creuse des rivières dans une colonne étroite. */
 p { margin: 0 0 2.5mm; text-align: left; }
+/* Deux lignes au moins de chaque côté d'une coupure de page. Chrome les respecte à l'impression ;
+   le test, lui, le vérifie sur le PDF plutôt que de le croire. */
+p, li { orphans: 2; widows: 2; }
 ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
 li { margin-bottom: 1.2mm; text-align: left; }
 code { font-family: "Cascadia Mono", Consolas, monospace; font-size: 9pt; background: #f2f4f6; padding: 0 0.6mm; border-radius: 1mm; }
@@ -351,7 +355,7 @@ th { background: #eef1f4; font-family: "Segoe UI", system-ui, sans-serif; font-w
 .document h1 { margin-bottom: 2mm; }
 `;
 
-export function page(contenuMarkdown, version) {
+export function page(contenuMarkdown, version, styleEnPlus = '') {
 	const points = QUESTIONS.map(
 		(q, index) => `
 	<div class="point">
@@ -366,7 +370,7 @@ export function page(contenuMarkdown, version) {
 <head>
 <meta charset="utf-8">
 <title>Conditions d'utilisation de jadwal, pour relecture juridique</title>
-<style>${STYLE}</style>
+<style>${STYLE}${styleEnPlus}</style>
 </head>
 <body>
 
@@ -534,6 +538,120 @@ export async function imprimer(chemin, sortie, pied) {
 }
 
 /**
+ * Les lignes de texte de chaque page, lues dans le PDF.
+ *
+ * ## Pourquoi on mesure le PDF, et pas la page dans le navigateur
+ *
+ * Chrome ne pagine qu'à l'impression. Dans le document, la mise en pages n'existe pas : tout est
+ * une colonne continue, et `getClientRects()` rend des positions qui ne disent rien des pages. Le
+ * PDF, lui, porte un flux de contenu par page, et chaque ligne de texte y pose sa position
+ * verticale avec `Td` ou `Tm`. C'est donc le seul endroit où la question a une réponse.
+ *
+ * Le pied de page est écarté : il est sur chaque page, il ne dit rien de la mise en pages, et le
+ * compter ferait passer une page presque vide pour une page à moitié pleine.
+ */
+export function lignesParPage(octets) {
+	const brut = octets.toString('latin1');
+	const flux = [];
+	const motif = /stream\r?\n/g;
+	let trouve;
+	while ((trouve = motif.exec(brut)) !== null) {
+		const debut = trouve.index + trouve[0].length;
+		const fin = brut.indexOf('endstream', debut);
+		if (fin < 0) continue;
+		try {
+			const clair = inflateSync(octets.subarray(debut, fin)).toString('latin1');
+			if (/\bBT\b/.test(clair) && /\bTf\b/.test(clair)) flux.push(clair);
+		} catch {
+			/* un flux qui n'est ni compressé ni du contenu : une police, une image */
+		}
+	}
+
+	return flux.map((contenu) => {
+		const lignes = [];
+		let corps = 0;
+		// Les opérateurs se lisent dans l'ordre : la taille de police courante est celle du dernier
+		// `Tf` rencontré, et c'est elle qui distingue un titre d'une ligne de texte.
+		for (const m of contenu.matchAll(
+			/\/[A-Za-z0-9]+\s+([\d.]+)\s+Tf|([-\d.]+)\s+([-\d.]+)\s+(?:Td|TD)\b|(?:[-\d.]+\s+){4}([-\d.]+)\s+([-\d.]+)\s+Tm\b/g
+		)) {
+			if (m[1] !== undefined) {
+				corps = Number(m[1]);
+				continue;
+			}
+			const y = Number(m[3] !== undefined ? m[3] : m[5]);
+			// La marge basse est de 22 mm, soit 62 points : en dessous, c'est le pied de page.
+			if (!Number.isFinite(y) || y < 62) continue;
+			lignes.push({ y: Math.round(y * 10) / 10, corps });
+		}
+		// Une même ligne peut être posée en plusieurs morceaux, pour du gras ou un lien.
+		const parY = new Map();
+		for (const ligne of lignes) {
+			if (!parY.has(ligne.y) || parY.get(ligne.y) < ligne.corps) parY.set(ligne.y, ligne.corps);
+		}
+		return [...parY.entries()]
+			.map(([y, corps]) => ({ y, corps }))
+			.sort((gauche, droite) => droite.y - gauche.y);
+	});
+}
+
+/** La dernière page doit porter au moins ce nombre de lignes. */
+export const LIGNES_MINIMUM_DERNIERE_PAGE = 8;
+
+/**
+ * Ce qui cloche dans la mise en pages, ou un tableau vide.
+ *
+ * Deux défauts, et un seul est évident à l'œil : une dernière page presque vide, et une ligne
+ * restée seule en haut ou en bas d'une page.
+ *
+ * La seconde se mesure par les écarts. Dans un paragraphe, deux lignes sont séparées d'un
+ * interligne ; entre deux paragraphes, l'écart est plus grand. Une première ligne de page suivie
+ * d'un grand écart est donc la **fin** d'un paragraphe restée seule ; une dernière ligne précédée
+ * d'un grand écart en est le **début**. Les titres sont écartés : ils ont leur propre taille, et un
+ * titre en bas de page est déjà empêché par `break-after: avoid`.
+ */
+export function defautsDeMiseEnPages(pages) {
+	const defauts = [];
+	const derniere = pages[pages.length - 1] ?? [];
+	if (derniere.length < LIGNES_MINIMUM_DERNIERE_PAGE) {
+		defauts.push(`la dernière page ne porte que ${derniere.length} ligne(s)`);
+	}
+
+	// L'interligne courant : l'écart le plus fréquent entre deux lignes voisines de même taille.
+	const ecarts = new Map();
+	for (const page of pages) {
+		for (let index = 1; index < page.length; index += 1) {
+			if (page[index].corps !== page[index - 1].corps) continue;
+			const ecart = Math.round(page[index - 1].y - page[index].y);
+			ecarts.set(ecart, (ecarts.get(ecart) ?? 0) + 1);
+		}
+	}
+	const interligne = [...ecarts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 0;
+	if (interligne === 0) return defauts;
+	const seuil = interligne * 1.4;
+
+	const corpsCourant = (() => {
+		const tailles = new Map();
+		for (const page of pages) {
+			for (const ligne of page) tailles.set(ligne.corps, (tailles.get(ligne.corps) ?? 0) + 1);
+		}
+		return [...tailles.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 0;
+	})();
+
+	for (const [index, page] of pages.entries()) {
+		if (page.length < 2) continue;
+		if (page[0].corps === corpsCourant && page[0].y - page[1].y > seuil) {
+			defauts.push(`page ${index + 1} : une ligne reste seule en haut`);
+		}
+		const dernier = page.length - 1;
+		if (page[dernier].corps === corpsCourant && page[dernier - 1].y - page[dernier].y > seuil) {
+			defauts.push(`page ${index + 1} : une ligne reste seule en bas`);
+		}
+	}
+	return defauts;
+}
+
+/**
  * Le pied de page, tel que Chrome l'attend : un fragment autonome, avec sa propre feuille de style,
  * et les deux classes qu'il remplit lui-même. Sans `displayHeaderFooter`, il n'est pas dessiné ;
  * avec, et sans gabarit, Chrome pose le sien, en anglais.
@@ -547,8 +665,8 @@ export function piedDePage(version) {
 }
 
 /** Le document entier, mis en page et typographié, tel qu'il part chez Chrome. */
-export function construire(markdown) {
-	return typographierHtml(page(versHtml(markdown), dateDeLaVersion(markdown)));
+export function construire(markdown, styleEnPlus = '') {
+	return typographierHtml(page(versHtml(markdown), dateDeLaVersion(markdown), styleEnPlus));
 }
 
 /** Le nombre de pages annoncé par le PDF lui-même, sans passer par un outil extérieur. */
@@ -557,25 +675,62 @@ export function nombreDePages(octets) {
 	return Number(trouve?.[1] ?? 0);
 }
 
+/**
+ * Les mises en pages essayées, dans cet ordre, jusqu'à ce que l'une tienne.
+ *
+ * Une dernière page presque vide ne se corrige pas en déplaçant un mot : elle tient à la hauteur
+ * totale du texte. Trois lignes qui débordent se ramènent en serrant très légèrement, et l'écart
+ * est invisible à la lecture — 0,1 point de corps, deux centièmes d'interligne.
+ *
+ * L'ordre va du plus discret au plus net. La première qui passe est gardée, et le rapport dit
+ * laquelle : une mise en pages choisie en silence serait une mise en pages qu'on ne sait pas
+ * reproduire.
+ */
+const VARIANTES = [
+	['telle quelle', ''],
+	['interligne 1,46', 'body { line-height: 1.46; }'],
+	['interligne 1,43', 'body { line-height: 1.43; }'],
+	['corps 10,4 pt', 'body { font-size: 10.4pt; }'],
+	['corps 10,4 pt, interligne 1,45', 'body { font-size: 10.4pt; line-height: 1.45; }'],
+	['corps 10,3 pt, interligne 1,44', 'body { font-size: 10.3pt; line-height: 1.44; }'],
+	['corps 10,6 pt', 'body { font-size: 10.6pt; }'],
+	['corps 10,8 pt, interligne 1,52', 'body { font-size: 10.8pt; line-height: 1.52; }']
+];
+
 /** Lit `docs/CONDITIONS.md`, écrit le PDF, et rend de quoi en rendre compte. */
-export async function produire({ avecPied = true } = {}) {
+export async function produire({ avecPied = true, variantes = VARIANTES } = {}) {
 	const markdown = readFileSync(SOURCE, 'utf8');
 	const version = dateDeLaVersion(markdown);
-	const html = construire(markdown);
-
 	mkdirSync(dirname(SORTIE), { recursive: true });
 	const travail = join(racine, 'A_LIVRER', '.conditions-juriste.html');
-	writeFileSync(travail, html, 'utf8');
 
+	let dernier = null;
 	try {
-		await imprimer(travail, SORTIE, avecPied ? piedDePage(version) : null);
+		for (const [nom, styleEnPlus] of variantes) {
+			const html = construire(markdown, styleEnPlus);
+			writeFileSync(travail, html, 'utf8');
+			await imprimer(travail, SORTIE, avecPied ? piedDePage(version) : null);
+			if (!existsSync(SORTIE)) throw new Error(`Chrome n’a pas produit ${SORTIE}.`);
+			const octets = readFileSync(SORTIE);
+			const lignes = lignesParPage(octets);
+			const defauts = defautsDeMiseEnPages(lignes);
+			dernier = {
+				chemin: SORTIE,
+				version,
+				html,
+				variante: nom,
+				octets: octets.length,
+				pages: nombreDePages(octets),
+				lignes: lignes.map((page) => page.length),
+				defauts
+			};
+			if (defauts.length === 0) return dernier;
+		}
 	} finally {
 		if (!process.env['JADWAL_GARDER_HTML']) rmSync(travail, { force: true });
 	}
-
-	if (!existsSync(SORTIE)) throw new Error(`Chrome n’a pas produit ${SORTIE}.`);
-	const octets = readFileSync(SORTIE);
-	return { chemin: SORTIE, version, html, octets: octets.length, pages: nombreDePages(octets) };
+	if (!dernier) throw new Error('aucune variante de mise en pages n’a été essayée');
+	return dernier;
 }
 
 // Importé par son épreuve, ce fichier ne doit rien faire ; lancé à la main, il produit le document.
@@ -585,6 +740,8 @@ if (import.meta.main) {
 		`${rendu.chemin}\n` +
 			`${QUESTIONS.length} points pour le juriste, puis docs/CONDITIONS.md en entier.\n` +
 			`version du ${rendu.version}, ${rendu.pages} pages, ` +
-			`${rendu.octets.toLocaleString('fr-CH')} octets.\n`
+			`${rendu.octets.toLocaleString('fr-CH')} octets.\n` +
+			`mise en pages : ${rendu.variante}. Lignes par page : ${rendu.lignes.join(', ')}.\n` +
+			(rendu.defauts.length > 0 ? `à revoir : ${rendu.defauts.join(' ; ')}\n` : '')
 	);
 }

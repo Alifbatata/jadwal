@@ -43,11 +43,9 @@ Le service n'utilise **aucun cookie de mesure d'audience**, ne fait **aucun suiv
 ne transmet vos données à **aucun tiers** à des fins commerciales. Les visiteurs de votre page
 publique ne sont pas identifiés et ne s'inscrivent à rien.
 
-### Ce que le service a cessé de conserver
+### Ce qu'une session ouverte ne retient pas
 
-Une session ouverte ne retient **ni l'adresse IP ni le navigateur** de la personne connectée. Le
-service les enregistrait jusqu'au 22 septembre 2026, sans que ce texte le dise et sans jamais les
-effacer. Les deux ont été retirés, et ce qui restait a été effacé.
+Une session ouverte ne retient **ni l'adresse IP ni le navigateur** de la personne connectée.
 
 ### Le journal technique du serveur
 
