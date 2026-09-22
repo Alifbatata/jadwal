@@ -15,10 +15,10 @@ Si vous n'avez pas de site, allez directement au **point 5**.
 
 1. Connectez-vous à jadwal.
 2. Ouvrez **Partager**, dans le menu du haut.
-3. Descendez jusqu'à **Le code à coller sur votre site**.
+3. Descendez jusqu'à la section **Le code à coller sur votre site**.
 4. Cliquez dans le cadre de texte, sélectionnez tout, et copiez.
 
-Le code ressemble à ceci — le vôtre porte le nom de votre organisation :
+Le code ressemble à ceci. Le vôtre porte le nom de votre organisation :
 
 ```html
 <script src="https://exemple.invalid/widget/jadwal-widget.js"></script>
@@ -35,7 +35,7 @@ dont le navigateur refuse les programmes de ce genre. Ne la retirez pas.
 ## 2. Collez-le sur votre site
 
 La manœuvre dépend de l'outil avec lequel votre site est fait. Dans tous les cas, vous cherchez un
-bloc qui accepte du **code HTML** — jamais une zone de texte ordinaire, qui afficherait le code au
+bloc qui accepte du **code HTML**. Pas une zone de texte ordinaire : elle afficherait le code au
 lieu de l'exécuter.
 
 **Sur un site Odoo**
@@ -122,9 +122,10 @@ ressemble à ceci :
 ```html
 <iframe
 	src="https://exemple.invalid/m/mon-organisation"
-	title="Programme des cours — Mon organisation"
+	title="Programme des cours – Mon organisation"
 	style="width:100%;height:900px;border:0"
 	loading="lazy"
+	referrerpolicy="no-referrer"
 ></iframe>
 ```
 
@@ -132,16 +133,23 @@ Collez-le au même endroit que le premier.
 
 La différence : **la hauteur ne s'adapte pas**. Le programme s'affiche dans une fenêtre de hauteur
 fixe, et le visiteur fait défiler à l'intérieur. Si vous trouvez la fenêtre trop courte ou trop
-haute, changez le nombre `900` — c'est une hauteur en pixels. Comptez environ 100 pixels par séance
+haute, changez le nombre `900` : c'est une hauteur en pixels. Comptez environ 100 pixels par séance
 affichée.
 
 **Si rien ne s'affiche du tout**, même avec ce code, c'est que votre site interdit aussi les
 fenêtres extérieures. Demandez alors à votre webmestre d'ajouter notre adresse à la ligne
 `frame-src` de la politique de sécurité du site, ou passez au point suivant.
 
+**Un cas plus rare.** Certains sites se protègent par un réglage que votre webmestre connaît sous le
+nom `Cross-Origin-Embedder-Policy`. Ce réglage refuse d'afficher dans un cadre une page qui ne le
+déclare pas elle-même, et notre programme ne le déclare pas. Sur un tel site, le script se charge
+sans doute, mais le programme ne s'affiche pas, ni avec le premier code ni avec celui-ci. Nous le
+déduisons des règles que suivent les navigateurs, sans l'avoir vu sur un vrai site. Dans ce cas,
+utilisez le lien de l'organisation (**point 5**).
+
 **Si votre site exige une empreinte de sécurité** (votre webmestre saura de quoi il s'agit), prenez
 le code de la section **Si votre site exige une empreinte d'intégrité**. Attention : ce code fige la
-version du programme. À chaque nouvelle publication de jadwal, il faudra revenir le copier — sinon
+version du programme. À chaque nouvelle publication de jadwal, il faudra revenir le copier. Sinon,
 le programme cessera de s'afficher, sans message.
 
 ---
@@ -182,15 +190,21 @@ partout, et qu'une erreur chez nous ne peut pas abîmer votre site.
 programme, son navigateur ne garde pas l'étape précédente. Le bouton « précédent » le fait donc
 sortir de votre page en une fois, ce qui est le comportement attendu par la plupart des gens.
 
+**Le lien « Conditions d'utilisation ».** En bas du programme, à côté de « S'abonner au
+calendrier », un lien mène aux conditions d'utilisation du service : celles que vous avez acceptées
+en entrant dans votre espace. Il s'ouvre toujours dans un nouvel onglet, parce que cette page refuse
+de s'afficher à l'intérieur d'un autre site. Votre page reste ouverte derrière. Le texte du lien
+suit la langue du programme, mais les conditions n'existent qu'en français.
+
 **Ce que nous voyons, et ce que nous ne voyons pas.** Le programme ne dépose aucun cookie et
 n'apprend rien de vos visiteurs. Une seule chose est comptée : le nombre d'affichages par jour, pour
-que votre espace puisse vous dire « votre widget a été vu 42 fois cette semaine » — et vous prévenir
+que votre espace puisse vous dire « votre widget a été vu 42 fois cette semaine », et vous prévenir
 s'il cesse de l'être. Ce compteur ne retient que votre organisation, la date, le type d'affichage et
 un nombre. Ni adresse, ni page d'où vient le visiteur, ni heure. Il n'y a donc rien à déclarer dans
 votre politique de confidentialité, et rien à faire accepter.
 
-**Ce qui se passe si notre service tombe.** Le lien du pied — `Voir le programme complet` — reste
-visible, et il reste cliquable. Votre page ne casse pas.
+**Ce qui se passe si notre service tombe.** Le lien placé sous le programme,
+`Voir le programme complet`, reste visible, et il reste cliquable. Votre page ne casse pas.
 
 ---
 
@@ -198,7 +212,7 @@ visible, et il reste cliquable. Votre page ne casse pas.
 
 Un cours annoncé « après Maghrib » n'a pas d'heure fixe : elle change chaque jour. Tant que
 l'organisation n'a pas dit d'où viennent ses heures de prière, ces cours s'affichent « 45 min après
-Maghrib », sans heure — sur votre site comme sur la page publique.
+Maghrib », sans heure, sur votre site comme sur la page publique.
 
 Pour qu'une heure apparaisse, allez dans **Prières** dans votre espace. Deux possibilités, qui se
 combinent :
@@ -212,7 +226,7 @@ combinent :
   avant d'enregistrer. Si l'écart est constant, l'ajustement par prière le rattrape.
 
 Depuis l'étape 8, une troisième source passe **avant les deux autres** : vos horaires **saisis à la
-main**. Une période — un nom, des dates, et pour chaque prière l'heure affichée et l'heure d'iqama —
+main**. Une période (un nom, des dates, et pour chaque prière l'heure affichée et l'heure d'iqama)
 dit ce que porte votre panneau. C'est aussi là que vous réglez vos **iqamas**, en heure fixe ou en
 minutes après l'heure affichée, et ce sont elles que suivent vos cours annoncés « après Maghrib ».
 
@@ -224,7 +238,7 @@ d'accueil vous prévient trente jours avant la fin de votre calendrier importé.
 
 Un écran à part, **Vendredi**, où vous saisissez une, deux ou trois sessions : l'heure, la langue du
 sermon, la salle. Elles apparaissent **en haut** de votre page publique et de votre widget, avant
-tout le reste — c'est l'information la plus cherchée.
+tout le reste : c'est l'information la plus cherchée.
 
 Dès qu'une session existe, elle remplace l'heure du Dhuhr du vendredi partout, y compris pour un
 cours annoncé « après le Dhuhr », qui suit alors la dernière session.

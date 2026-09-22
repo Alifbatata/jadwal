@@ -61,7 +61,9 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   licence à réciprocité. **jadwal est sous licence MIT**, widget compris (ADR 0043), avec un
   fichier des licences tierces engendré à la construction et livré dans l'image.
   Tout ce que des gens lisent passe désormais par LanguageTool, en conteneur et hors réseau, en
-  quatre langues : `pnpm orthographe`, et un flux de CI qui le relance quand un texte change. Le
+  quatre langues : `pnpm orthographe`, et un flux de CI qui le relance quand un texte change
+  (**c'était faux pour les huit documents de la racine de `docs/`**, `CONDITIONS.md` compris :
+  le motif de fichiers exigeait un sous-dossier ; trouvé et corrigé à l'étape 16). Le
   PDF pour le juriste ne finit plus sur une page presque vide, et sa mise en pages est mesurée
   dans le PDF rendu, pas supposée.
 - **Étape 15** (conditions exactes au mot près, relecture de l'arabe) : **terminée le 2026-09-22**.
@@ -71,6 +73,16 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   table contre le schéma. Les noms de code de la documentation passent entre accents graves, et le
   dictionnaire du correcteur ne garde que de vrais mots. Les 114 textes arabes publics sont
   relevés pour relecture ; **aucun n'a été modifié**.
+- **Étape 16** (conditions en ligne et acceptées, arabe corrigé, parcours complet éprouvé) :
+  **terminée le 2026-09-23**. Le service sert ses conditions sur `/conditions`, rendues depuis
+  `docs/CONDITIONS.md` par le convertisseur du PDF, et les fait accepter d'un clic à chaque
+  personne de l'espace d'une organisation, de nouveau à chaque version ; l'exploitant n'y est pas
+  soumis (ADR 0044). Les textes arabes relus par le chef de projet sont corrigés, et relus
+  désormais par le correcteur, qui lit aussi les documents de la racine de `docs/`. Tout le
+  parcours d'une organisation passe dans un vrai navigateur, contre l'image de production, avec
+  axe sur chaque page : `pnpm parcours:test`. Deux failles antérieures trouvées en chemin sont
+  fermées : une éditrice pouvait rattacher n'importe quel compte à son organisation (migration
+  0053), et le super-admin entré dans une organisation lisait les réglages d'une autre.
 
 ## Fait
 
@@ -423,7 +435,8 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   pour de vrai. **Depuis l'étape 9, le serveur n'efface plus rien à distance** : trois préfixes
   (`quotidien/`, `hebdo/`, `mensuel/`), trois verrous de conservation (7, 28, 180 jours) et un cycle
   de vie posés chez le stockage, hors d'atteinte de qui prendrait le serveur (ADR 0037). La rétention
-  7/4/6 ne vaut plus que pour le disque local.
+  7/4/6, devenue 7/4/5 le 2026-09-23 pour tenir les 181 jours promis, ne vaut plus que pour le
+  disque local.
 - **Supervision** : chaque tâche périodique bat vers un service de supervision extérieur, et c'est
   lui qui alerte quand un battement n'arrive pas. La sonde `/healthz` a quitté GitHub Actions, dont
   les machines n'ont pas d'IPv6 sortant : elle est devenue une minuterie de jadwal comme les autres,
@@ -488,6 +501,40 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   `pnpm veille:test`, `pnpm caddy:test`). ADR 0040 ; `docs/SECURITE.md`, `docs/EXPLOITATION.md` et
   `infra/compose/.env.example` mis à jour.
 
+Étape 16 :
+
+- **Les conditions sont en ligne et acceptées** (ADR 0044). `/conditions` rend `docs/CONDITIONS.md`,
+  lu à la construction et mis en mots par le même module que le PDF du juriste
+  (`apps/web/src/lib/conditions/rendu.js`) : ce qu'il lit est, au caractère près, ce que les
+  organisations acceptent. À l'entrée dans l'espace d'une organisation, chaque personne, éditeurs
+  compris, accepte d'un clic la version en cours ; la base garde qui, quelle version et quand, pose
+  le moment elle-même, et efface l'acceptation avec l'adhésion. Une nouvelle date du texte
+  redemande l'accord de chacun. Le super-admin n'y passe jamais.
+- **L'arabe relu par le chef de projet est corrigé**, les treize points un par un, chacun avec un
+  test montré en échec : jours d'une lettre, accord du nom compté par `Intl.PluralRules('ar')`,
+  rangs du mois, « و » collé et répété, chiffres latins partout. Le correcteur lit désormais le
+  widget, `affichage.ts` et `agenda.ts`, chaque chaîne dans sa langue, et **les huit documents de la
+  racine de `docs/`, qu'il n'avait jamais lus**.
+- **Le parcours complet passe dans un vrai navigateur** : `pnpm parcours:test`, 116 vérifications
+  contre l'image de production, de la passkey du super-admin au cours ancré sur une prière, en
+  passant par l'acceptation, le widget sur une autre origine et le flux agenda, avec axe sur
+  27 pages : rien de sérieux ni de critique. `playwright-core` et `axe-core` en dépendances de
+  développement.
+- **Trouvé et corrigé en chemin**, chaque fois test d'abord : une éditrice pouvait rattacher
+  n'importe quel compte à son organisation puis lire son courriel (migration 0053) ; le super-admin
+  entré dans une organisation lisait les réglages d'une autre ; une invitation expirée retenait un
+  compte au-delà des douze mois promis (migration 0054) ; les sauvegardes locales gardaient une
+  donnée effacée 184 jours et le journal technique une ligne seize jours, au-delà des 181 et
+  quatorze jours promis ; un décalage négatif s'écrivait « -15 min après » ; `<html lang>` disait
+  `fr` sur une page arabe ; un test tombait un mercredi sur deux.
+- **Une commande d'exploitant supprime une organisation**, aperçu d'abord
+  (`packages/db/scripts/delete-organization.mjs`) : les conditions le promettaient, rien ne le
+  faisait.
+- **Le PDF du juriste** : liste des données personnelles suivie de 1 à 10, plus aucune ligne seule
+  (le contrôle lisait les pages à l'envers), point 10 sur l'acceptation. Version du 23 septembre 2026.
+- 1 417 tests dans le dépôt, tous réussis, aucun sauté. ADR 0044 ; addendum à l'ADR 0013 ; ADR
+  0035, 0037 et 0039 révisées.
+
 **Un script ou une commande qu'aucun test ne _lance_ n'est pas éprouvé.** C'est la règle du dépôt
 depuis l'étape 12, et elle répond à la question laissée ouverte à l'étape 11.
 
@@ -531,6 +578,10 @@ tests.
 | 10    | Mise en ligne : déploiement réel, sauvegarde et déchiffrement      | terminée |
 | 11    | Courriel, fausses alertes, IPv6, premier compte super-admin        | terminée |
 | 12    | Caddy à jour, conteneur de démarrage, finitions                    | terminée |
+| 13    | Organisations de tout genre, conditions exactes, serveur           | terminée |
+| 14    | Licence MIT, correcteur en quatre langues, PDF pour le juriste     | terminée |
+| 15    | Conditions exactes au mot près, relevé de l'arabe                  | terminée |
+| 16    | Conditions en ligne et acceptées, arabe corrigé, parcours complet  | terminée |
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
 passkeys, paiement.
@@ -582,7 +633,30 @@ passkeys, paiement.
   reconnaît 73,6 % de ses instances. Question fermée à l'étape 8 : les manqués gonflent les chiffres
   sans les fausser gravement, et une dépendance de mille cinq cents expressions régulières coûterait
   plus qu'elle ne rapporterait.
-- `jadwal` est un nom de travail. Le nom public et le domaine sont à choisir avant le lancement.
+- Le propriétaire des tables garde le droit `TRUNCATE`, qui n'examine aucune politique : sans son
+  drapeau d'entretien, il peut vider une table, journal d'audit et acceptations compris. L'ADR 0019
+  dit pourtant qu'hors de ce drapeau il est en refus par défaut. Relevé à l'étape 16, non corrigé :
+  le retirer toucherait toutes les tables et chaque script d'entretien.
+- Le moment d'une acceptation des conditions est le début de la transaction qui l'écrit, comme
+  l'horodatage du journal d'audit (ADR 0020, ADR 0044). Une transaction de l'application dure le
+  temps d'une requête ; un rôle applicatif compromis pourrait avancer ce moment en la gardant
+  ouverte.
+- La politique `organization_superadmin_select` vaut `true`, même quand le super-admin est entré
+  dans une organisation : toute lecture de cette table sans filtre sur le contexte lui montre une
+  autre organisation. Quatre lectures ainsi faites ont été corrigées à l'étape 16 ; rien
+  n'empêche d'en écrire une cinquième.
+- En production, `Strict-Transport-Security` vaut deux ans (le bloc de site) et non un an (le
+  code de l'application) : c'est le serveur web frontal qui a le dernier mot. Rien n'est compressé,
+  alors que `Vary: accept-encoding` est annoncé.
+- Un site verrouillé par `Cross-Origin-Embedder-Policy` chargerait sans doute le script du widget,
+  mais refuserait son cadre, puisque `/m/**` n'envoie pas cet en-tête. Déduit de la norme, non
+  éprouvé ; écrit dans `docs/INTEGRATION.md`.
+- Le 404 d'une organisation inconnue passe par la page d'erreur racine : il porte le JavaScript de
+  SvelteKit et reste en français, même sous `/ar`.
+- Le DMARC de `voltia.ch` n'a pas d'adresse `rua` : personne ne reçoit les rapports agrégés.
+- Le lien des conditions du pied public s'ouvre dans un nouvel onglet sans l'annoncer au visiteur
+  (technique G201 des WCAG). axe ne le relève pas ; l'annoncer demanderait un texte de plus dans
+  les quatre langues.
 - L'hébergement cible est au choix de qui déploie : jadwal n'exige pas une machine à lui, son
   isolation ne repose pas dessus (ADR 0034).
 - Outillage récent : Vite 8 (Rolldown), Vitest 5, ESLint 10, pnpm 12. TypeScript 7 (compilateur
@@ -612,6 +686,11 @@ passkeys, paiement.
   serveur visé.
 - **La destination des sauvegardes** et sa clé publique `age` : à fournir par l'exploitant.
 - Texte du CLA et outil de signature (avant la première contribution externe).
+- **L'avis du juriste** sur les dix points de la page de garde, dont le point 10 : l'acceptation
+  par personne, rattachée à son adhésion, suffit-elle ?
+- **La relecture, par le chef de projet, des textes arabes écrits à l'étape 16** sans lui : le
+  lien « شروط الاستخدام », les formes en « قبل » d'un décalage négatif, et « عند » suivi du nom
+  arabe de la prière dans le flux agenda.
 
 ## À poser avant la mise en production
 

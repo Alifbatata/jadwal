@@ -10,7 +10,7 @@ Tout se passe dans l'écran **Prières** de votre espace.
 
 Certains de vos cours n'ont pas d'heure fixe : « après Maghrib », « 30 min après le Dhuhr ». Leur
 heure change chaque jour, et elle change avec vos heures de prière. Tant que le service ne les
-connaît pas, ces cours s'affichent « après Maghrib » sans heure — sur votre page, sur votre site, et
+connaît pas, ces cours s'affichent « après Maghrib » sans heure : sur votre page, sur votre site, et
 dans les calendriers auxquels les gens se sont abonnés.
 
 Il y a aussi une raison plus simple : les heures affichées sur votre panneau sont **les vôtres**.
@@ -45,7 +45,7 @@ l'heure d'iqama.
 ```
 Nom          Hiver 2027
 À partir du  1er novembre 2026
-Jusqu'au     (vide — jusqu'à nouvel ordre)
+Jusqu'au     (vide : jusqu'à nouvel ordre)
 
 Prière    Heure affichée   Iqama
 Fajr                       06:30
@@ -76,7 +76,7 @@ Quelle forme choisir :
   votre panneau ne change pas de lui-même non plus. Vous la corrigerez quand vous le déciderez.
 
 **Vos cours suivent l'iqama.** Un cours « 30 min après Maghrib », dans une organisation dont
-l'iqama du Maghrib est cinq minutes après le coucher, commence trente minutes après l'iqama —
+l'iqama du Maghrib est cinq minutes après le coucher, commence trente minutes après l'iqama,
 c'est-à-dire quand les gens sont dans la salle.
 
 ### La date de fin
@@ -91,7 +91,7 @@ nouvelle** à partir du lendemain. L'écran refuse le chevauchement et vous dit 
 
 C'est permis, et c'est parfois la bonne réponse : une période du 1er au 31 mars avec vos heures de
 Ramadan, et le reste de l'année qui retombe sur l'import ou le calcul. Le service ne connaît pas les
-mois lunaires — vous saisissez des dates civiles, et vous les corrigerez l'année prochaine.
+mois lunaires : vous saisissez des dates civiles, et vous les corrigerez l'année prochaine.
 
 ## 3. Importer un calendrier
 
@@ -130,8 +130,8 @@ ignorée** : le service ne s'en sert pas, sa présence n'est pas une erreur. Tou
 ignorée de la même façon.
 
 **Les dates.** `2027-01-01` est la forme la plus sûre. Sont aussi acceptées `01/01/2027`,
-`01.01.2027` et `1-1-2027`. Quand le fichier ne permet pas de trancher entre jour/mois et mois/jour —
-`03/04/2027` —, l'écran le dit et vous laisse choisir ; le choix vaut **pour tout le fichier**,
+`01.01.2027` et `1-1-2027`. Quand le fichier ne permet pas de trancher entre jour/mois et mois/jour
+(`03/04/2027`), l'écran le dit et vous laisse choisir ; le choix vaut **pour tout le fichier**,
 jamais ligne par ligne. Un export mensuel dont la colonne ne contient qu'un quantième (`1`, `2`,
 `3`…) se lit aussi : indiquez l'année et le mois avant d'envoyer.
 
@@ -169,7 +169,7 @@ sont signalés et non refusés parce qu'ils sont parfois justes : c'est votre ca
   corriger un mois sans renvoyer l'année.
 - L'écran d'accueil vous prévient **trente jours** avant la fin de votre calendrier importé.
 - Vous pouvez retirer les jours importés d'une plage ; le calcul les reprend aussitôt.
-- Chaque import et chaque retrait apparaissent dans le journal des modifications.
+- Chaque import et chaque retrait apparaît dans le journal des modifications.
 
 ## 4. Le calcul, en dernier recours
 
@@ -190,5 +190,5 @@ votre place.
 La prière du vendredi ne se règle pas ici : elle a son propre écran, **Vendredi**. Vous y saisissez
 une, deux ou trois sessions, avec leur heure et la langue du sermon.
 
-Dès qu'une session existe, elle **remplace le Dhuhr du vendredi** partout — y compris pour un cours
+Dès qu'une session existe, elle **remplace le Dhuhr du vendredi** partout, y compris pour un cours
 annoncé « après le Dhuhr », qui suit alors la dernière session. C'est ce que font vos fidèles.

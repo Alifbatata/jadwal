@@ -158,7 +158,7 @@ le programme, dans la liste des cours, dans le flux agenda de l'organisation et 
 (ADR 0033). Ce qui la distingue : son rang, ses langues de **sermon**, et le fait que, lorsqu'il en
 existe, l'heure du Dhuhr du vendredi ne s'affiche plus seule.
 
-Champ ajouté à l'étape 8. Un lecteur écrit avant l'ignore sans rien perdre : c'est une addition, pas
+Champ ajouté à l'étape 8. Un lecteur plus ancien l'ignore sans rien perdre : c'est une addition, pas
 une rupture, et `/api/v1/` reste `/api/v1/`.
 
 ### `status`
@@ -249,11 +249,29 @@ arrière et 120 en avant. Le fichier annonce un rafraîchissement d'une heure.
 
 Le paramètre `lang` s'applique aussi : il choisit la langue des titres et du libellé d'ancrage.
 
+**Le libellé d'ancrage** est la première ligne de `DESCRIPTION` d'un cours ancré sur une prière. Il
+est écrit dans la langue du flux, et nomme la prière comme la page publique la nomme dans cette
+langue : `عند المغرب` en arabe, `Zu Fadschr` et `15 Min. nach Ischa` en allemand. Avec un décalage,
+c'est la phrase de la page ; sans décalage, le flux dit `À Maghrib` là où la page dit
+`Après Maghrib`. Un décalage négatif se dit « avant », avec sa valeur absolue.
+
+| Décalage | `fr`                   | `de`                   | `it`                      | `ar`                    |
+| -------- | ---------------------- | ---------------------- | ------------------------- | ----------------------- |
+| 0        | `À Maghrib`            | `Zu Maghrib`           | `A Maghrib`               | `عند المغرب`            |
+| 15       | `15 min après Maghrib` | `15 Min. nach Maghrib` | `15 min dopo Maghrib`     | `بعد المغرب بـ15 دقيقة` |
+| -15      | `15 min avant Maghrib` | `15 Min. vor Maghrib`  | `15 min prima di Maghrib` | `قبل المغرب بـ15 دقيقة` |
+
+Depuis l'étape 16, le champ `DESCRIPTION` change donc pour trois sortes d'abonnés : en arabe, où
+la prière était écrite en lettres latines (`عند Maghrib`) ; en allemand, pour Fajr et Isha ; et dans
+toutes les langues pour un décalage négatif, qui sortait en `-15 min après Maghrib`. Les heures et les
+identifiants d'événement ne changent pas.
+
 ### Un seul cours
 
 `GET /m/belvedere/agenda/{courseId}.ics` rend le même fichier, pour **un seul cours** : mêmes règles,
-même code, même fenêtre glissante. Le nom du calendrier devient `<Nom de l'organisation> — <Titre du
-cours>`, et le nom de fichier suit le titre du cours.
+même code, même fenêtre glissante. Le nom du calendrier devient `<Nom de l'organisation> – <Titre du
+cours>`, avec un tiret demi-cadratin depuis l'étape 16 (un tiret cadratin avant), et le nom de
+fichier suit le titre du cours.
 
 Les identifiants d'événement sont les mêmes que dans le flux de l'organisation. Qui s'abonne aux
 deux verra les mêmes séances dans deux calendriers — c'est ce que font deux calendriers distincts.
@@ -282,9 +300,10 @@ suppression**, que les horodatages seuls ne verraient pas.
 
 ## Limites
 
-- **120 requêtes par minute et par adresse IP**, compteur partagé entre toutes les instances. Au
-  delà : `429` avec un en-tête `Retry-After`. Les fichiers du widget n'y sont pas comptés : ils sont
-  servis de mémoire, sans toucher la base, et une grande organisation tomberait avant son programme.
+- **120 requêtes par minute et par adresse IP**, compteur partagé entre toutes les instances.
+  Au-delà : `429` avec un en-tête `Retry-After`. Les fichiers du widget n'y sont pas comptés : ils
+  sont servis de mémoire, sans toucher la base, et une grande organisation tomberait avant son
+  programme.
 - Plage de dates : 92 jours par défaut, 366 sur demande explicite.
 - `CORS` : `Access-Control-Allow-Origin: *`, méthodes `GET, HEAD, OPTIONS`. **Aucun en-tête
   d'authentification n'est accepté** : il n'y a rien à authentifier, et un navigateur ne peut donc

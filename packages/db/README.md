@@ -34,6 +34,7 @@ script Node seul.
 | `audit_log`          | qui a fait quoi, avec l'état avant et après ; insertion seule (ADR 0015)         |
 | `admin_access_log`   | le registre interne des accès du super-admin, hors de portée des organisations   |
 | `invitation`         | une adresse invitée, son rôle, son statut et qui l'a acceptée (ADR 0017)         |
+| `terms_acceptance`   | qui a accepté quelle version des conditions, et quand ; insertion seule          |
 | `session`            | les sessions de Better Auth, plus la preuve de passkey et l'organisation choisie |
 | `account`            | exigée par Better Auth ; sa colonne de mot de passe reste vide                   |
 | `verification`       | les jetons de lien magique, stockés hachés                                       |
@@ -87,6 +88,17 @@ en insertion seule pour lui aussi, et les passkeys, qui appartiennent au seul r�
 `admin_access_log` est son registre interne : une entrée par requête, lisible de lui seul, en
 insertion seule, et hors de portée du rôle applicatif — aucun droit, aucune politique, aucune clé
 étrangère qui le rendrait atteignable par une jointure.
+
+`terms_acceptance` garde une ligne par personne, par organisation et par version des conditions
+d'utilisation. La version est la date de « Dernière mise à jour » du document, en ISO
+(`2026-09-22`) : une contrainte refuse toute autre forme, et une date absente du calendrier. Chacun
+lit et ajoute ses propres lignes, dans l'organisation du contexte : la politique exige l'organisation
+**et** la personne, donc une transaction qui ne pose que l'organisation n'y voit rien. Personne ne
+modifie ni ne supprime, super-admin compris, qui lit sans écrire. Le moment est posé par la base par
+le procédé du journal d'audit (ADR 0020) : l'insertion est accordée colonne par colonne, sans
+`accepted_at`, et nommer la colonne est refusé. La ligne part avec l'adhésion, par une clé étrangère
+en cascade vers `membership` : retirer la personne, supprimer son compte ou supprimer l'organisation
+l'efface, sans purge à écrire.
 
 ## Lancer la base et les migrations
 
@@ -147,21 +159,26 @@ une contrainte oublie l'enveloppe, sans nommer une seule table.
 
 ## Purges
 
-Trois procédures, toutes réservées au propriétaire — ni le rôle applicatif ni le super-admin ne
-peuvent les appeler :
+Huit procédures, toutes réservées au propriétaire — ni le rôle applicatif ni le super-admin ne
+peuvent les appeler. `scripts/purge.mjs` les lance toutes, chaque nuit :
 
-| Procédure                             | Ce qu'elle efface                                                    |
-| ------------------------------------- | -------------------------------------------------------------------- |
-| `jadwal.purge_audit_log()`            | les entrées de journal de plus de 24 mois (ADR 0020)                 |
-| `jadwal.purge_resolved_invitations()` | les invitations résolues depuis plus de 90 jours                     |
-| `jadwal.purge_orphan_accounts()`      | les comptes de plus de 12 mois sans adhésion, session, ni invitation |
+| Procédure                              | Ce qu'elle efface                                                                  |
+| -------------------------------------- | ---------------------------------------------------------------------------------- |
+| `jadwal.purge_audit_log()`             | les entrées de journal de plus de 24 mois (ADR 0020)                               |
+| `jadwal.purge_admin_access_log()`      | les traces d'accès du super-admin de plus de 24 mois                               |
+| `jadwal.purge_page_views()`            | les jours du compteur de vues de plus de 25 mois                                   |
+| `jadwal.purge_rate_limit()`            | les empreintes du limiteur de débit de plus d'un jour                              |
+| `jadwal.purge_expired_sessions()`      | les sessions expirées                                                              |
+| `jadwal.purge_expired_verifications()` | les liens de connexion expirés                                                     |
+| `jadwal.purge_resolved_invitations()`  | les invitations qui ne sont plus en cours depuis plus de 90 jours                  |
+| `jadwal.purge_orphan_accounts()`       | les comptes de plus de 12 mois sans adhésion, session, ni invitation encore valide |
 
-La borne du journal est portée par une **politique**, celle des deux autres par la **procédure**.
-Ce n'est pas une inconséquence : le journal doit résister au propriétaire lui-même, alors qu'un
-compte, il peut déjà l'effacer sous son drapeau d'entretien. Une politique bornée ne lui retirerait
-rien et donnerait l'illusion d'une garantie.
+Les six premières bornes sont portées par une **politique**, celles des invitations et des comptes
+par la **procédure**. Ce n'est pas une inconséquence : le journal doit résister au propriétaire
+lui-même, alors qu'un compte, il peut déjà l'effacer sous son drapeau d'entretien. Une politique
+bornée ne lui retirerait rien et donnerait l'illusion d'une garantie.
 
-La programmation périodique arrive à l'étape 8, avec le déploiement.
+Sur un serveur, la minuterie `jadwal-purges` lance `scripts/purge.mjs` chaque nuit (étape 9).
 
 ## Écrire une migration
 
