@@ -654,6 +654,58 @@ describe('les pouvoirs du super-admin', () => {
 		expect(page.headers.get('location')).toBe('/super-admin/passkey');
 	});
 
+	it('offers the passkey sign-in as soon as the first one is registered, with no sign-out', async () => {
+		// Ce que voit quelqu’un qui vient d’enregistrer sa première passkey : l’écran est rechargé par
+		// la même session, ouverte par lien magique. C’est exactement l’instant qui suit
+		// l’enregistrement, une fois les données relues.
+		//
+		// Lui demander de se déconnecter puis de revenir serait une marche de plus pour rien, et
+		// c’est ce que l’écran disait jusqu’à cette étape.
+		const email = `passkey-fraiche-${Date.now().toString(36)}@example.test`;
+		const userId = newId();
+		await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified", "is_super_admin")
+				values (${userId}, ${email}, true, true)
+			`);
+		});
+		await resetRateLimit();
+		const cookie = await signIn(email);
+
+		// Avant : aucune passkey. C’est la fenêtre d’amorçage, et elle ne propose que l’enregistrement.
+		const avant = await (
+			await fetch(`${origin}/super-admin/passkey`, { headers: { cookie } })
+		).text();
+		expect(avant).toContain('Enregistrer une passkey');
+		expect(avant).not.toContain('Se connecter avec une passkey');
+
+		// L’enregistrement, tel que le navigateur le fait : une ligne de plus dans la table.
+		await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			await tx.execute(sql`
+				insert into "passkey" ("id", "name", "public_key", "user_id", "credential_id", "counter",
+					"device_type", "backed_up")
+				values (${newId()}, 'Cet appareil', 'cle-publique', ${userId}, ${newId()}, 0, 'singleDevice', false)
+			`);
+		});
+
+		// Après, **sans changer de session** : le bouton est là.
+		const apres = await (
+			await fetch(`${origin}/super-admin/passkey`, { headers: { cookie } })
+		).text();
+		expect(apres).toContain('Se connecter avec une passkey');
+		// Et le message qui suit l’enregistrement ne demande plus de se déconnecter. Ce message-là
+		// n’est pas dans le HTML : il est posé par le navigateur, après la cérémonie WebAuthn, que
+		// ce test ne peut pas jouer. On garde donc le texte à la source — c’est une garde modeste,
+		// mais elle empêche le conseil inutile de revenir sans qu’on s’en aperçoive.
+		const ecran = readFileSync(
+			new URL('../src/routes/super-admin/passkey/+page.svelte', import.meta.url),
+			'utf8'
+		);
+		expect(ecran).not.toContain('Déconnectez-vous puis reconnectez-vous');
+	});
+
 	it('refuses to register another passkey from a session that has none proven', async () => {
 		// La règle d'amorçage : le premier enregistrement passe, les suivants exigent une session
 		// déjà prouvée. Sans cela, qui tient la boîte aux lettres se fabrique sa propre passkey.

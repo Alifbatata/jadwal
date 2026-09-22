@@ -10,41 +10,24 @@
       Une étiquette bouge : le retour arrière ne rendrait pas forcément ce qui tournait avant.
       Exemple : ansible-playbook jadwal.yml -e jadwal_image=ghcr.io/compte/jadwal@sha256:…
 
-# Un « $ » dans un secret ne traverse pas Docker Compose.
-#
-# Compose interpole le fichier d'environnement : `pa$$e-partout` devient `pa`, **sans erreur**, avec un
-# simple avertissement noyé dans sa sortie. Le conteneur reçoit un secret tronqué, et le service
-# échoue plus tard, ailleurs, pour une raison qui ne ressemble en rien à la cause. Mesuré au
-# déploiement du 2026-09-21 : un mot de passe SMTP de seize caractères en portait treize dans le
-# conteneur, et aucun courriel ne pouvait partir.
-#
-# Échapper ne sauve pas : `$$` répare Compose et casse `docker run --env-file`, qui n'interpole pas
-# et passerait `$$` tel quel — or c'est par là que part le courriel d'alerte. Un même fichier, deux
-# lecteurs, deux règles d'échappement inconciliables.
-#
-# On refuse donc, avant d'avoir rien écrit. C'est la raison pour laquelle les mots de passe engendrés
-# par ce projet sont alphanumériques : voir `group_vars/all/vault.yml.example`.
-- name: Aucun secret ne porte de dollar, que Compose avalerait
+# Compose doit être assez récent pour lire un `env_file` en `format: raw`, faute de quoi il
+# interpolerait les secrets et les tronquerait en silence — voir le fichier Compose. Une version
+# trop ancienne **ignore** la clé `format` sans rien dire : sans cette vérification, le déploiement
+# paraîtrait réussi et le service n'enverrait aucun courriel.
+- name: La version de Docker Compose
+  ansible.builtin.command: docker compose version --short
+  register: compose_version
+  changed_when: false
+  check_mode: false
+  become: true
+
+- name: Compose sait lire un fichier d'environnement tel quel
   ansible.builtin.assert:
-    that: "'$' not in item.valeur"
+    that: compose_version.stdout | trim | replace('v', '') is version('2.30.0', '>=')
     fail_msg: >-
-      {{ item.nom }} contient un « $ ». Docker Compose interpole le fichier d'environnement : la
-      valeur arriverait tronquée dans le conteneur, en silence. Choisir un secret sans « $ », le
-      reporter dans le coffre, et rejouer. Rien n'a été écrit.
-    quiet: true
-  loop:
-    - { nom: vault_postgres_password, valeur: '{{ vault_postgres_password }}' }
-    - { nom: vault_db_owner_password, valeur: '{{ vault_db_owner_password }}' }
-    - { nom: vault_db_app_password, valeur: '{{ vault_db_app_password }}' }
-    - { nom: vault_db_superadmin_password, valeur: '{{ vault_db_superadmin_password }}' }
-    - { nom: vault_db_auth_password, valeur: '{{ vault_db_auth_password }}' }
-    - { nom: vault_db_public_password, valeur: '{{ vault_db_public_password }}' }
-    - { nom: vault_better_auth_secret, valeur: '{{ vault_better_auth_secret }}' }
-    - { nom: vault_smtp_password, valeur: '{{ vault_smtp_password }}' }
-  loop_control:
-    label: '{{ item.nom }}'
-  # La valeur ne doit apparaître ni dans la sortie d'Ansible, ni dans le message d'échec.
-  no_log: true
+      Docker Compose {{ compose_version.stdout | trim }} ignore « format: raw » sur env_file, qui
+      demande 2.30.0 ou plus. Sans lui, un secret portant un « $ » arriverait tronqué dans le
+      conteneur, sans erreur. Mettre Compose à jour avant de déployer. Rien n'a été écrit.
 
 - name: Le fichier Compose
   ansible.builtin.copy:
@@ -66,6 +49,24 @@
     owner: root
     group: root
     mode: '0600'
+  become: true
+  no_log: true
+  notify: relancer jadwal
+
+# Un fichier par conteneur, et chacun ne porte que ce que son service a besoin de savoir. Compose
+# les lit en `format: raw` : ce qui est écrit ici arrive tel quel dans le conteneur, « $ » compris.
+#
+# `jadwal.env` ci-dessus ne disparaît pas pour autant : c'est lui que lisent les tâches de l'hôte et
+# le conteneur jetable qui envoie les alertes, et c'est lui que Compose lit pour interpoler ce qui
+# n'est pas secret — l'image, le port.
+- name: Les fichiers d'environnement des conteneurs
+  ansible.builtin.template:
+    src: '{{ item }}.env.j2'
+    dest: '{{ jadwal_etc }}/{{ item }}.env'
+    owner: root
+    group: root
+    mode: '0600'
+  loop: [app, db]
   become: true
   no_log: true
   notify: relancer jadwal

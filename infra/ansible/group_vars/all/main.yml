@@ -40,6 +40,20 @@ jadwal_smtp_user: noreply@voltia.ch
 jadwal_age_recipient: ''
 jadwal_rclone_remote: ''
 
+# Les options passées à chaque appel de `rclone`.
+#
+# `--s3-no-head` : ne pas relire un objet après l'avoir écrit. Mesuré sur la destination visée — le
+# `PUT` rend 200, puis la relecture que rclone fait **par identifiant de version** rend 501, parce
+# que ce stockage n'implémente pas les lectures versionnées. Deux conséquences : des lignes `ERROR`
+# toutes les nuits qui ne signalaient rien, et surtout **un code de retour qui ne voulait plus rien
+# dire** — un envoi réussi sortait en échec, et c'est ce code que la preuve des verrous interroge
+# pour affirmer qu'un écrasement a été refusé.
+#
+# Rien n'est perdu : la tâche de sauvegarde relit chaque copie distante **en entier** et compare son
+# empreinte. Une instance dont le stockage implémente les lectures versionnées peut vider cette
+# variable.
+jadwal_rclone_options: '--s3-no-head'
+
 # Caddy. Le rechargement est **refusé par défaut** : la première exécution pose le fichier de site,
 # montre ce qu'il contient et s'arrête là. L'exploitant le lit, puis relance avec
 # `-e jadwal_caddy_reload=true`. Recharger le Caddy d'un hôte qui peut servir d'autres sites

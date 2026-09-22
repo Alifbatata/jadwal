@@ -26,7 +26,7 @@
   no_log: true
 
 - name: La destination répond et est accessible en écriture
-  ansible.builtin.command: rclone --config {{ jadwal_etc }}/rclone.conf lsd {{ jadwal_rclone_remote }}
+  ansible.builtin.command: rclone {{ jadwal_rclone_options }} --config {{ jadwal_etc }}/rclone.conf lsd {{ jadwal_rclone_remote }}
   register: destination
   changed_when: false
   become: true
@@ -85,7 +85,7 @@
         sonde="$(mktemp)"
         date --utc +%Y-%m-%dT%H:%M:%SZ > "$sonde"
         nom="quotidien/verrou-eprouve-$(date --utc +%Y-%m-%dT%H%M%SZ).txt"
-        rclone --config {{ jadwal_etc }}/rclone.conf copyto "$sonde" "{{ jadwal_rclone_remote }}/$nom"
+        rclone {{ jadwal_rclone_options }} --config {{ jadwal_etc }}/rclone.conf copyto "$sonde" "{{ jadwal_rclone_remote }}/$nom"
         rm -f "$sonde"
         echo "$nom"
       args:
@@ -93,12 +93,18 @@
       register: sonde
       changed_when: true
 
+    # Cette tâche conclut sur un **code de retour**, et c'est fragile : il faut que ce code ne
+    # puisse rien dire d'autre que « le stockage a refusé ». Il a failli dire autre chose. Sans
+    # `--s3-no-head`, rclone relit l'objet après l'avoir écrit, par identifiant de version, et cette
+    # destination rend alors 501 : un écrasement **réussi** sortait en échec, et l'assertion
+    # ci-dessous en aurait conclu que le verrou tenait. Mesuré à l'étape 11, en lisant les échanges
+    # HTTP. Les options de rclone sont dans `group_vars/all/main.yml`, avec le détail.
     - name: L'écrasement doit être refusé
       ansible.builtin.shell: |
         set -uo pipefail
         autre="$(mktemp)"
         echo "un autre contenu" > "$autre"
-        rclone --config {{ jadwal_etc }}/rclone.conf copyto "$autre" \
+        rclone {{ jadwal_rclone_options }} --config {{ jadwal_etc }}/rclone.conf copyto "$autre" \
           "{{ jadwal_rclone_remote }}/{{ sonde.stdout_lines | last }}"
         code=$?
         rm -f "$autre"
@@ -111,7 +117,7 @@
 
     - name: L'effacement doit être refusé
       ansible.builtin.command: >-
-        rclone --config {{ jadwal_etc }}/rclone.conf deletefile
+        rclone {{ jadwal_rclone_options }} --config {{ jadwal_etc }}/rclone.conf deletefile
         {{ jadwal_rclone_remote }}/{{ sonde.stdout_lines | last }}
       register: effacement
       failed_when: false
