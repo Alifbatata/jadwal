@@ -25,22 +25,14 @@
  *
  * Docker. Rien d'autre : aucun secret, aucune base existante, aucun port fixe. Les mots de passe
  * sont tirés au hasard à chaque exécution et ne sont jamais affichés.
+ *
+ * La mise en marche elle-même (réseau, base, rôles, migrations, serveur) vit dans
+ * `image-en-marche.mjs`, que `eprouver-parcours.mjs` emploie aussi : les deux épreuves lèvent
+ * l'image de la même façon.
  */
-import { execFileSync, spawnSync } from 'node:child_process';
-import { randomBytes, randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const racine = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-
-/** PostgreSQL, à la version et au digest de `docker-compose.dev.yml` : une seule vérité. */
-function imagePostgres() {
-	const compose = readFileSync(join(racine, 'docker-compose.dev.yml'), 'utf8');
-	const trouve = /image:\s*(postgres:[^\s@]+@sha256:[0-9a-f]{64})/.exec(compose);
-	if (!trouve) throw new Error('digest de PostgreSQL introuvable dans docker-compose.dev.yml');
-	return trouve[1];
-}
+import { spawnSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
+import { construireImage, docker, MiseEnMarche, racine } from './image-en-marche.mjs';
 
 /** Ce que l'image ne doit plus porter, et la raison de chacun. */
 const INTERDITS = [
@@ -58,22 +50,8 @@ const INTERDITS = [
 
 const marque = randomUUID().slice(0, 8);
 const IMAGE = `jadwal-epreuve:${marque}`;
-const RESEAU = `jadwal-epreuve-${marque}`;
-const BASE = `jadwal-epreuve-db-${marque}`;
-const SERVEUR = `jadwal-epreuve-app-${marque}`;
-
-/** Un mot de passe tiré au hasard. Il ne sort jamais d'ici, et il meurt avec le test. */
-const motDePasse = () => randomBytes(24).toString('base64url');
-
-const SECRETS = {
-	POSTGRES_PASSWORD: motDePasse(),
-	JADWAL_DB_OWNER_PASSWORD: motDePasse(),
-	JADWAL_DB_APP_PASSWORD: motDePasse(),
-	JADWAL_DB_SUPERADMIN_PASSWORD: motDePasse(),
-	JADWAL_DB_AUTH_PASSWORD: motDePasse(),
-	JADWAL_DB_PUBLIC_PASSWORD: motDePasse(),
-	BETTER_AUTH_SECRET: motDePasse()
-};
+const marche = new MiseEnMarche(IMAGE, 'jadwal-epreuve', marque);
+const SERVEUR = marche.serveur;
 
 const echecs = [];
 let verifications = 0;
@@ -84,36 +62,8 @@ function verifier(quoi, condition, detail = '') {
 	process.stdout.write(`  ${condition ? 'ok  ' : 'NON '} ${quoi}${detail ? ` (${detail})` : ''}\n`);
 }
 
-function docker(args, options = {}) {
-	return execFileSync('docker', args, { encoding: 'utf8', ...options });
-}
-
-/** Les variables d'environnement, en arguments `--env`. Les valeurs ne passent jamais par un shell. */
-function environnement(extra = {}) {
-	const toutes = {
-		NODE_ENV: 'production',
-		POSTGRES_HOST: BASE,
-		POSTGRES_PORT: '5432',
-		POSTGRES_USER: 'jadwal',
-		POSTGRES_DB: 'jadwal',
-		ORIGIN: 'http://127.0.0.1:3000',
-		// `file` et `smtp` sont les deux seules valeurs. Une troisième fait lever l'application à
-		// la première requête, et toutes les routes rendent 500 : mesuré en écrivant ce test.
-		MAIL_TRANSPORT: 'file',
-		MAIL_OUTBOX_DIR: '/tmp/courriels',
-		MAIL_FROM: 'epreuve@example.test',
-		MAIL_FROM_NAME: 'jadwal',
-		...SECRETS,
-		...extra
-	};
-	return Object.entries(toutes).flatMap(([cle, valeur]) => ['--env', `${cle}=${valeur}`]);
-}
-
 function nettoyer() {
-	for (const nom of [SERVEUR, BASE]) {
-		spawnSync('docker', ['rm', '-f', nom], { stdio: 'ignore' });
-	}
-	spawnSync('docker', ['network', 'rm', RESEAU], { stdio: 'ignore' });
+	marche.nettoyer();
 	spawnSync('docker', ['image', 'rm', '-f', IMAGE], { stdio: 'ignore' });
 }
 
@@ -121,11 +71,7 @@ process.on('exit', nettoyer);
 process.on('SIGINT', () => process.exit(130));
 
 process.stdout.write(`\nConstruction de l'image\n`);
-const construction = spawnSync('docker', ['build', '--tag', IMAGE, '.'], {
-	cwd: racine,
-	stdio: ['ignore', 'pipe', 'pipe'],
-	encoding: 'utf8'
-});
+const construction = construireImage(racine, IMAGE);
 if (construction.status !== 0) {
 	process.stderr.write(construction.stderr?.slice(-4000) ?? '');
 	process.stderr.write('\nL’image ne se construit pas. Rien d’autre n’a été tenté.\n');
@@ -180,111 +126,104 @@ const licenceOci = docker([
 ]).trim();
 verifier('l’étiquette de licence dit MIT', licenceOci === 'MIT', licenceOci || 'absente');
 
-process.stdout.write(`\nL'image mise en marche, comme en production\n`);
-docker(['network', 'create', RESEAU], { stdio: 'ignore' });
-docker([
+// Les commandes d'exploitant se lancent depuis l'image, par leur chemin sous `node_modules` : c'est
+// la forme que `docs/EXPLOITATION.md` donne à chacune. Une commande que l'image ne porterait pas ne
+// se remarquerait que le jour où l'on en a besoin, sur le serveur. Elles arrivent par le champ
+// `files` de `@jadwal/db`, que `pnpm deploy` respecte, et l'élagage ne touche pas au paquet : il ne
+// retire que des paquets entiers du magasin, et celui-ci est une dépendance du serveur.
+const COMMANDES = [
+	'retention-hold.mjs',
+	'super-admin.mjs',
+	'reset-passkeys.mjs',
+	'delete-organization.mjs'
+];
+const scriptsDeLImage = docker([
 	'run',
-	'--detach',
-	'--name',
-	BASE,
-	'--network',
-	RESEAU,
-	'--env',
-	'POSTGRES_USER=jadwal',
-	'--env',
-	`POSTGRES_PASSWORD=${SECRETS.POSTGRES_PASSWORD}`,
-	'--env',
-	'POSTGRES_DB=jadwal',
-	imagePostgres()
-]);
-
-/** Attend que la base réponde, sans jamais dormir plus qu'il ne faut. */
-function attendreLaBase() {
-	for (let essai = 0; essai < 60; essai += 1) {
-		const sonde = spawnSync(
-			'docker',
-			['exec', BASE, 'pg_isready', '-h', '127.0.0.1', '-U', 'jadwal', '-d', 'jadwal'],
-			{ stdio: 'ignore' }
-		);
-		if (sonde.status === 0) return true;
-		Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1000);
-	}
-	return false;
+	'--rm',
+	'--entrypoint',
+	'sh',
+	IMAGE,
+	'-c',
+	'ls /app/node_modules/@jadwal/db/scripts'
+])
+	.split('\n')
+	.map((ligne) => ligne.trim())
+	.filter(Boolean);
+for (const commande of COMMANDES) {
+	verifier(
+		`la commande d’exploitant ${commande} est dans l’image`,
+		scriptsDeLImage.includes(commande)
+	);
 }
-verifier('la base répond', attendreLaBase());
+
+process.stdout.write(`\nL'image mise en marche, comme en production\n`);
+verifier('la base répond', marche.leverLaBase());
 
 for (const [quoi, script] of [
 	['les rôles sont créés', 'bootstrap-roles.mjs'],
 	['les migrations passent', 'migrate.mjs']
 ]) {
-	const passage = spawnSync(
-		'docker',
-		[
-			'run',
-			'--rm',
-			'--network',
-			RESEAU,
-			...environnement(),
-			IMAGE,
-			'node',
-			`node_modules/@jadwal/db/scripts/${script}`
-		],
-		{ encoding: 'utf8' }
-	);
-	const sortie = `${passage.stdout ?? ''}${passage.stderr ?? ''}`.trim().split('\n').pop() ?? '';
-	verifier(quoi, passage.status === 0, sortie.slice(0, 120));
+	const passage = marche.jouer(script);
+	verifier(quoi, passage.ok, passage.derniere.slice(0, 120));
 }
 
-docker([
-	'run',
-	'--detach',
-	'--name',
-	SERVEUR,
-	'--network',
-	RESEAU,
-	'--publish',
-	'127.0.0.1:0:3000',
-	...environnement(),
-	IMAGE
-]);
+// Présente ne suffit pas : elle doit démarrer, ses imports se résoudre dans l'arbre élagué, et la
+// base répondre. Un identifiant inconnu est le seul appel qui ne change rien, quelle que soit la
+// base ; ses effets, eux, sont éprouvés par `packages/db/test/delete-organization.test.ts`.
+const suppression = marche.jouer('delete-organization.mjs', ['--slug', 'inconnue']);
+verifier(
+	'la suppression d’une organisation démarre, et refuse un identifiant inconnu',
+	!suppression.ok && suppression.derniere.startsWith('Aucune organisation'),
+	suppression.derniere.slice(0, 120)
+);
+
+marche.lancerLeServeur('127.0.0.1:0:3000');
 
 const publie = docker(['port', SERVEUR, '3000']).trim().split('\n')[0] ?? '';
 const port = Number(publie.split(':').pop());
 verifier('le serveur publie un port', Number.isInteger(port) && port > 0, publie);
 
-/** Interroge une route, en laissant au serveur le temps de se lever. */
+/** Interroge une route, en laissant au serveur le temps de se lever. Rend le code et le corps. */
 async function interroger(chemin) {
 	for (let essai = 0; essai < 40; essai += 1) {
 		try {
 			const reponse = await fetch(`http://127.0.0.1:${port}${chemin}`, { redirect: 'manual' });
-			return reponse.status;
+			return { code: reponse.status, corps: await reponse.text() };
 		} catch {
 			await new Promise((resolue) => setTimeout(resolue, 500));
 		}
 	}
-	return 0;
+	return { code: 0, corps: '' };
 }
 
 // Une route par famille : la sonde, une page rendue côté serveur, l'API publique, un fichier
 // engendré, et une page publique qui interroge la base. Une image amputée tombe sur l'une d'elles.
+// `/conditions` rend un fichier de `docs/`, que `.dockerignore` écarte tout entier sauf lui.
 const ROUTES = [
 	['/healthz', 200],
 	['/connexion', 200],
+	['/conditions', 200],
 	['/api/v1/status', 200],
 	['/widget/jadwal-widget.js', 200],
 	['/sitemap.xml', 200],
 	['/m/inconnue/fr', 404]
 ];
+const corps = new Map();
 for (const [chemin, attendu] of ROUTES) {
-	const code = await interroger(chemin);
+	const { code, corps: texte } = await interroger(chemin);
+	corps.set(chemin, texte);
 	verifier(`${chemin} rend ${attendu}`, code === attendu, code === attendu ? '' : `rendu ${code}`);
 }
+// Le titre du document, et non celui de la page : c'est lui qui prouve que le fichier est entré dans
+// la construction. Le `<title>` vient du gabarit, il serait là même sans le texte.
+verifier(
+	'/conditions porte le texte des conditions',
+	corps.get('/conditions')?.includes('<h1>Conditions d’utilisation</h1>') === true,
+	`${corps.get('/conditions')?.length ?? 0} caractères`
+);
 
-// `docker logs` écrit la sortie standard du conteneur sur la sienne, et sa sortie d'erreur sur
-// la sienne. Les 500 d'`adapter-node` passent par la seconde : les lire toutes les deux, ou ne
-// rien voir d'une panne. Mesuré : le journal ne montrait que « Listening on ».
-const sortiesDuServeur = spawnSync('docker', ['logs', SERVEUR], { encoding: 'utf8' });
-const journal = `${sortiesDuServeur.stdout ?? ''}${sortiesDuServeur.stderr ?? ''}`;
+// Les deux sorties du conteneur : les 500 d'`adapter-node` passent par celle d'erreur.
+const journal = marche.journal();
 // Une route qui rend 500 ne dit pas pourquoi ; le journal du conteneur, lui, le dit. Sans ces
 // lignes, le test annonce un échec et emporte sa cause avec le conteneur qu'il détruit.
 if (echecs.length > 0) {
