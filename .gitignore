@@ -62,3 +62,4 @@ infra/ansible/inventory.ini
 infra/ansible/exploitant.yml
 infra/ansible/*.retry
 !infra/ansible/inventory.ini.example
+.orthographe/

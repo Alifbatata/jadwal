@@ -25,7 +25,7 @@ ce qui rend le déploiement rejouable, et son retrait sans dégât.
   mandataire va le chercher ; la base n'en publie aucun, et n'est donc joignable que depuis le réseau
   `jadwal`. Le `127.0.0.1:` du fichier Compose n'est pas décoratif : sans lui, Docker écrit ses
   propres règles dans nftables et **contourne le pare-feu de l'hôte**, qui n'en voit rien. C'est la
-  faute la plus courante et la plus silencieuse de Docker sur un serveur pare-feuté.
+  faute la plus courante et la plus silencieuse de Docker sur un serveur protégé par un pare-feu.
 - **Des fichiers qui n'appartiennent qu'à `root`.** `/etc/jadwal`, `/var/lib/jadwal` et
   `/var/backups/jadwal` sont en `0700` ; le fichier d'environnement, qui porte tous les secrets du
   service, est en **`0600 root:root`**. Aucun groupe partagé, aucun bit de lecture pour les autres,

@@ -4,7 +4,7 @@
 
 `jadwal` (« horaire » en arabe) permet à une organisation de publier le programme de ses cours
 récurrents à partir d'une seule saisie. Associations, écoles, clubs, entreprises, lieux de culte :
-toute organisation qui répète un programme et doit le faire savoir.
+toute organisation qui publie un programme régulier et doit le faire savoir.
 
 Les responsables saisissent une fois ; en sortent un widget intégrable au site de l'organisation, une
 page publique, un flux agenda (ICS) et des messages WhatsApp prêts à coller. Le service est gratuit.
