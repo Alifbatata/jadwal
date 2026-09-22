@@ -64,6 +64,13 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   quatre langues : `pnpm orthographe`, et un flux de CI qui le relance quand un texte change. Le
   PDF pour le juriste ne finit plus sur une page presque vide, et sa mise en pages est mesurée
   dans le PDF rendu, pas supposée.
+- **Étape 15** (conditions exactes au mot près, relecture de l'arabe) : **terminée le 2026-09-22**.
+  Six phrases des conditions d'utilisation affirmaient plus que le code ne tient : chacune est
+  corrigée, et chaque phrase de fait du document a désormais sa preuve, fichier et ligne ou requête
+  et résultat. La liste des données personnelles passe de six à neuf catégories, refaite table par
+  table contre le schéma. Les noms de code de la documentation passent entre accents graves, et le
+  dictionnaire du correcteur ne garde que de vrais mots. Les 114 textes arabes publics sont
+  relevés pour relecture ; **aucun n'a été modifié**.
 
 ## Fait
 
