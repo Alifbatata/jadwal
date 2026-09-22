@@ -228,4 +228,16 @@ networks:
 
 volumes:
   pgdata:
+    # **Ne jouez pas ce fichier tel quel sur un poste de développement.** `docker-compose.dev.yml`,
+    # à la racine du dépôt, produit un volume qui porte **exactement** ce nom : son projet s'appelle
+    # `jadwal` et son volume `pgdata`. Compose ne refuse pas — il avertit et attache le volume
+    # existant, et l'on se retrouve avec deux serveurs PostgreSQL sur le même répertoire de données.
+    #
+    # Mesuré le 2026-09-22, en répétant le déploiement sur un poste : les deux ont tourné vingt-huit
+    # secondes côte à côte, le second a réécrit `postmaster.pid`, et en s'arrêtant il l'a effacé — ce
+    # que le premier a fini par remarquer : « performing immediate shutdown because data directory
+    # lock file is invalid ». Rien n'a été perdu ici, et ce n'était pas garanti.
+    #
+    # Pour répéter en local : un fichier de surcharge qui renomme ce volume, et un nom de projet à
+    # part (`-p`).
     name: jadwal_pgdata

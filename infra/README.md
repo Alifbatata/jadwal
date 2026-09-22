@@ -28,7 +28,7 @@ veille. La marche à suivre quand quelque chose ne va pas est dans
 | Chemin     | Ce que c'est                                                                                                                                          |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ansible/` | Le déploiement : un inventaire d'exemple à copier, un playbook, cinq rôles, un playbook de retrait.                                                   |
-| `compose/` | Les deux conteneurs de production — l'application et sa base — et l'exemple du fichier d'environnement.                                               |
+| `compose/` | Les trois services de production — le conteneur de démarrage, l'application et sa base — et l'exemple du fichier d'environnement.                     |
 | `caddy/`   | Le bloc de site à poser dans le Caddy **de l'hôte**, qui peut servir d'autres sites.                                                                  |
 | `systemd/` | Sept unités de minuterie — celle de la sonde est un modèle, armé une fois par pile — leurs services, et l’unité d’alerte déclenchée par `OnFailure=`. |
 | `scripts/` | Ce que les minuteries lancent : prières, purges, sauvegarde, restauration, veille, sonde, coupe du journal, alerte.                                   |
