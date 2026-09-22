@@ -61,8 +61,8 @@ const MOTS: Record<string, Mots> = {
 	},
 	ar: {
 		titre: 'برنامج الدروس',
-		lien: 'عرض البرنامج كاملاً',
-		mention: 'مقدَّم مجاناً من jadwal، خدمة من Voltia'
+		lien: 'عرض البرنامج كاملًا',
+		mention: 'مقدَّم مجانًا من jadwal، خدمة من Voltia'
 	}
 };
 

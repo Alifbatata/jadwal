@@ -301,9 +301,10 @@ describe('le flux agenda d’un seul cours', () => {
 		expect(titres).toContain('Arabe du mardi');
 		expect(titres).not.toContain('Tafsir après Maghrib');
 		expect(titres).not.toContain('Brouillon du widget');
-		// Le nom du calendrier dit de quelle organisation et de quel cours il s'agit.
+		// Le nom du calendrier dit de quelle organisation et de quel cours il s'agit. L'application
+		// d'agenda l'affiche tel quel : un tiret demi-cadratin, pas de cadratin (`pnpm style`).
 		expect(composant.getFirstPropertyValue('x-wr-calname')).toBe(
-			'Association du widget — Arabe du mardi'
+			'Association du widget – Arabe du mardi'
 		);
 
 		const evenement = evenements.find(

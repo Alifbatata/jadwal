@@ -50,7 +50,7 @@ export const load: PageServerLoad = async (event) => {
 		// ne l'écrivons nulle part, mais une promesse se tient mieux quand la donnée n'arrive pas
 		// (ADR 0032). Le widget pose la même règle sur le cadre qu'il crée.
 		codeCadre:
-			`<iframe src="${lienPublic}" title="Programme des cours — ${programme.settings.name}"\n` +
+			`<iframe src="${lienPublic}" title="Programme des cours – ${programme.settings.name}"\n` +
 			`        style="width:100%;height:${HAUTEUR_CADRE}px;border:0" loading="lazy"\n` +
 			`        referrerpolicy="no-referrer"></iframe>`,
 		messageSemaine: weekMessage(
