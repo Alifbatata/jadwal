@@ -7,7 +7,7 @@ contributions les plus utiles à ce stade sont les retours sur `docs/CADRAGE.md`
 
 - **Langues** : documentation, rapports et commentaires de haut niveau en français ; code,
   identifiants, noms de fichiers de code et messages de commit en anglais.
-- **Branches** : développement sur `main` (trunk-based). Les contributions externes passent par une
+- **Branches** : développement sur `main` (`trunk-based`). Les contributions externes passent par une
   pull request vers `main`.
 - **Commits** : atomiques, au format [Conventional Commits](https://www.conventionalcommits.org/)
   (`feat:`, `fix:`, `docs:`, `chore:`, `ci:`, `test:`, `refactor:`), avec une portée quand elle aide

@@ -78,7 +78,7 @@ que ce projet paie aujourd'hui. Qui l'exige installe la même sonde ailleurs : e
 
 **Un code de sortie et un court message technique, rien d'autre.** Jamais un cours, jamais une
 adresse électronique, jamais un identifiant d'organisation. En cas d'échec, la sonde envoie l'erreur
-de `curl` — « couldn't connect to host », un code HTTP — et le nom de la tâche. Ce que le service de
+de `curl` — « `couldn't` connect to host », un code HTTP — et le nom de la tâche. Ce que le service de
 supervision apprend de plus que le public, c'est qu'un service existe et qu'il va bien ou mal.
 
 **Et il est facultatif.** Sans adresse de battement dans le fichier d'environnement, les tâches

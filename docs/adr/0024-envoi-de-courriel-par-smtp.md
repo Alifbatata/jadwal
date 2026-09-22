@@ -27,7 +27,7 @@ demanderait à une organisation d'ouvrir un compte AWS pour envoyer un lien de c
   message en clair.
 - **Robustesse** : délais bornés à l'établissement, à l'accueil et à l'inactivité ; réessai avec
   attente doublée sur une panne passagère ; **aucun** réessai sur un refus définitif.
-  `nodemailer` porte le code SMTP dans `responseCode` : 4xx est passager, 5xx est définitif, et une
+  `nodemailer` porte le code SMTP dans `responseCode` : `4xx` est passager, `5xx` est définitif, et une
   erreur sans code n'a pas atteint le serveur — DNS, connexion, TLS —, ce qui est passager par
   nature.
 - **Les traces ne portent jamais le message.** Le destinataire, le code, la commande SMTP en cause,

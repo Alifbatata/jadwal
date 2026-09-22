@@ -15,13 +15,13 @@ soit le fuseau de la machine. L'export ICS écrit des heures locales avec `TZID`
 ce qui n'exige aucune conversion en instant, sauf pour le `UNTIL` des règles de récurrence.
 
 Options considérées : `Date` avec des conventions (tout en UTC), une bibliothèque de dates avec
-fuseaux (luxon, dayjs + plugins, `Temporal` quand il sera disponible partout), ou des chaînes
+fuseaux (`luxon`, `dayjs` + plugins, `Temporal` quand il sera disponible partout), ou des chaînes
 typées et de l'arithmétique entière.
 
 ## Décision
 
-- Une date civile est une chaîne `IsoDate` (« AAAA-MM-JJ ») et une heure locale une chaîne
-  `LocalTime` (« HH:MM »), types littéraux de gabarit TypeScript, validés à l'entrée.
+- Une date civile est une chaîne `IsoDate` (« `AAAA-MM-JJ` ») et une heure locale une chaîne
+  `LocalTime` (« `HH`:MM »), types littéraux de gabarit TypeScript, validés à l'entrée.
 - Tout le calcul de dates se fait en **arithmétique entière** : jours depuis 1970-01-01 (algorithmes
   de Howard Hinnant `days_from_civil`, `civil_from_days`, `weekday_from_days`) et minutes depuis
   minuit. Aucun objet `Date` n'apparaît dans les calculs, ni dans les sources de `@jadwal/core`,

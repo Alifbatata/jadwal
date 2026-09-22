@@ -188,9 +188,6 @@ function dictionnaire() {
 // Extraire la prose, et rien qu'elle, sans perdre le compte des lignes.
 // ------------------------------------------------------------------------------------------------
 
-/** Autant d'espaces que le texte remplacé avait de caractères : les colonnes ne bougent pas. */
-const blanchir = (texte) => ' '.repeat(texte.length);
-
 /**
  * Ce qui remplaçe un bout de code en ligne ou une adresse au milieu d'une phrase.
  *
@@ -205,36 +202,49 @@ const SUBSTITUT = 'ceci';
 /** Le substitut, entouré d'espaces : collé à un mot, il en formerait un autre. */
 const POSER_SUBSTITUT = ` ${SUBSTITUT} `;
 
-/** Un document Markdown, moins ce qui n'est pas de la prose. */
+/**
+ * Un document Markdown, moins ce qui n'est pas de la prose.
+ *
+ * Trois passes, et l'ordre compte. Les blocs de code partent en premier, sinon leurs trois accents
+ * graves se feraient lire comme des débuts de code en ligne. Les spans entre accents graves partent
+ * ensuite, **sur le document entier** : ils enjambent souvent un retour à la ligne, et une passe
+ * ligne par ligne en ouvrait un au milieu d'un autre. Le reste se traite ligne par ligne.
+ */
 function prose(markdown) {
 	const lignes = markdown.split(/\r?\n/);
 	let dansUnBloc = false;
-	return lignes
-		.map((ligne) => {
-			if (/^\s*```/.test(ligne)) {
-				dansUnBloc = !dansUnBloc;
-				return '';
-			}
-			if (dansUnBloc) return '';
-			// Un tableau Markdown : les barres et les tirets d'alignement ne sont pas du texte.
-			if (/^\s*\|[\s:|-]+\|\s*$/.test(ligne)) return '';
-			return (
-				ligne
-					.replace(/^\s{4,}\S.*$/, blanchir)
-					// Une puce Markdown se lit comme un tiret de dialogue, et le correcteur réclame alors
-					// une majuscule après. Elle part, le texte de la puce reste.
-					.replace(/^(\s*)(?:[-*+]|\d+\.)\s+/, '$1')
-					.replace(/`[^`]*`/g, POSER_SUBSTITUT)
-					.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-					.replace(/https?:\/\/\S+/g, POSER_SUBSTITUT)
-					.replace(/<[^>]*>/g, ' ')
-					// Un titre n'a pas de point final, et le correcteur en réclame un à chaque fois. Le
-					// marqueur part, un point le remplace : le titre reste relu, sans ce faux signalement.
-					.replace(/^\s*#+\s*(.*)$/, (tout, titre) => ` ${titre.replace(/[.:!?]\s*$/, '')}.`)
-					.replace(/^\s*>+\s*/, ' ')
-					.replace(/[*_|]/g, ' ')
-			);
-		})
+	const sansBlocs = lignes.map((ligne) => {
+		if (/^\s*```/.test(ligne)) {
+			dansUnBloc = !dansUnBloc;
+			return '';
+		}
+		if (dansUnBloc) return '';
+		// Un tableau Markdown : les barres et les tirets d'alignement ne sont pas du texte.
+		if (/^\s*\|[\s:|-]+\|\s*$/.test(ligne)) return '';
+		// Un bloc de code indenté.
+		return /^\s{4,}\S/.test(ligne) ? '' : ligne;
+	});
+
+	const sansCode = sansBlocs
+		.join('\n')
+		.replace(/`[^`]*`/gs, (span) => POSER_SUBSTITUT + span.replace(/[^\n]/g, ''));
+
+	return sansCode
+		.split('\n')
+		.map((ligne) =>
+			ligne
+				// Une puce Markdown se lit comme un tiret de dialogue, et le correcteur réclame alors
+				// une majuscule après. Elle part, le texte de la puce reste.
+				.replace(/^(\s*)(?:[-*+]|\d+\.)\s+/, '$1')
+				.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+				.replace(/https?:\/\/\S+/g, POSER_SUBSTITUT)
+				.replace(/<[^>]*>/g, ' ')
+				// Un titre n'a pas de point final, et le correcteur en réclame un à chaque fois. Le
+				// marqueur part, un point le remplace : le titre reste relu, sans ce faux signalement.
+				.replace(/^\s*#+\s*(.*)$/, (tout, titre) => ` ${titre.replace(/[.:!?]\s*$/, '')}.`)
+				.replace(/^\s*>+\s*/, ' ')
+				.replace(/[*_|]/g, ' ')
+		)
 		.join('\n');
 }
 
@@ -242,6 +252,10 @@ function prose(markdown) {
 function gabarit(source) {
 	let texte = source
 		.replace(/<script[\s\S]*?<\/script>/g, (bloc) => bloc.replace(/[^\n]/g, ' '))
+		// Un `<code>` d'écran porte un nom de colonne ou de commande, jamais une phrase.
+		// Le substitut plutôt qu'un trou : ces noms se suivent souvent, séparés par des virgules,
+		// et un trou ferait voir au correcteur deux ponctuations collées.
+		.replace(/<code[^>]*>[\s\S]*?<\/code>/g, (bloc) => POSER_SUBSTITUT + bloc.replace(/[^\n]/g, ''))
 		.replace(/<style[\s\S]*?<\/style>/g, (bloc) => bloc.replace(/[^\n]/g, ' '))
 		.replace(/<!--[\s\S]*?-->/g, (bloc) => bloc.replace(/[^\n]/g, ' '));
 	// Les attributs, les expressions et les balises ne sont pas lus par un visiteur.
@@ -273,6 +287,16 @@ function gabarit(source) {
 }
 
 /**
+ * Une chaîne qui est un identifiant, et non une phrase : `moved_away`, `org`, `@jadwal/core`.
+ *
+ * Le correcteur ne sait pas les distinguer d'un mot mal écrit, et les ajouter au dictionnaire du
+ * projet reviendrait à y ranger du code. La règle est simple et se vérifie à l'œil : un seul mot,
+ * en minuscules, sans accent, éventuellement coupé de tirets bas, de points ou de barres obliques.
+ * Un texte d'écran d'un seul mot commence par une majuscule, ou porte un accent, ou une apostrophe.
+ */
+const IDENTIFIANT = /^[@a-z][a-z0-9_./-]*$/;
+
+/**
  * Un module, réduit à ce qui est entre guillemets. L'automate est celui du contrôle de style : il
  * connaît les trois délimiteurs et les échappements.
  */
@@ -280,12 +304,15 @@ function chaines(source) {
 	let sortie = '';
 	let etat = 'code';
 	let delimiteur = '';
+	/** La chaîne en cours, pour décider à sa fermeture si c'est une phrase ou un identifiant. */
+	let courante = '';
 	for (let index = 0; index < source.length; index += 1) {
 		const caractere = source[index];
 		if (etat === 'code') {
 			if (caractere === "'" || caractere === '"' || caractere === '`') {
 				etat = 'chaine';
 				delimiteur = caractere;
+				courante = '';
 				sortie += ' ';
 			} else if (caractere === '/' && source[index + 1] === '/') {
 				etat = 'ligne';
@@ -325,9 +352,17 @@ function chaines(source) {
 			}
 			if (caractere === delimiteur) {
 				etat = 'code';
+				// La chaîne vient d'être fermée : si c'est un identifiant, elle est effacée de la
+				// sortie, en gardant les retours à la ligne pour que le compte reste juste.
+				if (IDENTIFIANT.test(courante.trim())) {
+					sortie =
+						sortie.slice(0, sortie.length - courante.length) + courante.replace(/[^\n]/g, ' ');
+				}
+				courante = '';
 				sortie += ' ';
 				continue;
 			}
+			courante += caractere;
 			sortie += caractere === '\n' ? '\n' : caractere;
 			continue;
 		}
@@ -479,7 +514,17 @@ function corpus() {
 	const extrait = chaines(source);
 	for (let index = 0; index < debuts.length; index += 1) {
 		const [langue, de] = debuts[index];
-		const a = index + 1 < debuts.length ? debuts[index + 1][1] - 1 : lignes.length;
+		// Le dernier dictionnaire s'arrête où les dictionnaires s'arrêtent, et non à la fin du
+		// fichier : ce qui suit est du code partagé, et le relire en arabe n'a aucun sens.
+		const finDesDictionnaires = lignes.findIndex((ligne) =>
+			ligne.startsWith('const DICTIONNAIRES')
+		);
+		const a =
+			index + 1 < debuts.length
+				? debuts[index + 1][1] - 1
+				: finDesDictionnaires > 0
+					? finDesDictionnaires
+					: lignes.length;
 		ajouter(chemin, langue, tranche(extrait, de, a));
 	}
 	return morceaux;

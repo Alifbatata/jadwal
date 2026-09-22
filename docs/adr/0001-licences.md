@@ -10,8 +10,8 @@ hébergé par l'auteur, ou un auto-hébergement par une organisation avec Docker
 La V1 est gratuite ; des offres payantes viendront plus tard.
 
 Le dépôt est un monorepo pnpm (`apps/web`, `packages/core`, `packages/db`, `packages/widget`),
-portée npm `@jadwal/*`, tous les paquets en `private: true`. Le widget se distingue par son mode
-de diffusion : il est compilé en custom element `<jadwal-widget>`, en un seul fichier
+portée `npm` `@jadwal/*`, tous les paquets en `private: true`. Le widget se distingue par son mode
+de diffusion : il est compilé en `custom element` `<jadwal-widget>`, en un seul fichier
 `dist/jadwal-widget.js`, sans dépendance à l'exécution, utilisable avec une simple balise
 `<script>` que les sites des organisations collent chez eux. Contrainte : un site qui colle ce
 script ne doit avoir aucun doute sur ses obligations.
@@ -20,7 +20,7 @@ Le projet accepte des contributions externes. L'auteur veut pouvoir financer le 
 
 ## Décision
 
-- Tout le dépôt est sous licence AGPL-3.0-or-later. Le fichier `LICENSE` à la racine contient le
+- Tout le dépôt est sous licence `AGPL-3.0-or-later`. Le fichier `LICENSE` à la racine contient le
   texte intégral de l'AGPL-3.0, récupéré depuis la source officielle (gnu.org). Le champ `license`
   de chaque paquet, sauf le widget, vaut `AGPL-3.0-or-later`.
 - `packages/widget` est sous licence MIT, et lui seul : il porte son propre fichier `LICENSE` et
@@ -32,7 +32,7 @@ Le projet accepte des contributions externes. L'auteur veut pouvoir financer le 
 ## Conséquences
 
 - Un site qui intègre `dist/jadwal-widget.js` ne relève que de la licence MIT du widget ; le reste
-  du dépôt (`apps/web`, `packages/core`, `packages/db`) reste sous AGPL-3.0-or-later.
+  du dépôt (`apps/web`, `packages/core`, `packages/db`) reste sous `AGPL-3.0-or-later`.
 - `packages/widget` est le seul paquet dont la licence diffère de celle de la racine : son fichier
   `LICENSE` et son champ `license` sont à maintenir à part.
 - Le texte de l'AGPL-3.0 n'est pas retapé ni résumé : il est repris tel quel depuis gnu.org.

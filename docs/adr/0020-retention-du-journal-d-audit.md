@@ -49,7 +49,7 @@ au-delà de ce qui est utile.
 - La purge est testable sans mise en scène : un test pose des entrées de trente, vingt-cinq,
   vingt-trois et trois mois, joue la purge, et vérifie qu'il reste exactement les deux plus jeunes.
   Un autre vérifie que les rôles applicatifs se voient refuser la procédure.
-- Les fixtures d'un tel test ne peuvent pas être écrites par le rôle applicatif, puisqu'il ne peut
+- Les `fixtures` d'un tel test ne peuvent pas être écrites par le rôle applicatif, puisqu'il ne peut
   pas choisir l'horodatage : elles passent par le rôle du serveur, hors du chemin applicatif. C'est
   cohérent, puisque le test porte sur une tâche d'entretien et non sur un usage de l'application.
 - Passé vingt-quatre mois, un retour arrière sur une modification ancienne n'est plus possible. Le

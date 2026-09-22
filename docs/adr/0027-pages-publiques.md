@@ -7,7 +7,7 @@ WhatsApp et sur ses autres fiches en ligne. Elle est ouverte sur un téléphone,
 réseau mobile, par quelqu'un qui veut savoir s'il y a cours ce soir.
 
 Le cadrage en fixe le contenu (trois vues, filtres par public, détail déplié sur place) et
-l'ADR 0007 les langues (fr, de, it, ar, l'arabe en RTL complet avec des chiffres latins).
+l'ADR 0007 les langues (`fr`, de, `it`, `ar`, l'arabe en RTL complet avec des chiffres latins).
 L'ADR 0009 fixe le reste : aucun cookie, aucun traceur, aucune donnée personnelle côté public.
 
 Trois questions restaient ouvertes : où mettre la langue, combien de JavaScript, et jusqu'où ouvrir
@@ -63,7 +63,7 @@ du tout. C'est structurel plutôt que promis — il n'y a rien à oublier de ne 
 `frame-ancestors *` sur `/m/**`, `frame-ancestors 'none'` partout ailleurs.
 
 **Ce que cela ouvre** : n'importe quel site peut afficher la page d'une organisation dans une
-iframe. C'est précisément l'usage voulu, et il ne demande aucune inscription préalable d'un domaine
+`iframe`. C'est précisément l'usage voulu, et il ne demande aucune inscription préalable d'un domaine
 chez nous — une organisation colle son programme sur son propre site sans nous écrire.
 
 **Ce que cela n'ouvre pas** : la page n'a ni cookie, ni session, ni formulaire, ni action. Il n'y a

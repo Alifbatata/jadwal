@@ -27,7 +27,6 @@
 
 # CONTRIBUTING.md
 CONTRIBUTING.md | D_N_E_OU_E | une pull
-CONTRIBUTING.md | MOT_TRAIT_MOT | trunk-based
 
 # apps/web/src/lib/FormulaireCours.svelte
 apps/web/src/lib/FormulaireCours.svelte | FRENCH_WORD_REPEAT_RULE | Rythme Rythme
@@ -44,11 +43,8 @@ apps/web/src/lib/i18n.ts | AR_HOMOPHONES_REPLACE | الخطبة
 apps/web/src/lib/i18n.ts | AR_SIMPLE_REPLACE | الفترة
 apps/web/src/lib/i18n.ts | DE_PHRASE_REPETITION | Kalender abonnieren Kalender abonnieren
 apps/web/src/lib/i18n.ts | HUNSPELL_RULE_AR | Android
-apps/web/src/lib/i18n.ts | HUNSPELL_RULE_AR | er
 apps/web/src/lib/i18n.ts | HUNSPELL_RULE_AR | إث
-apps/web/src/lib/i18n.ts | MORFOLOGIK_RULE_IT_IT | mer
 apps/web/src/lib/i18n.ts | MORFOLOGIK_RULE_IT_IT | min
-apps/web/src/lib/i18n.ts | MORFOLOGIK_RULE_IT_IT | sab
 apps/web/src/lib/i18n.ts | POINT | Outlook
 apps/web/src/lib/i18n.ts | SWISS_GERMAN_SPELLER_RULE | Kalenderabo
 apps/web/src/lib/i18n.ts | SWISS_GERMAN_SPELLER_RULE | Sa
@@ -79,7 +75,6 @@ apps/web/src/routes/deconnexion/+page.svelte | PRONOMS_PERSONNELS_MINUSCULE | D�
 # apps/web/src/routes/prieres/+page.svelte
 apps/web/src/routes/prieres/+page.svelte | ACCORD_V_PPA | refusées
 apps/web/src/routes/prieres/+page.svelte | A_A_ACCENT2 | a
-apps/web/src/routes/prieres/+page.svelte | DATE | 01.01.2027
 apps/web/src/routes/prieres/+page.svelte | ESPACE_APRES_POINT | ceci …et
 apps/web/src/routes/prieres/+page.svelte | POINT | »
 apps/web/src/routes/prieres/+page.svelte | POINTS_SUSPENSIONS_SPACE | ceci …
@@ -89,7 +84,6 @@ apps/web/src/routes/prieres/+page.svelte | VPPA_SUJET_INVERSE | servi
 apps/web/src/routes/vendredi/+page.svelte | ACCORD_SUJET_VERBE | remplacent
 
 # apps/web/src/routes/widget/test/+page.svelte
-apps/web/src/routes/widget/test/+page.svelte | ESPACE_APRES_POINT | Ajoutez ?org
 apps/web/src/routes/widget/test/+page.svelte | OU_LEQUEL | où
 
 # docs/adr/0001-licences.md
@@ -99,7 +93,6 @@ docs/adr/0001-licences.md | A_ACCENT_A | ceci à
 docs/adr/0002-architecture-monorepo.md | ACCORD_R_PERS_VERBE | contiennent
 docs/adr/0002-architecture-monorepo.md | AGREEMENT_NUMERAL_PLURAL | compilé
 docs/adr/0002-architecture-monorepo.md | A_ACCENT_A | ceci à
-docs/adr/0002-architecture-monorepo.md | MOT_TRAIT_MOT | trunk-based
 
 # docs/adr/0003-modele-de-recurrence.md
 docs/adr/0003-modele-de-recurrence.md | ACCORD_SUJET_VERBE | porte
@@ -137,10 +130,6 @@ docs/adr/0013-isolation-par-rls-et-contexte-par-transaction.md | ACCORD_R_PERS_V
 docs/adr/0013-isolation-par-rls-et-contexte-par-transaction.md | A_ACCENT_A | ceci à
 docs/adr/0013-isolation-par-rls-et-contexte-par-transaction.md | PLACE_DE_LA_VIRGULE |  mais
 docs/adr/0013-isolation-par-rls-et-contexte-par-transaction.md | SON_SONT | son
-
-# docs/adr/0014-uuid-v7-generes-par-l-application.md
-docs/adr/0014-uuid-v7-generes-par-l-application.md | FR_COMPOUNDS_ALLER_RETOUR | aller- retour
-docs/adr/0014-uuid-v7-generes-par-l-application.md | TIRET | aller- retour
 
 # docs/adr/0015-journal-d-audit-en-insertion-seule.md
 docs/adr/0015-journal-d-audit-en-insertion-seule.md | PLACE_DE_LA_VIRGULE |  mais
@@ -189,6 +178,9 @@ docs/adr/0026-api-publique.md | SUBJ_SUBOR | peut
 # docs/adr/0027-pages-publiques.md
 docs/adr/0027-pages-publiques.md | FR_REPEATEDWORDS_SOUVENT | souvent
 
+# docs/adr/0028-flux-agenda-par-cours.md
+docs/adr/0028-flux-agenda-par-cours.md | ACCORD_R_PERS_VERBE | changent
+
 # docs/adr/0029-referencement-des-pages-publiques.md
 docs/adr/0029-referencement-des-pages-publiques.md | FRENCH_WORD_REPEAT_RULE | sous ceci sous ceci
 
@@ -232,7 +224,6 @@ docs/adr/0039-journal-d-acces-sans-adresse-ni-jeton.md | QUE_AVOIR | décidé
 
 # docs/adr/0040-conteneur-de-demarrage.md
 docs/adr/0040-conteneur-de-demarrage.md | SE_CE |  c'
-docs/adr/0040-conteneur-de-demarrage.md | TIRET | lui- même
 docs/adr/0040-conteneur-de-demarrage.md | TRAIT_UNION | non privilégiés
 
 # docs/adr/0041-ce-que-la-base-garde-vraiment-d-une-personne.md
@@ -247,7 +238,6 @@ docs/adr/0043-licence-mit.md | APOS_ESPACE | d' installer
 
 # docs/maquettes/public-agenda.md
 docs/maquettes/public-agenda.md | POINT | ouvre
-docs/maquettes/public-agenda.md | PRONOMS_PERSONNELS_MINUSCULE | : Vous
 docs/maquettes/public-agenda.md | SE_CE |  c'
 
 # docs/maquettes/public-cours.md

@@ -28,7 +28,7 @@ annuler la séance de demain, pas relire la fiche d'un cours.
 ### Le vocabulaire
 
 Celui de l'organisation : « séance » et non « occurrence », « cours » et non « événement »,
-« public » et non « audience », « Maghrib » et non « prayer anchor ». Le rythme s'affiche en
+« public » et non « audience », « Maghrib » et non « `prayer` `anchor` ». Le rythme s'affiche en
 phrase — « chaque semaine, le lundi et mercredi », « le dernier samedi du mois » — et jamais en
 règle de récurrence.
 
@@ -41,7 +41,7 @@ l'écran affiche à ce que `expandOccurrences` calcule.
 
 ### Ce que le responsable ne saisit jamais
 
-Les identifiants. Ils sont produits par le système, en UUID v7 (ADR 0014), et les contraintes d'UID
+Les identifiants. Ils sont produits par le système, en UUID v7 (ADR 0014), et les contraintes d'`UID`
 de l'étape 1 — pas d'espace, pas de virgule, jamais un identifiant qui finit par une date — ne
 remontent donc jamais jusqu'à lui.
 
@@ -57,7 +57,7 @@ remontent donc jamais jusqu'à lui.
 
 ### Le JavaScript améliore, il n'est jamais nécessaire
 
-Toutes les écritures passent par des form actions. Sans JavaScript : les onglets de langue sont
+Toutes les écritures passent par des `form` actions. Sans JavaScript : les onglets de langue sont
 tous dépliés, les blocs « annuler ou déplacer » sont tous ouverts, le résumé affiche l'état
 enregistré au lieu de suivre la frappe. Rien ne manque. Les tests postent des formulaires
 `application/x-www-form-urlencoded` avec `accept: text/html`, ce qui est exactement le chemin d'un

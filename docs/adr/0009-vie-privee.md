@@ -21,7 +21,7 @@ organisation. Appeler ou scraper un service tiers de calendrier de prière est e
 ## Décision
 
 - La V1 est sans inscription aux cours. Côté public, le système ne traite aucune donnée
-  personnelle, ne pose aucun cookie et n'embarque aucun analytics.
+  personnelle, ne pose aucun cookie et n'embarque aucun `analytics`.
 - Les seules données personnelles du système sont les emails des responsables.
 - L'API publique de `apps/web` est en lecture seule et sans cookie.
 - Le logiciel ne contient aucune télémétrie.
@@ -53,7 +53,7 @@ retour en arrière. Elle visait un outil de mesure d'audience — de ceux qui su
 page à l'autre. Ce compteur-là n'en est pas un : il incrémente un nombre par organisation, par jour
 et par type, dans une table qui n'a aucune autre colonne. Ni adresse, ni cookie, ni `Referer`, ni
 identifiant, ni horodatage, et rien gardé en mémoire au-delà de la requête. La phrase « côté public,
-le système ne traite aucune donnée personnelle, ne pose aucun cookie et n'embarque aucun analytics »
+le système ne traite aucune donnée personnelle, ne pose aucun cookie et n'embarque aucun `analytics` »
 reste donc vraie mot pour mot, et un test la vérifie en balayant toutes les colonnes de toutes les
 tables après des requêtes marquées.
 

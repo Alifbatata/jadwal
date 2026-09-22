@@ -36,7 +36,7 @@ L'étape 1 implémente la récurrence dans `packages/core` (ADR 0003) et doit tr
 ## Conséquences
 
 - Un cours « lundi et mercredi » est une seule fiche ; le widget, la page publique et le flux ICS
-  (un seul VEVENT avec `BYDAY=MO,WE`) le traitent comme tel.
+  (un seul `VEVENT` avec `BYDAY=MO,WE`) le traitent comme tel.
 - Une pause d'organisation suspend tous les cours en une saisie ; une pause de cours n'en suspend
   qu'un. Les responsables n'ont plus à annuler séance par séance.
 - Le statut `cancelled` reste réservé aux annulations ponctuelles : une séance en pause n'existe
@@ -44,7 +44,7 @@ L'étape 1 implémente la récurrence dans `packages/core` (ADR 0003) et doit tr
   vacances, mais il faut annuler explicitement une séance isolée que l'on veut montrer barrée.
 - Une exception saisie dans une pause n'a pas d'effet tant que la pause dure : l'interface
   (étape 4) devra le signaler au responsable.
-- Le modèle de la base (étape 2) porte les pauses dans une table à part, avec `courseId` nullable.
+- Le modèle de la base (étape 2) porte les pauses dans une table à part, avec `courseId` `nullable`.
 
 ## Statut
 

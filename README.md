@@ -41,7 +41,7 @@ infra/             déploiement en fichiers : Ansible, Compose, Caddy, systemd, 
 
 ## Commandes
 
-Prérequis : Node 24 (voir `.node-version`), git, corepack (encore distribué avec Node 24 ; la CI, elle,
+Prérequis : Node 24 (voir `.node-version`), git, `corepack` (encore distribué avec Node 24 ; la CI, elle,
 installe pnpm avec l'action officielle `pnpm/setup`). Docker est optionnel jusqu'à l'étape 2.
 
 ```
