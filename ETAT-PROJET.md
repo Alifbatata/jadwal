@@ -33,6 +33,13 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   au second passage, `pg_dump` sans mot de passe dans son propre conteneur, la clé privée consommée
   par une commande antérieure avant d'arriver à `age`, et une alerte qui se marquait elle-même en
   échec après avoir abouti.
+- **Étape 11** (courriel, fausses alertes, IPv6, premier compte) : **terminée le 2026-09-22**.
+  Le fichier d’environnement est lu **tel quel** par les deux conteneurs (`format: raw`), parce que
+  ses deux lecteurs ne lisaient pas pareil et tronquaient un secret en silence. La veille ne
+  s’inquiète plus d’une tâche avant son premier déclenchement, qu’elle demande à systemd plutôt que
+  de le recopier. Les erreurs de rclone ont disparu, et leur cause comptait : elles rendaient son
+  code de retour menteur, donc la preuve des verrous de conservation douteuse. Et le premier compte
+  super-admin s’ouvre par une commande, non plus par un `update` tapé dans la base.
 
 ## Fait
 
@@ -443,6 +450,7 @@ tests.
 | 8     | Heures réelles de la mosquée, iqama, prière du vendredi            | terminée |
 | 9     | Finitions, infrastructure en code, mise en production              | terminée |
 | 10    | Mise en ligne : déploiement réel, sauvegarde et déchiffrement      | terminée |
+| 11    | Courriel, fausses alertes, IPv6, premier compte super-admin        | terminée |
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
 passkeys, paiement.
