@@ -40,6 +40,14 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   de le recopier. Les erreurs de rclone ont disparu, et leur cause comptait : elles rendaient son
   code de retour menteur, donc la preuve des verrous de conservation douteuse. Et le premier compte
   super-admin s’ouvre par une commande, non plus par un `update` tapé dans la base.
+- **Étape 12** (Caddy à jour, conteneur de démarrage, finitions) : **terminée le 2026-09-22**.
+  Le conteneur exposé à Internet ne porte plus les deux mots de passe qui contournent la sécurité par
+  ligne : un conteneur de démarrage crée les rôles et passe les migrations, puis s'arrête, et
+  l'application ne démarre qu'après sa réussite (ADR 0040). Caddy quitte le paquet de la
+  distribution pour celui de l'éditeur, parce que la version distribuée ne connaît pas `log_skip` —
+  sans quoi `/healthz`, interrogé 576 fois par jour par la sonde, resterait majoritaire dans un
+  journal borné à quatorze jours. Et le dépôt se donne une règle de test qu'il n'avait pas :
+  **un script qu'aucun test ne lance n'est pas éprouvé**.
 
 ## Fait
 
@@ -427,6 +435,53 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   quatorze jours, fichier courant compris. `pnpm caddy:test` rejoue ce bloc dans un conteneur avec
   une requête porteuse de quatre secrets et relit la ligne écrite.
 
+Étape 12 :
+
+- **Le conteneur de l'application ne porte plus les deux mots de passe privilégiés** (ADR 0040) :
+  ni celui du superutilisateur de PostgreSQL, ni celui du propriétaire du schéma. Un service Compose
+  `init`, de la même image, les reçoit, crée les rôles, passe les migrations et **s'arrête** ;
+  `depends_on: { init: { condition: service_completed_successfully } }` fait que l'application ne
+  démarre pas avant. C'est une propriété du fichier Compose, donc elle tient aussi quand quelqu'un
+  tape `docker compose up` à la main. Les trois tâches qui écrivaient sous le propriétaire —
+  prières, purges, et la lecture des verrous par la veille — passent par ce même service.
+- **`/healthz` n'est plus journalisé** (ADR 0039 complété). La sonde de l'ADR 0038 interroge cette
+  adresse toutes les cinq minutes sur les deux piles : 576 lignes par jour, majoritaires sur
+  quatorze jours dans un journal qu'on lit justement pour le reste. `log_skip` demande Caddy 2.8.0
+  ou plus — le rôle Ansible relève la version et **refuse de poser le bloc** en deçà, parce qu'une
+  version plus ancienne ne saute pas la directive inconnue : elle refuse le Caddyfile entier, donc
+  tous les sites de la machine.
+- **Une commande d'exploitant retire toutes les passkeys d'un compte**
+  (`packages/db/scripts/reset-passkeys.mjs`). Elle fait deux choses, et la seconde compte autant que
+  la première : elle efface les passkeys, **et** elle remet à zéro la marque qui porte les pouvoirs
+  sur les sessions ouvertes. Les pouvoirs ne viennent pas de la table des passkeys mais de
+  `session.passkey_verified_at` : sans ce second geste, une session les garderait douze heures après
+  la remise à zéro.
+- **Un contrôle de la veille se taisait quand il ne pouvait pas contrôler.** Le relevé des verrous de
+  conservation se terminait par `|| true` : une commande en échec rendait une sortie vide, la sortie
+  vide voulait dire « rien à signaler », et la veille affirmait pour toujours qu'aucun verrou ne
+  traîne sans jamais avoir regardé. Trouvé en écrivant le test qui lance le script entier.
+- 1 230 tests dans le dépôt, plus trois commandes d'épreuve en conteneur (`pnpm env:test`,
+  `pnpm veille:test`, `pnpm caddy:test`). ADR 0040 ; `docs/SECURITE.md`, `docs/EXPLOITATION.md` et
+  `infra/compose/.env.example` mis à jour.
+
+**Un script ou une commande qu'aucun test ne _lance_ n'est pas éprouvé.** C'est la règle du dépôt
+depuis l'étape 12, et elle répond à la question laissée ouverte à l'étape 11.
+
+Chaque script et chaque commande a au moins un test qui **le lance comme en production** : en
+sous-processus, avec ses vrais arguments, et l'on vérifie son **effet** — en base, sur le disque, sur
+la sortie — jamais seulement son code de retour. Appeler une fonction exportée depuis un test ne
+compte pas.
+
+Elle vient d'un fait : à l'étape 11, `super-admin.mjs` passait sept tests et **ne s'exécutait pas**.
+Sept tests qui appelaient la fonction, aucun qui lançait le fichier ; la garde `isMainModule`
+rendait faux, le script se contentait d'être importé, et il sortait en 0. Le même motif s'est répété
+à l'étape 12 : c'est le test qui lance `jadwal-veille.sh` en entier qui a montré qu'un de ses
+contrôles se taisait quand il échouait.
+
+Pour ce qui ne tourne que sur un serveur — `systemctl`, `docker`, `curl` —, le script est lancé dans
+un conteneur avec des **doublures** pour ces commandes-là et de vrais fichiers pour le reste. Ce
+n'est pas la production, mais c'est le script, vraiment exécuté, du début à la fin.
+
 **Les scripts bash ne reçoivent pas de campagne de tests**, et c'est une décision, pas un oubli.
 Écrire un cadre de tests pour du shell coûterait plus qu'il ne rendrait sur neuf scripts dont
 l'essentiel du travail est fait par les programmes qu'ils appellent. La règle est autre : **chaque
@@ -451,6 +506,7 @@ tests.
 | 9     | Finitions, infrastructure en code, mise en production              | terminée |
 | 10    | Mise en ligne : déploiement réel, sauvegarde et déchiffrement      | terminée |
 | 11    | Courriel, fausses alertes, IPv6, premier compte super-admin        | terminée |
+| 12    | Caddy à jour, conteneur de démarrage, finitions                    | terminée |
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
 passkeys, paiement.
