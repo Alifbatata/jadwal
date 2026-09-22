@@ -17,6 +17,13 @@ trustPolicyExclude:
   - 'chokidar@4.0.3'
 blockExoticSubdeps: true
 
+# À propos des pairs facultatifs de `better-auth` — `@sveltejs/kit`, `svelte`, `vitest`,
+# `drizzle-kit` —, qui entraient dans l'image de production : `ignoredOptionalDependencies` a été
+# essayé ici, et **il n'y change rien**. Ce réglage refuse d'installer un pair facultatif absent ;
+# il ne refuse pas d'en lier un présent, et ces quatre-là le sont, puisqu'on développe avec.
+# La mesure est dans l'ADR 0043. Ce qui règle la question est `scripts/elaguer-arbre-de-production.mjs`,
+# lancé par le `Dockerfile` sur l'arbre déployé.
+
 # Depuis pnpm 11, ces réglages se lisent ici et non plus dans .npmrc.
 saveExact: true
 engineStrict: true

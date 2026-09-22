@@ -194,7 +194,8 @@ jobs:
           tags: |
             ${{ env.JADWAL_IMAGE_NAME }}:main
             ${{ env.JADWAL_IMAGE_NAME }}:${{ github.sha }}
-          # Trois étiquettes OCI, et trois seulement. Couper l'attestation de provenance a aussi
+          # Deux étiquettes OCI, et deux seulement. La licence est déclarée dans le `Dockerfile`,
+          # parce qu'elle décrit le contenu de l'image et non sa construction. Couper l'attestation de provenance a aussi
           # supprimé ce qui reliait une image à son commit : plus rien dans l'image ne disait d'où
           # elle venait, et un tiers qui n'a que l'image ne pouvait pas remonter à la source.
           #
@@ -206,7 +207,6 @@ jobs:
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.licenses=AGPL-3.0-or-later
           # Le cache du registre : une construction qui ne change que le code applicatif ne
           # réinstalle pas les dépendances.
           cache-from: type=gha

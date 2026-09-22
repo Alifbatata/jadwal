@@ -26,7 +26,9 @@
 		"env:test": "node scripts/eprouver-env-brut.mjs",
 		"veille:test": "node scripts/eprouver-veille-taches.mjs",
 		"conditions:pdf": "node scripts/conditions-pdf.mjs",
-		"conditions:test": "node scripts/eprouver-conditions-pdf.mjs"
+		"conditions:test": "node scripts/eprouver-conditions-pdf.mjs",
+		"image:test": "node scripts/eprouver-image.mjs",
+		"licences": "node scripts/licences-tierces.mjs"
 	},
 	"devDependencies": {
 		"@eslint/js": "10.0.1",

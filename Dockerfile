@@ -12,10 +12,16 @@
 #
 # Ce qui n'est pas dans l'image finale : ni pnpm, ni `.git`, ni les tests, ni les sources d'`apps/web`.
 #
-# Ce qui y reste et ne devrait pas, mesuré et assumé : `pnpm deploy --prod` élague les dépendances
-# de développement du paquet déployé, mais pas celles des paquets du workspace dont il dépend —
-# `drizzle-kit`, `typescript` et `esbuild` arrivent par `@jadwal/db`. L'arbre pèse 227 Mio là où une
-# centaine suffirait. C'est du disque, pas de la mémoire : rien de cela n'est chargé à l'exécution.
+# **L'arbre déployé est élagué.** `pnpm deploy --prod` retire les dépendances de développement,
+# mais il ne peut pas retirer ceci : `better-auth` déclare `@sveltejs/kit`, `svelte`, `vitest` et
+# `drizzle-kit` en **pairs facultatifs**, pnpm les résout depuis ce que le dépôt contient déjà, et
+# l'arête entre dans la fermeture de production. `vite` arrive avec eux, et `vite` tire
+# `lightningcss`. L'image portait ainsi un cadre de tests, deux compilateurs et un empaqueteur :
+# 193 paquets, 237 Mio, dont rien n'est chargé à l'exécution.
+#
+# `scripts/elaguer-arbre-de-production.mjs` ne garde que ce qu'un `import` résolu par Node peut
+# atteindre. `scripts/eprouver-image.mjs` le vérifie en lançant l'image pour de vrai : un arbre
+# élagué qui ne sert plus serait pire que le disque qu'il rend.
 #
 # Les images de base sont épinglées par digest, comme PostgreSQL depuis l'étape 0 (ADR 0010). Une
 # étiquette mouvante ferait qu'une reconstruction de la même version du code produirait une image
@@ -38,7 +44,12 @@ RUN --mount=type=cache,target=/pnpm/store,sharing=locked \
 	# Ce que `deploy` recopie du paquet et qui n'a rien à faire en production : les sources, les
 	# tests d'accès, et les fichiers de configuration des outils de développement.
 	rm -rf /app/out/src /app/out/tests /app/out/vite.config.ts /app/out/vitest.config.ts \
-		/app/out/tsconfig.json /app/out/pnpm-lock.yaml /app/out/pnpm-workspace.yaml
+		/app/out/tsconfig.json /app/out/pnpm-lock.yaml /app/out/pnpm-workspace.yaml && \
+	# Ce qui n'est atteignable par aucun `import` part. L'ordre compte : l'avis des licences se
+	# lit **après**, sur ce qui reste, pour qu'il décrive l'image et non l'arbre du poste.
+	node scripts/elaguer-arbre-de-production.mjs /app/out && \
+	node scripts/licences-tierces.mjs /app/out > /app/out/LICENCES-TIERCES.md && \
+	cp LICENSE /app/out/LICENSE
 
 # La même image, le même digest : l'étage d'exécution ne doit pas dériver de celui qui construit.
 FROM node@sha256:8ec5d7557396cfe32d21c3f9c13072355ceab22b584578ca4bb28af31120cffe AS runtime
@@ -49,6 +60,11 @@ ENV NODE_ENV=production
 USER node
 
 COPY --chown=node:node --from=build /app/out /app
+
+# La licence est une propriété du **contenu** de l'image : elle se déclare ici, où le contenu se
+# décide, et non dans la CI, qui ne sait que d'où vient la construction. `source` et `revision`
+# restent à la CI, pour la raison inverse.
+LABEL org.opencontainers.image.licenses="MIT"
 
 EXPOSE 3000
 # Pas de `HEALTHCHECK` ici : le conteneur est piloté par Compose, qui porte le sien. Une sonde
