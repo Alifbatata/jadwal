@@ -26,7 +26,17 @@
  *
  * Les documents, les gabarits des écrans, et les chaînes des modules de messages — les mêmes
  * surfaces que le contrôle de style, plus les ADR et le `README`. Les commentaires de code et le
- * code en sont exclus : ils sont écrits pour celui qui reprend le projet.
+ * code en sont exclus : ils sont écrits pour celui qui reprend le projet. Les maquettes de
+ * `docs/maquettes/` aussi : elles décrivent les écrans pour celui qui les construit.
+ *
+ * Avant de relire, il vérifie qu'il n'a oublié aucun document : chaque fichier Markdown suivi de
+ * `docs/`, hors `docs/maquettes/`, plus le `README`, `CONTRIBUTING.md` et `SECURITY.md`. Il en
+ * oubliait huit, les conditions comprises (`documentsOublies`).
+ *
+ * Les dictionnaires des pages publiques sont relus langue par langue. Trois modules rangent aussi
+ * leurs phrases par langue, sous des clés `fr:`, `de:`, `it:` et `ar:` : la mise en mots des pages
+ * publiques, le libellé d'ancrage du flux agenda et le widget. Chaque chaîne y est relue dans la
+ * langue de sa clé (`parLangue`).
  *
  * Le Markdown est nettoyé **ligne à ligne**, en remplaçant par des espaces ce qui n'est pas de la
  * prose : blocs de code, code en ligne, adresses, balises. Le compte de lignes est donc conservé, et
@@ -38,7 +48,7 @@
  * ignorées est ci-dessous, chacune avec la sienne. Et il ne sait pas tout : voir `AR` plus bas.
  */
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -243,6 +253,9 @@ function prose(markdown) {
 				// marqueur part, un point le remplace : le titre reste relu, sans ce faux signalement.
 				.replace(/^\s*#+\s*(.*)$/, (tout, titre) => ` ${titre.replace(/[.:!?]\s*$/, '')}.`)
 				.replace(/^\s*>+\s*/, ' ')
+				// Une emphase collée à une élision, « l'**iqama** » : remplacée par une espace comme les
+				// autres, elle donnait « l' iqama », et le correcteur signalait l'espace après l'apostrophe.
+				.replace(/(['’])[*_]+/g, '$1')
 				.replace(/[*_|]/g, ' ')
 		)
 		.join('\n');
@@ -299,13 +312,20 @@ const IDENTIFIANT = /^[@a-z][a-z0-9_./-]*$/;
 /**
  * Un module, réduit à ce qui est entre guillemets. L'automate est celui du contrôle de style : il
  * connaît les trois délimiteurs et les échappements.
+ *
+ * `identifiants: false` garde aussi les chaînes d'un seul mot en minuscules. C'est le cas des
+ * valeurs rangées sous une clé de langue (`parLangue`) et des dictionnaires de `i18n.ts` : elles
+ * sont du texte par construction, et le filtre y effaçait justement ce qu'il fallait relire,
+ * « premier », « allemand », « ultimo », « lundi », « oggi ».
  */
-function chaines(source) {
+function chaines(source, { identifiants = true } = {}) {
 	let sortie = '';
 	let etat = 'code';
 	let delimiteur = '';
 	/** La chaîne en cours, pour décider à sa fermeture si c'est une phrase ou un identifiant. */
 	let courante = '';
+	/** Où la chaîne en cours commence dans la sortie : c'est cette plage qu'on efface. */
+	let debutDansLaSortie = 0;
 	for (let index = 0; index < source.length; index += 1) {
 		const caractere = source[index];
 		if (etat === 'code') {
@@ -314,6 +334,7 @@ function chaines(source) {
 				delimiteur = caractere;
 				courante = '';
 				sortie += ' ';
+				debutDansLaSortie = sortie.length;
 			} else if (caractere === '/' && source[index + 1] === '/') {
 				etat = 'ligne';
 				sortie += ' ';
@@ -353,10 +374,13 @@ function chaines(source) {
 			if (caractere === delimiteur) {
 				etat = 'code';
 				// La chaîne vient d'être fermée : si c'est un identifiant, elle est effacée de la
-				// sortie, en gardant les retours à la ligne pour que le compte reste juste.
-				if (IDENTIFIANT.test(courante.trim())) {
+				// sortie, en gardant les retours à la ligne pour que le compte reste juste. Toute sa
+				// plage, et non ses seuls caractères : un gabarit y a aussi écrit un substitut par
+				// interpolation, et compter à rebours depuis la fin laissait « le ce » de `le ${jours}`.
+				if (identifiants && IDENTIFIANT.test(courante.trim())) {
 					sortie =
-						sortie.slice(0, sortie.length - courante.length) + courante.replace(/[^\n]/g, ' ');
+						sortie.slice(0, debutDansLaSortie) +
+						sortie.slice(debutDansLaSortie).replace(/[^\n]/g, ' ');
 				}
 				courante = '';
 				sortie += ' ';
@@ -380,6 +404,140 @@ function chaines(source) {
 		sortie += caractere === '\n' ? '\n' : ' ';
 	}
 	return sortie;
+}
+
+/**
+ * L'indice qui suit la chaîne ouverte en `debut` : guillemet simple, double, ou gabarit. Le code
+ * d'un `${…}` peut porter d'autres chaînes, et même des gabarits : il est parcouru par
+ * `finDeValeur`, qui s'arrête à l'accolade qui le ferme.
+ */
+function finDeChaine(source, debut) {
+	const delimiteur = source[debut];
+	let index = debut + 1;
+	while (index < source.length) {
+		const caractere = source[index];
+		if (caractere === '\\') index += 2;
+		else if (caractere === delimiteur) return index + 1;
+		else if (delimiteur === '`' && caractere === '$' && source[index + 1] === '{') {
+			index = finDeValeur(source, index + 2, { virgule: false }) + 1;
+		} else index += 1;
+	}
+	return source.length;
+}
+
+/**
+ * La fin d'une valeur de code commencée en `debut` : la première virgule, le premier point-virgule
+ * ou le premier fermant de niveau zéro. Parenthèses, crochets et accolades sont comptés ; chaînes,
+ * gabarits et commentaires sont sautés d'un bloc, pour qu'une virgule ou une accolade écrite dans
+ * un texte ne coupe pas la valeur. Dans un `${…}`, seule l'accolade fermante arrête.
+ */
+function finDeValeur(source, debut, { virgule = true } = {}) {
+	let profondeur = 0;
+	let index = debut;
+	while (index < source.length) {
+		const caractere = source[index];
+		if (caractere === "'" || caractere === '"' || caractere === '`') {
+			index = finDeChaine(source, index);
+			continue;
+		}
+		if (caractere === '/' && source[index + 1] === '/') {
+			const fin = source.indexOf('\n', index);
+			index = fin < 0 ? source.length : fin;
+			continue;
+		}
+		if (caractere === '/' && source[index + 1] === '*') {
+			const fin = source.indexOf('*/', index + 2);
+			index = fin < 0 ? source.length : fin + 2;
+			continue;
+		}
+		if ('([{'.includes(caractere)) profondeur += 1;
+		else if (')]}'.includes(caractere)) {
+			if (profondeur === 0) return index;
+			profondeur -= 1;
+		} else if (virgule && profondeur === 0 && (caractere === ',' || caractere === ';')) {
+			return index;
+		}
+		index += 1;
+	}
+	return source.length;
+}
+
+/**
+ * Un module qui range ses phrases par langue, découpé en autant de textes que de langues.
+ *
+ * Chaque clé `fr:`, `de:`, `it:` ou `ar:` d'un littéral d'objet donne une plage : sa valeur, une
+ * chaîne, une fonction fléchée ou un objet, délimitée par `finDeValeur`. La clé doit suivre une
+ * accolade ou une virgule, ce qui écarte un ternaire et une annotation de type. Quand deux plages
+ * s'emboîtent, **la plus intérieure l'emporte** : dans `fr: { fr: 'français', de: 'Französisch' }`,
+ * la clé extérieure est la langue enseignée, et c'est la clé intérieure qui dit dans quelle
+ * langue « Französisch » est écrit.
+ *
+ * Pour chaque langue, le texte rendu est le fichier entier, où tout ce qui n'appartient pas à cette
+ * langue est blanchi, retours à la ligne gardés : les numéros de ligne restent ceux du fichier, et
+ * `chaines` fait le reste comme pour les autres modules.
+ */
+function parLangue(source) {
+	const langues = new Set(LANGUES.map(([langue]) => langue));
+	const plages = [];
+	const mot = /[A-Za-z_$][\w$]*/y;
+	const deuxPoints = /\s*:(?!:)\s*/y;
+	/** Le dernier caractère significatif du code, commentaires et blancs exclus. */
+	let precedent = '';
+	let index = 0;
+	while (index < source.length) {
+		const caractere = source[index];
+		if (caractere === "'" || caractere === '"' || caractere === '`') {
+			index = finDeChaine(source, index);
+			precedent = caractere;
+			continue;
+		}
+		if (caractere === '/' && source[index + 1] === '/') {
+			const fin = source.indexOf('\n', index);
+			index = fin < 0 ? source.length : fin;
+			continue;
+		}
+		if (caractere === '/' && source[index + 1] === '*') {
+			const fin = source.indexOf('*/', index + 2);
+			index = fin < 0 ? source.length : fin + 2;
+			continue;
+		}
+		mot.lastIndex = index;
+		const lu = mot.exec(source);
+		if (lu) {
+			const suite = index + lu[0].length;
+			deuxPoints.lastIndex = suite;
+			if (
+				langues.has(lu[0]) &&
+				(precedent === '{' || precedent === ',') &&
+				deuxPoints.test(source)
+			) {
+				const debut = deuxPoints.lastIndex;
+				plages.push({ langue: lu[0], debut, fin: finDeValeur(source, debut) });
+			}
+			// La valeur n'est pas sautée : les clés qu'elle contient sont cherchées à leur tour.
+			index = suite;
+			precedent = lu[0].at(-1);
+			continue;
+		}
+		if (!/\s/.test(caractere)) precedent = caractere;
+		index += 1;
+	}
+
+	// Les plus longues d'abord : une plage intérieure, plus courte, recouvre ensuite la sienne.
+	const langueDe = new Array(source.length).fill('');
+	plages.sort((a, b) => b.fin - b.debut - (a.fin - a.debut));
+	for (const { langue, debut, fin } of plages) langueDe.fill(langue, debut, fin);
+
+	const textes = new Map();
+	for (const langue of langues) {
+		let texte = '';
+		for (let position = 0; position < source.length; position += 1) {
+			const caractere = source[position];
+			texte += langueDe[position] === langue || caractere === '\n' ? caractere : ' ';
+		}
+		textes.set(langue, texte);
+	}
+	return textes;
 }
 
 /** Ne garde que les lignes d'un intervalle, en blanchissant les autres. */
@@ -426,7 +584,13 @@ function degraisser(texte) {
 		.join('\n');
 }
 
-/** Les fichiers suivis par git qui correspondent à un motif. */
+/**
+ * Les fichiers suivis par git qui correspondent à un motif.
+ *
+ * Un motif qui porte `**` s'écrit avec la magie `:(glob)`. Sans elle, git compare le motif au
+ * chemin entier comme `fnmatch` sans `FNM_PATHNAME` : `**` n'y a aucun sens particulier, et
+ * `docs/**\/*.md` exige une barre oblique de plus que `docs/CONDITIONS.md` n'en porte.
+ */
 function fichiersDe(motif) {
 	return execFileSync('git', ['ls-files', '--', motif], { cwd: racine, encoding: 'utf8' })
 		.split('\n')
@@ -467,7 +631,15 @@ function corpus() {
 		if (paragraphes.length > 0) morceaux.push({ chemin, langue, paragraphes });
 	};
 
-	for (const chemin of [...fichiersDe('docs/**/*.md'), 'CONTRIBUTING.md', 'SECURITY.md']) {
+	// `docs/maquettes/` décrit les écrans pour celui qui les construit : structure, ordre des
+	// éléments, comportements. Aucun visiteur ni responsable ne la lit, et ses cellules de tableau et
+	// ses libellés cités hors de toute phrase demandaient chacun une exception. Elle sort du corpus.
+	// `docs/maquettes.md`, à côté du dossier, reste : c'est un document, qui dit d'où viennent les
+	// maquettes et ce qu'elles valent.
+	const documents = fichiersDe(':(glob)docs/**/*.md').filter(
+		(chemin) => !chemin.startsWith('docs/maquettes/')
+	);
+	for (const chemin of [...documents, 'CONTRIBUTING.md', 'SECURITY.md']) {
 		try {
 			ajouter(chemin, 'fr', prose(readFileSync(join(racine, chemin), 'utf8')));
 		} catch {
@@ -479,7 +651,7 @@ function corpus() {
 	const anglais = readme.split(/\r?\n/).findIndex((ligne) => /^##\s+English/.test(ligne));
 	ajouter('README.md', 'fr', tranche(prose(readme), 1, anglais > 0 ? anglais : 10_000));
 
-	for (const chemin of fichiersDe('apps/web/src/**/*.svelte')) {
+	for (const chemin of fichiersDe(':(glob)apps/web/src/**/*.svelte')) {
 		ajouter(chemin, 'fr', gabarit(readFileSync(join(racine, chemin), 'utf8')));
 	}
 
@@ -488,6 +660,19 @@ function corpus() {
 		'apps/web/src/lib/server/mail/messages.ts'
 	]) {
 		ajouter(chemin, 'fr', chaines(readFileSync(join(racine, chemin), 'utf8')));
+	}
+
+	// Trois modules rangent leurs phrases par langue, sous des clés `fr:`, `de:`, `it:` et `ar:` :
+	// la mise en mots des pages publiques, le libellé d'ancrage du flux agenda, et le widget. Chaque
+	// chaîne y est relue dans la langue de sa clé, et rien d'autre du fichier n'est relu.
+	for (const chemin of [
+		'apps/web/src/lib/public/affichage.ts',
+		'apps/web/src/lib/server/agenda.ts',
+		'packages/widget/src/element.ts'
+	]) {
+		for (const [langue, texte] of parLangue(readFileSync(join(racine, chemin), 'utf8'))) {
+			ajouter(chemin, langue, chaines(texte, { identifiants: false }));
+		}
 	}
 
 	// La page de garde du PDF : ses dix points, lus depuis le module qui les porte. Extraire les
@@ -511,7 +696,11 @@ function corpus() {
 		if (index >= 0) debuts.push([langue, index + 1]);
 	}
 	debuts.sort((a, b) => a[1] - b[1]);
-	const extrait = chaines(source);
+	// Sans le filtre des identifiants, comme pour les valeurs rangées sous une clé de langue : entre
+	// `const fr: Dictionnaire` et `const DICTIONNAIRES`, chaque chaîne est du texte, et le filtre y
+	// effaçait les jours, les mois, « heute », « oggi » et « lezioni ». Le code du fichier, qui porte
+	// de vrais identifiants (`'rtl'`, `'fr'`), est hors des tranches : `tranche` le blanchit.
+	const extrait = chaines(source, { identifiants: false });
 	for (let index = 0; index < debuts.length; index += 1) {
 		const [langue, de] = debuts[index];
 		// Le dernier dictionnaire s'arrête où les dictionnaires s'arrêtent, et non à la fin du
@@ -530,6 +719,31 @@ function corpus() {
 	return morceaux;
 }
 
+/**
+ * Les documents que le corpus doit contenir, pris ailleurs que dans les motifs qui le construisent.
+ *
+ * Un motif mal écrit ne lève aucune erreur : il rend moins de fichiers, et le correcteur conclut
+ * « rien à signaler » sur ce qu'il n'a pas lu. C'est arrivé : sans la magie `:(glob)`, git lit
+ * `docs/**\/*.md` comme s'il exigeait un sous-dossier, et les huit documents de la racine de
+ * `docs/`, les conditions comprises, n'ont été relus par personne de l'étape 14 à l'étape 16.
+ *
+ * La référence est donc la liste entière des fichiers suivis, filtrée par une expression régulière
+ * qui ne doit rien à la syntaxe des motifs de git. `docs/CONDITIONS.md` est exigé en plus, même
+ * absent du disque : si le texte des conditions changeait de nom, le correcteur le dirait au lieu
+ * de relire tout le reste et de conclure qu'il n'y a rien à signaler.
+ */
+function documentsOublies(morceaux) {
+	const lus = new Set(morceaux.map((morceau) => morceau.chemin));
+	const suivis = execFileSync('git', ['ls-files'], { cwd: racine, encoding: 'utf8' }).split('\n');
+	const attendus = suivis.filter(
+		(chemin) =>
+			(/^docs\/(?!maquettes\/).+\.md$/.test(chemin) ||
+				['README.md', 'CONTRIBUTING.md', 'SECURITY.md'].includes(chemin)) &&
+			existsSync(join(racine, chemin))
+	);
+	return [...new Set(['docs/CONDITIONS.md', ...attendus])].filter((chemin) => !lus.has(chemin));
+}
+
 // ------------------------------------------------------------------------------------------------
 
 const dossier = join(racine, '.orthographe');
@@ -540,6 +754,16 @@ process.on('exit', () => rmSync(dossier, { recursive: true, force: true }));
 const mots = dictionnaire();
 const relues = acceptees();
 const morceaux = corpus();
+const oublies = documentsOublies(morceaux);
+if (oublies.length > 0) {
+	process.stderr.write(
+		`\nOrthographe : ${oublies.length} document(s) absents du corpus, rien n'est relu.\n\n` +
+			oublies.map((chemin) => `      ${chemin}\n`).join('') +
+			`\n  Un correcteur qui ne lit pas un document ne prouve rien sur lui : corriger la\n` +
+			`  sélection des fichiers dans corpus(), ou dire dans documentsOublies() pourquoi il sort.\n`
+	);
+	process.exit(1);
+}
 const trouvailles = [];
 let relus = 0;
 let ignorees = 0;

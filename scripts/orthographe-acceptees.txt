@@ -12,8 +12,9 @@
 #   1. **Un bout de code au milieu d'une phrase.** Il est remplacé par le substitut « ceci », qui
 #      est masculin singulier ; « les `package.json` ne contiennent » devient « ceci ne contiennent »,
 #      et l'accord se plaint. Le texte, lui, est juste.
-#   2. **Un tableau ou une maquette.** Une cellule n'est pas une phrase : « cases : français,
-#      allemand » n'a ni sujet ni verbe.
+#   2. **Un tableau.** Une cellule n'est pas une phrase : elle n'a souvent ni sujet ni verbe.
+#      Les maquettes de `docs/maquettes/`, qui en étaient pleines, ne sont plus relues : elles
+#      décrivent les écrans pour celui qui les construit, et aucun utilisateur ne les lit.
 #   3. **Une notation technique** : `-120..240`, `<=`, `webcal:`, un nom de colonne, un sigle.
 #   4. **Un abrégé de jour ou de mois** : `Sa`, `mer`, `sab`, `min`. Ce sont les formes courtes des
 #      écrans, et elles sont voulues.
@@ -43,8 +44,15 @@ apps/web/src/lib/i18n.ts | AR_HOMOPHONES_REPLACE | الخطبة
 apps/web/src/lib/i18n.ts | AR_SIMPLE_REPLACE | الفترة
 apps/web/src/lib/i18n.ts | DE_PHRASE_REPETITION | Kalender abonnieren Kalender abonnieren
 apps/web/src/lib/i18n.ts | HUNSPELL_RULE_AR | Android
-apps/web/src/lib/i18n.ts | HUNSPELL_RULE_AR | إث
+# « والصقه », « et colle-la » : l'impératif « الصق » que la page écrit déjà deux fois sans
+# signalement (« والصق العنوان »), avec le pronom « ـه » collé. Hunspell ne connaît pas la forme
+# suffixée. C'est la phrase demandée par la relecture de l'arabe, mot pour mot.
+apps/web/src/lib/i18n.ts | HUNSPELL_RULE_AR | والصقه
 apps/web/src/lib/i18n.ts | MORFOLOGIK_RULE_IT_IT | min
+# « mer » et « sab », mercoledì et sabato abrégés pour l'en-tête de la vue Mois (famille 4). Le
+# filtre des identifiants les effaçait avant qu'il ne soit levé sur les dictionnaires.
+apps/web/src/lib/i18n.ts | MORFOLOGIK_RULE_IT_IT | mer
+apps/web/src/lib/i18n.ts | MORFOLOGIK_RULE_IT_IT | sab
 apps/web/src/lib/i18n.ts | POINT | Outlook
 apps/web/src/lib/i18n.ts | SWISS_GERMAN_SPELLER_RULE | Kalenderabo
 apps/web/src/lib/i18n.ts | SWISS_GERMAN_SPELLER_RULE | Sa
@@ -85,6 +93,80 @@ apps/web/src/routes/vendredi/+page.svelte | ACCORD_SUJET_VERBE | remplacent
 
 # apps/web/src/routes/widget/test/+page.svelte
 apps/web/src/routes/widget/test/+page.svelte | OU_LEQUEL | où
+
+# Les documents de la racine de `docs/`, relus pour la première fois à l'étape 16 : le motif qui
+# les choisissait exigeait un sous-dossier. Ce qui revient d'un fichier à l'autre, et n'est pas une
+# faute : « pas X mais Y » et « simple mais moins jolie » ne prennent pas de virgule ; les
+# « Style : mot répété » tombent sur un terme tenu exprès d'une section à l'autre (« annoncé »,
+# « vrai », « sauf ») ; « Vendredi », avec sa majuscule, est le nom d'un écran.
+
+# docs/API.md
+# Tableaux (famille 2) : « seulement » d'une ligne à la suivante, « c'est » en tête de cellule, la
+# cellule finale sans point, « atteinte » accordé à « limite ». Substitut (famille 1) :
+# « `moved_away` à sa date », et « l'`ETag` », développé en « le ceci ». « 120 » ouvre une puce, et
+# « explicite » est l'adjectif de « demande ».
+docs/API.md | ACCORD_SUJET_VERBE | explicite
+docs/API.md | AGREEMENT_POSTPONED_ADJ | atteinte
+docs/API.md | A_ACCENT_A | ceci à
+docs/API.md | IMP_PRON | Renvoyez le
+docs/API.md | NOMBRES_EN_LETTRES | 120
+docs/API.md | PLACE_DE_LA_VIRGULE | c'est
+docs/API.md | PLACE_DE_LA_VIRGULE | mais
+docs/API.md | POINT | )
+docs/API.md | POINTS_SUSPENSIONS_SPACE | lundi …
+docs/API.md | REP_SEULEMENT | seulement
+
+# docs/CADRAGE.md
+# « les annuaires où elle est inscrite » : un lieu. « rendues côté serveur » : « côté serveur » est
+# une locution, « rendues » s'accorde avec « pages ».
+docs/CADRAGE.md | J_N | rendues côté
+docs/CADRAGE.md | OU_LEQUEL | où
+
+# docs/CALENDRIER-PRIERES.md
+docs/CALENDRIER-PRIERES.md | JOURS | Vendredi
+docs/CALENDRIER-PRIERES.md | VIRG_NON_TROUVEE | vous
+
+# docs/CONDITIONS.md
+# Le texte que le juriste a lu : rien n'y est touché pour un faux signalement. Tableaux
+# (famille 2) : l'en-tête « Ce qui est conservé / Durée », la cellule finale « chaque nuit »,
+# « chiffrées » accordé à « sauvegardes » et non à la cellule voisine. « Voyez plus bas » est la
+# formule du renvoi, et « au bout d'un à deux jours » élide devant le numéral, ce que l'usage admet.
+docs/CONDITIONS.md | J_N | chiffrées Union
+docs/CONDITIONS.md | PAS_D_ELISION | d'un
+docs/CONDITIONS.md | POINT | nuit
+docs/CONDITIONS.md | VOIR_REGARDER | Voyez
+docs/CONDITIONS.md | VPPA_SUJET_INVERSE | conservé
+
+# docs/EXPLOITATION.md
+# « Toutes les passkeys d'un compte sont perdues » : « perdues » s'accorde avec « passkeys ». « la
+# seconde compte autant » : « compte » est le verbe. « et ceci et ceci » : quatre noms de fichier
+# (famille 1).
+docs/EXPLOITATION.md | ETRE_VPPA_OU_ADJ | perdues
+docs/EXPLOITATION.md | FRENCH_WORD_REPEAT_RULE | et ceci et ceci
+docs/EXPLOITATION.md | FR_REPEATEDWORDS_VRAI | vrai
+docs/EXPLOITATION.md | J_N2 | seconde compte
+
+# docs/INTEGRATION.md
+# « Embed » : le libellé anglais des éditeurs de site cités, écrit tel qu'ils l'affichent. « est ce
+# même lien » n'est pas une question.
+docs/INTEGRATION.md | EST_CE | est ce
+docs/INTEGRATION.md | FR_REPEATEDWORDS_ANNONCER | annoncé
+docs/INTEGRATION.md | FR_SPELLING_RULE | Embed
+docs/INTEGRATION.md | JOURS | Vendredi
+docs/INTEGRATION.md | PLACE_DE_LA_VIRGULE | mais
+
+# docs/SECURITE.md
+# « quoi qu'écrive le code » : quel que soit ce qu'il écrit, en deux mots. « l'exploitant a tout » :
+# le verbe avoir. « quittent le serveur chiffrées » : accordé à « sauvegardes ». Tableau
+# (famille 2) : « Qui vole la boîte aux lettres », la cellule finale sans point.
+docs/SECURITE.md | AGREEMENT_POSTPONED_ADJ | chiffrées
+docs/SECURITE.md | A_A_ACCENT | a
+docs/SECURITE.md | FR_REPEATEDWORDS_SAUF | sauf
+docs/SECURITE.md | FR_REPEATEDWORDS_VRAI | vrai
+docs/SECURITE.md | PLACE_DE_LA_VIRGULE | mais
+docs/SECURITE.md | POINT | trop
+docs/SECURITE.md | QUI_VCONJ | vole
+docs/SECURITE.md | QUOIQUE_QUOI_QUE | quoi qu'
 
 # docs/adr/0001-licences.md
 docs/adr/0001-licences.md | A_ACCENT_A | ceci à
@@ -201,7 +283,6 @@ docs/adr/0032-compteur-de-vues-sans-donnee-personnelle.md | OU_LEQUEL | où
 docs/adr/0032-compteur-de-vues-sans-donnee-personnelle.md | SON_SONT | son
 
 # docs/adr/0033-priere-du-vendredi.md
-docs/adr/0033-priere-du-vendredi.md | APOS_ESPACE | l' iqama
 docs/adr/0033-priere-du-vendredi.md | PLACE_DE_LA_VIRGULE |  mais
 
 # docs/adr/0035-sauvegardes-chiffrees.md
@@ -233,45 +314,9 @@ docs/adr/0041-ce-que-la-base-garde-vraiment-d-une-personne.md | VIRG_NON_TROUVEE
 # docs/adr/0042-module-des-heures-de-priere.md
 docs/adr/0042-module-des-heures-de-priere.md | ACCORD_QUEL_QUE_SOIT | quel que soit
 
-# docs/adr/0043-licence-mit.md
-docs/adr/0043-licence-mit.md | APOS_ESPACE | d' installer
-
-# docs/maquettes/public-agenda.md
-docs/maquettes/public-agenda.md | POINT | ouvre
-docs/maquettes/public-agenda.md | SE_CE |  c'
-
-# docs/maquettes/public-cours.md
-docs/maquettes/public-cours.md | J_N | Produites côté
-docs/maquettes/public-cours.md | PAS_DE_VERBE_APRES_POSSESSIF_DEMONSTRATIF | ferait
-docs/maquettes/public-cours.md | POINT | texte
-
-# docs/maquettes/public-mois.md
-docs/maquettes/public-mois.md | IL_Y_A_IL | il y a quoi
-docs/maquettes/public-mois.md | MOIS | Octobre
-
-# docs/maquettes/public-semaine.md
-docs/maquettes/public-semaine.md | ACCORD_SUJET_VERBE | cours
-docs/maquettes/public-semaine.md | ACCORD_V_PPA | publiés
-docs/maquettes/public-semaine.md | CONFUSION_E_ER | publiés
-docs/maquettes/public-semaine.md | PLACE_DE_LA_VIRGULE |  mais
-
-# docs/maquettes/public-tous-les-cours.md
-docs/maquettes/public-tous-les-cours.md | PRONOMS_PERSONNELS_MINUSCULE | ceci Il
-docs/maquettes/public-tous-les-cours.md | REP_PUISQUE | puisqu'
-
-# docs/maquettes/public-vendredi.md
-docs/maquettes/public-vendredi.md | FR_REPEATEDWORDS_EXACTEMENT | exactement
-
-# docs/maquettes/responsables-vendredi.md
-docs/maquettes/responsables-vendredi.md | ACCORD_SUJET_VERBE | cases
-docs/maquettes/responsables-vendredi.md | AGREEMENT_POSTPONED_ADJ | facultative
-docs/maquettes/responsables-vendredi.md | VIRG_NON_TROUVEE |  elles
-
-# docs/maquettes/widget.md
-docs/maquettes/widget.md | A_VERBE_INFINITIF | à coller
-docs/maquettes/widget.md | FR_REPEATEDWORDS_ANNONCER | annonce
-docs/maquettes/widget.md | FR_REPEATEDWORDS_ANNONCER | annoncé
-docs/maquettes/widget.md | POINT | nouvelle
+# packages/widget/src/element.ts
+packages/widget/src/element.ts | AR_DIACRITICS_REPLACE | البرنامج
+packages/widget/src/element.ts | AR_DIACRITICS_REPLACE | برنامج
 
 # scripts/conditions-pdf.mjs
 scripts/conditions-pdf.mjs | OU | ou
