@@ -165,6 +165,17 @@ export const QUESTIONS = [
 		<strong>C'est une acceptation par personne, et non au nom de l'organisation. Elle n'est pas
 		écrite au journal des modifications, et aucune copie n'est envoyée par courriel.</strong>
 		Est-ce suffisant ? Faut-il garder la preuve de l'acceptation plus longtemps que l'adhésion ?`
+	},
+	{
+		titre: 'Voltia, sans le nom de son titulaire',
+		corps: `Le texte nomme l'exploitant <strong>« Voltia »</strong>, en Suisse, avec une adresse de
+		contact, et aucun nom de personne. Voltia est une entreprise individuelle, et non une société.
+		Or le nom d'une entreprise individuelle doit contenir le nom de famille de son titulaire
+		(art. 945 du Code des obligations), et la nLPD demande d'identifier le responsable du
+		traitement et de dire comment le joindre (art. 19 nLPD). Le même nom figure seul comme
+		titulaire des droits d'auteur du code publié. <strong>« Voltia » seul suffit-il ?</strong>
+		Sinon, quel est le minimum, et où l'écrire : dans ce texte, au pied des pages publiques, ou
+		ailleurs ?`
 	}
 ];
 
@@ -244,7 +255,7 @@ export function page(contenuMarkdown, version, styleEnPlus = '') {
 		aujourd'hui. Il n'a <strong>jamais été relu par un juriste</strong>.
 	</p>
 	<p class="intro">
-		Dix points nous paraissent demander votre avis. Les autres passages sont des faits techniques
+		Onze points nous paraissent demander votre avis. Les autres passages sont des faits techniques
 		vérifiables ; ceux-ci sont des choix, et nous ne savons pas s'ils sont les bons.
 	</p>
 	${points}

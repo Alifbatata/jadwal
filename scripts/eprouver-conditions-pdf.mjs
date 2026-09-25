@@ -31,6 +31,11 @@
  * **La durée des sauvegardes.** Le point de la page de garde qui en parle est écrit à la main, dans
  * `QUESTIONS`, et le texte la promet de son côté. Le contrôle lit les deux et les compare.
  *
+ * **Le nom de l'exploitant.** Depuis l'étape 18, c'est Voltia, sans nom de personne. Les conditions
+ * l'écrivent, le pied de la page de garde le redit, et le onzième point demande au juriste s'il
+ * suffit : le contrôle lit les trois et les compare. Il compte aussi les points que l'introduction
+ * annonce en lettres, écrits à la main comme elle.
+ *
  * ## Ce qu'il joue
  *
  * Le document réel, celui de `docs/CONDITIONS.md`, et pas un document inventé : c'est lui qui part.
@@ -140,6 +145,66 @@ function dureeDesSauvegardes(source, questions) {
 	};
 }
 
+/** Les nombres que l'introduction de la page de garde peut écrire en lettres. */
+const NOMBRES = [
+	'zéro',
+	'un',
+	'deux',
+	'trois',
+	'quatre',
+	'cinq',
+	'six',
+	'sept',
+	'huit',
+	'neuf',
+	'dix',
+	'onze',
+	'douze',
+	'treize',
+	'quatorze',
+	'quinze'
+];
+
+/**
+ * Le nombre de points que l'introduction annonce en lettres (« Onze points nous paraissent… »), et
+ * celui que la page porte. L'annonce est écrite à la main : un point ajouté sans elle ferait dire
+ * « dix » à une page qui en montre onze.
+ */
+function annonceDesPoints(html) {
+	const mot = /(\S+) points nous paraissent/.exec(texteSeul(html))?.[1]?.toLocaleLowerCase('fr');
+	const points = html.split('<div class="point">').length - 1;
+	return {
+		accord: mot !== undefined && NOMBRES.indexOf(mot) === points,
+		detail: `annoncés : ${mot ?? '(phrase introuvable)'} ; présents : ${points}`
+	};
+}
+
+/**
+ * Le nom de l'exploitant, lu à trois endroits : la phrase des conditions (« Le service est exploité
+ * par X, en Suisse »), la même phrase au pied de la page de garde, et le point qui demande au
+ * juriste si ce nom suffit (art. 945 CO). Depuis l'étape 18, c'est Voltia, et aucun nom de personne
+ * ne l'accompagne. Si l'un des trois change sans les autres, le juriste répondrait sur un nom que
+ * le texte ne porte plus.
+ */
+function exploitantNomme(source, html, questions) {
+	const motif = /exploité par ([^,.]+), en Suisse/;
+	const conditions = motif.exec(source)?.[1];
+	const garde = /<section class="garde">([\s\S]*?)<\/section>/.exec(html)?.[1] ?? '';
+	const pied = motif.exec(garde)?.[1];
+	const points = questions.filter((point) => /art\. 945/.test(point.corps));
+	const cite =
+		points.length === 1 &&
+		conditions !== undefined &&
+		points[0].corps.includes(`« ${conditions} »`);
+	return {
+		accord: conditions === 'Voltia' && pied === conditions && cite,
+		detail:
+			`conditions : ${conditions ?? '(phrase introuvable)'} ; pied de la page de garde : ` +
+			`${pied ?? '(phrase introuvable)'} ; ${points.length} point(s) sur l'art. 945 CO` +
+			(points.length === 1 ? (cite ? ', qui cite ce nom' : ', qui ne cite pas ce nom') : '')
+	};
+}
+
 /** Des lignes de texte courant, construites : `n` lignes à un interligne l'une de l'autre. */
 function lignesDeTexte(haut, n, interligne = 15) {
 	return Array.from({ length: n }, (_, index) => ({ y: haut - index * interligne, corps: 10.5 }));
@@ -202,7 +267,19 @@ verifier(
 );
 
 const points = html.split('<div class="point">').length - 1;
-verifier('les dix points pour le juriste sont là', points === 10, `${points} trouvé(s)`);
+verifier('les onze points pour le juriste sont là', points === 11, `${points} trouvé(s)`);
+const annonce = annonceDesPoints(html);
+verifier(
+	'l’introduction annonce autant de points qu’elle en montre',
+	annonce.accord,
+	annonce.detail
+);
+const exploitant = exploitantNomme(markdown, html, QUESTIONS);
+verifier(
+	'l’exploitant est Voltia seul, dans les conditions, au pied de la page de garde et au point sur son nom',
+	exploitant.accord,
+	exploitant.detail
+);
 const liste = listeSuivie(markdown, html);
 verifier(
 	'la liste des données personnelles se suit d’un bout à l’autre',
@@ -265,6 +342,49 @@ const enRetard = QUESTIONS.map((point) =>
 );
 const ecart = dureeDesSauvegardes(markdown, enRetard);
 verifier('un point qui annonce un jour de moins que le texte est vu', !ecart.accord, ecart.detail);
+
+// Une annonce qui compte un point de trop, comme « Dix points » l'aurait fait devant neuf.
+const annonceFausse = annonceDesPoints(
+	html.replace(/\S+( points nous paraissent)/, `${NOMBRES[points + 1] ?? 'mille'}$1`)
+);
+verifier(
+	'une introduction qui annonce un point de trop est vue',
+	!annonceFausse.accord,
+	annonceFausse.detail
+);
+
+// Un nom de personne revenu devant Voltia, dans les conditions puis au seul pied de la page de
+// garde ; et une page de garde qui a perdu le point sur le nom.
+const avecUnNom = markdown.replace(
+	/exploité par [^,.]+, en Suisse/,
+	'exploité par Une Personne (Voltia), en Suisse'
+);
+const nomDansLeTexte = exploitantNomme(avecUnNom, html, QUESTIONS);
+verifier(
+	'un nom de personne revenu dans les conditions est vu',
+	avecUnNom !== markdown && !nomDansLeTexte.accord,
+	nomDansLeTexte.detail
+);
+const piedAvecUnNom = html.replace(
+	/(<section class="garde">[\s\S]*?exploité par )[^,.]+/,
+	'$1Une Personne (Voltia)'
+);
+const nomAuPied = exploitantNomme(markdown, piedAvecUnNom, QUESTIONS);
+verifier(
+	'un nom de personne revenu au pied de la page de garde est vu',
+	piedAvecUnNom !== html && !nomAuPied.accord,
+	nomAuPied.detail
+);
+const sansLePointDuNom = exploitantNomme(
+	markdown,
+	html,
+	QUESTIONS.filter((point) => !/art\. 945/.test(point.corps))
+);
+verifier(
+	'une page de garde sans le point sur le nom est vue',
+	!sansLePointDuNom.accord,
+	sansLePointDuNom.detail
+);
 
 process.stdout.write(`\nLes lignes seules, sur des pages construites\n`);
 
