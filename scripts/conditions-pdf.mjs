@@ -110,12 +110,14 @@ export const QUESTIONS = [
 		texte ?`
 	},
 	{
-		titre: 'Ce qui est effacé reste jusqu’à 181 jours dans les sauvegardes',
+		titre: 'Ce qui est effacé reste jusqu’à 182 jours dans les sauvegardes',
 		corps: `Une suppression est immédiate dans le service, mais les sauvegardes déjà parties ne se
-		réécrivent pas : c'est ce qui fait leur valeur le jour d'un incident. Le texte annonce
-		<strong>181 jours au plus</strong>. Est-ce compatible avec le droit à l'effacement ? La
-		formulation actuelle suffit-elle, ou faut-il dire explicitement que la suppression est
-		<em>différée</em> dans les sauvegardes ?`
+		réécrivent pas : c'est ce qui fait leur valeur le jour d'un incident. Une sauvegarde mensuelle
+		arrive à échéance 181 jours après sa création, et le fournisseur du stockage l'efface « en
+		général dans les 24 heures » qui suivent : le texte annonce donc <strong>182 jours au
+		plus</strong>, et le service vérifie chaque nuit qu'aucune sauvegarde n'a dépassé cet âge.
+		Est-ce compatible avec le droit à l'effacement ? La formulation actuelle suffit-elle, ou
+		faut-il dire explicitement que la suppression est <em>différée</em> dans les sauvegardes ?`
 	},
 	{
 		titre: 'L’exploitant lit vos données, et ses consultations ne sont pas signalées',

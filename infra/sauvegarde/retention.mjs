@@ -22,9 +22,10 @@
  * Ce qu'on garde, par défaut. Chaque nombre compte des **jours**, pas des fichiers.
  *
  * Cinq mensuelles et non six : les conditions d'utilisation promettent qu'une donnée effacée ne
- * reste pas plus de 181 jours dans une sauvegarde. Deux premiers du mois éloignés de six mois
+ * reste pas plus de 182 jours dans une sauvegarde. Deux premiers du mois éloignés de six mois
  * peuvent être séparés de 184 jours (du 1er mars au 1er septembre) ; avec cinq, une archive reste au
- * plus 153 jours sur ce disque. Un test le rejoue sur huit ans de vraies nuits.
+ * plus 153 jours sur ce disque. Un test le rejoue sur huit ans de vraies nuits, contre une borne de
+ * 181 : ce disque n'a pas le jour de retard du stockage distant.
  */
 export const RETENTION = { quotidiennes: 7, hebdomadaires: 4, mensuelles: 5 };
 

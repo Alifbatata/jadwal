@@ -19,6 +19,7 @@
 // suppression ; n'afficher aucun secret.
 
 import { spawn, spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { sql } from 'drizzle-orm';
@@ -34,6 +35,7 @@ import {
 
 const SCRIPT = fileURLToPath(new URL('../scripts/delete-organization.mjs', import.meta.url));
 const VERROU = fileURLToPath(new URL('../scripts/retention-hold.mjs', import.meta.url));
+const CONDITIONS = fileURLToPath(new URL('../../../docs/CONDITIONS.md', import.meta.url));
 
 /** Ce qui distingue les organisations et les comptes de ce fichier de ceux des autres. */
 const PREFIXE = `suppr-${Date.now().toString(36)}`;
@@ -271,6 +273,13 @@ describe('l’aperçu, sans --confirmer', () => {
 			expect(libelle, 'chaque table connue a son libellé').not.toContain('de la table');
 		}
 		expect(stdout, 'ce qui reste est dit aussi').toContain('registre interne');
+		// La durée des sauvegardes, redite à l'exploitant au moment où il supprime, est celle que
+		// les conditions d'utilisation promettent : au jour près, et sans la contredire.
+		const promesse = /reste au plus (\d+) jours dans ces sauvegardes/u.exec(
+			readFileSync(CONDITIONS, 'utf8')
+		)?.[1];
+		expect(promesse, 'la phrase des conditions qui dit la durée').toBe('182');
+		expect(stdout, 'la durée promise des sauvegardes').toContain(`${promesse} jours au plus`);
 		expect(stdout).toContain("Rien n'a été effacé");
 		expect(stdout, 'et comment confirmer').toContain(`--confirmer ${org.slug}`);
 

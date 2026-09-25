@@ -3,7 +3,7 @@
 Ce texte s'adresse aux organisations qui publient leur programme avec ce service. Il est écrit pour
 être lu, pas pour être opposé.
 
-Dernière mise à jour : 23 septembre 2026.
+Dernière mise à jour : 25 septembre 2026.
 
 ## Qui exploite le service
 
@@ -157,7 +157,7 @@ sans elle, l'assistance n'est pas possible.
   adhésions, les acceptations de ces conditions, les invitations, le compteur de consultations et le
   journal des modifications. Les traces d'accès de l'exploitant gardent leur durée de 24 mois. Une
   suppression est définitive : nous n'avons pas de corbeille. Les sauvegardes chiffrées déjà
-  parties, elles, ne se réécrivent pas. Voir plus bas : **181 jours au plus**.
+  parties, elles, ne se réécrivent pas. Voir plus bas : **182 jours au plus**.
 - **Le retrait d'une personne responsable**, depuis l'écran des membres. Une organisation garde
   toujours au moins une personne responsable ; la dernière ne peut pas être retirée sans en nommer
   une autre.
@@ -230,9 +230,9 @@ La nuance compte, et la voici : pour vérifier qu'une sauvegarde se relit vraime
 envoie la clé au serveur le temps d'un essai, où elle ne passe qu'en mémoire. Elle n'est écrite
 nulle part, et elle repart avec le processus.
 
-**Ce que vous effacez reste au plus 181 jours dans ces sauvegardes.** Une suppression est immédiate
+**Ce que vous effacez reste au plus 182 jours dans ces sauvegardes.** Une suppression est immédiate
 dans le service, mais les sauvegardes déjà parties ne se réécrivent pas, et c'est ce qui fait leur
-valeur le jour d'un incident. Passé 181 jours, aucune sauvegarde ne contient plus vos données
+valeur le jour d'un incident. Passé 182 jours, aucune sauvegarde ne contient plus vos données
 effacées.
 
 Le code du service est ouvert et peut être auto-hébergé : rien n'oblige une organisation à dépendre

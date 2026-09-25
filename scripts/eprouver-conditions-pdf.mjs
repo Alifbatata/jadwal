@@ -28,6 +28,9 @@
  * le contrôle de mise en pages de la même étape : il lisait les pages à l'envers et ne voyait que la
  * fin d'un paragraphe. Chacun a désormais son contrôle, et son témoin.
  *
+ * **La durée des sauvegardes.** Le point de la page de garde qui en parle est écrit à la main, dans
+ * `QUESTIONS`, et le texte la promet de son côté. Le contrôle lit les deux et les compare.
+ *
  * ## Ce qu'il joue
  *
  * Le document réel, celui de `docs/CONDITIONS.md`, et pas un document inventé : c'est lui qui part.
@@ -60,6 +63,7 @@ import {
 	nombreDePages,
 	piedDePage,
 	produire,
+	QUESTIONS,
 	typographierHtml
 } from './conditions-pdf.mjs';
 
@@ -114,6 +118,25 @@ function listeSuivie(source, html) {
 	return {
 		suivie: numerotes > 0 && listes.length === 1 && listes[0] === numerotes,
 		detail: `listes rendues : ${listes.join(' puis ') || 'aucune'} ; éléments numérotés dans la source : ${numerotes}`
+	};
+}
+
+/**
+ * La durée que le point sur les sauvegardes annonce au juriste, dans son titre et dans son corps,
+ * et celle que le texte promet (« reste au plus N jours dans ces sauvegardes »). Les deux sont
+ * lues, aucune n'est écrite ici : si l'une change sans l'autre, le juriste répondrait sur une durée
+ * que le texte ne dit plus.
+ */
+function dureeDesSauvegardes(source, questions) {
+	const promise = /reste au plus (\d+) jours dans ces sauvegardes/.exec(source)?.[1];
+	const points = questions.filter((point) => /sauvegardes/.test(point.titre));
+	const titre = /jusqu.à (\d+) jours/.exec(points[0]?.titre ?? '')?.[1];
+	const corps = /(\d+) jours\s+au\s+plus/.exec(points[0]?.corps ?? '')?.[1];
+	return {
+		accord: promise !== undefined && points.length === 1 && titre === promise && corps === promise,
+		detail:
+			`conditions : ${promise ?? '(phrase introuvable)'} jours ; point : titre ${titre ?? '?'},` +
+			` corps ${corps ?? '?'} ; ${points.length} point(s) sur les sauvegardes`
 	};
 }
 
@@ -190,6 +213,12 @@ verifier(
 	'la page de garde ne parle plus d’un lieu de culte',
 	!/mosqu|moschee|moschea|مسجد/i.test(html)
 );
+const duree = dureeDesSauvegardes(markdown, QUESTIONS);
+verifier(
+	'le point sur les sauvegardes dit la durée que promettent les conditions',
+	duree.accord,
+	duree.detail
+);
 
 process.stdout.write(`\nLes témoins : chaque contrôle sait tomber\n`);
 
@@ -220,6 +249,22 @@ verifier(
 	desindente !== markdown && !coupee.suivie,
 	desindente === markdown ? 'le paragraphe des passkeys est introuvable' : coupee.detail
 );
+
+// Un point qui annonce un jour de moins que le texte, 181 jours contre 182 par exemple. Le jour de
+// moins est compté depuis le texte : le contrôle doit tomber, quelle que soit la durée que le point
+// écrit.
+const joursDuTexte = Number(/reste au plus (\d+) jours dans ces sauvegardes/.exec(markdown)?.[1]);
+const enRetard = QUESTIONS.map((point) =>
+	/sauvegardes/.test(point.titre)
+		? {
+				...point,
+				titre: point.titre.replace(/\d+ jours/, `${joursDuTexte - 1} jours`),
+				corps: point.corps.replace(/\d+(?= jours\s+au\s+plus)/, String(joursDuTexte - 1))
+			}
+		: point
+);
+const ecart = dureeDesSauvegardes(markdown, enRetard);
+verifier('un point qui annonce un jour de moins que le texte est vu', !ecart.accord, ecart.detail);
 
 process.stdout.write(`\nLes lignes seules, sur des pages construites\n`);
 
