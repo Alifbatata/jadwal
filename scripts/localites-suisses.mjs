@@ -29,7 +29,7 @@
  *
  * Une colonne absente, une ligne qui n'a pas le bon nombre de champs, un nombre illisible, un point
  * hors du cadre MN95 de la Suisse : le fichier officiel a changé de forme, ou ce n'est pas le bon
- * fichier (celui en WGS84 a les mêmes colonnes). Le script s'arrête alors sans rien écrire, plutôt
+ * fichier (celui en WGS84, ou un ancien en MN03). Le script s'arrête alors sans rien écrire, plutôt
  * que de produire une liste fausse que personne ne remarquerait.
  *
  * Le résultat ne dépend que du fichier d'entrée et de la date : deux passages donnent le même

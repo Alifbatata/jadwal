@@ -12,24 +12,24 @@ service extérieur n'est appelé, ni au moment du choix ni plus tard.
 
 ## D'où vient le fichier
 
-| Quoi                     | Où                                                                                                                                      |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Page du produit          | https://www.swisstopo.admin.ch/fr/repertoire-officiel-des-localites                                                                     |
-| Jeu sur opendata.swiss   | https://opendata.swiss/de/dataset/amtliches-ortschaftenverzeichnis-mit-postleitzahl-und-perimeter                                       |
-| Collection STAC          | https://data.geo.admin.ch/api/stac/v1/collections/ch.swisstopo-vd.ortschaftenverzeichnis_plz                                            |
-| Fichier téléchargé       | https://data.geo.admin.ch/ch.swisstopo-vd.ortschaftenverzeichnis_plz/ortschaftenverzeichnis_plz/ortschaftenverzeichnis_plz_2056.csv.zip |
-| Description des colonnes | « Information sur le produit », janvier 2026, lien depuis la page du produit                                                            |
-| Formules de conversion   | https://www.swisstopo.admin.ch/dam/fr/sd-web/KLRCX9XIdXDu/ch1903wgs84-FR.pdf                                                            |
-| Conditions d'utilisation | https://www.swisstopo.admin.ch/fr/conditions-utilisation-geodonnees-et-geoservices-gratuit                                              |
+| Quoi                     | Où                                                                                                                                          |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Page du produit          | https://www.swisstopo.admin.ch/fr/repertoire-officiel-des-localites                                                                         |
+| Jeu sur opendata.swiss   | https://opendata.swiss/de/dataset/amtliches-ortschaftenverzeichnis-mit-postleitzahl-und-perimeter                                           |
+| Collection STAC          | https://data.geo.admin.ch/api/stac/v1/collections/ch.swisstopo-vd.ortschaftenverzeichnis_plz                                                |
+| Fichier téléchargé       | https://data.geo.admin.ch/ch.swisstopo-vd.ortschaftenverzeichnis_plz/ortschaftenverzeichnis_plz/ortschaftenverzeichnis_plz_2056.csv.zip     |
+| Description des colonnes | https://www.swisstopo.admin.ch/dam/fr/sd-web/63GBDVbxjKqw/Jan26_Amtliches%20Ortschaftenverzeichnis%20-%20Technical%20Documentation%20FR.pdf |
+| Formules de conversion   | https://www.swisstopo.admin.ch/dam/fr/sd-web/KLRCX9XIdXDu/ch1903wgs84-FR.pdf                                                                |
+| Conditions d'utilisation | https://www.swisstopo.admin.ch/fr/conditions-utilisation-geodonnees-et-geoservices-gratuit                                                  |
 
 Le fichier téléchargé est le CSV en MN95 (EPSG:2056), daté du 01.09.2026 par la collection STAC. Son
 empreinte SHA-256 est
 `d4f0da3e8e66f775d6af1d860b8fdbfb703956da5c8c82356295c9617601bf73`, la même que celle que la
 collection publie (`1220d4f0da3e…`, au format multihash). Le CSV qu'il contient,
-`AMTOVZ_CSV_LV95.csv`, compte 5 718 lignes ; le fichier produit en garde 4 073.
+`AMTOVZ_CSV_LV95.csv`, compte 5 718 lignes de données ; le fichier produit en garde 4 073.
 
-Seul le fichier produit est dans le dépôt. Le fichier téléchargé n'y est pas : l'adresse et
-l'empreinte ci-dessus suffisent à le retrouver.
+Seul le fichier produit est dans le dépôt, pas le fichier téléchargé. L'adresse ci-dessus sert
+toujours la version du mois : l'empreinte dit si un fichier en main est bien celui du 01.09.2026.
 
 ## Les conditions d'utilisation
 
@@ -87,7 +87,7 @@ latitude et la longitude.
 ## Refaire la liste
 
 swisstopo publie une version le premier jour de chaque mois. Les localités changent peu : une mise
-à jour par an suffit, ou quand une fusion de communes fait parler d'elle.
+à jour par an suffit, ou plus tôt quand une fusion de communes touche une organisation.
 
 1. Télécharger le CSV en MN95 depuis la collection STAC (adresse ci-dessus), et relever sa date
    (`datetime` de l'objet `ortschaftenverzeichnis_plz`) et son empreinte (`file:checksum`).
@@ -103,5 +103,5 @@ swisstopo publie une version le premier jour de chaque mois. Les localités chan
    fichier, puis lancer `node scripts/eprouver-localites-suisses.mjs` et les tests de `apps/web`.
 
 Le script refuse un fichier dont les colonnes ont changé, dont une ligne est amputée, ou dont les
-points ne sont pas du MN95 en Suisse (le CSV en WGS84 a les mêmes colonnes) : il s'arrête sans rien
-écrire.
+points ne sont pas du MN95 en Suisse (un fichier en WGS84 ou en MN03 pris par erreur) : il s'arrête
+sans rien écrire.
