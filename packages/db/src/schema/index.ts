@@ -98,6 +98,11 @@ const updatedAt = () =>
 export const PLANS = ['free', 'sponsored', 'paid'] as const;
 export const ORGANIZATION_STATUSES = ['active', 'suspended'] as const;
 export const MEMBERSHIP_ROLES = ['org_admin', 'editor'] as const;
+/**
+ * Les langues dans lesquelles l'espace des responsables peut s'afficher, et donc celles qu'un compte
+ * peut retenir (ADR 0007, ADR 0046) : français, allemand, italien, anglais britannique, arabe.
+ */
+export const ACCOUNT_LANGUAGES = ['fr', 'de', 'it', 'en', 'ar'] as const;
 export const COURSE_STATUSES = ['draft', 'published', 'archived'] as const;
 export const AUDIENCES = ['kids', 'youth', 'women', 'adults', 'open'] as const;
 export const RECURRENCE_KINDS = ['weekly', 'monthly', 'dates'] as const;
@@ -394,12 +399,22 @@ export const user = pgTable(
 		image: text(),
 		isSuperAdmin: boolean('is_super_admin').notNull().default(false),
 		createdAt: createdAt(),
-		updatedAt: updatedAt()
+		updatedAt: updatedAt(),
+		/**
+		 * La langue de l'espace des responsables retenue pour ce compte, parmi `ACCOUNT_LANGUAGES`.
+		 * Vide tant que la personne n'en a choisi aucune : l'espace prend alors celle du navigateur.
+		 * La personne seule la change (migration 0060, ADR 0046).
+		 */
+		language: text()
 	},
 	(table) => [
 		uniqueIndex('user_email_uq').on(sql`lower(${table.email})`),
 		ck('user_id_uuid_v7_ck', isUuidV7(table.id)),
 		ck('user_email_ck', sql`${table.email} ~ '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$'`),
+		ck(
+			'user_language_ck',
+			sql`${table.language} is null or ${oneOf(table.language, ACCOUNT_LANGUAGES)}`
+		),
 		// Pas d'annuaire global : un utilisateur est visible de lui-même et des membres de son
 		// organisation courante. La sous-requête passe elle-même par la politique de `membership`.
 		pgPolicy('user_select', {
@@ -410,6 +425,16 @@ export const user = pgTable(
 				select 1 from "membership" m
 				where m."user_id" = ${table.id} and m."organization_id" = ${orgContext}
 			)`
+		}),
+		// La personne change la langue de son propre compte, et rien d'autre : le droit de
+		// modification du rôle applicatif ne porte que sur `language` (migration 0060), et la
+		// politique ne lui laisse que la ligne de la personne du contexte, sans organisation.
+		pgPolicy('user_update', {
+			as: 'permissive',
+			for: 'update',
+			to: appRole,
+			using: sql`${table.id} = ${userContext}`,
+			withCheck: sql`${table.id} = ${userContext}`
 		}),
 		// Better Auth crée et met à jour les comptes : c'est sa seule écriture dans une table du
 		// métier (ADR 0016). Il ne supprime jamais un compte. La politique dit quelles lignes ; les
@@ -423,12 +448,13 @@ export const user = pgTable(
 		}),
 		// Il crée des comptes, jamais un compte super-admin. Un droit dit quelles colonnes on peut
 		// nommer — et Drizzle les nomme toutes —, seule une politique dit quelle valeur on y met
-		// (migration 0032).
+		// (migration 0032). Il nomme donc aussi la langue, et la laisse vide : c'est la personne qui
+		// la choisit (migration 0060).
 		pgPolicy('user_auth_insert', {
 			as: 'permissive',
 			for: 'insert',
 			to: authRole,
-			withCheck: sql`${table.isSuperAdmin} = false`
+			withCheck: sql`${table.isSuperAdmin} = false and ${table.language} is null`
 		}),
 		pgPolicy('user_auth_update', {
 			as: 'permissive',

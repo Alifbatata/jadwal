@@ -421,6 +421,13 @@
       "when": 1790377544454,
       "tag": "0059_org_admin_gestures",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1790378472149,
+      "tag": "0060_account_language",
+      "breakpoints": true
     }
   ]
 }
