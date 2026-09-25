@@ -156,10 +156,23 @@ la vie aux invitations annulées d'une organisation. Il garde le report d'éché
 précédent : ni le statut, ni l'acceptation, ni la date de réponse n'y changent. Seul le
 propriétaire, sous son drapeau d'entretien, sort de ces règles (ADR 0019).
 
+## Addendum du 2026-09-26 : la séparation des rôles ne le vise pas
+
+Depuis la migration 0059 (ADR 0046), la base réserve aux responsables d'une organisation, pour le
+rôle applicatif, les gestes que l'application leur réserve. Le super-admin n'est membre d'aucune
+organisation et garde tous ses pouvoirs : ses politiques ne passent pas par `jadwal.is_org_admin()`,
+et il ne peut pas l'appeler. Il invite, retire, change les rôles, règle l'organisation, ses salles
+et ses heures de prière dans l'organisation où il est entré, comme avant.
+
+Il est désormais seul à changer le plan, l'état et l'identifiant d'URL d'une organisation : le rôle
+applicatif ne modifie plus que les colonnes de l'écran des réglages. C'est ce que disait déjà
+l'ADR 0006 pour le plan ; la base le tient.
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 4 de la feuille de route. **Remplace l'ADR 0018** et corrige l'ADR 0013
 sur un point : la sécurité au niveau des lignes ne borne plus le super-admin à ce dont il a besoin,
 elle le borne à l'organisation où il est entré. Complété le 2026-09-23 (la table des organisations
 suit aussi le contexte, le super-admin peut repousser l'échéance d'une invitation, et il suit les
-passages de statut d'une invitation, voir les addendums).
+passages de statut d'une invitation, voir les addendums). Complété le 2026-09-26 (la séparation des
+rôles ne le vise pas, ADR 0046).

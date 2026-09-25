@@ -160,7 +160,8 @@ invitation annulée ne s'accepte plus, une acceptation est faite par la personne
 est adressée et ne passe à personne d'autre, une invitation échue ne s'accepte pas, une invitation
 résolue garde sa date de réponse, et une adhésion née d'une invitation porte le rôle de celle-ci.
 
-**Limite du rôle.** Pour le rôle applicatif, la base ne sépare pas l'éditeur du responsable à
+**Limite du rôle** (levée le 2026-09-26 par l'ADR 0046, voir l'addendum qui suit ; le paragraphe
+reste pour l'histoire). Pour le rôle applicatif, la base ne sépare pas l'éditeur du responsable à
 l'intérieur d'une organisation : toute personne qui a le contexte de l'organisation peut, par un
 appel direct, s'écrire une invitation, de n'importe quel rôle, à sa propre adresse, l'accepter et
 adhérer avec ce rôle, comme elle peut changer le rôle d'une adhésion, le sien compris (migration
@@ -171,9 +172,27 @@ Ce que tient la migration 0058, c'est la promesse d'une invitation donnée : l'a
 porte son rôle, une seule fois, et seulement si la personne l'a acceptée elle-même. Séparer les
 rôles dans la base est une décision du modèle de sécurité, qui reste à prendre.
 
+## Addendum du 2026-09-26 : seule une personne responsable écrit une invitation
+
+La décision est prise (ADR 0046, migration 0059). Pour le rôle applicatif, la base exige que la
+personne du contexte soit responsable de l'organisation du contexte pour lire les invitations de
+l'organisation, en écrire, en annuler ou en supprimer, pour changer un rôle et pour retirer un
+membre. Une éditrice qui s'écrirait une invitation de responsable est refusée dès l'insertion : il
+n'y a plus rien à accepter, et la chaîne de la limite ci-dessus est fermée à sa première marche.
+
+La branche de la personne invitée ne change pas. Reconnue par son adresse, sans contexte
+d'organisation, elle voit, accepte ou décline l'invitation reçue, et crée elle-même son adhésion
+avec le rôle de son invitation. Rien ne change non plus pour ce que la migration 0058 tient : les
+passages de statut, l'usage unique et le rôle de l'adhésion. Le super-admin invite et annule comme
+avant, dans l'organisation où il est entré (ADR 0025).
+
+Ce qui reste : qui tient le mot de passe du rôle applicatif pose lui-même le contexte, personne
+comprise, et peut se dire responsable (`docs/SECURITE.md`, barrière 1).
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 3 de la feuille de route (connexion, organisations, rôles, invitations,
 super-admin, journal). Complété le 2026-09-23 (ce que la base tient d'une invitation : la durée,
 l'échéance, le rôle, l'usage unique, les passages de statut et la date de réponse, voir
-l'addendum).
+l'addendum). Complété le 2026-09-26 : seule une personne responsable écrit une invitation, et la
+limite du rôle est levée (ADR 0046).

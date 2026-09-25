@@ -22,7 +22,7 @@ script Node seul.
 | Table                | Ce qu'elle porte                                                                 |
 | -------------------- | -------------------------------------------------------------------------------- |
 | `organization`       | slug, nom, fuseau IANA canonique, couleur d'accent, langues, plan, statut        |
-| `user`               | courriel unique sans égard à la casse, nom, statut super-admin                   |
+| `user`               | courriel unique sans égard à la casse, nom, statut super-admin, langue           |
 | `membership`         | qui est `org_admin` ou `editor` dans quelle organisation                         |
 | `room`               | salles de l'organisation et leur ordre d'affichage                               |
 | `course`             | public, langues, salle, intervenant, rythme et horaire en colonnes explicites    |
@@ -63,7 +63,10 @@ rejoue pas un fichier déjà appliqué.
 
 Le propriétaire est lui aussi soumis à la sécurité au niveau des lignes (ADR 0019) : hors d'une
 transaction qui déclare `set local jadwal.maintenance = 'on'`, il ne voit rien et n'écrit rien. C'est
-voulu. Attention : une écriture refusée par la RLS ne lève pas toujours — une insertion crie, mais un
+voulu. Deux lectures étroites échappent au drapeau, parce que deux fonctions à droits du définisseur
+tournent sous lui : les invitations, pour `jadwal.invited` (migration 0024), et l'adhésion de la
+personne du contexte dans l'organisation du contexte, pour `jadwal.is_org_admin` (migration 0059).
+Attention : une écriture refusée par la RLS ne lève pas toujours ; une insertion crie, mais un
 `update` ou un `delete` rend simplement « 0 ligne ». Un script d'entretien doit donc vérifier le
 nombre de lignes touchées, pas seulement l'absence d'erreur. Une exception, écrite comme limite dans
 l'ADR 0019 : le propriétaire garde `TRUNCATE`, qui n'examine aucune politique, et peut vider une
@@ -93,11 +96,25 @@ l'inviter de nouveau. `pg_restore` d'une sauvegarde complète recrée les décle
 lignes ; une restauration des seules données, dans un schéma déjà en place, passe
 `--disable-triggers`.
 
-**Limite.** Pour le rôle applicatif, la base ne sépare pas l'éditeur du responsable à l'intérieur
-d'une organisation : toute personne qui a le contexte de l'organisation peut, par un appel direct,
-s'écrire une invitation, de n'importe quel rôle, à sa propre adresse, l'accepter et adhérer avec ce
-rôle, comme elle peut changer le rôle d'une adhésion, le sien compris (migration 0053). C'est
-l'écran des membres qui réserve ces gestes aux personnes responsables.
+**L'éditeur et le responsable** (migration 0059, ADR 0046). À l'intérieur d'une organisation, la
+base réserve aux responsables ce que l'application leur réserve. `jadwal.is_org_admin()` dit si la
+personne du contexte est responsable de l'organisation du contexte ; droits du définisseur, chemin
+figé, exécution au seul rôle applicatif, comme `jadwal.invited`. Les politiques du rôle applicatif
+l'exigent pour lire et écrire les invitations de l'organisation (la branche de la personne invitée,
+par son adresse, ne change pas), modifier et retirer une adhésion, modifier l'organisation, et
+écrire `room`, `prayer_settings`, `prayer_day` et `prayer_period`. La lecture de ces dernières reste
+ouverte aux membres. Les cours, leurs traductions, les exceptions, les pauses, le journal et les
+acceptations s'écrivent toujours par tout membre. Le super-admin n'est pas concerné. La modification
+de l'organisation est bornée aux huit colonnes de l'écran des réglages : le plan, l'état et
+l'identifiant d'URL relèvent du super-admin.
+
+Conséquence pour un script ou un test : une écriture réservée pose l'organisation **et** la
+personne responsable (`asAdmin(organisation)` dans `test/helpers.ts`), comme les écrans. Sous
+l'organisation seule, une insertion est refusée, et une modification ou une suppression touche zéro
+ligne. `test/org-admin.test.ts` tente chaque geste réservé sous une éditrice, puis sous une
+personne responsable et sous le super-admin ; la migration 0059 vérifie la liste exacte des
+politiques qui exigent la fonction. Ce qui reste : qui tient le mot de passe du rôle applicatif pose
+lui-même la personne du contexte.
 
 Une invitation dure quatorze jours au plus, et la base le tient (migration 0056) : une contrainte
 borne la durée écoulée entre `created_at` et `expires_at`, sans dépendre du fuseau de la session, et
@@ -114,6 +131,14 @@ Le rôle de connexion écrit dans la table des comptes, qui est une table du mé
 bornés colonne par colonne, et une politique lui interdit la valeur `true` sur le drapeau
 super-admin : un droit dit quelles colonnes on peut nommer, seule une politique dit quelle valeur on
 y met.
+
+La langue du compte (`language`, migration 0060) est la langue de l'espace retenue pour la
+personne : vide tant qu'elle n'a rien choisi, sinon l'une des cinq de `ACCOUNT_LANGUAGES`, par une
+contrainte close par `is true`. La personne seule la change : le rôle applicatif peut modifier
+cette colonne et aucune autre du compte, et la politique `user_update` ne lui laisse que la ligne
+de la personne du contexte. Le rôle de connexion la nomme à la création d'un compte, parce que
+Drizzle nomme toutes les colonnes d'une insertion (migration 0032), et sa politique exige qu'elle
+reste vide ; il ne peut pas la modifier. `test/account-language.test.ts` le vérifie.
 
 Depuis l'étape 4, le rôle super-admin lit et écrit dans **toutes** les organisations, sans fenêtre à
 ouvrir (ADR 0025). Ses politiques restent bornées par `jadwal.current_org_id()` : ce n'est plus une

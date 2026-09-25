@@ -15,6 +15,7 @@ pour des communautés religieuses.
 | Adversaire                                   | Ce qu'il cherche                                          |
 | -------------------------------------------- | --------------------------------------------------------- |
 | Un responsable d'une autre organisation      | lire ou modifier les données d'une organisation voisine   |
+| Un éditeur de l'organisation                 | se faire responsable, inviter, changer rôles et réglages  |
 | Un curieux sans compte                       | savoir si telle adresse est responsable quelque part      |
 | Quelqu'un qui a volé une boîte aux lettres   | entrer dans l'espace d'une organisation                   |
 | Un compte applicatif compromis               | lire toutes les organisations, effacer ses propres traces |
@@ -30,7 +31,8 @@ erreur (ADR 0013). Disons ce que cette barrière arrête et ce qu'elle n'arrête
 **nos erreurs** — une requête sans filtre, un script d'entretien de trop, un identifiant venu du
 client — et elle les arrête quoi qu'écrive le code appelant. Elle n'arrête pas quelqu'un qui **tient
 le mot de passe du rôle applicatif** : ce rôle pose lui-même son contexte, donc il peut le poser sur
-l'organisation de son choix et lire les organisations une par une. Ce que ce mot de passe n'ouvre
+l'organisation de son choix et lire les organisations une par une, et sur la personne de son choix,
+une personne responsable comprise (barrière 4 bis). Ce que ce mot de passe n'ouvre
 pas, en revanche, ce sont les sessions et les jetons, qui appartiennent à un autre rôle, et le
 journal d'audit, qu'il ne peut ni modifier ni effacer.
 
@@ -51,11 +53,25 @@ lui, n'est plus contenu par la base : voir la barrière 10, qui dit ce que cela 
 l'appartenance est revérifiée à chaque requête. Un identifiant d'organisation glissé dans un
 formulaire, une URL ou un en-tête ne donne rien.
 
+**4 bis. Dans une organisation, l'éditeur n'est pas responsable, pour la base non plus.** Depuis
+l'étape 18 (ADR 0046, migration 0059), la base tient la même séparation que les écrans. Pour le
+rôle applicatif, les gestes réservés aux responsables exigent que la personne du contexte soit
+responsable de l'organisation du contexte : lire et écrire les invitations, changer un rôle,
+retirer un membre, modifier les réglages et les salles, régler les heures de prière. Une fonction à
+droits du définisseur le dit, `jadwal.is_org_admin()`, que seul le rôle applicatif peut appeler.
+L'éditeur garde tout ce qu'il fait à l'écran : les cours, les séances, les pauses, le vendredi.
+Cette barrière arrête les erreurs de l'application : un écran qui oublierait sa garde, un rôle lu
+dans la mauvaise adhésion, comme à l'étape 17. Elle n'arrête pas qui tient le mot de passe du rôle
+applicatif, qui pose lui-même la personne du contexte (barrière 1). Le super-admin n'est pas
+concerné : il garde ses pouvoirs (barrière 10).
+
 **5. Ce qui n'est pas explicitement autorisé est refusé.** Une contrainte de vérification qui rend
 `NULL` accepterait la ligne : toutes sont closes par `is true`. Une politique par opération, jamais
 une seule qui les couvre toutes. Une clé étrangère composite, parce que les vérifications
 d'intégrité contournent la sécurité au niveau des lignes. Pour la même raison, le rôle applicatif
-ne modifie d'une adhésion que le rôle et sa date (migration 0053, addendum de l'ADR 0013). Avant,
+ne modifie d'une adhésion que le rôle et sa date (migration 0053, addendum de l'ADR 0013), d'une
+organisation que les colonnes de l'écran des réglages, jamais le plan, l'état ni l'identifiant
+d'URL (migration 0059), et d'un compte que sa langue, la personne elle-même (migration 0060). Avant,
 un membre pouvait repointer une adhésion de son organisation vers un compte jamais invité, puis lire
 son courriel ; et le nom de la contrainte dans l'erreur disait si une collègue avait accepté les
 conditions. Le refus tombe maintenant sur un droit absent, avant toute clé : il ne dit rien de ce
@@ -88,10 +104,9 @@ tient : elle refuse une durée plus longue et une date de création choisie par 
 (migration 0057). Elle tient aussi ce qu'une invitation peut devenir, pour tous les rôles de
 connexion, super-admin compris (migration 0058) : une invitation consommée ou annulée ne sert plus,
 seule la personne invitée accepte, à son propre nom, l'adhésion porte le rôle de l'invitation, et
-la date de réponse, dont la purge compte ses quatre-vingt-dix jours, ne bouge plus. Limite : pour le
-rôle applicatif, la base ne sépare pas l'éditeur du responsable à l'intérieur d'une organisation.
-Toute personne qui a le contexte de l'organisation peut s'écrire une invitation, de n'importe quel
-rôle, à sa propre adresse, l'accepter et adhérer avec ce rôle (ADR 0017).
+la date de réponse, dont la purge compte ses quatre-vingt-dix jours, ne bouge plus. Et seule une
+personne responsable écrit, lit ou annule les invitations de son organisation : un éditeur qui
+s'écrirait une invitation de responsable est refusé dès l'insertion (barrière 4 bis, ADR 0017).
 
 **9. Le navigateur est bridé.** Politique de sécurité du contenu avec nonce, `frame-ancestors` calculé
 par route, pas de cadre par défaut, protection contre la soumission d'un formulaire depuis un autre
@@ -189,6 +204,11 @@ ou pointe ses adresses vers un faux service. C'est une garde contre l'oubli et l
 - **Le déni de service.** La limitation de débit protège les boîtes aux lettres, pas le service.
 - **Une personne responsable malveillante dans sa propre organisation** peut effacer le programme de
   son organisation. Le journal dit qui et quand, et l'état avant permet de revenir en arrière.
+- **Ce que la base laisse encore lire ou écrire à un éditeur.** Elle lui laisse lire les membres de
+  son organisation, avec leur nom et leur adresse : aucun écran ne les lui montre, mais une erreur
+  de l'application qui les afficherait ne serait pas arrêtée. Fermer cette lecture priverait la
+  garde des personnes désignées de ce qu'elle doit voir (barrière 5). Le journal accepte aussi
+  d'un membre une entrée qui en nomme un autre comme auteur (ADR 0046).
 - **Une invitation ouvre la fiche de l'organisation à son destinataire**, entière, avant même qu'il
   accepte : une politique porte sur des lignes, pas sur des colonnes. Rien de cette ligne n'est une
   donnée personnelle, et le nom sera public dès l'étape 5 (ADR 0017).
@@ -201,8 +221,10 @@ ou pointe ses adresses vers un faux service. C'est une garde contre l'oubli et l
 ## Comment le vérifier
 
 Les tests de `packages/db` jouent l'isolation contre un vrai PostgreSQL avec le rôle non privilégié,
-et échouent si une table ajoutée plus tard perd sa protection. Ceux d'`apps/web` lancent un vrai
-serveur et suivent le chemin complet d'une connexion. Aucun n'est simulé.
+et échouent si une table ajoutée plus tard perd sa protection. `test/org-admin.test.ts` y fait
+tenter chaque geste réservé aux responsables par une éditrice, avec le contexte que l'écran pose,
+puis par une personne responsable et par le super-admin. Ceux d'`apps/web` lancent un vrai serveur
+et suivent le chemin complet d'une connexion. Aucun n'est simulé.
 
 `pnpm parcours:test` rejoue ce qu'une organisation vit, dans Chrome, sur l'image de production et
 une base neuve lancées par Docker : la passkey du super-admin, l'invitation, les conditions à

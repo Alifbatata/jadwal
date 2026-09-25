@@ -138,7 +138,32 @@ L'empreinte du schéma que compare le test des migrations compte désormais les 
 colonne. Sans eux, le rejeu de la migration 0012, qui rend le droit large, serait passé inaperçu si
 la migration 0053 n'était pas rejouée après elle.
 
+## Addendum du 2026-09-26 : le rôle compte aussi, pas seulement l'organisation
+
+Les politiques du rôle applicatif ne vérifiaient que l'organisation du contexte. Depuis la
+migration 0059 (ADR 0046), celles des gestes que l'application réserve aux responsables exigent
+aussi que la personne du contexte soit responsable de cette organisation : lire et écrire les
+invitations, modifier et retirer une adhésion, modifier l'organisation, écrire les salles et les
+heures de prière. La fonction qui le dit, `jadwal.is_org_admin()`, est faite comme
+`jadwal.invited` : droits du définisseur, chemin figé, exécution au seul rôle applicatif.
+
+Deux conséquences pour ce document :
+
+- **Le contexte d'une écriture réservée porte la personne.** `withOrg` avec une organisation seule
+  lit toujours, mais n'écrit plus rien de réservé. Une modification ou une suppression écartée ne
+  lève pas d'erreur : elle touche zéro ligne. L'application pose toujours les deux
+  (`withSessionOrg`).
+- **Le propriétaire lit une adhésion hors de son drapeau d'entretien** : celle de la personne du
+  contexte, dans l'organisation du contexte, et rien d'autre. La fonction en a besoin, puisqu'elle
+  tourne sous lui. Cette politique ne lit aucune autre table : les politiques des adhésions
+  appellent la fonction sans récursion.
+
+La modification de l'organisation est aussi bornée aux colonnes de l'écran des réglages, comme
+celle d'une adhésion l'a été au rôle (addendum précédent) : le plan, l'état et l'identifiant d'URL
+relèvent du super-admin.
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 2 de la feuille de route (base, RLS, données de démo) ; complété le
-2026-09-22 (modification d'une adhésion bornée au rôle, voir l'addendum).
+2026-09-22 (modification d'une adhésion bornée au rôle, voir l'addendum) et le 2026-09-26 (le rôle
+de la personne du contexte, ADR 0046).

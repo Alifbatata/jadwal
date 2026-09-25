@@ -1,8 +1,8 @@
 // Réglages de l'organisation : nom, fuseau, couleur, langues, salles, formule d'accueil.
 //
-// Réservé aux responsables (`org_admin`). Un `editor` n'y entre pas — et ce n'est pas seulement
-// l'écran qui le dit : la base accorde les mêmes droits aux deux rôles, la distinction est ici.
-// C'est un choix assumé de l'étape 3, et le test le vérifie route par route.
+// Réservé aux responsables (`org_admin`). Un `editor` n'y entre pas : l'écran le renvoie à
+// l'accueil, et depuis la migration 0059 la base refuse aussi ses écritures sur l'organisation et
+// les salles (ADR 0046). Le test le vérifie route par route.
 
 import { fail } from '@sveltejs/kit';
 import { newId, sql } from '@jadwal/db';
