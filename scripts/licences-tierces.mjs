@@ -26,6 +26,16 @@
  * source, parce que c'est l'obligation propre à ces licences : celui qui reçoit le binaire doit
  * pouvoir obtenir la forme source des fichiers concernés.
  *
+ * ## Les données tierces
+ *
+ * Le serveur embarque aussi des données publiées par d'autres, qui ne sont pas des paquets : la
+ * liste officielle des localités suisses, de swisstopo. Leurs conditions exigent que la source soit
+ * citée « en cas de transmission », et l'image est une transmission. Chaque jeu porte cette mention
+ * dans les lignes d'en-tête (`# `) de son fichier, que son générateur écrit ; ce script les recopie
+ * pour chaque jeu que le serveur construit **contient**, et pour lui seul. Le fichier est lu dans le
+ * dépôt (à côté de ce script, dans l'étage de construction de l'image), sa présence dans le serveur
+ * est vérifiée dans l'arbre : un jeu retiré du serveur disparaît de l'avis tout seul.
+ *
  * ## Ce qu'il ne couvre pas
  *
  * La base système de l'image (Debian, et les paquets de l'image officielle de Node). C'est une
@@ -33,6 +43,7 @@
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const cible = process.argv[2];
 if (!cible) {
@@ -40,6 +51,20 @@ if (!cible) {
 	process.exit(2);
 }
 const magasin = join(resolve(cible), 'node_modules', '.pnpm');
+const depot = fileURLToPath(new URL('..', import.meta.url));
+
+/**
+ * Les jeux de données que le serveur peut incorporer à sa construction, et la marque qui, dans le
+ * serveur construit, dit qu'il les contient : une chaîne de leur en-tête, en ASCII pour qu'aucun
+ * échappement de l'empaqueteur ne la cache.
+ */
+const DONNEES_TIERCES = [
+	{
+		fichier: 'apps/web/src/lib/server/localites/localities.csv',
+		// L'identifiant du jeu chez swisstopo : il figure dans l'adresse de téléchargement de l'en-tête.
+		marque: 'ch.swisstopo-vd.ortschaftenverzeichnis_plz'
+	}
+];
 
 /** Les licences dont l'obligation porte sur les fichiers, et qui demandent donc la source. */
 const RECIPROQUES_PAR_FICHIER = /MPL|EPL|CDDL|CPL|Ms-RL/i;
@@ -130,7 +155,50 @@ function paquets() {
 	return [...trouves.values()].sort((a, b) => a.nom.localeCompare(b.nom));
 }
 
+/** Le texte de chaque fichier JavaScript du serveur construit, un à un. */
+function* scriptsConstruits(dossier) {
+	let entrees;
+	try {
+		entrees = readdirSync(dossier, { withFileTypes: true });
+	} catch {
+		return;
+	}
+	for (const entree of entrees) {
+		const chemin = join(dossier, entree.name);
+		if (entree.isDirectory()) yield* scriptsConstruits(chemin);
+		else if (entree.isFile() && /\.m?js$/.test(entree.name)) yield readFileSync(chemin, 'utf8');
+	}
+}
+
+/** Les jeux de données que l'arbre contient, chacun avec les lignes d'en-tête de son fichier. */
+function donneesTierces() {
+	const presentes = DONNEES_TIERCES.filter(({ marque }) => {
+		for (const texte of scriptsConstruits(join(resolve(cible), 'build'))) {
+			if (texte.includes(marque)) return true;
+		}
+		return false;
+	});
+	return presentes.map(({ fichier }) => {
+		let texte;
+		try {
+			texte = readFileSync(join(depot, fichier), 'utf8');
+		} catch {
+			// Le serveur contient le jeu, et sa mention est introuvable : l'image partirait sans la
+			// source que ses conditions exigent. Mieux vaut qu'elle ne parte pas.
+			process.stderr.write(`licences-tierces : ${fichier} est embarqué, mais illisible ici\n`);
+			process.exit(1);
+		}
+		const entete = [];
+		for (const ligne of texte.split(/\r?\n/)) {
+			if (!ligne.startsWith('#')) break;
+			entete.push(ligne.replace(/^#\s?/, ''));
+		}
+		return { fichier, entete };
+	});
+}
+
 const liste = paquets();
+const donnees = donneesTierces();
 const parLicence = new Map();
 for (const paquet of liste) {
 	parLicence.set(paquet.licence, (parLicence.get(paquet.licence) ?? 0) + 1);
@@ -158,6 +226,26 @@ lignes.push(
 	'de ces paquets porte son propre avis dans `/usr/share/doc`.'
 );
 lignes.push('');
+if (donnees.length > 0) {
+	lignes.push('## Données tierces');
+	lignes.push('');
+	lignes.push(
+		'Le serveur embarque aussi des données publiées par des tiers, sous leurs propres conditions.',
+		"Pour chacune, sa source et l'adresse de ses conditions d'utilisation, telles que son fichier",
+		'les porte :'
+	);
+	for (const { fichier, entete } of donnees) {
+		lignes.push(
+			'',
+			`- \`${fichier}\``,
+			'',
+			'  ```',
+			...entete.map((ligne) => `  ${ligne}`),
+			'  ```'
+		);
+	}
+	lignes.push('');
+}
 lignes.push('---');
 lignes.push('');
 

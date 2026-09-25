@@ -1,0 +1,4081 @@
+# Répertoire officiel des localités avec le code postal et le périmètre, version du 01.09.2026.
+# Source : Office fédéral de topographie swisstopo.
+# Téléchargé depuis https://data.geo.admin.ch/ch.swisstopo-vd.ortschaftenverzeichnis_plz/ortschaftenverzeichnis_plz/ortschaftenverzeichnis_plz_2056.csv.zip
+# Conditions d'utilisation : https://www.swisstopo.admin.ch/fr/conditions-utilisation-geodonnees-et-geoservices-gratuit
+# Transformé pour jadwal par scripts/localites-suisses.mjs : une ligne par localité et NPA, la
+# commune qui a le plus d’adresses, sa position convertie de MN95 en WGS84 par les formules
+# approchées de swisstopo, arrondie à 4 décimales.
+postcode;name;municipality;canton;latitude;longitude
+1000;Lausanne 25;Lausanne;VD;46.5596;6.6823
+1000;Lausanne 26;Lausanne;VD;46.5546;6.6959
+1000;Lausanne 27;Lausanne;VD;46.5421;6.6817
+1003;Lausanne;Lausanne;VD;46.5206;6.6319
+1004;Lausanne;Lausanne;VD;46.5283;6.6186
+1005;Lausanne;Lausanne;VD;46.5209;6.6427
+1006;Lausanne;Lausanne;VD;46.5129;6.6338
+1007;Lausanne;Lausanne;VD;46.5179;6.6136
+1008;Jouxtens-Mézery;Jouxtens-Mézery;VD;46.5495;6.5952
+1008;Prilly;Prilly;VD;46.5368;6.6045
+1009;Pully;Pully;VD;46.5125;6.6607
+1010;Lausanne;Lausanne;VD;46.5374;6.6524
+1011;Lausanne;Lausanne;VD;46.5254;6.6439
+1012;Lausanne;Lausanne;VD;46.5265;6.6547
+1015;Lausanne;Ecublens (VD);VD;46.5196;6.5667
+1018;Lausanne;Lausanne;VD;46.5351;6.6295
+1020;Renens VD;Renens (VD);VD;46.5379;6.5894
+1022;Chavannes-près-Renens;Chavannes-près-Renens;VD;46.5319;6.5752
+1023;Crissier;Crissier;VD;46.5535;6.5775
+1024;Ecublens VD;Ecublens (VD);VD;46.5250;6.5599
+1025;St-Sulpice VD;Saint-Sulpice (VD);VD;46.5128;6.5624
+1026;Denges;Denges;VD;46.5205;6.5397
+1026;Echandens;Echandens;VD;46.5356;6.5419
+1027;Lonay;Lonay;VD;46.5265;6.5191
+1028;Préverenges;Préverenges;VD;46.5160;6.5288
+1029;Villars-Ste-Croix;Villars-Sainte-Croix;VD;46.5674;6.5635
+1030;Bussigny;Bussigny;VD;46.5517;6.5551
+1031;Mex VD;Mex (VD);VD;46.5769;6.5611
+1032;Romanel-sur-Lausanne;Romanel-sur-Lausanne;VD;46.5630;6.6039
+1033;Cheseaux-sur-Lausanne;Cheseaux-sur-Lausanne;VD;46.5854;6.6051
+1034;Boussens;Boussens;VD;46.6033;6.5844
+1035;Bournens;Bournens;VD;46.6039;6.5628
+1036;Sullens;Sullens;VD;46.5922;6.5666
+1037;Etagnières;Etagnières;VD;46.6005;6.6131
+1038;Bercher;Bercher;VD;46.6912;6.7082
+1040;Echallens;Echallens;VD;46.6410;6.6348
+1040;St-Barthélemy VD;Saint-Barthélemy (VD);VD;46.6361;6.6019
+1040;Villars-le-Terroir;Villars-le-Terroir;VD;46.6556;6.6391
+1041;Bottens;Bottens;VD;46.6163;6.6607
+1041;Dommartin;Montilliez;VD;46.6487;6.7014
+1041;Montaubion-Chardonney;Jorat-Menthue;VD;46.6460;6.7120
+1041;Naz;Montilliez;VD;46.6582;6.6955
+1041;Poliez-Pittet;Poliez-Pittet;VD;46.6279;6.6831
+1041;Poliez-le-Grand;Montilliez;VD;46.6371;6.6640
+1042;Assens;Assens;VD;46.6125;6.6236
+1042;Bettens;Bettens;VD;46.6265;6.5767
+1042;Bioley-Orjulaz;Assens;VD;46.6204;6.5974
+1043;Sugnens;Montilliez;VD;46.6557;6.6721
+1044;Fey;Fey;VD;46.6750;6.6826
+1045;Ogens;Ogens;VD;46.7107;6.7240
+1046;Rueyres;Rueyres;VD;46.6939;6.6945
+1047;Oppens;Oppens;VD;46.7142;6.6939
+1052;Le Mont-sur-Lausanne;Le Mont-sur-Lausanne;VD;46.5539;6.6345
+1053;Bretigny-sur-Morrens;Bretigny-sur-Morrens;VD;46.5963;6.6422
+1053;Cugy VD;Cugy (VD);VD;46.5846;6.6416
+1054;Morrens VD;Morrens (VD);VD;46.5910;6.6273
+1055;Froideville;Froideville;VD;46.6011;6.6817
+1058;Villars-Tiercelin;Jorat-Menthue;VD;46.6262;6.7055
+1059;Peney-le-Jorat;Jorat-Menthue;VD;46.6321;6.7289
+1061;Villars-Mendraz;Jorat-Menthue;VD;46.6463;6.7288
+1062;Sottens;Jorat-Menthue;VD;46.6555;6.7419
+1063;Boulens;Boulens;VD;46.6814;6.7198
+1063;Chapelle-sur-Moudon;Montanaire;VD;46.6696;6.7362
+1063;Martherenges;Montanaire;VD;46.6610;6.7534
+1063;Peyres-Possens;Montanaire;VD;46.6614;6.7073
+1066;Epalinges;Epalinges;VD;46.5495;6.6680
+1068;Les Monts-de-Pully;Pully;VD;46.5366;6.6900
+1070;Puidoux;Puidoux;VD;46.4980;6.7770
+1071;Chexbres;Chexbres;VD;46.4822;6.7787
+1071;Rivaz;Rivaz;VD;46.4760;6.7792
+1071;St-Saphorin (Lavaux);Saint-Saphorin (Lavaux);VD;46.4762;6.7945
+1072;Forel (Lavaux);Forel (Lavaux);VD;46.5363;6.7635
+1073;Mollie-Margot;Savigny;VD;46.5552;6.7467
+1073;Savigny;Savigny;VD;46.5415;6.7227
+1076;Ferlens VD;Jorat-Mézières;VD;46.5881;6.7862
+1077;Servion;Servion;VD;46.5733;6.7816
+1078;Essertes;Oron;VD;46.5615;6.7867
+1080;Les Cullayes;Servion;VD;46.5734;6.7543
+1081;Montpreveyres;Montpreveyres;VD;46.5808;6.7389
+1082;Corcelles-le-Jorat;Corcelles-le-Jorat;VD;46.6065;6.7389
+1083;Mézières VD;Jorat-Mézières;VD;46.5946;6.7713
+1084;Carrouge VD;Jorat-Mézières;VD;46.6033;6.7732
+1085;Vulliens;Vulliens;VD;46.6223;6.7929
+1088;Ropraz;Ropraz;VD;46.6118;6.7535
+1090;La Croix (Lutry);Lutry;VD;46.5169;6.6995
+1091;Aran;Bourg-en-Lavaux;VD;46.5033;6.7129
+1091;Chenaux;Bourg-en-Lavaux;VD;46.4950;6.7288
+1091;Grandvaux;Bourg-en-Lavaux;VD;46.4998;6.7204
+1092;Belmont-sur-Lausanne;Belmont-sur-Lausanne;VD;46.5220;6.6817
+1093;La Conversion;Lutry;VD;46.5143;6.6857
+1094;Paudex;Paudex;VD;46.5072;6.6730
+1095;Lutry;Lutry;VD;46.5058;6.6880
+1096;Cully;Bourg-en-Lavaux;VD;46.4893;6.7282
+1096;Villette (Lavaux);Bourg-en-Lavaux;VD;46.4944;6.7091
+1097;Riex;Bourg-en-Lavaux;VD;46.4950;6.7373
+1098;Epesses;Bourg-en-Lavaux;VD;46.4920;6.7472
+1110;Morges;Morges;VD;46.5134;6.4957
+1112;Echichens;Echichens;VD;46.5279;6.4981
+1113;St-Saphorin-sur-Morges;Echichens;VD;46.5469;6.4892
+1114;Colombier VD;Echichens;VD;46.5565;6.4730
+1115;Vullierens;Vullierens;VD;46.5745;6.4834
+1116;Cottens VD;Hautemorges;VD;46.5722;6.4546
+1117;Grancy;Grancy;VD;46.5917;6.4645
+1121;Bremblens;Bremblens;VD;46.5458;6.5173
+1122;Romanel-sur-Morges;Romanel-sur-Morges;VD;46.5556;6.5095
+1123;Aclens;Aclens;VD;46.5675;6.5121
+1124;Gollion;Gollion;VD;46.5847;6.5085
+1125;Monnaz;Echichens;VD;46.5284;6.4801
+1126;Vaux-sur-Morges;Vaux-sur-Morges;VD;46.5356;6.4637
+1127;Clarmont;Clarmont;VD;46.5469;6.4497
+1128;Reverolle;Hautemorges;VD;46.5413;6.4381
+1131;Tolochenaz;Tolochenaz;VD;46.5031;6.4770
+1132;Lully VD;Lully (VD);VD;46.5055;6.4633
+1134;Chigny;Chigny;VD;46.5170;6.4790
+1134;Vufflens-le-Château;Vufflens-le-Château;VD;46.5269;6.4688
+1135;Denens;Denens;VD;46.5182;6.4550
+1136;Bussy-Chardonney;Hautemorges;VD;46.5298;6.4425
+1141;Sévery;Hautemorges;VD;46.5753;6.4392
+1142;Pampigny;Hautemorges;VD;46.5802;6.4274
+1143;Apples;Hautemorges;VD;46.5534;6.4312
+1144;Ballens;Ballens;VD;46.5536;6.3745
+1145;Bière;Bière;VD;46.5361;6.3350
+1146;Mollens VD;Mollens (VD);VD;46.5772;6.3624
+1147;Montricher;Montricher;VD;46.6001;6.3769
+1148;Chavannes-le-Veyron;Chavannes-le-Veyron;VD;46.6064;6.4509
+1148;Cuarnens;Cuarnens;VD;46.6248;6.4383
+1148;L'Isle;L'Isle;VD;46.6198;6.4115
+1148;La Coudre;L'Isle;VD;46.6385;6.4028
+1148;La Praz;La Praz;VD;46.6671;6.4268
+1148;Mauraz;Mauraz;VD;46.6057;6.4221
+1148;Moiry VD;Moiry;VD;46.6489;6.4536
+1148;Mont-la-Ville;Mont-la-Ville;VD;46.6458;6.4081
+1148;Villars-Bozon;L'Isle;VD;46.6065;6.4072
+1149;Berolle;Berolle;VD;46.5593;6.3373
+1162;St-Prex;Saint-Prex;VD;46.4815;6.4520
+1163;Etoy;Etoy;VD;46.4844;6.4175
+1164;Buchillon;Buchillon;VD;46.4698;6.4189
+1165;Allaman;Allaman;VD;46.4702;6.3944
+1166;Perroy;Perroy;VD;46.4678;6.3614
+1167;Lussy-sur-Morges;Lussy-sur-Morges;VD;46.5025;6.4500
+1168;Villars-sous-Yens;Villars-sous-Yens;VD;46.5106;6.4297
+1169;Yens;Yens;VD;46.5203;6.4193
+1170;Aubonne;Aubonne;VD;46.4935;6.3897
+1172;Bougy-Villars;Bougy-Villars;VD;46.4801;6.3549
+1173;Féchy;Féchy;VD;46.4806;6.3716
+1174;Montherod;Aubonne;VD;46.4996;6.3651
+1174;Pizy;Aubonne;VD;46.4917;6.3523
+1175;Lavigny;Lavigny;VD;46.5017;6.4043
+1176;St-Livres;Saint-Livres;VD;46.5080;6.3870
+1180;Rolle;Rolle;VD;46.4579;6.3353
+1180;Tartegnin;Tartegnin;VD;46.4667;6.3156
+1182;Gilly;Gilly;VD;46.4579;6.2976
+1183;Bursins;Bursins;VD;46.4523;6.2892
+1184;Luins;Luins;VD;46.4428;6.2715
+1184;Vinzel;Vinzel;VD;46.4476;6.2805
+1185;Mont-sur-Rolle;Mont-sur-Rolle;VD;46.4690;6.3394
+1186;Essertines-sur-Rolle;Essertines-sur-Rolle;VD;46.4914;6.3169
+1187;St-Oyens;Saint-Oyens;VD;46.4978;6.3063
+1188;Gimel;Gimel;VD;46.5115;6.3069
+1188;St-George;Saint-George;VD;46.5139;6.2629
+1189;Saubraz;Saubraz;VD;46.5144;6.3300
+1195;Bursinel;Bursinel;VD;46.4402;6.3072
+1195;Dully;Dully;VD;46.4309;6.2989
+1196;Gland;Gland;VD;46.4212;6.2703
+1197;Prangins;Prangins;VD;46.3963;6.2482
+1201;Genève;Genève;GE;46.2098;6.1439
+1202;Genève;Genève;GE;46.2164;6.1368
+1203;Genève;Genève;GE;46.2082;6.1233
+1204;Genève;Genève;GE;46.2022;6.1465
+1205;Genève;Genève;GE;46.1957;6.1423
+1206;Genève;Genève;GE;46.1916;6.1560
+1207;Genève;Genève;GE;46.2032;6.1600
+1208;Genève;Genève;GE;46.1982;6.1670
+1209;Genève;Genève;GE;46.2216;6.1238
+1212;Grand-Lancy;Lancy;GE;46.1787;6.1194
+1213;Onex;Onex;GE;46.1826;6.1025
+1213;Petit-Lancy;Lancy;GE;46.1916;6.1174
+1214;Vernier;Vernier;GE;46.2130;6.0805
+1215;Genève;Le Grand-Saconnex;GE;46.2354;6.1113
+1216;Cointrin;Meyrin;GE;46.2243;6.1063
+1217;Meyrin;Meyrin;GE;46.2303;6.0771
+1218;Le Grand-Saconnex;Le Grand-Saconnex;GE;46.2297;6.1187
+1219;Aïre;Vernier;GE;46.1986;6.0987
+1219;Châtelaine;Vernier;GE;46.2134;6.1097
+1219;Le Lignon;Vernier;GE;46.2047;6.0995
+1220;Les Avanchets;Vernier;GE;46.2208;6.1090
+1222;Vésenaz;Collonge-Bellerive;GE;46.2418;6.2027
+1223;Cologny;Cologny;GE;46.2181;6.1873
+1224;Chêne-Bougeries;Chêne-Bougeries;GE;46.1998;6.1857
+1225;Chêne-Bourg;Chêne-Bourg;GE;46.1974;6.1979
+1226;Thônex;Thônex;GE;46.1958;6.2074
+1227;Carouge GE;Carouge (GE);GE;46.1827;6.1406
+1227;Les Acacias;Genève;GE;46.1917;6.1355
+1228;Plan-les-Ouates;Plan-les-Ouates;GE;46.1678;6.1189
+1231;Conches;Chêne-Bougeries;GE;46.1875;6.1760
+1232;Confignon;Confignon;GE;46.1763;6.0857
+1233;Bernex;Bernex;GE;46.1722;6.0720
+1234;Vessy;Veyrier;GE;46.1719;6.1580
+1236;Cartigny;Cartigny;GE;46.1740;6.0221
+1237;Avully;Avully;GE;46.1686;5.9965
+1239;Collex;Collex-Bossy;GE;46.2720;6.1225
+1241;Puplinge;Puplinge;GE;46.2097;6.2317
+1242;Satigny;Satigny;GE;46.2148;6.0385
+1243;Presinge;Presinge;GE;46.2156;6.2551
+1244;Choulex;Choulex;GE;46.2252;6.2219
+1245;Collonge-Bellerive;Collonge-Bellerive;GE;46.2578;6.2032
+1246;Corsier GE;Corsier (GE);GE;46.2634;6.2214
+1247;Anières;Anières;GE;46.2789;6.2273
+1248;Hermance;Hermance;GE;46.2998;6.2441
+1251;Gy;Gy;GE;46.2520;6.2568
+1252;Meinier;Meinier;GE;46.2442;6.2321
+1253;Vandoeuvres;Vandoeuvres;GE;46.2156;6.2028
+1254;Jussy;Jussy;GE;46.2343;6.2627
+1255;Veyrier;Veyrier;GE;46.1672;6.1784
+1256;Troinex;Troinex;GE;46.1647;6.1462
+1257;La Croix-de-Rozon;Bardonnex;GE;46.1474;6.1221
+1258;Perly;Perly-Certoux;GE;46.1564;6.0906
+1260;Nyon;Nyon;VD;46.3851;6.2322
+1261;Le Vaud;Le Vaud;VD;46.4772;6.2372
+1261;Longirod;Longirod;VD;46.4956;6.2583
+1261;Marchissy;Marchissy;VD;46.4887;6.2459
+1262;Eysins;Eysins;VD;46.3808;6.2069
+1263;Crassier;Crassier;VD;46.3740;6.1659
+1264;St-Cergue;Saint-Cergue;VD;46.4482;6.1555
+1265;La Cure;Saint-Cergue;VD;46.4626;6.0762
+1266;Duillier;Duillier;VD;46.4104;6.2356
+1267;Coinsins;Coinsins;VD;46.4246;6.2343
+1267;Vich;Vich;VD;46.4283;6.2513
+1268;Begnins;Begnins;VD;46.4418;6.2476
+1268;Burtigny;Burtigny;VD;46.4671;6.2581
+1269;Bassins;Bassins;VD;46.4675;6.2293
+1270;Trélex;Trélex;VD;46.4168;6.2027
+1271;Givrins;Givrins;VD;46.4306;6.2003
+1272;Genolier;Genolier;VD;46.4373;6.2148
+1273;Arzier-Le Muids;Arzier-Le Muids;VD;46.4561;6.2096
+1274;Grens;Grens;VD;46.3945;6.1913
+1274;Signy;Signy-Avenex;VD;46.3904;6.1989
+1275;Chéserex;Chéserex;VD;46.4002;6.1733
+1276;Gingins;Gingins;VD;46.4112;6.1769
+1277;Arnex-sur-Nyon;Arnex-sur-Nyon;VD;46.3752;6.1923
+1277;Borex;Borex;VD;46.3805;6.1770
+1278;La Rippe;La Rippe;VD;46.3840;6.1512
+1279;Bogis-Bossey;Bogis-Bossey;VD;46.3527;6.1658
+1279;Chavannes-de-Bogis;Chavannes-de-Bogis;VD;46.3427;6.1628
+1281;Russin;Russin;GE;46.1891;6.0155
+1283;Dardagny;Dardagny;GE;46.1952;5.9942
+1283;La Plaine;Dardagny;GE;46.1779;6.0039
+1284;Chancy;Chancy;GE;46.1495;5.9733
+1285;Athenaz (Avusy);Avusy;GE;46.1487;6.0043
+1286;Soral;Soral;GE;46.1427;6.0425
+1287;Laconnex;Laconnex;GE;46.1558;6.0364
+1288;Aire-la-Ville;Aire-la-Ville;GE;46.1894;6.0432
+1290;Chavannes-des-Bois;Chavannes-des-Bois;VD;46.3156;6.1330
+1290;Versoix;Versoix;GE;46.2837;6.1601
+1291;Commugny;Commugny;VD;46.3217;6.1763
+1292;Chambésy;Pregny-Chambésy;GE;46.2441;6.1405
+1293;Bellevue;Bellevue;GE;46.2554;6.1459
+1294;Genthod;Genthod;GE;46.2648;6.1514
+1295;Mies;Mies;VD;46.3031;6.1712
+1295;Tannay;Tannay;VD;46.3102;6.1777
+1296;Coppet;Coppet;VD;46.3215;6.1896
+1297;Founex;Founex;VD;46.3334;6.1932
+1298;Céligny;Céligny;GE;46.3498;6.1990
+1299;Crans VD;Crans (VD);VD;46.3611;6.2111
+1302;Vufflens-la-Ville;Vufflens-la-Ville;VD;46.5783;6.5378
+1303;Penthaz;Penthaz;VD;46.5975;6.5387
+1304;Allens;Cossonay;VD;46.6000;6.5091
+1304;Cossonay-Ville;Cossonay;VD;46.6128;6.5063
+1304;Dizy;Dizy;VD;46.6352;6.4961
+1304;Senarclens;Senarclens;VD;46.5993;6.4886
+1305;Penthalaz;Penthalaz;VD;46.6106;6.5257
+1306;Daillens;Daillens;VD;46.6210;6.5489
+1307;Lussery-Villars;Lussery-Villars;VD;46.6326;6.5266
+1308;La Chaux (Cossonay);La Chaux (Cossonay);VD;46.6164;6.4732
+1312;Eclépens;Eclépens;VD;46.6517;6.5328
+1313;Ferreyres;Ferreyres;VD;46.6586;6.4849
+1315;La Sarraz;La Sarraz;VD;46.6583;6.5098
+1316;Chevilly;Chevilly;VD;46.6428;6.4765
+1317;Orny;Orny;VD;46.6679;6.5263
+1318;Pompaples;Pompaples;VD;46.6671;6.5105
+1321;Arnex-sur-Orbe;Arnex-sur-Orbe;VD;46.6934;6.5189
+1322;Croy;Croy;VD;46.6942;6.4769
+1323;Romainmôtier;Romainmôtier-Envy;VD;46.6942;6.4645
+1324;Premier;Premier;VD;46.7051;6.4448
+1325;Vaulion;Vaulion;VD;46.6878;6.3873
+1326;Juriens;Juriens;VD;46.6903;6.4482
+1329;Bretonnières;Bretonnières;VD;46.7131;6.4730
+1337;Vallorbe;Vallorbe;VD;46.7135;6.3815
+1338;Ballaigues;Ballaigues;VD;46.7304;6.4139
+1341;L'Orient;Le Chenit;VD;46.6018;6.2394
+1342;Le Pont;L'Abbaye;VD;46.6698;6.3366
+1343;Les Charbonnières;Le Lieu;VD;46.6674;6.3151
+1344;L'Abbaye;L'Abbaye;VD;46.6496;6.3196
+1345;Le Lieu;Le Lieu;VD;46.6455;6.2768
+1345;Le Séchey;Le Lieu;VD;46.6599;6.2993
+1346;Les Bioux;L'Abbaye;VD;46.6200;6.2695
+1347;Le Sentier;Le Chenit;VD;46.6064;6.2294
+1347;Le Solliat;Le Chenit;VD;46.6184;6.2328
+1348;Le Brassus;Le Chenit;VD;46.5852;6.2093
+1350;Orbe;Orbe;VD;46.7246;6.5329
+1352;Agiez;Agiez;VD;46.7196;6.5082
+1353;Bofflens;Bofflens;VD;46.7044;6.4987
+1354;Montcherand;Montcherand;VD;46.7336;6.5092
+1355;L'Abergement;L'Abergement;VD;46.7543;6.4885
+1355;Sergey;Sergey;VD;46.7508;6.5001
+1356;La Russille;Les Clées;VD;46.7363;6.4795
+1356;Les Clées;Les Clées;VD;46.7318;6.4617
+1357;Lignerolle;Lignerolle;VD;46.7417;6.4569
+1358;Valeyres-sous-Rances;Valeyres-sous-Rances;VD;46.7528;6.5239
+1372;Bavois;Bavois;VD;46.6832;6.5663
+1373;Chavornay;Chavornay;VD;46.7060;6.5709
+1374;Corcelles-sur-Chavornay;Chavornay;VD;46.7034;6.5996
+1375;Penthéréaz;Penthéréaz;VD;46.6826;6.6037
+1376;Eclagnens;Goumoëns;VD;46.6516;6.5918
+1376;Goumoens-la-Ville;Goumoëns;VD;46.6592;6.6051
+1376;Goumoens-le-Jux;Goumoëns;VD;46.6658;6.5875
+1377;Oulens-sous-Echallens;Oulens-sous-Echallens;VD;46.6435;6.5777
+1400;Cheseaux-Noréaz;Cheseaux-Noréaz;VD;46.7811;6.6704
+1400;Yverdon-les-Bains;Yverdon-les-Bains;VD;46.7780;6.6405
+1404;Cuarny;Cuarny;VD;46.7704;6.6891
+1404;Villars-Epeney;Villars-Epeney;VD;46.7819;6.6966
+1405;Pomy;Pomy;VD;46.7607;6.6682
+1406;Cronay;Cronay;VD;46.7566;6.6971
+1407;Bioley-Magnoux;Bioley-Magnoux;VD;46.7260;6.7110
+1407;Donneloye;Donneloye;VD;46.7448;6.7157
+1407;Gossens;Donneloye;VD;46.7408;6.7014
+1407;Mézery-près-Donneloye;Donneloye;VD;46.7488;6.7273
+1408;Prahins;Donneloye;VD;46.7348;6.7400
+1409;Chanéaz;Montanaire;VD;46.7292;6.7429
+1410;Correvon;Montanaire;VD;46.7158;6.7377
+1410;Denezy;Montanaire;VD;46.7211;6.7847
+1410;Prévondavaux;Prévondavaux;FR;46.7281;6.7945
+1410;St-Cierges;Montanaire;VD;46.6892;6.7350
+1410;Thierrens;Montanaire;VD;46.7034;6.7552
+1412;Ursins;Ursins;VD;46.7352;6.6686
+1412;Valeyres-sous-Ursins;Valeyres-sous-Ursins;VD;46.7454;6.6548
+1413;Orzens;Orzens;VD;46.7235;6.6827
+1415;Démoret;Démoret;VD;46.7472;6.7566
+1415;Molondin;Molondin;VD;46.7604;6.7494
+1416;Pailly;Pailly;VD;46.7002;6.6739
+1417;Epautheyres;Essertines-sur-Yverdon;VD;46.7386;6.6426
+1417;Essertines-sur-Yverdon;Essertines-sur-Yverdon;VD;46.7159;6.6406
+1418;Vuarrens;Vuarrens;VD;46.6877;6.6475
+1420;Fiez;Fiez;VD;46.8283;6.6243
+1421;Fontaines-sur-Grandson;Fontaines-sur-Grandson;VD;46.8354;6.6193
+1421;Grandevent;Grandevent;VD;46.8394;6.6062
+1422;Grandson;Grandson;VD;46.8062;6.6385
+1423;Fontanezier;Tévenon;VD;46.8544;6.6535
+1423;Romairon;Tévenon;VD;46.8507;6.6416
+1423;Vaugondry;Tévenon;VD;46.8467;6.6368
+1423;Villars-Burquin;Tévenon;VD;46.8475;6.6282
+1424;Champagne;Champagne;VD;46.8320;6.6575
+1425;Onnens VD;Onnens (VD);VD;46.8388;6.6886
+1426;Concise;Concise;VD;46.8531;6.7207
+1426;Corcelles-près-Concise;Corcelles-près-Concise;VD;46.8458;6.7089
+1427;Bonvillars;Bonvillars;VD;46.8385;6.6709
+1428;Mutrux;Mutrux;VD;46.8828;6.7269
+1428;Provence;Provence;VD;46.8921;6.7201
+1429;Giez;Giez;VD;46.8123;6.6168
+1430;Orges;Orges;VD;46.8086;6.5878
+1431;Novalles;Novalles;VD;46.8287;6.5960
+1431;Vugelles-La Mothe;Vugelles-La Mothe;VD;46.8225;6.5741
+1432;Belmont-sur-Yverdon;Belmont-sur-Yverdon;VD;46.7449;6.6242
+1432;Gressy;Yverdon-les-Bains;VD;46.7512;6.6386
+1433;Suchy;Suchy;VD;46.7234;6.5991
+1434;Ependes VD;Ependes (VD);VD;46.7435;6.6081
+1435;Essert-Pittet;Chavornay;VD;46.7276;6.5826
+1436;Chamblon;Chamblon;VD;46.7780;6.6060
+1436;Treycovagnes;Treycovagnes;VD;46.7760;6.6117
+1437;Suscévaz;Suscévaz;VD;46.7648;6.5800
+1438;Mathod;Mathod;VD;46.7665;6.5642
+1439;Rances;Rances;VD;46.7624;6.5309
+1441;Valeyres-sous-Montagny;Valeyres-sous-Montagny;VD;46.7984;6.6111
+1442;Montagny-près-Yverdon;Montagny-près-Yverdon;VD;46.7917;6.6135
+1443;Champvent;Champvent;VD;46.7829;6.5724
+1443;Essert-sous-Champvent;Champvent;VD;46.7928;6.5848
+1443;Villars-sous-Champvent;Champvent;VD;46.7849;6.5859
+1445;Vuiteboeuf;Vuiteboeuf;VD;46.8064;6.5530
+1446;Baulmes;Baulmes;VD;46.7900;6.5220
+1450;La Sagne (Ste-Croix);Sainte-Croix;VD;46.8151;6.4981
+1450;Le Château-de-Ste-Croix;Sainte-Croix;VD;46.8191;6.5315
+1450;Ste-Croix;Sainte-Croix;VD;46.8224;6.5028
+1452;Les Rasses;Bullet;VD;46.8296;6.5400
+1453;Bullet;Bullet;VD;46.8315;6.5541
+1453;Mauborget;Mauborget;VD;46.8561;6.6158
+1454;L'Auberson;Sainte-Croix;VD;46.8194;6.4622
+1454;La Vraconnaz;Sainte-Croix;VD;46.8406;6.4841
+1462;Yvonand;Yvonand;VD;46.7990;6.7436
+1463;Rovray;Rovray;VD;46.7871;6.7675
+1464;Chavannes-le-Chêne;Chavannes-le-Chêne;VD;46.7766;6.7787
+1464;Chêne-Pâquier;Chêne-Pâquier;VD;46.7706;6.7685
+1468;Cheyres;Cheyres-Châbles;FR;46.8182;6.7885
+1470;Bollion;Lully (FR);FR;46.8179;6.8268
+1470;Estavayer-le-Lac;Estavayer;FR;46.8481;6.8479
+1470;Lully FR;Lully (FR);FR;46.8335;6.8451
+1470;Seiry;Lully (FR);FR;46.8137;6.8317
+1473;Châtillon FR;Châtillon (FR);FR;46.8319;6.8312
+1473;Font;Estavayer;FR;46.8367;6.8219
+1474;Châbles FR;Cheyres-Châbles;FR;46.8226;6.8071
+1475;Autavaux;Estavayer;FR;46.8641;6.8795
+1475;Forel FR;Estavayer;FR;46.8731;6.8906
+1475;Montbrelloz;Estavayer;FR;46.8553;6.8847
+1482;Cugy FR;Cugy (FR);FR;46.8139;6.8902
+1483;Frasses;Les Montets;FR;46.8266;6.8641
+1483;Montet (Broye);Les Montets;FR;46.8161;6.8685
+1483;Vesin;Cugy (FR);FR;46.8088;6.8718
+1484;Aumont;Les Montets;FR;46.7993;6.8505
+1484;Granges-de-Vesin;Les Montets;FR;46.8111;6.8425
+1485;Nuvilly;Nuvilly;FR;46.7835;6.8341
+1486;Vuissens;Estavayer;FR;46.7369;6.7646
+1489;Murist;Estavayer;FR;46.7935;6.8107
+1509;Vucherens;Vucherens;VD;46.6253;6.7775
+1510;Moudon;Moudon;VD;46.6697;6.7973
+1510;Syens;Syens;VD;46.6459;6.7796
+1512;Chavannes-sur-Moudon;Chavannes-sur-Moudon;VD;46.6567;6.8097
+1513;Hermenches;Hermenches;VD;46.6409;6.7588
+1513;Rossenges;Rossenges;VD;46.6535;6.7758
+1514;Bussy-sur-Moudon;Bussy-sur-Moudon;VD;46.6860;6.8099
+1515;Neyruz-sur-Moudon;Montanaire;VD;46.6979;6.7877
+1515;Villars-le-Comte;Villars-le-Comte;VD;46.7107;6.7990
+1521;Curtilles;Curtilles;VD;46.6996;6.8490
+1522;Lucens;Lucens;VD;46.7075;6.8369
+1522;Oulens-sur-Lucens;Lucens;VD;46.7039;6.8086
+1523;Granges-près-Marnand;Valbroye;VD;46.7624;6.8870
+1524;Marnand;Valbroye;VD;46.7571;6.8997
+1525;Henniez;Henniez;VD;46.7419;6.8832
+1525;Seigneux;Valbroye;VD;46.7283;6.8758
+1526;Cremin;Lucens;VD;46.7262;6.8425
+1526;Forel-sur-Lucens;Lucens;VD;46.7277;6.8223
+1527;Villeneuve FR;Surpierre;FR;46.7471;6.8687
+1528;Praratoud;Surpierre;FR;46.7355;6.8462
+1528;Surpierre;Surpierre;FR;46.7461;6.8589
+1529;Cheiry;Surpierre;FR;46.7507;6.8367
+1530;Payerne;Payerne;VD;46.8209;6.9382
+1532;Fétigny;Fétigny-Ménières;FR;46.7971;6.9143
+1533;Ménières;Fétigny-Ménières;FR;46.7831;6.8806
+1534;Chapelle (Broye);Surpierre;FR;46.7689;6.8506
+1534;Sassel;Valbroye;VD;46.7764;6.8575
+1535;Combremont-le-Grand;Valbroye;VD;46.7618;6.8188
+1536;Combremont-le-Petit;Valbroye;VD;46.7489;6.8083
+1537;Champtauroz;Champtauroz;VD;46.7605;6.7892
+1538;Treytorrens (Payerne);Treytorrens (Payerne);VD;46.7719;6.8003
+1541;Bussy FR;Estavayer;FR;46.8358;6.8864
+1541;Morens FR;Estavayer;FR;46.8440;6.9061
+1541;Sévaz;Sévaz;FR;46.8383;6.8736
+1542;Rueyres-les-Prés;Estavayer;FR;46.8594;6.9152
+1543;Grandcour;Grandcour;VD;46.8720;6.9291
+1544;Gletterens;Gletterens;FR;46.9009;6.9355
+1545;Chevroux;Chevroux;VD;46.8896;6.9044
+1551;Vers-chez-Perrin;Payerne;VD;46.7987;6.9450
+1552;Trey;Trey;VD;46.7710;6.9222
+1553;Châtonnaye;Châtonnaye;FR;46.7529;6.9384
+1554;Rossens VD;Villarzel;VD;46.7358;6.9234
+1554;Sédeilles;Villarzel;VD;46.7482;6.9333
+1555;Villarzel;Villarzel;VD;46.7479;6.9128
+1562;Corcelles-près-Payerne;Corcelles-près-Payerne;VD;46.8313;6.9606
+1563;Dompierre FR;Belmont-Broye;FR;46.8520;6.9896
+1564;Domdidier;Belmont-Broye;FR;46.8649;7.0149
+1565;Missy;Missy;VD;46.8795;6.9691
+1565;Vallon;Vallon;FR;46.8813;6.9534
+1566;Les Friques;Saint-Aubin (FR);FR;46.9027;6.9886
+1566;St-Aubin FR;Saint-Aubin (FR);FR;46.8906;6.9810
+1567;Delley;Delley-Portalban;FR;46.9120;6.9677
+1568;Portalban;Delley-Portalban;FR;46.9184;6.9558
+1580;Avenches;Avenches;VD;46.8810;7.0408
+1580;Donatyre;Avenches;VD;46.8759;7.0584
+1580;Oleyres;Avenches;VD;46.8542;7.0379
+1583;Villarepos;Courtepin;FR;46.8839;7.0767
+1584;Villars-le-Grand;Vully-les-Lacs;VD;46.9057;6.9905
+1585;Bellerive VD;Vully-les-Lacs;VD;46.9244;7.0250
+1585;Cotterd;Vully-les-Lacs;VD;46.9241;7.0292
+1585;Salavaux;Vully-les-Lacs;VD;46.9169;7.0265
+1586;Vallamand;Vully-les-Lacs;VD;46.9293;7.0391
+1587;Constantine;Vully-les-Lacs;VD;46.9180;7.0111
+1587;Montmagny;Vully-les-Lacs;VD;46.9261;7.0102
+1588;Cudrefin;Cudrefin;VD;46.9538;7.0223
+1589;Chabrey;Vully-les-Lacs;VD;46.9261;6.9801
+1595;Clavaleyres;Murten;FR;46.8996;7.0911
+1595;Faoug;Faoug;VD;46.9071;7.0758
+1607;Les Tavernes;Oron;VD;46.5523;6.8109
+1607;Les Thioleyres;Oron;VD;46.5391;6.8131
+1607;Palézieux;Oron;VD;46.5419;6.8404
+1607;Palézieux-Village;Oron;VD;46.5535;6.8316
+1608;Bussigny-sur-Oron;Oron;VD;46.5689;6.8599
+1608;Chapelle (Glâne);Rue;FR;46.5874;6.8375
+1608;Chesalles-sur-Oron;Oron;VD;46.5763;6.8533
+1608;Oron-le-Châtel;Oron;VD;46.5753;6.8410
+1609;Besencens;Saint-Martin (FR);FR;46.5858;6.8670
+1609;Fiaugères;Saint-Martin (FR);FR;46.5865;6.8914
+1609;St-Martin FR;Saint-Martin (FR);FR;46.5759;6.8738
+1610;Châtillens;Oron;VD;46.5676;6.8139
+1610;Oron-la-Ville;Oron;VD;46.5704;6.8261
+1610;Vuibroye;Oron;VD;46.5709;6.8062
+1611;Le Crêt-près-Semsales;La Verrerie;FR;46.6065;6.9162
+1612;Ecoteaux;Oron;VD;46.5465;6.8606
+1613;Maracon;Maracon;VD;46.5519;6.8718
+1614;Granges (Veveyse);Granges (Veveyse);FR;46.5254;6.8296
+1615;Bossonnens;Bossonnens;FR;46.5256;6.8511
+1616;Attalens;Attalens;FR;46.5090;6.8510
+1617;Remaufens;Remaufens;FR;46.5300;6.8801
+1617;Tatroz;Attalens;FR;46.5252;6.8688
+1618;Châtel-St-Denis;Châtel-Saint-Denis;FR;46.5272;6.9037
+1619;Les Paccots;Châtel-Saint-Denis;FR;46.5189;6.9515
+1623;Semsales;Semsales;FR;46.5726;6.9298
+1624;Grattavache;La Verrerie;FR;46.5955;6.9187
+1624;La Verrerie;La Verrerie;FR;46.5892;6.9201
+1624;Progens;La Verrerie;FR;46.5848;6.9120
+1625;Maules;Sâles;FR;46.6383;6.9910
+1625;Sâles (Gruyère);Sâles;FR;46.6333;6.9702
+1626;Romanens;Sâles;FR;46.6519;6.9736
+1626;Rueyres-Treyfayes;Sâles;FR;46.6493;6.9563
+1627;Vaulruz;Vaulruz;FR;46.6213;6.9879
+1628;Vuadens;Vuadens;FR;46.6158;7.0188
+1630;Bulle;Bulle;FR;46.6205;7.0566
+1632;Riaz;Riaz;FR;46.6401;7.0580
+1633;Marsens;Marsens;FR;46.6564;7.0594
+1633;Vuippens;Marsens;FR;46.6597;7.0767
+1634;La Roche FR;La Roche;FR;46.6956;7.1411
+1635;La Tour-de-Trême;Bulle;FR;46.6089;7.0588
+1636;Broc;Broc;FR;46.6049;7.1012
+1637;Charmey (Gruyère);Val-de-Charmey;FR;46.6209;7.1673
+1638;Morlon;Morlon;FR;46.6249;7.0833
+1642;Sorens;Sorens;FR;46.6706;7.0529
+1643;Gumefens;Pont-en-Ogoz;FR;46.6774;7.0762
+1644;Avry-devant-Pont;Pont-en-Ogoz;FR;46.6865;7.0868
+1645;Le Bry;Pont-en-Ogoz;FR;46.7008;7.0847
+1646;Echarlens;Echarlens;FR;46.6466;7.0750
+1647;Corbières;Corbières;FR;46.6591;7.1053
+1648;Hauteville;Hauteville;FR;46.6736;7.1123
+1649;Pont-la-Ville;Pont-la-Ville;FR;46.6965;7.1136
+1651;Villarvolard;Corbières;FR;46.6449;7.1090
+1652;Botterens;Botterens;FR;46.6183;7.1135
+1652;Villarbeney;Botterens;FR;46.6286;7.1108
+1653;Châtel-sur-Montsalvens;Châtel-sur-Montsalvens;FR;46.6137;7.1266
+1653;Crésuz;Crésuz;FR;46.6206;7.1417
+1654;Cerniat FR;Val-de-Charmey;FR;46.6426;7.1707
+1656;Im Fang;Jaun;FR;46.5993;7.2379
+1656;Jaun;Jaun;FR;46.6099;7.2829
+1657;Abländschen;Saanen;BE;46.5725;7.2890
+1658;La Tine;Rossinière;VD;46.4704;7.0511
+1658;Rossinière;Rossinière;VD;46.4675;7.0830
+1659;Flendruz;Château-d'Oex;VD;46.4856;7.1750
+1659;Rougemont;Rougemont;VD;46.4907;7.2089
+1660;Château-d'Oex;Château-d'Oex;VD;46.4750;7.1363
+1660;L'Etivaz;Château-d'Oex;VD;46.4240;7.1497
+1660;La Lécherette;Château-d'Oex;VD;46.4250;7.1045
+1660;Les Moulins;Château-d'Oex;VD;46.4600;7.1090
+1661;Le Pâquier-Montbarry;Le Pâquier (FR);FR;46.5935;7.0551
+1663;Epagny;Gruyères;FR;46.5919;7.0852
+1663;Gruyères;Gruyères;FR;46.5828;7.0817
+1663;Moléson-sur-Gruyères;Gruyères;FR;46.5658;7.0368
+1663;Pringy;Gruyères;FR;46.5806;7.0688
+1665;Estavannens;Bas-Intyamon;FR;46.5638;7.1031
+1666;Grandvillard;Grandvillard;FR;46.5395;7.0855
+1666;Villars-sous-Mont;Bas-Intyamon;FR;46.5402;7.0689
+1667;Enney;Bas-Intyamon;FR;46.5654;7.0814
+1669;Albeuve;Haut-Intyamon;FR;46.5162;7.0546
+1669;Les Sciernes-d'Albeuve;Haut-Intyamon;FR;46.4962;7.0360
+1669;Lessoc;Haut-Intyamon;FR;46.5065;7.0628
+1669;Montbovon;Haut-Intyamon;FR;46.4845;7.0358
+1669;Neirivue;Haut-Intyamon;FR;46.5264;7.0593
+1670;Bionnens;Ursy;FR;46.6353;6.8547
+1670;Esmonts;Ursy;FR;46.6420;6.8437
+1670;Ursy;Ursy;FR;46.6338;6.8387
+1673;Auboranges;Rue;FR;46.5833;6.8041
+1673;Ecublens FR;Rue;FR;46.6083;6.8099
+1673;Gillarens;Rue;FR;46.5892;6.8283
+1673;Promasens;Rue;FR;46.6025;6.8237
+1673;Rue;Rue;FR;46.6216;6.8236
+1674;Montet (Glâne);Ursy;FR;46.6445;6.8155
+1674;Morlens;Ursy;FR;46.6527;6.8364
+1674;Vuarmarens;Ursy;FR;46.6440;6.8293
+1675;Blessens;Rue;FR;46.6080;6.8373
+1675;Mossel;Ursy;FR;46.6121;6.8580
+1675;Vauderens;Ursy;FR;46.6228;6.8498
+1676;Chavannes-les-Forts;Siviriez;FR;46.6519;6.8962
+1677;Prez-vers-Siviriez;Siviriez;FR;46.6376;6.8758
+1678;Siviriez;Siviriez;FR;46.6578;6.8767
+1679;Villaraboud;Siviriez;FR;46.6613;6.9110
+1680;Berlens;Mézières (FR);FR;46.6941;6.9527
+1680;Romont FR;Romont (FR);FR;46.6941;6.9134
+1681;Billens;Billens-Hennens;FR;46.6899;6.8977
+1681;Hennens;Billens-Hennens;FR;46.6828;6.8840
+1682;Cerniaz VD;Valbroye;VD;46.7262;6.8960
+1682;Dompierre VD;Dompierre (VD);VD;46.7090;6.8819
+1682;Lovatens;Lovatens;VD;46.6914;6.8652
+1682;Prévonloup;Prévonloup;VD;46.7003;6.8830
+1682;Villars-Bramard;Valbroye;VD;46.7190;6.8989
+1683;Brenles;Lucens;VD;46.6715;6.8540
+1683;Chesalles-sur-Moudon;Lucens;VD;46.6752;6.8339
+1683;Sarzens;Lucens;VD;46.6822;6.8494
+1684;Mézières FR;Mézières (FR);FR;46.6771;6.9280
+1685;Villariaz;Vuisternens-devant-Romont;FR;46.6627;6.9410
+1686;Grangettes-près-Romont;Grangettes;FR;46.6771;6.9635
+1686;La Neirigue;Vuisternens-devant-Romont;FR;46.6843;6.9548
+1687;Estévenens;Vuisternens-devant-Romont;FR;46.6677;6.9601
+1687;La Magne;Vuisternens-devant-Romont;FR;46.6379;6.9302
+1687;Vuisternens-devant-Romont;Vuisternens-devant-Romont;FR;46.6512;6.9287
+1688;Lieffrens;Vuisternens-devant-Romont;FR;46.6361;6.9013
+1688;Sommentier;Vuisternens-devant-Romont;FR;46.6374;6.9117
+1689;Le Châtelard-près-Romont;Le Châtelard;FR;46.6779;6.9848
+1690;Lussy FR;Villaz;FR;46.7158;6.9437
+1690;Villaz-St-Pierre;Villaz;FR;46.7205;6.9579
+1691;Villarimboud;Villaz;FR;46.7395;6.9629
+1692;Massonnens;Massonnens;FR;46.6984;6.9745
+1694;Chavannes-sous-Orsonnens;Villorsonnens;FR;46.7262;6.9896
+1694;Orsonnens;Villorsonnens;FR;46.7150;6.9947
+1694;Villargiroud;Villorsonnens;FR;46.7036;7.0014
+1694;Villarsiviriaux;Villorsonnens;FR;46.6981;7.0118
+1695;Estavayer-le-Gibloux;Gibloux;FR;46.7222;7.0247
+1695;Rueyres-St-Laurent;Gibloux;FR;46.7142;7.0343
+1695;Villarlod;Gibloux;FR;46.7023;7.0240
+1695;Villarsel-le-Gibloux;Gibloux;FR;46.7130;7.0178
+1696;Vuisternens-en-Ogoz;Gibloux;FR;46.7060;7.0544
+1697;La Joux FR;Vuisternens-devant-Romont;FR;46.6255;6.9362
+1697;Les Ecasseys;Vuisternens-devant-Romont;FR;46.6214;6.9050
+1699;Bouloz;Le Flon;FR;46.6123;6.8823
+1699;Pont (Veveyse);Le Flon;FR;46.5910;6.8532
+1699;Porsel;Le Flon;FR;46.6019;6.8667
+1700;Fribourg;Fribourg;FR;46.8051;7.1553
+1712;Tafers;Tafers;FR;46.8152;7.2192
+1713;St. Antoni;Tafers;FR;46.8206;7.2633
+1714;Heitenried;Heitenried;FR;46.8293;7.3016
+1715;Alterswil FR;Tafers;FR;46.7945;7.2644
+1716;Oberschrot;Plaffeien;FR;46.7398;7.2771
+1716;Plaffeien;Plaffeien;FR;46.7350;7.2899
+1716;Schwarzsee;Plaffeien;FR;46.6769;7.2897
+1717;St. Ursen;St. Ursen;FR;46.7891;7.2166
+1718;Rechthalten;Rechthalten;FR;46.7667;7.2443
+1719;Brünisried;Brünisried;FR;46.7560;7.2795
+1719;Zumholz;Plaffeien;FR;46.7554;7.2914
+1720;Chésopelloz;Corminboeuf;FR;46.8076;7.0810
+1720;Corminboeuf;Corminboeuf;FR;46.8108;7.1054
+1721;Cormérod;Misery-Courtion;FR;46.8647;7.0866
+1721;Cournillens;Misery-Courtion;FR;46.8579;7.1008
+1721;Courtion;Misery-Courtion;FR;46.8575;7.0708
+1721;Misery;Misery-Courtion;FR;46.8522;7.0670
+1722;Bourguillon;Fribourg;FR;46.8003;7.1748
+1723;Marly;Marly;FR;46.7781;7.1576
+1723;Pierrafortscha;Pierrafortscha;FR;46.7821;7.1809
+1723;Villarsel-sur-Marly;Villarsel-sur-Marly;FR;46.7625;7.1694
+1724;Bonnefontaine;Le Mouret;FR;46.7410;7.1978
+1724;Essert FR;Le Mouret;FR;46.7373;7.1640
+1724;Ferpicloz;Ferpicloz;FR;46.7473;7.1658
+1724;Le Mouret;Le Mouret;FR;46.7497;7.1778
+1724;Montévraz;Le Mouret;FR;46.7380;7.1751
+1724;Oberried FR;Le Mouret;FR;46.7353;7.1874
+1724;Senèdes;Bois-d'Amont;FR;46.7421;7.1432
+1724;Zénauva;Le Mouret;FR;46.7363;7.1810
+1725;Posieux;Hauterive (FR);FR;46.7637;7.0990
+1726;Farvagny-le-Grand;Gibloux;FR;46.7203;7.0665
+1726;Farvagny-le-Petit;Gibloux;FR;46.7288;7.0732
+1726;Grenilles;Gibloux;FR;46.7269;7.0485
+1726;Posat;Gibloux;FR;46.7363;7.0556
+1727;Corpataux;Gibloux;FR;46.7426;7.0951
+1727;Magnedens;Gibloux;FR;46.7425;7.0810
+1728;Rossens FR;Gibloux;FR;46.7201;7.1033
+1730;Ecuvillens;Hauterive (FR);FR;46.7562;7.0832
+1731;Ependes FR;Bois-d'Amont;FR;46.7543;7.1480
+1732;Arconciel;Bois-d'Amont;FR;46.7440;7.1238
+1733;Treyvaux;Treyvaux;FR;46.7278;7.1370
+1734;Tentlingen;Tentlingen;FR;46.7691;7.1972
+1735;Giffers;Giffers;FR;46.7602;7.2119
+1736;St. Silvester;St. Silvester;FR;46.7414;7.2208
+1737;Plasselb;Plasselb;FR;46.7350;7.2523
+1738;Sangernboden;Guggisberg;BE;46.7232;7.3527
+1740;Neyruz FR;Neyruz (FR);FR;46.7673;7.0651
+1741;Cottens FR;Cottens (FR);FR;46.7535;7.0350
+1742;Autigny;Autigny;FR;46.7376;7.0209
+1744;Chénens;Chénens;FR;46.7434;7.0000
+1745;Lentigny;La Brillaz;FR;46.7594;7.0052
+1746;Prez-vers-Noréaz;Prez;FR;46.7831;7.0131
+1747;Corserey;Prez;FR;46.7725;6.9936
+1748;Torny-le-Grand;Torny;FR;46.7705;6.9667
+1749;Middes;Torny;FR;46.7718;6.9479
+1752;Villars-sur-Glâne;Villars-sur-Glâne;FR;46.7930;7.1256
+1753;Matran;Matran;FR;46.7866;7.0980
+1754;Avry-sur-Matran;Avry;FR;46.7869;7.0691
+1754;Corjolens;Avry;FR;46.7856;7.0402
+1756;Lovens;La Brillaz;FR;46.7715;7.0215
+1756;Onnens FR;La Brillaz;FR;46.7749;7.0369
+1757;Noréaz;Prez;FR;46.8023;7.0281
+1762;Givisiez;Givisiez;FR;46.8127;7.1307
+1763;Granges-Paccot;Granges-Paccot;FR;46.8215;7.1461
+1772;Grolley;Grolley-Ponthaux;FR;46.8323;7.0641
+1772;Nierlet-les-Bois;Grolley-Ponthaux;FR;46.8215;7.0553
+1772;Ponthaux;Grolley-Ponthaux;FR;46.8146;7.0402
+1773;Chandon;Belmont-Broye;FR;46.8395;7.0441
+1773;Léchelles;Belmont-Broye;FR;46.8295;7.0152
+1773;Russy;Belmont-Broye;FR;46.8422;7.0018
+1774;Cousset;Montagny (FR);FR;46.8177;6.9774
+1774;Montagny-les-Monts;Montagny (FR);FR;46.8076;6.9874
+1775;Grandsivaz;Montagny (FR);FR;46.7870;6.9835
+1775;Mannens;Montagny (FR);FR;46.7937;6.9693
+1776;Montagny-la-Ville;Montagny (FR);FR;46.8176;6.9949
+1782;Autafond;Belfaux;FR;46.8162;7.0806
+1782;Belfaux;Belfaux;FR;46.8212;7.1016
+1782;Cormagens;La Sonnaz;FR;46.8366;7.1361
+1782;Formangueires;La Sonnaz;FR;46.8276;7.1171
+1782;La Corbaz;La Sonnaz;FR;46.8369;7.1189
+1782;Lossy;La Sonnaz;FR;46.8336;7.1094
+1783;Barberêche;Courtepin;FR;46.8607;7.1557
+1783;Pensier;Courtepin;FR;46.8444;7.1373
+1784;Courtepin;Courtepin;FR;46.8626;7.1259
+1784;Wallenried;Courtepin;FR;46.8732;7.1151
+1785;Cressier FR;Cressier (FR);FR;46.8997;7.1425
+1786;Sugiez;Mont-Vully;FR;46.9632;7.1147
+1787;Mur (Vully) FR;Mont-Vully;FR;46.9448;7.0639
+1787;Mur (Vully) VD;Vully-les-Lacs;VD;46.9439;7.0591
+1787;Môtier (Vully);Mont-Vully;FR;46.9472;7.0808
+1788;Praz (Vully);Mont-Vully;FR;46.9542;7.1001
+1789;Lugnorre;Mont-Vully;FR;46.9511;7.0756
+1791;Courtaman;Courtepin;FR;46.8697;7.1302
+1792;Cordast;Gurmels;FR;46.8746;7.1518
+1792;Guschelmuth;Gurmels;FR;46.8821;7.1403
+1793;Jeuss;Murten;FR;46.9032;7.1654
+1794;Salvenach;Murten;FR;46.9127;7.1507
+1795;Courlevon;Murten;FR;46.8915;7.1109
+1796;Courgevaux;Courgevaux;FR;46.9102;7.1106
+1797;Münchenwiler;Münchenwiler;BE;46.9132;7.1253
+1800;Vevey;Vevey;VD;46.4630;6.8476
+1801;Le Mont-Pèlerin;Chardonne;VD;46.4845;6.8286
+1802;Corseaux;Corseaux;VD;46.4708;6.8288
+1803;Chardonne;Chardonne;VD;46.4776;6.8293
+1804;Corsier-sur-Vevey;Corsier-sur-Vevey;VD;46.4717;6.8444
+1805;Jongny;Jongny;VD;46.4827;6.8455
+1806;St-Légier-La Chiésaz;Blonay - Saint-Légier;VD;46.4724;6.8751
+1807;Blonay;Blonay - Saint-Légier;VD;46.4665;6.8947
+1808;Les Monts-de-Corsier;Corsier-sur-Vevey;VD;46.5005;6.8774
+1809;Fenil-sur-Corsier;Corsier-sur-Vevey;VD;46.4836;6.8652
+1814;La Tour-de-Peilz;La Tour-de-Peilz;VD;46.4550;6.8657
+1815;Clarens;Montreux;VD;46.4444;6.8938
+1816;Chailly-Montreux;Montreux;VD;46.4531;6.8919
+1817;Brent;Montreux;VD;46.4548;6.9032
+1820;Montreux;Montreux;VD;46.4348;6.9129
+1820;Territet;Montreux;VD;46.4253;6.9256
+1820;Veytaux;Veytaux;VD;46.4182;6.9313
+1822;Chernex;Montreux;VD;46.4441;6.9122
+1823;Glion;Montreux;VD;46.4330;6.9271
+1824;Caux;Montreux;VD;46.4352;6.9472
+1832;Chamby;Montreux;VD;46.4539;6.9122
+1832;Villard-sur-Chamby;Montreux;VD;46.4649;6.9310
+1833;Les Avants;Montreux;VD;46.4571;6.9427
+1844;Villeneuve VD;Villeneuve (VD);VD;46.3968;6.9305
+1845;Noville;Noville;VD;46.3821;6.9034
+1846;Chessel;Chessel;VD;46.3502;6.8945
+1847;Rennaz;Rennaz;VD;46.3769;6.9199
+1852;Roche VD;Roche (VD);VD;46.3602;6.9296
+1853;Yvorne;Yvorne;VD;46.3320;6.9570
+1854;Leysin;Leysin;VD;46.3447;7.0144
+1856;Corbeyrier;Corbeyrier;VD;46.3495;6.9636
+1860;Aigle;Aigle;VD;46.3164;6.9647
+1862;La Comballaz;Ormont-Dessous;VD;46.3726;7.0814
+1862;Les Mosses;Ormont-Dessous;VD;46.3957;7.1014
+1863;Le Sépey;Ormont-Dessous;VD;46.3604;7.0498
+1864;Vers-l'Eglise;Ormont-Dessus;VD;46.3571;7.1218
+1865;Les Diablerets;Ormont-Dessus;VD;46.3510;7.1612
+1866;La Forclaz VD;Ormont-Dessous;VD;46.3495;7.0682
+1867;Ollon VD;Ollon;VD;46.2935;6.9950
+1867;Panex;Ollon;VD;46.3130;7.0169
+1867;St-Triphon;Ollon;VD;46.2893;6.9762
+1868;Collombey;Collombey-Muraz;VS;46.2734;6.9478
+1869;Massongex;Massongex;VS;46.2415;6.9867
+1870;Monthey;Monthey;VS;46.2539;6.9521
+1871;Choëx;Monthey;VS;46.2412;6.9496
+1871;Les Giettes;Monthey;VS;46.2273;6.9596
+1872;Troistorrents;Troistorrents;VS;46.2344;6.9223
+1873;Champoussin;Val-d'Illiez;VS;46.2082;6.8630
+1873;Les Crosets;Val-d'Illiez;VS;46.1872;6.8388
+1873;Val-d'Illiez;Val-d'Illiez;VS;46.2011;6.8914
+1874;Champéry;Champéry;VS;46.1757;6.8683
+1875;Morgins;Troistorrents;VS;46.2397;6.8605
+1880;Bex;Bex;VD;46.2490;7.0142
+1880;Fenalet-sur-Bex;Bex;VD;46.2716;7.0279
+1880;Frenières-sur-Bex;Bex;VD;46.2609;7.0679
+1880;Les Plans-sur-Bex;Bex;VD;46.2566;7.0919
+1880;Les Posses-sur-Bex;Bex;VD;46.2709;7.0469
+1882;Gryon;Gryon;VD;46.2816;7.0775
+1884;Arveyes;Ollon;VD;46.2899;7.0619
+1884;Huémoz;Ollon;VD;46.2914;7.0257
+1884;Villars-sur-Ollon;Ollon;VD;46.2993;7.0589
+1885;Chesières;Ollon;VD;46.3025;7.0440
+1890;Mex VS;Saint-Maurice;VS;46.1863;6.9975
+1890;St-Maurice;Saint-Maurice;VS;46.2062;7.0063
+1891;Vérossaz;Vérossaz;VS;46.2123;6.9848
+1892;Lavey-Village;Lavey-Morcles;VD;46.2203;7.0175
+1892;Lavey-les-Bains;Lavey-Morcles;VD;46.2053;7.0166
+1892;Morcles;Lavey-Morcles;VD;46.2090;7.0348
+1893;Muraz (Collombey);Collombey-Muraz;VS;46.2802;6.9289
+1895;Vionnaz;Vionnaz;VS;46.3107;6.9025
+1896;Miex;Vouvry;VS;46.3392;6.8627
+1896;Vouvry;Vouvry;VS;46.3372;6.8885
+1897;Bouveret;Port-Valais;VS;46.3833;6.8610
+1897;Les Evouettes;Port-Valais;VS;46.3624;6.8761
+1898;St-Gingolph;Saint-Gingolph;VS;46.3884;6.8130
+1899;Torgon;Vionnaz;VS;46.3170;6.8729
+1902;Evionnaz;Evionnaz;VS;46.1744;7.0228
+1903;Collonges;Collonges;VS;46.1725;7.0347
+1904;Vernayaz;Vernayaz;VS;46.1360;7.0407
+1905;Dorénaz;Dorénaz;VS;46.1490;7.0446
+1906;Charrat;Martigny;VS;46.1236;7.1332
+1907;Saxon;Saxon;VS;46.1479;7.1765
+1908;Riddes;Riddes;VS;46.1714;7.2220
+1911;Ovronnaz;Leytron;VS;46.1983;7.1732
+1912;Dugny (Leytron);Leytron;VS;46.1891;7.1812
+1912;Leytron;Leytron;VS;46.1862;7.2084
+1912;Montagnon (Leytron);Leytron;VS;46.1900;7.1912
+1912;Produit (Leytron);Leytron;VS;46.1868;7.1938
+1913;Saillon;Saillon;VS;46.1698;7.1861
+1914;Auddes-sur-Riddes;Riddes;VS;46.1522;7.2434
+1914;Isérables;Isérables;VS;46.1606;7.2485
+1918;La Tzoumaz;Riddes;VS;46.1447;7.2370
+1920;Martigny;Martigny;VS;46.1029;7.0749
+1921;Martigny-Croix;Martigny-Combe;VS;46.0830;7.0481
+1922;Les Granges (Salvan);Salvan;VS;46.1274;7.0214
+1922;Salvan;Salvan;VS;46.1201;7.0204
+1923;Le Trétien;Salvan;VS;46.1017;6.9985
+1923;Les Marécottes;Salvan;VS;46.1119;7.0056
+1925;Finhaut;Finhaut;VS;46.0824;6.9749
+1925;Le Châtelard VS;Finhaut;VS;46.0590;6.9570
+1926;Fully;Fully;VS;46.1410;7.1203
+1927;Chemin;Val de Bagnes;VS;46.0894;7.0987
+1928;Ravoire;Martigny-Combe;VS;46.0991;7.0488
+1929;Trient;Trient;VS;46.0557;6.9851
+1932;Bovernier;Bovernier;VS;46.0761;7.0823
+1932;Les Valettes (Bovernier);Bovernier;VS;46.0753;7.0734
+1933;Chamoille (Sembrancher);Sembrancher;VS;46.0606;7.1544
+1933;La Garde (Sembrancher);Sembrancher;VS;46.0654;7.1463
+1933;Sembrancher;Sembrancher;VS;46.0780;7.1505
+1933;Vens (Sembrancher);Val de Bagnes;VS;46.0872;7.1275
+1934;Bruson;Val de Bagnes;VS;46.0654;7.2129
+1934;Le Châble VS;Val de Bagnes;VS;46.0808;7.2142
+1936;Verbier;Val de Bagnes;VS;46.1000;7.2273
+1937;Orsières;Orsières;VS;46.0293;7.1442
+1938;Champex-Lac;Orsières;VS;46.0303;7.1133
+1941;Cries (Vollèges);Val de Bagnes;VS;46.0913;7.1772
+1941;Vollèges;Val de Bagnes;VS;46.0859;7.1676
+1942;Levron;Val de Bagnes;VS;46.0985;7.1630
+1943;Praz-de-Fort;Orsières;VS;45.9881;7.1233
+1944;La Fouly VS;Orsières;VS;45.9418;7.1029
+1945;Chandonne (Liddes);Liddes;VS;46.0044;7.1804
+1945;Chez Petit (Liddes);Liddes;VS;45.9863;7.1785
+1945;Dranse (Liddes);Liddes;VS;45.9889;7.1814
+1945;Fontaine Dessous (Liddes);Liddes;VS;46.0103;7.1680
+1945;Fontaine Dessus (Liddes);Liddes;VS;46.0056;7.1734
+1945;Fornex (Liddes);Liddes;VS;46.0086;7.1638
+1945;Les Moulins VS (Liddes);Liddes;VS;46.0045;7.1680
+1945;Liddes;Liddes;VS;45.9921;7.1859
+1945;Palasuit (Liddes);Liddes;VS;45.9823;7.1922
+1945;Petit Vichères (Liddes);Liddes;VS;45.9879;7.1578
+1945;Rive Haute (Liddes);Liddes;VS;46.0070;7.1705
+1945;Vichères (Liddes);Liddes;VS;45.9964;7.1664
+1946;Bourg-St-Pierre;Bourg-Saint-Pierre;VS;45.9497;7.2089
+1947;Champsec;Val de Bagnes;VS;46.0568;7.2420
+1947;Versegères;Val de Bagnes;VS;46.0661;7.2307
+1948;Fionnay;Val de Bagnes;VS;46.0306;7.3089
+1948;Lourtier;Val de Bagnes;VS;46.0518;7.2637
+1948;Sarreyer;Val de Bagnes;VS;46.0656;7.2519
+1950;Sion;Sion;VS;46.2314;7.3584
+1955;Chamoson;Chamoson;VS;46.2016;7.2234
+1955;Grugnay (Chamoson);Chamoson;VS;46.2080;7.2162
+1955;Les Vérines (Chamoson);Chamoson;VS;46.2111;7.2034
+1955;Mayens-de-Chamoson;Chamoson;VS;46.2054;7.1857
+1955;Némiaz (Chamoson);Chamoson;VS;46.2114;7.2238
+1955;St-Pierre-de-Clages;Chamoson;VS;46.1923;7.2370
+1957;Ardon;Ardon;VS;46.2096;7.2594
+1958;St-Léonard;Saint-Léonard;VS;46.2537;7.4221
+1958;Uvrier;Sion;VS;46.2491;7.4143
+1961;Vernamiège;Mont-Noble;VS;46.2108;7.4343
+1962;Pont-de-la-Morge (Sion);Sion;VS;46.2238;7.3151
+1963;Vétroz;Vétroz;VS;46.2216;7.2774
+1964;Conthey;Conthey;VS;46.2266;7.3044
+1965;Savièse;Savièse;VS;46.2538;7.3472
+1966;Argnou (Ayent);Ayent;VS;46.2625;7.3993
+1966;Blignou (Ayent);Ayent;VS;46.2727;7.3987
+1966;Botyre (Ayent);Ayent;VS;46.2762;7.4062
+1966;Fortunau (Ayent);Ayent;VS;46.2912;7.4173
+1966;La Place (Ayent);Ayent;VS;46.2748;7.4109
+1966;Luc (Ayent);Ayent;VS;46.2840;7.4194
+1966;Saxonne (Ayent);Ayent;VS;46.2806;7.4071
+1966;Signèse (Ayent);Ayent;VS;46.2578;7.4036
+1966;St-Romain (Ayent);Ayent;VS;46.2833;7.4123
+1966;Villa (Ayent);Ayent;VS;46.2764;7.4147
+1967;Bramois;Sion;VS;46.2322;7.4020
+1968;Mase;Mont-Noble;VS;46.1962;7.4358
+1969;Eison (St-Martin);Saint-Martin (VS);VS;46.1530;7.4700
+1969;Liez (St-Martin);Saint-Martin (VS);VS;46.1626;7.4515
+1969;St-Martin VS;Saint-Martin (VS);VS;46.1734;7.4428
+1969;Suen (St-Martin);Saint-Martin (VS);VS;46.1820;7.4382
+1969;Trogne (St-Martin);Saint-Martin (VS);VS;46.1692;7.4548
+1971;Champlan (Grimisuat);Grimisuat;VS;46.2472;7.3725
+1971;Grimisuat;Grimisuat;VS;46.2590;7.3847
+1972;Anzère;Ayent;VS;46.2978;7.4026
+1973;Nax;Mont-Noble;VS;46.2281;7.4311
+1974;Arbaz;Arbaz;VS;46.2772;7.3850
+1975;St-Séverin;Conthey;VS;46.2395;7.3057
+1976;Aven;Conthey;VS;46.2412;7.2688
+1976;Daillon;Conthey;VS;46.2555;7.3057
+1976;Erde;Conthey;VS;46.2506;7.2929
+1977;Icogne;Icogne;VS;46.2926;7.4389
+1978;Lens;Lens;VS;46.2818;7.4483
+1981;Vex;Vex;VS;46.2112;7.3977
+1982;Euseigne;Hérémence;VS;46.1704;7.4187
+1983;Evolène;Evolène;VS;46.1139;7.4944
+1983;Lanna;Evolène;VS;46.1201;7.4692
+1984;La Tour VS;Evolène;VS;46.0985;7.5057
+1984;Les Haudères;Evolène;VS;46.0853;7.5050
+1985;La Forclaz VS;Evolène;VS;46.0853;7.5243
+1985;La Sage;Evolène;VS;46.0993;7.5145
+1985;Villa (Evolène);Evolène;VS;46.1084;7.5133
+1986;Arolla;Evolène;VS;46.0331;7.4825
+1987;Hérémence;Hérémence;VS;46.1662;7.3953
+1988;Les Collons;Vex;VS;46.1836;7.3867
+1988;Thyon;Vex;VS;46.1799;7.3719
+1991;Arvillard (Salins);Sion;VS;46.2120;7.3492
+1991;Misériez (Salins);Sion;VS;46.2080;7.3469
+1991;Pravidondaz (Salins);Sion;VS;46.2119;7.3536
+1991;Salins;Sion;VS;46.2102;7.3560
+1991;Turin (Salins);Sion;VS;46.2163;7.3573
+1992;Crête-à-l'Oeil (Les Agettes);Sion;VS;46.2115;7.3712
+1992;La Vernaz (Les Agettes);Sion;VS;46.2102;7.3730
+1992;Les Agettes;Sion;VS;46.2076;7.3733
+1992;Les Mayens-de-Sion;Vex;VS;46.2014;7.3879
+1993;Clèbes (Nendaz);Nendaz;VS;46.1872;7.3442
+1993;Veysonnaz;Veysonnaz;VS;46.1954;7.3374
+1994;Aproz (Nendaz);Nendaz;VS;46.2056;7.3112
+1996;Baar (Nendaz);Nendaz;VS;46.2042;7.3274
+1996;Basse-Nendaz;Nendaz;VS;46.1910;7.3109
+1996;Beuson (Nendaz);Nendaz;VS;46.1805;7.3249
+1996;Bieudron (Nendaz);Nendaz;VS;46.1949;7.2777
+1996;Brignon (Nendaz);Nendaz;VS;46.1909;7.3258
+1996;Condémines (Nendaz);Nendaz;VS;46.1769;7.2555
+1996;Fey (Nendaz);Nendaz;VS;46.1865;7.2704
+1996;Saclentse;Nendaz;VS;46.1764;7.3177
+1997;Haute-Nendaz;Nendaz;VS;46.1794;7.2910
+1997;Siviez (Nendaz);Nendaz;VS;46.1335;7.3229
+1997;Sornard (Nendaz);Nendaz;VS;46.1876;7.3031
+2000;Neuchâtel;Neuchâtel;NE;46.9944;6.9271
+2012;Auvernier;Milvignes;NE;46.9772;6.8777
+2013;Colombier NE;Milvignes;NE;46.9674;6.8597
+2014;Bôle;Milvignes;NE;46.9674;6.8404
+2015;Areuse;Boudry;NE;46.9542;6.8547
+2016;Cortaillod;Cortaillod;NE;46.9451;6.8478
+2017;Boudry;Boudry;NE;46.9526;6.8330
+2019;Chambrelien;Rochefort;NE;46.9725;6.8153
+2019;Rochefort;Rochefort;NE;46.9807;6.8078
+2022;Bevaix;La Grande Béroche;NE;46.9296;6.8144
+2023;Gorgier;La Grande Béroche;NE;46.9059;6.7779
+2024;St-Aubin-Sauges;La Grande Béroche;NE;46.8922;6.7701
+2025;Chez-le-Bart;La Grande Béroche;NE;46.9060;6.7899
+2027;Fresens;La Grande Béroche;NE;46.8885;6.7462
+2027;Montalchez;La Grande Béroche;NE;46.9003;6.7439
+2028;Vaumarcus;La Grande Béroche;NE;46.8772;6.7543
+2034;Peseux;Neuchâtel;NE;46.9879;6.8916
+2035;Corcelles NE;Neuchâtel;NE;46.9853;6.8736
+2036;Cormondrèche;Neuchâtel;NE;46.9810;6.8671
+2037;Montezillon;Rochefort;NE;46.9868;6.8361
+2037;Montmollin;Val-de-Ruz;NE;46.9934;6.8459
+2042;Valangin;Neuchâtel;NE;47.0169;6.9054
+2043;Boudevilliers;Val-de-Ruz;NE;47.0308;6.8852
+2046;Fontaines NE;Val-de-Ruz;NE;47.0426;6.8999
+2052;Fontainemelon;Val-de-Ruz;NE;47.0553;6.8874
+2052;La Vue-des-Alpes;Val-de-Ruz;NE;47.0689;6.8760
+2053;Cernier;Val-de-Ruz;NE;47.0592;6.9013
+2054;Chézard-St-Martin;Val-de-Ruz;NE;47.0644;6.9186
+2054;Les Vieux-Prés;Val-de-Ruz;NE;47.0868;6.9375
+2056;Dombresson;Val-de-Ruz;NE;47.0716;6.9563
+2057;Villiers;Val-de-Ruz;NE;47.0752;6.9717
+2058;Le Pâquier NE;Val-de-Ruz;NE;47.1019;6.9815
+2063;Engollon;Val-de-Ruz;NE;47.0380;6.9218
+2063;Fenin;Val-de-Ruz;NE;47.0253;6.9223
+2063;Saules;Val-de-Ruz;NE;47.0383;6.9395
+2063;Vilars NE;Val-de-Ruz;NE;47.0316;6.9276
+2065;Savagnier;Val-de-Ruz;NE;47.0500;6.9542
+2067;Chaumont;Neuchâtel;NE;47.0279;6.9582
+2068;Hauterive NE;Laténa;NE;47.0130;6.9718
+2072;St-Blaise;Laténa;NE;47.0159;6.9885
+2073;Enges;Laténa;NE;47.0594;7.0150
+2074;Marin-Epagnier;Laténa;NE;47.0084;7.0089
+2075;Thielle;Laténa;NE;47.0216;7.0296
+2075;Wavre;Laténa;NE;47.0242;7.0204
+2087;Cornaux NE;Cornaux;NE;47.0378;7.0194
+2088;Cressier NE;Cressier (NE);NE;47.0496;7.0347
+2103;Noiraigue;Val-de-Travers;NE;46.9552;6.7241
+2105;Travers;Val-de-Travers;NE;46.9411;6.6753
+2108;Couvet;Val-de-Travers;NE;46.9248;6.6317
+2112;Môtiers NE;Val-de-Travers;NE;46.9097;6.6124
+2113;Boveresse;Val-de-Travers;NE;46.9168;6.5997
+2114;Fleurier;Val-de-Travers;NE;46.9023;6.5828
+2115;Buttes;Val-de-Travers;NE;46.8882;6.5514
+2116;Mont-de-Buttes;Val-de-Travers;NE;46.8836;6.5171
+2117;La Côte-aux-Fées;La Côte-aux-Fées;NE;46.8664;6.4890
+2123;St-Sulpice NE;Val-de-Travers;NE;46.9103;6.5632
+2124;Les Sagnettes;Val-de-Travers;NE;46.9346;6.5975
+2126;Les Verrières;Les Verrières;NE;46.9056;6.4793
+2127;Les Bayards;Val-de-Travers;NE;46.9185;6.5224
+2149;Brot-Dessous;Rochefort;NE;46.9560;6.7482
+2149;Champ-du-Moulin;Rochefort;NE;46.9600;6.7733
+2149;Fretereules;Rochefort;NE;46.9621;6.7662
+2206;Les Geneveys-sur-Coffrane;Val-de-Ruz;NE;47.0154;6.8509
+2207;Coffrane;Val-de-Ruz;NE;47.0093;6.8608
+2208;Les Hauts-Geneveys;Val-de-Ruz;NE;47.0471;6.8729
+2300;La Chaux-de-Fonds;La Chaux-de-Fonds;NE;47.1010;6.8263
+2300;La Cibourg;La Chaux-de-Fonds;NE;47.1178;6.8771
+2314;La Sagne NE;La Sagne;NE;47.0424;6.8008
+2316;Les Ponts-de-Martel;Les Ponts-de-Martel;NE;46.9973;6.7301
+2316;Petit-Martel;Les Ponts-de-Martel;NE;47.0113;6.7548
+2318;Brot-Plamboz;Brot-Plamboz;NE;46.9796;6.7505
+2322;Le Crêt-du-Locle;La Chaux-de-Fonds;NE;47.0773;6.7843
+2325;Les Planchettes;Les Planchettes;NE;47.1101;6.7736
+2333;La Cibourg;La Ferrière;BE;47.1230;6.8950
+2333;La Ferrière;La Ferrière;BE;47.1414;6.8987
+2336;Les Bois;Les Bois;JU;47.1795;6.9025
+2338;Les Emibois;Muriaux;JU;47.2318;6.9893
+2338;Muriaux;Muriaux;JU;47.2459;6.9791
+2340;Le Noirmont;Le Noirmont;JU;47.2232;6.9554
+2345;La Chaux-des-Breuleux;Les Breuleux;JU;47.2223;7.0279
+2345;Le Cerneux-Veusil;Muriaux;JU;47.1843;6.9624
+2345;Le Peuchapatte;Muriaux;JU;47.1974;6.9649
+2345;Les Breuleux;Les Breuleux;JU;47.2106;7.0024
+2350;Saignelégier;Saignelégier;JU;47.2569;6.9963
+2353;Les Pommerats;Saignelégier;JU;47.2725;6.9854
+2354;Goumois;Saignelégier;JU;47.2645;6.9536
+2360;Le Bémont JU;Le Bémont (JU);JU;47.2632;7.0217
+2362;Montfaucon;Montfaucon;JU;47.2800;7.0539
+2362;Montfavergier;Montfaucon;JU;47.3090;7.0900
+2363;Les Enfers;Les Enfers;JU;47.2885;7.0463
+2364;St-Brais;Saint-Brais;JU;47.3047;7.1131
+2400;Le Locle;Le Locle;NE;47.0570;6.7505
+2400;Le Prévoux;Le Locle;NE;47.0383;6.7074
+2405;La Chaux-du-Milieu;La Chaux-du-Milieu;NE;47.0133;6.7045
+2406;La Brévine;La Brévine;NE;46.9810;6.6046
+2406;La Châtagne;La Brévine;NE;46.9834;6.6382
+2406;Le Brouillet;La Brévine;NE;46.9612;6.5447
+2406;Les Taillères;La Brévine;NE;46.9715;6.5743
+2414;Le Cerneux-Péquignot;Le Cerneux-Péquignot;NE;47.0158;6.6630
+2416;Les Brenets;Le Locle;NE;47.0676;6.7072
+2502;Biel/Bienne;Biel/Bienne;BE;47.1421;7.2481
+2503;Biel/Bienne;Biel/Bienne;BE;47.1322;7.2564
+2504;Biel/Bienne;Biel/Bienne;BE;47.1488;7.2738
+2505;Biel/Bienne;Biel/Bienne;BE;47.1307;7.2185
+2512;Tüscherz-Alfermée;Twann-Tüscherz;BE;47.1167;7.1982
+2513;Twann;Twann-Tüscherz;BE;47.0985;7.1623
+2514;Ligerz;Ligerz;BE;47.0888;7.1404
+2515;Prêles;Plateau de Diesse;BE;47.0959;7.1285
+2516;Lamboing;Plateau de Diesse;BE;47.1176;7.1380
+2517;Diesse;Plateau de Diesse;BE;47.1134;7.1166
+2518;Nods;Nods;BE;47.1147;7.0797
+2520;La Neuveville;La Neuveville;BE;47.0659;7.0963
+2523;Lignières;Lignières;NE;47.0837;7.0626
+2525;Le Landeron;Le Landeron;NE;47.0570;7.0690
+2532;Magglingen/Macolin;Evilard;BE;47.1413;7.2129
+2533;Evilard;Evilard;BE;47.1506;7.2391
+2534;Les Prés-d'Orvin;Orvin;BE;47.1536;7.1707
+2534;Orvin;Orvin;BE;47.1605;7.2153
+2535;Frinvillier;Sauge;BE;47.1687;7.2568
+2536;Plagne;Sauge;BE;47.1903;7.2873
+2537;Vauffelin;Sauge;BE;47.1879;7.2991
+2538;Romont BE;Romont (BE);BE;47.1895;7.3401
+2540;Grenchen;Grenchen;SO;47.1943;7.3942
+2542;Pieterlen;Pieterlen;BE;47.1743;7.3375
+2543;Lengnau BE;Lengnau (BE);BE;47.1808;7.3682
+2544;Bettlach;Bettlach;SO;47.2022;7.4219
+2545;Selzach;Selzach;SO;47.2049;7.4529
+2552;Orpund;Orpund;BE;47.1399;7.3038
+2553;Safnern;Safnern;BE;47.1503;7.3228
+2554;Meinisberg;Meinisberg;BE;47.1603;7.3491
+2555;Brügg BE;Brügg;BE;47.1246;7.2746
+2556;Scheuren;Scheuren;BE;47.1326;7.3176
+2556;Schwadernau;Schwadernau;BE;47.1277;7.3043
+2557;Studen BE;Studen (BE);BE;47.1122;7.3023
+2558;Aegerten;Aegerten;BE;47.1203;7.2890
+2560;Nidau;Nidau;BE;47.1243;7.2418
+2562;Port;Port;BE;47.1146;7.2528
+2563;Ipsach;Ipsach;BE;47.1133;7.2332
+2564;Bellmund;Bellmund;BE;47.1056;7.2472
+2565;Jens;Jens;BE;47.0998;7.2613
+2572;Mörigen;Mörigen;BE;47.0839;7.2117
+2572;Sutz;Sutz-Lattrigen;BE;47.1003;7.2157
+2575;Gerolfingen;Täuffelen;BE;47.0750;7.2015
+2575;Hagneck;Hagneck;BE;47.0589;7.1882
+2575;Täuffelen;Täuffelen;BE;47.0667;7.1995
+2576;Lüscherz;Lüscherz;BE;47.0459;7.1519
+2577;Finsterhennen;Finsterhennen;BE;47.0246;7.1798
+2577;Siselen BE;Siselen;BE;47.0322;7.1886
+2603;Péry;Péry-La Heutte;BE;47.1926;7.2479
+2604;La Heutte;Péry-La Heutte;BE;47.1907;7.2246
+2605;Sonceboz-Sombeval;Sonceboz-Sombeval;BE;47.1965;7.1729
+2606;Corgémont;Corgémont;BE;47.1940;7.1416
+2607;Cortébert;Cortébert;BE;47.1901;7.1069
+2608;Courtelary;Courtelary;BE;47.1788;7.0710
+2608;Montagne-de-Courtelary;Courtelary;BE;47.1661;7.0815
+2610;Les Pontins;Saint-Imier;BE;47.1294;7.0052
+2610;Mont-Crosin;Courtelary;BE;47.1957;7.0556
+2610;Mont-Soleil;Saint-Imier;BE;47.1592;6.9894
+2610;St-Imier;Saint-Imier;BE;47.1525;6.9984
+2612;Cormoret;Cormoret;BE;47.1729;7.0526
+2613;Villeret;Villeret;BE;47.1582;7.0169
+2615;Montagne-de-Sonvilier;Sonvilier;BE;47.1229;6.9582
+2615;Sonvilier;Sonvilier;BE;47.1388;6.9650
+2616;La Cibourg;Renan (BE);BE;47.1189;6.8923
+2616;Renan BE;Renan (BE);BE;47.1227;6.9231
+2710;Tavannes;Tavannes;BE;47.2215;7.1987
+2712;Le Fuet;Saicourt;BE;47.2441;7.1821
+2713;Bellelay;Saicourt;BE;47.2629;7.1650
+2714;Le Prédame;Les Genevez (JU);JU;47.2541;7.1028
+2714;Les Genevez JU;Les Genevez (JU);JU;47.2568;7.1311
+2715;Châtelat;Petit-Val;BE;47.2721;7.1941
+2715;Monible;Petit-Val;BE;47.2776;7.2007
+2716;Sornetan;Petit-Val;BE;47.2744;7.2178
+2717;Fornet-Dessous;Petit-Val;BE;47.2799;7.1736
+2717;Rebévelier;Rebévelier;BE;47.2893;7.1790
+2718;Fornet-Dessus;Lajoux (JU);JU;47.2791;7.1588
+2718;Lajoux JU;Lajoux (JU);JU;47.2785;7.1389
+2720;La Tanne;Corgémont;BE;47.2110;7.1319
+2720;Tramelan;Tramelan;BE;47.2234;7.1031
+2722;Les Reussilles;Tramelan;BE;47.2258;7.0799
+2723;Mont-Tramelan;Mont-Tramelan;BE;47.2077;7.0579
+2732;Loveresse;Loveresse;BE;47.2406;7.2369
+2732;Reconvilier;Reconvilier;BE;47.2350;7.2240
+2732;Saicourt;Saicourt;BE;47.2436;7.2059
+2732;Saules BE;Saules (BE);BE;47.2477;7.2191
+2733;Pontenet;Valbirse;BE;47.2412;7.2551
+2735;Bévilard;Valbirse;BE;47.2389;7.2845
+2735;Champoz;Champoz;BE;47.2582;7.2991
+2735;Malleray;Valbirse;BE;47.2392;7.2707
+2736;Sorvilier;Sorvilier;BE;47.2390;7.3055
+2738;Court;Court;BE;47.2411;7.3381
+2740;Moutier;Moutier;JU;47.2774;7.3691
+2742;Perrefitte;Perrefitte;BE;47.2755;7.3421
+2743;Eschert;Eschert;BE;47.2763;7.3977
+2744;Belprahon;Belprahon;BE;47.2829;7.4054
+2745;Grandval;Grandval;BE;47.2828;7.4244
+2746;Crémines;Crémines;BE;47.2838;7.4402
+2747;Corcelles BE;Corcelles (BE);BE;47.2862;7.4566
+2747;Seehof;Seehof;BE;47.3061;7.5249
+2748;Les Ecorcheresses;Petit-Val;BE;47.2800;7.2738
+2748;Souboz;Petit-Val;BE;47.2739;7.2425
+2762;Roches BE;Roches (BE);BE;47.3024;7.3793
+2800;Delémont;Delémont;JU;47.3662;7.3475
+2802;Develier;Develier;JU;47.3585;7.2953
+2803;Bourrignon;Bourrignon;JU;47.3960;7.2466
+2805;Soyhières;Soyhières;JU;47.3928;7.3725
+2806;Mettembert;Mettembert;JU;47.3980;7.3220
+2807;Lucelle;Pleigne;JU;47.4174;7.2434
+2807;Pleigne;Pleigne;JU;47.4076;7.2908
+2812;Movelier;Movelier;JU;47.4097;7.3159
+2813;Ederswiler;Ederswiler;JU;47.4257;7.3341
+2814;Roggenburg;Roggenburg;BL;47.4337;7.3409
+2822;Courroux;Courroux;JU;47.3597;7.3767
+2823;Courcelon;Courroux;JU;47.3625;7.3918
+2824;Vicques;Val Terbi;JU;47.3499;7.4125
+2825;Courchapoix;Courchapoix;JU;47.3493;7.4544
+2826;Corban;Val Terbi;JU;47.3472;7.4755
+2827;Mervelier;Mervelier;JU;47.3437;7.5001
+2827;Schelten;Schelten;BE;47.3325;7.5516
+2828;Montsevelier;Val Terbi;JU;47.3608;7.5065
+2829;Vermes;Val Terbi;JU;47.3252;7.4775
+2830;Courrendlin;Courrendlin;JU;47.3385;7.3730
+2830;Vellerat;Courrendlin;JU;47.3197;7.3700
+2832;Rebeuvelier;Courrendlin;JU;47.3254;7.4160
+2842;Rossemaison;Rossemaison;JU;47.3461;7.3451
+2843;Châtillon JU;Châtillon (JU);JU;47.3284;7.3441
+2852;Courtételle;Courtételle;JU;47.3408;7.3177
+2853;Courfaivre;Haute-Sorne;JU;47.3342;7.2830
+2854;Bassecourt;Haute-Sorne;JU;47.3377;7.2429
+2855;Glovelier;Haute-Sorne;JU;47.3346;7.2032
+2856;Boécourt;Boécourt;JU;47.3502;7.2142
+2857;Montavon;Boécourt;JU;47.3696;7.2318
+2863;Undervelier;Haute-Sorne;JU;47.3029;7.2244
+2864;Soulce;Haute-Sorne;JU;47.3039;7.2701
+2873;Saulcy;Saulcy;JU;47.3027;7.1562
+2882;St-Ursanne;Clos du Doubs;JU;47.3648;7.1563
+2883;Montmelon;Clos du Doubs;JU;47.3521;7.1727
+2884;Montenol;Clos du Doubs;JU;47.3511;7.1484
+2885;Epauvillers;Clos du Doubs;JU;47.3354;7.1150
+2886;Epiquerez;Clos du Doubs;JU;47.3276;7.0656
+2887;Soubey;Soubey;JU;47.3088;7.0464
+2888;Seleute;Clos du Doubs;JU;47.3667;7.1131
+2889;Ocourt;Clos du Doubs;JU;47.3532;7.0727
+2900;Porrentruy;Porrentruy;JU;47.4158;7.0741
+2902;Fontenais;Fontenais;JU;47.4033;7.0811
+2903;Villars-sur-Fontenais;Fontenais;JU;47.3871;7.0796
+2904;Bressaucourt;Fontenais;JU;47.3881;7.0368
+2905;Courtedoux;Courtedoux;JU;47.4078;7.0407
+2906;Chevenez;Haute-Ajoie;JU;47.3928;6.9998
+2907;Rocourt;Haute-Ajoie;JU;47.3905;6.9575
+2908;Grandfontaine;Grandfontaine;JU;47.3929;6.9375
+2912;Roche-d'Or;Haute-Ajoie;JU;47.3659;6.9577
+2912;Réclère;Haute-Ajoie;JU;47.3757;6.9232
+2914;Damvant;Haute-Ajoie;JU;47.3720;6.8965
+2915;Bure;Bure;JU;47.4417;7.0070
+2916;Fahy;Fahy;JU;47.4186;6.9494
+2922;Courchavon;Courchavon;JU;47.4397;7.0527
+2923;Courtemaîche;Basse-Allaine;JU;47.4579;7.0477
+2924;Montignez;Basse-Allaine;JU;47.4863;7.0588
+2925;Buix;Basse-Allaine;JU;47.4809;7.0302
+2926;Boncourt;Boncourt;JU;47.4948;7.0127
+2932;Coeuve;Coeuve;JU;47.4515;7.0990
+2933;Damphreux;Damphreux-Lugnez;JU;47.4766;7.1038
+2933;Lugnez;Damphreux-Lugnez;JU;47.4835;7.0986
+2935;Beurnevésin;Basse-Vendline;JU;47.4925;7.1378
+2942;Alle;Alle;JU;47.4256;7.1290
+2943;Vendlincourt;Vendlincourt;JU;47.4520;7.1503
+2944;Bonfol;Basse-Vendline;JU;47.4777;7.1516
+2946;Miécourt;La Baroche;JU;47.4280;7.1753
+2947;Charmoille;La Baroche;JU;47.4229;7.2072
+2950;Courgenay;Courgenay;JU;47.4048;7.1229
+2950;Courtemautruy;Courgenay;JU;47.3945;7.1387
+2952;Cornol;Cornol;JU;47.4072;7.1629
+2953;Fregiécourt;La Baroche;JU;47.4122;7.1976
+2953;Pleujouse;La Baroche;JU;47.4116;7.2105
+2954;Asuel;La Baroche;JU;47.3992;7.2052
+3004;Bern;Bern;BE;46.9720;7.4459
+3005;Bern;Bern;BE;46.9408;7.4495
+3006;Bern;Bern;BE;46.9433;7.4684
+3007;Bern;Bern;BE;46.9396;7.4315
+3008;Bern;Bern;BE;46.9424;7.4179
+3010;Bern;Bern;BE;46.9477;7.4241
+3011;Bern;Bern;BE;46.9482;7.4485
+3012;Bern;Bern;BE;46.9546;7.4317
+3013;Bern;Bern;BE;46.9551;7.4506
+3014;Bern;Bern;BE;46.9620;7.4539
+3015;Bern;Bern;BE;46.9392;7.4803
+3018;Bern;Bern;BE;46.9407;7.3907
+3019;Bern;Bern;BE;46.9354;7.3507
+3020;Bern;Bern;BE;46.9410;7.3372
+3027;Bern;Bern;BE;46.9487;7.3876
+3032;Hinterkappelen;Wohlen bei Bern;BE;46.9680;7.3792
+3033;Wohlen b. Bern;Wohlen bei Bern;BE;46.9741;7.3577
+3034;Murzelen;Wohlen bei Bern;BE;46.9788;7.3157
+3035;Frieswil;Seedorf (BE);BE;46.9953;7.2857
+3036;Detligen;Radelfingen;BE;46.9986;7.2695
+3037;Herrenschwanden;Kirchlindach;BE;46.9750;7.4172
+3038;Kirchlindach;Kirchlindach;BE;47.0006;7.4173
+3042;Ortschwaben;Meikirch;BE;46.9950;7.3988
+3043;Uettligen;Wohlen bei Bern;BE;46.9869;7.3825
+3044;Innerberg;Wohlen bei Bern;BE;46.9950;7.3094
+3045;Meikirch;Meikirch;BE;47.0095;7.3663
+3046;Wahlendorf;Meikirch;BE;47.0060;7.3373
+3047;Bremgarten b. Bern;Bremgarten bei Bern;BE;46.9764;7.4349
+3048;Worblaufen;Ittigen;BE;46.9800;7.4628
+3049;Säriswil;Wohlen bei Bern;BE;46.9930;7.3373
+3052;Zollikofen;Zollikofen;BE;46.9968;7.4518
+3053;Deisswil b. Münchenbuchsee;Deisswil bei Münchenbuchsee;BE;47.0350;7.4565
+3053;Diemerswil;Münchenbuchsee;BE;47.0184;7.4260
+3053;Lätti;Rapperswil (BE);BE;47.0389;7.4324
+3053;Münchenbuchsee;Münchenbuchsee;BE;47.0209;7.4476
+3053;Wiggiswil;Wiggiswil;BE;47.0304;7.4689
+3054;Schüpfen;Schüpfen;BE;47.0414;7.3759
+3063;Ittigen;Ittigen;BE;46.9769;7.4822
+3065;Bolligen;Bolligen;BE;46.9762;7.4983
+3066;Stettlen;Stettlen;BE;46.9593;7.5262
+3067;Boll;Vechigen;BE;46.9554;7.5464
+3068;Utzigen;Vechigen;BE;46.9604;7.5685
+3072;Ostermundigen;Ostermundigen;BE;46.9556;7.4901
+3073;Gümligen;Muri bei Bern;BE;46.9338;7.5053
+3074;Muri b. Bern;Muri bei Bern;BE;46.9292;7.4871
+3075;Rüfenacht BE;Worb;BE;46.9303;7.5353
+3075;Vielbringen b. Worb;Worb;BE;46.9164;7.5474
+3076;Worb;Worb;BE;46.9293;7.5678
+3077;Enggistein;Worb;BE;46.9324;7.5975
+3078;Richigen;Worb;BE;46.9181;7.5822
+3082;Schlosswil;Grosshöchstetten;BE;46.9107;7.6152
+3083;Trimstein;Münsingen;BE;46.9038;7.5790
+3084;Wabern;Köniz;BE;46.9287;7.4549
+3086;Englisberg;Wald (BE);BE;46.8968;7.4645
+3086;Zimmerwald;Wald (BE);BE;46.8800;7.4734
+3087;Niedermuhlern;Niedermuhlern;BE;46.8582;7.4620
+3088;Oberbütschel;Rüeggisberg;BE;46.8399;7.4558
+3088;Rüeggisberg;Rüeggisberg;BE;46.8226;7.4387
+3089;Hinterfultigen;Rüeggisberg;BE;46.8384;7.4079
+3095;Spiegel b. Bern;Köniz;BE;46.9257;7.4342
+3096;Oberbalm;Oberbalm;BE;46.8663;7.4054
+3097;Liebefeld;Köniz;BE;46.9303;7.4177
+3098;Köniz;Köniz;BE;46.9227;7.4146
+3098;Schliern b. Köniz;Köniz;BE;46.9105;7.4150
+3099;Rüti b. Riggisberg;Riggisberg;BE;46.7839;7.4593
+3110;Münsingen;Münsingen;BE;46.8739;7.5594
+3111;Tägertschi;Münsingen;BE;46.8765;7.5843
+3112;Allmendingen b. Bern;Allmendingen;BE;46.9155;7.5209
+3113;Rubigen;Rubigen;BE;46.8981;7.5437
+3114;Wichtrach;Wichtrach;BE;46.8444;7.5740
+3115;Gerzensee;Gerzensee;BE;46.8406;7.5436
+3116;Kirchdorf BE;Kirchdorf (BE);BE;46.8200;7.5478
+3116;Mühledorf BE;Kirchdorf (BE);BE;46.8287;7.5378
+3116;Noflen BE;Kirchdorf (BE);BE;46.8059;7.5451
+3122;Kehrsatz;Kehrsatz;BE;46.9117;7.4689
+3123;Belp;Belp;BE;46.8919;7.5018
+3124;Belpberg;Belp;BE;46.8674;7.5253
+3125;Toffen;Toffen;BE;46.8602;7.4928
+3126;Gelterfingen;Kirchdorf (BE);BE;46.8409;7.5188
+3126;Kaufdorf;Kaufdorf;BE;46.8381;7.4980
+3127;Lohnstorf;Thurnen;BE;46.8080;7.5094
+3127;Mühlethurnen;Thurnen;BE;46.8146;7.5101
+3128;Kirchenthurnen;Thurnen;BE;46.8234;7.5026
+3128;Rümligen;Riggisberg;BE;46.8290;7.4952
+3132;Riggisberg;Riggisberg;BE;46.8105;7.4776
+3144;Gasel;Köniz;BE;46.8977;7.4015
+3145;Niederscherli;Köniz;BE;46.8839;7.3911
+3147;Mittelhäusern;Köniz;BE;46.8745;7.3679
+3148;Lanzenhäusern;Schwarzenburg;BE;46.8442;7.3577
+3150;Schwarzenburg;Schwarzenburg;BE;46.8177;7.3422
+3152;Mamishaus;Schwarzenburg;BE;46.8162;7.3764
+3153;Rüschegg Gambach;Rüschegg;BE;46.7769;7.3793
+3154;Rüschegg Heubach;Rüschegg;BE;46.7803;7.4049
+3155;Helgisried-Rohrbach;Rüeggisberg;BE;46.8120;7.4224
+3156;Riffenmatt;Guggisberg;BE;46.7657;7.3463
+3157;Milken;Schwarzenburg;BE;46.7953;7.3620
+3158;Guggisberg;Guggisberg;BE;46.7614;7.3195
+3159;Riedstätt;Guggisberg;BE;46.7857;7.3259
+3172;Niederwangen b. Bern;Köniz;BE;46.9256;7.3762
+3173;Oberwangen b. Bern;Köniz;BE;46.9136;7.3595
+3174;Thörishaus;Köniz;BE;46.8986;7.3555
+3175;Flamatt;Wünnewil-Flamatt;FR;46.8901;7.3187
+3176;Neuenegg;Neuenegg;BE;46.8964;7.3057
+3177;Laupen BE;Laupen;BE;46.9059;7.2396
+3178;Bösingen;Bösingen;FR;46.8938;7.2310
+3179;Kriechenwil;Kriechenwil;BE;46.9109;7.2222
+3182;Ueberstorf;Ueberstorf;FR;46.8687;7.3206
+3183;Albligen;Schwarzenburg;BE;46.8524;7.3192
+3184;Wünnewil;Wünnewil-Flamatt;FR;46.8724;7.2764
+3185;Schmitten FR;Schmitten (FR);FR;46.8542;7.2476
+3186;Düdingen;Düdingen;FR;46.8479;7.1916
+3202;Frauenkappelen;Frauenkappelen;BE;46.9542;7.3369
+3203;Mühleberg;Mühleberg;BE;46.9595;7.2681
+3204;Rosshäusern;Mühleberg;BE;46.9362;7.2848
+3205;Gümmenen;Mühleberg;BE;46.9436;7.2549
+3206;Biberen;Ferenbalm;BE;46.9397;7.2119
+3206;Ferenbalm;Ferenbalm;BE;46.9564;7.2148
+3206;Gammen;Ferenbalm;BE;46.9206;7.2273
+3206;Rizenbach;Ferenbalm;BE;46.9437;7.2265
+3206;Wallenbuch;Gurmels;FR;46.9292;7.2244
+3207;Golaten;Kallnach;BE;46.9868;7.2401
+3207;Wileroltigen;Wileroltigen;BE;46.9708;7.2389
+3208;Gurbrü;Gurbrü;BE;46.9644;7.2156
+3210;Kerzers;Kerzers;FR;46.9745;7.1986
+3212;Gurmels;Gurmels;FR;46.8919;7.1751
+3212;Kleingurmels;Gurmels;FR;46.8852;7.1845
+3213;Kleinbösingen;Kleinbösingen;FR;46.8896;7.1967
+3213;Liebistorf;Gurmels;FR;46.9066;7.1919
+3214;Ulmiz;Gurmels;FR;46.9334;7.1988
+3215;Büchslen;Murten;FR;46.9452;7.1803
+3215;Gempenach;Murten;FR;46.9410;7.1959
+3215;Lurtigen;Murten;FR;46.9286;7.1724
+3216;Agriswil;Ried bei Kerzers;FR;46.9543;7.1979
+3216;Ried b. Kerzers;Ried bei Kerzers;FR;46.9572;7.1861
+3225;Müntschemier;Müntschemier;BE;46.9957;7.1440
+3226;Treiten;Treiten;BE;47.0088;7.1612
+3232;Ins;Ins;BE;47.0052;7.1047
+3233;Tschugg;Tschugg;BE;47.0262;7.0757
+3234;Vinelz;Vinelz;BE;47.0334;7.1117
+3235;Erlach;Erlach;BE;47.0424;7.0970
+3236;Gampelen;Gampelen;BE;47.0125;7.0558
+3237;Brüttelen;Brüttelen;BE;47.0222;7.1471
+3238;Gals;Gals;BE;47.0265;7.0470
+3250;Lyss;Lyss;BE;47.0741;7.3074
+3251;Ruppoldsried;Rapperswil (BE);BE;47.0875;7.4253
+3251;Wengi b. Büren;Wengi;BE;47.0850;7.3917
+3252;Worben;Worben;BE;47.1018;7.2963
+3253;Schnottwil;Schnottwil;SO;47.1105;7.3908
+3254;Balm b. Messen;Messen;SO;47.1038;7.4311
+3254;Messen;Messen;SO;47.0915;7.4457
+3255;Rapperswil BE;Rapperswil (BE);BE;47.0646;7.4075
+3256;Bangerten b. Dieterswil;Rapperswil (BE);BE;47.0562;7.4467
+3256;Dieterswil;Rapperswil (BE);BE;47.0542;7.4277
+3256;Seewil;Rapperswil (BE);BE;47.0478;7.4083
+3257;Ammerzwil BE;Grossaffoltern;BE;47.0705;7.3417
+3257;Grossaffoltern;Grossaffoltern;BE;47.0674;7.3603
+3262;Suberg;Grossaffoltern;BE;47.0582;7.3395
+3263;Büetigen;Büetigen;BE;47.1051;7.3410
+3264;Diessbach b. Büren;Diessbach bei Büren;BE;47.1080;7.3606
+3266;Wiler b. Seedorf;Seedorf (BE);BE;47.0482;7.3193
+3267;Seedorf BE;Seedorf (BE);BE;47.0318;7.3145
+3268;Lobsigen;Seedorf (BE);BE;47.0241;7.2960
+3270;Aarberg;Aarberg;BE;47.0450;7.2758
+3271;Radelfingen b. Aarberg;Radelfingen;BE;47.0218;7.2740
+3272;Epsach;Epsach;BE;47.0686;7.2178
+3272;Walperswil;Walperswil;BE;47.0603;7.2287
+3273;Kappelen;Kappelen;BE;47.0615;7.2668
+3274;Bühl b. Aarberg;Bühl;BE;47.0701;7.2439
+3274;Hermrigen;Hermrigen;BE;47.0818;7.2436
+3274;Merzligen;Merzligen;BE;47.0888;7.2493
+3280;Greng;Greng;FR;46.9144;7.0897
+3280;Meyriez;Meyriez;FR;46.9226;7.1068
+3280;Murten;Murten;FR;46.9262;7.1201
+3282;Bargen BE;Bargen (BE);BE;47.0388;7.2618
+3283;Kallnach;Kallnach;BE;47.0210;7.2349
+3283;Niederried b. Kallnach;Kallnach;BE;47.0105;7.2477
+3284;Fräschels;Fräschels;FR;46.9970;7.2085
+3285;Galmiz;Murten;FR;46.9490;7.1570
+3286;Muntelier;Muntelier;FR;46.9375;7.1278
+3292;Busswil BE;Lyss;BE;47.1002;7.3240
+3293;Dotzigen;Dotzigen;BE;47.1194;7.3408
+3294;Büren an der Aare;Büren an der Aare;BE;47.1402;7.3727
+3294;Meienried;Meienried;BE;47.1391;7.3386
+3295;Rüti b. Büren;Rüti bei Büren;BE;47.1514;7.4056
+3296;Arch;Arch;BE;47.1663;7.4288
+3297;Leuzigen;Leuzigen;BE;47.1746;7.4574
+3298;Oberwil b. Büren;Oberwil bei Büren;BE;47.1290;7.4072
+3302;Moosseedorf;Moosseedorf;BE;47.0137;7.4838
+3303;Ballmoos;Jegenstorf;BE;47.0409;7.4735
+3303;Jegenstorf;Jegenstorf;BE;47.0509;7.5056
+3303;Münchringen;Jegenstorf;BE;47.0449;7.5206
+3303;Zuzwil BE;Zuzwil (BE);BE;47.0521;7.4713
+3305;Iffwil;Iffwil;BE;47.0641;7.4787
+3305;Scheunen;Jegenstorf;BE;47.0689;7.4572
+3306;Etzelkofen;Fraubrunnen;BE;47.0857;7.4784
+3307;Brunnenthal;Messen;SO;47.0867;7.4682
+3308;Grafenried;Fraubrunnen;BE;47.0784;7.5086
+3309;Kernenried;Kernenried;BE;47.0725;7.5488
+3309;Zauggenried;Fraubrunnen;BE;47.0741;7.5415
+3312;Fraubrunnen;Fraubrunnen;BE;47.0858;7.5257
+3313;Büren zum Hof;Fraubrunnen;BE;47.0949;7.5144
+3314;Schalunen;Fraubrunnen;BE;47.1107;7.5269
+3315;Bätterkinden;Bätterkinden;BE;47.1312;7.5381
+3315;Kräiligen;Bätterkinden;BE;47.1473;7.5329
+3317;Limpach;Fraubrunnen;BE;47.1087;7.4953
+3317;Mülchi;Fraubrunnen;BE;47.1008;7.4778
+3322;Mattstetten;Mattstetten;BE;47.0300;7.5128
+3322;Urtenen-Schönbühl;Urtenen-Schönbühl;BE;47.0224;7.4999
+3323;Bäriswil BE;Bäriswil;BE;47.0196;7.5282
+3324;Hindelbank;Hindelbank;BE;47.0447;7.5411
+3324;Mötschwil;Hindelbank;BE;47.0489;7.5684
+3325;Hettiswil b. Hindelbank;Krauchthal;BE;47.0313;7.5560
+3326;Krauchthal;Krauchthal;BE;47.0078;7.5619
+3360;Herzogenbuchsee;Herzogenbuchsee;BE;47.1890;7.7064
+3362;Niederönz;Niederönz;BE;47.1864;7.6914
+3363;Oberönz;Herzogenbuchsee;BE;47.1811;7.6944
+3365;Grasswil;Seeberg;BE;47.1436;7.6696
+3365;Seeberg;Seeberg;BE;47.1559;7.6661
+3366;Bettenhausen;Bettenhausen;BE;47.1732;7.7132
+3366;Bollodingen;Bettenhausen;BE;47.1678;7.7107
+3367;Ochlenberg;Ochlenberg;BE;47.1538;7.7417
+3367;Thörigen;Thörigen;BE;47.1741;7.7277
+3368;Bleienbach;Bleienbach;BE;47.1842;7.7563
+3372;Wanzwil;Heimenhausen;BE;47.2004;7.6925
+3373;Heimenhausen;Heimenhausen;BE;47.2094;7.6995
+3373;Röthenbach Herzogenbuchsee;Heimenhausen;BE;47.2043;7.6819
+3374;Wangenried;Wangen an der Aare;BE;47.2189;7.6564
+3375;Inkwil;Inkwil;BE;47.1994;7.6724
+3376;Berken;Berken;BE;47.2253;7.7090
+3376;Graben;Graben;BE;47.2196;7.7218
+3377;Walliswil b. Wangen;Walliswil bei Wangen;BE;47.2304;7.6819
+3380;Walliswil b. Niederbipp;Walliswil bei Niederbipp;BE;47.2362;7.6909
+3380;Wangen an der Aare;Wangen an der Aare;BE;47.2327;7.6524
+3400;Burgdorf;Burgdorf;BE;47.0574;7.6198
+3412;Heimiswil;Heimiswil;BE;47.0593;7.6595
+3413;Kaltacker;Heimiswil;BE;47.0756;7.6695
+3414;Oberburg;Oberburg;BE;47.0337;7.6226
+3415;Hasle b. Burgdorf;Hasle bei Burgdorf;BE;47.0154;7.6491
+3415;Rüegsauschachen;Rüegsau;BE;47.0184;7.6604
+3415;Schafhausen im Emmental;Hasle bei Burgdorf;BE;46.9925;7.6507
+3416;Affoltern im Emmental;Affoltern im Emmental;BE;47.0657;7.7308
+3417;Rüegsau;Rüegsau;BE;47.0252;7.6727
+3418;Rüegsbach;Rüegsau;BE;47.0414;7.6967
+3419;Biembach im Emmental;Hasle bei Burgdorf;BE;46.9989;7.6250
+3421;Lyssach;Lyssach;BE;47.0673;7.5810
+3421;Rüti b. Lyssach;Rüti bei Lyssach;BE;47.0557;7.5806
+3422;Alchenflüh;Rüdtligen-Alchenflüh;BE;47.0842;7.5781
+3422;Kirchberg BE;Kirchberg (BE);BE;47.0857;7.5865
+3422;Rüdtligen;Rüdtligen-Alchenflüh;BE;47.0913;7.5654
+3423;Ersigen;Ersigen;BE;47.0937;7.6006
+3424;Niederösch;Ersigen;BE;47.1175;7.6141
+3424;Oberösch;Ersigen;BE;47.1081;7.6097
+3425;Koppigen;Koppigen;BE;47.1318;7.6037
+3425;Willadingen;Willadingen;BE;47.1448;7.6132
+3426;Aefligen;Aefligen;BE;47.0947;7.5571
+3427;Utzenstorf;Utzenstorf;BE;47.1298;7.5551
+3428;Wiler b. Utzenstorf;Wiler bei Utzenstorf;BE;47.1520;7.5572
+3429;Hellsau;Hellsau;BE;47.1458;7.6480
+3429;Höchstetten;Höchstetten;BE;47.1434;7.6325
+3432;Lützelflüh-Goldbach;Lützelflüh;BE;47.0059;7.6883
+3433;Schwanden im Emmental;Rüderswil;BE;46.9807;7.6978
+3434;Landiswil;Landiswil;BE;46.9552;7.6870
+3434;Obergoldbach;Landiswil;BE;46.9597;7.6681
+3435;Ramsei;Lützelflüh;BE;46.9984;7.7094
+3436;Zollbrück;Lauperswil;BE;46.9692;7.7525
+3437;Rüderswil;Rüderswil;BE;46.9838;7.7207
+3438;Lauperswil;Lauperswil;BE;46.9623;7.7373
+3439;Ranflüh;Lützelflüh;BE;46.9912;7.7436
+3452;Grünenmatt;Lützelflüh;BE;47.0098;7.7250
+3453;Heimisbach;Trachselwald;BE;47.0113;7.7750
+3454;Sumiswald;Sumiswald;BE;47.0325;7.7497
+3455;Grünen;Sumiswald;BE;47.0245;7.7396
+3456;Trachselwald;Trachselwald;BE;47.0165;7.7413
+3457;Wasen im Emmental;Sumiswald;BE;47.0421;7.8034
+3462;Weier im Emmental;Affoltern im Emmental;BE;47.0621;7.7502
+3463;Häusernmoos im Emmental;Affoltern im Emmental;BE;47.0783;7.7460
+3464;Schmidigen-Mühleweg;Walterswil (BE);BE;47.0945;7.7469
+3465;Dürrenroth;Dürrenroth;BE;47.0863;7.7894
+3472;Rumendingen;Rumendingen;BE;47.1045;7.6427
+3472;Wynigen;Wynigen;BE;47.1037;7.6738
+3473;Alchenstorf;Alchenstorf;BE;47.1239;7.6371
+3474;Rüedisbach;Wynigen;BE;47.1198;7.6990
+3475;Hermiswil;Seeberg;BE;47.1529;7.6978
+3475;Riedtwil;Seeberg;BE;47.1420;7.6961
+3476;Oschwand;Ochlenberg;BE;47.1425;7.7211
+3503;Gysenstein;Konolfingen;BE;46.8934;7.5921
+3504;Niederhünigen;Niederhünigen;BE;46.8766;7.6392
+3504;Oberhünigen;Oberhünigen;BE;46.8788;7.6585
+3506;Grosshöchstetten;Grosshöchstetten;BE;46.9057;7.6384
+3507;Biglen;Biglen;BE;46.9271;7.6275
+3508;Arni BE;Arni (BE);BE;46.9358;7.6573
+3510;Freimettigen;Freimettigen;BE;46.8677;7.6279
+3510;Häutligen;Häutligen;BE;46.8577;7.6040
+3510;Konolfingen;Konolfingen;BE;46.8809;7.6211
+3512;Walkringen;Walkringen;BE;46.9462;7.6161
+3513;Bigenthal;Walkringen;BE;46.9702;7.6293
+3531;Oberthal;Oberthal;BE;46.9184;7.6790
+3532;Mirchel;Mirchel;BE;46.8939;7.6480
+3532;Zäziwil;Zäziwil;BE;46.8999;7.6613
+3533;Bowil;Bowil;BE;46.8963;7.6981
+3534;Signau;Signau;BE;46.9166;7.7280
+3535;Schüpbach;Signau;BE;46.9278;7.7414
+3536;Aeschau;Eggiwil;BE;46.9044;7.7741
+3537;Eggiwil;Eggiwil;BE;46.8707;7.7973
+3538;Röthenbach im Emmental;Röthenbach im Emmental;BE;46.8610;7.7388
+3543;Emmenmatt;Lauperswil;BE;46.9465;7.7396
+3550;Langnau im Emmental;Langnau im Emmental;BE;46.9407;7.7864
+3551;Oberfrittenbach;Langnau im Emmental;BE;46.9688;7.7921
+3552;Bärau;Langnau im Emmental;BE;46.9334;7.8128
+3553;Gohl;Langnau im Emmental;BE;46.9656;7.8162
+3555;Trubschachen;Trubschachen;BE;46.9214;7.8425
+3556;Trub;Trub;BE;46.9515;7.8746
+3557;Fankhaus (Trub);Trub;BE;46.9722;7.9178
+3600;Thun;Thun;BE;46.7549;7.6259
+3603;Thun;Thun;BE;46.7657;7.6001
+3604;Thun;Thun;BE;46.7406;7.6199
+3608;Thun;Thun;BE;46.7421;7.5949
+3612;Steffisburg;Steffisburg;BE;46.7787;7.6330
+3613;Steffisburg;Steffisburg;BE;46.7699;7.6174
+3614;Unterlangenegg;Unterlangenegg;BE;46.7962;7.6934
+3615;Heimenschwand;Buchholterberg;BE;46.8216;7.6920
+3616;Schwarzenegg;Oberlangenegg;BE;46.7972;7.7291
+3617;Fahrni b. Thun;Fahrni;BE;46.7961;7.6538
+3618;Süderen;Röthenbach im Emmental;BE;46.8236;7.7649
+3619;Eriz;Eriz;BE;46.7885;7.7775
+3622;Homberg b. Thun;Homberg;BE;46.7761;7.6791
+3623;Buchen BE;Horrenbach-Buchen;BE;46.7803;7.7064
+3623;Horrenbach;Horrenbach-Buchen;BE;46.7775;7.7455
+3623;Teuffenthal b. Thun;Teuffenthal (BE);BE;46.7706;7.7140
+3624;Goldiwil (Thun);Thun;BE;46.7627;7.6654
+3624;Schwendibach;Steffisburg;BE;46.7716;7.6616
+3625;Heiligenschwendi;Heiligenschwendi;BE;46.7502;7.6754
+3626;Hünibach;Hilterfingen;BE;46.7459;7.6486
+3627;Heimberg;Heimberg;BE;46.7903;7.6037
+3628;Uttigen;Uttigen;BE;46.7941;7.5775
+3629;Jaberg;Jaberg;BE;46.8184;7.5681
+3629;Kiesen;Kiesen;BE;46.8192;7.5814
+3629;Oppligen;Oppligen;BE;46.8195;7.5965
+3631;Höfen b. Thun;Stocken-Höfen;BE;46.7221;7.5644
+3632;Niederstocken;Stocken-Höfen;BE;46.7088;7.5803
+3632;Oberstocken;Stocken-Höfen;BE;46.7173;7.5556
+3633;Amsoldingen;Amsoldingen;BE;46.7281;7.5833
+3634;Thierachern;Thierachern;BE;46.7547;7.5770
+3635;Uebeschi;Uebeschi;BE;46.7389;7.5520
+3636;Forst b. Längenbühl;Forst-Längenbühl;BE;46.7622;7.5247
+3636;Längenbühl;Forst-Längenbühl;BE;46.7582;7.5383
+3638;Blumenstein;Blumenstein;BE;46.7402;7.5205
+3638;Pohlern;Pohlern;BE;46.7260;7.5325
+3645;Gwatt (Thun);Thun;BE;46.7276;7.6223
+3645;Zwieselberg;Reutigen;BE;46.7083;7.6178
+3646;Einigen;Spiez;BE;46.7103;7.6424
+3647;Reutigen;Reutigen;BE;46.6949;7.6211
+3652;Hilterfingen;Hilterfingen;BE;46.7381;7.6593
+3653;Oberhofen am Thunersee;Oberhofen am Thunersee;BE;46.7319;7.6710
+3654;Gunten;Sigriswil;BE;46.7145;7.7003
+3655;Sigriswil;Sigriswil;BE;46.7164;7.7189
+3656;Aeschlen ob Gunten;Sigriswil;BE;46.7201;7.6985
+3656;Ringoldswil;Sigriswil;BE;46.7330;7.6931
+3656;Tschingel ob Gunten;Sigriswil;BE;46.7244;7.7051
+3657;Schwanden (Sigriswil);Sigriswil;BE;46.7401;7.7235
+3658;Merligen;Sigriswil;BE;46.7002;7.7365
+3661;Uetendorf;Uetendorf;BE;46.7741;7.5812
+3662;Seftigen;Seftigen;BE;46.7886;7.5398
+3663;Gurzelen;Gurzelen;BE;46.7780;7.5373
+3664;Burgistein;Burgistein;BE;46.7912;7.5056
+3665;Wattenwil;Wattenwil;BE;46.7660;7.5060
+3671;Brenzikofen;Brenzikofen;BE;46.8147;7.6146
+3671;Herbligen;Herbligen;BE;46.8275;7.6089
+3672;Aeschlen b. Oberdiessbach;Oberdiessbach;BE;46.8363;7.6463
+3672;Oberdiessbach;Oberdiessbach;BE;46.8401;7.6199
+3673;Linden;Linden;BE;46.8479;7.6852
+3674;Bleiken b. Oberdiessbach;Oberdiessbach;BE;46.8156;7.6378
+3700;Spiez;Spiez;BE;46.6859;7.6774
+3702;Hondrich;Spiez;BE;46.6731;7.6842
+3703;Aeschi b. Spiez;Aeschi bei Spiez;BE;46.6554;7.7000
+3703;Aeschiried;Aeschi bei Spiez;BE;46.6455;7.7238
+3704;Krattigen;Krattigen;BE;46.6596;7.7284
+3705;Faulensee;Spiez;BE;46.6762;7.7016
+3706;Leissigen;Leissigen;BE;46.6545;7.7748
+3707;Därligen;Därligen;BE;46.6611;7.8065
+3711;Emdthal;Aeschi bei Spiez;BE;46.6543;7.6843
+3711;Mülenen;Aeschi bei Spiez;BE;46.6408;7.6924
+3713;Reichenbach im Kandertal;Reichenbach im Kandertal;BE;46.6214;7.6898
+3714;Frutigen;Frutigen;BE;46.5848;7.6473
+3714;Wengi b. Frutigen;Reichenbach im Kandertal;BE;46.6085;7.6616
+3715;Adelboden;Adelboden;BE;46.4910;7.5630
+3716;Kandergrund;Kandergrund;BE;46.5557;7.6609
+3717;Blausee-Mitholz;Kandergrund;BE;46.5256;7.6729
+3718;Kandersteg;Kandersteg;BE;46.4945;7.6740
+3722;Scharnachtal;Reichenbach im Kandertal;BE;46.6169;7.7013
+3723;Kiental;Reichenbach im Kandertal;BE;46.5782;7.7335
+3724;Ried (Frutigen);Frutigen;BE;46.5615;7.6073
+3725;Achseten;Frutigen;BE;46.5276;7.5943
+3752;Wimmis;Wimmis;BE;46.6774;7.6411
+3753;Oey;Diemtigen;BE;46.6549;7.5824
+3754;Diemtigen;Diemtigen;BE;46.6489;7.5651
+3755;Horboden;Diemtigen;BE;46.6215;7.5649
+3756;Zwischenflüh;Diemtigen;BE;46.6084;7.5134
+3757;Schwenden im Diemtigtal;Diemtigen;BE;46.5728;7.4872
+3758;Latterbach;Erlenbach im Simmental;BE;46.6654;7.5824
+3762;Erlenbach im Simmental;Erlenbach im Simmental;BE;46.6623;7.5446
+3763;Därstetten;Därstetten;BE;46.6596;7.4992
+3764;Weissenburg;Därstetten;BE;46.6580;7.4817
+3765;Oberwil im Simmental;Oberwil im Simmental;BE;46.6540;7.4365
+3766;Boltigen;Boltigen;BE;46.6132;7.3753
+3770;Zweisimmen;Zweisimmen;BE;46.5582;7.3760
+3771;Blankenburg;Zweisimmen;BE;46.5426;7.3893
+3772;St. Stephan;St. Stephan;BE;46.5103;7.3936
+3773;Matten (St. Stephan);St. Stephan;BE;46.4999;7.4316
+3775;Lenk im Simmental;Lenk;BE;46.4547;7.4453
+3776;Oeschseite;Zweisimmen;BE;46.5285;7.3442
+3777;Saanenmöser;Saanen;BE;46.5157;7.3082
+3778;Schönried;Saanen;BE;46.5041;7.2888
+3780;Gstaad;Saanen;BE;46.4725;7.2882
+3781;Turbach;Saanen;BE;46.4762;7.3340
+3782;Lauenen b. Gstaad;Lauenen;BE;46.4211;7.3273
+3783;Grund b. Gstaad;Saanen;BE;46.4470;7.2737
+3784;Feutersoey;Gsteig;BE;46.4123;7.2706
+3785;Gsteig b. Gstaad;Gsteig;BE;46.3856;7.2672
+3792;Saanen;Saanen;BE;46.4891;7.2619
+3800;Interlaken;Interlaken;BE;46.6847;7.8601
+3800;Matten b. Interlaken;Matten bei Interlaken;BE;46.6796;7.8665
+3800;Sundlauenen;Beatenberg;BE;46.6866;7.7947
+3800;Unterseen;Unterseen;BE;46.6854;7.8426
+3801;Jungfraujoch;Fieschertal;VS;46.5470;7.9830
+3803;Beatenberg;Beatenberg;BE;46.6968;7.7967
+3804;Habkern;Habkern;BE;46.7283;7.8631
+3805;Goldswil b. Interlaken;Ringgenberg (BE);BE;46.6958;7.8780
+3806;Bönigen b. Interlaken;Bönigen;BE;46.6860;7.8957
+3807;Iseltwald;Iseltwald;BE;46.7078;7.9659
+3812;Wilderswil;Wilderswil;BE;46.6636;7.8638
+3813;Saxeten;Saxeten;BE;46.6360;7.8317
+3814;Gsteigwiler;Gsteigwiler;BE;46.6550;7.8738
+3815;Gündlischwand;Gündlischwand;BE;46.6350;7.9134
+3815;Zweilütschinen;Gündlischwand;BE;46.6314;7.9036
+3816;Burglauenen;Grindelwald;BE;46.6351;7.9743
+3816;Lütschental;Lütschental;BE;46.6390;7.9536
+3818;Grindelwald;Grindelwald;BE;46.6264;8.0312
+3822;Isenfluh;Lauterbrunnen;BE;46.6196;7.8894
+3822;Lauterbrunnen;Lauterbrunnen;BE;46.5949;7.9089
+3823;Eigergletscher;Lauterbrunnen;BE;46.5749;7.9742
+3823;Kleine Scheidegg;Lauterbrunnen;BE;46.5850;7.9600
+3823;Wengen;Lauterbrunnen;BE;46.6046;7.9209
+3824;Stechelberg;Lauterbrunnen;BE;46.5512;7.9046
+3825;Mürren;Lauterbrunnen;BE;46.5605;7.8917
+3826;Gimmelwald;Lauterbrunnen;BE;46.5476;7.8873
+3852;Ringgenberg BE;Ringgenberg (BE);BE;46.7033;7.8962
+3853;Niederried b. Interlaken;Niederried bei Interlaken;BE;46.7180;7.9299
+3854;Oberried am Brienzersee;Oberried am Brienzersee;BE;46.7371;7.9611
+3855;Axalp;Brienz (BE);BE;46.7217;8.0379
+3855;Brienz BE;Brienz (BE);BE;46.7051;8.0309
+3855;Schwanden b. Brienz;Schwanden bei Brienz;BE;46.7583;8.0552
+3856;Brienzwiler;Brienzwiler;BE;46.7516;8.1008
+3857;Unterbach BE;Meiringen;BE;46.7390;8.1178
+3858;Hofstetten b. Brienz;Hofstetten bei Brienz;BE;46.7539;8.0764
+3860;Brünig;Meiringen;BE;46.7565;8.1359
+3860;Meiringen;Meiringen;BE;46.7286;8.1814
+3860;Rosenlaui;Schattenhalb;BE;46.6803;8.1545
+3860;Schattenhalb;Schattenhalb;BE;46.7144;8.1907
+3862;Innertkirchen;Innertkirchen;BE;46.7037;8.2346
+3863;Gadmen;Innertkirchen;BE;46.7293;8.3310
+3864;Guttannen;Guttannen;BE;46.6559;8.2868
+3900;Brig;Brig-Glis;VS;46.3165;7.9928
+3900;Brigerbad;Brig-Glis;VS;46.3001;7.9206
+3900;Gamsen;Brig-Glis;VS;46.3045;7.9536
+3901;Rothwald;Ried-Brig;VS;46.2794;8.0458
+3902;Glis;Brig-Glis;VS;46.3108;7.9814
+3903;Birgisch;Naters;VS;46.3201;7.9633
+3903;Mund;Naters;VS;46.3157;7.9355
+3904;Naters;Naters;VS;46.3269;7.9929
+3905;Saas-Almagell;Saas-Almagell;VS;46.0951;7.9577
+3906;Saas-Fee;Saas-Fee;VS;46.1098;7.9282
+3907;Gabi (Simplon);Simplon;VS;46.1839;8.0735
+3907;Gondo;Zwischbergen;VS;46.1799;8.1220
+3907;Simplon Dorf;Simplon;VS;46.1984;8.0538
+3907;Simplon Hospiz;Simplon;VS;46.2453;8.0235
+3908;Saas-Balen;Saas-Balen;VS;46.1498;7.9287
+3910;Saas-Grund;Saas-Grund;VS;46.1266;7.9381
+3911;Ried-Brig;Ried-Brig;VS;46.3139;8.0158
+3912;Termen;Termen;VS;46.3272;8.0224
+3913;Rosswald;Termen;VS;46.3048;8.0434
+3914;Belalp;Naters;VS;46.3724;7.9747
+3914;Blatten b. Naters;Naters;VS;46.3606;7.9814
+3916;Ferden;Ferden;VS;46.3928;7.7567
+3917;Goppenstein;Ferden;VS;46.3673;7.7546
+3917;Kippel;Kippel;VS;46.3995;7.7713
+3918;Wiler (Lötschen);Wiler (Lötschen);VS;46.4083;7.7808
+3919;Blatten (Lötschen);Blatten;VS;46.4198;7.8164
+3920;Zermatt;Zermatt;VS;46.0188;7.7487
+3922;Eisten;Eisten;VS;46.1972;7.8987
+3922;Kalpetran;Embd;VS;46.2144;7.8379
+3922;Stalden VS;Stalden (VS);VS;46.2341;7.8700
+3923;Törbel;Törbel;VS;46.2382;7.8510
+3924;St. Niklaus VS;St. Niklaus;VS;46.1791;7.8100
+3925;Grächen;Grächen;VS;46.1959;7.8379
+3926;Embd;Embd;VS;46.2170;7.8289
+3927;Herbriggen;St. Niklaus;VS;46.1352;7.7925
+3928;Randa;Randa;VS;46.0990;7.7830
+3929;Täsch;Täsch;VS;46.0682;7.7791
+3930;Eyholz;Visp;VS;46.2944;7.9100
+3930;Visp;Visp;VS;46.2931;7.8815
+3931;Lalden;Lalden;VS;46.2996;7.9012
+3932;Visperterminen;Visperterminen;VS;46.2618;7.8983
+3933;Staldenried;Staldenried;VS;46.2275;7.8886
+3934;Zeneggen;Zeneggen;VS;46.2722;7.8653
+3935;Bürchen;Bürchen;VS;46.2771;7.8231
+3937;Baltschieder;Baltschieder;VS;46.3069;7.8641
+3938;Ausserberg;Ausserberg;VS;46.3143;7.8514
+3939;Eggerberg;Eggerberg;VS;46.3082;7.8826
+3940;Steg VS;Steg-Hohtenn;VS;46.3142;7.7494
+3942;Niedergesteln;Niedergesteln;VS;46.3128;7.7836
+3942;Raron;Raron;VS;46.3079;7.8013
+3942;St. German;Raron;VS;46.3127;7.8209
+3943;Eischoll;Eischoll;VS;46.2917;7.7772
+3944;Unterbäch VS;Unterbäch;VS;46.2832;7.7971
+3945;Gampel;Gampel-Bratsch;VS;46.3179;7.7365
+3945;Niedergampel;Gampel-Bratsch;VS;46.3129;7.7111
+3946;Gruben;Oberems;VS;46.2135;7.7003
+3946;Turtmann;Turtmann-Unterems;VS;46.3020;7.7030
+3947;Ergisch;Ergisch;VS;46.2909;7.7186
+3948;Oberems;Oberems;VS;46.2816;7.6900
+3948;Unterems;Turtmann-Unterems;VS;46.2911;7.6951
+3949;Hohtenn;Steg-Hohtenn;VS;46.3198;7.7588
+3951;Agarn;Agarn;VS;46.2954;7.6661
+3952;Susten;Leuk;VS;46.3040;7.6452
+3953;Inden;Inden;VS;46.3436;7.6176
+3953;Leuk Stadt;Leuk;VS;46.3187;7.6359
+3953;Varen;Varen;VS;46.3190;7.6074
+3954;Leukerbad;Leukerbad;VS;46.3797;7.6282
+3955;Albinen;Albinen;VS;46.3408;7.6329
+3956;Guttet-Feschel;Guttet-Feschel;VS;46.3251;7.6697
+3957;Bratsch;Gampel-Bratsch;VS;46.3223;7.7084
+3957;Erschmatt;Leuk;VS;46.3220;7.6921
+3960;Corin-de-la-Crête;Crans-Montana;VS;46.2853;7.5043
+3960;Loc;Crans-Montana;VS;46.2927;7.5112
+3960;Muraz (Sierre);Sierre;VS;46.2976;7.5291
+3960;Niouc;Anniviers;VS;46.2715;7.5518
+3960;Sierre;Sierre;VS;46.2922;7.5319
+3961;Ayer;Anniviers;VS;46.1798;7.6019
+3961;Chandolin;Anniviers;VS;46.2516;7.5929
+3961;Grimentz;Anniviers;VS;46.1812;7.5752
+3961;Mission;Anniviers;VS;46.1911;7.5928
+3961;St-Jean VS;Anniviers;VS;46.1972;7.5835
+3961;St-Luc;Anniviers;VS;46.2208;7.5974
+3961;Vissoie;Anniviers;VS;46.2146;7.5827
+3961;Zinal;Anniviers;VS;46.1362;7.6279
+3963;Aminona;Crans-Montana;VS;46.3336;7.5317
+3963;Crans VS;Lens;VS;46.3025;7.4576
+3963;Crans-Montana;Crans-Montana;VS;46.3109;7.4844
+3963;Montana;Crans-Montana;VS;46.2977;7.4892
+3965;Chippis;Chippis;VS;46.2795;7.5398
+3966;Chalais;Chalais;VS;46.2658;7.5125
+3966;Réchy;Chalais;VS;46.2618;7.4949
+3967;Vercorin;Chalais;VS;46.2559;7.5304
+3968;Veyras;Noble-Contrée;VS;46.3028;7.5371
+3970;Salgesch;Salgesch;VS;46.3110;7.5707
+3971;Chermignon;Crans-Montana;VS;46.2887;7.4748
+3971;Chermignon-d'en-Bas;Crans-Montana;VS;46.2828;7.4833
+3971;Ollon VS;Crans-Montana;VS;46.2742;7.4786
+3972;Miège;Noble-Contrée;VS;46.3117;7.5471
+3973;Venthône;Noble-Contrée;VS;46.3066;7.5280
+3974;Mollens VS;Crans-Montana;VS;46.3132;7.5200
+3975;Randogne;Crans-Montana;VS;46.3102;7.5027
+3976;Champzabé;Crans-Montana;VS;46.2793;7.4982
+3976;Noës;Sierre;VS;46.2803;7.5053
+3977;Granges VS;Sierre;VS;46.2615;7.4669
+3978;Flanthey;Lens;VS;46.2690;7.4521
+3979;Grône;Grône;VS;46.2503;7.4659
+3982;Bitsch;Bitsch;VS;46.3378;8.0134
+3983;Bister;Bister;VS;46.3627;8.0669
+3983;Filet;Mörel-Filet;VS;46.3605;8.0536
+3983;Goppisberg;Riederalp;VS;46.3716;8.0498
+3983;Greich;Riederalp;VS;46.3665;8.0388
+3983;Mörel;Mörel-Filet;VS;46.3572;8.0451
+3984;Fiesch;Fiesch;VS;46.4031;8.1327
+3984;Fieschertal;Fieschertal;VS;46.4251;8.1433
+3985;Geschinen;Goms;VS;46.4963;8.2834
+3985;Münster VS;Goms;VS;46.4868;8.2643
+3986;Ried-Mörel;Riederalp;VS;46.3571;8.0309
+3987;Riederalp;Riederalp;VS;46.3786;8.0346
+3988;Obergesteln;Obergoms;VS;46.5146;8.3251
+3988;Ulrichen;Obergoms;VS;46.5059;8.3077
+3989;Biel VS;Goms;VS;46.4556;8.2172
+3989;Blitzingen;Goms;VS;46.4441;8.2015
+3989;Niederwald;Goms;VS;46.4354;8.1907
+3989;Ritzingen;Goms;VS;46.4577;8.2227
+3989;Selkingen;Goms;VS;46.4531;8.2127
+3991;Betten;Bettmeralp;VS;46.3775;8.0688
+3992;Bettmeralp;Bettmeralp;VS;46.3894;8.0625
+3993;Grengiols;Grengiols;VS;46.3726;8.0992
+3994;Lax;Lax;VS;46.3889;8.1160
+3994;Martisberg;Bettmeralp;VS;46.3867;8.0997
+3995;Ausserbinn;Ernen;VS;46.3819;8.1497
+3995;Ernen;Ernen;VS;46.3961;8.1424
+3995;Mühlebach (Goms);Ernen;VS;46.4087;8.1587
+3995;Steinhaus;Ernen;VS;46.4228;8.1786
+3996;Binn;Binn;VS;46.3653;8.1918
+3997;Bellwald;Bellwald;VS;46.4276;8.1601
+3998;Gluringen;Goms;VS;46.4639;8.2327
+3998;Reckingen VS;Goms;VS;46.4700;8.2440
+3999;Oberwald;Obergoms;VS;46.5329;8.3537
+4001;Basel;Basel;BS;47.5563;7.5890
+4031;Basel;Basel;BS;47.5617;7.5826
+4051;Basel;Basel;BS;47.5551;7.5850
+4052;Basel;Basel;BS;47.5506;7.6069
+4053;Basel;Basel;BS;47.5416;7.5938
+4054;Basel;Basel;BS;47.5502;7.5668
+4055;Basel;Basel;BS;47.5603;7.5696
+4056;Basel;Basel;BS;47.5671;7.5753
+4057;Basel;Basel;BS;47.5698;7.5923
+4058;Basel;Basel;BS;47.5651;7.6082
+4059;Basel;Basel;BS;47.5332;7.5926
+4101;Bruderholz;Binningen;BL;47.5284;7.5816
+4102;Binningen;Binningen;BL;47.5377;7.5684
+4103;Bottmingen;Bottmingen;BL;47.5234;7.5721
+4104;Oberwil BL;Oberwil (BL);BL;47.5157;7.5569
+4105;Biel-Benken BL;Biel-Benken;BL;47.5073;7.5234
+4106;Therwil;Therwil;BL;47.4992;7.5567
+4107;Ettingen;Ettingen;BL;47.4822;7.5467
+4108;Witterswil;Witterswil;SO;47.4863;7.5240
+4112;Bättwil;Bättwil;SO;47.4897;7.5113
+4112;Flüh;Hofstetten-Flüh;SO;47.4839;7.4983
+4114;Hofstetten SO;Hofstetten-Flüh;SO;47.4765;7.5146
+4115;Mariastein;Metzerlen-Mariastein;SO;47.4773;7.4870
+4116;Metzerlen;Metzerlen-Mariastein;SO;47.4644;7.4670
+4117;Burg im Leimental;Burg im Leimental;BL;47.4580;7.4396
+4118;Rodersdorf;Rodersdorf;SO;47.4816;7.4583
+4123;Allschwil;Allschwil;BL;47.5517;7.5465
+4124;Schönenbuch;Schönenbuch;BL;47.5377;7.5034
+4125;Riehen;Riehen;BS;47.5778;7.6476
+4126;Bettingen;Bettingen;BS;47.5703;7.6658
+4127;Birsfelden;Birsfelden;BL;47.5522;7.6269
+4132;Muttenz;Muttenz;BL;47.5285;7.6408
+4133;Pratteln;Pratteln;BL;47.5200;7.6949
+4142;Münchenstein;Münchenstein;BL;47.5193;7.6109
+4143;Dornach;Dornach;SO;47.4802;7.6168
+4144;Arlesheim;Arlesheim;BL;47.4959;7.6183
+4145;Gempen;Gempen;SO;47.4750;7.6605
+4146;Hochwald;Hochwald;SO;47.4549;7.6436
+4147;Aesch BL;Aesch (BL);BL;47.4710;7.5963
+4148;Pfeffingen;Pfeffingen;BL;47.4593;7.5900
+4153;Reinach BL;Reinach (BL);BL;47.4984;7.5936
+4202;Duggingen;Duggingen;BL;47.4525;7.6065
+4203;Grellingen;Grellingen;BL;47.4408;7.5870
+4204;Himmelried;Himmelried;SO;47.4219;7.5921
+4206;Seewen SO;Seewen;SO;47.4351;7.6587
+4207;Bretzwil;Bretzwil;BL;47.3985;7.6511
+4208;Nunningen;Nunningen;SO;47.3949;7.6189
+4222;Zwingen;Zwingen;BL;47.4372;7.5320
+4223;Blauen;Blauen;BL;47.4499;7.5191
+4224;Nenzlingen;Nenzlingen;BL;47.4472;7.5610
+4225;Brislach;Brislach;BL;47.4196;7.5421
+4226;Breitenbach;Breitenbach;SO;47.4067;7.5472
+4227;Büsserach;Büsserach;SO;47.3937;7.5421
+4228;Erschwil;Erschwil;SO;47.3736;7.5416
+4229;Beinwil SO;Beinwil (SO);SO;47.3601;7.5978
+4232;Fehren;Fehren;SO;47.3962;7.5797
+4233;Meltingen;Meltingen;SO;47.3872;7.5904
+4234;Zullwil;Zullwil;SO;47.3911;7.6010
+4242;Laufen;Laufen;BL;47.4205;7.5009
+4243;Dittingen;Dittingen;BL;47.4377;7.5008
+4244;Röschenz;Röschenz;BL;47.4253;7.4759
+4245;Kleinlützel;Kleinlützel;SO;47.4244;7.4177
+4246;Wahlen b. Laufen;Wahlen;BL;47.4014;7.5154
+4247;Grindel;Grindel;SO;47.3815;7.5035
+4252;Bärschwil;Bärschwil;SO;47.3862;7.4721
+4253;Liesberg;Liesberg;BL;47.3968;7.4266
+4254;Liesberg Dorf;Liesberg;BL;47.4037;7.4310
+4302;Augst BL;Augst;BL;47.5341;7.7181
+4303;Kaiseraugst;Kaiseraugst;AG;47.5379;7.7283
+4304;Giebenach;Giebenach;BL;47.5228;7.7435
+4305;Olsberg;Olsberg;AG;47.5219;7.7837
+4310;Rheinfelden;Rheinfelden;AG;47.5517;7.7922
+4312;Magden;Magden;AG;47.5278;7.8128
+4313;Möhlin;Möhlin;AG;47.5612;7.8429
+4314;Zeiningen;Zeiningen;AG;47.5426;7.8723
+4315;Zuzgen;Zuzgen;AG;47.5257;7.8990
+4316;Hellikon;Hellikon;AG;47.5094;7.9227
+4317;Wegenstetten;Wegenstetten;AG;47.4976;7.9313
+4322;Mumpf;Mumpf;AG;47.5469;7.9154
+4323;Wallbach;Wallbach;AG;47.5594;7.9025
+4324;Obermumpf;Obermumpf;AG;47.5316;7.9351
+4325;Schupfart;Schupfart;AG;47.5144;7.9648
+4332;Stein AG;Stein (AG);AG;47.5437;7.9530
+4333;Münchwilen AG;Münchwilen (AG);AG;47.5390;7.9645
+4334;Sisseln AG;Sisseln;AG;47.5523;7.9910
+4402;Frenkendorf;Frenkendorf;BL;47.5038;7.7134
+4410;Liestal;Liestal;BL;47.4836;7.7348
+4411;Seltisberg;Seltisberg;BL;47.4612;7.7189
+4412;Nuglar;Nuglar-St. Pantaleon;SO;47.4707;7.6930
+4413;Büren SO;Büren (SO);SO;47.4496;7.6720
+4414;Füllinsdorf;Füllinsdorf;BL;47.5063;7.7295
+4415;Lausen;Lausen;BL;47.4730;7.7600
+4416;Bubendorf;Bubendorf;BL;47.4504;7.7383
+4417;Ziefen;Ziefen;BL;47.4315;7.7062
+4418;Reigoldswil;Reigoldswil;BL;47.3979;7.6904
+4419;Lupsingen;Lupsingen;BL;47.4468;7.6929
+4421;St. Pantaleon;Nuglar-St. Pantaleon;SO;47.4610;7.6907
+4422;Arisdorf;Arisdorf;BL;47.5108;7.7656
+4423;Hersberg;Hersberg;BL;47.4928;7.7835
+4424;Arboldswil;Arboldswil;BL;47.4152;7.7171
+4425;Titterten;Titterten;BL;47.4022;7.7163
+4426;Lauwil;Lauwil;BL;47.3890;7.6756
+4431;Bennwil;Bennwil;BL;47.4038;7.7810
+4432;Lampenberg;Lampenberg;BL;47.4260;7.7589
+4433;Ramlinsburg;Ramlinsburg;BL;47.4495;7.7644
+4434;Hölstein;Hölstein;BL;47.4233;7.7710
+4435;Niederdorf;Niederdorf;BL;47.4072;7.7524
+4436;Liedertswil;Liedertswil;BL;47.3913;7.7187
+4436;Oberdorf BL;Oberdorf (BL);BL;47.3933;7.7519
+4437;Waldenburg;Waldenburg;BL;47.3813;7.7472
+4438;Langenbruck;Langenbruck;BL;47.3502;7.7691
+4441;Thürnen;Thürnen;BL;47.4557;7.8287
+4442;Diepflingen;Diepflingen;BL;47.4467;7.8382
+4443;Wittinsburg;Wittinsburg;BL;47.4246;7.8412
+4444;Rümlingen;Rümlingen;BL;47.4248;7.8489
+4445;Häfelfingen;Häfelfingen;BL;47.4153;7.8651
+4446;Buckten;Buckten;BL;47.4096;7.8439
+4447;Känerkinden;Känerkinden;BL;47.4121;7.8361
+4448;Läufelfingen;Läufelfingen;BL;47.3949;7.8559
+4450;Sissach;Sissach;BL;47.4657;7.8105
+4451;Wintersingen;Wintersingen;BL;47.4949;7.8259
+4452;Itingen;Itingen;BL;47.4678;7.7859
+4453;Nusshof;Nusshof;BL;47.4920;7.8050
+4455;Zunzgen;Zunzgen;BL;47.4523;7.8056
+4456;Tenniken;Tenniken;BL;47.4373;7.8122
+4457;Diegten;Diegten;BL;47.4100;7.8103
+4458;Eptingen;Eptingen;BL;47.3840;7.8174
+4460;Gelterkinden;Gelterkinden;BL;47.4645;7.8548
+4461;Böckten;Böckten;BL;47.4648;7.8365
+4462;Rickenbach BL;Rickenbach (BL);BL;47.4844;7.8513
+4463;Buus;Buus;BL;47.5060;7.8641
+4464;Maisprach;Maisprach;BL;47.5247;7.8457
+4465;Hemmiken;Hemmiken;BL;47.4882;7.8912
+4466;Ormalingen;Ormalingen;BL;47.4710;7.8745
+4467;Rothenfluh;Rothenfluh;BL;47.4623;7.9144
+4468;Kienberg;Kienberg;SO;47.4406;7.9665
+4469;Anwil;Anwil;BL;47.4513;7.9397
+4492;Tecknau;Tecknau;BL;47.4501;7.8839
+4493;Wenslingen;Wenslingen;BL;47.4409;7.9077
+4494;Oltingen;Oltingen;BL;47.4330;7.9344
+4495;Zeglingen;Zeglingen;BL;47.4170;7.9070
+4496;Kilchberg BL;Kilchberg (BL);BL;47.4260;7.8985
+4497;Rünenberg;Rünenberg;BL;47.4336;7.8826
+4500;Solothurn;Solothurn;SO;47.2100;7.5323
+4512;Bellach;Bellach;SO;47.2137;7.4992
+4513;Langendorf;Langendorf;SO;47.2222;7.5140
+4514;Lommiswil;Lommiswil;SO;47.2249;7.4709
+4515;Oberdorf SO;Oberdorf (SO);SO;47.2305;7.5036
+4515;Weissenstein b. Solothurn;Oberdorf (SO);SO;47.2501;7.5009
+4522;Rüttenen;Rüttenen;SO;47.2324;7.5297
+4523;Niederwil SO;Riedholz;SO;47.2505;7.5731
+4524;Balmberg;Balm bei Günsberg;SO;47.2673;7.5608
+4524;Günsberg;Günsberg;SO;47.2567;7.5774
+4524;Oberbalmberg;Balm bei Günsberg;SO;47.2645;7.5387
+4525;Balm b. Günsberg;Balm bei Günsberg;SO;47.2522;7.5558
+4528;Zuchwil;Zuchwil;SO;47.2056;7.5578
+4532;Feldbrunnen;Feldbrunnen-St. Niklaus;SO;47.2200;7.5555
+4533;Riedholz;Riedholz;SO;47.2326;7.5670
+4534;Flumenthal;Flumenthal;SO;47.2365;7.5999
+4535;Hubersdorf;Hubersdorf;SO;47.2450;7.5884
+4535;Kammersrohr;Kammersrohr;SO;47.2556;7.5941
+4536;Attiswil;Attiswil;BE;47.2484;7.6115
+4537;Wiedlisbach;Wiedlisbach;BE;47.2510;7.6466
+4538;Oberbipp;Oberbipp;BE;47.2604;7.6615
+4539;Farnern;Farnern;BE;47.2675;7.6206
+4539;Rumisberg;Rumisberg;BE;47.2660;7.6418
+4542;Luterbach;Luterbach;SO;47.2147;7.5836
+4543;Deitingen;Deitingen;SO;47.2152;7.6196
+4552;Derendingen;Derendingen;SO;47.1965;7.5876
+4553;Subingen;Subingen;SO;47.1954;7.6136
+4554;Etziken;Etziken;SO;47.1877;7.6463
+4554;Hüniken;Hüniken;SO;47.1846;7.6373
+4556;Aeschi SO;Aeschi (SO);SO;47.1792;7.6618
+4556;Bolken;Bolken;SO;47.1923;7.6637
+4556;Burgäschi;Aeschi (SO);SO;47.1731;7.6706
+4556;Steinhof SO;Aeschi (SO);SO;47.1617;7.6868
+4557;Horriwil;Horriwil;SO;47.1826;7.6215
+4558;Heinrichswil;Drei Höfe;SO;47.1581;7.6365
+4558;Hersiwil;Drei Höfe;SO;47.1656;7.6349
+4558;Winistorf;Drei Höfe;SO;47.1580;7.6489
+4562;Biberist;Biberist;SO;47.1825;7.5597
+4563;Gerlafingen;Gerlafingen;SO;47.1698;7.5733
+4564;Obergerlafingen;Obergerlafingen;SO;47.1610;7.5844
+4564;Zielebach;Zielebach;BE;47.1583;7.5757
+4565;Recherswil;Recherswil;SO;47.1603;7.5954
+4566;Halten;Kriegstetten;SO;47.1687;7.6072
+4566;Kriegstetten;Kriegstetten;SO;47.1761;7.5976
+4566;Oekingen;Kriegstetten;SO;47.1791;7.6050
+4571;Ichertswil;Lüterkofen-Ichertswil;SO;47.1584;7.4987
+4571;Lüterkofen;Lüterkofen-Ichertswil;SO;47.1630;7.5118
+4573;Lohn-Ammannsegg;Lohn-Ammannsegg;SO;47.1709;7.5282
+4574;Lüsslingen;Lüsslingen-Nennigkofen;SO;47.1900;7.5021
+4574;Nennigkofen;Lüsslingen-Nennigkofen;SO;47.1859;7.4942
+4576;Tscheppach;Buchegg;SO;47.1454;7.4792
+4577;Hessigkofen;Buchegg;SO;47.1413;7.4665
+4578;Bibern SO;Buchegg;SO;47.1460;7.4559
+4579;Gossliwil;Buchegg;SO;47.1367;7.4344
+4581;Küttigkofen;Buchegg;SO;47.1501;7.5144
+4582;Brügglen;Buchegg;SO;47.1427;7.4972
+4583;Aetigkofen;Buchegg;SO;47.1251;7.4660
+4583;Mühledorf SO;Buchegg;SO;47.1356;7.4761
+4584;Gächliwil;Buchegg;SO;47.1287;7.4480
+4584;Lüterswil;Buchegg;SO;47.1202;7.4397
+4585;Biezwil;Biezwil;SO;47.1141;7.4173
+4586;Kyburg-Buchegg;Buchegg;SO;47.1420;7.5100
+4587;Aetingen;Buchegg;SO;47.1324;7.5051
+4588;Brittern;Buchegg;SO;47.1215;7.4914
+4588;Oberramsern;Messen;SO;47.1147;7.4629
+4588;Unterramsern;Unterramsern;SO;47.1200;7.4833
+4600;Olten;Olten;SO;47.3489;7.9064
+4612;Wangen b. Olten;Wangen bei Olten;SO;47.3439;7.8713
+4613;Rickenbach SO;Rickenbach (SO);SO;47.3421;7.8539
+4614;Hägendorf;Hägendorf;SO;47.3358;7.8408
+4615;Allerheiligenberg;Hägendorf;SO;47.3521;7.8155
+4616;Kappel SO;Kappel (SO);SO;47.3228;7.8486
+4617;Gunzgen;Gunzgen;SO;47.3154;7.8310
+4618;Boningen;Boningen;SO;47.3072;7.8545
+4622;Egerkingen;Egerkingen;SO;47.3216;7.7956
+4623;Neuendorf;Neuendorf;SO;47.2988;7.7958
+4624;Härkingen;Härkingen;SO;47.3063;7.8180
+4625;Oberbuchsiten;Oberbuchsiten;SO;47.3099;7.7675
+4626;Niederbuchsiten;Niederbuchsiten;SO;47.2958;7.7744
+4628;Wolfwil;Wolfwil;SO;47.2687;7.7968
+4629;Fulenbach;Fulenbach;SO;47.2738;7.8326
+4632;Trimbach;Trimbach;SO;47.3638;7.9004
+4633;Hauenstein;Hauenstein-Ifenthal;SO;47.3762;7.8656
+4634;Wisen SO;Wisen (SO);SO;47.3937;7.8851
+4652;Winznau;Winznau;SO;47.3649;7.9318
+4653;Obergösgen;Obergösgen;SO;47.3646;7.9524
+4654;Lostorf;Lostorf;SO;47.3841;7.9462
+4655;Rohr b. Olten;Stüsslingen;SO;47.4105;7.9541
+4655;Stüsslingen;Stüsslingen;SO;47.3917;7.9704
+4656;Starrkirch-Wil;Starrkirch-Wil;SO;47.3486;7.9268
+4657;Dulliken;Dulliken;SO;47.3507;7.9423
+4658;Däniken SO;Däniken;SO;47.3530;7.9826
+4663;Aarburg;Aarburg;AG;47.3214;7.9043
+4665;Oftringen;Oftringen;AG;47.3089;7.9306
+4702;Oensingen;Oensingen;SO;47.2898;7.7166
+4703;Kestenholz;Kestenholz;SO;47.2814;7.7551
+4704;Niederbipp;Niederbipp;BE;47.2700;7.6926
+4704;Wolfisberg;Niederbipp;BE;47.2745;7.6615
+4710;Balsthal;Balsthal;SO;47.3151;7.6937
+4712;Laupersdorf;Laupersdorf;SO;47.3135;7.6547
+4713;Matzendorf;Matzendorf;SO;47.3057;7.6289
+4714;Aedermannsdorf;Aedermannsdorf;SO;47.3058;7.6088
+4715;Herbetswil;Herbetswil;SO;47.2965;7.5920
+4716;Gänsbrunnen;Welschenrohr-Gänsbrunnen;SO;47.2645;7.4754
+4716;Welschenrohr;Welschenrohr-Gänsbrunnen;SO;47.2807;7.5259
+4717;Mümliswil;Mümliswil-Ramiswil;SO;47.3432;7.7033
+4718;Holderbank SO;Holderbank (SO);SO;47.3332;7.7531
+4719;Ramiswil;Mümliswil-Ramiswil;SO;47.3494;7.6579
+4800;Zofingen;Zofingen;AG;47.2863;7.9463
+4802;Strengelbach;Strengelbach;AG;47.2810;7.9288
+4803;Vordemwald;Vordemwald;AG;47.2750;7.9013
+4805;Brittnau;Brittnau;AG;47.2623;7.9448
+4806;Wikon;Wikon;LU;47.2654;7.9644
+4812;Mühlethal;Zofingen;AG;47.3022;7.9765
+4813;Uerkheim;Uerkheim;AG;47.3036;8.0215
+4814;Bottenwil;Bottenwil;AG;47.2857;8.0060
+4852;Rothrist;Rothrist;AG;47.3033;7.8855
+4853;Murgenthal;Murgenthal;AG;47.2692;7.8383
+4853;Riken AG;Murgenthal;AG;47.2738;7.8510
+4856;Glashütten;Murgenthal;AG;47.2593;7.8400
+4900;Langenthal;Langenthal;BE;47.2125;7.7846
+4911;Schwarzhäusern;Schwarzhäusern;BE;47.2523;7.7668
+4912;Aarwangen;Aarwangen;BE;47.2374;7.7745
+4913;Bannwil;Bannwil;BE;47.2399;7.7350
+4914;Roggwil BE;Roggwil (BE);BE;47.2408;7.8206
+4915;St. Urban;Pfaffnau;LU;47.2287;7.8434
+4916;Untersteckholz;Langenthal;BE;47.2059;7.8440
+4917;Busswil b. Melchnau;Busswil bei Melchnau;BE;47.1852;7.8297
+4917;Melchnau;Melchnau;BE;47.1814;7.8512
+4919;Reisiswil;Reisiswil;BE;47.1636;7.8428
+4922;Bützberg;Thunstetten;BE;47.2156;7.7457
+4922;Thunstetten;Thunstetten;BE;47.2029;7.7568
+4923;Wynau;Wynau;BE;47.2577;7.8169
+4924;Obersteckholz;Langenthal;BE;47.2005;7.8228
+4932;Gutenburg;Madiswil;BE;47.1808;7.7957
+4932;Lotzwil;Lotzwil;BE;47.1907;7.7914
+4933;Rütschelen;Rütschelen;BE;47.1748;7.7752
+4934;Madiswil;Madiswil;BE;47.1645;7.8016
+4935;Leimiswil;Madiswil;BE;47.1523;7.7671
+4936;Kleindietwil;Madiswil;BE;47.1444;7.7909
+4937;Ursenbach;Ursenbach;BE;47.1358;7.7716
+4938;Rohrbach;Rohrbach;BE;47.1361;7.8165
+4938;Rohrbachgraben;Rohrbachgraben;BE;47.1169;7.8020
+4942;Walterswil BE;Walterswil (BE);BE;47.1101;7.7764
+4943;Oeschenbach;Oeschenbach;BE;47.1103;7.7483
+4944;Auswil;Auswil;BE;47.1357;7.8333
+4950;Huttwil;Huttwil;BE;47.1137;7.8483
+4952;Eriswil;Eriswil;BE;47.0781;7.8531
+4953;Schwarzenbach (Huttwil);Huttwil;BE;47.1042;7.8295
+4954;Wyssachen;Wyssachen;BE;47.0770;7.8242
+4955;Gondiswil;Gondiswil;BE;47.1425;7.8714
+5000;Aarau;Aarau;AG;47.3897;8.0482
+5004;Aarau;Aarau;AG;47.4006;8.0607
+5012;Eppenberg;Eppenberg-Wöschnau;SO;47.3761;8.0240
+5012;Schönenwerd;Schönenwerd;SO;47.3735;8.0060
+5012;Wöschnau;Eppenberg-Wöschnau;SO;47.3847;8.0269
+5013;Niedergösgen;Niedergösgen;SO;47.3725;7.9910
+5014;Gretzenbach;Gretzenbach;SO;47.3579;7.9982
+5015;Erlinsbach SO;Erlinsbach (SO);SO;47.3980;8.0053
+5017;Barmelweid;Erlinsbach (AG);AG;47.4216;7.9716
+5018;Erlinsbach;Erlinsbach (AG);AG;47.4037;8.0123
+5022;Rombach;Küttigen;AG;47.4049;8.0478
+5023;Biberstein;Biberstein;AG;47.4149;8.0831
+5024;Küttigen;Küttigen;AG;47.4143;8.0493
+5025;Asp;Densbüren;AG;47.4431;8.0504
+5026;Densbüren;Densbüren;AG;47.4547;8.0560
+5027;Herznach;Herznach-Ueken;AG;47.4731;8.0514
+5028;Ueken;Herznach-Ueken;AG;47.4840;8.0496
+5032;Aarau Rohr;Aarau;AG;47.4010;8.0807
+5033;Buchs AG;Buchs (AG);AG;47.3898;8.0747
+5034;Suhr;Suhr;AG;47.3766;8.0742
+5035;Unterentfelden;Unterentfelden;AG;47.3694;8.0434
+5036;Oberentfelden;Oberentfelden;AG;47.3565;8.0437
+5037;Muhen;Muhen;AG;47.3361;8.0560
+5040;Schöftland;Schöftland;AG;47.3059;8.0513
+5042;Hirschthal;Hirschthal;AG;47.3198;8.0563
+5043;Holziken;Holziken;AG;47.3214;8.0386
+5044;Schlossrued;Schlossrued;AG;47.2911;8.0887
+5046;Schmiedrued;Schmiedrued;AG;47.2712;8.1042
+5046;Walde AG;Schmiedrued;AG;47.2589;8.1117
+5053;Staffelbach;Staffelbach;AG;47.2830;8.0438
+5053;Wittwil;Staffelbach;AG;47.2910;8.0377
+5054;Kirchleerau;Kirchleerau;AG;47.2760;8.0647
+5054;Moosleerau;Moosleerau;AG;47.2679;8.0637
+5056;Attelwil;Reitnau;AG;47.2601;8.0427
+5057;Reitnau;Reitnau;AG;47.2520;8.0420
+5058;Wiliberg;Wiliberg;AG;47.2684;8.0160
+5062;Oberhof;Oberhof;AG;47.4490;8.0072
+5063;Wölflinswil;Wölflinswil;AG;47.4613;7.9980
+5064;Wittnau;Wittnau;AG;47.4808;7.9762
+5070;Frick;Frick;AG;47.5069;8.0208
+5072;Oeschgen;Oeschgen;AG;47.5196;8.0172
+5073;Gipf-Oberfrick;Gipf-Oberfrick;AG;47.4978;8.0028
+5074;Eiken;Eiken;AG;47.5346;7.9877
+5075;Hornussen;Böztal;AG;47.5002;8.0619
+5076;Bözen;Böztal;AG;47.4958;8.0842
+5077;Elfingen;Böztal;AG;47.5070;8.0991
+5078;Effingen;Böztal;AG;47.4889;8.1037
+5079;Zeihen;Zeihen;AG;47.4751;8.0858
+5080;Laufenburg;Laufenburg;AG;47.5592;8.0605
+5082;Kaisten;Kaisten;AG;47.5405;8.0462
+5083;Ittenthal;Kaisten;AG;47.5193;8.0583
+5084;Rheinsulz;Laufenburg;AG;47.5552;8.0895
+5085;Sulz AG;Laufenburg;AG;47.5350;8.0964
+5102;Rupperswil;Rupperswil;AG;47.4013;8.1282
+5103;Möriken AG;Möriken-Wildegg;AG;47.4154;8.1832
+5103;Wildegg;Möriken-Wildegg;AG;47.4147;8.1647
+5105;Auenstein;Auenstein;AG;47.4170;8.1372
+5106;Veltheim AG;Veltheim (AG);AG;47.4361;8.1484
+5107;Schinznach Dorf;Schinznach;AG;47.4470;8.1422
+5108;Oberflachs;Schinznach;AG;47.4417;8.1292
+5112;Thalheim AG;Thalheim (AG);AG;47.4379;8.1025
+5113;Holderbank AG;Holderbank (AG);AG;47.4282;8.1690
+5116;Schinznach Bad;Brugg;AG;47.4500;8.1692
+5200;Brugg AG;Brugg;AG;47.4850;8.2082
+5210;Windisch;Windisch;AG;47.4771;8.2176
+5212;Hausen AG;Hausen (AG);AG;47.4617;8.2124
+5213;Villnachern;Brugg;AG;47.4712;8.1612
+5222;Umiken;Brugg;AG;47.4827;8.1901
+5223;Riniken;Riniken;AG;47.4910;8.1873
+5225;Bözberg;Bözberg;AG;47.4889;8.1585
+5233;Stilli;Villigen;AG;47.5181;8.2313
+5234;Villigen;Villigen;AG;47.5248;8.2167
+5235;Rüfenach AG;Rüfenach;AG;47.5081;8.2136
+5236;Remigen;Remigen;AG;47.5158;8.1900
+5237;Mönthal;Mönthal;AG;47.5180;8.1436
+5242;Birr;Birr;AG;47.4347;8.2026
+5242;Lupfig;Lupfig;AG;47.4407;8.2004
+5243;Mülligen;Mülligen;AG;47.4569;8.2392
+5244;Birrhard;Birrhard;AG;47.4346;8.2446
+5245;Habsburg;Habsburg;AG;47.4626;8.1869
+5246;Scherz;Lupfig;AG;47.4475;8.1849
+5272;Gansingen;Gansingen;AG;47.5418;8.1353
+5273;Oberhofen AG;Mettauertal;AG;47.5541;8.1317
+5274;Mettau;Mettauertal;AG;47.5647;8.1275
+5275;Etzgen;Mettauertal;AG;47.5712;8.1110
+5276;Wil AG;Mettauertal;AG;47.5609;8.1523
+5277;Hottwil;Mettauertal;AG;47.5480;8.1620
+5300;Turgi;Baden;AG;47.4907;8.2544
+5301;Siggenthal Station;Untersiggenthal;AG;47.5179;8.2420
+5303;Würenlingen;Würenlingen;AG;47.5310;8.2543
+5304;Endingen;Endingen;AG;47.5373;8.2908
+5305;Unterendingen;Endingen;AG;47.5467;8.2910
+5306;Tegerfelden;Tegerfelden;AG;47.5612;8.2868
+5312;Döttingen;Döttingen;AG;47.5694;8.2597
+5313;Klingnau;Klingnau;AG;47.5820;8.2520
+5314;Kleindöttingen;Böttstein;AG;47.5700;8.2451
+5315;Böttstein;Böttstein;AG;47.5550;8.2220
+5316;Leuggern;Leuggern;AG;47.5840;8.2191
+5317;Hettenschwil;Leuggern;AG;47.5747;8.1985
+5318;Mandach;Mandach;AG;47.5473;8.1856
+5322;Koblenz;Koblenz;AG;47.6084;8.2418
+5323;Rietheim;Zurzach;AG;47.6005;8.2786
+5324;Full-Reuenthal;Full-Reuenthal;AG;47.6139;8.2042
+5325;Leibstadt;Leibstadt;AG;47.5909;8.1739
+5326;Schwaderloch;Schwaderloch;AG;47.5857;8.1439
+5330;Bad Zurzach;Zurzach;AG;47.5871;8.2937
+5332;Rekingen AG;Zurzach;AG;47.5712;8.3199
+5333;Baldingen;Zurzach;AG;47.5553;8.3164
+5334;Böbikon;Zurzach;AG;47.5542;8.3325
+5400;Baden;Baden;AG;47.4741;8.3002
+5404;Baden;Baden;AG;47.4561;8.2785
+5405;Dättwil AG;Baden;AG;47.4546;8.2842
+5406;Rütihof;Baden;AG;47.4376;8.2679
+5408;Ennetbaden;Ennetbaden;AG;47.4809;8.3196
+5412;Gebenstorf;Gebenstorf;AG;47.4804;8.2411
+5412;Vogelsang AG;Gebenstorf;AG;47.4940;8.2404
+5413;Birmenstorf AG;Birmenstorf (AG);AG;47.4609;8.2512
+5415;Hertenstein AG;Obersiggenthal;AG;47.4867;8.3116
+5415;Nussbaumen AG;Obersiggenthal;AG;47.4886;8.2929
+5415;Rieden AG;Obersiggenthal;AG;47.4841;8.3032
+5416;Kirchdorf AG;Obersiggenthal;AG;47.4961;8.2760
+5417;Untersiggenthal;Untersiggenthal;AG;47.4994;8.2580
+5420;Ehrendingen;Ehrendingen;AG;47.4979;8.3438
+5423;Freienwil;Freienwil;AG;47.5026;8.3269
+5425;Schneisingen;Schneisingen;AG;47.5190;8.3633
+5426;Lengnau AG;Lengnau (AG);AG;47.5227;8.3282
+5430;Wettingen;Wettingen;AG;47.4657;8.3259
+5432;Neuenhof;Neuenhof;AG;47.4488;8.3268
+5436;Würenlos;Würenlos;AG;47.4414;8.3627
+5442;Fislisbach;Fislisbach;AG;47.4376;8.2901
+5443;Niederrohrdorf;Niederrohrdorf;AG;47.4245;8.3043
+5444;Künten;Künten;AG;47.3887;8.3303
+5445;Eggenwil;Eggenwil;AG;47.3693;8.3410
+5452;Oberrohrdorf;Oberrohrdorf;AG;47.4210;8.3153
+5453;Remetschwil;Remetschwil;AG;47.4095;8.3248
+5454;Bellikon;Bellikon;AG;47.3901;8.3461
+5462;Siglistorf;Siglistorf;AG;47.5449;8.3797
+5463;Wislikofen;Zurzach;AG;47.5562;8.3664
+5464;Rümikon AG;Zurzach;AG;47.5656;8.3752
+5465;Mellikon;Mellikon;AG;47.5673;8.3510
+5466;Kaiserstuhl AG;Zurzach;AG;47.5683;8.4183
+5467;Fisibach;Fisibach;AG;47.5631;8.4085
+5502;Hunzenschwil;Hunzenschwil;AG;47.3856;8.1246
+5503;Schafisheim;Schafisheim;AG;47.3779;8.1431
+5504;Othmarsingen;Othmarsingen;AG;47.4016;8.2149
+5505;Brunegg;Brunegg;AG;47.4186;8.2172
+5506;Mägenwil;Mägenwil;AG;47.4120;8.2358
+5507;Mellingen;Mellingen;AG;47.4176;8.2736
+5512;Wohlenschwil;Wohlenschwil;AG;47.4140;8.2579
+5522;Tägerig;Tägerig;AG;47.4038;8.2790
+5524;Nesselnbach;Niederwil (AG);AG;47.3887;8.2915
+5524;Niederwil AG;Niederwil (AG);AG;47.3773;8.2957
+5525;Fischbach-Göslikon;Fischbach-Göslikon;AG;47.3704;8.3079
+5600;Ammerswil AG;Ammerswil;AG;47.3701;8.2052
+5600;Lenzburg;Lenzburg;AG;47.3879;8.1764
+5603;Staufen;Staufen;AG;47.3826;8.1670
+5604;Hendschiken;Hendschiken;AG;47.3866;8.2188
+5605;Dottikon;Dottikon;AG;47.3789;8.2405
+5606;Dintikon;Dintikon;AG;47.3643;8.2274
+5607;Hägglingen;Hägglingen;AG;47.3886;8.2526
+5608;Stetten AG;Stetten (AG);AG;47.4011;8.3075
+5610;Wohlen AG;Wohlen (AG);AG;47.3499;8.2777
+5611;Anglikon;Wohlen (AG);AG;47.3649;8.2638
+5612;Villmergen;Villmergen;AG;47.3482;8.2473
+5613;Hilfikon;Villmergen;AG;47.3331;8.2470
+5614;Sarmenstorf;Sarmenstorf;AG;47.3110;8.2498
+5615;Fahrwangen;Fahrwangen;AG;47.2947;8.2422
+5616;Meisterschwanden;Meisterschwanden;AG;47.2951;8.2287
+5617;Tennwil;Meisterschwanden;AG;47.3059;8.2221
+5618;Bettwil;Bettwil;AG;47.2894;8.2669
+5619;Büttikon AG;Büttikon;AG;47.3284;8.2703
+5619;Uezwil;Uezwil;AG;47.3172;8.2749
+5620;Bremgarten AG;Bremgarten (AG);AG;47.3502;8.3425
+5621;Zufikon;Zufikon;AG;47.3498;8.3560
+5622;Waltenschwil;Waltenschwil;AG;47.3350;8.3009
+5623;Boswil;Boswil;AG;47.3003;8.3141
+5624;Bünzen;Bünzen;AG;47.3106;8.3255
+5624;Waldhäusern AG;Bünzen;AG;47.3273;8.3147
+5625;Kallern;Kallern;AG;47.3109;8.2926
+5626;Hermetschwil-Staffeln;Bremgarten (AG);AG;47.3307;8.3406
+5627;Besenbüren;Besenbüren;AG;47.3126;8.3441
+5628;Aristau;Aristau;AG;47.2890;8.3618
+5630;Muri AG;Muri (AG);AG;47.2720;8.3404
+5632;Buttwil;Buttwil;AG;47.2677;8.3112
+5634;Merenschwand;Merenschwand;AG;47.2599;8.3760
+5636;Benzenschwil;Merenschwand;AG;47.2483;8.3661
+5637;Beinwil (Freiamt);Beinwil (Freiamt);AG;47.2292;8.3423
+5637;Geltwil;Geltwil;AG;47.2494;8.3258
+5642;Mühlau;Mühlau;AG;47.2299;8.3889
+5643;Alikon;Sins;AG;47.1982;8.3589
+5643;Meienberg;Sins;AG;47.1977;8.3760
+5643;Sins;Sins;AG;47.1936;8.3922
+5644;Auw;Auw;AG;47.2112;8.3654
+5645;Aettenschwil;Sins;AG;47.1838;8.3716
+5645;Fenkrieden;Sins;AG;47.1604;8.3708
+5646;Abtwil AG;Abtwil;AG;47.1750;8.3555
+5647;Oberrüti;Oberrüti;AG;47.1658;8.3965
+5702;Niederlenz;Niederlenz;AG;47.4017;8.1745
+5703;Seon;Seon;AG;47.3483;8.1602
+5704;Egliswil;Egliswil;AG;47.3494;8.1869
+5705;Hallwil;Hallwil;AG;47.3277;8.1756
+5706;Boniswil;Boniswil;AG;47.3153;8.1873
+5707;Seengen;Seengen;AG;47.3256;8.2075
+5708;Birrwil;Birrwil;AG;47.2898;8.1971
+5712;Beinwil am See;Beinwil am See;AG;47.2659;8.2030
+5722;Gränichen;Gränichen;AG;47.3608;8.0992
+5723;Teufenthal AG;Teufenthal (AG);AG;47.3289;8.1193
+5724;Dürrenäsch;Dürrenäsch;AG;47.3212;8.1575
+5725;Leutwil;Leutwil;AG;47.3092;8.1733
+5726;Unterkulm;Unterkulm;AG;47.3124;8.1121
+5727;Oberkulm;Oberkulm;AG;47.3014;8.1215
+5728;Gontenschwil;Gontenschwil;AG;47.2705;8.1448
+5732;Zetzwil;Zetzwil;AG;47.2872;8.1515
+5733;Leimbach AG;Leimbach (AG);AG;47.2728;8.1693
+5734;Reinach AG;Reinach (AG);AG;47.2562;8.1827
+5735;Pfeffikon LU;Rickenbach (LU);LU;47.2477;8.1759
+5736;Burg AG;Menziken;AG;47.2361;8.1798
+5737;Menziken;Menziken;AG;47.2404;8.1898
+5742;Kölliken;Kölliken;AG;47.3348;8.0225
+5745;Safenwil;Safenwil;AG;47.3216;7.9821
+5746;Walterswil SO;Walterswil (SO);SO;47.3261;7.9678
+6003;Luzern;Luzern;LU;47.0483;8.3011
+6004;Luzern;Luzern;LU;47.0568;8.3042
+6005;Luzern;Luzern;LU;47.0398;8.3128
+6005;St. Niklausen LU;Horw;LU;47.0292;8.3344
+6006;Luzern;Luzern;LU;47.0581;8.3278
+6010;Kriens;Kriens;LU;47.0323;8.2819
+6010;Pilatus Kulm;Alpnach;OW;46.9791;8.2548
+6012;Obernau;Kriens;LU;47.0322;8.2523
+6013;Eigenthal;Schwarzenberg;LU;47.0058;8.2180
+6014;Luzern;Luzern;LU;47.0527;8.2629
+6015;Luzern;Luzern;LU;47.0641;8.2781
+6016;Hellbühl;Neuenkirch;LU;47.0723;8.1994
+6017;Ruswil;Ruswil;LU;47.0852;8.1233
+6018;Buttisholz;Buttisholz;LU;47.1139;8.0933
+6019;Sigigen;Ruswil;LU;47.0613;8.1357
+6020;Emmenbrücke;Emmen;LU;47.0780;8.2713
+6022;Grosswangen;Grosswangen;LU;47.1328;8.0491
+6023;Rothenburg;Rothenburg;LU;47.0985;8.2691
+6024;Hildisrieden;Hildisrieden;LU;47.1503;8.2260
+6025;Neudorf;Beromünster;LU;47.1778;8.2086
+6026;Rain;Rain;LU;47.1285;8.2528
+6027;Römerswil LU;Römerswil;LU;47.1696;8.2471
+6028;Herlisberg;Römerswil;LU;47.1940;8.2346
+6030;Ebikon;Ebikon;LU;47.0801;8.3421
+6032;Emmen;Emmen;LU;47.0845;8.2993
+6033;Buchrain;Buchrain;LU;47.0969;8.3506
+6034;Inwil;Inwil;LU;47.1237;8.3519
+6035;Perlen;Buchrain;LU;47.1074;8.3578
+6036;Dierikon;Dierikon;LU;47.0946;8.3680
+6037;Root;Root;LU;47.1126;8.3889
+6038;Gisikon;Gisikon;LU;47.1246;8.4004
+6038;Honau;Root;LU;47.1311;8.4065
+6039;Root D4;Root;LU;47.1035;8.3742
+6042;Dietwil;Dietwil;AG;47.1483;8.3915
+6043;Adligenswil;Adligenswil;LU;47.0704;8.3649
+6044;Udligenswil;Udligenswil;LU;47.0898;8.3996
+6045;Meggen;Meggen;LU;47.0482;8.3719
+6047;Kastanienbaum;Horw;LU;47.0101;8.3362
+6048;Horw;Horw;LU;47.0188;8.3123
+6052;Hergiswil NW;Hergiswil (NW);NW;46.9895;8.3081
+6053;Alpnachstad;Alpnach;OW;46.9658;8.2879
+6055;Alpnach Dorf;Alpnach;OW;46.9369;8.2626
+6056;Kägiswil;Sarnen;OW;46.9196;8.2584
+6060;Ramersberg;Sarnen;OW;46.8997;8.2308
+6060;Sarnen;Sarnen;OW;46.8957;8.2459
+6062;Wilen (Sarnen);Sarnen;OW;46.8743;8.2107
+6063;Stalden (Sarnen);Sarnen;OW;46.8850;8.1962
+6064;Kerns;Kerns;OW;46.9032;8.2811
+6066;St. Niklausen OW;Kerns;OW;46.8777;8.2844
+6067;Melchtal;Kerns;OW;46.8319;8.2928
+6068;Melchsee-Frutt;Kerns;OW;46.7756;8.2729
+6072;Sachseln;Sachseln;OW;46.8653;8.2350
+6073;Flüeli-Ranft;Sachseln;OW;46.8727;8.2612
+6074;Giswil;Giswil;OW;46.8427;8.1679
+6078;Bürglen OW;Lungern;OW;46.8132;8.1678
+6078;Lungern;Lungern;OW;46.7851;8.1567
+6083;Hasliberg Hohfluh;Hasliberg;BE;46.7497;8.1760
+6084;Hasliberg Wasserwendi;Hasliberg;BE;46.7493;8.2028
+6085;Hasliberg Goldern;Hasliberg;BE;46.7393;8.1993
+6086;Hasliberg Reuti;Hasliberg;BE;46.7300;8.2164
+6102;Malters;Malters;LU;47.0384;8.1796
+6103;Schwarzenberg LU;Schwarzenberg;LU;47.0151;8.1775
+6105;Schachen LU;Werthenstein;LU;47.0351;8.1388
+6106;Werthenstein;Ruswil;LU;47.0577;8.1006
+6110;Fontannen b. Wolhusen;Romoos;LU;47.0246;7.9938
+6110;Wolhusen;Wolhusen;LU;47.0621;8.0737
+6112;Doppleschwand;Doppleschwand;LU;47.0176;8.0540
+6113;Romoos;Romoos;LU;47.0077;8.0161
+6114;Steinhuserberg;Wolhusen;LU;47.0462;8.0464
+6122;Menznau;Menznau;LU;47.0832;8.0394
+6123;Geiss;Menznau;LU;47.0922;8.0587
+6125;Menzberg;Menznau;LU;47.0410;8.0014
+6126;Daiwil;Willisau;LU;47.0915;8.0133
+6130;Willisau;Willisau;LU;47.1182;7.9915
+6132;Rohrmatt;Willisau;LU;47.0951;7.9822
+6133;Hergiswil b. Willisau;Hergiswil bei Willisau;LU;47.0739;7.9542
+6142;Gettnau;Willisau;LU;47.1404;7.9697
+6143;Ohmstal;Schötz;LU;47.1587;7.9560
+6144;Zell LU;Zell (LU);LU;47.1375;7.9281
+6145;Fischbach LU;Fischbach;LU;47.1524;7.9083
+6146;Grossdietwil;Grossdietwil;LU;47.1701;7.8871
+6147;Altbüron;Altbüron;LU;47.1835;7.8821
+6152;Hüswil;Zell (LU);LU;47.1273;7.9072
+6153;Ufhusen;Ufhusen;LU;47.1127;7.8949
+6154;Hofstatt;Luthern;LU;47.0837;7.9069
+6156;Luthern;Luthern;LU;47.0594;7.9147
+6156;Luthern Bad;Luthern;LU;47.0317;7.9253
+6162;Entlebuch;Entlebuch;LU;46.9935;8.0671
+6162;Finsterwald b. Entlebuch;Entlebuch;LU;46.9688;8.1137
+6162;Rengg;Entlebuch;LU;47.0010;8.0997
+6163;Ebnet;Entlebuch;LU;47.0215;8.0780
+6166;Hasle LU;Hasle (LU);LU;46.9754;8.0512
+6167;Bramboden;Romoos;LU;46.9812;7.9826
+6170;Schüpfheim;Schüpfheim;LU;46.9515;8.0165
+6173;Flühli LU;Flühli;LU;46.8833;8.0167
+6174;Sörenberg;Flühli;LU;46.8227;8.0319
+6182;Escholzmatt;Escholzmatt-Marbach;LU;46.9181;7.9419
+6192;Wiggen;Escholzmatt-Marbach;LU;46.8914;7.9145
+6196;Marbach LU;Escholzmatt-Marbach;LU;46.8598;7.8989
+6197;Schangnau;Schangnau;BE;46.8203;7.8755
+6203;Sempach Station;Neuenkirch;LU;47.1163;8.1965
+6204;Sempach;Sempach;LU;47.1331;8.1944
+6205;Eich;Eich;LU;47.1563;8.1679
+6206;Neuenkirch;Neuenkirch;LU;47.0999;8.2038
+6207;Nottwil;Nottwil;LU;47.1336;8.1355
+6208;Oberkirch LU;Oberkirch;LU;47.1592;8.1129
+6210;Sursee;Sursee;LU;47.1717;8.1091
+6211;Buchs LU;Dagmersellen;LU;47.2012;8.0360
+6212;Kaltbach;Mauensee;LU;47.1836;8.0588
+6212;St. Erhard;Knutwil;LU;47.1845;8.0735
+6213;Knutwil;Knutwil;LU;47.1988;8.0727
+6214;Schenkon;Schenkon;LU;47.1789;8.1347
+6215;Beromünster;Beromünster;LU;47.2058;8.1943
+6215;Schwarzenbach LU;Beromünster;LU;47.2330;8.2115
+6216;Mauensee;Mauensee;LU;47.1666;8.0705
+6217;Kottwil;Ettiswil;LU;47.1625;8.0431
+6218;Ettiswil;Ettiswil;LU;47.1499;8.0192
+6221;Rickenbach LU;Rickenbach (LU);LU;47.2222;8.1537
+6222;Gunzwil;Beromünster;LU;47.2029;8.1781
+6231;Schlierbach;Schlierbach;LU;47.2263;8.1133
+6232;Geuensee;Geuensee;LU;47.1984;8.1093
+6233;Büron;Büron;LU;47.2119;8.0953
+6234;Kulmerau;Triengen;LU;47.2542;8.0871
+6234;Triengen;Triengen;LU;47.2359;8.0775
+6235;Winikon;Triengen;LU;47.2361;8.0474
+6236;Wilihof;Triengen;LU;47.2209;8.0633
+6242;Wauwil;Wauwil;LU;47.1859;8.0239
+6243;Egolzwil;Egolzwil;LU;47.1853;8.0069
+6244;Nebikon;Nebikon;LU;47.1916;7.9787
+6245;Ebersecken;Altishofen;LU;47.1819;7.9384
+6246;Altishofen;Altishofen;LU;47.2015;7.9653
+6247;Schötz;Schötz;LU;47.1715;7.9862
+6248;Alberswil;Alberswil;LU;47.1505;8.0015
+6252;Dagmersellen;Dagmersellen;LU;47.2148;7.9873
+6253;Uffikon;Dagmersellen;LU;47.2123;8.0201
+6260;Hintermoos;Wikon;LU;47.2666;8.0057
+6260;Mehlsecken;Reiden;LU;47.2461;7.9593
+6260;Reiden;Reiden;LU;47.2444;7.9736
+6260;Reidermoos;Reiden;LU;47.2528;7.9911
+6262;Langnau b. Reiden;Reiden;LU;47.2293;7.9607
+6263;Richenthal;Reiden;LU;47.2132;7.9400
+6264;Pfaffnau;Pfaffnau;LU;47.2298;7.8989
+6265;Roggliswil;Roggliswil;LU;47.2132;7.8854
+6274;Eschenbach LU;Eschenbach (LU);LU;47.1310;8.3199
+6275;Ballwil;Ballwil;LU;47.1523;8.3233
+6276;Hohenrain;Hohenrain;LU;47.1800;8.3179
+6277;Kleinwangen;Hohenrain;LU;47.1946;8.2965
+6277;Lieli LU;Hohenrain;LU;47.2082;8.2988
+6280;Hochdorf;Hochdorf;LU;47.1667;8.2927
+6280;Urswil;Hochdorf;LU;47.1519;8.2906
+6283;Baldegg;Hochdorf;LU;47.1849;8.2806
+6284;Gelfingen;Hitzkirch;LU;47.2143;8.2678
+6284;Sulz LU;Hitzkirch;LU;47.2211;8.2843
+6285;Hitzkirch;Hitzkirch;LU;47.2243;8.2619
+6285;Retschwil;Hitzkirch;LU;47.1975;8.2452
+6286;Altwis;Hitzkirch;LU;47.2384;8.2519
+6287;Aesch LU;Aesch (LU);LU;47.2574;8.2404
+6288;Schongau;Schongau;LU;47.2687;8.2689
+6289;Hämikon;Hitzkirch;LU;47.2373;8.2766
+6289;Müswangen;Hitzkirch;LU;47.2378;8.2894
+6294;Ermensee;Ermensee;LU;47.2267;8.2421
+6295;Mosen;Hitzkirch;LU;47.2443;8.2265
+6300;Zug;Zug;ZG;47.1708;8.5173
+6300;Zugerberg;Zug;ZG;47.1490;8.5344
+6312;Steinhausen;Steinhausen;ZG;47.1961;8.4862
+6313;Edlibach;Menzingen;ZG;47.1798;8.5707
+6313;Finstersee;Menzingen;ZG;47.1662;8.6276
+6313;Menzingen;Menzingen;ZG;47.1761;8.5950
+6314;Neuägeri;Unterägeri;ZG;47.1489;8.5622
+6314;Unterägeri;Unterägeri;ZG;47.1360;8.5805
+6315;Alosen;Oberägeri;ZG;47.1403;8.6355
+6315;Morgarten;Oberägeri;ZG;47.1097;8.6497
+6315;Oberägeri;Oberägeri;ZG;47.1373;8.6132
+6317;Oberwil b. Zug;Zug;ZG;47.1444;8.5085
+6318;Walchwil;Walchwil;ZG;47.1021;8.5162
+6319;Allenwinden;Baar;ZG;47.1659;8.5535
+6330;Cham;Cham;ZG;47.1852;8.4589
+6331;Hünenberg;Hünenberg;ZG;47.1774;8.4243
+6332;Hagendorn;Cham;ZG;47.2037;8.4339
+6333;Hünenberg See;Hünenberg;ZG;47.1737;8.4474
+6340;Baar;Baar;ZG;47.1948;8.5267
+6340;Sihlbrugg;Hausen am Albis;ZH;47.2189;8.5737
+6343;Buonas;Risch;ZG;47.1412;8.4546
+6343;Holzhäusern ZG;Risch;ZG;47.1534;8.4396
+6343;Risch;Risch;ZG;47.1286;8.4619
+6343;Rotkreuz;Risch;ZG;47.1408;8.4300
+6344;Meierskappel;Meierskappel;LU;47.1219;8.4415
+6345;Neuheim;Neuheim;ZG;47.2031;8.5766
+6353;Weggis;Weggis;LU;47.0330;8.4339
+6354;Vitznau;Vitznau;LU;47.0127;8.4830
+6356;Rigi Kaltbad;Weggis;LU;47.0447;8.4673
+6362;Stansstad;Stansstad;NW;46.9757;8.3399
+6363;Bürgenstock;Ennetbürgen;NW;46.9971;8.3836
+6363;Fürigen;Stansstad;NW;46.9817;8.3518
+6363;Obbürgen;Stansstad;NW;46.9838;8.3635
+6365;Kehrsiten;Stansstad;NW;47.0006;8.3705
+6370;Oberdorf NW;Oberdorf (NW);NW;46.9566;8.3844
+6370;Stans;Stans;NW;46.9609;8.3641
+6372;Ennetmoos;Ennetmoos;NW;46.9464;8.3198
+6373;Ennetbürgen;Ennetbürgen;NW;46.9861;8.4119
+6374;Buochs;Buochs;NW;46.9736;8.4212
+6375;Beckenried;Beckenried;NW;46.9658;8.4695
+6376;Emmetten;Emmetten;NW;46.9548;8.5136
+6377;Seelisberg;Seelisberg;UR;46.9712;8.5807
+6382;Büren NW;Oberdorf (NW);NW;46.9396;8.3979
+6383;Dallenwil;Dallenwil;NW;46.9284;8.3895
+6383;Niederrickenbach;Oberdorf (NW);NW;46.9274;8.4275
+6383;Wiesenberg;Dallenwil;NW;46.9184;8.3551
+6383;Wirzweli;Dallenwil;NW;46.9125;8.3643
+6386;Wolfenschiessen;Wolfenschiessen;NW;46.9072;8.3966
+6387;Oberrickenbach;Wolfenschiessen;NW;46.8863;8.4219
+6388;Grafenort;Wolfenschiessen;NW;46.8757;8.3806
+6390;Engelberg;Engelberg;OW;46.8207;8.4086
+6402;Merlischachen;Küssnacht (SZ);SZ;47.0671;8.4101
+6403;Küssnacht am Rigi;Küssnacht (SZ);SZ;47.0822;8.4382
+6404;Greppen;Greppen;LU;47.0549;8.4306
+6405;Immensee;Küssnacht (SZ);SZ;47.0955;8.4615
+6410;Goldau;Arth;SZ;47.0493;8.5496
+6410;Rigi Klösterli;Arth;SZ;47.0445;8.4865
+6410;Rigi Kulm;Arth;SZ;47.0547;8.4860
+6410;Rigi Scheidegg;Gersau;SZ;47.0262;8.5200
+6410;Rigi Staffel;Arth;SZ;47.0522;8.4740
+6414;Oberarth;Arth;SZ;47.0560;8.5393
+6415;Arth;Arth;SZ;47.0646;8.5256
+6416;Steinerberg;Steinerberg;SZ;47.0560;8.5856
+6417;Sattel;Sattel;SZ;47.0772;8.6362
+6418;Rothenthurm;Rothenthurm;SZ;47.1030;8.6754
+6422;Steinen;Steinen;SZ;47.0496;8.6107
+6423;Seewen SZ;Schwyz;SZ;47.0292;8.6339
+6424;Lauerz;Lauerz;SZ;47.0317;8.5836
+6430;Schwyz;Schwyz;SZ;47.0242;8.6540
+6432;Rickenbach b. Schwyz;Schwyz;SZ;47.0127;8.6744
+6433;Stoos SZ;Morschach;SZ;46.9776;8.6653
+6434;Illgau;Illgau;SZ;46.9915;8.7293
+6436;Bisisthal;Muotathal;SZ;46.9365;8.8397
+6436;Muotathal;Muotathal;SZ;46.9741;8.7662
+6436;Ried (Muotathal);Muotathal;SZ;46.9867;8.7093
+6438;Ibach;Schwyz;SZ;47.0115;8.6453
+6440;Brunnen;Ingenbohl;SZ;46.9998;8.6072
+6441;Rütli;Seelisberg;UR;46.9696;8.5927
+6442;Gersau;Gersau;SZ;46.9958;8.5245
+6443;Morschach;Morschach;SZ;46.9820;8.6200
+6452;Riemenstalden;Riemenstalden;SZ;46.9480;8.6675
+6452;Sisikon;Sisikon;UR;46.9482;8.6230
+6454;Flüelen;Flüelen;UR;46.9189;8.6473
+6460;Altdorf UR;Altdorf (UR);UR;46.8791;8.6396
+6461;Isenthal;Isenthal;UR;46.9051;8.5451
+6462;Seedorf UR;Seedorf (UR);UR;46.8829;8.6121
+6463;Bürglen UR;Bürglen (UR);UR;46.8776;8.6734
+6464;Spiringen;Spiringen;UR;46.8771;8.7315
+6465;Unterschächen;Unterschächen;UR;46.8653;8.7776
+6466;Bauen;Seedorf (UR);UR;46.9312;8.5768
+6467;Schattdorf;Schattdorf;UR;46.8630;8.6509
+6468;Attinghausen;Attinghausen;UR;46.8623;8.6269
+6469;Haldi b. Schattdorf;Schattdorf;UR;46.8557;8.6805
+6472;Erstfeld;Erstfeld;UR;46.8231;8.6467
+6473;Silenen;Silenen;UR;46.7923;8.6710
+6474;Amsteg;Silenen;UR;46.7721;8.6704
+6475;Bristen;Silenen;UR;46.7693;8.7097
+6476;Intschi;Gurtnellen;UR;46.7629;8.6450
+6482;Gurtnellen;Gurtnellen;UR;46.7375;8.6264
+6484;Wassen UR;Wassen;UR;46.7036;8.5999
+6485;Meien;Wassen;UR;46.7286;8.5471
+6487;Göschenen;Göschenen;UR;46.6669;8.5821
+6490;Andermatt;Andermatt;UR;46.6355;8.5963
+6491;Realp;Realp;UR;46.5940;8.4973
+6493;Hospental;Hospental;UR;46.6196;8.5663
+6500;Bellinzona;Bellinzona;TI;46.1939;9.0254
+6503;Bellinzona;Bellinzona;TI;46.2080;9.0195
+6512;Giubiasco;Bellinzona;TI;46.1737;9.0120
+6513;Monte Carasso;Bellinzona;TI;46.1893;8.9983
+6514;Sementina;Bellinzona;TI;46.1826;8.9907
+6515;Gudo;Bellinzona;TI;46.1753;8.9442
+6516;Cugnasco;Cugnasco-Gerra;TI;46.1761;8.9177
+6517;Arbedo;Arbedo-Castione;TI;46.2144;9.0464
+6518;Gorduno;Bellinzona;TI;46.2193;9.0278
+6523;Preonzo;Bellinzona;TI;46.2633;8.9998
+6524;Moleno;Bellinzona;TI;46.2683;8.9908
+6525;Gnosca;Bellinzona;TI;46.2333;9.0215
+6526;Prosito;Riviera;TI;46.2818;8.9809
+6527;Lodrino;Riviera;TI;46.3004;8.9803
+6528;Camorino;Bellinzona;TI;46.1629;9.0043
+6532;Castione;Arbedo-Castione;TI;46.2263;9.0457
+6533;Lumino;Lumino;TI;46.2312;9.0659
+6534;S. Vittore;San Vittore;GR;46.2389;9.1047
+6535;Roveredo GR;Roveredo (GR);GR;46.2353;9.1269
+6537;Grono;Grono;GR;46.2481;9.1482
+6538;Verdabbio;Grono;GR;46.2681;9.1578
+6540;Castaneda;Castaneda;GR;46.2577;9.1399
+6541;Sta. Maria in Calanca;Santa Maria in Calanca;GR;46.2643;9.1424
+6542;Buseno;Buseno;GR;46.2696;9.1042
+6543;Arvigo;Calanca;GR;46.3008;9.1115
+6544;Braggio;Calanca;GR;46.3024;9.1242
+6545;Selma;Calanca;GR;46.3196;9.1166
+6546;Cauco;Calanca;GR;46.3336;9.1217
+6548;Augio;Rossa;GR;46.3653;9.1270
+6548;Rossa;Rossa;GR;46.3770;9.1249
+6548;Sta. Domenica;Rossa;GR;46.3514;9.1220
+6549;Laura;Roveredo (GR);GR;46.2126;9.1022
+6556;Leggia;Grono;GR;46.2620;9.1641
+6557;Cama;Cama;GR;46.2742;9.1713
+6558;Lostallo;Lostallo;GR;46.3173;9.1994
+6562;Soazza;Soazza;GR;46.3634;9.2209
+6563;Mesocco;Mesocco;GR;46.3988;9.2325
+6565;S. Bernardino;Mesocco;GR;46.4578;9.1951
+6571;Indemini;Gambarogno;TI;46.0950;8.8289
+6572;Quartino;Gambarogno;TI;46.1528;8.8967
+6573;Magadino;Gambarogno;TI;46.1464;8.8610
+6574;Vira (Gambarogno);Gambarogno;TI;46.1407;8.8422
+6575;S. Nazzaro;Gambarogno;TI;46.1338;8.8073
+6575;Vairano;Gambarogno;TI;46.1309;8.8099
+6576;Gerra (Gambarogno);Gambarogno;TI;46.1229;8.7887
+6577;Ranzo;Gambarogno;TI;46.1125;8.7730
+6578;Caviano;Gambarogno;TI;46.1060;8.7646
+6579;Piazzogna;Gambarogno;TI;46.1350;8.8245
+6582;Pianezzo;Bellinzona;TI;46.1713;9.0333
+6583;S. Antonio (Val Morobbia);Bellinzona;TI;46.1699;9.0658
+6584;Carena;Bellinzona;TI;46.1685;9.0903
+6592;S. Antonino;Sant'Antonino;TI;46.1549;8.9788
+6593;Cadenazzo;Cadenazzo;TI;46.1507;8.9492
+6594;Contone;Gambarogno;TI;46.1501;8.9259
+6595;Riazzino;Lavertezzo;TI;46.1787;8.8893
+6596;Gordola;Gordola;TI;46.1812;8.8649
+6597;Agarone;Cugnasco-Gerra;TI;46.1791;8.9073
+6598;Tenero;Tenero-Contra;TI;46.1793;8.8497
+6599;Robasacco;Cadenazzo;TI;46.1421;8.9459
+6600;Locarno;Locarno;TI;46.1680;8.7929
+6600;Muralto;Muralto;TI;46.1742;8.8046
+6600;Solduno;Locarno;TI;46.1704;8.7772
+6605;Locarno;Locarno;TI;46.1769;8.7837
+6612;Ascona;Ascona;TI;46.1561;8.7734
+6613;Porto Ronco;Ronco sopra Ascona;TI;46.1413;8.7265
+6614;Brissago;Brissago;TI;46.1182;8.7045
+6614;Isole di Brissago;Brissago;TI;46.1325;8.7357
+6616;Losone;Losone;TI;46.1688;8.7603
+6618;Arcegno;Losone;TI;46.1622;8.7422
+6622;Ronco sopra Ascona;Ronco sopra Ascona;TI;46.1463;8.7266
+6631;Corippo;Verzasca;TI;46.2358;8.8380
+6632;Vogorno;Verzasca;TI;46.2227;8.8609
+6633;Lavertezzo;Verzasca;TI;46.2634;8.8444
+6634;Brione (Verzasca);Verzasca;TI;46.2948;8.7893
+6635;Gerra (Verzasca);Verzasca;TI;46.3190;8.8008
+6636;Frasco;Verzasca;TI;46.3400;8.8017
+6637;Sonogno;Verzasca;TI;46.3512;8.7824
+6644;Orselina;Orselina;TI;46.1789;8.7982
+6645;Brione sopra Minusio;Brione sopra Minusio;TI;46.1858;8.8181
+6646;Contra;Tenero-Contra;TI;46.1877;8.8404
+6647;Mergoscia;Mergoscia;TI;46.2100;8.8425
+6648;Minusio;Minusio;TI;46.1780;8.8181
+6652;Tegna;Terre di Pedemonte;TI;46.1858;8.7440
+6653;Verscio;Terre di Pedemonte;TI;46.1845;8.7314
+6654;Cavigliano;Terre di Pedemonte;TI;46.1845;8.7197
+6655;Intragna;Centovalli;TI;46.1756;8.6894
+6655;Rasa;Centovalli;TI;46.1555;8.6571
+6655;Verdasio;Centovalli;TI;46.1708;8.6418
+6656;Golino;Centovalli;TI;46.1785;8.7124
+6657;Palagnedra;Centovalli;TI;46.1535;8.6338
+6658;Borgnone;Centovalli;TI;46.1621;8.6153
+6659;Camedo;Centovalli;TI;46.1553;8.6091
+6659;Moneto;Centovalli;TI;46.1484;8.6166
+6661;Auressio;Onsernone;TI;46.2013;8.6863
+6661;Berzona;Onsernone;TI;46.2035;8.6612
+6661;Comologno;Onsernone;TI;46.2050;8.5759
+6661;Crana;Onsernone;TI;46.2040;8.6089
+6661;Gresso;Onsernone;TI;46.2264;8.6166
+6661;Loco;Onsernone;TI;46.2051;8.6738
+6661;Mosogno;Onsernone;TI;46.1990;8.6390
+6661;Russo;Onsernone;TI;46.2029;8.6212
+6661;Spruga;Onsernone;TI;46.2006;8.5641
+6661;Vergeletto;Onsernone;TI;46.2312;8.5870
+6670;Avegno;Avegno Gordevio;TI;46.2053;8.7471
+6672;Gordevio;Avegno Gordevio;TI;46.2261;8.7457
+6673;Maggia;Maggia;TI;46.2487;8.7093
+6674;Riveo;Maggia;TI;46.2930;8.6260
+6674;Someo;Maggia;TI;46.2900;8.6575
+6675;Cevio;Cevio;TI;46.3132;8.6029
+6676;Bignasco;Cevio;TI;46.3393;8.6114
+6677;Aurigeno;Maggia;TI;46.2317;8.7208
+6677;Moghegno;Maggia;TI;46.2400;8.7034
+6678;Coglio;Maggia;TI;46.2683;8.6896
+6678;Giumaglio;Maggia;TI;46.2767;8.6810
+6678;Lodano;Maggia;TI;46.2580;8.6803
+6682;Linescio;Linescio;TI;46.3094;8.5835
+6683;Cerentino;Cerentino;TI;46.3068;8.5448
+6683;Niva (Vallemaggia);Campo (Vallemaggia);TI;46.2906;8.5310
+6684;Campo (Vallemaggia);Campo (Vallemaggia);TI;46.2885;8.5051
+6684;Cimalmotto;Campo (Vallemaggia);TI;46.2832;8.4845
+6685;Bosco/Gurin;Bosco/Gurin;TI;46.3173;8.4905
+6690;Cavergno;Cevio;TI;46.3587;8.5835
+6690;S. Carlo (Val Bavona);Cevio;TI;46.4144;8.5234
+6692;Brontallo;Lavizzara;TI;46.3557;8.6280
+6692;Menzonio;Lavizzara;TI;46.3619;8.6420
+6693;Broglio;Lavizzara;TI;46.3802;8.6587
+6694;Prato-Sornico;Lavizzara;TI;46.3941;8.6633
+6695;Peccia;Lavizzara;TI;46.4075;8.6465
+6695;Piano di Peccia;Lavizzara;TI;46.4137;8.6144
+6696;Fusio;Lavizzara;TI;46.4386;8.6617
+6702;Claro;Bellinzona;TI;46.2551;9.0245
+6703;Osogna;Riviera;TI;46.3109;8.9882
+6705;Cresciano;Riviera;TI;46.2853;9.0051
+6707;Iragna;Riviera;TI;46.3303;8.9639
+6710;Biasca;Biasca;TI;46.3608;8.9709
+6713;Malvaglia;Serravalle;TI;46.4128;8.9940
+6714;Semione;Serravalle;TI;46.4064;8.9684
+6715;Dongio;Acquarossa;TI;46.4393;8.9540
+6716;Acquarossa;Acquarossa;TI;46.4560;8.9373
+6716;Leontica;Acquarossa;TI;46.4570;8.9215
+6716;Lottigna;Acquarossa;TI;46.4694;8.9431
+6717;Dangio;Blenio;TI;46.4946;8.9533
+6717;Torre;Blenio;TI;46.4883;8.9528
+6718;Camperio;Blenio;TI;46.5241;8.9069
+6718;Olivone;Blenio;TI;46.5289;8.9296
+6719;Aquila;Blenio;TI;46.5047;8.9447
+6720;Campo (Blenio);Blenio;TI;46.5573;8.9305
+6720;Ghirone;Blenio;TI;46.5659;8.9435
+6721;Ludiano;Serravalle;TI;46.4204;8.9676
+6721;Motto (Blenio);Acquarossa;TI;46.4312;8.9704
+6722;Corzoneso;Acquarossa;TI;46.4461;8.9369
+6723;Castro;Acquarossa;TI;46.4710;8.9280
+6723;Marolta;Acquarossa;TI;46.4783;8.9201
+6723;Prugiasco;Acquarossa;TI;46.4661;8.9136
+6724;Largario;Acquarossa;TI;46.4939;8.9397
+6724;Ponto Valentino;Acquarossa;TI;46.4818;8.9323
+6742;Pollegio;Pollegio;TI;46.3645;8.9475
+6743;Bodio TI;Giornico;TI;46.3790;8.9128
+6744;Personico;Personico;TI;46.3682;8.9180
+6745;Giornico;Giornico;TI;46.4015;8.8746
+6746;Calonico;Faido;TI;46.4515;8.8425
+6746;Lavorgo;Faido;TI;46.4415;8.8405
+6746;Nivo;Faido;TI;46.4361;8.8426
+6747;Chironico;Faido;TI;46.4224;8.8366
+6748;Anzonico;Faido;TI;46.4312;8.8629
+6749;Cavagnago;Faido;TI;46.4140;8.8841
+6749;Sobrio;Faido;TI;46.4006;8.9016
+6760;Calpiogna;Faido;TI;46.4856;8.8054
+6760;Campello;Faido;TI;46.4897;8.8158
+6760;Carì;Faido;TI;46.4939;8.8200
+6760;Faido;Faido;TI;46.4789;8.7987
+6760;Molare;Faido;TI;46.4866;8.8297
+6760;Rossura;Faido;TI;46.4740;8.8289
+6763;Mairengo;Faido;TI;46.4891;8.7901
+6763;Osco;Faido;TI;46.4953;8.7756
+6764;Chiggiogna;Faido;TI;46.4682;8.8206
+6772;Rodi-Fiesso;Quinto;TI;46.4908;8.7376
+6773;Prato (Leventina);Quinto;TI;46.4826;8.7548
+6774;Dalpe;Dalpe;TI;46.4760;8.7759
+6775;Ambrì;Quinto;TI;46.5092;8.6960
+6776;Piotta;Quinto;TI;46.5180;8.6781
+6777;Quinto;Quinto;TI;46.5108;8.7188
+6780;Airolo;Airolo;TI;46.5279;8.6142
+6781;Bedretto;Bedretto;TI;46.5007;8.5081
+6781;Villa Bedretto;Bedretto;TI;46.5108;8.5247
+6802;Rivera;Monteceneri;TI;46.1208;8.9214
+6803;Camignolo;Monteceneri;TI;46.1063;8.9363
+6804;Bironico;Monteceneri;TI;46.1150;8.9347
+6805;Mezzovico;Mezzovico-Vira;TI;46.0915;8.9187
+6806;Sigirino;Monteceneri;TI;46.0809;8.9147
+6807;Taverne;Torricella-Taverne;TI;46.0636;8.9284
+6808;Torricella;Torricella-Taverne;TI;46.0654;8.9223
+6809;Medeglia;Monteceneri;TI;46.1178;8.9620
+6810;Isone;Isone;TI;46.1290;8.9863
+6814;Cadempino;Cadempino;TI;46.0346;8.9351
+6814;Lamone;Lamone;TI;46.0437;8.9319
+6815;Melide;Melide;TI;45.9533;8.9453
+6816;Bissone;Bissone;TI;45.9521;8.9665
+6817;Maroggia;Val Mara;TI;45.9347;8.9715
+6818;Melano;Val Mara;TI;45.9226;8.9849
+6821;Rovio;Val Mara;TI;45.9344;8.9862
+6822;Arogno;Arogno;TI;45.9575;8.9863
+6823;Pugerna;Lugano;TI;45.9849;8.9836
+6825;Capolago;Mendrisio;TI;45.9036;8.9795
+6826;Riva San Vitale;Riva San Vitale;TI;45.9028;8.9712
+6827;Brusino Arsizio;Brusino Arsizio;TI;45.9226;8.9374
+6828;Balerna;Balerna;TI;45.8469;9.0058
+6830;Chiasso;Chiasso;TI;45.8351;9.0268
+6832;Pedrinate;Chiasso;TI;45.8260;9.0131
+6832;Seseglio;Chiasso;TI;45.8272;8.9993
+6833;Vacallo;Vacallo;TI;45.8455;9.0340
+6834;Morbio Inferiore;Morbio Inferiore;TI;45.8497;9.0200
+6835;Morbio Superiore;Breggia;TI;45.8605;9.0235
+6837;Bruzella;Breggia;TI;45.8825;9.0381
+6837;Caneggio;Breggia;TI;45.8720;9.0313
+6838;Cabbio;Breggia;TI;45.8965;9.0464
+6838;Muggio;Breggia;TI;45.9064;9.0405
+6839;Sagno;Breggia;TI;45.8568;9.0390
+6850;Mendrisio;Mendrisio;TI;45.8708;8.9842
+6852;Genestrerio;Mendrisio;TI;45.8539;8.9606
+6853;Ligornetto;Mendrisio;TI;45.8617;8.9524
+6854;S. Pietro;Stabio;TI;45.8578;8.9378
+6855;Stabio;Stabio;TI;45.8505;8.9382
+6862;Rancate;Mendrisio;TI;45.8710;8.9687
+6863;Besazio;Mendrisio;TI;45.8725;8.9521
+6864;Arzo;Mendrisio;TI;45.8754;8.9406
+6865;Tremona;Mendrisio;TI;45.8799;8.9569
+6866;Meride;Mendrisio;TI;45.8905;8.9527
+6867;Serpiano;Brusino Arsizio;TI;45.9122;8.9300
+6872;Salorino;Mendrisio;TI;45.8757;8.9937
+6873;Corteglia;Castel San Pietro;TI;45.8613;8.9953
+6874;Castel San Pietro;Castel San Pietro;TI;45.8615;9.0071
+6875;Campora;Castel San Pietro;TI;45.8741;9.0238
+6875;Casima;Castel San Pietro;TI;45.8909;9.0371
+6875;Monte;Castel San Pietro;TI;45.8815;9.0268
+6877;Coldrerio;Coldrerio;TI;45.8550;8.9878
+6883;Novazzano;Novazzano;TI;45.8422;8.9795
+6900;Lugano;Lugano;TI;46.0085;8.9524
+6900;Massagno;Massagno;TI;46.0127;8.9442
+6900;Paradiso;Paradiso;TI;45.9894;8.9451
+6912;Pazzallo;Lugano;TI;45.9835;8.9407
+6913;Carabbia;Lugano;TI;45.9718;8.9370
+6914;Carona;Lugano;TI;45.9574;8.9367
+6915;Pambio-Noranco;Lugano;TI;45.9854;8.9307
+6916;Grancia;Grancia;TI;45.9680;8.9277
+6917;Barbengo;Lugano;TI;45.9610;8.9167
+6918;Figino;Lugano;TI;45.9543;8.9103
+6919;Carabietta;Collina d'Oro;TI;45.9686;8.8997
+6921;Vico Morcote;Vico Morcote;TI;45.9308;8.9239
+6922;Morcote;Morcote;TI;45.9268;8.9118
+6924;Sorengo;Sorengo;TI;46.0009;8.9362
+6925;Gentilino;Collina d'Oro;TI;45.9918;8.9311
+6926;Montagnola;Collina d'Oro;TI;45.9828;8.9170
+6927;Agra;Collina d'Oro;TI;45.9700;8.9140
+6928;Manno;Manno;TI;46.0357;8.9195
+6929;Gravesano;Gravesano;TI;46.0414;8.9194
+6930;Bedano;Bedano;TI;46.0514;8.9202
+6932;Breganzona;Lugano;TI;46.0070;8.9291
+6933;Muzzano;Muzzano;TI;45.9970;8.9184
+6934;Bioggio;Bioggio;TI;46.0145;8.9083
+6935;Bosco Luganese;Bioggio;TI;46.0256;8.9087
+6936;Cademario;Cademario;TI;46.0209;8.8943
+6937;Breno;Alto Malcantone;TI;46.0328;8.8706
+6938;Fescoggia;Alto Malcantone;TI;46.0404;8.8770
+6938;Vezio;Alto Malcantone;TI;46.0452;8.8829
+6939;Arosio;Alto Malcantone;TI;46.0479;8.9017
+6939;Mugena;Alto Malcantone;TI;46.0482;8.8899
+6942;Savosa;Savosa;TI;46.0187;8.9445
+6943;Vezia;Vezia;TI;46.0244;8.9375
+6944;Cureglia;Cureglia;TI;46.0367;8.9449
+6945;Origlio;Origlio;TI;46.0522;8.9468
+6946;Ponte Capriasca;Ponte Capriasca;TI;46.0607;8.9479
+6947;Vaglio;Capriasca;TI;46.0608;8.9569
+6948;Porza;Porza;TI;46.0276;8.9542
+6949;Comano;Comano;TI;46.0363;8.9553
+6950;Tesserete;Capriasca;TI;46.0694;8.9683
+6951;Bogno;Lugano;TI;46.0904;9.0628
+6951;Colla;Lugano;TI;46.0932;9.0545
+6951;Cozzo;Lugano;TI;46.0969;9.0624
+6951;Insone;Lugano;TI;46.0865;9.0299
+6951;Scareglia;Lugano;TI;46.0903;9.0362
+6951;Signôra;Lugano;TI;46.0927;9.0468
+6952;Canobbio;Canobbio;TI;46.0349;8.9663
+6953;Lugaggia;Capriasca;TI;46.0591;8.9720
+6954;Bigorio;Capriasca;TI;46.0725;8.9564
+6954;Sala Capriasca;Capriasca;TI;46.0666;8.9556
+6955;Cagiallo;Capriasca;TI;46.0667;8.9732
+6955;Oggio;Capriasca;TI;46.0721;8.9870
+6956;Lopagno;Capriasca;TI;46.0691;8.9778
+6957;Roveredo TI;Capriasca;TI;46.0735;8.9831
+6958;Bidogno;Capriasca;TI;46.0794;8.9994
+6958;Corticiasca;Capriasca;TI;46.0873;9.0164
+6959;Certara;Lugano;TI;46.0843;9.0597
+6959;Cimadera;Lugano;TI;46.0785;9.0465
+6959;Curtina;Lugano;TI;46.0816;9.0238
+6959;Maglio di Colla;Lugano;TI;46.0867;9.0427
+6959;Piandera Paese;Lugano;TI;46.0827;9.0397
+6960;Odogno;Capriasca;TI;46.0889;8.9703
+6962;Viganello;Lugano;TI;46.0129;8.9703
+6963;Cureggia;Lugano;TI;46.0209;8.9835
+6963;Pregassona;Lugano;TI;46.0224;8.9726
+6964;Davesco-Soragno;Lugano;TI;46.0353;8.9803
+6965;Cadro;Lugano;TI;46.0457;8.9862
+6966;Villa Luganese;Lugano;TI;46.0532;8.9940
+6967;Dino;Lugano;TI;46.0529;8.9829
+6968;Sonvico;Lugano;TI;46.0604;8.9949
+6974;Aldesago;Lugano;TI;46.0084;8.9788
+6976;Castagnola;Lugano;TI;46.0018;8.9795
+6977;Ruvigliana;Lugano;TI;46.0049;8.9775
+6978;Gandria;Lugano;TI;46.0058;9.0032
+6979;Brè sopra Lugano;Lugano;TI;46.0117;8.9972
+6980;Castelrotto;Tresa;TI;45.9947;8.8382
+6981;Banco;Lema;TI;46.0101;8.8442
+6981;Bedigliora;Lema;TI;46.0027;8.8416
+6981;Beride di Bedigliora;Lema;TI;46.0022;8.8336
+6981;Bombinasco;Lema;TI;46.0139;8.8337
+6982;Agno;Agno;TI;46.0006;8.9002
+6983;Magliaso;Magliaso;TI;45.9816;8.8900
+6984;Pura;Pura;TI;45.9836;8.8705
+6986;Curio;Lema;TI;46.0025;8.8615
+6986;Miglieglia;Lema;TI;46.0249;8.8576
+6986;Novaggio;Lema;TI;46.0100;8.8555
+6987;Caslano;Caslano;TI;45.9733;8.8788
+6988;Ponte Tresa;Tresa;TI;45.9698;8.8588
+6989;Purasca;Tresa;TI;45.9789;8.8495
+6990;Cassina d'Agno;Agno;TI;45.9922;8.8921
+6991;Neggio;Neggio;TI;45.9876;8.8801
+6992;Cimo;Bioggio;TI;46.0042;8.8922
+6992;Vernate;Vernate;TI;45.9939;8.8864
+6993;Iseo;Bioggio;TI;46.0047;8.8815
+6994;Aranno;Aranno;TI;46.0170;8.8710
+6995;Madonna del Piano;Tresa;TI;45.9881;8.8351
+6997;Sessa;Tresa;TI;46.0006;8.8180
+6998;Monteggio;Tresa;TI;45.9939;8.8085
+6999;Astano;Lema;TI;46.0124;8.8156
+7000;Chur;Chur;GR;46.8565;9.5293
+7012;Felsberg;Felsberg;GR;46.8457;9.4754
+7013;Domat/Ems;Domat/Ems;GR;46.8329;9.4508
+7014;Trin;Trin;GR;46.8286;9.3594
+7015;Tamins;Tamins;GR;46.8295;9.4077
+7016;Trin Mulin;Trin;GR;46.8327;9.3392
+7017;Flims Dorf;Flims;GR;46.8371;9.2860
+7018;Flims Waldhaus;Flims;GR;46.8296;9.2886
+7019;Fidaz;Flims;GR;46.8402;9.3077
+7023;Haldenstein;Chur;GR;46.8783;9.5266
+7026;Maladers;Chur;GR;46.8382;9.5629
+7027;Calfreisen;Arosa;GR;46.8424;9.5952
+7027;Castiel;Arosa;GR;46.8405;9.6049
+7027;Lüen;Arosa;GR;46.8346;9.6141
+7028;Pagig;Arosa;GR;46.8391;9.6396
+7028;St. Peter;Arosa;GR;46.8373;9.6511
+7029;Peist;Arosa;GR;46.8339;9.6762
+7031;Laax GR;Laax;GR;46.8089;9.2649
+7032;Laax GR 2;Laax;GR;46.8242;9.2586
+7050;Arosa;Arosa;GR;46.7805;9.6770
+7056;Molinis;Arosa;GR;46.8264;9.6536
+7057;Langwies;Arosa;GR;46.8240;9.7241
+7058;Litzirüti;Arosa;GR;46.7989;9.7021
+7062;Passugg;Churwalden;GR;46.8259;9.5509
+7063;Praden;Chur;GR;46.8245;9.5815
+7064;Tschiertschen;Chur;GR;46.8153;9.6052
+7074;Malix;Churwalden;GR;46.8172;9.5258
+7075;Churwalden;Churwalden;GR;46.7819;9.5426
+7076;Parpan;Churwalden;GR;46.7646;9.5633
+7077;Valbella;Vaz/Obervaz;GR;46.7497;9.5506
+7078;Lenzerheide/Lai;Vaz/Obervaz;GR;46.7262;9.5547
+7082;Vaz/Obervaz;Vaz/Obervaz;GR;46.6966;9.5313
+7083;Lantsch/Lenz;Lantsch/Lenz;GR;46.6855;9.5631
+7084;Brienz/Brinzauls GR;Albula/Alvra;GR;46.6696;9.5900
+7104;Versam;Safiental;GR;46.7881;9.3337
+7106;Tenna;Safiental;GR;46.7479;9.3384
+7107;Safien Platz;Safiental;GR;46.6953;9.3149
+7109;Thalkirch;Safiental;GR;46.6550;9.2836
+7110;Peiden;Lumnezia;GR;46.7200;9.1962
+7111;Pitasch;Ilanz/Glion;GR;46.7306;9.2210
+7112;Duvin;Ilanz/Glion;GR;46.7150;9.2138
+7113;Camuns;Lumnezia;GR;46.7033;9.1972
+7114;Uors (Lumnezia);Lumnezia;GR;46.7012;9.1839
+7115;Surcasti;Lumnezia;GR;46.6969;9.1771
+7116;St. Martin (Lugnez);Vals;GR;46.6634;9.1919
+7116;Tersnaus;Lumnezia;GR;46.6919;9.1846
+7122;Valendas;Safiental;GR;46.7845;9.2863
+7126;Castrisch;Ilanz/Glion;GR;46.7756;9.2315
+7127;Sevgein;Ilanz/Glion;GR;46.7637;9.2206
+7128;Riein;Ilanz/Glion;GR;46.7480;9.2363
+7130;Ilanz;Ilanz/Glion;GR;46.7734;9.2028
+7130;Schnaus;Ilanz/Glion;GR;46.7768;9.1789
+7132;Vals;Vals;GR;46.6146;9.1768
+7134;Obersaxen;Obersaxen Mundaun;GR;46.7499;9.1066
+7137;Flond;Obersaxen Mundaun;GR;46.7676;9.1645
+7138;Surcuolm;Obersaxen Mundaun;GR;46.7590;9.1424
+7141;Luven;Ilanz/Glion;GR;46.7583;9.1966
+7142;Cumbel;Lumnezia;GR;46.7254;9.1905
+7143;Morissen;Lumnezia;GR;46.7289;9.1804
+7144;Vella;Lumnezia;GR;46.7182;9.1718
+7145;Degen;Lumnezia;GR;46.7077;9.1686
+7146;Vattiz;Lumnezia;GR;46.7082;9.1570
+7147;Vignogn;Lumnezia;GR;46.6995;9.1556
+7148;Lumbrein;Lumnezia;GR;46.6827;9.1359
+7149;Vrin;Lumnezia;GR;46.6531;9.0957
+7151;Schluein;Schluein;GR;46.7874;9.2282
+7152;Sagogn;Sagogn;GR;46.7919;9.2562
+7153;Falera;Falera;GR;46.8019;9.2305
+7154;Ruschein;Ilanz/Glion;GR;46.7855;9.1909
+7155;Ladir;Ilanz/Glion;GR;46.7909;9.2016
+7156;Pigniu;Ilanz/Glion;GR;46.8102;9.1163
+7156;Rueun;Ilanz/Glion;GR;46.7796;9.1480
+7157;Siat;Ilanz/Glion;GR;46.7912;9.1607
+7158;Waltensburg/Vuorz;Breil/Brigels;GR;46.7771;9.1086
+7159;Andiast;Breil/Brigels;GR;46.7868;9.1121
+7162;Tavanasa;Breil/Brigels;GR;46.7559;9.0664
+7163;Danis;Breil/Brigels;GR;46.7551;9.0547
+7164;Dardin;Breil/Brigels;GR;46.7570;9.0420
+7165;Breil/Brigels;Breil/Brigels;GR;46.7703;9.0617
+7166;Trun;Trun;GR;46.7427;8.9861
+7167;Zignau;Trun;GR;46.7402;9.0055
+7168;Schlans;Trun;GR;46.7541;9.0145
+7172;Rabius;Sumvitg;GR;46.7347;8.9588
+7173;Surrein;Sumvitg;GR;46.7129;8.9478
+7174;S. Benedetg;Sumvitg;GR;46.7349;8.9394
+7175;Sumvitg;Sumvitg;GR;46.7292;8.9351
+7176;Cumpadials;Sumvitg;GR;46.7199;8.9204
+7180;Disentis/Mustér;Disentis/Mustér;GR;46.7042;8.8524
+7182;Cavardiras;Disentis/Mustér;GR;46.7074;8.8849
+7183;Mumpé Medel;Disentis/Mustér;GR;46.6858;8.8417
+7184;Curaglia;Medel (Lucmagn);GR;46.6735;8.8584
+7185;Platta;Medel (Lucmagn);GR;46.6448;8.8471
+7186;Segnas;Disentis/Mustér;GR;46.6924;8.8289
+7187;Camischolas;Tujetsch;GR;46.6800;8.7641
+7188;Sedrun;Tujetsch;GR;46.6799;8.7778
+7189;Rueras;Tujetsch;GR;46.6718;8.7415
+7202;Says;Trimmis;GR;46.9045;9.5804
+7203;Trimmis;Trimmis;GR;46.9006;9.5618
+7204;Untervaz;Untervaz;GR;46.9277;9.5375
+7205;Zizers;Zizers;GR;46.9353;9.5656
+7206;Igis;Landquart;GR;46.9465;9.5736
+7208;Malans GR;Malans;GR;46.9815;9.5739
+7212;Seewis Dorf;Seewis im Prättigau;GR;46.9921;9.6315
+7212;Seewis-Pardisla;Seewis im Prättigau;GR;46.9789;9.6355
+7212;Seewis-Schmitten;Seewis im Prättigau;GR;46.9809;9.6427
+7213;Valzeina;Grüsch;GR;46.9448;9.6081
+7214;Grüsch;Grüsch;GR;46.9752;9.6450
+7215;Fanas;Grüsch;GR;46.9871;9.6668
+7220;Schiers;Schiers;GR;46.9721;9.6885
+7222;Lunden;Schiers;GR;46.9506;9.7113
+7223;Buchen im Prättigau;Luzein;GR;46.9407;9.7186
+7224;Putz;Luzein;GR;46.9263;9.7431
+7226;Fajauna;Schiers;GR;46.9691;9.6994
+7226;Stels;Schiers;GR;46.9664;9.7302
+7228;Pusserein;Schiers;GR;46.9845;9.7104
+7228;Schuders;Schiers;GR;46.9939;9.7391
+7231;Pragg-Jenaz;Jenaz;GR;46.9385;9.7047
+7232;Furna;Furna;GR;46.9361;9.6705
+7233;Jenaz;Jenaz;GR;46.9282;9.7155
+7235;Fideris;Fideris;GR;46.9122;9.7420
+7240;Küblis;Küblis;GR;46.9158;9.7798
+7241;Conters im Prättigau;Conters im Prättigau;GR;46.9023;9.7965
+7242;Luzein;Luzein;GR;46.9206;9.7637
+7243;Pany;Luzein;GR;46.9313;9.7638
+7244;Gadenstätt;Luzein;GR;46.9431;9.7936
+7245;Ascharina;Luzein;GR;46.9578;9.8091
+7246;St. Antönien;Luzein;GR;46.9733;9.8288
+7247;Saas im Prättigau;Klosters;GR;46.9114;9.8124
+7249;Serneus;Klosters;GR;46.8916;9.8402
+7250;Klosters;Klosters;GR;46.8682;9.8897
+7252;Klosters Dorf;Klosters;GR;46.8850;9.8720
+7260;Davos Dorf;Davos;GR;46.8057;9.8466
+7265;Davos Wolfgang;Davos;GR;46.8352;9.8604
+7270;Davos Platz;Davos;GR;46.7936;9.8223
+7272;Davos Clavadel;Davos;GR;46.7576;9.8294
+7276;Davos Frauenkirch;Davos;GR;46.7645;9.7921
+7277;Davos Glaris;Davos;GR;46.7448;9.7824
+7278;Davos Monstein;Davos;GR;46.7120;9.7733
+7302;Landquart;Landquart;GR;46.9625;9.5635
+7303;Mastrils;Landquart;GR;46.9666;9.5437
+7304;Maienfeld;Maienfeld;GR;47.0074;9.5334
+7306;Fläsch;Fläsch;GR;47.0267;9.5132
+7307;Jenins;Jenins;GR;47.0005;9.5576
+7310;Bad Ragaz;Bad Ragaz;SG;47.0070;9.5014
+7312;Pfäfers;Pfäfers;SG;46.9900;9.5010
+7313;St. Margrethenberg;Pfäfers;SG;46.9783;9.5096
+7314;Vadura;Pfäfers;SG;46.9572;9.4862
+7315;Vättis;Pfäfers;SG;46.9113;9.4401
+7317;Valens;Pfäfers;SG;46.9714;9.4786
+7317;Vasön;Pfäfers;SG;46.9535;9.4749
+7320;Sargans;Sargans;SG;47.0492;9.4399
+7323;Wangs;Vilters-Wangs;SG;47.0297;9.4317
+7324;Vilters;Vilters-Wangs;SG;47.0263;9.4518
+7325;Schwendi im Weisstannental;Mels;SG;47.0105;9.3640
+7326;Weisstannen;Mels;SG;46.9895;9.3348
+7402;Bonaduz;Bonaduz;GR;46.8114;9.3976
+7403;Rhäzüns;Rhäzüns;GR;46.7986;9.3969
+7404;Feldis/Veulden;Domleschg;GR;46.7950;9.4328
+7405;Rothenbrunnen;Rothenbrunnen;GR;46.7682;9.4268
+7407;Trans;Domleschg;GR;46.7619;9.4661
+7408;Cazis;Cazis;GR;46.7266;9.4288
+7411;Sils im Domleschg;Sils im Domleschg;GR;46.7033;9.4547
+7412;Scharans;Scharans;GR;46.7171;9.4588
+7413;Fürstenaubruck;Fürstenau;GR;46.7137;9.4507
+7414;Fürstenau;Fürstenau;GR;46.7208;9.4487
+7415;Pratval;Domleschg;GR;46.7320;9.4460
+7415;Rodels;Domleschg;GR;46.7365;9.4438
+7416;Almens;Domleschg;GR;46.7371;9.4561
+7417;Paspels;Domleschg;GR;46.7486;9.4442
+7418;Tumegl/Tomils;Domleschg;GR;46.7621;9.4426
+7419;Scheid;Domleschg;GR;46.7816;9.4504
+7421;Summaprada;Cazis;GR;46.7136;9.4320
+7422;Tartar;Cazis;GR;46.7186;9.4195
+7423;Portein;Cazis;GR;46.7128;9.3898
+7423;Sarn;Cazis;GR;46.7206;9.4038
+7424;Dalin;Cazis;GR;46.7350;9.4042
+7424;Präz;Cazis;GR;46.7412;9.4041
+7425;Masein;Masein;GR;46.7010;9.4288
+7426;Flerden;Flerden;GR;46.7021;9.4065
+7427;Urmein;Urmein;GR;46.6969;9.3914
+7428;Tschappina;Tschappina;GR;46.6891;9.3763
+7430;Rongellen;Rongellen;GR;46.6753;9.4461
+7430;Thusis;Thusis;GR;46.6973;9.4381
+7431;Mutten;Thusis;GR;46.6783;9.4998
+7431;Obermutten;Thusis;GR;46.6733;9.4871
+7432;Zillis;Zillis-Reischen;GR;46.6376;9.4478
+7433;Donat;Muntogna da Schons;GR;46.6297;9.4280
+7433;Lohn GR;Muntogna da Schons;GR;46.6520;9.4258
+7433;Mathon;Muntogna da Schons;GR;46.6382;9.4109
+7433;Wergenstein;Muntogna da Schons;GR;46.6256;9.3977
+7434;Sufers;Sufers;GR;46.5720;9.3670
+7435;Splügen;Rheinwald;GR;46.5524;9.3225
+7436;Medels im Rheinwald;Rheinwald;GR;46.5482;9.2944
+7437;Nufenen;Rheinwald;GR;46.5412;9.2443
+7438;Hinterrhein;Rheinwald;GR;46.5320;9.1970
+7440;Andeer;Andeer;GR;46.6013;9.4252
+7442;Clugin;Andeer;GR;46.6158;9.4240
+7443;Pignia;Andeer;GR;46.6129;9.4385
+7444;Ausserferrera;Ferrera;GR;46.5587;9.4437
+7445;Innerferrera;Ferrera;GR;46.5200;9.4467
+7447;Avers;Avers;GR;46.4654;9.5174
+7448;Juf;Avers;GR;46.4454;9.5796
+7450;Tiefencastel;Albula/Alvra;GR;46.6622;9.5752
+7451;Alvaschein;Albula/Alvra;GR;46.6753;9.5507
+7452;Cunter;Surses;GR;46.6077;9.5922
+7453;Tinizong;Surses;GR;46.5828;9.6251
+7454;Rona;Surses;GR;46.5603;9.6252
+7455;Mulegns;Surses;GR;46.5232;9.6143
+7456;Marmorera;Surses;GR;46.5032;9.6697
+7456;Sur;Surses;GR;46.5242;9.6375
+7457;Bivio;Surses;GR;46.4676;9.6511
+7458;Mon;Albula/Alvra;GR;46.6509;9.5615
+7459;Stierva;Albula/Alvra;GR;46.6630;9.5392
+7460;Savognin;Surses;GR;46.5975;9.5990
+7462;Salouf;Surses;GR;46.6264;9.5739
+7463;Riom;Surses;GR;46.6091;9.5818
+7464;Parsonz;Surses;GR;46.5997;9.5715
+7472;Surava;Albula/Alvra;GR;46.6659;9.6165
+7473;Alvaneu Bad;Albula/Alvra;GR;46.6697;9.6488
+7477;Filisur;Bergün Filisur;GR;46.6720;9.6863
+7482;Bergün/Bravuogn;Bergün Filisur;GR;46.6287;9.7513
+7482;Preda;Bergün Filisur;GR;46.5901;9.7709
+7482;Stugl/Stuls;Bergün Filisur;GR;46.6527;9.7315
+7484;Latsch;Bergün Filisur;GR;46.6346;9.7513
+7492;Alvaneu Dorf;Albula/Alvra;GR;46.6791;9.6459
+7493;Schmitten (Albula);Schmitten (GR);GR;46.6871;9.6733
+7494;Davos Wiesen;Davos;GR;46.7045;9.7131
+7500;St. Moritz;St. Moritz;GR;46.4855;9.8335
+7502;Bever;Bever;GR;46.5523;9.8886
+7503;Samedan;Samedan;GR;46.5343;9.8715
+7504;Pontresina;Pontresina;GR;46.4937;9.9011
+7505;Celerina/Schlarigna;Celerina/Schlarigna;GR;46.5123;9.8579
+7512;Champfèr;Silvaplana;GR;46.4770;9.8107
+7513;Silvaplana;Silvaplana;GR;46.4598;9.7951
+7513;Silvaplana-Surlej;Silvaplana;GR;46.4582;9.8111
+7514;Fex;Sils im Engadin/Segl;GR;46.4144;9.7644
+7514;Sils/Segl Maria;Sils im Engadin/Segl;GR;46.4320;9.7651
+7515;Sils/Segl Baselgia;Sils im Engadin/Segl;GR;46.4328;9.7571
+7516;Maloja;Bregaglia;GR;46.4038;9.6985
+7517;Plaun da Lej;Sils im Engadin/Segl;GR;46.4227;9.7167
+7522;La Punt Chamues-ch;La Punt Chamues-ch;GR;46.5763;9.9285
+7523;Madulain;Madulain;GR;46.5878;9.9395
+7524;Zuoz;Zuoz;GR;46.6014;9.9584
+7525;S-chanf;S-chanf;GR;46.6129;9.9861
+7526;Chapella;S-chanf;GR;46.6348;10.0045
+7526;Cinuos-chel;S-chanf;GR;46.6412;10.0232
+7527;Brail;Zernez;GR;46.6549;10.0328
+7530;Zernez;Zernez;GR;46.6995;10.0934
+7532;Tschierv;Val Müstair;GR;46.6276;10.3364
+7533;Fuldera;Val Müstair;GR;46.6097;10.3696
+7534;Lü;Val Müstair;GR;46.6196;10.3742
+7535;Valchava;Val Müstair;GR;46.6011;10.4057
+7536;Sta. Maria Val Müstair;Val Müstair;GR;46.6029;10.4240
+7537;Müstair;Val Müstair;GR;46.6256;10.4470
+7542;Susch;Zernez;GR;46.7503;10.0786
+7543;Lavin;Zernez;GR;46.7674;10.1108
+7545;Guarda;Scuol;GR;46.7755;10.1533
+7546;Ardez;Scuol;GR;46.7759;10.1996
+7550;Scuol;Scuol;GR;46.7974;10.2996
+7551;Ftan;Scuol;GR;46.7940;10.2484
+7552;Vulpera;Scuol;GR;46.7872;10.2874
+7553;Tarasp;Scuol;GR;46.7785;10.2611
+7554;Sent;Scuol;GR;46.8173;10.3391
+7556;Ramosch;Valsot;GR;46.8345;10.3818
+7557;Vnà;Valsot;GR;46.8434;10.3631
+7558;Strada;Valsot;GR;46.8641;10.4349
+7559;Tschlin;Valsot;GR;46.8702;10.4251
+7560;Martina;Valsot;GR;46.8883;10.4614
+7562;Samnaun-Compatsch;Samnaun;GR;46.9600;10.3994
+7563;Samnaun Dorf;Samnaun;GR;46.9488;10.3655
+7602;Casaccia;Bregaglia;GR;46.3881;9.6649
+7603;Vicosoprano;Bregaglia;GR;46.3532;9.6240
+7604;Borgonovo;Bregaglia;GR;46.3476;9.6040
+7605;Stampa;Bregaglia;GR;46.3442;9.5834
+7606;Bondo;Bregaglia;GR;46.3331;9.5526
+7606;Promontogno;Bregaglia;GR;46.3378;9.5561
+7608;Castasegna;Bregaglia;GR;46.3344;9.5169
+7610;Soglio;Bregaglia;GR;46.3421;9.5393
+7710;Alp Grüm;Poschiavo;GR;46.3739;10.0332
+7710;Ospizio Bernina;Poschiavo;GR;46.4096;10.0431
+7741;S. Carlo (Poschiavo);Poschiavo;GR;46.3453;10.0642
+7742;La Rösa;Poschiavo;GR;46.4016;10.0661
+7742;Poschiavo;Poschiavo;GR;46.3253;10.0573
+7742;Sfazù;Poschiavo;GR;46.3913;10.0990
+7743;Brusio;Brusio;GR;46.2617;10.1228
+7743;Miralago;Poschiavo;GR;46.2732;10.1005
+7744;Campocologno;Brusio;GR;46.2329;10.1421
+7745;Li Curt;Poschiavo;GR;46.3108;10.0636
+7746;Le Prese;Poschiavo;GR;46.2959;10.0791
+7747;Viano;Brusio;GR;46.2528;10.1445
+7748;Campascio;Brusio;GR;46.2444;10.1285
+8001;Zürich;Zürich;ZH;47.3723;8.5425
+8002;Zürich;Zürich;ZH;47.3610;8.5299
+8003;Zürich;Zürich;ZH;47.3720;8.5171
+8004;Zürich;Zürich;ZH;47.3772;8.5233
+8005;Zürich;Zürich;ZH;47.3858;8.5258
+8006;Zürich;Zürich;ZH;47.3866;8.5453
+8008;Zürich;Zürich;ZH;47.3566;8.5591
+8032;Zürich;Zürich;ZH;47.3670;8.5623
+8037;Zürich;Zürich;ZH;47.3942;8.5267
+8038;Zürich;Zürich;ZH;47.3408;8.5303
+8041;Zürich;Zürich;ZH;47.3322;8.5158
+8044;Gockhausen;Dübendorf;ZH;47.3826;8.5976
+8044;Zürich;Zürich;ZH;47.3800;8.5604
+8045;Zürich;Zürich;ZH;47.3582;8.5127
+8046;Zürich;Zürich;ZH;47.4173;8.5143
+8047;Zürich;Zürich;ZH;47.3745;8.4901
+8048;Zürich;Zürich;ZH;47.3871;8.4839
+8049;Zürich;Zürich;ZH;47.4032;8.4964
+8050;Zürich;Zürich;ZH;47.4104;8.5530
+8051;Zürich;Zürich;ZH;47.4039;8.5798
+8052;Zürich;Zürich;ZH;47.4236;8.5451
+8053;Zürich;Zürich;ZH;47.3586;8.5903
+8055;Zürich;Zürich;ZH;47.3667;8.5062
+8057;Zürich;Zürich;ZH;47.3997;8.5417
+8064;Zürich;Zürich;ZH;47.3973;8.4885
+8102;Oberengstringen;Oberengstringen;ZH;47.4092;8.4629
+8103;Unterengstringen;Unterengstringen;ZH;47.4132;8.4495
+8104;Weiningen ZH;Weiningen (ZH);ZH;47.4195;8.4359
+8105;Regensdorf;Regensdorf;ZH;47.4324;8.4674
+8105;Watt;Regensdorf;ZH;47.4452;8.4782
+8106;Adlikon b. Regensdorf;Regensdorf;ZH;47.4513;8.4654
+8107;Buchs ZH;Buchs (ZH);ZH;47.4571;8.4377
+8108;Dällikon;Dällikon;ZH;47.4391;8.4406
+8109;Kloster Fahr;Würenlos;AG;47.4080;8.4387
+8112;Otelfingen;Otelfingen;ZH;47.4604;8.3894
+8113;Boppelsen;Boppelsen;ZH;47.4706;8.4030
+8114;Dänikon ZH;Dänikon;ZH;47.4456;8.4079
+8115;Hüttikon;Hüttikon;ZH;47.4449;8.3865
+8117;Fällanden;Fällanden;ZH;47.3720;8.6391
+8118;Pfaffhausen;Fällanden;ZH;47.3653;8.6242
+8121;Benglen;Fällanden;ZH;47.3598;8.6352
+8122;Binz;Maur;ZH;47.3575;8.6261
+8123;Ebmatingen;Maur;ZH;47.3509;8.6404
+8124;Maur;Maur;ZH;47.3394;8.6696
+8125;Zollikerberg;Zollikon;ZH;47.3457;8.6003
+8126;Zumikon;Zumikon;ZH;47.3316;8.6221
+8127;Forch;Maur;ZH;47.3275;8.6552
+8132;Egg b. Zürich;Egg;ZH;47.2983;8.6902
+8132;Hinteregg;Egg;ZH;47.3077;8.6825
+8133;Esslingen;Egg;ZH;47.2884;8.7110
+8134;Adliswil;Adliswil;ZH;47.3129;8.5257
+8135;Langnau am Albis;Langnau am Albis;ZH;47.2861;8.5361
+8135;Sihlbrugg Station;Horgen;ZH;47.2397;8.5771
+8135;Sihlwald;Horgen;ZH;47.2685;8.5568
+8136;Gattikon;Thalwil;ZH;47.2843;8.5488
+8142;Uitikon Waldegg;Uitikon;ZH;47.3678;8.4587
+8143;Stallikon;Stallikon;ZH;47.3338;8.4874
+8143;Uetliberg;Stallikon;ZH;47.3500;8.4897
+8152;Glattbrugg;Opfikon;ZH;47.4319;8.5642
+8152;Glattpark (Opfikon);Opfikon;ZH;47.4217;8.5620
+8152;Opfikon;Opfikon;ZH;47.4280;8.5775
+8153;Rümlang;Rümlang;ZH;47.4499;8.5297
+8154;Oberglatt ZH;Oberglatt;ZH;47.4759;8.5173
+8155;Nassenwil;Niederhasli;ZH;47.4654;8.4701
+8155;Niederhasli;Niederhasli;ZH;47.4806;8.4891
+8156;Oberhasli;Niederhasli;ZH;47.4678;8.5010
+8157;Dielsdorf;Dielsdorf;ZH;47.4799;8.4535
+8158;Regensberg;Regensberg;ZH;47.4823;8.4378
+8162;Steinmaur;Steinmaur;ZH;47.4959;8.4515
+8162;Sünikon;Steinmaur;ZH;47.4902;8.4366
+8164;Bachs;Bachs;ZH;47.5253;8.4372
+8165;Oberweningen;Oberweningen;ZH;47.5018;8.4061
+8165;Schleinikon;Schleinikon;ZH;47.4988;8.3946
+8165;Schöfflisdorf;Schöfflisdorf;ZH;47.5008;8.4165
+8166;Niederweningen;Niederweningen;ZH;47.5066;8.3756
+8172;Niederglatt ZH;Niederglatt;ZH;47.4928;8.4998
+8173;Neerach;Neerach;ZH;47.5099;8.4719
+8174;Stadel b. Niederglatt;Stadel;ZH;47.5291;8.4648
+8175;Windlach;Stadel;ZH;47.5421;8.4698
+8180;Bülach;Bülach;ZH;47.5200;8.5406
+8181;Höri;Höri;ZH;47.5068;8.5058
+8182;Hochfelden;Hochfelden;ZH;47.5223;8.5156
+8184;Bachenbülach;Bachenbülach;ZH;47.5045;8.5477
+8185;Winkel;Winkel;ZH;47.4884;8.5572
+8187;Weiach;Weiach;ZH;47.5567;8.4365
+8192;Glattfelden;Glattfelden;ZH;47.5584;8.5025
+8192;Zweidlen;Glattfelden;ZH;47.5702;8.4721
+8193;Eglisau;Eglisau;ZH;47.5756;8.5228
+8194;Hüntwangen;Hüntwangen;ZH;47.5958;8.4927
+8195;Wasterkingen;Wasterkingen;ZH;47.5903;8.4710
+8196;Wil ZH;Wil (ZH);ZH;47.6051;8.5059
+8197;Rafz;Rafz;ZH;47.6126;8.5393
+8200;Schaffhausen;Schaffhausen;SH;47.7035;8.6345
+8203;Schaffhausen;Schaffhausen;SH;47.6968;8.6555
+8207;Schaffhausen;Schaffhausen;SH;47.7226;8.6599
+8208;Schaffhausen;Schaffhausen;SH;47.7124;8.6362
+8212;Neuhausen am Rheinfall;Neuhausen am Rheinfall;SH;47.6837;8.6152
+8212;Nohl;Laufen-Uhwiesen;ZH;47.6699;8.6073
+8213;Neunkirch;Neunkirch;SH;47.6884;8.4988
+8214;Gächlingen;Gächlingen;SH;47.7040;8.4992
+8215;Hallau;Hallau;SH;47.6967;8.4581
+8216;Oberhallau;Oberhallau;SH;47.7064;8.4771
+8217;Wilchingen;Wilchingen;SH;47.6701;8.4665
+8218;Osterfingen;Wilchingen;SH;47.6624;8.4875
+8219;Trasadingen;Trasadingen;SH;47.6675;8.4307
+8222;Beringen;Beringen;SH;47.6980;8.5795
+8223;Guntmadingen;Beringen;SH;47.6854;8.5579
+8224;Löhningen;Löhningen;SH;47.7019;8.5519
+8225;Siblingen;Siblingen;SH;47.7151;8.5216
+8226;Schleitheim;Schleitheim;SH;47.7491;8.4841
+8228;Beggingen;Beggingen;SH;47.7661;8.5355
+8231;Hemmental;Schaffhausen;SH;47.7336;8.5841
+8232;Merishausen;Merishausen;SH;47.7595;8.6090
+8233;Bargen SH;Bargen (SH);SH;47.7923;8.6086
+8234;Stetten SH;Stetten (SH);SH;47.7386;8.6612
+8235;Lohn SH;Lohn (SH);SH;47.7555;8.6709
+8236;Büttenhardt;Büttenhardt;SH;47.7560;8.6528
+8236;Opfertshofen SH;Thayngen;SH;47.7763;8.6607
+8239;Dörflingen;Dörflingen;SH;47.7075;8.7217
+8240;Thayngen;Thayngen;SH;47.7489;8.7078
+8241;Barzheim;Thayngen;SH;47.7602;8.7209
+8242;Bibern SH;Thayngen;SH;47.7730;8.6781
+8242;Hofen SH;Thayngen;SH;47.7827;8.6763
+8243;Altdorf SH;Thayngen;SH;47.7847;8.6587
+8245;Feuerthalen;Feuerthalen;ZH;47.6904;8.6447
+8246;Langwiesen;Feuerthalen;ZH;47.6846;8.6605
+8247;Flurlingen;Flurlingen;ZH;47.6849;8.6292
+8248;Uhwiesen;Laufen-Uhwiesen;ZH;47.6712;8.6347
+8252;Schlatt TG;Schlatt (TG);TG;47.6626;8.6999
+8253;Diessenhofen;Diessenhofen;TG;47.6871;8.7509
+8253;Willisdorf;Diessenhofen;TG;47.6811;8.7362
+8254;Basadingen;Basadingen-Schlattingen;TG;47.6690;8.7471
+8255;Schlattingen;Basadingen-Schlattingen;TG;47.6653;8.7703
+8259;Etzwilen;Wagenhausen;TG;47.6598;8.8182
+8259;Kaltenbach;Wagenhausen;TG;47.6513;8.8402
+8259;Rheinklingen;Wagenhausen;TG;47.6732;8.8094
+8259;Wagenhausen;Wagenhausen;TG;47.6597;8.8470
+8260;Stein am Rhein;Stein am Rhein;SH;47.6599;8.8579
+8261;Hemishofen;Hemishofen;SH;47.6770;8.8318
+8262;Ramsen;Ramsen;SH;47.7072;8.8135
+8263;Buch SH;Buch (SH);SH;47.7174;8.7835
+8264;Eschenz;Eschenz;TG;47.6482;8.8718
+8265;Mammern;Mammern;TG;47.6440;8.9150
+8266;Steckborn;Steckborn;TG;47.6632;8.9820
+8267;Berlingen;Berlingen;TG;47.6728;9.0236
+8268;Mannenbach-Salenstein;Salenstein;TG;47.6729;9.0513
+8268;Salenstein;Salenstein;TG;47.6696;9.0581
+8269;Fruthwilen;Salenstein;TG;47.6617;9.0674
+8272;Ermatingen;Ermatingen;TG;47.6695;9.0821
+8273;Triboltingen;Ermatingen;TG;47.6610;9.1082
+8274;Gottlieben;Gottlieben;TG;47.6641;9.1335
+8274;Tägerwilen;Tägerwilen;TG;47.6546;9.1330
+8280;Kreuzlingen;Kreuzlingen;TG;47.6449;9.1737
+8302;Kloten;Kloten;ZH;47.4540;8.5840
+8303;Bassersdorf;Bassersdorf;ZH;47.4430;8.6295
+8304;Wallisellen;Wallisellen;ZH;47.4163;8.5948
+8305;Dietlikon;Dietlikon;ZH;47.4223;8.6165
+8306;Brüttisellen;Wangen-Brüttisellen;ZH;47.4233;8.6311
+8307;Effretikon;Illnau-Effretikon;ZH;47.4273;8.6897
+8307;Ottikon b. Kemptthal;Illnau-Effretikon;ZH;47.4354;8.7182
+8308;Agasul;Illnau-Effretikon;ZH;47.4251;8.7423
+8308;Illnau;Illnau-Effretikon;ZH;47.4088;8.7220
+8309;Nürensdorf;Nürensdorf;ZH;47.4548;8.6433
+8310;Grafstal;Lindau;ZH;47.4437;8.6995
+8310;Kemptthal;Lindau;ZH;47.4494;8.7037
+8311;Brütten;Brütten;ZH;47.4728;8.6765
+8312;Winterberg ZH;Lindau;ZH;47.4549;8.6948
+8314;Kyburg;Illnau-Effretikon;ZH;47.4540;8.7429
+8315;Lindau;Lindau;ZH;47.4425;8.6738
+8317;Tagelswangen;Lindau;ZH;47.4305;8.6722
+8320;Fehraltorf;Fehraltorf;ZH;47.3884;8.7540
+8322;Gündisau;Russikon;ZH;47.3988;8.8080
+8322;Madetswil;Russikon;ZH;47.4121;8.7919
+8330;Pfäffikon ZH;Pfäffikon;ZH;47.3682;8.7859
+8331;Auslikon;Pfäffikon;ZH;47.3446;8.8082
+8332;Rumlikon;Russikon;ZH;47.4084;8.7610
+8332;Russikon;Russikon;ZH;47.3950;8.7751
+8335;Hittnau;Hittnau;ZH;47.3662;8.8257
+8340;Hinwil;Hinwil;ZH;47.2997;8.8457
+8342;Wernetshausen;Hinwil;ZH;47.2971;8.8665
+8344;Bäretswil;Bäretswil;ZH;47.3367;8.8577
+8345;Adetswil;Bäretswil;ZH;47.3391;8.8415
+8352;Elsau;Elsau;ZH;47.5014;8.8012
+8352;Ricketwil (Winterthur);Winterthur;ZH;47.4866;8.8003
+8353;Elgg;Elgg;ZH;47.4944;8.8667
+8354;Dickbuch;Elgg;ZH;47.4963;8.8308
+8354;Hofstetten ZH;Elgg;ZH;47.4708;8.8579
+8355;Aadorf;Aadorf;TG;47.4911;8.9032
+8356;Ettenhausen TG;Aadorf;TG;47.4799;8.8989
+8357;Guntershausen b. Aadorf;Aadorf;TG;47.4753;8.9184
+8360;Eschlikon TG;Eschlikon;TG;47.4645;8.9676
+8360;Wallenwil;Eschlikon;TG;47.4576;8.9559
+8362;Balterswil;Bichelsee-Balterswil;TG;47.4546;8.9362
+8363;Bichelsee;Bichelsee-Balterswil;TG;47.4494;8.9223
+8370;Sirnach;Sirnach;TG;47.4635;8.9945
+8371;Busswil TG;Sirnach;TG;47.4526;9.0143
+8372;Wiezikon b. Sirnach;Sirnach;TG;47.4503;8.9851
+8374;Dussnang;Fischingen;TG;47.4306;8.9574
+8374;Oberwangen TG;Fischingen;TG;47.4301;8.9731
+8376;Au TG;Fischingen;TG;47.3956;8.9488
+8376;Fischingen;Fischingen;TG;47.4152;8.9686
+8400;Winterthur;Winterthur;ZH;47.5007;8.7260
+8404;Reutlingen (Winterthur);Winterthur;ZH;47.5278;8.7510
+8404;Stadel (Winterthur);Winterthur;ZH;47.5350;8.7625
+8404;Winterthur;Winterthur;ZH;47.5091;8.7565
+8405;Winterthur;Winterthur;ZH;47.4823;8.7677
+8406;Winterthur;Winterthur;ZH;47.4885;8.7053
+8408;Winterthur;Winterthur;ZH;47.5089;8.6925
+8409;Winterthur;Winterthur;ZH;47.5055;8.7751
+8412;Aesch (Neftenbach);Neftenbach;ZH;47.5415;8.6791
+8412;Hünikon (Neftenbach);Neftenbach;ZH;47.5521;8.6681
+8412;Riet (Neftenbach);Neftenbach;ZH;47.5367;8.6877
+8413;Neftenbach;Neftenbach;ZH;47.5257;8.6660
+8414;Buch am Irchel;Buch am Irchel;ZH;47.5513;8.6207
+8415;Berg am Irchel;Berg am Irchel;ZH;47.5696;8.5959
+8415;Gräslikon;Berg am Irchel;ZH;47.5571;8.6060
+8416;Flaach;Flaach;ZH;47.5758;8.6068
+8418;Schlatt ZH;Schlatt (ZH);ZH;47.4739;8.8213
+8421;Dättlikon;Dättlikon;ZH;47.5253;8.6227
+8422;Pfungen;Pfungen;ZH;47.5149;8.6429
+8424;Embrach;Embrach;ZH;47.5069;8.5946
+8425;Oberembrach;Oberembrach;ZH;47.4893;8.6235
+8426;Lufingen;Lufingen;ZH;47.4849;8.5930
+8427;Freienstein;Freienstein-Teufen;ZH;47.5322;8.5850
+8427;Rorbas;Rorbas;ZH;47.5315;8.5753
+8428;Teufen ZH;Freienstein-Teufen;ZH;47.5498;8.5678
+8442;Hettlingen;Hettlingen;ZH;47.5468;8.7079
+8444;Henggart;Henggart;ZH;47.5637;8.6824
+8447;Dachsen;Dachsen;ZH;47.6657;8.6171
+8450;Andelfingen;Andelfingen;ZH;47.5932;8.6773
+8451;Kleinandelfingen;Kleinandelfingen;ZH;47.5997;8.6852
+8452;Adlikon b. Andelfingen;Andelfingen;ZH;47.5769;8.7050
+8453;Alten;Kleinandelfingen;ZH;47.5991;8.6461
+8454;Buchberg;Buchberg;SH;47.5731;8.5605
+8455;Rüdlingen;Rüdlingen;SH;47.5804;8.5688
+8457;Humlikon;Andelfingen;ZH;47.5765;8.6696
+8458;Dorf;Dorf;ZH;47.5720;8.6471
+8459;Volken;Volken;ZH;47.5748;8.6255
+8460;Marthalen;Marthalen;ZH;47.6279;8.6511
+8461;Oerlingen;Kleinandelfingen;ZH;47.6246;8.6756
+8462;Rheinau;Rheinau;ZH;47.6408;8.6026
+8463;Benken ZH;Benken (ZH);ZH;47.6536;8.6542
+8464;Ellikon am Rhein;Marthalen;ZH;47.6049;8.5981
+8465;Rudolfingen;Trüllikon;ZH;47.6402;8.6739
+8465;Wildensbuch;Trüllikon;ZH;47.6522;8.6764
+8466;Trüllikon;Trüllikon;ZH;47.6380;8.6911
+8467;Truttikon;Truttikon;ZH;47.6295;8.7270
+8468;Guntalingen;Stammheim;ZH;47.6338;8.7686
+8468;Waltalingen;Stammheim;ZH;47.6217;8.7776
+8471;Berg (Dägerlen);Dägerlen;ZH;47.5637;8.7328
+8471;Bänk (Dägerlen);Dägerlen;ZH;47.5481;8.7387
+8471;Dägerlen;Dägerlen;ZH;47.5608;8.7220
+8471;Oberwil (Dägerlen);Dägerlen;ZH;47.5731;8.7165
+8471;Rutschwil (Dägerlen);Dägerlen;ZH;47.5569;8.7309
+8472;Oberohringen;Seuzach;ZH;47.5272;8.7132
+8472;Seuzach;Seuzach;ZH;47.5352;8.7340
+8472;Unterohringen;Seuzach;ZH;47.5345;8.7137
+8474;Dinhard;Dinhard;ZH;47.5591;8.7652
+8475;Ossingen;Ossingen;ZH;47.6121;8.7260
+8476;Unterstammheim;Stammheim;ZH;47.6386;8.7900
+8477;Oberstammheim;Stammheim;ZH;47.6327;8.7985
+8478;Thalheim an der Thur;Thalheim an der Thur;ZH;47.5815;8.7466
+8479;Altikon;Altikon;ZH;47.5733;8.7823
+8482;Sennhof (Winterthur);Winterthur;ZH;47.4682;8.7584
+8483;Kollbrunn;Zell (ZH);ZH;47.4582;8.7787
+8484;Neschwil;Weisslingen;ZH;47.4295;8.7886
+8484;Theilingen;Weisslingen;ZH;47.4212;8.7677
+8484;Weisslingen;Weisslingen;ZH;47.4310;8.7672
+8486;Rikon im Tösstal;Zell (ZH);ZH;47.4461;8.7971
+8487;Rämismühle;Zell (ZH);ZH;47.4408;8.8189
+8487;Zell ZH;Zell (ZH);ZH;47.4455;8.8211
+8488;Turbenthal;Turbenthal;ZH;47.4386;8.8487
+8489;Ehrikon;Wildberg;ZH;47.4188;8.8095
+8489;Schalchen;Wildberg;ZH;47.4069;8.8267
+8489;Wildberg;Wildberg;ZH;47.4263;8.8175
+8492;Wila;Wila;ZH;47.4181;8.8466
+8493;Saland;Bauma;ZH;47.3875;8.8572
+8494;Bauma;Bauma;ZH;47.3683;8.8790
+8495;Schmidrüti;Turbenthal;ZH;47.4142;8.9037
+8496;Steg im Tösstal;Fischenthal;ZH;47.3511;8.9377
+8497;Fischenthal;Fischenthal;ZH;47.3332;8.9232
+8498;Gibswil;Fischenthal;ZH;47.3134;8.9133
+8499;Sternenberg;Bauma;ZH;47.3888;8.9115
+8500;Frauenfeld;Frauenfeld;TG;47.5559;8.8984
+8500;Gerlikon;Frauenfeld;TG;47.5385;8.8777
+8505;Dettighofen;Pfyn;TG;47.6170;8.9513
+8505;Pfyn;Pfyn;TG;47.5965;8.9553
+8506;Lanzenneunforn;Herdern;TG;47.6238;8.9368
+8507;Hörhausen;Homburg;TG;47.6361;8.9692
+8508;Homburg;Homburg;TG;47.6289;8.9971
+8512;Lustdorf;Thundorf;TG;47.5514;8.9881
+8512;Thundorf;Thundorf;TG;47.5474;8.9629
+8512;Wetzikon TG;Thundorf;TG;47.5379;9.0006
+8514;Amlikon-Bissegg;Amlikon-Bissegg;TG;47.5632;9.0451
+8522;Aawangen;Aadorf;TG;47.5129;8.9001
+8522;Häuslenen;Aadorf;TG;47.5270;8.9028
+8523;Hagenbuch ZH;Hagenbuch;ZH;47.5185;8.8833
+8524;Buch b. Frauenfeld;Uesslingen-Buch;TG;47.5972;8.8406
+8524;Uesslingen;Uesslingen-Buch;TG;47.5823;8.8296
+8525;Niederneunforn;Neunforn;TG;47.5955;8.7830
+8525;Wilen b. Neunforn;Neunforn;TG;47.6015;8.7971
+8526;Oberneunforn;Neunforn;TG;47.6064;8.7678
+8532;Warth;Warth-Weiningen;TG;47.5841;8.8759
+8532;Weiningen TG;Warth-Weiningen;TG;47.5883;8.8870
+8535;Herdern;Herdern;TG;47.6064;8.9097
+8536;Hüttwilen;Hüttwilen;TG;47.6091;8.8712
+8537;Nussbaumen TG;Hüttwilen;TG;47.6256;8.8291
+8537;Uerschhausen;Hüttwilen;TG;47.6084;8.8171
+8542;Wiesendangen;Wiesendangen;ZH;47.5235;8.7875
+8543;Bertschikon;Wiesendangen;ZH;47.5260;8.8315
+8543;Gundetswil;Wiesendangen;ZH;47.5400;8.8228
+8543;Kefikon ZH;Wiesendangen;ZH;47.5479;8.8310
+8544;Attikon;Wiesendangen;ZH;47.5363;8.7970
+8545;Rickenbach Sulz;Rickenbach (ZH);ZH;47.5398;8.7885
+8545;Rickenbach ZH;Rickenbach (ZH);ZH;47.5520;8.7961
+8546;Islikon;Gachnang;TG;47.5453;8.8436
+8546;Kefikon TG;Gachnang;TG;47.5493;8.8337
+8546;Menzengrüt;Wiesendangen;ZH;47.5493;8.8215
+8547;Gachnang;Gachnang;TG;47.5400;8.8517
+8548;Ellikon an der Thur;Ellikon an der Thur;ZH;47.5629;8.8259
+8552;Felben-Wellhausen;Felben-Wellhausen;TG;47.5767;8.9433
+8553;Eschikofen;Hüttlingen;TG;47.5806;9.0058
+8553;Harenwilen;Hüttlingen;TG;47.5707;9.0010
+8553;Hüttlingen;Hüttlingen;TG;47.5781;8.9795
+8553;Mettendorf TG;Hüttlingen;TG;47.5777;8.9701
+8554;Bonau;Wigoltingen;TG;47.5840;9.0362
+8554;Müllheim-Wigoltingen;Wigoltingen;TG;47.5894;9.0137
+8555;Müllheim Dorf;Müllheim;TG;47.6024;9.0022
+8556;Engwang;Wigoltingen;TG;47.6005;9.0528
+8556;Illhart;Wigoltingen;TG;47.6191;9.0394
+8556;Lamperswil TG;Wigoltingen;TG;47.6121;9.0384
+8556;Wigoltingen;Wigoltingen;TG;47.5983;9.0321
+8558;Raperswilen;Raperswilen;TG;47.6364;9.0476
+8560;Märstetten;Märstetten;TG;47.5899;9.0668
+8561;Ottoberg;Märstetten;TG;47.5864;9.0850
+8564;Engwilen;Wäldi;TG;47.6176;9.0948
+8564;Gunterswilen;Wäldi;TG;47.6356;9.0772
+8564;Hattenhausen;Wäldi;TG;47.6241;9.0668
+8564;Hefenhausen;Wäldi;TG;47.6169;9.0652
+8564;Lipperswil;Wäldi;TG;47.6157;9.0564
+8564;Sonterswil;Wäldi;TG;47.6214;9.0787
+8564;Wagerswil;Wigoltingen;TG;47.6080;9.0644
+8564;Wäldi;Wäldi;TG;47.6337;9.0937
+8565;Hugelshofen;Kemmental;TG;47.5988;9.1164
+8566;Dotnacht;Kemmental;TG;47.5966;9.1435
+8566;Ellighausen;Kemmental;TG;47.6135;9.1364
+8566;Lippoldswilen;Kemmental;TG;47.6112;9.1128
+8566;Neuwilen;Kemmental;TG;47.6210;9.1347
+8570;Weinfelden;Weinfelden;TG;47.5664;9.1102
+8572;Andhausen;Berg (TG);TG;47.5786;9.1779
+8572;Berg TG;Berg (TG);TG;47.5789;9.1685
+8572;Graltshausen;Berg (TG);TG;47.5968;9.1814
+8572;Guntershausen b. Berg;Berg (TG);TG;47.5731;9.1881
+8573;Alterswilen;Kemmental;TG;47.6101;9.1549
+8573;Altishausen;Kemmental;TG;47.6009;9.1710
+8573;Siegershausen;Kemmental;TG;47.6109;9.1683
+8574;Dettighofen (Lengwil);Lengwil;TG;47.6205;9.2017
+8574;Illighausen;Lengwil;TG;47.6040;9.2074
+8574;Lengwil;Lengwil;TG;47.6245;9.1937
+8574;Oberhofen TG;Lengwil;TG;47.6179;9.1939
+8575;Bürglen TG;Bürglen (TG);TG;47.5509;9.1531
+8575;Istighofen;Bürglen (TG);TG;47.5398;9.1471
+8576;Mauren TG;Berg (TG);TG;47.5662;9.1559
+8577;Schönholzerswilen;Schönholzerswilen;TG;47.5158;9.1399
+8580;Amriswil;Amriswil;TG;47.5470;9.2974
+8580;Biessenhofen;Amriswil;TG;47.5460;9.2599
+8580;Hagenwil b. Amriswil;Amriswil;TG;47.5289;9.3079
+8580;Hefenhofen;Hefenhofen;TG;47.5588;9.3137
+8580;Sommeri;Sommeri;TG;47.5694;9.2863
+8581;Schocherswil;Amriswil;TG;47.5376;9.2679
+8582;Dozwil;Dozwil;TG;47.5763;9.3196
+8583;Donzhausen;Sulgen;TG;47.5541;9.1965
+8583;Götighofen;Sulgen;TG;47.5356;9.2159
+8583;Sulgen;Sulgen;TG;47.5398;9.1867
+8584;Leimbach TG;Bürglen (TG);TG;47.5609;9.1874
+8584;Opfershofen TG;Bürglen (TG);TG;47.5625;9.1747
+8585;Birwinken;Birwinken;TG;47.5823;9.1986
+8585;Happerswil;Birwinken;TG;47.5778;9.2237
+8585;Herrenhof;Langrickenbach;TG;47.5974;9.2445
+8585;Klarsreuti;Birwinken;TG;47.5867;9.2128
+8585;Langrickenbach;Langrickenbach;TG;47.5858;9.2464
+8585;Mattwil;Birwinken;TG;47.5780;9.2069
+8585;Schönenbaumgarten;Langrickenbach;TG;47.6138;9.2306
+8585;Zuben;Langrickenbach;TG;47.6073;9.2369
+8586;Andwil TG;Birwinken;TG;47.5654;9.2154
+8586;Buch b. Kümmertshausen;Birwinken;TG;47.5706;9.2357
+8586;Buchackern;Erlen;TG;47.5387;9.2320
+8586;Engishofen;Erlen;TG;47.5574;9.2507
+8586;Ennetaach;Erlen;TG;47.5496;9.2172
+8586;Erlen;Erlen;TG;47.5502;9.2282
+8586;Kümmertshausen;Erlen;TG;47.5661;9.2424
+8586;Riedt b. Erlen;Erlen;TG;47.5446;9.2155
+8587;Oberaach;Amriswil;TG;47.5574;9.2682
+8588;Zihlschlacht;Zihlschlacht-Sitterdorf;TG;47.5212;9.2573
+8589;Sitterdorf;Zihlschlacht-Sitterdorf;TG;47.5048;9.2473
+8590;Romanshorn;Romanshorn;TG;47.5656;9.3694
+8592;Uttwil;Uttwil;TG;47.5831;9.3428
+8593;Kesswil;Kesswil;TG;47.5933;9.3200
+8594;Güttingen;Güttingen;TG;47.6053;9.2896
+8595;Altnau;Altnau;TG;47.6126;9.2607
+8596;Münsterlingen;Münsterlingen;TG;47.6314;9.2339
+8596;Scherzingen;Münsterlingen;TG;47.6307;9.2255
+8597;Landschlacht;Münsterlingen;TG;47.6271;9.2469
+8598;Bottighofen;Bottighofen;TG;47.6369;9.2085
+8599;Salmsach;Salmsach;TG;47.5535;9.3692
+8600;Dübendorf;Dübendorf;ZH;47.3972;8.6206
+8602;Wangen b. Dübendorf;Wangen-Brüttisellen;ZH;47.4107;8.6456
+8603;Schwerzenbach;Schwerzenbach;ZH;47.3822;8.6559
+8604;Volketswil;Volketswil;ZH;47.3902;8.6802
+8605;Gutenswil;Volketswil;ZH;47.3851;8.7175
+8606;Greifensee;Greifensee;ZH;47.3674;8.6806
+8606;Nänikon;Uster;ZH;47.3699;8.6910
+8607;Aathal-Seegräben;Seegräben;ZH;47.3359;8.7658
+8608;Bubikon;Bubikon;ZH;47.2689;8.8175
+8610;Uster;Uster;ZH;47.3486;8.7182
+8614;Bertschikon (Gossau ZH);Gossau (ZH);ZH;47.3216;8.7580
+8614;Sulzbach;Uster;ZH;47.3283;8.7454
+8615;Freudwil;Uster;ZH;47.3752;8.7333
+8615;Wermatswil;Uster;ZH;47.3631;8.7425
+8616;Riedikon;Uster;ZH;47.3319;8.7128
+8617;Mönchaltorf;Mönchaltorf;ZH;47.3098;8.7210
+8618;Oetwil am See;Oetwil am See;ZH;47.2721;8.7226
+8620;Wetzikon ZH;Wetzikon (ZH);ZH;47.3247;8.7932
+8623;Wetzikon ZH;Wetzikon (ZH);ZH;47.3324;8.8149
+8624;Grüt (Gossau ZH);Gossau (ZH);ZH;47.3105;8.7835
+8625;Gossau ZH;Gossau (ZH);ZH;47.3053;8.7603
+8626;Ottikon (Gossau ZH);Gossau (ZH);ZH;47.2929;8.7863
+8627;Grüningen;Grüningen;ZH;47.2808;8.7626
+8630;Rüti ZH;Rüti (ZH);ZH;47.2565;8.8548
+8632;Tann;Dürnten;ZH;47.2670;8.8498
+8633;Wolfhausen;Bubikon;ZH;47.2569;8.7986
+8634;Hombrechtikon;Hombrechtikon;ZH;47.2512;8.7708
+8635;Dürnten;Dürnten;ZH;47.2778;8.8551
+8636;Wald ZH;Wald (ZH);ZH;47.2784;8.9141
+8637;Laupen ZH;Wald (ZH);ZH;47.2653;8.9297
+8638;Goldingen;Eschenbach (SG);SG;47.2704;8.9671
+8640;Hurden;Freienbach;SZ;47.2133;8.7974
+8640;Rapperswil SG;Rapperswil-Jona;SG;47.2282;8.8234
+8645;Jona;Rapperswil-Jona;SG;47.2337;8.8329
+8646;Wagen;Rapperswil-Jona;SG;47.2338;8.8837
+8700;Küsnacht ZH;Küsnacht (ZH);ZH;47.3200;8.5882
+8702;Zollikon;Zollikon;ZH;47.3408;8.5750
+8703;Erlenbach ZH;Erlenbach (ZH);ZH;47.3032;8.5988
+8704;Herrliberg;Herrliberg;ZH;47.2896;8.6146
+8706;Meilen;Meilen;ZH;47.2725;8.6445
+8707;Uetikon am See;Uetikon am See;ZH;47.2669;8.6812
+8708;Männedorf;Männedorf;ZH;47.2562;8.6963
+8712;Stäfa;Stäfa;ZH;47.2426;8.7268
+8713;Uerikon;Stäfa;ZH;47.2374;8.7552
+8714;Feldbach;Hombrechtikon;ZH;47.2424;8.7891
+8715;Bollingen;Rapperswil-Jona;SG;47.2205;8.8911
+8716;Schmerikon;Schmerikon;SG;47.2268;8.9461
+8717;Benken SG;Benken (SG);SG;47.1950;9.0061
+8718;Schänis;Schänis;SG;47.1595;9.0486
+8722;Kaltbrunn;Kaltbrunn;SG;47.2137;9.0264
+8723;Maseltrangen;Schänis;SG;47.1925;9.0563
+8723;Rufi;Schänis;SG;47.1823;9.0534
+8725;Ernetschwil;Gommiswald;SG;47.2379;9.0004
+8725;Gebertingen;Gommiswald;SG;47.2537;9.0061
+8726;Ricken SG;Gommiswald;SG;47.2599;9.0365
+8727;Walde SG;Eschenbach (SG);SG;47.2707;9.0164
+8730;Uznach;Uznach;SG;47.2259;8.9839
+8732;Neuhaus SG;Eschenbach (SG);SG;47.2441;8.9433
+8733;Eschenbach SG;Eschenbach (SG);SG;47.2416;8.9212
+8734;Ermenswil;Eschenbach (SG);SG;47.2459;8.8855
+8735;Rüeterswil;Eschenbach (SG);SG;47.2632;8.9855
+8735;St. Gallenkappel;Eschenbach (SG);SG;47.2460;8.9670
+8737;Gommiswald;Gommiswald;SG;47.2329;9.0229
+8738;Uetliburg SG;Gommiswald;SG;47.2371;9.0331
+8739;Rieden SG;Gommiswald;SG;47.2229;9.0509
+8750;Glarus;Glarus;GL;47.0419;9.0648
+8750;Klöntal;Glarus;GL;47.0207;8.9405
+8750;Riedern;Glarus;GL;47.0493;9.0511
+8751;Urnerboden;Spiringen;UR;46.8923;8.9084
+8752;Näfels;Glarus Nord;GL;47.0983;9.0590
+8753;Mollis;Glarus Nord;GL;47.0930;9.0753
+8754;Netstal;Glarus;GL;47.0616;9.0555
+8755;Ennenda;Glarus;GL;47.0359;9.0782
+8756;Mitlödi;Glarus Süd;GL;47.0113;9.0796
+8757;Filzbach;Glarus Nord;GL;47.1202;9.1292
+8758;Obstalden;Glarus Nord;GL;47.1146;9.1549
+8762;Schwanden GL;Glarus Süd;GL;46.9944;9.0715
+8762;Schwändi b. Schwanden;Glarus Süd;GL;47.0067;9.0671
+8762;Sool;Glarus Süd;GL;46.9998;9.0869
+8765;Engi;Glarus Süd;GL;46.9831;9.1527
+8766;Matt;Glarus Süd;GL;46.9609;9.1758
+8767;Elm;Glarus Süd;GL;46.9190;9.1637
+8772;Nidfurn;Glarus Süd;GL;46.9864;9.0551
+8773;Haslen GL;Glarus Süd;GL;46.9805;9.0588
+8774;Leuggelbach;Glarus Süd;GL;46.9767;9.0449
+8775;Hätzingen;Glarus Süd;GL;46.9611;9.0370
+8775;Luchsingen;Glarus Süd;GL;46.9672;9.0350
+8777;Betschwanden;Glarus Süd;GL;46.9460;9.0265
+8777;Diesbach GL;Glarus Süd;GL;46.9515;9.0314
+8782;Rüti GL;Glarus Süd;GL;46.9355;9.0147
+8783;Linthal;Glarus Süd;GL;46.9141;8.9950
+8784;Braunwald;Glarus Süd;GL;46.9427;8.9976
+8800;Thalwil;Thalwil;ZH;47.2932;8.5620
+8802;Kilchberg ZH;Kilchberg (ZH);ZH;47.3238;8.5439
+8803;Rüschlikon;Rüschlikon;ZH;47.3070;8.5527
+8804;Au ZH;Wädenswil;ZH;47.2429;8.6470
+8805;Richterswil;Richterswil;ZH;47.2074;8.6986
+8806;Bäch SZ;Freienbach;SZ;47.2045;8.7348
+8807;Freienbach;Freienbach;SZ;47.2047;8.7558
+8808;Pfäffikon SZ;Freienbach;SZ;47.1995;8.7769
+8810;Horgen;Horgen;ZH;47.2551;8.6008
+8815;Horgenberg;Horgen;ZH;47.2473;8.5858
+8816;Hirzel;Horgen;ZH;47.2160;8.6077
+8820;Wädenswil;Wädenswil;ZH;47.2262;8.6682
+8824;Schönenberg ZH;Wädenswil;ZH;47.1951;8.6447
+8825;Hütten;Wädenswil;ZH;47.1762;8.6641
+8832;Wilen b. Wollerau;Freienbach;SZ;47.1972;8.7343
+8832;Wollerau;Wollerau;SZ;47.1954;8.7132
+8833;Samstagern;Richterswil;ZH;47.1939;8.6804
+8834;Schindellegi;Feusisberg;SZ;47.1780;8.7136
+8835;Feusisberg;Feusisberg;SZ;47.1857;8.7472
+8836;Bennau;Einsiedeln;SZ;47.1486;8.7262
+8840;Einsiedeln;Einsiedeln;SZ;47.1303;8.7463
+8840;Trachslau;Einsiedeln;SZ;47.1029;8.7268
+8841;Gross;Einsiedeln;SZ;47.1149;8.7730
+8842;Unteriberg;Unteriberg;SZ;47.0587;8.8034
+8843;Oberiberg;Oberiberg;SZ;47.0398;8.7788
+8844;Euthal;Einsiedeln;SZ;47.0958;8.8146
+8845;Studen SZ;Unteriberg;SZ;47.0695;8.8427
+8846;Willerzell;Einsiedeln;SZ;47.1309;8.7973
+8847;Egg SZ;Einsiedeln;SZ;47.1596;8.7782
+8849;Alpthal;Alpthal;SZ;47.0558;8.7092
+8852;Altendorf;Altendorf;SZ;47.1890;8.8259
+8853;Lachen SZ;Lachen;SZ;47.1918;8.8554
+8854;Galgenen;Galgenen;SZ;47.1773;8.8734
+8854;Siebnen;Schübelbach;SZ;47.1741;8.9038
+8855;Wangen SZ;Wangen (SZ);SZ;47.1929;8.8918
+8856;Tuggen;Tuggen;SZ;47.2018;8.9418
+8857;Vorderthal;Vorderthal;SZ;47.1256;8.8984
+8858;Innerthal;Innerthal;SZ;47.0551;8.9207
+8862;Schübelbach;Schübelbach;SZ;47.1739;8.9294
+8863;Buttikon SZ;Schübelbach;SZ;47.1742;8.9511
+8864;Reichenburg;Reichenburg;SZ;47.1692;8.9795
+8865;Bilten;Glarus Nord;GL;47.1505;9.0230
+8866;Ziegelbrücke;Glarus Nord;GL;47.1337;9.0600
+8867;Niederurnen;Glarus Nord;GL;47.1259;9.0537
+8868;Oberurnen;Glarus Nord;GL;47.1150;9.0597
+8872;Weesen;Weesen;SG;47.1356;9.0976
+8873;Amden;Amden;SG;47.1494;9.1527
+8874;Mühlehorn;Glarus Nord;GL;47.1140;9.1764
+8877;Murg;Quarten;SG;47.1108;9.2133
+8878;Quinten;Quarten;SG;47.1302;9.2168
+8880;Walenstadt;Walenstadt;SG;47.1238;9.3152
+8881;Tscherlach;Walenstadt;SG;47.1187;9.3356
+8881;Walenstadtberg;Walenstadt;SG;47.1375;9.2852
+8882;Unterterzen;Quarten;SG;47.1124;9.2501
+8883;Quarten;Quarten;SG;47.1067;9.2392
+8884;Oberterzen;Quarten;SG;47.1002;9.2590
+8885;Mols;Quarten;SG;47.1118;9.2807
+8886;Mädris-Vermol;Mels;SG;47.0465;9.3800
+8887;Mels;Mels;SG;47.0457;9.4206
+8888;Heiligkreuz (Mels);Mels;SG;47.0584;9.4140
+8889;Plons;Mels;SG;47.0585;9.3950
+8890;Flums;Flums;SG;47.0928;9.3431
+8892;Berschis;Walenstadt;SG;47.1068;9.3454
+8893;Flums Hochwiese;Flums;SG;47.0848;9.3695
+8894;Flumserberg Saxli;Flums;SG;47.0733;9.3520
+8895;Flumserberg Portels;Flums;SG;47.0794;9.3343
+8896;Flumserberg Bergheim;Flums;SG;47.0939;9.3136
+8897;Flumserberg Tannenheim;Flums;SG;47.0868;9.3032
+8898;Flumserberg Tannenbodenalp;Quarten;SG;47.0936;9.2819
+8902;Urdorf;Urdorf;ZH;47.3865;8.4254
+8903;Birmensdorf ZH;Birmensdorf (ZH);ZH;47.3553;8.4431
+8904;Aesch ZH;Aesch (ZH);ZH;47.3368;8.4403
+8905;Arni AG;Arni (AG);AG;47.3177;8.4219
+8905;Islisberg;Islisberg;AG;47.3229;8.4393
+8906;Bonstetten;Bonstetten;ZH;47.3198;8.4705
+8907;Wettswil;Wettswil am Albis;ZH;47.3353;8.4755
+8908;Hedingen;Hedingen;ZH;47.2979;8.4484
+8909;Zwillikon;Affoltern am Albis;ZH;47.2883;8.4347
+8910;Affoltern am Albis;Affoltern am Albis;ZH;47.2783;8.4528
+8911;Rifferswil;Rifferswil;ZH;47.2441;8.4956
+8912;Obfelden;Obfelden;ZH;47.2640;8.4231
+8913;Ottenbach;Ottenbach;ZH;47.2806;8.4061
+8914;Aeugst am Albis;Aeugst am Albis;ZH;47.2685;8.4855
+8914;Aeugstertal;Aeugst am Albis;ZH;47.2832;8.4873
+8915;Hausen am Albis;Hausen am Albis;ZH;47.2455;8.5324
+8916;Jonen;Jonen;AG;47.2974;8.3938
+8917;Oberlunkhofen;Oberlunkhofen;AG;47.3120;8.3926
+8918;Unterlunkhofen;Unterlunkhofen;AG;47.3221;8.3812
+8919;Rottenschwil;Rottenschwil;AG;47.3145;8.3633
+8925;Ebertswil;Hausen am Albis;ZH;47.2266;8.5504
+8926;Hauptikon;Kappel am Albis;ZH;47.2305;8.4956
+8926;Kappel am Albis;Kappel am Albis;ZH;47.2280;8.5290
+8926;Uerzlikon;Kappel am Albis;ZH;47.2218;8.4980
+8932;Mettmenstetten;Mettmenstetten;ZH;47.2459;8.4643
+8933;Maschwanden;Maschwanden;ZH;47.2345;8.4267
+8934;Knonau;Knonau;ZH;47.2231;8.4618
+8942;Oberrieden;Oberrieden;ZH;47.2758;8.5766
+8951;Fahrweid;Weiningen (ZH);ZH;47.4091;8.4147
+8952;Schlieren;Schlieren;ZH;47.3980;8.4459
+8953;Dietikon;Dietikon;ZH;47.4020;8.3993
+8954;Geroldswil;Geroldswil;ZH;47.4231;8.4105
+8955;Oetwil an der Limmat;Oetwil an der Limmat;ZH;47.4285;8.3966
+8956;Killwangen;Killwangen;AG;47.4316;8.3499
+8957;Spreitenbach;Spreitenbach;AG;47.4195;8.3669
+8962;Bergdietikon;Bergdietikon;AG;47.3928;8.3845
+8964;Rudolfstetten;Rudolfstetten-Friedlisberg;AG;47.3682;8.3787
+8965;Berikon;Berikon;AG;47.3542;8.3703
+8966;Oberwil-Lieli;Oberwil-Lieli;AG;47.3389;8.3934
+8967;Widen;Widen;AG;47.3672;8.3592
+9000;St. Gallen;St. Gallen;SG;47.4234;9.3728
+9008;St. Gallen;St. Gallen;SG;47.4386;9.3895
+9010;St. Gallen;St. Gallen;SG;47.4391;9.3774
+9011;St. Gallen;St. Gallen;SG;47.4169;9.3922
+9012;St. Gallen;St. Gallen;SG;47.4094;9.3635
+9014;St. Gallen;St. Gallen;SG;47.4066;9.3340
+9015;St. Gallen;St. Gallen;SG;47.4047;9.3065
+9016;St. Gallen;St. Gallen;SG;47.4397;9.4100
+9030;Abtwil SG;Gaiserwald;SG;47.4243;9.3209
+9030;St. Josefen;Gaiserwald;SG;47.4249;9.3356
+9032;Engelburg;Gaiserwald;SG;47.4413;9.3464
+9033;Untereggen;Untereggen;SG;47.4523;9.4486
+9034;Eggersriet;Eggersriet;SG;47.4420;9.4693
+9035;Grub AR;Grub (AR);AR;47.4452;9.5080
+9036;Grub SG;Eggersriet;SG;47.4536;9.5124
+9037;Speicherschwendi;Speicher;AR;47.4258;9.4390
+9038;Rehetobel;Rehetobel;AR;47.4267;9.4818
+9042;Speicher;Speicher;AR;47.4122;9.4433
+9043;Trogen;Trogen;AR;47.4049;9.4654
+9044;Wald AR;Wald (AR);AR;47.4152;9.4956
+9050;Appenzell;Appenzell;AI;47.3313;9.4058
+9050;Appenzell Eggerstanden;Schwende-Rüte;AI;47.3330;9.4661
+9050;Appenzell Enggenhütten;Schlatt-Haslen;AI;47.3514;9.3608
+9050;Appenzell Meistersrüte;Appenzell;AI;47.3475;9.4290
+9050;Appenzell Schlatt;Schlatt-Haslen;AI;47.3547;9.3973
+9050;Appenzell Steinegg;Schwende-Rüte;AI;47.3218;9.4358
+9052;Niederteufen;Teufen (AR);AR;47.3921;9.3661
+9053;Teufen AR;Teufen (AR);AR;47.3904;9.3908
+9054;Haslen AI;Schlatt-Haslen;AI;47.3677;9.3733
+9055;Bühler;Bühler;AR;47.3747;9.4204
+9056;Gais;Gais;AR;47.3627;9.4563
+9057;Schwende;Schwende-Rüte;AI;47.2989;9.4347
+9057;Wasserauen;Schwende-Rüte;AI;47.2685;9.4030
+9057;Weissbad;Schwende-Rüte;AI;47.3021;9.4266
+9058;Brülisau;Schwende-Rüte;AI;47.2997;9.4616
+9062;Lustmühle;Teufen (AR);AR;47.3983;9.3571
+9063;Stein AR;Stein (AR);AR;47.3740;9.3429
+9064;Hundwil;Hundwil;AR;47.3579;9.3185
+9100;Herisau;Herisau;AR;47.3856;9.2795
+9103;Schwellbrunn;Schwellbrunn;AR;47.3508;9.2432
+9104;Waldstatt;Waldstatt;AR;47.3571;9.2845
+9105;Schönengrund;Neckertal;SG;47.3292;9.2208
+9107;Urnäsch;Urnäsch;AR;47.3118;9.2761
+9108;Gonten;Gonten;AI;47.3277;9.3454
+9108;Gontenbad;Gonten;AI;47.3319;9.3708
+9108;Jakobsbad;Gonten;AI;47.3158;9.3284
+9112;Schachen b. Herisau;Herisau;AR;47.3820;9.2412
+9113;Degersheim;Degersheim;SG;47.3744;9.1990
+9114;Hoffeld;Neckertal;SG;47.3589;9.1719
+9115;Dicken;Neckertal;SG;47.3375;9.1922
+9116;Wolfertswil;Degersheim;SG;47.3947;9.1807
+9122;Ebersol;Neckertal;SG;47.3472;9.1494
+9122;Mogelsberg;Neckertal;SG;47.3612;9.1361
+9123;Nassen;Neckertal;SG;47.3764;9.1418
+9125;Brunnadern;Neckertal;SG;47.3306;9.1370
+9126;Necker;Neckertal;SG;47.3475;9.1294
+9127;St. Peterzell;Neckertal;SG;47.3203;9.1766
+9200;Gossau SG;Gossau (SG);SG;47.4149;9.2534
+9203;Niederwil SG;Oberbüren;SG;47.4370;9.1985
+9204;Andwil SG;Andwil (SG);SG;47.4391;9.2729
+9205;Waldkirch;Waldkirch;SG;47.4673;9.2860
+9212;Arnegg;Gossau (SG);SG;47.4416;9.2556
+9213;Hauptwil;Hauptwil-Gottshaus;TG;47.4805;9.2516
+9214;Kradolf;Kradolf-Schönenberg;TG;47.5263;9.1999
+9215;Buhwil;Kradolf-Schönenberg;TG;47.5267;9.1631
+9215;Schönenberg an der Thur;Kradolf-Schönenberg;TG;47.5212;9.1984
+9216;Heldswil;Hohentannen;TG;47.5279;9.2244
+9216;Hohentannen;Hohentannen;TG;47.5086;9.2242
+9217;Neukirch an der Thur;Kradolf-Schönenberg;TG;47.5109;9.1742
+9220;Bischofszell;Bischofszell;TG;47.4942;9.2413
+9223;Halden;Bischofszell;TG;47.5040;9.2082
+9223;Schweizersholz;Bischofszell;TG;47.5014;9.1933
+9225;St. Pelagiberg;Hauptwil-Gottshaus;TG;47.4877;9.3021
+9225;Wilen (Gottshaus);Hauptwil-Gottshaus;TG;47.4922;9.2824
+9230;Flawil;Flawil;SG;47.4137;9.1841
+9231;Egg (Flawil);Flawil;SG;47.3918;9.2235
+9240;Niederglatt SG;Oberuzwil;SG;47.4293;9.1591
+9240;Uzwil;Uzwil;SG;47.4369;9.1334
+9242;Oberuzwil;Oberuzwil;SG;47.4295;9.1251
+9243;Jonschwil;Jonschwil;SG;47.4235;9.0876
+9244;Niederuzwil;Uzwil;SG;47.4458;9.1411
+9245;Oberbüren;Oberbüren;SG;47.4513;9.1613
+9245;Sonnental;Oberbüren;SG;47.4592;9.1371
+9246;Niederbüren;Niederbüren;SG;47.4638;9.2075
+9247;Henau;Uzwil;SG;47.4538;9.1156
+9248;Bichwil;Oberuzwil;SG;47.4204;9.1353
+9249;Algetshausen;Uzwil;SG;47.4469;9.1079
+9249;Niederstetten;Uzwil;SG;47.4513;9.0838
+9249;Oberstetten;Uzwil;SG;47.4485;9.0898
+9300;Wittenbach;Wittenbach;SG;47.4606;9.3867
+9304;Bernhardzell;Waldkirch;SG;47.4689;9.3404
+9305;Berg SG;Berg (SG);SG;47.4869;9.4081
+9306;Freidorf TG;Roggwil (TG);TG;47.4860;9.3946
+9308;Lömmenschwil;Häggenschwil;SG;47.4971;9.3508
+9312;Häggenschwil;Häggenschwil;SG;47.4934;9.3426
+9313;Muolen;Muolen;SG;47.5189;9.3262
+9314;Steinebrunn;Egnach;TG;47.5337;9.3462
+9315;Neukirch (Egnach);Egnach;TG;47.5287;9.3717
+9315;Winden;Egnach;TG;47.5100;9.3655
+9320;Arbon;Arbon;TG;47.5135;9.4251
+9320;Frasnacht;Arbon;TG;47.5267;9.4058
+9320;Stachen;Arbon;TG;47.5079;9.4100
+9322;Egnach;Egnach;TG;47.5441;9.3802
+9323;Steinach;Steinach;SG;47.5005;9.4380
+9325;Roggwil TG;Roggwil (TG);TG;47.5032;9.3989
+9326;Horn;Horn;TG;47.4933;9.4610
+9327;Tübach;Tübach;SG;47.4851;9.4523
+9400;Rorschach;Rorschach;SG;47.4757;9.4927
+9402;Mörschwil;Mörschwil;SG;47.4668;9.4241
+9403;Goldach;Goldach;SG;47.4762;9.4701
+9404;Rorschacherberg;Rorschacherberg;SG;47.4711;9.5046
+9405;Wienacht-Tobel;Lutzenberg;AR;47.4655;9.5363
+9410;Heiden;Heiden;AR;47.4426;9.5326
+9411;Reute AR;Reute (AR);AR;47.4129;9.5742
+9411;Schachen b. Reute;Reute (AR);AR;47.4251;9.5601
+9413;Oberegg;Oberegg;AI;47.4220;9.5523
+9422;Staad SG;Thal;SG;47.4792;9.5411
+9423;Altenrhein;Thal;SG;47.4907;9.5552
+9424;Rheineck;Rheineck;SG;47.4672;9.5849
+9425;Thal;Thal;SG;47.4685;9.5675
+9426;Lutzenberg;Lutzenberg;AR;47.4605;9.5756
+9427;Wolfhalden;Wolfhalden;AR;47.4532;9.5569
+9428;Walzenhausen;Walzenhausen;AR;47.4461;9.6040
+9430;St. Margrethen SG;St. Margrethen;SG;47.4511;9.6360
+9434;Au SG;Au (SG);SG;47.4323;9.6348
+9435;Heerbrugg;Au (SG);SG;47.4141;9.6288
+9436;Balgach;Balgach;SG;47.4051;9.6061
+9437;Marbach SG;Marbach (SG);SG;47.3923;9.5683
+9442;Berneck;Berneck;SG;47.4254;9.6143
+9442;Büriswilen;Oberegg;AI;47.4341;9.6059
+9443;Widnau;Widnau;SG;47.4049;9.6385
+9444;Diepoldsau;Diepoldsau;SG;47.3855;9.6569
+9445;Rebstein;Rebstein;SG;47.3989;9.5850
+9450;Altstätten SG;Altstätten;SG;47.3772;9.5446
+9450;Lüchingen;Altstätten;SG;47.3869;9.5538
+9451;Kriessern;Oberriet (SG);SG;47.3650;9.6095
+9452;Hinterforst;Altstätten;SG;47.3622;9.5309
+9453;Eichberg;Eichberg;SG;47.3429;9.5255
+9462;Montlingen;Oberriet (SG);SG;47.3341;9.5857
+9463;Oberriet SG;Oberriet (SG);SG;47.3204;9.5630
+9464;Lienz;Altstätten;SG;47.2780;9.5167
+9464;Rüthi (Rheintal);Rüthi (SG);SG;47.2910;9.5381
+9465;Salez;Sennwald;SG;47.2371;9.4994
+9466;Sennwald;Sennwald;SG;47.2606;9.5010
+9467;Frümsen;Sennwald;SG;47.2440;9.4712
+9468;Sax;Sennwald;SG;47.2300;9.4543
+9469;Haag (Rheintal);Sennwald;SG;47.2123;9.4917
+9470;Buchs SG;Buchs (SG);SG;47.1615;9.4760
+9470;Werdenberg;Grabs;SG;47.1710;9.4614
+9472;Grabs;Grabs;SG;47.1807;9.4458
+9472;Grabserberg;Grabs;SG;47.1795;9.4090
+9473;Gams;Gams;SG;47.2056;9.4410
+9475;Sevelen;Sevelen;SG;47.1235;9.4866
+9476;Fontnas;Wartau;SG;47.0903;9.4893
+9476;Weite;Wartau;SG;47.0920;9.4962
+9477;Trübbach;Wartau;SG;47.0734;9.4800
+9478;Azmoos;Wartau;SG;47.0798;9.4748
+9479;Gretschins;Wartau;SG;47.0970;9.4855
+9479;Malans SG;Wartau;SG;47.0915;9.4772
+9479;Oberschan;Wartau;SG;47.0988;9.4741
+9485;Nendeln;Eschen;FL;47.1974;9.5434
+9486;Schaanwald;Mauren;FL;47.2120;9.5619
+9487;Gamprin-Bendern;Gamprin;FL;47.2201;9.5114
+9488;Schellenberg;Schellenberg;FL;47.2303;9.5440
+9490;Vaduz;Vaduz;FL;47.1431;9.5175
+9491;Ruggell;Ruggell;FL;47.2388;9.5259
+9492;Eschen;Eschen;FL;47.2122;9.5217
+9493;Mauren FL;Mauren;FL;47.2191;9.5437
+9494;Schaan;Schaan;FL;47.1665;9.5116
+9495;Triesen;Triesen;FL;47.1091;9.5279
+9496;Balzers;Balzers;FL;47.0651;9.5026
+9497;Triesenberg;Triesenberg;FL;47.1187;9.5482
+9498;Planken;Planken;FL;47.1854;9.5452
+9500;Wil SG;Wil (SG);SG;47.4660;9.0481
+9502;Braunau;Braunau;TG;47.5031;9.0702
+9503;Lanterswil;Bussnang;TG;47.5206;9.0966
+9503;Stehrenberg;Bussnang;TG;47.5227;9.0897
+9504;Friltschen;Bussnang;TG;47.5376;9.0852
+9506;Lommis;Lommis;TG;47.5167;8.9945
+9507;Stettfurt;Stettfurt;TG;47.5254;8.9541
+9508;Weingarten-Kalthäusern;Lommis;TG;47.5247;8.9831
+9512;Rossrüti;Wil (SG);SG;47.4769;9.0625
+9514;Wuppenau;Wuppenau;TG;47.4962;9.1050
+9515;Hosenruck;Wuppenau;TG;47.4913;9.1276
+9517;Mettlen;Bussnang;TG;47.5319;9.1234
+9523;Züberwangen;Zuzwil (SG);SG;47.4657;9.0916
+9524;Zuzwil SG;Zuzwil (SG);SG;47.4751;9.1102
+9525;Lenggenwil;Niederhelfenschwil;SG;47.4752;9.1480
+9526;Zuckenriet;Niederhelfenschwil;SG;47.4850;9.1613
+9527;Niederhelfenschwil;Niederhelfenschwil;SG;47.4763;9.1863
+9532;Rickenbach b. Wil;Rickenbach (TG);TG;47.4486;9.0494
+9533;Dietschwil;Kirchberg (SG);SG;47.4221;9.0163
+9533;Kirchberg SG;Kirchberg (SG);SG;47.4125;9.0402
+9534;Gähwil;Kirchberg (SG);SG;47.3955;9.0026
+9535;Wilen b. Wil;Wilen (TG);TG;47.4515;9.0346
+9536;Schwarzenbach SG;Jonschwil;SG;47.4411;9.0750
+9542;Münchwilen TG;Münchwilen (TG);TG;47.4782;8.9947
+9543;St. Margarethen TG;Münchwilen (TG);TG;47.4875;9.0023
+9545;Wängi;Wängi;TG;47.4995;8.9575
+9546;Tuttwil;Wängi;TG;47.4817;8.9453
+9547;Wittenwil;Aadorf;TG;47.5027;8.9221
+9548;Matzingen;Matzingen;TG;47.5204;8.9310
+9552;Bronschhofen;Wil (SG);SG;47.4783;9.0335
+9553;Bettwiesen;Bettwiesen;TG;47.4970;9.0242
+9554;Tägerschen;Tobel-Tägerschen;TG;47.5080;9.0290
+9555;Tobel;Tobel-Tägerschen;TG;47.5154;9.0329
+9556;Affeltrangen;Affeltrangen;TG;47.5267;9.0320
+9556;Zezikon;Affeltrangen;TG;47.5357;9.0200
+9562;Buch b. Märwil;Affeltrangen;TG;47.5376;9.0557
+9562;Märwil;Affeltrangen;TG;47.5325;9.0729
+9565;Bussnang;Bussnang;TG;47.5578;9.0808
+9565;Oberbussnang;Bussnang;TG;47.5486;9.0875
+9565;Oppikon;Bussnang;TG;47.5497;9.0572
+9565;Rothenhausen;Bussnang;TG;47.5494;9.1029
+9565;Schmidshof;Bussnang;TG;47.5457;9.0545
+9573;Littenheid;Sirnach;TG;47.4409;9.0090
+9601;Lütisburg Station;Bütschwil-Ganterschwil;SG;47.3793;9.0668
+9602;Bazenheid;Kirchberg (SG);SG;47.4119;9.0653
+9602;Müselbach;Kirchberg (SG);SG;47.3900;9.0423
+9604;Lütisburg;Lütisburg;SG;47.3971;9.0892
+9604;Oberrindal;Oberuzwil;SG;47.4052;9.1335
+9604;Unterrindal;Lütisburg;SG;47.4084;9.0902
+9606;Bütschwil;Bütschwil-Ganterschwil;SG;47.3596;9.0721
+9607;Mosnang;Mosnang;SG;47.3621;9.0452
+9608;Ganterschwil;Bütschwil-Ganterschwil;SG;47.3791;9.0915
+9612;Dreien;Mosnang;SG;47.3628;9.0115
+9613;Mühlrüti;Mosnang;SG;47.3696;8.9874
+9614;Libingen;Mosnang;SG;47.3284;9.0216
+9615;Dietfurt;Bütschwil-Ganterschwil;SG;47.3424;9.0778
+9620;Lichtensteig;Lichtensteig;SG;47.3268;9.0872
+9621;Oberhelfenschwil;Neckertal;SG;47.3542;9.1086
+9622;Krinau;Wattwil;SG;47.3179;9.0534
+9630;Wattwil;Wattwil;SG;47.2993;9.0892
+9631;Ulisbach;Wattwil;SG;47.2854;9.1051
+9633;Bächli (Hemberg);Neckertal;SG;47.3049;9.2002
+9633;Hemberg;Neckertal;SG;47.2978;9.1739
+9642;Ebnat-Kappel;Ebnat-Kappel;SG;47.2617;9.1276
+9643;Krummenau;Nesslau;SG;47.2485;9.1719
+9650;Nesslau;Nesslau;SG;47.2228;9.1957
+9651;Ennetbühl;Nesslau;SG;47.2446;9.2222
+9652;Neu St. Johann;Nesslau;SG;47.2331;9.1933
+9655;Stein SG;Nesslau;SG;47.2002;9.2260
+9656;Alt St. Johann;Wildhaus-Alt St. Johann;SG;47.1902;9.2732
+9657;Unterwasser;Wildhaus-Alt St. Johann;SG;47.1990;9.3107
+9658;Wildhaus;Wildhaus-Alt St. Johann;SG;47.2018;9.3440
