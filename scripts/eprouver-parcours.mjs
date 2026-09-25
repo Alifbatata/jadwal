@@ -15,8 +15,10 @@
  * pas.
  *
  * La personne invitée est invitée dans **deux** organisations. Le lien « Choisir une autre
- * organisation » de l'écran d'acceptation n'existe que pour qui en a plus d'une, et l'acceptation
- * vaut pour une organisation, pas pour toutes : les deux ne se voient qu'à cette condition.
+ * organisation » de l'écran d'acceptation n'existe que pour qui en a plus d'une, « Changer
+ * d’organisation » dans la navigation que pour qui en a plus d'une ou a encore une invitation qui
+ * attend, et l'acceptation vaut pour une organisation, pas pour toutes : les trois ne se voient
+ * qu'à cette condition.
  *
  * Il passe aussi **axe** sur chaque page traversée. Le parcours s'arrête au premier écran qui ne
  * montre pas ce qu'il doit ; axe, lui, relève tout et tranche à la fin : un défaut d'accessibilité
@@ -96,6 +98,8 @@ const SALLE = 'Grande salle';
 const COURS_1 = { fr: 'Lecture du Coran', ar: 'قراءة القرآن' };
 const COURS_2 = 'Arabe pour adultes';
 const COURS_ANCRE = 'Tafsir du soir';
+/** Un second cours ancré, à l'heure même de la prière : le décalage nul a sa propre phrase. */
+const COURS_SANS_DECALAGE = 'Cercle de lecture';
 const POSITION = { lieu: 'Bienne', latitude: '47.14', longitude: '7.25' };
 const JOURS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
 const CHIFFRES_ORIENTAUX = /[\u0660-\u0669\u06F0-\u06F9]/g;
@@ -105,25 +109,74 @@ const BOITE = '/tmp/courriels';
 const HAUTEUR_INITIALE_DU_CADRE = 320;
 /**
  * Ce que la page publique écrit, langue par langue (`apps/web/src/lib/i18n.ts`) : le lien du pied,
- * et le début des deux mentions d'une séance déplacée, au départ et à l'arrivée. L'arabe est celui
- * que le chef de projet a relu.
+ * l'annonce du nouvel onglet que ce lien porte pour les lecteurs d'écran, et le début des deux
+ * mentions d'une séance déplacée, au départ et à l'arrivée. L'arabe est celui que le chef de projet
+ * a relu.
  */
 const TEXTES_PUBLICS = {
 	fr: {
 		conditions: 'Conditions d’utilisation',
+		nouvelOnglet: 's’ouvre dans un nouvel onglet',
 		depart: 'Déplacé au ',
 		arrivee: 'Initialement le '
 	},
-	de: { conditions: 'Nutzungsbedingungen', depart: 'Verschoben auf ', arrivee: 'Ursprünglich am ' },
-	it: { conditions: 'Condizioni d’uso', depart: 'Spostato al ', arrivee: 'Inizialmente il ' },
-	ar: { conditions: 'شروط الاستخدام', depart: 'نُقل إلى ', arrivee: 'كان مقرّرًا في ' }
+	de: {
+		conditions: 'Nutzungsbedingungen',
+		nouvelOnglet: 'öffnet sich in einem neuen Tab',
+		depart: 'Verschoben auf ',
+		arrivee: 'Ursprünglich am '
+	},
+	it: {
+		conditions: 'Condizioni d’uso',
+		nouvelOnglet: 'si apre in una nuova scheda',
+		depart: 'Spostato al ',
+		arrivee: 'Inizialmente il '
+	},
+	ar: {
+		conditions: 'شروط الاستخدام',
+		nouvelOnglet: 'يُفتح في علامة تبويب جديدة',
+		depart: 'نُقل إلى ',
+		arrivee: 'كان مقرّرًا في '
+	}
 };
-/** L'heure du cours ancré, 15 minutes après le maghrib : la phrase, puis l'heure calculée. */
-const HEURE_ANCREE = {
-	fr: /^15 min après Maghrib \(\d{2}:\d{2}\)$/,
-	ar: /^بعد المغرب بـ15 دقيقة \(\d{2}:\d{2}\)$/
+/**
+ * Le nom accessible d'un lien qui ouvre un nouvel onglet : son texte visible, puis l'annonce entre
+ * parenthèses, que seuls les lecteurs d'écran reçoivent (technique G201 des WCAG). Le widget dit la
+ * même annonce que la page (`packages/widget/src/element.ts`).
+ */
+const avecNouvelOnglet = (texte, langue) => `${texte} (${TEXTES_PUBLICS[langue].nouvelOnglet})`;
+/** Le lien du widget vers la page publique, sous son cadre. Le code collé ne demande aucune langue. */
+const LIEN_DU_WIDGET = 'Voir le programme complet';
+const CHANGER = 'Changer d’organisation';
+/**
+ * L'heure d'un cours ancré, la phrase puis l'heure calculée ; le libellé du flux, la phrase seule.
+ * 15 minutes après le maghrib, puis à l'heure même : au décalage nul, le flux dit la phrase de la
+ * page, « Après Maghrib », et non « À Maghrib » comme avant l'étape 17.
+ */
+const ANCRAGES = [
+	{
+		titre: COURS_ANCRE,
+		heure: {
+			fr: /^15 min après Maghrib \(\d{2}:\d{2}\)$/,
+			ar: /^بعد المغرب بـ15 دقيقة \(\d{2}:\d{2}\)$/
+		},
+		libelle: { fr: '15 min après Maghrib', ar: 'بعد المغرب بـ15 دقيقة' }
+	},
+	{
+		titre: COURS_SANS_DECALAGE,
+		heure: { fr: /^Après Maghrib \(\d{2}:\d{2}\)$/, ar: /^بعد المغرب \(\d{2}:\d{2}\)$/ },
+		libelle: { fr: 'Après Maghrib', ar: 'بعد المغرب' }
+	}
+];
+/**
+ * Une organisation qui n'existe pas, et ce que la page d'erreur de `/m/` en dit
+ * (`apps/web/src/lib/i18n.ts`, `notFound` et `notFoundHint`).
+ */
+const INCONNUE = 'organisation-inconnue';
+const INTROUVABLE = {
+	fr: { titre: 'Page introuvable', phrase: 'Vérifiez l’adresse.' },
+	ar: { titre: 'الصفحة غير موجودة', phrase: 'تحقّق من العنوان.' }
 };
-const LIBELLE_ANCRE = { fr: '15 min après Maghrib', ar: 'بعد المغرب بـ15 دقيقة' };
 
 // ---------------------------------------------------------------------------------------------
 // Ce qui se dit, et ce qui arrête tout
@@ -405,19 +458,63 @@ async function cheminDuLien(lien) {
 const navigationDeLEspace = (page) =>
 	page.getByRole('navigation', { name: 'Espace des responsables' });
 
+/**
+ * « Changer d’organisation » dans la navigation : pour qui est membre de plusieurs organisations,
+ * ou d'une seule avec une invitation qui attend encore.
+ */
+const lienChanger = (page) =>
+	navigationDeLEspace(page).getByRole('link', { name: CHANGER, exact: true });
+
+/**
+ * Les noms que Chrome donne lui-même aux liens du document principal, lus dans son arbre
+ * d'accessibilité : c'est ce qu'un lecteur d'écran annonce. `getByRole` en fait son propre calcul ;
+ * on demande les deux. Le contenu d'un cadre n'y est pas, celui d'un shadow root ouvert y est.
+ */
+async function nomsDesLiensSelonChrome(page) {
+	const cdp = await page.context().newCDPSession(page);
+	try {
+		const { nodes } = await cdp.send('Accessibility.getFullAXTree');
+		return nodes
+			.filter((noeud) => !noeud.ignored && noeud.role?.value === 'link')
+			.map((noeud) =>
+				String(noeud.name?.value ?? '')
+					.replace(/\s+/g, ' ')
+					.trim()
+			);
+	} finally {
+		await cdp.detach();
+	}
+}
+
+/**
+ * La boîte de l'annonce du nouvel onglet dans un lien, en pixels : `1×1` quand elle est cachée aux
+ * yeux et laissée aux lecteurs d'écran, `absente` quand le lien ne la porte pas.
+ */
+async function boiteDeLAnnonce(lien, langue) {
+	const annonce = lien.getByText(`(${TEXTES_PUBLICS[langue].nouvelOnglet})`, { exact: true });
+	if ((await annonce.count()) !== 1) return { cachee: false, taille: 'absente' };
+	const boite = await annonce.boundingBox();
+	if (!boite) return { cachee: false, taille: 'non rendue' };
+	return {
+		cachee: boite.width <= 1 && boite.height <= 1,
+		taille: `${Math.round(boite.width)}×${Math.round(boite.height)} px`
+	};
+}
+
 // ---------------------------------------------------------------------------------------------
 // Les étapes
 // ---------------------------------------------------------------------------------------------
 
 const T = aujourdhui();
 /**
- * Le premier cours demain, le second après-demain, déplacé au jour suivant, et le cours ancré dans
- * quatre jours : tout tient dans les sept jours de l'accueil et de la vue Semaine.
+ * Le premier cours demain, le second après-demain, déplacé au jour suivant, et les deux cours ancrés
+ * dans quatre et cinq jours : tout tient dans les sept jours de l'accueil et de la vue Semaine.
  */
 const J1 = plusJours(T, 1);
 const J2 = plusJours(T, 2);
 const J3 = plusJours(T, 3);
 const J4 = plusJours(T, 4);
+const J5 = plusJours(T, 5);
 
 const etat = { cours1: '', cours2: '', codeEmbarque: '', codeCadre: '' };
 
@@ -558,15 +655,22 @@ async function superAdmin(navigateur) {
 	await inviter(page, ORGANISATION, 'Responsable', 'responsable');
 
 	// La seconde organisation, où la même personne sera éditrice. La bannière ramène à l'écran du
-	// super-admin ; l'écran Membres a son propre « Changer d’organisation », qui mène ailleurs.
-	await suivre(
-		page,
-		page
-			.getByRole('status')
-			.filter({ hasText: 'pouvoirs de super-admin' })
-			.getByRole('link', { name: 'Changer d’organisation' }),
-		'/super-admin'
+	// super-admin. La navigation n'a pas de second « Changer d’organisation » : il mènerait au choix
+	// d'une personne membre, `/organisations`, et deux liens du même nom vers deux écrans
+	// tromperaient.
+	const parLaBanniere = page
+		.getByRole('status')
+		.filter({ hasText: 'pouvoirs de super-admin' })
+		.getByRole('link', { name: CHANGER, exact: true });
+	verifier(
+		`le super-admin garde « ${CHANGER} » dans sa bannière, vers son écran, et la navigation n’en a pas d’autre`,
+		(await parLaBanniere.count()) === 1 &&
+			(await cheminDuLien(parLaBanniere)) === '/super-admin' &&
+			(await navigationDeLEspace(page).count()) === 1 &&
+			(await lienChanger(page).count()) === 0,
+		`${await parLaBanniere.count()} dans la bannière, ${await lienChanger(page).count()} dans la navigation`
 	);
+	await suivre(page, parLaBanniere, '/super-admin');
 	await ouvrirEtEntrer(page, VOISINE);
 	await naviguer(page, 'Membres', '/membres');
 	await inviter(page, VOISINE, 'Éditeur', 'éditeur');
@@ -744,25 +848,93 @@ async function personneInvitee(navigateur) {
 		chemin(page)
 	);
 
-	// La seconde, par le choix d'organisation de l'écran Membres : ses conditions l'attendent, parce
-	// que l'acceptation vaut pour une organisation, et cette fois le lien vers le choix est là.
-	await naviguer(page, 'Membres', '/membres');
-	await suivre(
-		page,
-		page.getByRole('main').getByRole('link', { name: 'Changer d’organisation' }),
-		'/organisations'
+	// Membre d'une seule organisation, elle a encore la seconde invitation en attente : la
+	// navigation la mène au choix d'organisation, où elle l'accepte. Qu'une personne d'une seule
+	// organisation sans invitation n'ait pas ce lien, `apps/web/tests/acces.test.ts` le vérifie :
+	// personne, dans ce parcours, n'est dans ce cas.
+	verifier(
+		`avec une seule organisation et une invitation qui attend, elle trouve « ${CHANGER} » dans la navigation, vers le choix`,
+		(await lienChanger(page).count()) === 1 &&
+			(await cheminDuLien(lienChanger(page))) === '/organisations'
 	);
-	await envoyer(
-		page,
-		page.locator('li').filter({ hasText: VOISINE.nom }).getByRole('button', { name: 'Accepter' })
+	await naviguer(page, CHANGER, '/organisations');
+	const seconde = page.locator('li').filter({ hasText: VOISINE.nom });
+	verifier(
+		`par ce lien, elle retrouve l’invitation de « ${VOISINE.nom} », à accepter`,
+		(await texteDe(seconde)).includes(`${VOISINE.nom} (éditeur)`) &&
+			(await seconde.getByRole('button', { name: 'Accepter' }).count()) === 1,
+		await texteDe(seconde)
 	);
+
+	// Ses conditions l'attendent, parce que l'acceptation vaut pour une organisation, et cette fois
+	// le lien vers le choix est là.
+	await envoyer(page, seconde.getByRole('button', { name: 'Accepter' }));
 	const { lien: autre } = await ecranDAcceptation(page, VOISINE, { autresOrganisations: true });
 	await suivre(page, autre, '/organisations');
 	await envoyer(page, page.getByRole('button', { name: ORGANISATION.nom, exact: true }));
 	verifier(
 		`par ce lien, elle revient dans « ${ORGANISATION.nom} », qui ne redemande rien`,
-		chemin(page) === '/' && (await titre(page)) === 'À venir',
+		chemin(page) === '/' && (await page.title()) === `À venir | ${ORGANISATION.nom}`,
+		`${chemin(page)} « ${await page.title()} »`
+	);
+
+	// Membre de deux organisations, elle trouve « Changer d’organisation » dans la navigation, en
+	// responsable ici, puis en éditrice dans la voisine, où elle entre accepter les conditions.
+	verifier(
+		`membre de deux organisations, elle trouve « ${CHANGER} » dans la navigation, vers le choix`,
+		(await lienChanger(page).count()) === 1 &&
+			(await cheminDuLien(lienChanger(page))) === '/organisations'
+	);
+	await naviguer(page, CHANGER, '/organisations');
+	await envoyer(page, page.getByRole('button', { name: VOISINE.nom, exact: true }));
+	verifier(
+		`dans « ${VOISINE.nom} », ses conditions l’attendent encore`,
+		chemin(page) === '/conditions/accepter' && (await navigationDeLEspace(page).count()) === 0,
 		chemin(page)
+	);
+	await envoyer(
+		page,
+		page.getByRole('button', { name: 'J’accepte les conditions d’utilisation', exact: true })
+	);
+	const liensDeLEditrice = await navigationDeLEspace(page).getByRole('link').allTextContents();
+	verifier(
+		`éditrice dans « ${VOISINE.nom} », elle trouve « ${CHANGER} » dans la navigation, sans « Membres »`,
+		chemin(page) === '/' &&
+			(await page.title()) === `À venir | ${VOISINE.nom}` &&
+			(await lienChanger(page).count()) === 1 &&
+			(await cheminDuLien(lienChanger(page))) === '/organisations' &&
+			!liensDeLEditrice.some((texte) => texte.trim() === 'Membres'),
+		`« ${await page.title()} » : ${liensDeLEditrice.map((texte) => texte.trim()).join(', ')}`
+	);
+	await naviguer(page, CHANGER, '/organisations');
+	await envoyer(page, page.getByRole('button', { name: ORGANISATION.nom, exact: true }));
+	verifier(
+		`par ce lien, elle revient en responsable dans « ${ORGANISATION.nom} »`,
+		chemin(page) === '/' &&
+			(await page.title()) === `À venir | ${ORGANISATION.nom}` &&
+			(await navigationDeLEspace(page)
+				.getByRole('link', { name: 'Membres', exact: true })
+				.count()) === 1,
+		`${chemin(page)} « ${await page.title()} »`
+	);
+
+	// Une personne déjà connectée qui suit l'adresse de son courriel d'invitation passe par
+	// `/connexion`, qui la renvoie au choix d'organisation. De là, elle rentre dans « Centre du
+	// Parcours ».
+	const adresseDuCourriel = (invitations[1]?.text ?? '')
+		.split(/\s+/)
+		.find((mot) => mot.startsWith(`${ORIGINE}/connexion`));
+	await ouvrir(page, adresseDuCourriel ?? '/connexion');
+	verifier(
+		'une fois connectée, elle suit l’adresse de son second courriel d’invitation et arrive au choix d’organisation',
+		Boolean(adresseDuCourriel) && chemin(page) === '/organisations',
+		`${adresseDuCourriel ?? 'adresse absente du courriel'} : ${chemin(page)}`
+	);
+	await envoyer(page, page.getByRole('button', { name: ORGANISATION.nom, exact: true }));
+	verifier(
+		`de là, elle rentre dans « ${ORGANISATION.nom} »`,
+		chemin(page) === '/' && (await page.title()) === `À venir | ${ORGANISATION.nom}`,
+		`${chemin(page)} « ${await page.title()} »`
 	);
 	return { contexte, page };
 }
@@ -977,18 +1149,23 @@ async function verifierLaBaliseHtml(page, adresse, langue) {
 	);
 }
 
-/** Le lien des conditions au pied d'une page publique : son texte, sa cible, sa langue. */
+/**
+ * Le lien des conditions au pied d'une page publique, trouvé par son nom accessible entier, annonce
+ * du nouvel onglet comprise : sa cible, sa langue, et ce que l'œil voit de l'annonce.
+ */
 async function lienDesConditions(cadre, langue) {
-	const lien = cadre
-		.locator('footer')
-		.getByRole('link', { name: TEXTES_PUBLICS[langue].conditions, exact: true });
+	const lien = cadre.locator('footer').getByRole('link', {
+		name: avecNouvelOnglet(TEXTES_PUBLICS[langue].conditions, langue),
+		exact: true
+	});
 	const nombre = await lien.count();
 	return {
 		nombre,
 		chemin: nombre === 1 ? await cheminDuLien(lien) : '',
 		hreflang: nombre === 1 ? await lien.getAttribute('hreflang') : null,
 		target: nombre === 1 ? await lien.getAttribute('target') : null,
-		rel: nombre === 1 ? await lien.getAttribute('rel') : null
+		rel: nombre === 1 ? await lien.getAttribute('rel') : null,
+		annonce: nombre === 1 ? await boiteDeLAnnonce(lien, langue) : { cachee: false, taille: '' }
 	};
 }
 
@@ -1038,10 +1215,21 @@ async function pagesPubliques(page) {
 			`${depart?.mention ?? 'départ absent'} | ${arrivee?.mention ?? 'arrivée absente'} · ${phraseDArrivee}`
 		);
 		// Un nouvel onglet ici aussi : la même adresse, sans `embed=1`, est celle du cadre que
-		// l'écran Partager donne à coller à la main, et `/conditions` refuse d'être encadrée.
+		// l'écran Partager donne à coller à la main, et `/conditions` refuse d'être encadrée. Le
+		// lien le dit aux lecteurs d'écran, dans la langue de la page, et à eux seuls.
+		const nomAttendu = avecNouvelOnglet(textes.conditions, langue);
+		const nomsSelonChrome = await nomsDesLiensSelonChrome(page);
 		const conditions = await lienDesConditions(page, langue);
 		verifier(
-			`${adresse} : le pied porte le lien « ${textes.conditions} », vers /conditions, dans un nouvel onglet`,
+			`${adresse} : le nom accessible du lien des conditions est « ${nomAttendu} », selon playwright et selon Chrome, et l’annonce est cachée aux yeux`,
+			conditions.nombre === 1 && nomsSelonChrome.includes(nomAttendu) && conditions.annonce.cachee,
+			`Chrome : ${
+				nomsSelonChrome.filter((nom) => nom.startsWith(textes.conditions)).join(' | ') ||
+				'aucun lien de ce nom'
+			} ; playwright : ${conditions.nombre} lien ; annonce ${conditions.annonce.taille}`
+		);
+		verifier(
+			`${adresse} : le pied porte ce lien, vers /conditions, dans un nouvel onglet`,
 			conditions.nombre === 1 &&
 				conditions.chemin === '/conditions' &&
 				conditions.hreflang === 'fr' &&
@@ -1159,6 +1347,28 @@ async function widget(page) {
 				Math.abs(mesure.cadre - Math.max(mesure.contenu, HAUTEUR_INITIALE_DU_CADRE)) <= 2,
 			`cadre ${Math.round(mesure.cadre)} px, contenu ${Math.round(mesure.contenu)} px, ${HAUTEUR_INITIALE_DU_CADRE} px au départ`
 		);
+		// Sous le cadre, le lien vers la page publique ouvre un nouvel onglet : il le dit aux lecteurs
+		// d'écran. Il vit dans le shadow root du widget, que Chrome et playwright traversent.
+		const nomDuLienDuWidget = avecNouvelOnglet(LIEN_DU_WIDGET, 'fr');
+		const lienDuWidget = page
+			.locator('jadwal-widget')
+			.getByRole('link', { name: nomDuLienDuWidget, exact: true });
+		const nombreDeLiensDuWidget = await lienDuWidget.count();
+		const nomsSurLHote = await nomsDesLiensSelonChrome(page);
+		const annonceDuWidget =
+			nombreDeLiensDuWidget === 1
+				? await boiteDeLAnnonce(lienDuWidget, 'fr')
+				: { cachee: false, taille: '' };
+		verifier(
+			`le nom accessible du lien du widget est « ${nomDuLienDuWidget} », selon playwright et selon Chrome, et l’annonce est cachée aux yeux`,
+			nombreDeLiensDuWidget === 1 &&
+				nomsSurLHote.includes(nomDuLienDuWidget) &&
+				annonceDuWidget.cachee &&
+				(await lienDuWidget.getAttribute('target')) === '_blank' &&
+				(await cheminDuLien(lienDuWidget)) === `/m/${ORGANISATION.slug}`,
+			`Chrome : ${nomsSurLHote.join(' | ') || 'aucun lien'} ; playwright : ${nombreDeLiensDuWidget} lien ; annonce ${annonceDuWidget.taille}`
+		);
+
 		// `/conditions` refuse d'être encadrée : dans le cadre, le lien doit ouvrir un nouvel onglet.
 		const conditions = await lienDesConditions(encadree, 'fr');
 		verifier(
@@ -1197,7 +1407,10 @@ async function widget(page) {
 			page.context().waitForEvent('page'),
 			cadreManuel
 				.locator('footer')
-				.getByRole('link', { name: TEXTES_PUBLICS.fr.conditions, exact: true })
+				.getByRole('link', {
+					name: avecNouvelOnglet(TEXTES_PUBLICS.fr.conditions, 'fr'),
+					exact: true
+				})
 				.click()
 		]);
 		await onglet.waitForLoadState('load');
@@ -1273,9 +1486,9 @@ async function agenda() {
 	);
 }
 
-/** g. Le module de prière, une position, un cours ancré, son heure. */
+/** g. Le module de prière, une position, deux cours ancrés, avec et sans décalage, leur heure. */
 async function prieres(page, navigateur) {
-	etape('g. Le module de prière et un cours ancré');
+	etape('g. Le module de prière et deux cours ancrés, avec et sans décalage');
 	await naviguer(page, 'Réglages', '/reglages');
 	await envoyer(page, page.getByRole('button', { name: 'Allumer le module' }));
 	const navigation = page.getByRole('navigation', { name: 'Espace des responsables' });
@@ -1321,39 +1534,89 @@ async function prieres(page, navigateur) {
 		ancre: { priere: 'maghrib', decalage: 15, duree: 60 },
 		etat: 'publié'
 	});
+	await creerCours(page, {
+		titre: COURS_SANS_DECALAGE,
+		public: 'ouvert à tous',
+		jour: jourDeSemaine(J5),
+		ancre: { priere: 'maghrib', decalage: 0, duree: 45 },
+		etat: 'publié'
+	});
 
 	// Un visiteur neuf : la page publique se garde deux minutes en cache (`CACHE_PROGRAMME`), et celui
-	// de l'étape d relirait sa copie d'avant le cours ancré. C'est voulu, et ce n'est pas l'objet ici.
+	// de l'étape d relirait sa copie d'avant les cours ancrés. C'est voulu, et ce n'est pas l'objet
+	// ici.
 	const neuf = await navigateur.newContext();
 	neuf.setDefaultTimeout(15000);
 	const visiteur = await neuf.newPage();
 	for (const langue of ['fr', 'ar']) {
 		const adresse = `/m/${ORGANISATION.slug}${langue === 'fr' ? '' : '/ar'}`;
 		await ouvrir(visiteur, adresse);
-		const [seance] = await seancesPubliques(visiteur, COURS_ANCRE);
-		const heure = seance
-			? await texteDe(visiteur.locator('li').filter({ hasText: COURS_ANCRE }).locator('.heure'))
-			: '';
-		verifier(
-			`${adresse} : le cours ancré affiche son heure`,
-			HEURE_ANCREE[langue].test(heure),
-			heure
-		);
+		for (const ancrage of ANCRAGES) {
+			const [seance] = await seancesPubliques(visiteur, ancrage.titre);
+			const heure = seance
+				? await texteDe(visiteur.locator('li').filter({ hasText: ancrage.titre }).locator('.heure'))
+				: '';
+			verifier(
+				`${adresse} : « ${ancrage.titre} » affiche son heure`,
+				ancrage.heure[langue].test(heure),
+				heure
+			);
+		}
 		if (langue === 'ar') sansChiffresOrientaux(await visiteur.content(), adresse);
 	}
 
+	// Le flux dit la phrase de la page, décalage nul compris.
 	for (const langue of ['fr', 'ar']) {
 		const { texte, evenements } = await fluxAgenda(langue === 'fr' ? undefined : langue);
-		const ancres = evenements.filter((evenement) =>
-			evenement.some((ligne) => ligne.startsWith('SUMMARY:') && ligne.includes(COURS_ANCRE))
-		);
-		const description = ancres.flatMap((evenement) => champ(evenement, 'DESCRIPTION'))[0] ?? '';
-		verifier(
-			`le flux agenda${langue === 'fr' ? '' : ` (?lang=${langue})`} porte le libellé d’ancrage`,
-			ancres.length > 0 && description === `DESCRIPTION:${LIBELLE_ANCRE[langue]}`,
-			description.slice(0, 60)
-		);
+		for (const ancrage of ANCRAGES) {
+			const ancres = evenements.filter((evenement) =>
+				evenement.some((ligne) => ligne.startsWith('SUMMARY:') && ligne.includes(ancrage.titre))
+			);
+			const description = ancres.flatMap((evenement) => champ(evenement, 'DESCRIPTION'))[0] ?? '';
+			verifier(
+				`le flux agenda${langue === 'fr' ? '' : ` (?lang=${langue})`} dit « ${ancrage.libelle[langue]} » pour « ${ancrage.titre} », comme la page`,
+				ancres.length > 0 && description === `DESCRIPTION:${ancrage.libelle[langue]}`,
+				description.slice(0, 60)
+			);
+		}
 		if (langue === 'ar') sansChiffresOrientaux(texte, `le flux agenda (?lang=${langue})`);
+	}
+}
+
+/**
+ * h. Une organisation qui n'existe pas. Le 404 parle la langue de l'adresse, `<html>` compris, et
+ * ne porte aucun script : `/m/` n'en a jamais, erreur comprise. Le HTML est lu brut, tel que le
+ * serveur l'envoie ; le texte, dans le navigateur, qui le montre aussi à axe.
+ */
+async function organisationInconnue(page) {
+	etape('h. Une organisation inconnue : un 404 dans la langue de l’adresse, sans script');
+	for (const langue of ['fr', 'ar']) {
+		const adresse = `/m/${INCONNUE}${langue === 'fr' ? '' : `/${langue}`}`;
+		const dirAttendu = langue === 'ar' ? 'rtl' : 'ltr';
+		const brut = await fetch(`http://127.0.0.1:${PORT}${adresse}`);
+		const html = await brut.text();
+		const balise = /<html\b[^>]*>/i.exec(html)?.[0] ?? 'aucune balise <html>';
+		const scripts = html.match(/<script\b/gi)?.length ?? 0;
+		verifier(
+			`${adresse} rend 404, avec <html lang="${langue}" dir="${dirAttendu}"> et aucune balise script`,
+			brut.status === 404 &&
+				balise === `<html lang="${langue}" dir="${dirAttendu}">` &&
+				scripts === 0,
+			`rendu ${brut.status}, ${balise}, ${scripts} balise(s) script`
+		);
+
+		const reponse = await ouvrir(page, adresse);
+		const attendu = INTROUVABLE[langue];
+		const phrase = await texteDe(page.locator('main p'));
+		verifier(
+			`${adresse} : la page d’erreur dit « ${attendu.titre} » et « ${attendu.phrase} »`,
+			reponse?.status() === 404 &&
+				(await page.title()) === attendu.titre &&
+				(await titre(page)) === attendu.titre &&
+				phrase === attendu.phrase,
+			`« ${await page.title()} », « ${await titre(page)} », « ${phrase} »`
+		);
+		await auditer(page, `404 d’une organisation inconnue, ${langue}`);
 	}
 }
 
@@ -1391,6 +1654,7 @@ try {
 	await widget(visiteur);
 	await agenda();
 	await prieres(page, navigateur);
+	await organisationInconnue(visiteur);
 } catch (erreur) {
 	echoue = true;
 	if (!(erreur instanceof Echec)) {
