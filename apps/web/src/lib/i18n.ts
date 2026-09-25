@@ -10,9 +10,9 @@
 // qui parle arabe.
 //
 // Les dates s'écrivent `JJ.MM.AAAA` dans toutes les langues, comme en Suisse (étape 18), par
-// `numericDate`, et `longDate` y ajoute le nom du jour. C'est le seul endroit qui met une date en
-// forme pour une personne : la page publique, le flux, les messages prêts à coller et l'espace des
-// responsables passent tous par ici.
+// `numericDate`, et `longDate` y ajoute le nom du jour. La page publique, les messages prêts à
+// coller et les écrans de l'espace qui passent par `format.ts` les mettent en forme ici ; une date
+// lue par une personne ne doit pas l'être ailleurs.
 
 import { isoDateToDays, parseIsoDate, weekdayFromDays, type IsoDate } from '@jadwal/core';
 
