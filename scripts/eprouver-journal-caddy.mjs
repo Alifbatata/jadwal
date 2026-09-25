@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * Éprouve le journal du site : **la vraie configuration**, jouée par un vrai Caddy, dans un
- * conteneur jetable. Une requête porteuse de secrets est envoyée, et la ligne écrite est relue.
+ * Éprouve le bloc de site, journal et compression : **la vraie configuration**, jouée par un vrai
+ * Caddy, dans un conteneur jetable. Une requête porteuse de secrets est envoyée et la ligne écrite
+ * est relue ; une page et le widget sont demandés avec et sans compression, et relus décodés.
  *
  *     pnpm caddy:test
  *
@@ -14,9 +15,12 @@
  *
  * ## Ce qu'il joue
  *
- * Le bloc `log { … }` est lu **dans le fichier de site livré**, pas recopié ici : le jour où
- * quelqu'un l'affaiblit, ce test tombe. Il est posé dans un site jetable qui répond « ok » et pose
- * un faux cookie de session, puis une requête est envoyée depuis l'intérieur du conteneur avec :
+ * **Le bloc de site entier** est lu dans le fichier livré, pas recopié ici : le jour où quelqu'un
+ * l'affaiblit, ce test tombe. Il est posé tel quel sous une adresse locale en HTTP, et
+ * l'application qu'il sert par `reverse_proxy` est jouée par un second site du même Caddy, à
+ * l'adresse que le bloc désigne : elle répond « ok », pose un faux cookie de session, et sert une
+ * page HTML, le vrai widget construit et un fichier déjà compressé, comme le fait l'application.
+ * Puis une requête est envoyée depuis l'intérieur du conteneur avec :
  *
  *   - un jeton de lien magique dans la requête (`?token=…`) ;
  *   - le même jeton dans l'en-tête `Referer`, parce qu'un navigateur le renvoie après la redirection ;
@@ -32,6 +36,22 @@
  * tronquées, et que le chemin demandé, lui, y est resté : un journal qui ne dit plus rien n'est pas
  * un journal filtré, c'est un journal supprimé.
  *
+ * ## La compression
+ *
+ * Mesuré à l'étape 16 : rien n'était compressé, alors que l'application annonce
+ * `Vary: accept-encoding`. La page HTML et le widget sont donc demandés trois fois, comme un
+ * navigateur (zstd accepté), comme un client qui n'accepte que gzip, et sans rien demander ; le
+ * corps reçu est décodé selon ce que la réponse annonce et comparé à l'original, octet pour octet.
+ * S'y ajoutent `Vary`, l'ETag et le `304` d'une revalidation, une réponse trop courte pour valoir la
+ * peine, un fichier que l'application sert déjà compressé, et les en-têtes que le bloc pose
+ * (`Strict-Transport-Security`, pas de `Server`). Les tailles envoyées par Caddy sont affichées :
+ * c'est la mesure du gain.
+ *
+ * La page HTML est représentative, pas rendue par le serveur : le texte de `/conditions`, mis en
+ * mots par le module même de l'application (`apps/web/src/lib/conditions/rendu.js`), dans son
+ * gabarit `app.html`. Une vraie page demanderait la base. Le widget, lui, est le vrai fichier
+ * construit : `pnpm --filter @jadwal/widget build` s'il manque.
+ *
  * ## La borne des quatorze jours
  *
  * Les conditions d'utilisation promettent qu'aucune ligne du journal ne vit plus de quatorze jours.
@@ -42,15 +62,16 @@
  *
  * ## L'image
  *
- * `caddy:2.11.4` par défaut, parce que c'est la version en service sur le serveur visé : un filtre
- * qui marche sur la version courante et pas sur celle-là ne protégerait rien. `JADWAL_CADDY_IMAGE`
- * permet d'en éprouver une autre — mais pas en deçà de 2.8.0, où `log_skip` s'appelait `skip_log`
+ * `caddy:2.11.4` par défaut, une version récente de l'éditeur : un filtre qui marche sur une version
+ * et pas sur celle qu'on sert ne protégerait rien. Qui sert une autre version l'éprouve en la
+ * nommant dans `JADWAL_CADDY_IMAGE`, mais pas en deçà de 2.8.0, où `log_skip` s'appelait `skip_log`
  * et où Caddy refuse le fichier entier plutôt que d'ignorer la directive.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const IMAGE = process.env['JADWAL_CADDY_IMAGE'] ?? 'caddy:2.11.4';
 const CONTENEUR = 'jadwal-epreuve-journal';
@@ -150,39 +171,25 @@ const docker = (args, options = {}) =>
 	execFileSync('docker', args, { encoding: 'utf8', ...options }).trim();
 
 /**
- * Extrait le bloc `log { … }` du fichier de site, accolades appariées. On ne se contente pas d'une
- * expression régulière jusqu'à la première `}` : le bloc en contient d'autres.
+ * Le corps du bloc de site, entre `<domaine> {` et l'accolade qui le ferme en première colonne,
+ * lu **dans le fichier livré** : recopier ici ce qu'on prétend éprouver ne prouverait que la copie.
+ * Le fichier est mis en forme comme `caddy fmt` le fait, une tabulation par niveau ; une accolade en
+ * première colonne ne peut donc fermer que le bloc du site.
  */
-function blocJournal(source) {
-	const debut = source.search(/^\tlog \{$/m);
-	if (debut < 0) throw new Error(`Aucun bloc « log { » dans le fichier de site.`);
-	let profondeur = 0;
-	for (let i = debut; i < source.length; i += 1) {
-		if (source[i] === '{') profondeur += 1;
-		else if (source[i] === '}') {
-			profondeur -= 1;
-			if (profondeur === 0) return source.slice(debut, i + 1);
-		}
-	}
-	throw new Error('Le bloc « log » ne se referme pas.');
+function corpsDuSite(source) {
+	const lignes = source.split(/\r?\n/);
+	const debut = lignes.indexOf(`${DOMAINE} {`);
+	if (debut < 0) throw new Error(`Aucun bloc « ${DOMAINE} { » dans le fichier de site.`);
+	const fin = lignes.findIndex((l, i) => i > debut && l === '}');
+	if (fin < 0) throw new Error(`Le bloc « ${DOMAINE} » ne se referme pas.`);
+	return lignes.slice(debut + 1, fin).join('\n');
 }
 
-/**
- * Les directives `log_skip` du fichier de site, lues **dans le fichier livré** pour la même raison
- * que le bloc `log` : recopier ici ce qu'on prétend éprouver ne prouverait que la copie.
- */
-function lignesLogSkip(source) {
-	return source
-		.split(/\r?\n/)
-		.filter((l) => /^\tlog_skip\b/.test(l))
-		.join('\n');
-}
-
-/** Le chemin du journal, tel que le bloc le déclare. */
-function fichierJournal(bloc) {
-	const trouve = /output file (\S+)/.exec(bloc);
-	if (!trouve) throw new Error('Le bloc « log » n’écrit pas dans un fichier.');
-	return trouve[1];
+/** Ce que le bloc doit contenir pour que l'épreuve ait un sens, lu dans le bloc lui-même. */
+function lire(corps, motif, absent) {
+	const trouve = motif.exec(corps);
+	if (!trouve) throw new Error(absent);
+	return trouve[1] ?? trouve[0];
 }
 
 function nettoyer() {
@@ -214,34 +221,151 @@ function attendreCaddy() {
 	throw new Error(`Caddy n’a pas répondu dans le conteneur.`);
 }
 
-const racine = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
-const site = readFileSync(join(racine, 'infra', 'caddy', `${DOMAINE}.caddy`), 'utf8');
-const bloc = blocJournal(site);
-const sauts = lignesLogSkip(site);
-const journal = fichierJournal(bloc);
-if (!sauts.includes('/healthz')) {
-	throw new Error('Le fichier de site ne garde plus /healthz hors du journal (log_skip).');
+/**
+ * Une requête depuis l'intérieur du conteneur, par curl, qui ne demande aucune compression si on ne
+ * le lui dit pas. Rend le code, les en-têtes reçus (nom en minuscules, valeurs répétées jointes par
+ * une virgule, chaîne vide si absent), et la taille du corps, laissé **tel que reçu** dans un
+ * fichier du conteneur : rien n'est décodé en route.
+ */
+let requetes = 0;
+function demander(chemin, entetes = []) {
+	requetes += 1;
+	const recu = `/tmp/recu-${requetes}`;
+	const args = ['exec', CONTENEUR, 'curl', '-sS', '-o', recu, '-D', '-'];
+	for (const entete of entetes) args.push('-H', entete);
+	args.push(`http://127.0.0.1${chemin}`);
+	const [premiere, ...suite] = docker(args).split(/\r?\n/);
+	const recus = new Map();
+	for (const ligne of suite) {
+		const separateur = ligne.indexOf(':');
+		if (separateur <= 0) continue;
+		const nom = ligne.slice(0, separateur).trim().toLowerCase();
+		recus.set(nom, [...(recus.get(nom) ?? []), ligne.slice(separateur + 1).trim()]);
+	}
+	return {
+		statut: Number(/^HTTP\/\S+ (\d{3})/.exec(premiere ?? '')?.[1]),
+		entete: (nom) => (recus.get(nom) ?? []).join(', '),
+		// curl ne crée pas le fichier quand il n'y a aucun corps, un 304 par exemple.
+		octets: Number(
+			docker(['exec', CONTENEUR, 'sh', '-c', `stat -c %s ${recu} 2>/dev/null || echo 0`])
+		),
+		recu
+	};
 }
 
-// Le site jetable : il répond, il pose un cookie de session, et il journalise **avec le bloc livré**.
+/** Les décodeurs, par valeur de `Content-Encoding` ; la chaîne vide veut dire « rien à décoder ». */
+const DECODEURS = new Map([
+	['zstd', 'zstd -dcq'],
+	['gzip', 'gzip -dc'],
+	['', 'cat']
+]);
+
+/** L'empreinte du corps reçu, décodé selon ce que la réponse annonce : ce qu'un navigateur lirait. */
+function empreinteLue(reponse) {
+	const codage = reponse.entete('content-encoding');
+	const decodeur = DECODEURS.get(codage);
+	if (!decodeur) return `codage que ce test ne sait pas lire : ${codage}`;
+	return docker(['exec', CONTENEUR, 'sh', '-c', `${decodeur} ${reponse.recu} | sha256sum`]).split(
+		' '
+	)[0];
+}
+
+/** L'empreinte d'un fichier servi par la fausse application, tel qu'elle le garde. */
+const empreinteDe = (fichier) => docker(['exec', CONTENEUR, 'sha256sum', fichier]).split(' ')[0];
+
+/** `19242` → `19 242`, sans dépendre de la langue de la machine. */
+const octets = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+
+const racine = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
+const site = readFileSync(join(racine, 'infra', 'caddy', `${DOMAINE}.caddy`), 'utf8');
+const corps = corpsDuSite(site);
+lire(corps, /^\tlog \{$/m, `Aucun bloc « log { » dans le bloc de ${DOMAINE}.`);
+lire(
+	corps,
+	/^\tlog_skip\b.*\/healthz/m,
+	'Le fichier de site ne garde plus /healthz hors du journal (log_skip).'
+);
+const journal = lire(corps, /output file (\S+)/, 'Le bloc « log » n’écrit pas dans un fichier.');
+const HSTS = lire(
+	corps,
+	/Strict-Transport-Security "([^"]+)"/,
+	'Le bloc ne pose plus Strict-Transport-Security.'
+);
+const amont = lire(corps, /^\treverse_proxy (\S+)/m, 'Le bloc ne passe plus par reverse_proxy.');
+const [, hoteAmont, portAmont] = /^(.+):(\d+)$/.exec(amont) ?? [];
+if (!portAmont) throw new Error(`Adresse d'application que ce test ne sait pas lire : ${amont}`);
+
+// Ce que sert la fausse application. La page : le texte de `/conditions`, mis en mots par le module
+// de l'application, dans son gabarit. Les remplacements passent par une fonction, sans quoi un `$`
+// du texte serait lu comme un motif de remplacement.
+const WIDGET = join(racine, 'packages', 'widget', 'dist', 'jadwal-widget.js');
+if (!existsSync(WIDGET)) {
+	throw new Error(`Le widget n’est pas construit : lancer « pnpm --filter @jadwal/widget build ».`);
+}
+const { typographierHtml, versHtml } = await import(
+	pathToFileURL(join(racine, 'apps', 'web', 'src', 'lib', 'conditions', 'rendu.js')).href
+);
+const page = readFileSync(join(racine, 'apps', 'web', 'src', 'app.html'), 'utf8')
+	.replace('%lang%', () => 'fr')
+	.replace('%dir%', () => 'ltr')
+	.replace('%sveltekit.head%', () => '<title>Conditions d’utilisation · jadwal</title>')
+	.replace(
+		'%sveltekit.body%',
+		() =>
+			`<main>${typographierHtml(versHtml(readFileSync(join(racine, 'docs', 'CONDITIONS.md'), 'utf8')))}</main>`
+	);
+
+// Le Caddy jetable : l'application d'abord, à l'adresse où le bloc l'attend ; puis le site de
+// jadwal, **le bloc livré tel quel**, sous une adresse locale en HTTP. L'application pose un cookie
+// de session sur toute réponse et répond « ok » à ce qu'elle ne sert pas. Elle sert la page sans
+// `Vary`, comme SvelteKit, le widget avec le type et le `Vary` que l'application pose, et `/_app/`
+// depuis une version compressée à côté du fichier, comme adapter-node. `file_server` pose de
+// lui-même `Vary: Accept-Encoding` sur tout ce qu'il sert (relevé avec Caddy 2.11.4) : il est retiré
+// de la page et remplacé sur le widget, sans quoi le `Vary` vérifié plus bas ne viendrait pas du bloc.
 const caddyfile = `{
 	auto_https off
 	admin off
 }
 
-:80 {
+:${portAmont} {
+	bind ${hoteAmont}
 	header Set-Cookie "better-auth.session_token=${SECRETS.session}; Path=/; HttpOnly"
-	respond "ok"
+	root * /srv/app
 
-${sauts}
+	handle /conditions {
+		rewrite * /conditions.html
+		header -Vary
+		file_server
+	}
+	handle /widget/* {
+		header Content-Type "text/javascript; charset=utf-8"
+		header >Vary accept-encoding
+		file_server
+	}
+	handle /_app/* {
+		file_server {
+			precompressed gzip
+		}
+	}
+	handle {
+		respond "ok"
+	}
+}
 
-${bloc}
+:80 {
+${corps}
 }
 `;
 
 const dossier = mkdtempSync(join(tmpdir(), 'jadwal-journal-'));
 const chemin = join(dossier, 'Caddyfile');
 writeFileSync(chemin, caddyfile);
+const DEJA_COMPRESSE = '/_app/immutable/chunks/deja-compresse.js';
+mkdirSync(join(dossier, 'app', 'widget'), { recursive: true });
+mkdirSync(join(dossier, 'app', '_app', 'immutable', 'chunks'), { recursive: true });
+writeFileSync(join(dossier, 'app', 'conditions.html'), page);
+writeFileSync(join(dossier, 'app', 'widget', 'jadwal-widget.js'), readFileSync(WIDGET));
+writeFileSync(join(dossier, 'app', ...DEJA_COMPRESSE.split('/')), readFileSync(WIDGET));
 
 let echecs = [];
 let verifications = 0;
@@ -250,7 +374,8 @@ let brut;
 try {
 	nettoyer();
 	process.stdout.write(
-		`Caddy ${IMAGE}, conteneur jetable, avec le bloc « log » de ${DOMAINE}.\n\n`
+		`Caddy ${IMAGE}, conteneur jetable, avec le bloc de site de ${DOMAINE} devant une fausse ` +
+			`application sur ${amont}.\n\n`
 	);
 
 	// `docker create` puis `docker cp` plutôt qu'un montage : un montage Windows donne le bit
@@ -269,9 +394,38 @@ try {
 		'/etc/caddy/Caddyfile'
 	]);
 	docker(['cp', chemin, `${CONTENEUR}:/etc/caddy/Caddyfile`]);
+	docker(['cp', join(dossier, 'app'), `${CONTENEUR}:/srv/app`]);
 	docker(['start', CONTENEUR]);
 
 	attendreCaddy();
+
+	// Les outils de l'épreuve. L'image de Caddy est une Alpine : curl pour lire les en-têtes et
+	// garder le corps tel que reçu, zstd pour le décoder ; bash et les outils GNU pour les scripts,
+	// écrits pour un serveur Debian.
+	docker(
+		[
+			'exec',
+			CONTENEUR,
+			'apk',
+			'add',
+			'--no-cache',
+			'bash',
+			'coreutils',
+			'findutils',
+			'grep',
+			'curl',
+			'zstd'
+		],
+		{ stdio: 'pipe' }
+	);
+	// La version compressée que l'application garde à côté du fichier, comme adapter-node.
+	docker([
+		'exec',
+		CONTENEUR,
+		'sh',
+		'-c',
+		`gzip -9 -c /srv/app${DEJA_COMPRESSE} > /srv/app${DEJA_COMPRESSE}.gz`
+	]);
 
 	// La requête porteuse de secrets. `--header` de busybox wget, une fois par en-tête.
 	const url = `http://127.0.0.1/api/auth/magic-link/verify?token=${SECRETS.jeton}&callbackURL=/organisations`;
@@ -376,20 +530,140 @@ try {
 	);
 
 	// ---------------------------------------------------------------------------------------------
+	// La compression, jouée par le bloc livré devant la fausse application. Ce que Caddy envoie est
+	// gardé tel que reçu, décodé selon ce que la réponse annonce, et comparé à l'original.
+	// ---------------------------------------------------------------------------------------------
+	process.stdout.write('La compression, mesurée sur ce que Caddy a vraiment envoyé :\n\n');
+
+	// Ce qu'envoie un navigateur d'aujourd'hui : zstd y est, avec brotli, que Caddy n'a pas.
+	const NAVIGATEUR = 'Accept-Encoding: gzip, deflate, br, zstd';
+	const GZIP_SEUL = 'Accept-Encoding: gzip';
+	const servis = [
+		{ quoi: 'la page HTML', chemin: '/conditions', fichier: '/srv/app/conditions.html' },
+		{
+			quoi: 'le widget',
+			chemin: '/widget/jadwal-widget.js',
+			fichier: '/srv/app/widget/jadwal-widget.js'
+		}
+	];
+	const mesures = [];
+	for (const { quoi, chemin, fichier } of servis) {
+		const original = empreinteDe(fichier);
+		const enZstd = demander(chemin, [NAVIGATEUR]);
+		const enGzip = demander(chemin, [GZIP_SEUL]);
+		const sans = demander(chemin);
+		mesures.push({ quoi: `${quoi}, ${chemin}`, sans, enGzip, enZstd });
+
+		verifier(
+			`${quoi} : zstd pour un navigateur qui l’accepte`,
+			enZstd.entete('content-encoding') === 'zstd'
+		);
+		verifier(
+			`${quoi} : gzip pour un client qui n’accepte que gzip`,
+			enGzip.entete('content-encoding') === 'gzip'
+		);
+		verifier(
+			`${quoi} : aucune compression pour un client qui n’en demande aucune`,
+			sans.entete('content-encoding') === ''
+		);
+		for (const [comment, reponse] of [
+			['en zstd', enZstd],
+			['en gzip', enGzip],
+			['sans compression', sans]
+		]) {
+			verifier(
+				`${quoi} : reçu ${comment}, puis décodé, le corps est l’original à l’octet près`,
+				reponse.statut === 200 && empreinteLue(reponse) === original
+			);
+		}
+		for (const [comment, reponse] of [
+			['en zstd', enZstd],
+			['en gzip', enGzip]
+		]) {
+			const vary = reponse
+				.entete('vary')
+				.split(',')
+				.filter((valeur) => valeur.trim().toLowerCase() === 'accept-encoding');
+			verifier(`${quoi} : reçu ${comment}, Vary dit Accept-Encoding, une fois`, vary.length === 1);
+		}
+		for (const [comment, reponse] of [
+			['compressée', enZstd],
+			['non compressée', sans]
+		]) {
+			verifier(
+				`${quoi} : réponse ${comment}, Strict-Transport-Security vaut « ${HSTS} »`,
+				reponse.entete('strict-transport-security') === HSTS
+			);
+			verifier(
+				`${quoi} : réponse ${comment}, aucun en-tête Server`,
+				reponse.entete('server') === ''
+			);
+		}
+	}
+
+	// L'ETag d'une représentation compressée ne peut pas être celle du fichier brut (RFC 9110,
+	// 8.8.3.3), et un navigateur qui revalide avec elle doit encore obtenir un 304 : Caddy retire
+	// son ajout de `If-None-Match` avant de passer la requête à l'application.
+	const widget = mesures[1];
+	verifier(
+		`le widget en zstd porte une ETag à lui, distincte de celle du fichier brut`,
+		widget.sans.entete('etag') !== '' &&
+			widget.enZstd.entete('etag') !== '' &&
+			widget.enZstd.entete('etag') !== widget.sans.entete('etag')
+	);
+	const revalidation = demander('/widget/jadwal-widget.js', [
+		NAVIGATEUR,
+		`If-None-Match: ${widget.enZstd.entete('etag')}`
+	]);
+	verifier(
+		`revalidé avec cette ETag, le widget rend 304, sans corps`,
+		revalidation.statut === 304 && revalidation.octets === 0
+	);
+
+	// Sous 512 octets, compresser coûte plus que ça ne rapporte : Caddy laisse passer.
+	const courte = demander('/', [NAVIGATEUR]);
+	verifier(
+		`une réponse de deux octets n’est pas compressée`,
+		courte.statut === 200 && courte.entete('content-encoding') === '' && courte.octets === 2
+	);
+
+	// Un fichier que l'application sert déjà compressé passe tel quel, sans une seconde couche. Et
+	// un client qui ne demande rien le reçoit en clair : le transport de `reverse_proxy` demande gzip
+	// à l'application de lui-même, puis décode.
+	const dejaOriginal = empreinteDe(`/srv/app${DEJA_COMPRESSE}`);
+	const deja = demander(DEJA_COMPRESSE, ['Accept-Encoding: zstd, gzip']);
+	verifier(
+		`un fichier déjà compressé par l’application passe tel quel : gzip, sans zstd par-dessus`,
+		deja.entete('content-encoding') === 'gzip' && empreinteLue(deja) === dejaOriginal
+	);
+	const dejaSans = demander(DEJA_COMPRESSE);
+	verifier(
+		`et un client qui ne demande rien le reçoit en clair, à l’octet près`,
+		dejaSans.entete('content-encoding') === '' && empreinteLue(dejaSans) === dejaOriginal
+	);
+
+	const taille = (reponse, reference) =>
+		reponse.entete('content-encoding') === ''
+			? 'non compressé'
+			: `${octets(reponse.octets)} (-${Math.round((1 - reponse.octets / reference) * 100)} %)`;
+	process.stdout.write(
+		`  ${''.padEnd(38)}${'brut'.padStart(10)}${'gzip'.padStart(18)}${'zstd'.padStart(18)}\n`
+	);
+	for (const { quoi, sans, enGzip, enZstd } of mesures) {
+		process.stdout.write(
+			`  ${quoi.padEnd(38)}${octets(sans.octets).padStart(10)}` +
+				`${taille(enGzip, sans.octets).padStart(18)}${taille(enZstd, sans.octets).padStart(18)}\n`
+		);
+	}
+	process.stdout.write('\n');
+
+	// ---------------------------------------------------------------------------------------------
 	// La seconde moitié : la coupe quotidienne, jouée par **le vrai script**, pendant que Caddy tient
 	// le fichier ouvert. C'est le seul moment où l'on peut savoir ce qu'il advient de sa position
 	// d'écriture, et c'est ce qui a disqualifié `logrotate --copytruncate` (ADR 0039).
 	// ---------------------------------------------------------------------------------------------
 	process.stdout.write('La coupe quotidienne, jouée par jadwal-journal-caddy.sh :\n\n');
 
-	// Les scripts sont écrits pour un serveur Debian ; l'image de Caddy est une Alpine. On y pose
-	// donc bash et les outils GNU, le temps du conteneur.
-	docker(
-		['exec', CONTENEUR, 'apk', 'add', '--no-cache', 'bash', 'coreutils', 'findutils', 'grep'],
-		{
-			stdio: 'pipe'
-		}
-	);
 	docker([
 		'exec',
 		CONTENEUR,
@@ -421,7 +695,10 @@ try {
 		`echo vieux > ${vieille} && touch -d '20 days ago' ${vieille}`
 	]);
 
-	const lignesAvant = brut.split('\n').filter((l) => l.trim().length > 0).length;
+	// Relu maintenant : les requêtes de la compression y ont ajouté leurs lignes.
+	const lignesAvant = docker(['exec', CONTENEUR, 'cat', journal])
+		.split('\n')
+		.filter((l) => l.trim().length > 0).length;
 	const coupe = docker(['exec', CONTENEUR, '/opt/jadwal/scripts/jadwal-journal-caddy.sh']);
 	process.stdout.write(coupe + '\n\n');
 
@@ -625,14 +902,13 @@ if (echecs.length > 0) {
 	process.stderr.write(`\nCe qui a échoué :\n`);
 	for (const echec of echecs) process.stderr.write(`  - ${echec}\n`);
 	process.stderr.write(
-		`\nLe journal du site laisse passer ce qu’il ne devrait pas. Corriger le bloc « log » de\n` +
-			`infra/caddy/${DOMAINE}.caddy, ou infra/scripts/jadwal-journal-caddy.sh pour la durée,\n` +
-			`puis relancer.\n`
+		`\nLe bloc de site ne tient pas ce qu’il promet. Corriger infra/caddy/${DOMAINE}.caddy, ou\n` +
+			`infra/scripts/jadwal-journal-caddy.sh pour la durée du journal, puis relancer.\n`
 	);
 	process.exitCode = 1;
 } else {
 	process.stdout.write(
 		`Les ${verifications} vérifications passent : aucun secret dans le fichier, adresses tronquées, chemin gardé, ` +
-			`et aucune ligne gardée plus de ${JOURS} jours.\n`
+			`aucune ligne gardée plus de ${JOURS} jours, et les pages compressées sans rien perdre.\n`
 	);
 }
