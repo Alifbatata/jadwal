@@ -52,7 +52,8 @@ ce qui permet de l'éprouver sur un répertoire jetable rempli de fichiers vides
 quatre cent une dates, elle en garde quinze, et on peut les compter à la main.
 
 > **Révisé le 2026-09-23 : cinq mensuelles, et non plus six.** Les conditions d'utilisation
-> promettent qu'une donnée effacée ne reste pas plus de 181 jours dans une sauvegarde. Six premiers
+> promettent qu'une donnée effacée ne reste pas plus de 182 jours dans une sauvegarde (181 quand
+> cette révision a été écrite ; l'ADR 0037 dit d'où vient le jour de plus). Six premiers
 > du mois gardés, c'était jusqu'à 184 jours sur le disque du serveur : deux premiers du mois
 > éloignés de six mois peuvent être séparés de 184 jours, du 1er mars au 1er septembre. Avec cinq,
 > c'est 153 jours au plus. Un test le rejoue sur huit ans de vraies nuits. Le même jour, le script

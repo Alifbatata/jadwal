@@ -78,7 +78,7 @@ construit pas.
   l'organisation où il est entré. La clé reste `no action` à la modification : avec `cascade`,
   l'acceptation suivrait l'adhésion vers une personne qui n'a rien accepté.
 - La preuve d'une acceptation ne survit pas à l'adhésion. Si une organisation retire une personne,
-  la base ne garde plus son acceptation ; les sauvegardes chiffrées la gardent 181 jours au plus.
+  la base ne garde plus son acceptation ; les sauvegardes chiffrées la gardent 182 jours au plus.
   C'est la question posée au juriste (point 10).
 
 ## Ce qui n'est pas fait

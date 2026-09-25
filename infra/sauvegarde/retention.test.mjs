@@ -158,13 +158,18 @@ describe('aGarder', () => {
 });
 
 describe('la durée de vie d’une archive sur le disque du serveur', () => {
-	it('reste sous les 181 jours promis par les conditions, sur huit ans de vraies nuits', () => {
-		// `docs/CONDITIONS.md` : « Ce que vous effacez reste au plus 181 jours dans ces
+	it('reste sous les 181 jours du cycle de vie, donc sous les 182 promis, sur huit ans de vraies nuits', () => {
+		// `docs/CONDITIONS.md` : « Ce que vous effacez reste au plus 182 jours dans ces
 		// sauvegardes ». Une organisation supprimée juste après la sauvegarde d'une nuit reste
 		// dans l'archive de cette nuit tant que la règle la garde. On rejoue donc le serveur : une
 		// archive par nuit, la règle appliquée juste après, et l'on relève l'âge de chaque archive
 		// la nuit où elle part. Huit ans à partir de 2024 : deux années bissextiles, et chaque
 		// suite de mois possible entre deux premiers du mois.
+		//
+		// La borne reste à 181, un jour sous la promesse. Les 182 jours comptent le jour que le
+		// stockage peut mettre à effacer un objet échu (`ages.mjs`) ; ce disque n'a pas ce retard,
+		// c'est le serveur qui y efface, à la nuit dite. Il tient donc la durée du cycle de vie
+		// distant, sans le jour de plus.
 		//
 		// L'âge est compté en nuits, et doit rester **sous** 181 : la sauvegarde part à 02:15 avec
 		// jusqu'à dix minutes de délai aléatoire, donc une archive gardée 181 nuits pourrait

@@ -10,6 +10,10 @@
  *     hebdo/       le dimanche, en plus        verrou 28 jours,  effacement à 29 jours
  *     mensuel/     le 1er du mois, en plus     verrou 180 jours, effacement à 181 jours
  *
+ * Ces trois durées sont le réglage du cycle de vie, pas la promesse : le stockage peut mettre un jour
+ * à effacer un objet échu, et l'âge promis en tient compte, 9, 30 et 182 jours. C'est lui que la
+ * tâche de nuit vérifie, avec `ages.mjs`.
+ *
  * Une archive du dimanche 1er du mois part donc trois fois, sous trois préfixes : c'est trois fois
  * la place, et c'est le prix d'une rétention qu'un attaquant ne peut pas raccourcir. Les copies ne
  * sont pas des liens : un verrou porte sur un objet, pas sur un nom.
