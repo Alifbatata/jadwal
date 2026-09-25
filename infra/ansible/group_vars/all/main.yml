@@ -37,6 +37,36 @@ jadwal_veille_machine: false
 # retour en arrière ne rendrait pas forcément ce qui tournait avant.
 jadwal_image: ''
 
+# La garde du déploiement (rôle `garde`) : aucune image ne part sans une exécution verte du flux
+# `parcours` pour son commit. Elle exige une image publiée sur `jadwal_garde_registre`, sous le
+# chemin `jadwal_garde_depot` (sans tenir compte de la casse), et dont l'étiquette
+# `org.opencontainers.image.source` vaut `jadwal_garde_source`. Elle lit le commit dans l'étiquette
+# `org.opencontainers.image.revision` de l'image, par l'API du registre, puis demande à l'API de
+# GitHub les exécutions du flux pour ce commit. Rien de secret : l'image et le dépôt sont publics,
+# et tout se lit sans compte.
+#
+# Une instance qui construit sa propre image depuis son propre dépôt met le sien dans
+# `jadwal_garde_depot`, et garde le flux. Les deux adresses ne changent que pour l'épreuve
+# (`pnpm garde:test`), qui les pointe sur une fausse API servie par le poste.
+#
+# Les variables au préfixe `garde_` appartiennent à la garde, qui seule les pose. N'en définir
+# aucune, ni ici, ni dans l'inventaire, ni par `-e` : la garde refuse de tourner si l'une existe
+# avant elle.
+jadwal_garde_registre: https://ghcr.io
+jadwal_garde_api_github: https://api.github.com
+jadwal_garde_depot: Alifbatata/jadwal
+jadwal_garde_flux: parcours.yml
+# L'étiquette que `ci.yml` pose : `${{ github.server_url }}/${{ github.repository }}`. Elle ne
+# change que pour un dépôt hébergé ailleurs que sur github.com.
+jadwal_garde_source: 'https://github.com/{{ jadwal_garde_depot }}'
+# Lever la garde, en secours seulement, pour une image nommée et en écrivant pourquoi. En JSON, la
+# seule forme qui fasse passer une valeur composée :
+#   -e '{"jadwal_garde_derogation": {"image": "ghcr.io/<compte>/jadwal@sha256:<digest>", "motif": "<le motif, en une phrase>"}}'
+# Vide, la garde tient. Sinon elle exige cette forme et la même image que `jadwal_image`, puis ne
+# vérifie rien d'autre, le dit en rouge et le laisse au récapitulatif (`ignored=1`). Voir
+# `infra/README.md`.
+jadwal_garde_derogation: {}
+
 # Le courriel. L'adresse d'envoi n'est pas lue ; c'est `reply_to` qui reçoit les réponses.
 jadwal_mail_from: noreply@voltia.ch
 jadwal_mail_from_name: jadwal

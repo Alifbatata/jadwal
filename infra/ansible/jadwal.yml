@@ -10,14 +10,47 @@
 # Caddy, et elle est refusée par défaut : il faut `-e jadwal_caddy_reload=true`, après avoir lu le
 # bloc de site posé.
 #
+# Avant tout cela, une garde : une image dont le commit n'a pas d'exécution verte du flux `parcours`
+# (`.github/workflows/parcours.yml`) ne part pas. Elle tourne dans la première pièce, sur le nœud de
+# contrôle, avant la moindre connexion au serveur ; voir `roles/garde/`.
+#
 # Jouer :
 #   ansible-playbook jadwal.yml -e jadwal_image=ghcr.io/<compte>/jadwal@sha256:<digest>
 #
-# Vérifier sans rien changer :
+# Vérifier sans rien changer (la garde, elle, interroge quand même le registre et GitHub) :
 #   ansible-playbook jadwal.yml --check --diff -e jadwal_image=…
+#
+# Limiter à un serveur : la garde tourne sur localhost, qui doit rester dans la limite :
+#   ansible-playbook jadwal.yml --limit '<serveur>,localhost' -e jadwal_image=…
 #
 # Défaire : infra/ansible/retrait.yml, ou /opt/jadwal/RETRAIT.txt sur le serveur.
 ---
+# Une pièce à part plutôt qu'une tâche déléguée au nœud de contrôle : quand elle refuse, Ansible
+# s'arrête avant la pièce suivante, et le serveur n'a vu passer ni connexion ni collecte de faits.
+#
+# Elle porte le tag `application` en plus du sien : seul le rôle `application` lit `jadwal_image`
+# et l'écrit sur le serveur, et la garde tourne chaque fois qu'il tourne. Un passage qui ne le joue
+# pas (`--tags taches`, que la veille propose, ou `--tags caddy`) ne déploie aucune image et n'a pas
+# à présenter une image verte.
+#
+# La garde ne se tient pas qu'ici. Ses tâches se jouent d'un seul bloc, et `--start-at-task` ne
+# peut pas démarrer au milieu. Elle refuse toute variable à son préfixe (`garde_`) posée avant elle,
+# et range son verdict dans les faits du nœud de contrôle. Le rôle `application` commence par
+# vérifier ce verdict, et ses deux gabarits qui écrivent l'image ne la lisent qu'à travers lui.
+# `pnpm garde:test` joue des sélections de tâches de chaque sorte (`--tags`, `--skip-tags`,
+# `--start-at-task`, `--limit`) : aucune n'écrit une image que la garde n'a pas passée dans ce
+# passage. Par la voie prévue, s'en passer demande une dérogation écrite, qui nomme son image.
+# C'est une garde contre l'oubli et la hâte : qui modifie ce playbook ou ses rôles peut la
+# contourner (ADR 0045).
+- name: La garde du déploiement, sur le nœud de contrôle
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  any_errors_fatal: true
+  roles:
+    - role: garde
+      tags: [garde, application]
+
 - name: jadwal — déploiement additif et réversible
   hosts: jadwal
   gather_facts: true

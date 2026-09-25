@@ -1,0 +1,48 @@
+# La garde du déploiement : aucune image ne part sans un parcours complet vert pour son commit.
+#
+# Le flux `.github/workflows/parcours.yml` lance `pnpm parcours:test` à chaque poussée sur `main` :
+# tout le parcours d'une organisation, dans un vrai navigateur, contre l'image de production. La CI
+# publie l'image avant que ce flux ait fini, et rien, côté GitHub, n'empêche de déployer une image
+# dont le parcours a échoué. C'est donc ici que cela se tient, au seul endroit par où passe tout
+# déploiement.
+#
+# Ce rôle tourne sur le nœud de contrôle, dans une pièce à part du playbook, **avant toute
+# connexion au serveur** : un refus ne laisse rien derrière lui, pas même une collecte de faits. Il
+# tourne quand le rôle `application` tourne, le seul qui écrive l'image ; ce rôle-là commence par
+# vérifier le verdict posé ici, et ses gabarits ne lisent l'image qu'à travers lui (voir
+# `jadwal.yml` et `roles/application/`).
+#
+# Avant toute lecture, la référence elle-même : un digest, sur le registre que la garde lit, sous
+# le chemin du dépôt `jadwal_garde_depot`. N'importe quel compte du registre peut publier une image
+# dont l'étiquette de révision désigne un commit vert de jadwal ; seul le chemin dit qui l'a
+# publiée. Puis deux lectures, anonymes parce que l'image et le dépôt sont publics, et un constat :
+#
+#   1. les étiquettes que la CI pose sur l'image (`ci.yml`), lues dans la configuration de l'image
+#      par l'API du registre, au digest demandé : `org.opencontainers.image.revision`, le commit, et
+#      `org.opencontainers.image.source`, qui doit désigner ce dépôt ;
+#   2. les exécutions du flux pour ce commit, demandées à l'API de GitHub ;
+#   3. au moins une, **pour ce commit-là et ce flux-là**, conclue en `success`.
+#
+# Le digest n'est pas cru sur parole : l'empreinte du manifeste rendu est recalculée et comparée au
+# digest demandé, puis celle de la configuration à celle que le manifeste désigne. De la référence
+# passée au playbook jusqu'à l'étiquette lue, chaque maillon est vérifié. Le seul fait admis est
+# que ce qui est publié sous le chemin du dépôt l'a été par lui, sa CI ou son propriétaire.
+#
+# C'est une garde contre l'oubli et la hâte. Elle ne vise pas qui la contourne exprès : qui tient
+# le registre ou le compte, qui modifie ce playbook ou ses rôles, qui pointe ses adresses vers un
+# faux service. Voir « Ce qui n'est pas fait » dans l'ADR 0045.
+#
+# Toutes les lectures portent `check_mode: false` : `uri` ne tourne pas en `--check`, et une garde
+# sautée en simulation laisserait croire que le déploiement passera.
+#
+# **Toute la garde est dans `verifier.yml`, chargé ici d'un seul bloc** (`include_tasks`).
+# `--start-at-task` ne voit pas les tâches d'un fichier chargé en bloc : il ne peut pas démarrer au
+# milieu de la garde, sur la tâche qui pose le verdict par exemple, et Ansible le dit (« No
+# matching task »). Il peut démarrer sur ce bloc, et la garde tourne alors en entier. Les tâches du
+# fichier héritent des tags du rôle (mesuré avec ansible-core 2.21) : `--tags application` les
+# joue, `--skip-tags garde` les saute toutes ensemble.
+#
+# Éprouvé par `pnpm garde:test`, contre une fausse API, cas par cas.
+---
+- name: La garde, d'un seul bloc
+  ansible.builtin.include_tasks: verifier.yml

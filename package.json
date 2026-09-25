@@ -25,10 +25,12 @@
 		"caddy:test": "node scripts/eprouver-journal-caddy.mjs",
 		"env:test": "node scripts/eprouver-env-brut.mjs",
 		"veille:test": "node scripts/eprouver-veille-taches.mjs",
+		"sauvegarde:test": "node scripts/eprouver-sauvegarde.mjs",
 		"conditions:pdf": "node scripts/conditions-pdf.mjs",
 		"conditions:test": "node scripts/eprouver-conditions-pdf.mjs",
 		"image:test": "node scripts/eprouver-image.mjs",
 		"parcours:test": "node scripts/eprouver-parcours.mjs",
+		"garde:test": "node scripts/eprouver-garde-deploiement.mjs",
 		"licences": "node scripts/licences-tierces.mjs",
 		"orthographe": "node scripts/orthographe.mjs"
 	},

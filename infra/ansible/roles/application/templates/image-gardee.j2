@@ -1,0 +1,34 @@
+{#-
+  L'image que la garde du déploiement a passée dans cette exécution, et nulle autre (ADR 0045).
+
+  Les deux gabarits qui écrivent l'image, `compose.env.j2` et `jadwal.env.j2`, l'incluent au lieu de
+  lire `jadwal_image`. La première tâche du rôle vérifie déjà le verdict de la garde, mais
+  `--start-at-task` peut la sauter, avec la garde elle-même : c'est ici que cela se tient alors.
+  Sans verdict pour cette image, le rendu s'arrête sur `undef`, avec un message qui dit que faire,
+  et le fichier n'est pas écrit.
+
+  Le verdict se lit dans les faits de localhost, où la garde le range dans ce passage.
+  L'inventaire ne peut pas y écrire, et une variable posée par `-e` ne s'y lit pas.
+  `-e ansible_facts=…` remplace pourtant les faits de chaque hôte : s'ils portent un verdict ici,
+  sur le serveur, il vient de là, et il est refusé. Un cache de faits qui survit au passage
+  garderait le verdict d'un passage précédent : refusé aussi.
+
+  `--skip-tags garde` et une variable `garde_` posée à la main n'ont pas besoin d'une condition de
+  plus : la garde sautée ne range aucun verdict, et une variable ne se lit pas comme un fait. La
+  première tâche du rôle les nomme, pour que le message dise que faire.
+
+  Rien ne sort d'ici que l'image : les tirets des balises mangent les blancs, et le gabarit qui
+  l'inclut garde son saut de ligne par `+%}`. `verdict` est une variable du gabarit, que `-e` ne
+  remplace pas.
+-#}
+{%- set verdict = hostvars['localhost']['ansible_facts']['garde_verdict'] | default({}) -%}
+{{- jadwal_image
+    if (lookup('ansible.builtin.config', 'CACHE_PLUGIN') in ['memory', 'ansible.builtin.memory']
+        and ansible_facts.garde_verdict is not defined
+        and verdict.image | default('') == jadwal_image
+        and verdict.verdict | default('') in ['vert', 'derogation'])
+    else undef(hint='Image non gardée : ' ~ jadwal_image ~ '. La garde du déploiement ne l’a pas passée'
+      ~ ' dans cette exécution : elle a été sautée (--start-at-task, --skip-tags garde), laissée hors'
+      ~ ' de --limit, ou son verdict vient d’ailleurs que d’elle. Rejouer le playbook sans'
+      ~ ' --start-at-task ni --skip-tags garde, avec localhost dans --limit. L’image n’a été écrite'
+      ~ ' nulle part.') -}}

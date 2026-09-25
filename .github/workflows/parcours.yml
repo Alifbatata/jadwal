@@ -1,0 +1,94 @@
+# Le parcours complet d'une organisation, dans un vrai navigateur, contre l'image de production.
+#
+# `pnpm parcours:test` construit l'image depuis le commit poussé, la met en marche comme en
+# production avec sa base, puis fait tout ce qu'une organisation vit : passkey du super-admin,
+# invitation, conditions, cours, page publique, widget, flux agenda, et axe sur chaque page.
+#
+# Un flux à part, et non un travail de plus dans `ci.yml` : c'est **son nom de fichier** que la garde
+# du déploiement demande à GitHub (`infra/ansible/roles/garde/`). Le playbook refuse une image dont
+# le commit n'a pas d'exécution verte de ce flux-ci. Le renommer, c'est changer aussi
+# `jadwal_garde_flux` dans `infra/ansible/group_vars/all/main.yml`, sans quoi aucune image ne passe.
+#
+# Il ne publie rien : l'image qu'il construit reste sur le runner et meurt avec lui. Celle qui part
+# sur le registre est construite par `ci.yml`, depuis le même commit, et c'est par l'étiquette
+# `org.opencontainers.image.revision` de celle-là que la garde remonte jusqu'ici.
+#
+# Ce que le runner doit fournir, relevé dans la description de l'image `ubuntu-24.04`
+# (`ubuntu-latest`, image 20260907) du dépôt `actions/runner-images` : Docker 28 avec Buildx, dont
+# BuildKit est le constructeur par défaut (le `Dockerfile` en a besoin pour `RUN --mount`), et
+# Google Chrome, posé par le paquet de Google à `/usr/bin/google-chrome` (la variable `CHROME_BIN` de
+# l'image le dit). Aucun navigateur n'est téléchargé.
+
+name: Parcours
+
+on:
+  push:
+    branches: [main]
+  # Pour relancer le parcours d'un commit sans rien pousser : une exécution manuelle verte sur ce
+  # commit vaut autant qu'une autre aux yeux de la garde, qui filtre sur le commit et non sur
+  # l'événement.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Chaque commit garde son verdict : la garde du déploiement le demande pour le commit de l'image, et
+# une exécution annulée par une poussée plus récente n'en a aucun. Deux réglages y veillent.
+# `cancel-in-progress: false` : une poussée n'annule pas le parcours qui tourne. `queue: max` : les
+# exécutions qui attendent sont gardées, jusqu'à cent, dans l'ordre d'arrivée. Sans lui (valeur par
+# défaut `single`), GitHub n'en garde qu'une, et chaque nouvelle poussée annule celle qui attendait.
+# Documentation de GitHub, section `concurrency` de la syntaxe des flux :
+# https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency
+#
+# Si une exécution est annulée quand même (plus de cent en attente, ou à la main), son commit reste
+# sans verdict. La relancer depuis l'onglet Actions : `Re-run jobs` rejoue le même commit. Lancé à
+# la main (`workflow_dispatch`), le flux tourne sur le dernier commit de la branche choisie, et la
+# garde compte aussi cette exécution quand c'est le commit de l'image.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+  queue: max
+
+jobs:
+  parcours:
+    name: Le parcours complet, dans un vrai navigateur
+    runs-on: ubuntu-latest
+    # La construction de l'image, sans cache, prend le plus gros du temps ; le parcours lui-même
+    # tient en quelques minutes. Passé trente minutes, quelque chose attend ce qui ne viendra pas.
+    timeout-minutes: 30
+
+    env:
+      # Écrit plutôt que deviné : si l'image du runner cesse de fournir Chrome à cet endroit, le
+      # script s'arrête en le disant, au lieu de se rabattre sur un autre navigateur.
+      JADWAL_CHROME: /usr/bin/google-chrome
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+        with:
+          cache: true
+          install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+
+      # Le script importe `playwright-core` et `axe-core` depuis les dépendances de la racine. Rien
+      # n'est construit sur le runner : l'image l'est dans Docker, depuis le commit extrait.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Tools on the runner
+        run: |
+          docker version --format 'Docker {{.Server.Version}}'
+          docker buildx version
+          "$JADWAL_CHROME" --version
+
+      - name: Parcours
+        run: pnpm parcours:test
