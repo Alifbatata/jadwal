@@ -3,12 +3,12 @@
 Ce texte s'adresse aux organisations qui publient leur programme avec ce service. Il est écrit pour
 être lu, pas pour être opposé.
 
-Dernière mise à jour : 25 septembre 2026.
+Dernière mise à jour : 26 septembre 2026.
 
 ## Qui exploite le service
 
-Le service est exploité par Voltia, en Suisse. C'est lui le responsable du
-traitement au sens de la loi fédérale sur la protection des données (nLPD).
+Le service est exploité par Voltia, en Suisse. Voltia est le responsable du traitement au sens de la
+loi fédérale sur la protection des données (nLPD).
 
 Pour toute question ou demande : **contact@voltia.ch**.
 

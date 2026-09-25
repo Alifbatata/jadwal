@@ -74,8 +74,8 @@ dans `docker-compose.dev.yml`.
 
 ## Licence et droits d'auteur
 
-- Titulaire du copyright : Voltia. Le fichier [`COPYRIGHT`](COPYRIGHT) porte la
-  ligne de copyright et l'avis MIT.
+- Titulaire du copyright : Voltia. Le fichier [`COPYRIGHT`](COPYRIGHT) porte la ligne de copyright
+  et l'avis MIT.
 - Tout le dépôt est sous **MIT** (fichier [`LICENSE`](LICENSE)), widget compris. Le widget garde une
   copie du texte dans [`packages/widget/LICENSE`](packages/widget/LICENSE), parce que ce paquet se lit
   seul par qui colle le script sur son site (ADR 0043).
