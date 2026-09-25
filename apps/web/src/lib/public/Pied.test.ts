@@ -84,6 +84,7 @@ const NOM_DES_CONDITIONS: Record<Langue, string> = {
 	fr: 'Conditions d’utilisation (s’ouvre dans un nouvel onglet)',
 	de: 'Nutzungsbedingungen (öffnet sich in einem neuen Tab)',
 	it: 'Condizioni d’uso (si apre in una nuova scheda)',
+	en: 'Terms of use (opens in a new tab)',
 	ar: 'شروط الاستخدام (يُفتح في علامة تبويب جديدة)'
 };
 

@@ -3,7 +3,14 @@
 // Les séances viennent de `@jadwal/core`, comme partout. Cette route lit, filtre par public, et
 // range ; elle ne calcule aucune date.
 
-import { addDays, daysInMonth, isoDateToDays, weekdayFromDays, type IsoDate } from '@jadwal/core';
+import {
+	addDays,
+	daysInMonth,
+	isIsoDate,
+	isoDateToDays,
+	weekdayFromDays,
+	type IsoDate
+} from '@jadwal/core';
 import type { PageServerLoad } from './$types.js';
 import {
 	boundedRange,
@@ -39,6 +46,11 @@ function moisDemande(value: string | null, today: IsoDate): IsoDate {
 	const ecart = (isoDateToDays(demande) - isoDateToDays(courant)) / 30;
 	if (ecart < -MOIS_MAXIMUM || ecart > MOIS_MAXIMUM) return courant;
 	return demande;
+}
+
+/** Le jour choisi dans la vue Mois, s'il existe au calendrier. */
+function jourDemande(value: string | null): IsoDate | null {
+	return value !== null && isIsoDate(value) ? value : null;
 }
 
 export const load: PageServerLoad = async (event) => {
@@ -125,7 +137,9 @@ export const load: PageServerLoad = async (event) => {
 		to,
 		today,
 		premierDuMois,
-		jourChoisi: event.url.searchParams.get('jour'),
+		// Un jour qui n'existe pas, `2026-02-30`, n'est pas choisi : la page le recopiait tel quel en
+		// titre, dans la forme de la base, là où toute date se lit `JJ.MM.AAAA` (étape 18).
+		jourChoisi: jourDemande(event.url.searchParams.get('jour')),
 		seances,
 		// Les sessions du vendredi, pour le bloc du haut. Elles décrivent le **rythme habituel** et
 		// ne portent donc aucune exception : une session annulée ou déplacée se lit dans la vue

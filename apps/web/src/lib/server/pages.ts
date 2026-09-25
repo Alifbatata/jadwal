@@ -61,7 +61,7 @@ export async function publicContext(event: RequestEvent): Promise<PublicContext>
 	return { organisation, langue, explicite: Boolean(segment) };
 }
 
-/** La langue par défaut d'une organisation, ramenée à une des quatre que l'interface parle. */
+/** La langue par défaut d'une organisation, ramenée à une des cinq que l'interface parle. */
 export function langueParDefaut(organisation: OrganisationPublique): Langue {
 	return isLangue(organisation.default_language) ? organisation.default_language : 'fr';
 }

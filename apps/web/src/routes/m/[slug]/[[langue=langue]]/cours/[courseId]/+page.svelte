@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { IsoDate } from '@jadwal/core';
-	import { dateWithYear, direction, longDate, NOM_DE_LANGUE, t, type Langue } from '$lib/i18n.js';
+	import { direction, longDate, NOM_DE_LANGUE, numericDate, t, type Langue } from '$lib/i18n.js';
 	import { lienAgenda, lienCours, lienVue } from '$lib/public/liens.js';
 	import Pied from '$lib/public/Pied.svelte';
 	import { variablesAccent } from '$lib/couleur.js';
@@ -94,8 +94,8 @@
 				<dt>{mots.datesLabel}</dt>
 				<dd>
 					{mots.fromTo(
-						dateWithYear(data.langue, data.cours.startsOn as IsoDate),
-						dateWithYear(data.langue, data.cours.endsOn as IsoDate)
+						numericDate(data.cours.startsOn as IsoDate),
+						numericDate(data.cours.endsOn as IsoDate)
 					)}
 				</dd>
 			{/if}
@@ -130,7 +130,7 @@
 		</p>
 
 		{#if data.langues.length > 1}
-			<nav class="langues" aria-label="Langues">
+			<nav class="langues" aria-label={mots.languagesLabel}>
 				{#each data.langues as autre (autre)}
 					<a
 						href={versLangue(autre)}

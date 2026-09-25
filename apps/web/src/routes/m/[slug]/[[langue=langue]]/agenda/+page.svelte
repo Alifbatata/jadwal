@@ -43,7 +43,7 @@
 		<h1>{mots.subscribeTitle}</h1>
 		<p class="fil"><a href={lienVue(adresse)}>{data.organisation.name}</a></p>
 		{#if data.langues.length > 1}
-			<nav class="langues" aria-label="Langues">
+			<nav class="langues" aria-label={mots.languagesLabel}>
 				{#each data.langues as autre (autre)}
 					<a
 						href={versLangue(autre)}

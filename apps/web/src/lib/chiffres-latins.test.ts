@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
 import { addDays, type IsoDate, type LocalTime, type Prayer } from '@jadwal/core';
 import { buildCalendar } from '@jadwal/core/ics';
 import { computePrayerDay } from '@jadwal/core/prayer';
-import { dateWithYear, longDate, monthName, t } from './i18n.js';
+import { longDate, monthName, numericDate, t } from './i18n.js';
 import {
 	heureDeSeance,
 	horaireEnClair,
@@ -41,13 +41,13 @@ function sortiesArabes(): [string, string][] {
 
 	for (const jour of JOURS) {
 		noter('longDate', longDate('ar', jour));
-		noter('dateWithYear', dateWithYear('ar', jour));
+		noter('numericDate', numericDate(jour));
 	}
 	for (let annee = 2026; annee <= 2030; annee += 1) {
 		for (let mois = 1; mois <= 12; mois += 1) noter('monthName', monthName('ar', annee, mois));
 	}
 	noter('period', mots.period(longDate('ar', JOURS[0]!), longDate('ar', JOURS[6]!)));
-	noter('fromTo', mots.fromTo(dateWithYear('ar', JOURS[0]!), dateWithYear('ar', JOURS[300]!)));
+	noter('fromTo', mots.fromTo(numericDate(JOURS[0]!), numericDate(JOURS[300]!)));
 	noter('movedTo', mots.movedTo(longDate('ar', JOURS[40]!)));
 	noter('originallyOn', mots.originallyOn(longDate('ar', JOURS[41]!)));
 	for (let seances = 0; seances <= 500; seances += 1) {
@@ -198,7 +198,7 @@ describe('les chiffres de la vue arabe', () => {
 		expect(new Set(sorties.map(([formatage]) => formatage))).toEqual(
 			new Set([
 				'longDate',
-				'dateWithYear',
+				'numericDate',
 				'monthName',
 				'period',
 				'fromTo',

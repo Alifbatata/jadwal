@@ -1,11 +1,11 @@
-// La mise en mots des pages publiques, dans les quatre langues.
+// La mise en mots des pages publiques, dans les cinq langues.
 //
 // Pur, sans accès au serveur : les mêmes fonctions servent au rendu et aux tests. Les nombres
-// s'écrivent en chiffres latins dans les quatre langues, l'arabe compris (ADR 0007).
+// s'écrivent en chiffres latins dans les cinq langues, l'arabe compris (ADR 0007).
 //
 // Chaque phrase est un enregistrement par langue, jamais un ternaire sur la langue : le correcteur
 // (`pnpm orthographe`) relit chaque chaîne dans la langue de la clé qui la porte, `fr:`, `de:`,
-// `it:` ou `ar:`. Dans un ternaire, il ne saurait pas laquelle est laquelle.
+// `it:`, `en:` ou `ar:`. Dans un ternaire, il ne saurait pas laquelle est laquelle.
 
 import { t, type Langue } from '$lib/i18n.js';
 
@@ -16,11 +16,11 @@ export interface SeanceAffichable {
 }
 
 const PRIERES: Record<string, Record<Langue, string>> = {
-	fajr: { fr: 'Fajr', de: 'Fadschr', it: 'Fajr', ar: 'الفجر' },
-	dhuhr: { fr: 'Dhuhr', de: 'Dhuhr', it: 'Dhuhr', ar: 'الظهر' },
-	asr: { fr: 'Asr', de: 'Asr', it: 'Asr', ar: 'العصر' },
-	maghrib: { fr: 'Maghrib', de: 'Maghrib', it: 'Maghrib', ar: 'المغرب' },
-	isha: { fr: 'Isha', de: 'Ischa', it: 'Isha', ar: 'العشاء' }
+	fajr: { fr: 'Fajr', de: 'Fadschr', it: 'Fajr', en: 'Fajr', ar: 'الفجر' },
+	dhuhr: { fr: 'Dhuhr', de: 'Dhuhr', it: 'Dhuhr', en: 'Dhuhr', ar: 'الظهر' },
+	asr: { fr: 'Asr', de: 'Asr', it: 'Asr', en: 'Asr', ar: 'العصر' },
+	maghrib: { fr: 'Maghrib', de: 'Maghrib', it: 'Maghrib', en: 'Maghrib', ar: 'المغرب' },
+	isha: { fr: 'Isha', de: 'Ischa', it: 'Isha', en: 'Isha', ar: 'العشاء' }
 };
 
 export function nomPriere(langue: Langue, priere: string): string {
@@ -72,6 +72,7 @@ const CHAQUE_SEMAINE: Record<Langue, (jours: string) => string> = {
 	fr: (jours) => `le ${jours}`,
 	de: (jours) => `jeden ${jours}`,
 	it: (jours) => `il ${jours}`,
+	en: (jours) => `every ${jours}`,
 	ar: (jours) => `كل ${jours}`
 };
 
@@ -80,6 +81,7 @@ const UNE_SEMAINE_SUR_DEUX: Record<Langue, (jours: string) => string> = {
 	fr: (jours) => `un ${jours} sur deux`,
 	de: (jours) => `jeden zweiten ${jours}`,
 	it: (jours) => `un ${jours} su due`,
+	en: (jours) => `every other ${jours}`,
 	ar: (jours) => `${jours} كل أسبوعين`
 };
 
@@ -94,12 +96,13 @@ const ORDINAUX: Record<Langue, Record<number, string>> = {
 	fr: { 1: 'premier', 2: 'deuxième', 3: 'troisième', 4: 'quatrième', [-1]: 'dernier' },
 	de: { 1: 'ersten', 2: 'zweiten', 3: 'dritten', 4: 'vierten', [-1]: 'letzten' },
 	it: { 1: 'il primo', 2: 'il secondo', 3: 'il terzo', 4: 'il quarto', [-1]: 'l’ultimo' },
+	en: { 1: 'first', 2: 'second', 3: 'third', 4: 'fourth', [-1]: 'last' },
 	ar: { 1: 'أول', 2: 'ثاني', 3: 'ثالث', 4: 'رابع', [-1]: 'آخر' }
 };
 
 /**
  * Le jour tel qu'il s'écrit après un rang, quand ce n'est pas son nom habituel. En arabe, le rang
- * invariable demande le jour **sans article** : « آخر اثنين », pas « آخر الاثنين ». Les trois autres
+ * invariable demande le jour **sans article** : « آخر اثنين », pas « آخر الاثنين ». Les quatre autres
  * langues reprennent les noms de jour de leur dictionnaire.
  */
 const JOURS_APRES_UN_RANG: Partial<Record<Langue, readonly string[]>> = {
@@ -111,6 +114,7 @@ const RANG_DU_MOIS: Record<Langue, (rang: string, jour: string) => string> = {
 	fr: (rang, jour) => `le ${rang} ${jour} du mois`,
 	de: (rang, jour) => `am ${rang} ${jour} des Monats`,
 	it: (rang, jour) => `${rang} ${jour} del mese`,
+	en: (rang, jour) => `the ${rang} ${jour} of the month`,
 	ar: (rang, jour) => `${rang} ${jour} من الشهر`
 };
 
@@ -134,14 +138,16 @@ export function rythmeEnClair(langue: Langue, cours: RythmeAffichable): string {
 }
 
 /**
- * Une liste de deux éléments ou plus. Le français, l'allemand et l'italien séparent par des
- * virgules et posent la conjonction avant le dernier. L'arabe colle « و » au mot qui suit et le
- * répète devant chaque élément, sans virgule : « الفرنسية والعربية والتركية ».
+ * Une liste de deux éléments ou plus. Le français, l'allemand, l'italien et l'anglais séparent par
+ * des virgules et posent la conjonction avant le dernier ; l'anglais britannique, sans virgule
+ * devant « and ». L'arabe colle « و » au mot qui suit et le répète devant chaque élément, sans
+ * virgule : « الفرنسية والعربية والتركية ».
  */
 const LISTE: Record<Langue, (parties: readonly string[]) => string> = {
 	fr: (parties) => `${parties.slice(0, -1).join(', ')} et ${parties[parties.length - 1]}`,
 	de: (parties) => `${parties.slice(0, -1).join(', ')} und ${parties[parties.length - 1]}`,
 	it: (parties) => `${parties.slice(0, -1).join(', ')} e ${parties[parties.length - 1]}`,
+	en: (parties) => `${parties.slice(0, -1).join(', ')} and ${parties[parties.length - 1]}`,
 	ar: (parties) => parties.join(' و')
 };
 
@@ -157,6 +163,7 @@ const DE_A: Record<Langue, (debut: string, fin: string) => string> = {
 	fr: (debut, fin) => `de ${debut} à ${fin}`,
 	de: (debut, fin) => `von ${debut} bis ${fin}`,
 	it: (debut, fin) => `dalle ${debut} alle ${fin}`,
+	en: (debut, fin) => `from ${debut} to ${fin}`,
 	ar: (debut, fin) => `من ${debut} إلى ${fin}`
 };
 
@@ -178,16 +185,16 @@ export function horaireEnClair(
 	return decalageEnClair(langue, cours.timingOffsetMinutes ?? 0, priere);
 }
 
-/** Le nom de chaque langue d'enseignement, dans chacune des quatre langues de l'interface. */
+/** Le nom de chaque langue d'enseignement, dans chacune des cinq langues de l'interface. */
 const NOMS_DE_LANGUE: Record<string, Record<Langue, string>> = {
-	fr: { fr: 'français', de: 'Französisch', it: 'francese', ar: 'الفرنسية' },
-	de: { fr: 'allemand', de: 'Deutsch', it: 'tedesco', ar: 'الألمانية' },
-	it: { fr: 'italien', de: 'Italienisch', it: 'italiano', ar: 'الإيطالية' },
-	ar: { fr: 'arabe', de: 'Arabisch', it: 'arabo', ar: 'العربية' },
-	en: { fr: 'anglais', de: 'Englisch', it: 'inglese', ar: 'الإنجليزية' },
-	sq: { fr: 'albanais', de: 'Albanisch', it: 'albanese', ar: 'الألبانية' },
-	tr: { fr: 'turc', de: 'Türkisch', it: 'turco', ar: 'التركية' },
-	bs: { fr: 'bosnien', de: 'Bosnisch', it: 'bosniaco', ar: 'البوسنية' }
+	fr: { fr: 'français', de: 'Französisch', it: 'francese', en: 'French', ar: 'الفرنسية' },
+	de: { fr: 'allemand', de: 'Deutsch', it: 'tedesco', en: 'German', ar: 'الألمانية' },
+	it: { fr: 'italien', de: 'Italienisch', it: 'italiano', en: 'Italian', ar: 'الإيطالية' },
+	ar: { fr: 'arabe', de: 'Arabisch', it: 'arabo', en: 'Arabic', ar: 'العربية' },
+	en: { fr: 'anglais', de: 'Englisch', it: 'inglese', en: 'English', ar: 'الإنجليزية' },
+	sq: { fr: 'albanais', de: 'Albanisch', it: 'albanese', en: 'Albanian', ar: 'الألبانية' },
+	tr: { fr: 'turc', de: 'Türkisch', it: 'turco', en: 'Turkish', ar: 'التركية' },
+	bs: { fr: 'bosnien', de: 'Bosnisch', it: 'bosniaco', en: 'Bosnian', ar: 'البوسنية' }
 };
 
 /** Les langues d'enseignement, en toutes lettres. */

@@ -93,7 +93,7 @@ beforeAll(async () => {
 			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
 				"enabled_language", "prayer_module")
 			values (${organizationId}, ${SLUG}, 'Association du widget', ${FUSEAU}, 'fr',
-				array['fr','de','it','ar'], true)
+				array['fr','de','it','en','ar'], true)
 		`)
 	);
 	hebdoId = await poserCours({
@@ -234,6 +234,7 @@ describe('le mode intégré', () => {
 		for (const chemin of [
 			`/m/${SLUG}?embed=1`,
 			`/m/${SLUG}/ar?embed=1`,
+			`/m/${SLUG}/en?embed=1`,
 			`/m/${SLUG}/de/agenda?embed=1`
 		]) {
 			const html = await texte(`${origin}${chemin}`);
@@ -267,6 +268,14 @@ describe('le mode intégré', () => {
 		expect(await texte(`${origin}/widget/jadwal-widget.js`)).toContain(
 			'Proposé gratuitement par jadwal'
 		);
+	});
+
+	// L'anglais britannique (étape 18) : la même règle, et le même texte des deux côtés du cadre.
+	it('carries the English mention on the widget, and on the English page only outside a frame', async () => {
+		const mention = 'Provided free of charge by jadwal, a service from Voltia';
+		expect(await texte(`${origin}/m/${SLUG}/en`)).toContain(mention);
+		expect(await texte(`${origin}/m/${SLUG}/en?embed=1`)).not.toContain(mention);
+		expect(await texte(`${origin}/widget/jadwal-widget.js`)).toContain(mention);
 	});
 
 	it('marks the page so the embedded stylesheet applies, and only then', async () => {
@@ -438,9 +447,11 @@ describe('le référencement', () => {
 
 		const plan = await texte(`${origin}/sitemap-${SLUG}.xml`);
 		expect(plan).toContain('xmlns:xhtml="http://www.w3.org/1999/xhtml"');
-		// La page dans les quatre langues, la page d'abonnement, et une page par cours publié.
+		// La page dans les cinq langues, la page d'abonnement, et une page par cours publié.
 		expect(plan).toContain(`<loc>${origin}/m/${SLUG}</loc>`);
 		expect(plan).toContain(`<loc>${origin}/m/${SLUG}/ar</loc>`);
+		expect(plan).toContain(`<loc>${origin}/m/${SLUG}/en</loc>`);
+		expect(plan).toContain(`<loc>${origin}/m/${SLUG}/en/agenda</loc>`);
 		expect(plan).toContain(`<loc>${origin}/m/${SLUG}/agenda</loc>`);
 		expect(plan).toContain(`${origin}/m/${SLUG}/cours/${hebdoId}`);
 		expect(plan).not.toContain(brouillonId);
@@ -449,7 +460,7 @@ describe('le référencement', () => {
 		const entrees = plan.match(/<url>/g) ?? [];
 		const alternatives = plan.match(/hreflang="/g) ?? [];
 		expect(entrees.length).toBeGreaterThan(0);
-		expect(alternatives.length).toBe(entrees.length * 5);
+		expect(alternatives.length).toBe(entrees.length * 6);
 		expect(plan).toContain('hreflang="x-default"');
 	});
 

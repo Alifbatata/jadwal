@@ -65,7 +65,7 @@
 	{/if}
 
 	{#if langues.length > 1}
-		<nav class="langues" aria-label="Langues">
+		<nav class="langues" aria-label={mots.languagesLabel}>
 			{#each langues as autre (autre)}
 				<a
 					href={lienLangue(autre)}

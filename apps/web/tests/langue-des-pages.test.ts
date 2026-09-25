@@ -1,6 +1,7 @@
 // Chaque page dans sa langue, servie par HTTP : la balise `<html>`, les en-têtes de la vue Mois, le
 // lien des conditions au pied, le flux d'un cours ancré sur une prière, et le 404 d'une adresse
-// publique.
+// publique. Depuis l'étape 18 : l'anglais britannique, cinquième langue, et les dates en
+// `JJ.MM.AAAA` dans le texte que chaque page donne à lire, jamais en `AAAA-MM-JJ`.
 //
 // Ces promesses sont déjà tenues par des fonctions éprouvées une à une (`i18n.test.ts`,
 // `affichage.test.ts`, `agenda.test.ts`, `Pied.test.ts`). Ce fichier éprouve ce qu'aucun test
@@ -16,7 +17,7 @@ const origin = inject('origin');
 const testDatabase = inject('testDatabase');
 
 const FUSEAU = 'Europe/Zurich';
-/** Une organisation en français par défaut, qui parle les quatre langues et a le module des prières. */
+/** Une organisation en français par défaut, qui parle les cinq langues et a le module des prières. */
 const SLUG = 'langues';
 /** Une organisation dont la langue par défaut est l'arabe : son adresse courte doit être en arabe. */
 const SLUG_ARABE = 'langues-arabe';
@@ -159,7 +160,7 @@ beforeAll(async () => {
 			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
 				"enabled_language", "prayer_module")
 			values (${organisation}, ${SLUG}, 'Association des langues', ${FUSEAU}, 'fr',
-				array['fr','de','it','ar'], true)
+				array['fr','de','it','en','ar'], true)
 		`);
 		await tx.execute(sql`
 			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
@@ -218,6 +219,19 @@ const PAGES = [
 	{ chemin: `/m/${SLUG}`, statut: 200, balise: '<html lang="fr" dir="ltr">' },
 	{ chemin: `/m/${SLUG}/de`, statut: 200, balise: '<html lang="de" dir="ltr">' },
 	{ chemin: `/m/${SLUG}/it/agenda`, statut: 200, balise: '<html lang="it" dir="ltr">' },
+	// L'anglais britannique, cinquième langue (étape 18) : la page, les deux autres vues, l'abonnement,
+	// un cours, et les 404.
+	{ chemin: `/m/${SLUG}/en`, statut: 200, balise: '<html lang="en" dir="ltr">' },
+	{ chemin: `/m/${SLUG}/en?vue=mois`, statut: 200, balise: '<html lang="en" dir="ltr">' },
+	{ chemin: `/m/${SLUG}/en?embed=1`, statut: 200, balise: '<html lang="en" dir="ltr">' },
+	{ chemin: `/m/${SLUG}/en/agenda`, statut: 200, balise: '<html lang="en" dir="ltr">' },
+	{
+		chemin: `/m/${SLUG}/en/cours/${COURS.isha}`,
+		statut: 200,
+		balise: '<html lang="en" dir="ltr">'
+	},
+	{ chemin: '/m/inconnue/en', statut: 404, balise: '<html lang="en" dir="ltr">' },
+	{ chemin: `/m/${SLUG}/en/nulle-part`, statut: 404, balise: '<html lang="en" dir="ltr">' },
 	{ chemin: `/m/${SLUG_ARABE}`, statut: 200, balise: '<html lang="ar" dir="rtl">' },
 	{ chemin: `/m/${SLUG_ARABE}/agenda`, statut: 200, balise: '<html lang="ar" dir="rtl">' },
 	{
@@ -291,6 +305,12 @@ describe('les en-têtes de la vue Mois', () => {
 			chemin: `/m/${SLUG}/it?vue=mois`,
 			noms: ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'],
 			courts: ['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom']
+		},
+		{
+			langue: 'en',
+			chemin: `/m/${SLUG}/en?vue=mois`,
+			noms: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+			courts: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 		},
 		{
 			langue: 'ar',
@@ -373,6 +393,11 @@ describe('le lien des conditions, au pied de la page publique', () => {
 			nom: 'Condizioni d’uso (si apre in una nuova scheda)'
 		},
 		{
+			langue: 'en',
+			chemin: `/m/${SLUG}/en/cours/${COURS.maghrib}`,
+			nom: 'Terms of use (opens in a new tab)'
+		},
+		{
 			langue: 'ar',
 			chemin: `/m/${SLUG}/ar/cours/${COURS.isha}`,
 			nom: 'شروط الاستخدام (يُفتح في علامة تبويب جديدة)'
@@ -423,6 +448,17 @@ describe('le flux d’un cours ancré, dans sa langue', () => {
 		expect(soir).toMatch(/^DESCRIPTION:15 Min\. vor Ischa\r?$/m);
 		expect(soir).not.toContain('Isha');
 	});
+
+	// Le flux anglais (étape 18) : `?lang=en` retombait sur le français.
+	it('says the English page’s sentence in the English feed', async () => {
+		const maghrib = await flux(COURS.maghrib, 'en');
+		expect(maghrib).toMatch(/^DESCRIPTION:After Maghrib\r?$/m);
+		expect(maghrib).not.toContain('Après');
+
+		const soir = await flux(COURS.isha, 'en');
+		expect(soir).toMatch(/^DESCRIPTION:15 min before Isha\r?$/m);
+		expect(soir).not.toMatch(/avant|-15 min/);
+	});
 });
 
 describe('un décalage négatif se dit « avant »', () => {
@@ -465,11 +501,12 @@ describe('un décalage négatif se dit « avant »', () => {
 });
 
 describe('le 404 d’une adresse publique', () => {
-	/** Les quatre textes de la page d'erreur de `/m/`, écrits ici en toutes lettres. */
+	/** Les cinq textes de la page d'erreur de `/m/`, écrits ici en toutes lettres. */
 	const TEXTES = {
 		fr: { titre: 'Page introuvable', indice: 'Vérifiez l’adresse.' },
 		de: { titre: 'Seite nicht gefunden', indice: 'Bitte prüfen Sie die Adresse.' },
 		it: { titre: 'Pagina non trovata', indice: 'Controlla l’indirizzo.' },
+		en: { titre: 'Page not found', indice: 'Please check the address.' },
 		ar: { titre: 'الصفحة غير موجودة', indice: 'تحقّق من العنوان.' }
 	} as const;
 
@@ -483,6 +520,8 @@ describe('le 404 d’une adresse publique', () => {
 		{ chemin: '/m/inconnue/de/agenda', langue: 'de', dir: 'ltr' },
 		// Même dans un cadre : le script d'annonce de hauteur n'a rien à mesurer sur une erreur.
 		{ chemin: '/m/inconnue/it?embed=1', langue: 'it', dir: 'ltr' },
+		{ chemin: '/m/inconnue/en', langue: 'en', dir: 'ltr' },
+		{ chemin: `/m/${SLUG}/en/cours/${newId()}`, langue: 'en', dir: 'ltr' },
 		// Une organisation connue, un cours qui ne l'est pas.
 		{ chemin: `/m/${SLUG}/ar/cours/${newId()}`, langue: 'ar', dir: 'rtl' },
 		// Sans segment, la langue de l'organisation, quand elle est connue.
@@ -515,5 +554,167 @@ describe('le 404 d’une adresse publique', () => {
 		const { html } = await servir('/m/inconnue/ar');
 		expect(html).not.toContain('inconnue');
 		expect(html).not.toContain('Page introuvable.');
+	});
+});
+
+/**
+ * Le texte qu'une personne lit : le titre de l'onglet et le corps, sans balise, sans attribut, sans
+ * script ni style ni commentaire, les entités rendues. Une date dans une adresse de lien ou dans un
+ * `id` n'est pas lue ; elle n'est donc pas cherchée.
+ */
+function texteLu(html: string): string {
+	const titre = html.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? '';
+	const corps = html.match(/<body\b[^>]*>([\s\S]*)<\/body>/)?.[1] ?? '';
+	return texte(
+		`${titre} ${corps}`
+			.replace(/<script\b[\s\S]*?<\/script>/g, ' ')
+			.replace(/<style\b[\s\S]*?<\/style>/g, ' ')
+			.replace(/<!--[\s\S]*?-->/g, ' ')
+			.replace(/<[^>]+>/g, ' ')
+	)
+		.replaceAll('&lt;', '<')
+		.replaceAll('&gt;', '>')
+		.replaceAll('&quot;', '"')
+		.replaceAll('&#39;', "'")
+		.replaceAll('&nbsp;', ' ')
+		.replaceAll('&amp;', '&');
+}
+
+describe('une page publique en anglais britannique', () => {
+	it('speaks English on the programme, and not a word of the French interface', async () => {
+		const { statut, html } = await servir(`/m/${SLUG}/en`);
+		expect(statut).toBe(200);
+		const lu = texteLu(html);
+		expect(lu).toContain('Association des langues | This week’s courses');
+		for (const mot of [
+			'Week',
+			'All courses',
+			'Month',
+			'Children',
+			'Open to all',
+			'Subscribe to the calendar',
+			'Terms of use',
+			'Provided free of charge by jadwal, a service from Voltia',
+			'15 min before Isha',
+			'After Maghrib'
+		]) {
+			expect(lu, mot).toContain(mot);
+		}
+		for (const mot of ['Semaine', 'Tous les cours', 'S’abonner', 'Proposé gratuitement', 'avant']) {
+			expect(lu, mot).not.toContain(mot);
+		}
+		// La liste des langues porte son nom dans la langue de la page, et plus « Langues » partout.
+		expect(html).toContain('aria-label="Languages"');
+		expect(html).not.toContain('aria-label="Langues"');
+		// Le choix de langue propose l'anglais, sous son nom anglais.
+		expect(html).toMatch(/<a\b[^>]*hreflang="en"[^>]*>\s*English\s*<\/a>/);
+	});
+
+	it('explains the subscription in English', async () => {
+		const lu = texteLu((await servir(`/m/${SLUG}/en/agenda`)).html);
+		for (const phrase of [
+			'Subscribe to the calendar',
+			'The whole programme',
+			'Add to my calendar',
+			'On iPhone and iPad',
+			'On Android',
+			'In Outlook'
+		]) {
+			expect(lu, phrase).toContain(phrase);
+		}
+	});
+
+	it('describes a course in English, and its feed stays in English', async () => {
+		const { statut, html } = await servir(`/m/${SLUG}/en/cours/${COURS.isha}`);
+		expect(statut).toBe(200);
+		const lu = texteLu(html);
+		for (const phrase of ['Upcoming sessions', 'Taught in', 'Add this course to my calendar']) {
+			expect(lu, phrase).toContain(phrase);
+		}
+		expect(lu).toContain(`/m/${SLUG}/agenda/${COURS.isha}.ics?lang=en`);
+	});
+});
+
+describe('les langues qu’une organisation propose', () => {
+	/** Les versions linguistiques annoncées aux moteurs, et elles seules. */
+	function versions(html: string): string[] {
+		return [...html.matchAll(/<link\b[^>]*\srel="alternate"[^>]*>/g)].map(
+			(trouve) => attributs(trouve[0])['hreflang'] ?? ''
+		);
+	}
+
+	it('offers English where the organisation enabled it', async () => {
+		const { html } = await servir(`/m/${SLUG}`);
+		expect(versions(html)).toEqual(['fr', 'de', 'it', 'en', 'ar', 'x-default']);
+	});
+
+	it('does not offer English where the organisation did not enable it', async () => {
+		const { html } = await servir(`/m/${SLUG_ARABE}`);
+		expect(versions(html)).toEqual(['fr', 'ar', 'x-default']);
+		expect(html).not.toContain('hreflang="en"');
+		expect(texteLu(html)).not.toContain('English');
+	});
+});
+
+/**
+ * Les dates du public, depuis l'étape 18 : `JJ.MM.AAAA`, précédées ou non du nom du jour, dans les
+ * cinq langues. Et jamais la forme de la base, `AAAA-MM-JJ`, dans ce qu'une personne lit.
+ */
+describe('les dates du public', () => {
+	const today = todayInZone(FUSEAU, new Date());
+	/** Aujourd'hui, écrit ici sans passer par le code qu'on éprouve. */
+	const [annee, mois, jour] = today.split('-');
+	const AUJOURDHUI = `${jour}.${mois}.${annee}`;
+	const ISO = /(?<!\d)\d{4}-\d{2}-\d{2}(?!\d)/;
+	const SUISSE = /(?<!\d)\d{2}\.\d{2}\.\d{4}(?!\d)/;
+
+	const LANGUES = ['fr', 'de', 'it', 'en', 'ar'] as const;
+	const base = (langue: string) => (langue === 'fr' ? `/m/${SLUG}` : `/m/${SLUG}/${langue}`);
+	/** Chaque page publique, et si une date du jour doit s'y lire. */
+	const PAGES_DATEES = LANGUES.flatMap((langue) => [
+		{ langue, chemin: base(langue), attendu: AUJOURDHUI },
+		{ langue, chemin: `${base(langue)}?vue=cours`, attendu: AUJOURDHUI },
+		{ langue, chemin: `${base(langue)}?vue=mois&jour=${today}`, attendu: AUJOURDHUI },
+		{ langue, chemin: `${base(langue)}/cours/${COURS.isha}`, attendu: AUJOURDHUI },
+		{ langue, chemin: `${base(langue)}/agenda`, attendu: null }
+	]);
+
+	it.each(PAGES_DATEES)(
+		'writes the dates of $chemin as JJ.MM.AAAA, never as AAAA-MM-JJ',
+		async ({ chemin, attendu }) => {
+			const { statut, html } = await servir(chemin);
+			expect(statut).toBe(200);
+			const lu = texteLu(html);
+			expect(lu.match(ISO)?.[0] ?? null, 'une date AAAA-MM-JJ dans le texte lu').toBeNull();
+			if (attendu) {
+				expect(lu).toContain(attendu);
+				expect(lu).toMatch(SUISSE);
+			}
+		}
+	);
+
+	it('writes the period of the week and each day as JJ.MM.AAAA, in each language', async () => {
+		const semaine = addDays(today, 6);
+		const [a, m, j] = semaine.split('-');
+		const fin = `${j}.${m}.${a}`;
+		const periodes = await Promise.all(
+			LANGUES.map(async (langue) => {
+				const html = (await servir(base(langue))).html;
+				return texte(html.match(/<p class="periode[^"]*">([\s\S]*?)<\/p>/)?.[1] ?? '');
+			})
+		);
+		expect(periodes).toEqual([
+			`Du ${AUJOURDHUI} au ${fin}`,
+			`Vom ${AUJOURDHUI} bis ${fin}`,
+			`Dal ${AUJOURDHUI} al ${fin}`,
+			`From ${AUJOURDHUI} to ${fin}`,
+			`من ${AUJOURDHUI} إلى ${fin}`
+		]);
+	});
+
+	it('does not echo an impossible day written in the address', async () => {
+		const { statut, html } = await servir(`/m/${SLUG}?vue=mois&jour=2026-02-30`);
+		expect(statut).toBe(200);
+		expect(texteLu(html)).not.toContain('2026-02-30');
 	});
 });

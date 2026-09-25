@@ -1,17 +1,28 @@
-// Les quatre langues de l'interface publique (ADR 0007).
+// Les cinq langues de l'interface publique (ADR 0007) : français, allemand, italien, anglais
+// britannique et arabe, dans cet ordre, pour tout le service. L'anglais s'est ajouté à l'étape 18.
 //
-// Un objet par langue, pas de bibliothèque : il y a quatre langues et une centaine de phrases, et
+// Un objet par langue, pas de bibliothèque : il y a cinq langues et une centaine de phrases, et
 // une dépendance coûterait plus qu'elle ne rendrait. TypeScript tient le contrat — une clé oubliée
 // dans une langue ne compile pas.
 //
-// Les nombres s'écrivent en chiffres latins dans les quatre langues, l'arabe compris : c'est la
+// Les nombres s'écrivent en chiffres latins dans les cinq langues, l'arabe compris : c'est la
 // décision de l'ADR 0007, et c'est ce que lisent les téléphones réglés en français d'une communauté
 // qui parle arabe.
+//
+// Les dates s'écrivent `JJ.MM.AAAA` dans toutes les langues, comme en Suisse (étape 18), par
+// `numericDate`, et `longDate` y ajoute le nom du jour. C'est le seul endroit qui met une date en
+// forme pour une personne : la page publique, le flux, les messages prêts à coller et l'espace des
+// responsables passent tous par ici.
 
 import { isoDateToDays, parseIsoDate, weekdayFromDays, type IsoDate } from '@jadwal/core';
 
-export const LANGUES = ['fr', 'de', 'it', 'ar'] as const;
+export const LANGUES = ['fr', 'de', 'it', 'en', 'ar'] as const;
 export type Langue = (typeof LANGUES)[number];
+
+/** Une langue de l'interface, ou non : ce qui vient d'une adresse ou de la base se vérifie ici. */
+export function isLangue(value: string): value is Langue {
+	return (LANGUES as readonly string[]).includes(value);
+}
 
 /** Le sens d'écriture. L'arabe est en RTL complet. */
 export function direction(langue: Langue): 'ltr' | 'rtl' {
@@ -23,6 +34,7 @@ export const NOM_DE_LANGUE: Record<Langue, string> = {
 	fr: 'Français',
 	de: 'Deutsch',
 	it: 'Italiano',
+	en: 'English',
 	ar: 'العربية'
 };
 
@@ -85,6 +97,11 @@ interface Dictionnaire {
 	readonly offeredBy: string;
 	/** Le lien du pied vers les conditions d'utilisation, qui n'existent qu'en français. */
 	readonly terms: string;
+	/**
+	 * Le nom de la liste des langues, pour les lecteurs d'écran (`aria-label`). Il était écrit
+	 * « Langues » dans les trois gabarits, et donc annoncé en français sur une page arabe.
+	 */
+	readonly languagesLabel: string;
 	/**
 	 * Ce qu'un lien qui ouvre un nouvel onglet dit aux lecteurs d'écran, et à eux seuls (technique
 	 * G201 des WCAG). Les textes du chef de projet, mot pour mot ; `annonceNouvelOnglet` les met
@@ -202,6 +219,7 @@ const fr: Dictionnaire = {
 		'Ouvrez Outlook sur le web, allez dans Calendrier, Ajouter un calendrier, S’abonner à partir du Web, collez l’adresse, donnez-lui un nom, puis importez.',
 	offeredBy: 'Proposé gratuitement par jadwal, un service de Voltia',
 	terms: 'Conditions d’utilisation',
+	languagesLabel: 'Langues',
 	newTab: 's’ouvre dans un nouvel onglet',
 	notFound: 'Page introuvable',
 	notFoundHint: 'Vérifiez l’adresse.',
@@ -296,6 +314,7 @@ const de: Dictionnaire = {
 		'Öffnen Sie Outlook im Web, gehen Sie zu Kalender, Kalender hinzufügen, Aus dem Internet abonnieren, fügen Sie die Adresse ein, geben Sie einen Namen ein und importieren Sie.',
 	offeredBy: 'Kostenlos bereitgestellt von jadwal, einem Dienst von Voltia',
 	terms: 'Nutzungsbedingungen',
+	languagesLabel: 'Sprachen',
 	newTab: 'öffnet sich in einem neuen Tab',
 	notFound: 'Seite nicht gefunden',
 	notFoundHint: 'Bitte prüfen Sie die Adresse.',
@@ -390,6 +409,7 @@ const it: Dictionnaire = {
 		'Apri Outlook sul web, vai su Calendario, Aggiungi calendario, Iscriviti dal Web, incolla l’indirizzo, dagli un nome e importa.',
 	offeredBy: 'Offerto gratuitamente da jadwal, un servizio di Voltia',
 	terms: 'Condizioni d’uso',
+	languagesLabel: 'Lingue',
 	newTab: 'si apre in una nuova scheda',
 	notFound: 'Pagina non trovata',
 	notFoundHint: 'Controlla l’indirizzo.',
@@ -398,6 +418,104 @@ const it: Dictionnaire = {
 	sessionCount: (count) => (count === 1 ? '1 lezione' : `${count} lezioni`),
 	previousMonth: 'Mese precedente',
 	nextMonth: 'Mese successivo'
+};
+
+// L'anglais britannique (étape 18) : « programme », « cancelled », « fortnight », et les guillemets
+// simples des Britanniques dans les messages. Les noms de menus des téléphones et d'Outlook sont ceux
+// de leurs versions anglaises.
+const en: Dictionnaire = {
+	weekdays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+	shortWeekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+	months: [
+		'January',
+		'February',
+		'March',
+		'April',
+		'May',
+		'June',
+		'July',
+		'August',
+		'September',
+		'October',
+		'November',
+		'December'
+	],
+	views: { week: 'Week', courses: 'All courses', month: 'Month' },
+	audiences: {
+		kids: 'Children',
+		youth: 'Young people',
+		women: 'Women',
+		adults: 'Adults',
+		open: 'Open to all'
+	},
+	rhythms: {
+		weekly: 'Every week',
+		fortnightly: 'Every fortnight',
+		monthly: 'Every month',
+		dates: 'On specific dates'
+	},
+	today: 'today',
+	period: (from, to) => `From ${from} to ${to}`,
+	cancelled: 'Cancelled',
+	exceptionalDate: 'Rescheduled',
+	movedTo: (date) => `Moved to ${date}`,
+	originallyOn: (date) => `Originally on ${date}`,
+	after: (prayer) => `After ${prayer}`,
+	afterOffset: (offset, prayer) => `${offset} min after ${prayer}`,
+	beforeOffset: (offset, prayer) => `${offset} min before ${prayer}`,
+	emptyPauseNamed: (reason) => `No courses this week: ${reason}.`,
+	emptyPause: 'No courses this week: the programme is on a break.',
+	emptyNotPublished: 'The programme has not been published yet.',
+	emptyWeek: 'No sessions this week.',
+	emptyFilter: 'No sessions this week for this group.',
+	emptyMonth: 'No sessions this month.',
+	emptyDay: 'No sessions on this day.',
+	noCourses: 'No courses published yet.',
+	allAudiences: 'All',
+	place: 'Venue',
+	teacher: 'Teacher',
+	taughtIn: 'Taught in',
+	jumua: 'Friday prayer',
+	sermonIn: (languages) => `sermon in ${languages}`,
+	fromTo: (from, to) => `From ${from} to ${to}`,
+	datesLabel: 'Dates',
+	nextSessions: 'Upcoming sessions',
+	noNextSessions: 'No upcoming dates.',
+	backToProgramme: 'Back to the programme',
+	coursesCrumb: 'Courses',
+	subscribe: 'Subscribe to the calendar',
+	subscribeTitle: 'Subscribe to the calendar',
+	subscribeIntro: (name) =>
+		`The programme of ${name} is added to your calendar and updates itself, about once an hour. There is nothing to set up again when a course changes.`,
+	subscribeButton: 'Add to my calendar',
+	subscribeAddress: 'Or copy this address into your calendar app:',
+	subscribeWholeTitle: 'The whole programme',
+	subscribeOneCourseTitle: 'Just one course',
+	subscribeOneCourseText:
+		'You can also add just one course. Tap its name: it is added on its own and updates like the rest. Its https address is on the course page.',
+	subscribeWhole: 'Subscribe to the whole programme',
+	addCourseToCalendar: 'Add this course to my calendar',
+	courseFeedAddress: 'Or copy this address, which covers only this course:',
+	onIphone: 'On iPhone and iPad',
+	onAndroid: 'On Android',
+	onOutlook: 'In Outlook',
+	iphoneText:
+		'Tap the button above: your iPhone offers to add the calendar. If nothing happens, open Settings, then Apps, Calendar, Calendar Accounts, Add Account, Other, Add Subscribed Calendar, and paste the address.',
+	androidText:
+		'Open Google Calendar on a computer: the phone app cannot add a subscription. Under Other calendars, choose From URL, paste the address, then add the calendar. It will then appear on your phone.',
+	outlookText:
+		'Open Outlook on the web, go to Calendar, Add calendar, Subscribe from web, paste the address, give it a name, then import.',
+	offeredBy: 'Provided free of charge by jadwal, a service from Voltia',
+	terms: 'Terms of use',
+	languagesLabel: 'Languages',
+	newTab: 'opens in a new tab',
+	notFound: 'Page not found',
+	notFoundHint: 'Please check the address.',
+	weekTitle: 'This week’s courses',
+	coursesTitle: 'All courses',
+	sessionCount: (count) => (count === 1 ? '1 session' : `${count} sessions`),
+	previousMonth: 'Previous month',
+	nextMonth: 'Next month'
 };
 
 const ar: Dictionnaire = {
@@ -508,6 +626,7 @@ const ar: Dictionnaire = {
 		'افتح Outlook على الويب، اذهب إلى التقويم، إضافة تقويم، الاشتراك من الويب، الصق العنوان، سمِّه، ثم استورد.',
 	offeredBy: 'مقدَّم مجانًا من jadwal، خدمة من Voltia',
 	terms: 'شروط الاستخدام',
+	languagesLabel: 'اللغات',
 	newTab: 'يُفتح في علامة تبويب جديدة',
 	notFound: 'الصفحة غير موجودة',
 	notFoundHint: 'تحقّق من العنوان.',
@@ -526,7 +645,7 @@ const ar: Dictionnaire = {
 	nextMonth: 'الشهر التالي'
 };
 
-const DICTIONNAIRES: Record<Langue, Dictionnaire> = { fr, de, it, ar };
+const DICTIONNAIRES: Record<Langue, Dictionnaire> = { fr, de, it, en, ar };
 
 export function t(langue: Langue): Dictionnaire {
 	return DICTIONNAIRES[langue];
@@ -546,28 +665,34 @@ export function annonceNouvelOnglet(langue: Langue): string {
 	return ` (${DICTIONNAIRES[langue].newTab})`;
 }
 
-/** « lundi 21 septembre », dans la langue demandée. Chiffres latins partout. */
-export function longDate(langue: Langue, date: IsoDate): string {
+/**
+ * « 26.09.2026 » : une date telle qu'une personne la lit, dans les cinq langues (étape 18). Le jour
+ * et le mois sur deux chiffres, l'année sur quatre, séparés par des points, en chiffres latins.
+ *
+ * L'arabe l'écrit de la même façon, et elle s'y lit dans le bon ordre : pour l'algorithme
+ * bidirectionnel d'Unicode, un point entre deux nombres est un séparateur de nombre, et
+ * `26.09.2026` reste un seul bloc de gauche à droite dans une phrase de droite à gauche.
+ *
+ * Une chaîne illisible est rendue telle quelle : plutôt que d'inventer une date, une valeur
+ * inattendue doit se voir.
+ */
+export function numericDate(date: IsoDate): string {
 	const civil = parseIsoDate(date);
 	if (!civil) return date;
-	const dictionnaire = DICTIONNAIRES[langue];
-	const jour = dictionnaire.weekdays[weekdayFromDays(isoDateToDays(date)) - 1] ?? '';
-	const mois = dictionnaire.months[civil.month - 1] ?? '';
-	if (langue === 'fr') {
-		return `${jour} ${civil.day === 1 ? '1er' : civil.day} ${mois}`;
-	}
-	if (langue === 'de') return `${jour}, ${civil.day}. ${mois}`;
-	return `${jour} ${civil.day} ${mois}`;
+	const deux = (nombre: number) => String(nombre).padStart(2, '0');
+	return `${deux(civil.day)}.${deux(civil.month)}.${String(civil.year).padStart(4, '0')}`;
 }
 
-/** « 21 septembre 2026 », pour les endroits où l'année compte. */
-export function dateWithYear(langue: Langue, date: IsoDate): string {
-	const civil = parseIsoDate(date);
-	if (!civil) return date;
-	const mois = DICTIONNAIRES[langue].months[civil.month - 1] ?? '';
-	if (langue === 'de') return `${civil.day}. ${mois} ${civil.year}`;
-	if (langue === 'fr' && civil.day === 1) return `1er ${mois} ${civil.year}`;
-	return `${civil.day} ${mois} ${civil.year}`;
+/**
+ * « samedi 26.09.2026 », « Samstag, 26.09.2026 », « Saturday 26.09.2026 » : le nom du jour, puis la
+ * date. L'allemand sépare les deux par une virgule, comme il l'écrit ; les autres langues, par une
+ * espace. Jusqu'à l'étape 18, la date s'écrivait en toutes lettres et sans l'année, chaque langue à
+ * sa façon.
+ */
+export function longDate(langue: Langue, date: IsoDate): string {
+	if (!parseIsoDate(date)) return date;
+	const jour = DICTIONNAIRES[langue].weekdays[weekdayFromDays(isoDateToDays(date)) - 1] ?? '';
+	return `${jour}${langue === 'de' ? ', ' : ' '}${numericDate(date)}`;
 }
 
 /**

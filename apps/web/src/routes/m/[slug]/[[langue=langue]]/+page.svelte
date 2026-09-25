@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { addDays, isoDateToDays, weekdayFromDays, type IsoDate } from '@jadwal/core';
-	import { direction, longDate, monthName, t, type Langue } from '$lib/i18n.js';
+	import { direction, longDate, monthName, numericDate, t, type Langue } from '$lib/i18n.js';
 	import { lienAgenda, lienCours, lienVue } from '$lib/public/liens.js';
 	import Entete from '$lib/public/Entete.svelte';
 	import Pied from '$lib/public/Pied.svelte';
@@ -183,11 +183,9 @@
 	     de la page n'était dans un repère, et axe le relevait sur chaque vue. -->
 	<main>
 		{#if data.vue === 'semaine'}
+			<!-- La période en dates seules, `JJ.MM.AAAA` : chaque jour, plus bas, porte déjà son nom. -->
 			<p class="periode">
-				{mots.period(
-					longDate(data.langue, data.from as IsoDate),
-					longDate(data.langue, data.to as IsoDate)
-				)}
+				{mots.period(numericDate(data.from as IsoDate), numericDate(data.to as IsoDate))}
 			</p>
 			{#if parJour.length === 0}
 				<p class="vide">{messageVide}</p>

@@ -1,11 +1,12 @@
-// La mise en mots des pages publiques, dans les quatre langues.
+// La mise en mots des pages publiques, dans les cinq langues.
 //
-// Trois familles de tests. Les premiers figent les sorties françaises, allemandes et italiennes telles
-// qu'elles étaient avant la relecture de l'arabe : la restructuration de `affichage.ts` en
+// Quatre familles de tests. Les premiers figent les sorties françaises, allemandes et italiennes
+// telles qu'elles étaient avant la relecture de l'arabe : la restructuration de `affichage.ts` en
 // enregistrements par langue ne devait rien y changer, et ces tests le tiennent. Une seule sortie y a
 // bougé depuis, à dessein : « l’ultimo » italien. Les seconds portent les corrections de l'arabe
-// demandées par le chef de projet (rangs du mois, conjonction, minutes). Les derniers disent un
-// décalage négatif par « avant », dans les quatre langues.
+// demandées par le chef de projet (rangs du mois, conjonction, minutes). Les troisièmes disent un
+// décalage négatif par « avant », dans les quatre langues d'avant l'étape 18. Les derniers portent
+// l'anglais britannique, cinquième langue.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -362,6 +363,105 @@ describe('un décalage négatif se dit « avant »', () => {
 					})
 				).not.toMatch(/-/);
 			}
+		}
+	});
+});
+
+describe('l’anglais britannique, cinquième langue de la page', () => {
+	it('says the weekly and the fortnightly rhythms', () => {
+		expect(
+			rythmeEnClair('en', {
+				recurrenceKind: 'weekly',
+				recurrenceWeekdays: [6],
+				recurrenceInterval: 1
+			})
+		).toBe('every Saturday');
+		expect(
+			rythmeEnClair('en', {
+				recurrenceKind: 'weekly',
+				recurrenceWeekdays: [1, 3, 5],
+				recurrenceInterval: 1
+			})
+		).toBe('every Monday, Wednesday and Friday');
+		expect(
+			rythmeEnClair('en', {
+				recurrenceKind: 'weekly',
+				recurrenceWeekdays: [2],
+				recurrenceInterval: 2
+			})
+		).toBe('every other Tuesday');
+	});
+
+	it('says the five ranks of the month, and the precise dates', () => {
+		const rang = (ordinal: number, jour: number) =>
+			rythmeEnClair('en', {
+				recurrenceKind: 'monthly',
+				recurrenceOrdinal: ordinal,
+				recurrenceOrdinalWeekday: jour
+			});
+		expect([rang(1, 5), rang(2, 2), rang(3, 3), rang(4, 4), rang(-1, 6)]).toEqual([
+			'the first Friday of the month',
+			'the second Tuesday of the month',
+			'the third Wednesday of the month',
+			'the fourth Thursday of the month',
+			'the last Saturday of the month'
+		]);
+		expect(rythmeEnClair('en', { recurrenceKind: 'dates', recurrenceDates: ['2026-10-01'] })).toBe(
+			'On specific dates'
+		);
+	});
+
+	it('joins a list without a comma before « and », the British way', () => {
+		expect(joindre('en', ['a', 'b'])).toBe('a and b');
+		expect(joindre('en', ['a', 'b', 'c'])).toBe('a, b and c');
+		expect(languesEnClair('en', ['fr', 'ar'])).toBe('French and Arabic');
+		expect(languesEnClair('en', ['de', 'it', 'en', 'sq', 'tr', 'bs'])).toBe(
+			'German, Italian, English, Albanian, Turkish and Bosnian'
+		);
+		// Le nom de l'anglais dans les quatre autres langues existait déjà : il ne bouge pas.
+		expect(languesEnClair('fr', ['en'])).toBe('anglais');
+		expect(languesEnClair('ar', ['en'])).toBe('الإنجليزية');
+	});
+
+	it('says the timing of a course and the time of a session', () => {
+		const fixe = { timingKind: 'fixed', timingStart: '19:00:00', timingEnd: '20:30:00' };
+		expect(horaireEnClair('en', fixe)).toBe('from 19:00 to 20:30');
+		const ancre = (decalage: number) => ({
+			timingKind: 'prayer',
+			timingPrayer: 'maghrib',
+			timingOffsetMinutes: decalage
+		});
+		expect(horaireEnClair('en', ancre(0))).toBe('After Maghrib');
+		expect(horaireEnClair('en', ancre(15))).toBe('15 min after Maghrib');
+		expect(horaireEnClair('en', ancre(-15))).toBe('15 min before Maghrib');
+		expect(
+			heureDeSeance('en', {
+				start: '19:12',
+				end: null,
+				anchor: { prayer: 'maghrib', offsetMinutes: 0 }
+			})
+		).toBe('After Maghrib (19:12)');
+		expect(heureDeSeance('en', { start: '19:00', end: '20:30', anchor: null })).toBe(
+			'19:00 – 20:30'
+		);
+	});
+
+	it('names the prayers as the page names them, and never writes a minus sign', () => {
+		expect(['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].map((p) => nomPriere('en', p))).toEqual([
+			'Fajr',
+			'Dhuhr',
+			'Asr',
+			'Maghrib',
+			'Isha'
+		]);
+		for (let decalage = -120; decalage < 0; decalage += 1) {
+			expect(
+				horaireEnClair('en', {
+					timingKind: 'prayer',
+					timingPrayer: 'isha',
+					timingOffsetMinutes: decalage
+				})
+			).not.toMatch(/-/);
 		}
 	});
 });

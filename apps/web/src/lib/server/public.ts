@@ -24,6 +24,7 @@ import {
 	type DatabaseHandle,
 	type ResolvedPrayerRow
 } from '@jadwal/db';
+import type { Langue } from '$lib/i18n.js';
 import { appliquerVendredi, sessionsDuVendredi } from './vendredi.js';
 import {
 	toException,
@@ -47,13 +48,13 @@ export async function closePublicDatabase(): Promise<void> {
 	publicHandle = undefined;
 }
 
-/** Les quatre langues d'interface (ADR 0007). */
-export const LANGUES = ['fr', 'de', 'it', 'ar'] as const;
-export type Langue = (typeof LANGUES)[number];
-
-export function isLangue(value: string): value is Langue {
-	return (LANGUES as readonly string[]).includes(value);
-}
+/**
+ * Les cinq langues d'interface (ADR 0007), reprises de `i18n.ts` et non recopiées : jusqu'à
+ * l'étape 18, ce fichier tenait sa propre liste, et ajouter une langue demandait de penser aux deux.
+ * La page, l'API publique et le flux agenda lisent celle-ci.
+ */
+export { isLangue, LANGUES } from '$lib/i18n.js';
+export type { Langue };
 
 /** Plage maximale servie quand l'appelant ne demande rien : 92 jours, un trimestre. */
 export const MAX_JOURS = 92;

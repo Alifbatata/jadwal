@@ -7,7 +7,16 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { IsoDate } from '@jadwal/core';
-import { dateWithYear, documentDansSaLangue, LANGUES, longDate, monthName, t } from './i18n.js';
+import {
+	direction,
+	documentDansSaLangue,
+	LANGUES,
+	longDate,
+	monthName,
+	NOM_DE_LANGUE,
+	numericDate,
+	t
+} from './i18n.js';
 
 const ar = t('ar');
 
@@ -127,37 +136,120 @@ describe('les autres langues ne bougent pas', () => {
 		expect(t('de').shortWeekdays).toEqual(['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']);
 		expect(t('it').shortWeekdays).toEqual(['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom']);
 	});
+});
 
-	it('keeps the dates of the four languages, in Latin digits', () => {
-		const jeudi = '2026-10-01' as IsoDate;
-		expect(LANGUES.map((langue) => longDate(langue, jeudi))).toEqual([
-			'jeudi 1er octobre',
-			'Donnerstag, 1. Oktober',
-			'giovedì 1 ottobre',
-			'الخميس 1 أكتوبر'
+/**
+ * Les dates, depuis l'étape 18 : `JJ.MM.AAAA`, comme en Suisse, dans les cinq langues et en chiffres
+ * latins. Le nom du jour peut la précéder ; le nom du mois ne sert plus qu'en tête de la vue Mois.
+ * Jusque-là, la page écrivait « jeudi 1er octobre », sans l'année, et chaque langue à sa façon.
+ */
+describe('les dates, en JJ.MM.AAAA dans les cinq langues', () => {
+	const samedi = '2026-09-26' as IsoDate;
+
+	it('lists the five languages in the order of the service', () => {
+		expect(LANGUES).toEqual(['fr', 'de', 'it', 'en', 'ar']);
+	});
+
+	it('writes a date as day, month and year, with two digits for the day and the month', () => {
+		expect(numericDate(samedi)).toBe('26.09.2026');
+		expect(numericDate('2026-10-01' as IsoDate)).toBe('01.10.2026');
+		expect(numericDate('2028-02-29' as IsoDate)).toBe('29.02.2028');
+	});
+
+	it('puts the name of the day in front of it, in each language', () => {
+		expect(LANGUES.map((langue) => longDate(langue, samedi))).toEqual([
+			'samedi 26.09.2026',
+			'Samstag, 26.09.2026',
+			'sabato 26.09.2026',
+			'Saturday 26.09.2026',
+			'السبت 26.09.2026'
 		]);
-		expect(LANGUES.map((langue) => dateWithYear(langue, jeudi))).toEqual([
-			'1er octobre 2026',
-			'1. Oktober 2026',
-			'1 ottobre 2026',
-			'1 أكتوبر 2026'
+		expect(LANGUES.map((langue) => longDate(langue, '2026-10-01' as IsoDate))).toEqual([
+			'jeudi 01.10.2026',
+			'Donnerstag, 01.10.2026',
+			'giovedì 01.10.2026',
+			'Thursday 01.10.2026',
+			'الخميس 01.10.2026'
 		]);
+	});
+
+	it('keeps the name of the month where a month is named, at the head of the month view', () => {
 		expect(LANGUES.map((langue) => monthName(langue, 2026, 10))).toEqual([
 			'Octobre 2026',
 			'Oktober 2026',
 			'Ottobre 2026',
+			'October 2026',
 			'أكتوبر 2026'
 		]);
+	});
+
+	it('gives back what it was given when the date is unreadable', () => {
+		// Plutôt que d'inventer une date : une chaîne inattendue doit se voir, pas se fondre.
+		expect(numericDate('pas-une-date' as IsoDate)).toBe('pas-une-date');
+		expect(longDate('en', 'pas-une-date' as IsoDate)).toBe('pas-une-date');
+	});
+});
+
+describe('l’anglais britannique', () => {
+	const en = t('en');
+
+	it('reads from left to right, and names itself in English', () => {
+		expect(direction('en')).toBe('ltr');
+		expect(NOM_DE_LANGUE.en).toBe('English');
+	});
+
+	it('spells the British way', () => {
+		expect(en.cancelled).toBe('Cancelled');
+		expect(en.backToProgramme).toBe('Back to the programme');
+		expect(en.rhythms['fortnightly']).toBe('Every fortnight');
+		expect(en.views).toEqual({ week: 'Week', courses: 'All courses', month: 'Month' });
+	});
+
+	it('counts the sessions and the minutes', () => {
+		expect([0, 1, 2, 11].map((n) => en.sessionCount(n))).toEqual([
+			'0 sessions',
+			'1 session',
+			'2 sessions',
+			'11 sessions'
+		]);
+		expect(en.after('Maghrib')).toBe('After Maghrib');
+		expect(en.afterOffset(15, 'Maghrib')).toBe('15 min after Maghrib');
+		expect(en.beforeOffset(15, 'Maghrib')).toBe('15 min before Maghrib');
+	});
+
+	it('names the days and the months', () => {
+		expect(en.weekdays).toEqual([
+			'Monday',
+			'Tuesday',
+			'Wednesday',
+			'Thursday',
+			'Friday',
+			'Saturday',
+			'Sunday'
+		]);
+		expect(en.shortWeekdays).toEqual(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
+		expect(en.months[8]).toBe('September');
 	});
 });
 
 describe('le lien des conditions, au pied de la page publique', () => {
-	it('names the terms of use in each of the four languages', () => {
+	it('names the terms of use in each of the five languages', () => {
 		expect(LANGUES.map((langue) => t(langue).terms)).toEqual([
 			'Conditions d’utilisation',
 			'Nutzungsbedingungen',
 			'Condizioni d’uso',
+			'Terms of use',
 			'شروط الاستخدام'
+		]);
+	});
+
+	it('names the list of languages in each language, and no longer in French everywhere', () => {
+		expect(LANGUES.map((langue) => t(langue).languagesLabel)).toEqual([
+			'Langues',
+			'Sprachen',
+			'Lingue',
+			'Languages',
+			'اللغات'
 		]);
 	});
 });
@@ -214,6 +306,7 @@ describe('la langue du document', () => {
 		expect(documentDansSaLangue(gabarit, 'ar')).toContain('<html lang="ar" dir="rtl">');
 		expect(documentDansSaLangue(gabarit, 'de')).toContain('<html lang="de" dir="ltr">');
 		expect(documentDansSaLangue(gabarit, 'it')).toContain('<html lang="it" dir="ltr">');
+		expect(documentDansSaLangue(gabarit, 'en')).toContain('<html lang="en" dir="ltr">');
 		expect(documentDansSaLangue(gabarit, 'fr')).toContain('<html lang="fr" dir="ltr">');
 	});
 

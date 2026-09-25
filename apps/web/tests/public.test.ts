@@ -109,7 +109,7 @@ beforeAll(async () => {
 			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
 				"enabled_language", "prayer_module")
 			values (${organizationId}, ${SLUG}, 'Association publique', ${FUSEAU}, 'fr',
-				array['fr','de','it','ar'], true)
+				array['fr','de','it','en','ar'], true)
 		`);
 		await tx.execute(sql`
 			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
@@ -419,11 +419,12 @@ describe('le flux agenda', () => {
 	});
 });
 
-describe('les quatre langues', () => {
+describe('les cinq langues', () => {
 	it.each([
 		['fr', 'Semaine', 'ltr'],
 		['de', 'Woche', 'ltr'],
 		['it', 'Settimana', 'ltr'],
+		['en', 'Week', 'ltr'],
 		['ar', 'الأسبوع', 'rtl']
 	])('translates the interface into %s', async (langue, mot, sens) => {
 		const chemin = langue === 'fr' ? `/m/${SLUG}` : `/m/${SLUG}/${langue}`;
@@ -470,9 +471,21 @@ describe('les quatre langues', () => {
 			fr: adresse(''),
 			de: adresse('/de'),
 			it: adresse('/it'),
+			en: adresse('/en'),
 			ar: adresse('/ar'),
 			'x-default': adresse('')
 		});
+	});
+
+	// L'API publique accepte l'anglais depuis l'étape 18 : `?lang=en` retombait sur le français.
+	it('serves the programme and the courses in English when asked', async () => {
+		const programme = await json(`${origin}/api/v1/organisations/${SLUG}/schedule?lang=en`);
+		expect(programme['language']).toBe('en');
+		const cours = await json(`${origin}/api/v1/organisations/${SLUG}/courses?lang=en`);
+		expect(cours['language']).toBe('en');
+		// Une langue que l'interface ne parle pas retombe toujours sur le français.
+		const inconnue = await json(`${origin}/api/v1/organisations/${SLUG}/courses?lang=es`);
+		expect(inconnue['language']).toBe('fr');
 	});
 });
 

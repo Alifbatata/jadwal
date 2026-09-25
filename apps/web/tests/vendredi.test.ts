@@ -220,8 +220,10 @@ describe('avant toute session', () => {
 	it('laisse le cours de midi suivre l’heure du Dhuhr', async () => {
 		const today = todayInZone(FUSEAU, new Date());
 		const html = await page(`/m/${SLUG}`);
-		// Le vendredi est bien dans la semaine affichée, en toutes lettres comme partout ailleurs.
-		expect(html).toContain(`vendredi ${Number(prochainVendredi(today).slice(8, 10))}`);
+		// Le vendredi est bien dans la semaine affichée, en JJ.MM.AAAA comme partout ailleurs depuis
+		// l'étape 18 (« vendredi 02.10.2026 »).
+		const [annee, mois, jour] = prochainVendredi(today).split('-');
+		expect(html).toContain(`vendredi ${jour}.${mois}.${annee}`);
 		// 12:30 + 30 min = 13:00.
 		expect(heuresAffichees(html)).toContain('30 min après Dhuhr (13:00)');
 	});
