@@ -28,7 +28,22 @@ const appDir = dirname(dirname(fileURLToPath(import.meta.url)));
  * adresse en envoyant l'en-tête lui-même (étape 9). Les deux premières restent en prise directe,
  * comme en développement.
  */
-const PORTS = [4173, 4174, 4175] as const;
+const PORTS = portsDeTest();
+
+/**
+ * Trois ports qui se suivent, à partir de `JADWAL_TEST_PORT_BASE` (4173 par défaut). Deux arbres de
+ * travail peuvent ainsi lancer ces tests en même temps, chacun avec sa base (`JADWAL_TEST_DB`) et
+ * ses ports, sans se prendre un serveur. `roles-de-base.test.ts` prend le quatrième.
+ */
+function portsDeTest(): readonly [number, number, number] {
+	const base = Number(process.env['JADWAL_TEST_PORT_BASE'] ?? 4173);
+	if (!Number.isInteger(base) || base < 1024 || base > 65_000) {
+		throw new Error(
+			`JADWAL_TEST_PORT_BASE illisible : « ${process.env['JADWAL_TEST_PORT_BASE']} »`
+		);
+	}
+	return [base, base + 1, base + 2];
+}
 
 /**
  * Le secret de session des serveurs de test. Il est fourni aux fichiers de test parce qu'il sert

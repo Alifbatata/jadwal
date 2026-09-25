@@ -29,8 +29,8 @@ const AUTORISES = ['app', 'auth', 'public', 'superadmin'];
 /** Les deux variables qui ne doivent plus jamais être nécessaires au service. */
 const INTERDITES = ['POSTGRES_PASSWORD', 'JADWAL_DB_OWNER_PASSWORD'];
 
-/** Un port à part : les trois serveurs de la préparation globale occupent 4173 à 4175. */
-const PORT = 4176;
+/** Un port à part : les trois serveurs de la préparation globale occupent les trois qui précèdent. */
+const PORT = Number(process.env['JADWAL_TEST_PORT_BASE'] ?? 4173) + 3;
 const ORIGINE = `http://127.0.0.1:${PORT}`;
 
 function fichiersSources(racine: string): string[] {
