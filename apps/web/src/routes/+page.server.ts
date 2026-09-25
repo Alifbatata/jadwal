@@ -111,7 +111,8 @@ export const actions: Actions = {
 				after: { date, kind: 'cancelled' }
 			});
 			const settings = await tx.execute<{ greeting: string }>(
-				// Filtré sur le contexte : le super-admin voit toutes les organisations (`readSettings`).
+				// Filtré sur le contexte, et c'est la première barrière : pour le rôle applicatif, la
+				// politique rend aussi les organisations qui invitent la personne (`readSettings`).
 				sql`select "greeting" from "organization" where "id" = (select jadwal.current_org_id())`
 			);
 			const greeting =
@@ -150,7 +151,8 @@ export const actions: Actions = {
 				after: { date, toDate, toStart }
 			});
 			const settings = await tx.execute<{ greeting: string }>(
-				// Filtré sur le contexte : le super-admin voit toutes les organisations (`readSettings`).
+				// Filtré sur le contexte, et c'est la première barrière : pour le rôle applicatif, la
+				// politique rend aussi les organisations qui invitent la personne (`readSettings`).
 				sql`select "greeting" from "organization" where "id" = (select jadwal.current_org_id())`
 			);
 			const greeting =

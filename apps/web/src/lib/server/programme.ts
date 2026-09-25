@@ -199,9 +199,13 @@ export function toPause(row: PauseRow): Pause {
 /**
  * Les réglages de l'organisation en contexte. Une requête.
  *
- * Le filtre sur le contexte est écrit ici, et non laissé à la sécurité au niveau des lignes : le
- * rôle du super-admin voit **toutes** les organisations (ADR 0025), et sans lui la première venue
- * répondait pour celle où il est entré. Trouvé par le parcours complet (étape 16).
+ * Le filtre sur le contexte est écrit ici, et non laissé à la seule sécurité au niveau des lignes.
+ * Jusqu'à la migration 0055, le rôle du super-admin voyait **toutes** les organisations, même entré
+ * dans l'une, et sans ce filtre la première venue répondait pour celle où il est entré : trouvé par
+ * le parcours complet (étape 16). Depuis 0055, sa politique de lecture est bornée au contexte quand
+ * il est posé (addendum de l'ADR 0025). Pour le rôle applicatif, en revanche, la politique de
+ * lecture rend aussi toute organisation qui invite la personne connectée (migration 0023) : ce
+ * filtre reste la première barrière, et non une défense de second rang.
  */
 export async function readSettings(tx: Transaction): Promise<OrganisationSettings> {
 	const found = rows<OrganisationSettings>(

@@ -56,7 +56,16 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 					asSuperAdmin: context.asSuperAdmin,
 					// Tant que les conditions ne sont pas acceptées, la navigation n'est pas
 					// affichée : chacun de ses liens ramènerait à l'écran d'acceptation (ADR 0044).
-					termsAccepted: context.termsAccepted
+					termsAccepted: context.termsAccepted,
+					// « Changer d’organisation » dans la navigation, pour toute personne membre de
+					// plusieurs, éditeurs compris, et pour qui n'en a qu'une mais a une invitation qui
+					// court encore : c'est sur l'écran du choix qu'elle l'accepte, et aucun autre écran
+					// de l'espace n'y mène. Le super-admin entré par ses pouvoirs a déjà le lien de sa
+					// bannière, vers son propre écran : deux liens du même nom vers deux écrans
+					// tromperaient.
+					canSwitch:
+						!context.asSuperAdmin &&
+						(context.membershipCount > 1 || context.pendingInvitationCount > 0)
 				}
 			: null
 	};

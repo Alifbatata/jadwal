@@ -554,6 +554,557 @@ describe('la session et le contexte d’organisation', () => {
 	});
 });
 
+describe('changer d’organisation', () => {
+	// Jusqu'à l'étape 17, le lien n'était que dans la bannière du super-admin et sur l'écran Membres,
+	// que les éditeurs n'ouvrent pas, et il s'y montrait même à qui n'a qu'une organisation. Une
+	// éditrice de deux organisations devait connaître l'adresse `/organisations`, ou se déconnecter.
+	// Le lien vaut aussi pour qui n'a qu'une organisation et une invitation qui attend : c'est sur
+	// cet écran qu'elle l'accepte.
+	const PREMIERE = newId();
+	const SECONDE = newId();
+	const EDITRICE = newId();
+	const RESPONSABLE = newId();
+	const SEULE = newId();
+	const EN_ATTENTE = newId();
+	const INVITEE = newId();
+	const ECHUE = newId();
+	const INVITATION_QUI_COURT = newId();
+	const INVITATION_ECHUE = newId();
+	const LIBELLE = 'Changer d’organisation';
+
+	/**
+	 * Les liens d'un fragment, résolus depuis la page comme un navigateur le ferait. SvelteKit rend
+	 * les chemins de `resolve` relatifs à la page, `./organisations` sous `/cours` : comparer la
+	 * chaîne brute à `/organisations` ne trouverait jamais rien, et un test d'absence passerait à vide.
+	 */
+	function liens(fragment: string, page: string): { chemin: string; texte: string }[] {
+		return [...fragment.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)].map((trouve) => ({
+			chemin: new URL(
+				(trouve[1]?.match(/\bhref="([^"]*)"/)?.[1] ?? '').replaceAll('&amp;', '&'),
+				`${origin}${page}`
+			).pathname,
+			texte: (trouve[2] ?? '')
+				.replace(/<[^>]+>/g, '')
+				.replace(/\s+/g, ' ')
+				.trim()
+		}));
+	}
+
+	beforeAll(async () => {
+		await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			for (const [id, slug, nom] of [
+				[PREMIERE, 'changer-premiere', 'Association première'],
+				[SECONDE, 'changer-seconde', 'Association seconde']
+			] as const) {
+				await tx.execute(sql`
+					insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+						"enabled_language")
+					values (${id}, ${slug}, ${nom}, 'Europe/Zurich', 'fr', array['fr'])
+				`);
+			}
+			// Une éditrice des deux : le rôle le plus modeste, pour que le lien ne dépende pas d'un
+			// droit de responsable. Un responsable des deux, pour l'écran Membres, que l'éditrice
+			// n'ouvre pas. Une responsable d'une seule, qui l'ouvre et ne doit pas l'y trouver. Et une
+			// éditrice des deux qui n'a accepté les conditions que dans la première.
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified")
+				values (${EDITRICE}, 'deux-organisations@example.test', true),
+					(${RESPONSABLE}, 'deux-responsable@example.test', true),
+					(${SEULE}, 'une-organisation@example.test', true),
+					(${EN_ATTENTE}, 'deux-en-attente@example.test', true)
+			`);
+			for (const organisation of [PREMIERE, SECONDE]) {
+				await tx.execute(sql`
+					insert into "membership" ("id", "organization_id", "user_id", "role")
+					values (${newId()}, ${organisation}, ${EN_ATTENTE}, 'editor')
+				`);
+			}
+			await tx.execute(conditionsAcceptees(PREMIERE, EN_ATTENTE));
+			for (const organisation of [PREMIERE, SECONDE]) {
+				for (const [personne, role] of [
+					[EDITRICE, 'editor'],
+					[RESPONSABLE, 'org_admin']
+				] as const) {
+					await tx.execute(sql`
+						insert into "membership" ("id", "organization_id", "user_id", "role")
+						values (${newId()}, ${organisation}, ${personne}, ${role})
+					`);
+					await tx.execute(conditionsAcceptees(organisation, personne));
+				}
+			}
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${PREMIERE}, ${SEULE}, 'org_admin')
+			`);
+			await tx.execute(conditionsAcceptees(PREMIERE, SEULE));
+			// Deux personnes d'une seule organisation, invitées dans la seconde : une éditrice dont
+			// l'invitation court encore, et une responsable dont l'invitation a échu hier. Les dates
+			// se comptent en heures, pas en jours de calendrier : un passage à l'heure d'hiver ne
+			// les fait pas enjamber la borne des quatorze jours (migration 0056).
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified")
+				values (${INVITEE}, 'une-et-invitee@example.test', true),
+					(${ECHUE}, 'une-et-echue@example.test', true)
+			`);
+			for (const [personne, role] of [
+				[INVITEE, 'editor'],
+				[ECHUE, 'org_admin']
+			] as const) {
+				await tx.execute(sql`
+					insert into "membership" ("id", "organization_id", "user_id", "role")
+					values (${newId()}, ${PREMIERE}, ${personne}, ${role})
+				`);
+				await tx.execute(conditionsAcceptees(PREMIERE, personne));
+			}
+			await tx.execute(sql`
+				insert into "invitation" ("id", "organization_id", "email", "role", "expires_at")
+				values (${INVITATION_QUI_COURT}, ${SECONDE}, 'une-et-invitee@example.test', 'org_admin',
+					now() + make_interval(hours => 7 * 24))
+			`);
+			await tx.execute(sql`
+				insert into "invitation" ("id", "organization_id", "email", "role", "created_at",
+					"expires_at")
+				values (${INVITATION_ECHUE}, ${SECONDE}, 'une-et-echue@example.test', 'editor',
+					now() - make_interval(hours => 10 * 24), now() - make_interval(hours => 24))
+			`);
+		});
+	});
+
+	/** Les invitations que l'écran « Vos organisations » propose d'accepter, par leur identifiant. */
+	async function invitationsAAccepter(cookie: string): Promise<string[]> {
+		const page = await fetch(`${origin}/organisations`, { headers: { cookie } });
+		expect(page.status).toBe(200);
+		return [...(await page.text()).matchAll(/name="invitationId" value="([^"]*)"/g)].map(
+			(trouve) => trouve[1] ?? ''
+		);
+	}
+
+	/** Aucune trace du lien sur ces écrans de l'espace, qui sont bien ceux de cette organisation. */
+	async function aucunLien(cookie: string, routes: string[], nom: string): Promise<void> {
+		for (const route of routes) {
+			const page = await fetch(`${origin}${route}`, { headers: { cookie } });
+			expect(page.status, route).toBe(200);
+			const html = await page.text();
+			// La page est bien celle de l'espace : sans cette ligne, un renvoi passerait pour une
+			// absence.
+			expect(html, route).toContain(nom);
+			expect(html, route).not.toContain(LIBELLE);
+			expect(
+				liens(html, route).map((lien) => lien.chemin),
+				route
+			).not.toContain('/organisations');
+		}
+	}
+
+	/** Le lien du menu de l'espace, et lui seul sur toute la page : ni doublon, ni second chemin. */
+	async function lienUniqueDansLeMenu(cookie: string, route: string, nom: string): Promise<void> {
+		const page = await fetch(`${origin}${route}`, { headers: { cookie } });
+		expect(page.status, route).toBe(200);
+		const html = await page.text();
+		expect(html, route).toContain(nom);
+		const menu =
+			html.match(/<nav\b[^>]*aria-label="Espace des responsables"[^>]*>[\s\S]*?<\/nav>/)?.[0] ?? '';
+		expect(
+			liens(menu, route).filter((lien) => lien.texte === LIBELLE),
+			`${route} : le lien doit être dans le menu de l’espace, vers le choix`
+		).toEqual([{ chemin: '/organisations', texte: LIBELLE }]);
+		expect(html.split(LIBELLE), `${route} : une seule fois`).toHaveLength(2);
+	}
+
+	it('is in the menu of anyone who belongs to several organisations, editors included', async () => {
+		const cookie = await signIn('deux-organisations@example.test');
+		// Deux organisations et aucune choisie : la porte renvoie au choix.
+		const sansChoix = await fetch(`${origin}/cours`, { headers: { cookie }, redirect: 'manual' });
+		expect(sansChoix.headers.get('location')).toBe('/organisations');
+
+		const choisie = await postForm('/organisations?/choisir', { organizationId: SECONDE }, cookie);
+		expect(choisie.status).toBe(303);
+		for (const route of ['/', '/cours', '/partager']) {
+			await lienUniqueDansLeMenu(cookie, route, 'Association seconde');
+		}
+
+		// Et il mène bien au choix, d'où l'on passe à l'autre organisation.
+		const choix = await fetch(`${origin}/organisations`, { headers: { cookie } });
+		const liste = await choix.text();
+		expect(liste).toContain('Association première');
+		expect(liste).toContain('Association seconde');
+		expect(
+			(await postForm('/organisations?/choisir', { organizationId: PREMIERE }, cookie)).status
+		).toBe(303);
+		await lienUniqueDansLeMenu(cookie, '/cours', 'Association première');
+	});
+
+	it('is there once on the members screen too, for a manager of several organisations', async () => {
+		const cookie = await signIn('deux-responsable@example.test');
+		await postForm('/organisations?/choisir', { organizationId: PREMIERE }, cookie);
+		for (const route of ['/membres', '/reglages', '/']) {
+			await lienUniqueDansLeMenu(cookie, route, 'Association première');
+		}
+	});
+
+	it('is not offered to someone who belongs to one organisation only, on any screen', async () => {
+		const cookie = await signIn('une-organisation@example.test');
+		// Une responsable : elle ouvre aussi l'écran Membres, qui portait ce lien pour tout le monde.
+		await aucunLien(cookie, ['/', '/cours', '/membres', '/reglages'], 'Association première');
+		expect(await invitationsAAccepter(cookie)).toEqual([]);
+	});
+
+	it('is in the menu of someone with one organisation and an invitation waiting', async () => {
+		// Une éditrice : le lien ne dépend pas de l'écran Membres, qu'elle n'ouvre pas. C'est sur
+		// « Vos organisations » qu'elle accepte l'invitation, et aucun autre écran de l'espace n'y
+		// mène.
+		const cookie = await signIn('une-et-invitee@example.test');
+		for (const route of ['/', '/cours', '/partager']) {
+			await lienUniqueDansLeMenu(cookie, route, 'Association première');
+		}
+		// Le lien mène à l'invitation qui l'a fait paraître.
+		expect(await invitationsAAccepter(cookie)).toEqual([INVITATION_QUI_COURT]);
+	});
+
+	it('is not offered for an expired invitation, which the choice screen omits too', async () => {
+		// Le lien et l'écran lisent les invitations par la même requête : il ne mène jamais à un
+		// écran qui n'aurait rien de plus à proposer.
+		const cookie = await signIn('une-et-echue@example.test');
+		await aucunLien(cookie, ['/', '/cours', '/membres', '/reglages'], 'Association première');
+		expect(await invitationsAAccepter(cookie)).toEqual([]);
+		// L'invitation est bien là, en attente, et c'est son échéance seule qui l'écarte.
+		const ligne = await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			return tx.execute<{ status: string; echue: boolean }>(sql`
+				select "status", "expires_at" <= now() as echue from "invitation"
+				where "id" = ${INVITATION_ECHUE}
+			`);
+		});
+		expect([...(ligne as unknown as { status: string; echue: boolean }[])]).toEqual([
+			{ status: 'pending', echue: true }
+		]);
+	});
+
+	// L'écran d'acceptation a son propre lien vers le choix, « Choisir une autre organisation », pour
+	// qui en a plusieurs, et son en-tête est réduit à la marque, au compte et à la déconnexion
+	// (docs/maquettes/responsables-conditions.md). Un second lien vers le même écran n'y ajouterait
+	// rien.
+	it('does not double the link of the terms screen, which has its own', async () => {
+		const cookie = await signIn('deux-en-attente@example.test');
+		await postForm('/organisations?/choisir', { organizationId: SECONDE }, cookie);
+		const renvoi = await fetch(`${origin}/cours`, { headers: { cookie }, redirect: 'manual' });
+		expect(renvoi.headers.get('location')).toBe('/conditions/accepter');
+		const page = await fetch(`${origin}/conditions/accepter`, { headers: { cookie } });
+		expect(page.status).toBe(200);
+		const html = await page.text();
+		expect(html).toContain('Association seconde');
+		expect(html).not.toContain(LIBELLE);
+		expect(
+			liens(html, '/conditions/accepter').filter((lien) => lien.chemin === '/organisations')
+		).toEqual([{ chemin: '/organisations', texte: 'Choisir une autre organisation' }]);
+
+		// Les conditions acceptées, la navigation revient, et le lien avec elle.
+		expect(
+			(await postForm('/organisations?/choisir', { organizationId: PREMIERE }, cookie)).status
+		).toBe(303);
+		await lienUniqueDansLeMenu(cookie, '/cours', 'Association première');
+	});
+
+	it('leaves the super-admin the link of his banner, and only that one', async () => {
+		// Une invitation l'attend, et la règle de l'invitation ne lui rend pas pour autant le lien de
+		// la navigation. Elle est retirée à la fin : le reste du fichier ne l'attend pas.
+		const invitation = newId();
+		await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			await tx.execute(sql`
+				insert into "invitation" ("id", "organization_id", "email", "role", "expires_at")
+				values (${invitation}, ${PREMIERE}, 'admin@example.test', 'editor',
+					now() + make_interval(hours => 7 * 24))
+			`);
+		});
+		try {
+			const cookie = await signInSuperAdmin();
+			// Elle compte bien : l'écran du choix la propose.
+			expect(await invitationsAAccepter(cookie)).toEqual([invitation]);
+			expect(
+				(await postForm('/super-admin?/entrer', { organizationId: SECONDE }, cookie)).status
+			).toBe(303);
+			const html = await (await fetch(`${origin}/cours`, { headers: { cookie } })).text();
+			const banniere = html.match(/<p class="banniere[^"]*"[\s\S]*?<\/p>/)?.[0] ?? '';
+			expect(banniere).toContain('Association seconde');
+			expect(liens(banniere, '/cours')).toEqual([{ chemin: '/super-admin', texte: LIBELLE }]);
+			expect(html.split(LIBELLE)).toHaveLength(2);
+			expect(liens(html, '/cours').map((lien) => lien.chemin)).not.toContain('/organisations');
+		} finally {
+			await ownerHandle.db.transaction(async (tx) => {
+				await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+				await tx.execute(sql`delete from "invitation" where "id" = ${invitation}`);
+			});
+		}
+	});
+});
+
+describe('le rôle et l’organisation de la session, et d’aucune autre', () => {
+	// Une personne n'a qu'un compte pour tout le service (ADR 0017). La politique des adhésions lui
+	// montre ses lignes dans toutes ses organisations (migration 0022), et celle des organisations
+	// lui montre aussi celles qui l'invitent (migration 0023). Jusqu'à l'étape 17, le contexte lisait
+	// le rôle et l'organisation sans filtre et prenait la première ligne venue : une responsable
+	// d'une organisation, éditrice d'une autre, était traitée en responsable dans les deux. Trouvé
+	// par le parcours complet.
+	const suffixe = newId().slice(-8);
+	const RESPONSABLES = newId();
+	const EDITEURS = newId();
+	const QUI_INVITE = newId();
+	const DE_LA_SESSION = newId();
+	const DE_L_EXPLOITANT = newId();
+	const VISITEE = newId();
+	const DOUBLE = newId();
+	const DOUBLE_EDITRICE = newId();
+	const DOUBLE_RESPONSABLE = newId();
+	const COLLEGUE = newId();
+	const COLLEGUE_EDITEUR = newId();
+	const INVITEE_AILLEURS = newId();
+	const INVITATION_AILLEURS = newId();
+	const RETIREE = newId();
+	const EXPLOITANT = newId();
+	const SLUG_QUI_INVITE = `qui-invite-${suffixe}`;
+	const COULEUR_QUI_INVITE = '#7c2d12';
+
+	/** Les textes des liens du menu de l'espace, ou `null` si la page n'a pas ce menu. */
+	function menuDeLEspace(html: string): string[] | null {
+		const menu = html.match(
+			/<nav\b[^>]*aria-label="Espace des responsables"[^>]*>[\s\S]*?<\/nav>/
+		)?.[0];
+		if (!menu) return null;
+		return [...menu.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/g)].map((lien) =>
+			(lien[1] ?? '')
+				.replace(/<[^>]+>/g, '')
+				.replace(/\s+/g, ' ')
+				.trim()
+		);
+	}
+
+	/** Les adhésions d'une organisation, relues par le propriétaire : identifiant et rôle. */
+	async function adhesionsDe(organisation: string): Promise<Record<string, string>> {
+		const lignes = await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			return tx.execute<{ id: string; role: string }>(
+				sql`select "id", "role" from "membership" where "organization_id" = ${organisation}`
+			);
+		});
+		return Object.fromEntries(
+			(Array.isArray(lignes) ? (lignes as { id: string; role: string }[]) : []).map((ligne) => [
+				ligne.id,
+				ligne.role
+			])
+		);
+	}
+
+	beforeAll(async () => {
+		await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			// L'organisation qui invite est créée avant celle de la session, et le module des heures
+			// de prière n'est allumé que chez elle : une lecture sans filtre la rendrait en premier, et
+			// la coquille prendrait son nom, sa couleur et son module.
+			for (const [id, slug, nom, couleur, module] of [
+				[RESPONSABLES, `responsables-${suffixe}`, 'Association des responsables', '#0f766e', false],
+				[EDITEURS, `editeurs-${suffixe}`, 'Association des éditeurs', '#0f766e', false],
+				[QUI_INVITE, SLUG_QUI_INVITE, 'Association qui invite', COULEUR_QUI_INVITE, true],
+				[DE_LA_SESSION, `de-la-session-${suffixe}`, 'Association de la session', '#1d4ed8', false],
+				[DE_L_EXPLOITANT, `exploitant-${suffixe}`, 'Association de l’exploitant', '#0f766e', false],
+				[VISITEE, `visitee-${suffixe}`, 'Association visitée', '#0f766e', false]
+			] as const) {
+				await tx.execute(sql`
+					insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+						"enabled_language", "accent_color", "prayer_module")
+					values (${id}, ${slug}, ${nom}, 'Europe/Zurich', 'fr', array['fr'], ${couleur}, ${module})
+				`);
+			}
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified", "is_super_admin")
+				values (${DOUBLE}, 'responsable-et-editrice@example.test', true, false),
+					(${COLLEGUE}, 'collegue-editeur@example.test', true, false),
+					(${INVITEE_AILLEURS}, 'responsable-invitee-ailleurs@example.test', true, false),
+					(${RETIREE}, 'retiree@example.test', true, false),
+					(${EXPLOITANT}, 'exploitant-membre@example.test', true, true)
+			`);
+			// L'adhésion de responsable d'abord, dans une instruction à elle : c'est la ligne qu'une
+			// lecture sans filtre rendrait en premier, dans l'une comme dans l'autre organisation.
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${DOUBLE_RESPONSABLE}, ${RESPONSABLES}, ${DOUBLE}, 'org_admin')
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${DOUBLE_EDITRICE}, ${EDITEURS}, ${DOUBLE}, 'editor')
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${COLLEGUE_EDITEUR}, ${EDITEURS}, ${COLLEGUE}, 'editor'),
+					(${newId()}, ${DE_LA_SESSION}, ${INVITEE_AILLEURS}, 'org_admin'),
+					(${newId()}, ${RESPONSABLES}, ${RETIREE}, 'editor'),
+					(${newId()}, ${EDITEURS}, ${RETIREE}, 'editor'),
+					(${newId()}, ${DE_L_EXPLOITANT}, ${EXPLOITANT}, 'org_admin')
+			`);
+			for (const [organisation, personne] of [
+				[RESPONSABLES, DOUBLE],
+				[EDITEURS, DOUBLE],
+				[DE_LA_SESSION, INVITEE_AILLEURS],
+				[RESPONSABLES, RETIREE],
+				[EDITEURS, RETIREE]
+			] as const) {
+				await tx.execute(conditionsAcceptees(organisation, personne));
+			}
+			// Une invitation qui court, de l'organisation qui invite vers la responsable de l'autre.
+			await tx.execute(sql`
+				insert into "invitation" ("id", "organization_id", "email", "role", "expires_at")
+				values (${INVITATION_AILLEURS}, ${QUI_INVITE}, 'responsable-invitee-ailleurs@example.test',
+					'editor', now() + make_interval(hours => 7 * 24))
+			`);
+		});
+	});
+
+	it('treats a manager of one organisation as the editor she is in the other', async () => {
+		const cookie = await signIn('responsable-et-editrice@example.test');
+		expect(
+			(await postForm('/organisations?/choisir', { organizationId: EDITEURS }, cookie)).status
+		).toBe(303);
+
+		const accueil = await (await fetch(`${origin}/`, { headers: { cookie } })).text();
+		expect(accueil).toContain('Association des éditeurs');
+		const menu = menuDeLEspace(accueil);
+		// Le menu est bien là : sans cette ligne, une page sans menu passerait pour un menu d'éditrice.
+		expect(menu).toContain('Cours');
+		expect(menu).not.toContain('Membres');
+		expect(menu).not.toContain('Réglages');
+		for (const route of ['/membres', '/reglages']) {
+			const page = await fetch(`${origin}${route}`, { headers: { cookie }, redirect: 'manual' });
+			expect(page.status, route).toBe(303);
+			expect(page.headers.get('location'), route).toBe('/');
+		}
+
+		// Les actions de l'écran Membres, envoyées à la main : aucune ne passe, pas même se promouvoir
+		// soi-même, et rien ne part.
+		const envois: [string, Record<string, string>][] = [
+			['/membres?/inviter', { email: 'par-une-editrice@example.test', role: 'org_admin' }],
+			['/membres?/role', { membershipId: DOUBLE_EDITRICE, role: 'org_admin' }],
+			['/membres?/retirer', { membershipId: COLLEGUE_EDITEUR }]
+		];
+		for (const [action, champs] of envois) {
+			const reponse = await postForm(action, champs, cookie);
+			expect(reponse.status, action).toBe(303);
+			expect(reponse.headers.get('location'), action).toBe('/');
+		}
+		expect(await lastMailTo('par-une-editrice@example.test')).toBeUndefined();
+		expect(await adhesionsDe(EDITEURS)).toMatchObject({
+			[DOUBLE_EDITRICE]: 'editor',
+			[COLLEGUE_EDITEUR]: 'editor'
+		});
+
+		// Dans la première, elle reste responsable, et sa liste des membres n'y montre que les siens :
+		// pas son adhésion d'éditrice, venue de l'autre organisation.
+		expect(
+			(await postForm('/organisations?/choisir', { organizationId: RESPONSABLES }, cookie)).status
+		).toBe(303);
+		const membres = await fetch(`${origin}/membres`, { headers: { cookie }, redirect: 'manual' });
+		expect(membres.status).toBe(200);
+		const liste = await membres.text();
+		expect(liste).toContain(`<h1>Association des responsables</h1>`);
+		expect(liste).toContain(DOUBLE_RESPONSABLE);
+		expect(liste).not.toContain(DOUBLE_EDITRICE);
+		expect(liste).not.toContain(COLLEGUE_EDITEUR);
+	});
+
+	it('names the organisation of the session, never one that invites the person', async () => {
+		const cookie = await signIn('responsable-invitee-ailleurs@example.test');
+		// Membre d'une seule organisation : pas de choix, elle y entre tout de suite.
+		for (const route of ['/', '/cours', '/membres']) {
+			const page = await fetch(`${origin}${route}`, { headers: { cookie }, redirect: 'manual' });
+			expect(page.status, route).toBe(200);
+			const html = await page.text();
+			expect(html, route).toContain('Association de la session');
+			expect(html, route).not.toContain('Association qui invite');
+			expect(html, route).not.toContain(SLUG_QUI_INVITE);
+			expect(html, route).not.toContain(COULEUR_QUI_INVITE);
+			expect(menuDeLEspace(html), route).not.toContain('Prières');
+		}
+		// Le module des heures de prière est celui de son organisation, éteint : ses écrans n'existent
+		// pas, même si l'organisation qui l'invite a allumé le sien.
+		expect((await fetch(`${origin}/prieres`, { headers: { cookie } })).status).toBe(404);
+
+		// L'écran Membres de son organisation ne montre pas l'invitation qu'elle a reçue d'ailleurs, et
+		// ne peut pas l'annuler.
+		const membres = await (await fetch(`${origin}/membres`, { headers: { cookie } })).text();
+		expect(membres).not.toContain(INVITATION_AILLEURS);
+		expect(membres).toContain('Aucune invitation en attente.');
+		await postForm('/membres?/annuler', { invitationId: INVITATION_AILLEURS }, cookie);
+		const etat = await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			const lignes = await tx.execute<{ status: string }>(
+				sql`select "status" from "invitation" where "id" = ${INVITATION_AILLEURS}`
+			);
+			return (Array.isArray(lignes) ? (lignes[0] as { status: string } | undefined) : undefined)
+				?.status;
+		});
+		expect(etat).toBe('pending');
+		// Et le journal de son organisation ne dit pas qu'elle a annulé ce qu'elle n'a pas touché. Il
+		// se lit dans l'organisation, par le rôle applicatif : le propriétaire ne le lit pas.
+		const journal = await withOrg(
+			appHandle.db,
+			{ organizationId: DE_LA_SESSION, userId: INVITEE_AILLEURS },
+			async (tx) => {
+				const lignes = await tx.execute<{ action: string }>(sql`select "action" from "audit_log"`);
+				return (Array.isArray(lignes) ? (lignes as { action: string }[]) : []).map(
+					(ligne) => ligne.action
+				);
+			}
+		);
+		expect(journal).not.toContain('invitation.cancel');
+	});
+
+	it('lets a super-admin who belongs to one organisation enter another', async () => {
+		// Le repli sur l'organisation unique l'emportait sur celle qu'il venait de choisir : il
+		// retombait dans la sienne à chaque requête et n'entrait jamais ailleurs.
+		const cookie = await signIn('exploitant-membre@example.test');
+		await preuvePasskey(cookie, EXPLOITANT);
+		expect(
+			(await postForm('/super-admin?/entrer', { organizationId: VISITEE }, cookie)).status
+		).toBe(303);
+		const visitee = await (await fetch(`${origin}/cours`, { headers: { cookie } })).text();
+		expect(visitee).toContain('<title>Cours | Association visitée</title>');
+		expect(visitee).toContain('pouvoirs de super-admin');
+
+		// Revenu chez lui, il y est membre, et la bannière s'en va.
+		expect(
+			(await postForm('/super-admin?/entrer', { organizationId: DE_L_EXPLOITANT }, cookie)).status
+		).toBe(303);
+		const chezLui = await (await fetch(`${origin}/cours`, { headers: { cookie } })).text();
+		expect(chezLui).toContain('<title>Cours | Association de l’exploitant</title>');
+		expect(chezLui).not.toContain('pouvoirs de super-admin');
+
+		// Une session neuve, sans choix posé : il entre dans son unique organisation, comme avant.
+		const neuve = await signIn('exploitant-membre@example.test');
+		await preuvePasskey(neuve, EXPLOITANT);
+		const accueil = await (await fetch(`${origin}/cours`, { headers: { cookie: neuve } })).text();
+		expect(accueil).toContain('<title>Cours | Association de l’exploitant</title>');
+	});
+
+	it('brings an ordinary member removed from the chosen organisation back to her only one', async () => {
+		// La garde de la correction précédente : le choix posé ne l'emporte que pour le super-admin.
+		// Une personne ordinaire retirée de l'organisation choisie retombe dans celle qui lui reste,
+		// sans repasser par le choix.
+		const cookie = await signIn('retiree@example.test');
+		expect(
+			(await postForm('/organisations?/choisir', { organizationId: EDITEURS }, cookie)).status
+		).toBe(303);
+		await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			await tx.execute(sql`
+				delete from "membership" where "organization_id" = ${EDITEURS} and "user_id" = ${RETIREE}
+			`);
+		});
+		const page = await fetch(`${origin}/cours`, { headers: { cookie }, redirect: 'manual' });
+		expect(page.status).toBe(200);
+		expect(await page.text()).toContain('<title>Cours | Association des responsables</title>');
+	});
+});
+
 describe('les rôles', () => {
 	it('lets a manager invite, and refuses an editor', async () => {
 		const adminCookie = await signIn('responsable@example.test');
@@ -623,6 +1174,269 @@ describe('les rôles', () => {
 	});
 });
 
+describe('les invitations', () => {
+	type LigneInvitation = {
+		id: string;
+		status: string;
+		role: string;
+		valide: boolean;
+		resolue: boolean;
+	};
+
+	/** Les invitations d'une adresse dans l'organisation d'essai, de la plus ancienne à la plus récente. */
+	async function invitationsDe(email: string): Promise<LigneInvitation[]> {
+		const lignes = await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			return tx.execute<LigneInvitation>(sql`
+				select "id", "status", "role", "expires_at" > now() as valide,
+					"resolved_at" is not null as resolue
+				from "invitation"
+				where "organization_id" = ${organizationId} and lower("email") = lower(${email})
+				order by "id"
+			`);
+		});
+		return Array.isArray(lignes) ? (lignes as LigneInvitation[]) : [];
+	}
+
+	/** Ce que l'écran dit après l'envoi, et rien d'autre de la page. */
+	function messageDeLEcran(html: string): string | undefined {
+		return /<p role="status">([\s\S]*?)<\/p>/.exec(html)?.[1];
+	}
+
+	it('invites again an address whose invitation has run out, and the person sees it', async () => {
+		// L'index des invitations en attente couvre aussi les échues : l'insertion ne faisait rien,
+		// l'écran disait « envoyée », le courriel partait, et personne ne voyait d'invitation. La liste
+		// de l'écran ne montre pas les échues : la personne responsable ne pouvait pas non plus
+		// annuler l'ancienne.
+		const email = 'echue@example.test';
+		const echue = newId();
+		await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			await tx.execute(sql`
+				insert into "invitation" ("id", "organization_id", "email", "role", "invited_by",
+					"created_at", "expires_at")
+				values (${echue}, ${organizationId}, ${email}, 'editor', ${adminUserId},
+					now() - make_interval(hours => 15 * 24), now() - make_interval(hours => 24))
+			`);
+		});
+		const cookie = await signIn('responsable@example.test');
+		const reponse = await postForm('/membres?/inviter', { email, role: 'editor' }, cookie);
+		expect(reponse.status).toBe(200);
+		expect(messageDeLEcran(await reponse.text())).toBe(
+			'L’invitation a été envoyée à cette adresse.'
+		);
+
+		const lignes = await invitationsDe(email);
+		expect(lignes.find((ligne) => ligne.id === echue)).toMatchObject({
+			status: 'cancelled',
+			resolue: true
+		});
+		expect(lignes.filter((ligne) => ligne.status === 'pending' && ligne.valide)).toHaveLength(1);
+
+		// Et la personne invitée la trouve en se connectant.
+		const invitee = await signIn(email);
+		const choix = await (
+			await fetch(`${origin}/organisations`, { headers: { cookie: invitee } })
+		).text();
+		expect(choix).toContain('Association d’essai');
+		expect(choix).toMatch(/name="invitationId" value="[^"]+"/);
+	});
+
+	it('sends a real invitation when one is still pending, with the same answer', async () => {
+		// Une invitation qui court encore faisait tomber la nouvelle en silence : l'écran disait
+		// « envoyée » pour une invitation de responsable, et l'adresse restait invitée en éditrice.
+		// La nouvelle remplace désormais l'ancienne, et la réponse ne change pas d'un mot : elle ne
+		// dépend de rien que la personne responsable ne voie déjà (ADR 0017).
+		const email = 'deja-invitee@example.test';
+		const cookie = await signIn('responsable@example.test');
+		const premiere = await postForm('/membres?/inviter', { email, role: 'editor' }, cookie);
+		const seconde = await postForm('/membres?/inviter', { email, role: 'org_admin' }, cookie);
+		expect([premiere.status, seconde.status]).toEqual([200, 200]);
+		const messages = [
+			messageDeLEcran(await premiere.text()),
+			messageDeLEcran(await seconde.text())
+		];
+		expect(messages).toEqual([
+			'L’invitation a été envoyée à cette adresse.',
+			'L’invitation a été envoyée à cette adresse.'
+		]);
+		expect((await invitationsDe(email)).map((ligne) => [ligne.status, ligne.role])).toEqual([
+			['cancelled', 'editor'],
+			['pending', 'org_admin']
+		]);
+	});
+
+	it('lasts fourteen days by the clock, whatever the time zone of the session', async () => {
+		// La contrainte de la base compte une durée écoulée, 336 heures (migration 0056). Quatorze
+		// jours de calendrier, comptés dans un fuseau qui change d'heure, en font 337 : l'insertion de
+		// l'écran tombait alors sur la contrainte, et la page répondait 500. On rejoue son calcul à la
+		// lettre, lu dans le fichier de l'écran, le 20 octobre 2026 à Zurich : l'heure d'hiver arrive
+		// le 25, dans la durée.
+		const source = readFileSync(
+			new URL('../src/routes/membres/+page.server.ts', import.meta.url),
+			'utf8'
+		);
+		const jours = /^const INVITATION_DAYS = (\d+);$/m.exec(source)?.[1];
+		const duree = /now\(\) \+ (make_interval\([^)]*\))/.exec(source)?.[1];
+		expect(jours, 'INVITATION_DAYS dans l’écran des membres').toBeTruthy();
+		expect(duree, 'la fin calculée par l’écran').toBeTruthy();
+		const intervalle = (duree as string).replaceAll('${INVITATION_DAYS}', jours as string);
+		const creation = '2026-10-20 12:00:00+00';
+		await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			await tx.execute(sql`set local time zone 'Europe/Zurich'`);
+			const id = newId();
+			await tx.execute(sql`
+				insert into "invitation" ("id", "organization_id", "email", "role", "created_at",
+					"expires_at")
+				values (${id}, ${organizationId}, 'heure-d-hiver@example.test', 'editor',
+					${creation}::timestamptz, ${creation}::timestamptz + ${sql.raw(intervalle)})
+			`);
+			// La ligne n'a servi qu'à la contrainte : elle ne reste pas dans la liste de l'écran.
+			await tx.execute(sql`delete from "invitation" where "id" = ${id}`);
+		});
+	});
+
+	it('consumes the invitation of a person who is already a member, and keeps her role', async () => {
+		// L'écran ne consulte pas les comptes (ADR 0017) : il réinvite une personne déjà membre comme
+		// n'importe quelle adresse. Elle acceptait, l'adhésion existait déjà, rien n'était inséré, et
+		// l'invitation restait « accepted » : retirée ensuite, la personne se remettait seule dans
+		// l'organisation par un appel direct. La base la consomme désormais dès l'acceptation
+		// (migration 0058), et l'écran ne tente plus d'adhésion.
+		const email = 'deja-membre@example.test';
+		const membre = newId();
+		await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified") values (${membre}, ${email}, true)
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${organizationId}, ${membre}, 'editor')
+			`);
+			await tx.execute(conditionsAcceptees(organizationId, membre));
+		});
+		const responsable = await signIn('responsable@example.test');
+		const envoi = await postForm('/membres?/inviter', { email, role: 'org_admin' }, responsable);
+		expect(envoi.status).toBe(200);
+
+		const cookie = await signIn(email);
+		const page = await (await fetch(`${origin}/organisations`, { headers: { cookie } })).text();
+		const invitationId = page.match(/name="invitationId" value="([^"]+)"/)?.[1];
+		expect(invitationId, 'l’invitation doit apparaître').toBeTruthy();
+		const accepte = await postForm(
+			'/organisations?/accepter',
+			{ invitationId: invitationId as string },
+			cookie
+		);
+		expect(accepte.status).toBe(303);
+		expect(accepte.headers.get('location')).toBe('/');
+
+		expect(
+			(await invitationsDe(email)).map((ligne) => [ligne.id, ligne.status, ligne.role])
+		).toEqual([[invitationId, 'joined', 'org_admin']]);
+		const role = await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			return tx.execute<{ role: string }>(sql`
+				select "role" from "membership"
+				where "organization_id" = ${organizationId} and "user_id" = ${membre}
+			`);
+		});
+		expect((role as unknown as { role: string }[]).map((ligne) => ligne.role)).toEqual(['editor']);
+	});
+
+	it('leaves alone the invitations a manager received elsewhere when she invites her own address', async () => {
+		// La politique de modification laisse la personne connectée toucher les invitations reçues à
+		// son adresse, dans toutes les organisations (migration 0016). Réinviter une adresse clôt ses
+		// invitations en attente : sans le filtre sur l'organisation, une responsable qui invite sa
+		// propre adresse clôt celles qu'elle a reçues d'ailleurs.
+		const suffixe = newId().slice(-8);
+		const session = newId();
+		const ailleurs = newId();
+		const moi = newId();
+		const recue = newId();
+		const adresse = 'elle-meme@example.test';
+		await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			for (const [id, slug, nom] of [
+				[ailleurs, `ailleurs-${suffixe}`, 'Association d’ailleurs'],
+				[session, `sienne-${suffixe}`, 'Association à elle']
+			] as const) {
+				await tx.execute(sql`
+					insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+						"enabled_language")
+					values (${id}, ${slug}, ${nom}, 'Europe/Zurich', 'fr', array['fr'])
+				`);
+			}
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified") values (${moi}, ${adresse}, true)
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${session}, ${moi}, 'org_admin')
+			`);
+			await tx.execute(conditionsAcceptees(session, moi));
+			await tx.execute(sql`
+				insert into "invitation" ("id", "organization_id", "email", "role", "expires_at")
+				values (${recue}, ${ailleurs}, ${adresse}, 'editor', now() + make_interval(hours => 7 * 24))
+			`);
+		});
+		const cookie = await signIn(adresse);
+		const envoi = await postForm('/membres?/inviter', { email: adresse, role: 'editor' }, cookie);
+		expect(envoi.status).toBe(200);
+
+		const lignes = await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			return tx.execute<{ id: string; organization_id: string; status: string }>(sql`
+				select "id", "organization_id", "status" from "invitation"
+				where lower("email") = lower(${adresse}) order by "id"
+			`);
+		});
+		const parOrganisation = (
+			lignes as unknown as { id: string; organization_id: string; status: string }[]
+		).map((ligne) => [ligne.organization_id === ailleurs ? 'ailleurs' : 'sienne', ligne.status]);
+		expect(parOrganisation).toEqual([
+			['ailleurs', 'pending'],
+			['sienne', 'pending']
+		]);
+	});
+
+	it('writes the replaced invitation in the journal, with the one that replaces it', async () => {
+		// L'écran des membres consigne l'invitation remplacée comme une annulation qui nomme sa
+		// remplaçante (`routes/membres/+page.server.ts`, action `inviter`). Le journal se lit sous le
+		// rôle applicatif : le propriétaire n'y a pas accès (migration 0029), et une lecture sous lui
+		// passerait à vide.
+		const email = 'journal-remplacee@example.test';
+		const cookie = await signIn('responsable@example.test');
+		await postForm('/membres?/inviter', { email, role: 'editor' }, cookie);
+		await postForm('/membres?/inviter', { email, role: 'org_admin' }, cookie);
+		const [ancienne, nouvelle] = (await invitationsDe(email)).map((ligne) => ligne.id);
+		expect(ancienne && nouvelle, 'deux invitations').toBeTruthy();
+		const journal = await withOrg(
+			appHandle.db,
+			{ organizationId, userId: adminUserId },
+			async (tx) =>
+				tx.execute<{ action: string; target_id: string; after: unknown }>(sql`
+					select "action", "target_id", "after" from "audit_log"
+					where "target_id" in (${ancienne}, ${nouvelle}) order by "created_at", "id"
+				`)
+		);
+		expect(
+			(journal as unknown as { action: string; target_id: string; after: unknown }[]).map(
+				(ligne) => [
+					ligne.action,
+					ligne.target_id === ancienne ? 'ancienne' : 'nouvelle',
+					typeof ligne.after === 'string' ? JSON.parse(ligne.after) : ligne.after
+				]
+			)
+		).toEqual([
+			['invitation.create', 'ancienne', { email, role: 'editor' }],
+			['invitation.cancel', 'ancienne', { replacedBy: nouvelle }],
+			['invitation.create', 'nouvelle', { email, role: 'org_admin' }]
+		]);
+	});
+});
+
 describe('les en-têtes de sécurité', () => {
 	it('carries them on every response', async () => {
 		const response = await fetch(`${origin}/connexion`);
@@ -639,7 +1453,8 @@ describe('les en-têtes de sécurité', () => {
 			expect(response.headers.get(nom), nom).toBe(valeur);
 		}
 		// En clair, l'en-tête de transport strict ne doit pas partir : il engagerait le navigateur
-		// pour un an sur un domaine qui n'est pas encore en HTTPS.
+		// pour deux ans sur un domaine qui n'est pas encore en HTTPS. Sa valeur, que ces serveurs
+		// en clair ne peuvent pas montrer, est éprouvée par `src/lib/server/hsts.test.ts`.
 		expect(response.headers.get('strict-transport-security')).toBeNull();
 		const csp = response.headers.get('content-security-policy') ?? '';
 		expect(csp).toContain("frame-ancestors 'none'");

@@ -33,6 +33,10 @@ export const load: PageServerLoad = async (event) => {
 	// Un `editor` n'entre pas ici : il saisit des cours, il n'ouvre ni ne ferme les accès.
 	const context = await mustAdminister(event);
 
+	// Les deux listes nomment l'organisation en contexte. Les politiques rendent aussi à la personne
+	// connectée ses adhésions des autres organisations (migration 0022) et les invitations reçues à
+	// son adresse (migration 0016) : sans ce filtre, elles s'affichaient ici, avec leurs boutons
+	// (étape 17).
 	return withSessionOrg(context, async (tx) => ({
 		organisation: { nom: await organisationName(tx), slug: context.organizationSlug },
 		role: context.role,
@@ -47,6 +51,7 @@ export const load: PageServerLoad = async (event) => {
 			await tx.execute(sql`
 				select m."id", m."user_id", m."role", u."email", u."name"
 				from "membership" m join "user" u on u."id" = m."user_id"
+				where m."organization_id" = ${context.organizationId}
 				order by m."role", u."email"
 			`)
 		),
@@ -55,7 +60,9 @@ export const load: PageServerLoad = async (event) => {
 		invitations: rows<{ id: string; email: string; role: string; created_at: string }>(
 			await tx.execute(sql`
 				select "id", "email", "role", "created_at"::text
-				from "invitation" where "status" = 'pending' and "expires_at" > now()
+				from "invitation"
+				where "organization_id" = ${context.organizationId}
+					and "status" = 'pending' and "expires_at" > now()
 				order by "created_at"
 			`)
 		)
@@ -63,8 +70,12 @@ export const load: PageServerLoad = async (event) => {
 };
 
 /**
- * Le nom de l'organisation en contexte. Filtré ici : le super-admin voit toutes les organisations,
- * et l'invitation envoyée depuis la seconde nommait la première (`readSettings` le dit aussi).
+ * Le nom de l'organisation en contexte. Ce filtre est la première barrière, et non une défense de
+ * second rang : pour le rôle applicatif, la politique de lecture des organisations rend aussi toute
+ * organisation qui invite la personne connectée (migration 0023). Sans lui, l'écran et le courriel
+ * d'invitation pourraient nommer celle-ci. Le super-admin ne voit que l'organisation en contexte
+ * depuis la migration 0055 ; avant, il les voyait toutes, et l'invitation envoyée depuis la seconde
+ * nommait la première (`readSettings` le dit aussi).
  */
 async function organisationName(tx: Parameters<Parameters<typeof withSessionOrg>[1]>[0]) {
 	const found = rows<{ name: string }>(
@@ -75,10 +86,9 @@ async function organisationName(tx: Parameters<Parameters<typeof withSessionOrg>
 	return found[0]?.name ?? '';
 }
 
-/** Seule une personne responsable touche aux membres. */
 /**
- * Seul un responsable administre les membres — et le super-admin, qui entre partout depuis
- * l'étape 4 (ADR 0025). Un `editor` saisit des cours, il n'ouvre ni ne ferme les accès.
+ * Seule une personne responsable administre les membres, avec le super-admin, qui entre partout
+ * depuis l'étape 4 (ADR 0025). Un `editor` saisit des cours, il n'ouvre ni ne ferme les accès.
  */
 function mustBeAdmin(role: string) {
 	return role === 'org_admin' || role === 'superadmin';
@@ -106,12 +116,43 @@ export const actions: Actions = {
 		// message, ni par le temps de réponse (ADR 0017).
 		const invitationId = newId();
 		await withSessionOrg(context, async (tx) => {
-			await tx.execute(sql`
-				insert into "invitation" ("id", "organization_id", "email", "role", "invited_by", "expires_at")
-				values (${invitationId}, ${context.organizationId}, ${email}, ${role}, ${context.userId},
-					now() + make_interval(days => ${INVITATION_DAYS}))
-				on conflict do nothing
-			`);
+			// Une invitation encore en attente pour cette adresse, échue ou non, est close d'abord, et
+			// la nouvelle la remplace. L'index des invitations en attente n'en admet qu'une par adresse,
+			// échues comprises : sans cela, l'insertion ne faisait rien, et l'écran disait « envoyée »
+			// pour une invitation que personne ne voyait, ou qui gardait son ancien rôle (étape 17).
+			// Seules les invitations de cette organisation sont touchées, et aucun compte n'est lu : la
+			// réponse reste la même, mot pour mot.
+			const remplacees = rows<{ id: string }>(
+				await tx.execute(sql`
+					update "invitation" set "status" = 'cancelled', "resolved_at" = now()
+					where "organization_id" = ${context.organizationId}
+						and lower("email") = lower(${email}) and "status" = 'pending'
+					returning "id"
+				`)
+			);
+			for (const remplacee of remplacees) {
+				await record(tx, context.organizationId, context.userId, {
+					action: 'invitation.cancel',
+					targetTable: 'invitation',
+					targetId: remplacee.id,
+					after: { replacedBy: invitationId }
+				});
+			}
+			// La fin se compte en heures, comme la borne de la base (migration 0056) : quatorze jours de
+			// calendrier, dans un fuseau qui passe à l'heure d'hiver, font 337 heures, et la base les
+			// refusait.
+			// Il ne reste de conflit possible qu'avec une invitation envoyée au même instant, qui vaut
+			// alors pour celle-ci.
+			const creee = rows<{ id: string }>(
+				await tx.execute(sql`
+					insert into "invitation" ("id", "organization_id", "email", "role", "invited_by", "expires_at")
+					values (${invitationId}, ${context.organizationId}, ${email}, ${role}, ${context.userId},
+						now() + make_interval(hours => ${INVITATION_DAYS} * 24))
+					on conflict do nothing
+					returning "id"
+				`)
+			);
+			if (creee.length === 0) return;
 			await record(tx, context.organizationId, context.userId, {
 				action: 'invitation.create',
 				targetTable: 'invitation',
@@ -132,10 +173,18 @@ export const actions: Actions = {
 		}
 		const invitationId = String((await request.formData()).get('invitationId') ?? '');
 		await withSessionOrg(context, async (tx) => {
-			await tx.execute(sql`
-				update "invitation" set "status" = 'cancelled', "resolved_at" = now()
-				where "id" = ${invitationId} and "status" = 'pending'
-			`);
+			// L'organisation est nommée : la politique laisse aussi la personne connectée modifier les
+			// invitations reçues à son adresse. Depuis cet écran, elle annulait une invitation d'une
+			// autre organisation (étape 17). Le journal ne consigne que ce qui a changé.
+			const annulees = rows<{ id: string }>(
+				await tx.execute(sql`
+					update "invitation" set "status" = 'cancelled', "resolved_at" = now()
+					where "id" = ${invitationId} and "organization_id" = ${context.organizationId}
+						and "status" = 'pending'
+					returning "id"
+				`)
+			);
+			if (annulees.length === 0) return;
 			await record(tx, context.organizationId, context.userId, {
 				action: 'invitation.cancel',
 				targetTable: 'invitation',

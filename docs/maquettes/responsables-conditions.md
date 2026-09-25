@@ -43,7 +43,8 @@ Le document, en entier, tel qu'il est écrit :
 
 1. Titre de niveau 1 : `Conditions d'utilisation`.
 2. `Ce texte s'adresse aux organisations qui publient leur programme avec ce service. […]`
-3. `Dernière mise à jour : 22 septembre 2026.`
+3. `Dernière mise à jour : <date>.`, la date écrite en tête du document, par exemple
+   `23 septembre 2026`.
 4. Les sections du document, en titres de niveau 2 et 3, dans son ordre.
 
 Aucune session n'est demandée. Une personne connectée garde son en-tête habituel.
@@ -70,7 +71,7 @@ c'est lui qui propose ce texte.
    `Avant d'entrer dans l'espace de <organisation>, lisez les conditions d'utilisation et
 acceptez-les. Elles disent ce que le service conserve, combien de temps, et ce que l'exploitant peut
 voir.`
-3. La version : `Version du 22 septembre 2026`.
+3. La version : `Version du <date>`, la même date, par exemple `Version du 23 septembre 2026`.
 4. Pour une personne membre de plusieurs organisations, et pour elle seule : le lien
    `Choisir une autre organisation`, vers `/organisations`. Il vient avant le texte : qui voulait
    entrer dans une autre organisation n'a pas à parcourir tout le document pour le trouver.
@@ -88,10 +89,20 @@ liens ramènerait ici. Restent la marque `jadwal`, l'adresse de la personne et l
 donc le seul chemin vers une autre. `/organisations` ne passe pas par la porte de l'espace ; le choix
 fait, c'est la porte de l'autre organisation qui s'applique.
 
+Ailleurs dans l'espace, la navigation se termine par `Changer d'organisation`, vers
+`/organisations`, pour toute personne membre de plusieurs organisations, éditeurs compris. Il vaut
+aussi pour une personne d'une seule organisation qui a une invitation en attente, pas encore échue :
+c'est sur `/organisations` qu'elle l'accepte. Une personne d'une seule organisation sans invitation
+qui court ne le voit pas, et le super-admin entré par ses pouvoirs garde le seul lien de sa
+bannière, invitation ou non. Ce lien part avec la navigation sur cet écran, qui a déjà le sien.
+L'écran `Membres` ne le porte plus : il se montrait aussi à qui n'avait qu'une organisation et rien
+à choisir.
+
 ### Ce que fait le bouton
 
-Il enregistre une ligne : l'organisation, la personne, la version (`2026-09-22`). Le moment est posé
-par la base de données, pas par l'application. Puis il renvoie vers `/`, l'accueil de l'espace.
+Il enregistre une ligne : l'organisation, la personne, la version (`2026-09-23` pour le texte du
+23 septembre 2026). Le moment est posé par la base de données, pas par l'application. Puis il
+renvoie vers `/`, l'accueil de l'espace.
 
 Un second envoi du même formulaire n'ajoute rien et ne lève rien.
 

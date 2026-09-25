@@ -7,17 +7,9 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { newId, sql, withUser } from '@jadwal/db';
 import { appDatabase } from '$lib/server/database.js';
-import { chooseOrganisation, membershipsOf } from '$lib/server/context.js';
+import { chooseOrganisation, membershipsOf, pendingInvitationsOf } from '$lib/server/context.js';
 import { record } from '$lib/server/audit.js';
 import type { Actions, PageServerLoad } from './$types.js';
-
-interface InvitationRow {
-	id: string;
-	organization_id: string;
-	role: 'org_admin' | 'editor';
-	created_at: string;
-	expires_at: string;
-}
 
 function rows<T>(result: unknown): T[] {
 	if (Array.isArray(result)) return result as T[];
@@ -25,28 +17,14 @@ function rows<T>(result: unknown): T[] {
 	return Array.isArray(inner) ? (inner as T[]) : [];
 }
 
-/** Les invitations en attente adressées à cette personne, avec le nom de l'organisation. */
-async function pendingInvitations(userId: string) {
-	return withUser(appDatabase(), userId, async (tx) =>
-		rows<InvitationRow & { organisation: string }>(
-			await tx.execute(sql`
-				select i."id", i."organization_id", i."role", i."created_at"::text,
-					i."expires_at"::text, o."name" as organisation
-				from "invitation" i
-				join "organization" o on o."id" = i."organization_id"
-				where i."status" = 'pending' and i."expires_at" > now()
-				order by i."created_at"
-			`)
-		)
-	);
-}
-
 export const load: PageServerLoad = async ({ locals }) => {
 	const person = locals.person;
 	if (!person) redirect(303, '/connexion');
 	return {
 		memberships: await membershipsOf(person),
-		invitations: (await pendingInvitations(person.userId)).map((invitation) => ({
+		// La lecture que le contexte compte pour proposer cet écran dans la navigation : il ne mène
+		// jamais ici pour une invitation qui n'y serait pas.
+		invitations: (await pendingInvitationsOf(person)).map((invitation) => ({
 			id: invitation.id,
 			organisation: invitation.organisation,
 			role: invitation.role,
@@ -77,23 +55,34 @@ export const actions: Actions = {
 			// L'ordre compte. La personne accepte d'abord : la politique de mise à jour la reconnaît
 			// par son adresse, que le lien magique vient de prouver. C'est cette acceptation, et elle
 			// seule, qui autorisera ensuite la création de l'adhésion (ADR 0017).
-			const claimed = rows<{ organization_id: string; role: 'org_admin' | 'editor' }>(
+			const claimed = rows<{
+				organization_id: string;
+				role: 'org_admin' | 'editor';
+				status: 'accepted' | 'joined';
+			}>(
 				await tx.execute(sql`
 					update "invitation"
 					set "status" = 'accepted', "accepted_by" = ${person.userId}, "resolved_at" = now()
 					where "id" = ${invitationId} and "status" = 'pending' and "expires_at" > now()
-					returning "organization_id", "role"
+					returning "organization_id", "role", "status"
 				`)
 			)[0];
 			if (!claimed) return null;
 			// Le contexte d'organisation est posé maintenant, et pas avant : la personne vient à
 			// l'instant d'en devenir légitime.
 			await tx.execute(sql`select set_config('jadwal.org_id', ${claimed.organization_id}, true)`);
-			await tx.execute(sql`
-				insert into "membership" ("id", "organization_id", "user_id", "role")
-				values (${newId()}, ${claimed.organization_id}, ${person.userId}, ${claimed.role})
-				on conflict ("organization_id", "user_id") do nothing
-			`);
+			// Une personne déjà membre, réinvitée, n'a pas d'adhésion à créer : la base consomme son
+			// invitation dès l'acceptation, qui revient « joined » (migration 0058), et la politique
+			// refuserait l'insertion. Elle garde son adhésion et son rôle. Pour toute autre personne,
+			// l'adhésion porte le rôle de l'invitation : la base n'en accepte pas d'autre. L'insertion
+			// ne part donc que pour une personne qui n'est pas encore membre, et n'a plus besoin de
+			// « on conflict do nothing ».
+			if (claimed.status === 'accepted') {
+				await tx.execute(sql`
+					insert into "membership" ("id", "organization_id", "user_id", "role")
+					values (${newId()}, ${claimed.organization_id}, ${person.userId}, ${claimed.role})
+				`);
+			}
 			await record(tx, claimed.organization_id, person.userId, {
 				action: 'invitation.accept',
 				targetTable: 'invitation',
