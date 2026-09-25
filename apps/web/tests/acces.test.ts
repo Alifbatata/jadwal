@@ -9,6 +9,12 @@ import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { createDatabase, newId, sql, withOrg, type DatabaseHandle } from '@jadwal/db';
+import {
+	isAccountLanguage,
+	readAccountLanguage,
+	writeAccountLanguage,
+	type AccountLanguage
+} from '../src/lib/server/account-language.js';
 import { emailKey, storedKey } from '../src/lib/server/rate-limit.js';
 import { conditionsAcceptees } from './conditions-acceptees.js';
 
@@ -2397,5 +2403,67 @@ describe('le module des heures de prière', () => {
 			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
 			await tx.execute(sql`delete from "course" where "id" = ${session}`);
 		});
+	});
+});
+
+describe('la langue du compte', () => {
+	// Pas encore d'écran : l'espace en cinq langues viendra la lire et l'écrire par ces deux
+	// fonctions, qui passent par le rôle applicatif avec la seule personne dans le contexte
+	// (ADR 0046, migration 0060).
+	let personne: string;
+	let collegue: string;
+
+	beforeAll(async () => {
+		personne = newId();
+		collegue = newId();
+		await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified")
+				values (${personne}, 'langue@example.test', true),
+					(${collegue}, 'langue-collegue@example.test', true)
+			`);
+		});
+	});
+
+	/** La langue enregistrée, relevée par le propriétaire. */
+	async function enregistree(userId: string): Promise<string | null | undefined> {
+		return ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			const lignes = await tx.execute<{ language: string | null }>(
+				sql`select "language" from "user" where "id" = ${userId}`
+			);
+			return (Array.isArray(lignes) ? (lignes as { language: string | null }[]) : [])[0]?.language;
+		});
+	}
+
+	it('is read and written by the person, among the five languages, and reset to none', async () => {
+		expect(await readAccountLanguage(personne, appHandle.db)).toBeNull();
+		for (const langue of ['fr', 'de', 'it', 'en', 'ar'] as const) {
+			expect(await writeAccountLanguage(personne, langue, appHandle.db), langue).toBe(true);
+			expect(await readAccountLanguage(personne, appHandle.db)).toBe(langue);
+			expect(await enregistree(personne)).toBe(langue);
+		}
+		// Écrire la sienne ne touche pas celle d'une autre personne.
+		expect(await enregistree(collegue)).toBeNull();
+		expect(await writeAccountLanguage(personne, null, appHandle.db)).toBe(true);
+		expect(await readAccountLanguage(personne, appHandle.db)).toBeNull();
+	});
+
+	it('refuses a language outside the five before it reaches the base', async () => {
+		expect(await writeAccountLanguage(personne, 'de', appHandle.db)).toBe(true);
+		for (const valeur of ['es', 'FR', 'fr-CH', '']) {
+			expect(isAccountLanguage(valeur), valeur).toBe(false);
+			await expect(
+				writeAccountLanguage(personne, valeur as AccountLanguage, appHandle.db),
+				valeur
+			).rejects.toThrow(TypeError);
+		}
+		expect(await enregistree(personne)).toBe('de');
+	});
+
+	it('writes nothing for an account that does not exist', async () => {
+		// La politique écarte la ligne sans lever d'erreur : c'est le compte rendu qui le dit.
+		expect(await writeAccountLanguage(newId(), 'it', appHandle.db)).toBe(false);
 	});
 });
