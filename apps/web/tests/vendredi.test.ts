@@ -421,7 +421,11 @@ describe('les sessions du vendredi', () => {
 		);
 		const courseId = session[0]?.id ?? '';
 		const date = vendredi();
-		const versLe = addDays(date, 1);
+		// Le lendemain, sauf un samedi : la semaine affichée va alors du samedi au vendredi, et le
+		// lendemain du vendredi en sort. Le test tombait chaque samedi, sans rien qui ait changé (vu
+		// le 2026-09-26) ; la veille, un jeudi, est alors dans la semaine.
+		const today = todayInZone(FUSEAU, new Date());
+		const versLe = addDays(date, 1) > addDays(today, 6) ? addDays(date, -1) : addDays(date, 1);
 		expect(
 			(await postForm('/vendredi?/deplacer', { courseId, date, toDate: versLe, toStart: '15:00' }))
 				.status
