@@ -214,6 +214,7 @@ sur `main`, et la garde du déploiement exige son verdict.
 `pnpm garde:test` joue cette garde cas par cas, avec le vrai playbook, contre une fausse API du
 registre et de GitHub. `pnpm sauvegarde:test` joue le script de sauvegarde entier, jusqu'à la
 vérification de l'âge des objets distants, avec le vrai rclone en 1.60.1 puis en 1.75.1 : neuf
-passages par version. L'envoi va vers une destination locale, et la liste de deux de ces passages
-passe par un faux stockage S3 qui refuse de lire les métadonnées d'un objet. Les deux épreuves
-tournent dans des conteneurs jetables, et aucune ne joint le serveur.
+passages par version. L'envoi va vers une destination locale, et la liste de quatre de ces passages
+passe par un faux stockage S3 : un seau absent, un chemin absent, et deux fois un stockage qui refuse
+de lire les métadonnées d'un objet. Les deux épreuves tournent dans des conteneurs jetables, et
+aucune ne joint le serveur.
