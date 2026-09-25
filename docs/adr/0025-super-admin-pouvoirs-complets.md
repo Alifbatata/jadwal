@@ -98,8 +98,68 @@ l'information est donnée une fois, clairement, au lieu d'être répétée à ch
 - L'ADR 0018 est **remplacé** par celui-ci. Il reste lisible, avec un en-tête qui renvoie ici : une
   décision annulée se raye, elle ne s'efface pas.
 
+## Addendum du 2026-09-23 : la table des organisations suit aussi le contexte
+
+La décision dit que les politiques du super-admin restent bornées par le contexte. Ce n'était pas
+vrai pour la table des organisations elle-même : la lecture, la modification et la suppression y
+valaient `true`. Entré dans A, le super-admin lisait B. Quatre lectures de l'application qui ne
+filtraient pas sur le contexte lui ont montré les réglages d'une autre organisation que la sienne ;
+l'étape 16 les a corrigées une à une, et rien n'empêchait d'en écrire une cinquième. À l'écriture,
+c'était pire : une instruction sans `where`, tapée depuis A, modifiait ou supprimait toutes les
+organisations du service. C'est exactement la méprise que le contexte existe pour arrêter.
+
+**La migration 0055 borne ces trois politiques au contexte quand il est posé.** Entré dans une
+organisation, le super-admin ne voit et ne touche plus qu'elle. Dans sa console, sans contexte, il
+les voit et les change toutes : c'est là qu'il les liste, en crée, change le plan et l'état, et lit
+celle où il va entrer. Rien ne change pour ces écrans, qui tournent tous sans contexte, ni pour
+ceux de l'espace d'une organisation, qui tournent tous avec.
+
+« Sans contexte » veut dire un réglage absent ou vide. Un réglage illisible ne vaut pas la console :
+il ne montre rien, comme sur les autres tables (ADR 0013).
+
+Les autres politiques du super-admin qui ne lisent pas le contexte ont été relevées dans le
+catalogue, et aucune n'a le même défaut :
+
+- **la création d'une organisation** n'en touche aucune autre ; elle reste ouverte ;
+- **la lecture des comptes** : un compte n'appartient à aucune organisation, et le super-admin les
+  lit tous par décision (voir plus haut) ;
+- **son registre interne**, en lecture et en insertion : c'est le sien, pas une donnée
+  d'organisation, et il s'écrit aussi hors de tout contexte.
+
+Un test relève ces politiques dans le catalogue sans nommer de table : une politique du super-admin
+qui ne lit pas le contexte le fait échouer tant qu'elle n'est pas ajoutée à cette liste, avec sa
+raison.
+
+## Addendum du 2026-09-23 : repousser l'échéance d'une invitation
+
+Depuis la migration 0057, une invitation échue ne s'accepte plus (ADR 0017). Le super-admin, qui
+invite, garde le droit de modifier la fin d'une invitation dans l'organisation où il est entré :
+c'est une modification ordinaire. Il peut donc rendre la vie à une invitation échue qui a duré
+moins de quatorze jours, en repoussant sa fin jusqu'à quatorze jours après sa création. C'est voulu.
+La borne de la migration 0056 l'arrête là : une invitation créée il y a plus de quatorze jours ne
+reprend pas vie. Aucun écran ne le propose aujourd'hui ; c'est ce que la base permet au rôle du
+super-admin, et un test fixe ce comportement.
+
+## Addendum du 2026-09-23 : les passages de statut d'une invitation
+
+Depuis la migration 0058, la base tient ce qu'une invitation peut devenir (ADR 0017), et le
+super-admin suit ces règles comme les autres rôles de connexion. Il a tous les droits sur les
+données, mais une règle d'intégrité n'est pas un droit de lecture ou d'écriture : elle dit ce que
+veut dire une ligne, et « acceptée » veut dire que la personne a accepté. Il n'accepte donc pas à
+la place de quelqu'un, ne met pas une acceptation au nom d'un autre compte, ne rend pas la vie à
+une invitation annulée ou consommée, et ne change pas la date d'une réponse.
+
+Cela ne lui retire aucun pouvoir. Ce qu'un passage refusé lui donnerait, il l'obtient par un geste
+permis : une nouvelle invitation, ou l'adhésion qu'il crée lui-même dans l'organisation où il est
+entré. Et la règle l'arrête sur la méprise, comme le contexte : un `update` sans filtre ne rend pas
+la vie aux invitations annulées d'une organisation. Il garde le report d'échéance de l'addendum
+précédent : ni le statut, ni l'acceptation, ni la date de réponse n'y changent. Seul le
+propriétaire, sous son drapeau d'entretien, sort de ces règles (ADR 0019).
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 4 de la feuille de route. **Remplace l'ADR 0018** et corrige l'ADR 0013
 sur un point : la sécurité au niveau des lignes ne borne plus le super-admin à ce dont il a besoin,
-elle le borne à l'organisation où il est entré.
+elle le borne à l'organisation où il est entré. Complété le 2026-09-23 (la table des organisations
+suit aussi le contexte, le super-admin peut repousser l'échéance d'une invitation, et il suit les
+passages de statut d'une invitation, voir les addendums).

@@ -117,10 +117,13 @@ export async function seedOrganisation(owner: Database, slug: string): Promise<O
 			insert into "audit_log" ("id", "organization_id", "actor_id", "action", "target_table", "target_id")
 			values (${newId()}, ${id}, ${userId}, 'course.create', 'course', ${courseId})
 		`);
+		// Les dates d'une invitation se comptent en heures dans tous les tests, comme l'écran des
+		// membres les pose : la borne de la migration 0056 compte une durée écoulée, et quatorze jours
+		// de calendrier font 337 heures dans un fuseau qui passe à l'heure d'hiver entre-temps.
 		await tx.execute(sql`
 			insert into "invitation" ("id", "organization_id", "email", "role", "invited_by", "expires_at")
 			values (${newId()}, ${id}, ${`invite-${slug}@example.test`}, 'editor', ${userId},
-				now() + interval '14 days')
+				now() + make_interval(hours => 14 * 24))
 		`);
 		// Une ligne de compteur, comme pour toute table d'organisation : les tests d'isolation
 		// parcourent la liste des tables et attendent exactement une ligne par organisation.
@@ -154,7 +157,8 @@ export async function joinOrganisation(
 	await withMaintenance(owner, (tx) =>
 		tx.execute(sql`
 			insert into "invitation" ("id", "organization_id", "email", "role", "expires_at")
-			values (${newId()}, ${organizationId}, ${email}, ${role}, now() + interval '7 days')
+			values (${newId()}, ${organizationId}, ${email}, ${role},
+				now() + make_interval(hours => 7 * 24))
 		`)
 	);
 	await app.transaction(async (tx) => {
