@@ -43,6 +43,10 @@ apps/web/src/lib/i18n.ts | AR_DIACRITICS_REPLACE | برنامج
 apps/web/src/lib/i18n.ts | AR_HOMOPHONES_REPLACE | الخطبة
 apps/web/src/lib/i18n.ts | AR_SIMPLE_REPLACE | الفترة
 apps/web/src/lib/i18n.ts | DE_PHRASE_REPETITION | Kalender abonnieren Kalender abonnieren
+# « No sessions this week. No sessions this month. No sessions on this day. » : des textes d'écran
+# indépendants, que le corpus recolle en un paragraphe. Aucun écran ne les montre à la suite ; c'est
+# le même cas que « Kalender abonnieren » ci-dessus, et la même tournure que « Aucune séance… ».
+apps/web/src/lib/i18n.ts | ENGLISH_WORD_REPEAT_BEGINNING_RULE | No
 apps/web/src/lib/i18n.ts | HUNSPELL_RULE_AR | Android
 # « والصقه », « et colle-la » : l'impératif « الصق » que la page écrit déjà deux fois sans
 # signalement (« والصق العنوان »), avec le pronom « ـه » collé. Hunspell ne connaît pas la forme
@@ -53,12 +57,17 @@ apps/web/src/lib/i18n.ts | MORFOLOGIK_RULE_IT_IT | min
 # filtre des identifiants les effaçait avant qu'il ne soit levé sur les dictionnaires.
 apps/web/src/lib/i18n.ts | MORFOLOGIK_RULE_IT_IT | mer
 apps/web/src/lib/i18n.ts | MORFOLOGIK_RULE_IT_IT | sab
+# « Tue » et « Thu », Tuesday et Thursday abrégés pour l'en-tête anglais de la vue Mois (famille 4).
+apps/web/src/lib/i18n.ts | MORFOLOGIK_RULE_EN_GB | Tue
+apps/web/src/lib/i18n.ts | MORFOLOGIK_RULE_EN_GB | Thu
 apps/web/src/lib/i18n.ts | POINT | Outlook
 apps/web/src/lib/i18n.ts | SWISS_GERMAN_SPELLER_RULE | Kalenderabo
 apps/web/src/lib/i18n.ts | SWISS_GERMAN_SPELLER_RULE | Sa
 apps/web/src/lib/i18n.ts | SWISS_GERMAN_SPELLER_RULE | https-Adresse
 
 # apps/web/src/lib/messages.ts
+# « برنامج » sans voyelles, comme dans `i18n.ts` et le widget (famille 6).
+apps/web/src/lib/messages.ts | AR_DIACRITICS_REPLACE | برنامج
 apps/web/src/lib/messages.ts | FR_REPEATEDWORDS_NORMALEMENT | normalement
 
 # apps/web/src/lib/server/mail/messages.ts

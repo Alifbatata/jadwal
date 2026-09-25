@@ -8,7 +8,7 @@
  *
  * `pnpm style` retire des tics : le tiret cadratin et une liste de chevilles. Il ne comprend ni le
  * français, ni l'allemand, ni l'italien, et il ne voit aucune faute d'orthographe ni d'accord. Or le
- * service parle quatre langues à des gens qui ne les parlent pas toutes, et une faute dans un écran
+ * service parle cinq langues à des gens qui ne les parlent pas toutes, et une faute dans un écran
  * public est ce qui se remarque en premier.
  *
  * ## Comment il tourne
@@ -33,10 +33,10 @@
  * `docs/`, hors `docs/maquettes/`, plus le `README`, `CONTRIBUTING.md` et `SECURITY.md`. Il en
  * oubliait huit, les conditions comprises (`documentsOublies`).
  *
- * Les dictionnaires des pages publiques sont relus langue par langue. Trois modules rangent aussi
- * leurs phrases par langue, sous des clés `fr:`, `de:`, `it:` et `ar:` : la mise en mots des pages
- * publiques, le libellé d'ancrage du flux agenda et le widget. Chaque chaîne y est relue dans la
- * langue de sa clé (`parLangue`).
+ * Les dictionnaires des pages publiques sont relus langue par langue. Quatre modules rangent aussi
+ * leurs phrases par langue, sous des clés `fr:`, `de:`, `it:`, `en:` et `ar:` : la mise en mots des
+ * pages publiques, le libellé d'ancrage du flux agenda, le widget et, depuis l'étape 18, les
+ * messages prêts à coller. Chaque chaîne y est relue dans la langue de sa clé (`parLangue`).
  *
  * Le Markdown est nettoyé **ligne à ligne**, en remplaçant par des espaces ce qui n'est pas de la
  * prose : blocs de code, code en ligne, adresses, balises. Le compte de lignes est donc conservé, et
@@ -76,6 +76,9 @@ const LANGUES = [
 	['fr', 'fr-CH', 'français (Suisse)'],
 	['de', 'de-CH', 'allemand (Suisse)'],
 	['it', 'it', 'italien'],
+	// L'anglais du service est britannique (étape 18) : `en-GB` réclame « programme » et
+	// « cancelled », là où `en-US` les corrigerait à tort.
+	['en', 'en-GB', 'anglais (Royaume-Uni)'],
 	['ar', 'ar', 'arabe, orthographe et ponctuation seulement']
 ];
 
@@ -211,6 +214,12 @@ function dictionnaire() {
 const SUBSTITUT = 'ceci';
 /** Le substitut, entouré d'espaces : collé à un mot, il en formerait un autre. */
 const POSER_SUBSTITUT = ` ${SUBSTITUT} `;
+/**
+ * La ponctuation contre laquelle une interpolation reste collée, comme dans la source : guillemets
+ * des cinq langues, parenthèses, point, virgule, deux-points, et la virgule et le point-virgule
+ * arabes (voir `chaines`).
+ */
+const COLLE_A_LA_PONCTUATION = /^[«»‘’“”„"'().,:;!?،؛]$/u;
 
 /**
  * Un document Markdown, moins ce qui n'est pas de la prose.
@@ -361,8 +370,16 @@ function chaines(source, { identifiants = true } = {}) {
 				}
 				// Le substitut, et non un trou : une interpolation tient la place d'un mot dans la
 				// phrase, et l'effacer donnait « le cours du est annulé ».
+				//
+				// Il garde la typographie du texte qui l'entoure : collé à une ponctuation dans la
+				// source, il y reste collé. Entouré d'espaces à tout coup, `«${titre}»` devenait
+				// « « ceci » », et le correcteur allemand, italien et arabe signalait les espaces dans
+				// les guillemets ; `${date}.` devenait « ceci . », une espace avant le point. Contre une
+				// lettre ou un chiffre, l'espace reste : collé à un mot, il en formerait un autre.
 				const avale = source.slice(index, fin + 1);
-				sortie += POSER_SUBSTITUT + avale.replace(/[^\n]/g, '');
+				const avant = COLLE_A_LA_PONCTUATION.test(source[index - 1] ?? '') ? '' : ' ';
+				const apres = COLLE_A_LA_PONCTUATION.test(source[fin + 1] ?? '') ? '' : ' ';
+				sortie += avant + SUBSTITUT + apres + avale.replace(/[^\n]/g, '');
 				index = fin;
 				continue;
 			}
@@ -465,7 +482,7 @@ function finDeValeur(source, debut, { virgule = true } = {}) {
 /**
  * Un module qui range ses phrases par langue, découpé en autant de textes que de langues.
  *
- * Chaque clé `fr:`, `de:`, `it:` ou `ar:` d'un littéral d'objet donne une plage : sa valeur, une
+ * Chaque clé `fr:`, `de:`, `it:`, `en:` ou `ar:` d'un littéral d'objet donne une plage : sa valeur, une
  * chaîne, une fonction fléchée ou un objet, délimitée par `finDeValeur`. La clé doit suivre une
  * accolade ou une virgule, ce qui écarte un ternaire et une annotation de type. Quand deux plages
  * s'emboîtent, **la plus intérieure l'emporte** : dans `fr: { fr: 'français', de: 'Französisch' }`,
@@ -655,20 +672,20 @@ function corpus() {
 		ajouter(chemin, 'fr', gabarit(readFileSync(join(racine, chemin), 'utf8')));
 	}
 
-	for (const chemin of [
-		'apps/web/src/lib/messages.ts',
-		'apps/web/src/lib/server/mail/messages.ts'
-	]) {
+	for (const chemin of ['apps/web/src/lib/server/mail/messages.ts']) {
 		ajouter(chemin, 'fr', chaines(readFileSync(join(racine, chemin), 'utf8')));
 	}
 
-	// Trois modules rangent leurs phrases par langue, sous des clés `fr:`, `de:`, `it:` et `ar:` :
-	// la mise en mots des pages publiques, le libellé d'ancrage du flux agenda, et le widget. Chaque
-	// chaîne y est relue dans la langue de sa clé, et rien d'autre du fichier n'est relu.
+	// Quatre modules rangent leurs phrases par langue, sous des clés `fr:`, `de:`, `it:`, `en:` et
+	// `ar:` : la mise en mots des pages publiques, le libellé d'ancrage du flux agenda, le widget, et
+	// les messages prêts à coller, qui parlent les cinq langues depuis l'étape 18 et étaient relus en
+	// français de bout en bout jusque-là. Chaque chaîne y est relue dans la langue de sa clé, et rien
+	// d'autre du fichier n'est relu.
 	for (const chemin of [
 		'apps/web/src/lib/public/affichage.ts',
 		'apps/web/src/lib/server/agenda.ts',
-		'packages/widget/src/element.ts'
+		'packages/widget/src/element.ts',
+		'apps/web/src/lib/messages.ts'
 	]) {
 		for (const [langue, texte] of parLangue(readFileSync(join(racine, chemin), 'utf8'))) {
 			ajouter(chemin, langue, chaines(texte, { identifiants: false }));
@@ -683,7 +700,7 @@ function corpus() {
 		QUESTIONS.map((point) => `${point.titre}\n${point.corps}`).join('\n\n')
 	);
 
-	// `i18n.ts` porte les quatre langues, chacune dans son propre objet. Les relire toutes en
+	// `i18n.ts` porte les cinq langues, chacune dans son propre objet. Les relire toutes en
 	// français rendrait trois cents fautes qui n'en sont pas.
 	const chemin = 'apps/web/src/lib/i18n.ts';
 	const source = readFileSync(join(racine, chemin), 'utf8');
