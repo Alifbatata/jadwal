@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { newId, withOrg, type Database, type DatabaseHandle } from '../src/index.js';
 import {
 	allRows,
+	asAdmin,
 	countIn,
 	countVisible,
 	firstRow,
@@ -178,10 +179,13 @@ describe('lecture : une organisation ne voit que ses lignes', () => {
 	});
 });
 
+// Les écritures de ce bloc visent les salles, réservées aux responsables depuis la migration 0059
+// (ADR 0046). Elles posent la personne responsable de A : sans elle, la réserve refuserait tout, et
+// ces cas ne prouveraient plus rien de l'organisation.
 describe('écriture : une organisation ne touche que ses lignes', () => {
 	it('refuses an insert that would carry another organisation', async () => {
 		const state = await sqlStateOfFailure(() =>
-			withOrg(app, a.id, async (tx) => {
+			withOrg(app, asAdmin(a), async (tx) => {
 				await tx.execute(sql`
 					insert into "room" ("id", "organization_id", "name")
 					values ('00000000-0000-7000-8000-00000000aaa1', ${b.id}, 'Salle volée')
@@ -194,7 +198,7 @@ describe('écriture : une organisation ne touche que ses lignes', () => {
 
 	it('refuses an update that would move a row to another organisation', async () => {
 		const state = await sqlStateOfFailure(() =>
-			withOrg(app, a.id, async (tx) => {
+			withOrg(app, asAdmin(a), async (tx) => {
 				await tx.execute(sql`update "room" set organization_id = ${b.id}`);
 			})
 		);
@@ -202,7 +206,7 @@ describe('écriture : une organisation ne touche que ses lignes', () => {
 	});
 
 	it('touches no row when updating or deleting the other organisation rows', async () => {
-		await withOrg(app, a.id, async (tx) => {
+		await withOrg(app, asAdmin(a), async (tx) => {
 			const updated = await tx.execute(sql`
 				update "course" set teacher = 'pirate' where organization_id = ${b.id} returning id
 			`);
@@ -218,7 +222,7 @@ describe('écriture : une organisation ne touche que ses lignes', () => {
 
 	it('writes and reads back its own row through RETURNING', async () => {
 		const id = '00000000-0000-7000-8000-00000000aaa2';
-		const returned = await withOrg(app, a.id, async (tx) => {
+		const returned = await withOrg(app, asAdmin(a), async (tx) => {
 			const result = await tx.execute<{ id: string }>(sql`
 				insert into "room" ("id", "organization_id", "name")
 				values (${id}, ${a.id}, 'Salle A2') returning id
@@ -227,7 +231,7 @@ describe('écriture : une organisation ne touche que ses lignes', () => {
 		});
 		expect(returned).toEqual([id]);
 		expect(await countVisible(app, a.id, 'room')).toBe(2);
-		await withOrg(app, a.id, async (tx) => {
+		await withOrg(app, asAdmin(a), async (tx) => {
 			await tx.execute(sql`delete from "room" where id = ${id}`);
 		});
 	});
@@ -241,7 +245,7 @@ describe('écriture : une organisation ne touche que ses lignes', () => {
 		// La clé étrangère porte sur (course_id, organization_id) : la ligne visée n'existe pas pour
 		// cette organisation, et l'erreur ne dit pas si elle existe ailleurs.
 		const state = await sqlStateOfFailure(() =>
-			withOrg(app, a.id, async (tx) => {
+			withOrg(app, asAdmin(a), async (tx) => {
 				await tx.execute(sql`
 					insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
 					values ('00000000-0000-7000-8000-00000000aaa3', ${a.id}, ${courseId}, 'de', 'Vol')
@@ -425,17 +429,19 @@ describe('les personnes ne se laissent pas atteindre par une écriture', () => {
 	});
 });
 
+// Retirer un membre et changer un rôle sont réservés aux responsables depuis la migration 0059
+// (ADR 0046) : ces écritures posent donc la personne responsable de A, comme l'écran des membres.
 describe('la dernière personne responsable', () => {
 	it('cannot be removed, nor demoted, whatever the calling code does', async () => {
 		// La règle est portée par un déclencheur, donc elle tient même si une interface oublie de la
 		// vérifier : une organisation ne peut pas se retrouver sans responsable.
 		const remove = await sqlStateOfFailure(() =>
-			withOrg(app, a.id, (tx) =>
+			withOrg(app, asAdmin(a), (tx) =>
 				tx.execute(sql`delete from "membership" where "user_id" = ${a.userId}`)
 			)
 		);
 		const demote = await sqlStateOfFailure(() =>
-			withOrg(app, a.id, (tx) =>
+			withOrg(app, asAdmin(a), (tx) =>
 				tx.execute(sql`update "membership" set "role" = 'editor' where "user_id" = ${a.userId}`)
 			)
 		);
@@ -451,10 +457,10 @@ describe('la dernière personne responsable', () => {
 			`)
 		);
 		await joinOrganisation(owner, app, a.id, second, `second-${a.slug}@example.test`, 'org_admin');
-		await withOrg(app, a.id, (tx) =>
+		await withOrg(app, asAdmin(a), (tx) =>
 			tx.execute(sql`delete from "membership" where "user_id" = ${a.userId}`)
 		);
-		const left = await withOrg(app, a.id, (tx) =>
+		const left = await withOrg(app, asAdmin(a), (tx) =>
 			tx.execute<{ count: string }>(
 				sql`select count(*)::text as count from "membership" where "role" = 'org_admin'`
 			)
@@ -473,9 +479,11 @@ describe('la dernière personne responsable', () => {
 			`)
 		);
 		await joinOrganisation(owner, app, a.id, editor, `editeur-${a.slug}@example.test`);
-		await withOrg(app, a.id, (tx) =>
-			tx.execute(sql`delete from "membership" where "user_id" = ${editor}`)
+		// Une suppression écartée par la politique ne lève rien : on compte la ligne retirée.
+		const removed = await withOrg(app, asAdmin(a), (tx) =>
+			tx.execute(sql`delete from "membership" where "user_id" = ${editor} returning "id"`)
 		);
+		expect(allRows(removed)).toHaveLength(1);
 	});
 });
 

@@ -3,12 +3,16 @@
 // Une contrainte de vérification n'écarte une ligne que si elle rend FALSE ; si elle rend NULL, la
 // ligne passe. C'est le piège que ces tests surveillent : chaque cas ci-dessous est une ligne que
 // `@jadwal/core` sait refuser et que la base doit refuser aussi. Les écritures passent par le rôle
-// applicatif non privilégié partout où ses politiques le permettent.
+// applicatif non privilégié partout où ses politiques le permettent, sous le contexte que l'écran
+// pose pour la personne responsable : les réglages, les salles et les heures de prière lui sont
+// réservés depuis la migration 0059 (ADR 0046), et une écriture écartée par la politique ne
+// toucherait aucune ligne au lieu de buter sur la contrainte éprouvée.
 
 import { sql, type SQL } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { newId, withOrg, type Database, type DatabaseHandle } from '../src/index.js';
 import {
+	asAdmin,
 	countIn,
 	firstRow,
 	openDatabase,
@@ -37,7 +41,7 @@ beforeAll(async () => {
 	app = appHandle.db;
 	superAdmin = superAdminHandle.db;
 	org = await seedOrganisation(owner, 'contraintes');
-	await withOrg(app, org.id, async (tx) => {
+	await withOrg(app, asAdmin(org), async (tx) => {
 		const rooms = await tx.execute(sql`select "id" from "room" limit 1`);
 		const courses = await tx.execute(sql`select "id" from "course" limit 1`);
 		roomId = firstRow<{ id: string }>(rooms)?.id ?? '';
@@ -176,14 +180,14 @@ describe('forme du rythme et de l’horaire d’un cours', () => {
 			// L'échec avorte la transaction : c'est `withOrg` tout entier qui lève, et le code
 			// SQLSTATE se lit sur l'erreur qui en sort.
 			const state = await sqlStateOfFailure(() =>
-				withOrg(app, org.id, (tx) => tx.execute(course(columns, values)))
+				withOrg(app, asAdmin(org), (tx) => tx.execute(course(columns, values)))
 			);
 			expect(state).toBe(SQLSTATE.checkViolation);
 		});
 	}
 
 	it('accepts the two valid shapes', async () => {
-		await withOrg(app, org.id, async (tx) => {
+		await withOrg(app, asAdmin(org), async (tx) => {
 			await tx.execute(
 				course(`${WEEKLY_COLUMNS}, ${FIXED_COLUMNS}`, sql`${WEEKLY_VALUES}, ${FIXED_VALUES}`)
 			);
@@ -200,7 +204,7 @@ describe('forme du rythme et de l’horaire d’un cours', () => {
 describe('autres contraintes du schéma', () => {
 	it('refuses a primary key that is not a version 7 UUID', async () => {
 		const state = await sqlStateOfFailure(() =>
-			withOrg(app, org.id, (tx) =>
+			withOrg(app, asAdmin(org), (tx) =>
 				tx.execute(sql`
 					insert into "room" ("id", "organization_id", "name")
 					values ('0195e1a0-0000-4000-8000-000000000000', ${org.id}, 'Salle v4')
@@ -217,7 +221,7 @@ describe('autres contraintes du schéma', () => {
 		];
 		for (const statement of statements) {
 			const state = await sqlStateOfFailure(() =>
-				withOrg(app, org.id, (tx) => tx.execute(statement))
+				withOrg(app, asAdmin(org), (tx) => tx.execute(statement))
 			);
 			expect(state).toBe(SQLSTATE.checkViolation);
 		}
@@ -237,7 +241,7 @@ describe('autres contraintes du schéma', () => {
 
 	it('refuses a course with no teaching language at all', async () => {
 		const state = await sqlStateOfFailure(() =>
-			withOrg(app, org.id, (tx) =>
+			withOrg(app, asAdmin(org), (tx) =>
 				tx.execute(
 					sql`update "course" set "teaching_language" = array[]::text[] where "id" = ${courseId}`
 				)
@@ -254,7 +258,7 @@ describe('autres contraintes du schéma', () => {
 		];
 		for (const statement of statements) {
 			const state = await sqlStateOfFailure(() =>
-				withOrg(app, org.id, (tx) => tx.execute(statement))
+				withOrg(app, asAdmin(org), (tx) => tx.execute(statement))
 			);
 			expect(state).toBe(SQLSTATE.checkViolation);
 		}
@@ -271,7 +275,7 @@ describe('autres contraintes du schéma', () => {
 		];
 		for (const statement of statements) {
 			const state = await sqlStateOfFailure(() =>
-				withOrg(app, org.id, (tx) => tx.execute(statement))
+				withOrg(app, asAdmin(org), (tx) => tx.execute(statement))
 			);
 			expect(state).toBe(SQLSTATE.checkViolation);
 		}
@@ -287,7 +291,7 @@ describe('autres contraintes du schéma', () => {
 		];
 		for (const statement of statements) {
 			const state = await sqlStateOfFailure(() =>
-				withOrg(app, org.id, (tx) => tx.execute(statement))
+				withOrg(app, asAdmin(org), (tx) => tx.execute(statement))
 			);
 			expect(state).toBe(SQLSTATE.checkViolation);
 		}
@@ -295,7 +299,7 @@ describe('autres contraintes du schéma', () => {
 
 	it('refuses a prayer time that carries seconds', async () => {
 		const state = await sqlStateOfFailure(() =>
-			withOrg(app, org.id, (tx) =>
+			withOrg(app, asAdmin(org), (tx) =>
 				tx.execute(
 					sql`update "prayer_day" set "fajr" = '05:40:30' where "organization_id" = ${org.id}`
 				)
@@ -334,7 +338,7 @@ describe('autres contraintes du schéma', () => {
 		expect(state).toBe(SQLSTATE.checkViolation);
 
 		const colour = await sqlStateOfFailure(() =>
-			withOrg(app, org.id, (tx) =>
+			withOrg(app, asAdmin(org), (tx) =>
 				tx.execute(
 					sql`update "organization" set "accent_color" = 'turquoise' where "id" = ${org.id}`
 				)
@@ -370,7 +374,7 @@ describe('suppression d’une organisation', () => {
 			'invitation'
 		];
 
-		const before = await withOrg(app, doomed.id, async (tx) => {
+		const before = await withOrg(app, asAdmin(doomed), async (tx) => {
 			const counts: Record<string, number> = {};
 			for (const table of tables) counts[table] = await countIn(tx, table);
 			return counts;

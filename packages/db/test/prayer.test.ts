@@ -1,5 +1,10 @@
 // Le remplissage des heures calculées : la fenêtre, l'idempotence, et la règle qui commande tout —
 // un jour importé l'emporte sur le calcul (ADR 0004).
+//
+// Sous le rôle applicatif, le remplissage suit l'enregistrement des réglages sur l'écran des
+// prières, réservé aux responsables : le contexte pose l'organisation et sa responsable, comme
+// l'écran, et l'organisation seule n'y suffit plus depuis la migration 0059 (ADR 0046). La tâche de
+// nuit, elle, tourne sous le propriétaire.
 
 import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -15,7 +20,14 @@ import {
 	type StoredPrayerSettings
 } from '../src/index.js';
 import type { IsoDate } from '@jadwal/core';
-import { allRows, firstRow, openDatabase, seedOrganisation, type Organisation } from './helpers.js';
+import {
+	allRows,
+	asAdmin,
+	firstRow,
+	openDatabase,
+	seedOrganisation,
+	type Organisation
+} from './helpers.js';
 
 let appHandle: DatabaseHandle;
 let ownerHandle: DatabaseHandle;
@@ -46,11 +58,11 @@ function reglages(overrides: Partial<StoredPrayerSettings> = {}): StoredPrayerSe
 }
 
 function remplir(stored: StoredPrayerSettings = reglages()) {
-	return withOrg(app, organisation.id, (tx) => fillPrayerDays(tx, stored, AUJOURDHUI));
+	return withOrg(app, asAdmin(organisation), (tx) => fillPrayerDays(tx, stored, AUJOURDHUI));
 }
 
 async function jours() {
-	return withOrg(app, organisation.id, async (tx) =>
+	return withOrg(app, asAdmin(organisation), async (tx) =>
 		allRows<{ date: string; source: string; fajr: string; updated_at: string }>(
 			await tx.execute(sql`
 				select "date"::text, "source", "fajr"::text, "updated_at"::text
@@ -144,18 +156,18 @@ describe('le remplissage de la fenêtre', () => {
 
 describe('la fin du calendrier importé', () => {
 	it('nomme le dernier jour importé, puis plus rien une fois l’import effacé', async () => {
-		expect(await withOrg(app, organisation.id, (tx) => lastImportedDay(tx, organisation.id))).toBe(
-			AUJOURDHUI
-		);
+		expect(
+			await withOrg(app, asAdmin(organisation), (tx) => lastImportedDay(tx, organisation.id))
+		).toBe(AUJOURDHUI);
 
-		await withOrg(app, organisation.id, (tx) =>
+		await withOrg(app, asAdmin(organisation), (tx) =>
 			tx.execute(sql`
 				delete from "prayer_day"
 				where "organization_id" = ${organisation.id} and "source" = 'import'
 			`)
 		);
 		expect(
-			await withOrg(app, organisation.id, (tx) => lastImportedDay(tx, organisation.id))
+			await withOrg(app, asAdmin(organisation), (tx) => lastImportedDay(tx, organisation.id))
 		).toBeNull();
 
 		// Et le calcul reprend le jour laissé vacant, sans qu'on ait rien d'autre à faire.
@@ -173,7 +185,7 @@ describe('la fin du calendrier importé', () => {
 		);
 		// La nôtre n'a plus d'import : la lecture de la voisine ne l'a pas fait réapparaître.
 		expect(
-			await withOrg(app, organisation.id, (tx) => lastImportedDay(tx, organisation.id))
+			await withOrg(app, asAdmin(organisation), (tx) => lastImportedDay(tx, organisation.id))
 		).toBeNull();
 		expect(
 			firstRow<{ n: string }>(

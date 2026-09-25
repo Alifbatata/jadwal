@@ -56,6 +56,13 @@ const userContext = sql`(select jadwal.current_user_id())`;
  * montre rien (migration 0055).
  */
 const noOrgContext = sql`(select coalesce(current_setting('jadwal.org_id', true), '')) = ''`;
+/**
+ * La personne du contexte est-elle responsable de l'organisation du contexte ? Les politiques des
+ * gestes que l'application réserve aux responsables l'exigent, pour le rôle applicatif (ADR 0046).
+ * La fonction, à droits du définisseur, n'est pas connue de Drizzle : la migration 0059 l'écrit à
+ * la main. Entre parenthèses, elle est évaluée une fois par requête.
+ */
+const orgAdmin = sql`(select jadwal.is_org_admin())`;
 
 /** L'identifiant doit être un UUID v7 canonique : la règle de l'étape 1 tenue par la base (ADR 0014). */
 const isUuidV7 = (column: SQLWrapper) =>
@@ -181,13 +188,23 @@ function publicSelect(name: string, column: SQLWrapper, extra?: SQL) {
 /**
  * Les quatre opérations, pour une table dont l'organisation est portée par `organization_id`.
  * `userColumns` nomme les colonnes qui désignent une personne : elles sont gardées à l'écriture.
+ * `reserved` réserve les écritures aux responsables de l'organisation, pour le rôle applicatif : la
+ * lecture reste ouverte à tous ses membres (ADR 0046).
  */
-function orgPolicies(name: string, column: SQLWrapper, userColumns: SQLWrapper[] = []) {
+function orgPolicies(
+	name: string,
+	column: SQLWrapper,
+	userColumns: SQLWrapper[] = [],
+	{ reserved = false }: { reserved?: boolean } = {}
+) {
 	const scope = sql`${column} = ${orgContext}`;
-	const written = userColumns.reduce(
-		(guard, userColumn) => sql`${guard} and ${referencesVisibleUser(userColumn)}`,
-		scope
-	);
+	const guarded = (base: SQL) =>
+		userColumns.reduce(
+			(guard, userColumn) => sql`${guard} and ${referencesVisibleUser(userColumn)}`,
+			base
+		);
+	const writable = reserved ? sql`${scope} and ${orgAdmin}` : scope;
+	const written = guarded(writable);
 	return [
 		pgPolicy(`${name}_select`, { as: 'permissive', for: 'select', to: appRole, using: scope }),
 		pgPolicy(`${name}_insert`, {
@@ -200,14 +217,15 @@ function orgPolicies(name: string, column: SQLWrapper, userColumns: SQLWrapper[]
 			as: 'permissive',
 			for: 'update',
 			to: appRole,
-			using: scope,
+			using: writable,
 			withCheck: written
 		}),
-		pgPolicy(`${name}_delete`, { as: 'permissive', for: 'delete', to: appRole, using: scope }),
+		pgPolicy(`${name}_delete`, { as: 'permissive', for: 'delete', to: appRole, using: writable }),
 		// Le super-admin fait tout, dans l'organisation où il est entré et nulle part ailleurs
 		// (ADR 0025). Le contexte reste obligatoire, non pour le retenir — il choisit l'organisation
-		// qu'il veut — mais pour qu'il ne modifie pas la mauvaise par inadvertance.
-		...superAdminPolicies(name, scope, written)
+		// qu'il veut — mais pour qu'il ne modifie pas la mauvaise par inadvertance. Il n'est membre
+		// d'aucune organisation : la réserve aux responsables ne le vise pas.
+		...superAdminPolicies(name, scope, guarded(scope))
 	];
 }
 
@@ -309,12 +327,15 @@ export const organization = pgTable(
 						and u."id" = ${userContext}
 				)`
 		}),
+		// Les réglages de l'organisation sont l'affaire de ses responsables (ADR 0046). Les colonnes
+		// que le rôle applicatif peut nommer sont celles de l'écran des réglages : le plan, l'état et
+		// l'identifiant d'URL relèvent du super-admin (migration 0059).
 		pgPolicy('organization_update', {
 			as: 'permissive',
 			for: 'update',
 			to: appRole,
-			using: sql`${table.id} = ${orgContext}`,
-			withCheck: sql`${table.id} = ${orgContext}`
+			using: sql`${table.id} = ${orgContext} and ${orgAdmin}`,
+			withCheck: sql`${table.id} = ${orgContext} and ${orgAdmin}`
 		}),
 		// Créer et supprimer une organisation relève du super-admin (ADR 0006). Dans sa console, sans
 		// contexte, il les lit et les change toutes ; entré dans une organisation, il ne voit et ne
@@ -501,18 +522,21 @@ export const membership = pgTable(
 		}),
 		// Changer le rôle d'un membre ne vise qu'une personne déjà membre, donc déjà visible : rien
 		// ne fuit. Le dernier `org_admin` est protégé par un déclencheur, quel que soit l'appelant.
+		// Changer un rôle et retirer un membre sont réservés aux responsables de l'organisation
+		// (ADR 0046) : `jadwal.is_org_admin` lit l'adhésion de la personne du contexte à droits du
+		// définisseur, sous une politique du propriétaire qui ne lit rien d'autre (migration 0059).
 		pgPolicy('membership_update', {
 			as: 'permissive',
 			for: 'update',
 			to: appRole,
-			using: sql`${table.organizationId} = ${orgContext}`,
-			withCheck: sql`${table.organizationId} = ${orgContext}`
+			using: sql`${table.organizationId} = ${orgContext} and ${orgAdmin}`,
+			withCheck: sql`${table.organizationId} = ${orgContext} and ${orgAdmin}`
 		}),
 		pgPolicy('membership_delete', {
 			as: 'permissive',
 			for: 'delete',
 			to: appRole,
-			using: sql`${table.organizationId} = ${orgContext}`
+			using: sql`${table.organizationId} = ${orgContext} and ${orgAdmin}`
 		}),
 		// Le super-admin n'a pas de politique de lecture ici : « qui est responsable de quelle
 		// organisation » est ce que le modèle de menace classe comme sensible, et cela relève de la
@@ -569,7 +593,8 @@ export const room = pgTable(
 		unique('room_organization_name_uq').on(table.organizationId, table.name),
 		index('room_organization_idx').on(table.organizationId),
 		ck('room_id_uuid_v7_ck', isUuidV7(table.id)),
-		...orgPolicies('room', table.organizationId),
+		// Les salles se gèrent dans les réglages, par les responsables (ADR 0046).
+		...orgPolicies('room', table.organizationId, [], { reserved: true }),
 		publicSelect('room', table.organizationId)
 	]
 );
@@ -890,7 +915,9 @@ export const prayerDay = pgTable(
 			sql`${isLocalTime(table.fajr)} and ${isLocalTime(table.dhuhr)} and ${isLocalTime(table.asr)}
 				and ${isLocalTime(table.maghrib)} and ${isLocalTime(table.isha)}`
 		),
-		...orgPolicies('prayer_day', table.organizationId),
+		// Les heures de prière se règlent sur l'écran des prières, par les responsables (ADR 0046).
+		// La tâche de nuit qui les recalcule tourne sous le propriétaire, pas sous ces politiques.
+		...orgPolicies('prayer_day', table.organizationId, [], { reserved: true }),
 		publicSelect('prayer_day', table.organizationId)
 	]
 );
@@ -1001,7 +1028,7 @@ export const prayerPeriod = pgTable(
 				and (${table.maghribIqamaOffset} is null or ${table.maghribIqamaOffset} between 0 and 120)
 				and (${table.ishaIqamaOffset} is null or ${table.ishaIqamaOffset} between 0 and 120)`
 		),
-		...orgPolicies('prayer_period', table.organizationId),
+		...orgPolicies('prayer_period', table.organizationId, [], { reserved: true }),
 		publicSelect('prayer_period', table.organizationId)
 	]
 );
@@ -1062,7 +1089,7 @@ export const prayerSettings = pgTable(
 				and ${table.maghribAdjustment} between -120 and 120
 				and ${table.ishaAdjustment} between -120 and 120`
 		),
-		...orgPolicies('prayer_settings', table.organizationId)
+		...orgPolicies('prayer_settings', table.organizationId, [], { reserved: true })
 	]
 );
 
@@ -1354,12 +1381,13 @@ export const invitation = pgTable(
 			'invitation_duration_ck',
 			sql`${table.expiresAt} - ${table.createdAt} <= interval '14 days'`
 		),
-		// Les responsables gèrent les invitations de leur organisation…
+		// Les responsables gèrent les invitations de leur organisation, et elles seules : un éditeur
+		// n'en lit, n'en écrit ni n'en annule aucune (ADR 0046)…
 		pgPolicy('invitation_select', {
 			as: 'permissive',
 			for: 'select',
 			to: appRole,
-			using: sql`${table.organizationId} = ${orgContext}
+			using: sql`(${table.organizationId} = ${orgContext} and ${orgAdmin})
 				or exists (
 					select 1 from "user" u
 					where u."id" = ${userContext} and lower(u."email") = lower(${table.email})
@@ -1369,7 +1397,7 @@ export const invitation = pgTable(
 			as: 'permissive',
 			for: 'insert',
 			to: appRole,
-			withCheck: sql`${table.organizationId} = ${orgContext}
+			withCheck: sql`${table.organizationId} = ${orgContext} and ${orgAdmin}
 				and ${referencesVisibleUser(table.invitedBy)}`
 		}),
 		// …et la personne invitée répond à la sienne, sans contexte d'organisation puisqu'elle n'en
@@ -1382,12 +1410,12 @@ export const invitation = pgTable(
 			as: 'permissive',
 			for: 'update',
 			to: appRole,
-			using: sql`${table.organizationId} = ${orgContext}
+			using: sql`(${table.organizationId} = ${orgContext} and ${orgAdmin})
 				or exists (
 					select 1 from "user" u
 					where u."id" = ${userContext} and lower(u."email") = lower(${table.email})
 				)`,
-			withCheck: sql`${table.organizationId} = ${orgContext}
+			withCheck: sql`(${table.organizationId} = ${orgContext} and ${orgAdmin})
 				or exists (
 					select 1 from "user" u
 					where u."id" = ${userContext} and lower(u."email") = lower(${table.email})
@@ -1397,7 +1425,7 @@ export const invitation = pgTable(
 			as: 'permissive',
 			for: 'delete',
 			to: appRole,
-			using: sql`${table.organizationId} = ${orgContext}`
+			using: sql`${table.organizationId} = ${orgContext} and ${orgAdmin}`
 		}),
 		// Le super-admin invite et annule dans l'organisation où il est entré (ADR 0025).
 		pgPolicy('invitation_superadmin_select', {

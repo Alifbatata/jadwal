@@ -14,6 +14,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { newId, withOrg, type Database, type DatabaseHandle } from '../src/index.js';
 import {
 	allRows,
+	asAdmin,
 	messageOfFailure,
 	openDatabase,
 	seedOrganisation,
@@ -50,12 +51,21 @@ async function moduleAllume(organizationId = ici.id): Promise<boolean> {
 	});
 }
 
-/** Pose l'interrupteur, par le rôle applicatif : c'est lui qui écrit en production. */
-async function basculer(allume: boolean, organizationId = ici.id): Promise<void> {
-	await withOrg(app, organizationId, async (tx) => {
-		await tx.execute(
-			sql`update "organization" set "prayer_module" = ${allume} where "id" = ${organizationId}`
+/**
+ * Pose l'interrupteur, par le rôle applicatif : c'est lui qui écrit en production, sous le contexte
+ * que l'écran des réglages pose, l'organisation et sa responsable. L'organisation seule n'y suffit
+ * plus depuis la migration 0059 (ADR 0046). Une écriture écartée par la politique rendrait zéro
+ * ligne sans rien dire : le compte est vérifié.
+ */
+async function basculer(allume: boolean, organisation: Organisation = ici): Promise<void> {
+	await withOrg(app, asAdmin(organisation), async (tx) => {
+		const touchees = allRows(
+			await tx.execute(
+				sql`update "organization" set "prayer_module" = ${allume}
+					where "id" = ${organisation.id} returning "id"`
+			)
 		);
+		if (touchees.length !== 1) throw new Error(`module non basculé : ${touchees.length} ligne(s)`);
 	});
 }
 
@@ -165,7 +175,7 @@ describe('éteindre le module', () => {
 
 	it('ne regarde pas ce qui se passe chez une autre organisation', async () => {
 		const ailleurs = await seedOrganisation(ownerHandle.db, 'module-ailleurs');
-		await basculer(true, ailleurs.id);
+		await basculer(true, ailleurs);
 		const chezEux = await poserCours('prayer', ailleurs.id);
 
 		await basculer(true);

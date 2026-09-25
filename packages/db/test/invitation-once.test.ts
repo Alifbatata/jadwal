@@ -10,11 +10,9 @@
 // La migration 0058 ferme les deux. Elle tient aussi les passages de statut, sans lesquels une
 // invitation consommée repassait à « accepted » : `invitation-status.test.ts` les éprouve.
 //
-// Limite. Pour le rôle applicatif, la base ne sépare pas l'éditeur du responsable à l'intérieur d'une
-// organisation : toute personne qui a le contexte de l'organisation peut, par un appel direct,
-// s'écrire une invitation, de n'importe quel rôle, à sa propre adresse, l'accepter et adhérer avec ce
-// rôle, comme elle peut changer le rôle d'une adhésion, le sien compris (migration 0053). Ce fichier
-// éprouve donc la promesse d'une invitation donnée, pas la séparation des rôles.
+// Ce fichier éprouve la promesse d'une invitation donnée, pas la séparation des rôles : depuis la
+// migration 0059, seule une personne responsable écrit une invitation, et `org-admin.test.ts`
+// éprouve cette réserve (ADR 0046).
 //
 // Tout passe par les rôles de connexion, non privilégiés. Le propriétaire ne sert qu'à poser le
 // décor et à relire ce qui est réellement en base.

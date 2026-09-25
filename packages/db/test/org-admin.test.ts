@@ -1,0 +1,626 @@
+// L'éditeur et le responsable, du côté de la base (ADR 0046).
+//
+// Jusqu'à l'étape 18, la base ne distinguait pas les deux rôles à l'intérieur d'une organisation :
+// c'était l'application qui réservait des écrans aux personnes responsables. Toute personne qui avait
+// le contexte de l'organisation pouvait, par un appel direct, changer un rôle, le sien compris,
+// s'écrire une invitation de responsable et l'accepter, retirer un membre, modifier les réglages, les
+// salles et les heures de prière (ADR 0017, « Limite du rôle »). La faille de l'étape 17 a montré ce
+// que cela coûte : un rôle mal lu dans l'application suffisait.
+//
+// La migration 0059 fait tenir la séparation par la base : `jadwal.is_org_admin()` dit si la personne
+// du contexte est responsable de l'organisation du contexte, et les politiques des gestes réservés
+// l'exigent. Chaque geste de la liste de l'ADR 0046 est tenté ici par une éditrice, avec le contexte
+// que l'écran pose (l'organisation et sa propre personne), puis par une personne responsable. Le
+// parcours ordinaire, celui d'une personne invitée qui accepte et adhère, reste le même.
+//
+// Tout passe par les rôles de connexion, non privilégiés. Le propriétaire ne sert qu'à poser le
+// décor et à relever ce qui est réellement en base, sous son drapeau d'entretien (ADR 0019).
+
+import { sql, type SQL } from 'drizzle-orm';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { newId, withOrg, withUser, type Database, type DatabaseHandle } from '../src/index.js';
+import {
+	allRows,
+	firstRow,
+	joinOrganisation,
+	messageOfFailure,
+	openDatabase,
+	seedOrganisation,
+	withMaintenance,
+	type Organisation
+} from './helpers.js';
+
+/** Le message qui signale qu'une tentative a passé, et qu'on l'a annulée soi-même. */
+const ROLLED_BACK = 'tentative passée, annulée par le test';
+/** Une insertion refusée par une politique. */
+const NO_POLICY = /row-level security policy/;
+/** Un droit de colonne absent. */
+const NO_RIGHT = /permission denied/;
+
+/** Le contexte que l'application pose : l'organisation et la personne connectée, toujours les deux. */
+interface Context {
+	organizationId: string;
+	userId: string;
+}
+
+/**
+ * Ce que rend une tentative : le refus de la base, ou le nombre de lignes que l'écriture a touchées
+ * (ou que la lecture a rendues). Une modification ou une suppression que la politique écarte ne lève
+ * rien : elle touche zéro ligne, et c'est ce qu'on compte.
+ */
+type Outcome = { refused: string } | { rows: number };
+
+let ownerHandle: DatabaseHandle;
+let appHandle: DatabaseHandle;
+let superAdminHandle: DatabaseHandle;
+let owner: Database;
+let app: Database;
+let superAdmin: Database;
+let a: Organisation;
+let b: Organisation;
+/** L'éditrice de A qui tente chaque geste réservé. */
+let editor: { id: string; email: string };
+/** Une seconde responsable de A : la retirer ou la rétrograder ne bute pas sur la dernière. */
+let second: { id: string; email: string };
+/** Un collègue éditeur de A. */
+let colleague: { id: string; email: string };
+/** Responsable de B, éditrice de A : le rôle se lit dans l'organisation du contexte. */
+let both: { id: string; email: string };
+/** L'invitation en attente que `seedOrganisation` pose dans A. */
+let pendingInvitation: string;
+/** Une salle de A qu'aucun cours n'occupe : la supprimer ne dépend que du droit. */
+let spareRoom: string;
+/** La période d'horaires de A. */
+let period: string;
+
+/** Un compte sans organisation, créé par le propriétaire. */
+async function account(label: string): Promise<{ id: string; email: string }> {
+	const id = newId();
+	const email = `${label}@example.test`;
+	await withMaintenance(owner, (tx) =>
+		tx.execute(sql`insert into "user" ("id", "email") values (${id}, ${email})`)
+	);
+	return { id, email };
+}
+
+const inA = (userId: string): Context => ({ organizationId: a.id, userId });
+
+/**
+ * Joue une instruction dans le contexte donné, puis annule tout : chaque cas part du même décor.
+ * Les écritures portent `returning`, pour que le nombre de lignes touchées se lise.
+ */
+async function attempt(db: Database, context: Context | string, statement: SQL): Promise<Outcome> {
+	let rows = 0;
+	const message = await messageOfFailure(() =>
+		withOrg(db, context, async (tx) => {
+			rows = allRows(await tx.execute(statement)).length;
+			throw new Error(ROLLED_BACK);
+		})
+	);
+	return message === ROLLED_BACK ? { rows } : { refused: message };
+}
+
+/** Ce que la base répond sur la personne du contexte, lu par le rôle applicatif. */
+async function isOrgAdmin(context: Context | string): Promise<boolean | undefined> {
+	return firstRow<{ admin: boolean }>(
+		await withOrg(app, context, (tx) => tx.execute(sql`select jadwal.is_org_admin() as admin`))
+	)?.admin;
+}
+
+beforeAll(async () => {
+	ownerHandle = openDatabase('owner');
+	appHandle = openDatabase('app');
+	superAdminHandle = openDatabase('superadmin');
+	owner = ownerHandle.db;
+	app = appHandle.db;
+	superAdmin = superAdminHandle.db;
+	a = await seedOrganisation(owner, 'roles-a');
+	b = await seedOrganisation(owner, 'roles-b');
+	editor = await account('editrice-roles-a');
+	second = await account('seconde-roles-a');
+	colleague = await account('collegue-roles-a');
+	both = await account('responsable-b-editrice-a');
+	await joinOrganisation(owner, app, a.id, editor.id, editor.email, 'editor');
+	await joinOrganisation(owner, app, a.id, second.id, second.email, 'org_admin');
+	await joinOrganisation(owner, app, a.id, colleague.id, colleague.email, 'editor');
+	await joinOrganisation(owner, app, a.id, both.id, both.email, 'editor');
+	await joinOrganisation(owner, app, b.id, both.id, both.email, 'org_admin');
+	spareRoom = newId();
+	await withMaintenance(owner, (tx) =>
+		tx.execute(sql`
+			insert into "room" ("id", "organization_id", "name", "display_order")
+			values (${spareRoom}, ${a.id}, 'Salle libre', 9)
+		`)
+	);
+	// Les invitations des quatre personnes ci-dessus sont consommées par leur adhésion : il ne reste
+	// en attente que celle que `seedOrganisation` pose.
+	const lookup = async (query: SQL) =>
+		String(firstRow<{ id: string }>(await withMaintenance(owner, (tx) => tx.execute(query)))?.id);
+	pendingInvitation = await lookup(sql`
+		select "id" from "invitation" where "organization_id" = ${a.id} and "status" = 'pending'
+	`);
+	period = await lookup(sql`select "id" from "prayer_period" where "organization_id" = ${a.id}`);
+});
+
+afterAll(async () => {
+	await superAdminHandle?.close();
+	await appHandle?.close();
+	await ownerHandle?.close();
+});
+
+/**
+ * Les gestes que l'application réserve aux personnes responsables, tels que l'ADR 0046 les liste :
+ * la route qui les porte, la table, l'instruction que l'écran écrit ou la plus proche. `admin` dit
+ * combien de lignes la personne responsable touche ; l'éditrice, elle, doit être refusée ou n'en
+ * toucher aucune.
+ */
+interface Gesture {
+	name: string;
+	statement: () => SQL;
+	admin: number;
+}
+
+const GESTURES: Gesture[] = [
+	{
+		name: '/membres ?/inviter : écrire une invitation (invitation, insert)',
+		statement: () => sql`
+			insert into "invitation" ("id", "organization_id", "email", "role", "invited_by", "expires_at")
+			values (${newId()}, ${a.id}, 'nouvelle-roles-a@example.test', 'editor', ${editor.id},
+				now() + make_interval(hours => 14 * 24))
+			returning "id"
+		`,
+		admin: 1
+	},
+	{
+		name: '/membres ?/inviter : s’inviter soi-même comme responsable (invitation, insert)',
+		statement: () => sql`
+			insert into "invitation" ("id", "organization_id", "email", "role", "invited_by", "expires_at")
+			values (${newId()}, ${a.id}, ${editor.email}, 'org_admin', ${editor.id},
+				now() + make_interval(hours => 14 * 24))
+			returning "id"
+		`,
+		admin: 1
+	},
+	{
+		name: '/membres ?/annuler et ?/inviter : clore une invitation en attente (invitation, update)',
+		statement: () => sql`
+			update "invitation" set "status" = 'cancelled', "resolved_at" = now()
+			where "id" = ${pendingInvitation} and "status" = 'pending'
+			returning "id"
+		`,
+		admin: 1
+	},
+	{
+		name: 'aucun écran : supprimer une invitation (invitation, delete)',
+		statement: () => sql`delete from "invitation" where "id" = ${pendingInvitation} returning "id"`,
+		admin: 1
+	},
+	{
+		name: '/membres : lire les invitations en attente (invitation, select)',
+		statement: () => sql`
+			select "id", "email" from "invitation"
+			where "organization_id" = ${a.id} and "status" = 'pending'
+		`,
+		admin: 1
+	},
+	{
+		name: '/membres ?/role : se passer responsable (membership, update)',
+		statement: () => sql`
+			update "membership" set "role" = 'org_admin', "updated_at" = now()
+			where "organization_id" = ${a.id} and "user_id" = ${editor.id}
+			returning "id"
+		`,
+		admin: 1
+	},
+	{
+		name: '/membres ?/role : passer une responsable éditrice (membership, update)',
+		statement: () => sql`
+			update "membership" set "role" = 'editor', "updated_at" = now()
+			where "organization_id" = ${a.id} and "user_id" = ${second.id}
+			returning "id"
+		`,
+		admin: 1
+	},
+	{
+		name: '/membres ?/retirer : retirer un éditeur (membership, delete)',
+		statement: () => sql`
+			delete from "membership" where "organization_id" = ${a.id} and "user_id" = ${colleague.id}
+			returning "id"
+		`,
+		admin: 1
+	},
+	{
+		name: '/membres ?/retirer : retirer une responsable (membership, delete)',
+		statement: () => sql`
+			delete from "membership" where "organization_id" = ${a.id} and "user_id" = ${second.id}
+			returning "id"
+		`,
+		admin: 1
+	},
+	{
+		name: '/reglages ?/enregistrer : nom, fuseau, couleur, formule, langues (organization, update)',
+		statement: () => sql`
+			update "organization" set "name" = 'Nom changé', "greeting" = 'Bonjour',
+				"accent_color" = '#123456', "updated_at" = now()
+			where "id" = ${a.id}
+			returning "id"
+		`,
+		admin: 1
+	},
+	{
+		name: '/reglages ?/modulePrieres : éteindre le module des prières (organization, update)',
+		statement: () => sql`
+			update "organization" set "prayer_module" = false, "updated_at" = now()
+			where "id" = ${a.id}
+			returning "id"
+		`,
+		admin: 1
+	},
+	{
+		name: '/reglages ?/ajouterSalle : ajouter une salle (room, insert)',
+		statement: () => sql`
+			insert into "room" ("id", "organization_id", "name", "display_order")
+			values (${newId()}, ${a.id}, 'Salle neuve', 10)
+			returning "id"
+		`,
+		admin: 1
+	},
+	{
+		name: 'aucun écran : renommer une salle (room, update)',
+		statement: () => sql`
+			update "room" set "name" = 'Salle renommée' where "id" = ${spareRoom} returning "id"
+		`,
+		admin: 1
+	},
+	{
+		name: '/reglages ?/supprimerSalle : supprimer une salle (room, delete)',
+		statement: () => sql`delete from "room" where "id" = ${spareRoom} returning "id"`,
+		admin: 1
+	},
+	{
+		name: '/prieres ?/enregistrer : position et méthode de calcul (prayer_settings, insert ou update)',
+		statement: () => sql`
+			insert into "prayer_settings" ("organization_id", "latitude", "longitude")
+			values (${a.id}, 46.2, 6.1)
+			on conflict ("organization_id") do update set "latitude" = 46.2, "longitude" = 6.1
+			returning "organization_id"
+		`,
+		admin: 1
+	},
+	{
+		name: 'aucun écran : supprimer les réglages des prières (prayer_settings, delete)',
+		statement: () => sql`
+			delete from "prayer_settings" where "organization_id" = ${a.id} returning "organization_id"
+		`,
+		admin: 1
+	},
+	{
+		name: '/prieres ?/confirmer : importer des heures (prayer_day, insert ou update)',
+		statement: () => sql`
+			insert into "prayer_day" ("organization_id", "date", "fajr", "dhuhr", "asr", "maghrib", "isha", "source")
+			values (${a.id}, '2026-10-01', '05:50', '13:15', '16:30', '19:05', '20:40', 'import')
+			on conflict ("organization_id", "date") do update set "fajr" = excluded."fajr"
+			returning "date"
+		`,
+		admin: 1
+	},
+	{
+		name: '/prieres ?/confirmer : corriger une heure importée (prayer_day, update)',
+		statement: () => sql`
+			update "prayer_day" set "fajr" = '05:41'
+			where "organization_id" = ${a.id} and "date" = '2026-09-21'
+			returning "date"
+		`,
+		admin: 1
+	},
+	{
+		name: '/prieres ?/effacer : effacer des heures importées (prayer_day, delete)',
+		statement: () => sql`
+			delete from "prayer_day" where "organization_id" = ${a.id} and "date" = '2026-09-21'
+			returning "date"
+		`,
+		admin: 1
+	},
+	{
+		name: '/prieres ?/periode et ?/dupliquerPeriode : écrire une période (prayer_period, insert)',
+		statement: () => sql`
+			insert into "prayer_period" ("id", "organization_id", "name", "from_date", "to_date",
+				"maghrib_iqama_offset")
+			values (${newId()}, ${a.id}, 'Horaires anciens', '2025-01-01', '2025-06-30', 5)
+			returning "id"
+		`,
+		admin: 1
+	},
+	{
+		name: '/prieres ?/periode : modifier une période (prayer_period, update)',
+		statement: () => sql`
+			update "prayer_period" set "name" = 'Période renommée' where "id" = ${period}
+			returning "id"
+		`,
+		admin: 1
+	},
+	{
+		name: '/prieres ?/supprimerPeriode : supprimer une période (prayer_period, delete)',
+		statement: () => sql`delete from "prayer_period" where "id" = ${period} returning "id"`,
+		admin: 1
+	}
+];
+
+describe('les gestes réservés : l’éditrice est refusée, la personne responsable passe', () => {
+	it.each(GESTURES.map((gesture) => [gesture.name, gesture] as const))('%s', async (_, gesture) => {
+		const asEditor = await attempt(app, inA(editor.id), gesture.statement());
+		// Refusée par la politique, ou rien de touché : les deux disent « non », selon l'opération.
+		if ('refused' in asEditor) expect(asEditor.refused).toMatch(NO_POLICY);
+		else expect(asEditor).toEqual({ rows: 0 });
+
+		expect(await attempt(app, inA(a.userId), gesture.statement())).toEqual({
+			rows: gesture.admin
+		});
+		// La seconde responsable, entrée par une invitation acceptée, passe aussi : ce n'est pas la
+		// personne qui compte, c'est son rôle.
+		expect(await attempt(app, inA(second.id), gesture.statement())).toEqual({
+			rows: gesture.admin
+		});
+		// Le super-admin garde ses pouvoirs (ADR 0025), dans l'organisation où il est entré.
+		expect(await attempt(superAdmin, a.id, gesture.statement())).toEqual({ rows: gesture.admin });
+	});
+
+	it('reads the role in the organisation of the context, not in another one', async () => {
+		// Responsable de B, éditrice de A : c'est la faille de l'étape 17, où la première adhésion
+		// venue donnait son rôle. Dans A, la base la traite en éditrice ; dans B, en responsable.
+		expect(await isOrgAdmin(inA(both.id))).toBe(false);
+		expect(await isOrgAdmin({ organizationId: b.id, userId: both.id })).toBe(true);
+		const invite = (organizationId: string) => sql`
+			insert into "invitation" ("id", "organization_id", "email", "role", "invited_by", "expires_at")
+			values (${newId()}, ${organizationId}, ${both.email}, 'org_admin', ${both.id},
+				now() + make_interval(hours => 14 * 24))
+			returning "id"
+		`;
+		const inOrgA = await attempt(app, inA(both.id), invite(a.id));
+		expect('refused' in inOrgA ? inOrgA.refused : inOrgA).toMatch(NO_POLICY);
+		expect(await attempt(app, { organizationId: b.id, userId: both.id }, invite(b.id))).toEqual({
+			rows: 1
+		});
+	});
+
+	it('takes nobody for a responsible person without a person, or without an organisation', async () => {
+		// Le contexte d'une organisation seule, sans personne : un script qui l'oublierait écrivait
+		// jusqu'ici comme n'importe quel membre. Il n'écrit plus rien de réservé.
+		expect(await isOrgAdmin(a.id)).toBe(false);
+		const settings = sql`update "organization" set "greeting" = 'Sans personne'
+			where "id" = ${a.id} returning "id"`;
+		expect(await attempt(app, a.id, settings)).toEqual({ rows: 0 });
+		// La personne seule, sans organisation.
+		const alone = firstRow<{ admin: boolean }>(
+			await withUser(app, a.userId, (tx) => tx.execute(sql`select jadwal.is_org_admin() as admin`))
+		);
+		expect(alone?.admin).toBe(false);
+		// La responsable de B, avec le contexte de A, où elle n'est rien.
+		expect(await isOrgAdmin(inA(b.userId))).toBe(false);
+		expect(await attempt(app, inA(b.userId), settings)).toEqual({ rows: 0 });
+	});
+
+	it('closes the chain of step 17: an editor who invites herself as responsible, then accepts', async () => {
+		// L'attaque que l'ADR 0017 laissait ouverte, tentée jusqu'au bout. La première marche tombe.
+		const invitationId = newId();
+		const message = await messageOfFailure(() =>
+			withOrg(app, inA(editor.id), (tx) =>
+				tx.execute(sql`
+					insert into "invitation" ("id", "organization_id", "email", "role", "invited_by", "expires_at")
+					values (${invitationId}, ${a.id}, ${editor.email}, 'org_admin', ${editor.id},
+						now() + make_interval(hours => 14 * 24))
+				`)
+			)
+		);
+		expect(message).toMatch(NO_POLICY);
+		// Et rien n'existe à accepter.
+		const stored = await withMaintenance(owner, (tx) =>
+			tx.execute(sql`select 1 from "invitation" where "id" = ${invitationId}`)
+		);
+		expect(allRows(stored)).toEqual([]);
+		// Elle reste éditrice.
+		const role = firstRow<{ role: string }>(
+			await withMaintenance(owner, (tx) =>
+				tx.execute(sql`
+					select "role" from "membership"
+					where "organization_id" = ${a.id} and "user_id" = ${editor.id}
+				`)
+			)
+		);
+		expect(role?.role).toBe('editor');
+	});
+});
+
+describe('ce que ni l’éditeur ni la personne responsable ne font : le plan, l’état, l’adresse', () => {
+	it('leaves the plan, the state and the web address to the super-admin', async () => {
+		// L'écran des réglages n'écrit que sept colonnes. Le plan, l'état et l'identifiant d'URL
+		// relèvent du super-admin (ADR 0025) : un appel direct les écrivait sous le rôle applicatif.
+		const writes: [string, SQL][] = [
+			[
+				'plan',
+				sql`update "organization" set "plan" = 'sponsored' where "id" = ${a.id} returning "id"`
+			],
+			[
+				'status',
+				sql`update "organization" set "status" = 'suspended' where "id" = ${a.id} returning "id"`
+			],
+			[
+				'slug',
+				sql`update "organization" set "slug" = 'roles-a-bis' where "id" = ${a.id} returning "id"`
+			],
+			[
+				'created_at',
+				sql`update "organization" set "created_at" = now() where "id" = ${a.id} returning "id"`
+			]
+		];
+		for (const [column, write] of writes) {
+			for (const person of [editor.id, a.userId]) {
+				expect(await attempt(app, inA(person), write), `${column} par ${person}`).toEqual({
+					refused: expect.stringMatching(NO_RIGHT)
+				});
+			}
+			expect(await attempt(superAdmin, a.id, write), `${column} par le super-admin`).toEqual({
+				rows: 1
+			});
+		}
+	});
+});
+
+describe('ce que l’éditeur fait toujours', () => {
+	it('lets an editor, whom the base does not take for a responsible person, keep the programme', async () => {
+		expect(await isOrgAdmin(inA(editor.id))).toBe(false);
+		expect(await isOrgAdmin(inA(a.userId))).toBe(true);
+		const courseId = newId();
+		const roomId = String(
+			firstRow<{ id: string }>(
+				await withMaintenance(owner, (tx) =>
+					tx.execute(sql`
+						select "id" from "room" where "organization_id" = ${a.id} and "id" <> ${spareRoom}
+					`)
+				)
+			)?.id
+		);
+		// Les écritures des écrans « Cours », « À venir » et « Vendredi », mot pour mot ou presque,
+		// dans une seule transaction annulée à la fin.
+		const outcome = await messageOfFailure(() =>
+			withOrg(app, inA(editor.id), async (tx) => {
+				await tx.execute(sql`
+					insert into "course" (
+						"id", "organization_id", "status", "audience", "teaching_language", "room_id",
+						"source_language", "recurrence_kind", "recurrence_weekday", "recurrence_interval",
+						"recurrence_anchor_date", "timing_kind", "timing_start", "timing_end", "starts_on",
+						"updated_by"
+					) values (
+						${courseId}, ${a.id}, 'draft', 'adults', array['fr'], ${roomId},
+						'fr', 'weekly', array[2]::smallint[], 1, '2026-09-08', 'fixed', '18:00', '19:00',
+						'2026-09-08', ${editor.id}
+					)
+				`);
+				await tx.execute(sql`
+					insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
+					values (${newId()}, ${a.id}, ${courseId}, 'fr', 'Cours de l’éditrice')
+				`);
+				await tx.execute(sql`
+					update "course" set "status" = 'published', "updated_at" = now(),
+						"updated_by" = ${editor.id}
+					where "id" = ${courseId}
+				`);
+				await tx.execute(sql`
+					insert into "session_exception"
+						("id", "organization_id", "course_id", "date", "kind", "created_by")
+					values (${newId()}, ${a.id}, ${courseId}, '2026-09-15', 'cancelled', ${editor.id})
+					on conflict ("course_id", "date") do update
+						set "kind" = 'cancelled', "to_date" = null, "to_start" = null
+				`);
+				await tx.execute(sql`
+					delete from "session_exception" where "course_id" = ${courseId} and "date" = '2026-09-15'
+				`);
+				await tx.execute(sql`
+					insert into "pause" ("id", "organization_id", "course_id", "from_date", "to_date",
+						"reason", "created_by")
+					values (${newId()}, ${a.id}, ${courseId}, '2026-10-05', '2026-10-18', 'Vacances',
+						${editor.id})
+				`);
+				await tx.execute(sql`
+					insert into "audit_log" ("id", "organization_id", "actor_id", "action", "target_table", "target_id")
+					values (${newId()}, ${a.id}, ${editor.id}, 'course.create', 'course', ${courseId})
+				`);
+				await tx.execute(sql`
+					insert into "terms_acceptance" ("id", "organization_id", "user_id", "version")
+					values (${newId()}, ${a.id}, ${editor.id}, '2026-08-01')
+				`);
+				const deleted = allRows(
+					await tx.execute(sql`delete from "course" where "id" = ${courseId} returning "id"`)
+				);
+				expect(deleted).toHaveLength(1);
+				throw new Error(ROLLED_BACK);
+			})
+		);
+		expect(outcome).toBe(ROLLED_BACK);
+	});
+});
+
+describe('le parcours ordinaire', () => {
+	it('gives the invited person the role of her invitation, and the base reads it', async () => {
+		for (const role of ['editor', 'org_admin'] as const) {
+			const person = await account(`invitee-${role}-roles-a`);
+			const invitationId = newId();
+			// La personne responsable invite, avec l'insertion de l'écran des membres.
+			await withOrg(app, inA(a.userId), (tx) =>
+				tx.execute(sql`
+					insert into "invitation" ("id", "organization_id", "email", "role", "invited_by", "expires_at")
+					values (${invitationId}, ${a.id}, ${person.email}, ${role}, ${a.userId},
+						now() + make_interval(hours => 14 * 24))
+				`)
+			);
+			// Sans contexte d'organisation, la personne voit l'invitation reçue à son adresse, et
+			// l'accepte ; puis l'écran pose l'organisation et crée l'adhésion avec le rôle invité.
+			await withUser(app, person.id, async (tx) => {
+				const seen = allRows<{ id: string }>(
+					await tx.execute(sql`select "id" from "invitation" where "status" = 'pending'`)
+				);
+				expect(seen.map((row) => row.id)).toEqual([invitationId]);
+				const claimed = allRows(
+					await tx.execute(sql`
+						update "invitation"
+						set "status" = 'accepted', "accepted_by" = ${person.id}, "resolved_at" = now()
+						where "id" = ${invitationId} and "status" = 'pending' and "expires_at" > now()
+						returning "role"
+					`)
+				);
+				expect(claimed).toEqual([{ role }]);
+				await tx.execute(sql`select set_config('jadwal.org_id', ${a.id}, true)`);
+				await tx.execute(sql`
+					insert into "membership" ("id", "organization_id", "user_id", "role")
+					values (${newId()}, ${a.id}, ${person.id}, ${role})
+				`);
+			});
+			// Sans contexte d'organisation, elle retrouve ses adhésions.
+			const mine = allRows<{ organization_id: string; role: string }>(
+				await withUser(app, person.id, (tx) =>
+					tx.execute(sql`select "organization_id", "role" from "membership"`)
+				)
+			);
+			expect(mine).toEqual([{ organization_id: a.id, role }]);
+			// Et la base lit son rôle comme l'invitation le disait.
+			expect(await isOrgAdmin(inA(person.id))).toBe(role === 'org_admin');
+		}
+	});
+});
+
+describe('la fonction qui lit le rôle', () => {
+	it('runs with the rights of its definer, a fixed search path, and only for the application', async () => {
+		const found = firstRow<{
+			definer: boolean;
+			config: string[] | null;
+			volatility: string;
+			args: string;
+		}>(
+			await owner.execute(sql`
+				select p.prosecdef as definer, p.proconfig as config, p.provolatile as volatility,
+					pg_get_function_identity_arguments(p.oid) as args
+				from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+				where n.nspname = 'jadwal' and p.proname = 'is_org_admin'
+			`)
+		);
+		expect(found).toEqual({
+			definer: true,
+			config: ['search_path=public, pg_temp'],
+			volatility: 's',
+			args: ''
+		});
+		const executors = allRows<{ role: string; can: boolean }>(
+			await owner.execute(sql`
+				select r.role, has_function_privilege(r.role, 'jadwal.is_org_admin()', 'EXECUTE') as can
+				from unnest(array['jadwal_app', 'jadwal_superadmin', 'jadwal_auth', 'jadwal_public']) as r(role)
+				order by r.role
+			`)
+		);
+		expect(executors).toEqual([
+			{ role: 'jadwal_app', can: true },
+			{ role: 'jadwal_auth', can: false },
+			{ role: 'jadwal_public', can: false },
+			{ role: 'jadwal_superadmin', can: false }
+		]);
+	});
+});

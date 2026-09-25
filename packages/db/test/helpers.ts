@@ -142,6 +142,16 @@ export async function seedOrganisation(owner: Database, slug: string): Promise<O
 }
 
 /**
+ * Le contexte que l'écran pose pour la personne responsable d'une organisation créée par
+ * `seedOrganisation` : l'organisation **et** sa personne. Depuis la migration 0059, les réglages,
+ * les salles, les heures de prière, les invitations et les adhésions ne s'écrivent que sous le
+ * contexte d'une personne responsable (ADR 0046) : l'organisation seule n'y suffit plus.
+ */
+export function asAdmin(organisation: Organisation): OrgContext {
+	return { organizationId: organisation.id, userId: organisation.userId };
+}
+
+/**
  * Rattache quelqu'un à une organisation par le chemin réel : une invitation, puis son acceptation
  * par la personne elle-même. La base n'en accepte pas d'autre — on ne s'attache que soi-même, et
  * seulement si l'on a été invité (ADR 0017).

@@ -7,6 +7,9 @@
 // Il éprouve aussi ce qu'aucune autre suite ne peut éprouver : que la priorité **ne détruit rien**.
 // Retirer la période rend les jours importés tels qu'ils étaient — c'est la raison d'être de la
 // résolution à la lecture.
+//
+// Les heures de prière s'écrivent sous le contexte d'une personne responsable, comme l'écran des
+// prières le pose : depuis la migration 0059, l'organisation seule n'y suffit plus (ADR 0046).
 
 import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -20,7 +23,7 @@ import {
 	type ResolvedPrayerRow
 } from '../src/index.js';
 import type { IsoDate } from '@jadwal/core';
-import { allRows, openDatabase, seedOrganisation, type Organisation } from './helpers.js';
+import { allRows, asAdmin, openDatabase, seedOrganisation, type Organisation } from './helpers.js';
 
 let ownerHandle: DatabaseHandle;
 let appHandle: DatabaseHandle;
@@ -29,7 +32,7 @@ let org: Organisation;
 
 /** Les lignes résolues sur une plage, lues par le rôle applicatif dans son contexte. */
 async function resoudre(de: string, a: string): Promise<ResolvedPrayerRow[]> {
-	return withOrg(app, org.id, async (tx) =>
+	return withOrg(app, asAdmin(org), async (tx) =>
 		allRows<ResolvedPrayerRow>(
 			await tx.execute(resolvedPrayerDaysQuery(org.id, de as IsoDate, a as IsoDate))
 		)
@@ -42,7 +45,7 @@ async function jour(date: string): Promise<ResolvedPrayerRow | undefined> {
 
 /** Un jour de `prayer_day`, avec sa source. */
 async function poserJour(date: string, maghrib: string, source: 'import' | 'computed') {
-	await withOrg(app, org.id, (tx) =>
+	await withOrg(app, asAdmin(org), (tx) =>
 		tx.execute(sql`
 			insert into "prayer_day" ("organization_id", "date", "fajr", "dhuhr", "asr", "maghrib",
 				"isha", "source")
@@ -61,7 +64,7 @@ async function poserPeriode(
 ): Promise<string> {
 	const id = newId();
 	const noms = Object.keys(colonnes);
-	await withOrg(app, org.id, (tx) =>
+	await withOrg(app, asAdmin(org), (tx) =>
 		tx.execute(sql`
 			insert into "prayer_period" ("id", "organization_id", "name", "from_date", "to_date"
 				${
@@ -87,7 +90,7 @@ async function poserPeriode(
 }
 
 async function vider() {
-	await withOrg(app, org.id, async (tx) => {
+	await withOrg(app, asAdmin(org), async (tx) => {
 		await tx.execute(sql`delete from "prayer_period" where "organization_id" = ${org.id}`);
 		await tx.execute(sql`delete from "prayer_day" where "organization_id" = ${org.id}`);
 	});
@@ -171,7 +174,7 @@ describe('la priorité des trois sources', () => {
 		const id = await poserPeriode('2027-04-01', '2027-04-30', { maghrib: '19:30' });
 		expect(await jour('2027-04-10')).toMatchObject({ maghrib: '19:30:00' });
 
-		await withOrg(app, org.id, (tx) =>
+		await withOrg(app, asAdmin(org), (tx) =>
 			tx.execute(sql`delete from "prayer_period" where "id" = ${id}`)
 		);
 		expect(await jour('2027-04-10')).toMatchObject({
@@ -247,7 +250,7 @@ describe('l’iqama', () => {
 	it('repasse par minuit sans rien casser', async () => {
 		// Une Isha à 23:50 avec un quart d'heure d'iqama tombe à 00:05, et c'est l'heure juste.
 		await vider();
-		await withOrg(app, org.id, (tx) =>
+		await withOrg(app, asAdmin(org), (tx) =>
 			tx.execute(sql`
 				insert into "prayer_day" ("organization_id", "date", "fajr", "dhuhr", "asr", "maghrib",
 					"isha", "source")
@@ -288,10 +291,10 @@ describe('l’isolation', () => {
 		await poserJour('2027-10-01', '18:00', 'import');
 		// La fixture pose déjà une période ouverte chez la voisine : on la retire, sinon la
 		// contrainte d'exclusion refuse la nôtre — ce qui prouve au passage qu'elle fonctionne.
-		await withOrg(app, voisine.id, (tx) =>
+		await withOrg(app, asAdmin(voisine), (tx) =>
 			tx.execute(sql`delete from "prayer_period" where "organization_id" = ${voisine.id}`)
 		);
-		await withOrg(app, voisine.id, (tx) =>
+		await withOrg(app, asAdmin(voisine), (tx) =>
 			tx.execute(sql`
 				insert into "prayer_period" ("id", "organization_id", "name", "from_date", "maghrib")
 				values (${newId()}, ${voisine.id}, 'Chez la voisine', '2027-09-01', '18:45')

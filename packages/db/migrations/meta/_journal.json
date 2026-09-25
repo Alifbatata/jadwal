@@ -414,6 +414,13 @@
       "when": 1790098885138,
       "tag": "0058_invitation_role_and_single_use",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1790377544454,
+      "tag": "0059_org_admin_gestures",
+      "breakpoints": true
     }
   ]
 }

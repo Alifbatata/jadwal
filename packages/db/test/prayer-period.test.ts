@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { newId, withOrg, type Database, type DatabaseHandle } from '../src/index.js';
 import {
 	allRows,
+	asAdmin,
 	countIn,
 	openDatabase,
 	seedOrganisation,
@@ -27,32 +28,36 @@ let ailleurs: Organisation;
 const EXCLUSION = '23P01';
 
 interface Periode {
-	organizationId?: string;
+	organisation?: Organisation;
 	nom?: string;
 	de: string;
 	a?: string | null;
 	colonnes?: Record<string, string | number | null>;
 }
 
-function poser({ organizationId, nom, de, a = null, colonnes = {} }: Periode) {
-	const cible = organizationId ?? ici.id;
+/**
+ * L'écran des prières est réservé aux responsables, et la base aussi depuis la migration 0059 :
+ * les écritures posent l'organisation et sa responsable, comme l'écran (ADR 0046).
+ */
+function poser({ organisation, nom, de, a = null, colonnes = {} }: Periode) {
+	const cible = organisation ?? ici;
 	const noms = Object.keys(colonnes);
 	const entetes = noms.map((nom) => sql.identifier(nom));
 	const valeurs = noms.map((nom) => sql`${colonnes[nom]}`);
-	return withOrg(app, cible, (tx) =>
+	return withOrg(app, asAdmin(cible), (tx) =>
 		tx.execute(sql`
 			insert into "prayer_period" ("id", "organization_id", "name", "from_date", "to_date"
 				${noms.length > 0 ? sql`, ${sql.join(entetes, sql`, `)}` : sql``})
-			values (${newId()}, ${cible}, ${nom ?? 'Période'}, ${de}, ${a}
+			values (${newId()}, ${cible.id}, ${nom ?? 'Période'}, ${de}, ${a}
 				${noms.length > 0 ? sql`, ${sql.join(valeurs, sql`, `)}` : sql``})
 		`)
 	);
 }
 
 /** Vide les périodes de l'organisation d'essai : chaque cas part d'une table propre. */
-async function vider(organizationId = ici.id) {
-	await withOrg(app, organizationId, (tx) =>
-		tx.execute(sql`delete from "prayer_period" where "organization_id" = ${organizationId}`)
+async function vider(organisation = ici) {
+	await withOrg(app, asAdmin(organisation), (tx) =>
+		tx.execute(sql`delete from "prayer_period" where "organization_id" = ${organisation.id}`)
 	);
 }
 
@@ -106,9 +111,9 @@ describe('deux périodes ne se chevauchent jamais', () => {
 		// La contrainte porte sur l'organisation **et** la plage : elle ne doit pas transformer le
 		// calendrier d'une organisation en contrainte sur celui d'une autre.
 		await vider();
-		await vider(ailleurs.id);
+		await vider(ailleurs);
 		await poser({ de: '2028-01-01', a: '2028-12-31' });
-		await poser({ organizationId: ailleurs.id, de: '2028-01-01', a: '2028-12-31' });
+		await poser({ organisation: ailleurs, de: '2028-01-01', a: '2028-12-31' });
 		expect(await withOrg(app, ici.id, (tx) => countIn(tx, 'prayer_period'))).toBe(1);
 		expect(await withOrg(app, ailleurs.id, (tx) => countIn(tx, 'prayer_period'))).toBe(1);
 	});
@@ -120,7 +125,7 @@ describe('deux périodes ne se chevauchent jamais', () => {
 		// Étendre la première jusqu'en mai la ferait mordre sur la seconde.
 		expect(
 			await sqlStateOfFailure(() =>
-				withOrg(app, ici.id, (tx) =>
+				withOrg(app, asAdmin(ici), (tx) =>
 					tx.execute(sql`update "prayer_period" set "to_date" = '2029-05-01' where "name" = 'Un'`)
 				)
 			)
@@ -183,9 +188,9 @@ describe('ce qu’une période accepte et refuse', () => {
 describe('isolation', () => {
 	it('ne montre à une organisation que ses propres périodes', async () => {
 		await vider();
-		await vider(ailleurs.id);
+		await vider(ailleurs);
 		await poser({ nom: 'La nôtre', de: '2031-01-01', a: '2031-12-31' });
-		await poser({ organizationId: ailleurs.id, nom: 'La leur', de: '2031-01-01', a: '2031-12-31' });
+		await poser({ organisation: ailleurs, nom: 'La leur', de: '2031-01-01', a: '2031-12-31' });
 
 		const vues = await withOrg(app, ici.id, async (tx) =>
 			allRows<{ name: string }>(await tx.execute(sql`select "name" from "prayer_period"`))
