@@ -13,6 +13,50 @@ jadwal.voltia.ch {
 	# Rien à renouveler à la main : c'est Caddy qui s'en occupe, et la veille surveille sa date
 	# d'expiration au cas où il n'y arriverait pas.
 
+	# La compression : zstd pour qui l'accepte, gzip pour les autres. Mesuré à l'étape 16 : rien
+	# n'était compressé, alors que l'application annonce `Vary: accept-encoding`. `pnpm caddy:test`
+	# mesure le gain à chaque passage. Le 2026-09-25 : 64 % de moins en gzip et 63 % en zstd sur le
+	# texte de `/conditions` (16 882 octets), 51 % et 49 % sur le widget (4 239 octets). À ces
+	# tailles, zstd au niveau par défaut de Caddy pèse 2 à 4 % de plus que gzip, soit 143 octets de
+	# plus sur la page et 82 sur le widget.
+	#
+	# `encode` enveloppe la réponse de `reverse_proxy`. Caddy lui donne sa place dans la chaîne où
+	# qu'on l'écrive : il est ici pour se lire à côté du mandataire dont il compresse les réponses.
+	# L'ordre `zstd gzip` départage un client qui accepte les deux au même poids, comme le fait un
+	# navigateur. Brotli n'y est pas : Caddy ne l'a pas sans module tiers.
+	#
+	# Ce qu'il fait en passant, et que `pnpm caddy:test` vérifie : il ajoute `Accept-Encoding` à
+	# `Vary`, sans doublon ; il suffixe l'ETag forte de la réponse compressée (`-zstd`, `-gzip`),
+	# puisque c'est une autre représentation, et retire ce suffixe de `If-None-Match` avant de
+	# passer la requête à l'application, dont le `304` marche donc comme avant.
+	#
+	# Ce qu'il ne fait pas : il ne touche pas à une réponse déjà compressée. Les fichiers de
+	# `/_app/immutable/` passent donc tels quels vers un client qui accepte brotli ou gzip :
+	# adapter-node les lui sert déjà compressés. Un client qui n'accepte que zstd les reçoit en clair
+	# de l'application, et `encode` les compresse. Il ne touche pas non plus à une réponse de moins
+	# de 512 octets, ni aux types hors de sa liste (PNG, PDF), ni à une réponse marquée
+	# `Cache-Control: no-transform`. Pour un client qui n'accepte ni zstd ni gzip, il ne compresse
+	# pas et n'ajoute pas `Vary` : une réponse en clair qu'un cache partagé servirait à tous ne fait
+	# de tort à personne. L'empreinte `integrity` du widget ne change pas : elle porte sur le corps
+	# décodé.
+	#
+	# Trois écarts, relevés en 2.8.0 comme en 2.11.4. Il compresse aussi une réponse `206`, mais
+	# garde le `Content-Range` de la forme brute. sirv, qui sert les fichiers de `/_app/` pour
+	# adapter-node, répond aux plages. Un navigateur reçoit le fichier déjà compressé en brotli ou en
+	# gzip, qu'`encode` laisse passer. Mais un client qui n'accepte que zstd reçoit une plage
+	# compressée dont le `Content-Range` ne décrit pas le corps. Les routes de l'application, elles,
+	# ne servent pas de plages. En `HEAD`, il annonce dans `Content-Length` la taille d'un flux
+	# compressé vide (20 octets en gzip). Un `304` rend l'ETag sans le suffixe de compression.
+	#
+	# BREACH ne trouve rien à lire ici : il lui faut, dans un même corps compressé, un secret stable
+	# et un texte choisi par l'attaquant. Le nonce de la politique de contenu change à chaque
+	# réponse ; aucun formulaire ne porte de jeton, SvelteKit contrôle l'origine ; le jeton de
+	# session ne paraît que dans les corps de `/api/auth/get-session` et `/api/auth/list-sessions`
+	# de Better Auth, qui ne reprennent rien de la requête ; les pages publiques reprennent des
+	# paramètres de la requête, mais ne lisent aucune session. Une réponse qui mettrait un jeton
+	# durable à côté d'un texte venu de la requête demanderait de revoir ce point.
+	encode zstd gzip
+
 	# L'application, sur la boucle locale. Compose n'y publie le port que là : rien d'autre que ce
 	# reverse_proxy ne peut l'atteindre.
 	reverse_proxy 127.0.0.1:3080 {
