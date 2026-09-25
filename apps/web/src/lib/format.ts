@@ -135,12 +135,14 @@ export function describeTiming(timing: TimingView): string {
 }
 
 /**
- * « à Maghrib », « 15 min après Maghrib », « 15 min avant Maghrib ». Un décalage négatif se dit
+ * « après Maghrib », « 15 min après Maghrib », « 15 min avant Maghrib ». Un décalage négatif se dit
  * « avant », avec sa valeur absolue : l'horaire d'un cours et l'heure de chacune de ses séances le
- * disent de la même façon, parce qu'ils passent tous deux par ici.
+ * disent de la même façon, parce qu'ils passent tous deux par ici. Ce sont les mots de la page
+ * publique et du flux agenda (`decalageEnClair`), en minuscules, puisque l'espace les écrit au fil
+ * de la ligne.
  */
 function quandParRapportA(priere: string, decalage: number): string {
-	if (decalage === 0) return `à ${priere}`;
+	if (decalage === 0) return `après ${priere}`;
 	return decalage > 0 ? `${decalage} min après ${priere}` : `${-decalage} min avant ${priere}`;
 }
 

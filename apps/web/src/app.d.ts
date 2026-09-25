@@ -7,6 +7,15 @@ import type { SignedIn } from '$lib/server/context.js';
 
 declare global {
 	namespace App {
+		interface Error {
+			message: string;
+			/**
+			 * La langue d'un 404 d'une adresse publique, pour que la page d'erreur de `/m/` parle
+			 * celle que le hook écrit sur `<html>`. Posée par `introuvable`, seule à les poser toutes
+			 * deux ; absente, la page d'erreur parle français.
+			 */
+			langue?: import('$lib/i18n.js').Langue | undefined;
+		}
 		interface Locals {
 			/** Qui est connecté, d'après la session vérifiée côté serveur. `null` si personne. */
 			person: SignedIn | null;

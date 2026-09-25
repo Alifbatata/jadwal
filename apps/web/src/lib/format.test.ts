@@ -16,6 +16,7 @@ import {
 	weekdayName
 } from './format.js';
 import { cancellationMessage, moveMessage, weekMessage } from './messages.js';
+import { decalageEnClair, nomPriere } from './public/affichage.js';
 
 describe('les dates en français', () => {
 	it.each([
@@ -107,10 +108,12 @@ describe('l’horaire en clair', () => {
 		).toBe('20 min avant Fajr, pendant 45 min');
 	});
 
-	it('says « à » when there is no offset at all', () => {
+	it('says « après » when there is no offset at all, as the public page does', () => {
+		// Jusqu'à l'étape 17, la liste des cours disait « à Isha », quand la page publique et le flux
+		// agenda disaient « Après Isha » pour le même cours.
 		expect(
 			describeTiming({ kind: 'prayer', prayer: 'isha', offsetMinutes: 0, durationMinutes: 60 })
-		).toBe('à Isha, pendant 1 h');
+		).toBe('après Isha, pendant 1 h');
 	});
 
 	it.each([
@@ -168,6 +171,30 @@ describe('l’heure d’une séance', () => {
 					durationMinutes: 60
 				})
 			).toBe(`${attendu}, pendant 1 h`);
+		}
+	);
+
+	it.each([-15, 0, 15])(
+		'says what the public page says, in French, for an offset of %i minutes',
+		(decalage) => {
+			// L'espace écrit ses repères en minuscules, au fil de la ligne (« chaque semaine, le lundi,
+			// après Maghrib ») ; la page publique ouvre la phrase par une majuscule. Les mots, eux, sont
+			// les mêmes : une responsable ne lit pas une autre heure que le visiteur.
+			const espace = describeSessionTime({
+				start: null,
+				end: null,
+				anchor: { prayer: 'maghrib', offsetMinutes: decalage }
+			});
+			const publique = decalageEnClair('fr', decalage, nomPriere('fr', 'maghrib'));
+			expect(espace.charAt(0).toUpperCase() + espace.slice(1)).toBe(publique);
+			expect(
+				describeTiming({
+					kind: 'prayer',
+					prayer: 'maghrib',
+					offsetMinutes: decalage,
+					durationMinutes: 45
+				})
+			).toBe(`${espace}, pendant 45 min`);
 		}
 	);
 

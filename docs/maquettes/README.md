@@ -67,7 +67,11 @@ le code est un défaut — de l'un ou de l'autre, et il faut trancher, pas conto
      (`Nutzungsbedingungen`, `Condizioni d'uso`, `شروط الاستخدام`). La page, elle, n'existe qu'en
      français, et le lien le dit par `hreflang="fr"`. Il s'ouvre toujours dans un nouvel onglet :
      `/conditions` refuse d'être encadrée, et la page publique vit souvent dans un cadre, celui du
-     widget ou celui qu'une organisation pose à la main.
+     widget ou celui qu'une organisation pose à la main. Le lien le dit aux lecteurs d'écran, et à
+     eux seuls, par un texte caché aux yeux : son nom devient
+     `Conditions d'utilisation (s'ouvre dans un nouvel onglet)`, et de même dans les trois autres
+     langues (`öffnet sich in einem neuen Tab`, `si apre in una nuova scheda`,
+     `يُفتح في علامة تبويب جديدة`). À l'écran, rien ne change.
 2. `Proposé gratuitement par jadwal, un service de Voltia`.
 3. Rien d'autre. Pas de compteur, pas de logo.
 
@@ -86,6 +90,24 @@ Toujours dans cet ordre, sur une ligne ou deux :
 Une séance **annulée** reste visible, son texte est barré, et elle porte la mention `Annulé`.
 Une séance **déplacée** apparaît deux fois : barrée à sa date d'origine avec `Déplacé au <date>`, et
 à sa nouvelle date avec `Date exceptionnelle`.
+
+### Une adresse qui ne mène nulle part
+
+Une organisation inconnue ou suspendue, un cours qui n'est pas publié, une adresse qu'aucune page ne
+connaît sous `/m/<identifiant>/` : tous rendent le même `404`, dans la langue de l'adresse, et sans
+aucun script, même dans le cadre du widget. La langue est celle du segment de l'adresse. Sans
+segment, c'est la langue par défaut de l'organisation pour un cours qu'elle ne publie pas, et le
+français partout ailleurs : une adresse inventée ne coûte aucune lecture de la base. La page porte
+un titre de niveau 1 et une phrase, rien d'autre :
+
+| Langue | Titre                  | Phrase                          |
+| ------ | ---------------------- | ------------------------------- |
+| `fr`   | `Page introuvable`     | `Vérifiez l'adresse.`           |
+| `de`   | `Seite nicht gefunden` | `Bitte prüfen Sie die Adresse.` |
+| `it`   | `Pagina non trovata`   | `Controlla l'indirizzo.`        |
+| `ar`   | `الصفحة غير موجودة`    | `تحقّق من العنوان.`             |
+
+Elle ne dit pas si l'organisation a existé.
 
 ### Les langues
 

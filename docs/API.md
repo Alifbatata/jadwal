@@ -250,14 +250,14 @@ arrière et 120 en avant. Le fichier annonce un rafraîchissement d'une heure.
 Le paramètre `lang` s'applique aussi : il choisit la langue des titres et du libellé d'ancrage.
 
 **Le libellé d'ancrage** est la première ligne de `DESCRIPTION` d'un cours ancré sur une prière. Il
-est écrit dans la langue du flux, et nomme la prière comme la page publique la nomme dans cette
-langue : `عند المغرب` en arabe, `Zu Fadschr` et `15 Min. nach Ischa` en allemand. Avec un décalage,
-c'est la phrase de la page ; sans décalage, le flux dit `À Maghrib` là où la page dit
-`Après Maghrib`. Un décalage négatif se dit « avant », avec sa valeur absolue.
+est écrit dans la langue du flux, et c'est la phrase de la page publique dans cette langue, mot pour
+mot : `بعد المغرب` en arabe, `Nach Fadschr` et `15 Min. nach Ischa` en allemand. Sans décalage, le
+flux dit `Après Maghrib`, comme la page. Un décalage négatif se dit « avant », avec sa valeur
+absolue.
 
 | Décalage | `fr`                   | `de`                   | `it`                      | `ar`                    |
 | -------- | ---------------------- | ---------------------- | ------------------------- | ----------------------- |
-| 0        | `À Maghrib`            | `Zu Maghrib`           | `A Maghrib`               | `عند المغرب`            |
+| 0        | `Après Maghrib`        | `Nach Maghrib`         | `Dopo Maghrib`            | `بعد المغرب`            |
 | 15       | `15 min après Maghrib` | `15 Min. nach Maghrib` | `15 min dopo Maghrib`     | `بعد المغرب بـ15 دقيقة` |
 | -15      | `15 min avant Maghrib` | `15 Min. vor Maghrib`  | `15 min prima di Maghrib` | `قبل المغرب بـ15 دقيقة` |
 
@@ -265,6 +265,11 @@ Depuis l'étape 16, le champ `DESCRIPTION` change donc pour trois sortes d'abonn
 la prière était écrite en lettres latines (`عند Maghrib`) ; en allemand, pour Fajr et Isha ; et dans
 toutes les langues pour un décalage négatif, qui sortait en `-15 min après Maghrib`. Les heures et les
 identifiants d'événement ne changent pas.
+
+Depuis l'étape 17, le décalage nul change aussi, dans les quatre langues : le flux disait
+`À Maghrib`, `Zu Maghrib`, `A Maghrib` et `عند المغرب`, là où la page disait « après ». Il dit
+maintenant la phrase de la page, et n'en a plus aucune à lui. Les heures et les identifiants
+d'événement ne changent pas non plus.
 
 ### Un seul cours
 

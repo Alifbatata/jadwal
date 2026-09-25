@@ -12,6 +12,7 @@ import { error, type Handle } from '@sveltejs/kit';
 import { documentDansSaLangue } from '$lib/i18n.js';
 import { auth } from '$lib/server/auth.js';
 import { passkeyCount, recordAdminAccess, signedIn } from '$lib/server/context.js';
+import { strictTransportSecurity } from '$lib/server/hsts.js';
 import { compter } from '$lib/server/vues.js';
 
 /**
@@ -179,9 +180,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 	// Seulement en HTTPS réel. Derrière un mandataire, cela suppose `ORIGIN` en https, sans quoi
 	// l'en-tête ne partirait jamais.
-	if (event.url.protocol === 'https:') {
-		response.headers.set('strict-transport-security', 'max-age=31536000; includeSubDomains');
-	}
+	const transportStrict = strictTransportSecurity(event.url);
+	if (transportStrict) response.headers.set('strict-transport-security', transportStrict);
 
 	return response;
 };

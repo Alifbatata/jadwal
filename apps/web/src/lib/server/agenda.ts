@@ -2,7 +2,7 @@
 //
 // Construit par `@jadwal/core/ics`, qui est le seul endroit du projet où une `RRULE` est produite.
 // Ce fichier ne fait que rassembler les entrées et choisir les libellés : un cours ancré sur une
-// prière sort avec « À Maghrib » en tête de description, puisque son heure change chaque jour.
+// prière sort avec « Après Maghrib » en tête de description, puisque son heure change chaque jour.
 
 import { buildCalendar, DEFAULT_HORIZON_DAYS, DEFAULT_PAST_DAYS } from '@jadwal/core/ics';
 import { addDays, todayInZone, type Prayer } from '@jadwal/core';
@@ -22,28 +22,19 @@ import { sql } from '@jadwal/db';
 import { decalageEnClair, nomPriere } from '$lib/public/affichage.js';
 
 /**
- * Le libellé d'un cours ancré sans décalage : « À Maghrib », là où la page dit « Après Maghrib ».
- * C'est la seule phrase propre au flux, et elle reste ici.
- */
-const A_LA_PRIERE: Record<Langue, (priere: string) => string> = {
-	fr: (priere) => `À ${priere}`,
-	de: (priere) => `Zu ${priere}`,
-	it: (priere) => `A ${priere}`,
-	ar: (priere) => `عند ${priere}`
-};
-
-/**
  * Le libellé d'ancrage, dans la langue de la page : c'est la première ligne de la description.
  *
- * La prière est nommée comme la page la nomme, par `nomPriere` : « عند المغرب » dans le flux arabe,
- * et non plus « عند Maghrib ». Le flux allemand dit donc « Fadschr » et « Ischa », comme la page
- * allemande. Avec un décalage, le flux reprend la phrase de la page, `decalageEnClair`, au lieu
- * d'avoir la sienne : « après » ou « avant » selon le signe, et l'arabe accorde ses minutes au
- * nombre à un seul endroit, `i18n.ts`.
+ * Le flux dit la phrase de la page, `decalageEnClair`, et n'en a aucune à lui : « Après Maghrib »
+ * au décalage nul, « après » ou « avant » selon le signe sinon, et l'arabe accorde ses minutes au
+ * nombre à un seul endroit, `i18n.ts`. Jusqu'à l'étape 17, le décalage nul avait sa propre phrase,
+ * « À Maghrib », « عند المغرب » : un abonné lisait dans son agenda autre chose que sur la page.
+ *
+ * La prière est nommée comme la page la nomme, par `nomPriere` : « بعد المغرب » dans le flux arabe,
+ * et non « بعد Maghrib ». Le flux allemand dit donc « Fadschr » et « Ischa », comme la page
+ * allemande.
  */
 export function libelleAncrage(langue: Langue, priere: string, decalage: number): string {
-	const nom = nomPriere(langue, priere);
-	return decalage === 0 ? A_LA_PRIERE[langue](nom) : decalageEnClair(langue, decalage, nom);
+	return decalageEnClair(langue, decalage, nomPriere(langue, priere));
 }
 
 export interface AgendaOptions {
