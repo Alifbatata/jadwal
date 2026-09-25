@@ -553,10 +553,11 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   nouveau. **La tâche de nuit le vérifie** (`infra/sauvegarde/ages.mjs`) : tout objet distant plus
   vieux que 9 jours sous `quotidien/`, 30 sous `hebdo/` ou 182 sous `mensuel/` fait échouer la
   tâche, et l'alerte part. L'âge se compte depuis le dépôt, ou depuis l'heure écrite dans le nom
-  quand le dépôt a plus d'une heure de retard sur elle : une archive recopiée ne repart pas de zéro. La liste doit montrer ce que la nuit
-  vient d'envoyer, et elle ne lit aucune date objet par objet, parce que rclone met l'heure présente
-  quand cette lecture échoue. `pnpm sauvegarde:test` joue le script entier avec rclone 1.60.1 et
-  1.75.1, neuf passages chacun, dont deux contre un faux stockage S3.
+  quand le dépôt a plus d'une heure de retard sur elle : une archive recopiée ne repart pas de
+  zéro. La liste doit montrer ce que la nuit vient d'envoyer, et elle ne lit aucune date objet par
+  objet, parce que rclone met l'heure présente quand cette lecture échoue. `pnpm sauvegarde:test`
+  joue le script entier avec rclone 1.60.1 et 1.75.1, neuf passages chacun, dont quatre contre un
+  faux stockage S3.
 - **Le parcours complet entre dans la CI**, dans son propre flux (`parcours.yml`), **et garde le
   déploiement** (ADR 0045) : le playbook lit la révision de l'image dans le registre et demande à
   GitHub une exécution verte de ce flux pour ce commit, avant toute connexion au serveur. Une
