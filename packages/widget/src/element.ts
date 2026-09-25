@@ -32,7 +32,8 @@ const HAUTEUR_MAXIMALE = 20000;
  */
 const HYSTERESIS = 2;
 
-const LANGUES = new Set(['fr', 'de', 'it', 'ar']);
+/** Les cinq langues du service, dans son ordre ; l'anglais britannique depuis l'étape 18. */
+const LANGUES = new Set(['fr', 'de', 'it', 'en', 'ar']);
 const VUES = new Set(['semaine', 'cours', 'mois']);
 const PUBLICS = new Set(['kids', 'youth', 'women', 'adults', 'open']);
 
@@ -48,7 +49,11 @@ interface Mots {
 	readonly mention: string;
 }
 
-/** Quatre langues, quatre phrases. Un fichier de traduction coûterait plus qu'il ne rendrait ici. */
+/**
+ * Cinq langues, quatre phrases. Un fichier de traduction coûterait plus qu'il ne rendrait ici. Les
+ * textes sont ceux de la page publique, mot pour mot : le lien et la mention se lisent pareil des
+ * deux côtés du cadre.
+ */
 const MOTS: Record<string, Mots> = {
 	fr: {
 		titre: 'Programme des cours',
@@ -67,6 +72,12 @@ const MOTS: Record<string, Mots> = {
 		lien: 'Vedi tutto il programma',
 		nouvelOnglet: 'si apre in una nuova scheda',
 		mention: 'Offerto gratuitamente da jadwal, un servizio di Voltia'
+	},
+	en: {
+		titre: 'Course programme',
+		lien: 'See the full programme',
+		nouvelOnglet: 'opens in a new tab',
+		mention: 'Provided free of charge by jadwal, a service from Voltia'
 	},
 	ar: {
 		titre: 'برنامج الدروس',

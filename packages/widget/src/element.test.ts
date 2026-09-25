@@ -222,8 +222,24 @@ describe('les textes du widget', () => {
 		expect(textes('ar').join(' ')).not.toMatch(/اً/);
 	});
 
+	// L'anglais britannique, cinquième langue du service (étape 18) : les mêmes quatre textes que la
+	// page publique anglaise, et le cadre vers la page en anglais.
+	it('speaks British English when asked, and frames the English page', () => {
+		expect(textes('en')).toEqual([
+			'Course programme',
+			'See the full programme',
+			' (opens in a new tab)',
+			'Provided free of charge by jadwal, a service from Voltia'
+		]);
+		const element = poser(`org="belvedere" lang="EN" base="${ORIGINE}"`);
+		expect(new URL(cadreDe(element)?.src ?? '').pathname).toBe('/m/belvedere/en');
+		expect(element.shadowRoot?.querySelector('footer a')?.getAttribute('href')).toBe(
+			`${ORIGINE}/m/belvedere/en`
+		);
+	});
+
 	it('writes no Eastern Arabic or Persian digit, in any language', () => {
-		for (const langue of ['fr', 'de', 'it', 'ar']) {
+		for (const langue of ['fr', 'de', 'it', 'en', 'ar']) {
 			expect(textes(langue).join(' ')).not.toMatch(/[٠-٩۰-۹]/);
 		}
 	});
