@@ -27,7 +27,7 @@ veille. La marche à suivre quand quelque chose ne va pas est dans
 
 | Chemin     | Ce que c'est                                                                                                                                          |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ansible/` | Le déploiement : un inventaire d'exemple à copier, un playbook, cinq rôles, un playbook de retrait.                                                   |
+| `ansible/` | Le déploiement : un inventaire d'exemple à copier, un playbook, six rôles dont la garde, un playbook de retrait.                                      |
 | `compose/` | Les trois services de production — le conteneur de démarrage, l'application et sa base — et l'exemple du fichier d'environnement.                     |
 | `caddy/`   | Le bloc de site à poser dans le Caddy **de l'hôte**, qui peut servir d'autres sites.                                                                  |
 | `systemd/` | Sept unités de minuterie — celle de la sonde est un modèle, armé une fois par pile — leurs services, et l’unité d’alerte déclenchée par `OnFailure=`. |
@@ -130,7 +130,117 @@ ansible-playbook retrait.yml -e @exploitant.yml
 
 Le digest à déployer est écrit dans le résumé de l'exécution de la CI, avec la commande à copier
 telle quelle. **Jamais d'étiquette** : `:main` bouge, un digest non. Le playbook refuse de démarrer
-si `jadwal_image` n'en porte pas un.
+si `jadwal_image` n'en porte pas un, et il refuse aussi une image dont le commit n'a pas passé le
+parcours complet : c'est la garde, décrite ci-dessous.
+
+## La garde du déploiement
+
+**Le playbook ne déploie pas une image dont le commit n'a pas d'exécution verte du flux
+`parcours`.** Ce flux, `.github/workflows/parcours.yml`, lance `pnpm parcours:test` à chaque
+poussée sur `main` : tout le parcours d'une organisation, dans un vrai navigateur, contre l'image de
+production. La CI publie l'image sans attendre ce flux, et rien, côté GitHub, n'empêche de déployer
+une image dont le parcours a échoué. La garde fait ce lien, au seul endroit par où passe tout
+déploiement.
+
+Elle tourne en premier, sur le poste qui déploie, **avant toute connexion au serveur** :
+
+1. elle exige une image désignée par son digest, publiée sur le registre que la garde lit
+   (`ghcr.io`), sous le chemin du dépôt (`jadwal_garde_depot`, sans tenir compte de la casse).
+   N'importe quel compte du registre peut publier une image qui porte le commit d'un autre ; seul
+   le chemin dit qui l'a publiée ;
+2. elle lit, par l'API du registre et au digest donné, les étiquettes que la CI pose sur l'image :
+   `org.opencontainers.image.revision`, le commit, et `org.opencontainers.image.source`, qui doit
+   désigner ce dépôt. L'empreinte du manifeste et celle de la configuration sont recalculées, et une
+   image qui ne correspond pas à son digest est refusée. Elle n'accepte qu'un manifeste d'image
+   simple, celui que la CI publie : un index de plusieurs plateformes est refusé, en disant que
+   faire ;
+3. elle demande à l'API de GitHub les exécutions du flux `parcours.yml` pour ce commit, et exige au
+   moins une exécution réussie (`success`) **de ce commit-là et de ce flux-là**. Sinon, elle
+   s'arrête, et dit quelle révision, quel flux, ce qu'elle a trouvé et ce qu'il faut faire.
+
+Tout se lit sans compte, parce que l'image et le dépôt sont publics : le poste qui déploie doit
+seulement joindre `ghcr.io` et `api.github.com` en HTTPS. Sans compte, l'API de GitHub accepte 60
+requêtes par heure depuis une même adresse ; la garde en fait une par déploiement.
+
+**Quand elle tourne.** Chaque fois que le rôle `application` tourne : seul ce rôle lit
+`jadwal_image` et l'écrit sur le serveur. Un passage qui ne le joue pas, comme `--tags taches` ou
+`--tags caddy`, ne déploie aucune image, et la garde n'y tourne pas. `--check` ne la saute pas : une
+simulation répond comme le déploiement répondrait.
+
+**Une sélection de tâches ne la contourne pas.** Les tâches de la garde se jouent d'un seul bloc :
+`--start-at-task` ne peut pas démarrer au milieu, et Ansible répond qu'il ne trouve rien à ce nom. La
+garde range son verdict dans les faits du poste qui déploie, pour ce passage seulement. Le rôle
+`application` commence par vérifier que ce verdict porte sur cette image-là, et ses deux gabarits
+qui écrivent l'image (`compose.env` et `jadwal.env`) ne la lisent qu'à travers lui.
+`--skip-tags garde`, `--start-at-task` sur une tâche du rôle `application`, ou `--limit` sans
+`localhost` arrêtent donc le déploiement avant qu'une image ne soit écrite, en disant pourquoi.
+`pnpm garde:test` joue chacun de ces cas.
+
+**Ses variables ne se posent pas à la main.** Les variables au préfixe `garde_` sont celles de la
+garde. Si l'une existe avant elle, par `-e` ou par l'inventaire, la garde refuse de tourner, et le
+rôle `application` refuse d'écrire l'image. Un verdict écrit dans l'inventaire ne se lit pas comme
+un fait, et un cache de faits qui survivrait au passage (`ANSIBLE_CACHE_PLUGIN=jsonfile`, par
+exemple) est refusé.
+
+**Ce qu'elle ne vise pas.** C'est une garde contre l'oubli et la hâte, pas contre qui la contourne
+exprès. Qui modifie le playbook ou ses rôles, pointe `jadwal_garde_registre` ou
+`jadwal_garde_api_github` vers un faux service, ou tient le registre, le compte ou le dépôt, peut
+déployer une image rouge. Voir « Ce qui n'est pas fait » dans l'ADR 0045.
+
+**Le serveur ne s'appelle pas `localhost` dans l'inventaire.** La garde tourne sur le poste qui
+déploie, sous le nom `localhost`, et y range son verdict. Un serveur nommé `localhost` dans le groupe
+`jadwal`, pour déployer sur la machine même qui lance Ansible, verrait ces variables comme posées
+hors de la garde, et une image verte serait refusée. Nommez le serveur par son nom de domaine, comme
+dans l'exemple d'inventaire.
+
+**Limiter le déploiement à un serveur** : la garde tourne sur `localhost`, qui doit rester dans la
+limite, sans quoi le rôle `application` s'arrête en disant que la garde n'a pas tourné :
+
+```sh
+ansible-playbook jadwal.yml --limit '<serveur>,localhost' -e @exploitant.yml \
+  -e jadwal_image=ghcr.io/<compte>/jadwal@sha256:<digest>
+```
+
+**Quand elle refuse** :
+
+- le flux tourne encore : attendre sa fin, puis relancer la même commande ;
+- il a échoué, ou il a été annulé : le relancer depuis l'onglet Actions du dépôt (`Re-run jobs`
+  rejoue le même commit), ou déployer l'image du dernier commit. Une poussée plus récente n'annule
+  ni le parcours en cours (`cancel-in-progress: false`) ni ceux qui attendent (`queue: max`, jusqu'à
+  cent) : un commit reste sans verdict seulement si son exécution a été annulée à la main, ou passé
+  cent en attente ;
+- « aucune exécution de ce flux pour ce commit » : l'image vient d'un commit poussé avant que le
+  flux existe. C'est le cas de toute image construite avant la garde, y compris celle qui tourne
+  peut-être encore : la redéployer demande une dérogation. Un passage `--tags taches` n'est pas
+  concerné : la garde n'y tourne pas ;
+- « le flux est inconnu de GitHub pour ce dépôt (404) » : GitHub cherche un flux par son nom dans
+  le dépôt, quel que soit le commit. Le fichier n'y a pas encore été poussé, il a changé de nom, ou
+  `jadwal_garde_depot` et `jadwal_garde_flux` désignent un autre dépôt ou un autre flux.
+
+**Lever la garde**, en secours seulement, par exemple pour revenir en urgence à une image construite
+avant elle. La dérogation nomme l'image qu'elle couvre, la même que `jadwal_image`, et dit pourquoi :
+
+```sh
+ansible-playbook jadwal.yml -e @exploitant.yml -e jadwal_image=ghcr.io/<compte>/jadwal@sha256:<digest> \
+  -e '{"jadwal_garde_derogation": {"image": "ghcr.io/<compte>/jadwal@sha256:<digest>", "motif": "retour à l’image d’avant la garde, le dernier parcours est rouge"}}'
+```
+
+Elle s'écrit en JSON, la seule forme qui fasse passer une valeur composée : `-e clé=valeur` ne sait
+écrire qu'une chaîne, coupée au premier espace sans rien dire. La garde refuse toute autre forme, une
+dérogation qui nomme une autre image, et un motif d'un seul mot. Une dérogation oubliée dans un
+fichier passé par `-e @fichier` ne vaut donc pas pour l'image suivante. Avec une dérogation, **rien
+d'autre n'est vérifié** : la garde l'écrit en rouge avec l'image et le motif, et le récapitulatif
+final en garde la trace (`ignored=1`).
+
+Une instance qui construit sa propre image depuis son propre dépôt met le sien dans
+`jadwal_garde_depot` (`ansible/group_vars/all/main.yml`) et garde le flux `parcours.yml`.
+
+`pnpm garde:test` l'éprouve cas par cas : le playbook livré, joué par Ansible dans un conteneur
+jetable, contre une fausse API servie par le poste, y compris le rôle `application` en simulation,
+sous des sélections de tâches de chaque sorte et avec des variables forgées. Aucune connexion ne
+part vers un serveur.
+`node scripts/eprouver-garde-deploiement.mjs --reel ghcr.io/<compte>/jadwal@sha256:<digest>` joue la
+même garde contre les vraies API, en lecture seule, sans rien déployer.
 
 ## Le coffre
 

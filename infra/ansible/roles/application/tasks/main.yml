@@ -1,5 +1,58 @@
 # L'application et sa base : deux conteneurs, un réseau, un volume (ADR 0034).
 ---
+# La garde du déploiement, tenue dans le seul rôle qui écrit l'image (ADR 0045). C'est la première
+# tâche du rôle, et elle n'a pas de tag à elle : elle hérite d'`application`, et aucune sélection
+# par `--tags` ou `--skip-tags` ne joue le rôle sans elle. `--start-at-task` peut la sauter ; les
+# deux gabarits qui écrivent l'image l'arrêtent alors à leur tour (`image-gardee.j2`).
+#
+# Le verdict se lit dans les faits de localhost, où la garde l'a rangé dans ce passage (voir
+# `roles/garde/tasks/verifier.yml`). L'inventaire ne peut pas y écrire. Sont refusés en plus :
+#   - une variable au préfixe `garde_` visible ici : seule la garde en pose, et sur localhost
+#     seulement, donc celle-ci vient de `-e` ou de l'inventaire ;
+#   - un verdict dans les faits de ce serveur : `-e ansible_facts=…` remplace les faits de chaque
+#     hôte, ceux de localhost compris ;
+#   - `--skip-tags garde`, qui saute la garde ;
+#   - un cache de faits qui survit au passage, et qui garderait le verdict d'un passage précédent.
+#
+# Aucune variable de tâche ici : `-e` l'emporterait sur elle. Le verdict est donc relu en entier
+# dans chaque condition.
+#
+# La ligne vide après `endif` est voulue : sans elle, `trim_blocks` collerait la phrase suivante au
+# constat.
+- name: La garde est passée pour cette image
+  ansible.builtin.assert:
+    that:
+      - lookup('ansible.builtin.config', 'CACHE_PLUGIN') in ['memory', 'ansible.builtin.memory']
+      - lookup('ansible.builtin.varnames', '^garde_', wantlist=True) | length == 0
+      - ansible_facts.garde_verdict is not defined
+      - "'garde' not in ansible_skip_tags"
+      - (hostvars['localhost']['ansible_facts']['garde_verdict'] | default({})).image | default('') == jadwal_image
+      - (hostvars['localhost']['ansible_facts']['garde_verdict'] | default({})).verdict | default('') in ['vert', 'derogation']
+    fail_msg: |-
+      {% set verdict = hostvars['localhost']['ansible_facts']['garde_verdict'] | default({}) %}
+      {% set cache = lookup('ansible.builtin.config', 'CACHE_PLUGIN') %}
+      {% set posees = lookup('ansible.builtin.varnames', '^garde_', wantlist=True) + (['ansible_facts.garde_verdict'] if ansible_facts.garde_verdict is defined else []) %}
+      {% set hors_limite = ansible_limit is defined and 'localhost' not in (lookup('ansible.builtin.inventory_hostnames', ansible_limit, wantlist=True, errors='ignore') or []) %}
+      Le déploiement ne part pas sans la garde.
+      Image demandée    : {{ jadwal_image if jadwal_image else '(rien)' }}
+      Garde passée pour : {{ verdict.image | default("(aucune image : la garde n'a pas rendu de verdict dans ce passage)") }}
+      Constat           : {% if posees -%}
+      des variables réservées à la garde sont posées hors d'elle, par -e ou par l'inventaire : {{ posees | join(', ') }}. Les retirer.
+      {%- elif cache not in ['memory', 'ansible.builtin.memory'] -%}
+      le cache de faits est {{ cache }}, qui garderait le verdict d'un passage précédent. Retirer ce réglage : le cache par défaut, memory, ne vit que le temps du passage.
+      {%- elif 'garde' in ansible_skip_tags -%}
+      la garde n'a pas tourné : --skip-tags garde l'a sautée. Relancer sans.
+      {%- elif not verdict and hors_limite -%}
+      la garde n'a pas tourné. Elle tourne sur localhost, que --limit {{ ansible_limit }} laisse dehors : garder localhost dans la limite, par exemple --limit '{{ ansible_play_hosts_all | join(',') }},localhost'.
+      {%- elif not verdict -%}
+      la garde n'a pas tourné dans ce passage. Rejouer le playbook sans --start-at-task.
+      {%- else -%}
+      la garde a jugé une autre image. Rejouer le playbook en entier, pour celle-ci.
+      {%- endif %}
+
+      En secours seulement, une dérogation écrite pour cette image : voir infra/README.md.
+    quiet: true
+
 - name: Une image, et par digest
   ansible.builtin.assert:
     that:
@@ -39,6 +92,26 @@
   become: true
   notify: relancer jadwal
 
+# Ce que Compose lit pour interpoler, et **rien d'autre**. Aucun secret n'y entre.
+#
+# Compose ne se contente pas de lire le fichier qu'on lui donne : il développe les références de
+# variables à l'intérieur de ses valeurs. Tant qu'on lui donnait `jadwal.env`, le « $ » du mot de
+# passe SMTP lui faisait nommer deux de ses caractères dans un avertissement, à chaque appel de
+# chaque tâche. Le fichier que Compose lit ne porte donc plus que l'image, le port et la taille de
+# corps, et il est en 0644 : il n'y a rien à cacher dedans.
+#
+# Il est écrit avant `jadwal.env`, et c'est voulu : si la garde n'a pas passé l'image, son gabarit
+# s'arrête en disant pourquoi, alors que le `no_log` de `jadwal.env` cacherait ce message.
+- name: Le fichier d'interpolation de Compose
+  ansible.builtin.template:
+    src: compose.env.j2
+    dest: '{{ jadwal_etc }}/compose.env'
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+  notify: relancer jadwal
+
 # Le fichier d'environnement porte tous les secrets du service. 0600 root:root, et rien d'autre :
 # c'est cette ligne qui rend jadwal illisible à tout compte non privilégié.
 # `no_log` empêche Ansible d'en recopier le contenu dans sa propre sortie.
@@ -51,23 +124,6 @@
     mode: '0600'
   become: true
   no_log: true
-  notify: relancer jadwal
-
-# Ce que Compose lit pour interpoler, et **rien d'autre**. Aucun secret n'y entre.
-#
-# Compose ne se contente pas de lire le fichier qu'on lui donne : il développe les références de
-# variables à l'intérieur de ses valeurs. Tant qu'on lui donnait `jadwal.env`, le « $ » du mot de
-# passe SMTP lui faisait nommer deux de ses caractères dans un avertissement, à chaque appel de
-# chaque tâche. Le fichier que Compose lit ne porte donc plus que l'image, le port et la taille de
-# corps, et il est en 0644 : il n'y a rien à cacher dedans.
-- name: Le fichier d'interpolation de Compose
-  ansible.builtin.template:
-    src: compose.env.j2
-    dest: '{{ jadwal_etc }}/compose.env'
-    owner: root
-    group: root
-    mode: '0644'
-  become: true
   notify: relancer jadwal
 
 # Un fichier par conteneur, et chacun ne porte que ce que son service a besoin de savoir. Compose

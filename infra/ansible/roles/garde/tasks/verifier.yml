@@ -1,0 +1,441 @@
+# Les vérifications de la garde, et son verdict. `main.yml` charge ce fichier d'un seul bloc :
+# lire son en-tête d'abord.
+#
+# Le verdict ne naît que d'une vérification faite dans ce passage, et trois choses y veillent.
+#
+#   1. Ce fichier se joue en entier ou pas du tout : `--start-at-task` ne voit pas ses tâches
+#      (`main.yml`).
+#   2. La première tâche refuse toute variable au préfixe `garde_` qui existe avant la garde. Une
+#      variable passée par `-e` l'emporte sur `set_fact` et sur `register` (mesuré avec ansible-core
+#      2.21) : `-e garde_revision=<un commit vert>` rendait vert le verdict d'une image rouge, la
+#      garde jouée en entier. Toutes les variables de la garde portent donc ce préfixe, jusqu'aux
+#      variables de tâche.
+#   3. Le verdict est rangé dans les faits du nœud de contrôle (`cacheable: true`), et le rôle
+#      `application` le relit là. L'inventaire ne peut pas écrire dans les faits : Ansible les
+#      range à part, et une clé `ansible_facts` posée dans l'inventaire est remplacée par eux.
+#      `-e ansible_facts=…` les remplace sur chaque hôte, et le rôle `application` le voit sur le
+#      serveur. Un cache de faits qui survit au passage (`jsonfile`, par exemple) y garderait le
+#      verdict d'un passage précédent : la garde exige le cache en mémoire, le réglage par défaut.
+---
+- name: Rien de la garde n'existe avant elle
+  ansible.builtin.assert:
+    that:
+      - lookup('ansible.builtin.config', 'CACHE_PLUGIN') in ['memory', 'ansible.builtin.memory']
+      - lookup('ansible.builtin.varnames', '^garde_', wantlist=True) | length == 0
+      - ansible_facts.garde_verdict is not defined
+    fail_msg: |-
+      {% set cache = lookup('ansible.builtin.config', 'CACHE_PLUGIN') %}
+      {% set posees = lookup('ansible.builtin.varnames', '^garde_', wantlist=True) + (['ansible_facts.garde_verdict'] if ansible_facts.garde_verdict is defined else []) %}
+      Déploiement refusé : rien ne garantirait que le verdict de la garde vienne de ce passage.
+      {% if cache not in ['memory', 'ansible.builtin.memory'] %}
+      Cache de faits : {{ cache }} ; attendu : memory, le réglage par défaut d'Ansible.
+      Un cache qui survit au passage garderait le verdict d'un passage précédent. Retirer ce réglage
+      (ANSIBLE_CACHE_PLUGIN, ou fact_caching dans ansible.cfg), puis relancer.
+      {% endif %}
+      {% if posees %}
+      Variables posées hors de la garde : {{ posees | join(', ') }}.
+      Seule la garde pose ces variables. Elles viennent de -e ou de l'inventaire : les retirer, puis
+      relancer.
+      {% endif %}
+    quiet: true
+
+- name: Une image par digest
+  ansible.builtin.assert:
+    that:
+      - jadwal_image is match('^[^/@]+/[^@]+@sha256:[0-9a-f]{64}$')
+    fail_msg: |-
+      Déploiement refusé : jadwal_image ne désigne pas une image par son digest.
+      Reçu    : {{ jadwal_image if jadwal_image else '(rien)' }}
+      Attendu : ghcr.io/<compte>/jadwal@sha256:<digest>, copié du résumé de l'exécution de la CI.
+    quiet: true
+
+- name: La garde levée, sur demande écrite de l'exploitant
+  when: jadwal_garde_derogation | default({}, true) | length > 0
+  block:
+    # La dérogation nomme l'image qu'elle couvre. Sans cela, restée dans un fichier passé par
+    # `-e @fichier` à chaque déploiement, elle lèverait la garde pour toutes les images suivantes.
+    # Une valeur composée ne passe qu'en JSON : `-e clé=valeur` ne sait écrire qu'une chaîne, coupée
+    # au premier espace sans rien dire (mesuré avec ansible-core 2.21).
+    - name: Une dérogation qui nomme son image
+      ansible.builtin.assert:
+        that:
+          - jadwal_garde_derogation is mapping
+          - jadwal_garde_derogation.keys() | sort | list == ['image', 'motif']
+          - jadwal_garde_derogation.image is string
+          - jadwal_garde_derogation.motif is string
+        fail_msg: |-
+          Dérogation refusée : elle n'a pas la forme attendue.
+          Reçu    : {{ jadwal_garde_derogation }}
+          Attendu : l'image qu'elle couvre, par digest, et le motif, en JSON :
+          -e '{"jadwal_garde_derogation": {"image": "{{ jadwal_image }}", "motif": "<le motif, en une phrase>"}}'
+          Une dérogation qui ne nomme pas son image vaudrait pour toutes les suivantes.
+        quiet: true
+
+    - name: Une dérogation pour cette image-là
+      ansible.builtin.assert:
+        that:
+          - jadwal_garde_derogation.image == jadwal_image
+        fail_msg: |-
+          Dérogation refusée : elle nomme une autre image que celle demandée.
+          Dérogation pour : {{ jadwal_garde_derogation.image }}
+          Image demandée  : {{ jadwal_image }}
+          Une dérogation ne vaut que pour l'image qu'elle nomme. Si elle vient d'un fichier passé par
+          -e @fichier, l'en retirer : elle a été écrite pour une autre image.
+        quiet: true
+
+    - name: Un motif, pas un mot
+      ansible.builtin.assert:
+        that:
+          - (jadwal_garde_derogation.motif | trim).split() | length >= 2
+        fail_msg: |-
+          Dérogation refusée : le motif tient en un seul mot ({{ jadwal_garde_derogation.motif | trim }}).
+          Écrire pourquoi la garde est levée, en une phrase.
+        quiet: true
+
+    # Rouge dans la sortie, et « ignored=1 » au récapitulatif : une dérogation ne passe inaperçue
+    # ni pendant le déploiement, ni à la relecture de son journal.
+    - name: DÉROGATION, la garde du déploiement est levée
+      ansible.builtin.fail:
+        msg: |-
+          DÉROGATION : la garde du déploiement est levée pour cette exécution.
+          Image : {{ jadwal_garde_derogation.image }}
+          Motif : {{ jadwal_garde_derogation.motif | trim }}
+          Rien n'a été vérifié : ni la révision de l'image, ni le parcours de son commit.
+      ignore_errors: true
+
+    # Le verdict porte l'image que la dérogation nomme, et non `jadwal_image` : il ne dit que ce
+    # que la dérogation couvre.
+    - name: La dérogation, retenue pour la pièce du déploiement
+      ansible.builtin.set_fact:
+        garde_verdict:
+          image: '{{ jadwal_garde_derogation.image }}'
+          verdict: derogation
+        cacheable: true
+
+- name: La garde
+  when: jadwal_garde_derogation | default({}, true) | length == 0
+  block:
+    - name: La référence, en morceaux
+      ansible.builtin.set_fact:
+        garde_hote: "{{ jadwal_image.split('/', 1)[0] }}"
+        garde_chemin: "{{ jadwal_image.split('@')[0].split('/', 1)[1] }}"
+        garde_digest: "{{ jadwal_image.split('@')[1] }}"
+        # Les quatre formes de manifeste qu'un registre peut rendre, et il ne rend un manifeste que
+        # dans un type que le client déclare accepter. Les index sont demandés aussi, pour pouvoir
+        # dire que c'en est un, plutôt qu'une image introuvable.
+        garde_types_image:
+          - application/vnd.oci.image.manifest.v1+json
+          - application/vnd.docker.distribution.manifest.v2+json
+        garde_types_index:
+          - application/vnd.oci.image.index.v1+json
+          - application/vnd.docker.distribution.manifest.list.v2+json
+
+    # Le registre écrit le chemin en minuscules (la CI met le nom du dépôt en minuscules pour
+    # publier), GitHub garde les majuscules du compte : la comparaison ne tient pas compte de la
+    # casse.
+    - name: Une image de ce dépôt, sur ce registre
+      ansible.builtin.assert:
+        that:
+          - garde_hote | lower == jadwal_garde_registre | urlsplit('netloc') | lower
+          - garde_chemin | lower == jadwal_garde_depot | lower
+        fail_msg: |-
+          Déploiement refusé : l'image n'est pas publiée par ce dépôt, sur le registre que la garde lit.
+          Image    : {{ jadwal_image }}
+          Registre : {{ garde_hote }} ; attendu : {{ jadwal_garde_registre | urlsplit('netloc') }} (jadwal_garde_registre)
+          Chemin   : {{ garde_chemin }} ; attendu : {{ jadwal_garde_depot }}, sans tenir compte de la casse (jadwal_garde_depot)
+          Seule la CI de ce dépôt publie sous ce chemin. Copier la référence du résumé de son exécution.
+        quiet: true
+
+    - name: Les types de manifeste acceptés
+      ansible.builtin.set_fact:
+        garde_types: "{{ (garde_types_image + garde_types_index) | join(', ') }}"
+
+    # Le registre dit lui-même où demander un jeton, et pour quelle portée : c'est le défi
+    # `WWW-Authenticate` de la spécification des jetons de Docker, que ghcr.io applique. Lire le
+    # défi plutôt que d'écrire `/token` en dur, c'est ne rien supposer du registre.
+    - name: Le registre, sans jeton, pour connaître son service de jetons
+      ansible.builtin.uri:
+        url: '{{ jadwal_garde_registre }}/v2/{{ garde_chemin }}/manifests/{{ garde_digest }}'
+        headers:
+          Accept: '{{ garde_types }}'
+        status_code: [200, 401]
+        timeout: 20
+      register: garde_defi
+      failed_when: false
+      check_mode: false
+
+    - name: Le registre répond
+      ansible.builtin.assert:
+        that:
+          - garde_defi.status in [200, 401]
+        fail_msg: |-
+          Déploiement refusé : le registre n'a pas répondu comme un registre d'images.
+          Adresse : {{ jadwal_garde_registre }}/v2/{{ garde_chemin }}/manifests/{{ garde_digest }}
+          Réponse : {{ garde_defi.status }} {{ garde_defi.msg | default('') }}
+          Sans lui, la révision de l'image ne peut pas être lue. Réessayer quand il répond.
+        quiet: true
+
+    - name: Le service de jetons, tel que le registre le désigne
+      ansible.builtin.set_fact:
+        garde_royaume: >-
+          {{ garde_defi.www_authenticate | default('') | regex_findall('realm="([^"]+)"') | first | default('') }}
+        garde_service: >-
+          {{ garde_defi.www_authenticate | default('') | regex_findall('service="([^"]+)"') | first | default('') }}
+        garde_portee: >-
+          {{ garde_defi.www_authenticate | default('') | regex_findall('scope="([^"]+)"') | first | default('') }}
+
+    # Un jeton anonyme ne vaut qu'une lecture d'une image publique. Il n'est pas affiché pour autant :
+    # `no_log` sur chaque tâche qui le porte, jusque dans une sortie en `-vvv`.
+    - name: Un jeton anonyme, en lecture seule
+      when: garde_defi.status == 401
+      ansible.builtin.uri:
+        url: '{{ garde_royaume }}?service={{ garde_service | urlencode }}&scope={{ garde_portee | urlencode }}'
+        timeout: 20
+      register: garde_jeton
+      failed_when: false
+      check_mode: false
+      no_log: true
+
+    - name: Le jeton, et les en-têtes des lectures suivantes
+      ansible.builtin.set_fact:
+        garde_autorisation: >-
+          {{ {'Authorization': 'Bearer ' ~ ((garde_jeton.json | default({})).token | default(''))}
+             if garde_defi.status == 401 else {} }}
+      no_log: true
+
+    # Le `msg` d'`uri` dit l'état de la requête, jamais le corps rendu : l'afficher ne montre pas le
+    # jeton, et c'est la seule trace d'un échec de connexion.
+    - name: Le registre a donné un jeton
+      when: garde_defi.status == 401
+      ansible.builtin.assert:
+        that:
+          - garde_royaume | length > 0
+          - garde_jeton.status | default(-1) == 200
+          - garde_autorisation.Authorization | length > 'Bearer '|length
+        fail_msg: |-
+          Déploiement refusé : le registre n'a pas donné de jeton de lecture.
+          Service de jetons : {{ garde_royaume if garde_royaume else '(absent du défi du registre)' }}
+          Réponse           : {{ garde_jeton.status | default('aucune') }} {{ garde_jeton.msg | default('') }}
+          Une image publique se lit sans compte. Vérifier que l'image l'est toujours.
+        quiet: true
+
+    - name: Le manifeste, au digest demandé
+      ansible.builtin.uri:
+        url: '{{ jadwal_garde_registre }}/v2/{{ garde_chemin }}/manifests/{{ garde_digest }}'
+        headers: "{{ {'Accept': garde_types} | combine(garde_autorisation) }}"
+        return_content: true
+        timeout: 20
+      register: garde_manifeste
+      failed_when: false
+      check_mode: false
+      no_log: true
+
+    - name: Le registre a rendu l'image
+      ansible.builtin.assert:
+        that:
+          - garde_manifeste.status == 200
+        fail_msg: |-
+          Déploiement refusé : le registre n'a pas rendu l'image demandée.
+          Image   : {{ jadwal_image }}
+          Réponse : {{ garde_manifeste.status }} {{ garde_manifeste.content | default('') | truncate(200) }}
+          Vérifier le digest : il se copie du résumé de l'exécution de la CI, étape « What to deploy ».
+        quiet: true
+
+    - name: Le manifeste rendu est celui du digest
+      ansible.builtin.assert:
+        that:
+          - ('sha256:' ~ (garde_manifeste.content | hash('sha256'))) == garde_digest
+        fail_msg: |-
+          Déploiement refusé : l'empreinte du manifeste rendu n'est pas le digest demandé.
+          Demandé : {{ garde_digest }}
+          Rendu   : sha256:{{ garde_manifeste.content | hash('sha256') }}
+          Le registre a rendu autre chose que l'image désignée. Ne pas déployer.
+        quiet: true
+
+    # Le type annoncé par le registre, et celui que le manifeste écrit dans son corps. Docker se fie
+    # au premier ; les deux doivent dire la même chose.
+    - name: Le manifeste, lu, et son type
+      ansible.builtin.set_fact:
+        garde_lu: '{{ garde_manifeste.content | from_json }}'
+        garde_type_annonce: "{{ (garde_manifeste.content_type | default('')).split(';') | first | trim }}"
+
+    - name: Le type du manifeste
+      ansible.builtin.set_fact:
+        garde_type: '{{ garde_lu.mediaType | default(garde_type_annonce) }}'
+
+    # Le type décide, pas la présence d'une clé. La CI publie un manifeste d'image simple
+    # (`provenance: false` et `sbom: false` dans `ci.yml`). Un index regroupe plusieurs manifestes,
+    # et Docker y prend celui de la plateforme du serveur, que la garde ne connaît pas : elle le
+    # refuse, plutôt que de juger un manifeste qui ne serait peut-être pas celui qui tourne.
+    - name: Un index de plusieurs manifestes, refusé
+      when: garde_type in garde_types_index or garde_type_annonce in garde_types_index
+      ansible.builtin.fail:
+        msg: |-
+          Déploiement refusé : le digest désigne un index de plusieurs manifestes, pas une image.
+          Image : {{ jadwal_image }}
+          Type  : {{ garde_type }}
+          La CI publie un manifeste d'image simple (provenance et sbom coupés dans ci.yml), et la garde
+          ne juge que celui-là : dans un index, Docker prendrait le manifeste de la plateforme du serveur.
+          Que faire : déployer le digest du manifeste de cette plateforme, que donne
+          docker buildx imagetools inspect {{ jadwal_image }} ; ou, si ci.yml ne coupe plus provenance
+          et sbom, les couper de nouveau.
+
+    # Un manifeste d'image qui porte aussi une liste « manifests » se lit de deux façons : Docker
+    # exécuterait sa configuration et ses couches, une lecture moins attentive suivrait la liste.
+    - name: Un manifeste d'image, sans ambiguïté
+      ansible.builtin.assert:
+        that:
+          - garde_type in garde_types_image
+          - garde_type_annonce in ['', garde_type]
+          - garde_lu.manifests is not defined
+        fail_msg: |-
+          Déploiement refusé : le registre n'a pas rendu un manifeste d'image sans ambiguïté.
+          Image               : {{ jadwal_image }}
+          Type annoncé        : {{ garde_type_annonce if garde_type_annonce else '(aucun)' }}
+          Type du manifeste   : {{ garde_type if garde_type else '(aucun)' }}
+          Liste « manifests » : {{ 'présente' if garde_lu.manifests is defined else 'absente' }}
+          Attendu : un manifeste d'image ({{ garde_types_image | join(' ou ') }}), sans liste « manifests ».
+          Ne pas déployer.
+        quiet: true
+
+    # Le registre renvoie vers un stockage pour les blobs (ghcr.io : une redirection 307) ; `uri` la
+    # suit, parce qu'une lecture est sûre à suivre.
+    - name: La configuration de l'image
+      ansible.builtin.uri:
+        url: "{{ jadwal_garde_registre }}/v2/{{ garde_chemin }}/blobs/{{ (garde_lu.config | default({})).digest | default('') }}"
+        headers: '{{ garde_autorisation }}'
+        return_content: true
+        timeout: 20
+      register: garde_configuration
+      failed_when: false
+      check_mode: false
+      no_log: true
+
+    - name: La configuration rendue est celle que le manifeste désigne
+      ansible.builtin.assert:
+        that:
+          - garde_configuration.status == 200
+          - ('sha256:' ~ (garde_configuration.content | default('') | hash('sha256'))) == (garde_lu.config | default({})).digest | default('')
+        fail_msg: |-
+          Déploiement refusé : la configuration de l'image est illisible, ou n'est pas celle que son manifeste désigne.
+          Configuration : {{ (garde_lu.config | default({})).digest | default('(absente du manifeste)') }}
+          Réponse       : {{ garde_configuration.status }}
+        quiet: true
+
+    - name: Les étiquettes inscrites dans l'image
+      vars:
+        garde_etiquettes: >-
+          {{ (((garde_configuration.content | from_json).config | default({}, true)).Labels | default({}, true)) }}
+      ansible.builtin.set_fact:
+        garde_revision: "{{ garde_etiquettes['org.opencontainers.image.revision'] | default('') }}"
+        garde_source: "{{ garde_etiquettes['org.opencontainers.image.source'] | default('') }}"
+
+    # 40 caractères pour un dépôt en SHA-1, 64 pour un dépôt en SHA-256.
+    - name: La révision est un commit
+      ansible.builtin.assert:
+        that:
+          - garde_revision is match('^([0-9a-f]{40}|[0-9a-f]{64})$')
+        fail_msg: |-
+          Déploiement refusé : la révision de l'image est illisible.
+          Image                             : {{ jadwal_image }}
+          org.opencontainers.image.revision : {{ garde_revision if garde_revision else '(absente)' }}
+          La CI de ce dépôt pose cette étiquette sur chaque image qu'elle publie (ci.yml). Une image
+          qui ne la porte pas, ou qui y porte autre chose qu'un commit, ne vient pas de là.
+        quiet: true
+
+    # Le chemin a déjà dit qui a publié l'image ; l'étiquette `source` dit de quel dépôt la CI l'a
+    # construite. Les deux doivent désigner le même.
+    - name: L'image a été construite depuis ce dépôt
+      ansible.builtin.assert:
+        that:
+          - garde_source | lower == jadwal_garde_source | lower
+        fail_msg: |-
+          Déploiement refusé : l'étiquette org.opencontainers.image.source ne désigne pas ce dépôt.
+          Image                           : {{ jadwal_image }}
+          org.opencontainers.image.source : {{ garde_source if garde_source else '(absente)' }}
+          Attendu                         : {{ jadwal_garde_source }} (jadwal_garde_source)
+          La CI de ce dépôt pose cette étiquette sur chaque image qu'elle publie (ci.yml). Une image
+          qui ne la porte pas, ou qui désigne un autre dépôt, ne vient pas de là.
+        quiet: true
+
+    - name: Les exécutions du flux pour cette révision
+      ansible.builtin.uri:
+        url: '{{ jadwal_garde_api_github }}/repos/{{ jadwal_garde_depot }}/actions/workflows/{{ jadwal_garde_flux }}/runs?head_sha={{ garde_revision }}&per_page=100'
+        headers:
+          Accept: application/vnd.github+json
+          X-GitHub-Api-Version: '2026-03-10'
+        timeout: 20
+      register: garde_executions
+      failed_when: false
+      check_mode: false
+
+    # Les deux filtres de l'adresse, le commit et le flux, sont refaits ici. Si l'API en ignorait un
+    # un jour, ou si l'adresse était mal écrite, elle rendrait les exécutions d'un autre commit ou
+    # d'un autre flux (`ci.yml`, qui ne dit rien du parcours), et une seule verte suffirait à tout
+    # laisser passer. L'API écrit le flux par son chemin dans le dépôt : `.github/workflows/<nom>`.
+    - name: Les exécutions de ce commit-là et de ce flux-là
+      vars:
+        garde_rendues: '{{ (garde_executions.json | default({})).workflow_runs | default([]) }}'
+      ansible.builtin.set_fact:
+        garde_toutes: '{{ garde_rendues | length }}'
+        garde_du_commit: >-
+          {{ garde_rendues | selectattr('head_sha', 'defined') | selectattr('head_sha', 'equalto', garde_revision)
+             | selectattr('path', 'defined') | selectattr('path', 'equalto', '.github/workflows/' ~ jadwal_garde_flux)
+             | list }}
+
+    - name: Les exécutions vertes
+      ansible.builtin.set_fact:
+        garde_vertes: "{{ garde_du_commit | selectattr('conclusion', 'equalto', 'success') | list }}"
+
+    # La ligne vide après `endif` est voulue : Ansible mange le saut de ligne qui suit une balise
+    # (`trim_blocks`), et sans elle « Que faire » se collait au constat, vu dans l'épreuve.
+    #
+    # Une lecture qui n'a pas eu lieu ne porte pas de `status` : le message doit le dire, et non
+    # tomber lui-même en erreur sur un attribut absent, vu dans l'épreuve par mutation.
+    - name: Un parcours vert pour ce commit
+      when: garde_vertes | length == 0
+      vars:
+        garde_statut: '{{ garde_executions.status | default(-1) | int }}'
+      ansible.builtin.fail:
+        msg: |-
+          Déploiement refusé : l'image demandée n'a pas passé le parcours complet.
+          Image    : {{ jadwal_image }}
+          Révision : {{ garde_revision }}
+          Flux     : {{ jadwal_garde_flux }} de {{ jadwal_garde_depot }}
+          Constat  : {% if garde_statut | int == 404 -%}
+          le flux est inconnu de GitHub pour ce dépôt (404) : il n'y a pas encore été poussé, il a changé de nom, ou jadwal_garde_depot et jadwal_garde_flux désignent un autre dépôt ou un autre flux.
+          {%- elif garde_statut | int == -1 -%}
+          GitHub n'a pas répondu : {{ garde_executions.msg | default('la lecture n’a pas eu lieu') }}
+          {%- elif garde_statut | int != 200 -%}
+          GitHub a répondu {{ garde_statut }} : {{ (garde_executions.json | default({})).message | default(garde_executions.msg | default('')) }}
+          {%- elif garde_du_commit | length == 0 -%}
+          aucune exécution de ce flux pour ce commit{% if garde_toutes | int > 0 %} ({{ garde_toutes }} rendue(s) pour un autre commit ou un autre flux, écartée(s)){% endif %}.
+          {%- else -%}
+          {{ garde_du_commit | length }} exécution(s) pour ce commit, aucune réussie : {% for execution in garde_du_commit %}{{ execution.status }}/{{ execution.conclusion | default('aucune', true) }} {{ execution.html_url | default('') }}{{ ', ' if not loop.last else '' }}{% endfor %}
+          {%- endif %}
+
+          {% if garde_statut | int == 404 -%}
+          Que faire : toute image recevra la même réponse tant que le flux reste inconnu. Pousser
+          .github/workflows/{{ jadwal_garde_flux }} sur le dépôt, ou corriger jadwal_garde_depot et
+          jadwal_garde_flux pour qu'ils le désignent, puis relancer. En secours seulement, une
+          dérogation écrite pour cette image (infra/README.md).
+          {%- else -%}
+          Que faire : attendre la fin du flux s'il tourne encore ; le relancer depuis l'onglet Actions
+          du dépôt s'il a échoué ou a été annulé ; ou déployer une image dont le parcours est vert. En
+          secours seulement, une dérogation écrite pour cette image (infra/README.md).
+          {%- endif %}
+
+    - name: Le parcours est vert
+      ansible.builtin.debug:
+        msg: >-
+          Garde : la révision {{ garde_revision }} a un parcours vert
+          ({{ garde_vertes[0].html_url | default('exécution ' ~ garde_vertes[0].id | default('?')) }}).
+          Le déploiement continue.
+
+    - name: Le verdict, retenu pour la pièce du déploiement
+      ansible.builtin.set_fact:
+        garde_verdict:
+          image: '{{ jadwal_image }}'
+          revision: '{{ garde_revision }}'
+          verdict: vert
+        cacheable: true
