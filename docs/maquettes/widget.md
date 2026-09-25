@@ -42,8 +42,10 @@ réponse, et non un message d'erreur sur le site de quelqu'un d'autre.
 1. **Le cadre**, sur toute la largeur disponible, sans bordure et sans barre de défilement interne.
    Sa hauteur vaut `min-height` jusqu'à ce que la page annonce la sienne.
 2. **Un pied d'une ligne**, discret, en police du système, à 0,8 rem :
-   - `Voir le programme complet` — un lien vers la page publique, qui **sort du cadre** (nouvelle
-     fenêtre). C'est lui qu'on imprime, et c'est lui qui reste utile si le cadre ne s'affiche pas ;
+   - `Voir le programme complet` : un lien vers la page publique, qui **sort du cadre** (nouvel
+     onglet). C'est lui qu'on imprime, et c'est lui qui reste utile si le cadre ne s'affiche pas.
+     Il le dit aux lecteurs d'écran, et à eux seuls, par un texte caché aux yeux : son nom devient
+     `Voir le programme complet (s'ouvre dans un nouvel onglet)`, dans la langue du widget ;
    - `Proposé gratuitement par jadwal, un service de Voltia`.
 
 Le pied est traduit dans les quatre langues, d'après l'attribut `lang`.
@@ -66,7 +68,13 @@ d'autre : le contenu, l'en-tête, les vues, les filtres et les langues sont exac
 
 Les deux liens du pied de la page, `S'abonner au calendrier` et `Conditions d'utilisation`, restent
 dans le cadre. Le second s'ouvre dans un nouvel onglet, comme partout : `/conditions` refuse d'être
-encadrée, et `embed.js` laisse passer sans y toucher tout lien qui porte une cible.
+encadrée, et `embed.js` laisse passer sans y toucher tout lien qui porte une cible. Son nom annonce
+le nouvel onglet aux lecteurs d'écran, dans le cadre comme ailleurs (voir `README.md`, « Le pied,
+identique partout »).
+
+Une adresse qui ne mène nulle part rend, dans le cadre aussi, le `404` des pages publiques (voir
+`README.md`, « Une adresse qui ne mène nulle part ») : sans aucun script, `embed.js` compris. Rien
+n'annonce donc sa hauteur, et le cadre garde celle de `min-height`.
 
 ## Ce que le widget ne fait pas
 

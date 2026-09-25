@@ -4,7 +4,6 @@
 // de recherche indexe. Un cours non publié, ou d'une organisation suspendue, répond comme un cours
 // qui n'existe pas — le rôle public ne le voit pas, donc il n'y a rien à filtrer ici.
 
-import { error } from '@sveltejs/kit';
 import { todayInZone } from '@jadwal/core';
 import type { PageServerLoad } from './$types.js';
 import { CACHE_PROGRAMME } from '$lib/server/api.js';
@@ -16,7 +15,7 @@ import {
 } from '$lib/server/public.js';
 import { toException, toSchedule } from '$lib/server/programme.js';
 import { nextDates } from '$lib/server/serialise.js';
-import { languesProposees, publicContext, referencement } from '$lib/server/pages.js';
+import { introuvable, languesProposees, publicContext, referencement } from '$lib/server/pages.js';
 import { lienCours, lienFluxCours } from '$lib/public/liens.js';
 import { sql } from '@jadwal/db';
 
@@ -28,7 +27,8 @@ export const load: PageServerLoad = async (event) => {
 	const courseId = event.params.courseId;
 	const courses = await readPublicCourses(organisation.id, langue as Langue);
 	const cours = courses.find((candidat) => candidat.id === courseId);
-	if (!cours) error(404, 'Page introuvable.');
+	// L'organisation est connue : son 404 parle la langue de la page, par défaut comprise.
+	if (!cours) introuvable(event, langue);
 
 	const today = todayInZone(organisation.time_zone, new Date());
 	const pauses = await readPublicPauses(organisation.id);
@@ -60,8 +60,8 @@ export const load: PageServerLoad = async (event) => {
 	);
 
 	event.setHeaders({ 'cache-control': CACHE_PROGRAMME });
-	// La langue du document, que le hook écrit sur `<html>` (voir la page du programme). Posée
-	// après la recherche du cours : le 404 d'un cours inconnu reste en français, comme son texte.
+	// La langue du document, que le hook écrit sur `<html>` (voir la page du programme). Le 404
+	// d'un cours inconnu la pose lui-même, par `introuvable`, avec le texte de la page d'erreur.
 	event.locals.langue = langue;
 	return {
 		canonical: moteur.canonical,

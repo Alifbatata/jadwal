@@ -39,29 +39,39 @@ const PUBLICS = new Set(['kids', 'youth', 'women', 'adults', 'open']);
 interface Mots {
 	readonly titre: string;
 	readonly lien: string;
+	/**
+	 * Ce que le lien dit aux lecteurs d'écran, et à eux seuls : il ouvre un nouvel onglet (technique
+	 * G201 des WCAG). Les textes du chef de projet, mot pour mot, les mêmes que ceux de la page
+	 * publique ; les parenthèses sont ajoutées au rendu.
+	 */
+	readonly nouvelOnglet: string;
 	readonly mention: string;
 }
 
-/** Quatre langues, trois phrases. Un fichier de traduction coûterait plus qu'il ne rendrait ici. */
+/** Quatre langues, quatre phrases. Un fichier de traduction coûterait plus qu'il ne rendrait ici. */
 const MOTS: Record<string, Mots> = {
 	fr: {
 		titre: 'Programme des cours',
 		lien: 'Voir le programme complet',
+		nouvelOnglet: 's’ouvre dans un nouvel onglet',
 		mention: 'Proposé gratuitement par jadwal, un service de Voltia'
 	},
 	de: {
 		titre: 'Kursprogramm',
 		lien: 'Das ganze Programm ansehen',
+		nouvelOnglet: 'öffnet sich in einem neuen Tab',
 		mention: 'Kostenlos bereitgestellt von jadwal, einem Dienst von Voltia'
 	},
 	it: {
 		titre: 'Programma dei corsi',
 		lien: 'Vedi tutto il programma',
+		nouvelOnglet: 'si apre in una nuova scheda',
 		mention: 'Offerto gratuitamente da jadwal, un servizio di Voltia'
 	},
 	ar: {
 		titre: 'برنامج الدروس',
 		lien: 'عرض البرنامج كاملًا',
+		nouvelOnglet: 'يُفتح في علامة تبويب جديدة',
 		mention: 'مقدَّم مجانًا من jadwal، خدمة من Voltia'
 	}
 };
@@ -94,6 +104,17 @@ footer {
 	gap: 0.5rem;
 }
 a { color: #0f5c55; min-height: 24px; }
+.pour-lecteur {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	border: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
 `;
 
 export class JadwalWidget extends HTMLElement {
@@ -102,6 +123,10 @@ export class JadwalWidget extends HTMLElement {
 	#racine: ShadowRoot | undefined;
 	#cadre: HTMLIFrameElement | undefined;
 	#lien: HTMLAnchorElement | undefined;
+	/** Le texte visible du lien : un nœud à lui, pour que l'annonce qui le suit ne soit pas écrasée. */
+	#texteDuLien: Text | undefined;
+	/** L'annonce du nouvel onglet, dans le lien, cachée aux yeux seuls. */
+	#annonce: HTMLSpanElement | undefined;
 	#mention: HTMLSpanElement | undefined;
 	#hauteur = 0;
 	readonly #ecoute = (evenement: MessageEvent): void => this.#surMessage(evenement);
@@ -131,6 +156,11 @@ export class JadwalWidget extends HTMLElement {
 		this.#lien = document.createElement('a');
 		this.#lien.target = '_blank';
 		this.#lien.rel = 'noopener';
+		// Le texte, puis l'annonce, sans blanc entre les deux : un blanc passerait dans le nom du lien.
+		this.#texteDuLien = document.createTextNode('');
+		this.#annonce = document.createElement('span');
+		this.#annonce.className = 'pour-lecteur';
+		this.#lien.append(this.#texteDuLien, this.#annonce);
 		this.#mention = document.createElement('span');
 		pied.append(this.#lien, this.#mention);
 		racine.append(style, pied);
@@ -190,11 +220,17 @@ export class JadwalWidget extends HTMLElement {
 	#rendre(): void {
 		const racine = this.#racine;
 		const lien = this.#lien;
+		const texteDuLien = this.#texteDuLien;
+		const annonce = this.#annonce;
 		const mention = this.#mention;
-		if (!racine || !lien || !mention) return;
+		if (!racine || !lien || !texteDuLien || !annonce || !mention) return;
 
 		const mots = MOTS[this.#langue() ?? 'fr'] ?? (MOTS['fr'] as Mots);
-		lien.textContent = mots.lien;
+		texteDuLien.data = mots.lien;
+		// Entre parenthèses, espace en tête, et non après une virgule : l'annonce, cachée en
+		// `position: absolute`, est un bloc, et Chrome sépare un bloc de ce qui l'entoure par une
+		// espace. La virgule se retrouvait détachée du mot qui la précède (Chrome 153).
+		annonce.textContent = ` (${mots.nouvelOnglet})`;
 		mention.textContent = mots.mention;
 
 		const publique = this.#adresse(false);

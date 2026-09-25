@@ -17,13 +17,42 @@ export interface PublicContext {
 }
 
 /**
+ * La langue que demande l'adresse, lue sur le seul segment qui suit l'identifiant :
+ * `/m/<identifiant>/ar/cours/…` est en arabe avant même que l'organisation soit trouvée. Lue sur le
+ * chemin et non sur `params` : la route qui attrape les adresses inconnues n'a pas de paramètre de
+ * langue, et son 404 doit parler comme les autres. `undefined` sans segment, puisque la langue par
+ * défaut est celle d'une organisation qu'un 404 ne connaît pas toujours.
+ */
+export function langueDuChemin(event: RequestEvent): Langue | undefined {
+	const segment = event.url.pathname.split('/')[3];
+	return segment && isLangue(segment) ? segment : undefined;
+}
+
+/**
+ * Le 404 d'une adresse publique, dans une langue : celle que l'appelant connaît, sinon celle du
+ * chemin, sinon le français. Elle est posée aux deux endroits qui la lisent, et d'ici seulement :
+ * `locals`, que le hook écrit sur `<html>`, et le corps de l'erreur, que la page d'erreur de `/m/`
+ * lit pour son texte. Les deux ne peuvent donc pas se contredire.
+ *
+ * Jusqu'à l'étape 17, ce 404 passait par la page d'erreur racine, en français et avec le JavaScript
+ * de SvelteKit : c'est `routes/m/[slug]/+error.svelte` qui le rend désormais.
+ */
+export function introuvable(
+	event: RequestEvent,
+	langue: Langue | undefined = langueDuChemin(event)
+): never {
+	event.locals.langue = langue;
+	error(404, { message: 'Page introuvable.', langue });
+}
+
+/**
  * L'organisation et la langue d'une page publique. Un identifiant inconnu et une organisation
  * suspendue rendent le même 404 : le code de réponse ne dit pas qu'une organisation a existé.
  */
 export async function publicContext(event: RequestEvent): Promise<PublicContext> {
 	const slug = event.params['slug'] ?? '';
 	const organisation = await findOrganisation(slug);
-	if (!organisation) error(404, 'Page introuvable.');
+	if (!organisation) introuvable(event);
 	// Une vue de page, à compter après la réponse. C'est le seul endroit qui la pose pour les trois
 	// écrans publics : une page nouvelle est comptée sans qu'on y pense (ADR 0032).
 	event.locals.vue = vueDe(event, organisation);

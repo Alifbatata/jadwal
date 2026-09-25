@@ -105,7 +105,7 @@ export const load: PageServerLoad = async (event) => {
 		)
 	);
 	// La langue du document, que le hook écrit sur `<html>`. Posée au moment où la page va être
-	// rendue, et pas plus tôt : un 404 levé plus haut reste en français, comme son texte.
+	// rendue ; un 404 levé plus haut pose la sienne, par `introuvable` (`$lib/server/pages.ts`).
 	event.locals.langue = langue;
 	return {
 		canonical: moteur.canonical,

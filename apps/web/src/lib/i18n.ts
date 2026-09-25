@@ -85,6 +85,16 @@ interface Dictionnaire {
 	readonly offeredBy: string;
 	/** Le lien du pied vers les conditions d'utilisation, qui n'existent qu'en français. */
 	readonly terms: string;
+	/**
+	 * Ce qu'un lien qui ouvre un nouvel onglet dit aux lecteurs d'écran, et à eux seuls (technique
+	 * G201 des WCAG). Les textes du chef de projet, mot pour mot ; `annonceNouvelOnglet` les met
+	 * entre parenthèses.
+	 */
+	readonly newTab: string;
+	/** Le titre de la page d'erreur d'une adresse publique qui n'existe pas. */
+	readonly notFound: string;
+	/** La phrase qui le suit : la seule chose que le visiteur peut faire. */
+	readonly notFoundHint: string;
 	readonly weekTitle: string;
 	readonly coursesTitle: string;
 	readonly sessionCount: (count: number) => string;
@@ -192,6 +202,9 @@ const fr: Dictionnaire = {
 		'Ouvrez Outlook sur le web, allez dans Calendrier, Ajouter un calendrier, S’abonner à partir du Web, collez l’adresse, donnez-lui un nom, puis importez.',
 	offeredBy: 'Proposé gratuitement par jadwal, un service de Voltia',
 	terms: 'Conditions d’utilisation',
+	newTab: 's’ouvre dans un nouvel onglet',
+	notFound: 'Page introuvable',
+	notFoundHint: 'Vérifiez l’adresse.',
 	weekTitle: 'Cours de la semaine',
 	coursesTitle: 'Tous les cours',
 	sessionCount: (count) => (count === 1 ? '1 séance' : `${count} séances`),
@@ -283,6 +296,9 @@ const de: Dictionnaire = {
 		'Öffnen Sie Outlook im Web, gehen Sie zu Kalender, Kalender hinzufügen, Aus dem Internet abonnieren, fügen Sie die Adresse ein, geben Sie einen Namen ein und importieren Sie.',
 	offeredBy: 'Kostenlos bereitgestellt von jadwal, einem Dienst von Voltia',
 	terms: 'Nutzungsbedingungen',
+	newTab: 'öffnet sich in einem neuen Tab',
+	notFound: 'Seite nicht gefunden',
+	notFoundHint: 'Bitte prüfen Sie die Adresse.',
 	weekTitle: 'Kurse dieser Woche',
 	coursesTitle: 'Alle Kurse',
 	sessionCount: (count) => (count === 1 ? '1 Termin' : `${count} Termine`),
@@ -374,6 +390,9 @@ const it: Dictionnaire = {
 		'Apri Outlook sul web, vai su Calendario, Aggiungi calendario, Iscriviti dal Web, incolla l’indirizzo, dagli un nome e importa.',
 	offeredBy: 'Offerto gratuitamente da jadwal, un servizio di Voltia',
 	terms: 'Condizioni d’uso',
+	newTab: 'si apre in una nuova scheda',
+	notFound: 'Pagina non trovata',
+	notFoundHint: 'Controlla l’indirizzo.',
 	weekTitle: 'Corsi della settimana',
 	coursesTitle: 'Tutti i corsi',
 	sessionCount: (count) => (count === 1 ? '1 lezione' : `${count} lezioni`),
@@ -476,6 +495,8 @@ const ar: Dictionnaire = {
 	subscribeWhole: 'الاشتراك في البرنامج كاملًا',
 	addCourseToCalendar: 'أضف هذا الدرس إلى تقويمي',
 	courseFeedAddress: 'أو انسخ هذا العنوان، وهو خاص بهذا الدرس وحده:',
+	// Décision du chef de projet, à l'étape 17 : ce titre reste tel quel, avec le « و » détaché
+	// devant « iPad ». Une relecture ne doit pas le « corriger ».
 	onIphone: 'على iPhone و iPad',
 	onAndroid: 'على Android',
 	onOutlook: 'على Outlook',
@@ -487,6 +508,9 @@ const ar: Dictionnaire = {
 		'افتح Outlook على الويب، اذهب إلى التقويم، إضافة تقويم، الاشتراك من الويب، الصق العنوان، سمِّه، ثم استورد.',
 	offeredBy: 'مقدَّم مجانًا من jadwal، خدمة من Voltia',
 	terms: 'شروط الاستخدام',
+	newTab: 'يُفتح في علامة تبويب جديدة',
+	notFound: 'الصفحة غير موجودة',
+	notFoundHint: 'تحقّق من العنوان.',
 	weekTitle: 'دروس الأسبوع',
 	coursesTitle: 'كل الدروس',
 	sessionCount: (count) =>
@@ -506,6 +530,20 @@ const DICTIONNAIRES: Record<Langue, Dictionnaire> = { fr, de, it, ar };
 
 export function t(langue: Langue): Dictionnaire {
 	return DICTIONNAIRES[langue];
+}
+
+/**
+ * Le texte caché d'un lien qui ouvre un nouvel onglet : collé au texte visible, il donne au lien le
+ * nom « Conditions d’utilisation (s’ouvre dans un nouvel onglet) ».
+ *
+ * Entre parenthèses, et non après une virgule. L'élément qui le cache est en `position: absolute`,
+ * donc un bloc, et Chrome sépare un bloc de ce qui l'entoure par une espace : la virgule se
+ * retrouvait détachée, « Conditions d’utilisation , s’ouvre… », mesuré dans l'arbre
+ * d'accessibilité de Chrome 153. L'espace de tête couvre les calculs du nom qui ne séparent pas les
+ * blocs, et la page lue sans sa feuille de style.
+ */
+export function annonceNouvelOnglet(langue: Langue): string {
+	return ` (${DICTIONNAIRES[langue].newTab})`;
 }
 
 /** « lundi 21 septembre », dans la langue demandée. Chiffres latins partout. */

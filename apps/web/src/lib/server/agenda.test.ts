@@ -1,10 +1,10 @@
 // Le libellé d'ancrage du flux agenda : la première ligne de la description d'un cours ancré.
 //
-// Pour un décalage non nul, le flux dit exactement ce que dit la page : il reprend la phrase de
-// `affichage.ts`, et l'arabe accorde ses minutes au nombre au même endroit pour les deux. La prière
-// est nommée dans la langue du flux, comme sur la page : « المغرب » en arabe, « Ischa » en allemand.
-// Ces tests ne touchent pas la base : le libellé est une fonction pure, et c'est elle que
-// `buildAgenda` appelle.
+// Le flux dit exactement ce que dit la page, décalage nul compris : il reprend la phrase de
+// `affichage.ts`, « Après Maghrib », « بعد المغرب », et l'arabe accorde ses minutes au nombre au
+// même endroit pour les deux. La prière est nommée dans la langue du flux, comme sur la page :
+// « المغرب » en arabe, « Ischa » en allemand. Ces tests ne touchent pas la base : le libellé est une
+// fonction pure, et c'est elle que `buildAgenda` appelle.
 
 import { describe, expect, it } from 'vitest';
 import { LANGUES } from '$lib/i18n.js';
@@ -12,24 +12,26 @@ import { horaireEnClair } from '$lib/public/affichage.js';
 import { libelleAncrage } from './agenda.js';
 
 describe('le libellé d’ancrage du flux agenda', () => {
-	it('keeps the zero offset sentence of each language, which is not the page one', () => {
-		expect(libelleAncrage('fr', 'maghrib', 0)).toBe('À Maghrib');
-		expect(libelleAncrage('de', 'maghrib', 0)).toBe('Zu Maghrib');
-		expect(libelleAncrage('it', 'maghrib', 0)).toBe('A Maghrib');
-		expect(libelleAncrage('ar', 'maghrib', 0)).toBe('عند المغرب');
+	// Jusqu'à l'étape 17, le flux avait sa propre phrase au décalage nul, « À Maghrib », « عند
+	// المغرب », là où la page dit « Après Maghrib ». Un abonné lisait deux choses pour un même cours.
+	it('says the sentence of the page for a zero offset, « Après Maghrib »', () => {
+		expect(libelleAncrage('fr', 'maghrib', 0)).toBe('Après Maghrib');
+		expect(libelleAncrage('de', 'maghrib', 0)).toBe('Nach Maghrib');
+		expect(libelleAncrage('it', 'maghrib', 0)).toBe('Dopo Maghrib');
+		expect(libelleAncrage('ar', 'maghrib', 0)).toBe('بعد المغرب');
 	});
 
 	it('names the prayer in the language of the feed, as the page does', () => {
-		expect(libelleAncrage('ar', 'isha', 0)).toBe('عند العشاء');
+		expect(libelleAncrage('ar', 'isha', 0)).toBe('بعد العشاء');
 		expect(libelleAncrage('ar', 'fajr', 15)).toBe('بعد الفجر بـ15 دقيقة');
 		// L'allemand du flux suit celui de la page : « Fadschr » et « Ischa », plus « Fajr » et
 		// « Isha ».
-		expect(libelleAncrage('de', 'fajr', 0)).toBe('Zu Fadschr');
+		expect(libelleAncrage('de', 'fajr', 0)).toBe('Nach Fadschr');
 		expect(libelleAncrage('de', 'isha', 15)).toBe('15 Min. nach Ischa');
 		expect(libelleAncrage('fr', 'isha', 1)).toBe('1 min après Isha');
 		expect(libelleAncrage('it', 'fajr', 100)).toBe('100 min dopo Fajr');
 		// Une prière inconnue reste telle quelle, comme sur la page.
-		expect(libelleAncrage('fr', 'witr', 0)).toBe('À witr');
+		expect(libelleAncrage('fr', 'witr', 0)).toBe('Après witr');
 	});
 
 	it('keeps the French, German and Italian minutes as they were', () => {
@@ -38,10 +40,12 @@ describe('le libellé d’ancrage du flux agenda', () => {
 		expect(libelleAncrage('it', 'maghrib', 15)).toBe('15 min dopo Maghrib');
 	});
 
-	it('says, for a non-zero offset, exactly what the page says', () => {
+	it('says, for every offset, zero included, exactly what the page says', () => {
 		for (const langue of LANGUES) {
 			for (const priere of ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']) {
-				for (const decalage of [-120, -100, -15, -11, -10, -3, -2, -1, 1, 2, 3, 10, 11, 15, 240]) {
+				for (const decalage of [
+					-120, -100, -15, -11, -10, -3, -2, -1, 0, 1, 2, 3, 10, 11, 15, 240
+				]) {
 					expect(libelleAncrage(langue, priere, decalage)).toBe(
 						horaireEnClair(langue, {
 							timingKind: 'prayer',
@@ -59,7 +63,7 @@ describe('le libellé d’ancrage du flux agenda', () => {
 			libelleAncrage('ar', 'maghrib', decalage)
 		);
 		expect(phrases).toEqual([
-			'عند المغرب',
+			'بعد المغرب',
 			'بعد المغرب بدقيقة واحدة',
 			'بعد المغرب بدقيقتين',
 			'بعد المغرب بـ3 دقائق',

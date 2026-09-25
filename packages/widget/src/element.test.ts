@@ -18,6 +18,13 @@ function cadreDe(element: HTMLElement): HTMLIFrameElement | null {
 	return element.shadowRoot?.querySelector('iframe') ?? null;
 }
 
+/** Le texte d'un lien que l'œil lit : tout, sauf ce qui est réservé aux lecteurs d'écran. */
+function visible(lien: Element): string {
+	const copie = lien.cloneNode(true) as Element;
+	for (const cache of copie.querySelectorAll('.pour-lecteur')) cache.remove();
+	return copie.textContent ?? '';
+}
+
 /**
  * jsdom ne crée pas de contexte de navigation pour un cadre placé dans un shadow root : son
  * `contentWindow` vaut `null`, alors qu'il vaut une fenêtre dans tout navigateur. On lui en prête
@@ -117,13 +124,58 @@ describe('l’enregistrement et les attributs', () => {
 	it('carries a discreet footer with a link to the public page', () => {
 		const element = poser(`org="belvedere" base="${ORIGINE}"`);
 		const lien = element.shadowRoot?.querySelector('footer a') as HTMLAnchorElement;
-		expect(lien.textContent).toBe('Voir le programme complet');
+		expect(visible(lien)).toBe('Voir le programme complet');
 		// Le lien sort du cadre : c'est aussi celui qui reste utile quand le cadre ne s'affiche pas.
 		expect(lien.getAttribute('href')).toBe(`${ORIGINE}/m/belvedere`);
 		expect(lien.target).toBe('_blank');
-		expect(element.shadowRoot?.querySelector('footer span')?.textContent).toBe(
+		expect(element.shadowRoot?.querySelector('footer > span')?.textContent).toBe(
 			'Proposé gratuitement par jadwal, un service de Voltia'
 		);
+	});
+
+	// Technique G201 des WCAG : un lien qui ouvre un nouvel onglet le dit avant qu'on le suive. Le
+	// nom d'un lien est le texte de tout ce qu'il contient, partie cachée comprise : c'est ce que
+	// `textContent` rend ici, et ce qu'un lecteur d'écran annonce.
+	it('tells a screen reader, in its language, that the link opens a new tab', () => {
+		// Entre parenthèses, précédées d'une espace : Chrome sépare l'élément caché, qui est un bloc,
+		// par une espace, et une virgule s'y retrouvait détachée du mot qui la précède.
+		const noms: Record<string, string> = {
+			fr: 'Voir le programme complet (s’ouvre dans un nouvel onglet)',
+			de: 'Das ganze Programm ansehen (öffnet sich in einem neuen Tab)',
+			it: 'Vedi tutto il programma (si apre in una nuova scheda)',
+			ar: 'عرض البرنامج كاملًا (يُفتح في علامة تبويب جديدة)'
+		};
+		for (const [langue, nom] of Object.entries(noms)) {
+			const element = poser(`org="belvedere" lang="${langue}" base="${ORIGINE}"`);
+			const lien = element.shadowRoot?.querySelector('footer a') as HTMLAnchorElement;
+			expect(lien.textContent, langue).toBe(nom);
+			expect(lien.querySelector('.pour-lecteur')?.textContent, langue).toBe(
+				nom.slice(visible(lien).length)
+			);
+		}
+		// Sans langue demandée, le widget parle français, pour le lien comme pour son annonce.
+		const sansLangue = poser(`org="belvedere" base="${ORIGINE}"`);
+		expect(sansLangue.shadowRoot?.querySelector('footer a')?.textContent).toBe(noms['fr']);
+	});
+
+	it('hides that sentence from the eye only, in the style sheet of its own shadow root', () => {
+		const element = poser(`org="belvedere" base="${ORIGINE}"`);
+		// La feuille de la page hôte n'entre pas dans le shadow root : la règle doit y être.
+		const style = element.shadowRoot?.querySelector('style')?.textContent ?? '';
+		const regle = style.match(/\.pour-lecteur\s*\{([^}]*)\}/)?.[1];
+		expect(regle, 'aucune règle pour la classe « pour-lecteur »').toBeTruthy();
+		expect(regle).toMatch(/position:\s*absolute/);
+		expect(regle).toMatch(/clip-path:\s*inset\(50%\)/);
+		// L'un ou l'autre le retirerait aussi aux lecteurs d'écran.
+		expect(regle).not.toMatch(/display:\s*none|visibility:\s*hidden/);
+	});
+
+	it('keeps the announcement when the language changes, once and in the new language', () => {
+		const element = poser(`org="belvedere" base="${ORIGINE}"`);
+		element.setAttribute('lang', 'ar');
+		const lien = element.shadowRoot?.querySelector('footer a') as HTMLAnchorElement;
+		expect(lien.querySelectorAll('.pour-lecteur')).toHaveLength(1);
+		expect(lien.textContent).toBe('عرض البرنامج كاملًا (يُفتح في علامة تبويب جديدة)');
 	});
 
 	it('never renders the fallback content itself: there is no slot in the shadow root', () => {
@@ -146,13 +198,15 @@ describe('l’enregistrement et les attributs', () => {
 });
 
 describe('les textes du widget', () => {
-	/** Les trois textes que le widget pose lui-même, dans une langue. */
+	/** Les textes que le widget pose lui-même, dans une langue, annonce du nouvel onglet comprise. */
 	function textes(langue: string): string[] {
 		const element = poser(`org="belvedere" lang="${langue}" base="${ORIGINE}"`);
+		const lien = element.shadowRoot?.querySelector('footer a');
 		return [
 			cadreDe(element)?.title ?? '',
-			element.shadowRoot?.querySelector('footer a')?.textContent ?? '',
-			element.shadowRoot?.querySelector('footer span')?.textContent ?? ''
+			lien ? visible(lien) : '',
+			lien?.querySelector('.pour-lecteur')?.textContent ?? '',
+			element.shadowRoot?.querySelector('footer > span')?.textContent ?? ''
 		];
 	}
 
@@ -160,6 +214,7 @@ describe('les textes du widget', () => {
 		expect(textes('ar')).toEqual([
 			'برنامج الدروس',
 			'عرض البرنامج كاملًا',
+			' (يُفتح في علامة تبويب جديدة)',
 			'مقدَّم مجانًا من jadwal، خدمة من Voltia'
 		]);
 		// Le tanwin se pose sur la lettre qui précède l'alif, jamais sur l'alif : « ـاً » est la

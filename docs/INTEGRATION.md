@@ -194,7 +194,9 @@ sortir de votre page en une fois, ce qui est le comportement attendu par la plup
 calendrier », un lien mène aux conditions d'utilisation du service : celles que vous avez acceptées
 en entrant dans votre espace. Il s'ouvre toujours dans un nouvel onglet, parce que cette page refuse
 de s'afficher à l'intérieur d'un autre site. Votre page reste ouverte derrière. Le texte du lien
-suit la langue du programme, mais les conditions n'existent qu'en français.
+suit la langue du programme, mais les conditions n'existent qu'en français. Un lecteur d'écran
+annonce aussi le nouvel onglet, pour ce lien comme pour « Voir le programme complet » : « Conditions
+d'utilisation (s'ouvre dans un nouvel onglet) ». À l'écran, rien ne change.
 
 **Ce que nous voyons, et ce que nous ne voyons pas.** Le programme ne dépose aucun cookie et
 n'apprend rien de vos visiteurs. Une seule chose est comptée : le nombre d'affichages par jour, pour
@@ -256,7 +258,7 @@ champ de position, et nous n'appelons jamais un service tiers de calendrier de p
 | Rien du tout, pas même un lien          | Le bloc a supprimé le code à l'enregistrement. Essayez le cadre du **point 4**.           |
 | Seulement le lien « Voir le programme » | Le script est bloqué par votre site. Essayez le cadre du **point 4**.                     |
 | Une fenêtre vide, ou très courte        | Votre site bloque les fenêtres extérieures. Votre webmestre doit autoriser notre adresse. |
-| « Organisation introuvable »            | Le nom dans `org=` n'est pas le bon. Recopiez le code depuis **Partager**.                |
+| « Page introuvable »                    | Le nom dans `org=` n'est pas le bon. Recopiez le code depuis **Partager**.                |
 | Le programme est vide                   | Aucun cours n'est **publié**. Un brouillon ne s'affiche jamais en public.                 |
 
 Dans tous les cas, le lien de l'organisation (**point 5**) fonctionne, lui, toujours. Mettez-le en
