@@ -98,6 +98,22 @@ function normalise(text: string): string {
 		.join(' ');
 }
 
+/**
+ * Les chiffres arabes orientaux (U+0660 à U+0669) et persans (U+06F0 à U+06F9) en chiffres
+ * latins : un clavier arabe de téléphone tape les premiers, et les NPA de la liste sont en chiffres
+ * latins, comme toute l'application (ADR 0007).
+ */
+function latinDigits(text: string): string {
+	let result = '';
+	for (const character of text) {
+		const code = character.charCodeAt(0);
+		if (code >= 0x0660 && code <= 0x0669) result += String(code - 0x0660);
+		else if (code >= 0x06f0 && code <= 0x06f9) result += String(code - 0x06f0);
+		else result += character;
+	}
+	return result;
+}
+
 interface Entry {
 	locality: Locality;
 	/** Le nom entier, normalisé. */
@@ -253,7 +269,10 @@ function compare(a: Entry, b: Entry): number {
  *   qu'une fois, sous le plus petit de ceux qui répondent le mieux.
  * - Un NPA : entier, il rend les localités qui le portent ; commencé (deux chiffres au moins), il
  *   rend les NPA qui commencent par ces chiffres, dans l'ordre.
- * - Un NPA suivi d'un nom (« 2502 biel ») : les deux doivent correspondre.
+ * - Un NPA et un nom, dans un ordre ou dans l'autre (« 2502 biel », « bienne 2502 ») : les deux
+ *   doivent correspondre.
+ *
+ * Un NPA tapé en chiffres arabes orientaux ou persans se lit comme en chiffres latins.
  *
  * Moins de deux caractères utiles ne donnent rien : une lettre seule correspond à des centaines de
  * localités, et aucune n'est plus probable qu'une autre.
@@ -263,8 +282,12 @@ export function searchLocalities(query: string, limit = DEFAULT_LIMIT): Locality
 	const bound = Number.isNaN(limit)
 		? DEFAULT_LIMIT
 		: Math.min(MAX_LIMIT, Math.max(1, Math.floor(limit)));
-	const words = query.trim().split(/\s+/);
-	const digits = /^\d{1,4}$/.test(words[0] ?? '') ? (words.shift() as string) : '';
+	// Le NPA vient en tête (« 2502 Biel/Bienne », l'ordre d'une adresse suisse), entier ou commencé,
+	// ou en fin, et alors entier : un nombre plus court en fin fait partie du nom (« Lausanne 25 »).
+	const words = latinDigits(query).trim().split(/\s+/);
+	let digits = '';
+	if (/^\d{1,4}$/.test(words[0] ?? '')) digits = words.shift() as string;
+	else if (words.length > 1 && /^\d{4}$/.test(words.at(-1) ?? '')) digits = words.pop() as string;
 	const text = normalise(words.join(' '));
 
 	if (digits !== '' && text === '') {

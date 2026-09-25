@@ -120,6 +120,26 @@ describe('searchLocalities, par NPA', () => {
 		expect(premier('1227 acacias')).toBe('1227 Les Acacias (GE)');
 		expect(searchLocalities('2502 zurich')).toEqual([]);
 	});
+
+	it('accepte aussi le nom suivi du NPA', () => {
+		expect(premier('bienne 2502')).toBe('2502 Biel/Bienne (BE)');
+		expect(premier('Zürich 8050')).toBe('8050 Zürich (ZH)');
+	});
+
+	it('garde au nom le nombre qui en fait partie', () => {
+		// « Lausanne 25 » est un nom officiel, pas Lausanne au NPA 25.
+		expect(premier('lausanne 25')).toBe('1000 Lausanne 25 (VD)');
+		expect(premier('laax gr 2')).toBe('7032 Laax GR 2 (GR)');
+	});
+
+	it('lit un NPA tapé en chiffres arabes orientaux ou persans comme en chiffres latins', () => {
+		// Un clavier arabe de téléphone tape ces chiffres ; la liste, comme toute l'application, est
+		// en chiffres latins (ADR 0007). Écrits par leur code, pour qu'aucun ne se perde à la relecture.
+		const oriental = String.fromCharCode(0x0662, 0x0665, 0x0660, 0x0662);
+		const persan = String.fromCharCode(0x06f2, 0x06f5, 0x06f0, 0x06f2);
+		expect(premier(oriental)).toBe('2502 Biel/Bienne (BE)');
+		expect(premier(persan)).toBe('2502 Biel/Bienne (BE)');
+	});
 });
 
 describe('searchLocalities, les bornes', () => {
