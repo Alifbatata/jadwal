@@ -83,6 +83,16 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   axe sur chaque page : `pnpm parcours:test`. Deux failles antérieures trouvées en chemin sont
   fermées : une éditrice pouvait rattacher n'importe quel compte à son organisation (migration
   0053), et le super-admin entré dans une organisation lisait les réglages d'une autre.
+- **Étape 17** (dernières retouches avant les tests du chef de projet) : **terminée le
+  2026-09-25**. Les conditions disent 182 jours, et une vérification de nuit refuse tout objet
+  distant plus vieux que l'âge promis pour son préfixe, même recopié, même quand le stockage refuse
+  de lire ses métadonnées. Le parcours complet a son propre flux dans la CI, et le déploiement
+  refuse une image dont le commit n'a pas de parcours vert (ADR 0045). Le parcours a trouvé une
+  faille antérieure : pour une personne membre de deux organisations, le rôle était lu sans filtre
+  d'organisation, et une éditrice de l'une recevait les droits de responsable qu'elle avait dans
+  l'autre. La faille est fermée, avec six autres défauts trouvés en chemin. La base tient désormais
+  l'échéance, le rôle et les passages de statut d'une invitation (migrations 0056 à 0058), et le
+  super-admin entré dans une organisation ne lit plus les autres (0055).
 
 ## Fait
 
@@ -435,8 +445,8 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   pour de vrai. **Depuis l'étape 9, le serveur n'efface plus rien à distance** : trois préfixes
   (`quotidien/`, `hebdo/`, `mensuel/`), trois verrous de conservation (7, 28, 180 jours) et un cycle
   de vie posés chez le stockage, hors d'atteinte de qui prendrait le serveur (ADR 0037). La rétention
-  7/4/6, devenue 7/4/5 le 2026-09-23 pour tenir les 181 jours promis, ne vaut plus que pour le
-  disque local.
+  7/4/6, devenue 7/4/5 le 2026-09-23 pour tenir la promesse des sauvegardes (182 jours depuis
+  l'étape 17), ne vaut plus que pour le disque local.
 - **Supervision** : chaque tâche périodique bat vers un service de supervision extérieur, et c'est
   lui qui alerte quand un battement n'arrive pas. La sonde `/healthz` a quitté GitHub Actions, dont
   les machines n'ont pas d'IPv6 sortant : elle est devenue une minuterie de jadwal comme les autres,
@@ -535,6 +545,49 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
 - 1 417 tests dans le dépôt, tous réussis, aucun sauté. ADR 0044 ; addendum à l'ADR 0013 ; ADR
   0035, 0037 et 0039 révisées.
 
+Étape 17 :
+
+- **182 jours au plus**, partout : conditions, page de garde du PDF, documentation, commande de
+  suppression. Le stockage peut mettre un jour à effacer une sauvegarde échue, et le texte en tient
+  compte. Le texte change, donc sa date aussi : version du 25 septembre 2026, que chacun accepte de
+  nouveau. **La tâche de nuit le vérifie** (`infra/sauvegarde/ages.mjs`) : tout objet distant plus
+  vieux que 9 jours sous `quotidien/`, 30 sous `hebdo/` ou 182 sous `mensuel/` fait échouer la
+  tâche, et l'alerte part. L'âge se compte depuis le dépôt, ou depuis l'heure écrite dans le nom
+  quand le dépôt a plus d'une heure de retard sur elle : une archive recopiée ne repart pas de zéro. La liste doit montrer ce que la nuit
+  vient d'envoyer, et elle ne lit aucune date objet par objet, parce que rclone met l'heure présente
+  quand cette lecture échoue. `pnpm sauvegarde:test` joue le script entier avec rclone 1.60.1 et
+  1.75.1, neuf passages chacun, dont deux contre un faux stockage S3.
+- **Le parcours complet entre dans la CI**, dans son propre flux (`parcours.yml`), **et garde le
+  déploiement** (ADR 0045) : le playbook lit la révision de l'image dans le registre et demande à
+  GitHub une exécution verte de ce flux pour ce commit, avant toute connexion au serveur. Une
+  dérogation doit nommer son image. Ni une sélection de tâches ni une variable posée à la main
+  n'écrit une image que la garde n'a pas passée : `pnpm garde:test`, 52 cas.
+- **Les questions de l'étape 16 sont réglées** : les liens qui ouvrent un nouvel onglet l'annoncent
+  aux lecteurs d'écran, dans les quatre langues ; « Changer d'organisation » est dans la navigation
+  de toute personne membre de plusieurs organisations, ou qu'une invitation attend ; le flux agenda
+  dit « Après Maghrib » au décalage nul, comme la page ; HSTS à deux ans dans l'application ;
+  compression zstd et gzip dans le bloc de site ; le 404 de `/m/…` parle la langue demandée, sans
+  script ; la lecture des
+  organisations du super-admin est bornée au contexte quand il en a un (migration 0055) ; le
+  `TRUNCATE` du propriétaire est écrit comme limite (ADR 0019). « على iPhone و iPad » reste tel quel,
+  et le DMARC reste sans adresse `rua`, par décision. La preuve d'acceptation attend l'avis du
+  juriste.
+- **Les invitations, tenues par la base** : quatorze jours au plus, comptés à l'horloge, par la
+  migration 0056 ; une invitation échue ne s'accepte plus, même par un appel direct, par la 0057 ;
+  l'adhésion porte le rôle de l'invitation, une invitation ne sert qu'une fois, et ses passages de
+  statut sont fixés, super-admin compris, par la 0058.
+- **Trouvé par le parcours et les relectures adverses, et corrigé**, chaque fois test d'abord : le
+  rôle lu sans filtre d'organisation (une éditrice traitée en responsable) ; le nom d'une
+  organisation qui invite prêté à celle de la session ; les membres et les invitations d'une autre
+  organisation dans l'écran Membres, et l'annulation d'une invitation d'une autre organisation ; le
+  super-admin membre d'une seule organisation qui ne pouvait pas en visiter une autre ; une
+  réinvitation qui ne créait rien quand l'ancienne invitation avait échu ; une invitation annulée ou
+  consommée qui resservait ; « à Maghrib » dans la liste des cours.
+- **Le PDF du juriste**, version du 25 septembre 2026, avec 182 jours au point 5.
+- 1 581 tests dans le dépôt, tous réussis, aucun sauté. Parcours complet : 139 vérifications, axe
+  sur 29 pages, rien de sérieux. ADR 0045 ; addenda aux ADR 0017, 0019 et 0025 ; ADR 0035, 0037 et
+  0044 révisées.
+
 **Un script ou une commande qu'aucun test ne _lance_ n'est pas éprouvé.** C'est la règle du dépôt
 depuis l'étape 12, et elle répond à la question laissée ouverte à l'étape 11.
 
@@ -582,6 +635,7 @@ tests.
 | 14    | Licence MIT, correcteur en quatre langues, PDF pour le juriste     | terminée |
 | 15    | Conditions exactes au mot près, relevé de l'arabe                  | terminée |
 | 16    | Conditions en ligne et acceptées, arabe corrigé, parcours complet  | terminée |
+| 17    | 182 jours vérifiés, garde du déploiement, invitations tenues       | terminée |
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
 passkeys, paiement.
@@ -634,29 +688,25 @@ passkeys, paiement.
   sans les fausser gravement, et une dépendance de mille cinq cents expressions régulières coûterait
   plus qu'elle ne rapporterait.
 - Le propriétaire des tables garde le droit `TRUNCATE`, qui n'examine aucune politique : sans son
-  drapeau d'entretien, il peut vider une table, journal d'audit et acceptations compris. L'ADR 0019
-  dit pourtant qu'hors de ce drapeau il est en refus par défaut. Relevé à l'étape 16, non corrigé :
-  le retirer toucherait toutes les tables et chaque script d'entretien.
+  drapeau d'entretien, il peut vider une table, journal d'audit et acceptations compris. C'est
+  écrit comme limite dans l'ADR 0019 depuis l'étape 17 : le propriétaire est de confiance par
+  construction. Retirer ce droit ne suffirait pas, puisqu'il peut se le rendre : la seule correction
+  séparerait l'entretien de la propriété.
 - Le moment d'une acceptation des conditions est le début de la transaction qui l'écrit, comme
   l'horodatage du journal d'audit (ADR 0020, ADR 0044). Une transaction de l'application dure le
   temps d'une requête ; un rôle applicatif compromis pourrait avancer ce moment en la gardant
   ouverte.
-- La politique `organization_superadmin_select` vaut `true`, même quand le super-admin est entré
-  dans une organisation : toute lecture de cette table sans filtre sur le contexte lui montre une
-  autre organisation. Quatre lectures ainsi faites ont été corrigées à l'étape 16 ; rien
-  n'empêche d'en écrire une cinquième.
-- En production, `Strict-Transport-Security` vaut deux ans (le bloc de site) et non un an (le
-  code de l'application) : c'est le serveur web frontal qui a le dernier mot. Rien n'est compressé,
-  alors que `Vary: accept-encoding` est annoncé.
 - Un site verrouillé par `Cross-Origin-Embedder-Policy` chargerait sans doute le script du widget,
   mais refuserait son cadre, puisque `/m/**` n'envoie pas cet en-tête. Déduit de la norme, non
   éprouvé ; écrit dans `docs/INTEGRATION.md`.
-- Le 404 d'une organisation inconnue passe par la page d'erreur racine : il porte le JavaScript de
-  SvelteKit et reste en français, même sous `/ar`.
-- Le DMARC de `voltia.ch` n'a pas d'adresse `rua` : personne ne reçoit les rapports agrégés.
-- Le lien des conditions du pied public s'ouvre dans un nouvel onglet sans l'annoncer au visiteur
-  (technique G201 des WCAG). axe ne le relève pas ; l'annoncer demanderait un texte de plus dans
-  les quatre langues.
+- La vérification de nuit juge chaque objet à quelques minutes de son âge promis : l'archive de la
+  nuit N est jugée la nuit N + 9 sous `quotidien/`, alors que le cycle de vie l'efface à 8 jours,
+  plus le jour que le stockage peut mettre à le faire. Si le stockage dépasse ce jour, la tâche
+  échoue et l'alerte part : la marche à suivre est « Une sauvegarde distante est trop vieille »
+  (`docs/EXPLOITATION.md`). Les premières archives jugées à cette limite sont celles des premières
+  nuits de la vérification, neuf jours après le déploiement de l'étape 17.
+- Le DMARC de `voltia.ch` n'a pas d'adresse `rua`, par décision (étape 17) : personne ne reçoit
+  les rapports agrégés, et l'alignement tient par SPF.
 - L'hébergement cible est au choix de qui déploie : jadwal n'exige pas une machine à lui, son
   isolation ne repose pas dessus (ADR 0034).
 - Outillage récent : Vite 8 (Rolldown), Vitest 5, ESLint 10, pnpm 12. TypeScript 7 (compilateur
@@ -688,9 +738,17 @@ passkeys, paiement.
 - Texte du CLA et outil de signature (avant la première contribution externe).
 - **L'avis du juriste** sur les dix points de la page de garde, dont le point 10 : l'acceptation
   par personne, rattachée à son adhésion, suffit-elle ?
-- **La relecture, par le chef de projet, des textes arabes écrits à l'étape 16** sans lui : le
-  lien « شروط الاستخدام », les formes en « قبل » d'un décalage négatif, et « عند » suivi du nom
-  arabe de la prière dans le flux agenda.
+- **La relecture, par le chef de projet, des textes arabes écrits sans lui** : le lien
+  « شروط الاستخدام » et les formes en « قبل » d'un décalage négatif (étape 16) ; la page 404
+  publique, « الصفحة غير موجودة » et « تحقّق من العنوان. », et la place des parenthèses autour de
+  l'annonce qu'il a donnée, « شروط الاستخدام (يُفتح في علامة تبويب جديدة) » (étape 17).
+- **La séparation des rôles dans la base.** Pour le rôle applicatif, la base ne distingue pas
+  l'éditeur du responsable à l'intérieur d'une organisation : c'est l'application qui la tient.
+  Toute personne qui a le contexte de l'organisation peut changer le rôle d'une adhésion, ou
+  s'écrire une invitation de responsable et l'accepter (ADR 0017, « Limite du rôle »). La faille de
+  l'étape 17 montre ce que cela coûte : un rôle mal lu suffisait. La fermer demanderait une
+  fonction qui lit le rôle, sur le modèle de `jadwal.invited`, pour l'écriture des invitations et
+  la modification des adhésions.
 
 ## À poser avant la mise en production
 

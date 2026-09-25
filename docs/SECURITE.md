@@ -37,8 +37,10 @@ journal d'audit, qu'il ne peut ni modifier ni effacer.
 **2. Aucun rôle en jeu n'échappe aux politiques.** Le propriétaire des tables n'est ni
 superutilisateur ni porteur de `BYPASSRLS` : elles s'appliquent aussi à lui, et ses écritures
 d'entretien exigent un drapeau posé pour la durée d'une transaction (ADR 0019). Un test de catalogue
-échoue si un objet appartient à un autre rôle, si ce rôle porte un attribut privilégié — directement
-ou par appartenance — ou si une table perd son forçage.
+échoue si un objet appartient à un autre rôle, si ce rôle porte un attribut privilégié, directement
+ou par appartenance, ou si une table perd son forçage. Une exception, écrite comme limite dans
+l'ADR 0019 : le propriétaire garde `TRUNCATE`, qui n'examine aucune politique. Sans son drapeau, il
+peut vider une table, journal d'audit et acceptations compris. Il est de confiance par construction.
 
 **3. Quatre rôles, quatre périmètres.** Le rôle du serveur ne sert qu'à l'amorçage. Le propriétaire
 migre. Le rôle de connexion ne touche qu'aux sessions et aux passkeys ; le rôle applicatif n'a
@@ -65,7 +67,8 @@ pour le super-admin, qui a pourtant tous les autres droits : il y écrit, il n'y
 propriétaire, lui, purge sans lire. L'acceptation des conditions suit la même règle : le rôle
 applicatif lit et ajoute ses propres acceptations, sans rien modifier ni supprimer, et le moment est
 posé par la base, jamais par l'application. Le super-admin les lit, sans en écrire aucune. Elles
-partent avec l'adhésion, par la clé en cascade, et par aucun autre chemin (ADR 0044).
+partent avec l'adhésion, par la clé en cascade, et par aucun autre chemin (ADR 0044), hors le
+`TRUNCATE` du propriétaire (barrière 2).
 
 **7. Les purges sont bornées, et elles appartiennent au propriétaire.** Journal à vingt-quatre mois,
 invitations résolues à quatre-vingt-dix jours, comptes sans adhésion à douze mois. Aucune n'est
@@ -79,11 +82,22 @@ pour emporter son journal.
 **8. La connexion ne dit rien.** Demander un lien ne consulte pas les comptes : la réponse, le
 contenu affiché et le temps de réponse sont les mêmes pour une adresse connue et une adresse
 inconnue. Inviter ne consulte pas davantage (ADR 0016, 0017). Le lien dure quinze minutes, sert une
-fois, et son jeton est stocké haché.
+fois, et son jeton est stocké haché. Une invitation dure quatorze jours, et c'est la base qui le
+tient : elle refuse une durée plus longue et une date de création choisie par l'application
+(migration 0056), puis l'acceptation d'une invitation échue et l'adhésion qui la suivrait
+(migration 0057). Elle tient aussi ce qu'une invitation peut devenir, pour tous les rôles de
+connexion, super-admin compris (migration 0058) : une invitation consommée ou annulée ne sert plus,
+seule la personne invitée accepte, à son propre nom, l'adhésion porte le rôle de l'invitation, et
+la date de réponse, dont la purge compte ses quatre-vingt-dix jours, ne bouge plus. Limite : pour le
+rôle applicatif, la base ne sépare pas l'éditeur du responsable à l'intérieur d'une organisation.
+Toute personne qui a le contexte de l'organisation peut s'écrire une invitation, de n'importe quel
+rôle, à sa propre adresse, l'accepter et adhérer avec ce rôle (ADR 0017).
 
 **9. Le navigateur est bridé.** Politique de sécurité du contenu avec nonce, `frame-ancestors` calculé
 par route, pas de cadre par défaut, protection contre la soumission d'un formulaire depuis un autre
-site, cookie signé `HttpOnly` `SameSite=Lax`.
+site, cookie signé `HttpOnly` `SameSite=Lax`. Le transport strict (HSTS) demande deux ans,
+sous-domaines compris, sans `preload`. L'application dit la même valeur que le bloc de site du
+serveur web, et un test compare les deux.
 
 **9 bis. Le widget est confiné, et ne reçoit qu'un nombre.** Depuis l'étape 6, le widget d'une
 organisation ne redessine rien : il pose un cadre vers la page publique (ADR 0005 révisé). Le rendu
@@ -104,7 +118,11 @@ limitation de débit y est plus stricte qu'ailleurs. Une passkey nouvelle ne s'e
 une session déjà prouvée par passkey, sauf pour la toute première — sans cette règle, une boîte aux
 lettres compromise se fabriquerait la sienne. Ses **écritures** restent signées dans le journal de
 l'organisation, comme celles d'un responsable ; ses lectures vont dans un registre interne
-qu'aucune organisation ne peut atteindre, ni directement ni par une jointure.
+qu'aucune organisation ne peut atteindre, ni directement ni par une jointure. La base le borne
+pourtant à l'organisation où il est entré, table des organisations comprise depuis la migration
+0055 : entré dans l'une, il ne lit et ne modifie plus qu'elle, et une instruction sans filtre ne
+touche pas les autres. Il ne les voit toutes que dans sa console, sans contexte. Ce n'est pas une
+limite de pouvoir, puisqu'il entre où il veut : c'est une garde contre la méprise.
 
 **11. jadwal est cloisonné sur la machine, et ne suppose rien de son voisinage.** Un serveur peut
 héberger d'autres applications ; jadwal n'a besoin d'en connaître aucune, et ne compte sur aucune.
@@ -123,6 +141,18 @@ dépose porte son nom, dans des répertoires préfixés, et s'enlève d'un seul 
 cette barrière n'arrête pas : qui obtient les droits `root` sur la machine tient le fichier
 d'environnement, donc les mots de passe de la base — c'est un secret d'hébergement, et la section
 suivante le redit.
+
+**12. Aucune image ne part sans le parcours complet.** Le playbook commence par une garde, jouée
+sur le poste qui déploie avant toute connexion au serveur (ADR 0045). Elle n'accepte qu'une image
+publiée sous le chemin du dépôt, avec l'étiquette source de ce dépôt. Elle lit le commit de
+l'image dans le registre, vérifie au passage que le registre a rendu l'image du digest demandé, et
+exige une exécution verte du flux `parcours` pour ce commit. Tout se lit sans compte : aucun secret
+de plus. Le rôle qui écrit l'image n'accepte qu'un verdict rendu par la garde dans le même passage :
+ni une sélection de tâches, ni une variable de la garde posée à la main ne le remplacent. Par la
+voie prévue, la lever demande une dérogation écrite qui nomme son image, affichée en rouge et
+gardée au récapitulatif. Ce qu'elle n'arrête pas : qui tient le registre, le compte ou le dépôt,
+puisqu'elle croit l'étiquette de révision que la CI pose sur l'image, ni qui modifie le playbook
+ou pointe ses adresses vers un faux service. C'est une garde contre l'oubli et la hâte.
 
 ## Ce qui n'est pas couvert
 
@@ -151,8 +181,11 @@ suivante le redit.
   serveur chiffrées avec une clé publique dont la privée n'est jamais là : une archive volée reste
   illisible (ADR 0035). Et depuis l'ADR 0037, le serveur ne peut plus **effacer** ce qu'il a envoyé —
   qui prend le serveur prend la base, pas les sauvegardes des cent quatre-vingts derniers jours.
-  Ce qui reste hors de portée : qui obtient à la fois une archive **et** la clé privée de
-  l'exploitant a tout.
+  La contrepartie : il n'efface rien à distance, par décision, pas même une archive que le
+  stockage aurait oubliée une fois son verrou passé.
+  Chaque nuit, la tâche de sauvegarde vérifie donc que chaque objet distant tient l'âge promis de
+  son préfixe, 182 jours au plus, et échoue sinon, ce qui fait partir l'alerte. Ce qui reste hors
+  de portée : qui obtient à la fois une archive **et** la clé privée de l'exploitant a tout.
 - **Le déni de service.** La limitation de débit protège les boîtes aux lettres, pas le service.
 - **Une personne responsable malveillante dans sa propre organisation** peut effacer le programme de
   son organisation. Le journal dit qui et quand, et l'état avant permet de revenir en arrière.
@@ -175,4 +208,12 @@ serveur et suivent le chemin complet d'une connexion. Aucun n'est simulé.
 une base neuve lancées par Docker : la passkey du super-admin, l'invitation, les conditions à
 accepter, les cours, la page publique, le widget posé sur une autre origine et le flux agenda. Il
 passe axe sur chaque page traversée, et échoue sur tout problème d'accessibilité d'impact `serious`
-ou `critical`, les deux niveaux les plus graves d'axe.
+ou `critical`, les deux niveaux les plus graves d'axe. Le flux `parcours` le lance à chaque poussée
+sur `main`, et la garde du déploiement exige son verdict.
+
+`pnpm garde:test` joue cette garde cas par cas, avec le vrai playbook, contre une fausse API du
+registre et de GitHub. `pnpm sauvegarde:test` joue le script de sauvegarde entier, jusqu'à la
+vérification de l'âge des objets distants, avec le vrai rclone en 1.60.1 puis en 1.75.1 : neuf
+passages par version. L'envoi va vers une destination locale, et la liste de deux de ces passages
+passe par un faux stockage S3 qui refuse de lire les métadonnées d'un objet. Les deux épreuves
+tournent dans des conteneurs jetables, et aucune ne joint le serveur.
