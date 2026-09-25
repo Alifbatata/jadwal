@@ -28,13 +28,16 @@ describe('les dates en français', () => {
 		expect(weekdayName(date as IsoDate)).toBe(attendu);
 	});
 
-	it('writes the first of the month as « 1er », and the rest in figures', () => {
-		expect(shortDate('2026-10-01' as IsoDate)).toBe('jeudi 1er octobre');
-		expect(shortDate('2026-10-02' as IsoDate)).toBe('vendredi 2 octobre');
+	// Depuis l'étape 18, JJ.MM.AAAA partout, comme la page publique : « jeudi 1er octobre » ne disait
+	// pas l'année, et l'espace et la page ne l'écrivaient pas de la même façon.
+	it('writes the day, then the date as JJ.MM.AAAA', () => {
+		expect(shortDate('2026-10-01' as IsoDate)).toBe('jeudi 01.10.2026');
+		expect(shortDate('2026-10-02' as IsoDate)).toBe('vendredi 02.10.2026');
+		expect(shortDate('2026-09-26' as IsoDate)).toBe('samedi 26.09.2026');
 	});
 
-	it('keeps the year where the year matters', () => {
-		expect(longDate('2026-08-15' as IsoDate)).toBe('15 août 2026');
+	it('writes the date alone as JJ.MM.AAAA where the day adds nothing', () => {
+		expect(longDate('2026-08-15' as IsoDate)).toBe('15.08.2026');
 	});
 
 	it('gives back what it was given when the date is unreadable', () => {
@@ -79,7 +82,7 @@ describe('le rythme en clair', () => {
 	it('lists a few precise dates and counts the rest, instead of a wall of dates', () => {
 		const dates = ['2026-09-21', '2026-10-05', '2026-10-19', '2026-11-02', '2026-11-16'];
 		const phrase = describeRecurrence({ kind: 'dates', dates });
-		expect(phrase).toContain('lundi 21 septembre');
+		expect(phrase).toContain('lundi 21.09.2026');
 		expect(phrase).toContain('et 2 autres');
 	});
 });
@@ -240,7 +243,7 @@ describe('les messages prêts à coller', () => {
 
 	it('groups by day and marks what is cancelled, instead of hiding it', () => {
 		const message = weekMessage('Salam alaykoum', 'Association de Bienne', seances);
-		expect(message).toContain('lundi 21 septembre');
+		expect(message).toContain('lundi 21.09.2026');
 		expect(message).toContain('- Tafsir, 19:00 – 20:30, Salle 1');
 		// Taire une annulation ferait déplacer quelqu'un pour rien : c'est le contraire du but.
 		expect(message).toContain('- Arabe, 17:00 – 18:00 (ANNULÉ)');
@@ -270,7 +273,7 @@ describe('les messages prêts à coller', () => {
 
 	it('always says that the course goes on, when a single session is cancelled', () => {
 		const message = cancellationMessage('Salam alaykoum', 'Tafsir', '2026-09-21' as IsoDate);
-		expect(message).toContain('« Tafsir » du lundi 21 septembre est annulé');
+		expect(message).toContain('« Tafsir » du lundi 21.09.2026 est annulé');
 		expect(message).toContain('Les autres séances ont lieu normalement.');
 	});
 
@@ -282,7 +285,7 @@ describe('les messages prêts à coller', () => {
 			'2026-09-23' as IsoDate,
 			'18:00'
 		);
-		expect(message).toContain('du lundi 21 septembre');
-		expect(message).toContain('au mercredi 23 septembre à 18:00');
+		expect(message).toContain('du lundi 21.09.2026');
+		expect(message).toContain('au mercredi 23.09.2026 à 18:00');
 	});
 });

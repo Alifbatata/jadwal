@@ -5,43 +5,28 @@
 // `Intl` n'est pas utilisé pour les dates : il demande un objet `Date`, donc un instant, donc un
 // fuseau — et c'est précisément ce que le modèle de l'étape 1 a refusé d'introduire.
 
-import { isoDateToDays, parseIsoDate, weekdayFromDays, type IsoDate } from '@jadwal/core';
+import { isoDateToDays, weekdayFromDays, type IsoDate } from '@jadwal/core';
+import { longDate as dateDuJour, numericDate } from './i18n.js';
 
 const JOURS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'] as const;
-const MOIS = [
-	'janvier',
-	'février',
-	'mars',
-	'avril',
-	'mai',
-	'juin',
-	'juillet',
-	'août',
-	'septembre',
-	'octobre',
-	'novembre',
-	'décembre'
-] as const;
 
 /** « lundi ». */
 export function weekdayName(date: IsoDate): string {
 	return JOURS[weekdayFromDays(isoDateToDays(date)) - 1] ?? '';
 }
 
-/** « lundi 21 septembre ». Sans l'année, qui n'apprend rien sur sept jours. */
+/**
+ * « lundi 21.09.2026 » : le nom du jour, puis la date en `JJ.MM.AAAA`. Depuis l'étape 18, l'espace
+ * écrit ses dates comme la page publique, par la même fonction de `i18n.ts` ; elles s'écrivaient
+ * « lundi 21 septembre », sans l'année.
+ */
 export function shortDate(date: IsoDate): string {
-	const civil = parseIsoDate(date);
-	if (!civil) return date;
-	const premier = civil.day === 1 ? '1er' : String(civil.day);
-	return `${weekdayName(date)} ${premier} ${MOIS[civil.month - 1]}`;
+	return dateDuJour('fr', date);
 }
 
-/** « 21 septembre 2026 », pour les endroits où l'année compte. */
+/** « 21.09.2026 », pour les endroits où le nom du jour n'apprend rien. */
 export function longDate(date: IsoDate): string {
-	const civil = parseIsoDate(date);
-	if (!civil) return date;
-	const premier = civil.day === 1 ? '1er' : String(civil.day);
-	return `${premier} ${MOIS[civil.month - 1]} ${civil.year}`;
+	return numericDate(date);
 }
 
 export const AUDIENCE_LABELS: Record<string, string> = {
