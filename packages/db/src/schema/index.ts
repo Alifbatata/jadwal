@@ -50,6 +50,12 @@ export const publicRole = pgRole('jadwal_public').existing();
  */
 const orgContext = sql`(select jadwal.current_org_id())`;
 const userContext = sql`(select jadwal.current_user_id())`;
+/**
+ * Aucune organisation posée : le réglage est absent ou vide. Un réglage illisible n'en fait pas
+ * partie : `current_org_id()` le rend nul, mais il ne vaut pas une absence de contexte, et il ne
+ * montre rien (migration 0055).
+ */
+const noOrgContext = sql`(select coalesce(current_setting('jadwal.org_id', true), '')) = ''`;
 
 /** L'identifiant doit être un UUID v7 canonique : la règle de l'étape 1 tenue par la base (ADR 0014). */
 const isUuidV7 = (column: SQLWrapper) =>
@@ -310,13 +316,18 @@ export const organization = pgTable(
 			using: sql`${table.id} = ${orgContext}`,
 			withCheck: sql`${table.id} = ${orgContext}`
 		}),
-		// Créer et supprimer une organisation relève du super-admin (ADR 0006).
+		// Créer et supprimer une organisation relève du super-admin (ADR 0006). Dans sa console, sans
+		// contexte, il les lit et les change toutes ; entré dans une organisation, il ne voit et ne
+		// touche plus qu'elle, comme sur toute autre table d'organisation (ADR 0025, migration 0055).
+		// Jusqu'à l'étape 17, ces trois politiques valaient `true` : entré dans A, il lisait B, et une
+		// instruction sans `where` tapée depuis A modifiait toutes les organisations du service.
 		pgPolicy('organization_superadmin_select', {
 			as: 'permissive',
 			for: 'select',
 			to: superAdminRole,
-			using: sql`true`
+			using: sql`${table.id} = ${orgContext} or ${noOrgContext}`
 		}),
+		// Créer n'en touche aucune autre : la création reste ouverte, avec ou sans contexte.
 		pgPolicy('organization_superadmin_insert', {
 			as: 'permissive',
 			for: 'insert',
@@ -327,14 +338,14 @@ export const organization = pgTable(
 			as: 'permissive',
 			for: 'update',
 			to: superAdminRole,
-			using: sql`true`,
-			withCheck: sql`true`
+			using: sql`${table.id} = ${orgContext} or ${noOrgContext}`,
+			withCheck: sql`${table.id} = ${orgContext} or ${noOrgContext}`
 		}),
 		pgPolicy('organization_superadmin_delete', {
 			as: 'permissive',
 			for: 'delete',
 			to: superAdminRole,
-			using: sql`true`
+			using: sql`${table.id} = ${orgContext} or ${noOrgContext}`
 		}),
 		// Le côté public lit les organisations **actives**, sans contexte : une page publique est
 		// désignée par son identifiant d'URL (ADR 0026). Suspendre une organisation la retire du
@@ -466,15 +477,27 @@ export const membership = pgTable(
 		// une organisation fabriquait l'adhésion qui lui ouvrait la lecture d'une personne d'une
 		// autre organisation. L'étape 3 les lui rend sous une forme qui garde l'évasion fermée.
 		//
-		// On ne s'attache que soi-même : c'est l'invité qui crée son adhésion en acceptant, et
-		// jamais l'organisation qui l'attache (ADR 0017). La politique ne lit que le contexte,
-		// jamais la table des comptes, donc aucune récursion avec `user_select`.
+		// On ne s'attache que soi-même, et sur une invitation : c'est l'invité qui crée son adhésion
+		// en acceptant, et jamais l'organisation qui l'attache (ADR 0017). La politique lit le
+		// contexte, puis `jadwal.invited` : une invitation acceptée par cette personne, qui court
+		// encore, et du rôle de la ligne. Cette fonction, à droits du définisseur, n'est pas connue de
+		// Drizzle : les migrations 0024, 0026, 0057 et 0058 l'écrivent à la main, et 0024 puis 0058 la
+		// politique qui l'appelle. Elle lit `invitation` sans passer par la table des comptes, donc
+		// aucune récursion avec `user_select`.
+		//
+		// La politique est donc écrite à la main, et redite ici telle que la base la tient. Jusqu'à
+		// l'étape 17, le schéma et l'instantané la déclaraient sans l'invitation : une génération qui
+		// l'aurait touchée l'aurait réécrite sans elle, en silence. `meta/0058_snapshot.json` est
+		// l'instantané que Drizzle Kit produit pour cette définition, et `drizzle-kit generate` ne
+		// produit plus aucune migration. `test/catalog.test.ts` lit la définition réelle dans la base,
+		// et `test/invitation-once.test.ts` tombe si l'adhésion ne suit plus le rôle de l'invitation.
 		pgPolicy('membership_insert', {
 			as: 'permissive',
 			for: 'insert',
 			to: appRole,
 			withCheck: sql`${table.organizationId} = ${orgContext}
-				and ${table.userId} = ${userContext}`
+				and ${table.userId} = ${userContext}
+				and jadwal.invited(${table.organizationId}, ${table.userId}, ${table.role})`
 		}),
 		// Changer le rôle d'un membre ne vise qu'une personne déjà membre, donc déjà visible : rien
 		// ne fuit. Le dernier `org_admin` est protégé par un déclencheur, quel que soit l'appelant.
@@ -1322,6 +1345,15 @@ export const invitation = pgTable(
 			sql`${table.email} ~ '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$'`
 		),
 		ck('invitation_expires_at_ck', sql`${table.expiresAt} > ${table.createdAt}`),
+		// Quatorze jours au plus, la durée que pose l'écran des membres (`INVITATION_DAYS`). La borne
+		// porte sur la durée écoulée et non sur une date de calendrier : elle ne dépend pas du fuseau
+		// de la session, et une restauration sous un autre fuseau revérifie les mêmes lignes au même
+		// résultat. `created_at` est posé par le serveur : aucun rôle de connexion ne peut le nommer
+		// (migration 0056), sans quoi une création datée de l'an prochain allongerait tout.
+		ck(
+			'invitation_duration_ck',
+			sql`${table.expiresAt} - ${table.createdAt} <= interval '14 days'`
+		),
 		// Les responsables gèrent les invitations de leur organisation…
 		pgPolicy('invitation_select', {
 			as: 'permissive',
@@ -1342,6 +1374,10 @@ export const invitation = pgTable(
 		}),
 		// …et la personne invitée répond à la sienne, sans contexte d'organisation puisqu'elle n'en
 		// est pas encore membre. Elle est reconnue par son adresse, que le lien magique a prouvée.
+		// Une invitation échue ne passe jamais à « accepted », et une acceptation échue ne change
+		// pas de mains : un déclencheur le refuse, quels que soient le rôle et la branche de
+		// politique qui laissent passer la ligne, et `jadwal.invited` exige aussi l'échéance pour
+		// ouvrir l'adhésion (migration 0057).
 		pgPolicy('invitation_update', {
 			as: 'permissive',
 			for: 'update',

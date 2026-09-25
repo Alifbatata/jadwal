@@ -65,14 +65,50 @@ Le propriétaire est lui aussi soumis à la sécurité au niveau des lignes (ADR
 transaction qui déclare `set local jadwal.maintenance = 'on'`, il ne voit rien et n'écrit rien. C'est
 voulu. Attention : une écriture refusée par la RLS ne lève pas toujours — une insertion crie, mais un
 `update` ou un `delete` rend simplement « 0 ligne ». Un script d'entretien doit donc vérifier le
-nombre de lignes touchées, pas seulement l'absence d'erreur.
+nombre de lignes touchées, pas seulement l'absence d'erreur. Une exception, écrite comme limite dans
+l'ADR 0019 : le propriétaire garde `TRUNCATE`, qui n'examine aucune politique, et peut vider une
+table sans son drapeau, journal d'audit compris. `test/owner-truncate.test.ts` fixe cette limite.
 
 Une organisation n'attache personne : c'est la personne invitée qui crée son adhésion en acceptant,
 et la politique d'écriture n'autorise une adhésion que pour soi-même, après une invitation acceptée
 (ADR 0017). Sans cela, une organisation fabriquait l'adhésion qui lui ouvrait la lecture d'une
-personne d'une autre organisation — la vérification d'une clé étrangère contourne toujours la
-sécurité au niveau des lignes. L'adhésion créée marque l'invitation consommée : elle ne vaut qu'une
-fois.
+personne d'une autre organisation : la vérification d'une clé étrangère contourne toujours la
+sécurité au niveau des lignes. L'adhésion porte le rôle de l'invitation, et aucun autre : la
+fonction que lit la politique reçoit le rôle de la ligne à insérer (migration 0058). Une invitation
+ne vaut qu'une fois. L'adhésion créée la marque consommée (« joined ») ; si la personne qui accepte
+est déjà membre, c'est l'acceptation elle-même qui la consomme, sans créer d'adhésion (migration
+0058). Le super-admin n'est pas concerné : il crée une adhésion sans invitation, dans
+l'organisation où il est entré (ADR 0025).
+
+La base tient aussi les passages de statut d'une invitation, pour tous les rôles de connexion,
+super-admin compris (migration 0058). Une invitation naît en attente, acceptée par personne, sans
+date de réponse ; en attente, elle est acceptée ou annulée ; acceptée, elle est consommée ;
+consommée ou annulée, elle ne bouge plus. Seule la personne à qui elle est adressée l'accepte, à
+son propre nom, et cette acceptation ne passe jamais à un autre compte. La date de réponse est
+l'heure de la transaction qui répond, écrite une fois pour toutes : la purge des invitations
+résolues compte ses quatre-vingt-dix jours depuis elle. Un déclencheur refuse tout le reste avec
+`restrict_violation`, et un message qui nomme la règle. Seul le propriétaire, sous son drapeau
+d'entretien, en sort. Retirée, une personne ne revient donc pas avec la même invitation : il faut
+l'inviter de nouveau. `pg_restore` d'une sauvegarde complète recrée les déclencheurs après les
+lignes ; une restauration des seules données, dans un schéma déjà en place, passe
+`--disable-triggers`.
+
+**Limite.** Pour le rôle applicatif, la base ne sépare pas l'éditeur du responsable à l'intérieur
+d'une organisation : toute personne qui a le contexte de l'organisation peut, par un appel direct,
+s'écrire une invitation, de n'importe quel rôle, à sa propre adresse, l'accepter et adhérer avec ce
+rôle, comme elle peut changer le rôle d'une adhésion, le sien compris (migration 0053). C'est
+l'écran des membres qui réserve ces gestes aux personnes responsables.
+
+Une invitation dure quatorze jours au plus, et la base le tient (migration 0056) : une contrainte
+borne la durée écoulée entre `created_at` et `expires_at`, sans dépendre du fuseau de la session, et
+`created_at` est posé par le serveur : aucun rôle de connexion ne peut le nommer. Une invitation
+échue ne passe jamais à « accepted », quel que soit le rôle, et ne change pas de mains une fois
+acceptée : un déclencheur le refuse avec `restrict_violation`. Le retour à vide de `accepted_by`
+reste permis : c'est ce que fait la suppression d'un compte, par la clé étrangère. Sans cela, un
+compte qui porte une acceptation échue ne se supprimerait plus, et la purge des comptes échouerait
+en entier. L'adhésion, elle, exige une acceptation qui court encore (migration 0057). La durée est
+aussi celle de l'écran des membres (`INVITATION_DAYS`) : `test/invitation-expiry.test.ts` rejoue la
+fin que pose l'écran sous deux fuseaux et échoue si les deux divergent, d'une seconde ou d'une heure.
 
 Le rôle de connexion écrit dans la table des comptes, qui est une table du métier. Ses droits y sont
 bornés colonne par colonne, et une politique lui interdit la valeur `true` sur le drapeau
@@ -84,6 +120,9 @@ ouvrir (ADR 0025). Ses politiques restent bornées par `jadwal.current_org_id()`
 barrière — il entre où il veut — c'est le garde-fou qui l'empêche de modifier la mauvaise
 organisation par inadvertance. Deux tables lui échappent quand même : le journal d'audit, qui reste
 en insertion seule pour lui aussi, et les passkeys, qui appartiennent au seul rôle de connexion.
+La table des organisations suit la même règle depuis l'étape 17 (migration 0055) : entré dans une
+organisation, il ne voit et ne touche plus qu'elle ; sans contexte, dans sa console, il les voit et
+les change toutes. Un contexte illisible ne montre rien.
 
 `admin_access_log` est son registre interne : une entrée par requête, lisible de lui seul, en
 insertion seule, et hors de portée du rôle applicatif — aucun droit, aucune politique, aucune clé
@@ -196,8 +235,8 @@ pnpm --filter @jadwal/db test
 
 Deux ensembles : les tests unitaires (`src/*.test.ts`, sans base) et ceux qui exigent un vrai
 PostgreSQL (`test/*.test.ts`). Ces derniers créent leur propre base, y jouent les migrations, et la
-détruisent à la fin. **Si le serveur est injoignable, la suite échoue avec un message qui dit quoi
-lancer** ; elle ne passe jamais en silence.
+détruisent à la fin. **Si le serveur est injoignable, la suite échoue avec un message qui dit quelle
+commande lancer** ; elle ne passe jamais en silence.
 
 Tout ce qui touche à l'isolation est joué avec `jadwal_app`, le rôle non privilégié. Un test qui
 utiliserait le propriétaire ou un superutilisateur prouverait le contraire de ce qu'il affirme : ces

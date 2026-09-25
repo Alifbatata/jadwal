@@ -9,7 +9,7 @@
 
 import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { newId, withOrg, type Database, type DatabaseHandle } from '../src/index.js';
+import { newId, withOrg, withUser, type Database, type DatabaseHandle } from '../src/index.js';
 import {
 	allRows,
 	firstRow,
@@ -119,7 +119,7 @@ describe('la purge des comptes sans adhésion', () => {
 			tx.execute(sql`
 				insert into "invitation" ("id", "organization_id", "email", "role", "expires_at")
 				values (${newId()}, ${org.id}, ${adresse.toUpperCase()}, 'editor',
-					now() + interval '14 days')
+					now() + make_interval(hours => 14 * 24))
 			`)
 		);
 		// Comparaison insensible à la casse, comme l'unicité des adresses : sans cela, une
@@ -145,9 +145,9 @@ describe('la purge des comptes sans adhésion', () => {
 					"expires_at")
 				values
 					(${perimee}, ${org.id}, ${adressePerimee.toUpperCase()}, 'editor',
-						now() - interval '15 days', now() - interval '1 day'),
+						now() - make_interval(hours => 15 * 24), now() - interval '24 hours'),
 					(${newId()}, ${org.id}, ${adresseEnCours.toUpperCase()}, 'editor',
-						now() - interval '13 days', now() + interval '1 day')
+						now() - make_interval(hours => 13 * 24), now() + interval '24 hours')
 			`)
 		);
 		await withMaintenance(owner, (tx) => tx.execute(sql`select jadwal.purge_orphan_accounts()`));
@@ -205,6 +205,94 @@ describe('la purge des comptes sans adhésion', () => {
 	});
 });
 
+describe('un compte qui porte une acceptation échue, jamais consommée', () => {
+	// L'écran accepte et adhère dans la même transaction, mais rien ne l'impose à un appel direct : une
+	// personne peut accepter sans adhérer, et l'invitation reste « accepted » avec son nom. Jusqu'à la
+	// migration 0058, cet état naissait aussi d'un parcours ordinaire : une personne déjà membre,
+	// réinvitée, acceptait, et rien ne consommait l'invitation. La base la consomme désormais dès
+	// l'acceptation ; l'appel direct, lui, reste possible. Quand le compte est supprimé, la clé
+	// étrangère (`on delete set null`) vide ce nom. Le déclencheur de la migration 0057 ne doit pas
+	// prendre ce retour à vide pour un changement de mains : sinon le compte ne se supprime plus, et la
+	// purge des comptes, une seule instruction pour tous, échoue en entier chaque nuit.
+
+	/** L'état exact, bâti par un appel direct. Rend le compte, orphelin. */
+	async function orphanWithExpiredAcceptance(): Promise<{ userId: string; invitationId: string }> {
+		const email = `acceptee-${newId()}@example.test`;
+		const userId = await compte(email, 24);
+		// La personne responsable l'invite, avec l'insertion de l'écran des membres.
+		const invitationId = newId();
+		await withOrg(app, { organizationId: org.id, userId: org.userId }, (tx) =>
+			tx.execute(sql`
+				insert into "invitation" ("id", "organization_id", "email", "role", "invited_by",
+					"expires_at")
+				values (${invitationId}, ${org.id}, ${email}, 'editor', ${org.userId},
+					now() + make_interval(hours => 14 * 24))
+			`)
+		);
+		// Elle accepte par un appel direct, et n'adhère pas.
+		const claimed = await withUser(app, userId, async (tx) =>
+			allRows<{ status: string }>(
+				await tx.execute(sql`
+					update "invitation"
+					set "status" = 'accepted', "accepted_by" = ${userId}, "resolved_at" = now()
+					where "id" = ${invitationId} and "status" = 'pending' and "expires_at" > now()
+					returning "status"
+				`)
+			)
+		);
+		expect(claimed, 'acceptée, sans adhésion').toEqual([{ status: 'accepted' }]);
+		// Quinze jours passent : les trois dates reculent ensemble, du même nombre d'heures, et la
+		// durée reste dans la borne de 0056. Plus d'adhésion, plus de session, plus d'invitation qui
+		// court : le compte est orphelin.
+		await withMaintenance(owner, (tx) =>
+			tx.execute(sql`
+				update "invitation"
+				set "created_at" = "created_at" - make_interval(hours => 15 * 24),
+					"expires_at" = "expires_at" - make_interval(hours => 15 * 24),
+					"resolved_at" = "resolved_at" - make_interval(hours => 15 * 24)
+				where "id" = ${invitationId}
+			`)
+		);
+		const state = firstRow<{ status: string; accepted_by: string | null; expired: boolean }>(
+			await withMaintenance(owner, (tx) =>
+				tx.execute(sql`
+					select "status", "accepted_by", "expires_at" <= now() as "expired"
+					from "invitation" where "id" = ${invitationId}
+				`)
+			)
+		);
+		expect(state).toEqual({ status: 'accepted', accepted_by: userId, expired: true });
+		return { userId, invitationId };
+	}
+
+	it('can still be deleted by the owner, under his flag', async () => {
+		const { userId, invitationId } = await orphanWithExpiredAcceptance();
+		await withMaintenance(owner, (tx) =>
+			tx.execute(sql`delete from "user" where "id" = ${userId}`)
+		);
+		expect(await existe('user', userId)).toBe(false);
+		// L'invitation reste, sans nom : elle suit sa propre purge, quatre-vingt-dix jours plus tard.
+		const state = firstRow<{ status: string; accepted_by: string | null }>(
+			await withMaintenance(owner, (tx) =>
+				tx.execute(
+					sql`select "status", "accepted_by" from "invitation" where "id" = ${invitationId}`
+				)
+			)
+		);
+		expect(state).toEqual({ status: 'accepted', accepted_by: null });
+	});
+
+	it('does not stop the purge of orphan accounts, for itself or for anyone else', async () => {
+		const { userId } = await orphanWithExpiredAcceptance();
+		const abandonne = await compte(`abandonne-${newId()}@example.test`, 13);
+		await withMaintenance(owner, (tx) => tx.execute(sql`select jadwal.purge_orphan_accounts()`));
+		expect(await existe('user', userId), 'le compte qui porte l’acceptation échue').toBe(false);
+		expect(await existe('user', abandonne), 'un autre compte orphelin, purgé du même coup').toBe(
+			false
+		);
+	});
+});
+
 describe('la purge des invitations résolues', () => {
 	it('is refused to both application roles, procedure included', async () => {
 		for (const [nom, db] of [
@@ -225,14 +313,19 @@ describe('la purge des invitations résolues', () => {
 		joursJusquaExpiration = -186
 	): Promise<string> {
 		const id = newId();
+		const resolution =
+			joursDepuisResolution === null
+				? null
+				: sql`now() - make_interval(hours => ${joursDepuisResolution * 24})`;
+		// Créée quatorze jours avant sa fin, comptés en heures comme par l'écran des membres : la base
+		// refuse une invitation plus longue depuis la migration 0056.
 		await withMaintenance(owner, (tx) =>
 			tx.execute(sql`
 				insert into "invitation" ("id", "organization_id", "email", "role", "status",
 					"created_at", "expires_at", "resolved_at")
 				values (${id}, ${org.id}, ${`${id}@example.test`}, 'editor', ${statut},
-					now() - interval '200 days',
-					now() + make_interval(days => ${joursJusquaExpiration}),
-					${joursDepuisResolution === null ? null : sql`now() - make_interval(days => ${joursDepuisResolution})`})
+					now() + make_interval(hours => ${(joursJusquaExpiration - 14) * 24}),
+					now() + make_interval(hours => ${joursJusquaExpiration * 24}), ${resolution})
 			`)
 		);
 		return id;

@@ -220,6 +220,24 @@ describe('catalogue : sécurité au niveau des lignes', () => {
 		expect(columns).toContain('action');
 	});
 
+	it('keeps the invitation, with its role, in the policy by which a person joins', async () => {
+		// La politique est réécrite à la main (migrations 0024, puis 0058), comme la fonction qu'elle
+		// appelle, que Drizzle ne connaît pas. Le schéma la redit et l'instantané de 0058 la porte ;
+		// sans cela, une génération la réécrirait sans l'invitation, en silence. C'est ici la
+		// définition réelle qui est lue, et non celle que Drizzle croit connaître (ADR 0017).
+		const policy = firstRow<{ roles: string; with_check: string }>(
+			await db.execute(sql`
+				select roles::text as roles, with_check from pg_policies
+				where schemaname = 'public' and tablename = 'membership'
+					and policyname = 'membership_insert' and cmd = 'INSERT'
+			`)
+		);
+		expect(policy?.roles).toBe(`{${APP_ROLE}}`);
+		expect(policy?.with_check).toContain('jadwal.current_org_id()');
+		expect(policy?.with_check).toContain('jadwal.current_user_id()');
+		expect(policy?.with_check).toContain('jadwal.invited(organization_id, user_id, role)');
+	});
+
 	it.each(CONNECTING_ROLES)('keeps %s unprivileged and not an owner', async (role) => {
 		// Tous les attributs que la migration d'amorçage prend la peine d'imposer, pas seulement
 		// les deux plus connus : un rôle qui peut créer des rôles peut s'en créer un qui voit tout.
@@ -407,6 +425,7 @@ describe('catalogue : intégrité du schéma', () => {
 		const functions = allRows<{ name: string; volatility: string; leakproof: boolean }>(result);
 		expect(functions.map((row) => row.name)).toEqual([
 			'consume_invitation',
+			'consume_invitation_to_member',
 			'count_view',
 			'current_org_id',
 			'current_user_id',
@@ -421,6 +440,8 @@ describe('catalogue : intégrité du schéma', () => {
 			'purge_page_views',
 			'purge_rate_limit',
 			'purge_resolved_invitations',
+			'refuse_expired_acceptance',
+			'refuse_invitation_status_change',
 			'refuse_last_org_admin',
 			'refuse_prayer_course_without_module',
 			'refuse_prayer_module_off'

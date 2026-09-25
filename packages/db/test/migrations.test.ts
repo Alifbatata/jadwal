@@ -120,6 +120,12 @@ describe('application des migrations', () => {
 			),
 			'définitions de fonction relevées'
 		).toBe(true);
+		expect(
+			before.some((line) =>
+				line.startsWith('invitation invitation_refuses_expired_acceptance O CREATE TRIGGER')
+			),
+			'déclencheurs relevés, avec leur état'
+		).toBe(true);
 		for (const entry of replayable) {
 			const statements = readFileSync(join(migrationsDir, `${entry.tag}.sql`), 'utf8')
 				.split('--> statement-breakpoint')
@@ -157,11 +163,13 @@ async function appliedCount(db: Database): Promise<number> {
 
 /**
  * Empreinte du schéma : tables, colonnes, contraintes, index, politiques, et droits de table et de
- * colonne, et les fonctions du schéma `jadwal` avec leur corps et leurs droits. Sans les droits, un
- * fichier rejoué qui rend un droit large, que retire une migration plus récente, passerait inaperçu :
- * c'est le cas de 0012 face à 0053. Sans les fonctions, un fichier rejoué qui remet une définition
- * qu'une migration plus récente remplace passerait inaperçu de même : c'est le cas de 0034 face à
- * 0049 et à 0054.
+ * colonne, les fonctions du schéma `jadwal` avec leur corps et leurs droits, et les déclencheurs
+ * avec leur état. Sans les droits, un fichier rejoué qui rend un droit large, que retire une
+ * migration plus récente, passerait inaperçu : c'est le cas de 0012 face à 0053. Sans les fonctions,
+ * un fichier rejoué qui remet une définition qu'une migration plus récente remplace passerait
+ * inaperçu de même : c'est le cas de 0034 face à 0049 et à 0054. Sans les déclencheurs, un fichier
+ * rejoué qui en retire un, ou le laisse coupé, passerait inaperçu : or plusieurs protections en sont
+ * (la dernière personne responsable, 0012 ; l'échéance d'une invitation, 0057).
  */
 async function schemaFingerprint(db: Database): Promise<string[]> {
 	const columns = allRows<{ line: string }>(
@@ -238,6 +246,20 @@ async function schemaFingerprint(db: Database): Promise<string[]> {
 			order by 1
 		`)
 	);
+	// La table, le nom, l'état (`O` : il tire ; `D` : coupé) et la définition entière, clause `WHEN`
+	// comprise. Les déclencheurs internes, ceux que PostgreSQL pose pour les clés étrangères, sont
+	// déjà relevés par leur contrainte.
+	const triggers = allRows<{ line: string }>(
+		await db.execute(sql`
+			select c.relname || ' ' || tg.tgname || ' ' || tg.tgenabled::text || ' '
+				|| pg_get_triggerdef(tg.oid) as line
+			from pg_trigger tg
+			join pg_class c on c.oid = tg.tgrelid
+			join pg_namespace n on n.oid = c.relnamespace
+			where n.nspname = 'public' and not tg.tgisinternal
+			order by 1
+		`)
+	);
 	return [
 		...columns,
 		...constraints,
@@ -245,6 +267,7 @@ async function schemaFingerprint(db: Database): Promise<string[]> {
 		...policies,
 		...privileges,
 		...functions,
-		...functionPrivileges
+		...functionPrivileges,
+		...triggers
 	].map((row) => row.line);
 }
