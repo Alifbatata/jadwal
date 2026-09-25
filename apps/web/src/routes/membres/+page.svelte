@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	let { data, form } = $props();
 	const roleLabel: Record<string, string> = { org_admin: 'responsable', editor: 'éditeur' };
 	// Le super-admin administre les membres comme un responsable : le serveur l'accepte
@@ -9,8 +8,10 @@
 
 <svelte:head><title>Membres | {data.organisation.nom}</title></svelte:head>
 
+<!-- « Changer d’organisation » est dans l'en-tête de la coquille, pour qui en a plusieurs ou a une
+     invitation qui attend. Il était ici jusqu'à l'étape 17 : les éditeurs n'ouvrent pas cet écran,
+     et il s'y montrait aussi à qui n'a qu'une organisation et rien à choisir. -->
 <h1>{data.organisation.nom}</h1>
-<p><a href={resolve('/organisations')}>Changer d’organisation</a></p>
 
 {#if form?.erreur}
 	<p role="alert">{form.erreur}</p>

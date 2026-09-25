@@ -18,8 +18,10 @@
 	{#if !data.cotePublic}
 		<meta name="robots" content="noindex" />
 	{/if}
-	{#if data.integre}
-		<!-- Le seul script d'une page publique, et seulement quand elle est dans un cadre.
+	{#if data.integre && !page.error}
+		<!-- Le seul script d'une page publique, et seulement quand elle est dans un cadre. Jamais sur
+		     une page d'erreur : elle n'a ni lien à suivre ni programme à mesurer, et le cadre garde
+		     la hauteur minimale du widget.
 		     Un fichier, jamais du code en ligne : sur une page `csr = false`, SvelteKit ne déclare
 		     aucun nonce dans l'en-tête de politique de sécurité du contenu, donc un script en ligne
 		     y serait bloqué avec ou sans nonce, tandis que `script-src 'self'` autorise un fichier
@@ -68,6 +70,13 @@
 							<a href={resolve('/prieres')}>Prières</a>
 						{/if}
 						<a href={resolve('/reglages')}>Réglages</a>
+					{/if}
+					<!-- Pour toute personne membre de plusieurs organisations, éditeurs compris, et
+					     pour qui n'en a qu'une mais a une invitation qui court encore, qu'elle accepte
+					     sur cet écran. Dans la navigation, donc absent de l'écran d'acceptation des
+					     conditions, qui a son propre « Choisir une autre organisation ». -->
+					{#if organisation.canSwitch}
+						<a href={resolve('/organisations')}>Changer d’organisation</a>
 					{/if}
 				</nav>
 			{/if}

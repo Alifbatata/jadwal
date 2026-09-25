@@ -55,6 +55,18 @@ export interface OrganisationContext extends SignedIn {
 	 * Toujours vrai pour un compte super-admin, membre ou non : l'exploitant n'y est pas soumis.
 	 */
 	termsAccepted: boolean;
+	/**
+	 * Le nombre d'organisations dont la personne est membre, lu sans requête de plus : le contexte
+	 * les parcourt déjà pour trouver la sienne. À partir de deux, la coquille propose d'en changer.
+	 */
+	membershipCount: number;
+	/**
+	 * Le nombre d'invitations en attente adressées à la personne, qui courent encore : celles que
+	 * l'écran « Vos organisations » lui propose d'accepter, lues par la même fonction, soit une
+	 * requête de plus par contexte. Avec une invitation qui attend, la coquille propose ce choix
+	 * même à qui n'a qu'une organisation : c'est sur cet écran qu'elle l'accepte.
+	 */
+	pendingInvitationCount: number;
 }
 
 function firstRow<T>(result: unknown): T | undefined {
@@ -138,6 +150,13 @@ export interface Membership {
  * Les organisations dont cette personne est membre. La lecture passe par le contexte de chaque
  * organisation à tour de rôle : il n'existe aucune requête qui verrait tout d'un coup, et c'est
  * voulu. On part de la table d'adhésion, lue sous le contexte de l'organisation candidate.
+ *
+ * Les deux lectures nomment l'organisation candidate. Le contexte ne suffit pas à les borner : la
+ * politique des adhésions rend aussi à la personne ses lignes des autres organisations (migration
+ * 0022), et celle des organisations, celles qui l'invitent (migration 0023). Sans filtre, la
+ * première ligne venue répondait : une responsable d'une organisation, éditrice d'une autre, était
+ * traitée en responsable dans les deux, et l'organisation qui invite prêtait son nom, sa couleur et
+ * son module à celle de la session (étape 17).
  */
 export async function membershipsOf(person: SignedIn): Promise<Membership[]> {
 	// Une transaction qui ne pose que la personne : à ce moment-là il n'y a pas encore
@@ -160,11 +179,15 @@ export async function membershipsOf(person: SignedIn): Promise<Membership[]> {
 					prayer_module: boolean;
 				}>(
 					await tx.execute(
-						sql`select "slug", "name", "accent_color", "prayer_module" from "organization"`
+						sql`select "slug", "name", "accent_color", "prayer_module" from "organization"
+							where "id" = ${organizationId}`
 					)
 				);
 				const membership = firstRow<{ role: MembershipRole }>(
-					await tx.execute(sql`select "role" from "membership" where "user_id" = ${person.userId}`)
+					await tx.execute(
+						sql`select "role" from "membership"
+							where "user_id" = ${person.userId} and "organization_id" = ${organizationId}`
+					)
 				);
 				return organisation && membership
 					? {
@@ -182,6 +205,39 @@ export async function membershipsOf(person: SignedIn): Promise<Membership[]> {
 	}
 	return memberships.sort((left, right) =>
 		left.organizationName.localeCompare(right.organizationName, 'fr')
+	);
+}
+
+/** Une invitation en attente adressée à la personne, avec le nom de l'organisation qui invite. */
+export interface PendingInvitation {
+	id: string;
+	organization_id: string;
+	role: 'org_admin' | 'editor';
+	created_at: string;
+	expires_at: string;
+	organisation: string;
+}
+
+/**
+ * Les invitations en attente adressées à cette personne, qui courent encore. La lecture ne pose
+ * que la personne : elle n'est pas membre des organisations qui l'invitent, et c'est son adresse,
+ * prouvée par le lien magique, qui les lui montre (ADR 0017).
+ *
+ * L'écran « Vos organisations » les liste, et le contexte les compte par cette même fonction : la
+ * coquille ne propose jamais d'aller sur cet écran pour une invitation qu'il ne montrerait pas.
+ */
+export async function pendingInvitationsOf(person: SignedIn): Promise<PendingInvitation[]> {
+	return withUser(appDatabase(), person.userId, async (tx) =>
+		allRows<PendingInvitation>(
+			await tx.execute(sql`
+				select i."id", i."organization_id", i."role", i."created_at"::text,
+					i."expires_at"::text, o."name" as organisation
+				from "invitation" i
+				join "organization" o on o."id" = i."organization_id"
+				where i."status" = 'pending' and i."expires_at" > now()
+				order by i."created_at"
+			`)
+		)
 	);
 }
 
@@ -222,16 +278,22 @@ async function hasAcceptedTerms(person: SignedIn, organizationId: string): Promi
 export async function currentOrganisation(person: SignedIn): Promise<OrganisationContext | null> {
 	const active = await activeOrganizationId(person);
 	const memberships = await membershipsOf(person);
-	// Une seule organisation : pas de choix à faire, et rien à stocker.
+	// Une seule organisation : pas de choix à faire, et rien à stocker. Sauf pour le super-admin qui
+	// en a posé une autre par ses pouvoirs : son choix l'emporte, sans quoi il retombait dans la
+	// sienne à chaque requête et n'entrait jamais ailleurs (étape 17). Une personne ordinaire retirée
+	// de l'organisation choisie retombe, elle, dans celle qui lui reste.
+	const choisieAilleurs = person.hasSuperAdminPowers && active !== null;
 	const chosen =
 		memberships.find((entry) => entry.organizationId === active) ??
-		(memberships.length === 1 ? memberships[0] : undefined);
+		(memberships.length === 1 && !choisieAilleurs ? memberships[0] : undefined);
 	if (chosen) {
 		return {
 			...person,
 			...chosen,
 			asSuperAdmin: false,
-			termsAccepted: await hasAcceptedTerms(person, chosen.organizationId)
+			termsAccepted: await hasAcceptedTerms(person, chosen.organizationId),
+			membershipCount: memberships.length,
+			pendingInvitationCount: (await pendingInvitationsOf(person)).length
 		};
 	}
 
@@ -260,7 +322,11 @@ export async function currentOrganisation(person: SignedIn): Promise<Organisatio
 		role: 'superadmin',
 		asSuperAdmin: true,
 		// L'exploitant n'accepte pas ses propres conditions (ADR 0044).
-		termsAccepted: true
+		termsAccepted: true,
+		membershipCount: memberships.length,
+		// Compté pour lui comme pour tout le monde, pour que le nombre dise vrai : c'est la coquille
+		// qui ne lui propose pas le choix des membres, puisqu'il a le lien de sa bannière.
+		pendingInvitationCount: (await pendingInvitationsOf(person)).length
 	};
 }
 
