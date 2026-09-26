@@ -7,7 +7,7 @@
 
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { findLocality, LOCALITIES_SOURCE, searchLocalities } from './localities.js';
+import { findLocality, findLocalityAt, LOCALITIES_SOURCE, searchLocalities } from './localities.js';
 
 /** Le premier résultat d'une recherche, sous la forme « NPA Nom (canton) ». */
 function premier(requete: string): string {
@@ -341,5 +341,21 @@ describe('findLocality', () => {
 
 	it('rend le Liechtenstein sous le code FL', () => {
 		expect(findLocality('9490', 'Vaduz')?.canton).toBe('FL');
+	});
+});
+
+describe('findLocalityAt', () => {
+	// L'écran des prières n'enregistre que la position : c'est elle qui redit la localité choisie.
+	it('retrouve la localité d’une position prise dans la liste', () => {
+		const bienne = findLocality('2502', 'Biel/Bienne');
+		expect(bienne).not.toBeNull();
+		expect(findLocalityAt(bienne?.latitude ?? 0, bienne?.longitude ?? 0)).toEqual(bienne);
+		const vaduz = findLocality('9490', 'Vaduz');
+		expect(findLocalityAt(vaduz?.latitude ?? 0, vaduz?.longitude ?? 0)?.name).toBe('Vaduz');
+	});
+
+	it('ne rend rien pour une position saisie à la main', () => {
+		expect(findLocalityAt(48.8566, 2.3522)).toBeNull();
+		expect(findLocalityAt(47.1368, 7.2468)).toBeNull();
 	});
 });

@@ -504,3 +504,17 @@ export function findLocality(postcode: string, name: string): Locality | null {
 			?.locality ?? null
 	);
 }
+
+/**
+ * La localité dont la position est exactement celle-ci, ou `null`. Les réglages des prières ne
+ * gardent que la position : une position prise dans la liste redonne ainsi la localité choisie, et
+ * une position saisie à la main, qui n'a aucune raison de tomber sur un point de la liste à quatre
+ * décimales près, n'en redonne aucune.
+ */
+export function findLocalityAt(latitude: number, longitude: number): Locality | null {
+	return (
+		entries.find(
+			(entry) => entry.locality.latitude === latitude && entry.locality.longitude === longitude
+		)?.locality ?? null
+	);
+}
