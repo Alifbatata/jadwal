@@ -7,10 +7,11 @@
 // aucun service extérieur, et rien de tout cela n'atteint le navigateur, puisque le fichier vit sous
 // `$lib/server`.
 //
-// La recherche répond à ce qu'une personne tape : un nom, avec ou sans accents, dans sa langue ; un
-// NPA, entier ou commencé ; les deux à la suite ; un nom suivi de son canton (« Biel BE »), et la
-// forme sous laquelle une localité s'affiche (« 2502 Biel/Bienne (BE) »). Elle rend les résultats
-// les plus probables d'abord, et peu : c'est une liste où l'on choisit, pas un annuaire.
+// La recherche répond à ce qu'une personne tape : un nom, avec ou sans accents, avec ses trémas ou
+// écrit sans eux (« Zuerich »), dans sa langue ; un NPA, entier ou commencé ; les deux à la suite ;
+// un nom suivi de son canton (« Biel BE »), et la forme sous laquelle une localité s'affiche
+// (« 2502 Biel/Bienne (BE) »). Elle rend les résultats les plus probables d'abord, et peu : c'est
+// une liste où l'on choisit, pas un annuaire.
 
 import brut from './localities.csv?raw';
 
@@ -120,6 +121,23 @@ function normalise(text: string): string {
 		.join(' ');
 }
 
+/** Les trémas allemands tels qu'on les écrit sans eux : « Zürich » devient « Zuerich ». */
+const UMLAUTS: Record<string, string> = { ä: 'ae', ö: 'oe', ü: 'ue', Ä: 'Ae', Ö: 'Oe', Ü: 'Ue' };
+
+/**
+ * Un nom sous chacune de ses graphies, normalisées : telle quelle (« zurich »), et, s'il porte des
+ * trémas, telle qu'un clavier sans trémas l'écrit (« zuerich »). La seconde s'ajoute à la première
+ * du côté de la liste, jamais du côté de ce qui est tapé : « Frauenfeld » ou « Aeugst » s'écrivent
+ * vraiment avec « ue » et « ae », et ne doivent rien perdre.
+ */
+function spellingsOf(text: string): string[] {
+	const plain = normalise(text);
+	const withoutUmlauts = normalise(
+		text.replace(/[äöüÄÖÜ]/g, (letter) => UMLAUTS[letter] ?? letter)
+	);
+	return withoutUmlauts === plain ? [plain] : [plain, withoutUmlauts];
+}
+
 /**
  * Les chiffres arabes orientaux (U+0660 à U+0669) et persans (U+06F0 à U+06F9) en chiffres
  * latins : un clavier arabe de téléphone tape les premiers, et les NPA de la liste sont en chiffres
@@ -140,12 +158,15 @@ interface Entry {
 	locality: Locality;
 	/** Le nom entier, normalisé. */
 	name: string;
+	/** Le nom entier sous chacune de ses graphies : tel quel, et sans trémas (voir `spellingsOf`). */
+	spellings: string[];
 	/**
 	 * Les noms sous lesquels la localité se cherche : chaque langue du nom officiel, sans suffixe,
-	 * et ses noms dans les autres langues.
+	 * et ses noms dans les autres langues, chacun sous ses graphies.
 	 */
 	names: string[];
-	municipality: string;
+	/** La commune, sous ses graphies. */
+	municipalities: string[];
 	/** Combien de NPA portent ce nom : une grande ville en a beaucoup. */
 	weight: number;
 	/** Combien de localités la commune compte : départage à poids égal. */
@@ -159,9 +180,9 @@ interface Entry {
 function namesOf(locality: Locality): string[] {
 	const names = locality.name
 		.split('/')
-		.map((part) => normalise(part.replace(/\s*\(.*\)\s*$/, '').replace(CANTON_SUFFIX, '')));
+		.flatMap((part) => spellingsOf(part.replace(/\s*\(.*\)\s*$/, '').replace(CANTON_SUFFIX, '')));
 	for (const other of OTHER_NAMES[`${locality.name}|${locality.canton}`] ?? []) {
-		names.push(normalise(other));
+		names.push(...spellingsOf(other));
 	}
 	return names.filter((name) => name.length > 0);
 }
@@ -221,8 +242,9 @@ function parse(text: string): { title: string; version: string; entries: Entry[]
 	const entries = localities.map((locality) => ({
 		locality,
 		name: normalise(locality.name),
+		spellings: spellingsOf(locality.name),
 		names: namesOf(locality),
-		municipality: normalise(locality.municipality),
+		municipalities: spellingsOf(locality.municipality),
 		weight: byName.get(`${locality.name}|${locality.canton}`) ?? 1,
 		municipalityWeight: byMunicipality.get(`${locality.municipality}|${locality.canton}`) ?? 1
 	}));
@@ -258,16 +280,26 @@ export const LOCALITIES_SOURCE: LocalitiesSource = Object.freeze({
  * 4. son nom contient ce texte ;
  * 5. chaque mot du texte commence un mot de son nom, dans n'importe quel ordre (« bienne biel ») ;
  * 6. un mot de sa commune commence par ce texte (« val de ruz » pour Cernier).
+ *
+ * Chaque nom compte sous ses graphies : « zuerich » trouve Zürich au même rang que « zurich ».
  */
 function rank(entry: Entry, text: string): number | null {
-	if (entry.name === text) return 0;
+	const { spellings } = entry;
+	if (spellings.includes(text)) return 0;
 	if (entry.names.includes(text)) return 1;
 	if (entry.names.some((name) => name.startsWith(text))) return 2;
-	if (` ${entry.name}`.includes(` ${text}`)) return 3;
-	if (entry.name.includes(text)) return 4;
+	if (spellings.some((spelling) => ` ${spelling}`.includes(` ${text}`))) return 3;
+	if (spellings.some((spelling) => spelling.includes(text))) return 4;
 	const words = text.split(' ');
-	if (words.length > 1 && words.every((word) => ` ${entry.name}`.includes(` ${word}`))) return 5;
-	if (` ${entry.municipality}`.includes(` ${text}`)) return 6;
+	if (
+		words.length > 1 &&
+		spellings.some((spelling) => words.every((word) => ` ${spelling}`.includes(` ${word}`)))
+	) {
+		return 5;
+	}
+	if (entry.municipalities.some((municipality) => ` ${municipality}`.includes(` ${text}`))) {
+		return 6;
+	}
 	return null;
 }
 
@@ -465,7 +497,8 @@ function find(
  * Les localités qui répondent à `query`, les plus probables d'abord, `limit` au plus (10 par
  * défaut, jamais plus de 50).
  *
- * - Un nom : sans tenir compte des accents ni de la casse, dans n'importe quelle langue du nom
+ * - Un nom : sans tenir compte des accents ni de la casse, avec « ue », « oe » et « ae » pour
+ *   « ü », « ö » et « ä » (« Zuerich » trouve Zürich), dans n'importe quelle langue du nom
  *   officiel (« bienne » trouve Biel/Bienne), et pour les chefs-lieux dans les autres langues
  *   nationales et en anglais (« Genf », « Geneva »). Une localité qui a plusieurs NPA n'est rendue
  *   qu'une fois, sous le plus petit de ceux qui répondent le mieux.

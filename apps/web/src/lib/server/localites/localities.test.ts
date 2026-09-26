@@ -238,6 +238,69 @@ describe('searchLocalities, pendant la frappe (relecture du lot 2)', () => {
 	});
 });
 
+describe('searchLocalities, sans trémas (relecture du lot 3)', () => {
+	// Un clavier sans trémas, anglais ou arabe, écrit « Zuerich » : c'est justement celui de la
+	// personne à qui l'écran arabe demande de taper en lettres latines. La recherche ne trouvait rien.
+
+	/** « Zürich » écrit comme sur un clavier sans trémas, sans passer par le module qu'on éprouve. */
+	const TREMAS: Record<string, string> = { ä: 'ae', ö: 'oe', ü: 'ue', Ä: 'Ae', Ö: 'Oe', Ü: 'Ue' };
+	const sansTremas = (nom: string) =>
+		nom.replace(/[äöüÄÖÜ]/g, (lettre) => TREMAS[lettre] ?? lettre);
+
+	it('lit « ue », « oe » et « ae » comme « ü », « ö » et « ä »', () => {
+		expect(premier('Zuerich')).toBe('8001 Zürich (ZH)');
+		expect(premier('Koeniz')).toBe('3098 Köniz (BE)');
+		expect(premier('Muensterlingen')).toBe('8596 Münsterlingen (TG)');
+		expect(premier('Naefels')).toBe('8752 Näfels (GL)');
+		expect(premier('Duedingen')).toBe('3186 Düdingen (FR)');
+		expect(premier('zueri')).toBe('8001 Zürich (ZH)');
+		expect(premier('8050 Zuerich')).toBe('8050 Zürich (ZH)');
+	});
+
+	it('trouve encore sans trémas ni « e », comme avant', () => {
+		expect(premier('Zurich')).toBe('8001 Zürich (ZH)');
+		expect(premier('Koniz')).toBe('3098 Köniz (BE)');
+		expect(premier('Munsterlingen')).toBe('8596 Münsterlingen (TG)');
+	});
+
+	it('garde les noms qui s’écrivent vraiment avec « ue », « oe » ou « ae »', () => {
+		expect(premier('Frauenfeld')).toBe('8500 Frauenfeld (TG)');
+		expect(premier('Feuerthalen')).toBe('8245 Feuerthalen (ZH)');
+		expect(premier('Mauensee')).toBe('6216 Mauensee (LU)');
+		expect(premier('Oensingen')).toBe('4702 Oensingen (SO)');
+		expect(premier('Coeuve')).toBe('2932 Coeuve (JU)');
+		expect(premier('Aeugst am Albis')).toBe('8914 Aeugst am Albis (ZH)');
+		expect(premier('Bellevue')).toBe('1293 Bellevue (GE)');
+		expect(searchLocalities('Buenos Aires')).toEqual([]);
+	});
+
+	it('retrouve en premier chaque localité à trémas, écrite sans trémas, avec son NPA et son canton', () => {
+		const lignes = LIGNES.filter(({ name }) => /[äöüÄÖÜ]/.test(name));
+		expect(lignes.length).toBeGreaterThan(300);
+		const perdues = lignes
+			.map(({ postcode, name, canton }) => ({
+				tapee: `${postcode} ${sansTremas(name)} (${canton})`,
+				attendue: `${postcode} ${name} (${canton})`
+			}))
+			.filter(({ tapee, attendue }) => premier(tapee) !== attendue)
+			.map(({ tapee }) => `${tapee} -> ${premier(tapee)}`);
+		expect(perdues).toEqual([]);
+	});
+
+	it('retrouve en premier chaque localité à trémas sous « Nom (CANTON) », écrit sans trémas', () => {
+		const perdues = LIGNES.filter(({ name }) => /[äöüÄÖÜ]/.test(name))
+			.filter(({ name, canton }) => {
+				const [trouve] = searchLocalities(`${sansTremas(name)} (${canton})`);
+				return trouve?.name !== name || trouve.canton !== canton;
+			})
+			.map(
+				({ name, canton }) =>
+					`${sansTremas(name)} (${canton}) -> ${premier(`${sansTremas(name)} (${canton})`)}`
+			);
+		expect([...new Set(perdues)]).toEqual([]);
+	});
+});
+
 describe('searchLocalities, par NPA', () => {
 	it('« 2502 » trouve Biel/Bienne', () => {
 		const resultats = searchLocalities('2502');
