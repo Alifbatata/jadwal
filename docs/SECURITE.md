@@ -113,8 +113,15 @@ davantage les comptes. Le lien de connexion part dans la langue de l'écran d'o�
 l'invitation, dans celle de la personne qui invite, pour toute adresse. Lire la langue du compte
 destinataire, ce serait chercher un compte par son adresse : un test vérifie qu'une invitation vers
 un compte réglé en arabe est la même, objet, texte et HTML, que vers une adresse inconnue
-(ADR 0017, ADR 0047). **Le lien ne porte rien de plus qu'avant** : son adresse de retour est fixe
-(`/organisations`), et aucune langue n'y figure.
+(ADR 0017, ADR 0047). **Le lien porte une chose de plus, et une seule** : quand un choix de langue
+fait avant la connexion attend sur le navigateur de la demande, son adresse de retour le porte
+(`/organisations?language=de`), sinon elle reste `/organisations`. Ce choix vient du cookie de ce
+navigateur, jamais du compte. La vérification du lien l'écrit sur le compte que le jeton désigne, et
+nulle part ailleurs : une adresse qui porte ce paramètre, posée sur un autre site, ne change ni la
+page ni le compte, et aucun écran ne le lit. La demande retire le choix pour toute adresse de forme
+acceptable, qu'un courriel parte ou que la limite par adresse le retienne : garder le choix dans ce
+seul cas changerait les cookies de la réponse, et dirait qu'on a déjà demandé trois liens pour cette
+adresse dans l'heure.
 
 **9. Le navigateur est bridé.** Politique de sécurité du contenu avec nonce, `frame-ancestors` calculé
 par route, pas de cadre par défaut, protection contre la soumission d'un formulaire depuis un autre
@@ -256,8 +263,9 @@ et échouent si une table ajoutée plus tard perd sa protection. `test/org-admin
 tenter chaque geste réservé aux responsables par une éditrice, avec le contexte que l'écran pose,
 puis par une personne responsable et par le super-admin. Ceux d'`apps/web` lancent un vrai serveur
 et suivent le chemin complet d'une connexion. Aucun n'est simulé. Depuis l'étape 18,
-`tests/choix-de-la-langue.test.ts` y vérifie un choix fait avant la connexion, `Vary` et le retour
-du choix de la langue par HTTP, et `src/lib/i18n/language.test.ts` essaie ce retour sous plus de
+`tests/choix-de-la-langue.test.ts` y vérifie un choix fait avant la connexion, le lien qui
+l'emporte et n'emporte rien d'autre, une adresse qui ne change la langue d'aucun compte, `Vary` et
+le retour du choix de la langue par HTTP, et `src/lib/i18n/language.test.ts` essaie ce retour sous plus de
 deux mille formes de points et de barres ; `tests/espace-en-cinq-langues.test.ts` vérifie les deux
 cookies, et compare l'invitation vers un compte connu et vers une adresse inconnue ; `tests/public.test.ts` lit les pages publiques comme un
 Android, un iPhone et un ordinateur, et refuse tout lien vers un autre domaine que les deux services
