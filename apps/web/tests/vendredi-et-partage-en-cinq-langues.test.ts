@@ -669,6 +669,9 @@ async function ajouterUneSessionDePassage(
 	return { reponse, id: trouvee?.id ?? '' };
 }
 
+/** Où commence la première carte de l'écran : ce qui s'écrit avant est en tête. */
+const PREMIERE_CARTE = /<section\b[^>]*class="session[\s"]/;
+
 describe('une modification refusée reste sous les yeux (retour B1)', () => {
 	/** Le texte de chaque liste d'erreurs d'un morceau de page. */
 	function erreurs(html: string): string[][] {
@@ -745,6 +748,32 @@ describe('une modification refusée reste sous les yeux (retour B1)', () => {
 		expect(valeur(formulaire, 'teacher')).toBe('Imam Omar');
 		expect(rangChoisi(formulaire)).toEqual(['2']);
 		expect(formulaire).toContain('action="?/enregistrer#ajout"');
+	});
+
+	it('says at the top that the session no longer exists, with the mistakes, when its card is gone', async () => {
+		// La session est supprimée ailleurs (un autre onglet, une autre personne responsable) pendant
+		// que son formulaire est encore ouvert ici, puis ce formulaire part avec une erreur.
+		const { id } = await ajouterUneSessionDePassage('Prière supprimée ailleurs');
+		expect((await postForm('/vendredi?/supprimer', { courseId: id }, cookies)).status).toBe(200);
+		const reponse = await postForm(
+			'/vendredi?/enregistrer',
+			{ ...SESSION_DE_PASSAGE, courseId: id, title: 'Prière supprimée ailleurs', end: '15:00' },
+			cookies
+		);
+		expect(reponse.status).toBe(400);
+		const html = await reponse.text();
+		// Aucune carte ne porte plus cette session : la réponse ne peut s'écrire qu'en tête.
+		expect(section(html, `session-${id}`)).toBe('');
+		expect(erreurs(html)).toEqual([
+			[
+				'Cette session n’existe plus. Rechargez la page pour voir les sessions telles qu’elles sont.',
+				'L’heure de fin doit venir après l’heure de début.'
+			]
+		]);
+		expect(html.search(ERREURS)).toBeGreaterThan(-1);
+		expect(html.search(ERREURS)).toBeLessThan(html.search(PREMIERE_CARTE));
+		// Il n'y a plus de formulaire à rouvrir.
+		expect(replis(html).filter(ouvert)).toEqual([]);
 	});
 });
 

@@ -29,6 +29,21 @@
 	 * retaper. Les autres refus, qui ne visent pas un formulaire de session, restent en tête.
 	 */
 	const refuse = $derived(form?.errors && form.entry ? (form.courseId ?? '') : null);
+	/**
+	 * Le formulaire refusé n'a plus de carte : sa session a été supprimée entre-temps, dans un autre
+	 * onglet ou par une autre personne responsable. Ses erreurs s'écrivent alors en tête, après la
+	 * phrase qui dit que la session n'existe plus ; sans cela, la page reviendrait sans rien dire.
+	 */
+	const sansCarte = $derived(
+		refuse !== null && refuse !== '' && !data.sessions.some((session) => session.id === refuse)
+	);
+	/** Les erreurs qui s'écrivent en tête : celles des autres gestes, ou d'un formulaire sans carte. */
+	const erreursEnTete = $derived.by((): readonly FridayError[] => {
+		if (!form?.errors) return [];
+		if (refuse === null) return form.errors;
+		// La vérification du formulaire ne rend jamais « sessionGone » : la phrase ne s'écrit qu'une fois.
+		return sansCarte ? ['sessionGone', ...form.errors] : [];
+	});
 	/** La confirmation d'un enregistrement, par la clé de sa session, ou `null` pour les autres gestes. */
 	const enregistre = $derived(
 		form?.done === 'updated' ? (form.courseId ?? null) : form?.done === 'added' ? '' : null
@@ -45,7 +60,7 @@
 <p class="aide">{text.intro}</p>
 <p class="aide">{text.severalSessions}</p>
 
-{#if form?.errors && refuse === null}{@render erreurs(form.errors)}{/if}
+{#if erreursEnTete.length > 0}{@render erreurs(erreursEnTete)}{/if}
 {#if form?.done && enregistre === null}{@render confirmation(form.done)}{/if}
 
 {#if data.sessions.length === 0}
