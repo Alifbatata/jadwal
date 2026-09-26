@@ -21,6 +21,7 @@
 // La carte d'un déplacement envoie aussi l'heure qu'elle montrait : quand l'heure du cours a changé
 // depuis dans sa fiche, l'action la refuse, au lieu de déplacer la séance à l'ancienne heure
 // (relecture du lot 5), et la carte rouverte propose l'heure actuelle, sauf une heure tapée.
+// Annuler refuse une séance dont la date est passée.
 
 import { fail } from '@sveltejs/kit';
 import { isIsoDate, todayInZone } from '@jadwal/core';
@@ -268,9 +269,17 @@ export const actions: Actions = {
 		const courseId = String(form.get('courseId') ?? '');
 		const date = String(form.get('date') ?? '');
 		if (!isIsoDate(date)) return refuse('unreadableDate', { courseId, date });
+		const now = new Date();
 		return withSessionOrg(context, async (tx) => {
 			const course = await readCourse(tx, courseId);
 			if (!course) return refuse('sessionGone', { courseId, date }, 404);
+			const settings = await readSettings(tx);
+			// Aucune carte ne propose une date passée, mais une page ouverte la veille, ou un formulaire
+			// écrit à la main, peut l'envoyer. Deux dates civiles au même format se comparent comme des
+			// chaînes.
+			if (date < todayInZone(settings.time_zone, now)) {
+				return refuse('pastSession', { courseId, date });
+			}
 			// Une séance déjà annulée ou déplacée garde ce qui lui est arrivé : l'annulation ne
 			// s'écrit que si la place est libre, et rien ne s'écrit sinon, pas même le journal.
 			const written = rows<{ id: string }>(
@@ -290,7 +299,6 @@ export const actions: Actions = {
 				targetId: courseId,
 				after: { date, kind: 'cancelled' }
 			});
-			const settings = await readSettings(tx);
 			// Le message d'une séance, dans chaque langue publiée, la langue du cours d'abord.
 			const messages: Message[] = messageLanguages(settings.enabled_language, course.source).map(
 				(language) => ({

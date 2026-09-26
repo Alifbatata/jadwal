@@ -8,7 +8,8 @@
 //   date prévue. L'action refuse une date passée, avec une phrase claire, et n'écrit rien. Elle
 //   refuse aussi un déplacement qui ne change rien, la même date à l'heure déjà prévue (relecture du
 //   lot 3), et répond par une phrase, jamais par une erreur 500, à une heure hors plage, à un
-//   identifiant mal formé ou à un cours inconnu.
+//   identifiant mal formé ou à un cours inconnu. Elle refuse aussi, par une phrase, l'annulation
+//   d'une séance déjà passée.
 // - Une page restée ouverte (Retour, un second onglet, une autre personne) ne défait pas un
 //   changement : annuler ou déplacer une séance déjà annulée ou déplacée est refusé, rien n'est
 //   écrit, et l'écran rendu est à jour (relecture du lot 4). La carte envoie aussi l'heure qu'elle
@@ -91,6 +92,18 @@ const HEURE_CHANGEE: Record<Langue, string> = {
 	it: 'L’orario di questa lezione è cambiato da quando hai aperto la pagina. Non è stato salvato niente. Il nuovo orario è indicato sotto il titolo: controlla la data e l’orario scelti, poi riprova.',
 	en: 'The time of this session has changed since the page was opened. Nothing has been saved. Its new time is shown under its title: check the date and time you chose, then try again.',
 	ar: 'تغيّر وقت هذه الحصة منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. وقتها الجديد مكتوب تحت عنوانها: راجع ما اخترته من تاريخ ووقت، ثم حاول مرة أخرى.'
+};
+
+/**
+ * Le refus d'une annulation pour une date passée, que la page d'hier encore ouverte peut envoyer.
+ * Aucune carte ne porte cette séance : la phrase s'écrit en haut de l'écran.
+ */
+const SEANCE_PASSEE: Record<Langue, string> = {
+	fr: 'Cette séance est déjà passée : vous ne pouvez annuler que les séances d’aujourd’hui et des jours suivants.',
+	de: 'Dieser Termin ist schon vorbei: Sie können nur Termine von heute oder von einem späteren Tag absagen.',
+	it: 'Questa lezione è già passata: puoi annullare solo le lezioni di oggi o dei giorni successivi.',
+	en: 'This session has already passed: you can only cancel sessions from today onwards.',
+	ar: 'موعد هذه الحصة قد مضى: يمكنك إلغاء حصص اليوم والأيام التالية فقط.'
 };
 
 /** Ce qui est pareil dans toutes les langues par nature : noms, titres, adresses. */
@@ -820,6 +833,27 @@ describe('A2 : déplacer une séance', () => {
 		}
 		// Rien n'est écrit dans l'autre organisation.
 		expect(await exception(tajwid, jour(3))).toBeUndefined();
+	});
+
+	it('refuses to cancel a session whose date is past, with a sentence above the programme, and writes nothing', async () => {
+		// Aucune carte ne propose une date passée : l'envoi vient d'une page ouverte la veille, ou d'un
+		// formulaire écrit à la main.
+		const reponse = await postForm('/?/annuler', { courseId: soir, date: jour(-1) }, cookie);
+		try {
+			expect(reponse.status).toBe(400);
+			const html = await reponse.text();
+			expect(alerte(html)).toBe(SEANCE_PASSEE.fr);
+			expect(html.indexOf('role="alert"')).toBeLessThan(html.indexOf('id="jour-'));
+			expect(section(html, 'message-titre')).toBe('');
+			expect(optionsDesSeances(html).filter((options) => options.ouvert)).toEqual([]);
+			expect(await exception(soir, jour(-1))).toBeUndefined();
+		} finally {
+			await maintenance((tx) =>
+				tx.execute(sql`
+					delete from "session_exception" where "course_id" = ${soir} and "date" = ${jour(-1)}
+				`)
+			);
+		}
 	});
 
 	it('accepts a date earlier than the planned one, and shows the session there', async () => {
@@ -1566,6 +1600,7 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 		'après un déplacement qui ne change rien',
 		'après une page restée ouverte',
 		'après une carte dont l’heure a changé',
+		'après une annulation pour une date passée',
 		'après un rétablissement'
 	];
 	const ATTENDUS: Record<string, number> = {
@@ -1575,6 +1610,7 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 		'après un déplacement qui ne change rien': 400,
 		'après une page restée ouverte': 409,
 		'après une carte dont l’heure a changé': 409,
+		'après une annulation pour une date passée': 400,
 		'après un rétablissement': 200
 	};
 
@@ -1628,6 +1664,11 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 						},
 						cookie
 					)
+				],
+				[
+					// La carte du cours du soir d'hier, sur une page ouverte depuis la veille.
+					'après une annulation pour une date passée',
+					await postForm('/?/annuler', { courseId: soir, date: jour(-1) }, cookie)
 				],
 				[
 					'après un rétablissement',
@@ -1788,6 +1829,15 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 			const ouvertes = optionsDesSeances(html).filter((bloc) => bloc.ouvert);
 			expect(ouvertes, langue).toHaveLength(1);
 			expect(alerte(ouvertes[0]?.contenu ?? ''), langue).toBe(HEURE_CHANGEE[langue]);
+			expect(section(html, 'message-titre'), langue).toBe('');
+		}
+	});
+
+	it('says in each language that a past session can no longer be cancelled, above the programme', () => {
+		for (const langue of LANGUES) {
+			const html = rendus['après une annulation pour une date passée']?.[langue] ?? '';
+			expect(alerte(html), langue).toBe(SEANCE_PASSEE[langue]);
+			expect(html.indexOf('role="alert"'), langue).toBeLessThan(html.indexOf('id="jour-'));
 			expect(section(html, 'message-titre'), langue).toBe('');
 		}
 	});

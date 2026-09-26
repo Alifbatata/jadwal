@@ -23,13 +23,15 @@ export type UpcomingDone = 'cancelled' | 'moved' | 'restored';
  * `changed` : la séance a été annulée ou déplacée depuis que la page a été ouverte, par Retour, dans
  * un autre onglet ou par une autre personne ; la carte encore affichée ne défait pas ce changement.
  * `timeChanged` : l'heure du cours a changé dans sa fiche depuis ; la séance garde sa carte, qui se
- * rouvre sur la phrase, sous sa nouvelle heure.
+ * rouvre sur la phrase, sous sa nouvelle heure. `pastSession` : l'annulation d'une séance dont la
+ * date est passée, qu'aucune carte ne propose.
  */
 export type UpcomingError =
 	| 'unreadableDate'
 	| 'unreadableNewDate'
 	| 'unreadableTime'
 	| 'pastDate'
+	| 'pastSession'
 	| 'unchanged'
 	| 'changed'
 	| 'timeChanged'
@@ -210,6 +212,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			unreadableTime:
 				'Cette heure n’a pas pu être lue. Écrivez les heures et les minutes, par exemple 19:30.',
 			pastDate: 'Cette date est déjà passée. Choisissez une date à partir d’aujourd’hui.',
+			pastSession:
+				'Cette séance est déjà passée : vous ne pouvez annuler que les séances d’aujourd’hui et des jours suivants.',
 			unchanged:
 				'La séance est déjà prévue à cette date et à cette heure. Choisissez une autre date ou une autre heure.',
 			changed:
@@ -304,6 +308,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			unreadableTime:
 				'Diese Uhrzeit konnte nicht gelesen werden. Geben Sie Stunden und Minuten ein, zum Beispiel 19:30.',
 			pastDate: 'Dieses Datum ist schon vorbei. Wählen Sie heute oder einen späteren Tag.',
+			pastSession:
+				'Dieser Termin ist schon vorbei: Sie können nur Termine von heute oder von einem späteren Tag absagen.',
 			unchanged:
 				'Der Termin ist schon an diesem Datum und zu dieser Uhrzeit geplant. Wählen Sie ein anderes Datum oder eine andere Uhrzeit.',
 			changed:
@@ -398,6 +404,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			unreadableTime:
 				'Non è stato possibile leggere questo orario. Scrivi le ore e i minuti, per esempio 19:30.',
 			pastDate: 'Questa data è già passata. Scegli oggi o un giorno successivo.',
+			pastSession:
+				'Questa lezione è già passata: puoi annullare solo le lezioni di oggi o dei giorni successivi.',
 			unchanged:
 				'La lezione è già prevista per questa data e questo orario. Scegli un’altra data o un altro orario.',
 			changed:
@@ -490,6 +498,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			unreadableTime:
 				'This time could not be read. Enter the hours and minutes, for example 19:30.',
 			pastDate: 'This date has already passed. Choose today or a later day.',
+			pastSession:
+				'This session has already passed: you can only cancel sessions from today onwards.',
 			unchanged:
 				'The session is already planned for this date and time. Choose a different date or time.',
 			changed:
@@ -585,6 +595,7 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			unreadableNewDate: 'تعذّرت قراءة هذا التاريخ. اختره من تقويم خانة «التاريخ الجديد».',
 			unreadableTime: 'تعذّرت قراءة هذا الوقت. اكتب الساعات والدقائق، مثلًا 19:30.',
 			pastDate: 'هذا التاريخ قد مضى. اختر اليوم أو يومًا بعده.',
+			pastSession: 'موعد هذه الحصة قد مضى: يمكنك إلغاء حصص اليوم والأيام التالية فقط.',
 			unchanged: 'الحصة مقرّرة أصلًا في هذا التاريخ وفي هذا الوقت. اختر تاريخًا آخر أو وقتًا آخر.',
 			changed:
 				'تغيّرت هذه الحصة منذ أن فُتحت الصفحة: سبق أن أُلغيت أو نُقلت. لم يُحفظ أي شيء. برنامجك المعروض أدناه محدَّث.',
