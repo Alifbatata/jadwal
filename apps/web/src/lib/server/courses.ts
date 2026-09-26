@@ -24,10 +24,6 @@ import { AUDIENCES, newId, sql, type Transaction } from '@jadwal/db';
 import { record } from './audit.js';
 import type { OrganisationContext } from './context.js';
 
-/** Les deux formes que les formulaires acceptent, et rien d'autre. */
-const DATE = /^\d{4}-\d{2}-\d{2}$/;
-const HEURE = /^\d{2}:\d{2}$/;
-
 export interface CourseValues {
 	/**
 	 * `course` ou `jumua`. Une session du vendredi passe par les mêmes écritures qu'un cours : ces
@@ -338,84 +334,4 @@ export async function updateCourse(
 		after: { title: values.title, status: values.status, recurrence: values.recurrence }
 	});
 	return true;
-}
-
-// ---------------------------------------------------------------------------------------------
-// Les sessions du vendredi (ADR 0033)
-// ---------------------------------------------------------------------------------------------
-
-/**
- * Lit le formulaire d'une session du vendredi.
- *
- * Trois questions ne sont **pas** posées, et ce n'est pas un oubli : le jour, c'est le vendredi ;
- * le rythme, c'est chaque semaine ; le public, c'est ouvert à tous. Elles ont un sens pour un cours,
- * aucun ici, et l'écran ne fait pas semblant de les poser
- * (docs/maquettes/responsables-vendredi.md). Trois contraintes de vérification disent la même chose
- * du côté de la base : elle refuserait une session qui s'en écarterait, quel que soit le chemin.
- */
-export function parseJumuaForm(form: FormData, enabledLanguages: readonly string[]): ParseResult {
-	const erreurs: string[] = [];
-	const titre = text(form, 'title') || 'Prière du vendredi';
-	if (titre.length > 120) erreurs.push('Le titre est trop long.');
-
-	const rang = Number(text(form, 'jumuaOrder'));
-	if (!Number.isInteger(rang) || rang < 1 || rang > 3) {
-		erreurs.push('Choisissez la première, la deuxième ou la troisième session.');
-	}
-
-	const debut = text(form, 'start');
-	const fin = text(form, 'end');
-	if (!HEURE.test(debut) || !HEURE.test(fin)) {
-		erreurs.push('Donnez une heure de début et une heure de fin, au format 12:10.');
-	} else if (fin <= debut) {
-		erreurs.push('La fin doit venir après le début.');
-	}
-
-	const langues = form.getAll('sermonLanguages').map(String);
-	const sermon = langues.filter((langue) => enabledLanguages.includes(langue));
-	if (sermon.length === 0) erreurs.push('Choisissez au moins une langue de sermon.');
-
-	const debutDe = text(form, 'startsOn');
-	if (!DATE.test(debutDe)) erreurs.push('Donnez une date de début, au format AAAA-MM-JJ.');
-	const finDe = text(form, 'endsOn');
-	if (finDe !== '' && !DATE.test(finDe)) erreurs.push('La date de fin est illisible.');
-	if (DATE.test(debutDe) && DATE.test(finDe) && finDe < debutDe) {
-		erreurs.push('La date de fin vient avant la date de début.');
-	}
-
-	const sourceLanguage = enabledLanguages[0] ?? 'fr';
-	if (erreurs.length > 0) return { ok: false, erreurs };
-
-	const translations = new Map<string, { title: string; description: string | null }>();
-	translations.set(sourceLanguage, {
-		title: titre,
-		description: optional(form, 'description')
-	});
-
-	return {
-		ok: true,
-		values: {
-			kind: 'jumua',
-			jumuaOrder: rang,
-			title: titre,
-			description: optional(form, 'description'),
-			audience: 'open',
-			teachingLanguages: sermon,
-			sourceLanguage,
-			roomId: optional(form, 'roomId'),
-			teacher: optional(form, 'teacher'),
-			status: text(form, 'status') === 'published' ? 'published' : 'draft',
-			startsOn: debutDe as IsoDate,
-			endsOn: finDe === '' ? null : (finDe as IsoDate),
-			// Le vendredi, chaque semaine : jamais autre chose.
-			recurrence: {
-				kind: 'weekly',
-				weekdays: [5],
-				interval: 1,
-				anchorDate: debutDe as IsoDate
-			},
-			timing: { kind: 'fixed', start: debut as LocalTime, end: fin as LocalTime },
-			translations
-		}
-	};
 }
