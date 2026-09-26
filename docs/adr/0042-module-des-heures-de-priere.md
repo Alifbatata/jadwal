@@ -93,10 +93,37 @@ ne doit pas avoir à refuser quelque chose.
 ## Conséquences
 
 - Une colonne, un déclencheur, une migration qui rattrape l'existant.
-- Quatre langues pour le libellé de l'interrupteur, sa phrase d'explication et le message de refus.
+- Quatre langues pour le libellé de l'interrupteur, sa phrase d'explication et le message de refus
+  (cinq depuis l'étape 18, ADR 0007).
 - Les tests d'accès couvrent les deux états : ce qui répond 404 éteint, ce qui répond allumé.
 - Un test de base couvre le refus d'éteindre, et le prouve en le faisant échouer avec un cours ancré.
 - `docs/CADRAGE.md` décrit désormais les heures de prière comme un module optionnel.
+
+## Addendum du 2026-09-26 : l'onglet « Prières » de la page publique
+
+Jusqu'ici, la page publique ne montrait les heures de prière qu'à travers les cours qui les suivent
+et le bloc du vendredi. Les tests du chef de projet ont demandé qu'un visiteur les trouve elles-mêmes
+(retour C4).
+
+**Allumé, le module ajoute un quatrième onglet**, `Prières`, à côté de `Semaine`, `Tous les cours`
+et `Mois`. Il montre les heures du jour (prière, adhan, iqama), celles des sept prochains jours,
+datées `JJ.MM.AAAA`, puis les sessions du vendredi avec la langue de leur sermon. Le vendredi, les
+sessions prennent la place de l'iqama du Dhuhr, comme sur l'écran des responsables (ADR 0033). Les
+heures viennent de la même requête que celle qui place les cours ancrés (`readPublicPrayerDays`) :
+l'onglet ne peut pas dire une autre heure que le programme. Sur cet onglet, les filtres par public
+et le bloc du vendredi du haut disparaissent : ils ne s'y appliquent pas.
+
+**Éteint, l'onglet n'existe pas**, et `?vue=prieres` montre la semaine : le point 5 tient.
+
+**Le widget n'a pas changé.** Il encadre la page publique (ADR 0005), et l'onglet y apparaît donc
+de lui-même, dans les organisations qui ont allumé le module. L'attribut `view` du widget ne connaît
+pas `prieres` : l'accepter changerait le fichier du widget, donc son empreinte, et casserait les
+sites qui l'ont épinglée avec son empreinte d'intégrité.
+
+**Limite, relevée par la relecture et non corrigée.** L'onglet place les sessions du vendredi sur
+chaque vendredi daté d'après leur rythme habituel, sans lire les annulations ni les déplacements de
+ce jour-là : une session annulée un vendredi y figure encore, alors que la vue Semaine de la même
+page la dit annulée. Le point est ouvert dans `ETAT-PROJET.md`.
 
 ## Ce que cette décision ne dit pas
 
