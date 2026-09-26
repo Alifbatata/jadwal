@@ -60,6 +60,14 @@ const SECRET = 'secret-de-test-assez-long-pour-ne-pas-etre-refuse';
  * lien de connexion dont l'écran de retour est pris sur un autre site y renverrait, alors que la
  * production le refuse. Le serveur doit se croire en production, comme `NODE_ENV` le lui dit plus
  * bas : ce que la production refuse, les tests le voient refusé.
+ *
+ * Retirer `TEST` change aussi la façon dont Better Auth trouve l'adresse du visiteur pour sa limite
+ * de débit. Pour une requête sans en-tête d'adresse (`x-forwarded-for`), ce qui est le cas de
+ * presque toutes celles des tests, il prenait 127.0.0.1 en test ; sans `TEST`, comme en production,
+ * il n'en trouve aucune. Il range alors toutes ces requêtes d'un même chemin dans un seul seau,
+ * partagé, et l'écrit une fois par serveur dans la sortie des tests : « WARN [Better Auth]: Rate
+ * limiting could not determine a client IP and is falling back to a single shared per-path
+ * bucket. » Ce seau remplace celui de 127.0.0.1, que ces requêtes partageaient déjà.
  */
 function productionEnvironment(): NodeJS.ProcessEnv {
 	const env: NodeJS.ProcessEnv = { ...process.env };
