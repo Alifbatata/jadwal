@@ -36,7 +36,7 @@ donnée, n'écrit rien nulle part.
 3. **Le poids.** Le fichier est chargé sur le site de chaque organisation. Le widget de l'étape 0,
    un composant Svelte 5 **vide** qui affichait deux mots, pesait 12,48 Kio gzip : c'était le
    moteur de rendu, pas le composant. Celui-ci pesait **1,71 Kio gzip**, mesurés à l'étape 6, parce
-   qu'il n'a plus rien à rendre — et il est donc écrit en TypeScript pur, sans dépendance à
+   qu'il n'a plus rien à rendre : il est donc écrit en TypeScript pur, sans dépendance à
    l'exécution. Depuis l'anglais de l'étape 18, il pèse 2 141 octets gzip.
 
 ### Ce que cela coûte, et il faut le dire
