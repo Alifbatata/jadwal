@@ -24,9 +24,10 @@ export const load: PageServerLoad = async (event) => {
 		const titres = new Map(courses.map((course) => [course.id, course.title]));
 		return {
 			organisation: { name: settings.name },
+			// Un titre absent reste absent : la page écrit « Cours sans titre » dans sa langue.
 			courses: courses.map((course) => ({
 				id: course.id,
-				title: course.title ?? 'Cours sans titre',
+				title: course.title,
 				status: course.status,
 				audience: course.audience,
 				room: course.room,
@@ -51,7 +52,7 @@ export const load: PageServerLoad = async (event) => {
 			pauses: pauses.map((pause) => ({
 				id: pause.id,
 				courseId: pause.course_id,
-				course: pause.course_id ? (titres.get(pause.course_id) ?? 'Cours') : null,
+				course: pause.course_id ? (titres.get(pause.course_id) ?? null) : null,
 				from: pause.from_date,
 				to: pause.to_date,
 				reason: pause.reason
@@ -68,8 +69,9 @@ export const actions: Actions = {
 		const to = String(form.get('to') ?? '');
 		const courseId = String(form.get('courseId') ?? '') || null;
 		const reason = String(form.get('reason') ?? '').trim() || null;
-		if (!DATE.test(from) || !DATE.test(to)) return fail(400, { erreur: 'Dates illisibles.' });
-		if (to < from) return fail(400, { erreur: 'La fin de la pause est avant son début.' });
+		// Le nom de l'erreur, jamais sa phrase : la page l'écrit dans sa langue.
+		if (!DATE.test(from) || !DATE.test(to)) return fail(400, { error: 'pauseDates' as const });
+		if (to < from) return fail(400, { error: 'pauseInverted' as const });
 		const id = newId();
 		await withSessionOrg(context, async (tx) => {
 			await tx.execute(sql`
@@ -85,7 +87,7 @@ export const actions: Actions = {
 				after: { from, to, courseId, reason }
 			});
 		});
-		return { pausePosee: true };
+		return { pauseAdded: true };
 	},
 
 	supprimerPause: async (event) => {
@@ -100,7 +102,7 @@ export const actions: Actions = {
 				targetId: pauseId
 			});
 		});
-		return { pauseSupprimee: true };
+		return { pauseRemoved: true };
 	},
 
 	supprimer: async (event) => {
