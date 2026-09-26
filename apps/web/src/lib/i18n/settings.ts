@@ -54,10 +54,16 @@ interface SettingsTexts {
 	/** Quoi choisir quand la ville de l'organisation n'est pas dans la liste (celle du super-admin). */
 	readonly timeZoneNotListed: string;
 	/**
-	 * Un fuseau enregistré avant la liste, qu'elle ne propose pas (un alias) : la liste le montre,
-	 * choisi, pour qu'un enregistrement ne le change pas sans le dire.
+	 * Un fuseau enregistré avant la liste, qu'elle ne propose pas : la liste le montre, choisi, pour
+	 * qu'un enregistrement ne le change pas sans le dire. Cette phrase-ci pour un fuseau avec lequel
+	 * le flux agenda marche (un `Etc/`) ; l'autre pour un alias, qu'il refuse.
 	 */
 	readonly timeZoneKept: (zone: string) => string;
+	/**
+	 * Le même fuseau, quand le flux agenda le refuse (un alias, `buildCalendar`) : « il est gardé »
+	 * rassurait à tort. La phrase dit ce qui ne marche pas, et quoi faire.
+	 */
+	readonly timeZoneKeptNoCalendar: (zone: string) => string;
 	readonly timeZoneEurope: string;
 	readonly timeZoneWorld: string;
 	readonly colourLabel: string;
@@ -124,6 +130,8 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		timeZoneNotListed: `Si la ville de l’organisation n’est pas dans la liste, choisissez une ville qui a toujours la même heure qu’elle. Pour la plus grande partie de l’Europe : ${SWISS_ZONE}, ${PARIS_ZONE} ou ${BERLIN_ZONE}.`,
 		timeZoneKept: (zone) =>
 			`Votre fuseau actuel, ${zone}, ne fait pas partie de la liste. Il est gardé tant que vous n’en choisissez pas un autre.`,
+		timeZoneKeptNoCalendar: (zone) =>
+			`Votre fuseau actuel, ${zone}, ne fait pas partie de la liste. Avec ce fuseau, l’abonnement au calendrier de votre page publique ne marche pas. Choisissez dans la liste une ville qui a la même heure que la vôtre, puis enregistrez.`,
 		timeZoneEurope: 'Europe',
 		timeZoneWorld: 'Reste du monde',
 		colourLabel: 'Couleur de votre page',
@@ -199,6 +207,8 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		timeZoneNotListed: `Steht der Ort der Organisation nicht in der Liste, wählen Sie eine Stadt, in der immer die gleiche Uhrzeit gilt wie dort. Für den grössten Teil Europas: ${SWISS_ZONE}, ${PARIS_ZONE} oder ${BERLIN_ZONE}.`,
 		timeZoneKept: (zone) =>
 			`Ihre aktuelle Zeitzone, ${zone}, steht nicht in der Liste. Sie bleibt erhalten, solange Sie keine andere wählen.`,
+		timeZoneKeptNoCalendar: (zone) =>
+			`Ihre aktuelle Zeitzone, ${zone}, steht nicht in der Liste. Mit dieser Zeitzone lässt sich der Kalender Ihrer öffentlichen Seite nicht abonnieren. Wählen Sie aus der Liste eine Stadt, in der die gleiche Uhrzeit gilt wie bei Ihnen, und speichern Sie dann.`,
 		timeZoneEurope: 'Europa',
 		timeZoneWorld: 'Übrige Welt',
 		colourLabel: 'Farbe Ihrer Seite',
@@ -274,6 +284,8 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		timeZoneNotListed: `Se la città dell’organizzazione non è nella lista, scegli una città con la stessa ora tutto l’anno. Per la maggior parte dell’Europa: ${SWISS_ZONE}, ${PARIS_ZONE} o ${BERLIN_ZONE}.`,
 		timeZoneKept: (zone) =>
 			`Il tuo fuso orario attuale, ${zone}, non è nella lista. Resta tale finché non ne scegli un altro.`,
+		timeZoneKeptNoCalendar: (zone) =>
+			`Il tuo fuso orario attuale, ${zone}, non è nella lista. Con questo fuso orario, l’iscrizione al calendario della tua pagina pubblica non funziona. Scegli dalla lista una città che ha la stessa ora della tua, poi salva.`,
 		timeZoneEurope: 'Europa',
 		timeZoneWorld: 'Resto del mondo',
 		colourLabel: 'Colore della tua pagina',
@@ -349,6 +361,8 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		timeZoneNotListed: `If the town of the organisation is not in the list, choose a city with the same time all year round. For most of Europe: ${SWISS_ZONE}, ${PARIS_ZONE} or ${BERLIN_ZONE}.`,
 		timeZoneKept: (zone) =>
 			`Your current time zone, ${zone}, is not in the list. It is kept until you choose another one.`,
+		timeZoneKeptNoCalendar: (zone) =>
+			`Your current time zone, ${zone}, is not in the list. With this time zone, subscribing to the calendar of your public page does not work. From the list, choose a city with the same time as yours, then save.`,
 		timeZoneEurope: 'Europe',
 		timeZoneWorld: 'Rest of the world',
 		colourLabel: 'Colour of your page',
@@ -423,6 +437,8 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		timeZoneNotListed: `إذا لم تكن مدينة المؤسسة في القائمة، فاختر مدينة لها دائمًا التوقيت نفسه. لمعظم دول أوروبا: ${SWISS_ZONE} أو ${PARIS_ZONE} أو ${BERLIN_ZONE}.`,
 		timeZoneKept: (zone) =>
 			`منطقتك الزمنية الحالية، ${zone}، ليست في القائمة. تبقى كما هي ما لم تختر منطقة أخرى.`,
+		timeZoneKeptNoCalendar: (zone) =>
+			`منطقتك الزمنية الحالية، ${zone}، ليست في القائمة، والاشتراك في تقويم صفحتك العامة لا يعمل معها. اختر من القائمة مدينة لها توقيت مدينتك نفسه، ثم احفظ.`,
 		timeZoneEurope: 'أوروبا',
 		timeZoneWorld: 'بقية العالم',
 		colourLabel: 'لون صفحتك',

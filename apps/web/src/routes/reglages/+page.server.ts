@@ -8,6 +8,7 @@
 // l'écran (`$lib/i18n/settings.ts`, étape 18).
 
 import { fail } from '@sveltejs/kit';
+import { isCanonicalTimeZone } from '@jadwal/core/ics';
 import { newId, sql } from '@jadwal/db';
 // Les langues qu'on peut activer sont celles des pages publiques (ADR 0007), lues dans la liste
 // commune. L'écran en gardait une copie à quatre langues : l'anglais, ajouté à l'étape 18, n'y était
@@ -87,7 +88,11 @@ export const load: PageServerLoad = async (event) => {
 			timeZones: timeZoneChoices(),
 			// Un fuseau enregistré avant la liste, qu'elle ne propose pas (un alias) : la page l'ajoute,
 			// choisi, pour qu'enregistrer le reste des réglages ne le remplace pas sans le dire.
-			timeZoneKept: isOfferedTimeZone(settings.time_zone) ? null : settings.time_zone
+			timeZoneKept: isOfferedTimeZone(settings.time_zone) ? null : settings.time_zone,
+			// Le flux agenda refuse un alias (`buildCalendar`), et répond par une erreur : la page le
+			// dit alors, au lieu d'assurer que le fuseau est gardé sans dommage. Un `Etc/`, canonique,
+			// y passe.
+			timeZoneKeptBreaksCalendar: !isCanonicalTimeZone(settings.time_zone)
 		};
 	});
 };

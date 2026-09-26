@@ -14,7 +14,8 @@
 // - les deux écrans dans les cinq langues, erreurs comprises, sans phrase française restée et sans
 //   date écrite comme la base l'écrit (D2, A3) ;
 // - après un refus, Réglages rend ce qui a été saisi, et le fuseau se choisit dans la liste du
-//   super-admin, qui n'a aucun alias ;
+//   super-admin, qui n'a aucun alias ; d'un fuseau enregistré hors de la liste, l'écran dit si
+//   l'abonnement au calendrier marche avec lui, et le flux agenda le confirme ;
 // - supprimer une salle que des cours occupent : l'écran le dit avant, et demande de confirmer, en
 //   haut de la page, là où l'on arrive après l'envoi.
 
@@ -1201,6 +1202,22 @@ const HORS_LISTE: Record<Langue, string> = {
 	ar: 'اختر المنطقة الزمنية من القائمة.'
 };
 
+/**
+ * Ce que Réglages dit d'un fuseau enregistré hors de la liste avec lequel le flux agenda ne marche
+ * pas, un alias : la vérité, et quoi faire. « Il est gardé » rassurait à tort.
+ */
+const SANS_CALENDRIER: Record<Langue, string> = {
+	fr: 'Votre fuseau actuel, Europe/Amsterdam, ne fait pas partie de la liste. Avec ce fuseau, l’abonnement au calendrier de votre page publique ne marche pas. Choisissez dans la liste une ville qui a la même heure que la vôtre, puis enregistrez.',
+	de: 'Ihre aktuelle Zeitzone, Europe/Amsterdam, steht nicht in der Liste. Mit dieser Zeitzone lässt sich der Kalender Ihrer öffentlichen Seite nicht abonnieren. Wählen Sie aus der Liste eine Stadt, in der die gleiche Uhrzeit gilt wie bei Ihnen, und speichern Sie dann.',
+	it: 'Il tuo fuso orario attuale, Europe/Amsterdam, non è nella lista. Con questo fuso orario, l’iscrizione al calendario della tua pagina pubblica non funziona. Scegli dalla lista una città che ha la stessa ora della tua, poi salva.',
+	en: 'Your current time zone, Europe/Amsterdam, is not in the list. With this time zone, subscribing to the calendar of your public page does not work. From the list, choose a city with the same time as yours, then save.',
+	ar: 'منطقتك الزمنية الحالية، Europe/Amsterdam، ليست في القائمة، والاشتراك في تقويم صفحتك العامة لا يعمل معها. اختر من القائمة مدينة لها توقيت مدينتك نفسه، ثم احفظ.'
+};
+
+/** Ce qu'il dit d'un fuseau hors de la liste avec lequel le flux marche : un `Etc/`, canonique. */
+const GARDE_AVEC_CALENDRIER =
+	'Votre fuseau actuel, Etc/GMT-1, ne fait pas partie de la liste. Il est gardé tant que vous n’en choisissez pas un autre.';
+
 describe('l’écran Réglages dans les cinq langues (retours B1, D2 et A3)', () => {
 	let cookie = '';
 	const rendus: Partial<Record<Langue, string>> = {};
@@ -1440,9 +1457,7 @@ describe('Réglages après un refus, et le fuseau dans une liste (retour B1)', (
 		expect(
 			optionsDe(element(html, 'timeZone')).filter((zone) => zone === 'Europe/Amsterdam')
 		).toEqual(['Europe/Amsterdam']);
-		expect(lu(element(html, 'timeZone-aide'))).toContain(
-			'Votre fuseau actuel, Europe/Amsterdam, ne fait pas partie de la liste. Il est gardé tant que vous n’en choisissez pas un autre.'
-		);
+		expect(lu(element(html, 'timeZone-aide'))).toContain(SANS_CALENDRIER.fr);
 
 		// Enregistrer sans toucher au fuseau le garde.
 		const garde = await postForm(
@@ -1476,6 +1491,40 @@ describe('Réglages après un refus, et le fuseau dans une liste (retour B1)', (
 		const apres = await page200('/reglages', cookie);
 		expect(optionsChoisies(apres, 'timeZone')).toEqual(['Europe/Berlin']);
 		expect(optionsDe(element(apres, 'timeZone'))).not.toContain('Europe/Amsterdam');
+	});
+
+	/** Un fuseau enregistré avant la liste, que la liste ne propose pas. */
+	async function fuseauEnBase(zone: string): Promise<void> {
+		await maintenance((tx) =>
+			tx.execute(
+				sql`update "organization" set "time_zone" = ${zone} where "id" = ${organizationId}`
+			)
+		);
+	}
+
+	it.each(LANGUES)(
+		'says in %s that the calendar subscription does not work with a saved alias, and what to do',
+		async (langue) => {
+			await poserLangueDuCompte(RESPONSABLE, langue);
+			await fuseauEnBase('Europe/Amsterdam');
+			expect(lu(element(await page200('/reglages', cookie), 'timeZone-aide'))).toContain(
+				SANS_CALENDRIER[langue]
+			);
+			// La phrase dit vrai : le flux agenda de la page publique ne répond pas avec ce fuseau.
+			expect((await get(`/m/${SLUG}/agenda.ics`, '')).status).not.toBe(200);
+		}
+	);
+
+	it('still says a saved time zone is kept when the calendar works with it', async () => {
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		await fuseauEnBase('Etc/GMT-1');
+		const html = await page200('/reglages', cookie);
+		expect(optionsChoisies(html, 'timeZone')).toEqual(['Etc/GMT-1']);
+		const aide = lu(element(html, 'timeZone-aide'));
+		expect(aide).toContain(GARDE_AVEC_CALENDRIER);
+		expect(aide).not.toContain('abonnement au calendrier');
+		// Et c'est vrai : le flux agenda répond avec ce fuseau.
+		expect((await get(`/m/${SLUG}/agenda.ics`, '')).status).toBe(200);
 	});
 });
 
