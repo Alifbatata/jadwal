@@ -587,6 +587,46 @@ describe('la prière du vendredi dit ce qu’elle demande (retour B1)', () => {
 		expect(texteDeLId(html, aideDuGroupe ?? '')).not.toBe('');
 	});
 
+	/** L'aide de « À partir du » d'un formulaire, telle qu'un lecteur d'écran la lit sous le champ. */
+	function aideDuDebut(html: string, formulaire: string): string {
+		const champ = formulaire.match(/<input\b[^>]*\sname="startsOn"[^>]*>/)?.[0] ?? '';
+		return (attribut(champ, 'aria-describedby') ?? '')
+			.split(' ')
+			.filter(Boolean)
+			.map((id) => texteDeLId(html, id))
+			.join(' ');
+	}
+
+	it.each(LANGUES)(
+		'gives « À partir du » a help that fits a session already in place, not the add advice, in %s',
+		(langue) => {
+			// Dans la carte d'une session, le champ montre sa date de début, pas la date du jour :
+			// « gardez la date du jour » n'y vaut rien, et pousserait à changer une session en place.
+			const html = rendus['/vendredi']?.[langue] ?? '';
+			const francais = rendus['/vendredi']?.fr ?? '';
+			const ajout = aideDuDebut(html, formulaireDAjout(html));
+			const modifications = ([1, 2, 3] as const).map((rang) =>
+				aideDuDebut(html, formulaireDe(html, sessions[rang]))
+			);
+			const [modification] = modifications;
+			expect(modification, langue).toBeTruthy();
+			expect(modifications, langue).toEqual([modification, modification, modification]);
+			expect(modification, langue).not.toBe(ajout);
+			if (langue === 'fr') {
+				expect(ajout).toBe(
+					'La session a lieu chaque vendredi à partir de cette date. Gardez la date du jour pour qu’elle commence tout de suite.'
+				);
+				expect(modification).toBe(
+					'La session a lieu chaque vendredi à partir de cette date. Changez cette date seulement pour corriger une erreur.'
+				);
+			} else {
+				expect(modification, langue).not.toBe(
+					aideDuDebut(francais, formulaireDe(francais, sessions[1]))
+				);
+			}
+		}
+	);
+
 	it('shows examples where a value is not obvious, in French', () => {
 		const lu = visibleText(rendus['/vendredi']?.fr ?? '');
 		for (const exemple of [

@@ -327,7 +327,10 @@
 				/>
 			</div>
 		</div>
-		<p class="aide" id={`aide-du-${cle}`}>{text.form.startsOnHelp}</p>
+		<!-- Dans la carte d'une session, le champ montre sa date de début, pas la date du jour. -->
+		<p class="aide" id={`aide-du-${cle}`}>
+			{session ? text.form.startsOnEditHelp : text.form.startsOnHelp}
+		</p>
 		<p class="aide" id={`aide-au-${cle}`}>{text.form.endsOnHelp}</p>
 		<p class="aide" id={`aide-saison-${cle}`}>{text.form.season}</p>
 
