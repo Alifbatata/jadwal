@@ -28,15 +28,20 @@ met à jour tout seul. Rien à réinstaller quand un cours change.` Il ne promet
    - iPhone, iPad, Mac : le lien `webcal:` du cours, et `Vous pouvez aussi n'ajouter qu'un cours.
 Touchez son nom : il s'ajoute seul et se met à jour comme le reste. Son adresse en https figure sur
 la page du cours.` ;
-   - Android : le lien de Google Agenda pour ce cours, dans un nouvel onglet, et `Vous pouvez aussi
-n'ajouter qu'un cours. Touchez son nom : Google Agenda propose de l'ajouter seul, et il se met à
-jour comme le reste.` ;
+   - Android : le lien de Google Agenda pour ce cours, dans un nouvel onglet, et juste sous son nom,
+     sur toute la largeur, le lien `Page du cours`, vers la page du cours à l'ancre `#agenda`. La
+     phrase : `Vous pouvez aussi n'ajouter qu'un cours. Touchez son nom : Google Agenda s'ouvre pour
+ce cours seul, comme avec le bouton ci-dessus. Si Google Agenda ne propose rien sur votre
+téléphone, touchez Page du cours, juste sous son nom : cette page donne l'adresse du cours et la
+marche à suivre sur un ordinateur.` ;
    - ailleurs : la page du cours, à l'ancre `#agenda`, et `Vous pouvez aussi n'ajouter qu'un cours.
 Touchez son nom : sa page propose les mêmes choix, pour ce cours seul.`
-5. **Ajouter l'adresse à la main**, titre de niveau 2 : `Si le bouton ne fait rien, copiez
-l'adresse et suivez les étapes de votre application.`, puis trois titres de niveau 3 dans cet ordre,
-   en texte et sans capture d'écran : `Sur iPhone et iPad`, `Sur Android`, `Sur Outlook`. La
-   section Android se termine par le délai de Google.
+5. **Ajouter l'adresse à la main**, titre de niveau 2. Sur un iPhone ou sur Android : `Si le bouton
+ne fait rien, copiez l'adresse et suivez les étapes de votre application.` Sur le choix complet, qui
+   n'a que des liens : `Si aucun de ces liens ne fonctionne pour vous, copiez l'adresse et suivez
+les étapes de votre application.` Puis trois titres de niveau 3 dans cet ordre, en texte et sans
+   capture d'écran : `Sur iPhone et iPad`, `Sur Android`, `Sur Outlook`. La section Android se
+   termine par le délai de Google, celle d'Outlook par le délai d'Outlook.
 6. **Le pied commun**.
 
 ## Le bloc selon l'appareil
@@ -57,51 +62,60 @@ abonner. Acceptez, et le calendrier se met à jour tout seul, environ une fois p
 
 - Le bouton `Ajouter à Google Agenda`, vers Google Agenda, avec la demande d'abonnement prête, dans
   un nouvel onglet annoncé aux lecteurs d'écran.
-- `Touchez le bouton : Google Agenda s'ouvre dans votre navigateur et propose d'ajouter l'agenda.
-Confirmez, et il apparaît aussi dans l'application Google Agenda de votre téléphone.`
+- `Touchez le bouton : il ouvre Google Agenda et lui demande d'ajouter cet agenda. Si Google Agenda
+propose de l'ajouter, confirmez.`
 - `Google peut mettre jusqu'à 24 heures à rafraîchir un abonnement.`, dans un paragraphe à lui.
-- L'adresse `https:` à copier, puis `Un autre appareil ? Voir tous les choix`.
+- Ce qu'il faut faire si rien ne se passe, puisque l'aide de Google dit qu'on ne s'abonne à un
+  agenda par son adresse que depuis le navigateur d'un ordinateur : `Si Google Agenda ne propose
+rien sur votre téléphone, passez par un ordinateur : selon Google, on ne peut ajouter un agenda par
+son adresse que depuis le navigateur d'un ordinateur. Ouvrez-y Google Agenda. À gauche, à côté
+d'Autres agendas, cliquez sur le signe + (Ajouter d'autres agendas), puis choisissez À partir de
+l'URL. Collez l'adresse ci-dessous et cliquez sur Ajouter l'agenda. L'agenda apparaîtra ensuite
+aussi sur votre téléphone.`
+- `L'adresse à coller :`, sans « Ou », puisque la phrase d'avant vient de dire de la coller, puis
+  l'adresse `https:`, et `Un autre appareil ? Voir tous les choix`.
 
 **Ailleurs, ou avec `?appareil=tous`.** `Choisissez votre application de calendrier :`, puis
 quatre choix, chacun avec sa phrase :
 
-| Choix                   | Ce qu'il fait                                                                                                                                                                      |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Google Agenda`         | nouvel onglet ; `Il propose d'ajouter l'agenda à votre compte Google.`, puis le délai de Google                                                                                    |
-| `Outlook`               | nouvel onglet, Outlook sur le web ; `Outlook sur le web s'ouvre avec l'adresse déjà remplie : choisissez Importer. Avec un compte de travail ou d'école, copiez plutôt l'adresse.` |
-| `Une autre application` | lien `webcal:` ; `Calendrier d'Apple, Thunderbird ou toute application qui sait s'abonner à un calendrier : elle s'ouvre et propose l'abonnement.`                                 |
-| `Copier l'adresse`      | `Sélectionnez-la, copiez-la, puis collez-la dans votre application, là où elle propose d'ajouter un calendrier par son adresse.`, puis l'adresse `https:`                          |
+| Choix                   | Ce qu'il fait                                                                                                                                                                                               |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Google Agenda`         | nouvel onglet ; `Il propose d'ajouter l'agenda à votre compte Google.`, puis le délai de Google                                                                                                             |
+| `Outlook`               | nouvel onglet, Outlook sur le web ; `Outlook sur le web s'ouvre avec l'adresse déjà remplie : choisissez Importer. Avec un compte de travail ou d'école, copiez plutôt l'adresse.`, puis le délai d'Outlook |
+| `Une autre application` | lien `webcal:` ; `Calendrier d'Apple, Thunderbird ou toute application qui sait s'abonner à un calendrier : elle s'ouvre et propose l'abonnement.`                                                          |
+| `Copier l'adresse`      | `Sélectionnez-la, copiez-la, puis collez-la dans votre application, là où elle propose d'ajouter un calendrier par son adresse.`, puis l'adresse `https:`                                                   |
 
 Le choix complet ne dépend d'aucun en-tête, et sa réponse ne porte pas ce `Vary`.
 
 ## Le texte des trois marches à suivre, en français
 
-**Sur iPhone et iPad.** Touchez le bouton ci-dessus : votre iPhone propose d'ajouter le calendrier.
-Si rien ne se passe, ouvrez Réglages, puis Applications, Calendrier, Comptes, Ajouter un compte,
-Autre, Ajouter un abonnement à un calendrier, et collez l'adresse.
+**Sur iPhone et iPad.** Ouvrez Réglages, puis Applications, Calendrier, Comptes, Ajouter un
+compte, Autre, Ajouter un abonnement à un calendrier, et collez l'adresse.
 
-**Sur Android.** Ouvrez Google Agenda sur un ordinateur : l'application du téléphone ne sait pas
-ajouter un abonnement. Dans Autres agendas, choisissez À partir de l'URL, collez l'adresse, puis
-ajoutez l'agenda. Il apparaîtra ensuite sur votre téléphone. Google peut mettre jusqu'à 24 heures à
-rafraîchir un abonnement.
+**Sur Android.** Selon Google, on ne peut ajouter un agenda par son adresse que depuis le navigateur
+d'un ordinateur. Sur l'ordinateur, ouvrez Google Agenda. À gauche, à côté d'Autres agendas, cliquez
+sur le signe + (Ajouter d'autres agendas), puis choisissez À partir de l'URL. Collez l'adresse et
+cliquez sur Ajouter l'agenda. Il apparaîtra ensuite aussi sur votre téléphone. Puis, dans un
+paragraphe à lui : Google peut mettre jusqu'à 24 heures à rafraîchir un abonnement.
 
 **Sur Outlook.** Ouvrez Outlook sur le web, allez dans Calendrier, Ajouter un calendrier,
-S'abonner à partir du Web, collez l'adresse, donnez-lui un nom, puis importez.
+S'abonner à partir du Web, collez l'adresse, donnez-lui un nom, puis importez. Puis, dans un
+paragraphe à lui : Outlook peut mettre plus de 24 heures à rafraîchir un abonnement.
 
 Ces textes sont traduits dans les quatre autres langues, avec les noms de menus dans la langue de la
 page : un menu français dans une page allemande ne servirait à personne.
 
-## Ce qui reste à reprendre
+## Ce qui reste à vérifier
 
-Relevé par la relecture de l'étape 18, non corrigé à la fin de l'étape :
-
-- la page servie à Android dit, sous le bouton, que Google Agenda s'ouvre dans le navigateur et
-  propose l'abonnement, et plus bas, qu'il faut un ordinateur. L'aide de Google dit la seconde
-  chose ; le bouton doit être éprouvé sur un vrai téléphone Android, puis les deux phrases
-  accordées ;
-- `Si le bouton ne fait rien` et `Touchez le bouton ci-dessus` s'affichent aussi sur le choix
-  complet, qui n'a que des liens ;
-- le choix `Outlook` ne dit pas que Microsoft peut mettre plus de 24 heures à rafraîchir.
+- Le bouton d'Android n'a pas été essayé sur un vrai téléphone : des appareils ont été simulés par
+  leurs en-têtes, rien de plus. Google ne documente pas le lien qu'il suit, et Microsoft ne
+  documente pas non plus celui d'Outlook ; les deux suivent l'usage d'autres projets (ADR 0048).
+  Jusqu'au lot 4 de l'étape 18, la page servie à Android se contredisait : sous le bouton, Google
+  Agenda « propose d'ajouter l'agenda » ; plus bas, il fallait un ordinateur. Elle dit maintenant
+  les deux dans l'ordre : le bouton demande l'ajout, et si rien ne se passe, le passage par un
+  ordinateur.
+- L'aide de Google, relue à l'étape 18, ne donne aucun délai de rafraîchissement : la phrase des
+  24 heures n'a plus d'appui écrit.
 
 ## Ce que la page ne fait pas
 
