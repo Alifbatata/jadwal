@@ -61,8 +61,18 @@ services refusent d'être encadrés, et la page l'est souvent, dans le widget d'
 
 **Le délai de Google est dit**, dans les cinq langues : « Google peut mettre jusqu'à 24 heures à
 rafraîchir un abonnement. », sous le bouton d'Android, sous le choix de Google et dans les étapes à
-la main. L'introduction de la page ne promet plus de délai ; le bouton d'Apple garde « environ une
-fois par heure ».
+la main. Celui de Microsoft aussi, sous le choix d'Outlook et dans ses étapes : « Outlook peut
+mettre plus de 24 heures à rafraîchir un abonnement. » L'introduction de la page ne promet plus de
+délai ; le bouton d'Apple garde « environ une fois par heure ».
+
+**Sur Android, la page dit quoi faire si le bouton ne donne rien.** Sous le bouton : « Touchez le
+bouton : il ouvre Google Agenda et lui demande d'ajouter cet agenda. Si Google Agenda propose de
+l'ajouter, confirmez. » Puis, puisque l'aide de Google dit qu'on ne s'abonne à un agenda par son
+adresse que depuis le navigateur d'un ordinateur, le passage par un ordinateur, avec les libellés de
+l'interface de Google (le signe +, « À partir de l'URL », « Ajouter l'agenda »), et l'adresse à
+coller. Pour un seul cours, un lien « Page du cours », juste sous son nom, mène à la page du cours,
+qui donne l'adresse de ce cours et la même marche à suivre. Sur le choix complet, qui n'a que des
+liens, la section à la main ne parle pas d'un bouton.
 
 Les adresses de Google et d'Outlook sont des constantes du code, et non des variables
 d'environnement : ce sont les adresses fixes de services publics, pas un réglage d'instance.
@@ -92,16 +102,16 @@ d'un autre domaine, et n'admet un lien `<a>` vers ailleurs que pour `calendar.go
   `render?cid=` ou `addfromweb` ; les formes retenues sont celles de l'usage établi. L'aide de Google
   dit même qu'on ne s'abonne à un agenda par son adresse que depuis un ordinateur, jamais depuis
   l'application Android : le bouton ouvre la version web de Google Agenda dans le navigateur. Il
-  faut l'éprouver sur un vrai téléphone Android avant d'en rien promettre.
-- **Ce qui reste ouvert**, dans `ETAT-PROJET.md` : sur la page servie à Android, la phrase sous le
-  bouton (« Google Agenda s'ouvre dans votre navigateur et propose d'ajouter l'agenda ») et la marche
-  à suivre plus bas (« Ouvrez Google Agenda sur un ordinateur ») se contredisent ; le délai de
-  Microsoft (« plus de 24 heures ») n'est pas dit sous Outlook ; « Touchez le bouton ci-dessus »
-  s'affiche aussi sur le choix complet, qui n'a que des liens.
+  faut l'éprouver sur un vrai téléphone Android avant d'en rien promettre ; l'essai reste à faire
+  (`ETAT-PROJET.md`). En attendant, la page ne promet pas que le bouton suffit : elle dit ce qu'il
+  demande, puis le passage par un ordinateur.
+- La relecture de l'étape 18 a relu l'aide de Google en six langues : elle ne donne aucun délai de
+  rafraîchissement. La phrase des 24 heures n'a donc plus d'appui écrit.
 - `outlook.live.com` est l'Outlook des comptes personnels. Un compte de travail ou d'école copie
   l'adresse, et la page le dit.
 - La maquette `docs/maquettes/public-agenda.md` décrit désormais ce comportement.
 
 ## Statut
 
-Accepté, 2026-09-26. Étape 18, retours E1 et E2 du chef de projet.
+Accepté, 2026-09-26. Étape 18, retours E1 et E2 du chef de projet. Révisé le même jour, à la fin
+de l'étape : la page servie à Android ne se contredit plus, et le délai d'Outlook est dit.
