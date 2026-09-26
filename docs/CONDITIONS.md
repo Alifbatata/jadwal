@@ -3,7 +3,7 @@
 Ce texte s'adresse aux organisations qui publient leur programme avec ce service. Il est écrit pour
 être lu, pas pour être opposé.
 
-Dernière mise à jour : 26 septembre 2026.
+Dernière mise à jour : 26.09.2026.
 
 ## Qui exploite le service
 

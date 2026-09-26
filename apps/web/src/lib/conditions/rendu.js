@@ -279,42 +279,29 @@ export function dateDeLaVersion(markdown) {
 	return trouve ? (trouve[1] ?? '').trim() : 'sans date';
 }
 
-const MOIS = [
-	'janvier',
-	'février',
-	'mars',
-	'avril',
-	'mai',
-	'juin',
-	'juillet',
-	'août',
-	'septembre',
-	'octobre',
-	'novembre',
-	'décembre'
-];
-
 /**
- * La version du texte, écrite en ISO : « 22 septembre 2026 » devient `2026-09-22`. C'est elle que
- * l'acceptation enregistre et que le pied du PDF annonce, en toutes lettres.
+ * La version du texte, écrite en ISO : « 22.09.2026 » devient `2026-09-22`. C'est elle que
+ * l'acceptation enregistre ; le pied du PDF et l'écran d'acceptation l'annoncent comme le texte
+ * l'écrit, `JJ.MM.AAAA`, la forme de toutes les dates du service (étape 18, retour A3). Jusqu'à
+ * l'étape 18, le texte l'écrivait en toutes lettres, « 26 septembre 2026 » : cette forme est refusée,
+ * pour qu'une seule façon d'écrire la date reste possible.
  *
  * Lève plutôt que d'inventer : une date illisible donnerait une version que personne n'a écrite, et
  * les acceptations enregistrées sous elle ne diraient plus ce qui a été accepté. Une date qui
- * n'existe pas, un 31 septembre, est illisible elle aussi.
+ * n'existe pas, un 31.09, est illisible elle aussi.
  *
  * @param {string} markdown
  * @returns {string}
  */
 export function versionIso(markdown) {
 	const date = dateDeLaVersion(markdown);
-	const trouve = /^(1er|\d{1,2}) (\p{L}+) (\d{4})$/u.exec(date);
-	const mois = MOIS.indexOf((trouve?.[2] ?? '').toLowerCase()) + 1;
-	const jour = trouve?.[1] === '1er' ? 1 : Number(trouve?.[1]);
+	const trouve = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(date);
+	const jour = Number(trouve?.[1]);
+	const mois = Number(trouve?.[2]);
 	const annee = Number(trouve?.[3]);
 	const jourDuCalendrier = new Date(Date.UTC(annee, mois - 1, jour));
 	if (
 		!trouve ||
-		mois === 0 ||
 		jourDuCalendrier.getUTCFullYear() !== annee ||
 		jourDuCalendrier.getUTCMonth() !== mois - 1 ||
 		jourDuCalendrier.getUTCDate() !== jour

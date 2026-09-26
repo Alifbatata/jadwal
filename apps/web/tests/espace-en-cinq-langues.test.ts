@@ -493,6 +493,24 @@ describe('chaque écran du socle, dans les cinq langues', () => {
 		);
 	});
 
+	it('writes the date of the terms one way only, JJ.MM.AAAA, in the text of the terms too', () => {
+		// L'écran d'acceptation dit la version, puis montre le texte, qui dit sa date de mise à jour :
+		// une personne lit deux fois la même date, et doit la lire deux fois de la même façon (A3).
+		const [annee, mois, jour] = VERSION_DES_CONDITIONS.split('-');
+		const date = `${jour}\\.${mois}\\.${annee}`;
+		const enLettres =
+			/\d{1,2}(?:er)?\s+(?:janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)\s+\d{4}/i;
+		for (const chemin of ['/conditions', '/conditions/accepter']) {
+			for (const langue of LANGUES) {
+				const lu = visibleText(rendus[chemin]?.[langue] ?? '');
+				expect(lu.match(enLettres)?.[0] ?? null, `${chemin} ${langue}`).toBeNull();
+				expect(lu, `${chemin} ${langue}`).toMatch(
+					new RegExp(`Dernière mise à jour\\s*:\\s*${date}\\.`)
+				);
+			}
+		}
+	});
+
 	it('names the page not found in each language, with a way back', () => {
 		const titres = {
 			fr: 'Page introuvable',

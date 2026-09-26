@@ -72,16 +72,16 @@ describe('la version du texte', () => {
 	const document = (date: string) => `# Titre\n\nDernière mise à jour : ${date}.\n\nLe texte.\n`;
 
 	it('reads the date of the last update', () => {
-		expect(dateDeLaVersion(document('22 septembre 2026'))).toBe('22 septembre 2026');
+		expect(dateDeLaVersion(document('22.09.2026'))).toBe('22.09.2026');
 	});
 
 	it.each([
-		['22 septembre 2026', '2026-09-22'],
-		['1er octobre 2026', '2026-10-01'],
-		['5 août 2027', '2027-08-05'],
-		['3 décembre 2026', '2026-12-03'],
+		['22.09.2026', '2026-09-22'],
+		['01.10.2026', '2026-10-01'],
+		['05.08.2027', '2027-08-05'],
+		['03.12.2026', '2026-12-03'],
 		// 2028 est bissextile, 2027 ne l'est pas : le 29 février n'existe que la première.
-		['29 février 2028', '2028-02-29']
+		['29.02.2028', '2028-02-29']
 	])('writes « %s » as %s', (date, attendu) => {
 		expect(versionIso(document(date))).toBe(attendu);
 	});
@@ -89,17 +89,24 @@ describe('la version du texte', () => {
 	it.each([
 		['no date line at all', '# Titre\n\nLe texte.\n'],
 		['a date in words', document('bientôt')],
-		['an abbreviated month', document('22 sept. 2026')],
-		['a month that is not French', document('22 September 2026')],
-		['a day the month does not have', document('31 septembre 2026')],
-		['a 29 February in a common year', document('29 février 2027')],
-		['« er » after another day than the first', document('2er mars 2026')],
-		['no year', document('22 septembre')]
+		// Une seule façon d'écrire la date, celle de l'écran (A3) : l'ancienne, en toutes lettres,
+		// est refusée plutôt que lue à côté de la nouvelle.
+		['the date in words that the text used to carry', document('22 septembre 2026')],
+		['a day or a month without its zero', document('2.09.2026')],
+		['a month without its zero', document('22.9.2026')],
+		['a year in two digits', document('22.09.26')],
+		['the date as the database writes it', document('2026-09-22')],
+		['another separator', document('22/09/2026')],
+		['a day the month does not have', document('31.09.2026')],
+		['a month the year does not have', document('22.13.2026')],
+		['a day zero', document('00.09.2026')],
+		['a 29 February in a common year', document('29.02.2027')]
 	])('throws on %s, rather than invent a version', (_cas, markdown) => {
 		expect(() => versionIso(markdown)).toThrow(/illisible/);
 	});
 
-	it('reads the version of docs/CONDITIONS.md', () => {
+	it('reads the version of docs/CONDITIONS.md, whose date is written as on the screen', () => {
+		expect(dateDeLaVersion(CONDITIONS)).toMatch(/^\d\d\.\d\d\.20\d\d$/);
 		expect(versionIso(CONDITIONS)).toMatch(/^20\d\d-\d\d-\d\d$/);
 	});
 });
