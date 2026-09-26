@@ -166,6 +166,7 @@
 			id="name"
 			name="name"
 			type="text"
+			dir="auto"
 			maxlength="120"
 			required
 			aria-describedby="name-aide"

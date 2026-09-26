@@ -322,6 +322,9 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 			);
 			expect(visibleText(html)).not.toContain('Ouvrir une organisation');
 			expect(libelle(html, 'name')).toBe('Nom de l’organisation');
+			// Un nom s'écrit en lettres latines ou arabes : le champ prend le sens de ce qu'on y tape,
+			// et « Club 2000 ! » ne devient pas « ! Club 2000 » sur l'écran arabe.
+			expect(html.match(/<input\b[^>]*\bid="name"[^>]*>/)?.[0] ?? '').toMatch(/\bdir="auto"/);
 		});
 
 		it('labels the address « Adresse de la page publique », with its rule, an example and the full address', async () => {
