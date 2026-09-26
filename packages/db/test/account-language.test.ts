@@ -200,4 +200,28 @@ describe('la langue du compte', () => {
 		);
 		expect(read).toHaveProperty('language');
 	});
+
+	it('lets the login role name it when it creates an account, and never set it', async () => {
+		// Drizzle nomme toutes les colonnes d'une insertion, celle-ci comprise : le rôle de connexion
+		// a donc le droit de la nommer (migration 0060). Sa politique exige qu'elle reste vide, parce
+		// que c'est la personne qui choisit sa langue, jamais la création du compte.
+		const create = (language: SQL) => {
+			const id = newId();
+			return authHandle.db.execute(sql`
+				insert into "user" ("id", "email", "name", "email_verified", "image", "is_super_admin",
+					"language", "created_at", "updated_at")
+				values (${id}, ${`${id}@example.test`}, 'Sans nom', false, default, default,
+					${language}, now(), now())
+				returning "language"
+			`);
+		};
+		for (const empty of [sql`default`, sql`null`]) {
+			expect(allRows(await create(empty))).toEqual([{ language: null }]);
+		}
+		for (const language of ['fr', 'de', 'it', 'en', 'ar']) {
+			const message = await messageOfFailure(() => create(sql`${language}`));
+			expect(message, language).toContain('row-level security policy');
+			expect(message, language).toContain('"user"');
+		}
+	});
 });

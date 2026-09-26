@@ -30,8 +30,8 @@ function createAccount(id: string, email: string, superAdmin: 'default' | boolea
 	const flag = superAdmin === 'default' ? sql`default` : sql`${superAdmin}`;
 	return auth.execute(sql`
 		insert into "user" ("id", "email", "name", "email_verified", "image", "is_super_admin",
-			"created_at", "updated_at")
-		values (${id}, ${email}, 'Sans nom', false, default, ${flag}, now(), now())
+			"language", "created_at", "updated_at")
+		values (${id}, ${email}, 'Sans nom', false, default, ${flag}, default, now(), now())
 		returning "id", "email", "is_super_admin"
 	`);
 }
