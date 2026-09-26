@@ -37,6 +37,7 @@ import { prayersTexts } from '$lib/i18n/prayers.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { mustAdministerPrayerModule } from '$lib/server/guard.js';
 import {
+	DEFAULT_LIMIT,
 	findLocality,
 	findLocalityAt,
 	LOCALITIES_SOURCE,
@@ -222,10 +223,12 @@ export const load: PageServerLoad = async (event) => {
 			savedLocality: localite ? toChoice(localite) : null,
 			search:
 				lieu.trim() === '' ? null : { query: lieu, results: searchLocalities(lieu).map(toChoice) },
-			// La source de la liste, à citer près du choix dans la langue de l'écran (swisstopo l'exige).
+			// La source de la liste, à citer près du choix dans la langue de l'écran (swisstopo l'exige),
+			// et le nombre de localités qu'une recherche rend au plus.
 			localities: {
 				credit: LOCALITIES_SOURCE.credit,
-				version: LOCALITIES_SOURCE.version as IsoDate
+				version: LOCALITIES_SOURCE.version as IsoDate,
+				limit: DEFAULT_LIMIT
 			},
 			methodes: CALCULATION_METHODS,
 			ecoles: MADHABS,

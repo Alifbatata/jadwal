@@ -85,6 +85,10 @@
 		if (trouvees === null) return '';
 		if (recherche.trim().length < 2) return text.computed.tooShort;
 		if (trouvees.length === 0) return text.computed.noneFound;
+		// Une liste pleine en a peut-être laissé : elle montre les meilleures, elle ne les compte pas.
+		if (trouvees.length >= data.localities.limit) {
+			return text.computed.foundBest(trouvees.length);
+		}
 		return text.computed.found(trouvees.length);
 	});
 

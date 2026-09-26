@@ -65,6 +65,8 @@ interface PrayersTexts {
 		readonly searchButton: string;
 		readonly resultsLegend: string;
 		readonly found: (count: number) => string;
+		/** Une liste pleine : la recherche en a peut-être trouvé davantage, elle montre les meilleures. */
+		readonly foundBest: (count: number) => string;
 		readonly noneFound: string;
 		readonly tooShort: string;
 		/** Suivie du nom de la localité choisie. */
@@ -312,8 +314,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 				'Aucune heure de prière n’est réglée. Les cours qui suivent une prière s’affichent sans heure, par exemple « Après Maghrib ». Répondez à la question ci-dessous.',
 			manualPeriods: (count) =>
 				francais(count, {
-					one: `Vous avez saisi ${count} période à la main : les jours qu’elle couvre, elle passe avant.`,
-					other: `Vous avez saisi ${count} périodes à la main : les jours qu’elles couvrent, elles passent avant.`
+					one: `Vous avez saisi ${count} période à la main : les jours qu’elle couvre, ses heures passent avant celles du fichier et du calcul.`,
+					other: `Vous avez saisi ${count} périodes à la main : les jours qu’elles couvrent, leurs heures passent avant celles du fichier et du calcul.`
 				})
 		},
 		question: {
@@ -351,6 +353,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 					one: `${count} localité trouvée.`,
 					other: `${count} localités trouvées.`
 				}),
+			foundBest: (count) =>
+				`Voici les ${count} localités qui correspondent le mieux. Si la vôtre n’y est pas, précisez le nom ou tapez le NPA.`,
 			noneFound: 'Aucune localité ne correspond. Vérifiez l’orthographe, ou tapez le NPA.',
 			tooShort: 'Tapez au moins deux lettres ou deux chiffres.',
 			chosen: 'Localité choisie :',
@@ -369,7 +373,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 				'Les réglages proposés conviennent à la plupart des organisations. Ne les changez que si l’aperçu diffère des heures que vous annoncez déjà.',
 			methodLabel: 'Méthode de calcul',
 			methodHint:
-				'Elle fixe l’heure du Fajr et de l’Isha. En cas de doute, gardez « Ligue islamique mondiale » : c’est la méthode la plus répandue en Europe.',
+				'Elle fixe l’heure du Fajr et de l’Isha. En cas de doute, gardez « Ligue islamique mondiale » : c’est la méthode la plus répandue en Europe. « Autre » ne fixe aucun angle : le Fajr tomberait presque au lever du soleil et l’Isha presque au coucher.',
 			methods: {
 				MuslimWorldLeague: 'Ligue islamique mondiale',
 				Egyptian: 'Autorité générale égyptienne d’arpentage',
@@ -393,7 +397,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			},
 			ruleLabel: 'Règle pour les nuits courtes de l’été',
 			ruleHint:
-				'En juin, la nuit est si courte que l’Isha tombe tard et le Fajr très tôt. Le milieu de la nuit garde les heures astronomiques ; le dernier septième avance l’Isha et retarde le Fajr, pour des heures plus faciles à tenir.',
+				'En juin, la nuit est si courte que l’Isha tombe tard et le Fajr très tôt. Le milieu de la nuit garde les heures astronomiques ; le dernier septième avance l’Isha et retarde le Fajr, pour des heures plus faciles à tenir. « Proportionnelle à l’angle » donne des heures entre les deux, selon l’angle de la méthode choisie.',
 			rules: {
 				middleofthenight: 'Milieu de la nuit',
 				seventhofthenight: 'Dernier septième de la nuit',
@@ -626,8 +630,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 				'Es sind keine Gebetszeiten eingestellt. Kurse, die auf ein Gebet folgen, erscheinen ohne Uhrzeit, zum Beispiel «Nach Maghrib». Beantworten Sie die Frage unten.',
 			manualPeriods: (count) =>
 				deutsch(count, {
-					one: `Sie haben ${count} Zeitraum von Hand eingegeben: An den Tagen, die er abdeckt, hat er Vorrang.`,
-					other: `Sie haben ${count} Zeiträume von Hand eingegeben: An den Tagen, die sie abdecken, haben sie Vorrang.`
+					one: `Sie haben ${count} Zeitraum von Hand eingegeben: An den Tagen, die er abdeckt, gehen seine Zeiten der Datei und der Berechnung vor.`,
+					other: `Sie haben ${count} Zeiträume von Hand eingegeben: An den Tagen, die sie abdecken, gehen ihre Zeiten der Datei und der Berechnung vor.`
 				})
 		},
 		question: {
@@ -662,6 +666,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			resultsLegend: 'Wählen Sie Ihren Ort',
 			found: (count) =>
 				deutsch(count, { one: `${count} Ort gefunden.`, other: `${count} Orte gefunden.` }),
+			foundBest: (count) =>
+				`Hier sind die ${count} Orte, die am besten passen. Ist Ihrer nicht dabei, ergänzen Sie den Namen oder geben Sie die Postleitzahl ein.`,
 			noneFound:
 				'Kein Ort passt. Prüfen Sie die Schreibweise, oder geben Sie die Postleitzahl ein.',
 			tooShort: 'Geben Sie mindestens zwei Buchstaben oder zwei Ziffern ein.',
@@ -676,12 +682,12 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			latitude: 'Breitengrad',
 			longitude: 'Längengrad',
 			abroadExample: 'Beispiel: Breitengrad 48.8566 und Längengrad 2.3522 für Paris.',
-			advancedSummary: 'Berechnungsmethode, Rechtsschule und Anpassungen (freiwillig)',
+			advancedSummary: 'Berechnungsmethode, Rechtsschule und Anpassungen (optional)',
 			advancedHint:
 				'Die vorgeschlagenen Einstellungen passen für die meisten Organisationen. Ändern Sie sie nur, wenn die Vorschau von den Zeiten abweicht, die Sie bereits bekannt geben.',
 			methodLabel: 'Berechnungsmethode',
 			methodHint:
-				'Sie bestimmt die Zeit von Fadschr und Ischa. Behalten Sie im Zweifel «Islamische Weltliga»: Diese Methode ist in Europa am weitesten verbreitet.',
+				'Sie bestimmt die Zeit von Fadschr und Ischa. Behalten Sie im Zweifel «Islamische Weltliga»: Diese Methode ist in Europa am weitesten verbreitet. «Andere» legt keinen Winkel fest: Fadschr fiele dann fast auf den Sonnenaufgang und Ischa fast auf den Sonnenuntergang.',
 			methods: {
 				MuslimWorldLeague: 'Islamische Weltliga',
 				Egyptian: 'Ägyptische Vermessungsbehörde',
@@ -705,7 +711,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			},
 			ruleLabel: 'Regel für die kurzen Sommernächte',
 			ruleHint:
-				'Im Juni ist die Nacht so kurz, dass Ischa spät und Fadschr sehr früh fällt. Die Nachtmitte behält die astronomischen Zeiten; das letzte Siebtel legt Ischa früher und Fadschr später, damit die Zeiten leichter einzuhalten sind.',
+				'Im Juni ist die Nacht so kurz, dass Ischa spät und Fadschr sehr früh fällt. Die Nachtmitte behält die astronomischen Zeiten; das letzte Siebtel legt Ischa früher und Fadschr später, damit die Zeiten leichter einzuhalten sind. «Anteilig zum Winkel» ergibt Zeiten zwischen den beiden, je nach dem Winkel der gewählten Methode.',
 			rules: {
 				middleofthenight: 'Nachtmitte',
 				seventhofthenight: 'Letztes Siebtel der Nacht',
@@ -819,7 +825,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			manualTitle: 'Von Hand eingegeben',
 			manualIntro:
 				'Ein Zeitraum ist das, was Sie einige Wochen oder das ganze Jahr auf Ihrer Anzeigetafel zeigen: ein Name, Daten und für jedes Gebet die angezeigte Zeit und die Zeit der Iqama. Ein leeres Feld überlässt die Zeit der Datei oder der Berechnung.',
-			iqamaTitle: 'Die Iqama (freiwillig)',
+			iqamaTitle: 'Die Iqama (optional)',
 			iqamaIntro:
 				'Die Iqama ist die Zeit, zu der das Gebet im Saal ausgerufen wird. Wenn Sie eine haben, stellen Sie sie hier ein: Ein Kurs «nach Maghrib» richtet sich dann nach der Iqama. Ein Zeitraum ohne letzten Tag genügt, wenn sich im Jahr nichts ändert.',
 			noOverlap:
@@ -939,8 +945,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 				'Nessun orario di preghiera è impostato. I corsi che seguono una preghiera appaiono senza ora, per esempio «Dopo Maghrib». Rispondi alla domanda qui sotto.',
 			manualPeriods: (count) =>
 				italiano(count, {
-					one: `Hai inserito ${count} periodo a mano: nei giorni che copre, ha la precedenza.`,
-					other: `Hai inserito ${count} periodi a mano: nei giorni che coprono, hanno la precedenza.`
+					one: `Hai inserito ${count} periodo a mano: nei giorni che copre, i suoi orari hanno la precedenza sul file e sul calcolo.`,
+					other: `Hai inserito ${count} periodi a mano: nei giorni che coprono, i loro orari hanno la precedenza sul file e sul calcolo.`
 				})
 		},
 		question: {
@@ -978,6 +984,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 					one: `${count} località trovata.`,
 					other: `${count} località trovate.`
 				}),
+			foundBest: (count) =>
+				`Ecco le ${count} località che corrispondono meglio. Se la tua non c’è, precisa il nome o scrivi il NPA.`,
 			noneFound: 'Nessuna località corrisponde. Controlla l’ortografia, o scrivi il NPA.',
 			tooShort: 'Scrivi almeno due lettere o due cifre.',
 			chosen: 'Località scelta:',
@@ -996,7 +1004,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 				'Le impostazioni proposte vanno bene per la maggior parte delle organizzazioni. Cambiale solo se l’anteprima è diversa dagli orari che annunci già.',
 			methodLabel: 'Metodo di calcolo',
 			methodHint:
-				'Fissa l’ora di Fajr e di Isha. Nel dubbio, tieni «Lega musulmana mondiale»: è il metodo più diffuso in Europa.',
+				'Fissa l’ora di Fajr e di Isha. Nel dubbio, tieni «Lega musulmana mondiale»: è il metodo più diffuso in Europa. «Altro» non fissa nessun angolo: Fajr cadrebbe quasi al sorgere del sole e Isha quasi al tramonto.',
 			methods: {
 				MuslimWorldLeague: 'Lega musulmana mondiale',
 				Egyptian: 'Autorità generale egiziana di rilevamento',
@@ -1020,7 +1028,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			},
 			ruleLabel: 'Regola per le notti corte d’estate',
 			ruleHint:
-				'A giugno la notte è così corta che Isha cade tardi e Fajr molto presto. La metà della notte tiene gli orari astronomici; l’ultimo settimo anticipa Isha e posticipa Fajr, per orari più facili da rispettare.',
+				'A giugno la notte è così corta che Isha cade tardi e Fajr molto presto. La metà della notte tiene gli orari astronomici; l’ultimo settimo anticipa Isha e posticipa Fajr, per orari più facili da rispettare. «Proporzionale all’angolo» dà orari tra i due, secondo l’angolo del metodo scelto.',
 			rules: {
 				middleofthenight: 'Metà della notte',
 				seventhofthenight: 'Ultimo settimo della notte',
@@ -1256,8 +1264,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 				'No prayer times are set. Courses that follow a prayer are shown without a time, for example ‘After Maghrib’. Answer the question below.',
 			manualPeriods: (count) =>
 				english(count, {
-					one: `You have entered ${count} period by hand: on the days it covers, it comes first.`,
-					other: `You have entered ${count} periods by hand: on the days they cover, they come first.`
+					one: `You have entered ${count} period by hand: on the days it covers, its times come before those of the file and the calculation.`,
+					other: `You have entered ${count} periods by hand: on the days they cover, their times come before those of the file and the calculation.`
 				})
 		},
 		question: {
@@ -1286,12 +1294,14 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			saved: 'Saved town or village:',
 			searchLabel: 'Name or postcode of the town or village',
 			searchHint:
-				'For example Biel, Lugano or 2502. The official list of Swiss localities is inside the service: no other website is asked.',
+				'For example Biel, Lugano or 2502. The official list of Swiss localities is inside the service: no other website is contacted.',
 			latinLetters: null,
 			searchButton: 'Search',
 			resultsLegend: 'Choose your town or village',
 			found: (count) =>
 				english(count, { one: `${count} place found.`, other: `${count} places found.` }),
+			foundBest: (count) =>
+				`Here are the ${count} places that match best. If yours is not there, type more of the name, or the postcode.`,
 			noneFound: 'No town or village matches. Check the spelling, or type the postcode.',
 			tooShort: 'Type at least two letters or two digits.',
 			chosen: 'Chosen town or village:',
@@ -1310,7 +1320,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 				'The suggested settings suit most organisations. Only change them if the preview differs from the times you already announce.',
 			methodLabel: 'Calculation method',
 			methodHint:
-				'It sets the time of Fajr and Isha. If in doubt, keep ‘Muslim World League’: it is the most widely used method in Europe.',
+				'It sets the time of Fajr and Isha. If in doubt, keep ‘Muslim World League’: it is the most widely used method in Europe. ‘Other’ sets no angle: Fajr would fall almost at sunrise and Isha almost at sunset.',
 			methods: {
 				MuslimWorldLeague: 'Muslim World League',
 				Egyptian: 'Egyptian General Authority of Survey',
@@ -1334,7 +1344,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			},
 			ruleLabel: 'Rule for short summer nights',
 			ruleHint:
-				'In June the night is so short that Isha falls late and Fajr very early. The middle of the night keeps the astronomical times; the last seventh brings Isha forward and Fajr back, for times that are easier to keep.',
+				'In June the night is so short that Isha falls late and Fajr very early. The middle of the night keeps the astronomical times; the last seventh brings Isha forward and Fajr back, for times that are easier to keep. ‘In proportion to the angle’ gives times between the two, depending on the angle of the chosen method.',
 			rules: {
 				middleofthenight: 'Middle of the night',
 				seventhofthenight: 'Last seventh of the night',
@@ -1560,7 +1570,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			nothing:
 				'لم تُضبط أي مواقيت للصلاة. تظهر الدروس التي تأتي بعد صلاة بلا وقت، مثل «بعد المغرب». أجب عن السؤال أدناه.',
 			manualPeriods: (count) =>
-				`الفترات التي أدخلتها يدويًا: ${count}. في الأيام التي تغطيها، تكون لها الأولوية.`
+				`الفترات التي أدخلتها يدويًا: ${count}. في الأيام التي تغطيها، تسبق مواقيتها مواقيت الملف والحساب.`
 		},
 		question: {
 			legend: 'من أين تأتي مواقيت الصلاة لديك؟',
@@ -1588,12 +1598,14 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			saved: 'البلدة المحفوظة:',
 			searchLabel: 'اسم البلدة أو رمزها البريدي',
 			searchHint:
-				'مثلًا Biel أو Lugano أو 2502. القائمة الرسمية للبلدات السويسرية موجودة داخل الخدمة: لا يُسأل أي موقع آخر.',
+				'مثلًا Biel أو Lugano أو 2502. القائمة الرسمية للبلدات السويسرية موجودة داخل الخدمة: لا اتصال بأي موقع آخر.',
 			latinLetters:
 				'اكتب الرمز البريدي أو اسم البلدة بحروف لاتينية، فالقائمة لا تتضمن أسماء عربية.',
 			searchButton: 'بحث',
 			resultsLegend: 'اختر بلدتك',
 			found: (count) => `البلدات التي وُجدت: ${count}.`,
+			foundBest: (count) =>
+				`إليك البلدات الأكثر تطابقًا (${count}). إن لم تجد بلدتك بينها، فأكمل الاسم أو اكتب الرمز البريدي.`,
 			noneFound: 'لا توجد بلدة مطابقة. تحقّق من الإملاء، أو اكتب الرمز البريدي.',
 			tooShort: 'اكتب حرفين أو رقمين على الأقل.',
 			chosen: 'البلدة المختارة:',
@@ -1611,7 +1623,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 				'الإعدادات المقترحة تناسب معظم المؤسسات. لا تغيّرها إلا إذا اختلفت المعاينة عن المواقيت التي تعلنها.',
 			methodLabel: 'طريقة الحساب',
 			methodHint:
-				'تحدّد وقت الفجر والعشاء. إن كنت مترددًا، فاحتفظ بـ«رابطة العالم الإسلامي»: إنها الطريقة الأكثر انتشارًا في أوروبا.',
+				'تحدّد وقت الفجر والعشاء. إن كنت مترددًا، فاحتفظ بـ«رابطة العالم الإسلامي»: إنها الطريقة الأكثر انتشارًا في أوروبا. «أخرى» لا تضبط أي زاوية: فيقع الفجر تقريبًا عند شروق الشمس والعشاء تقريبًا عند غروبها.',
 			methods: {
 				MuslimWorldLeague: 'رابطة العالم الإسلامي',
 				Egyptian: 'الهيئة المصرية العامة للمساحة',
@@ -1635,7 +1647,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			},
 			ruleLabel: 'قاعدة ليالي الصيف القصيرة',
 			ruleHint:
-				'في يونيو يقصر الليل حتى يتأخر العشاء ويبكر الفجر كثيرًا. منتصف الليل يُبقي المواقيت الفلكية كما هي، والسُّبع الأخير يقدّم العشاء ويؤخر الفجر، لمواقيت يسهل الالتزام بها.',
+				'في يونيو يقصر الليل حتى يتأخر العشاء ويبكر الفجر كثيرًا. منتصف الليل يُبقي المواقيت الفلكية كما هي، والسُّبع الأخير يقدّم العشاء ويؤخر الفجر، لمواقيت يسهل الالتزام بها. «بنسبة الزاوية» تعطي مواقيت بين الاثنتين، حسب زاوية الطريقة المختارة.',
 			rules: {
 				middleofthenight: 'منتصف الليل',
 				seventhofthenight: 'السُّبع الأخير من الليل',
@@ -1716,7 +1728,12 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			previewFromToday: 'معاينة: الأيام السبعة القادمة في الملف',
 			previewFirst: 'معاينة: الأيام السبعة الأولى في الملف',
 			nothingSaved: 'لم يُحفظ شيء بعد. الحفظ يستبدل الأيام التي يغطيها هذا الملف، ولا يمس غيرها.',
-			saveDays: (count) => `حفظ هذه الأيام (${count})`,
+			saveDays: (count) =>
+				arabic(count, {
+					one: 'حفظ هذا اليوم',
+					two: 'حفظ هذين اليومين',
+					other: `حفظ هذه الأيام (${count})`
+				}),
 			removeTitle: 'إزالة أيام مستوردة',
 			removeHint:
 				'الأيام المُزالة تعود إلى الحساب، إن كانت هناك بلدة مختارة. ويحتفظ سجل التعديلات بأثر ذلك.',

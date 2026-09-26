@@ -984,3 +984,117 @@ describe('les replis (retour B1)', () => {
 		}
 	});
 });
+
+describe('les formulations relevées par la relecture du lot 3', () => {
+	/** Un fichier de `jours` jours à venir, envoyé et lu : la page qui montre ce qu'on en a compris. */
+	async function lireJours(jours: number): Promise<string> {
+		const lignesDuFichier = ['date;fajr;dhuhr;asr;maghrib;isha'];
+		for (let pas = 0; pas < jours; pas += 1) {
+			lignesDuFichier.push(`${addDays(aujourdhui(), pas)};05:11;13:11;17:11;19:11;21:11`);
+		}
+		const reponse = await postFichier(
+			'/prieres?source=import&/lireFichier',
+			'jours.csv',
+			lignesDuFichier.join('\n')
+		);
+		return visibleText(await reponse.text());
+	}
+
+	it('names one day and two days in the Arabic button, and not « (1) »', async () => {
+		await poserLangueDuCompte(RESPONSABLE, 'ar');
+		expect(await lireJours(1)).toContain('حفظ هذا اليوم');
+		expect(await lireJours(2)).toContain('حفظ هذين اليومين');
+		const trois = await lireJours(3);
+		expect(trois).toContain('حفظ هذه الأيام (3)');
+		expect(trois).not.toContain('(1)');
+	});
+
+	/** Ce que « Autre » donne, dit près du choix de la méthode. */
+	const AUTRE: Record<Langue, string> = {
+		fr: '« Autre » ne fixe aucun angle : le Fajr tomberait presque au lever du soleil et l’Isha presque au coucher.',
+		de: '«Andere» legt keinen Winkel fest: Fadschr fiele dann fast auf den Sonnenaufgang und Ischa fast auf den Sonnenuntergang.',
+		it: '«Altro» non fissa nessun angolo: Fajr cadrebbe quasi al sorgere del sole e Isha quasi al tramonto.',
+		en: '‘Other’ sets no angle: Fajr would fall almost at sunrise and Isha almost at sunset.',
+		ar: '«أخرى» لا تضبط أي زاوية: فيقع الفجر تقريبًا عند شروق الشمس والعشاء تقريبًا عند غروبها.'
+	};
+	/** Ce que fait la troisième règle des nuits courtes, dit avec les deux autres. */
+	const PROPORTIONNELLE: Record<Langue, string> = {
+		fr: '« Proportionnelle à l’angle » donne des heures entre les deux, selon l’angle de la méthode choisie.',
+		de: '«Anteilig zum Winkel» ergibt Zeiten zwischen den beiden, je nach dem Winkel der gewählten Methode.',
+		it: '«Proporzionale all’angolo» dà orari tra i due, secondo l’angolo del metodo scelto.',
+		en: '‘In proportion to the angle’ gives times between the two, depending on the angle of the chosen method.',
+		ar: '«بنسبة الزاوية» تعطي مواقيت بين الاثنتين، حسب زاوية الطريقة المختارة.'
+	};
+
+	it.each(LANGUES)(
+		'explains the method « Other » and the rule in proportion to the angle, in %s',
+		async (langue) => {
+			await poserLangueDuCompte(RESPONSABLE, langue);
+			const lu = visibleText(await (await get('/prieres?source=computed')).text());
+			expect(lu).toContain(AUTRE[langue]);
+			expect(lu).toContain(PROPORTIONNELLE[langue]);
+		}
+	);
+
+	/** L'état, quand une période saisie à la main donne des heures : avant quoi elle passe. */
+	const PERIODE_AVANT: Record<Langue, string> = {
+		fr: 'Vous avez saisi 1 période à la main : les jours qu’elle couvre, ses heures passent avant celles du fichier et du calcul.',
+		de: 'Sie haben 1 Zeitraum von Hand eingegeben: An den Tagen, die er abdeckt, gehen seine Zeiten der Datei und der Berechnung vor.',
+		it: 'Hai inserito 1 periodo a mano: nei giorni che copre, i suoi orari hanno la precedenza sul file e sul calcolo.',
+		en: 'You have entered 1 period by hand: on the days it covers, its times come before those of the file and the calculation.',
+		ar: 'الفترات التي أدخلتها يدويًا: 1. في الأيام التي تغطيها، تسبق مواقيتها مواقيت الملف والحساب.'
+	};
+
+	it('says before what a period entered by hand comes, in each language', async () => {
+		const id = newId();
+		const debut = addDays(aujourdhui(), 6000);
+		await maintenance((tx) =>
+			tx.execute(sql`
+				insert into "prayer_period" ("id", "organization_id", "name", "from_date", "to_date",
+					"maghrib")
+				values (${id}, ${organizationId}, 'Panneau', ${debut}::date, ${addDays(debut, 10)}::date,
+					'19:00'::time)
+			`)
+		);
+		try {
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const lu = visibleText(await (await get('/prieres')).text());
+				expect(lu, langue).toContain(PERIODE_AVANT[langue]);
+			}
+		} finally {
+			await maintenance((tx) => tx.execute(sql`delete from "prayer_period" where "id" = ${id}`));
+		}
+	});
+
+	it('says that no other website is contacted, in English and in Arabic', async () => {
+		await poserLangueDuCompte(RESPONSABLE, 'en');
+		const anglais = visibleText(await (await get('/prieres?source=computed')).text());
+		expect(anglais).toContain('no other website is contacted.');
+		expect(anglais).not.toContain('is asked');
+		await poserLangueDuCompte(RESPONSABLE, 'ar');
+		const arabe = visibleText(await (await get('/prieres?source=computed')).text());
+		expect(arabe).toContain('موجودة داخل الخدمة: لا اتصال بأي موقع آخر.');
+		expect(arabe).not.toContain('لا يُسأل');
+	});
+
+	it('writes « optional » in German, and not « freiwillig »', async () => {
+		await poserLangueDuCompte(RESPONSABLE, 'de');
+		const lu = visibleText(await (await get('/prieres?source=computed')).text());
+		expect(lu).toContain('Berechnungsmethode, Rechtsschule und Anpassungen (optional)');
+		expect(lu).toContain('Die Iqama (optional)');
+		expect(lu).not.toContain('freiwillig');
+	});
+
+	it('says that a list cut at ten holds the ten that match best, and not that ten were found', async () => {
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		const lugano = visibleText(await (await get('/prieres?source=computed&lieu=Lugano')).text());
+		expect(lugano).toContain(
+			'Voici les 10 localités qui correspondent le mieux. Si la vôtre n’y est pas, précisez le nom ou tapez le NPA.'
+		);
+		expect(lugano).not.toContain('10 localités trouvées.');
+		// Une liste plus courte que la borne dit encore combien elle en a trouvé.
+		const bienne = visibleText(await (await get('/prieres?source=computed&lieu=2502')).text());
+		expect(bienne).toContain('1 localité trouvée.');
+	});
+});

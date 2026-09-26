@@ -100,7 +100,12 @@ const CANTONS = new Set(
 /** Un canton qui termine un nom officiel pour le distinguer (« Carouge GE », « Laax GR 2 »). */
 const CANTON_SUFFIX = new RegExp(`\\s+(?:${[...CANTONS].join('|')})(?:\\s+\\d+)?$`);
 
-const DEFAULT_LIMIT = 10;
+/**
+ * Ce qu'une recherche rend sans autre borne. Une liste qui en compte autant en a peut-être laissé :
+ * l'écran dit alors qu'il montre les localités qui correspondent le mieux, et non combien il en a
+ * trouvé.
+ */
+export const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 50;
 const MIN_LENGTH = 2;
 
