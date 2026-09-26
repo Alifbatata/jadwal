@@ -108,11 +108,37 @@ la date de réponse, dont la purge compte ses quatre-vingt-dix jours, ne bouge p
 personne responsable écrit, lit ou annule les invitations de son organisation : un éditeur qui
 s'écrirait une invitation de responsable est refusé dès l'insertion (barrière 4 bis, ADR 0017).
 
+Depuis l'étape 18, les courriels parlent cinq langues, et le choix de la langue ne consulte pas
+davantage les comptes. Le lien de connexion part dans la langue de l'écran d'où il est demandé ;
+l'invitation, dans celle de la personne qui invite, pour toute adresse. Lire la langue du compte
+destinataire, ce serait chercher un compte par son adresse : un test vérifie qu'une invitation vers
+un compte réglé en arabe est la même, objet, texte et HTML, que vers une adresse inconnue
+(ADR 0017, ADR 0047). **Le lien ne porte rien de plus qu'avant** : son adresse de retour est fixe
+(`/organisations`), et aucune langue n'y figure.
+
 **9. Le navigateur est bridé.** Politique de sécurité du contenu avec nonce, `frame-ancestors` calculé
 par route, pas de cadre par défaut, protection contre la soumission d'un formulaire depuis un autre
 site, cookie signé `HttpOnly` `SameSite=Lax`. Le transport strict (HSTS) demande deux ans,
 sous-domaines compris, sans `preload`. L'application dit la même valeur que le bloc de site du
 serveur web, et un test compare les deux.
+
+**Deux cookies de langue, et rien de personnel dedans.** Depuis l'étape 18, l'espace retient la
+langue choisie (ADR 0047). `jadwal_language` ne porte que le code de la langue, `fr` à `ar` ;
+`jadwal_language_pending` porte `1`, et dit qu'un choix fait avant la connexion attend d'être donné
+au compte. Les deux sont `HttpOnly`, `SameSite=Lax`, `Secure` dès que le service est servi en
+HTTPS, valables un an, et ne sont posés que par un choix fait dans le formulaire, jamais au premier
+passage. Le formulaire (`POST /langue`) ne renvoie jamais vers un autre site : le chemin de retour
+est vérifié avant et après sa normalisation, parce que `/.//ailleurs` devient `//ailleurs`, qu'un
+navigateur lit comme une autre origine. Un envoi depuis un autre site est refusé par SvelteKit.
+Chaque réponse de l'espace porte `Vary: Accept-Language, Cookie`. Le côté public ne lit aucun de
+ces cookies.
+
+**L'appareil, lu pour deux pages publiques.** La page d'abonnement au calendrier et la page d'un
+cours lisent `Sec-CH-UA-Platform`, sinon `User-Agent`, pour proposer d'abord le bouton d'agenda qui
+convient, et leur réponse porte `Vary: Sec-CH-UA-Platform, User-Agent` (ADR 0048). L'application
+n'écrit l'appareil nulle part. Ces deux pages portent des liens vers Google Agenda et Outlook, qui
+s'ouvrent dans un nouvel onglet avec `rel="noopener"` ; un test refuse tout autre domaine dans un
+lien, et toute ressource chargée d'un autre domaine.
 
 **9 bis. Le widget est confiné, et ne reçoit qu'un nombre.** Depuis l'étape 6, le widget d'une
 organisation ne redessine rien : il pose un cadre vers la page publique (ADR 0005 révisé). Le rendu
@@ -212,6 +238,11 @@ ou pointe ses adresses vers un faux service. C'est une garde contre l'oubli et l
 - **Une invitation ouvre la fiche de l'organisation à son destinataire**, entière, avant même qu'il
   accepte : une politique porte sur des lignes, pas sur des colonnes. Rien de cette ligne n'est une
   donnée personnelle, et le nom sera public dès l'étape 5 (ADR 0017).
+- **Un visiteur qui suit le lien de Google Agenda ou d'Outlook** donne à ce service l'adresse du
+  flux, qui est publique. Ce que ce service apprend ensuite de lui ne relève plus de jadwal.
+- **Un cache partagé qui ignorerait `Vary`** pourrait servir à un visiteur l'écran préparé pour une
+  autre langue ou un autre appareil. Le modèle de `infra/` n'en place aucun devant le service ; une
+  instance qui en ajoute un doit respecter `Vary`.
 - **L'existence d'un compte reste devinable hors du service** : si une personne est publiquement
   responsable d'une organisation, savoir qu'elle a un compte n'apprend rien. Nous protégeons ce que
   le service révèle, pas ce que le monde sait déjà.
@@ -224,7 +255,13 @@ Les tests de `packages/db` jouent l'isolation contre un vrai PostgreSQL avec le 
 et échouent si une table ajoutée plus tard perd sa protection. `test/org-admin.test.ts` y fait
 tenter chaque geste réservé aux responsables par une éditrice, avec le contexte que l'écran pose,
 puis par une personne responsable et par le super-admin. Ceux d'`apps/web` lancent un vrai serveur
-et suivent le chemin complet d'une connexion. Aucun n'est simulé.
+et suivent le chemin complet d'une connexion. Aucun n'est simulé. Depuis l'étape 18,
+`tests/choix-de-la-langue.test.ts` y vérifie un choix fait avant la connexion, `Vary` et le retour
+du choix de la langue par HTTP, et `src/lib/i18n/language.test.ts` essaie ce retour sous plus de
+deux mille formes de points et de barres ; `tests/espace-en-cinq-langues.test.ts` vérifie les deux
+cookies, et compare l'invitation vers un compte connu et vers une adresse inconnue ; `tests/public.test.ts` lit les pages publiques comme un
+Android, un iPhone et un ordinateur, et refuse tout lien vers un autre domaine que les deux services
+d'agenda.
 
 `pnpm parcours:test` rejoue ce qu'une organisation vit, dans Chrome, sur l'image de production et
 une base neuve lancées par Docker : la passkey du super-admin, l'invitation, les conditions à
