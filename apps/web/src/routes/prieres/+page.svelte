@@ -1144,11 +1144,16 @@
 		padding: 0.5rem 0.75rem;
 		margin-block: 0.5rem;
 	}
+	/* Le résumé d'un repli garde le triangle des `<details>`, qui dit qu'on peut l'ouvrir : il faut
+	   pour cela qu'il reste en `list-item` (en `flex`, le navigateur le retirait). Ce triangle s'ouvre
+	   sans JavaScript et se tourne de lui-même vers la gauche en arabe. Les 44 px de hauteur viennent
+	   du remplissage : 24 px de ligne et deux fois 10. */
 	.repli summary {
 		cursor: pointer;
+		display: list-item;
+		box-sizing: border-box;
 		min-height: 44px;
-		display: flex;
-		align-items: center;
+		padding-block: 0.625rem;
 		font-weight: 600;
 	}
 	.resultats {

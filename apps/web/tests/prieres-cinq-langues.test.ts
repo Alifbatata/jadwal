@@ -946,3 +946,39 @@ describe('l’aperçu d’une période préparée à l’avance (retour B1)', ()
 	// jours avec cette période » : c'est la vue « l’aperçu d’une période » plus haut (premier jour
 	// dans deux jours), que le test « shows, under each answer, the preview… (C1) » lit.
 });
+
+describe('les replis (retour B1)', () => {
+	it('shows that each fold opens: its summary keeps the marker of a details element', async () => {
+		// « Hors de Suisse », « Méthode de calcul… », « Le format en détail »… : `display: flex` sur
+		// le résumé retirait le triangle des `<details>`, et ils ressemblaient à des boîtes de texte.
+		// Un résumé en `list-item` garde le triangle du navigateur, qui s'ouvre sans JavaScript et se
+		// tourne de lui-même vers la gauche quand la page se lit de droite à gauche.
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		const html = await (await get('/prieres?source=computed')).text();
+		let css = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)]
+			.map((trouve) => trouve[1] ?? '')
+			.join('\n');
+		for (const lien of html.matchAll(/<link\b[^>]*\brel="stylesheet"[^>]*>/g)) {
+			const adresse = lien[0].match(/\shref="([^"]+)"/)?.[1];
+			if (adresse) css += await (await fetch(new URL(adresse, `${origin}/prieres`))).text();
+		}
+		const regles = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+			.map((trouve) => ({ selecteur: (trouve[1] ?? '').trim(), declarations: trouve[2] ?? '' }))
+			.filter(
+				({ selecteur }) =>
+					/\.repli\b/.test(selecteur) &&
+					/summary(?![\w-])/.test(selecteur) &&
+					!selecteur.includes('::')
+			);
+		expect(regles.length, 'aucune règle pour le résumé des replis').toBeGreaterThan(0);
+		for (const { selecteur, declarations } of regles) {
+			const display = declarations.match(/(?:^|;)\s*display\s*:\s*([^;]+)/)?.[1]?.trim();
+			expect(display ?? 'list-item', selecteur).toBe('list-item');
+			expect(declarations, selecteur).not.toMatch(/list-style(?:-type)?\s*:\s*none/);
+		}
+		// Ce sont bien des `<details>` : ils s'ouvrent et se ferment sans aucun script.
+		for (const resume of [HORS_DE_SUISSE.fr, 'Méthode de calcul, école et ajustements']) {
+			expect(replie(html, resume), resume).toMatch(/^<details\b/);
+		}
+	});
+});
