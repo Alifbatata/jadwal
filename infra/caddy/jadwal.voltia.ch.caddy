@@ -123,21 +123,32 @@ jadwal.voltia.ch {
 		# `apps/web/src/lib/server/hsts.test.ts` vérifie que les deux sont identiques.
 		Strict-Transport-Security "max-age=63072000; includeSubDomains"
 		# `Server` et `Via` ne disent rien au visiteur, seulement quel logiciel sert le site : rien
-		# n'oblige à le publier.
+		# n'oblige à le publier. Caddy pose `Server: Caddy` au début de chaque réponse. Ce que
+		# `reverse_proxy` en fait, et s'il ajoute `Via`, dépend de la version de Caddy (code lu aux
+		# versions 2.8.0, 2.9.0, 2.10.0 et 2.11.4, la dernière publiée à l'étape 18 ; essayé en
+		# 2.8.0, 2.9.1, 2.10.0 et 2.11.4) :
 		#
-		# Caddy pose `Server: Caddy` au début de chaque réponse, et `reverse_proxy` le retire déjà de
-		# ce qu'il relaie. `-Server` retire donc celui qu'enverrait l'application. Elle n'en envoie
-		# pas aujourd'hui ; la fausse application de `pnpm caddy:test`, un Caddy, en envoie un, et
-		# l'épreuve vérifie qu'il ne passe pas.
+		#   - en 2.8 et 2.9, `reverse_proxy` laisse `Server: Caddy` sur ce qu'il relaie et n'ajoute
+		#     pas `Via`. C'est `-Server` qui enlève `Server: Caddy` ; `-Via` n'enlève que le `Via`
+		#     qu'enverrait l'application ;
+		#   - depuis 2.10.0, `reverse_proxy` retire lui-même `Server: Caddy` de ce qu'il relaie, et
+		#     ajoute à la place `Via: 1.1 Caddy` à chaque réponse de l'application, `304` compris.
+		#     C'est `-Via` qui l'enlève, et `-Server` n'enlève plus que celui qu'enverrait
+		#     l'application.
 		#
-		# `reverse_proxy` ajoute `Via: 1.1 Caddy` à chaque réponse de l'application, `304` compris.
+		# L'application n'envoie aujourd'hui ni l'un ni l'autre. La fausse application de
+		# `pnpm caddy:test`, un Caddy, envoie `Server`, et l'épreuve vérifie qu'il ne passe pas. Le
+		# rôle accepte Caddy 2.8.0 ou plus : les deux lignes restent. Sans `-Server`, un Caddy 2.8
+		# ou 2.9 publie `Server: Caddy` ; sans `-Via`, un Caddy 2.10 ou plus publie `Via: 1.1 Caddy`.
+		#
 		# `Via` se retire ici, et pas par `header_down -Via` dans `reverse_proxy`. `header_down`
 		# modifie les en-têtes reçus de l'application, avant que Caddy les recopie ; `Via`, Caddy
-		# l'écrit directement sur la réponse qu'il envoie, où `header_down` ne le voit pas. Essayé en
-		# 2.11.4 : avec `header_down -Via`, la réponse porte toujours `Via`. Le `502` de Caddy n'en
-		# porte pas, et `-Via` n'y est pour rien : sans réponse de l'application, `reverse_proxy`
-		# n'en ajoute pas. `pnpm caddy:test` vérifie qu'aucune réponse ne porte `Via`, ce `502`
-		# compris.
+		# 2.10 ou plus l'écrit directement sur la réponse qu'il envoie, où `header_down` ne le voit
+		# pas. Essayé en 2.11.4 : avec `header_down -Via`, la réponse porte toujours `Via`. Le `502`
+		# de Caddy n'en porte pas, et `-Via` n'y est pour rien : sans réponse de l'application,
+		# `reverse_proxy` n'en ajoute pas. `pnpm caddy:test` vérifie qu'aucune réponse ne porte
+		# `Via`, ce `502` compris. En 2.8 et 2.9, rien ne pose `Via` : cette vérification passe
+		# alors avec ou sans `-Via`.
 		-Server
 		-Via
 	}
