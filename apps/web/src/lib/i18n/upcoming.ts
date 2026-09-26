@@ -82,11 +82,20 @@ interface UpcomingTexts {
 	readonly done: { readonly [D in UpcomingDone]: string };
 	/** Sous ce titre, ce qu'est le message et dans quelles langues il est écrit (retour D1). */
 	readonly messageHelp: string;
-	/** Le nom de chaque zone de texte du message, pour les lecteurs d'écran (`aria-label`). */
+	/**
+	 * Le nom de chaque zone de texte du message, pour les lecteurs d'écran (`aria-label`). Il est
+	 * suivi de `inLanguage` : « Message à copier en allemand ».
+	 */
 	readonly messageLabel: string;
 	readonly weekTitle: string;
 	readonly weekHelp: string;
+	/** Le nom de chaque zone de texte du programme de la semaine, suivi lui aussi de `inLanguage`. */
 	readonly weekLabel: string;
+	/**
+	 * La langue d'une zone de texte, dans la langue de l'écran : « en allemand ». Elle suit son nom, et
+	 * cinq zones ouvertes ne s'annoncent plus toutes pareilles.
+	 */
+	readonly inLanguage: (language: string) => string;
 	readonly audience: {
 		readonly title: string;
 		readonly where: string;
@@ -161,6 +170,7 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		weekHelp:
 			'Le programme des sept prochains jours, prêt à copier dans WhatsApp. Il est écrit dans chaque langue de votre page publique, la langue par défaut d’abord : ouvrez une langue, puis copiez son texte.',
 		weekLabel: 'Programme de la semaine',
+		inLanguage: (language) => `en ${language}`,
 		audience: {
 			title: 'Combien votre programme a été vu',
 			where: 'Où',
@@ -244,6 +254,7 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		weekHelp:
 			'Das Programm der nächsten sieben Tage, bereit zum Kopieren in WhatsApp. Es steht in jeder Sprache Ihrer öffentlichen Seite bereit, die Standardsprache zuerst: Öffnen Sie eine Sprache und kopieren Sie deren Text.',
 		weekLabel: 'Programm der Woche',
+		inLanguage: (language) => `auf ${language}`,
 		audience: {
 			title: 'Wie oft wurde Ihr Programm angesehen?',
 			where: 'Wo',
@@ -327,6 +338,7 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		weekHelp:
 			'Il programma dei prossimi sette giorni, pronto da copiare su WhatsApp. È scritto in ogni lingua della tua pagina pubblica, prima la lingua predefinita: apri una lingua, poi copia il suo testo.',
 		weekLabel: 'Programma della settimana',
+		inLanguage: (language) => `in ${language}`,
 		audience: {
 			title: 'Quante volte è stato visto il tuo programma',
 			where: 'Dove',
@@ -409,6 +421,7 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		weekHelp:
 			'The programme for the next seven days, ready to copy into WhatsApp. It is written in each language of your public page, the default language first: open a language, then copy its text.',
 		weekLabel: 'Programme for the week',
+		inLanguage: (language) => `in ${language}`,
 		audience: {
 			title: 'How often your programme was seen',
 			where: 'Where',
@@ -495,6 +508,7 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		weekHelp:
 			'برنامجك للأيام السبعة القادمة، لتنسخه في WhatsApp. هو مكتوب بكل لغة من لغات صفحتك العامة، واللغة الافتراضية أولًا: افتح لغة، ثم انسخ نصها.',
 		weekLabel: 'برنامجك لهذا الأسبوع',
+		inLanguage: (language) => `ب${language}`,
 		audience: {
 			title: 'كم مرة شوهد برنامجك',
 			where: 'أين',

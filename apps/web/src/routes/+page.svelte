@@ -5,6 +5,7 @@
 	import { direction, NOM_DE_LANGUE, type Langue } from '$lib/i18n.js';
 	import { commonTexts } from '$lib/i18n/common.js';
 	import { upcomingTexts } from '$lib/i18n/upcoming.js';
+	import { languesEnClair } from '$lib/public/affichage.js';
 
 	let { data, form } = $props();
 
@@ -50,21 +51,32 @@
 
 <!-- Les messages prêts à coller, une langue par bloc, la première ouverte (retour D1). Chaque bloc
      porte la langue et le sens de son texte : un message arabe se lit de droite à gauche dans un écran
-     français, et un message français de gauche à droite dans un écran arabe. -->
+     français, et un message français de gauche à droite dans un écran arabe.
+     Le nom de chaque zone dit sa langue, dans celle de l'écran : « Message à copier en allemand ».
+     La zone se désigne d'abord elle-même, ce qui lit son `aria-label` à cette place, puis l'élément
+     caché qui dit la langue. Cet élément ne porte pas de `lang` : il parle la langue de l'écran, et
+     le message garde la sienne. -->
 {#snippet messagesInLanguages(
 	messages: readonly { language: Langue; text: string }[],
 	label: string,
+	idPrefix: string,
 	rows: number
 )}
 	{#each messages as message, index (message.language)}
+		{@const id = `${idPrefix}-${message.language}`}
 		<details class="langue-du-message" open={index === 0}>
 			<summary lang={message.language}>{NOM_DE_LANGUE[message.language]}</summary>
 			<textarea
+				{id}
 				readonly
 				{rows}
 				aria-label={label}
+				aria-labelledby={`${id} ${id}-langue`}
 				lang={message.language}
 				dir={direction(message.language)}>{message.text}</textarea
+			>
+			<span id={`${id}-langue`} hidden
+				>{text.inLanguage(languesEnClair(language, [message.language]))}</span
 			>
 		</details>
 	{/each}
@@ -87,7 +99,7 @@
 		<h2 id="message-titre">{text.done[form.done]}</h2>
 		{#if form.messages}
 			<p class="aide">{text.messageHelp}</p>
-			{@render messagesInLanguages(form.messages, text.messageLabel, 5)}
+			{@render messagesInLanguages(form.messages, text.messageLabel, 'message', 5)}
 		{/if}
 	</section>
 {/if}
@@ -268,7 +280,7 @@
 <section class="message" aria-labelledby="semaine-titre">
 	<h2 id="semaine-titre">{text.weekTitle}</h2>
 	<p class="aide">{text.weekHelp}</p>
-	{@render messagesInLanguages(data.weekMessages, text.weekLabel, 8)}
+	{@render messagesInLanguages(data.weekMessages, text.weekLabel, 'semaine', 8)}
 </section>
 
 <style>

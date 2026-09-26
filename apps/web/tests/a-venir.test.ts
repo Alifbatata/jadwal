@@ -11,7 +11,7 @@
 //   identifiant mal formé ou à un cours inconnu.
 // - D1 : les messages prêts à coller s'écrivent dans chacune des langues que l'organisation publie,
 //   la langue source d'abord : la langue par défaut pour le programme de la semaine, celle du cours
-//   pour une annulation ou un déplacement.
+//   pour une annulation ou un déplacement. Le nom de chaque zone de texte dit sa langue.
 // - D2, A3, B1 : l'écran dans les cinq langues, sans phrase française restée, sans date AAAA-MM-JJ
 //   dans le texte lu, et un champ de date qui dit ce qu'il accepte.
 
@@ -260,6 +260,28 @@ function alerte(fragment: string): string {
 	return texte(fragment.match(/<[a-z]+\b[^>]*role="alert"[^>]*>([\s\S]*?)<\/[a-z]+>/)?.[1] ?? '');
 }
 
+/**
+ * Le nom qu'un lecteur d'écran annonce pour une zone de texte : les éléments que désigne son
+ * `aria-labelledby`, dans l'ordre, la zone elle-même valant son `aria-label` ; sans lui, son
+ * `aria-label`. Chaque élément désigné est rendu avec sa balise, pour lire sa langue.
+ */
+function nomAccessible(
+	fragment: string,
+	balise: string
+): { nom: string; designes: { balise: string; texte: string }[] } {
+	const champs = attributs(balise);
+	const ids = (champs['aria-labelledby'] ?? '').split(/\s+/).filter(Boolean);
+	if (ids.length === 0) return { nom: champs['aria-label'] ?? '', designes: [] };
+	const designes = ids.map((id) => {
+		if (id === champs['id']) return { balise, texte: champs['aria-label'] ?? '' };
+		const trouve = fragment.match(
+			new RegExp(`(<([a-z]+)\\b[^>]*\\bid="${id}"[^>]*>)([\\s\\S]*?)</\\2>`)
+		);
+		return { balise: trouve?.[1] ?? '', texte: texte(trouve?.[3] ?? '') };
+	});
+	return { nom: designes.map((designe) => designe.texte).join(' '), designes };
+}
+
 /** Une section de la page, par l'identifiant de son titre. */
 function section(html: string, titre: string): string {
 	return (
@@ -271,9 +293,13 @@ function section(html: string, titre: string): string {
 
 interface Message {
 	ouvert: boolean;
+	/** La balise ouvrante du bloc de la langue. */
+	bloc: string;
 	langue: string | undefined;
 	sens: string | undefined;
 	libelle: string | undefined;
+	/** Le nom accessible de la zone de texte, et les éléments qui le composent. */
+	nom: ReturnType<typeof nomAccessible>;
 	texte: string;
 }
 
@@ -286,9 +312,11 @@ function messages(fragment: string): Message[] {
 			const champs = attributs(zone?.[1] ?? '');
 			return {
 				ouvert: bloc.ouvert,
+				bloc: bloc.balise,
 				langue: champs['lang'],
 				sens: champs['dir'],
 				libelle: champs['aria-label'],
+				nom: nomAccessible(bloc.contenu, zone?.[1] ?? ''),
 				texte: decode(zone?.[2] ?? '')
 			};
 		});
@@ -805,9 +833,61 @@ describe('D1 : les messages prêts à coller, dans les langues publiées', () =>
 		expect(de).toMatch(new RegExp(`Der Kurs «${SOIR.de}» vom \\p{L}+, ${date}, fällt aus\\.`, 'u'));
 		expect(ar).toContain(`«${SOIR.ar}»`);
 		expect(ar).toContain(date);
-		// Le libellé que lit un lecteur d'écran est dans la langue de l'écran, ici l'allemand.
-		expect(annonce[0]?.libelle).toBe('Nachricht zum Kopieren');
+		// Le nom que lit un lecteur d'écran est dans la langue de l'écran, ici l'allemand, et il dit
+		// la langue de chaque message.
+		expect(annonce.map((message) => message.nom.nom)).toEqual([
+			'Nachricht zum Kopieren auf Französisch',
+			'Nachricht zum Kopieren auf Deutsch',
+			'Nachricht zum Kopieren auf Italienisch',
+			'Nachricht zum Kopieren auf Englisch',
+			'Nachricht zum Kopieren auf Arabisch'
+		]);
 		await postForm('/?/retablir', { courseId: soir, date: jour(1) }, cookie);
+	});
+
+	it('names each message box after its language, in the language of the screen', async () => {
+		const cookie = await signIn(RESPONSABLE);
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		const semaine = messages(section(await (await get('/', cookie)).text(), 'semaine-titre'));
+		// Cinq noms différents : un lecteur d'écran ne dit plus cinq fois la même chose.
+		expect(semaine.map((message) => message.nom.nom)).toEqual([
+			'Programme de la semaine en français',
+			'Programme de la semaine en allemand',
+			'Programme de la semaine en italien',
+			'Programme de la semaine en anglais',
+			'Programme de la semaine en arabe'
+		]);
+		// Chaque message garde sa langue et son sens.
+		expect(semaine.map((message) => [message.langue, message.sens])).toEqual(
+			LANGUES.map((langue) => [langue, SENS[langue]])
+		);
+		for (const message of semaine) {
+			// La langue du message est dite par un élément qui n'est pas dans sa langue à lui : ni
+			// l'élément, ni son bloc ne portent de `lang`, il parle donc la langue de l'écran.
+			const autres = message.nom.designes.filter(
+				(designe) => !designe.balise.startsWith('<textarea')
+			);
+			expect(autres.length, message.langue).toBeGreaterThan(0);
+			for (const designe of autres)
+				expect(attributs(designe.balise), message.langue).not.toHaveProperty('lang');
+			expect(attributs(message.bloc), message.langue).not.toHaveProperty('lang');
+		}
+		// Le libellé que lisent les tests de l'accueil (`acces.test.ts`) reste le même.
+		expect(semaine.map((message) => message.libelle)).toEqual(
+			Array(5).fill('Programme de la semaine')
+		);
+	});
+
+	it('names the message boxes in Arabic on an Arabic screen', async () => {
+		const cookie = await signIn(RESPONSABLE_B);
+		await poserLangueDuCompte(RESPONSABLE_B, 'ar');
+		const semaine = messages(section(await (await get('/', cookie)).text(), 'semaine-titre'));
+		expect(semaine.map((message) => message.nom.nom)).toEqual([
+			'برنامجك لهذا الأسبوع بالألمانية',
+			'برنامجك لهذا الأسبوع بالفرنسية',
+			'برنامجك لهذا الأسبوع بالعربية'
+		]);
+		await poserLangueDuCompte(RESPONSABLE_B, 'fr');
 	});
 
 	it('puts the default language first for the week, and the language of the course first for it', async () => {
