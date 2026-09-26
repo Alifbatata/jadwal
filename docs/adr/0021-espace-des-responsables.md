@@ -67,7 +67,7 @@ remontent donc jamais jusqu'à lui.
 > simple. En contrepartie, l'action refuse un déplacement qui ne change ni la date ni l'heure, avec
 > une phrase qui dit de choisir une autre date ou une autre heure. L'accepter écrivait une exception
 > vers la séance elle-même : la séance s'affichait deux fois le même jour, et le message prêt à
-> coller annonçait « déplacé du mercredi 30.09.2026 au mercredi 30.09.2026 ». L'heure prévue est
+> coller annonçait un déplacement du mercredi au même mercredi, à la même heure. L'heure prévue est
 > celle que calcule `@jadwal/core` pour ce jour-là, et non une valeur renvoyée par le formulaire. Le
 > même jour à une autre heure reste un déplacement, comme le même jour pour une séance affichée sans
 > heure, qui en reçoit une.

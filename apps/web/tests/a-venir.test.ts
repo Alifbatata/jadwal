@@ -1092,7 +1092,7 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 			de: 'Der Termin ist schon an diesem Datum und zu dieser Uhrzeit geplant. Wählen Sie ein anderes Datum oder eine andere Uhrzeit.',
 			it: 'La lezione è già prevista per questa data e questo orario. Scegli un’altra data o un altro orario.',
 			en: 'The session is already planned for this date and time. Choose a different date or time.',
-			ar: 'الحصة مقرّرة بالفعل في هذا التاريخ وفي هذا الوقت. اختر تاريخًا آخر أو وقتًا آخر.'
+			ar: 'الحصة مقرّرة أصلًا في هذا التاريخ وفي هذا الوقت. اختر تاريخًا آخر أو وقتًا آخر.'
 		};
 		for (const langue of LANGUES) {
 			const html = rendus['après un déplacement qui ne change rien']?.[langue] ?? '';
