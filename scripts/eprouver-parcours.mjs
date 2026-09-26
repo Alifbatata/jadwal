@@ -47,7 +47,8 @@
  *   qui a son propre nom et un message juste.
  * - B3 : l'écran Membres dit ce que fait un éditeur, sans lui promettre de supprimer un cours, et ce
  *   qui est réservé au responsable.
- * - B4 : le résumé du formulaire de cours, sa ligne de description, et ce qui manque, signalé.
+ * - B4 : le résumé du formulaire de cours, sa ligne de description, et ce qui manque, signalé ; une
+ *   description écrite sans le titre de sa langue est refusée, avec une phrase qui nomme la langue.
  * - C1 : « D'où viennent vos heures de prière ? », ses trois réponses et l'aperçu de sept jours ;
  *   axe à 390 px de large sur les trois réponses.
  * - C2 : la localité trouvée par son nom et par son NPA, sans service extérieur, avec l'attribution
@@ -242,6 +243,15 @@ const SECONDE_SESSION = { debut: '13:40', fin: '14:20' };
  * du vendredi après une suppression (`friday.ts`).
  */
 const SESSION_SUPPRIMEE = 'La session est supprimée.';
+/**
+ * Une description écrite en allemand, le titre allemand laissé vide (retour B4), et le refus qui
+ * nomme la langue (`course-form.ts`).
+ */
+const DESCRIPTION_SANS_TITRE = {
+	texte: 'Kommentierte Lesung.',
+	refus:
+		'La description en allemand ne peut pas être publiée sans titre dans la même langue. Écrivez aussi le titre en allemand, ou effacez cette description.'
+};
 /** La description que reçoit le premier cours le temps de lire le résumé (retour B4). */
 const DESCRIPTION = 'Pour les enfants de 7 à 12 ans.';
 /**
@@ -1989,6 +1999,39 @@ async function clarteDuFormulaire(page, cours) {
 }
 
 /**
+ * Une description écrite en allemand, le titre allemand laissé vide (B4) : le serveur refuse le
+ * cours avec une phrase qui nomme la langue, et le formulaire revient avec la saisie. La
+ * description est ensuite effacée, pour que le cours s'enregistre sans elle. Le champ vit derrière
+ * l'onglet de sa langue, qu'on ouvre avant d'y écrire, quel que soit l'onglet que l'écran rouvre.
+ */
+async function descriptionSansTitre(page) {
+	const allemand = () => page.getByRole('tab', { name: /allemand/ }).click();
+	const francais = () => page.getByRole('tab', { name: /français/ }).click();
+	const description = page.locator('#description-de');
+	await retour('B4', async () => {
+		await allemand();
+		await description.fill(DESCRIPTION_SANS_TITRE.texte);
+		await francais();
+		await envoyer(page, page.locator('form.colonne button[type="submit"]'));
+		const refus = (await page.locator('form.colonne [role="alert"] li').allTextContents()).map(
+			(phrase) => phrase.replace(/\s+/g, ' ').trim()
+		);
+		verifier(
+			'une description écrite en allemand sans titre en allemand est refusée, avec une phrase qui nomme la langue, et le formulaire revient avec la description',
+			chemin(page) === '/cours/nouveau' &&
+				refus.includes(DESCRIPTION_SANS_TITRE.refus) &&
+				(await description.inputValue()) === DESCRIPTION_SANS_TITRE.texte,
+			`${chemin(page)} ; ${refus.map((phrase) => `« ${phrase} »`).join(', ') || 'aucun refus'}`
+		);
+		if (chemin(page) === '/cours/nouveau') {
+			await allemand();
+			await description.fill('');
+			await francais();
+		}
+	});
+}
+
+/**
  * Un cours saisi comme une personne le saisit : écran par écran, champ par champ. Les champs sont
  * visés par leur `id`, le contrat du formulaire avec le serveur ; leurs libellés et leurs aides
  * sont vérifiés à part.
@@ -2023,7 +2066,12 @@ async function creerCours(page, cours) {
 	await page.locator('#roomId').selectOption({ label: SALLE });
 	await page.locator('#startsOn').fill(T);
 	await page.locator('#status').selectOption(cours.etat === 'publié' ? 'published' : 'draft');
-	await envoyer(page, page.locator('form.colonne button[type="submit"]'));
+	if (cours.descriptionSansTitre) await descriptionSansTitre(page);
+	// Un écran qui accepte la description sans titre, comme avant la relecture du lot 4, enregistre le
+	// cours dès cet envoi : il est alors déjà dans la liste, et il n'y a rien à renvoyer.
+	if (chemin(page) === '/cours/nouveau') {
+		await envoyer(page, page.locator('form.colonne button[type="submit"]'));
+	}
 
 	const ligne = page.locator('li').filter({ hasText: cours.titre });
 	verifier(
@@ -2236,7 +2284,8 @@ async function programme(page) {
 		jour: jourDeSemaine(J3),
 		debut: '20:00',
 		fin: '21:30',
-		etat: 'brouillon'
+		etat: 'brouillon',
+		descriptionSansTitre: true
 	});
 	await auditer(page, 'cours');
 
