@@ -70,6 +70,11 @@ interface FridayTexts {
 	readonly remove: string;
 	readonly removeConfirm: string;
 	readonly add: string;
+	/**
+	 * À la place du formulaire d'ajout, quand trois sessions continuent sans date de fin : pourquoi
+	 * l'écran n'en propose pas une autre, et quoi faire.
+	 */
+	readonly noFreeOrder: string;
 	readonly form: {
 		readonly title: string;
 		readonly titleHelp: string;
@@ -144,6 +149,8 @@ export const fridayTexts: Translations<FridayTexts> = {
 		remove: 'Supprimer cette session',
 		removeConfirm: 'Oui, supprimer',
 		add: 'Ajouter une session',
+		noFreeOrder:
+			'Vous ne pouvez pas ajouter de session : trois sessions continuent déjà sans date de fin, et c’est le maximum. Pour changer l’heure d’une session, ouvrez « Modifier cette session » plus haut. Si l’heure change avec la saison, remplissez d’abord « Jusqu’au » dans la session qui s’arrête : vous pourrez ensuite ajouter la nouvelle ici.',
 		form: {
 			title: 'Titre',
 			titleHelp:
@@ -246,6 +253,8 @@ export const fridayTexts: Translations<FridayTexts> = {
 		remove: 'Diesen Durchgang löschen',
 		removeConfirm: 'Ja, löschen',
 		add: 'Durchgang hinzufügen',
+		noFreeOrder:
+			'Sie können keinen weiteren Durchgang hinzufügen: Drei Durchgänge laufen schon ohne Enddatum weiter, und mehr sind nicht möglich. Um die Zeit eines Durchgangs zu ändern, öffnen Sie weiter oben «Diesen Durchgang bearbeiten». Ändert sich die Zeit mit der Jahreszeit? Füllen Sie zuerst beim Durchgang, der endet, «Gültig bis» aus. Danach können Sie hier den neuen hinzufügen.',
 		form: {
 			title: 'Titel',
 			titleHelp:
@@ -354,6 +363,8 @@ export const fridayTexts: Translations<FridayTexts> = {
 		remove: 'Elimina questo turno',
 		removeConfirm: 'Sì, elimina',
 		add: 'Aggiungi un turno',
+		noFreeOrder:
+			'Non puoi aggiungere un altro turno: tre turni continuano già senza data di fine, ed è il massimo. Per cambiare l’orario di un turno, apri «Modifica questo turno» più in alto. Se l’orario cambia con la stagione, compila prima «Valido fino al» nel turno che finisce: poi potrai aggiungere qui quello nuovo.',
 		form: {
 			title: 'Titolo',
 			titleHelp:
@@ -457,6 +468,8 @@ export const fridayTexts: Translations<FridayTexts> = {
 		remove: 'Delete this session',
 		removeConfirm: 'Yes, delete',
 		add: 'Add a session',
+		noFreeOrder:
+			'You cannot add another session: three sessions already carry on with no end date, and that is the maximum. To change the time of a session, open ‘Edit this session’ further up. If the time changes with the season, first fill in ‘Until’ in the session that ends: you can then add the new one here.',
 		form: {
 			title: 'Title',
 			titleHelp: 'What visitors read on your public page. Example: Friday prayer',
@@ -559,6 +572,8 @@ export const fridayTexts: Translations<FridayTexts> = {
 		remove: 'حذف هذا الموعد',
 		removeConfirm: 'نعم، احذف',
 		add: 'إضافة موعد',
+		noFreeOrder:
+			'لا يمكنك إضافة موعد آخر: توجد 3 مواعيد مستمرة دون تاريخ نهاية، وهذا هو الحد الأقصى. لتغيير وقت موعد، افتح «تعديل هذا الموعد» في الأعلى. وإن تغيّر الوقت مع الفصل، فاملأ أولًا خانة «يسري حتى» في الموعد الذي ينتهي، ثم أضف الموعد الجديد هنا.',
 		form: {
 			title: 'العنوان',
 			titleHelp: 'ما يراه الزوار على صفحتك العامة. مثال: صلاة الجمعة',

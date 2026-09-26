@@ -120,7 +120,12 @@ describe('proposedOrder', () => {
 			[{ jumuaOrder: 1, endsOn: '2026-10-23' }, sans(2), sans(3)],
 			1
 		],
-		['all three go on: the third, the last there is', [sans(1), sans(2), sans(3)], 3]
+		['all three go on: none, no order is free', [sans(1), sans(2), sans(3)], null],
+		[
+			'all three go on, and an older one has ended: none',
+			[{ jumuaOrder: 2, endsOn: '2026-03-27' }, sans(1), sans(2), sans(3)],
+			null
+		]
 	] as const)('proposes the first free order when %s', (_, existantes, attendu) => {
 		expect(proposedOrder(existantes)).toBe(attendu);
 	});

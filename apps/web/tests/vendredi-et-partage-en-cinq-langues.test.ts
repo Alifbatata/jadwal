@@ -9,7 +9,8 @@
 // « Ce vendredi » suit la règle d'« À venir » : une page restée ouverte ne défait pas un changement
 // fait ailleurs, ni ne vise une session supprimée depuis ; un déplacement qui ne change rien est
 // refusé, une carte dont l'heure a changé depuis aussi, quel que soit le jour choisi (relecture du
-// lot 5).
+// lot 5). Quand trois sessions continuent sans date de fin, l'écran ne propose plus d'en ajouter une,
+// et dit pourquoi et quoi faire.
 //
 // Vrai serveur construit, vraie base, formulaires envoyés comme sans JavaScript, sur le modèle de
 // `espace-en-cinq-langues.test.ts`.
@@ -358,7 +359,8 @@ beforeAll(async () => {
 
 	// L'organisation allemande : une session au titre laissé vide, qui prend le nom proposé, et une
 	// session au titre choisi, saisies par l'écran ; puis une session d'avant l'étape 18, écrite en
-	// allemand sous le nom français que le service proposait alors dans toutes les langues.
+	// allemand sous le nom français que le service proposait alors dans toutes les langues. Celle-ci
+	// s'arrête dans deux mois : son rang reste libre, et l'écran propose encore d'ajouter une session.
 	for (const [rang, champs] of [
 		[1, { title: '', start: '12:10', end: '12:50', sermonLanguages: ['de'] }],
 		[2, { title: TITRE_CHOISI, start: '13:30', end: '14:10', sermonLanguages: ['ar'] }]
@@ -376,9 +378,10 @@ beforeAll(async () => {
 			insert into "course" ("id", "organization_id", "kind", "jumua_order", "status", "audience",
 				"teaching_language", "source_language", "recurrence_kind", "recurrence_weekday",
 				"recurrence_interval", "recurrence_anchor_date", "timing_kind", "timing_start",
-				"timing_end", "starts_on")
+				"timing_end", "starts_on", "ends_on")
 			values (${ancienne}, ${organizationDeId}, 'jumua', 3, 'published', 'open', array['de'], 'de',
-				'weekly', array[5]::smallint[], 1, '2026-09-04', 'fixed', '14:30', '15:10', '2026-09-04')
+				'weekly', array[5]::smallint[], 1, '2026-09-04', 'fixed', '14:30', '15:10', '2026-09-04',
+				${FIN_DE_SESSION()})
 		`);
 		await tx.execute(sql`
 			insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
@@ -731,14 +734,16 @@ const SESSION_DE_PASSAGE = {
 
 /**
  * Ajoute par l'écran une session de passage sous ce titre, et rend la réponse et son identifiant.
- * Les autres tests comptent trois sessions : celui qui l'ajoute doit la supprimer.
+ * `champs` remplace ceux de la session de passage. Les autres tests comptent trois sessions : celui
+ * qui l'ajoute doit la supprimer.
  */
 async function ajouterUneSessionDePassage(
-	titre: string
+	titre: string,
+	champs: Record<string, string> = {}
 ): Promise<{ reponse: Response; id: string }> {
 	const reponse = await postForm(
 		'/vendredi?/enregistrer',
-		{ ...SESSION_DE_PASSAGE, title: titre },
+		{ ...SESSION_DE_PASSAGE, ...champs, title: titre },
 		cookies
 	);
 	const [trouvee] = await maintenance(async (tx) =>
@@ -894,6 +899,67 @@ describe('un enregistrement réussi se confirme là où la page s’ouvre (retou
 		} finally {
 			await postForm('/vendredi?/supprimer', { courseId: id }, cookies);
 		}
+	});
+});
+
+/**
+ * Ce que la section d'ajout dit quand aucun rang n'est libre, parce que trois sessions continuent
+ * sans date de fin : pourquoi l'écran ne propose plus d'ajouter une session, et quoi faire.
+ */
+const PLUS_DE_RANG_LIBRE: Record<Langue, string> = {
+	fr: 'Vous ne pouvez pas ajouter de session : trois sessions continuent déjà sans date de fin, et c’est le maximum. Pour changer l’heure d’une session, ouvrez « Modifier cette session » plus haut. Si l’heure change avec la saison, remplissez d’abord « Jusqu’au » dans la session qui s’arrête : vous pourrez ensuite ajouter la nouvelle ici.',
+	de: 'Sie können keinen weiteren Durchgang hinzufügen: Drei Durchgänge laufen schon ohne Enddatum weiter, und mehr sind nicht möglich. Um die Zeit eines Durchgangs zu ändern, öffnen Sie weiter oben «Diesen Durchgang bearbeiten». Ändert sich die Zeit mit der Jahreszeit? Füllen Sie zuerst beim Durchgang, der endet, «Gültig bis» aus. Danach können Sie hier den neuen hinzufügen.',
+	it: 'Non puoi aggiungere un altro turno: tre turni continuano già senza data di fine, ed è il massimo. Per cambiare l’orario di un turno, apri «Modifica questo turno» più in alto. Se l’orario cambia con la stagione, compila prima «Valido fino al» nel turno che finisce: poi potrai aggiungere qui quello nuovo.',
+	en: 'You cannot add another session: three sessions already carry on with no end date, and that is the maximum. To change the time of a session, open ‘Edit this session’ further up. If the time changes with the season, first fill in ‘Until’ in the session that ends: you can then add the new one here.',
+	ar: 'لا يمكنك إضافة موعد آخر: توجد 3 مواعيد مستمرة دون تاريخ نهاية، وهذا هو الحد الأقصى. لتغيير وقت موعد، افتح «تعديل هذا الموعد» في الأعلى. وإن تغيّر الوقت مع الفصل، فاملأ أولًا خانة «يسري حتى» في الموعد الذي ينتهي، ثم أضف الموعد الجديد هنا.'
+};
+
+describe('sans rang libre, l’écran ne propose plus d’ajouter une session, et dit pourquoi', () => {
+	/** Le texte lu d'un morceau de page. */
+	const lu = (fragment: string) => visibleText(`<body>${fragment}</body>`);
+
+	it('shows no add form once three sessions go on with no end date, and says why and what to do, in each language', async () => {
+		// La première session s'arrête dans deux mois : son rang est libre. Une session sans date de
+		// fin le prend, et les trois rangs sont occupés.
+		const { reponse, id } = await ajouterUneSessionDePassage('Prière du premier rang', {
+			jumuaOrder: '1'
+		});
+		try {
+			expect(reponse.status).toBe(200);
+			// La confirmation de l'ajout reste là où la page s'ouvre, suivie de la phrase.
+			const apresAjout = section(await reponse.text(), 'ajout');
+			expect(formulaireDAjout(apresAjout)).toBe('');
+			expect(lu(apresAjout)).toContain('La session est ajoutée.');
+			expect(lu(apresAjout)).toContain(PLUS_DE_RANG_LIBRE.fr);
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const html = await (await get('/vendredi', cookies)).text();
+				const ajout = section(html, 'ajout');
+				expect(ajout, langue).not.toBe('');
+				expect(formulaireDAjout(html), langue).toBe('');
+				expect(lu(ajout), langue).toContain(PLUS_DE_RANG_LIBRE[langue]);
+			}
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			// Un ajout envoyé depuis une page ouverte avant, et refusé, garde son formulaire : ce qui
+			// a été tapé et l'erreur ne disparaissent pas.
+			const refuse = await postForm(
+				'/vendredi?/enregistrer',
+				{ ...SESSION_DE_PASSAGE, title: 'Prière de trop', end: '15:00' },
+				cookies
+			);
+			expect(refuse.status).toBe(400);
+			const ajout = section(await refuse.text(), 'ajout');
+			expect(valeur(formulaireDAjout(ajout), 'title')).toBe('Prière de trop');
+			expect(lu(ajout)).toContain('L’heure de fin doit venir après l’heure de début.');
+			expect(lu(ajout)).not.toContain(PLUS_DE_RANG_LIBRE.fr);
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await postForm('/vendredi?/supprimer', { courseId: id }, cookies);
+		}
+		// Le rang de la première session est de nouveau libre : le formulaire d'ajout revient.
+		const html = await (await get('/vendredi', cookies)).text();
+		expect(rangChoisi(formulaireDAjout(html))).toEqual(['1']);
+		expect(lu(section(html, 'ajout'))).not.toContain(PLUS_DE_RANG_LIBRE.fr);
 	});
 });
 

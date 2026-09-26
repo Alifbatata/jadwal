@@ -109,10 +109,16 @@
 	</section>
 {/each}
 
+<!-- Sans rang libre, pas de formulaire d'ajout, mais la phrase qui dit pourquoi et quoi faire. Un
+     ajout qui vient d'être refusé garde le sien : ce qui a été tapé et l'erreur restent. -->
 <section class="session" aria-labelledby="ajout">
 	<h2 id="ajout">{text.add}</h2>
 	{#if form?.done && enregistre === ''}{@render confirmation(form.done)}{/if}
-	{@render formulaire(null)}
+	{#if data.rangPropose !== null || refuse === ''}
+		{@render formulaire(null)}
+	{:else}
+		<p>{text.noFreeOrder}</p>
+	{/if}
 </section>
 
 {#if data.prochaines.length > 0}

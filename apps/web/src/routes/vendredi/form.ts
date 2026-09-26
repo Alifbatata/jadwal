@@ -129,13 +129,13 @@ export function readFridayEntry(form: FormData): FridayFormEntry {
 /**
  * Le rang proposé à l'ajout : le premier qu'aucune session sans date de fin n'occupe. Une session
  * qui a une date de fin s'en va, au changement de saison, et celle qui la remplace reprend son
- * rang. Quand les trois sont pris, le troisième, le dernier qui existe.
+ * rang. `null` quand les trois sont pris : l'écran ne propose alors pas d'ajouter une session.
  */
 export function proposedOrder(
 	sessions: readonly { jumuaOrder: number; endsOn: string | null }[]
-): number {
+): number | null {
 	const taken = new Set(
 		sessions.filter((session) => session.endsOn === null).map((session) => session.jumuaOrder)
 	);
-	return [1, 2, 3].find((order) => !taken.has(order)) ?? 3;
+	return [1, 2, 3].find((order) => !taken.has(order)) ?? null;
 }
