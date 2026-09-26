@@ -263,6 +263,85 @@ export async function importerJours(
 	return jours.length;
 }
 
+/**
+ * Ce que le lecteur de fichiers dit d'une ligne, relu pour l'écran (étape 18, retours D2 et A3).
+ *
+ * `analyserCalendrier`, dans `@jadwal/core`, écrit ses raisons de refus et ses avertissements en
+ * français, avec les dates telles que la base les écrit. L'écran les redit dans la langue de la
+ * personne, dates en JJ.MM.AAAA : il lui faut le motif et ses valeurs, pas la phrase. Chaque phrase
+ * du lecteur a son motif ici, et `prieres.test.ts` les fait toutes produire par le vrai lecteur ;
+ * une phrase inconnue est gardée telle quelle (`other`) plutôt que perdue.
+ */
+export type RaisonLue =
+	| { code: 'empty' }
+	| { code: 'header' }
+	| { code: 'badDate'; raw: string }
+	| { code: 'badTime'; prayer: string; raw: string }
+	| { code: 'noSuchDate' }
+	| { code: 'order'; later: string; laterTime: string; earlier: string; earlierTime: string }
+	| { code: 'ishaBeforeMaghrib'; isha: string; maghrib: string }
+	| { code: 'duplicate'; date: string }
+	| {
+			code: 'jump';
+			date: string;
+			prayer: string;
+			minutes: number;
+			before: string;
+			after: string;
+	  }
+	| { code: 'other'; text: string };
+
+const HEURE = '(\\d{2}:\\d{2})';
+const MOTIFS_DU_LECTEUR: [RegExp, (trouve: RegExpExecArray) => RaisonLue][] = [
+	[/^Le fichier est vide\.$/, () => ({ code: 'empty' })],
+	[/^La première ligne doit nommer les colonnes : /, () => ({ code: 'header' })],
+	[/^Date illisible : « (.*) »\.$/, (trouve) => ({ code: 'badDate', raw: trouve[1] ?? '' })],
+	[
+		/^Heure illisible pour (\w+) : « (.*) »\.$/,
+		(trouve) => ({ code: 'badTime', prayer: trouve[1] ?? '', raw: trouve[2] ?? '' })
+	],
+	[/^Cette date n’existe pas dans le calendrier\.$/, () => ({ code: 'noSuchDate' })],
+	[
+		new RegExp(`^(\\w+) \\(${HEURE}\\) ne peut pas précéder (\\w+) \\(${HEURE}\\)\\.$`),
+		(trouve) => ({
+			code: 'order',
+			later: trouve[1] ?? '',
+			laterTime: trouve[2] ?? '',
+			earlier: trouve[3] ?? '',
+			earlierTime: trouve[4] ?? ''
+		})
+	],
+	[
+		new RegExp(`^isha \\(${HEURE}\\) tombe avant maghrib \\(${HEURE}\\) sans passer minuit\\.$`),
+		(trouve) => ({ code: 'ishaBeforeMaghrib', isha: trouve[1] ?? '', maghrib: trouve[2] ?? '' })
+	],
+	[
+		/^La date (\d{4}-\d{2}-\d{2}) apparaît deux fois\.$/,
+		(trouve) => ({ code: 'duplicate', date: trouve[1] ?? '' })
+	],
+	[
+		new RegExp(
+			`^(\\d{4}-\\d{2}-\\d{2}) : (\\w+) saute de (\\d+) minutes par rapport à la veille \\(${HEURE} puis ${HEURE}\\)\\.$`
+		),
+		(trouve) => ({
+			code: 'jump',
+			date: trouve[1] ?? '',
+			prayer: trouve[2] ?? '',
+			minutes: Number(trouve[3]),
+			before: trouve[4] ?? '',
+			after: trouve[5] ?? ''
+		})
+	]
+];
+
+export function lireRaison(texte: string): RaisonLue {
+	for (const [motif, lire] of MOTIFS_DU_LECTEUR) {
+		const trouve = motif.exec(texte);
+		if (trouve) return lire(trouve);
+	}
+	return { code: 'other', text: texte };
+}
+
 /** Efface les jours importés d'une plage : ce que le responsable annule quand il s'est trompé. */
 export async function effacerImport(
 	tx: Transaction,

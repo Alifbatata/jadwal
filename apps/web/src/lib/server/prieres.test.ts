@@ -6,7 +6,8 @@
 
 import { describe, expect, it } from 'vitest';
 import { addDays, type IsoDate } from '@jadwal/core';
-import { datesAnneeSuivante } from './prieres.js';
+import { analyserCalendrier } from '@jadwal/core/prayer';
+import { datesAnneeSuivante, lireRaison } from './prieres.js';
 
 /** Une année découpée en douze périodes mensuelles jointives, du 1er janvier au 31 décembre. */
 function moisDe(annee: number): { de: IsoDate; a: IsoDate }[] {
@@ -96,5 +97,77 @@ describe('datesAnneeSuivante', () => {
 				expect(addDays(avant.toDate, 1), `jointure ${index} de ${annee + 1}`).toBe(apres.fromDate);
 			}
 		}
+	});
+});
+
+/**
+ * Ce que le lecteur de `@jadwal/core` dit d'un fichier, relu pour l'écran (étape 18, retours D2 et
+ * A3). Le lecteur écrit ses raisons en français, dates de la base comprises ; l'écran les redit dans
+ * sa langue, dates en JJ.MM.AAAA. Chaque raison est produite ici par le vrai lecteur : si sa phrase
+ * change, ce test tombe au lieu de laisser l'écran afficher du français dans une page allemande.
+ */
+describe('lireRaison', () => {
+	const ENTETE = 'date;fajr;dhuhr;asr;maghrib;isha';
+
+	/** Les raisons de refus et les avertissements d'un fichier, relus. */
+	function raisons(...lignes: string[]) {
+		const lu = analyserCalendrier(lignes.join('\n'));
+		return [
+			...lu.refusees.map((refusee) => lireRaison(refusee.raison)),
+			...lu.avertissements.map((avertissement) => lireRaison(avertissement.message))
+		];
+	}
+
+	it('reads every refusal of the reader', () => {
+		expect(raisons('   ')).toEqual([{ code: 'empty' }]);
+		expect(raisons('jour;matin', '2027-01-01;05:00')).toEqual([{ code: 'header' }]);
+		expect(raisons(ENTETE, 'mardi;05:00;12:30;15:00;17:30;19:00')).toEqual([
+			{ code: 'badDate', raw: 'mardi' }
+		]);
+		expect(raisons(ENTETE, '2027-01-01;05:00;midi;15:00;17:30;19:00')).toEqual([
+			{ code: 'badTime', prayer: 'dhuhr', raw: 'midi' }
+		]);
+		expect(raisons(ENTETE, '2027-02-30;05:00;12:30;15:00;17:30;19:00')).toEqual([
+			{ code: 'noSuchDate' }
+		]);
+		expect(raisons(ENTETE, '2027-01-01;05:00;12:30;18:00;17:30;19:00')).toEqual([
+			{ code: 'order', later: 'maghrib', laterTime: '17:30', earlier: 'asr', earlierTime: '18:00' }
+		]);
+		expect(raisons(ENTETE, '2027-01-01;05:00;12:30;15:00;17:30;03:00')).toEqual([
+			{ code: 'ishaBeforeMaghrib', isha: '03:00', maghrib: '17:30' }
+		]);
+		expect(
+			raisons(
+				ENTETE,
+				'2027-01-01;05:00;12:30;15:00;17:30;19:00',
+				'2027-01-01;05:00;12:30;15:00;17:30;19:00'
+			)
+		).toEqual([{ code: 'duplicate', date: '2027-01-01' }]);
+	});
+
+	it('reads the warning of a jump from one day to the next', () => {
+		expect(
+			raisons(
+				ENTETE,
+				'2027-01-01;05:00;12:30;15:00;17:30;19:00',
+				'2027-01-02;05:20;12:30;15:00;17:30;19:00'
+			)
+		).toEqual([
+			{
+				code: 'jump',
+				date: '2027-01-02',
+				prayer: 'fajr',
+				minutes: 20,
+				before: '05:00',
+				after: '05:20'
+			}
+		]);
+	});
+
+	it('keeps a sentence it does not know as it is, rather than lose it', () => {
+		expect(lireRaison('Une phrase nouvelle.')).toEqual({
+			code: 'other',
+			text: 'Une phrase nouvelle.'
+		});
 	});
 });
