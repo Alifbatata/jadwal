@@ -1117,7 +1117,9 @@ async function superAdmin(navigateur) {
 
 	await ouvrir(page, '/super-admin/passkey');
 	await retour('A3', async () => {
-		const ligne = page.locator('li').filter({ hasText: 'Cet appareil' });
+		// La ligne de la passkey, par sa date : son nom dépend de l'appareil (« Windows, 26.09.2026 »
+		// sur ce poste, « Linux, … » dans la CI), et n'est plus « Cet appareil » depuis l'étape 18.
+		const ligne = page.locator('li').filter({ hasText: /enregistrée le/i });
 		const texte = (await ligne.count()) === 1 ? await texteDe(ligne) : 'aucune ligne';
 		verifier(
 			`la passkey est datée du jour en Suisse, « Enregistrée le ${dateSuisse(T)} »`,
@@ -1194,12 +1196,12 @@ async function languesDuSuperAdmin(page) {
 					problemes.push(`${ecran} : <html lang="${lang}" dir="${dir}">`);
 				}
 				if (!(await choixPresent(page, langue))) problemes.push(`${ecran} : choix de la langue`);
+				// Le nom d'une passkey, « Windows, 26.09.2026 », s'écrit de même dans toutes les langues :
+				// ce n'est pas une phrase, et il n'a pas à être écarté.
 				const restes = resteEnFrancais(
 					/** @type {string[]} */ (francais.get(ecran)),
 					await segmentsLus(page),
-					// Le nom que la passkey a reçu à son enregistrement, en français : une donnée gardée
-					// telle quelle, comme un nom saisi.
-					[...NOMS_SAISIS, 'Cet appareil']
+					NOMS_SAISIS
 				);
 				for (const reste of restes.slice(0, 3)) problemes.push(`${ecran} : « ${reste} »`);
 			}
