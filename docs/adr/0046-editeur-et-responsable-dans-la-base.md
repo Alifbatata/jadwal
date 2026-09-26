@@ -30,27 +30,29 @@ base distingue l'éditeur du responsable pour tout ce qu'un éditeur ne doit pas
 Elle vient de l'application telle qu'elle est : les gardes des routes (`mustBeInOrganisation`,
 `mustHavePrayerModule`, `mustAdminister`, `mustAdministerPrayerModule`, `mustBeAdmin`), les liens
 de navigation montrés selon le rôle, et chaque écriture en base derrière ces gardes. C'est aussi la
-liste que l'écran Membres montrera, pour qu'une personne sache ce que chaque rôle permet.
+liste que l'écran Membres montre, sous le choix du rôle, pour qu'une personne sache ce que chaque
+rôle permet.
 
 Chaque geste dit sa route, puis la table et l'opération. Chaque écriture ajoute aussi une ligne au
 journal (`audit_log`, ajout), qui n'est pas répétée. Les deux colonnes se lisent chacune de haut en
 bas : une ligne ne met pas en regard deux gestes liés.
 
-| Ce que fait un éditeur                                                                                                             | Ce que fait en plus un responsable                                                                                                                                      |
-| ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Voir la semaine à venir : `/` · lecture                                                                                            | Voir les membres et leur rôle : `/membres` · `membership`, `user` (lecture)                                                                                             |
-| Annuler, déplacer, rétablir une séance : `/?/annuler`, `?/deplacer`, `?/retablir` · `session_exception` (ajout, suppression)       | Voir les invitations en attente : `/membres` · `invitation` (lecture)                                                                                                   |
-| Voir les cours : `/cours` · lecture                                                                                                | Inviter une personne, avec son rôle : `/membres?/inviter` · `invitation` (ajout ; l'invitation en attente pour la même adresse est close)                               |
-| Créer un cours : `/cours/nouveau` · `course`, `course_translation` (ajout)                                                         | Annuler une invitation : `/membres?/annuler` · `invitation` (modification)                                                                                              |
-| Modifier un cours : `/cours/[id]` · `course` (modification), `course_translation` (remplacement)                                   | Changer le rôle d'un membre : `/membres?/role` · `membership` (modification)                                                                                            |
-| Supprimer un cours : `/cours?/supprimer` · `course` (suppression)                                                                  | Retirer un membre : `/membres?/retirer` · `membership` (suppression)                                                                                                    |
-| Poser, retirer une pause : `/cours?/pause`, `?/supprimerPause` · `pause` (ajout, suppression)                                      | Modifier nom, fuseau, couleur, formule d'accueil, langues : `/reglages?/enregistrer` · `organization` (modification)                                                    |
-| Gérer le vendredi, module allumé : `/vendredi` · `course`, `course_translation`, `session_exception`                               | Allumer, éteindre le module des prières : `/reglages?/modulePrieres` · `organization` (modification)                                                                    |
-| Partager le programme : `/partager` · lecture                                                                                      | Ajouter, supprimer une salle : `/reglages?/ajouterSalle`, `?/supprimerSalle` · `room` (ajout, suppression)                                                              |
-| Accepter une invitation reçue : `/organisations?/accepter` · `invitation` (modification), `membership` (ajout)                     | Régler le calcul des heures de prière, après un aperçu : `/prieres?/apercu` (sans rien écrire), `?/enregistrer` · `prayer_settings`, `prayer_day` (ajout, modification) |
-| Accepter les conditions : `/conditions/accepter` · `terms_acceptance` (ajout)                                                      | Importer, effacer des heures : `/prieres?/lireFichier` (sans rien écrire), `?/confirmer`, `?/effacer` · `prayer_day` (ajout, modification, suppression)                 |
-| Choisir sa langue, écran à venir · `user` (modification de `language`, son propre compte)                                          | Écrire, dupliquer, supprimer une période : `/prieres?/periode`, `?/dupliquerPeriode`, `?/supprimerPeriode` · `prayer_period`                                            |
-| Changer d'organisation, pour qui est membre de plusieurs : `/organisations?/choisir` · `session` (modification, rôle de connexion) | Télécharger le modèle d'horaires : `/prieres/modele.csv` · lecture                                                                                                      |
+| Ce que fait un éditeur                                                                                                             | Ce que fait en plus un responsable                                                                                                                                                   |
+| ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Voir la semaine à venir : `/` · lecture                                                                                            | Voir les membres et leur rôle : `/membres` · `membership`, `user` (lecture)                                                                                                          |
+| Annuler, déplacer, rétablir une séance : `/?/annuler`, `?/deplacer`, `?/retablir` · `session_exception` (ajout, suppression)       | Voir les invitations en attente : `/membres` · `invitation` (lecture)                                                                                                                |
+| Voir les cours : `/cours` · lecture                                                                                                | Inviter une personne, avec son rôle : `/membres?/inviter` · `invitation` (ajout ; l'invitation en attente pour la même adresse est close)                                            |
+| Créer un cours : `/cours/nouveau` · `course`, `course_translation` (ajout)                                                         | Annuler une invitation : `/membres?/annuler` · `invitation` (modification)                                                                                                           |
+| Modifier un cours : `/cours/[id]` · `course` (modification), `course_translation` (remplacement)                                   | Changer le rôle d'un membre : `/membres?/role` · `membership` (modification)                                                                                                         |
+| Supprimer un cours : `/cours?/supprimer` · `course` (suppression)                                                                  | Retirer un membre : `/membres?/retirer` · `membership` (suppression)                                                                                                                 |
+| Poser, retirer une pause : `/cours?/pause`, `?/supprimerPause` · `pause` (ajout, suppression)                                      | Modifier nom, fuseau, couleur, formule d'accueil, langues : `/reglages?/enregistrer` · `organization` (modification)                                                                 |
+| Gérer le vendredi, module allumé : `/vendredi` · `course`, `course_translation`, `session_exception`                               | Allumer, éteindre le module des prières : `/reglages?/modulePrieres` · `organization` (modification)                                                                                 |
+| Partager le programme : `/partager` · lecture                                                                                      | Ajouter, supprimer une salle : `/reglages?/ajouterSalle`, `?/supprimerSalle` · `room` (ajout, suppression)                                                                           |
+| Accepter une invitation reçue : `/organisations?/accepter` · `invitation` (modification), `membership` (ajout)                     | Régler le calcul des heures de prière, après un aperçu : `/prieres?/apercu` (sans rien écrire), `?/enregistrer` · `prayer_settings`, `prayer_day` (ajout, modification)              |
+| Accepter les conditions : `/conditions/accepter` · `terms_acceptance` (ajout)                                                      | Importer, effacer des heures : `/prieres?/lireFichier` (sans rien écrire), `?/confirmer`, `?/effacer` · `prayer_day` (ajout, modification, suppression)                              |
+| Choisir sa langue, en haut de chaque écran : `/langue` · `user` (modification de `language`, son propre compte)                    | Écrire, prévisualiser, dupliquer, supprimer une période : `/prieres?/periode`, `?/apercuPeriode` (écrite puis annulée), `?/dupliquerPeriode`, `?/supprimerPeriode` · `prayer_period` |
+| Changer d'organisation, pour qui est membre de plusieurs : `/organisations?/choisir` · `session` (modification, rôle de connexion) | Télécharger le modèle d'horaires : `/prieres/modele.csv` · lecture                                                                                                                   |
+|                                                                                                                                    | Chercher une localité suisse : `/prieres/localites` · lecture de la liste embarquée, aucune table                                                                                    |
 
 Trois écritures ne viennent d'aucun écran et sont réservées quand même, parce qu'elles touchent
 aux mêmes tables : supprimer une invitation, renommer une salle, supprimer les réglages des
@@ -106,7 +108,25 @@ contrainte close par `is true`. La personne seule la change : le rôle applicati
 modifier cette colonne et aucune autre, et une politique ne lui laisse que la ligne de la personne
 du contexte. Le rôle de connexion nomme la colonne à la création d'un compte, parce que Drizzle
 nomme toutes les colonnes d'une insertion (migration 0032) ; sa politique refuse qu'elle porte une
-valeur. `apps/web/src/lib/server/account-language.ts` la lit et l'écrit.
+valeur. `apps/web/src/lib/server/account-language.ts` la lit et l'écrit. Quand et comment
+l'application l'écrit (le choix en haut de chaque écran, un choix fait avant la connexion qui
+devient la langue du compte), c'est l'ADR 0047.
+
+### Ce que l'étape 18 a encore changé dans les écrans réservés
+
+La liste ci-dessus est celle du code à la fin de l'étape 18 :
+
+- **L'écran Membres montre la liste**, en deux parties : ce que peut faire un éditeur, et ce qui est
+  réservé à la personne responsable. `apps/web/tests/membres-et-reglages.test.ts` la lie à la base :
+  les tables que les politiques réservent (celles qui appellent `jadwal.is_org_admin()`, lues dans
+  `pg_policies`) doivent être exactement celles des gestes que l'écran dit réservés.
+- **L'écran des prières prévisualise une période** avant de l'enregistrer (`?/apercuPeriode`) : la
+  période est écrite, les sept prochains jours sont relus, puis la transaction est annulée. Il passe
+  par la même garde et par les mêmes politiques que `?/periode`.
+- **Supprimer une salle qu'un cours occupe** demande d'abord une confirmation à l'écran, puis la base
+  ne vide que la salle de ces cours (migration 0061).
+- **Les langues d'une organisation** sont bornées par la base aux cinq langues du public
+  (migration 0062).
 
 ## Conséquences
 
@@ -137,4 +157,5 @@ valeur. `apps/web/src/lib/server/account-language.ts` la lit et l'écrit.
 ## Statut
 
 Accepté, 2026-09-26. Étape 18, retour H1 des tests de l'exploitant (les rôles dans la base), et la
-langue du compte.
+langue du compte. Révisé le même jour, à la fin de l'étape : le choix de la langue a son écran,
+l'écran Membres montre la liste, et l'écran des prières prévisualise une période.
