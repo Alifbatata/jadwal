@@ -25,7 +25,7 @@ correspond plus. L'élément n'ayant aucun `<slot>`, ce contenu disparaît dès 
 | Attribut     | Valeurs                                    | Défaut                        |
 | ------------ | ------------------------------------------ | ----------------------------- |
 | `org`        | l'identifiant d'URL de l'organisation      | obligatoire, sinon rien       |
-| `lang`       | `fr`, `de`, `it`, `ar`                     | la langue de l'organisation   |
+| `lang`       | `fr`, `de`, `it`, `en`, `ar`               | la langue de l'organisation   |
 | `view`       | `semaine`, `cours`, `mois`                 | `semaine`                     |
 | `audience`   | `kids`, `youth`, `women`, `adults`, `open` | tous les publics              |
 | `min-height` | un nombre de pixels                        | `320`                         |
@@ -36,6 +36,12 @@ l'organisation ; `view="tableau"` donne la vue Semaine ; `min-height="-42"` donn
 
 Sans `org`, aucun cadre n'est posé et le contenu de repli reste seul visible : c'est la bonne
 réponse, et non un message d'erreur sur le site de quelqu'un d'autre.
+
+`en` s'est ajouté à l'étape 18 : c'est le seul changement du fichier du widget à cette étape, et il
+a publié une nouvelle version. L'onglet `Prières` de la page publique (voir `public-prieres.md`)
+apparaît dans le cadre sans rien changer au fichier, dans les organisations qui ont allumé le module.
+`view` ne le connaît pas : l'accepter changerait le fichier, donc son empreinte, et les sites qui
+l'ont épinglée.
 
 ## Ce que le widget affiche, de haut en bas
 
@@ -48,10 +54,10 @@ réponse, et non un message d'erreur sur le site de quelqu'un d'autre.
      `Voir le programme complet (s'ouvre dans un nouvel onglet)`, dans la langue du widget ;
    - `Proposé gratuitement par jadwal, un service de Voltia`.
 
-Le pied est traduit dans les quatre langues, d'après l'attribut `lang`.
+Le pied est traduit dans les cinq langues, d'après l'attribut `lang`.
 
-Le cadre porte un `title` traduit — `Programme des cours`, `Kursprogramm`, `Programma dei corsi`,
-`برنامج الدروس` — sans quoi il serait annoncé comme un cadre anonyme.
+Le cadre porte un `title` traduit (`Programme des cours`, `Kursprogramm`, `Programma dei corsi`,
+`Course programme`, `برنامج الدروس`), sans quoi il serait annoncé comme un cadre anonyme.
 
 ## Ce que la page publique change en mode intégré
 

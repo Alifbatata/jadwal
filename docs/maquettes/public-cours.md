@@ -20,23 +20,27 @@ indexe.
    - `Lieu` : le nom de la salle.
    - `Intervenant` : le texte saisi.
    - `Enseigné en` : les langues d'enseignement, en toutes lettres.
-   - `Du … au …` : les dates de début et de fin, si elles sont posées.
+   - `Dates` : `Du 01.09.2026 au 20.12.2026`, si le cours a une date de fin.
 6. **Les prochaines séances**, titre de niveau 2 : au plus dix dates à venir, chacune avec son
-   heure. Une séance annulée figure barrée avec la mention `Annulé` ; une séance déplacée figure à
-   sa nouvelle date avec `Date exceptionnelle`.
-7. **L'abonnement à ce seul cours** (ADR 0028), dans cet ordre :
-   - un bouton `Ajouter ce cours à mon agenda`, en `webcal:`, vers le flux de **ce** cours ;
-   - `Ou copiez cette adresse, qui ne porte que ce cours :` puis l'adresse en `https:`, en texte
-     sélectionnable ;
-   - deux liens sur une ligne : `S'abonner à tout le programme` — vers la page d'abonnement — et
-     `Retour au programme` — vers la vue Semaine.
-8. **Le pied commun**.
+   jour et sa date (`samedi 26.09.2026`) et son heure. Une séance annulée figure barrée avec la
+   mention `Annulé` ; une séance déplacée figure à sa nouvelle date avec `Date exceptionnelle`.
+7. **Ajouter ce cours à mon agenda**, titre de niveau 2, à l'ancre `#agenda` (ADR 0028, ADR 0048).
+   Dessous, le même bloc que la page d'abonnement, selon l'appareil, pour le flux de **ce** cours
+   seul (voir `public-agenda.md`) : le bouton `Ajouter à mon calendrier` en `webcal:` sur un
+   iPhone, un iPad ou un Mac ; `Ajouter à Google Agenda` sur Android ; le choix complet ailleurs.
+   Outlook reçoit le nom `<Nom de l'organisation> – <Titre du cours>`, celui que porte le flux.
+   Puis `Ou copiez cette adresse, qui ne porte que ce cours :` et l'adresse en `https:`, et
+   `Un autre appareil ? Voir tous les choix`, vers `?appareil=tous#agenda`. La réponse porte
+   `Vary: Sec-CH-UA-Platform, User-Agent`, sauf pour le choix complet.
+8. **Deux liens** sur une ligne : `S'abonner à tout le programme`, vers la page d'abonnement, et
+   `Retour au programme`, vers la vue Semaine.
+9. **Le pied commun**.
 
 ## Métadonnées de partage
 
 Produites côté serveur, dans la langue de la page :
 
-- `<title>` : `<Titre du cours> — <Nom de l'organisation>`
+- `<title>` : `<Titre du cours> | <Nom de l'organisation>`
 - `og:title` : le titre du cours
 - `og:description` : la description, coupée à 200 caractères sur un espace, ou à défaut la ligne de
   repères (rythme, horaire, public)

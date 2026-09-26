@@ -34,10 +34,14 @@ Déplié, le bloc ajoute, dans cet ordre, en sautant ce qui est vide :
 2. **Le lieu** : `Salle : Grande salle`.
 3. **L'intervenant** : `Intervenant : Amina Cherif`.
 4. **Les langues d'enseignement** : `Enseigné en français et arabe`.
-5. **Les prochaines dates**, au plus cinq : `Prochaines séances : lundi 21 septembre,
-mercredi 23 septembre, lundi 28 septembre.` Une séance annulée n'y figure pas ; une séance
-   déplacée y figure à sa nouvelle date.
-6. **Deux liens**, dans cet ordre : `Voir la page du cours`, `Ajouter à mon agenda`.
+5. **Les prochaines dates**, au plus trois, en une phrase qui vient entière du dictionnaire,
+   ponctuation comprise : `Prochaines séances : lundi 21.09.2026, mercredi 23.09.2026, lundi
+28.09.2026`. L'espace avant les deux-points n'existe qu'en français (`Upcoming sessions: …`),
+   l'allemand sépare les dates par un point-virgule, puisqu'une virgule suit déjà le nom du jour
+   (`Nächste Termine: Montag, 21.09.2026; …`), et l'arabe par `،`. Une séance annulée n'y figure
+   pas ; une séance déplacée y figure à sa nouvelle date, et plus à l'ancienne (étape 18).
+6. **Un lien** : `Page du cours`, vers la page de ce cours. Avant l'étape 18, il disait `Cours`, et
+   se lisait `Courses` en anglais.
 
 Le détail se déplie **sur place**, sans fenêtre modale : c'est le comportement natif de `<details>`,
 donc sans JavaScript, et il survit à un rechargement puisque l'élément ouvert est celui que l'URL
@@ -45,11 +49,11 @@ désigne (`#cours-<identifiant>`).
 
 ## Quand il n'y a rien
 
-`Aucun cours publié pour l'instant.` — et rien d'autre : pas de pause à nommer ici, puisqu'une pause
+`Aucun cours publié pour l'instant.`, et rien d'autre : pas de pause à nommer ici, puisqu'une pause
 ne supprime pas un cours, elle en suspend les séances.
 
 ## Comportements
 
-- Un cours sans séance à venir reste affiché, avec `Prochaines séances : aucune date à venir.` Il
-  existe, il a seulement fini ou pas encore commencé.
-- Le titre du navigateur est `<Nom de l'organisation> — Tous les cours`.
+- Un cours sans séance à venir reste affiché, avec `Aucune date à venir.` Il existe, il a seulement
+  fini ou pas encore commencé.
+- Le titre du navigateur est `<Nom de l'organisation> | Tous les cours`.

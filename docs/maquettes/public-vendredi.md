@@ -64,6 +64,9 @@ avec `Annulé` ou `Date exceptionnelle`, exactement comme une séance de cours.
 C'est un choix : un bloc qui changerait chaque semaine ne serait plus une réponse, il serait une
 question de plus.
 
+**Depuis l'étape 18**, sur l'onglet `Prières` (voir `public-prieres.md`), le bloc du haut
+disparaît : l'onglet donne lui-même les sessions, avec la langue du sermon.
+
 ## Dans la vue Semaine
 
 Les sessions apparaissent **aussi** à leur place, dans le bloc du vendredi, triées à leur heure
@@ -71,14 +74,14 @@ parmi les cours de ce jour-là. Elles s'affichent comme une séance ordinaire, a
 différence : le mot qui introduit les langues.
 
 ```
-vendredi 25 septembre
+vendredi 25.09.2026
 12:10 – 12:50   Prière du vendredi   Ouvert à tous · Grande salle · sermon en arabe et français
 13:30 – 14:10   Prière du vendredi   Ouvert à tous · Grande salle · sermon en arabe
 19:10 – 20:10   Tafsir du vendredi   Ouvert à tous · Grande salle
 ```
 
 Le titre est celui que l'organisation a saisi, dans la langue demandée, avec le même repli que pour
-un cours. Le libellé `sermon en …` est le nôtre, traduit dans les quatre langues d'interface : c'est
+un cours. Le libellé `sermon en …` est le nôtre, traduit dans les cinq langues d'interface : c'est
 le mot juste, et « langue d'enseignement » ne l'est pas ici.
 
 Répéter les sessions en haut **et** dans le vendredi est voulu : le bloc du haut répond à la question

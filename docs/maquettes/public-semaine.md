@@ -10,10 +10,11 @@ sinon. Les filtres et la vue passent par la requête : `?public=kids`, `?vue=sem
 ## Structure, de haut en bas
 
 1. **L'en-tête commun** (voir `README.md`) : nom, vues, filtres, langues.
-2. **La période affichée**, en une ligne discrète : `Du lundi 21 septembre au dimanche 27 septembre`.
+2. **La période affichée**, en une ligne discrète, en dates seules : `Du 21.09.2026 au 27.09.2026`
+   (étape 18 ; chaque jour, plus bas, porte déjà son nom).
 3. **Un bloc par jour**, dans l'ordre chronologique, sur sept jours à partir d'aujourd'hui.
-   - Titre du jour, en toutes lettres : `lundi 21 septembre`. Le jour courant porte en plus la
-     mention `aujourd'hui`.
+   - Titre du jour, le nom du jour puis la date : `lundi 21.09.2026`. Le jour courant porte en plus
+     la mention `aujourd'hui`.
    - Sous le titre, les séances du jour, triées par heure ; une séance sans heure connue passe en
      dernier.
    - **Un jour sans séance n'est pas affiché.** Sept blocs vides ne disent rien.
@@ -42,4 +43,4 @@ laisse croire à un oubli ; nommer la pause répond à la question avant qu'elle
 
 - Changer de filtre garde la vue et la langue ; changer de langue garde la vue et le filtre.
 - Un filtre qui ne laisse rien affiche : `Aucune séance cette semaine pour ce public.`
-- Le titre du navigateur est `<Nom de l'organisation> — Cours de la semaine`.
+- Le titre du navigateur est `<Nom de l'organisation> | Cours de la semaine`.

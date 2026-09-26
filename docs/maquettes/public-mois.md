@@ -21,7 +21,7 @@ Une grille, puis la liste du jour choisi. C'est la vue qui répond à « et le 1
    - Le jour courant est marqué, même s'il n'a pas de séance.
    - Les cases des jours qui n'appartiennent pas au mois affiché restent vides.
 4. **La liste du jour choisi**, sous la grille, si un jour est choisi :
-   - Titre de niveau 2 : `lundi 12 octobre`.
+   - Titre de niveau 2 : `lundi 12.10.2026` (étape 18 ; les mois de la barre gardent leur nom).
    - Les séances du jour, dans la forme commune décrite dans `README.md`.
 5. **Le pied commun**.
 
@@ -41,4 +41,6 @@ pas la place d'un mot lisible ; un compte se lit, un titre tronqué ne se lit pa
 - Changer de mois oublie le jour choisi.
 - Le filtre par public s'applique à la grille **et** à la liste : les comptes des cases reflètent le
   filtre, sans quoi ils mentiraient.
-- Le titre du navigateur est `<Nom de l'organisation> — Octobre 2026`.
+- Un jour impossible tapé dans l'adresse (`?jour=2026-02-30`) est ignoré : il n'est jamais recopié
+  dans la page (étape 18).
+- Le titre du navigateur est `<Nom de l'organisation> | Octobre 2026`.

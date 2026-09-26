@@ -37,6 +37,29 @@ le code est un défaut — de l'un ou de l'autre, et il faut trancher, pas conto
 | ---------------------------- | ------------------------------------------------------------------------ |
 | `responsables-conditions.md` | la page des conditions, ouverte à tous, et l'écran qui les fait accepter |
 
+## Les écrans récrits à l'étape 18
+
+À l'étape 18, les retours des tests du chef de projet ont récrit l'espace des responsables : chaque
+écran dit ce qu'il fait, chaque champ a un libellé clair, une aide et un exemple, et tout se lit
+dans cinq langues. Ces descriptions-ci ont été écrites **après** le code, d'après les dictionnaires
+de chaque écran (`apps/web/src/lib/i18n/`) et les écrans rendus. Elles citent le français ; les
+quatre autres langues disent la même chose.
+
+| Fichier                            | Écran                                                                         |
+| ---------------------------------- | ----------------------------------------------------------------------------- |
+| `public-prieres.md`                | l'onglet Prières de la page publique, quand le module est allumé              |
+| `responsables-coquille.md`         | la coquille, le choix de la langue, la connexion, les organisations, l'erreur |
+| `responsables-a-venir.md`          | l'écran À venir : les sept prochains jours, annuler, déplacer, messages       |
+| `responsables-cours.md`            | la liste des cours, les pauses, et le formulaire d'un cours avec son résumé   |
+| `responsables-heures-de-priere.md` | l'écran Heures de prière : une question, trois réponses                       |
+| `responsables-partager.md`         | l'écran Partager : l'adresse, le message, le QR code, les codes à coller      |
+| `responsables-membres.md`          | l'écran Membres : les membres, les invitations, ce que chaque rôle permet     |
+| `responsables-reglages.md`         | l'écran Réglages : nom, fuseau, couleur, langues, salles, heures de prière    |
+| `super-admin.md`                   | la console du super-admin et l'écran de la passkey                            |
+
+`public-agenda.md`, `public-cours.md`, `widget.md` et `responsables-vendredi.md` ont été mis à
+jour à la même étape.
+
 ## Conventions communes à tous les écrans publics
 
 ### Ce qui ne change jamais
@@ -45,32 +68,41 @@ le code est un défaut — de l'un ou de l'autre, et il faut trancher, pas conto
   `<details>`, les vues et les filtres sont des liens. Une page publique qui aurait besoin d'un
   script serait un défaut de conception, pas une fonctionnalité.
 - **Aucune ressource d'un autre domaine** : pas de police distante, pas d'image distante, pas de
-  script distant. Le texte s'affiche avec les polices du système.
+  script distant. Le texte s'affiche avec les polices du système. Depuis l'étape 18, deux liens
+  mènent ailleurs, vers Google Agenda et Outlook, sur la page d'abonnement et la page d'un cours ;
+  ce sont des liens que le visiteur choisit de suivre, rien n'est chargé (ADR 0048).
 - **Aucun cookie, aucun traceur.** Un visiteur ne laisse rien.
 - **Texte brut.** Rien de ce qu'un responsable a saisi n'est interprété comme du HTML.
+- **Les dates s'écrivent `JJ.MM.AAAA`**, précédées du nom du jour quand il aide :
+  `samedi 26.09.2026`, `Samstag, 26.09.2026`, `Saturday 26.09.2026`. Seuls les mois de la vue Mois
+  gardent leur nom.
 
-### L'en-tête, identique sur les trois vues
+### L'en-tête, identique sur toutes les vues
 
 1. Le **nom de l'organisation**, en titre de niveau 1.
-2. Les **trois vues**, dans cet ordre, la vue courante marquée : `Semaine`, `Tous les cours`,
-   `Mois`.
+2. Les **vues**, dans cet ordre, la vue courante marquée : `Semaine`, `Tous les cours`, `Mois`, et
+   `Prières` quand le module des heures de prière est allumé (voir `public-prieres.md`). Les
+   lecteurs d'écran entendent le nom de la liste, `Affichage`.
 3. Les **filtres par public**, dans cet ordre : `Tous`, `Enfants`, `Jeunes`, `Femmes`, `Adultes`,
-   `Ouvert à tous`. Le filtre actif est marqué. Un filtre est un lien, jamais une case à cocher.
-4. Les **langues disponibles**, en toutes lettres : `Français`, `Deutsch`, `Italiano`, `العربية`.
-   La langue courante est marquée. Chaque langue est un lien vers la même vue dans cette langue.
+   `Ouvert à tous`. Le filtre actif est marqué. Un filtre est un lien, jamais une case à cocher. Les
+   lecteurs d'écran entendent `Filtrer par public`. Il n'y a pas de filtre sur l'onglet `Prières`.
+4. Les **langues disponibles**, en toutes lettres : `Français`, `Deutsch`, `Italiano`, `English`,
+   `العربية`, celles que l'organisation publie. La langue courante est marquée. Chaque langue est un
+   lien vers la même vue dans cette langue.
 
 ### Le pied, identique partout
 
 1. Une ligne, deux liens séparés par `·` :
    - `S'abonner au calendrier`, vers la page d'abonnement ;
-   - `Conditions d'utilisation`, vers `/conditions`. Le texte du lien suit la langue de la page
-     (`Nutzungsbedingungen`, `Condizioni d'uso`, `شروط الاستخدام`). La page, elle, n'existe qu'en
-     français, et le lien le dit par `hreflang="fr"`. Il s'ouvre toujours dans un nouvel onglet :
-     `/conditions` refuse d'être encadrée, et la page publique vit souvent dans un cadre, celui du
-     widget ou celui qu'une organisation pose à la main. Le lien le dit aux lecteurs d'écran, et à
-     eux seuls, par un texte caché aux yeux : son nom devient
-     `Conditions d'utilisation (s'ouvre dans un nouvel onglet)`, et de même dans les trois autres
-     langues (`öffnet sich in einem neuen Tab`, `si apre in una nuova scheda`,
+   - `Conditions d'utilisation`, vers `/conditions?lang=<langue de la page>`. Le texte du lien suit
+     la langue de la page (`Nutzungsbedingungen`, `Condizioni d'uso`, `Terms of use`,
+     `شروط الاستخدام`), et la page des conditions s'ouvre dans cette langue, avec une phrase qui dit
+     que le texte n'existe qu'en français ; le lien le dit aussi par `hreflang="fr"`. Il s'ouvre
+     toujours dans un nouvel onglet : `/conditions` refuse d'être encadrée, et la page publique vit
+     souvent dans un cadre, celui du widget ou celui qu'une organisation pose à la main. Le lien le
+     dit aux lecteurs d'écran, et à eux seuls, par un texte caché aux yeux : son nom devient
+     `Conditions d'utilisation (s'ouvre dans un nouvel onglet)`, et de même dans les quatre autres
+     langues (`öffnet sich in einem neuen Tab`, `si apre in una nuova scheda`, `opens in a new tab`,
      `يُفتح في علامة تبويب جديدة`). À l'écran, rien ne change.
 2. `Proposé gratuitement par jadwal, un service de Voltia`.
 3. Rien d'autre. Pas de compteur, pas de logo.
@@ -80,16 +112,17 @@ le code est un défaut — de l'un ou de l'autre, et il faut trancher, pas conto
 Toujours dans cet ordre, sur une ligne ou deux :
 
 1. **L'heure**. Pour un cours à heure fixe : `19:00 – 20:30`. Pour un cours ancré sur une prière :
-   `Après Maghrib` d'abord, puis l'heure entre parenthèses **si elle est connue** — jamais de
-   mention d'un réglage manquant, un visiteur n'a pas à connaître nos étapes.
+   `Après Maghrib`, `15 min après Maghrib` ou `10 min avant Maghrib` d'abord, puis l'heure entre
+   parenthèses **si elle est connue**. Jamais de mention d'un réglage manquant : un visiteur n'a pas
+   à connaître nos étapes.
 2. **Le titre du cours**, qui est un lien vers la page du cours.
 3. **Le public**, en un mot : `Enfants`, `Jeunes`, `Femmes`, `Adultes`, `Ouvert à tous`.
 4. **La salle**, si elle est renseignée.
 5. **L'intervenant**, s'il est renseigné.
 
 Une séance **annulée** reste visible, son texte est barré, et elle porte la mention `Annulé`.
-Une séance **déplacée** apparaît deux fois : barrée à sa date d'origine avec `Déplacé au <date>`, et
-à sa nouvelle date avec `Date exceptionnelle`.
+Une séance **déplacée** apparaît deux fois : barrée à sa date d'origine avec
+`Déplacé au samedi 03.10.2026`, et à sa nouvelle date avec `Date exceptionnelle`.
 
 ### Une adresse qui ne mène nulle part
 
@@ -105,14 +138,16 @@ un titre de niveau 1 et une phrase, rien d'autre :
 | `fr`   | `Page introuvable`     | `Vérifiez l'adresse.`           |
 | `de`   | `Seite nicht gefunden` | `Bitte prüfen Sie die Adresse.` |
 | `it`   | `Pagina non trovata`   | `Controlla l'indirizzo.`        |
+| `en`   | `Page not found`       | `Please check the address.`     |
 | `ar`   | `الصفحة غير موجودة`    | `تحقّق من العنوان.`             |
 
 Elle ne dit pas si l'organisation a existé.
 
 ### Les langues
 
-L'arabe s'affiche en écriture de droite à gauche complète (`dir="rtl"`), avec des **chiffres
-latins** : `19:00`, jamais `١٩:٠٠`. Le contenu d'un cours s'affiche dans la langue demandée si la
+Cinq langues depuis l'étape 18 : français, allemand de Suisse, italien, anglais britannique et
+arabe (ADR 0007). L'arabe s'affiche en écriture de droite à gauche complète (`dir="rtl"`), avec des
+**chiffres latins** : `19:00`, jamais `١٩:٠٠`. Le contenu d'un cours s'affiche dans la langue demandée si la
 traduction existe, sinon dans sa langue source, **sans mention d'échec** : un visiteur n'a pas à
 savoir qu'une traduction manque.
 
