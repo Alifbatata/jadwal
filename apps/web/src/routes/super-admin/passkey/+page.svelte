@@ -4,11 +4,14 @@
 	import { invalidateAll } from '$app/navigation';
 	import { numericDate } from '$lib/i18n.js';
 	import { passkeyTexts } from '$lib/i18n/super-admin-passkey.js';
+	import { afterRegistration, passkeyButtons } from './screen.js';
 
 	let { data } = $props();
 	const text = $derived(passkeyTexts[data.language]);
+	const buttons = $derived(passkeyButtons(data));
 
-	type Outcome = 'registered' | 'registerFailed' | 'signInFailed' | 'deleteFailed';
+	type Outcome =
+		'registered' | 'registeredAnother' | 'registerFailed' | 'signInFailed' | 'deleteFailed';
 
 	let etat = $state<'repos' | 'en-cours' | 'echec'>('repos');
 	/** Ce qui vient de se passer, dit dans la langue de l'écran. */
@@ -38,16 +41,18 @@
 
 	async function enregistrer() {
 		begin();
+		// Le message dépend de la session qui enregistre, lue avant que les données ne changent.
+		const said = afterRegistration(data);
 		try {
 			const authClient = await client();
 			const { error } = await authClient.passkey.addPasskey({ name: text.thisDevice });
 			if (error) throw new Error(error.message ?? '');
 			etat = 'repos';
-			// Pas de déconnexion : le bouton « Se connecter avec une passkey » apparaît juste en
-			// dessous dès que les données sont relues, et c'est lui qui donne les pouvoirs à cette
-			// session. L'écran a longtemps demandé de sortir puis de revenir — une marche de plus
-			// pour rien, et la première chose qu'on lit après avoir enregistré sa passkey.
-			outcome = 'registered';
+			// Pas de déconnexion. Pour la première passkey, le bouton « Se connecter avec une
+			// passkey » apparaît juste en dessous dès que les données sont relues, et c'est lui qui
+			// donne les pouvoirs à cette session. Pour une passkey de plus, la session a déjà ses
+			// pouvoirs : aucun bouton n'apparaît, et le message le dit.
+			outcome = said;
 			await invalidateAll();
 		} catch (erreur) {
 			failed('registerFailed', erreur);
@@ -107,12 +112,12 @@
 {/if}
 
 <div class="actions">
-	{#if data.amorcage || data.hasSuperAdminPowers}
+	{#if buttons.register}
 		<button type="button" onclick={enregistrer} disabled={etat === 'en-cours'}>
 			{text.register}
 		</button>
 	{/if}
-	{#if !data.hasSuperAdminPowers && !data.amorcage}
+	{#if buttons.signIn}
 		<button type="button" onclick={seConnecter} disabled={etat === 'en-cours'}>
 			{text.signIn}
 		</button>

@@ -18,7 +18,13 @@ interface PasskeyTexts {
 	readonly noPowers: string;
 	readonly register: string;
 	readonly signIn: string;
+	/**
+	 * Après l'enregistrement : `registered` pour la première passkey, qui renvoie au bouton de
+	 * connexion apparu dessous ; `registeredAnother` pour une passkey de plus, pouvoirs actifs, quand
+	 * l'écran n'a aucun bouton de connexion (`routes/super-admin/passkey/screen.ts`).
+	 */
 	readonly registered: string;
+	readonly registeredAnother: string;
 	readonly registerFailed: string;
 	readonly signInFailed: string;
 	readonly deleteFailed: string;
@@ -51,6 +57,8 @@ export const passkeyTexts: Translations<PasskeyTexts> = {
 		signIn: 'Se connecter avec une passkey',
 		registered:
 			'Passkey enregistrée. Utilisez le bouton ci-dessous pour vous connecter avec elle, sans quitter la page.',
+		registeredAnother:
+			'Passkey enregistrée. Vous pourrez vous connecter avec elle la prochaine fois. Vous n’avez rien d’autre à faire.',
 		registerFailed:
 			'La passkey n’a pas pu être enregistrée. Réessayez, ou essayez depuis un autre appareil.',
 		signInFailed: 'La connexion avec la passkey n’a pas abouti. Réessayez.',
@@ -80,6 +88,8 @@ export const passkeyTexts: Translations<PasskeyTexts> = {
 		signIn: 'Mit Passkey anmelden',
 		registered:
 			'Passkey gespeichert. Melden Sie sich jetzt damit an, mit der Schaltfläche unten, ohne die Seite zu verlassen.',
+		registeredAnother:
+			'Passkey gespeichert. Sie können sich beim nächsten Mal damit anmelden. Mehr ist nicht zu tun.',
 		registerFailed:
 			'Der Passkey konnte nicht gespeichert werden. Versuchen Sie es noch einmal oder mit einem anderen Gerät.',
 		signInFailed: 'Die Anmeldung mit dem Passkey hat nicht geklappt. Versuchen Sie es noch einmal.',
@@ -110,6 +120,8 @@ export const passkeyTexts: Translations<PasskeyTexts> = {
 		signIn: 'Accedi con una passkey',
 		registered:
 			'Passkey registrata. Accedi adesso con questa passkey, con il pulsante qui sotto, senza lasciare la pagina.',
+		registeredAnother:
+			'Passkey registrata. Potrai accedere con questa passkey la prossima volta. Non devi fare nient’altro.',
 		registerFailed:
 			'Non è stato possibile registrare la passkey. Riprova, oppure prova da un altro dispositivo.',
 		signInFailed: 'L’accesso con la passkey non è riuscito. Riprova.',
@@ -139,6 +151,8 @@ export const passkeyTexts: Translations<PasskeyTexts> = {
 		signIn: 'Sign in with a passkey',
 		registered:
 			'Passkey registered. Sign in with it now, with the button below, without leaving the page.',
+		registeredAnother:
+			'Passkey registered. You can sign in with it next time. There is nothing else to do.',
 		registerFailed: 'The passkey could not be registered. Try again, or try from another device.',
 		signInFailed: 'Signing in with the passkey did not work. Try again.',
 		deleteFailed: 'The passkey could not be removed. Try again.',
@@ -166,6 +180,8 @@ export const passkeyTexts: Translations<PasskeyTexts> = {
 		register: 'تسجيل مفتاح مرور',
 		signIn: 'الدخول بمفتاح مرور',
 		registered: 'تم تسجيل مفتاح المرور. سجل الدخول به الآن، بالزر أدناه، دون مغادرة الصفحة.',
+		registeredAnother:
+			'تم تسجيل مفتاح المرور. يمكنك الدخول به في المرة القادمة. لا حاجة إلى فعل أي شيء آخر.',
 		registerFailed: 'تعذر تسجيل مفتاح المرور. أعد المحاولة، أو جرب من جهاز آخر.',
 		signInFailed: 'لم ينجح الدخول بمفتاح المرور. أعد المحاولة.',
 		deleteFailed: 'تعذر حذف مفتاح المرور. أعد المحاولة.',
