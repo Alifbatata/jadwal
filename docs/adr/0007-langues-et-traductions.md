@@ -89,7 +89,12 @@ texte n'existe qu'en français pour le moment.
 **Les messages prêts à coller** s'écrivent dans chacune des langues que l'organisation publie : ce
 sont celles que lit sa communauté. Le programme de la semaine commence par la langue par défaut de
 l'organisation ; une annulation ou un déplacement, par la langue source du cours. Un titre traduit
-prend sa traduction, sinon il garde sa langue source, comme sur la page publique.
+prend sa traduction, sinon il garde sa langue source, comme sur la page publique. Une exception :
+une session du vendredi qui porte le nom que le service propose (« Prière du vendredi »,
+« Freitagsgebet »…) se lit dans la langue du lecteur, dans les messages, sur la page publique, dans
+le programme sur un site, dans l'API et dans le flux agenda, puisque l'organisation n'a rien choisi.
+Un titre qu'elle a écrit elle-même reste tel quel. La session s'écrit dans la langue par défaut de
+l'organisation (`apps/web/src/lib/server/friday-title.ts`).
 
 **Le correcteur relit les cinq langues**, l'anglais avec LanguageTool en anglais britannique
 (`pnpm orthographe`).
