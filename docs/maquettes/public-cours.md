@@ -24,6 +24,9 @@ indexe.
 6. **Les prochaines séances**, titre de niveau 2 : au plus dix dates à venir, chacune avec son
    jour et sa date (`samedi 26.09.2026`) et son heure. Une séance annulée figure barrée avec la
    mention `Annulé` ; une séance déplacée figure à sa nouvelle date avec `Date exceptionnelle`.
+   Déplacée le même jour à une autre heure, elle porte `Nouvelle heure`, puis l'heure d'avant,
+   `Initialement à 19:30`, la même que la vue Semaine, y compris pour un cours placé après une
+   prière (étape 18). Si aucune heure de prière ne couvre ce jour, l'heure d'avant n'est pas dite.
 7. **Ajouter ce cours à mon agenda**, titre de niveau 2, à l'ancre `#agenda` (ADR 0028, ADR 0048).
    Dessous, le même bloc que la page d'abonnement, selon l'appareil, pour le flux de **ce** cours
    seul (voir `public-agenda.md`) : le bouton `Ajouter à mon calendrier` en `webcal:` sur un

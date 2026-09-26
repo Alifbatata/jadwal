@@ -122,7 +122,9 @@ Toujours dans cet ordre, sur une ligne ou deux :
 
 Une séance **annulée** reste visible, son texte est barré, et elle porte la mention `Annulé`.
 Une séance **déplacée** apparaît deux fois : barrée à sa date d'origine avec
-`Déplacé au samedi 03.10.2026`, et à sa nouvelle date avec `Date exceptionnelle`.
+`Déplacé au samedi 03.10.2026`, et à sa nouvelle date avec `Date exceptionnelle`. Déplacée le même
+jour à une autre heure, elle est barrée avec `Déplacé à 20:30`, puis écrite à sa nouvelle heure avec
+`Nouvelle heure` et `Initialement à 19:00` (étape 18).
 
 ### Une adresse qui ne mène nulle part
 
