@@ -49,10 +49,14 @@ Un brouillon, un cours archivé, une organisation suspendue et un identifiant in
 
 | Paramètre | Où      | Défaut                                 | Notes                                           |
 | --------- | ------- | -------------------------------------- | ----------------------------------------------- |
-| `lang`    | requête | la langue par défaut de l'organisation | `fr`, `de`, `it` ou `ar` ; sinon `fr`           |
+| `lang`    | requête | la langue par défaut de l'organisation | `fr`, `de`, `it`, `en` ou `ar` ; sinon `fr`     |
 | `from`    | requête | aujourd'hui                            | `AAAA-MM-JJ` ; une valeur illisible est ignorée |
 | `to`      | requête | `from` + 6 jours                       | borné par `maxDays`                             |
 | `maxDays` | requête | `92`                                   | entier, **366 au plus** ; sinon `400`           |
+
+`en`, l'anglais britannique, s'est ajouté à l'étape 18 : c'est une addition, et `/api/v1/` reste
+`/api/v1/`. Les dates de l'API et des flux restent écrites `AAAA-MM-JJ` : c'est un format
+d'échange. Une page ou un écran les écrit `JJ.MM.AAAA` pour une personne.
 
 La plage est ramenée dans ses bornes **par le serveur**. Demander dix ans rend quatre-vingt-douze
 jours, sans erreur : le champ `range` de la réponse dit toujours ce qui a réellement été servi.
@@ -90,7 +94,7 @@ GET /api/v1/organisations/belvedere/schedule?from=2026-09-01&to=2027-06-30&maxDa
 | `name`            | chaîne | son nom, tel qu'il s'affiche                                |
 | `timeZone`        | chaîne | nom IANA, par exemple `Europe/Zurich`                       |
 | `accentColor`     | chaîne | couleur hexadécimale, pour le widget                        |
-| `languages`       | liste  | les langues activées, parmi `fr`, `de`, `it`, `ar`          |
+| `languages`       | liste  | les langues activées, parmi `fr`, `de`, `it`, `en`, `ar`    |
 | `defaultLanguage` | chaîne | celle qui s'applique quand `lang` n'est pas donné           |
 | `rooms`           | liste  | les **noms** des salles ; elles n'ont pas d'identifiant ici |
 
@@ -235,7 +239,10 @@ pas une annulation : la séance n'existe pas.
 | `prayer` | `prayer`, `offsetMinutes` (-120 à 240), `durationMinutes` (5 à 1440) |
 
 Pour un cours ancré, **affichez la prière en premier** et l'heure en indication : elle change chaque
-jour, et elle peut être inconnue.
+jour, et elle peut être inconnue. Un `offsetMinutes` négatif place le cours **avant** la prière :
+`-10` se lit « 10 min avant Maghrib ». Depuis l'étape 18, l'écran des responsables propose « avant
+une prière » avec des minutes positives (de 1 à 120 avant, de 0 à 240 après), et la base garde le
+décalage signé : le contrat de l'API ne change pas.
 
 ## Les flux agenda
 
@@ -255,11 +262,11 @@ mot : `بعد المغرب` en arabe, `Nach Fadschr` et `15 Min. nach Ischa` en 
 flux dit `Après Maghrib`, comme la page. Un décalage négatif se dit « avant », avec sa valeur
 absolue.
 
-| Décalage | `fr`                   | `de`                   | `it`                      | `ar`                    |
-| -------- | ---------------------- | ---------------------- | ------------------------- | ----------------------- |
-| 0        | `Après Maghrib`        | `Nach Maghrib`         | `Dopo Maghrib`            | `بعد المغرب`            |
-| 15       | `15 min après Maghrib` | `15 Min. nach Maghrib` | `15 min dopo Maghrib`     | `بعد المغرب بـ15 دقيقة` |
-| -15      | `15 min avant Maghrib` | `15 Min. vor Maghrib`  | `15 min prima di Maghrib` | `قبل المغرب بـ15 دقيقة` |
+| Décalage | `fr`                   | `de`                   | `it`                      | `en`                    | `ar`                    |
+| -------- | ---------------------- | ---------------------- | ------------------------- | ----------------------- | ----------------------- |
+| 0        | `Après Maghrib`        | `Nach Maghrib`         | `Dopo Maghrib`            | `After Maghrib`         | `بعد المغرب`            |
+| 15       | `15 min après Maghrib` | `15 Min. nach Maghrib` | `15 min dopo Maghrib`     | `15 min after Maghrib`  | `بعد المغرب بـ15 دقيقة` |
+| -15      | `15 min avant Maghrib` | `15 Min. vor Maghrib`  | `15 min prima di Maghrib` | `15 min before Maghrib` | `قبل المغرب بـ15 دقيقة` |
 
 Depuis l'étape 16, le champ `DESCRIPTION` change donc pour trois sortes d'abonnés : en arabe, où
 la prière était écrite en lettres latines (`عند Maghrib`) ; en allemand, pour Fajr et Isha ; et dans
@@ -270,6 +277,9 @@ Depuis l'étape 17, le décalage nul change aussi, dans les quatre langues : le 
 `À Maghrib`, `Zu Maghrib`, `A Maghrib` et `عند المغرب`, là où la page disait « après ». Il dit
 maintenant la phrase de la page, et n'en a plus aucune à lui. Les heures et les identifiants
 d'événement ne changent pas non plus.
+
+Depuis l'étape 18, le flux parle aussi anglais (`?lang=en`), avec la phrase de la page anglaise.
+Rien ne change pour les abonnés des quatre autres langues.
 
 ### Un seul cours
 
