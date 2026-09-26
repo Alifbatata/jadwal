@@ -59,7 +59,17 @@
 	// Une copie, volontairement figée au premier rendu : le formulaire est la source de vérité de
 	// la saisie en cours, et le recharger depuis `values` effacerait ce que la personne tape.
 	let entry = $state({ ...untrack(() => values) });
-	let activeLanguage = $state(untrack(() => values.sourceLanguage));
+	// L'onglet ouvert d'abord est celui de la langue de saisie. Après un envoi refusé pour une
+	// description sans titre, c'est celui de la première langue en cause, dans l'ordre de l'encadré :
+	// la langue de saisie si son titre manque aussi, sinon la première dont la description n'a pas de
+	// titre. Sans cela, le champ à corriger resterait caché derrière son onglet.
+	let activeLanguage = $state(
+		untrack(() =>
+			errors.includes('titleMissing')
+				? values.sourceLanguage
+				: (untitledDescriptions[0] ?? values.sourceLanguage)
+		)
+	);
 	// Les onglets de langue ne marchent qu'avec JavaScript. Tant que la page n'est pas hydratée, et
 	// toujours sans JavaScript, ils n'existent pas, et les champs de chaque langue sont tous montrés.
 	let hydrated = $state(false);
