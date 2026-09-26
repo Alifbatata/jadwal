@@ -54,7 +54,8 @@
  *   qui est réservé au responsable ; une responsable qui se donne le rôle d'éditeur le lit sur
  *   l'écran où elle arrive.
  * - B4 : le résumé du formulaire de cours, sa ligne de description, et ce qui manque, signalé ; une
- *   description écrite sans le titre de sa langue est refusée, avec une phrase qui nomme la langue.
+ *   description écrite sans le titre de sa langue est refusée, avec une phrase qui nomme la langue,
+ *   et l'écran revient sur l'onglet de cette langue.
  * - C1 : « D'où viennent vos heures de prière ? », ses trois réponses et l'aperçu de sept jours ;
  *   axe à 390 px de large sur les trois réponses.
  * - C2 : la localité trouvée par son nom et par son NPA, sans service extérieur, avec l'attribution
@@ -2060,9 +2061,10 @@ async function clarteDuFormulaire(page, cours) {
 
 /**
  * Une description écrite en allemand, le titre allemand laissé vide (B4) : le serveur refuse le
- * cours avec une phrase qui nomme la langue, et le formulaire revient avec la saisie. La
- * description est ensuite effacée, pour que le cours s'enregistre sans elle. Le champ vit derrière
- * l'onglet de sa langue, qu'on ouvre avant d'y écrire, quel que soit l'onglet que l'écran rouvre.
+ * cours avec une phrase qui nomme la langue, et le formulaire revient avec la saisie, ouvert sur
+ * l'onglet de l'allemand, où le champ à corriger est en vue. La description est ensuite effacée,
+ * pour que le cours s'enregistre sans elle. Le champ vit derrière l'onglet de sa langue, qu'on ouvre
+ * avant d'y écrire, quel que soit l'onglet que l'écran rouvre.
  */
 async function descriptionSansTitre(page) {
 	const allemand = () => page.getByRole('tab', { name: /allemand/ }).click();
@@ -2089,6 +2091,27 @@ async function descriptionSansTitre(page) {
 				'la description gardée': gardee === DESCRIPTION_SANS_TITRE.texte
 			},
 			`${chemin(page)} ; ${refus.map((phrase) => `« ${phrase} »`).join(', ') || 'aucun refus'} ; description « ${gardee} »`
+		);
+		// Les onglets n'existent qu'une fois la page rouverte hydratée : on les attend, sans rien
+		// cliquer, cinq secondes au plus.
+		if (chemin(page) === '/cours/nouveau') {
+			await page
+				.getByRole('tab')
+				.first()
+				.waitFor({ timeout: 5000 })
+				.catch(() => undefined);
+		}
+		const choisis = (
+			await page.locator('[role="tab"][aria-selected="true"]').allTextContents()
+		).map((onglet) => onglet.replace(/\s+/g, ' ').trim());
+		const enVue = (await description.count()) === 1 && (await description.isVisible());
+		verifierChaque(
+			'avec JavaScript, après ce refus, l’écran revient sur l’onglet de la langue en cause, « allemand », où la description est en vue',
+			{
+				'l’onglet « allemand » choisi, seul': choisis.length === 1 && choisis[0] === 'allemand',
+				'la description en vue': enVue
+			},
+			`onglet choisi : ${choisis.map((onglet) => `« ${onglet} »`).join(', ') || 'aucun'} ; description ${enVue ? 'en vue' : 'cachée ou absente'}`
 		);
 		if (chemin(page) === '/cours/nouveau') {
 			await allemand();
