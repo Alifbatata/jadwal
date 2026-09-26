@@ -41,7 +41,8 @@
  *   page publique, widget), et la date des conditions et d'une passkey en `JJ.MM.AAAA`.
  * - B1 : les aides sous les champs clés, et des libellés qui disent ce qu'ils font ; sur un
  *   téléphone, la confirmation avant de supprimer une salle occupée se voit sans défiler ; sans
- *   JavaScript, une session du vendredi se supprime, et l'écran le dit.
+ *   JavaScript, une session du vendredi se supprime, et l'écran le dit. Dans la carte d'une session
+ *   du vendredi, l'aide de « À partir du » est celle d'une modification.
  * - B2 : l'écran du super-admin, de « Créer une organisation » au lien de connexion de secours ;
  *   l'adresse proposée pendant la frappe, et par le serveur sans JavaScript ; une seconde passkey,
  *   qui a son propre nom et un message juste.
@@ -239,10 +240,13 @@ const VENDREDI = { debut: '12:30', fin: '13:15' };
 /** Une seconde session, ajoutée puis supprimée dans un navigateur sans JavaScript (retour B1). */
 const SECONDE_SESSION = { debut: '13:40', fin: '14:20' };
 /**
- * La phrase lue à la lettre dans un écran corrigé depuis la relecture du lot 4 : ce que dit l'écran
- * du vendredi après une suppression (`friday.ts`).
+ * Les phrases lues à la lettre dans un écran corrigé depuis la relecture du lot 4 : ce que dit
+ * l'écran du vendredi après une suppression, et l'aide de « À partir du » dans la carte d'une
+ * session (`friday.ts`).
  */
 const SESSION_SUPPRIMEE = 'La session est supprimée.';
+const AIDE_DE_LA_MODIFICATION =
+	'La session a lieu chaque vendredi à partir de cette date. Changez cette date seulement pour corriger une erreur.';
 /**
  * Une description écrite en allemand, le titre allemand laissé vide (retour B4), et le refus qui
  * nomme la langue (`course-form.ts`).
@@ -3213,6 +3217,20 @@ async function prieres(page, navigateur) {
 			'une session du vendredi est ajoutée',
 			(await texteDe(page.getByRole('status').last())) === 'La session est ajoutée.',
 			await texteDe(page.getByRole('status').last())
+		);
+	});
+	// La carte de la session enregistrée a son propre formulaire, celui d'une modification : son aide
+	// ne dit pas de garder la date du jour, comme celle de l'ajout.
+	await retour('B1', async () => {
+		const carte = page
+			.locator('section.session')
+			.filter({ hasText: `${VENDREDI.debut} – ${VENDREDI.fin}` });
+		const champ = carte.getByLabel('À partir du', { exact: true });
+		const aide = (await champ.count()) === 1 ? await descriptionDe(champ) : 'aucun champ';
+		verifier(
+			'dans la carte d’une session, « À partir du » a l’aide d’une modification : « Changez cette date seulement pour corriger une erreur. »',
+			aide === AIDE_DE_LA_MODIFICATION,
+			aide || 'aucune aide'
 		);
 	});
 	await auditer(page, 'vendredi');
