@@ -25,6 +25,15 @@
 					defaultLanguage: organisation.default_language
 				}
 	);
+	/**
+	 * Le nom et la formule d'accueil, liés à leur champ. Posés par `value=`, ils étaient mis à jour
+	 * par le même effet que l'aperçu de la couleur : la première couleur choisie après le chargement
+	 * remettait dans les deux champs les valeurs du départ, et ce qui avait été tapé partait perdu
+	 * sous « Réglages enregistrés. ». Liés, ils gardent ce qui est tapé, et repartent de la saisie
+	 * seulement quand elle change.
+	 */
+	let nom = $derived(saisie.name);
+	let accueil = $derived(saisie.greeting);
 	/** Un fuseau hors de la liste n'est jamais rendu par le serveur : c'est alors celui qui est enregistré. */
 	const fuseauChoisi = $derived(saisie.timeZone ?? organisation.time_zone);
 	/** Un nom de fuseau se lit mieux sans ses traits de soulignement : « America/New York ». */
@@ -85,7 +94,7 @@
 		id="name"
 		name="name"
 		type="text"
-		value={saisie.name}
+		bind:value={nom}
 		maxlength="120"
 		required
 		dir="auto"
@@ -142,7 +151,7 @@
 		id="greeting"
 		name="greeting"
 		type="text"
-		value={saisie.greeting}
+		bind:value={accueil}
 		maxlength="60"
 		required
 		dir="auto"
