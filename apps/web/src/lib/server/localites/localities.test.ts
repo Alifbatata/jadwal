@@ -190,15 +190,51 @@ describe('searchLocalities, d’autres façons d’écrire', () => {
 		expect(premier('ch-1201 geneve')).toBe('1201 Genève (GE)');
 	});
 
-	it('lit un NPA que la liste ne connaît pas comme ses trois premiers chiffres', () => {
+	it('lit un NPA que la liste ne connaît pas comme celui de la grande localité voisine', () => {
 		// 8000, 3000, 1200 : des NPA de cases postales ou de grands destinataires, que le répertoire
-		// des localités ne contient pas. Leurs trois premiers chiffres désignent la même ville.
+		// des localités ne contient pas. La ville voisine qui a le plus de NPA vient d'abord.
 		expect(premier('8000 Zürich')).toBe('8001 Zürich (ZH)');
 		expect(premier('8000')).toBe('8001 Zürich (ZH)');
 		expect(premier('3000 Bern')).toBe('3004 Bern (BE)');
 		expect(premier('1200 Genève')).toBe('1201 Genève (GE)');
 		// Un NPA que la liste connaît reste pris tel quel : il ne correspond pas à Zurich.
 		expect(searchLocalities('2502 zurich')).toEqual([]);
+	});
+});
+
+describe('searchLocalities, pendant la frappe (relecture du lot 2)', () => {
+	it('lit une parenthèse encore ouverte comme le début d’un mot, et non comme un canton', () => {
+		// « Charmey (Gr » est le nom qualifié qu'une personne est en train de taper : la liste ne
+		// doit pas se vider à la deuxième lettre après la parenthèse.
+		expect(premier('Charmey (Gr')).toBe('1637 Charmey (Gruyère) (FR)');
+		expect(premier('Aproz (Ne')).toBe('1994 Aproz (Nendaz) (VS)');
+		expect(premier('Egg (Fl')).toBe('9231 Egg (Flawil) (SG)');
+		expect(premier('Chapelle (Gl')).toBe('1608 Chapelle (Glâne) (FR)');
+		expect(premier('Campo (Bl')).toBe('6720 Campo (Blenio) (TI)');
+		// Une parenthèse ouverte sur un vrai canton le lit encore, localités de ce canton d'abord.
+		expect(premier('Biel (BE')).toBe('2502 Biel/Bienne (BE)');
+	});
+
+	it('garde des places au sens littéral quand les localités du canton rempliraient la liste', () => {
+		const noms = (requete: string) => searchLocalities(requete).map((localite) => localite.name);
+		expect(noms('la ne')).toEqual(expect.arrayContaining(['La Neuveville', 'La Neirigue']));
+		expect(noms('le gr')).toContain('Le Grand-Saconnex');
+		expect(noms('la ti')).toContain('La Tine');
+		// Les localités du canton restent en tête, et la liste garde sa borne.
+		expect(searchLocalities('la ne')[0]?.canton).toBe('NE');
+		expect(searchLocalities('la ne')).toHaveLength(10);
+	});
+
+	it('propose d’abord la ville d’un NPA de cases postales, et non une localité voisine', () => {
+		// 1211 : les cases postales de Genève. 3030 : celles de Berne. Ni l'un ni l'autre n'est dans
+		// la liste, et leurs trois premiers chiffres mènent à Grand-Lancy et à Hinterkappelen.
+		expect(premier('1211')).toBe('1201 Genève (GE)');
+		expect(premier('1211 Genève')).toBe('1201 Genève (GE)');
+		expect(premier('3030')).toBe('3004 Bern (BE)');
+		expect(premier('3030 Bern')).toBe('3004 Bern (BE)');
+		// Une ville n'y figure qu'une fois, sous son plus petit NPA.
+		const geneve = searchLocalities('1211').filter((localite) => localite.name === 'Genève');
+		expect(geneve).toHaveLength(1);
 	});
 });
 

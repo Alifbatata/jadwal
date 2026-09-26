@@ -270,26 +270,41 @@ function compare(a: Entry, b: Entry): number {
 	);
 }
 
-/** Les NPA de la liste : un NPA entier absent se lit comme ses trois premiers chiffres. */
+/** Les NPA de la liste : un NPA entier absent est celui d'une case postale ou d'un grand destinataire. */
 const POSTCODES = new Set(entries.map((entry) => entry.locality.postcode));
 
 /** Un NPA, éventuellement précédé de « CH- » : entier en `whole`, commencé en `start`. */
 const POSTCODE_WORD = { whole: /^(?:ch-?)?(\d{4})$/i, start: /^(?:ch-?)?(\d{1,4})$/i };
 
+/** Deux lettres, entre parenthèses ou non, et peut-être une parenthèse encore ouverte. */
+const CANTON_WORD = /^(\()?([a-z]{2})(\))?$/i;
+
+/** Ce que dit une recherche, une fois lue. */
+interface Query {
+	/** Le NPA, entier ou commencé, ou rien. */
+	digits: string;
+	/** Vrai quand le NPA est entier et que la liste ne le connaît pas. */
+	unknown: boolean;
+	/** Le nom, normalisé. */
+	text: string;
+	/** Le canton qui suit le nom, ou `null`. */
+	canton: string | null;
+	/** Les lettres du canton telles qu'elles ont été tapées. */
+	cantonWord: string;
+	/** Vrai quand le canton est entre deux parenthèses : il ne peut alors être que le canton. */
+	strict: boolean;
+}
+
 /**
- * Ce que dit une recherche : le NPA, le nom normalisé, et le canton qui le suit s'il y en a un
- * (`cantonWord` garde les lettres telles qu'elles ont été tapées).
+ * Lit une recherche : le NPA, le nom normalisé, et le canton qui le suit s'il y en a un.
  *
  * Le NPA vient en tête (« 2502 Biel/Bienne », l'ordre d'une adresse suisse), entier ou commencé, ou
  * en fin, et alors entier : un nombre plus court en fin fait partie du nom (« Lausanne 25 »). Le
- * canton vient en fin, après au moins un mot : seul, « BE » reste un nom commencé.
+ * canton vient en fin, après au moins un mot : seul, « BE » reste un nom commencé. Entre deux
+ * parenthèses, « (BE) », il ne peut être que le canton ; après une parenthèse encore ouverte,
+ * « Charmey (Gr », il peut aussi être le début du mot qui précise un nom, « Charmey (Gruyère) ».
  */
-function readQuery(query: string): {
-	digits: string;
-	text: string;
-	canton: string | null;
-	cantonWord: string;
-} {
+function readQuery(query: string): Query {
 	// Une virgule sépare comme une espace ; une parenthèse collée au nom s'en détache.
 	const words = latinDigits(query)
 		.replace(/[,;]/g, ' ')
@@ -300,6 +315,7 @@ function readQuery(query: string): {
 	let digits = '';
 	let canton: string | null = null;
 	let cantonWord = '';
+	let strict = false;
 	const head = POSTCODE_WORD.start.exec(words[0] ?? '');
 	if (head) {
 		digits = head[1] as string;
@@ -308,20 +324,79 @@ function readQuery(query: string): {
 	while (words.length > 1) {
 		const last = words.at(-1) as string;
 		const postcode = digits === '' ? POSTCODE_WORD.whole.exec(last) : null;
-		const code = /^\(?([a-z]{2})\)?$/i.exec(last)?.[1]?.toUpperCase();
+		const word = CANTON_WORD.exec(last);
+		const code = word?.[2]?.toUpperCase();
 		if (postcode) digits = postcode[1] as string;
 		else if (canton === null && code && CANTONS.has(code)) {
 			canton = code;
 			cantonWord = last;
+			strict = word?.[1] !== undefined && word[3] !== undefined;
 		} else break;
 		words.pop();
 	}
-	if (digits.length === 4 && !POSTCODES.has(digits)) digits = digits.slice(0, 3);
-	return { digits, text: normalise(words.join(' ')), canton, cantonWord };
+	return {
+		digits,
+		unknown: digits.length === 4 && !POSTCODES.has(digits),
+		text: normalise(words.join(' ')),
+		canton,
+		cantonWord,
+		strict
+	};
+}
+
+/**
+ * Les localités autour d'un NPA que la liste ne connaît pas : celui d'une case postale ou d'un grand
+ * destinataire, comme « 1211 » à Genève ou « 3030 » à Berne.
+ *
+ * Ce NPA n'appartient à aucune localité, et ses trois premiers chiffres ne mènent pas toujours à la
+ * bonne : « 121 » ne donne que des communes voisines de Genève, Grand-Lancy d'abord. La recherche
+ * regarde donc les localités du même arrondissement postal (les deux premiers chiffres), une fois
+ * chacune sous son plus petit NPA, et met d'abord celle qui a le plus de NPA pour la distance qui la
+ * sépare du NPA tapé : une ville proche vient avant un village aussi proche, et avant une ville
+ * lointaine. Avec un nom, le rang du nom passe avant tout le reste.
+ */
+function nearby(digits: string, text: string, canton: string | null, bound: number): Locality[] {
+	if (text !== '' && text.length < MIN_LENGTH) return [];
+	const typed = Number(digits);
+	const district = digits.slice(0, 2);
+	const groups = new Map<string, { entry: Entry; rank: number; count: number; distance: number }>();
+	for (const entry of entries) {
+		const { postcode, name, canton: itsCanton } = entry.locality;
+		if (!postcode.startsWith(district)) continue;
+		if (canton !== null && itsCanton !== canton) continue;
+		const value = text === '' ? 0 : rank(entry, text);
+		if (value === null) continue;
+		const distance = Math.abs(Number(postcode) - typed);
+		const key = `${name}|${itsCanton}`;
+		const known = groups.get(key);
+		if (!known) {
+			groups.set(key, { entry, rank: value, count: 1, distance });
+			continue;
+		}
+		known.count += 1;
+		known.distance = Math.min(known.distance, distance);
+		if (value < known.rank || (value === known.rank && postcode < known.entry.locality.postcode)) {
+			known.entry = entry;
+			known.rank = value;
+		}
+	}
+	return [...groups.values()]
+		.sort(
+			(a, b) =>
+				a.rank - b.rank || b.count / b.distance - a.count / a.distance || compare(a.entry, b.entry)
+		)
+		.slice(0, bound)
+		.map(({ entry }) => entry.locality);
 }
 
 /** Les localités d'un NPA, d'un nom, ou des deux, dans ce canton s'il est donné. */
-function find(digits: string, text: string, canton: string | null, bound: number): Locality[] {
+function find(
+	{ digits, unknown }: Pick<Query, 'digits' | 'unknown'>,
+	text: string,
+	canton: string | null,
+	bound: number
+): Locality[] {
+	if (unknown) return nearby(digits, text, canton, bound);
 	const inCanton = (entry: Entry) => canton === null || entry.locality.canton === canton;
 
 	if (digits !== '' && text === '') {
@@ -381,14 +456,17 @@ function find(digits: string, text: string, canton: string | null, bound: number
  *   rend les NPA qui commencent par ces chiffres, dans l'ordre.
  * - Un NPA et un nom, dans un ordre ou dans l'autre (« 2502 biel », « bienne 2502 ») : les deux
  *   doivent correspondre. Le NPA peut suivre « CH- » (« CH-2502 ») ou précéder une virgule
- *   (« 1201, Genève »). Un NPA entier que la liste ne connaît pas (« 8000 », celui d'une case
- *   postale ou d'un grand destinataire) se lit comme ses trois premiers chiffres, qui désignent la
- *   même ville.
+ *   (« 1201, Genève »). Un NPA entier que la liste ne connaît pas (« 1211 », celui d'une case
+ *   postale ou d'un grand destinataire) propose les localités voisines, la plus grande et la plus
+ *   proche d'abord (voir `nearby`).
  * - Un nom suivi de l'abréviation du canton, avec ou sans parenthèses (« Biel BE », « Biel/Bienne
- *   (BE) »), comme on lève un homonyme en Suisse : les localités de ce canton d'abord, et, sans
- *   parenthèses, celles dont le nom porte ces deux lettres ensuite (« biel be » peut être le début
- *   de « Biel-Benken »). La forme « NPA Nom (CANTON) », celle sous laquelle une localité
- *   s'affiche, retrouve donc cette localité en premier.
+ *   (BE) »), comme on lève un homonyme en Suisse. Entre deux parenthèses, les localités de ce
+ *   canton seulement. Sans parenthèses, ou après une parenthèse encore ouverte, les localités de ce
+ *   canton d'abord, puis celles dont le nom porte ces deux lettres (« biel be » peut être le début
+ *   de « Biel-Benken », « Charmey (Gr » celui de « Charmey (Gruyère) ») : ces dernières gardent au
+ *   moins la moitié des places quand elles existent, pour que « la ne » propose encore
+ *   La Neuveville. La forme « NPA Nom (CANTON) », celle sous laquelle une localité s'affiche,
+ *   retrouve donc cette localité en premier.
  *
  * Un NPA tapé en chiffres arabes orientaux ou persans se lit comme en chiffres latins.
  *
@@ -400,15 +478,19 @@ export function searchLocalities(query: string, limit = DEFAULT_LIMIT): Locality
 	const bound = Number.isNaN(limit)
 		? DEFAULT_LIMIT
 		: Math.min(MAX_LIMIT, Math.max(1, Math.floor(limit)));
-	const { digits, text, canton, cantonWord } = readQuery(query);
-	if (canton === null) return find(digits, text, null, bound);
-	const found = find(digits, text, canton, bound);
-	// Entre parenthèses, les deux lettres ne peuvent être que le canton. Sans elles, elles peuvent
-	// aussi commencer le dernier mot d'un nom : les localités de ce canton d'abord, puis les autres,
-	// sans doublon.
-	if (cantonWord.startsWith('(')) return found;
-	const literal = find(digits, normalise(`${text} ${cantonWord}`), null, bound);
-	return [...found, ...literal.filter((locality) => !found.includes(locality))].slice(0, bound);
+	const read = readQuery(query);
+	const { text, canton, cantonWord } = read;
+	if (canton === null) return find(read, text, null, bound);
+	const found = find(read, text, canton, bound);
+	if (read.strict) return found;
+	// Sans ses deux parenthèses, les deux lettres peuvent aussi commencer le dernier mot d'un nom :
+	// les localités de ce canton d'abord, puis les autres, sans doublon. Les autres gardent jusqu'à
+	// la moitié des places : sans quoi un canton qui compte beaucoup de localités les chassait toutes
+	// de la liste, et « la ne » ne proposait plus La Neuveville.
+	const literal = find(read, normalise(`${text} ${cantonWord}`), null, bound);
+	const others = literal.filter((locality) => !found.includes(locality));
+	const kept = Math.min(others.length, Math.floor(bound / 2));
+	return [...found.slice(0, bound - kept), ...others].slice(0, bound);
 }
 
 /**
