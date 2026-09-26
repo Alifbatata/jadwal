@@ -721,14 +721,18 @@ describe('la prière du vendredi dit ce qu’elle demande (retour B1)', () => {
 	});
 });
 
-/** Une session de passage, en brouillon, au rang 3 : le test qui l'ajoute la supprime avant de finir. */
+/**
+ * Une session de passage, en brouillon, au rang 3 : le test qui l'ajoute la supprime avant de finir.
+ * Elle a une date de fin : le rang 3 est déjà celui d'une session sans date de fin, et le serveur
+ * refuse une seconde session sans date de fin au même rang.
+ */
 const SESSION_DE_PASSAGE = {
 	jumuaOrder: '3',
 	start: '16:00',
 	end: '16:40',
 	sermonLanguages: ['fr'],
 	startsOn: '2026-09-04',
-	endsOn: '',
+	endsOn: '2027-06-25',
 	status: 'draft'
 } as const;
 
@@ -922,7 +926,8 @@ describe('sans rang libre, l’écran ne propose plus d’ajouter une session, e
 		// La première session s'arrête dans deux mois : son rang est libre. Une session sans date de
 		// fin le prend, et les trois rangs sont occupés.
 		const { reponse, id } = await ajouterUneSessionDePassage('Prière du premier rang', {
-			jumuaOrder: '1'
+			jumuaOrder: '1',
+			endsOn: ''
 		});
 		try {
 			expect(reponse.status).toBe(200);
@@ -960,6 +965,44 @@ describe('sans rang libre, l’écran ne propose plus d’ajouter une session, e
 		const html = await (await get('/vendredi', cookies)).text();
 		expect(rangChoisi(formulaireDAjout(html))).toEqual(['1']);
 		expect(lu(section(html, 'ajout'))).not.toContain(PLUS_DE_RANG_LIBRE.fr);
+	});
+
+	it('refuses a session sent at a rank a session with no end date already holds, keeps what was typed, and writes nothing, in each language', async () => {
+		// La phrase promet un maximum : le serveur le tient aussi pour une page ouverte avant, ou un
+		// formulaire écrit à la main (relecture du lot 7).
+		const RANG_PRIS: Record<Langue, string> = {
+			fr: 'Une autre session sans date de fin occupe déjà ce rang. Choisissez un autre rang, ou remplissez d’abord « Jusqu’au » dans l’autre session.',
+			de: 'Ein anderer Durchgang ohne Enddatum hat schon diese Reihenfolge. Wählen Sie eine andere, oder füllen Sie zuerst «Gültig bis» im anderen Durchgang aus.',
+			it: 'Un altro turno senza data di fine occupa già questo posto nell’ordine. Scegline un altro, oppure compila prima «Valido fino al» nell’altro turno.',
+			en: 'Another session with no end date already has this place in the order. Choose another, or first fill in ‘Until’ in the other session.',
+			ar: 'موعد آخر بلا تاريخ نهاية يشغل هذا الترتيب. اختر ترتيبًا آخر، أو املأ أولًا «يسري حتى» في الموعد الآخر.'
+		};
+		const { id } = await ajouterUneSessionDePassage('Prière du premier rang', {
+			jumuaOrder: '1',
+			endsOn: ''
+		});
+		try {
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const titre = `Prière de trop, ${langue}`;
+				const refuse = await postForm(
+					'/vendredi?/enregistrer',
+					{ ...SESSION_DE_PASSAGE, jumuaOrder: '2', endsOn: '', title: titre },
+					cookies
+				);
+				expect(refuse.status, langue).toBe(409);
+				const ajout = section(await refuse.text(), 'ajout');
+				expect(valeur(formulaireDAjout(ajout), 'title'), langue).toBe(titre);
+				expect(lu(ajout), langue).toContain(RANG_PRIS[langue]);
+				const ecrites = await maintenance(async (tx) =>
+					lignes(await tx.execute(sql`select 1 from "course_translation" where "title" = ${titre}`))
+				);
+				expect(ecrites, langue).toEqual([]);
+			}
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await postForm('/vendredi?/supprimer', { courseId: id }, cookies);
+		}
 	});
 });
 

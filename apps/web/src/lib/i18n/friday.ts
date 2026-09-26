@@ -15,7 +15,8 @@ import type { Translations } from './space.js';
  * Ce qu'une action de l'écran peut refuser : le nom de l'erreur, jamais sa phrase. Pour « Ce
  * vendredi », comme sur « À venir » : `changed`, la session a été annulée ou déplacée ce jour-là
  * depuis l'ouverture de la page ; `timeChanged`, son heure a changé depuis ; `unchanged`, un
- * déplacement vers le jour et l'heure où elle est déjà prévue.
+ * déplacement vers le jour et l'heure où elle est déjà prévue. Pour l'ajout : `orderTaken`, une
+ * session sans date de fin a déjà ce rang.
  */
 export type FridayError =
 	| 'titleTooLong'
@@ -31,7 +32,8 @@ export type FridayError =
 	| 'timeUnreadable'
 	| 'changed'
 	| 'timeChanged'
-	| 'unchanged';
+	| 'unchanged'
+	| 'orderTaken';
 
 /** Ce qu'une action de l'écran a fait, pour la phrase qui le confirme. */
 export type FridayDone =
@@ -229,7 +231,9 @@ export const fridayTexts: Translations<FridayTexts> = {
 			timeChanged:
 				'L’heure de cette session a changé depuis l’ouverture de la page. Rien n’a été enregistré. Sa nouvelle heure est écrite plus bas, dans « Ce vendredi » : vérifiez le jour et l’heure choisis, puis recommencez.',
 			unchanged:
-				'La session est déjà prévue ce jour-là à cette heure : rien n’a été déplacé. Choisissez une autre heure ou un autre jour dans « Ce vendredi », plus bas.'
+				'La session est déjà prévue ce jour-là à cette heure : rien n’a été déplacé. Choisissez une autre heure ou un autre jour dans « Ce vendredi », plus bas.',
+			orderTaken:
+				'Une autre session sans date de fin occupe déjà ce rang. Choisissez un autre rang, ou remplissez d’abord « Jusqu’au » dans l’autre session.'
 		}
 	},
 	de: {
@@ -339,7 +343,9 @@ export const fridayTexts: Translations<FridayTexts> = {
 			timeChanged:
 				'Die Uhrzeit dieses Durchgangs hat sich geändert, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Die neue Uhrzeit steht weiter unten unter «Diesen Freitag»: Prüfen Sie den gewählten Tag und die gewählte Uhrzeit und versuchen Sie es noch einmal.',
 			unchanged:
-				'Der Durchgang ist schon an diesem Tag zu dieser Uhrzeit geplant: Es wurde nichts verschoben. Wählen Sie weiter unten unter «Diesen Freitag» einen anderen Tag oder eine andere Uhrzeit.'
+				'Der Durchgang ist schon an diesem Tag zu dieser Uhrzeit geplant: Es wurde nichts verschoben. Wählen Sie weiter unten unter «Diesen Freitag» einen anderen Tag oder eine andere Uhrzeit.',
+			orderTaken:
+				'Ein anderer Durchgang ohne Enddatum hat schon diese Reihenfolge. Wählen Sie eine andere, oder füllen Sie zuerst «Gültig bis» im anderen Durchgang aus.'
 		}
 	},
 	it: {
@@ -444,7 +450,9 @@ export const fridayTexts: Translations<FridayTexts> = {
 			timeChanged:
 				'L’orario di questo turno è cambiato da quando hai aperto la pagina. Non è stato salvato niente. Il nuovo orario è indicato più in basso, in «Questo venerdì»: controlla il giorno e l’orario scelti, poi riprova.',
 			unchanged:
-				'Il turno è già previsto quel giorno a quell’ora: non è stato spostato niente. Scegli un altro giorno o un altro orario più in basso, in «Questo venerdì».'
+				'Il turno è già previsto quel giorno a quell’ora: non è stato spostato niente. Scegli un altro giorno o un altro orario più in basso, in «Questo venerdì».',
+			orderTaken:
+				'Un altro turno senza data di fine occupa già questo posto nell’ordine. Scegline un altro, oppure compila prima «Valido fino al» nell’altro turno.'
 		}
 	},
 	en: {
@@ -548,7 +556,9 @@ export const fridayTexts: Translations<FridayTexts> = {
 			timeChanged:
 				'The time of this session has changed since the page was opened. Nothing has been saved. Its new time is shown further down, under ‘This Friday’: check the day and time you chose, then try again.',
 			unchanged:
-				'The session is already planned for that day at that time: nothing has been moved. Choose a different day or time under ‘This Friday’, further down.'
+				'The session is already planned for that day at that time: nothing has been moved. Choose a different day or time under ‘This Friday’, further down.',
+			orderTaken:
+				'Another session with no end date already has this place in the order. Choose another, or first fill in ‘Until’ in the other session.'
 		}
 	},
 	ar: {
@@ -646,7 +656,9 @@ export const fridayTexts: Translations<FridayTexts> = {
 			timeChanged:
 				'تغيّر وقت هذا الموعد منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. وقته الجديد مكتوب في قسم «هذه الجمعة» في الأسفل: راجع ما اخترته من يوم ووقت، ثم حاول مرة أخرى.',
 			unchanged:
-				'الموعد مقرّر أصلًا في هذا اليوم وفي هذا الوقت: لم يُنقل أي شيء. اختر يومًا آخر أو وقتًا آخر في قسم «هذه الجمعة» في الأسفل.'
+				'الموعد مقرّر أصلًا في هذا اليوم وفي هذا الوقت: لم يُنقل أي شيء. اختر يومًا آخر أو وقتًا آخر في قسم «هذه الجمعة» في الأسفل.',
+			orderTaken:
+				'موعد آخر بلا تاريخ نهاية يشغل هذا الترتيب. اختر ترتيبًا آخر، أو املأ أولًا «يسري حتى» في الموعد الآخر.'
 		}
 	}
 };

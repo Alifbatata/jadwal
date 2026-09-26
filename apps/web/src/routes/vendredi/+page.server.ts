@@ -185,6 +185,23 @@ export const actions: Actions = {
 				return fail(400, { errors: lu.errors, courseId, entry: readFridayEntry(form) });
 			}
 			if (courseId === '') {
+				// Le rang d'une session sans date de fin est à elle seule, comme l'écran le propose
+				// (`proposedOrder`) : une page ouverte avant, ou un formulaire écrit à la main, ne
+				// glisse pas une quatrième session à un rang déjà pris.
+				if (lu.values.endsOn === null) {
+					const ouvertes = await readCourses(tx, ['draft', 'published', 'archived'], ['jumua']);
+					const pris = ouvertes.some(
+						(session) =>
+							session.ends_on === null && (session.jumua_order ?? 1) === lu.values.jumuaOrder
+					);
+					if (pris) {
+						return fail(409, {
+							errors: ['orderTaken'] satisfies FridayError[],
+							courseId,
+							entry: readFridayEntry(form)
+						});
+					}
+				}
 				await insertCourse(tx, context, lu.values);
 				return fait('added');
 			}
