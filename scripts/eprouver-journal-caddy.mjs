@@ -681,7 +681,8 @@ try {
 		dejaSans.entete('content-encoding') === '' && empreinteLue(dejaSans) === dejaOriginal
 	);
 
-	// `reverse_proxy` ajoute `Via: 1.1 Caddy` à chaque réponse de l'application, `304` compris.
+	// Depuis Caddy 2.10.0, `reverse_proxy` ajoute `Via: 1.1 Caddy` à chaque réponse de l'application,
+	// `304` compris.
 	// Le bloc le retire (étape 18, retour H4) : aucune des réponses reçues plus haut ne le porte.
 	// Toutes viennent de l'application ; la réponse que Caddy sert lui-même est vérifiée à la fin.
 	const avecVia = recues.filter((reponse) => reponse.entete('via') !== '');
