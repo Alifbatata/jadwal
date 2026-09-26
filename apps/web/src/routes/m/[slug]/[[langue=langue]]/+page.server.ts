@@ -1,7 +1,10 @@
-// La page publique d'une organisation : trois vues, une langue par lien (ADR 0027).
+// La page publique d'une organisation : trois vues, une langue par lien (ADR 0027), et depuis
+// l'étape 18 un quatrième onglet, les heures de prière, quand le module est allumé (retour C4).
 //
 // Les séances viennent de `@jadwal/core`, comme partout. Cette route lit, filtre par public, et
-// range ; elle ne calcule aucune date.
+// range ; elle ne calcule aucune date. Les heures de prière viennent de la même requête que celles
+// qui placent les cours ancrés (`readPublicPrayerDays`) : l'onglet ne peut pas dire une autre heure
+// que celle qui place un cours « après Maghrib ».
 
 import {
 	addDays,
@@ -16,6 +19,7 @@ import {
 	boundedRange,
 	fingerprint,
 	pauseCouvrant,
+	readPublicPrayerDays,
 	readPublicProgramme,
 	type SeancePublique
 } from '$lib/server/public.js';
@@ -28,14 +32,26 @@ import {
 import { lienVue } from '$lib/public/liens.js';
 import { CACHE_PROGRAMME } from '$lib/server/api.js';
 
-export type Vue = 'semaine' | 'cours' | 'mois';
+export type Vue = 'semaine' | 'cours' | 'mois' | 'prieres';
 
 const JOURS_SEMAINE = 7;
 /** La navigation par mois est bornée : un an en arrière, un an en avant. */
 const MOIS_MAXIMUM = 12;
+/** Les cinq prières, dans l'ordre de la journée : les colonnes de l'onglet. */
+const PRIERES = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
 
-function vueDemandee(value: string | null): Vue {
+/**
+ * La vue demandée. L'onglet des prières n'existe que si le module est allumé : sans lui, l'adresse
+ * `?vue=prieres` montre la semaine, comme toute vue inconnue, et ne dit rien d'un réglage.
+ */
+function vueDemandee(value: string | null, avecPrieres: boolean): Vue {
+	if (value === 'prieres') return avecPrieres ? 'prieres' : 'semaine';
 	return value === 'cours' || value === 'mois' ? value : 'semaine';
+}
+
+/** « 05:30 » : une heure de la base, `05:30:00`, ramenée aux minutes ; `null` si elle manque. */
+function minutes(valeur: string | null | undefined): string | null {
+	return typeof valeur === 'string' && /^\d{2}:\d{2}/.test(valeur) ? valeur.slice(0, 5) : null;
 }
 
 /** Le premier jour du mois demandé, ramené dans les bornes. */
@@ -55,7 +71,7 @@ function jourDemande(value: string | null): IsoDate | null {
 
 export const load: PageServerLoad = async (event) => {
 	const { organisation, langue } = await publicContext(event);
-	const vue = vueDemandee(event.url.searchParams.get('vue'));
+	const vue = vueDemandee(event.url.searchParams.get('vue'), organisation.prayer_module);
 	const filtre = publicDemande(event);
 
 	const programme = await readPublicProgramme(organisation, langue, new Date());
@@ -77,9 +93,26 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	const complet =
-		vue === 'semaine'
+		vue === 'semaine' || vue === 'prieres'
 			? programme
 			: await readPublicProgramme(organisation, langue, new Date(), { from, to });
+
+	// L'onglet des prières : aujourd'hui et les six jours suivants, adhan et iqama de chaque prière,
+	// les trois sources résolues comme pour les cours ancrés. Un jour qu'aucune source ne couvre
+	// n'est pas montré ; une iqama que l'organisation n'a pas réglée reste vide.
+	const prieres =
+		vue === 'prieres'
+			? (await readPublicPrayerDays(organisation.id, today, addDays(today, JOURS_SEMAINE - 1)))
+					.map((ligne) => ({
+						date: String(ligne.date).slice(0, 10),
+						heures: PRIERES.map((priere) => ({
+							priere,
+							adhan: minutes(ligne[priere]),
+							iqama: minutes(ligne[`${priere}_iqama`])
+						}))
+					}))
+					.filter((jour) => jour.heures.some((heure) => heure.adhan !== null))
+			: [];
 
 	const garde = (seance: SeancePublique) => !filtre || seance.audience === filtre;
 	const seances = complet.seances.filter(garde).map((seance) => ({
@@ -132,6 +165,9 @@ export const load: PageServerLoad = async (event) => {
 		langue,
 		langues: languesProposees(organisation),
 		vue,
+		// L'onglet des prières n'est proposé que si le module est allumé (ADR 0042).
+		avecPrieres: organisation.prayer_module,
+		prieres,
 		filtre,
 		from,
 		to,

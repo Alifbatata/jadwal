@@ -5,9 +5,14 @@ Le custom element `<jadwal-widget org="...">` à coller sur le site d'une organi
 conserver l'avis de copyright et de licence s'il redistribue le fichier.
 
 **Ce fichier ne dessine rien.** Il pose un cadre vers la page publique `/m/<identifiant>` et lui
-donne la hauteur de son contenu. Les vues, les filtres et les quatre langues sont ceux de la page,
+donne la hauteur de son contenu. Les vues, les filtres et les cinq langues sont ceux de la page,
 testés une seule fois, identiques partout. Les raisons et ce que cela coûte sont dans l'ADR 0005,
 révisé à l'étape 6.
+
+L'onglet des heures de prière de l'étape 18 en est l'exemple : il est apparu dans le widget sans
+qu'une ligne de ce paquet change, parce qu'il est dans la page. Il suit le module des prières de
+l'organisation, comme sur la page. L'attribut `view` ne le connaît pas encore : l'ajouter changerait
+le fichier, donc son empreinte, et les sites qui l'ont épinglée.
 
 Aucune bibliothèque, aucune dépendance à l'exécution : **1,71 Kio gzip**, mesurés.
 
@@ -35,7 +40,7 @@ peut pas demander à une organisation sans qu'elle la recopie de travers une foi
 | Attribut     | Valeurs                                    | Défaut                        |
 | ------------ | ------------------------------------------ | ----------------------------- |
 | `org`        | l'identifiant d'URL de l'organisation      | obligatoire                   |
-| `lang`       | `fr`, `de`, `it`, `ar`                     | la langue de l'organisation   |
+| `lang`       | `fr`, `de`, `it`, `en`, `ar`               | la langue de l'organisation   |
 | `view`       | `semaine`, `cours`, `mois`                 | `semaine`                     |
 | `audience`   | `kids`, `youth`, `women`, `adults`, `open` | tous les publics              |
 | `min-height` | un nombre de pixels                        | `320`                         |

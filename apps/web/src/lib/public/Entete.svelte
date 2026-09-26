@@ -1,7 +1,12 @@
 <script lang="ts">
-	// L'en-tête commun aux trois vues : nom, vues, filtres, langues (voir docs/maquettes/README.md).
-	// Tout est lien : aucun bouton, aucune case à cocher, donc rien qui demande du JavaScript.
+	// L'en-tête commun aux vues : nom, vues, filtres, langues (voir docs/maquettes/README.md). Tout
+	// est lien : aucun bouton, aucune case à cocher, donc rien qui demande du JavaScript.
+	//
+	// Depuis l'étape 18, un quatrième onglet, les heures de prière, quand le module est allumé
+	// (retour C4). Le widget n'en sait rien : il encadre cette page, et l'onglet y est donc aussi.
 	import { NOM_DE_LANGUE, t, type Langue } from '$lib/i18n.js';
+
+	type Vue = 'semaine' | 'cours' | 'mois' | 'prieres';
 
 	let {
 		nom,
@@ -13,17 +18,20 @@
 		lienFiltre,
 		lienLangue,
 		avecFiltres = true,
+		avecPrieres = false,
 		vendredi
 	}: {
 		nom: string;
 		langue: Langue;
 		langues: Langue[];
-		vue: 'semaine' | 'cours' | 'mois';
+		vue: Vue;
 		filtre: string | null;
-		lienVue: (vue: 'semaine' | 'cours' | 'mois') => string;
+		lienVue: (vue: Vue) => string;
 		lienFiltre: (audience: string | null) => string;
 		lienLangue: (langue: Langue) => string;
 		avecFiltres?: boolean;
+		/** L'onglet des prières, montré seulement si le module de l'organisation est allumé. */
+		avecPrieres?: boolean;
 		/**
 		 * Le bloc de la prière du vendredi, rendu **entre le nom et les vues** : c'est la seule
 		 * chose qui passe devant la navigation, et c'est délibéré (docs/maquettes/public-vendredi.md).
@@ -33,6 +41,12 @@
 
 	const mots = $derived(t(langue));
 	const PUBLICS = ['kids', 'youth', 'women', 'adults', 'open'] as const;
+	const onglets = $derived<[Vue, string][]>([
+		['semaine', mots.views.week],
+		['cours', mots.views.courses],
+		['mois', mots.views.month],
+		...(avecPrieres ? [['prieres', mots.views.prayers] as [Vue, string]] : [])
+	]);
 </script>
 
 <header>
@@ -41,11 +55,8 @@
 	{@render vendredi?.()}
 
 	<nav class="vues" aria-label={mots.viewsLabel}>
-		{#each [['semaine', mots.views.week], ['cours', mots.views.courses], ['mois', mots.views.month]] as [cle, libelle] (cle)}
-			<a
-				href={lienVue(cle as 'semaine' | 'cours' | 'mois')}
-				aria-current={vue === cle ? 'page' : undefined}
-			>
+		{#each onglets as [cle, libelle] (cle)}
+			<a href={lienVue(cle)} aria-current={vue === cle ? 'page' : undefined}>
 				{libelle}
 			</a>
 		{/each}

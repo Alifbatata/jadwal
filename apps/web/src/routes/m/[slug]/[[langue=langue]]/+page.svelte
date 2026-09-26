@@ -6,6 +6,7 @@
 	import Pied from '$lib/public/Pied.svelte';
 	import { variablesAccent } from '$lib/couleur.js';
 	import Vendredi from '$lib/public/Vendredi.svelte';
+	import Prieres from '$lib/public/Prieres.svelte';
 	import Seance from '$lib/public/Seance.svelte';
 	import { horaireEnClair, languesEnClair, rythmeEnClair } from '$lib/public/affichage.js';
 
@@ -133,9 +134,11 @@
 	const titre = $derived(
 		data.vue === 'cours'
 			? `${data.organisation.name} | ${mots.coursesTitle}`
-			: data.vue === 'mois' && data.premierDuMois
-				? `${data.organisation.name} | ${monthName(data.langue, Number(data.premierDuMois.slice(0, 4)), Number(data.premierDuMois.slice(5, 7)))}`
-				: `${data.organisation.name} | ${mots.weekTitle}`
+			: data.vue === 'prieres'
+				? `${data.organisation.name} | ${mots.prayersTitle}`
+				: data.vue === 'mois' && data.premierDuMois
+					? `${data.organisation.name} | ${monthName(data.langue, Number(data.premierDuMois.slice(0, 4)), Number(data.premierDuMois.slice(5, 7)))}`
+					: `${data.organisation.name} | ${mots.weekTitle}`
 	);
 </script>
 
@@ -173,9 +176,15 @@
 		lienVue={(vue) => vers({ vue })}
 		lienFiltre={(audience) => vers({ public: audience })}
 		lienLangue={(autre) => vers({ langue: autre })}
+		avecFiltres={data.vue !== 'prieres'}
+		avecPrieres={data.avecPrieres}
 	>
 		{#snippet vendredi()}
-			<Vendredi langue={data.langue} sessions={data.vendredi} />
+			<!-- L'onglet des prières porte les sessions du vendredi dans son propre contenu, avec la
+			     langue du sermon : le bloc du haut les dirait une seconde fois. -->
+			{#if data.vue !== 'prieres'}
+				<Vendredi langue={data.langue} sessions={data.vendredi} />
+			{/if}
 		{/snippet}
 	</Entete>
 
@@ -251,6 +260,13 @@
 					{/each}
 				</section>
 			{/each}
+		{:else if data.vue === 'prieres'}
+			<Prieres
+				langue={data.langue}
+				today={data.today}
+				jours={data.prieres}
+				sessions={data.vendredi}
+			/>
 		{:else if data.premierDuMois}
 			<nav class="mois" aria-label={mots.views.month}>
 				<a href={vers({ vue: 'mois', mois: moisPrecedent, jour: null })}>‹ {mots.previousMonth}</a>
