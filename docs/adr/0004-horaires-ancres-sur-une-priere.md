@@ -229,7 +229,8 @@ calculées pour votre localité, importées depuis un fichier, saisies à la mai
 montre que ce qu'elle demande, puis l'aperçu des sept prochains jours, puis « Enregistrer ». La
 priorité entre les trois sources ne change pas, et l'écran la dit en une phrase. La « source que
 vous déclarez » a disparu de l'écran ; sa colonne `prayer_settings.source` reste en base, et plus
-aucun code ne la lit.
+aucun code n'en tient compte. L'enregistrement du calcul la relit pour la réécrire telle qu'elle
+était, sauf quand un formulaire envoie encore ce champ, et aucune décision ne dépend de sa valeur.
 
 ## Conséquences
 
