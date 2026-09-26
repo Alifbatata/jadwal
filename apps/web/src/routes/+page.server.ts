@@ -6,11 +6,13 @@
 //
 // Depuis l'étape 18, l'écran parle la langue de l'espace, et ses actions rendent le nom d'une erreur,
 // jamais sa phrase (`$lib/i18n/upcoming.ts`). Les messages prêts à coller s'écrivent dans chacune des
-// langues que l'organisation publie, la langue source d'abord (retour D1). Une séance se déplace à
-// toute date à partir d'aujourd'hui, plus tôt comme plus tard que sa date prévue (retour A2) : c'est
-// l'action qui refuse une date passée, et non le seul champ du navigateur, qu'un formulaire envoyé à
-// la main contourne. Elle refuse aussi un déplacement qui ne change rien, la même date à l'heure où
-// la séance est déjà prévue.
+// langues que l'organisation publie, la langue source d'abord (retour D1) ; une session du vendredi
+// qui porte le nom proposé par le service s'y nomme dans la langue du message, comme dans ceux de
+// l'écran Partager (`friday-title.ts`). Une séance se déplace à toute date à partir d'aujourd'hui,
+// plus tôt comme plus tard que sa date prévue (retour A2) : c'est l'action qui refuse une date
+// passée, et non le seul champ du navigateur, qu'un formulaire envoyé à la main contourne. Elle
+// refuse aussi un déplacement qui ne change rien, la même date à l'heure où la séance est déjà
+// prévue.
 //
 // Annuler et déplacer ne visent qu'une séance encore prévue telle quelle. Une page restée ouverte
 // (Retour, un autre onglet, une autre personne) montre encore la carte d'une séance annulée ou
@@ -24,6 +26,7 @@ import { LANGUES, type Langue } from '$lib/i18n.js';
 import type { UpcomingError } from '$lib/i18n/upcoming.js';
 import { record } from '$lib/server/audit.js';
 import { withSessionOrg } from '$lib/server/context.js';
+import { fridayTitle } from '$lib/server/friday-title.js';
 import { mustBeInOrganisation } from '$lib/server/guard.js';
 import { etatDesSources, readReglages } from '$lib/server/prieres.js';
 import { readProgramme, readSettings } from '$lib/server/programme.js';
@@ -82,26 +85,36 @@ async function readTitles(tx: Transaction): Promise<Map<string, Map<string, stri
 
 /**
  * Le cours d'une séance visée par une action : sa langue source, et son titre dans une langue, ou
- * dans sa langue source quand il n'y est pas traduit. Rien si le cours n'existe pas, ou plus.
+ * dans sa langue source quand il n'y est pas traduit ; pour une session du vendredi qui porte le nom
+ * proposé, le nom de la prière dans cette langue. Rien si le cours n'existe pas, ou plus.
  */
 async function readCourse(
 	tx: Transaction,
 	courseId: string
 ): Promise<{ source: string; title: (language: Langue) => string } | null> {
 	if (!UUID.test(courseId)) return null;
-	const found = rows<{ source_language: string; language: string | null; title: string | null }>(
+	const found = rows<{
+		source_language: string;
+		kind: string;
+		language: string | null;
+		title: string | null;
+	}>(
 		await tx.execute(sql`
-			select c."source_language", t."language", t."title"
+			select c."source_language", c."kind", t."language", t."title"
 			from "course" c
 			left join "course_translation" t on t."course_id" = c."id"
 			where c."id" = ${courseId} and c."organization_id" = (select jadwal.current_org_id())
 		`)
 	);
 	const source = found[0]?.source_language;
+	const kind = found[0]?.kind ?? 'course';
 	if (source === undefined) return null;
 	const titles = new Map(found.map((row) => [row.language, row.title ?? '']));
 	const fallback = titles.get(source) ?? found.find((row) => row.title)?.title ?? '';
-	return { source, title: (language) => titles.get(language) ?? fallback };
+	return {
+		source,
+		title: (language) => fridayTitle(titles.get(language) ?? fallback, kind, language)
+	};
 }
 
 /**
@@ -189,7 +202,9 @@ export const load: PageServerLoad = async (event) => {
 		audience: seance.audience
 	}));
 	// Le programme de la semaine, une fois par langue publiée, la langue par défaut d'abord. Le titre
-	// d'un cours est celui de la langue du message quand il y est traduit, comme sur la page publique.
+	// d'un cours est celui de la langue du message quand il y est traduit, comme sur la page publique,
+	// et une session du vendredi au nom proposé prend celui de la prière dans cette langue.
+	const kinds = new Map(programme.courses.map((course) => [course.id, course.kind]));
 	const weekMessages: Message[] = messageLanguages(
 		settings.enabled_language,
 		settings.default_language
@@ -200,7 +215,11 @@ export const load: PageServerLoad = async (event) => {
 			settings.name,
 			seances.map((seance) => ({
 				date: seance.date,
-				title: titles.get(seance.courseId)?.get(language) ?? seance.title,
+				title: fridayTitle(
+					titles.get(seance.courseId)?.get(language) ?? seance.title,
+					kinds.get(seance.courseId) ?? 'course',
+					language
+				),
 				start: seance.start,
 				end: seance.end,
 				room: seance.room,

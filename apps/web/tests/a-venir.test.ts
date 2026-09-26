@@ -14,7 +14,9 @@
 //   écrit, et l'écran rendu est à jour (relecture du lot 4).
 // - D1 : les messages prêts à coller s'écrivent dans chacune des langues que l'organisation publie,
 //   la langue source d'abord : la langue par défaut pour le programme de la semaine, celle du cours
-//   pour une annulation ou un déplacement. Le nom de chaque zone de texte dit sa langue.
+//   pour une annulation ou un déplacement. Le nom de chaque zone de texte dit sa langue. Une session
+//   du vendredi qui porte le nom proposé par le service se nomme dans la langue de chaque message,
+//   comme sur l'écran Partager ; un titre choisi par l'organisation reste tel quel.
 // - D2, A3, B1 : l'écran dans les cinq langues, sans phrase française restée, sans date AAAA-MM-JJ
 //   dans le texte lu, et un champ de date qui dit ce qu'il accepte.
 
@@ -1295,6 +1297,192 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 				langue
 			).toEqual([]);
 			expect(section(html, 'message-titre'), langue).toBe('');
+		}
+	});
+});
+
+describe('D1 : la prière du vendredi dans la langue de chaque message (relecture du lot 4)', () => {
+	/** Le nom que le service propose à une session du vendredi, dans chaque langue. */
+	const PRIERE: Record<Langue, string> = {
+		fr: 'Prière du vendredi',
+		de: 'Freitagsgebet',
+		it: 'Preghiera del venerdì',
+		en: 'Friday prayer',
+		ar: 'صلاة الجمعة'
+	};
+	/** Un titre que l'organisation a écrit elle-même : il ne change dans aucune langue. */
+	const CHOISI = 'Jumu’a des jeunes';
+	/** Le titre d'un cours dans un message, entre les guillemets de chaque langue. */
+	const GUILLEMETS: Record<Langue, (titre: string) => string> = {
+		fr: (titre) => `« ${titre} »`,
+		de: (titre) => `«${titre}»`,
+		it: (titre) => `«${titre}»`,
+		en: (titre) => `‘${titre}’`,
+		ar: (titre) => `«${titre}»`
+	};
+	const VIRGULE: Record<Langue, string> = { fr: ', ', de: ', ', it: ', ', en: ', ', ar: '، ' };
+
+	/** Une organisation de langue française qui publie les cinq langues. */
+	const francophone = newId();
+	/** Une organisation de langue allemande qui publie aussi le français. */
+	const germanophone = newId();
+	const RESPONSABLE_FR = 'avenir-vendredi@example.test';
+	const RESPONSABLE_DE = 'avenir-freitag@example.test';
+	const propose = newId();
+	const choisi = newId();
+	const freitag = newId();
+	/** Le vendredi des sept jours affichés : il y en a toujours un, et un seul. */
+	const vendredi =
+		[0, 1, 2, 3, 4, 5, 6]
+			.map((pas) => jour(pas))
+			.find((date) => new Date(`${date}T12:00:00Z`).getUTCDay() === 5) ?? today;
+	let cookieFr: string;
+	let cookieDe: string;
+
+	beforeAll(async () => {
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+					"enabled_language", "prayer_module", "greeting")
+				values (${francophone}, 'a-venir-vendredi', 'Mosquée du vendredi', ${FUSEAU}, 'fr',
+					array['fr','de','it','en','ar'], true, ${ACCUEIL}),
+					(${germanophone}, 'a-venir-freitag', 'Verein am Freitag', ${FUSEAU}, 'de',
+					array['de','fr'], true, ${ACCUEIL})
+			`);
+			for (const [email, organisation] of [
+				[RESPONSABLE_FR, francophone],
+				[RESPONSABLE_DE, germanophone]
+			] as const) {
+				const utilisateur = newId();
+				await tx.execute(sql`
+					insert into "user" ("id", "email", "email_verified", "language")
+					values (${utilisateur}, ${email}, true, 'fr')
+				`);
+				await tx.execute(sql`
+					insert into "membership" ("id", "organization_id", "user_id", "role")
+					values (${newId()}, ${organisation}, ${utilisateur}, 'org_admin')
+				`);
+				await tx.execute(conditionsAcceptees(organisation, utilisateur));
+			}
+			for (const [id, organisation, source, ordre, debut, fin, titre] of [
+				[propose, francophone, 'fr', 1, '13:30', '14:00', PRIERE.fr],
+				[choisi, francophone, 'fr', 2, '14:15', '14:45', CHOISI],
+				[freitag, germanophone, 'de', 1, '13:15', '13:45', PRIERE.de]
+			] as const) {
+				await tx.execute(sql`
+					insert into "course" ("id", "organization_id", "kind", "jumua_order", "status",
+						"audience", "teaching_language", "source_language", "recurrence_kind",
+						"recurrence_weekday", "recurrence_interval", "recurrence_anchor_date", "timing_kind",
+						"timing_start", "timing_end", "starts_on")
+					values (${id}, ${organisation}, 'jumua', ${ordre}, 'published', 'open', array[${source}],
+						${source}, 'weekly', array[5]::smallint[], 1, ${jour(-30)}, 'fixed', ${debut}, ${fin},
+						${jour(-30)})
+				`);
+				await tx.execute(sql`
+					insert into "course_translation" ("id", "organization_id", "course_id", "language",
+						"title")
+					values (${newId()}, ${organisation}, ${id}, ${source}, ${titre})
+				`);
+			}
+		});
+		cookieFr = await signIn(RESPONSABLE_FR);
+		cookieDe = await signIn(RESPONSABLE_DE);
+	});
+
+	it('names the prayer in each week message, and keeps a title the organisation chose', async () => {
+		const semaine = messages(section(await (await get('/', cookieFr)).text(), 'semaine-titre'));
+		expect(semaine.map((message) => message.langue)).toEqual([...LANGUES]);
+		for (const message of semaine) {
+			const langue = message.langue as Langue;
+			expect(message.texte, langue).toContain(`- ${PRIERE[langue]}${VIRGULE[langue]}13:30 – 14:00`);
+			expect(message.texte, langue).toContain(`- ${CHOISI}${VIRGULE[langue]}14:15 – 14:45`);
+			if (langue !== 'fr') expect(message.texte, langue).not.toContain(PRIERE.fr);
+		}
+	});
+
+	it('names the prayer in each cancellation and move message', async () => {
+		for (const [action, envoi] of [
+			['annuler', { courseId: propose, date: vendredi }],
+			[
+				'deplacer',
+				{ courseId: propose, date: vendredi, toDate: addDays(vendredi, 1), toStart: '15:00' }
+			]
+		] as const) {
+			const reponse = await postForm(`/?/${action}`, envoi, cookieFr);
+			try {
+				expect(reponse.status, action).toBe(200);
+				const annonce = messages(section(await reponse.text(), 'message-titre'));
+				expect(
+					annonce.map((message) => message.langue),
+					action
+				).toEqual([...LANGUES]);
+				for (const message of annonce) {
+					const langue = message.langue as Langue;
+					expect(message.texte, `${action} ${langue}`).toContain(
+						GUILLEMETS[langue](PRIERE[langue])
+					);
+					if (langue !== 'fr') {
+						expect(message.texte, `${action} ${langue}`).not.toContain(PRIERE.fr);
+					}
+				}
+			} finally {
+				await retablir(propose, vendredi, cookieFr);
+			}
+		}
+	});
+
+	it('keeps a title the organisation chose in each cancellation and move message', async () => {
+		for (const [action, envoi] of [
+			['annuler', { courseId: choisi, date: vendredi }],
+			[
+				'deplacer',
+				{ courseId: choisi, date: vendredi, toDate: addDays(vendredi, 1), toStart: '15:00' }
+			]
+		] as const) {
+			const reponse = await postForm(`/?/${action}`, envoi, cookieFr);
+			try {
+				expect(reponse.status, action).toBe(200);
+				const annonce = messages(section(await reponse.text(), 'message-titre'));
+				expect(annonce, action).toHaveLength(5);
+				for (const message of annonce) {
+					const langue = message.langue as Langue;
+					expect(message.texte, `${action} ${langue}`).toContain(GUILLEMETS[langue](CHOISI));
+				}
+			} finally {
+				await retablir(choisi, vendredi, cookieFr);
+			}
+		}
+	});
+
+	it('names it in French for an organisation that writes in German', async () => {
+		const semaine = messages(section(await (await get('/', cookieDe)).text(), 'semaine-titre'));
+		expect(semaine.map((message) => message.langue)).toEqual(['de', 'fr']);
+		const [de, fr] = semaine.map((message) => message.texte);
+		expect(de).toContain(`- ${PRIERE.de}, 13:15 – 13:45`);
+		expect(fr).toContain(`- ${PRIERE.fr}, 13:15 – 13:45`);
+		expect(fr).not.toContain(PRIERE.de);
+		for (const [action, envoi] of [
+			['annuler', { courseId: freitag, date: vendredi }],
+			[
+				'deplacer',
+				{ courseId: freitag, date: vendredi, toDate: addDays(vendredi, 1), toStart: '15:00' }
+			]
+		] as const) {
+			const reponse = await postForm(`/?/${action}`, envoi, cookieDe);
+			try {
+				expect(reponse.status, action).toBe(200);
+				const annonce = messages(section(await reponse.text(), 'message-titre'));
+				expect(
+					annonce.map((message) => message.langue),
+					action
+				).toEqual(['de', 'fr']);
+				const [allemand, francais] = annonce.map((message) => message.texte);
+				expect(allemand, action).toContain(GUILLEMETS.de(PRIERE.de));
+				expect(francais, action).toContain(GUILLEMETS.fr(PRIERE.fr));
+				expect(francais, action).not.toContain(PRIERE.de);
+			} finally {
+				await retablir(freitag, vendredi, cookieDe);
+			}
 		}
 	});
 });
