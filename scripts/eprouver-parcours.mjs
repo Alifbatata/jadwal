@@ -41,7 +41,7 @@
  *   page publique, widget), et la date des conditions et d'une passkey en `JJ.MM.AAAA`.
  * - B1 : les aides sous les champs clés, et des libellés qui disent ce qu'ils font ; sur un
  *   téléphone, la confirmation avant de supprimer une salle occupée se voit sans défiler ; sans
- *   JavaScript, une session du vendredi se supprime.
+ *   JavaScript, une session du vendredi se supprime, et l'écran le dit.
  * - B2 : l'écran du super-admin, de « Créer une organisation » au lien de connexion de secours ;
  *   l'adresse proposée pendant la frappe, et par le serveur sans JavaScript ; une seconde passkey,
  *   qui a son propre nom et un message juste.
@@ -236,6 +236,11 @@ const PRIERES = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
 const VENDREDI = { debut: '12:30', fin: '13:15' };
 /** Une seconde session, ajoutée puis supprimée dans un navigateur sans JavaScript (retour B1). */
 const SECONDE_SESSION = { debut: '13:40', fin: '14:20' };
+/**
+ * La phrase lue à la lettre dans un écran corrigé depuis la relecture du lot 4 : ce que dit l'écran
+ * du vendredi après une suppression (`friday.ts`).
+ */
+const SESSION_SUPPRIMEE = 'La session est supprimée.';
 /** La description que reçoit le premier cours le temps de lire le résumé (retour B4). */
 const DESCRIPTION = 'Pour les enfants de 7 à 12 ans.';
 /**
@@ -3653,7 +3658,8 @@ async function surUnTelephone(navigateur, page) {
 
 /**
  * k. Sans JavaScript, avec la session de la personne responsable : les options d'une séance restent
- * fermées et s'ouvrent (A1) ; une session du vendredi s'ajoute et se supprime (B1).
+ * fermées et s'ouvrent (A1) ; une session du vendredi s'ajoute et se supprime, et l'écran le dit
+ * (B1).
  */
 async function sansJavaScript(navigateur, page) {
 	etape('k. Sans JavaScript');
@@ -3712,11 +3718,15 @@ async function sansJavaScript(navigateur, page) {
 			]);
 			await sans.waitForLoadState('networkidle');
 			await lireLEcran(sans);
-			const annonce = sans.getByRole('status');
+			// Le texte de l'annonce, et non sa seule présence : une annonce qui dirait autre chose, ou
+			// qui resterait celle de l'ajout, ne dit pas ce qui s'est passé.
+			const annonces = (await sans.getByRole('status').allTextContents()).map((texte) =>
+				texte.replace(/\s+/g, ' ').trim()
+			);
 			verifier(
-				'sans JavaScript, une session du vendredi se supprime : ouvrir « Supprimer cette session », confirmer, et elle a disparu',
-				avant === 1 && (await carte().count()) === 0 && (await annonce.count()) > 0,
-				`${avant} carte avant, ${await carte().count()} après ; ${(await annonce.count()) > 0 ? await texteDe(annonce.last()) : 'aucun message'}`
+				`sans JavaScript, une session du vendredi se supprime : ouvrir « Supprimer cette session », confirmer, et elle a disparu, « ${SESSION_SUPPRIMEE} »`,
+				avant === 1 && (await carte().count()) === 0 && annonces.includes(SESSION_SUPPRIMEE),
+				`${avant} carte avant, ${await carte().count()} après ; ${annonces.map((texte) => `« ${texte} »`).join(', ') || 'aucun message'}`
 			);
 		});
 	} finally {
