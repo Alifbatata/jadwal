@@ -40,10 +40,25 @@ const JOURS: Record<Langue, readonly string[]> = {
 	ar: ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد']
 };
 
+/** Le nom de la prière que le service propose, dans chaque langue (`t(langue).jumua`). */
+const NOM_DE_LA_PRIERE: Record<Langue, string> = {
+	fr: 'Prière du vendredi',
+	de: 'Freitagsgebet',
+	it: 'Preghiera del venerdì',
+	en: 'Friday prayer',
+	ar: 'صلاة الجمعة'
+};
+/** La virgule d'une énumération dans un message : la virgule arabe « ، » en arabe. */
+const VIRGULE: Record<Langue, string> = { fr: ', ', de: ', ', it: ', ', en: ', ', ar: '، ' };
+
 const FUSEAU = 'Europe/Zurich';
 const ORGANISATION = 'Association du vendredi en cinq langues';
 const SLUG = 'vendredi-cinq-langues';
-/** Une organisation qui publie d'abord en allemand, puis en français et en arabe, et rien d'autre. */
+/**
+ * Une organisation de langue allemande qui publie aussi le français et l'arabe. Ses langues sont
+ * enregistrées dans l'ordre où Réglages les écrit, le français d'abord : sa langue n'est donc pas la
+ * première de la liste, et c'est ce que les tests de la langue de l'organisation éprouvent.
+ */
 const ORGANISATION_DE = 'Verein am Freitag';
 const SLUG_DE = 'verein-am-freitag';
 const RESPONSABLE = 'vp-responsable@example.test';
@@ -53,6 +68,8 @@ const COURS = 'Cours d’arabe';
 const COURS_DE = 'Arabischkurs';
 const INTERVENANT = 'Imam Youssef';
 const SALUT = 'Salam alaykoum';
+/** Un titre que l'organisation allemande a écrit elle-même : il reste tel quel dans chaque langue. */
+const TITRE_CHOISI = 'Jumu’a im Gemeindesaal';
 
 /** Ce qui est pareil dans toutes les langues par nature : noms, adresses, ce que l'organisation a saisi. */
 const PERMIS = [
@@ -74,6 +91,8 @@ let cookies: string;
 let cookiesDe: string;
 /** Les trois sessions du vendredi, par rang. */
 const sessions: Record<1 | 2 | 3, string> = { 1: '', 2: '', 3: '' };
+/** Les trois sessions de l'organisation allemande, par rang. */
+const sessionsDe: Record<1 | 2 | 3, string> = { 1: '', 2: '', 3: '' };
 
 const today = (): IsoDate => todayInZone(FUSEAU, new Date());
 
@@ -224,7 +243,7 @@ beforeAll(async () => {
 	await maintenance(async (tx) => {
 		for (const [id, slug, nom, source, langues] of [
 			[organizationId, SLUG, ORGANISATION, 'fr', "array['fr','de','it','en','ar']"],
-			[organizationDeId, SLUG_DE, ORGANISATION_DE, 'de', "array['de','fr','ar']"]
+			[organizationDeId, SLUG_DE, ORGANISATION_DE, 'de', "array['fr','de','ar']"]
 		] as const) {
 			await tx.execute(sql`
 				insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
@@ -329,6 +348,44 @@ beforeAll(async () => {
 		(await postForm('/vendredi?/basculer', { courseId: sessions[3], vers: 'draft' }, cookies))
 			.status
 	).toBe(200);
+
+	// L'organisation allemande : une session au titre laissé vide, qui prend le nom proposé, et une
+	// session au titre choisi, saisies par l'écran ; puis une session d'avant l'étape 18, écrite en
+	// allemand sous le nom français que le service proposait alors dans toutes les langues.
+	for (const [rang, champs] of [
+		[1, { title: '', start: '12:10', end: '12:50', sermonLanguages: ['de'] }],
+		[2, { title: TITRE_CHOISI, start: '13:30', end: '14:10', sermonLanguages: ['ar'] }]
+	] as const) {
+		const reponse = await postForm(
+			'/vendredi?/enregistrer',
+			{ ...champs, jumuaOrder: String(rang), status: 'published', startsOn: '2026-09-04' },
+			cookiesDe
+		);
+		expect(reponse.status, `session allemande ${rang}`).toBe(200);
+	}
+	await maintenance(async (tx) => {
+		const ancienne = newId();
+		await tx.execute(sql`
+			insert into "course" ("id", "organization_id", "kind", "jumua_order", "status", "audience",
+				"teaching_language", "source_language", "recurrence_kind", "recurrence_weekday",
+				"recurrence_interval", "recurrence_anchor_date", "timing_kind", "timing_start",
+				"timing_end", "starts_on")
+			values (${ancienne}, ${organizationDeId}, 'jumua', 3, 'published', 'open', array['de'], 'de',
+				'weekly', array[5]::smallint[], 1, '2026-09-04', 'fixed', '14:30', '15:10', '2026-09-04')
+		`);
+		await tx.execute(sql`
+			insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
+			values (${newId()}, ${organizationDeId}, ${ancienne}, 'de', ${NOM_DE_LA_PRIERE.fr})
+		`);
+		for (const trouvee of lignes<{ id: string; jumua_order: 1 | 2 | 3 }>(
+			await tx.execute(sql`
+				select "id", "jumua_order" from "course"
+				where "organization_id" = ${organizationDeId} and "kind" = 'jumua'
+			`)
+		)) {
+			sessionsDe[trouvee.jumua_order] = trouvee.id;
+		}
+	});
 });
 
 afterAll(async () => {
@@ -423,16 +480,65 @@ describe('les deux écrans, dans les cinq langues (retours D2 et A3)', () => {
 	});
 });
 
-describe('la prière du vendredi dit ce qu’elle demande (retour B1)', () => {
-	/** Le formulaire d'ajout : celui qui ne porte pas l'identifiant d'une session. */
-	function formulaireDAjout(html: string): string {
-		return (
-			[...html.matchAll(/<form\b[^>]*action="\?\/enregistrer"[^>]*>[\s\S]*?<\/form>/g)]
-				.map((trouve) => trouve[0])
-				.find((formulaire) => !formulaire.includes('name="courseId"')) ?? ''
-		);
-	}
+/** Les formulaires d'enregistrement d'une page, chacun entier. */
+function formulairesDEnregistrement(html: string): string[] {
+	return [...html.matchAll(/<form\b[^>]*action="\?\/enregistrer[^"]*"[^>]*>[\s\S]*?<\/form>/g)].map(
+		(trouve) => trouve[0]
+	);
+}
 
+/** Le formulaire d'ajout : celui qui ne porte pas l'identifiant d'une session. */
+function formulaireDAjout(html: string): string {
+	return (
+		formulairesDEnregistrement(html).find(
+			(formulaire) => !formulaire.includes('name="courseId"')
+		) ?? ''
+	);
+}
+
+/** Le formulaire de modification d'une session, par son identifiant. */
+function formulaireDe(html: string, courseId: string): string {
+	return (
+		formulairesDEnregistrement(html).find((formulaire) =>
+			formulaire.includes(`name="courseId" value="${courseId}"`)
+		) ?? ''
+	);
+}
+
+/** La valeur d'un champ d'un formulaire, par son nom, telle que le navigateur l'affiche. */
+function valeur(formulaire: string, nom: string): string | undefined {
+	const champ = formulaire.match(new RegExp(`<input\\b[^>]*\\sname="${nom}"[^>]*>`))?.[0] ?? '';
+	const brute = attribut(champ, 'value');
+	return brute === undefined ? undefined : visibleText(`<body>${brute}</body>`);
+}
+
+/** Le rang choisi d'avance dans un formulaire : l'option qui porte `selected`. */
+function rangChoisi(formulaire: string): string[] {
+	const liste = formulaire.match(/<select\b[^>]*name="jumuaOrder"[^>]*>([\s\S]*?)<\/select>/)?.[1];
+	return [...(liste ?? '').matchAll(/<option\b([^>]*)>/g)]
+		.filter((option) => /\sselected(?:[\s=>]|$)/.test(option[1] ?? ''))
+		.map((option) => attribut(option[0], 'value') ?? '');
+}
+
+/**
+ * Les replis de modification et de suppression d'une page, par leur balise ouvrante. Svelte ajoute
+ * à la classe celle qui borne la feuille de style de l'écran.
+ */
+function replis(html: string): string[] {
+	return [...html.matchAll(/<details\b[^>]*class="repli(?:\s[^"]*)?"[^>]*>/g)].map(
+		(trouve) => trouve[0]
+	);
+}
+
+const ouvert = (balise: string) => /\sopen(?:[\s=>]|$)/.test(balise);
+
+/**
+ * Une liste d'erreurs : un bloc `role="alert"` autour d'une liste. Le rôle posé sur la liste même
+ * effacerait son rôle de liste, et axe le relève (`listitem`).
+ */
+const ERREURS = /<div\b[^>]*role="alert"[^>]*>\s*<ul\b[^>]*>([\s\S]*?)<\/ul>/g;
+
+describe('la prière du vendredi dit ce qu’elle demande (retour B1)', () => {
 	/** Le texte d'un élément de la page par son `id`, sans ses balises. */
 	function texteDeLId(html: string, id: string): string {
 		const ouverture = new RegExp(`<([a-z]+)\\b[^>]*\\sid="${id}"[^>]*>`).exec(html);
@@ -452,6 +558,7 @@ describe('la prière du vendredi dit ce qu’elle demande (retour B1)', () => {
 			'end',
 			'roomId',
 			'teacher',
+			'startsOn',
 			'endsOn',
 			'description'
 		]) {
@@ -509,12 +616,136 @@ describe('la prière du vendredi dit ce qu’elle demande (retour B1)', () => {
 		expect(lu).toContain('Publiée : visible sur votre page publique.');
 		expect(lu).toContain('Brouillon : pas encore visible sur votre page publique.');
 	});
+
+	it('opens no edit and no delete fold on load: the screen stays short to read', () => {
+		for (const langue of LANGUES) {
+			const trouves = replis(rendus['/vendredi']?.[langue] ?? '');
+			// Deux replis par session : le modifier, le supprimer.
+			expect(trouves, langue).toHaveLength(6);
+			expect(trouves.filter(ouvert), langue).toEqual([]);
+		}
+	});
+
+	it('proposes the first free order, and a session with an end date frees its own', () => {
+		// La première session s'arrête dans deux mois : c'est la saison qui change, et la session qui
+		// la remplace reprend son rang. La deuxième et la troisième continuent sans date de fin.
+		expect(rangChoisi(formulaireDAjout(rendus['/vendredi']?.fr ?? ''))).toEqual(['1']);
+	});
+});
+
+describe('une modification refusée reste sous les yeux (retour B1)', () => {
+	/** Le texte de chaque liste d'erreurs d'un morceau de page. */
+	function erreurs(html: string): string[][] {
+		return [...html.matchAll(ERREURS)].map((liste) =>
+			[...(liste[1] ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)].map((point) =>
+				visibleText(`<body>${point[1] ?? ''}</body>`)
+			)
+		);
+	}
+
+	it('reopens the fold of the refused session, keeps what was typed, and says the mistake there', async () => {
+		const reponse = await postForm(
+			'/vendredi?/enregistrer',
+			{
+				courseId: sessions[2],
+				title: NOM_DE_LA_PRIERE.fr,
+				jumuaOrder: '2',
+				start: '13:30',
+				end: '13:00',
+				sermonLanguages: ['de'],
+				teacher: 'Imam Omar',
+				startsOn: '2026-09-04',
+				endsOn: '',
+				status: 'published'
+			},
+			cookies
+		);
+		expect(reponse.status).toBe(400);
+		const html = await reponse.text();
+		const carte = section(html, `session-${sessions[2]}`);
+		expect(carte).not.toBe('');
+		// L'erreur est dans la carte de la session, et nulle part ailleurs.
+		expect(erreurs(carte)).toEqual([['L’heure de fin doit venir après l’heure de début.']]);
+		expect(erreurs(html.replace(carte, ''))).toEqual([]);
+		expect(html).not.toMatch(/<ul\b[^>]*\srole=/);
+		// Le repli de modification de cette session est ouvert, et lui seul.
+		const ouverts = replis(html).filter(ouvert);
+		expect(ouverts).toHaveLength(1);
+		expect(replis(carte).filter(ouvert)).toEqual(ouverts);
+		// Ce que la personne a saisi est encore là.
+		const formulaire = formulaireDe(carte, sessions[2]);
+		expect(valeur(formulaire, 'end')).toBe('13:00');
+		expect(valeur(formulaire, 'teacher')).toBe('Imam Omar');
+		// Sans script, la page renvoyée s'ouvre sur la carte de la session, pas en haut de l'écran.
+		expect(formulaire).toContain(`action="?/enregistrer#session-${sessions[2]}"`);
+	});
+
+	it('keeps what was typed in the add form too, and says the mistakes there', async () => {
+		const reponse = await postForm(
+			'/vendredi?/enregistrer',
+			{
+				title: 'Prière de midi',
+				jumuaOrder: '2',
+				start: '13:00',
+				end: '12:00',
+				teacher: 'Imam Omar',
+				startsOn: '2026-09-04',
+				endsOn: '',
+				status: 'published'
+			},
+			cookies
+		);
+		expect(reponse.status).toBe(400);
+		const html = await reponse.text();
+		const ajout = section(html, 'ajout');
+		expect(erreurs(ajout)).toEqual([
+			['L’heure de fin doit venir après l’heure de début.', 'Cochez au moins une langue du sermon.']
+		]);
+		expect(erreurs(html.replace(ajout, ''))).toEqual([]);
+		const formulaire = formulaireDAjout(ajout);
+		expect(valeur(formulaire, 'title')).toBe('Prière de midi');
+		expect(valeur(formulaire, 'start')).toBe('13:00');
+		expect(valeur(formulaire, 'end')).toBe('12:00');
+		expect(valeur(formulaire, 'teacher')).toBe('Imam Omar');
+		expect(rangChoisi(formulaire)).toEqual(['2']);
+		expect(formulaire).toContain('action="?/enregistrer#ajout"');
+	});
+});
+
+describe('la prière du vendredi s’écrit dans la langue de l’organisation', () => {
+	it('proposes the name of the prayer in the language of the organisation, even when it is not its first published one', async () => {
+		expect(valeur(formulaireDAjout(rendus['/vendredi']?.fr ?? ''), 'title')).toBe(
+			NOM_DE_LA_PRIERE.fr
+		);
+		const html = await (await get('/vendredi', cookiesDe)).text();
+		expect(valeur(formulaireDAjout(html), 'title')).toBe(NOM_DE_LA_PRIERE.de);
+	});
+
+	it('writes a session in the language of the organisation, under the proposed name when the title is left empty', async () => {
+		const ecrites = await maintenance(async (tx) =>
+			lignes<{ source_language: string; language: string; title: string }>(
+				await tx.execute(sql`
+					select c."source_language", t."language", t."title"
+					from "course" c join "course_translation" t on t."course_id" = c."id"
+					where c."id" = ${sessionsDe[1]}
+				`)
+			)
+		);
+		expect(ecrites).toEqual([{ source_language: 'de', language: 'de', title: 'Freitagsgebet' }]);
+	});
+
+	it('shows a session saved under the French name before under the name in the language of the organisation', async () => {
+		const html = await (await get('/vendredi', cookiesDe)).text();
+		expect(valeur(formulaireDe(html, sessionsDe[3]), 'title')).toBe(NOM_DE_LA_PRIERE.de);
+		// Un titre choisi par l'organisation reste tel quel.
+		expect(valeur(formulaireDe(html, sessionsDe[2]), 'title')).toBe(TITRE_CHOISI);
+	});
 });
 
 describe('la prière du vendredi répond dans la langue du compte (retour D2)', () => {
 	/** Les messages d'une réponse : la liste d'erreurs ou la confirmation, en texte. */
 	function alerte(html: string): string[] {
-		const liste = html.match(/<ul\b[^>]*role="alert"[^>]*>([\s\S]*?)<\/ul>/)?.[1] ?? '';
+		const liste = [...html.matchAll(ERREURS)][0]?.[1] ?? '';
 		return [...liste.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)].map((trouve) =>
 			visibleText(`<body>${trouve[1] ?? ''}</body>`)
 		);
@@ -675,10 +906,106 @@ describe('le message de la semaine, dans chaque langue publiée (retour D1)', ()
 	});
 
 	it('follows the languages of the organisation: its own first, and none it does not publish', async () => {
+		// Ses langues sont enregistrées fr, de, ar : c'est pourtant l'allemand qui vient d'abord.
 		const html = await (await get('/partager', cookiesDe)).text();
 		const trouves = messages(html);
 		expect(trouves.map((message) => message.langue)).toEqual(['de', 'fr', 'ar']);
 		expect(trouves[0]?.texte.split('\n')[2]).toBe(ENTETE.de(ORGANISATION_DE));
+		const titres = [
+			...section(html, 'semaine-titre').matchAll(/<summary\b[^>]*>([\s\S]*?)<\/summary>/g)
+		].map((trouve) => visibleText(`<body>${trouve[1] ?? ''}</body>`));
+		expect(titres).toEqual([
+			'En allemand (la langue principale de votre page)',
+			'En français',
+			'En arabe'
+		]);
+	});
+
+	it('names the Friday prayer in the language of each message, when its title is the one proposed', () => {
+		const trouves = messages(rendus['/partager']?.fr ?? '');
+		expect(trouves.map((message) => message.langue)).toEqual([...LANGUES]);
+		for (const message of trouves) {
+			const langue = message.langue as Langue;
+			const v = VIRGULE[langue];
+			expect(message.texte, langue).toContain(
+				`- ${NOM_DE_LA_PRIERE[langue]}${v}12:10 – 12:50${v}${SALLE}`
+			);
+			if (langue !== 'fr') expect(message.texte, langue).not.toContain(NOM_DE_LA_PRIERE.fr);
+		}
+	});
+
+	it('keeps a title the organisation chose, and names the others in the language of each message', async () => {
+		const trouves = messages(await (await get('/partager', cookiesDe)).text());
+		expect(trouves.map((message) => message.langue)).toEqual(['de', 'fr', 'ar']);
+		for (const message of trouves) {
+			const langue = message.langue as Langue;
+			const v = VIRGULE[langue];
+			expect(message.texte, langue).toContain(`- ${NOM_DE_LA_PRIERE[langue]}${v}12:10 – 12:50`);
+			expect(message.texte, langue).toContain(`- ${TITRE_CHOISI}${v}13:30 – 14:10`);
+			// La session d'avant l'étape 18, écrite en allemand sous le nom français.
+			expect(message.texte, langue).toContain(`- ${NOM_DE_LA_PRIERE[langue]}${v}14:30 – 15:10`);
+			for (const autre of LANGUES.filter((une) => une !== langue)) {
+				expect(message.texte, `${langue} : ${autre}`).not.toContain(NOM_DE_LA_PRIERE[autre]);
+			}
+		}
+	});
+});
+
+describe('la page publique, le programme sur un site et le flux agenda nomment la prière dans la langue du lecteur (retour D1)', () => {
+	/** Les titres des événements d'un flux agenda, lignes repliées recollées. */
+	function titresDuFlux(ics: string): string[] {
+		return ics
+			.replace(/\r?\n[ \t]/g, '')
+			.split(/\r?\n/)
+			.filter((ligne) => ligne.startsWith('SUMMARY:'))
+			.map((ligne) => ligne.slice('SUMMARY:'.length));
+	}
+
+	async function lire(chemin: string): Promise<string> {
+		const reponse = await fetch(`${origin}${chemin}`);
+		expect(reponse.status, chemin).toBe(200);
+		return reponse.text();
+	}
+
+	it.each(['en', 'de'] as const)(
+		'names the sessions of a French organisation in %s on the public page and in the programme on a site',
+		async (langue) => {
+			// La page publique, puis la même page telle que le code à coller la montre, vues Semaine
+			// et Tous les cours.
+			for (const chemin of [
+				`/m/${SLUG}/${langue}`,
+				`/m/${SLUG}/${langue}?vue=cours`,
+				`/m/${SLUG}/${langue}?embed=1`,
+				`/m/${SLUG}/${langue}?vue=cours&embed=1`
+			]) {
+				const lu = visibleText(await lire(chemin));
+				expect(lu, chemin).toContain(NOM_DE_LA_PRIERE[langue]);
+				expect(lu, chemin).not.toContain(NOM_DE_LA_PRIERE.fr);
+			}
+		}
+	);
+
+	it.each(['en', 'de'] as const)(
+		'names the sessions of a French organisation in %s in the calendar feed',
+		async (langue) => {
+			const titres = titresDuFlux(await lire(`/m/${SLUG}/agenda.ics?lang=${langue}`));
+			expect(titres).toContain(NOM_DE_LA_PRIERE[langue]);
+			expect(titres).not.toContain(NOM_DE_LA_PRIERE.fr);
+		}
+	);
+
+	it('keeps a title the organisation chose, on the public page and in the feed', async () => {
+		const allemand = visibleText(await lire(`/m/${SLUG_DE}?vue=cours`));
+		expect(allemand).toContain(TITRE_CHOISI);
+		expect(allemand).toContain(NOM_DE_LA_PRIERE.de);
+		expect(allemand).not.toContain(NOM_DE_LA_PRIERE.fr);
+		const francais = visibleText(await lire(`/m/${SLUG_DE}/fr?vue=cours`));
+		expect(francais).toContain(TITRE_CHOISI);
+		expect(francais).toContain(NOM_DE_LA_PRIERE.fr);
+		expect(francais).not.toContain(NOM_DE_LA_PRIERE.de);
+		expect(titresDuFlux(await lire(`/m/${SLUG_DE}/agenda.ics?lang=ar`)).sort()).toEqual(
+			[NOM_DE_LA_PRIERE.ar, NOM_DE_LA_PRIERE.ar, TITRE_CHOISI].sort()
+		);
 	});
 });
 
@@ -707,6 +1034,22 @@ describe('le code à coller, expliqué sans jargon (retour B1)', () => {
 			expect(dit).toContain(EXEMPLE[langue]);
 			// Le nombre à changer pour un cadre plus haut, dit en toutes lettres.
 			expect(dit).toContain('900');
+		}
+	);
+
+	/** Ce que le programme ne prend pas au site qui l'affiche : ses couleurs et ses polices. */
+	const APPARENCE: Record<Langue, string> = {
+		fr: 'Le programme garde sa propre présentation : il ne prend ni les couleurs ni les polices de votre site.',
+		de: 'Das Programm behält seine eigene Gestaltung: Es übernimmt weder die Farben noch die Schriften Ihrer Website.',
+		it: 'Il programma mantiene il suo aspetto: non prende né i colori né i caratteri del tuo sito.',
+		en: 'The programme keeps its own look: it does not take on the colours or the fonts of your website.',
+		ar: 'يحتفظ البرنامج بمظهره الخاص: فهو لا يأخذ ألوان موقعك ولا خطوطه.'
+	};
+
+	it.each(LANGUES)(
+		'says that the programme keeps its own look, whatever the site, in %s',
+		(langue) => {
+			expect(explications(rendus['/partager']?.[langue] ?? '')).toContain(APPARENCE[langue]);
 		}
 	);
 
