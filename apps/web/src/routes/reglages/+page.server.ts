@@ -6,14 +6,16 @@
 
 import { fail } from '@sveltejs/kit';
 import { newId, sql } from '@jadwal/db';
+// Les langues qu'on peut activer sont celles des pages publiques (ADR 0007), lues dans la liste
+// commune. L'écran en gardait une copie à quatre langues : l'anglais, ajouté à l'étape 18, n'y était
+// pas, et un « en » envoyé par le formulaire était retiré sans rien dire.
+import { LANGUES } from '$lib/i18n.js';
 import { record } from '$lib/server/audit.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { mustAdminister } from '$lib/server/guard.js';
 import { readRooms, readSettings } from '$lib/server/programme.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
-/** Les langues que l'interface sait afficher (ADR 0007). */
-const LANGUES = ['fr', 'de', 'it', 'ar'] as const;
 const COULEUR = /^#[0-9a-fA-F]{6}$/;
 
 /** Ce que dit l'écran quand le module ne peut pas s'éteindre, sans chiffres à accorder. */
