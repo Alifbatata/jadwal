@@ -133,7 +133,7 @@ export const membersTexts: Translations<MembersTexts> = {
 				week: 'Voir les séances des sept prochains jours et copier les messages prêts à coller',
 				sessions:
 					'Annuler une séance, la déplacer à une autre date ou à une autre heure, puis la rétablir',
-				courses: 'Créer un cours, le modifier, le publier et le supprimer',
+				courses: 'Créer un cours, le modifier et le publier',
 				pauses: 'Poser une pause, par exemple pendant les vacances, puis la retirer',
 				friday:
 					'Quand les heures de prière sont activées : ajouter une prière du vendredi, la modifier, la publier, l’annuler, la déplacer ou la supprimer',
@@ -205,7 +205,7 @@ export const membersTexts: Translations<MembersTexts> = {
 				week: 'Die Termine der nächsten sieben Tage sehen und die vorbereiteten Nachrichten kopieren',
 				sessions:
 					'Einen Termin absagen, auf ein anderes Datum oder eine andere Uhrzeit verschieben und wiederherstellen',
-				courses: 'Einen Kurs erstellen, ändern, veröffentlichen und löschen',
+				courses: 'Einen Kurs erstellen, ändern und veröffentlichen',
 				pauses: 'Eine Pause eintragen, zum Beispiel während der Ferien, und wieder entfernen',
 				friday:
 					'Wenn die Gebetszeiten aktiviert sind: ein Freitagsgebet hinzufügen, ändern, veröffentlichen, absagen, verschieben oder löschen',
@@ -275,7 +275,7 @@ export const membersTexts: Translations<MembersTexts> = {
 				week: 'Vedere le lezioni dei prossimi sette giorni e copiare i messaggi pronti da incollare',
 				sessions:
 					'Annullare una lezione, spostarla a un’altra data o a un’altra ora, poi ripristinarla',
-				courses: 'Creare un corso, modificarlo, pubblicarlo ed eliminarlo',
+				courses: 'Creare un corso, modificarlo e pubblicarlo',
 				pauses: 'Inserire una pausa, per esempio durante le vacanze, poi toglierla',
 				friday:
 					'Quando gli orari di preghiera sono attivi: aggiungere una preghiera del venerdì, modificarla, pubblicarla, annullarla, spostarla o eliminarla',
@@ -346,7 +346,7 @@ export const membersTexts: Translations<MembersTexts> = {
 			editor: {
 				week: 'See the sessions of the next seven days and copy the ready-to-paste messages',
 				sessions: 'Cancel a session, move it to another date or time, then restore it',
-				courses: 'Create a course, edit it, publish it and delete it',
+				courses: 'Create a course, edit it and publish it',
 				pauses: 'Add a break, for example during the holidays, then remove it',
 				friday:
 					'When prayer times are switched on: add a Friday prayer, edit it, publish it, cancel it, move it or delete it',
@@ -419,7 +419,7 @@ export const membersTexts: Translations<MembersTexts> = {
 			editor: {
 				week: 'عرض حصص الأيام السبعة القادمة ونسخ الرسائل الجاهزة',
 				sessions: 'إلغاء حصة أو نقلها إلى تاريخ آخر أو ساعة أخرى، ثم إعادتها',
-				courses: 'إنشاء درس وتعديله ونشره وحذفه',
+				courses: 'إنشاء درس وتعديله ونشره',
 				pauses: 'إضافة عطلة، في الإجازات مثلًا، ثم إزالتها',
 				friday: 'عند تفعيل مواقيت الصلاة: إضافة صلاة جمعة وتعديلها ونشرها وإلغاؤها ونقلها أو حذفها',
 				share: 'مشاركة البرنامج: الرابط ورمز QR والشيفرة التي تُلصق في موقع',

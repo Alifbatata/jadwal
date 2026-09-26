@@ -521,7 +521,7 @@ const PREUVES: {
 		}
 	},
 	courses: {
-		texte: 'Créer un cours, le modifier, le publier et le supprimer',
+		texte: 'Créer un cours, le modifier et le publier',
 		preuve: async (cookie) => {
 			const nom = 'Cours créé par l’éditrice';
 			const modifie = 'Cours modifié par l’éditrice';
@@ -537,8 +537,10 @@ const PREUVES: {
 			expect(cours?.status).toBe('draft');
 			const id = cours?.id ?? '';
 
-			// Le modifier et le publier : le formulaire de sa page, l'état « publié » choisi.
-			expect(await page200(`/cours/${id}`, cookie)).toMatch(/<form\b[^>]*method="post"/);
+			// Le modifier et le publier : le formulaire de sa page, qui propose l'état « publié ».
+			const edition = await page200(`/cours/${id}`, cookie);
+			expect(edition).toMatch(/<form\b[^>]*method="post"/);
+			expect(element(edition, 'status')).toMatch(/<option\b[^>]*\bvalue="published"/);
 			const publie = await postForm(
 				`/cours/${id}`,
 				{ ...COURS_DE_L_EDITRICE, 'title.fr': modifie, status: 'published' },
@@ -548,13 +550,8 @@ const PREUVES: {
 			expect(publie.status).toBe(303);
 			expect(publie.headers.get('location')).toBe('/cours');
 			expect(await coursNommes(modifie)).toEqual([{ id, status: 'published', kind: 'course' }]);
-
-			// Le supprimer : l'action de l'écran des cours que l'ADR 0046 nomme. Aucun bouton de
-			// l'écran ne l'appelle encore (trouvaille du lot 3 sur l'écran des cours) : la preuve poste
-			// à l'action elle-même.
-			const supprime = await postForm('/cours?/supprimer', { courseId: id }, cookie);
-			expect(supprime.status).toBe(200);
-			expect(await coursNommes(modifie)).toEqual([]);
+			// Pas de suppression : aucun écran ne propose de supprimer un cours, et l'écran Membres ne
+			// la promet plus. Une preuve qui postait directement à l'action restait verte quand même.
 		}
 	},
 	pauses: {
@@ -818,6 +815,18 @@ const RESERVES: {
 	}
 };
 
+/**
+ * Ce que l'écran promet des cours à un éditeur, dans chaque langue : rien de plus que ce que les
+ * écrans des cours proposent. Aucun ne propose de supprimer un cours.
+ */
+const COURS_DE_L_EDITEUR: Record<Langue, string> = {
+	fr: 'Créer un cours, le modifier et le publier',
+	de: 'Einen Kurs erstellen, ändern und veröffentlichen',
+	it: 'Creare un corso, modificarlo e pubblicarlo',
+	en: 'Create a course, edit it and publish it',
+	ar: 'إنشاء درس وتعديله ونشره'
+};
+
 /** Le titre de la liste réservée, dans chaque langue : les mots que la consigne demande. */
 const RESERVE: Record<Langue, string> = {
 	fr: 'Réservé au responsable',
@@ -957,7 +966,9 @@ describe('ce que peut faire chaque rôle, sous le choix du rôle (retour B3)', (
 		const aide = element(rendus[langue] ?? '', 'roles-aide');
 		const responsable = element(aide, 'peut-org_admin');
 		expect(lu(responsable.match(/<h3\b[\s\S]*?<\/h3>/)?.[0] ?? '')).toContain(RESERVE[langue]);
-		expect(elementsDeListe(element(aide, 'peut-editor'))).toHaveLength(EDITOR_GESTURES.length);
+		const editeur = elementsDeListe(element(aide, 'peut-editor'));
+		expect(editeur).toHaveLength(EDITOR_GESTURES.length);
+		expect(editeur[EDITOR_GESTURES.indexOf('courses')]).toBe(COURS_DE_L_EDITEUR[langue]);
 		expect(elementsDeListe(responsable)).toHaveLength(MANAGER_GESTURES.length);
 	});
 });
