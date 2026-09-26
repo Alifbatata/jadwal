@@ -49,8 +49,9 @@
 --    adhésions et des comptes aussi (la garde des personnes désignées, ADR 0013, s'appuie sur elle :
 --    une éditrice qui annule la séance qu'une collègue avait déplacée écrit une ligne qui la nomme).
 --    Le super-admin garde ses pouvoirs (ADR 0025) : ses politiques ne passent pas par cette
---    fonction, et il ne peut pas l'appeler. Le propriétaire, sous son drapeau, non plus. Les règles
---    des migrations 0053 à 0058 restent telles quelles.
+--    fonction, et il ne peut pas l'appeler. Aucune politique du propriétaire ne passe non plus par
+--    elle : il peut l'appeler, puisqu'elle lui appartient, mais aucun de ses droits n'en dépend.
+--    Les règles des migrations 0053 à 0058 restent telles quelles.
 --
 -- 3. Les colonnes de l'organisation. Le rôle applicatif pouvait modifier toute la ligne, plan, état,
 --    identifiant d'URL et date de création compris, alors que l'écran des réglages n'en écrit que

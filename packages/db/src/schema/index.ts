@@ -100,7 +100,8 @@ export const ORGANIZATION_STATUSES = ['active', 'suspended'] as const;
 export const MEMBERSHIP_ROLES = ['org_admin', 'editor'] as const;
 /**
  * Les langues dans lesquelles l'espace des responsables peut s'afficher, et donc celles qu'un compte
- * peut retenir (ADR 0007, ADR 0046) : français, allemand, italien, anglais britannique, arabe.
+ * peut retenir (ADR 0046) : français, allemand, italien, anglais britannique, arabe. L'ADR 0007 ne
+ * traite que de l'interface publique.
  */
 export const ACCOUNT_LANGUAGES = ['fr', 'de', 'it', 'en', 'ar'] as const;
 export const COURSE_STATUSES = ['draft', 'published', 'archived'] as const;

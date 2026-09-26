@@ -150,9 +150,10 @@ heures de prière. La fonction qui le dit, `jadwal.is_org_admin()`, est faite co
 Deux conséquences pour ce document :
 
 - **Le contexte d'une écriture réservée porte la personne.** `withOrg` avec une organisation seule
-  lit toujours, mais n'écrit plus rien de réservé. Une modification ou une suppression écartée ne
-  lève pas d'erreur : elle touche zéro ligne. L'application pose toujours les deux
-  (`withSessionOrg`).
+  n'écrit plus rien de réservé, et ne lit plus les invitations de l'organisation ; il lit encore
+  les salles, les réglages, les heures de prière et les adhésions. Une modification ou une
+  suppression écartée ne lève pas d'erreur : elle touche zéro ligne. L'application pose toujours
+  les deux (`withSessionOrg`).
 - **Le propriétaire lit une adhésion hors de son drapeau d'entretien** : celle de la personne du
   contexte, dans l'organisation du contexte, et rien d'autre. La fonction en a besoin, puisqu'elle
   tourne sous lui. Cette politique ne lit aucune autre table : les politiques des adhésions

@@ -3,7 +3,8 @@
 --
 -- L'espace des responsables se lit en cinq langues, et la langue choisie est retenue pour le compte :
 -- une colonne de plus, vide tant que la personne n'a rien choisi, et limitée aux cinq langues de
--- l'espace (ADR 0007) par une contrainte close par `is true`, comme toutes les autres (ADR 0013).
+-- l'espace par une contrainte close par `is true`, comme toutes les autres (ADR 0013). Ces cinq
+-- langues sont celles de l'étape 18 (ADR 0046) ; l'ADR 0007 ne traite que de l'interface publique.
 --
 -- Qui écrit aujourd'hui dans la table des comptes, et comment :
 -- - le rôle de connexion (Better Auth) crée et met à jour les comptes. Ses droits sont accordés
