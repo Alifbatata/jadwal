@@ -51,7 +51,8 @@
  *   l'adresse proposée pendant la frappe, et par le serveur sans JavaScript ; une seconde passkey,
  *   qui a son propre nom et un message juste.
  * - B3 : l'écran Membres dit ce que fait un éditeur, sans lui promettre de supprimer un cours, et ce
- *   qui est réservé au responsable.
+ *   qui est réservé au responsable ; une responsable qui se donne le rôle d'éditeur le lit sur
+ *   l'écran où elle arrive.
  * - B4 : le résumé du formulaire de cours, sa ligne de description, et ce qui manque, signalé ; une
  *   description écrite sans le titre de sa langue est refusée, avec une phrase qui nomme la langue.
  * - C1 : « D'où viennent vos heures de prière ? », ses trois réponses et l'aperçu de sept jours ;
@@ -114,10 +115,11 @@
  *
  * ## En dernier, ce qui change l'organisation
  *
- * Deux pas viennent après tous les autres, parce qu'ils changent ce que les autres lisent. La
+ * Trois pas viennent après tous les autres, parce qu'ils changent ce que les autres lisent. La
  * session du vendredi est déplacée le même jour, sur « À venir », d'où un second onglet, ouvert
  * avant, renvoie sa carte restée telle quelle. Le nom et la formule d'accueil sont tapés dans
- * Réglages, puis remis.
+ * Réglages, puis remis. Une seconde personne responsable rejoint l'organisation, la première se
+ * donne le rôle d'éditeur, et la seconde lui rend le sien.
  *
  * ## Les heures de prière attendues
  *
@@ -256,13 +258,16 @@ const HEURE_DU_VENDREDI_DEPLACE = '13:00';
 /**
  * Les phrases lues à la lettre dans les écrans corrigés depuis la relecture du lot 4 : ce que dit
  * l'écran du vendredi après une suppression, et l'aide de « À partir du » dans la carte d'une
- * session (`friday.ts`) ; le refus d'une carte restée ouverte sur « À venir » (`upcoming.ts`).
+ * session (`friday.ts`) ; le refus d'une carte restée ouverte sur « À venir » (`upcoming.ts`) ; ce
+ * que lit une responsable qui s'est donné le rôle d'éditeur (`common.ts`).
  */
 const SESSION_SUPPRIMEE = 'La session est supprimée.';
 const AIDE_DE_LA_MODIFICATION =
 	'La session a lieu chaque vendredi à partir de cette date. Changez cette date seulement pour corriger une erreur.';
 const SEANCE_CHANGEE =
 	'Cette séance a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée. Rien n’a été enregistré. Le programme ci-dessous est à jour.';
+const DEVENUE_EDITRICE =
+	'Vous avez maintenant le rôle d’éditeur. Les écrans réservés aux responsables, comme Membres et Réglages, ne vous sont plus ouverts. Pour les retrouver, demandez à une autre personne responsable de vous redonner le rôle de responsable.';
 /**
  * Une description écrite en allemand, le titre allemand laissé vide (retour B4), et le refus qui
  * nomme la langue (`course-form.ts`).
@@ -278,6 +283,11 @@ const SAISIE_AU_CLAVIER = {
 	accueil: 'Salam au clavier',
 	couleur: '#b91c1c'
 };
+/**
+ * Une seconde personne responsable de l'organisation : sans elle, la base refuse qu'une
+ * responsable se donne le rôle d'éditeur (retour B3).
+ */
+const SECONDE_RESPONSABLE = 'deuxieme.personne@example.test';
 /** La description que reçoit le premier cours le temps de lire le résumé (retour B4). */
 const DESCRIPTION = 'Pour les enfants de 7 à 12 ans.';
 /**
@@ -4078,6 +4088,79 @@ async function reglagesAuClavier(page) {
 	});
 }
 
+/**
+ * o. Membres (B3) : une seconde personne responsable rejoint l'organisation, puis la première se
+ * donne le rôle d'éditeur sur sa propre ligne. Elle arrive sur « À venir », où une phrase, visible
+ * sans défiler, lui dit ce qui s'est passé et comment retrouver ses écrans. La seconde lui rend
+ * ensuite son rôle.
+ */
+async function devenirEditrice(navigateur, page) {
+	etape('o. Membres : une responsable se donne le rôle d’éditeur');
+	await retour('B3', async () => {
+		await ouvrir(page, '/membres');
+		await page.locator('#email').fill(SECONDE_RESPONSABLE);
+		await page.locator('#role').selectOption('org_admin');
+		await envoyer(page, page.locator('form[action="?/inviter"] button[type="submit"]'));
+		const ailleurs = await nouveauContexte(navigateur);
+		try {
+			const seconde = await ailleurs.newPage();
+			await ouvrir(seconde, '/connexion');
+			const avant = courriels().length;
+			await demanderUnLien(seconde, SECONDE_RESPONSABLE);
+			await ouvrir(seconde, (await nouveauLienDeConnexion(SECONDE_RESPONSABLE, avant)) ?? '/');
+			await envoyer(
+				seconde,
+				seconde
+					.locator('li')
+					.filter({ hasText: ORGANISATION.nom })
+					.getByRole('button', { name: 'Accepter' })
+			);
+			await envoyer(
+				seconde,
+				seconde.getByRole('button', { name: 'J’accepte les conditions d’utilisation', exact: true })
+			);
+
+			await ouvrir(page, '/membres');
+			const ligne = (cible, adresse) =>
+				cible.locator('ul.membres li').filter({ has: cible.getByText(adresse, { exact: true }) });
+			await envoyer(
+				page,
+				ligne(page, RESPONSABLE).getByRole('button', {
+					name: 'Donner le rôle d’éditeur',
+					exact: true
+				})
+			);
+			const avis = page.locator('#avis-role');
+			const texte = (await avis.count()) === 1 ? await texteDe(avis) : '';
+			const boite = texte ? await avis.boundingBox() : null;
+			const hauteur = page.viewportSize()?.height ?? ECRAN.height;
+			const adresse = new URL(page.url());
+			verifier(
+				'une responsable qui se donne le rôle d’éditeur arrive sur « À venir », où une phrase, visible sans défiler, lui dit ce qui s’est passé et comment retrouver ses écrans',
+				adresse.pathname === '/' &&
+					(await titre(page)) === 'À venir' &&
+					texte === DEVENUE_EDITRICE &&
+					(await avis.getAttribute('role')) === 'status' &&
+					boite !== null &&
+					boite.y >= 0 &&
+					boite.y + boite.height <= hauteur,
+				`${adresse.pathname}${adresse.search}, « ${await titre(page)} » ; ${texte ? `« ${texte} »` : 'aucune phrase'}`
+			);
+			// La seconde responsable lui rend son rôle.
+			await ouvrir(seconde, '/membres');
+			await envoyer(
+				seconde,
+				ligne(seconde, RESPONSABLE).getByRole('button', {
+					name: 'Donner le rôle de responsable',
+					exact: true
+				})
+			);
+		} finally {
+			await ailleurs.close();
+		}
+	});
+}
+
 // ---------------------------------------------------------------------------------------------
 // Le déroulé
 // ---------------------------------------------------------------------------------------------
@@ -4124,6 +4207,7 @@ try {
 	await periodeCopiee(page);
 	await vendrediSurLAccueil(page);
 	await reglagesAuClavier(page);
+	await devenirEditrice(navigateur, page);
 	await bilanDesEcrans();
 } catch (erreur) {
 	echoue = true;
