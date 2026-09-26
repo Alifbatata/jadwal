@@ -164,6 +164,9 @@ docs/CALENDRIER-PRIERES.md | VIRG_NON_TROUVEE | vous
 # (famille 2) : l'en-tête « Ce qui est conservé / Durée », la cellule finale « chaque nuit »,
 # « chiffrées » accordé à « sauvegardes » et non à la cellule voisine. « Voyez plus bas » est la
 # formule du renvoi, et « au bout d'un à deux jours » élide devant le numéral, ce que l'usage admet.
+# « 26.09.2026 » : la date de mise à jour s'écrit JJ.MM.AAAA, avec des points, comme toutes les
+# dates du service et comme en Suisse (étape 18, retour A3) ; la règle propose des barres obliques.
+docs/CONDITIONS.md | DATE | 26.09.2026
 docs/CONDITIONS.md | J_N | chiffrées Union
 docs/CONDITIONS.md | PAS_D_ELISION | d'un
 docs/CONDITIONS.md | POINT | nuit
