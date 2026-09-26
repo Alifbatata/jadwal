@@ -488,6 +488,23 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 			}
 		);
 
+		it('chooses Europe/Zurich again when the time zone sent is not in the list', async () => {
+			// Un nom hors de la liste ne peut être choisi dans aucune option : sans cela, aucune ne
+			// serait choisie, et le navigateur prendrait la première, Europe/Andorra.
+			const reponse = await postForm(
+				'/super-admin?/ouvrir',
+				{ name: 'Club du fuseau perdu', slug: 'club-fuseau-perdu', timeZone: 'Mars/Olympus' },
+				avecPouvoirs
+			);
+			expect(reponse.status).toBe(400);
+			const html = await reponse.text();
+			expect(erreur(html)).toBe('Choisissez le fuseau horaire dans la liste.');
+			expect(valeurDuChamp(html, 'name')).toBe('Club du fuseau perdu');
+			expect(fuseaux(html).filter((option) => option.choisi)).toEqual([
+				{ valeur: 'Europe/Zurich', groupe: 'Europe', choisi: true }
+			]);
+		});
+
 		it.each([
 			['Europe/Amsterdam', 'un alias, qui pointe vers le fuseau d’un autre pays'],
 			['Europe/Nulle-Part', 'un nom inventé'],

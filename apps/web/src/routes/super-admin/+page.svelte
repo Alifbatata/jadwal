@@ -38,7 +38,13 @@
 	let name = $state(saisi?.name ?? '');
 	let address = $state(saisi?.slug ?? '');
 	let addressWritten = $state(Boolean(saisi?.slug));
-	const chosenTimeZone = untrack(() => saisi?.timeZone || data.defaultTimeZone);
+	// Le fuseau saisi revient choisi s'il est dans la liste. Un nom qu'elle n'a pas ne choisirait
+	// aucune option, et le navigateur prendrait la première : c'est alors celui de la Suisse.
+	const chosenTimeZone = untrack(() => {
+		const zone = saisi?.timeZone ?? '';
+		const listed = data.timeZones.europe.includes(zone) || data.timeZones.world.includes(zone);
+		return listed ? zone : data.defaultTimeZone;
+	});
 	const shownAddress = $derived(address || proposePublicAddress(name));
 
 	function followName(event: Event & { currentTarget: HTMLInputElement }) {
