@@ -14,7 +14,8 @@ qu'une ligne de ce paquet change, parce qu'il est dans la page. Il suit le modul
 l'organisation, comme sur la page. L'attribut `view` ne le connaît pas encore : l'ajouter changerait
 le fichier, donc son empreinte, et les sites qui l'ont épinglée.
 
-Aucune bibliothèque, aucune dépendance à l'exécution : **1,71 Kio gzip**, mesurés.
+Aucune bibliothèque, aucune dépendance à l'exécution : **2 141 octets gzip** (2,14 ko, soit
+2,09 Kio), mesurés sur la construction de l'étape 18 par `pnpm --filter @jadwal/widget size`.
 
 Pour un responsable d'organisation, la marche à suivre est dans `docs/INTEGRATION.md`. Ce fichier-ci
 s'adresse à qui travaille sur le paquet.
@@ -68,7 +69,7 @@ d'écart. Aucun autre type de message n'est traité.
 
 ```
 pnpm --filter @jadwal/widget build      # produit dist/jadwal-widget.js (un seul fichier, IIFE)
-pnpm --filter @jadwal/widget test       # vitest + jsdom : 25 tests
+pnpm --filter @jadwal/widget test       # vitest + jsdom : 31 tests
 pnpm --filter @jadwal/widget size       # taille brute et gzip
 pnpm --filter @jadwal/widget integrity  # l'empreinte SHA-384 et le code à coller
 ```
