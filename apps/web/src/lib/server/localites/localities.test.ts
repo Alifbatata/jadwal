@@ -27,6 +27,10 @@ const LIGNES = readFileSync(new URL('./localities.csv', import.meta.url), 'utf8'
 		return { postcode: postcode as string, name: name as string, canton: canton as string };
 	});
 
+/** « Zürich » écrit comme sur un clavier sans trémas, sans passer par le module qu'on éprouve. */
+const TREMAS: Record<string, string> = { ä: 'ae', ö: 'oe', ü: 'ue', Ä: 'Ae', Ö: 'Oe', Ü: 'Ue' };
+const sansTremas = (nom: string) => nom.replace(/[äöüÄÖÜ]/g, (lettre) => TREMAS[lettre] ?? lettre);
+
 describe('LOCALITIES_SOURCE', () => {
 	it('nomme la liste officielle, sa version et la source à citer', () => {
 		expect(LOCALITIES_SOURCE.title).toBe(
@@ -242,11 +246,6 @@ describe('searchLocalities, sans trémas (relecture du lot 3)', () => {
 	// Un clavier sans trémas, anglais ou arabe, écrit « Zuerich » : c'est justement celui de la
 	// personne à qui l'écran arabe demande de taper en lettres latines. La recherche ne trouvait rien.
 
-	/** « Zürich » écrit comme sur un clavier sans trémas, sans passer par le module qu'on éprouve. */
-	const TREMAS: Record<string, string> = { ä: 'ae', ö: 'oe', ü: 'ue', Ä: 'Ae', Ö: 'Oe', Ü: 'Ue' };
-	const sansTremas = (nom: string) =>
-		nom.replace(/[äöüÄÖÜ]/g, (lettre) => TREMAS[lettre] ?? lettre);
-
 	it('lit « ue », « oe » et « ae » comme « ü », « ö » et « ä »', () => {
 		expect(premier('Zuerich')).toBe('8001 Zürich (ZH)');
 		expect(premier('Koeniz')).toBe('3098 Köniz (BE)');
@@ -298,6 +297,128 @@ describe('searchLocalities, sans trémas (relecture du lot 3)', () => {
 					`${sansTremas(name)} (${canton}) -> ${premier(`${sansTremas(name)} (${canton})`)}`
 			);
 		expect([...new Set(perdues)]).toEqual([]);
+	});
+});
+
+describe('searchLocalities, un nom qui s’écrit vraiment avec « üe » ou « ue » (relecture du lot 4)', () => {
+	// La lecture « ue = ü » faisait remonter, pendant la frappe, tous les noms en « ü » : « Büe »
+	// devenait « bue », qui commence aussi « Büchslen » lu « Buechslen », et Büetigen sortait des dix
+	// premiers. De même « Rüe » pour Rüegsau, et « Rue » pour Rueras, qui s'écrit vraiment ainsi.
+
+	/** Les noms trouvés, dans l'ordre. */
+	const noms = (requete: string) => searchLocalities(requete).map((localite) => localite.name);
+
+	/** Un texte réduit à ses lettres, sans accents ni trémas, sans passer par le module éprouvé. */
+	const plat = (texte: string) =>
+		texte
+			.normalize('NFD')
+			.replace(/\p{M}/gu, '')
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, ' ')
+			.trim();
+
+	/** Vrai quand le nom ou la commune porte ce début tel qu'il s'écrit, trémas effacés des deux côtés. */
+	const lEcritAinsi = (localite: { name: string; municipality: string }, debut: string) =>
+		` ${plat(localite.name)} ${plat(localite.municipality)}`.includes(plat(debut));
+
+	/**
+	 * Les chefs-lieux se cherchent aussi sous leur nom dans les autres langues (« Neuenburg »), que ces
+	 * tests ne relisent pas : ils sont laissés de côté.
+	 */
+	const CHEFS_LIEUX = new Set([
+		'Zürich',
+		'Bern',
+		'Luzern',
+		'Schwyz',
+		'Glarus',
+		'Zug',
+		'Fribourg',
+		'Solothurn',
+		'Basel',
+		'Schaffhausen',
+		'St. Gallen',
+		'Chur',
+		'Bellinzona',
+		'Lausanne',
+		'Sion',
+		'Neuchâtel',
+		'Genève',
+		'Delémont'
+	]);
+	const horsChefsLieux = (requete: string) =>
+		searchLocalities(requete).filter((localite) => !CHEFS_LIEUX.has(localite.name));
+
+	/**
+	 * Les débuts d'un seul mot, de 3 à 6 et de 8 lettres, des noms de la liste qui portent « ue »,
+	 * « oe » ou « ae », avec ou sans tréma.
+	 */
+	const debutsEnUe = (avecTrema: boolean) =>
+		new Set(
+			LIGNES.flatMap(({ name }) =>
+				[3, 4, 5, 6, 8].map((longueur) => name.slice(0, longueur))
+			).filter(
+				(debut) =>
+					/[äöüÄÖÜ]/.test(debut) === avecTrema &&
+					/ue|oe|ae/.test(plat(debut)) &&
+					!plat(debut).includes(' ')
+			)
+		);
+
+	/** Vrai quand ce début est le nom entier, ou l'une de ses langues, écrit sans ses trémas (« Lue »). */
+	const nomEntierSansTremas = (localite: { name: string }, debut: string) =>
+		[localite.name, ...localite.name.split('/')].some(
+			(nom) => plat(sansTremas(nom)) === plat(debut)
+		);
+
+	it('met en tête les noms en « üe » dont on tape le début avec son tréma', () => {
+		expect(premier('Büe')).toBe('3263 Büetigen (BE)');
+		expect(premier('Büet')).toBe('3263 Büetigen (BE)');
+		expect(premier('Flüe')).toBe('6073 Flüeli-Ranft (OW)');
+		expect(premier('Lüe')).toBe('7027 Lüen (GR)');
+		expect(noms('Rüeg').slice(0, 3)).toEqual(['Rüeggisberg', 'Rüegsau', 'Rüegsbach']);
+		expect(noms('Rüe')).toEqual(expect.arrayContaining(['Rüegsau', 'Rüegsbach']));
+	});
+
+	it('garde en tête les noms qui s’écrivent vraiment avec « ue » ou « oe », tapés sans tréma', () => {
+		expect(noms('Rue')).toEqual(expect.arrayContaining(['Rue', 'Rueras', 'Rueyres-Treyfayes']));
+		expect(premier('Boé')).toBe('2856 Boécourt (JU)');
+		expect(noms('Boé').slice(0, 3)).toEqual(['Boécourt', 'Corminboeuf', 'Vuiteboeuf']);
+	});
+
+	it('lit toujours « Zuerich » comme Zürich et « Koeniz » comme Köniz', () => {
+		expect(premier('Zuerich')).toBe('8001 Zürich (ZH)');
+		expect(premier('Koeniz')).toBe('3098 Köniz (BE)');
+	});
+
+	it('ne rend, pour un début en « üe » tapé avec son tréma, que des noms qui l’écrivent ainsi', () => {
+		// Chaque début de 3 à 6 ou de 8 lettres d'un nom de la liste, tapé tel quel avec son tréma, qui
+		// porte « üe », « öe » ou « äe » : un tréma tapé dit que la personne écrit les trémas, et le
+		// « ue » qu'elle tape est alors un vrai « ue ».
+		const debuts = debutsEnUe(true);
+		expect(debuts.size).toBeGreaterThan(20);
+		const fautives = [...debuts].flatMap((debut) =>
+			horsChefsLieux(debut)
+				.filter((localite) => !lEcritAinsi(localite, debut))
+				.map((localite) => `« ${debut} » -> ${localite.name}`)
+		);
+		expect(fautives).toEqual([]);
+	});
+
+	it('met, sans tréma tapé, les noms écrits ainsi avant ceux qui ne l’écrivent que sans leurs trémas', () => {
+		// Chaque début de 3 à 6 ou de 8 lettres d'un nom de la liste qui porte « ue », « oe » ou « ae »,
+		// tapé sans tréma : les localités qui l'écrivent ainsi forment le haut de la liste, et celles
+		// qui ne l'écrivent qu'une fois leurs trémas lus « ue », « oe » ou « ae » viennent après.
+		// Seule exception : un nom entier écrit sans ses trémas, que la personne a tapé en entier.
+		const debuts = debutsEnUe(false);
+		expect(debuts.size).toBeGreaterThan(100);
+		const melangees = [...debuts].filter((debut) => {
+			const ecrites = horsChefsLieux(debut).map(
+				(localite) => lEcritAinsi(localite, debut) || nomEntierSansTremas(localite, debut)
+			);
+			const premiereAutre = ecrites.indexOf(false);
+			return premiereAutre !== -1 && ecrites.slice(premiereAutre).includes(true);
+		});
+		expect(melangees).toEqual([]);
 	});
 });
 

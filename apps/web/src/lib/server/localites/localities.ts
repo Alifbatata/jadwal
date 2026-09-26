@@ -128,19 +128,15 @@ function normalise(text: string): string {
 
 /** Les trémas allemands tels qu'on les écrit sans eux : « Zürich » devient « Zuerich ». */
 const UMLAUTS: Record<string, string> = { ä: 'ae', ö: 'oe', ü: 'ue', Ä: 'Ae', Ö: 'Oe', Ü: 'Ue' };
+const UMLAUT = /[äöüÄÖÜ]/;
 
 /**
- * Un nom sous chacune de ses graphies, normalisées : telle quelle (« zurich »), et, s'il porte des
- * trémas, telle qu'un clavier sans trémas l'écrit (« zuerich »). La seconde s'ajoute à la première
- * du côté de la liste, jamais du côté de ce qui est tapé : « Frauenfeld » ou « Aeugst » s'écrivent
- * vraiment avec « ue » et « ae », et ne doivent rien perdre.
+ * Un nom tel qu'un clavier sans trémas l'écrit, normalisé : « Zürich » donne `zuerich`. Cette
+ * graphie ne vaut que du côté de la liste, jamais du côté de ce qui est tapé : « Frauenfeld » ou
+ * « Aeugst » s'écrivent vraiment avec « ue » et « ae ».
  */
-function spellingsOf(text: string): string[] {
-	const plain = normalise(text);
-	const withoutUmlauts = normalise(
-		text.replace(/[äöüÄÖÜ]/g, (letter) => UMLAUTS[letter] ?? letter)
-	);
-	return withoutUmlauts === plain ? [plain] : [plain, withoutUmlauts];
+function withoutUmlauts(text: string): string {
+	return normalise(text.replace(/[äöüÄÖÜ]/g, (letter) => UMLAUTS[letter] ?? letter));
 }
 
 /**
@@ -159,19 +155,27 @@ function latinDigits(text: string): string {
 	return result;
 }
 
+/** Ce qu'une recherche compare d'une localité, sous une même graphie. */
+interface Forms {
+	/** Le nom officiel entier. */
+	name: string;
+	/**
+	 * Les noms sous lesquels la localité se cherche : chaque langue du nom officiel, sans suffixe,
+	 * et ses noms dans les autres langues.
+	 */
+	names: string[];
+	/** La commune. */
+	municipality: string;
+}
+
 interface Entry {
 	locality: Locality;
 	/** Le nom entier, normalisé. */
 	name: string;
-	/** Le nom entier sous chacune de ses graphies : tel quel, et sans trémas (voir `spellingsOf`). */
-	spellings: string[];
-	/**
-	 * Les noms sous lesquels la localité se cherche : chaque langue du nom officiel, sans suffixe,
-	 * et ses noms dans les autres langues, chacun sous ses graphies.
-	 */
-	names: string[];
-	/** La commune, sous ses graphies. */
-	municipalities: string[];
+	/** Les noms tels qu'ils s'écrivent, normalisés (« zurich »). */
+	written: Forms;
+	/** Les mêmes, sans trémas (« zuerich »), pour une localité qui en porte ; sinon `null`. */
+	withoutUmlauts: Forms | null;
 	/** Combien de NPA portent ce nom : une grande ville en a beaucoup. */
 	weight: number;
 	/** Combien de localités la commune compte : départage à poids égal. */
@@ -180,16 +184,25 @@ interface Entry {
 
 /**
  * Les noms d'une localité, un par langue (« Biel/Bienne »), sans le canton qui la distingue
- * (« Carouge GE ») ni la précision entre parenthèses (« St-Saphorin (Lavaux) »).
+ * (« Carouge GE ») ni la précision entre parenthèses (« St-Saphorin (Lavaux) »), puis ses noms dans
+ * les autres langues, chacun écrit par `spell`.
  */
-function namesOf(locality: Locality): string[] {
+function namesOf(locality: Locality, spell: (text: string) => string): string[] {
 	const names = locality.name
 		.split('/')
-		.flatMap((part) => spellingsOf(part.replace(/\s*\(.*\)\s*$/, '').replace(CANTON_SUFFIX, '')));
+		.map((part) => spell(part.replace(/\s*\(.*\)\s*$/, '').replace(CANTON_SUFFIX, '')));
 	for (const other of OTHER_NAMES[`${locality.name}|${locality.canton}`] ?? []) {
-		names.push(...spellingsOf(other));
+		names.push(spell(other));
 	}
 	return names.filter((name) => name.length > 0);
+}
+
+function formsOf(locality: Locality, spell: (text: string) => string): Forms {
+	return {
+		name: spell(locality.name),
+		names: namesOf(locality, spell),
+		municipality: spell(locality.municipality)
+	};
 }
 
 function parse(text: string): { title: string; version: string; entries: Entry[] } {
@@ -247,9 +260,10 @@ function parse(text: string): { title: string; version: string; entries: Entry[]
 	const entries = localities.map((locality) => ({
 		locality,
 		name: normalise(locality.name),
-		spellings: spellingsOf(locality.name),
-		names: namesOf(locality),
-		municipalities: spellingsOf(locality.municipality),
+		written: formsOf(locality, normalise),
+		withoutUmlauts: UMLAUT.test(`${locality.name} ${locality.municipality}`)
+			? formsOf(locality, withoutUmlauts)
+			: null,
 		weight: byName.get(`${locality.name}|${locality.canton}`) ?? 1,
 		municipalityWeight: byMunicipality.get(`${locality.municipality}|${locality.canton}`) ?? 1
 	}));
@@ -286,25 +300,40 @@ export const LOCALITIES_SOURCE: LocalitiesSource = Object.freeze({
  * 5. chaque mot du texte commence un mot de son nom, dans n'importe quel ordre (« bienne biel ») ;
  * 6. un mot de sa commune commence par ce texte (« val de ruz » pour Cernier).
  *
- * Chaque nom compte sous ses graphies : « zuerich » trouve Zürich au même rang que « zurich ».
+ * Une localité à trémas compte aussi sans eux : « zuerich » trouve Zürich. Un nom entier tapé sans
+ * ses trémas (« Zuerich », ou « Lue » pour Lü) passe juste après un nom qui répond au même rang tel
+ * qu'il s'écrit. Un début de nom ou un morceau (« Rue ») passe après toutes les localités qui
+ * répondent telles qu'elles s'écrivent (son rang plus 7) : un nom qui s'écrit vraiment avec « ue »,
+ * comme Rueras, ne se perd pas pendant la frappe parmi tous les noms en « ü ». Et un texte tapé avec
+ * des trémas (`umlauts`) ne se compare qu'aux noms tels qu'ils s'écrivent : la personne écrit les
+ * trémas, et le « ue » qu'elle tape est un vrai « ue » (« Büe » cherche Büetigen, et non tous les
+ * noms en « Bü »).
  */
-function rank(entry: Entry, text: string): number | null {
-	const { spellings } = entry;
-	if (spellings.includes(text)) return 0;
-	if (entry.names.includes(text)) return 1;
-	if (entry.names.some((name) => name.startsWith(text))) return 2;
-	if (spellings.some((spelling) => ` ${spelling}`.includes(` ${text}`))) return 3;
-	if (spellings.some((spelling) => spelling.includes(text))) return 4;
+function rank(entry: Entry, text: string, umlauts: boolean): number | null {
+	const written = rankIn(entry.written, text);
+	if (written !== null || umlauts || entry.withoutUmlauts === null) return written;
+	const without = rankIn(entry.withoutUmlauts, text);
+	if (without === null) return null;
+	return without <= 1 ? without + 0.5 : WITHOUT_UMLAUTS + without;
+}
+
+/**
+ * Ajouté au rang d'un début de nom ou d'un morceau trouvé seulement sans les trémas : il passe ainsi
+ * après tous les rangs de 0 à 6.
+ */
+const WITHOUT_UMLAUTS = 7;
+
+/** Le rang, de 0 à 6, sous une graphie. */
+function rankIn(forms: Forms, text: string): number | null {
+	const { name, names, municipality } = forms;
+	if (name === text) return 0;
+	if (names.includes(text)) return 1;
+	if (names.some((one) => one.startsWith(text))) return 2;
+	if (` ${name}`.includes(` ${text}`)) return 3;
+	if (name.includes(text)) return 4;
 	const words = text.split(' ');
-	if (
-		words.length > 1 &&
-		spellings.some((spelling) => words.every((word) => ` ${spelling}`.includes(` ${word}`)))
-	) {
-		return 5;
-	}
-	if (entry.municipalities.some((municipality) => ` ${municipality}`.includes(` ${text}`))) {
-		return 6;
-	}
+	if (words.length > 1 && words.every((word) => ` ${name}`.includes(` ${word}`))) return 5;
+	if (` ${municipality}`.includes(` ${text}`)) return 6;
 	return null;
 }
 
@@ -347,6 +376,8 @@ interface Query {
 	cantonWord: string;
 	/** Vrai quand le canton est entre deux parenthèses : il ne peut alors être que le canton. */
 	strict: boolean;
+	/** Vrai quand le texte tapé porte des trémas (voir `rank`). */
+	umlauts: boolean;
 }
 
 /**
@@ -394,7 +425,8 @@ function readQuery(query: string): Query {
 		text: normalise(words.join(' ')),
 		canton,
 		cantonWord,
-		strict
+		strict,
+		umlauts: UMLAUT.test(query)
 	};
 }
 
@@ -409,7 +441,12 @@ function readQuery(query: string): Query {
  * sépare du NPA tapé : une ville proche vient avant un village aussi proche, et avant une ville
  * lointaine. Avec un nom, le rang du nom passe avant tout le reste.
  */
-function nearby(digits: string, text: string, canton: string | null, bound: number): Locality[] {
+function nearby(
+	{ digits, umlauts }: Pick<Query, 'digits' | 'umlauts'>,
+	text: string,
+	canton: string | null,
+	bound: number
+): Locality[] {
 	if (text !== '' && text.length < MIN_LENGTH) return [];
 	const typed = Number(digits);
 	const district = digits.slice(0, 2);
@@ -418,7 +455,7 @@ function nearby(digits: string, text: string, canton: string | null, bound: numb
 		const { postcode, name, canton: itsCanton } = entry.locality;
 		if (!postcode.startsWith(district)) continue;
 		if (canton !== null && itsCanton !== canton) continue;
-		const value = text === '' ? 0 : rank(entry, text);
+		const value = text === '' ? 0 : rank(entry, text, umlauts);
 		if (value === null) continue;
 		const distance = Math.abs(Number(postcode) - typed);
 		const key = `${name}|${itsCanton}`;
@@ -445,12 +482,12 @@ function nearby(digits: string, text: string, canton: string | null, bound: numb
 
 /** Les localités d'un NPA, d'un nom, ou des deux, dans ce canton s'il est donné. */
 function find(
-	{ digits, unknown }: Pick<Query, 'digits' | 'unknown'>,
+	{ digits, unknown, umlauts }: Pick<Query, 'digits' | 'unknown' | 'umlauts'>,
 	text: string,
 	canton: string | null,
 	bound: number
 ): Locality[] {
-	if (unknown) return nearby(digits, text, canton, bound);
+	if (unknown) return nearby({ digits, umlauts }, text, canton, bound);
 	const inCanton = (entry: Entry) => canton === null || entry.locality.canton === canton;
 
 	if (digits !== '' && text === '') {
@@ -480,7 +517,7 @@ function find(
 		const { postcode, name, canton: itsCanton } = entry.locality;
 		if (digits !== '' && !postcode.startsWith(digits)) continue;
 		if (!inCanton(entry)) continue;
-		const value = rank(entry, text);
+		const value = rank(entry, text, umlauts);
 		if (value === null) continue;
 		const key = digits === '' ? `${name}|${itsCanton}` : `${postcode}|${name}`;
 		const known = best.get(key);
@@ -503,10 +540,11 @@ function find(
  * défaut, jamais plus de 50).
  *
  * - Un nom : sans tenir compte des accents ni de la casse, avec « ue », « oe » et « ae » pour
- *   « ü », « ö » et « ä » (« Zuerich » trouve Zürich), dans n'importe quelle langue du nom
- *   officiel (« bienne » trouve Biel/Bienne), et pour les chefs-lieux dans les autres langues
- *   nationales et en anglais (« Genf », « Geneva »). Une localité qui a plusieurs NPA n'est rendue
- *   qu'une fois, sous le plus petit de ceux qui répondent le mieux.
+ *   « ü », « ö » et « ä » (« Zuerich » trouve Zürich, après les noms qui s'écrivent vraiment
+ *   ainsi, et jamais quand le texte tapé porte lui-même des trémas, voir `rank`), dans n'importe
+ *   quelle langue du nom officiel (« bienne » trouve Biel/Bienne), et pour les chefs-lieux dans les
+ *   autres langues nationales et en anglais (« Genf », « Geneva »). Une localité qui a plusieurs NPA
+ *   n'est rendue qu'une fois, sous le plus petit de ceux qui répondent le mieux.
  * - Un NPA : entier, il rend les localités qui le portent ; commencé (deux chiffres au moins), il
  *   rend les NPA qui commencent par ces chiffres, dans l'ordre.
  * - Un NPA et un nom, dans un ordre ou dans l'autre (« 2502 biel », « bienne 2502 ») : les deux
