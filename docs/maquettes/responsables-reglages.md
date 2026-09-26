@@ -1,0 +1,65 @@
+# L'écran Réglages
+
+Décrit après le code, à l'étape 18 (retours B1, D2, A3 pour cet écran). Textes :
+`apps/web/src/lib/i18n/settings.ts`, dans les cinq langues.
+
+**Lien** : `/reglages`, réservé à la personne responsable (ADR 0046).
+
+## Structure, de haut en bas
+
+1. Titre de niveau 1 : `Réglages`, puis `Ce que votre organisation montre au public : son nom, sa
+couleur, ses langues et ses salles.`
+2. **Le formulaire des réglages**, chaque champ avec son aide :
+   - `Nom de l'organisation` : `Votre page publique l'affiche tout en haut.`
+   - `Fuseau horaire` : `L'heure de vos cours en dépend. En Suisse, écrivez Europe/Zurich. Ailleurs,
+le nom s'écrit en anglais, le continent puis la ville, par exemple Europe/Paris.` (avant :
+     « Nom IANA »). Le champ se lit de gauche à droite, même en arabe.
+   - `Couleur de votre page` (avant : « Couleur d'accent »), un `Exemple de bouton`, puis
+     `Contraste du texte sur cette couleur : 5,5 pour 1. Il se lit bien à partir de 4,5 pour 1.` et
+     `Elle sert de fond sur votre page publique, dans le programme collé sur votre site et ici. […]`
+   - `Formule d'accueil des messages` : `Les premiers mots des messages prêts à coller que vous
+envoyez à votre communauté. Exemple : Assalamu alaykum`
+   - `Langues de votre page publique` (avant : « Langues activées »), cinq cases, les noms des
+     langues dans la langue de l'écran : `Votre page publique, et le programme collé sur votre site,
+se lisent dans les langues cochées. Chaque visiteur choisit la sienne.` L'anglais est proposé
+     depuis l'étape 18 ; la base refuse toute autre langue (migration 0062).
+   - `Langue par défaut` : `La langue de votre page publique à la première visite. Elle doit faire
+partie des langues cochées.`
+   - Le bouton `Enregistrer`, puis `Réglages enregistrés.`
+3. **Salles** : `Les salles de vos cours. Un cours peut indiquer sa salle, mais ce n'est pas
+obligatoire.` Chaque salle, avec, si des cours l'utilisent, `2 cours utilisent cette salle ; ils
+n'auront plus de salle si vous la supprimez.` (et la même phrase pour les prières du vendredi), et
+   le bouton `Supprimer`. Puis `Nouvelle salle` (`Exemple : Grande salle`) et `Ajouter`. Après un
+   geste : `Salle ajoutée.` ou `Salle supprimée.`
+4. **Heures de prière** : `Les heures de prière sont activées.` ou `désactivées`, avec ce que cela
+   change et ce qui reste si on les désactive, puis le bouton `Activer les heures de prière` ou
+   `Désactiver les heures de prière` (avant : « Allumer le module »). Le mot « module » a disparu de
+   l'écran.
+
+## Supprimer une salle occupée
+
+Le premier envoi ne supprime rien (avant l'étape 18, la salle partait au premier clic, et l'écran
+renvoyait même une erreur 500) : l'écran montre une demande de confirmation, `Vous allez supprimer
+cette salle : <nom>`, les phrases des cours et des prières du vendredi qui la perdront,
+`Rien d'autre ne change dans votre programme.`, puis `Supprimer la salle` et `Garder la salle`. Une
+salle libre part au premier envoi. La base ne vide ensuite que la salle de ces cours (migration
+0061).
+
+## Les messages
+
+Toutes les erreurs disent quoi écrire, par exemple `Écrivez le nom de l'organisation.`,
+`Ce fuseau horaire n'existe pas. En Suisse, écrivez Europe/Zurich.`,
+`La langue par défaut doit faire partie des langues cochées.`, et le refus de désactiver les heures
+de prière : `L'heure de certains cours se règle sur une prière, ou une prière du vendredi existe.
+Donnez à ces cours une heure fixe ou supprimez-les avant de désactiver les heures de prière.`
+
+## Ce qui reste à reprendre
+
+Relevé par la relecture de l'étape 18, non corrigé à la fin de l'étape :
+
+- la demande de confirmation d'une salle occupée s'affiche en bas de la page, hors de l'écran,
+  alors que la page revient en haut après l'envoi : on croit que rien ne s'est passé ;
+- après un refus du serveur, les champs reviennent aux valeurs enregistrées au lieu de ce qui a été
+  tapé, et le message contredit l'écran ;
+- le fuseau reste un champ de texte, qui accepte un alias (`Europe/Amsterdam`) que le flux agenda
+  refuse ensuite. La console du super-admin, elle, propose une liste de noms canoniques.

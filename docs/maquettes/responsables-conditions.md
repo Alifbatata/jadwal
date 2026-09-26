@@ -35,6 +35,20 @@ Conditions d'utilisation
 
 Un lien vers `/conditions`. Rien d'autre.
 
+## Les langues (étape 18)
+
+Les deux écrans suivent la langue de l'espace (ADR 0047) : le titre, les phrases de l'écran, le
+bouton et le lien se lisent dans les cinq langues. **Le texte des conditions, lui, reste en
+français** : c'est un texte juridique, relu en français, que chacun accepte tel quel. Dans les
+quatre autres langues, une phrase en tête le dit, par exemple
+`For now, this text only exists in French.` ; le texte porte `lang="fr" dir="ltr"`, et se lit de
+gauche à droite même dans l'espace en arabe.
+
+Le lien des conditions au pied d'une page publique passe la langue de cette page, `?lang=de` par
+exemple : `/conditions` s'ouvre alors dans cette langue, sans rien retenir.
+
+La date s'écrit `JJ.MM.AAAA` sur les deux écrans, dans l'en-tête du texte comme dans la version.
+
 ## `/conditions`
 
 **Titre de la page** : `Conditions d'utilisation | jadwal`.
@@ -44,7 +58,7 @@ Le document, en entier, tel qu'il est écrit :
 1. Titre de niveau 1 : `Conditions d'utilisation`.
 2. `Ce texte s'adresse aux organisations qui publient leur programme avec ce service. […]`
 3. `Dernière mise à jour : <date>.`, la date écrite en tête du document, par exemple
-   `23 septembre 2026`.
+   `26.09.2026`.
 4. Les sections du document, en titres de niveau 2 et 3, dans son ordre.
 
 Aucune session n'est demandée. Une personne connectée garde son en-tête habituel.
@@ -71,10 +85,12 @@ c'est lui qui propose ce texte.
    `Avant d'entrer dans l'espace de <organisation>, lisez les conditions d'utilisation et
 acceptez-les. Elles disent ce que le service conserve, combien de temps, et ce que l'exploitant peut
 voir.`
-3. La version : `Version du <date>`, la même date, par exemple `Version du 23 septembre 2026`.
-4. Pour une personne membre de plusieurs organisations, et pour elle seule : le lien
-   `Choisir une autre organisation`, vers `/organisations`. Il vient avant le texte : qui voulait
-   entrer dans une autre organisation n'a pas à parcourir tout le document pour le trouver.
+3. La version : `Version du <date>`, la même date, par exemple `Version du 26.09.2026`, puis
+   `Si le texte change, cet écran vous demandera de nouveau votre accord.`
+4. Pour une personne membre de plusieurs organisations, ou qui a une invitation qui court encore
+   (étape 18), et pour elle seule : le lien `Choisir une autre organisation`, vers
+   `/organisations`. Il vient avant le texte : qui voulait entrer dans une autre organisation n'a
+   pas à parcourir tout le document pour le trouver.
 5. Le document en entier, sans son titre, que le titre de la page reprend déjà : il commence à
    `Ce texte s'adresse aux organisations […]`.
 6. Le bouton, seul dans son formulaire : `J'accepte les conditions d'utilisation`.
@@ -84,8 +100,8 @@ voir.`
 ### L'en-tête, pendant ce temps
 
 La navigation de l'espace (`À venir`, `Cours`, `Partager`…) **n'est pas affichée** : chacun de ses
-liens ramènerait ici. Restent la marque `jadwal`, l'adresse de la personne et le bouton
-`Se déconnecter`. Pour qui a plusieurs organisations, le lien `Choisir une autre organisation` est
+liens ramènerait ici. Restent la marque `jadwal`, le choix de la langue, l'adresse de la personne et
+le bouton `Se déconnecter`. Pour qui a plusieurs organisations, le lien `Choisir une autre organisation` est
 donc le seul chemin vers une autre. `/organisations` ne passe pas par la porte de l'espace ; le choix
 fait, c'est la porte de l'autre organisation qui s'applique.
 
@@ -100,8 +116,8 @@ L'écran `Membres` ne le porte plus : il se montrait aussi à qui n'avait qu'une
 
 ### Ce que fait le bouton
 
-Il enregistre une ligne : l'organisation, la personne, la version (`2026-09-23` pour le texte du
-23 septembre 2026). Le moment est posé par la base de données, pas par l'application. Puis il
+Il enregistre une ligne : l'organisation, la personne, la version (`2026-09-26` pour le texte du
+26.09.2026). Le moment est posé par la base de données, pas par l'application. Puis il
 renvoie vers `/`, l'accueil de l'espace.
 
 Un second envoi du même formulaire n'ajoute rien et ne lève rien.

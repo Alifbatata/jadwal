@@ -22,10 +22,13 @@ Ce qui est décrit, et depuis quand :
 - la prière du vendredi, bloc public et écran des responsables : `docs/maquettes/public-vendredi.md`
   et `docs/maquettes/responsables-vendredi.md`, depuis l'étape 8 ;
 - les conditions d'utilisation, la page ouverte à tous et l'écran d'acceptation :
-  `docs/maquettes/responsables-conditions.md`, depuis l'étape 16.
+  `docs/maquettes/responsables-conditions.md`, depuis l'étape 16 ;
+- le reste de l'espace des responsables et le super-admin, récrits à l'étape 18 : la coquille et la
+  connexion, À venir, les cours, les heures de prière, Partager, Membres, Réglages, la console du
+  super-admin et sa passkey ; et l'onglet Prières de la page publique. Voir la liste des fichiers
+  dans `docs/maquettes/README.md`.
 
-Le reste de l'espace des responsables (À venir, Cours, Partager, Membres, Réglages, Prières, et les
-écrans du super-admin) n'a pas encore sa description.
-
-`docs/CADRAGE.md` reste la référence du comportement attendu pour tout ce qui n'a pas encore sa
-description.
+Ces descriptions de l'étape 18 ont été écrites **après** le code, d'après les dictionnaires de
+chaque écran et les écrans rendus : elles disent ce qui est livré, et, pour chaque écran, ce que la
+relecture a relevé sans le corriger. Chaque écran de l'espace a maintenant sa description ;
+`docs/CADRAGE.md` reste la référence du comportement attendu.
