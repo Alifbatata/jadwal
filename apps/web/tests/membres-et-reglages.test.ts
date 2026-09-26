@@ -6,6 +6,7 @@
 //   responsable (B3), et cette liste est liée à ce que la base et les routes permettent vraiment :
 //   chaque table que la base réserve au responsable est couverte par un geste dit « réservé », chaque
 //   geste réservé est refusé à une éditrice, chaque geste de l'éditeur lui est ouvert ;
+// - annuler une invitation, retirer un membre, changer un rôle : l'écran dit ce qui est fait ;
 // - l'invitation part dans la langue de l'écran de la personne qui invite (D3) ;
 // - les deux écrans dans les cinq langues, erreurs comprises, sans phrase française restée et sans
 //   date écrite comme la base l'écrit (D2, A3) ;
@@ -42,6 +43,8 @@ const ORGANISATION = 'Association des membres et des réglages';
 const RESPONSABLE = 'mr-responsable@example.test';
 const EDITRICE = 'mr-editrice@example.test';
 const INVITEE = 'mr-invitee@example.test';
+/** Un troisième membre, que la responsable retire et dont elle change le rôle. */
+const MEMBRE = 'mr-membre@example.test';
 const SALLE_OCCUPEE = 'Salle de prière';
 const SALLE_LIBRE = 'Petite salle';
 
@@ -54,6 +57,7 @@ const PERMIS = [
 	RESPONSABLE,
 	EDITRICE,
 	INVITEE,
+	MEMBRE,
 	SALLE_OCCUPEE,
 	SALLE_LIBRE,
 	...[...timeZoneChoices().europe, ...timeZoneChoices().world].map((zone) =>
@@ -635,6 +639,104 @@ describe('l’invitation, dans la langue de l’écran de la personne qui invite
 		expect(courriel?.subject).toBe(sujet);
 		expect(courriel?.html).toContain(`<html lang="${langue}" dir="${SENS[langue]}">`);
 		await poserLangueDuCompte(RESPONSABLE, 'fr');
+	});
+});
+
+/** Ce que Membres dit après chacun des trois gestes, dans chaque langue. */
+const FAIT: Record<
+	Langue,
+	{ annulee: string; retire: string; responsable: string; editeur: string }
+> = {
+	fr: {
+		annulee: 'L’invitation est annulée : la personne ne peut plus l’accepter.',
+		retire: 'La personne a été retirée de votre organisation.',
+		responsable: 'Le rôle a été changé. Nouveau rôle : responsable.',
+		editeur: 'Le rôle a été changé. Nouveau rôle : éditeur.'
+	},
+	de: {
+		annulee: 'Sie haben die Einladung zurückgezogen. Die Person kann sie nicht mehr annehmen.',
+		retire: 'Sie haben die Person aus Ihrer Organisation entfernt.',
+		responsable: 'Die Rolle wurde geändert. Neue Rolle: Leitung.',
+		editeur: 'Die Rolle wurde geändert. Neue Rolle: Redaktion.'
+	},
+	it: {
+		annulee: 'L’invito è annullato: la persona non può più accettarlo.',
+		retire: 'La persona è stata rimossa dalla tua organizzazione.',
+		responsable: 'Il ruolo è stato cambiato. Nuovo ruolo: responsabile.',
+		editeur: 'Il ruolo è stato cambiato. Nuovo ruolo: redattore.'
+	},
+	en: {
+		annulee: 'The invitation is cancelled: the person can no longer accept it.',
+		retire: 'The person has been removed from your organisation.',
+		responsable: 'The role has been changed. New role: manager.',
+		editeur: 'The role has been changed. New role: editor.'
+	},
+	ar: {
+		annulee: 'أُلغيت الدعوة، ولم يعد بإمكان الشخص قبولها.',
+		retire: 'أُزيل الشخص من مؤسستك.',
+		responsable: 'تم تغيير الدور. الدور الجديد: مسؤول.',
+		editeur: 'تم تغيير الدور. الدور الجديد: محرر.'
+	}
+};
+
+describe('annuler, retirer, changer un rôle : Membres dit ce qui est fait (retour B1)', () => {
+	let cookie = '';
+	const membre = newId();
+	const adhesion = newId();
+
+	async function remettreLeMembre(): Promise<void> {
+		await maintenance((tx) =>
+			tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${adhesion}, ${organizationId}, ${membre}, 'editor')
+			`)
+		);
+	}
+
+	beforeAll(async () => {
+		await maintenance((tx) =>
+			tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified") values (${membre}, ${MEMBRE}, true)
+			`)
+		);
+		await remettreLeMembre();
+		cookie = await signIn(RESPONSABLE);
+	});
+
+	afterAll(async () => {
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		await maintenance((tx) => tx.execute(sql`delete from "membership" where "id" = ${adhesion}`));
+	});
+
+	it.each(LANGUES)('says in %s what each of the three gestures did', async (langue) => {
+		await poserLangueDuCompte(RESPONSABLE, langue);
+		const invitation = newId();
+		await maintenance((tx) =>
+			tx.execute(sql`
+				insert into "invitation" ("id", "organization_id", "email", "role", "invited_by", "expires_at")
+				values (${invitation}, ${organizationId}, ${`mr-annulee-${langue}@example.test`}, 'editor',
+					${ids[RESPONSABLE] ?? ''}, now() + make_interval(hours => 24))
+			`)
+		);
+		const annulee = await postForm('/membres?/annuler', { invitationId: invitation }, cookie);
+		expect(annulee.status).toBe(200);
+		expect(statut(await annulee.text())).toBe(FAIT[langue].annulee);
+
+		for (const [role, attendu] of [
+			['org_admin', FAIT[langue].responsable],
+			['editor', FAIT[langue].editeur]
+		] as const) {
+			const change = await postForm('/membres?/role', { membershipId: adhesion, role }, cookie);
+			expect(change.status).toBe(200);
+			expect(statut(await change.text())).toBe(attendu);
+		}
+
+		const retire = await postForm('/membres?/retirer', { membershipId: adhesion }, cookie);
+		expect(retire.status).toBe(200);
+		const html = await retire.text();
+		expect(statut(html)).toBe(FAIT[langue].retire);
+		expect(html).not.toContain(MEMBRE);
+		await remettreLeMembre();
 	});
 });
 

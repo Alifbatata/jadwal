@@ -32,10 +32,18 @@
 <h1>{data.organisation.nom}</h1>
 <p>{text.intro}</p>
 
+<!-- Chaque geste dit ce qu'il a fait : sans message, la ligne disparaissait ou changeait sans un mot,
+     et la personne se demandait si son clic avait porté. -->
 {#if erreur}
 	<p role="alert">{erreur}</p>
 {:else if form && 'invitee' in form && form.invitee}
 	<p role="status">{text.sent}</p>
+{:else if form && 'annulee' in form}
+	<p role="status">{text.done.cancelled}</p>
+{:else if form && 'retire' in form}
+	<p role="status">{text.done.removed}</p>
+{:else if form && 'change' in form && form.role}
+	<p role="status">{text.done.roleChanged(roleName[form.role] ?? form.role)}</p>
 {/if}
 
 <h2>{text.membersTitle}</h2>

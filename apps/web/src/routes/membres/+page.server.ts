@@ -264,7 +264,8 @@ export const actions: Actions = {
 		} catch (error) {
 			return fail(409, { error: derniereResponsable(error) });
 		}
-		return { change: true };
+		// Le nouveau rôle revient à la page, qui le nomme dans son message.
+		return { change: true, role };
 	}
 };
 

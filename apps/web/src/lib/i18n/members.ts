@@ -80,6 +80,16 @@ interface MembersTexts {
 	 * passait pour une répétition.
 	 */
 	readonly sent: string;
+	/**
+	 * Ce que la page dit après les trois gestes sur un membre ou une invitation : sans message, la
+	 * ligne disparaissait ou changeait sans rien dire, et l'on doutait que le geste ait porté.
+	 */
+	readonly done: {
+		readonly cancelled: string;
+		readonly removed: string;
+		/** Le nouveau rôle, déjà écrit dans la langue de l'écran (`common.ts`). */
+		readonly roleChanged: (role: string) => string;
+	};
 	readonly send: string;
 	readonly errors: {
 		readonly notManager: string;
@@ -148,6 +158,11 @@ export const membersTexts: Translations<MembersTexts> = {
 		},
 		alwaysOneManager: 'Une organisation garde toujours au moins une personne responsable.',
 		sent: 'L’invitation a été envoyée à cette adresse.',
+		done: {
+			cancelled: 'L’invitation est annulée : la personne ne peut plus l’accepter.',
+			removed: 'La personne a été retirée de votre organisation.',
+			roleChanged: (role) => `Le rôle a été changé. Nouveau rôle : ${role}.`
+		},
 		send: 'Envoyer l’invitation',
 		errors: {
 			notManager: 'Seule une personne responsable peut faire cela.',
@@ -213,6 +228,11 @@ export const membersTexts: Translations<MembersTexts> = {
 		},
 		alwaysOneManager: 'Eine Organisation behält immer mindestens eine Person in der Leitung.',
 		sent: 'Die Einladung wurde an diese Adresse gesendet.',
+		done: {
+			cancelled: 'Sie haben die Einladung zurückgezogen. Die Person kann sie nicht mehr annehmen.',
+			removed: 'Sie haben die Person aus Ihrer Organisation entfernt.',
+			roleChanged: (role) => `Die Rolle wurde geändert. Neue Rolle: ${role}.`
+		},
 		send: 'Einladung senden',
 		errors: {
 			notManager: 'Das darf nur die Leitung.',
@@ -280,6 +300,11 @@ export const membersTexts: Translations<MembersTexts> = {
 		},
 		alwaysOneManager: 'Un’organizzazione ha sempre almeno un responsabile.',
 		sent: 'L’invito è stato inviato a questo indirizzo.',
+		done: {
+			cancelled: 'L’invito è annullato: la persona non può più accettarlo.',
+			removed: 'La persona è stata rimossa dalla tua organizzazione.',
+			roleChanged: (role) => `Il ruolo è stato cambiato. Nuovo ruolo: ${role}.`
+		},
 		send: 'Invia l’invito',
 		errors: {
 			notManager: 'Solo un responsabile può farlo.',
@@ -343,6 +368,11 @@ export const membersTexts: Translations<MembersTexts> = {
 		},
 		alwaysOneManager: 'An organisation always keeps at least one manager.',
 		sent: 'The invitation has been sent to this address.',
+		done: {
+			cancelled: 'The invitation is cancelled: the person can no longer accept it.',
+			removed: 'The person has been removed from your organisation.',
+			roleChanged: (role) => `The role has been changed. New role: ${role}.`
+		},
 		send: 'Send the invitation',
 		errors: {
 			notManager: 'Only a manager can do this.',
@@ -410,6 +440,11 @@ export const membersTexts: Translations<MembersTexts> = {
 		},
 		alwaysOneManager: 'تحتفظ المؤسسة دائمًا بمسؤول واحد أو أكثر.',
 		sent: 'أُرسلت الدعوة إلى هذا العنوان.',
+		done: {
+			cancelled: 'أُلغيت الدعوة، ولم يعد بإمكان الشخص قبولها.',
+			removed: 'أُزيل الشخص من مؤسستك.',
+			roleChanged: (role) => `تم تغيير الدور. الدور الجديد: ${role}.`
+		},
 		send: 'إرسال الدعوة',
 		errors: {
 			notManager: 'هذا الإجراء خاص بالمسؤول.',
