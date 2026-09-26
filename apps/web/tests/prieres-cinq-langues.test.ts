@@ -816,3 +816,45 @@ describe('chaque vue de l’écran, dans les cinq langues (retours D2 et A3)', (
 		}
 	});
 });
+
+describe('copier une période pour l’année suivante (retour D2)', () => {
+	/** Le nom de la copie d'« Hiver », dans la langue de l'écran qui l'a faite. */
+	const COPIE: Record<Langue, string> = {
+		fr: 'Hiver (année suivante)',
+		de: 'Hiver (nächstes Jahr)',
+		it: 'Hiver (anno seguente)',
+		en: 'Hiver (next year)',
+		ar: 'Hiver (السنة التالية)'
+	};
+
+	it.each(LANGUES)('names the copy in the language of the screen, %s', async (langue) => {
+		await poserLangueDuCompte(RESPONSABLE, langue);
+		// Une période par langue, à plus de deux ans l'une de l'autre : aucune copie n'en chevauche
+		// une autre, ni une période des tests précédents.
+		const debut = addDays(aujourdhui(), 1000 + 800 * LANGUES.indexOf(langue));
+		const id = newId();
+		await maintenance((tx) =>
+			tx.execute(sql`
+				insert into "prayer_period" ("id", "organization_id", "name", "from_date", "to_date",
+					"maghrib_iqama_offset")
+				values (${id}, ${organizationId}, 'Hiver', ${debut}::date, ${addDays(debut, 10)}::date, 5)
+			`)
+		);
+		// Par le bouton de l'écran, comme une personne le ferait : l'action, et non du SQL.
+		const reponse = await postForm('/prieres?source=manual&/dupliquerPeriode', { periodeId: id });
+		expect(reponse.status).toBe(200);
+		const copies = await maintenance(async (tx) =>
+			lignes<{ name: string }>(
+				await tx.execute(sql`
+					select "name" from "prayer_period"
+					where "organization_id" = ${organizationId}
+						and "from_date" between ${debut}::date + 300 and ${debut}::date + 400
+				`)
+			)
+		);
+		expect(copies.map((copie) => copie.name)).toEqual([COPIE[langue]]);
+		const lu = visibleText(await (await get('/prieres?source=manual')).text());
+		expect(lu).toContain(COPIE[langue]);
+		expect(lu.includes('(année suivante)')).toBe(langue === 'fr');
+	});
+});

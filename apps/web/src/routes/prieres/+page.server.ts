@@ -33,6 +33,7 @@ import {
 	type OrdreDeDate
 } from '@jadwal/core/prayer';
 import type { ResolvedPrayerRow } from '@jadwal/db';
+import { prayersTexts } from '$lib/i18n/prayers.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { mustAdministerPrayerModule } from '$lib/server/guard.js';
 import {
@@ -522,12 +523,14 @@ export const actions: Actions = {
 
 	/**
 	 * Dupliquer une période pour l'année suivante. Voir `dupliquerPeriode` : mêmes mois et mêmes
-	 * jours un an plus tard, et « dates à vérifier » jusqu'à ce qu'un responsable l'enregistre.
+	 * jours un an plus tard, et « dates à vérifier » jusqu'à ce qu'un responsable l'enregistre. La
+	 * copie est nommée dans la langue de l'écran d'où part le bouton.
 	 */
 	dupliquerPeriode: async (event) => {
 		const context = await mustAdministerPrayerModule(event);
 		const form = await event.request.formData();
 		const id = String(form.get('periodeId') ?? '');
+		const textes = prayersTexts[event.locals.langue ?? 'fr'];
 		try {
 			const fait = await withSessionOrg(context, async (tx) => {
 				const source = (await readPeriodes(tx)).find((periode) => periode.id === id);
@@ -535,7 +538,8 @@ export const actions: Actions = {
 				const copie = await dupliquerPeriode(
 					tx,
 					{ organizationId: context.organizationId, userId: context.userId },
-					source
+					source,
+					textes.periods.copyName(source.name)
 				);
 				return copie === null ? ('sans-equivalent' as const) : ('faite' as const);
 			});

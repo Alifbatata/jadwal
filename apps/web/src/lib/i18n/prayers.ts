@@ -222,6 +222,8 @@ interface PrayersTexts {
 		readonly iqamaAfter: (minutes: number) => string;
 		readonly modify: string;
 		readonly copy: string;
+		/** Le nom d'une période copiée pour l'année suivante, d'après le nom de l'originale. */
+		readonly copyName: (name: string) => string;
 		readonly delete: string;
 		readonly add: string;
 		readonly prefilled: (name: string) => string;
@@ -518,6 +520,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			iqamaAfter: (minutes) => `${minutes} min après`,
 			modify: 'Modifier cette période',
 			copy: 'Copier pour l’année suivante',
+			copyName: (name) => `${name} (année suivante)`,
 			delete: 'Supprimer',
 			add: 'Ajouter une période',
 			prefilled: (name) =>
@@ -825,6 +828,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			iqamaAfter: (minutes) => `${minutes} Min. danach`,
 			modify: 'Diesen Zeitraum ändern',
 			copy: 'Für das nächste Jahr kopieren',
+			copyName: (name) => `${name} (nächstes Jahr)`,
 			delete: 'Löschen',
 			add: 'Zeitraum hinzufügen',
 			prefilled: (name) =>
@@ -1138,6 +1142,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			iqamaAfter: (minutes) => `${minutes} min dopo`,
 			modify: 'Modifica questo periodo',
 			copy: 'Copia per l’anno seguente',
+			copyName: (name) => `${name} (anno seguente)`,
 			delete: 'Elimina',
 			add: 'Aggiungi un periodo',
 			prefilled: (name) =>
@@ -1441,6 +1446,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			iqamaAfter: (minutes) => `${minutes} min after`,
 			modify: 'Change this period',
 			copy: 'Copy for next year',
+			copyName: (name) => `${name} (next year)`,
 			delete: 'Delete',
 			add: 'Add a period',
 			prefilled: (name) =>
@@ -1743,6 +1749,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 				}),
 			modify: 'تعديل هذه الفترة',
 			copy: 'النسخ للسنة التالية',
+			copyName: (name) => `${name} (السنة التالية)`,
 			delete: 'حذف',
 			add: 'إضافة فترة',
 			prefilled: (name) => `قيم «${name}» مملوءة مسبقًا: لا تغيّر إلا ما يتغير.`,

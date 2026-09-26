@@ -561,6 +561,10 @@ export function datesAnneeSuivante(
  *
  * Rend `null` si la période n'a pas d'équivalent l'année suivante (voir `datesAnneeSuivante`).
  *
+ * `nom` est le nom de la copie, écrit par l'appelant dans la langue de l'écran qui la fait
+ * (« Hiver (nächstes Jahr) ») : une personne qui lit l'allemand ne doit pas trouver de français
+ * dans le nom de sa période (étape 18, retour D2).
+ *
  * Le chevauchement n'est pas vérifié ici : la contrainte d'exclusion le refuse, et l'appelant
  * traduit le code `23P01`. Une période sans date de fin ne peut pas être dupliquée sans chevaucher
  * l'originale, et c'est exact — il faut d'abord la clore.
@@ -568,13 +572,14 @@ export function datesAnneeSuivante(
 export async function dupliquerPeriode(
 	tx: Transaction,
 	context: { organizationId: string; userId: string | null },
-	source: PeriodeHoraires
+	source: PeriodeHoraires,
+	nom: string
 ): Promise<string | null> {
 	const dates = datesAnneeSuivante(source.fromDate as IsoDate, source.toDate as IsoDate | null);
 	if (!dates) return null;
 	return enregistrerPeriode(tx, context, {
 		id: null,
-		name: `${source.name} (année suivante)`.slice(0, 60),
+		name: nom.slice(0, 60),
 		fromDate: dates.fromDate,
 		toDate: dates.toDate,
 		needsReview: true,
