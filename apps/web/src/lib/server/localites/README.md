@@ -66,7 +66,9 @@ reste soumis aux conditions de swisstopo, qui en permettent la redistribution.
   liste. C'est la transmission dont parlent les conditions.
 - **Sur l'écran où l'on choisit la localité** : `LOCALITIES_SOURCE.credit` donne la mention dans
   chaque langue de l'espace, sous l'une des formes que swisstopo accepte (`©swisstopo` pour
-  l'arabe, qui n'a pas de forme à lui). L'écran doit l'afficher à côté du choix.
+  l'arabe, qui n'a pas de forme à lui). L'écran des heures de prière l'affiche à côté du choix,
+  avec la version de la liste (« Liste officielle des localités : Office fédéral de topographie
+  swisstopo, version du 01.09.2026. »).
 
 ## Ce que le fichier produit contient
 
