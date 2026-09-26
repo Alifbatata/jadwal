@@ -20,6 +20,8 @@ Une seule saisie par les responsables, quatre sorties :
 2. une **page publique** par organisation, avec un lien unique à mettre partout ;
 3. un **flux agenda ICS** auquel on s'abonne ;
 4. des **messages WhatsApp** générés : programme de la semaine, annulation, déplacement, nouveau cours.
+   Depuis l'étape 18, les messages que l'espace propose (programme de la semaine, annulation,
+   déplacement) s'écrivent dans chacune des langues que l'organisation publie.
 
 ### Cible
 
@@ -44,6 +46,8 @@ Deux modes avec le même code :
 | `editor`     | saisit et modifie les cours                      |
 
 - En pratique, 2 à 3 responsables par organisation.
+- La base elle-même sépare l'éditeur du responsable : ce que l'écran réserve au responsable, elle
+  le refuse à l'éditeur (ADR 0046). L'écran Membres dit ce que chaque rôle permet.
 - Connexion par lien magique reçu par mail, sans mot de passe.
 - Avant d'entrer dans l'espace d'une organisation, chaque personne accepte les conditions
   d'utilisation, puis chaque nouvelle version du texte. Le super-admin n'y est pas soumis
@@ -68,9 +72,12 @@ rythme, horaire.
 ### Horaire
 
 - heure fixe (début et fin) ;
-- **ou** ancré sur une prière (fajr, dhuhr, asr, maghrib, isha), avec un décalage en minutes et une durée.
+- **ou** ancré sur une prière (fajr, dhuhr, asr, maghrib, isha), après ou avant elle, avec un nombre
+  de minutes (de 0 à 240 après, de 1 à 120 avant) et une durée. La base garde un décalage signé :
+  « 10 min avant Maghrib » s'y écrit −10 (ADR 0004, addendum de l'étape 18).
 
-À l'affichage, « après Maghrib » passe en premier et l'heure reste indicative.
+À l'affichage, « après Maghrib » ou « 10 min avant Maghrib » passe en premier et l'heure reste
+indicative.
 
 ### Exceptions par séance
 
@@ -92,11 +99,18 @@ tout ce qui suit (ADR 0042).
    C'est ce qu'elle imprime sur son panneau.
 2. **L'import du calendrier CSV** de l'organisation, avec un modèle téléchargeable prérempli.
 3. **Le calcul** avec la bibliothèque Adhan (MIT), méthode, école, règle des latitudes hautes et
-   ajustements par prière réglables par organisation.
+   ajustements par prière réglables par organisation. La position est celle de la localité de
+   l'organisation, choisie par son nom ou son NPA dans la liste officielle des localités de
+   swisstopo, embarquée dans le serveur ; hors de Suisse, une latitude et une longitude.
+
+L'écran des responsables pose une seule question, « D'où viennent vos heures de prière ? », avec
+trois réponses (calculées, importées, saisies à la main) ; chacune montre l'aperçu des sept
+prochains jours avant d'enregistrer.
 
 Un cours ancré sur une prière suit l'**iqama** quand elle existe, l'heure du soleil sinon.
 
-Ne jamais appeler ni scraper un service tiers de calendrier de prière.
+Ne jamais appeler ni scraper un service tiers de calendrier de prière, ni un service de recherche
+d'adresse.
 
 ### Prière du vendredi
 
@@ -118,12 +132,21 @@ Trois vues :
 - **Tous les cours**, groupés par rythme ;
 - **Mois** : grille, puis liste du jour choisi.
 
+Et, quand le module des heures de prière est allumé, un quatrième onglet, **Prières** : les heures
+du jour et des sept prochains jours (adhan et iqama), puis les sessions du vendredi avec la langue
+de leur sermon (ADR 0042, addendum de l'étape 18).
+
 Filtres par public. Le détail d'un cours se déplie sur place, sans modale : description, horaire,
 intervenant, lieu, rythme, prochaines dates, « ajouter à mon agenda », « partager ».
 
 ### Langues
 
-- Langues d'interface : `fr`, `de`, `it`, `ar`, avec RTL complet et chiffres latins en arabe.
+- Langues d'interface : `fr`, `de`, `it`, `en` (anglais britannique) et `ar`, avec RTL complet et
+  chiffres latins en arabe. Depuis l'étape 18, les mêmes cinq langues valent pour l'espace des
+  responsables, le super-admin et les courriels, et non plus pour le seul côté public (ADR 0007,
+  ADR 0047).
+- Les dates lues par une personne s'écrivent `JJ.MM.AAAA`, comme en Suisse, dans les cinq langues.
+- Les conditions d'utilisation restent en français ; dans les autres langues, une phrase le dit.
 - Contenu : une langue source obligatoire par cours, traductions optionnelles, repli sur la langue source.
 
 ### Flux ICS
@@ -137,14 +160,21 @@ fermée.
 - Cours ancrés sur une prière : événements datés un par un sur une fenêtre glissante, puisque
   l'heure change chaque jour.
 
+La page d'abonnement, et le bloc « ajouter à mon agenda » d'un cours, proposent d'abord ce que
+l'appareil du visiteur sait ouvrir : le lien `webcal:` sur un iPhone, un iPad ou un Mac, Google
+Agenda sur Android, le choix complet ailleurs. Le serveur lit l'appareil dans les en-têtes, la page
+reste sans script, et le choix complet est toujours à un lien (ADR 0048).
+
 ### Widget
 
 **Révisé à l'étape 6 (ADR 0005).** Le widget ne redessine plus les trois vues : il pose un cadre qui
 affiche la page publique, et lui donne la hauteur de son contenu.
 
 - Balise `<jadwal-widget org="...">`, Shadow DOM.
-- Zéro dépendance à l'exécution : TypeScript pur, un seul fichier, moins de 2 Kio gzip.
-- Attributs `org`, `lang`, `view`, `audience`, `min-height`.
+- Zéro dépendance à l'exécution : TypeScript pur, un seul fichier, environ 2 Kio gzip (2 141 octets
+  mesurés à l'étape 18).
+- Attributs `org`, `lang`, `view`, `audience`, `min-height`. L'onglet **Prières** apparaît dans le
+  cadre sans que le fichier du widget change ; `view` ne le connaît pas.
 - Le cadre **posé à la main** est le mode sans script, pour un site qui les refuse ; sa hauteur est
   alors fixe.
 - URL versionnée avec empreinte SRI pour les sites stricts, et `crossorigin` obligatoire avec elle.
@@ -175,8 +205,10 @@ leur durée, est dans `docs/CONDITIONS.md`.
   organisations, invitations et rôles restent à nous, ADR 0016). Mails envoyés par SMTP (ADR 0024).
 - Instance officielle : Docker Compose derrière Caddy, sauvegardes quotidiennes chiffrées. jadwal
   n'exige pas une machine à lui : son isolation ne repose pas dessus (ADR 0034).
-- Licence : MIT pour tout le dépôt, widget compris (ADR 0043). Contributions externes soumises à
-  un CLA.
+- Licence : MIT pour tout le dépôt, widget compris (ADR 0043), sauf la liste des localités suisses
+  (`apps/web/src/lib/server/localites/localities.csv`), qui reste sous les conditions d'utilisation
+  de swisstopo et se cite « Source : Office fédéral de topographie swisstopo ». Contributions
+  externes soumises à un CLA.
 
 ## Feuille de route
 
@@ -191,6 +223,9 @@ leur durée, est dans `docs/CONDITIONS.md`.
 8. Heures réelles de l'organisation, iqama, prière du vendredi.
 9. Finitions, infrastructure en fichiers, déploiement, pose sur le site de la première
    organisation.
+
+Les étapes suivantes, de la mise en ligne aux retours des tests du chef de projet (étape 18), sont
+dans `ETAT-PROJET.md`.
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
 passkeys pour tous les comptes, paiement. (Les passkeys sont arrivées à l'étape 4 pour le seul
