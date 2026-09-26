@@ -50,7 +50,12 @@ remontent donc jamais jusqu'à lui.
 - **Annuler** demande une confirmation qui rappelle, en toutes lettres, que le cours continue les
   autres semaines. C'est la confusion la plus probable, et elle se corrige par une phrase.
 - **Déplacer** propose toute date à partir d'aujourd'hui, plus tôt ou plus tard que la date prévue,
-  et une heure. Un déplacement qui ne change ni la date ni l'heure est refusé.
+  et une heure. Un déplacement qui ne change ni la date ni l'heure d'une séance de l'écran est
+  refusé. Le même jour à une autre heure, la carte et le message disent un changement d'heure, et
+  non de date.
+- **Annuler** et **Déplacer** ne visent qu'une séance encore prévue telle quelle. Une page restée
+  ouverte qui envoie la carte d'une séance annulée ou déplacée depuis est refusée : rien n'est écrit,
+  et l'écran rendu est à jour.
 - **Rétablir** défait l'un comme l'autre.
 - Après une annulation ou un déplacement, **le message prêt à coller s'affiche**. C'est ce que les
   responsables font déjà à la main, dans WhatsApp.
@@ -71,6 +76,22 @@ remontent donc jamais jusqu'à lui.
 > celle que calcule `@jadwal/core` pour ce jour-là, et non une valeur renvoyée par le formulaire. Le
 > même jour à une autre heure reste un déplacement, comme le même jour pour une séance affichée sans
 > heure, qui en reçoit une.
+
+> **Révisé le 2026-09-26, à l'étape 18 (relecture du lot 4).** Le refus ne tenait pas sur tous les
+> chemins. Une page restée ouverte, par Retour, dans un autre onglet ou chez une autre personne,
+> montrait encore la carte d'une séance déjà déplacée ou annulée. Envoyée sans changement, cette
+> carte écrivait un déplacement de la séance vers elle-même, qui écrasait le premier ; une
+> annulation devenait de la même façon un déplacement. Annuler et Déplacer n'écrivent donc plus que
+> pour une séance qui n'a encore ni annulation ni déplacement ce jour-là. Sinon, l'action répond que
+> la séance a changé depuis l'ouverture de la page, que rien n'a été enregistré et que le programme
+> affiché est à jour, puisque la page est rendue de nouveau. L'heure prévue qui sert à refuser un
+> déplacement sans changement est celle des sept jours de l'écran, les seuls que ses cartes
+> proposent : un formulaire fabriqué à la main pour une séance plus lointaine n'est pas comparé.
+>
+> Un déplacement le même jour à une autre heure se disait comme un changement de date : la carte
+> d'arrivée portait « date exceptionnelle » et « Prévue à l'origine » suivi du même jour, et le
+> message répétait la date. La carte porte maintenant « nouvelle heure » et l'heure prévue, et le
+> message ne donne la date qu'une fois, avec la nouvelle heure et celle d'avant.
 
 ### Le JavaScript améliore, il n'est jamais nécessaire
 
@@ -123,5 +144,6 @@ pré-traduction validée par le responsable est dans la feuille de route, pas da
 
 Accepté, 2026-09-20. Étape 4 de la feuille de route (espace des responsables). Les numéros 0022 et
 0023 restent libres. Révisé le 2026-09-26 (étape 18) : une séance se déplace à toute date à partir
-d'aujourd'hui, un déplacement qui ne change rien est refusé, et les options d'une séance sont
-fermées par défaut.
+d'aujourd'hui, un déplacement qui ne change rien est refusé, les options d'une séance sont fermées
+par défaut, une page restée ouverte ne défait pas un changement, et un déplacement le même jour se
+dit comme un changement d'heure.
