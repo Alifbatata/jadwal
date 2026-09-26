@@ -93,16 +93,16 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   l'autre. La faille est fermée, avec six autres défauts trouvés en chemin. La base tient désormais
   l'échéance, le rôle et les passages de statut d'une invitation (migrations 0056 à 0058), et le
   super-admin entré dans une organisation ne lit plus les autres (0055).
-- **Étape 18** (les retours des tests du chef de projet) : **en cours le 2026-09-26**. Une règle les
-  réunit : une personne qui ne connaît rien au service doit tout comprendre seule, sans aide. Le
-  service parle maintenant cinq langues partout, l'anglais britannique en plus, dans l'espace des
-  responsables, le super-admin et les courriels comme sur la page publique ; les dates s'écrivent
-  `JJ.MM.AAAA`, comme en Suisse ; chaque écran de l'espace dit ce qu'il fait ; les heures de prière
-  se règlent par une seule question, pour une localité choisie dans la liste officielle de
-  swisstopo ; la page publique a un onglet Prières, et l'abonnement au calendrier propose le bouton
-  de l'appareil ; la base sépare enfin l'éditeur du responsable. Les lots 1 à 3 sont intégrés :
-  2 832 tests, tous réussis ; restent le parcours automatique rejoué sur les écrans récrits, la
-  relecture de l'arabe, le bloc de site et le déploiement.
+- **Étape 18** (les retours des tests du chef de projet) : **livrée à la fin de la séance du
+  2026-09-26** ; le déploiement se fait en fin de séance. Une règle réunit les retours : une
+  personne qui ne connaît rien au service doit tout comprendre seule, sans aide. Le service parle
+  maintenant cinq langues partout, l'anglais britannique en plus, dans l'espace des responsables, le
+  super-admin et les courriels comme sur la page publique ; les dates s'écrivent `JJ.MM.AAAA`, comme
+  en Suisse ; chaque écran de l'espace dit ce qu'il fait ; les heures de prière se règlent par une
+  seule question, pour une localité choisie dans la liste officielle de swisstopo ; la page publique
+  a un onglet Prières, et l'abonnement au calendrier propose le bouton de l'appareil ; la base
+  sépare enfin l'éditeur du responsable. Les six lots sont intégrés : 3 252 tests, tous réussis,
+  mesurés le 26.09.2026.
 
 ## Fait
 
@@ -276,8 +276,9 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   implémentation, donc aucune divergence possible avec `/m/<slug>` ; et le poids du fichier chargé
   sur le site de chaque organisation.
 - **Le widget est écrit en TypeScript pur**, sans dépendance à l'exécution : **1,71 Kio gzip**
-  mesurés, contre 12,48 Kio pour le composant Svelte 5 **vide** de l'étape 0. Svelte n'apportait plus
-  que son moteur, puisqu'il n'y a plus rien à rendre. `CLAUDE.md` et `docs/CADRAGE.md` sont corrigés.
+  mesurés à l'étape 6, contre 12,48 Kio pour le composant Svelte 5 **vide** de l'étape 0 (2 141
+  octets depuis l'anglais de l'étape 18). Svelte n'apportait plus que son moteur, puisqu'il n'y a
+  plus rien à rendre. `CLAUDE.md` et `docs/CADRAGE.md` sont corrigés.
 - **Un seul script sur une page publique, et seulement dans un cadre.** `?embed=1` charge
   `/widget/embed.js` (1 856 octets, 1 009 en gzip). Il fait deux choses : annoncer la hauteur — mesurée
   sur la boîte de bordure de `<html>`, jamais `scrollHeight`, qui ne redescend jamais dans un cadre —
@@ -286,7 +287,8 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   aucun script, et le test de l'étape 5 est resté tel quel.
 - **Côté parent, trois vérifications et rien d'autre** : la fenêtre émettrice est celle du cadre,
   l'origine est exactement la sienne par égalité stricte, et la forme du message est la bonne. La
-  hauteur est bornée, et ignorée en deçà de deux pixels. 25 tests l'éprouvent, dont neuf refus.
+  hauteur est bornée, et ignorée en deçà de deux pixels. 25 tests l'éprouvaient à l'étape 6, dont
+  neuf refus ; le widget en a 31 depuis l'étape 18.
 - **Deux adresses pour le fichier** : `/widget/jadwal-widget.js`, mouvante, sans empreinte publiée ;
   et `/widget/<empreinte>/jadwal-widget.js`, immuable, avec son `integrity` et le `crossorigin` sans
   lequel l'empreinte bloquerait le script au lieu de le protéger. L'écran Partager affiche les deux,
@@ -599,7 +601,7 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   sur 29 pages, rien de sérieux. ADR 0045 ; addenda aux ADR 0017, 0019 et 0025 ; ADR 0035, 0037 et
   0044 révisées.
 
-Étape 18 (lots 1 à 3, intégrés le 2026-09-26 ; le lot 4 est en cours) :
+Étape 18 (livrée à la fin de la séance du 2026-09-26, en six lots) :
 
 Les retours des tests du chef de projet, lettre par lettre. Une règle les réunit : une personne qui
 ne connaît rien au service doit tout comprendre seule, sans aide.
@@ -613,8 +615,16 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   d'annulation actif sans rien ouvrir. Elles sont maintenant dans un repli fermé, propre à chaque
   carte, avec ou sans JavaScript, et le bouton d'annulation n'existe que derrière lui. Une séance se
   déplace à n'importe quelle date à partir d'aujourd'hui, plus tôt ou plus tard que prévu, et non
-  plus aux six jours qui suivent. Une date passée est refusée avec une phrase ; une date ou une
-  heure illisible ne fait plus d'erreur 500.
+  plus aux six jours qui suivent. Sont refusés avec une phrase, sans rien écrire : une date passée ;
+  une date ou une heure illisible, qui faisait une erreur 500 ; un déplacement qui ne change rien ;
+  une carte restée ouverte (touche Retour, autre onglet, autre personne) sur une séance annulée ou
+  déplacée depuis ; une carte dont l'heure a changé depuis l'ouverture de la page. Deux
+  déplacements envoyés au même instant n'en écrivent qu'un. Un déplacement le même jour se dit
+  comme un changement d'heure : `nouvelle heure` sur la carte, « commence à 20:30 au lieu de
+  19:00 » dans le message, `(nouvelle heure)` dans le programme de la semaine, `Déplacé à 20:30`
+  puis `Initialement à 19:00` sur la page publique, page d'un cours comprise. L'écran
+  `Prière du vendredi` suit la même règle : une page restée ouverte y défaisait un changement fait
+  ailleurs (ADR 0021, révisé).
 - **La clarté (B1).** Chaque écran de l'espace et du super-admin dit ce qu'il fait ; chaque champ a
   un libellé clair, une aide et un exemple ; chaque geste dit ce qu'il a fait ; chaque erreur dit
   quoi faire. « Module », « IANA », « widget », « iframe » et « identifiant d'URL » ont quitté les
@@ -622,18 +632,28 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   écran a maintenant sa description dans `docs/maquettes/`, écrite d'après le code.
 - **Le super-admin (B2).** L'adresse de la page publique est proposée à partir du nom, et montrée en
   entier, dans la liste comme à la création ; le fuseau se choisit dans une liste de noms canoniques,
-  sans alias ; une adresse déjà prise est dite à l'écran, au lieu d'une erreur 500 ; les plans et les
-  états s'écrivent en mots, avec deux boutons distincts ; le lien de secours dit ce qu'il fait ; la
-  date d'une passkey est le jour en Suisse.
+  sans alias, et une phrase dit quoi choisir pour une ville absente ; une adresse déjà prise est
+  dite à l'écran, au lieu d'une erreur 500 ; les plans et les états s'écrivent en mots, avec deux
+  boutons distincts ; le lien de secours dit ce qu'il fait ; la date d'une passkey est le jour en
+  Suisse, et chaque nouvelle passkey porte le nom de son système et son jour, « Windows,
+  26.09.2026 », au lieu de « Cet appareil ».
 - **Les rôles (H1, B3).** La base elle-même refuse à un éditeur ce que l'écran réserve au
   responsable : lire et écrire les invitations, changer un rôle, retirer un membre, modifier les
   réglages, les salles et les heures de prière. Une fonction à droits du définisseur le dit,
   `jadwal.is_org_admin()` (migration 0059, ADR 0046). Le rôle applicatif ne modifie plus le plan,
   l'état ni l'identifiant d'URL d'une organisation. L'écran Membres dit, sous le choix du rôle, ce
-  que chaque rôle permet ; un test lie ce texte aux politiques de la base.
-- **Le formulaire d'un cours (B4).** Un résumé de ce qui sera publié, une ligne par information, ce
-  qui manque marqué et dit ; juste sans JavaScript, et qui suit la saisie avec. Un cours sans langue
-  d'enseignement est refusé, au lieu d'en recevoir une en silence.
+  que chaque rôle permet ; un test lie ce texte aux politiques de la base. Il ne promet plus à
+  l'éditeur de supprimer un cours, qu'aucun écran ne propose, et il dit ce que chaque geste a fait.
+  Une responsable qui se donne le rôle d'éditeur arrive sur `À venir`, avec un encadré qui le lui
+  dit. Le fuseau de l'écran Réglages est la même liste que celle du super-admin.
+- **Le formulaire d'un cours (B4).** Un résumé de ce qui sera publié, une ligne par information,
+  description comprise ; ce qui manque est marqué et dit, et ce que le serveur refuserait est marqué
+  « à corriger ». Il est juste sans JavaScript, et suit la saisie avec. Sont refusés, au lieu de
+  disparaître en silence : un cours sans langue d'enseignement, des dates précises hors de la
+  période, une description sans titre dans sa langue. Après un refus, avec JavaScript, la page
+  revient sur l'onglet de la langue en cause. Chaque champ porte la langue et le sens de son texte,
+  toutes les langues se voient sans JavaScript, le rythme mensuel demande le jour puis son rang dans
+  le mois, et l'italien dit « la domenica ».
 - **Les heures de prière (C1, C2).** L'écran pose une question, « D'où viennent vos heures de
   prière ? », avec trois réponses ; chacune montre ses champs, l'aperçu des sept prochains jours,
   puis « Enregistrer ». Une période se prévisualise avant d'être enregistrée. La « source que vous
@@ -641,42 +661,70 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   pareils, dans le répertoire officiel des localités de swisstopo, embarqué dans le serveur : 4 073
   localités, version du 01.09.2026, licence vérifiée avant de l'embarquer, positions converties de
   la projection suisse par les formules de swisstopo, et aucun service extérieur. La source est
-  citée dans le fichier, dans l'image et à l'écran (ADR 0043, addendum).
+  citée dans le fichier, dans l'image et à l'écran (ADR 0043, addendum). `Zuerich` trouve Zürich ;
+  l'écran arabe dit de taper le nom en lettres latines. Hors de Suisse, une dernière case de la
+  liste, « Hors de Suisse », fait passer d'une localité enregistrée à une position tapée, avec ou
+  sans JavaScript, et les replis restent ouverts pendant la frappe.
 - **Un cours avant une prière (C3).** « Avant une prière », de 1 à 120 minutes ; « après », de 0
   à 240. La base garde le décalage négatif qu'elle connaissait, sans migration (ADR 0004,
   addendum).
 - **L'onglet Prières (C4).** Sur la page publique, quand le module est allumé : les heures du jour
   et des sept prochains jours, adhan et iqama, puis les sessions du vendredi avec la langue de leur
-  sermon. Il apparaît dans le widget sans que le fichier du widget change (ADR 0042, addendum).
+  sermon. Chaque jour daté dit ce qui a lieu ce jour-là : une session annulée y est barrée, comme
+  dans la vue Semaine. Il apparaît dans le widget sans que le fichier du widget change (ADR 0042,
+  addendum).
 - **Les langues (D1, D2, D4).** L'anglais britannique est la cinquième langue du public, du widget
   et du flux agenda, et le widget a publié une nouvelle version pour lui. L'espace des responsables
   et le super-admin parlent les cinq langues, un dictionnaire par écran, l'arabe de droite à gauche,
-  en chiffres latins (ADR 0007, addendum). La langue se choisit en haut de chaque écran, sans
-  JavaScript, et reste attachée au compte (migration 0060) ; un choix fait avant la connexion
-  devient la langue du compte (ADR 0047). Les messages prêts à coller s'écrivent dans chaque langue
-  que l'organisation publie. Les conditions restent en français ; dans les autres langues, une
-  phrase le dit. La base limite les langues d'une organisation aux cinq (migration 0062), et l'écran
-  des réglages propose enfin l'anglais.
+  en chiffres latins (ADR 0007, addendum). Au premier passage, l'écran prend la langue du
+  navigateur, sinon le français. La langue se choisit en haut de chaque écran, sans JavaScript, et
+  reste attachée au compte (migration 0060). Un choix fait avant la connexion part avec le lien de
+  connexion, même demandé des jours plus tard, et devient la langue du compte, même quand le lien
+  s'ouvre dans un autre navigateur (ADR 0047). Les messages prêts à coller s'écrivent dans chaque
+  langue que l'organisation publie ; une session du vendredi qui porte le nom proposé par le service
+  se lit partout dans la langue du lecteur, et s'écrit dans la langue par défaut de l'organisation.
+  Les conditions restent en français ; dans les autres langues, une phrase le dit. La base limite
+  les langues d'une organisation aux cinq (migration 0062), et l'écran des réglages propose enfin
+  l'anglais.
 - **Les courriels (D3).** Le lien de connexion et l'invitation parlent les cinq langues, dans la
   langue de l'écran où le geste est fait. **Point d'arrêt** : une invitation part dans la langue de
   la personne qui invite, pour toute adresse ; lire la langue du compte invité consulterait les
   comptes, ce que l'ADR 0017 interdit, et l'envoi n'est pas découplé de la réponse (ADR 0017,
   addendum). La question d'un envoi différé est posée plus bas.
-- **Le correcteur (D5).** `pnpm orthographe` relit l'anglais britannique, et chaque dictionnaire de
-  l'espace dans sa langue. La relecture de l'arabe par le chef de projet appartient au lot 4.
-- **L'agenda selon l'appareil (E1, E2).** La page d'abonnement et la page d'un cours proposent
+- **Le correcteur (D5).** `pnpm orthographe` relit l'anglais britannique, chaque dictionnaire de
+  l'espace et chaque courriel dans sa langue, l'arabe pour l'orthographe et la ponctuation
+  seulement. Les textes arabes, allemands et italiens écrits à cette étape attendent la relecture
+  d'un locuteur (plus bas).
+- **L'agenda selon l'appareil (E1, E2, E3).** La page d'abonnement et la page d'un cours proposent
   d'abord ce que l'appareil sait ouvrir : `webcal:` sur iPhone, iPad et Mac, Google Agenda sur
   Android, le choix complet ailleurs, avec toujours un lien vers le choix complet. Le serveur lit
   `Sec-CH-UA-Platform`, sinon `User-Agent`, et la réponse porte `Vary` sur ces en-têtes ; la page
-  reste sans script (ADR 0048). Le délai de Google, jusqu'à 24 heures, est dit dans les cinq langues.
+  reste sans script (ADR 0048). Sur Android, la page dit ce que fait le bouton, puis, si Google
+  Agenda ne propose rien, le passage par un ordinateur, avec les libellés de Google ; pour un seul
+  cours, un lien `Page du cours`, juste sous son nom, donne l'adresse de ce cours. Les délais de
+  Google (jusqu'à 24 heures) et d'Outlook (plus de 24 heures) sont dits dans les cinq langues. Les
+  étapes d'un essai sur un vrai téléphone Android sont écrites pour le matériel de test ; l'essai
+  reste à faire.
 - **Les conditions (F1 à F3).** Voltia seul, comme exploitant et comme titulaire du droit d'auteur :
   le nom de la personne a quitté les fichiers du dépôt ; l'historique de git le garde. Une onzième
   question pour le juriste : « Voltia » seul suffit-il ? Nouvelle version, du 26.09.2026, que
   chacun accepte de nouveau, sa date écrite comme partout ; le PDF du juriste la suit.
 - **L'acceptation (H2).** `Choisir une autre organisation` s'affiche aussi pour une personne d'une
   seule organisation qu'une invitation attend encore.
+- **Le bloc de site (H3, H4).** Le navigateur reçoit la page et le widget en `gzip`, que le bloc
+  préfère désormais à `zstd`, et aucune réponse de l'application relayée par Caddy ne porte plus
+  `Via`. Les réponses 502 et 504 que Caddy écrit lui-même gardent `Server: Caddy` et n'ont pas de
+  HSTS : c'est écrit dans le bloc et dans `docs/EXPLOITATION.md`. `pnpm caddy:test` le vérifie,
+  74 vérifications, en Caddy 2.11.4 comme en 2.8.0.
 - **Le parcours dans la CI (H5).** `queue: max` reste sur le flux `parcours` : chaque commit garde
   son verdict.
+- **Le parcours automatique.** Chaque retour a au moins une vérification : 262 vérifications, dont
+  143 pour les retours, et axe sur 37 pages, sans rien de sérieux, au dernier passage relevé, sur
+  la branche du lot 6. Rejoué contre l'image de l'étape 17, il fait tomber 86 des 87 vérifications
+  de retours qui peuvent y jouer ; les 56 autres visent des gestes que l'ancienne image n'offre pas.
+  Ce qui ne tourne que dans un navigateur y est éprouvé : la liste des localités pendant la frappe,
+  la seconde passkey, les passages sans JavaScript. La garde du déploiement exige de toute façon un
+  parcours vert pour le commit déployé (ADR 0045).
 - **Le serveur (G).** Les retours sur la machine de l'exploitant se jouent sur elle, et ne sont pas
   décrits dans ce dépôt.
 - **Trouvé en chemin et corrigé**, chaque fois test d'abord : supprimer une salle qu'un cours occupe
@@ -687,20 +735,21 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   l'adresse de la vue Mois était recopié dans la page. La vue Tous les cours comptait une séance
   déplacée à son ancienne date. La liste des langues d'une page publique s'annonçait « Langues » aux
   lecteurs d'écran, en français, dans toutes les langues. Un test du vendredi tombait tous les
-  samedis. Le contrôle du catalogue ignorait les
-  clés qui vident une colonne obligatoire par `SET DEFAULT`.
+  samedis. Le contrôle du catalogue ignorait les clés qui vident une colonne obligatoire par
+  `SET DEFAULT`. Une session du vendredi supprimée entre-temps, et un identifiant d'organisation mal
+  formé envoyé au choix de l'organisation, donnaient une erreur 500 : ils reçoivent une phrase.
 - **La licence.** MIT pour tout le dépôt, sauf la liste des localités, qui reste sous les
   conditions de swisstopo et se cite « Source : Office fédéral de topographie swisstopo ». Le
   `package.json` d'`apps/web` et l'étiquette de l'image disent `MIT AND LicenseRef-swisstopo-OGD`,
   et l'épreuve de l'image le vérifie.
-- 2 832 tests dans le dépôt à l'intégration des lots 1 à 3, tous réussis, aucun sauté : 676 dans
-  `core`, 442 dans la base, 82 pour les sauvegardes, 1 601 dans l'application, 31 pour le widget
-  (2 141 octets en gzip).
+- 3 252 tests dans le dépôt, mesurés le 26.09.2026 sur le commit qui intègre les six lots, tous
+  réussis, aucun sauté : 676 dans `core`, 442 dans la base, 82 pour les sauvegardes, 2 021 dans
+  l'application, 31 pour le widget (2 141 octets en gzip).
 - ADR 0046 (rôles dans la base), 0047 (langue de l'espace), 0048 (agenda selon l'appareil) ;
-  addenda aux ADR 0004, 0007, 0013, 0017, 0025, 0027, 0042 et 0043. Descriptions écran par écran
-  de l'espace et du super-admin dans `docs/maquettes/` ; `docs/CADRAGE.md`, `docs/SECURITE.md`,
-  `docs/INTEGRATION.md`, `docs/CALENDRIER-PRIERES.md`, `docs/API.md`, `docs/EXPLOITATION.md` et le
-  `README` mis à jour.
+  addenda aux ADR 0004, 0007, 0013, 0017, 0025, 0027, 0042 et 0043 ; ADR 0005, 0021 et 0044
+  révisés. Descriptions écran par écran de l'espace et du super-admin dans `docs/maquettes/` ;
+  `docs/CADRAGE.md`, `docs/SECURITE.md`, `docs/INTEGRATION.md`, `docs/CALENDRIER-PRIERES.md`,
+  `docs/API.md`, `docs/EXPLOITATION.md` et le `README` mis à jour.
 
 **Un script ou une commande qu'aucun test ne _lance_ n'est pas éprouvé.** C'est la règle du dépôt
 depuis l'étape 12, et elle répond à la question laissée ouverte à l'étape 11.
@@ -750,7 +799,7 @@ tests.
 | 15    | Conditions exactes au mot près, relevé de l'arabe                   | terminée |
 | 16    | Conditions en ligne et acceptées, arabe corrigé, parcours complet   | terminée |
 | 17    | 182 jours vérifiés, garde du déploiement, invitations tenues        | terminée |
-| 18    | Retours des tests : cinq langues, écrans clairs, rôles dans la base | en cours |
+| 18    | Retours des tests : cinq langues, écrans clairs, rôles dans la base | livrée   |
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
 passkeys, paiement.
@@ -759,10 +808,12 @@ passkeys, paiement.
 
 - Les alias de fuseau IANA sont refusés à la saisie depuis l'étape 2 : 26 noms européens, dont
   `Europe/Amsterdam`, `Europe/Oslo` et `Europe/Stockholm`, redirigent vers le fuseau d'un autre
-  pays. Tranché à la création depuis l'étape 18 : la console du super-admin propose une liste de
-  noms canoniques. Pas encore dans l'écran des réglages, où le fuseau reste un texte libre qui
-  accepte un alias, que le flux agenda refuse ensuite. Et la liste de la console n'offre aucun
-  nom pour vingt et une villes d'Europe dont le nom est un alias, sans dire lequel choisir.
+  pays. Tranché à l'étape 18 : la console du super-admin et l'écran Réglages proposent la même
+  liste de noms canoniques, et une phrase dit quoi choisir pour une ville absente. Reste une
+  organisation dont le fuseau, enregistré avant la liste, est un alias : Réglages le garde tant
+  qu'elle n'en choisit pas un autre, et le dit. Son flux agenda répondait par une erreur au commit
+  qui intègre les six lots ; c'est **à vérifier** sur le code livré, qu'un chantier mené en même
+  temps a pu corriger.
 - L'écriture ne peut plus désigner une personne invisible, mais la lecture reste ouverte à toute
   personne rattachée à l'organisation courante : c'est le flux d'invitation de l'étape 3 qui devra
   décider ce qu'un responsable voit d'un compte existant ailleurs, l'unicité de l'adresse étant
@@ -841,14 +892,18 @@ passkeys, paiement.
 - **Google Agenda sur Android, à vérifier sur un vrai téléphone** (étape 18, E3). L'aide de Google
   dit qu'on ne s'abonne à un agenda par son adresse que depuis un ordinateur, jamais depuis
   l'application Android ; le bouton de la page d'abonnement ouvre la version web de Google Agenda
-  dans le navigateur, par un lien que Google ne documente pas (ADR 0048). Tant que l'essai n'est
-  pas fait, la page servie à Android se contredit : sous le bouton, Google Agenda « propose
-  d'ajouter l'agenda » ; plus bas, « ouvrez Google Agenda sur un ordinateur ». Le lien d'Outlook
-  n'est pas documenté non plus.
-- **Le choix de la langue fait avant la connexion vit dans un cookie de ce seul navigateur**
-  (ADR 0047). Si le lien de connexion s'ouvre dans un autre navigateur, courant sur un téléphone,
-  le choix est perdu ; et le cookie d'attente, qui vit un an, peut remettre plus tard l'ancien
-  choix sur le compte, à une connexion suivante sur le premier navigateur.
+  dans le navigateur, par un lien que Google ne documente pas (ADR 0048). La page ne se contredit
+  plus : elle dit ce que le bouton demande, puis, si rien ne se passe, le passage par un
+  ordinateur. Mais aucun essai n'a été fait sur un vrai téléphone, seulement des appareils simulés
+  par leurs en-têtes : ses résultats décideront des phrases d'Android. Le lien d'Outlook n'est pas
+  documenté non plus, et l'aide de Google ne donne plus aucun délai de rafraîchissement, alors que
+  la page dit « jusqu'à 24 heures ».
+- **Le choix de la langue fait avant la connexion part avec le lien de connexion** (ADR 0047) : il
+  n'est plus perdu quand le lien s'ouvre dans un autre navigateur. Ce qui reste vrai : tant qu'aucun
+  lien n'est demandé sur le navigateur du choix, le cookie d'attente, qui vit un an, peut remettre
+  ce choix sur le compte à la première connexion sur ce navigateur, par-dessus une langue changée
+  depuis sur un autre appareil. Une demande de lien freinée par la limite de débit consomme aussi
+  le choix. Et l'adresse d'arrivée montre `?language=de`, qu'aucun écran ne lit.
 - Les pages de l'espace, la page d'abonnement et la page d'un cours changent selon la langue, le
   cookie ou l'appareil, et le disent par `Vary`. Un cache partagé qui l'ignorerait servirait la
   mauvaise version ; le modèle de `infra/` n'en place aucun.
@@ -882,8 +937,12 @@ passkeys, paiement.
   langue de la personne qui invite, parce que lire la langue du compte invité consulterait les
   comptes (ADR 0017). Un envoi différé, où le courriel part au moment où l'adresse est reconnue,
   est-il voulu ? C'est une table, une tâche et une reprise sur échec de plus.
-- **Le choix de la langue doit-il suivre le lien de connexion** (étape 18), par exemple porté avec
-  la demande de lien, ou le cookie d'attente vivre aussi peu que le lien ?
+- ~~Le choix de la langue doit-il suivre le lien de connexion~~ : fait à l'étape 18, il part avec
+  le lien (ADR 0047). **Reste à accepter** ce que la règle laisse, « quel que soit le délai » : un
+  choix fait sans demander de lien peut, jusqu'à un an plus tard, remettre sa langue sur le compte
+  par-dessus une langue changée ailleurs, et une demande freinée consomme le choix. L'autre voie
+  est un repère côté serveur, la date du dernier changement de langue du compte : une colonne et
+  une migration de plus.
 - **Les deux cookies de langue** sont fonctionnels, posés sur demande, sans donnée personnelle.
   Faut-il les nommer dans `docs/CONDITIONS.md`, qui ne parle que des cookies de mesure
   d'audience ? La question revient au juriste.
@@ -906,29 +965,39 @@ passkeys, paiement.
 
 ## Défauts relevés à l'étape 18, non corrigés
 
-Relevés par les relectures des lots 1 à 3, et encore là au commit qui les intègre. Chaque écran les
-redit dans sa description (`docs/maquettes/`).
+Relevés par les relectures des six lots, et vérifiés dans le code du commit qui les intègre. Aucune
+relecture ne les a jugés bloquants. Un chantier mené en même temps que la livraison en corrige
+d'autres, qui ne sont pas repris ici. Chaque écran redit les siens dans sa description
+(`docs/maquettes/`).
 
-- **À venir** : toucher « Déplacer la séance » sans rien changer enregistre un déplacement vers la
-  même date et la même heure ; deux cartes peuvent être ouvertes en même temps ; le programme de la
-  semaine compte les cours en brouillon, celui de Partager non ; une carte « date exceptionnelle »
-  n'a pas de « Rétablir ».
-- **Cours** : le résumé n'a pas de ligne pour la description ; un cours à dates précises dont les
-  dates tombent avant le premier jour est accepté, et aucune séance ne sera publiée ; les champs
-  de titre et de description n'ont ni `lang` ni `dir` ; la liste n'a pas de bouton pour supprimer
-  un cours.
-- **Heures de prière** : les tableaux qui défilent de côté sur un téléphone ne se prennent pas au
-  clavier (axe, « serious ») ; une période copiée garde en français le suffixe « (année
-  suivante) » ; `©swisstopo` n'est pas isolé dans une ligne arabe ; l'aperçu d'une période lointaine
-  n'en dit rien ; une saisie en écriture arabe, ou `Zuerich`, ne trouve aucune localité.
-- **Réglages** : la confirmation de suppression d'une salle s'affiche hors de l'écran ; après un
-  refus, les champs reviennent aux valeurs enregistrées.
-- **Membres** : annuler une invitation, retirer un membre et changer un rôle ne disent rien.
-- **Super-admin** : après l'ajout d'une seconde passkey, l'écran renvoie à un bouton qui n'existe
-  pas ; sans JavaScript, une adresse proposée se crée sans avoir été vue.
-- **Page publique** : l'onglet Prières montre une session du vendredi annulée ce jour-là ; la page
-  d'abonnement parle d'un bouton sur le choix complet, qui n'a que des liens, et ne dit pas le délai
-  d'Outlook.
+- **La base** : une éditrice peut écrire au journal une entrée qui nomme un collègue comme auteur
+  (politique `audit_log_insert`, migration 0004), et lire la liste des membres par un appel
+  direct. Les deux sont écrits comme limites dans l'ADR 0046.
+- **À venir** : le programme de la semaine compte les cours en brouillon, celui de Partager non ;
+  une carte « date exceptionnelle » n'a pas de « Rétablir » ; la phrase d'une séance disparue
+  demande de recharger la page, alors que la page renvoyée est déjà à jour.
+- **Cours** : la liste n'a pas de bouton pour supprimer un cours, alors que l'action existe et reste
+  ouverte à l'éditeur ; enregistrer un cours archivé le repasse en brouillon, parce que le
+  formulaire ne connaît pas « archivé » (aucun écran n'archive un cours aujourd'hui).
+- **Heures de prière** : sans aucune période, l'aperçu d'une nouvelle période saute un niveau de
+  titre (axe, « heading-order », gravité modérée).
+- **Réglages, à vérifier** : le flux agenda d'une organisation dont le fuseau enregistré est un
+  alias répondait par une erreur 500 ; un chantier mené en même temps a pu le corriger.
+- **Super-admin** : sans JavaScript, l'adresse proposée à partir du nom se crée sans avoir été vue,
+  et ne se change plus ; la proposition perd les ligatures, et « مسجد النور 2 » donne `/m/2`.
+- **Des corrections sans test** (le code est juste, mais un retour en arrière passerait la suite) :
+  l'onglet rouvert après le refus d'un cours ; les replis de l'écran des prières, qui restent
+  ouverts pendant la frappe ; la comparaison qui laisse choisir une localité quand une autre
+  position est enregistrée ; sur la page d'un cours, l'heure du vendredi et la plage des jours lus
+  pour dire l'heure d'avant ; sur `Prière du vendredi`, le refus d'une carte dont l'heure a changé,
+  quand elle vise un autre jour.
+- **Des commentaires et des outils** : `account-language.ts` (« Pas encore d'écran ») et
+  `scripts/orthographe.mjs` (« ses dix points ») disent faux ; `apps/web/tests/adresse.test.ts` et
+  `global-setup.ts` disent encore que Caddy ajoute son adresse à `X-Forwarded-For`, alors qu'il la
+  remplace ; `scripts/eprouver-journal-caddy.mjs` dit sans date que Caddy ajoute `Via`, ce qui
+  n'est vrai que depuis 2.10.0 ; l'épreuve du PDF ne cherche le nom de l'exploitant que dans une
+  phrase ; le générateur de la liste des localités accepte une date impossible ; les cartes de
+  sources partent dans l'image, qui porte la liste des localités deux fois.
 
 ## À poser avant la mise en production
 
