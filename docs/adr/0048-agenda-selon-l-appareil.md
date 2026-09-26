@@ -65,12 +65,12 @@ la main. Celui de Microsoft aussi, sous le choix d'Outlook et dans ses étapes :
 mettre plus de 24 heures à rafraîchir un abonnement. » L'introduction de la page ne promet plus de
 délai ; le bouton d'Apple garde « environ une fois par heure ».
 
-**Sur Android, la page dit quoi faire si le bouton ne donne rien.** Sous le bouton : « Touchez le
-bouton : il ouvre Google Agenda et lui demande d'ajouter cet agenda. Si Google Agenda propose de
-l'ajouter, confirmez. » Puis, puisque l'aide de Google dit qu'on ne s'abonne à un agenda par son
-adresse que depuis le navigateur d'un ordinateur, le passage par un ordinateur, avec les libellés de
-l'interface de Google (le signe +, « À partir de l'URL », « Ajouter l'agenda »), et l'adresse à
-coller. Pour un seul cours, un lien « Page du cours », juste sous son nom, mène à la page du cours,
+**Sur Android, la page dit ce qu'il faut faire si le bouton ne donne rien.** Sous le bouton :
+« Touchez le bouton : il ouvre Google Agenda et lui demande d'ajouter cet agenda. Si Google Agenda
+propose de l'ajouter, confirmez. » Puis, puisque l'aide de Google dit qu'on ne s'abonne à un agenda
+par son adresse que depuis le navigateur d'un ordinateur, le passage par un ordinateur, avec les
+libellés de l'interface de Google (le signe +, « À partir de l'URL », « Ajouter l'agenda »), et
+l'adresse à coller. Pour un seul cours, un lien « Page du cours », juste sous son nom, mène à la page du cours,
 qui donne l'adresse de ce cours et la même marche à suivre. Sur le choix complet, qui n'a que des
 liens, la section à la main ne parle pas d'un bouton.
 
@@ -106,7 +106,7 @@ d'un autre domaine, et n'admet un lien `<a>` vers ailleurs que pour `calendar.go
   (`ETAT-PROJET.md`). En attendant, la page ne promet pas que le bouton suffit : elle dit ce qu'il
   demande, puis le passage par un ordinateur.
 - La relecture de l'étape 18 a relu l'aide de Google en six langues : elle ne donne aucun délai de
-  rafraîchissement. La phrase des 24 heures n'a donc plus d'appui écrit.
+  rafraîchissement. La phrase qui annonce jusqu'à 24 heures n'a donc plus d'appui écrit.
 - `outlook.live.com` est l'Outlook des comptes personnels. Un compte de travail ou d'école copie
   l'adresse, et la page le dit.
 - La maquette `docs/maquettes/public-agenda.md` décrit désormais ce comportement.

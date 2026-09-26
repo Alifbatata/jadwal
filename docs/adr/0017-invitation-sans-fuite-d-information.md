@@ -199,7 +199,7 @@ de l'étape voulait qu'un courriel parte dans la langue du compte qui le reçoit
 un compte ou non.** Trois raisons :
 
 - **L'envoi n'est pas découplé de la réponse** : `await createMailer().send(...)` dans l'action, et
-  le hook refuse exprès les promesses laissées courir.
+  `hooks.server.ts` refuse exprès les promesses laissées courir.
 - **Lire la langue du compte destinataire, c'est chercher un compte par son adresse**, ce que cet
   ADR interdit à la lettre : « aucune branche du code ne dépend de l'existence d'un compte ».
 - **Le rôle applicatif ne voit pas le compte d'une personne qui n'est pas membre** (`user_select`) :

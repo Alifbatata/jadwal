@@ -73,12 +73,12 @@ cours est marquée.
 
 ### Le choix fait avant la connexion part avec le lien
 
-Quand la personne demande un lien sur le navigateur où son choix attend, l'adresse de retour du lien
-porte la langue choisie : `/organisations?language=de` (`signInCallback`, dans
+Quand la personne demande un lien depuis le navigateur qui garde son choix en attente, l'adresse de
+retour du lien porte la langue choisie : `/organisations?language=de` (`signInCallback`, dans
 `apps/web/src/lib/i18n/language.ts`). La vérification du lien l'écrit sur le compte que le jeton
-désigne (`apps/web/src/lib/server/auth.ts`), sur quelque navigateur que le lien s'ouvre : celui de
-la demande, ou l'application de messagerie d'un téléphone. Un cookie de langue sans choix en attente
-ne part pas, puisqu'il peut dater d'un choix que la personne a défait depuis, ailleurs.
+désigne (`apps/web/src/lib/server/auth.ts`), dans le navigateur qui ouvre le lien, que ce soit
+celui de la demande ou l'application de messagerie d'un téléphone. Un cookie de langue sans choix
+en attente ne part pas, puisqu'il peut dater d'un choix que la personne a défait depuis, ailleurs.
 
 Le paramètre `language` ne compte qu'à ce moment-là. Seul un lien valide ouvre une session neuve, et
 son jeton, secret et à usage unique, désigne le compte : une adresse qui porte ce paramètre, posée
@@ -89,14 +89,14 @@ d'arrivée.
 La règle exacte, que les commentaires de `hooks.server.ts`, de `language.ts` et de
 `connexion/+page.server.ts` redisent :
 
-- **Le choix attend sur le navigateur où il a été fait**, sous son cookie d'attente, un an au plus.
+- **Le choix attend sur son navigateur**, sous son cookie d'attente, un an au plus.
 - **Il part une seule fois**, au premier de ces deux moments :
   - la demande d'un lien sur ce navigateur, quel que soit le temps passé depuis le choix, et qu'un
     courriel parte ou non. Seule une adresse refusée pour sa forme, qui ne demande aucun lien, le
     laisse attendre ;
-  - sinon, la première requête connectée sur ce navigateur, quelle que soit la façon dont la session
-    s'y est ouverte : une passkey, un lien demandé sur un autre navigateur, un choix refait après la
-    demande du lien. Elle l'écrit sur le compte (`languageForTheAccount`).
+  - sinon, la première requête connectée sur ce navigateur, que la session s'y soit ouverte par une
+    passkey, par un lien demandé sur un autre navigateur, ou après un choix refait une fois le lien
+    demandé. Elle l'écrit sur le compte (`languageForTheAccount`).
 
   Le cookie d'attente est retiré à ce moment-là.
 
