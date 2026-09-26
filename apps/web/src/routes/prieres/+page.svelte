@@ -13,6 +13,7 @@
 	import { prayersTexts } from '$lib/i18n/prayers.js';
 	import { nomPriere } from '$lib/public/affichage.js';
 	import type { RaisonLue } from '$lib/server/prieres.js';
+	import { localityKey, localityOptions } from './locality-options.js';
 
 	let { data, form } = $props();
 	const text = $derived(prayersTexts[data.language]);
@@ -38,11 +39,6 @@
 	/** « 2502 Biel/Bienne (BE) » : une localité telle qu'on la reconnaît en Suisse. */
 	function label(localite: { postcode: string; name: string; canton: string }): string {
 		return `${localite.postcode} ${localite.name} (${localite.canton})`;
-	}
-
-	/** Ce que le formulaire envoie d'une localité choisie : le serveur y relit la position. */
-	function cle(localite: { postcode: string; name: string }): string {
-		return `${localite.postcode}|${localite.name}`;
 	}
 
 	const coordonnee = (valeur: number) => valeur.toFixed(4);
@@ -83,8 +79,8 @@
 				? ''
 				: String(data.reglages.longitude)
 	);
-	/** Les cases de la liste : les localités trouvées, sinon celle qui vient d'être choisie. */
-	const options = $derived(trouvees ?? (choisie ? [choisie] : []));
+	/** Les cases de la liste : voir `localityOptions`, qui garde cochée la localité choisie. */
+	const options = $derived(localityOptions(trouvees, choisie));
 	const message = $derived.by(() => {
 		if (trouvees === null) return '';
 		if (recherche.trim().length < 2) return text.computed.tooShort;
@@ -365,13 +361,13 @@
 				{#if options.length > 0}
 					<fieldset class="resultats">
 						<legend>{text.computed.resultsLegend}</legend>
-						{#each options as localite (cle(localite))}
+						{#each options as localite (localityKey(localite))}
 							<label class="resultat">
 								<input
 									type="radio"
 									name="localite"
-									value={cle(localite)}
-									checked={choisie !== null && cle(choisie) === cle(localite)}
+									value={localityKey(localite)}
+									checked={choisie !== null && localityKey(choisie) === localityKey(localite)}
 									onchange={() => choisir(localite)}
 								/>
 								<bdi>{label(localite)}</bdi>
