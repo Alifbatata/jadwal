@@ -4,7 +4,7 @@
 // de recherche indexe. Un cours non publié, ou d'une organisation suspendue, répond comme un cours
 // qui n'existe pas — le rôle public ne le voit pas, donc il n'y a rien à filtrer ici.
 
-import { todayInZone } from '@jadwal/core';
+import { expandOccurrences, todayInZone, type IsoDate } from '@jadwal/core';
 import type { PageServerLoad } from './$types.js';
 import { CACHE_PROGRAMME } from '$lib/server/api.js';
 import {
@@ -69,6 +69,19 @@ export const load: PageServerLoad = async (event) => {
 	// retour E1), comme la page d'abonnement.
 	const { appareil, tousLesChoix } = appareilDuVisiteur(event);
 
+	// Une séance déplacée le même jour, à une autre heure : la page dit un changement d'heure, avec
+	// l'heure d'avant (relecture du lot 4), et non « Date exceptionnelle » pour une date qui n'a pas
+	// changé. L'heure d'avant est celle que la règle du cours donne ce jour-là ; elle reste inconnue
+	// pour un cours qui suit une prière, puisque cette page ne lit pas les heures de prière.
+	const schedule = toSchedule(cours);
+	const heureDAvant = (date: string, originalDate: string | undefined): string | null =>
+		originalDate === date
+			? (expandOccurrences({
+					schedules: [schedule],
+					range: { from: date as IsoDate, to: date as IsoDate }
+				})[0]?.start ?? null)
+			: null;
+
 	event.setHeaders({ 'cache-control': CACHE_PROGRAMME });
 	// La langue du document, que le hook écrit sur `<html>` (voir la page du programme). Le 404
 	// d'un cours inconnu la pose lui-même, par `introuvable`, avec le texte de la page d'erreur.
@@ -116,15 +129,15 @@ export const load: PageServerLoad = async (event) => {
 			timingOffsetMinutes: cours.timing_offset_minutes,
 			timingDurationMinutes: cours.timing_duration_minutes
 		},
-		prochaines: nextDates(toSchedule(cours), exceptions, pauses, today, PROCHAINES).map(
-			(seance) => ({
-				date: seance.date,
-				start: seance.start,
-				end: seance.end,
-				status: seance.status,
-				anchor: seance.anchor ?? null,
-				originalDate: seance.originalDate ?? null
-			})
-		)
+		prochaines: nextDates(schedule, exceptions, pauses, today, PROCHAINES).map((seance) => ({
+			date: seance.date,
+			start: seance.start,
+			end: seance.end,
+			status: seance.status,
+			anchor: seance.anchor ?? null,
+			originalDate: seance.originalDate ?? null,
+			originalStart:
+				seance.status === 'moved_here' ? heureDAvant(seance.date, seance.originalDate) : null
+		}))
 	};
 };

@@ -113,7 +113,14 @@
 						{longDate(data.langue, seance.date as IsoDate)}
 						<span class="heure">{heureDeSeance(data.langue, seance)}</span>
 						{#if seance.status === 'cancelled'}<span class="marque">{mots.cancelled}</span>{/if}
-						{#if seance.status === 'moved_here'}
+						<!-- Déplacée le même jour, à une autre heure : un changement d'heure, et l'heure d'avant
+						     quand elle est connue (relecture du lot 4). -->
+						{#if seance.status === 'moved_here' && seance.originalDate === seance.date}
+							<span class="marque">{mots.newTime}</span>
+							{#if seance.originalStart}<span class="heure"
+									>{mots.originallyAt(seance.originalStart)}</span
+								>{/if}
+						{:else if seance.status === 'moved_here'}
 							<span class="marque">{mots.exceptionalDate}</span>
 						{/if}
 					</li>

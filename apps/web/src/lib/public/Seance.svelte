@@ -2,6 +2,10 @@
 	// Une séance, dans la forme décrite par docs/maquettes/README.md : heure, titre, public, salle,
 	// intervenant. Annulée, elle reste visible et barrée ; déplacée, elle porte la mention qui dit
 	// où elle va ou d'où elle vient.
+	//
+	// Déplacée le même jour, à une autre heure, elle dit un changement d'heure (relecture du lot 4) :
+	// « Déplacé à 20:30 » au départ, « Nouvelle heure » et l'heure d'avant à l'arrivée. Elle disait
+	// « Déplacé au » suivi du jour même, et « Date exceptionnelle » pour une date qui n'avait pas changé.
 	import { longDate, t, type Langue } from '$lib/i18n.js';
 	import { heureDeSeance, languesEnClair } from './affichage.js';
 	import type { IsoDate } from '@jadwal/core';
@@ -15,6 +19,8 @@
 		anchor: { prayer: string; offsetMinutes: number } | null;
 		movedTo: { date: string; start: string } | null;
 		originalDate: string | null;
+		/** Pour une séance venue d'une autre heure du même jour : l'heure d'avant, si elle est connue. */
+		originalStart?: string | null;
 		title: string;
 		audience: string;
 		room: string | null;
@@ -33,6 +39,11 @@
 
 	const mots = $derived(t(langue));
 	const barree = $derived(seance.status === 'cancelled' || seance.status === 'moved_away');
+	/** Déplacée sans changer de jour : seule l'heure a changé. */
+	const memeJour = $derived(
+		(seance.status === 'moved_away' && seance.movedTo?.date === seance.date) ||
+			(seance.status === 'moved_here' && seance.originalDate === seance.date)
+	);
 </script>
 
 <li class:barree>
@@ -40,9 +51,15 @@
 		<span class="heure">{heureDeSeance(langue, seance)}</span>
 		<a class="titre" href={lienCours(seance.courseId)}>{seance.title}</a>
 		{#if seance.status === 'cancelled'}<span class="marque">{mots.cancelled}</span>{/if}
-		{#if seance.status === 'moved_here'}<span class="marque">{mots.exceptionalDate}</span>{/if}
+		{#if seance.status === 'moved_here'}
+			<span class="marque">{memeJour ? mots.newTime : mots.exceptionalDate}</span>
+		{/if}
 		{#if seance.status === 'moved_away' && seance.movedTo}
-			<span class="marque">{mots.movedTo(longDate(langue, seance.movedTo.date as IsoDate))}</span>
+			<span class="marque"
+				>{memeJour
+					? mots.movedToTime(seance.movedTo.start)
+					: mots.movedTo(longDate(langue, seance.movedTo.date as IsoDate))}</span
+			>
 		{/if}
 	</p>
 	<p class="details">
@@ -52,7 +69,9 @@
 		{#if seance.kind === 'jumua' && seance.sermonLanguages && seance.sermonLanguages.length > 0}
 			· {mots.sermonIn(languesEnClair(langue, seance.sermonLanguages))}
 		{/if}
-		{#if seance.status === 'moved_here' && seance.originalDate}
+		{#if seance.status === 'moved_here' && memeJour}
+			{#if seance.originalStart}· {mots.originallyAt(seance.originalStart)}{/if}
+		{:else if seance.status === 'moved_here' && seance.originalDate}
 			· {mots.originallyOn(longDate(langue, seance.originalDate as IsoDate))}
 		{/if}
 	</p>

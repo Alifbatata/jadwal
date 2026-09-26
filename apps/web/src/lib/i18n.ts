@@ -51,6 +51,14 @@ interface Dictionnaire {
 	readonly exceptionalDate: string;
 	readonly movedTo: (date: string) => string;
 	readonly originallyOn: (date: string) => string;
+	/**
+	 * Une séance déplacée le même jour, à une autre heure (relecture du lot 4). Au départ, la nouvelle
+	 * heure ; à l'arrivée, la marque, puis l'heure d'avant. La page disait « Déplacé au » suivi du jour
+	 * même, et « Date exceptionnelle » pour une date qui n'avait pas changé.
+	 */
+	readonly movedToTime: (time: string) => string;
+	readonly newTime: string;
+	readonly originallyAt: (time: string) => string;
 	readonly after: (prayer: string) => string;
 	/** « 15 min après Maghrib ». Le nombre est positif : le signe est déjà dans le choix du mot. */
 	readonly afterOffset: (offset: number, prayer: string) => string;
@@ -297,6 +305,9 @@ const fr: Dictionnaire = {
 	exceptionalDate: 'Date exceptionnelle',
 	movedTo: (date) => `Déplacé au ${date}`,
 	originallyOn: (date) => `Initialement le ${date}`,
+	movedToTime: (time) => `Déplacé à ${time}`,
+	newTime: 'Nouvelle heure',
+	originallyAt: (time) => `Initialement à ${time}`,
 	after: (prayer) => `Après ${prayer}`,
 	afterOffset: (offset, prayer) => `${offset} min après ${prayer}`,
 	beforeOffset: (offset, prayer) => `${offset} min avant ${prayer}`,
@@ -453,6 +464,9 @@ const de: Dictionnaire = {
 	exceptionalDate: 'Ausnahmetermin',
 	movedTo: (date) => `Verschoben auf ${date}`,
 	originallyOn: (date) => `Ursprünglich am ${date}`,
+	movedToTime: (time) => `Verschoben auf ${time}`,
+	newTime: 'Neue Uhrzeit',
+	originallyAt: (time) => `Ursprünglich um ${time}`,
 	after: (prayer) => `Nach ${prayer}`,
 	afterOffset: (offset, prayer) => `${offset} Min. nach ${prayer}`,
 	beforeOffset: (offset, prayer) => `${offset} Min. vor ${prayer}`,
@@ -604,6 +618,9 @@ const it: Dictionnaire = {
 	exceptionalDate: 'Data eccezionale',
 	movedTo: (date) => `Spostato al ${date}`,
 	originallyOn: (date) => `Inizialmente il ${date}`,
+	movedToTime: (time) => `Spostato alle ${time}`,
+	newTime: 'Nuovo orario',
+	originallyAt: (time) => `Inizialmente alle ${time}`,
 	after: (prayer) => `Dopo ${prayer}`,
 	afterOffset: (offset, prayer) => `${offset} min dopo ${prayer}`,
 	beforeOffset: (offset, prayer) => `${offset} min prima di ${prayer}`,
@@ -756,6 +773,9 @@ const en: Dictionnaire = {
 	exceptionalDate: 'Rescheduled',
 	movedTo: (date) => `Moved to ${date}`,
 	originallyOn: (date) => `Originally on ${date}`,
+	movedToTime: (time) => `Moved to ${time}`,
+	newTime: 'New time',
+	originallyAt: (time) => `Originally at ${time}`,
 	after: (prayer) => `After ${prayer}`,
 	afterOffset: (offset, prayer) => `${offset} min after ${prayer}`,
 	beforeOffset: (offset, prayer) => `${offset} min before ${prayer}`,
@@ -907,6 +927,9 @@ const ar: Dictionnaire = {
 	exceptionalDate: 'موعد استثنائي',
 	movedTo: (date) => `نُقل إلى ${date}`,
 	originallyOn: (date) => `كان مقرّرًا في ${date}`,
+	movedToTime: (time) => `نُقل إلى الساعة ${time}`,
+	newTime: 'وقت جديد',
+	originallyAt: (time) => `كان مقرّرًا في الساعة ${time}`,
 	after: (prayer) => `بعد ${prayer}`,
 	// Zéro n'est pas une phrase de minutes : c'est « après » tout court, la phrase de `after`.
 	afterOffset: (offset, prayer) =>

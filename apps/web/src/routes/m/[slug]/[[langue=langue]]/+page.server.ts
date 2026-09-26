@@ -112,6 +112,19 @@ export const load: PageServerLoad = async (event) => {
 				originalDate: seance.originalDate ?? null
 			}));
 
+	// Une séance déplacée le même jour, à une autre heure : l'heure d'avant est celle de la séance de
+	// départ, que l'expansion rend le même jour (relecture du lot 4). La page dit alors un changement
+	// d'heure, et non « Déplacé au » suivi du jour même.
+	const heureDAvant = (seance: SeancePublique): string | null =>
+		seance.status === 'moved_here' && seance.originalDate === seance.date
+			? (complet.seances.find(
+					(depart) =>
+						depart.status === 'moved_away' &&
+						depart.courseId === seance.courseId &&
+						depart.date === seance.date
+				)?.start ?? null)
+			: null;
+
 	// L'onglet des prières : aujourd'hui et les six jours suivants, adhan et iqama de chaque prière,
 	// les trois sources résolues comme pour les cours ancrés. Un jour qu'aucune source ne couvre
 	// n'est pas montré ; une iqama que l'organisation n'a pas réglée reste vide. Chaque jour porte
@@ -145,6 +158,7 @@ export const load: PageServerLoad = async (event) => {
 		anchor: seance.anchor ?? null,
 		movedTo: seance.movedTo ?? null,
 		originalDate: seance.originalDate ?? null,
+		originalStart: heureDAvant(seance),
 		title: seance.title,
 		audience: seance.audience,
 		room: seance.room,
