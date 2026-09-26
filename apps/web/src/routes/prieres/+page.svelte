@@ -783,16 +783,17 @@
 <section aria-labelledby="servies-titre">
 	<h2 id="servies-titre">{text.served.title}</h2>
 	<p class="aide">{text.served.intro}</p>
-	{@render tableServie(data.septJours, 'servies-titre')}
+	{@render tableServie(data.septJours, 'servies-titre', text.served.empty)}
 </section>
 
 <!-- `titre` : l'identifiant du titre qui nomme le tableau. Un tableau plus large qu'un téléphone
      défile seul, et le clavier doit pouvoir le faire défiler : il y faut une région nommée qui prend
-     le focus (axe, scrollable-region-focusable). -->
-{#snippet tableServie(jours: Jour[], titre: string)}
+     le focus (axe, scrollable-region-focusable). `vide` : ce que dit l'écran quand aucun de ces
+     jours n'a d'heure. -->
+{#snippet tableServie(jours: Jour[], titre: string, vide: string)}
 	{@const rangs = jours.filter((jour) => PRIERES.some((priere) => jour[priere] !== null))}
 	{#if rangs.length === 0}
-		<p class="aide">{text.served.empty}</p>
+		<p class="aide">{vide}</p>
 	{:else}
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 		<div class="defile" role="region" tabindex="0" aria-labelledby={titre}>
@@ -1044,9 +1045,21 @@
 			</button>
 		</div>
 		{#if renvoyee && form?.apercuPeriode}
-			<h4 id={`apercu-periode-titre-${cleDeLaPeriode}`}>{text.periods.previewTitle}</h4>
+			<!-- Une période qui commence après les sept prochains jours : ses sept premiers jours, et
+			     une phrase qui le dit, pour qu'elle ne paraisse pas absente de l'aperçu. -->
+			{@const depuis = form.apercuDepuis ?? null}
+			<h4 id={`apercu-periode-titre-${cleDeLaPeriode}`}>
+				{depuis ? text.periods.previewTitleLater : text.periods.previewTitle}
+			</h4>
+			{#if depuis}
+				<p class="aide">{text.periods.previewLater(numericDate(depuis))}</p>
+			{/if}
 			<p class="aide">{text.periods.previewHint}</p>
-			{@render tableServie(form.apercuPeriode, `apercu-periode-titre-${cleDeLaPeriode}`)}
+			{@render tableServie(
+				form.apercuPeriode,
+				`apercu-periode-titre-${cleDeLaPeriode}`,
+				depuis ? text.periods.previewLaterEmpty : text.served.empty
+			)}
 		{/if}
 		<div class="boutons">
 			<button type="submit" class="principal">{text.periods.save}</button>

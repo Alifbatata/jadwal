@@ -20,7 +20,7 @@
 // l'écran (étape 18, retour D2).
 
 import { fail } from '@sveltejs/kit';
-import { addDays, todayInZone, type IsoDate, type PrayerDay } from '@jadwal/core';
+import { addDays, compareIsoDates, todayInZone, type IsoDate, type PrayerDay } from '@jadwal/core';
 import {
 	analyserCalendrier,
 	CALCULATION_METHODS,
@@ -311,10 +311,14 @@ function versEnregistrement(saisie: PeriodeSaisie) {
 
 /**
  * Levée pour annuler la transaction de l'aperçu d'une période, une fois les sept jours relus avec
- * elle : c'est ce qui garantit que l'aperçu n'écrit rien, audit compris.
+ * elle : c'est ce qui garantit que l'aperçu n'écrit rien, audit compris. `depuis` est le premier
+ * jour de la période quand l'aperçu montre ses sept premiers jours plutôt que les sept prochains.
  */
 class ApercuSeulement extends Error {
-	constructor(readonly jours: ResolvedPrayerRow[]) {
+	constructor(
+		readonly jours: ResolvedPrayerRow[],
+		readonly depuis: IsoDate | null
+	) {
 		super('aperçu d’une période, transaction annulée');
 	}
 }
@@ -490,6 +494,10 @@ export const actions: Actions = {
 	 * (`resolvedPrayerDaysQuery`, qui tient la priorité entre les trois sources), puis la transaction
 	 * est annulée : l'aperçu montre exactement ce que l'enregistrement donnera, et un chevauchement
 	 * y est refusé comme il le serait à l'enregistrement.
+	 *
+	 * Une période préparée à l'avance, qui commence après les sept prochains jours (un Ramadan dans
+	 * trois mois), n'y apparaîtrait pas : l'aperçu montre alors ses sept premiers jours, et la page
+	 * le dit (retour B1).
 	 */
 	apercuPeriode: async (event) => {
 		const context = await mustAdministerPrayerModule(event);
@@ -504,13 +512,17 @@ export const actions: Actions = {
 					versEnregistrement(saisie)
 				);
 				const today = todayInZone(settings.time_zone, new Date());
+				const premier = saisie.fromDate as IsoDate;
+				const plusTard = compareIsoDates(premier, addDays(today, 6)) > 0;
+				const debut = plusTard ? premier : today;
 				throw new ApercuSeulement(
-					await readPrayerDays(tx, context.organizationId, today, addDays(today, 6))
+					await readPrayerDays(tx, context.organizationId, debut, addDays(debut, 6)),
+					plusTard ? premier : null
 				);
 			});
 		} catch (cause) {
 			if (cause instanceof ApercuSeulement) {
-				return { apercuPeriode: cause.jours, periode: saisie };
+				return { apercuPeriode: cause.jours, apercuDepuis: cause.depuis, periode: saisie };
 			}
 			if (codeSql(cause) === '23P01') {
 				return fail(400, { error: 'periodOverlap' as const, periode: saisie });

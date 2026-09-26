@@ -249,6 +249,10 @@ interface PrayersTexts {
 		readonly iqamaOffsetLabel: (prayer: string) => string;
 		readonly preview: string;
 		readonly previewTitle: string;
+		/** Une période qui commence après les sept prochains jours : l'aperçu montre ses sept premiers. */
+		readonly previewTitleLater: string;
+		readonly previewLater: (firstDay: string) => string;
+		readonly previewLaterEmpty: string;
 		readonly previewHint: string;
 		readonly save: string;
 	};
@@ -550,6 +554,10 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			iqamaOffsetLabel: (prayer) => `Iqama : ${prayer}, minutes après l’heure affichée`,
 			preview: 'Voir l’aperçu',
 			previewTitle: 'Aperçu des sept prochains jours avec cette période',
+			previewTitleLater: 'Aperçu des sept premiers jours de cette période',
+			previewLater: (firstDay) =>
+				`Cette période commence le ${firstDay} : l’aperçu montre ses sept premiers jours, et non les sept prochains.`,
+			previewLaterEmpty: 'Aucune heure pour ces sept jours.',
 			previewHint: 'Rien n’est encore enregistré.',
 			save: 'Enregistrer cette période'
 		},
@@ -859,6 +867,10 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			iqamaOffsetLabel: (prayer) => `Iqama: ${prayer}, Minuten nach der angezeigten Zeit`,
 			preview: 'Vorschau anzeigen',
 			previewTitle: 'Vorschau der nächsten sieben Tage mit diesem Zeitraum',
+			previewTitleLater: 'Vorschau der ersten sieben Tage dieses Zeitraums',
+			previewLater: (firstDay) =>
+				`Dieser Zeitraum beginnt am ${firstDay}: Die Vorschau zeigt seine ersten sieben Tage, nicht die nächsten sieben.`,
+			previewLaterEmpty: 'Keine Zeiten für diese sieben Tage.',
 			previewHint: 'Noch ist nichts gespeichert.',
 			save: 'Diesen Zeitraum speichern'
 		},
@@ -1173,6 +1185,10 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			iqamaOffsetLabel: (prayer) => `Iqama: ${prayer}, minuti dopo l’ora mostrata`,
 			preview: 'Vedi l’anteprima',
 			previewTitle: 'Anteprima dei prossimi sette giorni con questo periodo',
+			previewTitleLater: 'Anteprima dei primi sette giorni di questo periodo',
+			previewLater: (firstDay) =>
+				`Questo periodo comincia il ${firstDay}: l’anteprima mostra i suoi primi sette giorni, non i prossimi sette.`,
+			previewLaterEmpty: 'Nessun orario per questi sette giorni.',
 			previewHint: 'Non è ancora salvato niente.',
 			save: 'Salva questo periodo'
 		},
@@ -1478,6 +1494,10 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			iqamaOffsetLabel: (prayer) => `Iqama: ${prayer}, minutes after the time shown`,
 			preview: 'Show the preview',
 			previewTitle: 'Preview of the next seven days with this period',
+			previewTitleLater: 'Preview of the first seven days of this period',
+			previewLater: (firstDay) =>
+				`This period starts on ${firstDay}: the preview shows its first seven days, not the next seven.`,
+			previewLaterEmpty: 'No times for these seven days.',
 			previewHint: 'Nothing has been saved yet.',
 			save: 'Save this period'
 		},
@@ -1780,6 +1800,10 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			iqamaOffsetLabel: (prayer) => `الإقامة: ${prayer}، دقائق بعد الوقت المعروض`,
 			preview: 'عرض المعاينة',
 			previewTitle: 'معاينة الأيام السبعة القادمة مع هذه الفترة',
+			previewTitleLater: 'معاينة الأيام السبعة الأولى من هذه الفترة',
+			previewLater: (firstDay) =>
+				`تبدأ هذه الفترة في ${firstDay}: لذلك تعرض المعاينة أيامها السبعة الأولى، لا الأيام السبعة القادمة.`,
+			previewLaterEmpty: 'لا مواقيت لهذه الأيام السبعة.',
 			previewHint: 'لم يُحفظ شيء بعد.',
 			save: 'حفظ هذه الفترة'
 		},

@@ -887,3 +887,62 @@ describe('copier une période pour l’année suivante (retour D2)', () => {
 		expect(lu.includes('(année suivante)')).toBe(langue === 'fr');
 	});
 });
+
+describe('l’aperçu d’une période préparée à l’avance (retour B1)', () => {
+	/** Le titre de l'aperçu d'une période qui commence après les sept prochains jours. */
+	const TITRE: Record<Langue, string> = {
+		fr: 'Aperçu des sept premiers jours de cette période',
+		de: 'Vorschau der ersten sieben Tage dieses Zeitraums',
+		it: 'Anteprima dei primi sette giorni di questo periodo',
+		en: 'Preview of the first seven days of this period',
+		ar: 'معاينة الأيام السبعة الأولى من هذه الفترة'
+	};
+	/** La phrase qui le dit, avec le premier jour de la période. */
+	const PHRASE: Record<Langue, (jour: string) => string> = {
+		fr: (jour) =>
+			`Cette période commence le ${jour} : l’aperçu montre ses sept premiers jours, et non les sept prochains.`,
+		de: (jour) =>
+			`Dieser Zeitraum beginnt am ${jour}: Die Vorschau zeigt seine ersten sieben Tage, nicht die nächsten sieben.`,
+		it: (jour) =>
+			`Questo periodo comincia il ${jour}: l’anteprima mostra i suoi primi sette giorni, non i prossimi sette.`,
+		en: (jour) =>
+			`This period starts on ${jour}: the preview shows its first seven days, not the next seven.`,
+		ar: (jour) =>
+			`تبدأ هذه الفترة في ${jour}: لذلك تعرض المعاينة أيامها السبعة الأولى، لا الأيام السبعة القادمة.`
+	};
+
+	it.each(LANGUES)(
+		'previews the first seven days of a period that starts later, and says so, in %s',
+		async (langue) => {
+			// Un Ramadan préparé deux mois à l'avance : les sept prochains jours ne le montraient pas, et
+			// rien ne le disait. Une personne novice croyait que sa période ne marchait pas.
+			await poserLangueDuCompte(RESPONSABLE, langue);
+			const debut = addDays(aujourdhui(), 60);
+			const avant = await nombreDePeriodes();
+			const reponse = await postForm('/prieres?source=manual&/apercuPeriode', {
+				name: 'Ramadan des essais',
+				fromDate: debut,
+				toDate: addDays(debut, 20),
+				maghrib: '19:00'
+			});
+			expect(reponse.status).toBe(200);
+			const html = await reponse.text();
+			const lu = visibleText(html);
+			expect(lu).toContain(TITRE[langue]);
+			expect(lu).toContain(PHRASE[langue](jjmmaaaa(debut)));
+			// Le tableau qui suit le titre : les sept premiers jours de la période, Maghrib saisi.
+			const apres = html.slice(html.indexOf(`${TITRE[langue]}</h4>`));
+			const tableau = apres.match(/<tbody>[\s\S]*?<\/tbody>/)?.[0] ?? '';
+			expect(tableau.match(/<tr\b/g)?.length ?? 0).toBe(7);
+			for (let pas = 0; pas < 7; pas += 1) {
+				expect(visibleText(`<body>${tableau}</body>`)).toContain(jjmmaaaa(addDays(debut, pas)));
+			}
+			expect(tableau.match(/19:00/g)?.length ?? 0).toBe(7);
+			// Un aperçu, rien de plus : la période n'est pas écrite.
+			expect(await nombreDePeriodes()).toBe(avant);
+		}
+	);
+	// Une période qui commence pendant les sept prochains jours garde « Aperçu des sept prochains
+	// jours avec cette période » : c'est la vue « l’aperçu d’une période » plus haut (premier jour
+	// dans deux jours), que le test « shows, under each answer, the preview… (C1) » lit.
+});
