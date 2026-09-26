@@ -507,10 +507,10 @@ describe('la localité, par son nom ou son NPA (retour C2)', () => {
 		expect(await positionEnregistree()).toEqual({ latitude: null, longitude: null });
 	});
 
-	it('saves the position of the list, and not the one the browser sends', async () => {
-		// Le navigateur envoie la localité, et les deux nombres de « Hors de Suisse » tels que la page
-		// les a remplis : ici, vides. Deux autres nombres tapés ne sont plus ignorés sans rien dire :
-		// voir « says so, and saves nothing, when a locality stays chosen and another position is typed ».
+	it('saves the chosen locality, sent with the two numbers of « Outside Switzerland » left empty', async () => {
+		// Aucune position n'est encore enregistrée : la page laisse vides les deux nombres de « Hors de
+		// Suisse », et le navigateur les envoie vides avec la localité. Des nombres tapés, et ceux que
+		// la page remplit en cochant une localité, ont leurs propres tests plus bas.
 		const reponse = await postForm('/prieres?source=computed&/enregistrer', {
 			localite: BIENNE_CHOISIE,
 			latitude: '',
@@ -665,6 +665,69 @@ describe('la localité, par son nom ou son NPA (retour C2)', () => {
 			longitude: ''
 		});
 		expect(efface.status).toBe(200);
+		expect(await positionEnregistree()).toEqual(BIENNE);
+	});
+
+	it('says so, and saves nothing, when the typed position differs from the chosen locality by one number', async () => {
+		// Bienne est enregistrée et cochée, et la page a rempli ses deux nombres sous « Hors de
+		// Suisse ». La personne n'en change qu'un, pour la position exacte de sa mosquée, sans choisir
+		// « Hors de Suisse » dans la liste : ce n'est plus la position de Bienne, et le serveur le dit.
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		expect(await positionEnregistree()).toEqual(BIENNE);
+		const html = await (await get('/prieres?source=computed')).text();
+		const envoyes = champsEnvoyes(html, '?source=computed&/enregistrer');
+		expect(envoyes['localite']).toBe(BIENNE_CHOISIE);
+		expect([envoyes['latitude'], envoyes['longitude']]).toEqual([
+			String(BIENNE.latitude),
+			String(BIENNE.longitude)
+		]);
+		for (const [champ, tape] of [
+			['latitude', '47.15'],
+			['longitude', '7.25']
+		] as const) {
+			const reponse = await postForm('/prieres?source=computed&/enregistrer', {
+				...envoyes,
+				[champ]: tape
+			});
+			expect(reponse.status, champ).toBe(400);
+			const rendu = await reponse.text();
+			expect(visibleText(rendu), champ).toContain(LOCALITE_ET_POSITION.fr);
+			expect(valeurDuChamp(rendu, champ), champ).toBe(tape);
+		}
+		expect(await positionEnregistree()).toEqual(BIENNE);
+	});
+
+	it('saves a locality chosen while another position is saved, with the two numbers the page fills in from it', async () => {
+		// Paris est enregistré. Avec JavaScript, cocher Bienne écrit sa position dans les deux champs
+		// de « Hors de Suisse » : le formulaire envoie Bienne et ses deux nombres, qui ne sont pas ceux
+		// de Paris. C'est bien Bienne que la personne a choisie.
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		const versParis = await postForm('/prieres?source=computed&/enregistrer', {
+			...CALCUL,
+			localite: '',
+			latitude: String(PARIS.latitude),
+			longitude: String(PARIS.longitude)
+		});
+		expect(versParis.status).toBe(200);
+		expect(await positionEnregistree()).toEqual(PARIS);
+
+		// La page écrit la position que la route de recherche lui a donnée.
+		const [trouvee] = (await (await get('/prieres/localites?q=2502')).json()) as {
+			latitude: number;
+			longitude: number;
+		}[];
+		const recherche = await (await get('/prieres?source=computed&lieu=Bienne')).text();
+		const champs: Record<string, string> = {
+			...champsEnvoyes(recherche, '?source=computed&/enregistrer'),
+			localite: BIENNE_CHOISIE,
+			latitude: String(trouvee?.latitude),
+			longitude: String(trouvee?.longitude)
+		};
+		for (const action of ['apercu', 'enregistrer']) {
+			const reponse = await postForm(`/prieres?source=computed&/${action}`, champs);
+			expect(reponse.status, action).toBe(200);
+			expect(visibleText(await reponse.text()), action).not.toContain(LOCALITE_ET_POSITION.fr);
+		}
 		expect(await positionEnregistree()).toEqual(BIENNE);
 	});
 
