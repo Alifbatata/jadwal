@@ -351,7 +351,7 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 				'Elle est proposée à partir du nom, et vous pouvez la modifier. Si vous la laissez vide, elle est formée à partir du nom.'
 			);
 			expect(creer).toContain(
-				'Lettres minuscules sans accent, chiffres et traits d’union. Exemple : mosquee-madretsch'
+				'Lettres minuscules sans accent ni cédille, chiffres et traits d’union. Exemple : mosquee-madretsch'
 			);
 			// L'adresse complète, qui vient de l'origine du serveur, jamais d'un nom écrit en dur.
 			expect(creer).toContain(`Adresse complète : ${HOTE}/m/`);
@@ -359,6 +359,43 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 			// Le champ peut rester vide : c'est alors le serveur qui propose l'adresse.
 			expect(champ).not.toMatch(/\brequired\b/);
 			expect(champ).toContain('pattern="[a-z0-9]+(-[a-z0-9]+)*"');
+		});
+
+		it('says in German that the address takes no Umlaut, in the rule and in both errors', async () => {
+			// Pour qui parle allemand, ä, ö et ü sont des Umlaute, pas des accents : « ohne Akzente »
+			// laissait croire que « zürich-moschee » convenait. Le français dit de même la cédille,
+			// qui n'est pas un accent non plus : les tests voisins lisent ses textes exacts.
+			await langueDuCompte('de');
+			try {
+				const html = await (await get('/super-admin', avecPouvoirs)).text();
+				expect
+					.soft(texteDe(section(html, 'creer-titre')))
+					.toContain(
+						'Kleinbuchstaben ohne Umlaute und Akzente, Ziffern und Bindestriche. Beispiel: moschee-madretsch'
+					);
+				const refusee = await postForm(
+					'/super-admin?/ouvrir',
+					{ name: 'Moschee Zürich', slug: 'zürich-moschee', timeZone: 'Europe/Zurich' },
+					avecPouvoirs
+				);
+				expect(refusee.status).toBe(400);
+				expect
+					.soft(erreur(await refusee.text()))
+					.toContain(
+						'Sie darf nur Kleinbuchstaben ohne Umlaute und Akzente, Ziffern und Bindestriche enthalten'
+					);
+				const sansAdresse = await postForm(
+					'/super-admin?/ouvrir',
+					{ name: 'مسجد السلام', slug: '', timeZone: 'Europe/Zurich' },
+					avecPouvoirs
+				);
+				expect(sansAdresse.status).toBe(400);
+				expect
+					.soft(erreur(await sansAdresse.text()))
+					.toContain('mit Kleinbuchstaben ohne Umlaute und Akzente, Ziffern und Bindestrichen.');
+			} finally {
+				await langueDuCompte('fr');
+			}
 		});
 
 		it('offers the time zone in a list of canonical names, Europe/Zurich chosen, Europe first', async () => {
@@ -434,7 +471,7 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 			);
 			expect(reponse.status).toBe(400);
 			expect(erreur(await reponse.text())).toBe(
-				'Cette adresse ne convient pas. Elle ne peut contenir que des lettres minuscules sans accent, des chiffres et des traits d’union, un seul entre deux mots, jamais au début ni à la fin. Exemple : mosquee-madretsch'
+				'Cette adresse ne convient pas. Elle ne peut contenir que des lettres minuscules sans accent ni cédille, des chiffres et des traits d’union, un seul entre deux mots, jamais au début ni à la fin. Exemple : mosquee-madretsch'
 			);
 			expect(await nombreDOrganisations()).toBe(avant);
 		});
@@ -460,7 +497,7 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 			);
 			expect(reponse.status).toBe(400);
 			expect(erreur(await reponse.text())).toBe(
-				'Le nom ne permet pas de proposer une adresse. Écrivez-la vous-même, en lettres minuscules sans accent, chiffres et traits d’union. Exemple : mosquee-madretsch'
+				'Le nom ne permet pas de proposer une adresse. Écrivez-la vous-même, en lettres minuscules sans accent ni cédille, chiffres et traits d’union. Exemple : mosquee-madretsch'
 			);
 			expect(await nombreDOrganisations()).toBe(avant);
 		});
