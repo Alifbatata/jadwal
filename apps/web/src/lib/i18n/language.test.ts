@@ -13,6 +13,9 @@ import {
 	languageForTheAccount,
 	PENDING_CHOICE_COOKIE,
 	returnPath,
+	SIGN_IN_CHOICE_PARAMETER,
+	signInCallback,
+	signInChoice,
 	spaceLanguage
 } from './language.js';
 
@@ -127,6 +130,55 @@ describe('la langue du compte, à la connexion', () => {
 		});
 		expect(languageCookieOptions(new URL('http://127.0.0.1:4173/langue')).secure).toBe(false);
 	});
+
+	it('gives the cookie of a choice in waiting the life it is asked, that of a sign-in link', () => {
+		// Le choix de la langue garde un an ; le choix en attente, pas plus qu'un lien de connexion.
+		expect(languageCookieOptions(new URL('https://jadwal.example/langue'), 900)).toEqual({
+			path: '/',
+			httpOnly: true,
+			sameSite: 'lax',
+			secure: true,
+			maxAge: 900
+		});
+	});
+});
+
+describe('le choix fait avant la connexion, porté par le lien de connexion', () => {
+	const ORIGINE = 'https://jadwal.example';
+
+	it('sends the link back to the organisations, with the language chosen before signing in', () => {
+		expect(SIGN_IN_CHOICE_PARAMETER).toBe('language');
+		expect(signInCallback({ cookie: 'de', pending: true })).toBe('/organisations?language=de');
+		expect(signInCallback({ cookie: 'ar', pending: true })).toBe('/organisations?language=ar');
+	});
+
+	it('carries no language without a choice in waiting: an old cookie may have been undone elsewhere', () => {
+		expect(signInCallback({ cookie: 'de', pending: false })).toBe('/organisations');
+		expect(signInCallback({ cookie: null, pending: true })).toBe('/organisations');
+		expect(signInCallback({})).toBe('/organisations');
+	});
+
+	it('carries only one of the five languages, whatever the cookie holds', () => {
+		expect(signInCallback({ cookie: 'es', pending: true })).toBe('/organisations');
+		expect(signInCallback({ cookie: 'de&x=1', pending: true })).toBe('/organisations');
+		expect(signInCallback({ cookie: '//ailleurs.example', pending: true })).toBe('/organisations');
+	});
+
+	it('reads back the language that a link carries, and nothing else', () => {
+		expect(signInChoice('/organisations?language=de', ORIGINE)).toBe('de');
+		expect(signInChoice(signInCallback({ cookie: 'it', pending: true }), ORIGINE)).toBe('it');
+		for (const retour of [
+			'/organisations',
+			'/organisations?language=es',
+			'/organisations?lang=de',
+			'',
+			null,
+			undefined,
+			'http://[ailleurs'
+		]) {
+			expect(signInChoice(retour, ORIGINE), String(retour)).toBeNull();
+		}
+	});
 });
 
 describe('le retour après le choix de la langue', () => {
@@ -140,7 +192,10 @@ describe('le retour après le choix de la langue', () => {
 		['/conditions?lang=de', '/conditions'],
 		['/cours?lang=de&vue=semaine', '/cours?vue=semaine'],
 		// Le nom d'une action de formulaire ne se rejoue pas en GET.
-		['/organisations?/choisir', '/organisations']
+		['/organisations?/choisir', '/organisations'],
+		// La langue qu'un lien de connexion a portée jusqu'à l'écran d'arrivée : elle n'a compté
+		// qu'une fois, quand le lien a été vérifié, et l'adresse n'a plus à la montrer.
+		['/organisations?language=de', '/organisations']
 	])('comes back to %s as %s', (valeur, attendu) => {
 		expect(returnPath(valeur, ORIGINE)).toBe(attendu);
 	});

@@ -22,6 +22,11 @@ export const LANGUAGE_COOKIE = 'jadwal_language';
  * Sans lui, le serveur ne saurait pas distinguer deux navigateurs qui envoient la même chose : celui
  * où la personne vient de choisir l'allemand avant de se connecter, et celui où l'allemand est resté
  * d'un choix ancien, alors que le compte a changé depuis sur un autre appareil.
+ *
+ * Il ne vit pas plus longtemps qu'un lien de connexion : quinze minutes après le choix, et de nouveau
+ * quinze minutes à chaque lien demandé. Le lien, lui, emporte le choix (`signInCallback`), sur
+ * quelque navigateur qu'il s'ouvre. Ouvert ailleurs, il ne peut pas retirer ce cookie-ci : c'est sa
+ * courte vie qui l'empêche de défaire plus tard une langue changée entre-temps sur l'autre appareil.
  */
 export const PENDING_CHOICE_COOKIE = 'jadwal_language_pending';
 
@@ -31,9 +36,13 @@ export const LANGUAGE_COOKIE_SECONDS = 31_536_000;
 /**
  * Les attributs des deux cookies, les mêmes pour les poser et pour les retirer : lisibles du seul
  * serveur, envoyés par les formulaires du service, `Secure` dès que le service est servi en HTTPS,
- * comme la session (`auth.ts`).
+ * comme la session (`auth.ts`). Seule la vie change : un an pour la langue choisie, celle d'un lien
+ * de connexion pour le choix en attente.
  */
-export function languageCookieOptions(url: URL): {
+export function languageCookieOptions(
+	url: URL,
+	maxAge: number = LANGUAGE_COOKIE_SECONDS
+): {
 	path: '/';
 	httpOnly: true;
 	sameSite: 'lax';
@@ -45,7 +54,7 @@ export function languageCookieOptions(url: URL): {
 		httpOnly: true,
 		sameSite: 'lax',
 		secure: url.protocol === 'https:',
-		maxAge: LANGUAGE_COOKIE_SECONDS
+		maxAge
 	};
 }
 
@@ -55,6 +64,50 @@ export function languageCookieOptions(url: URL): {
  * visiteur lisait (retour D4). C'est le nom que l'API et le flux agenda donnent déjà à la langue.
  */
 export const LANGUAGE_PARAMETER = 'lang';
+
+/**
+ * Le paramètre qui porte, dans le lien de connexion, la langue choisie avant la connexion. Il est
+ * ajouté à l'écran où le lien ramène, et lu une seule fois : quand le lien est vérifié (`auth.ts`),
+ * pour la personne que son jeton désigne. Ailleurs, il ne compte pas : un écran ne le lit pas, et une
+ * adresse qui le porte, posée sur un autre site, ne change ni la page ni le compte.
+ */
+export const SIGN_IN_CHOICE_PARAMETER = 'language';
+
+/** L'écran où ramène un lien de connexion. */
+const SIGN_IN_LANDING = '/organisations';
+
+/**
+ * L'écran où ramènera le lien de connexion demandé sur ce navigateur : celui des organisations, avec
+ * la langue choisie avant la connexion quand ce choix attend encore d'être donné au compte. Le choix
+ * voyage ainsi avec le lien, et vaut sur le navigateur qui l'ouvre, quel qu'il soit.
+ *
+ * Un cookie de langue sans choix en attente ne part pas : il peut dater d'un choix ancien, que la
+ * personne a défait depuis, sur un autre appareil. Une valeur qui n'est pas l'une des cinq langues ne
+ * part pas non plus.
+ */
+export function signInCallback(sources: {
+	cookie?: string | null | undefined;
+	pending?: boolean | undefined;
+}): string {
+	const { cookie, pending } = sources;
+	if (!pending || !cookie || !isLangue(cookie)) return SIGN_IN_LANDING;
+	return `${SIGN_IN_LANDING}?${new URLSearchParams({ [SIGN_IN_CHOICE_PARAMETER]: cookie })}`;
+}
+
+/**
+ * La langue choisie avant la connexion qu'emporte un lien de connexion, lue dans l'écran où il
+ * ramène, ou `null`. Seule l'une des cinq langues compte : le lien passe par une boîte aux lettres et
+ * par un navigateur, qui peuvent y écrire n'importe quoi.
+ */
+export function signInChoice(callback: string | null | undefined, origin: string): Langue | null {
+	if (!callback) return null;
+	try {
+		const choice = new URL(callback, origin).searchParams.get(SIGN_IN_CHOICE_PARAMETER);
+		return choice !== null && isLangue(choice) ? choice : null;
+	} catch {
+		return null;
+	}
+}
 
 /**
  * La meilleure langue du service parmi celles que le navigateur demande (`Accept-Language`), ou
@@ -123,7 +176,9 @@ export interface AccountSources {
  * La langue à écrire sur le compte d'une personne connectée, ou `null` s'il n'y a rien à écrire.
  *
  * - Un choix fait avant la connexion devient la langue du compte, même si le compte en avait une :
- *   c'est la dernière chose que la personne a dite, sur l'écran même de la connexion.
+ *   c'est la dernière chose que la personne a dite, sur l'écran même de la connexion. Le lien de
+ *   connexion l'emporte aussi, et la vérification du lien l'écrit (`auth.ts`) ; ici, c'est le
+ *   cookie d'attente qui le dit, sur le navigateur où il a été fait.
  * - Un compte sans langue reçoit celle que la personne voyait : son choix sur ce navigateur, sinon
  *   celle du navigateur, sinon le français.
  * - Ensuite, le compte fait foi : un cookie resté sur un navigateur ne le change pas, puisque la
@@ -152,7 +207,8 @@ function staysOnTheService(path: string, origin: string): boolean {
  * Le formulaire envoie le chemin de l'écran d'où il part. Tout ce qui n'est pas un chemin absolu du
  * même site renvoie à l'accueil : `//ailleurs`, `/\ailleurs` (qu'un navigateur lit comme `//`), une
  * adresse complète. La langue demandée par l'adresse est retirée, sans quoi elle défait le choix qui
- * vient d'être fait ; et le nom d'une action de formulaire (`?/choisir`) aussi, qui ne se rejoue pas.
+ * vient d'être fait ; celle qu'un lien de connexion a portée jusqu'à l'écran d'arrivée aussi, qui n'a
+ * compté qu'une fois ; et le nom d'une action de formulaire (`?/choisir`), qui ne se rejoue pas.
  *
  * Le chemin est vérifié deux fois : tel qu'il arrive, et tel qu'il repart. Entre les deux, l'adresse
  * le normalise, et la normalisation peut faire apparaître ce que la valeur ne montrait pas : les
@@ -164,6 +220,7 @@ export function returnPath(value: string, origin: string): string {
 	if (!staysOnTheService(value, origin)) return '/';
 	const url = new URL(value, origin);
 	url.searchParams.delete(LANGUAGE_PARAMETER);
+	url.searchParams.delete(SIGN_IN_CHOICE_PARAMETER);
 	for (const name of [...url.searchParams.keys()]) {
 		if (name.startsWith('/')) url.searchParams.delete(name);
 	}

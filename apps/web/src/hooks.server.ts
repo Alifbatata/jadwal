@@ -115,12 +115,19 @@ async function guardPasskeyRoutes(event: Parameters<Handle>[0]['event']): Promis
  * déjà une langue ; sinon, pour un compte qui n'en a aucune, celle du navigateur. Ses courriels et
  * ses prochaines visites, depuis n'importe quel appareil, la gardent. Ensuite, le compte fait foi.
  *
- * Le choix d'avant la connexion se reconnaît à son cookie d'attente, qui est retiré une fois le
- * choix écrit sur le compte : un navigateur ne le donne qu'une fois. Une écriture qui échoue ne fait
- * pas échouer la page, et le cookie d'attente reste : la langue n'est qu'une préférence, et elle sera
- * retentée à la requête suivante. SvelteKit n'ajoute les cookies qu'aux réponses qu'il rend : une
- * réponse de Better Auth (`/api/auth/`) ne porte donc pas le retrait, et c'est l'écran suivant qui le
- * fait. Après un lien de connexion, cet écran est celui vers lequel le lien renvoie.
+ * Le choix d'avant la connexion voyage avec le lien de connexion, dont la vérification l'écrit sur le
+ * compte (`auth.ts`), sur quelque navigateur que le lien s'ouvre. Ici, il se reconnaît à son cookie
+ * d'attente, sur le navigateur où il a été fait : pour une connexion par passkey, qui n'a pas de lien,
+ * et pour un choix refait après la demande du lien. Ce cookie est retiré une fois le choix écrit sur
+ * le compte : un navigateur ne le donne qu'une fois. Il ne vit pas plus longtemps qu'un lien de
+ * connexion : ouvert sur un autre navigateur, le lien ne peut pas le retirer ici, et sa courte vie
+ * l'empêche de défaire plus tard une langue changée entre-temps sur l'autre appareil.
+ *
+ * Une écriture qui échoue ne fait pas échouer la page, et le cookie d'attente reste : la langue n'est
+ * qu'une préférence, et elle sera retentée à la requête suivante. SvelteKit n'ajoute les cookies
+ * qu'aux réponses qu'il rend : une réponse de Better Auth (`/api/auth/`) ne porte donc pas le
+ * retrait, et c'est l'écran suivant qui le fait. Après un lien de connexion, cet écran est celui vers
+ * lequel le lien renvoie.
  */
 async function languageOfTheSpace(event: RequestEvent): Promise<Langue> {
 	const person = event.locals.person;

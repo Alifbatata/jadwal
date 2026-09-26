@@ -20,13 +20,18 @@ import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { passkey } from '@better-auth/passkey';
 import { getRequestEvent } from '$app/server';
 import { v7 as uuidv7 } from 'uuid';
+import { signInChoice } from '$lib/i18n/language.js';
+import { writeAccountLanguage } from './account-language.js';
 import { authDatabase } from './database.js';
 import { createMailer } from './mail/index.js';
 import { magicLinkEmail } from './mail/messages.js';
 import { consume, consumeDetailed, emailKey, MAGIC_LINK_BUDGET } from './rate-limit.js';
 
-/** Quinze minutes, en secondes : l'unité de `expiresIn` est la seconde. */
-const MAGIC_LINK_SECONDS = 900;
+/**
+ * Quinze minutes, en secondes : l'unité de `expiresIn` est la seconde. C'est aussi la vie du cookie
+ * d'un choix de langue en attente, qui ne doit pas durer plus qu'un lien (`i18n/language.ts`).
+ */
+export const MAGIC_LINK_SECONDS = 900;
 /** Trente jours, en secondes. */
 const SESSION_SECONDS = 2_592_000;
 /** Un jour : au-delà, l'usage d'une session repousse sa date de fin. */
@@ -39,6 +44,9 @@ const SESSION_REFRESH_SECONDS = 86_400;
  * l'attribuerait (ADR 0025).
  */
 const PASSKEY_AUTHENTICATED = '/passkey/verify-authentication';
+
+/** Le chemin où un lien magique est vérifié, et où il ouvre la session. */
+const MAGIC_LINK_VERIFIED = '/magic-link/verify';
 
 /**
  * Les mandataires inverses devant nous, en notation CIDR, séparés par des virgules.
@@ -201,6 +209,23 @@ export function createAuth(env: NodeJS.ProcessEnv = process.env) {
 		},
 		hooks: {
 			after: createAuthMiddleware(async (ctx) => {
+				if (ctx.path === MAGIC_LINK_VERIFIED) {
+					// La langue choisie avant la connexion, emportée par le lien (`signInCallback`) :
+					// elle devient la langue du compte, même s'il en avait une (`languageForTheAccount`),
+					// sur quelque navigateur que le lien s'ouvre. Seul un lien valide arrive ici avec
+					// une session neuve : le jeton, secret et à usage unique, désigne le compte, et une
+					// adresse posée sur un autre site ne peut rien écrire. Une écriture qui échoue ne
+					// fait pas échouer la connexion : la langue n'est qu'une préférence.
+					const userId = ctx.context.newSession?.user?.id;
+					const choice = signInChoice(ctx.query?.['callbackURL'], origin);
+					if (!userId || !choice) return;
+					try {
+						await writeAccountLanguage(userId, choice);
+					} catch (erreur) {
+						console.error('langue du compte :', erreur);
+					}
+					return;
+				}
 				if (ctx.path !== PASSKEY_AUTHENTICATED) return;
 				const token = ctx.context.newSession?.session?.token;
 				if (!token) return;

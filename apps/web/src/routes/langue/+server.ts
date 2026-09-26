@@ -5,7 +5,8 @@
 // qu'elle retrouve sur tous ses appareils ; le cookie la retient aussi sur ce navigateur, pour
 // l'écran de connexion après une déconnexion. Avant la connexion, le cookie la retient, et un second
 // cookie dit que ce choix attend d'être donné au compte : à la connexion, il devient la langue du
-// compte (`hooks.server.ts`).
+// compte (`hooks.server.ts`). Ce second cookie ne vit pas plus longtemps qu'un lien de connexion, qui
+// emporte le choix (`connexion/+page.server.ts`).
 //
 // Un envoi depuis un autre site est refusé par SvelteKit avant d'arriver ici (vérification de
 // l'origine des formulaires). Le retour ne quitte jamais le service (`returnPath`).
@@ -19,6 +20,7 @@ import {
 	returnPath
 } from '$lib/i18n/language.js';
 import { writeAccountLanguage } from '$lib/server/account-language.js';
+import { MAGIC_LINK_SECONDS } from '$lib/server/auth.js';
 import type { RequestHandler } from './$types.js';
 
 export const POST: RequestHandler = async ({ request, cookies, locals, url }) => {
@@ -32,7 +34,7 @@ export const POST: RequestHandler = async ({ request, cookies, locals, url }) =>
 	if (locals.person) {
 		await writeAccountLanguage(locals.person.userId, language);
 	} else {
-		cookies.set(PENDING_CHOICE_COOKIE, '1', languageCookieOptions(url));
+		cookies.set(PENDING_CHOICE_COOKIE, '1', languageCookieOptions(url, MAGIC_LINK_SECONDS));
 	}
 	redirect(303, back);
 };

@@ -318,13 +318,14 @@ describe('le choix de la langue', () => {
 		expect(pose).toMatch(/; SameSite=Lax/i);
 		expect(pose).toMatch(/; Max-Age=31536000/);
 		// Fait avant la connexion, le choix attend d'être donné au compte : un second cookie le dit,
-		// posé de la même façon, sans rien porter d'autre que sa présence.
+		// posé de la même façon, sans rien porter d'autre que sa présence, pour le temps d'un lien de
+		// connexion seulement (quinze minutes).
 		const enAttente = cookieEnAttente(reponse) ?? '';
 		expect(enAttente).toMatch(/^jadwal_language_pending=1;/);
 		expect(enAttente).toMatch(/; Path=\//);
 		expect(enAttente).toMatch(/; HttpOnly/i);
 		expect(enAttente).toMatch(/; SameSite=Lax/i);
-		expect(enAttente).toMatch(/; Max-Age=31536000/);
+		expect(enAttente).toMatch(/; Max-Age=900(;|$)/);
 
 		const page = await get('/connexion', { cookie: `${COOKIE}=it`, navigateur: 'de-CH,de' });
 		const html = await page.text();
