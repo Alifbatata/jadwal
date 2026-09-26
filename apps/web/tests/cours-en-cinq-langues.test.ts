@@ -559,6 +559,24 @@ describe('le résumé en haut du formulaire (B4)', () => {
 		]);
 	});
 
+	it('shows the title and description of every language without JavaScript', async () => {
+		// Sans JavaScript, les onglets ne feraient rien : ils n'existent qu'une fois la page hydratée,
+		// et le rendu du serveur montre les champs de chaque langue, l'un sous l'autre.
+		for (const chemin of ['/cours/nouveau', `/cours/${tafsirId}`]) {
+			const html = await (await get(chemin, cookie)).text();
+			// Le bloc de chaque langue, et s'il est masqué (la classe de portée de Svelte mise à part).
+			const masques = [...html.matchAll(/<div\b[^>]*\bclass="(onglet\b[^"]*)"[^>]*>/g)].map(
+				(trouve) => (trouve[1] ?? '').split(/\s+/).includes('masque')
+			);
+			expect(masques, chemin).toEqual([false, false, false]);
+			expect(html, chemin).not.toMatch(/role="tablist"/);
+			for (const code of ['fr', 'de', 'ar']) {
+				expect(libelle(html, `title-${code}`), `${chemin}, ${code}`).toMatch(/^Titre en /);
+				expect(champ(html, `title-${code}`)['name'], `${chemin}, ${code}`).toBe(`title.${code}`);
+			}
+		}
+	});
+
 	it('stays right after a validation error, and the form keeps what was typed', async () => {
 		const reponse = await postForm(
 			'/cours/nouveau',

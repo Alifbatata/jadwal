@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	// Le formulaire de cours, partagé par la création et la modification, dans la langue de l'espace.
 	//
 	// Le résumé en haut reprend tout ce qui sera publié et signale ce qui manque (retour B4). Il se met
@@ -57,6 +57,13 @@
 	// la saisie en cours, et le recharger depuis `values` effacerait ce que la personne tape.
 	let entry = $state({ ...untrack(() => values) });
 	let activeLanguage = $state(untrack(() => values.sourceLanguage));
+	// Les onglets de langue ne marchent qu'avec JavaScript. Tant que la page n'est pas hydratée, et
+	// toujours sans JavaScript, ils n'existent pas, et les champs de chaque langue sont tous montrés.
+	let hydrated = $state(false);
+	onMount(() => {
+		hydrated = true;
+	});
+	const tabs = $derived(hydrated && languages.length > 1);
 
 	const text = $derived(courseFormTexts[language]);
 	const summary = $derived(summarise(entry, { languages, rooms }, language));
@@ -144,7 +151,7 @@
 
 	<fieldset>
 		<legend>{text.textLegend}</legend>
-		{#if languages.length > 1}
+		{#if tabs}
 			<div class="onglets" role="tablist" aria-label={text.languageTabs}>
 				{#each languages as code (code)}
 					<button
@@ -161,9 +168,10 @@
 		{/if}
 		{#each languages as code (code)}
 			<!-- Les champs des autres langues restent dans la page : sans JavaScript, tout est
-			     visible et saisissable d'un coup. Aucun n'est `required` : caché dans un onglet, il
-			     bloquerait l'envoi sans rien dire, et le serveur dit déjà ce qui manque. -->
-			<div class="onglet" class:masque={languages.length > 1 && activeLanguage !== code}>
+			     visible et saisissable d'un coup, et seuls les onglets, une fois la page hydratée, en
+			     masquent une partie. Aucun n'est `required` : caché dans un onglet, il bloquerait
+			     l'envoi sans rien dire, et le serveur dit déjà ce qui manque. -->
+			<div class="onglet" class:masque={tabs && activeLanguage !== code}>
 				<label for={`title-${code}`}>
 					{text.titleLabel(languageLabel(code, language))}
 					<span class="marque">
