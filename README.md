@@ -76,9 +76,21 @@ dans `docker-compose.dev.yml`.
 
 - Titulaire du copyright : Voltia. Le fichier [`COPYRIGHT`](COPYRIGHT) porte la ligne de copyright
   et l'avis MIT.
-- Tout le dépôt est sous **MIT** (fichier [`LICENSE`](LICENSE)), widget compris. Le widget garde une
-  copie du texte dans [`packages/widget/LICENSE`](packages/widget/LICENSE), parce que ce paquet se lit
-  seul par qui colle le script sur son site (ADR 0043).
+- Tout le dépôt est sous **MIT** (fichier [`LICENSE`](LICENSE)), widget compris, sauf un fichier de
+  données, dit ci-dessous. Le widget garde une copie du texte dans
+  [`packages/widget/LICENSE`](packages/widget/LICENSE), parce que ce paquet se lit seul par qui colle
+  le script sur son site (ADR 0043).
+- **L'exception : la liste des localités suisses**,
+  [`apps/web/src/lib/server/localites/localities.csv`](apps/web/src/lib/server/localites/localities.csv).
+  Elle n'est pas sous MIT et ses données ne sont pas à Voltia : elle est tirée du Répertoire officiel
+  des localités avec le code postal et le périmètre, de l'Office fédéral de topographie swisstopo, et
+  reste soumise à ses
+  [conditions d'utilisation des géodonnées gratuites](https://www.swisstopo.admin.ch/fr/conditions-utilisation-geodonnees-et-geoservices-gratuit).
+  Elles permettent de l'utiliser, de la transformer et de la redistribuer, même à des fins
+  commerciales, à une condition : citer la source, y compris quand on transmet le fichier. La mention
+  à reprendre est « Source : Office fédéral de topographie swisstopo ». Le
+  [`README.md`](apps/web/src/lib/server/localites/README.md) de ce dossier dit d'où vient le fichier
+  et où la source est citée.
 - Les licences des composants tiers embarqués dans l'image de production sont dans
   `LICENCES-TIERCES.md`, engendré à la construction à partir du contenu réel de l'image.
 - Les contributions externes sont soumises à un accord de contribution (CLA), voir
@@ -113,5 +125,7 @@ once; out come an embeddable widget, a public page, an ICS calendar feed and rea
 messages. The service is free. An optional prayer-times module is available for places of worship,
 switched off by default. Everyone who enters an organisation's workspace first accepts the terms of
 use, published online. The same code runs as a hosted service or self-hosted with Docker Compose.
-Status: first version, online since 21 September 2026. Licence: MIT. External contributions require
-a CLA.
+Status: first version, online since 21 September 2026. Licence: MIT, except the list of Swiss
+localities (`apps/web/src/lib/server/localites/localities.csv`), which remains under the terms of
+use of the Federal Office of Topography swisstopo and must be credited as "Source: Federal Office of
+Topography swisstopo". External contributions require a CLA.
