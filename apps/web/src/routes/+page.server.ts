@@ -298,7 +298,8 @@ export const actions: Actions = {
 	/**
 	 * Déplacer une séance : nouvelle date et nouvelle heure, les deux obligatoires. Toute date à partir
 	 * d'aujourd'hui, dans le fuseau de l'organisation, plus tôt comme plus tard que la date prévue. Le
-	 * même jour à une autre heure est un déplacement ; le même jour à la même heure n'en est pas un.
+	 * même jour à une autre heure est un déplacement, que le message dit comme un changement d'heure ;
+	 * le même jour à la même heure n'en est pas un.
 	 */
 	deplacer: async (event) => {
 		const context = await mustBeInOrganisation(event);
@@ -326,9 +327,9 @@ export const actions: Actions = {
 			// Le champ s'ouvre sur la date prévue et l'heure habituelle. Les renvoyer tels quels ne
 			// déplace rien : l'accepter écrivait une exception vers la séance elle-même, affichée deux
 			// fois le même jour, et un message « déplacé du mercredi au mercredi » pour la communauté.
-			if (toDate === date && (await plannedStart(tx, now, courseId, date)) === toStart) {
-				return refuse('unchanged', fields);
-			}
+			// Le même jour, l'heure prévue sert aussi au message, qui dit un changement d'heure.
+			const planned = toDate === date ? await plannedStart(tx, now, courseId, date) : null;
+			if (toDate === date && planned === toStart) return refuse('unchanged', fields);
 			// Un autre envoi arrivé entre la vérification et cette ligne garde la main : rien n'est
 			// écrasé, et celui-ci est refusé de la même façon.
 			const written = rows<{ id: string }>(
@@ -358,7 +359,8 @@ export const actions: Actions = {
 						date,
 						toDate,
 						toStart,
-						language
+						language,
+						planned
 					)
 				})
 			);

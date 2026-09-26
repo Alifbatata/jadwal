@@ -44,6 +44,10 @@ interface Phrases {
 	readonly heureInconnue: string;
 	readonly annulation: (titre: string, date: string) => string;
 	readonly deplacement: (titre: string, de: string, vers: string, heure: string) => string;
+	/** Le même jour à une autre heure : la date une fois, la nouvelle heure, puis celle d'avant. */
+	readonly changementHeure: (titre: string, date: string, heure: string, avant: string) => string;
+	/** Le même jour, pour une séance qui n'avait pas encore d'heure : la nouvelle heure seule. */
+	readonly heureFixee: (titre: string, date: string, heure: string) => string;
 	readonly lesAutres: string;
 	readonly nouveau: (titre: string, suite: string) => string;
 }
@@ -61,6 +65,9 @@ const PHRASES: Record<Langue, Phrases> = {
 		annulation: (titre, date) => `Le cours « ${titre} » du ${date} est annulé.`,
 		deplacement: (titre, de, vers, heure) =>
 			`Le cours « ${titre} » du ${de} est déplacé au ${vers} à ${heure}.`,
+		changementHeure: (titre, date, heure, avant) =>
+			`Le cours « ${titre} » du ${date} commence à ${heure} au lieu de ${avant}.`,
+		heureFixee: (titre, date, heure) => `Le cours « ${titre} » du ${date} commence à ${heure}.`,
 		lesAutres: 'Les autres séances ont lieu normalement.',
 		nouveau: (titre, suite) => `Nouveau cours : « ${titre} », ${suite}.`
 	},
@@ -72,6 +79,9 @@ const PHRASES: Record<Langue, Phrases> = {
 		annulation: (titre, date) => `Der Kurs «${titre}» vom ${date}, fällt aus.`,
 		deplacement: (titre, de, vers, heure) =>
 			`Der Kurs «${titre}» vom ${de}, wird auf ${vers}, um ${heure} verschoben.`,
+		changementHeure: (titre, date, heure, avant) =>
+			`Am ${date}, beginnt der Kurs «${titre}» um ${heure} statt um ${avant}.`,
+		heureFixee: (titre, date, heure) => `Am ${date}, beginnt der Kurs «${titre}» um ${heure}.`,
 		lesAutres: 'Die anderen Termine finden wie gewohnt statt.',
 		nouveau: (titre, suite) => `Neuer Kurs: «${titre}», ${suite}.`
 	},
@@ -83,6 +93,9 @@ const PHRASES: Record<Langue, Phrases> = {
 		annulation: (titre, date) => `La lezione «${titre}» di ${date} è annullata.`,
 		deplacement: (titre, de, vers, heure) =>
 			`La lezione «${titre}» di ${de} è spostata a ${vers} alle ${heure}.`,
+		changementHeure: (titre, date, heure, avant) =>
+			`La lezione «${titre}» di ${date} inizia alle ${heure} anziché alle ${avant}.`,
+		heureFixee: (titre, date, heure) => `La lezione «${titre}» di ${date} inizia alle ${heure}.`,
 		lesAutres: 'Le altre lezioni si svolgono regolarmente.',
 		nouveau: (titre, suite) => `Nuovo corso: «${titre}», ${suite}.`
 	},
@@ -94,6 +107,9 @@ const PHRASES: Record<Langue, Phrases> = {
 		annulation: (titre, date) => `The ‘${titre}’ session on ${date} is cancelled.`,
 		deplacement: (titre, de, vers, heure) =>
 			`The ‘${titre}’ session on ${de} has been moved to ${vers} at ${heure}.`,
+		changementHeure: (titre, date, heure, avant) =>
+			`The ‘${titre}’ session on ${date} now starts at ${heure} instead of ${avant}.`,
+		heureFixee: (titre, date, heure) => `The ‘${titre}’ session on ${date} starts at ${heure}.`,
 		lesAutres: 'The other sessions go ahead as usual.',
 		nouveau: (titre, suite) => `New course: ‘${titre}’, ${suite}.`
 	},
@@ -105,6 +121,9 @@ const PHRASES: Record<Langue, Phrases> = {
 		annulation: (titre, date) => `أُلغي درس «${titre}» يوم ${date}.`,
 		deplacement: (titre, de, vers, heure) =>
 			`نُقل درس «${titre}» من يوم ${de} إلى يوم ${vers} في الساعة ${heure}.`,
+		changementHeure: (titre, date, heure, avant) =>
+			`يبدأ درس «${titre}» يوم ${date} في الساعة ${heure} بدلًا من الساعة ${avant}.`,
+		heureFixee: (titre, date, heure) => `يبدأ درس «${titre}» يوم ${date} في الساعة ${heure}.`,
 		lesAutres: 'تُقام الحصص الأخرى كالمعتاد.',
 		nouveau: (titre, suite) => `درس جديد: «${titre}»، ${suite}.`
 	}
@@ -189,22 +208,30 @@ export function cancellationMessage(
 	].join('\n');
 }
 
-/** Le message d'un déplacement. Les deux dates y sont, sans quoi personne ne s'y retrouve. */
+/**
+ * Le message d'un déplacement. Les deux dates y sont, sans quoi personne ne s'y retrouve. Le même
+ * jour, seule l'heure change, et le message ne parle que d'elle : la date une fois, la nouvelle
+ * heure, et `plannedStart`, l'heure prévue, quand la séance en avait une (relecture du lot 4 de
+ * l'étape 18).
+ */
 export function moveMessage(
 	greeting: string,
 	title: string,
 	from: IsoDate,
 	to: IsoDate,
 	start: string,
-	langue: Langue = 'fr'
+	langue: Langue = 'fr',
+	plannedStart: string | null = null
 ): string {
 	const phrases = PHRASES[langue];
-	return [
-		salutation(greeting, langue),
-		'',
-		phrases.deplacement(title, longDate(langue, from), longDate(langue, to), start),
-		phrases.lesAutres
-	].join('\n');
+	const date = longDate(langue, from);
+	const phrase =
+		from !== to
+			? phrases.deplacement(title, date, longDate(langue, to), start)
+			: plannedStart
+				? phrases.changementHeure(title, date, start, plannedStart)
+				: phrases.heureFixee(title, date, start);
+	return [salutation(greeting, langue), '', phrase, phrases.lesAutres].join('\n');
 }
 
 /**

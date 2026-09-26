@@ -290,6 +290,70 @@ describe('l’annonce d’un déplacement, dans les cinq langues', () => {
 	});
 });
 
+describe('l’annonce d’un changement d’heure le même jour, dans les cinq langues', () => {
+	const jour = '2026-09-29' as IsoDate;
+
+	it('says that only the time changes, from the planned time to the new one, with one date', () => {
+		expect(
+			LANGUES.map((langue) => moveMessage(SALUT, 'Tafsir', jour, jour, '20:30', langue, '19:00'))
+		).toEqual([
+			[
+				'Salam alaykoum,',
+				'',
+				'Le cours « Tafsir » du mardi 29.09.2026 commence à 20:30 au lieu de 19:00.',
+				'Les autres séances ont lieu normalement.'
+			].join('\n'),
+			[
+				'Salam alaykoum,',
+				'',
+				'Am Dienstag, 29.09.2026, beginnt der Kurs «Tafsir» um 20:30 statt um 19:00.',
+				'Die anderen Termine finden wie gewohnt statt.'
+			].join('\n'),
+			[
+				'Salam alaykoum,',
+				'',
+				'La lezione «Tafsir» di martedì 29.09.2026 inizia alle 20:30 anziché alle 19:00.',
+				'Le altre lezioni si svolgono regolarmente.'
+			].join('\n'),
+			[
+				'Salam alaykoum,',
+				'',
+				'The ‘Tafsir’ session on Tuesday 29.09.2026 now starts at 20:30 instead of 19:00.',
+				'The other sessions go ahead as usual.'
+			].join('\n'),
+			[
+				'Salam alaykoum،',
+				'',
+				'يبدأ درس «Tafsir» يوم الثلاثاء 29.09.2026 في الساعة 20:30 بدلًا من الساعة 19:00.',
+				'تُقام الحصص الأخرى كالمعتاد.'
+			].join('\n')
+		]);
+	});
+
+	it('gives the new time alone to a session that had no time yet', () => {
+		expect(
+			LANGUES.map(
+				(langue) => moveMessage(SALUT, 'Tafsir', jour, jour, '19:00', langue, null).split('\n')[2]
+			)
+		).toEqual([
+			'Le cours « Tafsir » du mardi 29.09.2026 commence à 19:00.',
+			'Am Dienstag, 29.09.2026, beginnt der Kurs «Tafsir» um 19:00.',
+			'La lezione «Tafsir» di martedì 29.09.2026 inizia alle 19:00.',
+			'The ‘Tafsir’ session on Tuesday 29.09.2026 starts at 19:00.',
+			'يبدأ درس «Tafsir» يوم الثلاثاء 29.09.2026 في الساعة 19:00.'
+		]);
+	});
+
+	it('keeps both dates when the day changes, even with the planned time given', () => {
+		const vers = '2026-10-01' as IsoDate;
+		for (const langue of LANGUES) {
+			expect(moveMessage(SALUT, 'Tafsir', jour, vers, '20:30', langue, '19:00'), langue).toBe(
+				moveMessage(SALUT, 'Tafsir', jour, vers, '20:30', langue)
+			);
+		}
+	});
+});
+
 describe('l’annonce d’un cours nouveau, dans les cinq langues', () => {
 	it('names the course, its rhythm, its time and its room', () => {
 		const rythmes = {

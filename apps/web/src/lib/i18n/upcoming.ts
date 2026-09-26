@@ -58,16 +58,25 @@ interface UpcomingTexts {
 	readonly widgetLink: string;
 	readonly empty: string;
 	readonly emptyLink: string;
-	/** Les marques d'une séance, à côté de son titre. */
+	/**
+	 * Les marques d'une séance, à côté de son titre. `newTime` : une séance déplacée le même jour, à
+	 * une autre heure ; sa date n'a rien d'exceptionnel.
+	 */
 	readonly marks: {
 		readonly cancelled: string;
 		readonly movedAway: string;
 		readonly movedHere: string;
+		readonly newTime: string;
 	};
 	/** Sous une séance déplacée : sa nouvelle date et sa nouvelle heure. */
 	readonly movedTo: (date: string, time: string) => string;
 	/** Sous une séance arrivée d'une autre date : la date où elle était prévue. */
 	readonly originallyOn: (date: string) => string;
+	/**
+	 * Sous une séance déplacée le même jour : l'heure où elle était prévue, telle que l'écran l'écrit
+	 * (« 19:00 – 20:30 », ou « 15 min après Maghrib » quand l'heure de la prière manque).
+	 */
+	readonly originallyAt: (time: string) => string;
 	/** Le bouton qui ouvre les options d'une séance, et elles seules (retour A1). */
 	readonly options: string;
 	readonly cancelHelp: string;
@@ -145,9 +154,15 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		widgetLink: 'Revoir le code à coller',
 		empty: 'Aucune séance dans les sept prochains jours.',
 		emptyLink: 'Créer un cours',
-		marks: { cancelled: 'annulée', movedAway: 'déplacée', movedHere: 'date exceptionnelle' },
+		marks: {
+			cancelled: 'annulée',
+			movedAway: 'déplacée',
+			movedHere: 'date exceptionnelle',
+			newTime: 'nouvelle heure'
+		},
 		movedTo: (date, time) => `Déplacée au ${date} à ${time}`,
 		originallyOn: (date) => `Prévue à l’origine le ${date}`,
+		originallyAt: (time) => `Prévue à l’origine : ${time}`,
 		options: 'Annuler ou déplacer',
 		cancelHelp:
 			'Seule cette séance est annulée : le cours continue les autres semaines. Vous pourrez la rétablir ensuite.',
@@ -231,9 +246,15 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		widgetLink: 'Code zum Einfügen noch einmal ansehen',
 		empty: 'Keine Termine in den nächsten sieben Tagen.',
 		emptyLink: 'Kurs erstellen',
-		marks: { cancelled: 'abgesagt', movedAway: 'verschoben', movedHere: 'Ausnahmetermin' },
+		marks: {
+			cancelled: 'abgesagt',
+			movedAway: 'verschoben',
+			movedHere: 'Ausnahmetermin',
+			newTime: 'neue Uhrzeit'
+		},
 		movedTo: (date, time) => `Verschoben auf ${date}, um ${time}`,
 		originallyOn: (date) => `Ursprünglich geplant am ${date}`,
+		originallyAt: (time) => `Ursprünglich geplant: ${time}`,
 		options: 'Absagen oder verschieben',
 		cancelHelp:
 			'Nur dieser Termin wird abgesagt: Der Kurs geht in den anderen Wochen weiter. Sie können den Termin danach wiederherstellen.',
@@ -317,9 +338,15 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		widgetLink: 'Rivedi il codice da incollare',
 		empty: 'Nessuna lezione nei prossimi sette giorni.',
 		emptyLink: 'Crea un corso',
-		marks: { cancelled: 'annullata', movedAway: 'spostata', movedHere: 'data eccezionale' },
+		marks: {
+			cancelled: 'annullata',
+			movedAway: 'spostata',
+			movedHere: 'data eccezionale',
+			newTime: 'nuovo orario'
+		},
 		movedTo: (date, time) => `Spostata a ${date} alle ${time}`,
 		originallyOn: (date) => `Prevista inizialmente per ${date}`,
+		originallyAt: (time) => `Prevista inizialmente: ${time}`,
 		options: 'Annulla o sposta',
 		cancelHelp:
 			'Viene annullata solo questa lezione: il corso continua nelle altre settimane. Potrai ripristinarla dopo.',
@@ -403,9 +430,15 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		widgetLink: 'See the code to paste again',
 		empty: 'No sessions in the next seven days.',
 		emptyLink: 'Create a course',
-		marks: { cancelled: 'cancelled', movedAway: 'moved', movedHere: 'rescheduled' },
+		marks: {
+			cancelled: 'cancelled',
+			movedAway: 'moved',
+			movedHere: 'rescheduled',
+			newTime: 'new time'
+		},
 		movedTo: (date, time) => `Moved to ${date} at ${time}`,
 		originallyOn: (date) => `Originally planned for ${date}`,
+		originallyAt: (time) => `Originally planned: ${time}`,
 		options: 'Cancel or move',
 		cancelHelp:
 			'Only this session is cancelled: the course continues in the other weeks. You can restore it afterwards.',
@@ -493,9 +526,15 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		widgetLink: 'عرض الرمز المراد لصقه مرة أخرى',
 		empty: 'لا حصص خلال الأيام السبعة القادمة.',
 		emptyLink: 'إنشاء درس',
-		marks: { cancelled: 'ملغاة', movedAway: 'منقولة', movedHere: 'موعد استثنائي' },
+		marks: {
+			cancelled: 'ملغاة',
+			movedAway: 'منقولة',
+			movedHere: 'موعد استثنائي',
+			newTime: 'وقت جديد'
+		},
 		movedTo: (date, time) => `نُقلت إلى يوم ${date} في الساعة ${time}`,
 		originallyOn: (date) => `كانت مقرّرة يوم ${date}`,
+		originallyAt: (time) => `الوقت المقرّر أصلًا: ${time}`,
 		options: 'إلغاء أو نقل',
 		cancelHelp: 'تُلغى هذه الحصة وحدها: يستمر الدرس في الأسابيع الأخرى. يمكنك استعادتها بعد ذلك.',
 		cancelButton: 'إلغاء هذه الحصة',

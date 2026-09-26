@@ -12,6 +12,8 @@
 // - Une page restée ouverte (Retour, un second onglet, une autre personne) ne défait pas un
 //   changement : annuler ou déplacer une séance déjà annulée ou déplacée est refusé, rien n'est
 //   écrit, et l'écran rendu est à jour (relecture du lot 4).
+// - B1 : un déplacement le même jour à une autre heure se dit comme un changement d'heure, sur la
+//   carte et dans le message ; un changement de date garde ses mots (relecture du lot 4).
 // - D1 : les messages prêts à coller s'écrivent dans chacune des langues que l'organisation publie,
 //   la langue source d'abord : la langue par défaut pour le programme de la semaine, celle du cours
 //   pour une annulation ou un déplacement. Le nom de chaque zone de texte dit sa langue. Une session
@@ -923,6 +925,183 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 			expect(await exception(soir, today)).toEqual(annulee);
 		} finally {
 			await retablir(soir, today, cookie);
+		}
+	});
+});
+
+describe('B1 : un déplacement le même jour dit un changement d’heure (relecture du lot 4)', () => {
+	let cookie: string;
+
+	beforeAll(async () => {
+		cookie = await signIn(RESPONSABLE);
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+	});
+
+	/** La phrase d'un message prêt à coller, entre la salutation et la dernière ligne. */
+	function phrase(message: Message): string {
+		return message.texte.split('\n')[2] ?? '';
+	}
+
+	/** La marque d'une carte, à côté de son titre. Svelte ajoute sa propre classe à la sienne. */
+	function marque(fragment: string): string {
+		return texte(
+			fragment.match(/<span\b[^>]*class="marque\b[^"]*"[^>]*>([\s\S]*?)<\/span>/)?.[1] ?? ''
+		);
+	}
+
+	it('says in each message that only the time changes, from the planned time to the new one', async () => {
+		const reponse = await postForm(
+			'/?/deplacer',
+			{ courseId: soir, date: jour(3), toDate: jour(3), toStart: '20:30' },
+			cookie
+		);
+		try {
+			expect(reponse.status).toBe(200);
+			const annonce = messages(section(await reponse.text(), 'message-titre'));
+			expect(annonce.map((message) => message.langue)).toEqual([...LANGUES]);
+			const date = numerique(jour(3));
+			const [fr, de, it, en, ar] = annonce.map(phrase);
+			expect(fr).toMatch(
+				new RegExp(
+					`^Le cours « ${SOIR.fr} » du \\p{L}+ ${date} commence à 20:30 au lieu de 19:00\\.$`,
+					'u'
+				)
+			);
+			expect(de).toMatch(
+				new RegExp(
+					`^Am \\p{L}+, ${date}, beginnt der Kurs «${SOIR.de}» um 20:30 statt um 19:00\\.$`,
+					'u'
+				)
+			);
+			expect(it).toMatch(
+				new RegExp(
+					`^La lezione «${SOIR.fr}» di \\p{L}+ ${date} inizia alle 20:30 anziché alle 19:00\\.$`,
+					'u'
+				)
+			);
+			expect(en).toMatch(
+				new RegExp(
+					`^The ‘${SOIR.fr}’ session on \\p{L}+ ${date} now starts at 20:30 instead of 19:00\\.$`,
+					'u'
+				)
+			);
+			expect(ar).toMatch(
+				new RegExp(
+					`^يبدأ درس «${SOIR.ar}» يوم \\p{L}+ ${date} في الساعة 20:30 بدلًا من الساعة 19:00\\.$`,
+					'u'
+				)
+			);
+			// La date n'est dite qu'une fois : plus de « du mardi … au mardi … ».
+			for (const message of annonce) {
+				expect(message.texte.split(date).length - 1, message.langue).toBe(1);
+			}
+		} finally {
+			await retablir(soir, jour(3), cookie);
+		}
+	});
+
+	it('marks the session with its new time on its card, and says the planned time, in each language', async () => {
+		const reponse = await postForm(
+			'/?/deplacer',
+			{ courseId: soir, date: jour(3), toDate: jour(3), toStart: '20:30' },
+			cookie
+		);
+		try {
+			expect(reponse.status).toBe(200);
+			const attendus: Record<Langue, { marque: string; origine: string; ancienne: string }> = {
+				fr: {
+					marque: 'nouvelle heure',
+					origine: 'Prévue à l’origine : 19:00 – 20:30',
+					ancienne: 'date exceptionnelle'
+				},
+				de: {
+					marque: 'neue Uhrzeit',
+					origine: 'Ursprünglich geplant: 19:00 – 20:30',
+					ancienne: 'Ausnahmetermin'
+				},
+				it: {
+					marque: 'nuovo orario',
+					origine: 'Prevista inizialmente: 19:00 – 20:30',
+					ancienne: 'data eccezionale'
+				},
+				en: {
+					marque: 'new time',
+					origine: 'Originally planned: 19:00 – 20:30',
+					ancienne: 'rescheduled'
+				},
+				ar: {
+					marque: 'وقت جديد',
+					origine: 'الوقت المقرّر أصلًا: 19:00 – 20:30',
+					ancienne: 'موعد استثنائي'
+				}
+			};
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const html = await (await get('/', cookie)).text();
+				const arrivee = carte(html, jour(3), SOIR.fr, 'moved_here');
+				expect(arrivee, langue).not.toBe('');
+				const lu = texte(arrivee);
+				expect(lu, langue).toContain(attendus[langue].marque);
+				expect(lu, langue).toContain(attendus[langue].origine);
+				// Ni « date exceptionnelle », ni la date elle-même : elle n'a pas changé.
+				expect(lu, langue).not.toContain(attendus[langue].ancienne);
+				expect(lu, langue).not.toContain(numerique(jour(3)));
+				expect(marque(arrivee), langue).toBe(attendus[langue].marque);
+			}
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await retablir(soir, jour(3), cookie);
+		}
+	});
+
+	it('gives the new time alone to a session that had none, on its card and in the message', async () => {
+		// Le calendrier importé s'arrête à J+4 : le cercle de J+5 s'affiche « 15 min après Maghrib ».
+		const reponse = await postForm(
+			'/?/deplacer',
+			{ courseId: cercle, date: jour(5), toDate: jour(5), toStart: '19:00' },
+			cookie
+		);
+		try {
+			expect(reponse.status).toBe(200);
+			const annonce = messages(section(await reponse.text(), 'message-titre'));
+			expect(phrase(annonce[0] as Message)).toMatch(
+				new RegExp(
+					`^Le cours « ${CERCLE} » du \\p{L}+ ${numerique(jour(5))} commence à 19:00\\.$`,
+					'u'
+				)
+			);
+			const arrivee = texte(
+				carte(await (await get('/', cookie)).text(), jour(5), CERCLE, 'moved_here')
+			);
+			expect(arrivee).toContain('nouvelle heure');
+			expect(arrivee).toContain('Prévue à l’origine : 15 min après Maghrib');
+		} finally {
+			await retablir(cercle, jour(5), cookie);
+		}
+	});
+
+	it('keeps the words of a change of date, on the card and in the message', async () => {
+		const reponse = await postForm(
+			'/?/deplacer',
+			{ courseId: cercle, date: jour(4), toDate: jour(6), toStart: '18:00' },
+			cookie
+		);
+		try {
+			expect(reponse.status).toBe(200);
+			const annonce = messages(section(await reponse.text(), 'message-titre'));
+			expect(phrase(annonce[0] as Message)).toMatch(
+				new RegExp(
+					`^Le cours « ${CERCLE} » du \\p{L}+ ${numerique(jour(4))} est déplacé au \\p{L}+ ${numerique(jour(6))} à 18:00\\.$`,
+					'u'
+				)
+			);
+			const arrivee = carte(await (await get('/', cookie)).text(), jour(6), CERCLE, 'moved_here');
+			expect(marque(arrivee)).toBe('date exceptionnelle');
+			expect(texte(arrivee)).toMatch(
+				new RegExp(`Prévue à l’origine le \\p{L}+ ${numerique(jour(4))}`, 'u')
+			);
+		} finally {
+			await retablir(cercle, jour(4), cookie);
 		}
 	});
 });

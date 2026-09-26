@@ -36,6 +36,21 @@
 	const cle = (courseId: string, jour: string) => `${courseId}-${jour}`;
 
 	/**
+	 * Pour une séance déplacée le même jour à une autre heure, la séance d'origine, que l'écran montre
+	 * aussi ce jour-là : seule l'heure a changé, et la carte le dit (relecture du lot 4). Rien pour
+	 * une séance venue d'une autre date.
+	 */
+	function origineLeMemeJour(seance: (typeof data.seances)[number]) {
+		if (seance.status !== 'moved_here' || seance.originalDate !== seance.date) return undefined;
+		return data.seances.find(
+			(autre) =>
+				autre.status === 'moved_away' &&
+				autre.courseId === seance.courseId &&
+				autre.date === seance.date
+		);
+	}
+
+	/**
 	 * La séance qu'une action vient de refuser : ses options, et elles seules, se rouvrent sur la
 	 * phrase qui dit quoi faire, avec ce qui avait été saisi (retour A1).
 	 */
@@ -156,12 +171,14 @@
 		<ul>
 			{#each seances as seance (cle(seance.courseId, seance.date) + seance.status)}
 				{@const k = cle(seance.courseId, seance.date)}
+				{@const origine = origineLeMemeJour(seance)}
 				<li class="seance {seance.status}">
 					<p class="titre">
 						<bdi>{seance.title}</bdi>
 						{#if seance.status === 'cancelled'}<span class="marque">{text.marks.cancelled}</span
 							>{/if}
-						{#if seance.status === 'moved_here'}<span class="marque">{text.marks.movedHere}</span
+						{#if seance.status === 'moved_here'}<span class="marque"
+								>{origine ? text.marks.newTime : text.marks.movedHere}</span
 							>{/if}
 						{#if seance.status === 'moved_away'}<span class="marque">{text.marks.movedAway}</span
 							>{/if}
@@ -175,7 +192,9 @@
 					{#if seance.status === 'moved_away' && seance.movedTo}
 						<p class="details">{text.movedTo(date(seance.movedTo.date), seance.movedTo.start)}</p>
 					{/if}
-					{#if seance.status === 'moved_here' && seance.originalDate}
+					{#if origine}
+						<p class="details">{text.originallyAt(describeSessionTime(origine, language))}</p>
+					{:else if seance.status === 'moved_here' && seance.originalDate}
 						<p class="details">{text.originallyOn(date(seance.originalDate))}</p>
 					{/if}
 
