@@ -33,27 +33,39 @@
  * voir.
  *
  * - A1 : sur « À venir », les options d'une séance sont fermées, « Annuler ou déplacer » n'ouvre que
- *   sa carte, et rien ne s'annule sans l'avoir ouverte.
+ *   sa carte, et rien ne s'annule sans l'avoir ouverte, avec ou sans JavaScript.
  * - A2 : une séance se déplace à une date plus tôt que la sienne, toute date à partir d'aujourd'hui,
- *   et le déplacement se lit sur la page publique et dans le flux agenda.
+ *   et le déplacement se lit sur la page publique et dans le flux agenda. Un déplacement qui ne
+ *   change ni la date ni l'heure est refusé, avec une phrase.
  * - A3 : aucune date écrite `2026-09-26` dans le texte d'aucun écran traversé (espace, super-admin,
  *   page publique, widget), et la date des conditions et d'une passkey en `JJ.MM.AAAA`.
- * - B1 : les aides sous les champs clés, et des libellés qui disent ce qu'ils font.
- * - B2 : l'écran du super-admin, de « Créer une organisation » au lien de connexion de secours.
+ * - B1 : les aides sous les champs clés, et des libellés qui disent ce qu'ils font ; sur un
+ *   téléphone, la confirmation avant de supprimer une salle occupée se voit sans défiler ; sans
+ *   JavaScript, une session du vendredi se supprime.
+ * - B2 : l'écran du super-admin, de « Créer une organisation » au lien de connexion de secours ;
+ *   l'adresse proposée pendant la frappe, et par le serveur sans JavaScript ; une seconde passkey,
+ *   qui a son propre nom et un message juste.
  * - B3 : l'écran Membres dit ce que fait un éditeur et ce qui est réservé au responsable.
- * - B4 : le résumé du formulaire de cours, et ce qui manque, signalé.
- * - C1 : « D'où viennent vos heures de prière ? », ses trois réponses et l'aperçu de sept jours.
+ * - B4 : le résumé du formulaire de cours, sa ligne de description, et ce qui manque, signalé.
+ * - C1 : « D'où viennent vos heures de prière ? », ses trois réponses et l'aperçu de sept jours ;
+ *   axe à 390 px de large sur les trois réponses.
  * - C2 : la localité trouvée par son nom et par son NPA, sans service extérieur, avec l'attribution
- *   de swisstopo, et la position qu'elle donne aux heures servies.
+ *   de swisstopo, et les heures qu'elle donne : celles que `@jadwal/core` calcule pour la position
+ *   de la liste, sur l'écran, sur la page publique et dans le flux.
  * - C3 : un cours « avant une prière », des minutes positives à l'écran.
- * - C4 : l'onglet « Prières » de la page publique et du widget.
- * - D1 : la page publique, le widget, le flux et une page d'erreur en anglais, sans texte français.
+ * - C4 : l'onglet « Prières » de la page publique et du widget, et axe à 390 px de large.
+ * - D1 : la page publique, le widget, le flux et une page d'erreur en anglais, sans texte français ;
+ *   les messages prêts à coller de Partager, un par langue publiée, le nom de la prière du vendredi
+ *   dans chacune.
  * - D2 : l'espace et le super-admin en cinq langues, le choix en haut de chaque écran, retenu pour
- *   le compte, et la langue du navigateur au premier passage.
+ *   le compte, la langue du navigateur au premier passage, celle choisie avant la connexion, et la
+ *   copie d'une période nommée dans la langue de l'écran.
  * - D3 : le courriel de connexion et celui d'une invitation dans la langue de l'écran d'où ils
  *   partent.
- * - D4 : les conditions restent en français, précédées d'une phrase dans la langue de la page.
- * - E1, E2 : l'agenda selon l'appareil, iPhone, Android, ordinateur, et le délai de Google.
+ * - D4 : les conditions restent en français, précédées d'une phrase dans la langue de la page, en
+ *   allemand, en italien, en anglais et en arabe.
+ * - E1, E2 : l'agenda selon l'appareil, iPhone (ni Google ni Outlook), Android (le bouton de
+ *   Google, puis une issue par un ordinateur, avec l'adresse), ordinateur, et le délai de Google.
  * - F1 : l'exploitant est Voltia ; le nom de personne retiré du dépôt ne s'affiche nulle part.
  * - H2 : l'écran d'acceptation compte une invitation en attente, comme la navigation.
  *
@@ -69,10 +81,10 @@
  * `JADWAL_PARCOURS_RELEVE=1`, une vérification d'un retour qui tombe est notée en rouge, et le
  * parcours continue tant que la suite reste possible. C'est ce qui montre, sur l'image d'une
  * version d'avant, que chaque vérification tombe sur l'ancien comportement. Un geste impossible sur
- * l'ancien écran (un champ qui n'existe pas encore) est noté comme tel, en rouge, pour son retour.
- * Les vérifications qui ne sont pas celles d'un retour restent strictes dans les deux modes : le
- * parcours s'arrête quand la suite n'a plus de sens, et le tableau dit alors quels retours n'ont pas
- * été atteints.
+ * l'ancien écran (un champ qui n'existe pas encore) est noté comme tel, « impossible », pour son
+ * retour. Les vérifications qui ne sont pas celles d'un retour restent strictes dans les deux
+ * modes : le parcours s'arrête quand la suite n'a plus de sens, et le tableau dit alors quels
+ * retours n'ont pas été atteints.
  *
  * Un geste impossible arrête son bloc : les vérifications qui le suivent dans ce bloc ne sont pas
  * jouées. Le bilan les compte donc à part : les vérifications jouées, vertes ou rouges, puis les
@@ -82,6 +94,25 @@
  * Les gestes qui ne sont pas l'objet d'une vérification visent les champs par leur `id` ou leur
  * `name`, qui sont le contrat du formulaire avec le serveur, et non par leur libellé : un libellé
  * qu'on récrit ne casse pas le parcours, et les libellés qui comptent sont vérifiés pour eux-mêmes.
+ *
+ * ## Sur un téléphone, et sans JavaScript
+ *
+ * Deux passages de plus, à la fin. L'un à 390 px de large, la largeur d'un téléphone courant : axe
+ * sur l'écran des prières et sur l'onglet « Prières » du public, dont les tableaux défilent de côté
+ * à cette largeur, et la confirmation d'une salle occupée, qui doit se voir sans défiler. L'autre
+ * dans un navigateur sans JavaScript, avec la session de la personne responsable : l'espace doit
+ * marcher sans script. Le super-admin passe aussi par un navigateur sans JavaScript, dès l'étape a,
+ * pour l'adresse que le serveur propose quand personne ne l'a vue se remplir.
+ *
+ * ## Les heures de prière attendues
+ *
+ * Les heures qu'un écran dit « calculées pour la localité » sont comparées à celles que
+ * `@jadwal/core` calcule pour la position que la liste des localités donne à cette localité
+ * (`apps/web/src/lib/server/localites/localities.csv`), avec la méthode, l'école, la règle et les
+ * ajustements que l'écran a enregistrés. Le calcul est celui de l'image, joué dans le conteneur du
+ * serveur : le poste n'a pas à construire le paquet, et la CI ne construit rien hors de Docker. Le
+ * début d'un cours ancré en est tiré par la règle du service : l'heure de la prière, décalée de ses
+ * minutes, arrondie aux cinq minutes supérieures.
  *
  * ## Ce qu'il lui faut
  *
@@ -178,10 +209,45 @@ const COURS_ANCRE = 'Tafsir du soir';
 const COURS_SANS_DECALAGE = 'Cercle de lecture';
 /** Un cours placé avant une prière, avec des minutes positives (retour C3). */
 const COURS_AVANT = { titre: 'Hifz avant Maghrib', minutes: 10 };
-/** La localité du parcours, cherchée par son nom puis par son NPA (retour C2). */
-const LOCALITE = { nom: 'Bienne', npa: '2502', libelle: '2502 Biel/Bienne (BE)' };
+/**
+ * La localité du parcours, cherchée par son nom puis par son NPA (retour C2) ; `liste`, le début de
+ * sa ligne dans la liste des localités, d'où vient sa position.
+ */
+const LOCALITE = {
+	nom: 'Bienne',
+	npa: '2502',
+	libelle: '2502 Biel/Bienne (BE)',
+	liste: '2502;Biel/Bienne;'
+};
+/** La liste des localités que le serveur embarque, lue dans le dépôt. */
+const LISTE_DES_LOCALITES = join(
+	racine,
+	'apps',
+	'web',
+	'src',
+	'lib',
+	'server',
+	'localites',
+	'localities.csv'
+);
+/** Les cinq prières, dans l'ordre des colonnes de chaque tableau. */
+const PRIERES = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
 /** La session du vendredi, qui s'affiche dans l'onglet « Prières » (retour C4). */
 const VENDREDI = { debut: '12:30', fin: '13:15' };
+/** Une seconde session, ajoutée puis supprimée dans un navigateur sans JavaScript (retour B1). */
+const SECONDE_SESSION = { debut: '13:40', fin: '14:20' };
+/** La description que reçoit le premier cours le temps de lire le résumé (retour B4). */
+const DESCRIPTION = 'Pour les enfants de 7 à 12 ans.';
+/**
+ * Une organisation créée sans JavaScript, l'adresse laissée vide : le serveur la propose (retour
+ * B2), comme l'écran l'aurait fait pendant la frappe.
+ */
+const SANS_SCRIPT = { nom: 'École du Lac', adresse: 'ecole-du-lac' };
+/** Une période préparée à l'avance, puis copiée depuis l'écran en allemand (retour D2). */
+const PERIODE = { nom: 'Winter', copie: 'Winter (nächstes Jahr)' };
+/** La fenêtre d'un téléphone courant, et celle que playwright donne par défaut. */
+const TELEPHONE = { width: 390, height: 844 };
+const ECRAN = { width: 1280, height: 720 };
 const CHIFFRES_ORIENTAUX = /[\u0660-\u0669\u06F0-\u06F9]/g;
 /** Une date telle que la base l'écrit, qui ne doit se lire sur aucun écran (retour A3). */
 const DATE_ISO = /(?<!\d)\d{4}-\d{2}-\d{2}(?!\d)/g;
@@ -240,9 +306,27 @@ const TEXTES_PUBLICS = {
 		introuvable: { titre: 'الصفحة غير موجودة', phrase: 'تحقّق من العنوان.' }
 	}
 };
-/** La phrase en tête des conditions, dans une autre langue que le français (retour D4). */
+/**
+ * La phrase en tête des conditions, dans une autre langue que le français (retour D4,
+ * `apps/web/src/lib/i18n/terms.ts`).
+ */
 const CONDITIONS_EN_FRANCAIS_SEULEMENT = {
-	de: 'Diesen Text gibt es vorerst nur auf Französisch.'
+	de: 'Diesen Text gibt es vorerst nur auf Französisch.',
+	it: 'Per ora questo testo esiste solo in francese.',
+	en: 'For now, this text only exists in French.',
+	ar: 'هذا النص متوفر بالفرنسية فقط في الوقت الحالي.'
+};
+/**
+ * Le nom que le service propose à une session du vendredi, dans chaque langue
+ * (`apps/web/src/lib/i18n.ts`) : une session qui le garde le prend dans la langue de qui la lit
+ * (retour D1).
+ */
+const PRIERE_DU_VENDREDI = {
+	fr: 'Prière du vendredi',
+	de: 'Freitagsgebet',
+	it: 'Preghiera del venerdì',
+	en: 'Friday prayer',
+	ar: 'صلاة الجمعة'
 };
 /**
  * Le nom accessible d'un lien qui ouvre un nouvel onglet : son texte visible, puis l'annonce entre
@@ -254,18 +338,17 @@ const avecNouvelOnglet = (texte, langue) => `${texte} (${TEXTES_PUBLICS[langue].
 const LIEN_DU_WIDGET = { fr: 'Voir le programme complet', en: 'See the full programme' };
 const CHANGER = 'Changer d’organisation';
 /**
- * L'heure d'un cours ancré, la phrase puis l'heure calculée ; le libellé du flux, la phrase seule.
- * 15 minutes après le maghrib, puis à l'heure même : au décalage nul, le flux dit la phrase de la
- * page, « Après Maghrib », et non « À Maghrib » comme avant l'étape 17. Le flux anglais dit la
- * phrase de la page anglaise (retour D1).
+ * Les deux cours ancrés sur le maghrib : leur jour (dans quatre et cinq jours), leurs minutes après
+ * la prière, et leur libellé. La page écrit le libellé puis le début, tiré du maghrib calculé,
+ * « 15 min après Maghrib (19:30) » ; le flux, le libellé seul. 15 minutes après le maghrib, puis à
+ * l'heure même : au décalage nul, le flux dit la phrase de la page, « Après Maghrib », et non « À
+ * Maghrib » comme avant l'étape 17. Le flux anglais dit la phrase de la page anglaise (retour D1).
  */
 const ANCRAGES = [
 	{
 		titre: COURS_ANCRE,
-		heure: {
-			fr: /^15 min après Maghrib \(\d{2}:\d{2}\)$/,
-			ar: /^بعد المغرب بـ15 دقيقة \(\d{2}:\d{2}\)$/
-		},
+		dans: 4,
+		minutes: 15,
 		libelle: {
 			fr: '15 min après Maghrib',
 			en: '15 min after Maghrib',
@@ -274,7 +357,8 @@ const ANCRAGES = [
 	},
 	{
 		titre: COURS_SANS_DECALAGE,
-		heure: { fr: /^Après Maghrib \(\d{2}:\d{2}\)$/, ar: /^بعد المغرب \(\d{2}:\d{2}\)$/ },
+		dans: 5,
+		minutes: 0,
 		libelle: { fr: 'Après Maghrib', en: 'After Maghrib', ar: 'بعد المغرب' }
 	}
 ];
@@ -517,6 +601,23 @@ const compacte = (iso) => iso.replaceAll('-', '');
 /** « 26.09.2026 » : une date comme la Suisse l'écrit, et comme chaque écran doit l'écrire (A3). */
 const dateSuisse = (iso) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(0, 4)}`;
 
+/** La date `AAAA-MM-JJ` d'un texte qui l'écrit `JJ.MM.AAAA`, « samedi 26.09.2026 », ou `''`. */
+function isoDuTexte(texte) {
+	const trouvee = /(\d{2})\.(\d{2})\.(\d{4})/.exec(texte);
+	return trouvee ? `${trouvee[3]}-${trouvee[2]}-${trouvee[1]}` : '';
+}
+
+/**
+ * Le début d'un cours ancré sur une prière : l'heure de la prière, décalée de ses minutes, puis
+ * arrondie aux cinq minutes supérieures, la règle de `roundUpToFiveMinutes`
+ * (`packages/core/src/dates.ts`). « 19:13 » et 15 minutes donnent « 19:30 ».
+ */
+function debutAncre(priere, minutes) {
+	const [h, m] = priere.split(':').map(Number);
+	const total = Math.ceil(((h ?? 0) * 60 + (m ?? 0) + minutes) / 5) * 5;
+	return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
 // ---------------------------------------------------------------------------------------------
 // Le serveur : ses courriels, son journal
 // ---------------------------------------------------------------------------------------------
@@ -582,6 +683,61 @@ const langueDuCourriel = (courriel) =>
 
 function dernieresLignesDuServeur(combien = 30) {
 	return marche.journal().trim().split('\n').slice(-combien);
+}
+
+/** Le lien de connexion d'un courriel arrivé après les `avant` premiers, attendu dix secondes. */
+async function nouveauLienDeConnexion(pour, avant) {
+	for (let essai = 0; essai < 40; essai += 1) {
+		const lien = lienDeConnexion(
+			courriels()
+				.slice(avant)
+				.find((courriel) => courriel.to === pour)
+		);
+		if (lien) return lien;
+		await attendre(250);
+	}
+	return undefined;
+}
+
+/** La position que la liste des localités donne à la localité du parcours (retour C2). */
+function positionDeLaListe() {
+	const ligne = readFileSync(LISTE_DES_LOCALITES, 'utf8')
+		.split(/\r?\n/)
+		.find((une) => une.startsWith(LOCALITE.liste));
+	const champs = (ligne ?? '').split(';');
+	return { latitude: Number(champs[4]), longitude: Number(champs[5]) };
+}
+
+/**
+ * Les heures que `@jadwal/core` calcule pour une position et des réglages, date par date : le calcul
+ * de l'image elle-même, joué dans le conteneur du serveur (voir l'en-tête). Rend
+ * `{ [date]: { fajr, dhuhr, asr, maghrib, isha } }`.
+ */
+function heuresCalculees(dates, reglage) {
+	const code = [
+		"const { computePrayerDay } = await import('@jadwal/core/prayer');",
+		'const [dates, reglage] = JSON.parse(process.argv[1]);',
+		'const jours = dates.map((date) => [date, computePrayerDay(date, reglage) ?? null]);',
+		'process.stdout.write(JSON.stringify(Object.fromEntries(jours)));'
+	].join('\n');
+	const passage = spawnSync(
+		'docker',
+		[
+			'exec',
+			marche.serveur,
+			'node',
+			'--input-type=module',
+			'-e',
+			code,
+			JSON.stringify([dates, reglage])
+		],
+		{ encoding: 'utf8' }
+	);
+	if (passage.status !== 0) {
+		const raison = (passage.stderr ?? '').trim().split('\n').pop();
+		throw new Error(`le calcul des heures dans le conteneur a échoué : ${raison}`);
+	}
+	return JSON.parse(passage.stdout);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -948,7 +1104,15 @@ const J4 = plusJours(T, 4);
 const J5 = plusJours(T, 5);
 const J6 = plusJours(T, 6);
 
-const etat = { cours1: '', cours2: '', codeEmbarque: '', codeCadre: '', segmentsDuCadre: [] };
+const etat = {
+	cours1: '',
+	cours2: '',
+	codeEmbarque: '',
+	codeCadre: '',
+	segmentsDuCadre: [],
+	/** Les heures calculées pour la localité, date par date, une fois enregistrée (retour C2). */
+	heures: /** @type {Record<string, Record<string, string>> | null} */ (null)
+};
 
 function preparerLImage() {
 	etape(`L'image`);
@@ -1136,6 +1300,7 @@ async function superAdmin(navigateur) {
 			texte
 		);
 	});
+	await secondePasskey(page, cdp, authenticatorId);
 	await languesDuSuperAdmin(page);
 
 	await ouvrir(page, '/super-admin');
@@ -1173,7 +1338,100 @@ async function superAdmin(navigateur) {
 		!passages.some((passage) => passage.startsWith('/conditions/accepter')),
 		`${passages.length} pages traversées`
 	);
+	await adresseSansScript(navigateur, contexte);
 	await contexte.close();
+}
+
+/**
+ * Une passkey de plus, pouvoirs actifs (B2) : un second appareil, que l'authentificateur virtuel
+ * joue en remplaçant le premier. Celui qui garde déjà la première passkey refuserait la seconde, que
+ * le serveur lui envoie dans `excludeCredentials`. Le message dit qu'elle servira à la prochaine
+ * connexion, sans renvoyer à un bouton que l'écran n'a pas, et son nom se distingue de la première.
+ */
+async function secondePasskey(page, cdp, premier) {
+	await retour('B2', async () => {
+		await cdp.send('WebAuthn.removeVirtualAuthenticator', { authenticatorId: premier });
+		await cdp.send('WebAuthn.addVirtualAuthenticator', {
+			options: {
+				protocol: 'ctap2',
+				transport: 'internal',
+				hasResidentKey: true,
+				hasUserVerification: true,
+				isUserVerified: true,
+				automaticPresenceSimulation: true
+			}
+		});
+		// Le message de ce geste : le premier qui n'était pas déjà à l'écran avant le clic, comme celui
+		// qui dit que les pouvoirs sont actifs. Quinze secondes au plus.
+		const annonces = async () =>
+			(await page.getByRole('status').allTextContents()).map((texte) =>
+				texte.replace(/\s+/g, ' ').trim()
+			);
+		const dejaLa = new Set(await annonces());
+		await page.getByRole('button', { name: 'Enregistrer une passkey' }).click();
+		let message = '';
+		for (let essai = 0; essai < 60 && !message; essai += 1) {
+			message = (await annonces()).find((texte) => !dejaLa.has(texte)) ?? '';
+			if (!message) await attendre(250);
+		}
+		const boutons = (await page.locator('.actions button').allTextContents()).map((texte) =>
+			texte.trim()
+		);
+		verifier(
+			'une seconde passkey, pouvoirs actifs : le message dit qu’elle servira à la prochaine connexion, sans renvoyer à un bouton, et l’écran n’en montre pas d’autre que « Enregistrer une passkey »',
+			message.startsWith('Passkey enregistrée.') &&
+				message.includes('la prochaine fois') &&
+				!/bouton/i.test(message) &&
+				boutons.join('|') === 'Enregistrer une passkey',
+			`« ${message || 'aucun message'} » ; boutons : ${boutons.join(', ') || 'aucun'}`
+		);
+		// La liste se relit après le message : on attend la seconde ligne, cinq secondes au plus.
+		const lignes = page.locator('li').filter({ hasText: /enregistrée le/i });
+		await lignes
+			.nth(1)
+			.waitFor({ timeout: 5000 })
+			.catch(() => undefined);
+		const noms = (await lignes.locator('strong').allTextContents()).map((nom) => nom.trim());
+		verifier(
+			'son nom se distingue de celui de la première',
+			noms.length === 2 && new Set(noms).size === 2,
+			noms.map((nom) => `« ${nom} »`).join(', ') || 'aucun nom'
+		);
+	});
+}
+
+/**
+ * Le super-admin sans JavaScript (B2) : l'adresse de la page publique ne se remplit pas pendant la
+ * frappe, le champ part vide, et le serveur la propose d'après le nom, comme l'écran l'aurait fait.
+ * La même session, dans un navigateur qui n'exécute aucun script.
+ */
+async function adresseSansScript(navigateur, contexte) {
+	await retour('B2', async () => {
+		const sansScript = await nouveauContexte(navigateur, {
+			javaScriptEnabled: false,
+			storageState: await contexte.storageState()
+		});
+		try {
+			const page = await sansScript.newPage();
+			await ouvrir(page, '/super-admin');
+			await page.locator('#name').fill(SANS_SCRIPT.nom);
+			await envoyer(page, page.locator('form[action="?/ouvrir"] button[type="submit"]'));
+			const adresse = `${new URL(ORIGINE).host}/m/${SANS_SCRIPT.adresse}`;
+			const succes = page.locator('section.succes');
+			const annonce = (await succes.count()) === 1 ? await texteDe(succes) : '';
+			const carte = page.locator('li').filter({ hasText: SANS_SCRIPT.nom });
+			verifier(
+				`sans JavaScript, « ${SANS_SCRIPT.nom} », créée sans adresse écrite, reçoit celle que le serveur propose, « ${SANS_SCRIPT.adresse} », et l’écran dit l’adresse entière`,
+				annonce.includes(SANS_SCRIPT.nom) &&
+					annonce.includes(adresse) &&
+					(await carte.count()) === 1 &&
+					(await texteDe(carte)).includes(adresse),
+				annonce || (await texteDe(page.locator('main'))).slice(0, 160)
+			);
+		} finally {
+			await sansScript.close();
+		}
+	});
 }
 
 /**
@@ -1697,6 +1955,20 @@ async function clarteDuFormulaire(page, cours) {
 				(await texteDe(ligne('Premier jour'))).endsWith(dateSuisse(T)),
 			`${await texteDe(ligne('Titre en français'))} | ${await texteDe(ligne('Premier jour'))}`
 		);
+		// La description a sa ligne, juste sous le titre de sa langue. Elle est retirée ensuite : le
+		// cours du parcours n'en a pas, et les écrans lus dans les autres langues n'ont rien à écarter.
+		await page.locator('#description-fr').fill(DESCRIPTION);
+		const lignes = (await resume.locator('dl > div').allTextContents()).map((texte) =>
+			texte.replace(/\s+/g, ' ').trim()
+		);
+		const titreLu = lignes.indexOf(`Titre en français : ${cours.titre}`);
+		const apresLeTitre = titreLu >= 0 ? (lignes[titreLu + 1] ?? '') : '';
+		verifier(
+			'le résumé a une ligne pour la description, sous le titre de sa langue',
+			apresLeTitre === `Description en français : ${DESCRIPTION}`,
+			apresLeTitre || lignes.slice(0, 3).join(' | ')
+		);
+		await page.locator('#description-fr').fill('');
 	});
 }
 
@@ -1813,6 +2085,23 @@ async function deplacerPlusTot(page) {
 				aide
 			);
 		});
+		// Les champs s'ouvrent sur la date prévue et l'heure habituelle : les envoyer tels quels ne
+		// déplace rien, et l'écran le dit dans la carte, au lieu d'écrire un déplacement vers la séance
+		// elle-même.
+		await envoyer(page, depart.getByRole('button', { name: 'Déplacer la séance', exact: true }));
+		const inchangee = seanceDuJour(page, J3, COURS_2);
+		const phrase =
+			(await inchangee.getByRole('alert').count()) === 1
+				? await texteDe(inchangee.getByRole('alert'))
+				: '';
+		verifier(
+			'« Déplacer la séance » sans rien changer, ni la date ni l’heure, est refusé avec une phrase, dans la carte, et rien n’est déplacé',
+			(await inchangee.count()) === 1 &&
+				/\p{L}{2,}.*\.$/u.test(phrase) &&
+				!phrase.startsWith('Cette date est déjà passée.') &&
+				!(await texteDe(inchangee)).includes('déplacée'),
+			`${await inchangee.count()} carte(s) ; « ${phrase || 'aucune phrase'} »`
+		);
 		// Une date passée, que le navigateur refuserait de lui-même : le formulaire est envoyé sans sa
 		// validation, et c'est le serveur qui doit la refuser, dans la carte rouverte.
 		await depart.locator('form[action="?/deplacer"]').evaluate((formulaire) => {
@@ -2154,7 +2443,9 @@ async function pagesPubliques(page) {
 					restes.slice(0, 5).join(' | ')
 				);
 			}
-			if (langue === 'de') await conditionsDansUneAutreLangue(page, conditions, langue);
+			if (langue in CONDITIONS_EN_FRANCAIS_SEULEMENT) {
+				await conditionsDansUneAutreLangue(page, conditions, langue);
+			}
 		});
 	}
 
@@ -2186,8 +2477,8 @@ async function pagesPubliques(page) {
 }
 
 /**
- * Les conditions ouvertes depuis la page publique allemande (D4) : le texte reste en français,
- * précédé d'une phrase en allemand qui le dit.
+ * Les conditions ouvertes depuis la page publique dans une autre langue que le français (D4) : le
+ * texte reste en français, précédé d'une phrase dans la langue de la page qui le dit.
  */
 async function conditionsDansUneAutreLangue(page, conditions, langue) {
 	await retour('D4', async () => {
@@ -2486,9 +2777,21 @@ async function abonnementSelon(navigateur, agent) {
 					}))
 				)
 			: [];
+		// Les paragraphes du bloc, dans l'ordre : un lien, une adresse à copier, ou une phrase.
+		const paragraphes = present
+			? await bloc.locator('p').evaluateAll((tous) =>
+					tous.map((p) => ({
+						lien: /** @type {HTMLAnchorElement | null} */ (p.querySelector('a'))?.href ?? '',
+						adresse: (p.querySelector('code')?.textContent ?? '').trim(),
+						texte: (p.textContent ?? '').replace(/\s+/g, ' ').trim()
+					}))
+				)
+			: [];
 		return {
 			vary: (reponse?.headers()['vary'] ?? '').toLowerCase(),
+			appareil: present ? await bloc.getAttribute('data-appareil') : null,
 			liens,
+			paragraphes,
 			texte: present ? await texteDe(bloc) : '',
 			page: present ? await texteDe(page.locator('main')) : ''
 		};
@@ -2512,13 +2815,31 @@ async function appareils(navigateur) {
 		verifier(
 			'sur un iPhone, le premier lien est l’abonnement webcal, sans Google ni Outlook',
 			commencePar(iphone.liens[0]?.href ?? '', webcal) &&
-				!iphone.liens.some((lien) => commencePar(lien.href, 'https://calendar.google.com')),
+				!iphone.liens.some((lien) => commencePar(lien.href, 'https://calendar.google.com')) &&
+				!iphone.liens.some((lien) => commencePar(lien.href, 'https://outlook.live.com')),
 			iphone.liens.map((lien) => lien.href).join(' ') || 'aucun lien'
 		);
 		verifier(
 			'sur un Android, le lien ouvre Google Agenda avec la demande d’abonnement prête, dans un nouvel onglet',
 			commencePar(android.liens[0]?.href ?? '', google) && android.liens[0]?.target === '_blank',
 			android.liens.map((lien) => lien.href).join(' ') || 'aucun lien'
+		);
+		// La forme de la page, et non ses phrases, qu'un autre chantier récrit : le bouton de Google
+		// d'abord, puis une phrase qui propose de passer par un ordinateur, et l'adresse à y coller
+		// après elle.
+		const adresseACopier = `http://${new URL(ORIGINE).host}/m/${ORGANISATION.slug}/agenda.ics`;
+		const bouton = android.paragraphes.findIndex((p) => commencePar(p.lien, google));
+		const parUnOrdinateur = android.paragraphes.findIndex(
+			(p, index) => index > bouton && !p.lien && !p.adresse && /ordinateur/i.test(p.texte)
+		);
+		const adresse = android.paragraphes.findIndex((p) => p.adresse === adresseACopier);
+		verifier(
+			'sur un Android, après le bouton de Google, une issue par un ordinateur, puis l’adresse à y coller',
+			android.appareil === 'android' &&
+				bouton === 0 &&
+				parUnOrdinateur > bouton &&
+				adresse > parUnOrdinateur,
+			`bloc « ${android.appareil} » ; bouton ${bouton}, ordinateur ${parUnOrdinateur}, adresse ${adresse} sur ${android.paragraphes.length} paragraphes`
 		);
 		verifier(
 			'sur un PC Windows, le choix entre Google Agenda, Outlook, une autre application, et l’adresse à copier',
@@ -2546,6 +2867,130 @@ async function appareils(navigateur) {
 /** Le choix de la localité du parcours, parmi les réponses de la recherche. */
 const radioDeLaLocalite = (page) =>
 	page.getByRole('radio', { name: LOCALITE.libelle, exact: true });
+
+/**
+ * Les réglages du calcul que l'écran des prières vient d'enregistrer, lus dans ses champs par leur
+ * `id`, avec la position que la liste donne à la localité et le fuseau de l'organisation.
+ */
+async function reglageEnregistre(page) {
+	const valeur = (id) => page.locator(`#${id}`).inputValue();
+	/** @type {Record<string, number>} */
+	const ajustements = {};
+	for (const priere of PRIERES) ajustements[priere] = Number(await valeur(`${priere}Adjustment`));
+	return {
+		...positionDeLaListe(),
+		timeZone: FUSEAU,
+		method: await valeur('method'),
+		madhab: await valeur('madhab'),
+		highLatitudeRule: await valeur('highLatitudeRule'),
+		adjustments: ajustements
+	};
+}
+
+/**
+ * Les jours d'un tableau d'heures de prière : la date, lue dans l'en-tête de la ligne, puis une
+ * heure par prière, lue dans la cellule ou dans l'élément `cellule` qu'elle contient.
+ */
+async function heuresDuTableau(lignes, cellule) {
+	const lus = await lignes.evaluateAll(
+		(rangees, selecteur) =>
+			rangees.map((rangee) => ({
+				jour: rangee.querySelector('th')?.textContent ?? '',
+				heures: [...rangee.querySelectorAll('td')].map(
+					(td) => (selecteur ? td.querySelector(selecteur) : td)?.textContent ?? ''
+				)
+			})),
+		cellule
+	);
+	return lus.map((lu) => ({
+		date: isoDuTexte(lu.jour),
+		heures: lu.heures.map((texte) => /\d{2}:\d{2}/.exec(texte)?.[0] ?? '–')
+	}));
+}
+
+/** Les jours lus qui diffèrent du calcul, un par ligne : ce qu'on lit, puis ce qui est calculé. */
+function ecartsAuCalcul(jours, calculees) {
+	return jours.flatMap((jour) => {
+		const attendues = PRIERES.map((priere) => calculees?.[jour.date]?.[priere] ?? '?');
+		if (attendues.join(' ') === jour.heures.join(' ')) return [];
+		const date = jour.date ? dateSuisse(jour.date) : 'date illisible';
+		return [`${date} : lu ${jour.heures.join(' ')}, calculé ${attendues.join(' ')}`];
+	});
+}
+
+/**
+ * Ce que la page publique écrit pour un cours ancré sur le maghrib dans `dans` jours, `minutes`
+ * après la prière (avant, si négatif) : le libellé, puis son début, tiré du maghrib calculé pour la
+ * localité.
+ */
+function heureAncree(libelle, dans, minutes) {
+	const maghrib = etat.heures?.[plusJours(T, dans)]?.maghrib;
+	return maghrib
+		? `${libelle} (${debutAncre(maghrib, minutes)})`
+		: `${libelle} (heure calculée inconnue)`;
+}
+
+/**
+ * Les messages prêts à coller de Partager (D1) : un par langue que l'organisation publie, la sienne
+ * d'abord et seule ouverte, chacun marqué de sa langue et de son sens. La session du vendredi, qui
+ * garde le nom proposé, y prend le nom de la prière dans la langue du message.
+ */
+async function messagesDuPartage(page) {
+	await retour('D1', async () => {
+		await naviguer(page, '/partager');
+		const lus = await page.locator('details.message').evaluateAll((replis) =>
+			replis.map((repli) => {
+				const zone = repli.querySelector('textarea');
+				return {
+					ouvert: /** @type {HTMLDetailsElement} */ (repli).open,
+					lang: zone?.getAttribute('lang') ?? '',
+					dir: zone?.getAttribute('dir') ?? '',
+					texte: zone?.value ?? ''
+				};
+			})
+		);
+		const langues = lus.map((lu) => lu.lang);
+		verifier(
+			`Partager donne un message par langue publiée, les ${LANGUES.length}, le français de l’organisation d’abord et seul ouvert`,
+			lus.length === LANGUES.length &&
+				LANGUES.every((langue) => langues.includes(langue)) &&
+				langues[0] === 'fr' &&
+				lus.every((lu, index) => lu.ouvert === (index === 0)),
+			lus.map((lu) => `${lu.lang || 'sans langue'}${lu.ouvert ? ' (ouvert)' : ''}`).join(', ') ||
+				'aucun repli'
+		);
+		verifier(
+			'chaque message porte sa langue et son sens, de droite à gauche en arabe',
+			lus.length > 0 &&
+				lus.every(
+					(lu) => LANGUES.includes(lu.lang) && lu.dir === (lu.lang === 'ar' ? 'rtl' : 'ltr')
+				),
+			lus.map((lu) => `lang="${lu.lang}" dir="${lu.dir}"`).join(', ') || 'aucune zone'
+		);
+		const fautifs = LANGUES.filter((langue) => {
+			const texte = lus.find((lu) => lu.lang === langue)?.texte ?? '';
+			return (
+				!texte.includes(PRIERE_DU_VENDREDI[langue]) ||
+				(langue !== 'fr' && texte.includes(PRIERE_DU_VENDREDI.fr))
+			);
+		});
+		verifier(
+			`la session du vendredi y porte le nom de la prière dans la langue du message : ${LANGUES.filter(
+				(langue) => langue !== 'fr'
+			)
+				.map((langue) => `« ${PRIERE_DU_VENDREDI[langue]} »`)
+				.join(', ')}`,
+			lus.length > 0 && fautifs.length === 0,
+			fautifs
+				.map((langue) => {
+					const texte = lus.find((lu) => lu.lang === langue)?.texte ?? '';
+					const ligne = texte.split('\n').find((une) => une.includes(VENDREDI.debut));
+					return `${langue} : ${ligne?.trim() ?? `aucune ligne à ${VENDREDI.debut}`}`;
+				})
+				.join(' ; ')
+		);
+	});
+}
 
 /**
  * g. Les heures de prière, par la question (C1) et la localité (C2) ; une session du vendredi ; trois
@@ -2661,15 +3106,23 @@ async function prieres(page, navigateur) {
 	});
 	page.off('request', surveiller);
 	await retour('C2', async () => {
-		const servies = page
-			.locator('section', { has: page.locator('#servies-titre') })
-			.locator('tbody tr');
+		// Les heures attendues, pour tous les jours que ce parcours lit : celles que `@jadwal/core`
+		// calcule pour la position de la liste, avec les réglages que l'écran vient d'enregistrer.
+		const reglage = await reglageEnregistre(page);
+		etat.heures = heuresCalculees(
+			Array.from({ length: 7 }, (_, pas) => plusJours(T, pas)),
+			reglage
+		);
+		const servies = await heuresDuTableau(
+			page.locator('section', { has: page.locator('#servies-titre') }).locator('tbody tr'),
+			'.soleil'
+		);
+		const ecarts = ecartsAuCalcul(servies, etat.heures);
 		verifier(
-			'les heures des sept prochains jours sont servies au public, calculées pour cette localité',
-			(await servies.count()) === 7,
-			(await servies.count()) > 0
-				? (await servies.first().innerText()).replace(/\s+/g, ' ')
-				: '0 ligne'
+			'les heures des sept prochains jours sont servies au public, celles que le calcul donne pour la position de la localité dans la liste',
+			servies.length === 7 && ecarts.length === 0,
+			ecarts.slice(0, 2).join(' ; ') ||
+				`${servies.length} jour(s), position ${reglage.latitude}, ${reglage.longitude}, ${reglage.method}`
 		);
 	});
 	await auditer(page, 'prières');
@@ -2698,6 +3151,7 @@ async function prieres(page, navigateur) {
 		);
 	});
 	await auditer(page, 'vendredi');
+	await messagesDuPartage(page);
 
 	await creerCours(page, {
 		titre: COURS_ANCRE,
@@ -2731,10 +3185,11 @@ async function prieres(page, navigateur) {
 							visiteur.locator('li').filter({ hasText: ancrage.titre }).locator('.heure')
 						)
 					: '';
+				const attendue = heureAncree(ancrage.libelle[langue], ancrage.dans, ancrage.minutes);
 				verifier(
-					`${adresse} : « ${ancrage.titre} » affiche son heure, calculée pour la localité`,
-					ancrage.heure[langue].test(heure),
-					heure
+					`${adresse} : « ${ancrage.titre} » affiche son heure, celle que le calcul donne pour la localité`,
+					heure === attendue,
+					`lu « ${heure} », attendu « ${attendue} »`
 				);
 			}
 		}
@@ -2747,15 +3202,21 @@ async function prieres(page, navigateur) {
 		const heure = await texteDe(
 			visiteur.locator('li').filter({ hasText: COURS_AVANT.titre }).locator('.heure')
 		);
+		// Le cours d'avant une prière a lieu dans six jours.
+		const attendue = heureAncree(
+			`${COURS_AVANT.minutes} min avant Maghrib`,
+			6,
+			-COURS_AVANT.minutes
+		);
 		verifier(
 			`la page publique dit « ${COURS_AVANT.minutes} min avant Maghrib », avec l’heure`,
-			new RegExp(`^${COURS_AVANT.minutes} min avant Maghrib \\(\\d{2}:\\d{2}\\)$`).test(heure),
-			heure
+			heure === attendue,
+			`lu « ${heure} », attendu « ${attendue} »`
 		);
 	});
 
 	// Le flux dit la phrase de la page, décalage nul compris, et en anglais celle de la page
-	// anglaise (D1).
+	// anglaise (D1). La séance commence à l'heure que le calcul donne pour la localité.
 	for (const langue of ['fr', 'en', 'ar']) {
 		const { texte, evenements } = await fluxAgenda(langue === 'fr' ? undefined : langue);
 		await retour(langue === 'en' ? 'D1' : 'C2', async () => {
@@ -2764,10 +3225,21 @@ async function prieres(page, navigateur) {
 					evenement.some((ligne) => ligne.startsWith('SUMMARY:') && ligne.includes(ancrage.titre))
 				);
 				const description = ancres.flatMap((evenement) => champ(evenement, 'DESCRIPTION'))[0] ?? '';
+				const jour = compacte(plusJours(T, ancrage.dans));
+				const debut =
+					ancres
+						.flatMap((evenement) => champ(evenement, 'DTSTART'))
+						.find((ligne) => ligne.includes(`${jour}T`)) ?? '';
+				const maghrib = etat.heures?.[plusJours(T, ancrage.dans)]?.maghrib;
+				const attendu = maghrib
+					? `${jour}T${debutAncre(maghrib, ancrage.minutes).replace(':', '')}`
+					: 'heure calculée inconnue';
 				verifier(
-					`le flux agenda${langue === 'fr' ? '' : ` (?lang=${langue})`} dit « ${ancrage.libelle[langue]} » pour « ${ancrage.titre} », comme la page`,
-					ancres.length > 0 && description === `DESCRIPTION:${ancrage.libelle[langue]}`,
-					description.slice(0, 60)
+					`le flux agenda${langue === 'fr' ? '' : ` (?lang=${langue})`} dit « ${ancrage.libelle[langue]} » pour « ${ancrage.titre} », comme la page, à l’heure que le calcul donne pour la localité`,
+					ancres.length > 0 &&
+						description === `DESCRIPTION:${ancrage.libelle[langue]}` &&
+						debut.includes(attendu),
+					`${description.slice(0, 60)} ; ${debut || 'aucun début ce jour-là'}, attendu ${attendu}`
 				);
 			}
 		});
@@ -3019,15 +3491,7 @@ async function languesDeLEspace(navigateur, page) {
 			await ouvrir(autre, '/connexion');
 			const avant = courriels().length;
 			await demanderUnLien(autre, RESPONSABLE);
-			let lien;
-			for (let essai = 0; essai < 40 && !lien; essai += 1) {
-				lien = lienDeConnexion(
-					courriels()
-						.slice(avant)
-						.find((courriel) => courriel.to === RESPONSABLE)
-				);
-				if (!lien) await attendre(250);
-			}
+			const lien = await nouveauLienDeConnexion(RESPONSABLE, avant);
 			await ouvrir(autre, /** @type {string} */ (lien));
 			verifier(
 				'reconnectée dans un autre navigateur réglé en français, elle retrouve l’italien de son compte',
@@ -3047,6 +3511,267 @@ async function languesDeLEspace(navigateur, page) {
 			`<html lang="${await racineDit(page, 'lang')}">`
 		);
 	});
+	await langueChoisieAvantLaConnexion(navigateur, page);
+}
+
+/**
+ * Une langue choisie sur `/connexion`, avant de demander le lien, devient celle du compte (D2) : le
+ * lien la porte, et un autre navigateur, réglé en français, qui l'ouvre arrive dans cette langue.
+ * Puis le compte revient au français, pour la suite du parcours.
+ */
+async function langueChoisieAvantLaConnexion(navigateur, page) {
+	await retour('D2', async () => {
+		const avantLaConnexion = await nouveauContexte(navigateur);
+		const ailleurs = await nouveauContexte(navigateur);
+		try {
+			const choix = await avantLaConnexion.newPage();
+			await ouvrir(choix, '/connexion');
+			await choisirLaLangue(choix, 'de');
+			const avant = courriels().length;
+			await demanderUnLien(choix, RESPONSABLE);
+			const lien = await nouveauLienDeConnexion(RESPONSABLE, avant);
+			const arrivee = await ailleurs.newPage();
+			await ouvrir(arrivee, lien ?? '/connexion');
+			verifier(
+				'une langue choisie sur /connexion avant de demander le lien devient celle du compte : ouvert dans un autre navigateur, réglé en français, le lien arrive en allemand',
+				Boolean(lien) &&
+					chemin(arrivee) === '/organisations' &&
+					(await racineDit(arrivee, 'lang')) === 'de' &&
+					(await titre(arrivee)) === 'Ihre Organisationen',
+				`${lien ? 'lien reçu' : 'aucun lien'}, ${chemin(arrivee)}, <html lang="${await racineDit(arrivee, 'lang')}">, « ${await titre(arrivee)} »`
+			);
+			if ((await racineDit(arrivee, 'lang')) !== 'fr') await choisirLaLangue(arrivee, 'fr');
+		} finally {
+			await avantLaConnexion.close();
+			await ailleurs.close();
+		}
+	});
+	await ouvrir(page, '/');
+	if ((await racineDit(page, 'lang')) !== 'fr') await choisirLaLangue(page, 'fr');
+}
+
+/** Les trouvailles « serious » ou « critical » d'axe sur des pages nommées. */
+const gravesSur = (noms) =>
+	trouvaillesAxe.filter(
+		(trouvaille) => noms.includes(trouvaille.page) && GRAVES.has(trouvaille.impact)
+	);
+
+/**
+ * j. Sur un téléphone, 390 px de large : les tableaux de l'écran des prières et de l'onglet
+ * « Prières » défilent de côté, et doivent se prendre au clavier (axe, C1 et C4) ; la confirmation
+ * avant de supprimer une salle occupée se voit sans défiler (B1).
+ */
+async function surUnTelephone(navigateur, page) {
+	etape('j. Sur un téléphone, 390 px de large');
+	await page.setViewportSize(TELEPHONE);
+	try {
+		await retour('C1', async () => {
+			const noms = [];
+			for (const [reponse, quoi] of [
+				['computed', 'calculées'],
+				['import', 'importées'],
+				['manual', 'saisies à la main']
+			]) {
+				await ouvrir(page, `/prieres?source=${reponse}`);
+				noms.push(`prières à 390 px, heures ${quoi}`);
+				await auditer(page, /** @type {string} */ (noms.at(-1)));
+			}
+			const servies = await page
+				.locator('section[aria-labelledby="servies-titre"] tbody tr')
+				.count();
+			const graves = gravesSur(noms);
+			verifier(
+				'à 390 px de large, axe ne relève rien de sérieux sur les trois réponses de l’écran des prières, heures servies comprises',
+				servies === 7 && graves.length === 0,
+				graves.map((grave) => `${grave.regle} : ${grave.cible}`).join(' ; ') ||
+					`${servies} jour(s) servis`
+			);
+		});
+		await retour('B1', async () => {
+			await ouvrir(page, '/reglages');
+			const salle = page.locator('#salles li').filter({ hasText: SALLE });
+			// Le formulaire recharge la page aujourd'hui ; s'il passe un jour par JavaScript, sans
+			// recharger, la demande doit se voir de même : on attend l'une ou l'autre, sans l'exiger.
+			await Promise.all([
+				page.waitForEvent('load', { timeout: 5000 }).catch(() => undefined),
+				salle.locator('form[action="?/supprimerSalle"] button[type="submit"]').click()
+			]);
+			await page.waitForLoadState('networkidle');
+			await lireLEcran(page);
+			const confirmation = page.locator('#confirmer-salle');
+			await confirmation.waitFor({ timeout: 5000 }).catch(() => undefined);
+			const present = (await confirmation.count()) === 1;
+			const boite = present ? await confirmation.boundingBox() : null;
+			const bouton = present
+				? await confirmation.locator('button[type="submit"]').boundingBox()
+				: null;
+			verifier(
+				`à 390 px, supprimer « ${SALLE} », qu’un cours occupe, demande d’abord de confirmer, et la demande se voit sans défiler`,
+				present &&
+					(await texteDe(confirmation)).includes(SALLE) &&
+					boite !== null &&
+					boite.y >= 0 &&
+					bouton !== null &&
+					bouton.y + bouton.height <= TELEPHONE.height,
+				boite
+					? `demande de ${Math.round(boite.y)} à ${Math.round(boite.y + boite.height)} px, bouton jusqu’à ${Math.round((bouton?.y ?? 0) + (bouton?.height ?? 0))} px, fenêtre de ${TELEPHONE.height} px`
+					: 'aucune demande de confirmation'
+			);
+		});
+	} finally {
+		await page.setViewportSize(ECRAN);
+	}
+
+	// Un visiteur sur son téléphone, dans un navigateur neuf : aucune copie de la page en cache.
+	const telephone = await nouveauContexte(navigateur, { viewport: TELEPHONE });
+	try {
+		const visiteur = await telephone.newPage();
+		await retour('C4', async () => {
+			const noms = [];
+			const semaines = [];
+			for (const langue of ['fr', 'ar']) {
+				await ouvrir(
+					visiteur,
+					`/m/${ORGANISATION.slug}${langue === 'fr' ? '' : `/${langue}`}?vue=prieres`
+				);
+				semaines.push(await visiteur.locator('table.semaine').count());
+				noms.push(`onglet Prières à 390 px, ${langue}`);
+				await auditer(visiteur, /** @type {string} */ (noms.at(-1)));
+			}
+			const graves = gravesSur(noms);
+			verifier(
+				'à 390 px de large, axe ne relève rien de sérieux sur l’onglet « Prières », en français et en arabe, tableau de la semaine compris',
+				semaines.every((nombre) => nombre === 1) && graves.length === 0,
+				graves.map((grave) => `${grave.regle} : ${grave.cible}`).join(' ; ') ||
+					`tableau de la semaine : ${semaines.join(', ')}`
+			);
+		});
+	} finally {
+		await telephone.close();
+	}
+}
+
+/**
+ * k. Sans JavaScript, avec la session de la personne responsable : les options d'une séance restent
+ * fermées et s'ouvrent (A1) ; une session du vendredi s'ajoute et se supprime (B1).
+ */
+async function sansJavaScript(navigateur, page) {
+	etape('k. Sans JavaScript');
+	const contexte = await nouveauContexte(navigateur, {
+		javaScriptEnabled: false,
+		storageState: await page.context().storageState()
+	});
+	try {
+		const sans = await contexte.newPage();
+		await retour('A1', async () => {
+			await ouvrir(sans, '/');
+			const options = sans.locator('details.options');
+			const nombre = await options.count();
+			const ouvertes = async () => sans.locator('details.options[open]').count();
+			verifier(
+				'sans JavaScript, les options de chaque séance sont fermées au chargement, et aucun bouton « Annuler cette séance » ne se voit',
+				nombre >= 2 &&
+					(await ouvertes()) === 0 &&
+					(await boutonsDAnnulationVisibles(sans).count()) === 0,
+				`${nombre} cartes, ${await ouvertes()} ouvertes, ${await boutonsDAnnulationVisibles(sans).count()} boutons visibles`
+			);
+			const premiere = options.first();
+			await premiere.locator(':scope > summary').click();
+			verifier(
+				'sans JavaScript, « Annuler ou déplacer » ouvre les options de sa carte, et d’elle seule',
+				(await ouvertes()) === 1 &&
+					(await premiere.evaluate(
+						(details) => /** @type {HTMLDetailsElement} */ (details).open
+					)) &&
+					(await boutonsDAnnulationVisibles(premiere).count()) === 1 &&
+					(await boutonsDAnnulationVisibles(sans).count()) === 1,
+				`${await ouvertes()} ouverte(s), ${await boutonsDAnnulationVisibles(sans).count()} bouton(s) visible(s)`
+			);
+		});
+		await retour('B1', async () => {
+			await ouvrir(sans, '/vendredi');
+			const ajout = sans.getByRole('region', { name: 'Ajouter une session' });
+			await ajout.locator('input[name="start"]').fill(SECONDE_SESSION.debut);
+			await ajout.locator('input[name="end"]').fill(SECONDE_SESSION.fin);
+			const langues = ajout.locator('input[name="sermonLanguages"]');
+			if ((await langues.locator(':checked').count()) === 0) await langues.first().check();
+			await envoyer(sans, ajout.locator('button[type="submit"]'));
+			const carte = () =>
+				sans
+					.locator('section.session')
+					.filter({ hasText: `${SECONDE_SESSION.debut} – ${SECONDE_SESSION.fin}` });
+			const avant = await carte().count();
+			// Le repli qui supprime : le second de la carte, après celui qui modifie. Son bouton est visé
+			// quel que soit son type, et l'on n'exige pas que la page se recharge : un bouton qui ne
+			// fait rien sans script est justement ce que la vérification doit voir.
+			const repli = carte().locator('details.repli').nth(1);
+			await repli.locator(':scope > summary').click();
+			await Promise.all([
+				sans.waitForEvent('load', { timeout: 5000 }).catch(() => undefined),
+				repli.locator('form[action="?/supprimer"] button').click()
+			]);
+			await sans.waitForLoadState('networkidle');
+			await lireLEcran(sans);
+			const annonce = sans.getByRole('status');
+			verifier(
+				'sans JavaScript, une session du vendredi se supprime : ouvrir « Supprimer cette session », confirmer, et elle a disparu',
+				avant === 1 && (await carte().count()) === 0 && (await annonce.count()) > 0,
+				`${avant} carte avant, ${await carte().count()} après ; ${(await annonce.count()) > 0 ? await texteDe(annonce.last()) : 'aucun message'}`
+			);
+		});
+	} finally {
+		await contexte.close();
+	}
+}
+
+/**
+ * l. Une période préparée à l'avance, copiée pour l'année suivante depuis l'écran en allemand : la
+ * copie est nommée dans cette langue (D2). Les deux périodes sont ensuite supprimées, et l'écran
+ * revient au français.
+ */
+async function periodeCopiee(page) {
+	etape('l. Une période copiée pour l’année suivante, depuis l’écran en allemand');
+	await retour('D2', async () => {
+		await ouvrir(page, '/prieres?source=manual');
+		await choisirLaLangue(page, 'de');
+		const nom = page.locator('#nom-nouvelle');
+		const repli = page.locator('details', { has: nom });
+		if (!(await repli.evaluate((details) => /** @type {HTMLDetailsElement} */ (details).open))) {
+			await repli.locator(':scope > summary').click();
+		}
+		// Dans deux mois, pour un mois : les sept prochains jours n'en sont pas touchés.
+		await nom.fill(PERIODE.nom);
+		await page.locator('#de-nouvelle').fill(plusJours(T, 60));
+		await page.locator('#a-nouvelle').fill(plusJours(T, 90));
+		await envoyer(page, page.locator('form', { has: nom }).locator('button.principal'));
+		const periode = (intitule) =>
+			page
+				.locator('div.periode')
+				.filter({ has: page.locator('h3 bdi').getByText(intitule, { exact: true }) });
+		await envoyer(
+			page,
+			periode(PERIODE.nom).locator('form[action$="/dupliquerPeriode"] button[type="submit"]')
+		);
+		const noms = (await page.locator('div.periode h3 bdi').allTextContents()).map((texte) =>
+			texte.trim()
+		);
+		verifier(
+			`depuis l’écran en allemand, la copie de « ${PERIODE.nom} » pour l’année suivante s’appelle « ${PERIODE.copie} »`,
+			noms.includes(PERIODE.copie),
+			noms.map((texte) => `« ${texte} »`).join(', ') || 'aucune période'
+		);
+		// Toutes les périodes de l'écran sont celles de ce pas : elles s'en vont.
+		for (let reste = await page.locator('div.periode').count(); reste > 0; reste -= 1) {
+			await envoyer(
+				page,
+				page
+					.locator('div.periode')
+					.first()
+					.locator('form[action$="/supprimerPeriode"] button[type="submit"]')
+			);
+		}
+	});
+	if ((await racineDit(page, 'lang')) !== 'fr') await choisirLaLangue(page, 'fr');
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -3090,6 +3815,9 @@ try {
 	await organisationInconnue(visiteur);
 	await languesDeLEspace(navigateur, page);
 	await prieres(page, navigateur);
+	await surUnTelephone(navigateur, page);
+	await sansJavaScript(navigateur, page);
+	await periodeCopiee(page);
 	await bilanDesEcrans();
 } catch (erreur) {
 	echoue = true;
