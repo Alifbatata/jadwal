@@ -45,7 +45,8 @@
  *   téléphone, la confirmation avant de supprimer une salle occupée se voit sans défiler ; sans
  *   JavaScript, une session du vendredi se supprime, et l'écran le dit. Le message d'une séance
  *   déplacée le même jour dit un changement d'heure ; dans la carte d'une session du vendredi,
- *   l'aide de « À partir du » est celle d'une modification.
+ *   l'aide de « À partir du » est celle d'une modification ; dans Réglages, le nom et la formule
+ *   d'accueil tapés au clavier s'enregistrent, même quand la couleur change ensuite.
  * - B2 : l'écran du super-admin, de « Créer une organisation » au lien de connexion de secours ;
  *   l'adresse proposée pendant la frappe, et par le serveur sans JavaScript ; une seconde passkey,
  *   qui a son propre nom et un message juste.
@@ -113,9 +114,10 @@
  *
  * ## En dernier, ce qui change l'organisation
  *
- * Un pas vient après tous les autres, parce qu'il change ce que les autres lisent : la session du
- * vendredi est déplacée le même jour, sur « À venir », d'où un second onglet, ouvert avant, renvoie
- * sa carte restée telle quelle.
+ * Deux pas viennent après tous les autres, parce qu'ils changent ce que les autres lisent. La
+ * session du vendredi est déplacée le même jour, sur « À venir », d'où un second onglet, ouvert
+ * avant, renvoie sa carte restée telle quelle. Le nom et la formule d'accueil sont tapés dans
+ * Réglages, puis remis.
  *
  * ## Les heures de prière attendues
  *
@@ -269,6 +271,12 @@ const DESCRIPTION_SANS_TITRE = {
 	texte: 'Kommentierte Lesung.',
 	refus:
 		'La description en allemand ne peut pas être publiée sans titre dans la même langue. Écrivez aussi le titre en allemand, ou effacez cette description.'
+};
+/** Ce qui est tapé au clavier dans Réglages, puis la couleur choisie ensuite (retour B1). */
+const SAISIE_AU_CLAVIER = {
+	nom: 'Centre du Parcours, nom tapé',
+	accueil: 'Salam au clavier',
+	couleur: '#b91c1c'
 };
 /** La description que reçoit le premier cours le temps de lire le résumé (retour B4). */
 const DESCRIPTION = 'Pour les enfants de 7 à 12 ans.';
@@ -4015,6 +4023,61 @@ async function vendrediSurLAccueil(page) {
 	}
 }
 
+/**
+ * n. Réglages, avec JavaScript et au clavier (B1) : le nom et la formule d'accueil tapés, puis une
+ * autre couleur, sont ce qui s'enregistre. Le sélecteur de couleur du navigateur ne se pilote pas
+ * au clavier : sa valeur est posée directement. Les réglages d'avant reviennent ensuite.
+ */
+async function reglagesAuClavier(page) {
+	etape('n. Réglages : ce qui est tapé au clavier, puis une autre couleur');
+	await retour('B1', async () => {
+		await ouvrir(page, '/reglages');
+		const nom = page.locator('#name');
+		const accueil = page.locator('#greeting');
+		const couleur = page.locator('#accentColor');
+		// Une fois la page hydratée, Svelte retire l'attribut `value` des champs, qui gardent leur
+		// valeur : c'est le signe que les gestes passent par l'écran. Cinq secondes au plus.
+		await page
+			.waitForFunction(() => !document.getElementById('name')?.hasAttribute('value'), undefined, {
+				timeout: 5000
+			})
+			.catch(() => undefined);
+		const avant = {
+			nom: await nom.inputValue(),
+			accueil: await accueil.inputValue(),
+			couleur: await couleur.inputValue()
+		};
+		for (const [champ, texte] of [
+			[nom, SAISIE_AU_CLAVIER.nom],
+			[accueil, SAISIE_AU_CLAVIER.accueil]
+		]) {
+			await champ.click();
+			await page.keyboard.press('ControlOrMeta+A');
+			await page.keyboard.type(texte);
+		}
+		await couleur.fill(SAISIE_AU_CLAVIER.couleur);
+		const tape = { nom: await nom.inputValue(), accueil: await accueil.inputValue() };
+		const formulaire = page.locator('form[action="?/enregistrer"] button[type="submit"]');
+		await envoyer(page, formulaire);
+		const statut = await texteDe(page.getByRole('status'));
+		const enregistre = { nom: await nom.inputValue(), accueil: await accueil.inputValue() };
+		verifier(
+			'avec JavaScript, le nom et la formule d’accueil tapés au clavier, puis une autre couleur : c’est ce qui a été tapé qui s’enregistre',
+			tape.nom === SAISIE_AU_CLAVIER.nom &&
+				tape.accueil === SAISIE_AU_CLAVIER.accueil &&
+				statut === 'Réglages enregistrés.' &&
+				enregistre.nom === SAISIE_AU_CLAVIER.nom &&
+				enregistre.accueil === SAISIE_AU_CLAVIER.accueil &&
+				(await page.title()) === `Réglages | ${SAISIE_AU_CLAVIER.nom}`,
+			`avant l’envoi « ${tape.nom} », « ${tape.accueil} » ; « ${statut} », enregistré « ${enregistre.nom} », « ${enregistre.accueil} »`
+		);
+		await couleur.fill(avant.couleur);
+		await nom.fill(avant.nom);
+		await accueil.fill(avant.accueil);
+		await envoyer(page, formulaire);
+	});
+}
+
 // ---------------------------------------------------------------------------------------------
 // Le déroulé
 // ---------------------------------------------------------------------------------------------
@@ -4060,6 +4123,7 @@ try {
 	await sansJavaScript(navigateur, page);
 	await periodeCopiee(page);
 	await vendrediSurLAccueil(page);
+	await reglagesAuClavier(page);
 	await bilanDesEcrans();
 } catch (erreur) {
 	echoue = true;
