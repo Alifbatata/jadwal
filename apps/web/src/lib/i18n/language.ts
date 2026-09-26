@@ -24,11 +24,15 @@ export const LANGUAGE_COOKIE = 'jadwal_language';
  *
  * La règle : un choix fait avant la connexion part avec le lien de connexion (`signInCallback`),
  * quel que soit le temps passé avant de le demander. Ce cookie vit donc aussi longtemps que la langue
- * choisie. Il est retiré dès que le choix est parti : à la demande du lien, qui l'emporte, ou à la
- * connexion, qui l'écrit sur le compte (une connexion par passkey, un choix refait après la demande
- * du lien). Un navigateur ne donne donc un choix qu'une fois, et ce choix ne revient jamais plus
- * tard défaire une langue changée entre-temps sur un autre appareil. Le lien, lui, ne vit que quinze
- * minutes (`auth.ts`).
+ * choisie, un an. Il est retiré dès que le choix est parti, une seule fois : à la demande d'un lien
+ * sur ce navigateur, qui l'emporte, qu'un courriel parte ou non ; sinon à la première requête
+ * connectée sur ce navigateur, qui l'écrit sur le compte (une passkey, un lien demandé sur un autre
+ * navigateur, un choix refait après la demande du lien). À la demande du lien, seule une adresse
+ * refusée pour sa forme, qui ne demande aucun lien, le laisse attendre. Une fois parti, le choix ne
+ * revient plus défaire une langue changée ensuite ailleurs. Tant qu'il attend, en revanche, il passe
+ * devant une langue changée entre-temps sur un autre appareil : la première connexion sur ce
+ * navigateur, jusqu'à un an plus tard, le donne au compte. Le lien, lui, ne vit que quinze minutes
+ * (`auth.ts`).
  */
 export const PENDING_CHOICE_COOKIE = 'jadwal_language_pending';
 
@@ -178,8 +182,9 @@ export interface AccountSources {
  *   c'est la dernière chose que la personne a dite, sur l'écran même de la connexion. D'ordinaire,
  *   le lien de connexion l'emporte, quel que soit le temps passé depuis le choix, et la vérification
  *   du lien l'écrit (`auth.ts`). Ici, c'est le cookie d'attente qui le dit, sur le navigateur où il
- *   a été fait, quand aucun lien ne l'a emporté : une connexion par passkey, un choix refait après
- *   la demande du lien.
+ *   a été fait, quand aucun lien ne l'a emporté : une connexion par passkey, par un lien demandé sur
+ *   un autre navigateur, ou après un choix refait une fois le lien demandé. Il passe alors devant
+ *   une langue changée entre-temps sur un autre appareil.
  * - Un compte sans langue reçoit celle que la personne voyait : son choix sur ce navigateur, sinon
  *   celle du navigateur, sinon le français.
  * - Ensuite, le compte fait foi : un cookie resté sur un navigateur ne le change pas, puisque la

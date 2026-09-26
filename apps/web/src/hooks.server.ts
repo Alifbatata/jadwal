@@ -115,15 +115,21 @@ async function guardPasskeyRoutes(event: Parameters<Handle>[0]['event']): Promis
  * déjà une langue ; sinon, pour un compte qui n'en a aucune, celle du navigateur. Ses courriels et
  * ses prochaines visites, depuis n'importe quel appareil, la gardent. Ensuite, le compte fait foi.
  *
- * La règle du choix d'avant la connexion : il part avec le lien de connexion, quel que soit le temps
- * passé avant de le demander, et la vérification du lien l'écrit sur le compte (`auth.ts`), sur
- * quelque navigateur que le lien s'ouvre. Son cookie d'attente est retiré dès que le choix est parti :
- * à la demande du lien (`connexion/+page.server.ts`), ou ici, à la connexion, une fois le choix écrit
- * sur le compte. Un navigateur ne donne donc un choix qu'une fois, et ce choix ne revient jamais plus
- * tard défaire une langue changée entre-temps sur un autre appareil. Le lien, lui, ne vit que quinze
- * minutes. Ici, le choix se reconnaît à son cookie d'attente, sur le navigateur où il a été fait,
- * quand aucun lien ne l'a emporté : une connexion par passkey, qui n'a pas de lien, et un choix refait
- * après la demande du lien.
+ * La règle du choix d'avant la connexion. Il attend sur le navigateur où il a été fait, sous son
+ * cookie d'attente, un an au plus, et il part une seule fois, au premier de ces deux moments :
+ * - la demande d'un lien sur ce navigateur (`connexion/+page.server.ts`), quel que soit le temps
+ *   passé depuis le choix, et qu'un courriel parte ou non ; une adresse refusée pour sa forme n'en
+ *   demande aucun. Le lien l'emporte, et sa vérification l'écrit sur le compte (`auth.ts`), sur
+ *   quelque navigateur qu'il s'ouvre. Le lien, lui, ne vit que quinze minutes ;
+ * - sinon, ici, la première requête connectée sur ce navigateur, quelle que soit la façon dont la
+ *   session s'y est ouverte : une passkey, un lien demandé sur un autre navigateur, un choix refait
+ *   après la demande du lien. Elle l'écrit sur le compte.
+ * Son cookie d'attente est retiré à ce moment-là. Une fois parti, le choix ne revient plus : un
+ * second lien, demandé sans nouveau choix, ne l'emporte pas, et une langue changée ensuite ailleurs
+ * reste. Tant qu'il attend, en revanche, il passe devant une langue changée entre-temps sur un autre
+ * appareil : choisir l'allemand ici sans demander de lien, passer à l'italien ailleurs, puis se
+ * connecter ici jusqu'à un an plus tard rend l'allemand au compte. C'est la dernière chose que la
+ * personne a dite sur ce navigateur.
  *
  * Une écriture qui échoue ne fait pas échouer la page, et le cookie d'attente reste : la langue n'est
  * qu'une préférence, et elle sera retentée à la requête suivante. SvelteKit n'ajoute les cookies

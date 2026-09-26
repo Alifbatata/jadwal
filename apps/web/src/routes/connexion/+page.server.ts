@@ -12,9 +12,18 @@
 // Une langue choisie avant la connexion part avec le lien (`signInCallback`), quel que soit le temps
 // passé depuis le choix : il l'emporte sur le navigateur qui l'ouvre, même si ce n'est pas celui-ci,
 // et la vérification du lien en fait la langue du compte (`auth.ts`). Parti avec ce lien, le choix
-// n'attend plus sur ce navigateur : son cookie d'attente est retiré, pour qu'il ne revienne pas plus
-// tard défaire une langue changée entre-temps ailleurs. Ce que l'action lit et retire pour cela vient
-// des cookies de ce navigateur, jamais du compte : la réponse reste la même pour toutes les adresses.
+// n'attend plus sur ce navigateur : son cookie d'attente est retiré, et un second lien, demandé
+// sans nouveau choix, ne l'emporte pas. Une fois parti, il ne revient donc pas défaire une langue
+// changée ensuite ailleurs ; tant qu'aucun lien n'est demandé ici, il attend, jusqu'à un an
+// (`hooks.server.ts` dit la règle entière).
+//
+// Le retrait vaut pour toute adresse de forme acceptable, qu'un courriel parte ou non : une demande
+// que la limite par adresse retient (`auth.ts`), ou dont l'envoi échoue, retire aussi le choix.
+// L'action ne sait pas si le courriel est parti, et la réponse, cookies compris, doit rester la même
+// pour toutes les adresses (ADR 0017) : garder le choix quand la limite par adresse retient l'envoi
+// dirait qu'on a déjà demandé trois liens pour cette adresse dans l'heure. Seule une adresse refusée
+// pour sa forme le laisse attendre : aucun lien n'est demandé. Ce que l'action lit et retire vient
+// des cookies de ce navigateur, jamais du compte.
 
 import { fail, redirect } from '@sveltejs/kit';
 import {
