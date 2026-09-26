@@ -109,6 +109,44 @@ compte en pannes.
 - L'historique git garde ses commits sous AGPL. Ils restent exacts pour leur date, et ils ne sont
   pas réécrits.
 
+## Addendum du 2026-09-26 : une exception, la liste des localités suisses
+
+Depuis l'étape 18, l'écran des heures de prière laisse une personne responsable choisir la localité
+de son organisation par son nom ou son NPA. La liste vient du **Répertoire officiel des localités
+avec le code postal et le périmètre**, de l'Office fédéral de topographie swisstopo. Elle est dans
+le dépôt, réduite à ce qui sert, dans
+`apps/web/src/lib/server/localites/localities.csv`, et le serveur l'embarque : aucun service
+extérieur n'est appelé, ni au moment du choix ni plus tard.
+
+**Ce fichier n'est pas sous MIT, et ses données ne sont pas à Voltia.** Il reste soumis aux
+conditions d'utilisation des géodonnées gratuites de swisstopo (version du 01.03.2021), qui
+permettent de l'utiliser, de le transformer et de le redistribuer, même à des fins commerciales, à
+une condition : citer la source, sur toute représentation et quand les données sont transmises.
+La licence a été vérifiée avant d'embarquer la liste ; l'adresse des conditions, l'empreinte du
+fichier téléchargé et la marche à suivre pour le refaire sont dans le `README.md` de ce dossier.
+
+La source est citée à quatre endroits :
+
+- **dans le fichier lui-même**, par ses lignes d'en-tête, que le générateur
+  (`scripts/localites-suisses.mjs`) écrit à chaque fois ;
+- **dans l'image de production** : `scripts/licences-tierces.mjs` recopie ces lignes dans
+  `LICENCES-TIERCES.md`, sous « Données tierces », dès que le serveur construit contient la liste.
+  C'est la transmission dont parlent les conditions ;
+- **à l'écran, près du choix de la localité**, dans la langue de l'espace, sous l'une des formes
+  que swisstopo accepte (`©swisstopo` pour l'arabe, qui n'a pas de forme à lui) ;
+- **dans `README.md` et `COPYRIGHT`**, là où la licence du dépôt est donnée, avec la mention à
+  reprendre : « Source : Office fédéral de topographie swisstopo ».
+
+**Les déclarations de licence le disent aussi.** Le paquet qui contient la liste,
+`apps/web/package.json`, déclare `MIT AND LicenseRef-swisstopo-OGD`, et l'étiquette OCI de l'image
+porte la même expression (`Dockerfile`). La spécification OCI demande une expression SPDX ; les
+conditions de swisstopo n'ont pas d'identifiant SPDX, d'où le préfixe `LicenseRef-`, dont `COPYRIGHT`
+dit ce qu'il désigne. `scripts/eprouver-image.mjs` vérifie l'étiquette et la section « Données
+tierces » de l'image construite. Le `package.json` de la racine, qui ne contient pas la liste, dit
+toujours `MIT`.
+
+Le reste de la décision ne change pas : tout le code, widget compris, est sous MIT.
+
 ## Ce que cette décision ne dit pas
 
 Elle ne dit rien du CLA, qui ne change pas. Elle ne dit rien d'un changement de licence futur : une
