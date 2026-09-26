@@ -1,18 +1,30 @@
-// Mise en mots, en français. Aucune dépendance au serveur, aucune horloge, aucun fuseau : tout part
-// d'une date civile en chaîne (ADR 0012), pour que la même phrase sorte ici, dans un test, et un
-// jour dans le navigateur.
+// Mise en mots, dans les cinq langues de l'espace. Aucune dépendance au serveur, aucune horloge, aucun
+// fuseau : tout part d'une date civile en chaîne (ADR 0012), pour que la même phrase sorte ici, dans
+// un test, et un jour dans le navigateur.
 //
 // `Intl` n'est pas utilisé pour les dates : il demande un objet `Date`, donc un instant, donc un
 // fuseau — et c'est précisément ce que le modèle de l'étape 1 a refusé d'introduire.
+//
+// Chaque fonction prend la langue en dernier paramètre, facultatif, le français par défaut (étape 18) :
+// un appel sans langue rend ce qu'il rendait avant, mot pour mot, et les écrans pas encore repris
+// n'ont rien à changer. Les mots viennent de `i18n/formatting.ts`, de `i18n.ts` et de
+// `public/affichage.ts`, jamais d'ici.
 
 import { isoDateToDays, weekdayFromDays, type IsoDate } from '@jadwal/core';
-import { longDate as dateDuJour, numericDate } from './i18n.js';
-
-const JOURS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'] as const;
+import { longDate as dateDuJour, numericDate, t, type Langue } from './i18n.js';
+import { formattingTexts } from './i18n/formatting.js';
+import {
+	decalageEnClair,
+	horaireEnClair,
+	joindre,
+	languesEnClair,
+	nomPriere,
+	rythmeEnClair
+} from './public/affichage.js';
 
 /** « lundi ». */
-export function weekdayName(date: IsoDate): string {
-	return JOURS[weekdayFromDays(isoDateToDays(date)) - 1] ?? '';
+export function weekdayName(date: IsoDate, language: Langue = 'fr'): string {
+	return t(language).weekdays[weekdayFromDays(isoDateToDays(date)) - 1] ?? '';
 }
 
 /**
@@ -20,55 +32,56 @@ export function weekdayName(date: IsoDate): string {
  * écrit ses dates comme la page publique, par la même fonction de `i18n.ts` ; elles s'écrivaient
  * « lundi 21 septembre », sans l'année.
  */
-export function shortDate(date: IsoDate): string {
-	return dateDuJour('fr', date);
+export function shortDate(date: IsoDate, language: Langue = 'fr'): string {
+	return dateDuJour(language, date);
 }
 
-/** « 21.09.2026 », pour les endroits où le nom du jour n'apprend rien. */
+/** « 21.09.2026 », pour les endroits où le nom du jour n'apprend rien. Pareil dans les cinq langues. */
 export function longDate(date: IsoDate): string {
 	return numericDate(date);
 }
 
-export const AUDIENCE_LABELS: Record<string, string> = {
-	kids: 'enfants',
-	youth: 'jeunes',
-	women: 'femmes',
-	adults: 'adultes',
-	open: 'ouvert à tous'
-};
+type Audience = keyof (typeof formattingTexts)['fr']['audiences'];
 
-export const PRAYER_LABELS: Record<string, string> = {
-	fajr: 'Fajr',
-	dhuhr: 'Dhuhr',
-	asr: 'Asr',
-	maghrib: 'Maghrib',
-	isha: 'Isha'
-};
+/** Les publics, au fil d'une ligne, dans une langue : pour une liste d'options, par exemple. */
+export function audienceLabels(language: Langue): Record<string, string> {
+	return { ...formattingTexts[language].audiences };
+}
 
-export const LANGUAGE_LABELS: Record<string, string> = {
-	fr: 'français',
-	de: 'allemand',
-	it: 'italien',
-	ar: 'arabe',
-	en: 'anglais',
-	sq: 'albanais',
-	tr: 'turc',
-	bs: 'bosnien'
-};
+/** Un public au fil d'une ligne ; un code inconnu reste tel quel. */
+export function audienceLabel(code: string, language: Langue = 'fr'): string {
+	const labels = formattingTexts[language].audiences;
+	return code in labels ? labels[code as Audience] : code;
+}
 
-const ORDINALS: Record<number, string> = {
-	1: 'premier',
-	2: 'deuxième',
-	3: 'troisième',
-	4: 'quatrième',
-	[-1]: 'dernier'
-};
+export const AUDIENCE_LABELS: Record<string, string> = audienceLabels('fr');
+
+/** Le nom d'une prière, tel que la page publique le donne ; un code inconnu reste tel quel. */
+export function prayerLabel(code: string, language: Langue = 'fr'): string {
+	return nomPriere(language, code);
+}
+
+export const PRAYER_LABELS: Record<string, string> = Object.fromEntries(
+	['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].map((code) => [code, prayerLabel(code)])
+);
+
+/** Le nom d'une langue d'enseignement ; un code inconnu reste tel quel. */
+export function languageLabel(code: string, language: Langue = 'fr'): string {
+	return languesEnClair(language, [code]);
+}
+
+export const LANGUAGE_LABELS: Record<string, string> = Object.fromEntries(
+	['fr', 'de', 'it', 'ar', 'en', 'sq', 'tr', 'bs'].map((code) => [code, languageLabel(code)])
+);
+
+/** « lundi, mercredi et vendredi », avec la conjonction de chaque langue. */
+export function joinList(parts: readonly string[], language: Langue = 'fr'): string {
+	return joindre(language, parts);
+}
 
 /** « lundi et mercredi », « lundi, mercredi et vendredi ». */
 export function joinFrench(parts: readonly string[]): string {
-	if (parts.length === 0) return '';
-	if (parts.length === 1) return parts[0] ?? '';
-	return `${parts.slice(0, -1).join(', ')} et ${parts[parts.length - 1]}`;
+	return joinList(parts, 'fr');
 }
 
 export interface RecurrenceView {
@@ -80,24 +93,35 @@ export interface RecurrenceView {
 	dates?: readonly string[] | null;
 }
 
-/** Le rythme en clair : c'est la phrase que le responsable relit pour se rassurer. */
-export function describeRecurrence(recurrence: RecurrenceView): string {
-	if (recurrence.kind === 'weekly') {
-		const jours = joinFrench((recurrence.weekdays ?? []).map((day) => JOURS[day - 1] ?? ''));
-		return recurrence.interval === 2 ? `un ${jours} sur deux` : `chaque semaine, le ${jours}`;
+/**
+ * Le rythme en clair : c'est la phrase que le responsable relit pour se rassurer.
+ *
+ * Une semaine sur deux et le rang dans le mois se disent comme sur la page publique ; seul le rythme
+ * de chaque semaine le précise (« chaque semaine, le lundi »), pour se distinguer d'« un lundi sur
+ * deux », et les dates précises montrent les trois premières.
+ */
+export function describeRecurrence(recurrence: RecurrenceView, language: Langue = 'fr'): string {
+	const words = formattingTexts[language];
+	if (recurrence.kind === 'weekly' && recurrence.interval !== 2) {
+		const days = (recurrence.weekdays ?? []).map((day) => t(language).weekdays[day - 1] ?? '');
+		return words.weekly(joinList(days, language));
 	}
-	if (recurrence.kind === 'monthly') {
-		const rang = ORDINALS[recurrence.ordinal ?? 1] ?? 'premier';
-		const jour = JOURS[(recurrence.ordinalWeekday ?? 1) - 1] ?? '';
-		return `le ${rang} ${jour} du mois`;
+	if (recurrence.kind === 'weekly' || recurrence.kind === 'monthly') {
+		return rythmeEnClair(language, {
+			recurrenceKind: recurrence.kind,
+			recurrenceWeekdays: recurrence.weekdays ?? null,
+			recurrenceInterval: recurrence.interval ?? null,
+			recurrenceOrdinal: recurrence.ordinal ?? 1,
+			recurrenceOrdinalWeekday: recurrence.ordinalWeekday ?? 1
+		});
 	}
 	const dates = recurrence.dates ?? [];
-	if (dates.length === 0) return 'à des dates précises';
-	const affichees = dates.slice(0, 3).map((date) => shortDate(date as IsoDate));
-	const reste = dates.length - affichees.length;
-	return reste > 0
-		? `à des dates précises : ${joinFrench(affichees)}, et ${reste} autre${reste > 1 ? 's' : ''}`
-		: `à des dates précises : ${joinFrench(affichees)}`;
+	if (dates.length === 0) return words.datesNone;
+	const shown = words.dateList(
+		dates.slice(0, 3).map((date) => shortDate(date as IsoDate, language))
+	);
+	const more = dates.length - Math.min(dates.length, 3);
+	return more > 0 ? words.datesAndMore(shown, more) : words.dates(shown);
 }
 
 export interface TimingView {
@@ -109,46 +133,51 @@ export interface TimingView {
 	durationMinutes?: number | null;
 }
 
-/** « de 19:00 à 20:30 », « 30 min après Maghrib, pendant 1 h ». */
-export function describeTiming(timing: TimingView): string {
+/** « de 19:00 à 20:30 », « 30 min après Maghrib, pendant 1 h 30 ». */
+export function describeTiming(timing: TimingView, language: Langue = 'fr'): string {
 	if (timing.kind === 'fixed') {
-		return `de ${(timing.start ?? '').slice(0, 5)} à ${(timing.end ?? '').slice(0, 5)}`;
+		return horaireEnClair(language, {
+			timingKind: 'fixed',
+			timingStart: timing.start ?? '',
+			timingEnd: timing.end ?? ''
+		});
 	}
-	const priere = PRAYER_LABELS[timing.prayer ?? ''] ?? timing.prayer ?? '';
-	const quand = quandParRapportA(priere, timing.offsetMinutes ?? 0);
-	return `${quand}, pendant ${describeDuration(timing.durationMinutes ?? 0)}`;
+	const when = relativeToPrayer(timing.prayer ?? '', timing.offsetMinutes ?? 0, language);
+	return formattingTexts[language].lasting(
+		when,
+		describeDuration(timing.durationMinutes ?? 0, language)
+	);
 }
 
 /**
- * « après Maghrib », « 15 min après Maghrib », « 15 min avant Maghrib ». Un décalage négatif se dit
- * « avant », avec sa valeur absolue : l'horaire d'un cours et l'heure de chacune de ses séances le
- * disent de la même façon, parce qu'ils passent tous deux par ici. Ce sont les mots de la page
- * publique et du flux agenda (`decalageEnClair`), en minuscules, puisque l'espace les écrit au fil
- * de la ligne.
+ * « après Maghrib », « 15 min après Maghrib », « 15 min avant Maghrib » (retour C3). Un décalage
+ * négatif se dit « avant », avec sa valeur absolue : l'horaire d'un cours et l'heure de chacune de ses
+ * séances le disent de la même façon, parce qu'ils passent tous deux par ici. Ce sont les mots de la
+ * page publique et du flux agenda (`decalageEnClair`), en minuscule initiale, puisque l'espace les
+ * écrit au fil de la ligne ; un code de prière inconnu reste tel quel.
  */
-function quandParRapportA(priere: string, decalage: number): string {
-	if (decalage === 0) return `après ${priere}`;
-	return decalage > 0 ? `${decalage} min après ${priere}` : `${-decalage} min avant ${priere}`;
+function relativeToPrayer(prayer: string, offset: number, language: Langue): string {
+	const phrase = decalageEnClair(language, offset, nomPriere(language, prayer));
+	return phrase.charAt(0).toLocaleLowerCase(language) + phrase.slice(1);
 }
 
-/** « 1 h 30 », « 45 min ». */
-export function describeDuration(minutes: number): string {
-	if (minutes < 60) return `${minutes} min`;
-	const heures = Math.floor(minutes / 60);
-	const reste = minutes % 60;
-	return reste === 0 ? `${heures} h` : `${heures} h ${String(reste).padStart(2, '0')}`;
+/** « 1 h 30 », « 45 min » ; « 1 Stunde 30 Minuten », « ساعة و30 دقيقة ». */
+export function describeDuration(minutes: number, language: Langue = 'fr'): string {
+	return formattingTexts[language].duration(Math.floor(minutes / 60), minutes % 60);
 }
 
 /** L'heure d'une séance, ou ce qu'on en sait quand la table des prières ne dit rien. */
-export function describeSessionTime(seance: {
-	start: string | null;
-	end: string | null;
-	anchor?: { prayer: string; offsetMinutes: number } | undefined;
-}): string {
+export function describeSessionTime(
+	seance: {
+		start: string | null;
+		end: string | null;
+		anchor?: { prayer: string; offsetMinutes: number } | undefined;
+	},
+	language: Langue = 'fr'
+): string {
 	if (seance.start && seance.end) return `${seance.start} – ${seance.end}`;
 	if (seance.anchor) {
-		const priere = PRAYER_LABELS[seance.anchor.prayer] ?? seance.anchor.prayer;
-		return quandParRapportA(priere, seance.anchor.offsetMinutes);
+		return relativeToPrayer(seance.anchor.prayer, seance.anchor.offsetMinutes, language);
 	}
-	return 'heure à préciser';
+	return formattingTexts[language].timeUnknown;
 }
