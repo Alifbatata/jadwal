@@ -10,7 +10,7 @@
 // servi. Vrai serveur construit, vraie base.
 
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
-import { addDays, todayInZone } from '@jadwal/core';
+import { addDays, isoDateToDays, todayInZone, weekdayFromDays, type IsoDate } from '@jadwal/core';
 import { createDatabase, newId, sql, type DatabaseHandle } from '@jadwal/db';
 
 const origin = inject('origin');
@@ -829,5 +829,108 @@ describe('le nom des vues et des publics, dans l’en-tête', () => {
 			);
 		expect(nom('vues')).toEqual([vues]);
 		expect(nom('filtres')).toEqual([publics]);
+	});
+});
+
+/**
+ * La vue « Tous les cours » : sous chaque cours, ses prochaines séances, puis le lien vers sa page.
+ *
+ * Jusqu'ici, la ligne des séances était écrite « {libellé} : » dans le gabarit, avec l'espace que le
+ * français met devant les deux-points, et la page anglaise lisait « Upcoming sessions : ». Les dates
+ * y étaient séparées par la virgule latine, en arabe aussi, et en allemand par une virgule qui se
+ * confondait avec celle qui suit le nom du jour (« Samstag, 26.09.2026, Montag, 28.09.2026 »). Le
+ * lien vers la page du cours portait le mot du fil d'Ariane, « Courses » au pluriel.
+ */
+describe('la vue « Tous les cours », dans chaque langue', () => {
+	const today = todayInZone(FUSEAU, new Date());
+	/** Les jours de la semaine, écrits ici sans passer par le code qu'on éprouve, lundi d'abord. */
+	const JOURS = {
+		fr: ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'],
+		de: ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'],
+		it: ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'],
+		en: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+		ar: ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد']
+	} as const;
+	/** « samedi 26.09.2026 », « Samstag, 26.09.2026 ». */
+	function jourEtDate(langue: keyof typeof JOURS, date: IsoDate): string {
+		const [a, m, j] = date.split('-');
+		const nom = JOURS[langue][weekdayFromDays(isoDateToDays(date)) - 1];
+		return `${nom}${langue === 'de' ? ',' : ''} ${j}.${m}.${a}`;
+	}
+	/** Les trois prochaines séances du cours borné, qui a lieu chaque jour. */
+	const trois = (langue: keyof typeof JOURS) =>
+		[0, 1, 2].map((pas) => jourEtDate(langue, addDays(today, pas)));
+
+	/** Le bloc d'un cours dans la vue, de son `<details>` à la fin de celui-ci. */
+	function bloc(html: string, courseId: string): string {
+		const debut = html.indexOf(`id="cours-${courseId}"`);
+		expect(debut, `le cours ${courseId} manque à la vue`).toBeGreaterThan(-1);
+		return html.slice(debut, html.indexOf('</details>', debut));
+	}
+
+	it.each([
+		{
+			langue: 'fr' as const,
+			chemin: `/m/${SLUG}?vue=cours`,
+			ligne: `Prochaines séances : ${trois('fr').join(', ')}`,
+			lien: 'Page du cours'
+		},
+		{
+			langue: 'de' as const,
+			chemin: `/m/${SLUG}/de?vue=cours`,
+			ligne: `Nächste Termine: ${trois('de').join('; ')}`,
+			lien: 'Seite des Kurses'
+		},
+		{
+			langue: 'it' as const,
+			chemin: `/m/${SLUG}/it?vue=cours`,
+			ligne: `Prossime lezioni: ${trois('it').join(', ')}`,
+			lien: 'Pagina del corso'
+		},
+		{
+			langue: 'en' as const,
+			chemin: `/m/${SLUG}/en?vue=cours`,
+			ligne: `Upcoming sessions: ${trois('en').join(', ')}`,
+			lien: 'Course page'
+		},
+		{
+			langue: 'ar' as const,
+			chemin: `/m/${SLUG}/ar?vue=cours`,
+			ligne: `الحصص القادمة: ${trois('ar').join('، ')}`,
+			lien: 'صفحة الدرس'
+		}
+	])(
+		'lists the upcoming sessions with the punctuation of $langue, and names the link « $lien »',
+		async ({ chemin, ligne, lien }) => {
+			const { statut, html } = await servir(chemin);
+			expect(statut).toBe(200);
+			const cours = bloc(html, COURS.borne);
+			expect(texte(cours.match(/<p class="details[^"]*">([\s\S]*?)<\/p>/)?.[1] ?? '')).toBe(ligne);
+			// Le lien vers la page de ce cours, et lui seul.
+			const liens = [...cours.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)].filter((trouve) =>
+				(attributs(`<a${trouve[1]}>`)['href'] ?? '').endsWith(`/cours/${COURS.borne}`)
+			);
+			expect(liens.map((trouve) => texte(trouve[2] ?? ''))).toEqual([lien]);
+		}
+	);
+});
+
+/**
+ * La ponctuation de chaque langue, dans tout ce que les pages publiques donnent à lire. L'espace
+ * avant les deux-points, le point-virgule, le point d'interrogation et le point d'exclamation est
+ * une règle du français, et de lui seul.
+ */
+describe('la ponctuation des pages publiques', () => {
+	const PAGES_A_LIRE = (['de', 'it', 'en', 'ar'] as const).flatMap((langue) =>
+		['', '?vue=cours', '?vue=mois', '/agenda', `/cours/${COURS.borne}`].map((suite) => ({
+			langue,
+			chemin: `/m/${SLUG}/${langue}${suite}`
+		}))
+	);
+
+	it.each(PAGES_A_LIRE)('puts no space before : ; ? or ! on $chemin', async ({ chemin }) => {
+		const { statut, html } = await servir(chemin);
+		expect(statut).toBe(200);
+		expect(texteLu(html).match(/.{0,30}\s[:;?!؟؛].{0,10}/)?.[0] ?? null).toBeNull();
 	});
 });

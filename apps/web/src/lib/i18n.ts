@@ -74,9 +74,23 @@ interface Dictionnaire {
 	readonly fromTo: (from: string, to: string) => string;
 	readonly datesLabel: string;
 	readonly nextSessions: string;
+	/**
+	 * « Prochaines séances : samedi 26.09.2026, lundi 28.09.2026 », sous un cours de la vue « Tous
+	 * les cours ». La phrase entière, et pas seulement son libellé : chaque langue a sa ponctuation.
+	 * L'espace avant les deux-points n'est que française. L'arabe sépare les dates par sa virgule,
+	 * « ، ». L'allemand, par un point-virgule, parce que la virgule y suit déjà le nom du jour
+	 * (« Samstag, 26.09.2026 ») et qu'une seconde les confondrait.
+	 */
+	readonly nextSessionsLine: (dates: readonly string[]) => string;
 	readonly noNextSessions: string;
 	readonly backToProgramme: string;
+	/** Le fil d'Ariane de la page d'un cours, qui ramène à la vue de tous les cours. */
 	readonly coursesCrumb: string;
+	/**
+	 * Le lien qui mène, depuis la vue « Tous les cours », à la page d'un seul cours. Il portait le
+	 * mot du fil d'Ariane, au pluriel en anglais, en allemand et en italien.
+	 */
+	readonly coursePage: string;
 	readonly subscribe: string;
 	readonly subscribeTitle: string;
 	readonly subscribeIntro: (name: string) => string;
@@ -199,9 +213,11 @@ const fr: Dictionnaire = {
 	fromTo: (from, to) => `Du ${from} au ${to}`,
 	datesLabel: 'Dates',
 	nextSessions: 'Prochaines séances',
+	nextSessionsLine: (dates) => `Prochaines séances : ${dates.join(', ')}`,
 	noNextSessions: 'Aucune date à venir.',
 	backToProgramme: 'Retour au programme',
 	coursesCrumb: 'Cours',
+	coursePage: 'Page du cours',
 	subscribe: 'S’abonner au calendrier',
 	subscribeTitle: 'S’abonner au calendrier',
 	subscribeIntro: (name) =>
@@ -296,9 +312,11 @@ const de: Dictionnaire = {
 	fromTo: (from, to) => `Vom ${from} bis ${to}`,
 	datesLabel: 'Zeitraum',
 	nextSessions: 'Nächste Termine',
+	nextSessionsLine: (dates) => `Nächste Termine: ${dates.join('; ')}`,
 	noNextSessions: 'Keine kommenden Termine.',
 	backToProgramme: 'Zurück zum Programm',
 	coursesCrumb: 'Kurse',
+	coursePage: 'Seite des Kurses',
 	subscribe: 'Kalender abonnieren',
 	subscribeTitle: 'Kalender abonnieren',
 	subscribeIntro: (name) =>
@@ -393,9 +411,11 @@ const it: Dictionnaire = {
 	fromTo: (from, to) => `Dal ${from} al ${to}`,
 	datesLabel: 'Date',
 	nextSessions: 'Prossime lezioni',
+	nextSessionsLine: (dates) => `Prossime lezioni: ${dates.join(', ')}`,
 	noNextSessions: 'Nessuna data in programma.',
 	backToProgramme: 'Torna al programma',
 	coursesCrumb: 'Corsi',
+	coursePage: 'Pagina del corso',
 	subscribe: 'Iscriviti al calendario',
 	subscribeTitle: 'Iscriviti al calendario',
 	subscribeIntro: (name) =>
@@ -493,9 +513,11 @@ const en: Dictionnaire = {
 	fromTo: (from, to) => `From ${from} to ${to}`,
 	datesLabel: 'Dates',
 	nextSessions: 'Upcoming sessions',
+	nextSessionsLine: (dates) => `Upcoming sessions: ${dates.join(', ')}`,
 	noNextSessions: 'No upcoming dates.',
 	backToProgramme: 'Back to the programme',
 	coursesCrumb: 'Courses',
+	coursePage: 'Course page',
 	subscribe: 'Subscribe to the calendar',
 	subscribeTitle: 'Subscribe to the calendar',
 	subscribeIntro: (name) =>
@@ -612,9 +634,11 @@ const ar: Dictionnaire = {
 	fromTo: (from, to) => `من ${from} إلى ${to}`,
 	datesLabel: 'الفترة',
 	nextSessions: 'الحصص القادمة',
+	nextSessionsLine: (dates) => `الحصص القادمة: ${dates.join('، ')}`,
 	noNextSessions: 'لا مواعيد قادمة.',
 	backToProgramme: 'العودة إلى البرنامج',
 	coursesCrumb: 'الدروس',
+	coursePage: 'صفحة الدرس',
 	subscribe: 'الاشتراك في التقويم',
 	subscribeTitle: 'الاشتراك في التقويم',
 	subscribeIntro: (name) =>

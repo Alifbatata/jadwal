@@ -232,17 +232,21 @@
 								<dt>{mots.taughtIn}</dt>
 								<dd>{languesEnClair(data.langue, cours.teachingLanguages)}</dd>
 							</dl>
+							<!-- La phrase entière vient du dictionnaire, ponctuation comprise : l'espace avant
+							     les deux-points n'est que française, et chaque langue sépare ses dates à sa
+							     façon. -->
 							<p class="details">
-								{mots.nextSessions} :
 								{#if prochaines(cours.id, 3).length === 0}
 									{mots.noNextSessions}
 								{:else}
-									{prochaines(cours.id, 3)
-										.map((seance) => longDate(data.langue, seance.date as IsoDate))
-										.join(', ')}
+									{mots.nextSessionsLine(
+										prochaines(cours.id, 3).map((seance) =>
+											longDate(data.langue, seance.date as IsoDate)
+										)
+									)}
 								{/if}
 							</p>
-							<p><a href={versCours(cours.id)}>{mots.coursesCrumb}</a></p>
+							<p><a href={versCours(cours.id)}>{mots.coursePage}</a></p>
 						</details>
 					{/each}
 				</section>
