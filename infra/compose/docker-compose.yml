@@ -141,8 +141,9 @@ services:
       # port ci-dessous qui décide de ce que l'hôte expose.
       HOST: 0.0.0.0
       PORT: '3000'
-      # L'adresse réelle du visiteur : la dernière valeur de X-Forwarded-For, celle que Caddy vient
-      # d'ajouter. `XFF_DEPTH=1` parce qu'il y a exactement un mandataire devant nous.
+      # L'adresse réelle du visiteur : la dernière valeur de X-Forwarded-For, celle que Caddy a
+      # écrite. Sans mandataire de confiance devant lui, Caddy remplace cet en-tête, qui n'a alors
+      # qu'une valeur. `XFF_DEPTH=1` parce qu'il y a exactement un mandataire devant nous.
       ADDRESS_HEADER: x-forwarded-for
       XFF_DEPTH: '1'
       BODY_SIZE_LIMIT: ${BODY_SIZE_LIMIT:-512K}

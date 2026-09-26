@@ -27,15 +27,17 @@ export const BUDGET_PUBLIC: Budget = { windowSeconds: 60, max: 120 };
  * L'adresse du client, telle que l'adaptateur l'a résolue.
  *
  * **Ce code lisait l'en-tête lui-même, et il le lisait de travers** (corrigé à l'étape 9). Il
- * prenait la *première* valeur de `X-Forwarded-For`. Or un mandataire **ajoute** la sienne à celles
- * que le client a envoyées : un visiteur qui pose `X-Forwarded-For: 1.2.3.4` obtient
- * `1.2.3.4, <sa vraie adresse>` après Caddy, et nous lisions `1.2.3.4`. Il suffisait d'en changer à
- * chaque requête pour obtenir un seau de limitation neuf — autant dire qu'il n'y avait pas de
+ * prenait la *première* valeur de `X-Forwarded-For`. Caddy, sans mandataire de confiance devant
+ * lui (`trusted_proxies`), **remplace** cet en-tête par l'adresse de qui s'est connecté à lui : il
+ * n'y reste qu'une valeur. Mais derrière un mandataire qui **ajoute** la sienne à celles que le
+ * client a envoyées, un visiteur qui pose `X-Forwarded-For: 1.2.3.4` arrive avec
+ * `1.2.3.4, <sa vraie adresse>`, et nous lisions `1.2.3.4`. Il suffisait alors d'en changer à
+ * chaque requête pour obtenir un seau de limitation neuf : autant dire qu'il n'y avait plus de
  * limitation.
  *
  * La lecture revient donc à `adapter-node`, qui le fait correctement : avec
  * `ADDRESS_HEADER=x-forwarded-for` et `XFF_DEPTH=1`, il prend la **dernière** valeur, celle que le
- * mandataire vient d'ajouter. `XFF_DEPTH` dit combien de mandataires sont devant nous ; il vaut 1
+ * mandataire a écrite. `XFF_DEPTH` dit combien de mandataires sont devant nous ; il vaut 1
  * parce qu'il y a exactement un Caddy, et il devrait changer le jour où un second s'ajouterait.
  * Sans mandataire — en développement, dans les tests — l'en-tête n'est pas déclaré et c'est
  * l'adresse de la connexion qui sert.
