@@ -398,7 +398,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 				'Calculé avec ce que vous venez de choisir, sans rien enregistrer. Comparez avec le panneau de votre organisation, puis enregistrez.',
 			previewSaved: 'Calculé avec les réglages enregistrés.',
 			previewEmpty:
-				'Choisissez une localité, puis touchez « Voir l’aperçu » : les heures des sept prochains jours s’affichent ici avant d’être enregistrées.',
+				'Une fois la localité choisie, touchez « Voir l’aperçu » : les heures des sept prochains jours s’affichent ici avant d’être enregistrées.',
 			nextDay: 'le lendemain',
 			nextDayTitle: 'Cette heure tombe après minuit, le jour suivant',
 			save: 'Enregistrer'
@@ -704,7 +704,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 				'Berechnet mit dem, was Sie eben gewählt haben, ohne etwas zu speichern. Vergleichen Sie mit der Anzeigetafel Ihrer Organisation und speichern Sie dann.',
 			previewSaved: 'Berechnet mit den gespeicherten Einstellungen.',
 			previewEmpty:
-				'Wählen Sie einen Ort und tippen Sie dann auf «Vorschau anzeigen»: Die Zeiten der nächsten sieben Tage erscheinen hier, bevor sie gespeichert werden.',
+				'Sobald der Ort gewählt ist, tippen Sie auf «Vorschau anzeigen»: Die Zeiten der nächsten sieben Tage erscheinen hier, bevor sie gespeichert werden.',
 			nextDay: 'am Folgetag',
 			nextDayTitle: 'Diese Zeit fällt nach Mitternacht, auf den folgenden Tag',
 			save: 'Speichern'
@@ -1014,7 +1014,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 				'Calcolata con quello che hai appena scelto, senza salvare niente. Confronta con il tabellone della tua organizzazione, poi salva.',
 			previewSaved: 'Calcolata con le impostazioni salvate.',
 			previewEmpty:
-				'Scegli una località, poi tocca «Vedi l’anteprima»: gli orari dei prossimi sette giorni appaiono qui prima di essere salvati.',
+				'Quando hai scelto la località, tocca «Vedi l’anteprima»: gli orari dei prossimi sette giorni appaiono qui prima di essere salvati.',
 			nextDay: 'il giorno dopo',
 			nextDayTitle: 'Quest’ora cade dopo mezzanotte, il giorno seguente',
 			save: 'Salva'
@@ -1322,7 +1322,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 				'Calculated with what you have just chosen, without saving anything. Compare it with the notice board of your organisation, then save.',
 			previewSaved: 'Calculated with the saved settings.',
 			previewEmpty:
-				'Choose a town or village, then tap ‘Show the preview’: the times of the next seven days appear here before they are saved.',
+				'Once the town or village is chosen, tap ‘Show the preview’: the times of the next seven days appear here before they are saved.',
 			nextDay: 'the next day',
 			nextDayTitle: 'This time falls after midnight, on the following day',
 			save: 'Save'
@@ -1616,7 +1616,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			previewUnsaved: 'محسوبة بما اخترته الآن، دون حفظ أي شيء. قارنها بلوحة مؤسستك، ثم احفظ.',
 			previewSaved: 'محسوبة بالإعدادات المحفوظة.',
 			previewEmpty:
-				'اختر بلدة، ثم اضغط «عرض المعاينة»: تظهر هنا مواقيت الأيام السبعة القادمة قبل حفظها.',
+				'بعد اختيار البلدة، اضغط «عرض المعاينة»: تظهر هنا مواقيت الأيام السبعة القادمة قبل حفظها.',
 			nextDay: 'في اليوم التالي',
 			nextDayTitle: 'هذا الوقت بعد منتصف الليل، في اليوم التالي',
 			save: 'حفظ'
