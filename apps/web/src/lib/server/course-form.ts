@@ -13,6 +13,7 @@
 
 import { isIsoDate, isLocalTime, type IsoDate } from '@jadwal/core';
 import {
+	descriptionsWithoutTitle,
 	durationAllowed,
 	isTimingChoice,
 	minutesAllowed,
@@ -41,6 +42,11 @@ export type ReadCourseForm =
 			 */
 			datesBefore: IsoDate[];
 			datesAfter: IsoDate[];
+			/**
+			 * Les langues dont la description est écrite sans titre dans la même langue. `errors`
+			 * porte alors `descriptionWithoutTitle`, et la page écrit une phrase par langue.
+			 */
+			untitledDescriptions: string[];
 			/** Ce que la personne a envoyé, pour le lui remontrer avec le résumé qui va avec. */
 			values: CourseFormValues;
 	  };
@@ -110,17 +116,23 @@ export function readCourseForm(form: FormData, languages: readonly string[]): Re
 	const badDates: string[] = [];
 	const datesBefore: IsoDate[] = [];
 	const datesAfter: IsoDate[] = [];
+	const untitledDescriptions: string[] = [];
 	const refuse = () => ({
 		ok: false as const,
 		errors: ['refused' as const],
 		badDates,
 		datesBefore,
 		datesAfter,
+		untitledDescriptions,
 		values
 	});
 
 	if (!languages.includes(values.sourceLanguage)) return refuse();
 	if (!values.titles[values.sourceLanguage]) errors.push('titleMissing');
+	// Une description sans le titre de sa langue serait perdue à l'enregistrement (`parseCourseForm`
+	// ne garde une langue qu'avec son titre) : le cours ne s'enregistre pas, et la page nomme la langue.
+	untitledDescriptions.push(...descriptionsWithoutTitle(values, languages));
+	if (untitledDescriptions.length > 0) errors.push('descriptionWithoutTitle');
 	// Aucune langue cochée : le résumé dit « pas choisie », et le cours ne s'enregistre pas avec une
 	// langue que personne n'a choisie (`parseCourseForm` prendrait la langue de saisie sans le dire).
 	if (values.teachingLanguages.length === 0) errors.push('teachingMissing');
@@ -168,7 +180,9 @@ export function readCourseForm(form: FormData, languages: readonly string[]): Re
 		errors.push('endsBeforeStarts');
 	}
 
-	if (errors.length > 0) return { ok: false, errors, badDates, datesBefore, datesAfter, values };
+	if (errors.length > 0) {
+		return { ok: false, errors, badDates, datesBefore, datesAfter, untitledDescriptions, values };
+	}
 
 	// Ce que `parseCourseForm` lit : le décalage signé, les dates comme la base les écrit.
 	const normalised = new FormData();

@@ -35,7 +35,8 @@
 		errors = [],
 		badDates = [],
 		datesBefore = [],
-		datesAfter = []
+		datesAfter = [],
+		untitledDescriptions = []
 	}: {
 		values: CourseFormValues;
 		/** Les langues de l'organisation : celles du texte du cours et de l'enseignement. */
@@ -51,6 +52,8 @@
 		/** Les dates avant le premier jour et après le dernier, qu'aucune séance ne suivrait. */
 		datesBefore?: IsoDate[];
 		datesAfter?: IsoDate[];
+		/** Les langues dont la description est écrite sans titre dans la même langue. */
+		untitledDescriptions?: string[];
 	} = $props();
 
 	// Une copie, volontairement figée au premier rendu : le formulaire est la source de vérité de
@@ -85,8 +88,21 @@
 			: [...list, day].sort((a, b) => a - b);
 	}
 
+	/**
+	 * Les phrases d'une erreur : une seule, sauf pour une description sans titre, qui en a une par
+	 * langue en cause, avec le nom de la langue.
+	 */
+	function messages(error: CourseFormError): string[] {
+		if (error === 'descriptionWithoutTitle') {
+			return untitledDescriptions.map((code) =>
+				text.descriptionWithoutTitle(languageLabel(code, language))
+			);
+		}
+		return [message(error)];
+	}
+
 	/** La phrase d'une erreur. Celles des dates recopient les dates en cause, en JJ.MM.AAAA. */
-	function message(error: CourseFormError): string {
+	function message(error: Exclude<CourseFormError, 'descriptionWithoutTitle'>): string {
 		const dates = (list: readonly IsoDate[]) => joinList(list.map(numericDate), language);
 		if (error === 'badDates') return text.badDates(joinList(badDates, language), badDates.length);
 		if (error === 'datesBeforeStart') {
@@ -122,7 +138,9 @@
 			<p>{text.errorsTitle}</p>
 			<ul>
 				{#each errors as error (error)}
-					<li>{message(error)}</li>
+					{#each messages(error) as phrase (phrase)}
+						<li>{phrase}</li>
+					{/each}
 				{/each}
 			</ul>
 		</div>

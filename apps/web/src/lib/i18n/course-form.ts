@@ -44,6 +44,11 @@ interface CourseFormTexts {
 		readonly refused: string;
 		readonly gone: string;
 	};
+	/**
+	 * Une description écrite sans titre dans sa langue, et le nom de cette langue : une phrase par
+	 * langue en cause. Le cours ne s'enregistre pas, pour que la description ne se perde pas.
+	 */
+	readonly descriptionWithoutTitle: (language: string) => string;
 	/** Les dates illisibles ou qui n'existent pas, telles que la personne les a écrites, et leur nombre. */
 	readonly badDates: (list: string, count: number) => string;
 	/**
@@ -78,7 +83,7 @@ interface CourseFormTexts {
 	/** Ce que le résumé dit à la place d'une valeur qui manque. */
 	readonly missing: {
 		readonly title: string;
-		/** Une description sans titre dans sa langue : elle n'est pas publiée (`parseCourseForm`). */
+		/** Une description sans titre dans sa langue : le serveur la refuse, la ligne dit « à corriger ». */
 		readonly descriptionWithoutTitle: (language: string) => string;
 		readonly days: string;
 		readonly dates: string;
@@ -205,6 +210,8 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			refused: 'Une valeur du formulaire n’est pas reconnue. Rechargez la page, puis recommencez.',
 			gone: 'Ce cours n’existe plus : il a peut-être été supprimé.'
 		},
+		descriptionWithoutTitle: (language) =>
+			`La description en ${language} ne peut pas être publiée sans titre dans la même langue. Écrivez aussi le titre en ${language}, ou effacez cette description.`,
 		badDates: (list, count) =>
 			count === 1
 				? `Cette date n’est pas valable : ${list}. Écrivez chaque date comme ceci : 12.10.2026`
@@ -241,7 +248,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		missing: {
 			title: 'pas encore écrit',
-			descriptionWithoutTitle: (language) => `pas publiée sans titre en ${language}`,
+			descriptionWithoutTitle: (language) => `à corriger, il manque le titre en ${language}`,
 			days: 'pas choisis',
 			dates: 'pas encore écrites',
 			noDateInPeriod: 'aucune ne sera publiée',
@@ -361,6 +368,8 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 				'Ein Wert des Formulars wird nicht erkannt. Laden Sie die Seite neu und versuchen Sie es noch einmal.',
 			gone: 'Diesen Kurs gibt es nicht mehr. Vielleicht wurde er gelöscht.'
 		},
+		descriptionWithoutTitle: (language) =>
+			`Die Beschreibung auf ${language} kann ohne Titel in derselben Sprache nicht veröffentlicht werden. Schreiben Sie auch den Titel auf ${language} oder löschen Sie diese Beschreibung.`,
 		badDates: (list, count) =>
 			count === 1
 				? `Dieses Datum ist nicht gültig: ${list}. Schreiben Sie jedes Datum so: 12.10.2026`
@@ -397,8 +406,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		missing: {
 			title: 'noch nicht geschrieben',
-			descriptionWithoutTitle: (language) =>
-				`nicht veröffentlicht, weil der Titel auf ${language} fehlt`,
+			descriptionWithoutTitle: (language) => `zu korrigieren, der Titel auf ${language} fehlt`,
 			days: 'nicht gewählt',
 			dates: 'noch nicht eingetragen',
 			noDateInPeriod: 'keines wird veröffentlicht',
@@ -517,6 +525,8 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			refused: 'Un valore del modulo non è riconosciuto. Ricarica la pagina e riprova.',
 			gone: 'Questo corso non esiste più: forse è stato eliminato.'
 		},
+		descriptionWithoutTitle: (language) =>
+			`La descrizione in ${language} non può essere pubblicata senza un titolo nella stessa lingua. Scrivi anche il titolo in ${language}, oppure cancella questa descrizione.`,
 		badDates: (list, count) =>
 			count === 1
 				? `Questa data non è valida: ${list}. Scrivi ogni data così: 12.10.2026`
@@ -553,7 +563,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		missing: {
 			title: 'non ancora scritto',
-			descriptionWithoutTitle: (language) => `non pubblicata senza un titolo in ${language}`,
+			descriptionWithoutTitle: (language) => `da correggere, manca il titolo in ${language}`,
 			days: 'non scelti',
 			dates: 'non ancora scritte',
 			noDateInPeriod: 'nessuna sarà pubblicata',
@@ -671,6 +681,8 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			refused: 'A value in the form is not recognised. Reload the page, then try again.',
 			gone: 'This course no longer exists. It may have been deleted.'
 		},
+		descriptionWithoutTitle: (language) =>
+			`The description in ${language} cannot be published without a title in the same language. Write the title in ${language} too, or delete this description.`,
 		badDates: (list, count) =>
 			count === 1
 				? `This date is not valid: ${list}. Write each date like this: 12.10.2026`
@@ -707,7 +719,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		missing: {
 			title: 'not written yet',
-			descriptionWithoutTitle: (language) => `not published without a title in ${language}`,
+			descriptionWithoutTitle: (language) => `to correct, the title in ${language} is missing`,
 			days: 'none chosen',
 			dates: 'not written yet',
 			noDateInPeriod: 'none will be published',
@@ -825,6 +837,8 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			refused: 'إحدى قيم النموذج غير معروفة. أعد تحميل الصفحة، ثم حاول مرة أخرى.',
 			gone: 'هذا الدرس لم يعد موجودًا. ربما حُذف.'
 		},
+		descriptionWithoutTitle: (language) =>
+			`لا يمكن نشر الوصف ب${language} دون عنوان باللغة نفسها. اكتب العنوان ب${language} أيضًا، أو احذف هذا الوصف.`,
 		// Le singulier, le duel, puis le pluriel d'un nom de chose, accordé au féminin singulier.
 		badDates: (list, count) =>
 			arabic(count, {
@@ -868,7 +882,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		missing: {
 			title: 'لم يُكتب بعد',
-			descriptionWithoutTitle: (language) => `لن يُنشر دون عنوان ب${language}`,
+			descriptionWithoutTitle: (language) => `يجب تصحيحه، ينقصه العنوان ب${language}`,
 			days: 'لم تُختر بعد',
 			dates: 'لم تُكتب بعد',
 			noDateInPeriod: 'لن يُنشر أي منها',

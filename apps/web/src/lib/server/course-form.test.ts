@@ -175,6 +175,62 @@ describe('les dates d’un cours à dates précises (A3)', () => {
 	});
 });
 
+describe('une description sans titre dans sa langue (B4)', () => {
+	function avecTextes(textes: Record<string, string>) {
+		return formulaire({ ...BASE, timingKind: 'fixed', start: '19:00', end: '20:00', ...textes });
+	}
+
+	it('refuses it rather than losing it in silence, and names each language', () => {
+		const lu = readCourseForm(
+			avecTextes({ 'description.ar': 'قراءة مع شرح.', 'description.de': 'Für Erwachsene.' }),
+			LANGUES
+		);
+		expect(lu.ok).toBe(false);
+		if (lu.ok) return;
+		expect(lu.errors).toEqual(['descriptionWithoutTitle']);
+		// Dans l'ordre des langues de l'organisation, celui des onglets.
+		expect(lu.untitledDescriptions).toEqual(['de', 'ar']);
+		// Le formulaire revient avec ce qui a été écrit : rien n'est à retaper.
+		expect(lu.values.descriptions).toMatchObject({ de: 'Für Erwachsene.', ar: 'قراءة مع شرح.' });
+	});
+
+	it('keeps it with its title, and ignores a description of blanks', () => {
+		const avecTitre = readCourseForm(
+			avecTextes({ 'title.de': 'Tafsir am Abend', 'description.de': 'Für Erwachsene.' }),
+			LANGUES
+		);
+		expect(avecTitre.ok && avecTitre.values.translations.get('de')).toEqual({
+			title: 'Tafsir am Abend',
+			description: 'Für Erwachsene.'
+		});
+		const blancs = readCourseForm(avecTextes({ 'description.de': '  \n ' }), LANGUES);
+		expect(blancs.ok).toBe(true);
+	});
+
+	it('says only the missing title in the input language, in the order of the form', () => {
+		// Sans titre dans la langue de saisie, c'est ce titre qui manque, et il est déjà demandé.
+		const lu = readCourseForm(
+			formulaire({
+				...BASE,
+				'title.fr': '',
+				'description.fr': 'Lecture commentée.',
+				'description.de': 'Für Erwachsene.',
+				teachingLanguages: [],
+				timingKind: 'fixed',
+				start: '19:00',
+				end: '20:00'
+			}),
+			LANGUES
+		);
+		expect(lu.ok ? [] : lu.errors).toEqual([
+			'titleMissing',
+			'descriptionWithoutTitle',
+			'teachingMissing'
+		]);
+		expect(lu.ok ? [] : lu.untitledDescriptions).toEqual(['de']);
+	});
+});
+
 describe('les erreurs, champ par champ (B1)', () => {
 	it('names each field to correct, in the order of the form', () => {
 		const lu = readCourseForm(

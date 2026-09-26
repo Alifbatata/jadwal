@@ -156,6 +156,12 @@ function manques(html: string): string[] {
 	].map((trouve) => lu(trouve[0]));
 }
 
+/** Les phrases de l'encadré des erreurs, une par ligne de la liste. */
+function erreurs(html: string): string[] {
+	const alerte = html.match(/<div\b[^>]*role="alert"[^>]*>[\s\S]*?<\/div>/)?.[0] ?? '';
+	return [...alerte.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)].map((t) => lu(t[1] ?? ''));
+}
+
 /** Les options d'une liste, avec celle qui est choisie. */
 function options(html: string, id: string): { valeur: string; texte: string; choisie: boolean }[] {
 	const liste = html.match(new RegExp(`<select\\b[^>]*\\bid="${id}"[^>]*>([\\s\\S]*?)</select>`));
@@ -830,11 +836,6 @@ describe('les dates hors de la période du cours (B4)', () => {
 		];
 	}
 
-	function erreurs(html: string): string[] {
-		const alerte = html.match(/<div\b[^>]*role="alert"[^>]*>[\s\S]*?<\/div>/)?.[0] ?? '';
-		return [...alerte.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)].map((t) => lu(t[1] ?? ''));
-	}
-
 	it('refuses dates before the first day, names them and says what to do, in each language', async () => {
 		// Le moteur ne publierait aucune de ces séances : le cours ne s'enregistre pas en silence.
 		const attendu: Record<Langue, string> = {
@@ -965,6 +966,97 @@ describe('les dates hors de la période du cours (B4)', () => {
 		]);
 
 		expect(await periodeEnBase()).toEqual([{ startsOn: '2026-10-12', endsOn: null }]);
+	});
+});
+
+describe('une description sans titre dans sa langue (B4)', () => {
+	let cookie = '';
+
+	beforeAll(async () => {
+		cookie = await signIn(RESPONSABLE);
+	});
+
+	const DESCRIPTION_DE = 'Kommentierte Lesung für Erwachsene.';
+	const MANQUE = 'Description en allemand : à corriger, il manque le titre en allemand';
+	const MESSAGE: Record<Langue, string> = {
+		fr: 'La description en allemand ne peut pas être publiée sans titre dans la même langue. Écrivez aussi le titre en allemand, ou effacez cette description.',
+		de: 'Die Beschreibung auf Deutsch kann ohne Titel in derselben Sprache nicht veröffentlicht werden. Schreiben Sie auch den Titel auf Deutsch oder löschen Sie diese Beschreibung.',
+		it: 'La descrizione in tedesco non può essere pubblicata senza un titolo nella stessa lingua. Scrivi anche il titolo in tedesco, oppure cancella questa descrizione.',
+		en: 'The description in German cannot be published without a title in the same language. Write the title in German too, or delete this description.',
+		ar: 'لا يمكن نشر الوصف بالألمانية دون عنوان باللغة نفسها. اكتب العنوان بالألمانية أيضًا، أو احذف هذا الوصف.'
+	};
+
+	/** Les titres et descriptions en base du cours qui porte ce titre, langue par langue. */
+	async function traductionsDe(titreDuCours: string) {
+		return maintenance(async (tx) =>
+			lignes<{ language: string; title: string; description: string | null }>(
+				await tx.execute(sql`
+					select t."language", t."title", t."description" from "course_translation" t
+					where t."organization_id" = ${organizationId} and t."course_id" in (
+						select "course_id" from "course_translation" where "title" = ${titreDuCours}
+					)
+					order by t."language"
+				`)
+			)
+		);
+	}
+
+	it('refuses it on a new course, names the language and says what to do, in each language', async () => {
+		// Avant, le cours s'enregistrait et la description disparaissait sans un mot.
+		const titreDuCours = 'Description allemande sans titre';
+		const champs: (readonly [string, string])[] = [
+			...coursAncre(titreDuCours, 'prayer', '15'),
+			['description.de', DESCRIPTION_DE]
+		];
+		for (const langue of LANGUES) {
+			await poserLangueDuCompte(langue);
+			const reponse = await postForm('/cours/nouveau', champs, cookie);
+			expect(reponse.status, langue).toBe(400);
+			expect(erreurs(await reponse.text()), langue).toEqual([MESSAGE[langue]]);
+		}
+		await poserLangueDuCompte('fr');
+		expect(await traductionsDe(titreDuCours)).toEqual([]);
+	});
+
+	it('keeps what was typed, marks it in the summary, and saves it once the title is written', async () => {
+		const titreDuCours = 'Description gardée';
+		const champs: (readonly [string, string])[] = [
+			...coursAncre(titreDuCours, 'prayer', '15'),
+			['description.de', DESCRIPTION_DE]
+		];
+		const reponse = await postForm('/cours/nouveau', champs, cookie);
+		expect(reponse.status).toBe(400);
+		const html = await reponse.text();
+		expect(champsDuFormulaire(html)).toContainEqual(['description.de', DESCRIPTION_DE]);
+		expect(manques(html)).toContain(MANQUE);
+
+		// Le titre ajouté, comme le message le demande : le cours s'enregistre avec la description.
+		const corrige = await postForm(
+			'/cours/nouveau',
+			[...champs, ['title.de', 'Kurs mit Beschreibung']],
+			cookie
+		);
+		expect(corrige.status).toBe(303);
+		expect(await traductionsDe(titreDuCours)).toEqual([
+			{ language: 'de', title: 'Kurs mit Beschreibung', description: DESCRIPTION_DE },
+			{ language: 'fr', title: titreDuCours, description: null }
+		]);
+	});
+
+	it('refuses it on the page of a course too, keeps what was typed and the course as it was', async () => {
+		const champs = champsDuFormulaire(await (await get(`/cours/${tafsirId}`, cookie)).text()).map(
+			([nom, valeur]): [string, string] => [nom, nom === 'description.de' ? DESCRIPTION_DE : valeur]
+		);
+		const reponse = await postForm(`/cours/${tafsirId}`, champs, cookie);
+		expect(reponse.status).toBe(400);
+		const html = await reponse.text();
+		expect(erreurs(html)).toEqual([MESSAGE.fr]);
+		expect(champsDuFormulaire(html)).toContainEqual(['description.de', DESCRIPTION_DE]);
+		expect(manques(html)).toEqual([MANQUE]);
+		expect(await traductionsDe(TAFSIR)).toEqual([
+			{ language: 'ar', title: TAFSIR_AR, description: null },
+			{ language: 'fr', title: TAFSIR, description: DESCRIPTION }
+		]);
 	});
 });
 

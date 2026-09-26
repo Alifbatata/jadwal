@@ -128,9 +128,9 @@ describe('le résumé de ce qui sera publié (B4)', () => {
 		expect(rows.map((row) => row.key)).not.toContain('endsOn');
 	});
 
-	it('says a description is published only with a title in its language', () => {
-		// `parseCourseForm` ne garde la traduction d'une langue qu'avec son titre : une description
-		// seule n'est pas publiée, et le résumé le dit au lieu de la montrer comme publiée.
+	it('marks as to correct a description without a title in its language', () => {
+		// Le serveur refuse une description seule, sans le titre de sa langue : le résumé la marque « à
+		// corriger », comme les autres valeurs refusées, au lieu de la montrer comme publiée.
 		const rows = summarise(
 			{ ...COMPLET, descriptions: { fr: ' ', de: 'Für Erwachsene.', ar: 'قراءة مع شرح.' } },
 			CONTEXTE,
@@ -138,11 +138,29 @@ describe('le résumé de ce qui sera publié (B4)', () => {
 		);
 		expect(rows.slice(0, 4).map((row) => `${row.label} ${row.value}`)).toEqual([
 			'Titre en français : Tafsir du soir',
-			'Description en allemand : pas publiée sans titre en allemand',
+			'Description en allemand : à corriger, il manque le titre en allemand',
 			'Titre en arabe : تفسير المساء',
 			'Description en arabe : قراءة مع شرح.'
 		]);
 		expect(rows.filter((row) => row.missing).map((row) => row.key)).toEqual(['description-de']);
+		const marquee = (langue: Parameters<typeof summarise>[2]) =>
+			summarise(
+				{ ...COMPLET, descriptions: { fr: '', de: 'Für Erwachsene.', ar: '' } },
+				CONTEXTE,
+				langue
+			)
+				.filter((row) => row.missing)
+				.map((row) => `${row.label} ${row.value}`);
+		expect(marquee('de')).toEqual([
+			'Beschreibung auf Deutsch: zu korrigieren, der Titel auf Deutsch fehlt'
+		]);
+		expect(marquee('it')).toEqual([
+			'Descrizione in tedesco: da correggere, manca il titolo in tedesco'
+		]);
+		expect(marquee('en')).toEqual([
+			'Description in German: to correct, the title in German is missing'
+		]);
+		expect(marquee('ar')).toEqual(['الوصف بالألمانية: يجب تصحيحه، ينقصه العنوان بالألمانية']);
 	});
 
 	it('puts the title of the input language first', () => {

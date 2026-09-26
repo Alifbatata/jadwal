@@ -114,6 +114,7 @@ export const actions: Actions = {
 				badDates: read.badDates,
 				datesBefore: read.datesBefore,
 				datesAfter: read.datesAfter,
+				untitledDescriptions: read.untitledDescriptions,
 				values: read.values
 			});
 		}
@@ -133,6 +134,7 @@ export const actions: Actions = {
 				badDates: [],
 				datesBefore: [],
 				datesAfter: [],
+				untitledDescriptions: [],
 				values: null
 			});
 		}

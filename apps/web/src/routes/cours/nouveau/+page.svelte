@@ -57,6 +57,7 @@
 	badDates={form?.badDates ?? []}
 	datesBefore={form?.datesBefore ?? []}
 	datesAfter={form?.datesAfter ?? []}
+	untitledDescriptions={form?.untitledDescriptions ?? []}
 />
 
 <style>

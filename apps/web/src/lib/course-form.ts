@@ -36,13 +36,15 @@ import { formattingTexts } from './i18n/formatting.js';
 /**
  * Le nom d'une erreur du formulaire ; sa phrase, dans chaque langue, est dans `i18n/course-form.ts`.
  * `badDates`, `datesBeforeStart` et `datesAfterEnd` ont la leur à part, parce qu'elles recopient
- * les dates en cause et accordent leur nombre.
+ * les dates en cause et accordent leur nombre ; `descriptionWithoutTitle` aussi, avec une phrase par
+ * langue en cause.
  */
 export type CourseFormError =
 	| keyof (typeof courseFormTexts)['fr']['errors']
 	| 'badDates'
 	| 'datesBeforeStart'
-	| 'datesAfterEnd';
+	| 'datesAfterEnd'
+	| 'descriptionWithoutTitle';
 
 /** Les trois façons de donner l'heure d'un cours, dans la liste « Comment fixer l'heure ? ». */
 export type TimingChoice = 'fixed' | 'prayer' | 'beforePrayer';
@@ -123,6 +125,25 @@ export function durationAllowed(value: number | null): value is number {
 		Number.isInteger(value) &&
 		value >= MIN_DURATION_MINUTES &&
 		value <= MAX_DURATION_MINUTES
+	);
+}
+
+/**
+ * Les langues dont la description est écrite sans titre dans la même langue, dans l'ordre des
+ * langues de l'organisation. Une langue n'est gardée qu'avec son titre (`parseCourseForm`) : plutôt
+ * que de perdre la description sans rien dire, le serveur refuse le formulaire tant qu'il en reste
+ * une, et le résumé la marque. Le serveur et le résumé jugent par cette fonction. La langue de saisie
+ * n'y figure jamais : son titre manquant est déjà une erreur.
+ */
+export function descriptionsWithoutTitle(
+	values: Pick<CourseFormValues, 'sourceLanguage' | 'titles' | 'descriptions'>,
+	languages: readonly string[]
+): string[] {
+	return languages.filter(
+		(code) =>
+			code !== values.sourceLanguage &&
+			(values.descriptions[code]?.trim() ?? '') !== '' &&
+			(values.titles[code]?.trim() ?? '') === ''
 	);
 }
 
@@ -231,6 +252,7 @@ export function summarise(
 
 	// Le titre et la description de chaque langue, ensemble, comme dans l'onglet de la langue.
 	const others = context.languages.filter((code) => code !== values.sourceLanguage);
+	const untitled = descriptionsWithoutTitle(values, context.languages);
 	for (const code of [values.sourceLanguage, ...others]) {
 		const name = languageLabel(code, language);
 		const title = values.titles[code]?.trim() ?? '';
@@ -240,13 +262,13 @@ export function summarise(
 			const label = text.summary.titleIn(name);
 			row(`title-${code}`, label, title || null, text.missing.title, true, code);
 		}
-		// `parseCourseForm` ne garde une langue qu'avec son titre : une description seule n'est pas
-		// publiée, et le résumé le dit. Dans la langue de saisie, le titre manquant est déjà signalé.
+		// Une description seule, sans le titre de sa langue, est refusée par le serveur : sa ligne est
+		// « à corriger ». Dans la langue de saisie, le titre manquant est déjà signalé.
 		if (description) {
 			row(
 				`description-${code}`,
 				text.summary.descriptionIn(name),
-				title || isSource ? description : null,
+				untitled.includes(code) ? null : description,
 				text.missing.descriptionWithoutTitle(name),
 				true,
 				code
