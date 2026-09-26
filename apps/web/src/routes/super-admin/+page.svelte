@@ -212,7 +212,7 @@
 		<p class="aide">{text.addressFixed}</p>
 
 		<label for="timeZone">{text.timeZoneLabel}</label>
-		<select id="timeZone" name="timeZone" aria-describedby="timeZone-aide">
+		<select id="timeZone" name="timeZone" aria-describedby="timeZone-aide timeZone-ville">
 			<optgroup label={text.timeZoneEurope}>
 				{#each data.timeZones.europe as zone (zone)}
 					<option value={zone} selected={zone === chosenTimeZone}>{zoneLabel(zone)}</option>
@@ -225,6 +225,7 @@
 			</optgroup>
 		</select>
 		<p id="timeZone-aide" class="aide">{text.timeZoneHint(data.defaultTimeZone)}</p>
+		<p id="timeZone-ville" class="aide">{text.timeZoneNotListed}</p>
 
 		<button type="submit">{text.create}</button>
 	</form>

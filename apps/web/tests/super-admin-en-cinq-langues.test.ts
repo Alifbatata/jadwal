@@ -426,6 +426,36 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 			);
 		});
 
+		it('says what to choose when the town is not in the list, in the five languages', async () => {
+			// Oslo, Amsterdam, Vaduz ou Zagreb ne sont pas dans la liste : ce sont des alias, que le flux
+			// agenda refuse. Une ville à la même heure les remplace, et l'aide le dit.
+			const EXEMPLES = ['Europe/Zurich', 'Europe/Paris', 'Europe/Berlin'];
+			const aide = (html: string) => texteDe(element(html, /<p\b[^>]*\bid="timeZone-ville"/, 'p'));
+			const francais = await (await get('/super-admin', avecPouvoirs)).text();
+			expect(aide(francais)).toBe(
+				'Si la ville de l’organisation n’est pas dans la liste, choisissez une ville qui a toujours la même heure qu’elle. Pour la plus grande partie de l’Europe : Europe/Zurich, Europe/Paris ou Europe/Berlin.'
+			);
+			// Le lecteur d'écran la lit avec le champ, et chaque exemple se trouve dans la liste.
+			expect(francais.match(/<select\b[^>]*\bid="timeZone"[^>]*>/)?.[0] ?? '').toMatch(
+				/\baria-describedby="[^"]*\btimeZone-ville\b/
+			);
+			expect(fuseaux(francais).map((option) => option.valeur)).toEqual(
+				expect.arrayContaining(EXEMPLES)
+			);
+			try {
+				for (const langue of LANGUES.slice(1)) {
+					await langueDuCompte(langue);
+					const lue = aide(await (await get('/super-admin', avecPouvoirs)).text());
+					expect.soft(lue, langue).not.toBe('');
+					expect.soft(lue, langue).not.toBe(aide(francais));
+					for (const exemple of EXEMPLES)
+						expect.soft(lue, `${langue} ${exemple}`).toContain(exemple);
+				}
+			} finally {
+				await langueDuCompte('fr');
+			}
+		});
+
 		it('proposes the address from the name when the field arrives empty, without JavaScript', async () => {
 			const reponse = await postForm(
 				'/super-admin?/ouvrir',

@@ -15,6 +15,14 @@ import type { Translations } from './space.js';
 /** Le lieu de l'exemple de nom : un nom propre, qui s'écrit de même dans chaque langue. */
 const PLACE = 'Madretsch';
 
+/**
+ * Trois fuseaux de la liste qui ont toujours l'heure de la plus grande partie de l'Europe. Une ville
+ * dont le nom est un alias (Oslo, Amsterdam, Vaduz, Zagreb…) n'est pas dans la liste, parce que le
+ * flux agenda refuse les alias : l'aide dit de prendre une ville à la même heure, par exemple l'un
+ * de ceux-là. Ce sont des noms de la base IANA, écrits comme la liste les montre.
+ */
+const [ZURICH, PARIS, BERLIN] = ['Europe/Zurich', 'Europe/Paris', 'Europe/Berlin'] as const;
+
 interface SuperAdminTexts {
 	readonly title: string;
 	readonly intro: string;
@@ -60,6 +68,8 @@ interface SuperAdminTexts {
 	readonly timeZoneLabel: string;
 	/** À quoi sert le fuseau, et celui de la Suisse, que le serveur donne. */
 	readonly timeZoneHint: (zone: string) => string;
+	/** Quoi choisir quand la ville de l'organisation n'est pas dans la liste. */
+	readonly timeZoneNotListed: string;
 	readonly timeZoneEurope: string;
 	readonly timeZoneWorld: string;
 	readonly create: string;
@@ -138,6 +148,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		timeZoneLabel: 'Fuseau horaire',
 		timeZoneHint: (zone) =>
 			`Il sert à afficher les heures du programme à l’heure du lieu de l’organisation et à calculer les heures de prière. En Suisse : ${zone}.`,
+		timeZoneNotListed: `Si la ville de l’organisation n’est pas dans la liste, choisissez une ville qui a toujours la même heure qu’elle. Pour la plus grande partie de l’Europe : ${ZURICH}, ${PARIS} ou ${BERLIN}.`,
 		timeZoneEurope: 'Europe',
 		timeZoneWorld: 'Reste du monde',
 		create: 'Créer l’organisation',
@@ -214,6 +225,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		timeZoneLabel: 'Zeitzone',
 		timeZoneHint: (zone) =>
 			`Sie dient dazu, die Zeiten des Programms in der Ortszeit der Organisation anzuzeigen und die Gebetszeiten zu berechnen. In der Schweiz: ${zone}.`,
+		timeZoneNotListed: `Steht der Ort der Organisation nicht in der Liste, wählen Sie eine Stadt, in der immer die gleiche Uhrzeit gilt wie dort. Für den grössten Teil Europas: ${ZURICH}, ${PARIS} oder ${BERLIN}.`,
 		timeZoneEurope: 'Europa',
 		timeZoneWorld: 'Übrige Welt',
 		create: 'Organisation erstellen',
@@ -291,6 +303,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		timeZoneLabel: 'Fuso orario',
 		timeZoneHint: (zone) =>
 			`Serve a mostrare gli orari del programma all’ora del luogo dell’organizzazione e a calcolare gli orari di preghiera. In Svizzera: ${zone}.`,
+		timeZoneNotListed: `Se la città dell’organizzazione non è nella lista, scegli una città con la stessa ora tutto l’anno. Per la maggior parte dell’Europa: ${ZURICH}, ${PARIS} o ${BERLIN}.`,
 		timeZoneEurope: 'Europa',
 		timeZoneWorld: 'Resto del mondo',
 		create: 'Crea l’organizzazione',
@@ -367,6 +380,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		timeZoneLabel: 'Time zone',
 		timeZoneHint: (zone) =>
 			`It is used to show the times of the programme in the local time of the organisation, and to work out the prayer times. In Switzerland: ${zone}.`,
+		timeZoneNotListed: `If the town of the organisation is not in the list, choose a city with the same time all year round. For most of Europe: ${ZURICH}, ${PARIS} or ${BERLIN}.`,
 		timeZoneEurope: 'Europe',
 		timeZoneWorld: 'Rest of the world',
 		create: 'Create the organisation',
@@ -441,6 +455,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		timeZoneLabel: 'المنطقة الزمنية',
 		timeZoneHint: (zone) =>
 			`تستعمل لعرض المواعيد حسب التوقيت المحلي لمكان المؤسسة، ولحساب مواقيت الصلاة. في سويسرا: ${zone}.`,
+		timeZoneNotListed: `إذا لم تكن مدينة المؤسسة في القائمة، فاختر مدينة لها دائمًا التوقيت نفسه. لمعظم دول أوروبا: ${ZURICH} أو ${PARIS} أو ${BERLIN}.`,
 		timeZoneEurope: 'أوروبا',
 		timeZoneWorld: 'بقية العالم',
 		create: 'إنشاء المؤسسة',
