@@ -276,6 +276,16 @@ describe('le résumé de ce qui sera publié (B4)', () => {
 		expect(rows).toContain('Fréquence : chaque mois');
 	});
 
+	it('agrees the Italian rank with « domenica » in the day of a monthly course', () => {
+		const domenica = (monthlyOrdinal: number) =>
+			lignes({ ...COMPLET, recurrenceKind: 'monthly', monthlyOrdinal, monthlyWeekday: 7 }, 'it');
+		expect(domenica(1)).toContain('Giorni: la prima domenica del mese');
+		expect(domenica(-1)).toContain('Giorni: l’ultima domenica del mese');
+		expect(lignes({ ...COMPLET, recurrenceKind: 'monthly', monthlyWeekday: 1 }, 'it')).toContain(
+			'Giorni: il primo lunedì del mese'
+		);
+	});
+
 	it('speaks each of the five languages', () => {
 		const horaires = {
 			fr: 'Horaire : 10 min avant Maghrib, pendant 1 h',

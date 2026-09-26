@@ -101,6 +101,20 @@ const ORDINAUX: Record<Langue, Record<number, string>> = {
 };
 
 /**
+ * Le rang devant un jour féminin, dans la seule langue qui l'accorde au jour : l'italien, où la
+ * domenica est féminine, « la prima domenica », « l’ultima domenica ». Les jours de chaque langue qui
+ * le demandent sont dans `JOURS_FEMININS`, en jours ISO. Le français, l'allemand, l'anglais et l'arabe
+ * disent le rang du dimanche comme celui des autres jours.
+ */
+const ORDINAUX_FEMININS: Partial<Record<Langue, Record<number, string>>> = {
+	it: { 1: 'la prima', 2: 'la seconda', 3: 'la terza', 4: 'la quarta', [-1]: 'l’ultima' }
+};
+
+const JOURS_FEMININS: Partial<Record<Langue, readonly number[]>> = {
+	it: [7]
+};
+
+/**
  * Le jour tel qu'il s'écrit après un rang, quand ce n'est pas son nom habituel. En arabe, le rang
  * invariable demande le jour **sans article** : « آخر اثنين », pas « آخر الاثنين ». Les quatre autres
  * langues reprennent les noms de jour de leur dictionnaire.
@@ -129,9 +143,12 @@ export function rythmeEnClair(langue: Langue, cours: RythmeAffichable): string {
 			: CHAQUE_SEMAINE[langue](liste);
 	}
 	if (cours.recurrenceKind === 'monthly') {
-		const rang = ORDINAUX[langue][cours.recurrenceOrdinal ?? 1] ?? '';
+		const numero = cours.recurrenceOrdinalWeekday ?? 1;
+		const feminin = JOURS_FEMININS[langue]?.includes(numero) ?? false;
+		const rangs = (feminin ? ORDINAUX_FEMININS[langue] : undefined) ?? ORDINAUX[langue];
+		const rang = rangs[cours.recurrenceOrdinal ?? 1] ?? '';
 		const jours = JOURS_APRES_UN_RANG[langue] ?? mots.weekdays;
-		const jour = jours[(cours.recurrenceOrdinalWeekday ?? 1) - 1] ?? '';
+		const jour = jours[numero - 1] ?? '';
 		return RANG_DU_MOIS[langue](rang, jour);
 	}
 	return mots.rhythms['dates'] ?? '';

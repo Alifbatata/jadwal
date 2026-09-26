@@ -2,8 +2,9 @@
 //
 // Quatre familles de tests. Les premiers figent les sorties françaises, allemandes et italiennes
 // telles qu'elles étaient avant la relecture de l'arabe : la restructuration de `affichage.ts` en
-// enregistrements par langue ne devait rien y changer, et ces tests le tiennent. Une seule sortie y a
-// bougé depuis, à dessein : « l’ultimo » italien. Les seconds portent les corrections de l'arabe
+// enregistrements par langue ne devait rien y changer, et ces tests le tiennent. Deux sorties
+// italiennes y ont bougé depuis, à dessein : « l’ultimo », et le rang accordé à la domenica,
+// « la prima domenica ». Les seconds portent les corrections de l'arabe
 // demandées par le chef de projet (rangs du mois, conjonction, minutes). Les troisièmes disent un
 // décalage négatif par « avant », dans les quatre langues d'avant l'étape 18. Les derniers portent
 // l'anglais britannique, cinquième langue.
@@ -68,6 +69,27 @@ describe('les sorties françaises, allemandes et italiennes ne bougent pas', () 
 		// L'article s'élide devant la voyelle : « l’ultimo », jamais « il ultimo ».
 		expect(rythmeEnClair('it', rang(-1, 1))).toBe('l’ultimo lunedì del mese');
 		expect(rythmeEnClair('it', rang(-1, 6))).toBe('l’ultimo sabato del mese');
+	});
+
+	it('agrees the Italian rank with « domenica », the only feminine day', () => {
+		// « il primo domenica » était faux : le rang et son article s'accordent au jour.
+		const dimanche = (ordinal: number) => ({
+			recurrenceKind: 'monthly',
+			recurrenceOrdinal: ordinal,
+			recurrenceOrdinalWeekday: 7
+		});
+		expect([1, 2, 3, 4, -1].map((ordinal) => rythmeEnClair('it', dimanche(ordinal)))).toEqual([
+			'la prima domenica del mese',
+			'la seconda domenica del mese',
+			'la terza domenica del mese',
+			'la quarta domenica del mese',
+			'l’ultima domenica del mese'
+		]);
+		// Les autres langues n'accordent pas le rang au jour : le dimanche n'y change rien.
+		expect(rythmeEnClair('fr', dimanche(1))).toBe('le premier dimanche du mois');
+		expect(rythmeEnClair('de', dimanche(-1))).toBe('am letzten Sonntag des Monats');
+		expect(rythmeEnClair('en', dimanche(1))).toBe('the first Sunday of the month');
+		expect(rythmeEnClair('ar', dimanche(-1))).toBe('آخر أحد من الشهر');
 	});
 
 	it('keeps the rhythm of precise dates', () => {
