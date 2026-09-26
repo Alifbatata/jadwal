@@ -189,10 +189,39 @@ avant, dans l'organisation où il est entré (ADR 0025).
 Ce qui reste : qui tient le mot de passe du rôle applicatif pose lui-même le contexte, personne
 comprise, et peut se dire responsable (`docs/SECURITE.md`, barrière 1).
 
+## Addendum du 2026-09-26 : la langue d'une invitation (point d'arrêt)
+
+Depuis l'étape 18, les courriels parlent les cinq langues du service (ADR 0007, ADR 0047). Le plan
+de l'étape voulait qu'un courriel parte dans la langue du compte qui le reçoit, et qu'une invitation
+à une adresse sans compte parte dans la langue de la personne qui invite.
+
+**Point d'arrêt. Une invitation part dans la langue de la personne qui invite, pour toute
+adresse**, qu'un compte la porte ou non. Deux raisons :
+
+- **Lire la langue du compte qui porte l'adresse invitée consulterait les comptes**, ce que cet ADR
+  interdit : « aucune branche du code ne dépend de l'existence d'un compte ». Une invitation en
+  arabe pour une adresse connue, en français pour une adresse inconnue, dirait à qui la reçoit, et
+  au temps de réponse, ce que le formulaire s'interdit de dire. De plus, le rôle applicatif ne voit
+  pas le compte d'une personne qui n'est pas membre : il faudrait un autre rôle.
+- **L'envoi n'est pas découplé de la réponse.** Le courriel part pendant l'action, qui attend
+  l'envoi avant de répondre. Une différence de traitement se lirait donc dans le temps de réponse.
+
+La langue est celle de l'écran de la personne qui invite, passée à la fonction du courriel
+(`apps/web/src/routes/membres/+page.server.ts`). Un test le fige : même objet, même texte et même
+HTML pour une adresse inconnue et pour un compte réglé en arabe. Le lien de connexion suit la même
+règle, dans la langue de l'écran d'où il est demandé.
+
+**Question posée au chef de projet :** un envoi différé est-il voulu ? Le courriel partirait au
+moment où l'adresse est reconnue, par exemple par une table de courriels à envoyer, relevée par une
+tâche après la réponse. La réponse du formulaire resterait la même pour toute adresse, et le
+courriel pourrait prendre la langue du compte. C'est un changement d'architecture (une table, une
+tâche, la reprise d'un envoi qui échoue) qui demande sa propre décision.
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 3 de la feuille de route (connexion, organisations, rôles, invitations,
 super-admin, journal). Complété le 2026-09-23 (ce que la base tient d'une invitation : la durée,
 l'échéance, le rôle, l'usage unique, les passages de statut et la date de réponse, voir
 l'addendum). Complété le 2026-09-26 : seule une personne responsable écrit une invitation, et la
-limite du rôle est levée (ADR 0046).
+limite du rôle est levée (ADR 0046) ; une invitation part dans la langue de la personne qui invite
+(point d'arrêt, question ouverte sur un envoi différé).
