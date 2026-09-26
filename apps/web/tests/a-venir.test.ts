@@ -5,7 +5,9 @@
 //   bouton qui annule ne se trouve que derrière elles. C'est la page servie qui est lue : ce qu'elle
 //   montre sans JavaScript est ce que ces tests voient.
 // - A2 : une séance se déplace à toute date à partir d'aujourd'hui, plus tôt comme plus tard que la
-//   date prévue. L'action refuse une date passée, avec une phrase claire, et n'écrit rien.
+//   date prévue. L'action refuse une date passée, avec une phrase claire, et n'écrit rien. Elle
+//   répond par une phrase, jamais par une erreur 500, à une heure hors plage, à un identifiant mal
+//   formé ou à un cours inconnu.
 // - D1 : les messages prêts à coller s'écrivent dans chacune des langues que l'organisation publie,
 //   la langue source d'abord : la langue par défaut pour le programme de la semaine, celle du cours
 //   pour une annulation ou un déplacement.
@@ -250,6 +252,11 @@ function enveloppesDesAnnulations(html: string): (string | null)[] {
 function cache(fragment: string, nom: string): string | undefined {
 	const balise = fragment.match(new RegExp(`<input\\b[^>]*name="${nom}"[^>]*>`))?.[0];
 	return balise ? attributs(balise)['value'] : undefined;
+}
+
+/** La phrase d'erreur d'un fragment : le texte de son élément `role="alert"`. */
+function alerte(fragment: string): string {
+	return texte(fragment.match(/<[a-z]+\b[^>]*role="alert"[^>]*>([\s\S]*?)<\/[a-z]+>/)?.[1] ?? '');
 }
 
 /** Une section de la page, par l'identifiant de son titre. */
@@ -534,6 +541,61 @@ describe('A2 : déplacer une séance', () => {
 		expect(reponse.status).toBe(400);
 		expect(visibleText(await reponse.text())).toContain('Cette date n’a pas pu être lue.');
 		expect(await exception(soir, jour(3))).toBeUndefined();
+	});
+
+	it('refuses an hour out of range with a sentence, instead of failing', async () => {
+		for (const heure of ['25:99', '24:00', '19:60']) {
+			const reponse = await postForm(
+				'/?/deplacer',
+				{ courseId: soir, date: jour(3), toDate: jour(4), toStart: heure },
+				cookie
+			);
+			expect(reponse.status, heure).toBe(400);
+			const bloc =
+				optionsDesSeances(await reponse.text()).find((options) => options.ouvert)?.contenu ?? '';
+			expect(alerte(bloc), heure).toBe(
+				'Cette heure n’a pas pu être lue. Écrivez les heures et les minutes, par exemple 19:30.'
+			);
+			expect(await exception(soir, jour(3)), heure).toBeUndefined();
+		}
+	});
+
+	it('answers a malformed course identifier with a sentence, in each action', async () => {
+		const champs = { courseId: 'pas-un-identifiant', date: jour(3) };
+		for (const [action, envoi] of [
+			['annuler', champs],
+			['deplacer', { ...champs, toDate: jour(4), toStart: '18:00' }],
+			['retablir', champs]
+		] as const) {
+			const reponse = await postForm(`/?/${action}`, envoi, cookie);
+			expect(reponse.status, action).toBe(404);
+			const html = await reponse.text();
+			// La séance visée ne désigne aucune carte : la phrase s'affiche en haut de l'écran.
+			expect(alerte(html), action).toBe(
+				'Cette séance n’existe plus. Rechargez la page pour voir le programme à jour.'
+			);
+			expect(
+				optionsDesSeances(html).filter((options) => options.ouvert),
+				action
+			).toEqual([]);
+		}
+	});
+
+	it('answers an unknown course, or one of another organisation, with a sentence', async () => {
+		for (const courseId of [newId(), tajwid]) {
+			for (const [action, envoi] of [
+				['annuler', { courseId, date: jour(3) }],
+				['deplacer', { courseId, date: jour(3), toDate: jour(4), toStart: '18:00' }]
+			] as const) {
+				const reponse = await postForm(`/?/${action}`, envoi, cookie);
+				expect(reponse.status, `${action} ${courseId}`).toBe(404);
+				expect(alerte(await reponse.text()), `${action} ${courseId}`).toBe(
+					'Cette séance n’existe plus. Rechargez la page pour voir le programme à jour.'
+				);
+			}
+		}
+		// Rien n'est écrit dans l'autre organisation.
+		expect(await exception(tajwid, jour(3))).toBeUndefined();
 	});
 
 	it('accepts a date earlier than the planned one, and shows the session there', async () => {
