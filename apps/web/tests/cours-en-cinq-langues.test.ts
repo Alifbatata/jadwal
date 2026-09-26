@@ -518,8 +518,10 @@ describe('le résumé en haut du formulaire (B4)', () => {
 		expect(lu(resume(html).match(/<h2\b[\s\S]*?<\/h2>/)?.[0] ?? '')).toBe(
 			'Résumé : ce qui sera publié'
 		);
+		// La description est publiée sur la fiche publique du cours : le résumé la reprend (B4).
 		expect(lignesDuResume(html)).toEqual([
 			`Titre en français : ${TAFSIR}`,
+			`Description en français : ${DESCRIPTION}`,
 			`Titre en arabe : ${TAFSIR_AR}`,
 			'Public : adultes',
 			'Jours : lundi et mercredi',

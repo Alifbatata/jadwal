@@ -33,7 +33,7 @@ const COMPLET: CourseFormValues = {
 	offsetMinutes: 10,
 	durationMinutes: 60,
 	titles: { fr: 'Tafsir du soir', de: '', ar: 'تفسير المساء' },
-	descriptions: { fr: '', de: '', ar: '' }
+	descriptions: { fr: 'Lecture commentée, pour adultes.', de: '', ar: '' }
 };
 
 const CONTEXTE = { languages: ['fr', 'de', 'ar'], rooms: [{ id: 'salle', name: 'Grande salle' }] };
@@ -83,9 +83,10 @@ describe('l’horaire par rapport à une prière (C3)', () => {
 });
 
 describe('le résumé de ce qui sera publié (B4)', () => {
-	it('takes up every published field, the title in each language filled in', () => {
+	it('takes up every published field, the title and the description in each language filled in', () => {
 		expect(lignes(COMPLET)).toEqual([
 			'Titre en français : Tafsir du soir',
+			'Description en français : Lecture commentée, pour adultes.',
 			'Titre en arabe : تفسير المساء',
 			'Public : adultes',
 			'Jours : lundi et mercredi',
@@ -125,6 +126,23 @@ describe('le résumé de ce qui sera publié (B4)', () => {
 		]);
 		// Pas de dernier jour : la ligne n'existe pas, puisqu'il n'y en a pas.
 		expect(rows.map((row) => row.key)).not.toContain('endsOn');
+	});
+
+	it('says a description is published only with a title in its language', () => {
+		// `parseCourseForm` ne garde la traduction d'une langue qu'avec son titre : une description
+		// seule n'est pas publiée, et le résumé le dit au lieu de la montrer comme publiée.
+		const rows = summarise(
+			{ ...COMPLET, descriptions: { fr: ' ', de: 'Für Erwachsene.', ar: 'قراءة مع شرح.' } },
+			CONTEXTE,
+			'fr'
+		);
+		expect(rows.slice(0, 4).map((row) => `${row.label} ${row.value}`)).toEqual([
+			'Titre en français : Tafsir du soir',
+			'Description en allemand : pas publiée sans titre en allemand',
+			'Titre en arabe : تفسير المساء',
+			'Description en arabe : قراءة مع شرح.'
+		]);
+		expect(rows.filter((row) => row.missing).map((row) => row.key)).toEqual(['description-de']);
 	});
 
 	it('puts the title of the input language first', () => {
@@ -191,5 +209,15 @@ describe('le résumé de ce qui sera publié (B4)', () => {
 		}
 		expect(lignes(COMPLET, 'de')).toContain('Erster Tag: Montag, 07.09.2026');
 		expect(lignes(COMPLET, 'ar')[0]).toBe('العنوان بالفرنسية: Tafsir du soir');
+		const descriptions = {
+			fr: 'Description en français : Lecture commentée, pour adultes.',
+			de: 'Beschreibung auf Französisch: Lecture commentée, pour adultes.',
+			it: 'Descrizione in francese: Lecture commentée, pour adultes.',
+			en: 'Description in French: Lecture commentée, pour adultes.',
+			ar: 'الوصف بالفرنسية: Lecture commentée, pour adultes.'
+		} as const;
+		for (const [langue, description] of Object.entries(descriptions)) {
+			expect(lignes(COMPLET, langue as keyof typeof descriptions)[1], langue).toBe(description);
+		}
 	});
 });

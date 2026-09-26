@@ -137,8 +137,9 @@ function isWholeNumber(value: number | null | undefined): value is number {
 }
 
 /**
- * Le résumé de ce qui sera publié, une ligne par information (retour B4) : le titre dans chaque
- * langue remplie, celle de saisie d'abord, le public, les jours, la fréquence, l'horaire, la salle,
+ * Le résumé de ce qui sera publié, une ligne par information (retour B4) : le titre et la
+ * description dans chaque langue remplie, celle de saisie d'abord, le public, les jours, la
+ * fréquence, l'horaire, la salle,
  * l'intervenant, la langue d'enseignement, le premier jour, le dernier s'il y en a un, et l'état. Ce
  * qui manque a sa ligne, marquée, avec une phrase qui le dit : rien ne disparaît en silence.
  */
@@ -156,12 +157,26 @@ export function summarise(
 				: { key, label, value: missing, missing: true, typed: false }
 		);
 
+	// Le titre et la description de chaque langue, ensemble, comme dans l'onglet de la langue.
 	const others = context.languages.filter((code) => code !== values.sourceLanguage);
 	for (const code of [values.sourceLanguage, ...others]) {
+		const name = languageLabel(code, language);
 		const title = values.titles[code]?.trim() ?? '';
-		if (title || code === values.sourceLanguage) {
-			const label = text.summary.titleIn(languageLabel(code, language));
-			row(`title-${code}`, label, title || null, text.missing.title, true);
+		const description = values.descriptions[code]?.trim() ?? '';
+		const isSource = code === values.sourceLanguage;
+		if (title || isSource) {
+			row(`title-${code}`, text.summary.titleIn(name), title || null, text.missing.title, true);
+		}
+		// `parseCourseForm` ne garde une langue qu'avec son titre : une description seule n'est pas
+		// publiée, et le résumé le dit. Dans la langue de saisie, le titre manquant est déjà signalé.
+		if (description) {
+			row(
+				`description-${code}`,
+				text.summary.descriptionIn(name),
+				title || isSource ? description : null,
+				text.missing.descriptionWithoutTitle(name),
+				true
+			);
 		}
 	}
 

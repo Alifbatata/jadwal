@@ -51,6 +51,7 @@ interface CourseFormTexts {
 	readonly summary: {
 		readonly title: string;
 		readonly titleIn: (language: string) => string;
+		readonly descriptionIn: (language: string) => string;
 		readonly audience: string;
 		readonly days: string;
 		readonly dates: string;
@@ -67,6 +68,8 @@ interface CourseFormTexts {
 	/** Ce que le résumé dit à la place d'une valeur qui manque. */
 	readonly missing: {
 		readonly title: string;
+		/** Une description sans titre dans sa langue : elle n'est pas publiée (`parseCourseForm`). */
+		readonly descriptionWithoutTitle: (language: string) => string;
 		readonly days: string;
 		readonly dates: string;
 		readonly time: string;
@@ -189,6 +192,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		summary: {
 			title: 'Résumé : ce qui sera publié',
 			titleIn: (language) => `Titre en ${language} :`,
+			descriptionIn: (language) => `Description en ${language} :`,
 			audience: 'Public :',
 			days: 'Jours :',
 			dates: 'Dates :',
@@ -204,6 +208,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		missing: {
 			title: 'pas encore écrit',
+			descriptionWithoutTitle: (language) => `pas publiée sans titre en ${language}`,
 			days: 'pas choisis',
 			dates: 'pas encore écrites',
 			time: 'à indiquer',
@@ -325,6 +330,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		summary: {
 			title: 'Zusammenfassung: das wird veröffentlicht',
 			titleIn: (language) => `Titel auf ${language}:`,
+			descriptionIn: (language) => `Beschreibung auf ${language}:`,
 			audience: 'Zielgruppe:',
 			days: 'Tage:',
 			dates: 'Daten:',
@@ -340,6 +346,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		missing: {
 			title: 'noch nicht geschrieben',
+			descriptionWithoutTitle: (language) => `ohne Titel auf ${language} nicht veröffentlicht`,
 			days: 'nicht gewählt',
 			dates: 'noch nicht eingetragen',
 			time: 'noch nicht angegeben',
@@ -460,6 +467,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		summary: {
 			title: 'Riepilogo: ciò che sarà pubblicato',
 			titleIn: (language) => `Titolo in ${language}:`,
+			descriptionIn: (language) => `Descrizione in ${language}:`,
 			audience: 'Pubblico:',
 			days: 'Giorni:',
 			dates: 'Date:',
@@ -475,6 +483,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		missing: {
 			title: 'non ancora scritto',
+			descriptionWithoutTitle: (language) => `non pubblicata senza un titolo in ${language}`,
 			days: 'non scelti',
 			dates: 'non ancora scritte',
 			time: 'non ancora indicato',
@@ -594,6 +603,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		summary: {
 			title: 'Summary: what will be published',
 			titleIn: (language) => `Title in ${language}:`,
+			descriptionIn: (language) => `Description in ${language}:`,
 			audience: 'Audience:',
 			days: 'Days:',
 			dates: 'Dates:',
@@ -609,6 +619,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		missing: {
 			title: 'not written yet',
+			descriptionWithoutTitle: (language) => `not published without a title in ${language}`,
 			days: 'none chosen',
 			dates: 'not written yet',
 			time: 'not given yet',
@@ -731,6 +742,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		summary: {
 			title: 'الملخص: ما سيُنشر',
 			titleIn: (language) => `العنوان ب${language}:`,
+			descriptionIn: (language) => `الوصف ب${language}:`,
 			audience: 'الفئة:',
 			days: 'الأيام:',
 			dates: 'التواريخ:',
@@ -746,6 +758,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		missing: {
 			title: 'لم يُكتب بعد',
+			descriptionWithoutTitle: (language) => `لن يُنشر دون عنوان ب${language}`,
 			days: 'لم تُختر بعد',
 			dates: 'لم تُكتب بعد',
 			time: 'لم يُحدَّد بعد',
