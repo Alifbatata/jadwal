@@ -32,7 +32,7 @@ import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { addDays, todayInZone, type IsoDate } from '@jadwal/core';
-import { createDatabase, newId, sql, type DatabaseHandle } from '@jadwal/db';
+import { createDatabase, newId, sql, withOrg, type DatabaseHandle } from '@jadwal/db';
 import { conditionsAcceptees } from './conditions-acceptees.js';
 import { frenchLeft, ISO_DATE, textSegments, visibleText } from './textes-lus.js';
 
@@ -819,6 +819,17 @@ describe('A2 : déplacer une séance', () => {
 	});
 
 	it('answers an unknown course, or one of another organisation, with a sentence', async () => {
+		// Ni exception ni ligne du journal : la réponse vient avant toute écriture. Le journal se lit
+		// dans l'organisation, par le rôle applicatif : le propriétaire ne le lit pas.
+		const journal = createDatabase({ role: 'app', overrides: { database: testDatabase } });
+		const lignesDuJournal = async () =>
+			withOrg(
+				journal.db,
+				{ organizationId: organisationA, userId: ids[RESPONSABLE] ?? '' },
+				async (tx) =>
+					lignes<{ n: number }>(await tx.execute(sql`select count(*)::int as n from "audit_log"`))
+			).then((trouve) => trouve[0]?.n ?? 0);
+		const journalAvant = await lignesDuJournal();
 		for (const courseId of [newId(), tajwid]) {
 			for (const [action, envoi] of [
 				['annuler', { courseId, date: jour(3) }],
@@ -832,8 +843,10 @@ describe('A2 : déplacer une séance', () => {
 				);
 			}
 		}
-		// Rien n'est écrit dans l'autre organisation.
+		// Rien n'est écrit dans l'autre organisation, ni au journal.
 		expect(await exception(tajwid, jour(3))).toBeUndefined();
+		expect(await lignesDuJournal()).toBe(journalAvant);
+		await journal.close();
 	});
 
 	it('refuses to cancel a session whose date is past, with a sentence above the programme, and writes nothing', async () => {
