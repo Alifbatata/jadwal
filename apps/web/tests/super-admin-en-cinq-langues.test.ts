@@ -40,9 +40,15 @@ const SENS: Record<Langue, 'ltr' | 'rtl'> = {
 const EXPLOITANT = 'sa-exploitant@example.test';
 const EXISTANTE = 'Association déjà là';
 const EXISTANTE_ADRESSE = 'sa-deja-la';
-/** La date d'enregistrement de la passkey d'essai, et ce que l'écran doit en écrire. */
+/**
+ * La passkey d'essai est enregistrée le 5 mars à 23:30 UTC : en Suisse, où le service est exploité,
+ * il est déjà 00:30 le 6. L'écran écrit le jour de la Suisse, jamais celui de Greenwich, et jamais
+ * comme la base l'écrit.
+ */
+const PASSKEY_CREEE = '2026-03-05 23:30:00+00';
 const PASSKEY_LE = '2026-03-05';
-const PASSKEY_LE_AFFICHE = '05.03.2026';
+const PASSKEY_JOUR_UTC = '05.03.2026';
+const PASSKEY_LE_AFFICHE = '06.03.2026';
 
 /**
  * Le titre de l'onglet de chaque écran, dans chaque langue. « Super-admin » s'écrit de même en
@@ -208,7 +214,7 @@ async function preuvePasskey(cookie: string): Promise<void> {
 			insert into "passkey" ("id", "name", "public_key", "user_id", "credential_id", "counter",
 				"device_type", "backed_up", "created_at")
 			values (${newId()}, 'Téléphone', 'cle-publique', ${exploitantId}, ${newId()}, 0,
-				'singleDevice', false, ${`${PASSKEY_LE} 10:00:00+00`})
+				'singleDevice', false, ${PASSKEY_CREEE})
 		`);
 		await tx.execute(
 			sql`update "session" set "passkey_verified_at" = now() where "token" = ${jeton}`
@@ -543,12 +549,13 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 			}
 		});
 
-		it('writes the day a passkey was registered as JJ.MM.AAAA', async () => {
+		it('writes the day a passkey was registered as JJ.MM.AAAA, the day of Switzerland', async () => {
 			for (const langue of LANGUES) {
 				await langueDuCompte(langue);
 				const lu = visibleText(await (await get('/super-admin/passkey', avecPouvoirs)).text());
 				expect(lu, langue).toContain(PASSKEY_LE_AFFICHE);
 				expect(lu, langue).not.toContain(PASSKEY_LE);
+				expect(lu, langue).not.toContain(PASSKEY_JOUR_UTC);
 			}
 		});
 

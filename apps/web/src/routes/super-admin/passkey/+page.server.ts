@@ -12,6 +12,7 @@ import type { IsoDate } from '@jadwal/core';
 import { sql } from '@jadwal/db';
 import { authDatabase } from '$lib/server/database.js';
 import { mustBeSignedIn } from '$lib/server/guard.js';
+import { DEFAULT_TIME_ZONE } from '../time-zones.server.js';
 import type { PageServerLoad } from './$types.js';
 
 function rows<T>(result: unknown): T[] {
@@ -24,10 +25,15 @@ export const load: PageServerLoad = async (event) => {
 	const person = mustBeSignedIn(event);
 	// Cet écran est accessible **sans** pouvoirs : c'est par lui qu'on les obtient la première fois.
 	if (!person.isSuperAdmin) redirect(303, '/organisations');
+	// Le jour d'enregistrement est celui de la Suisse, où le service est exploité : lu tel quel,
+	// l'instant serait écrit à l'heure de la session de la base, et une passkey enregistrée à 00:30
+	// porterait la date de la veille.
 	const passkeys = rows<{ id: string; name: string | null; created_at: string }>(
 		await authDatabase().execute(sql`
-			select "id", "name", "created_at"::text from "passkey"
-			where "user_id" = ${person.userId} order by "created_at"
+			select "id", "name",
+				to_char("created_at" at time zone ${DEFAULT_TIME_ZONE}, 'YYYY-MM-DD') as "created_at"
+			from "passkey"
+			where "user_id" = ${person.userId} order by "passkey"."created_at"
 		`)
 	);
 	return {
