@@ -1,4 +1,4 @@
-// L'espace du super-admin : ouvrir et fermer des organisations, attribuer le plan, entrer dans
+// L'espace du super-admin : créer et suspendre des organisations, attribuer le plan, entrer dans
 // l'espace d'une organisation avec tous les pouvoirs, produire un lien de connexion de secours.
 //
 // Depuis l'étape 4, il n'y a plus de fenêtre d'accès à ouvrir : il lit et écrit partout, à tout
@@ -7,6 +7,9 @@
 //
 // Deux garde-fous demeurent, et ils ne sont pas cosmétiques : aucun pouvoir sans session ouverte
 // par passkey, et une organisation à la fois — celle de la session, rappelée par une bannière.
+//
+// Les actions rendent le nom d'une erreur, jamais sa phrase : la page l'écrit dans la langue de
+// l'espace (`i18n/super-admin.ts`, étape 18).
 
 import { fail, redirect } from '@sveltejs/kit';
 import { newId, sql } from '@jadwal/db';
@@ -14,9 +17,10 @@ import { auth, captureMagicLink } from '$lib/server/auth.js';
 import { chooseOrganisation, recordAdminAccess } from '$lib/server/context.js';
 import { superAdminDatabase } from '$lib/server/database.js';
 import { mustBeSuperAdmin } from '$lib/server/guard.js';
+import { isPublicAddress, proposePublicAddress } from './public-address.js';
+import { DEFAULT_TIME_ZONE, isOfferedTimeZone, timeZoneChoices } from './time-zones.server.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
-const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const PLANS = ['free', 'sponsored', 'paid'] as const;
 const STATUTS = ['active', 'suspended'] as const;
 const ADRESSE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -25,6 +29,25 @@ function rows<T>(result: unknown): T[] {
 	if (Array.isArray(result)) return result as T[];
 	const inner = (result as { rows?: unknown[] }).rows;
 	return Array.isArray(inner) ? (inner as T[]) : [];
+}
+
+/** Le code SQLSTATE d'une erreur du pilote, lu dans la cause comme ailleurs dans le dépôt. */
+function codeSql(error: unknown): string | undefined {
+	let current: unknown = error;
+	for (let depth = 0; depth < 5 && current instanceof Error; depth += 1) {
+		const code = (current as { code?: unknown }).code;
+		if (typeof code === 'string') return code;
+		current = (current as { cause?: unknown }).cause;
+	}
+	return undefined;
+}
+
+/**
+ * Le début de l'adresse d'une page publique, tel que l'écran l'écrit : l'hôte de l'origine publique
+ * du service (`ORIGIN`, que l'adaptateur donne à `event.url`), sans le protocole, puis `/m/`.
+ */
+function publicPrefix(url: URL): string {
+	return `${url.host}/m/`;
 }
 
 export const load: PageServerLoad = async (event) => {
@@ -42,28 +65,46 @@ export const load: PageServerLoad = async (event) => {
 			`)
 		),
 		plans: PLANS,
-		statuts: STATUTS
+		statuts: STATUTS,
+		timeZones: timeZoneChoices(),
+		defaultTimeZone: DEFAULT_TIME_ZONE,
+		publicPrefix: publicPrefix(event.url)
 	};
 };
 
 export const actions: Actions = {
+	/** Créer une organisation. Le nom de l'action date d'avant l'étape 18, où l'écran disait « ouvrir ». */
 	ouvrir: async (event) => {
 		mustBeSuperAdmin(event);
 		const form = await event.request.formData();
-		const slug = String(form.get('slug') ?? '').trim();
 		const name = String(form.get('name') ?? '').trim();
-		const timeZone = String(form.get('timeZone') ?? 'Europe/Zurich').trim();
-		if (!SLUG.test(slug)) {
-			return fail(400, {
-				erreur: 'L’identifiant d’URL ne porte que des minuscules, des chiffres et des tirets.'
-			});
+		const written = String(form.get('slug') ?? '').trim();
+		const timeZone = String(form.get('timeZone') ?? '').trim();
+		// Ce que la personne a saisi revient dans le formulaire, pour qu'une erreur ne l'efface pas.
+		const values = { name, slug: written, timeZone };
+		if (name.length === 0) return fail(400, { error: 'nameRequired' as const, values });
+		// Sans JavaScript, le champ arrive vide : le serveur propose l'adresse comme l'écran l'aurait
+		// fait pendant la frappe. Une adresse écrite, elle, est gardée telle quelle et vérifiée.
+		const slug = written || proposePublicAddress(name);
+		if (slug === '') return fail(400, { error: 'noAddressFromName' as const, values });
+		if (!isPublicAddress(slug)) return fail(400, { error: 'invalidAddress' as const, values });
+		if (!isOfferedTimeZone(timeZone)) {
+			return fail(400, { error: 'unknownTimeZone' as const, values });
 		}
-		if (name.length === 0) return fail(400, { erreur: 'Le nom est obligatoire.' });
-		await superAdminDatabase().execute(sql`
-			insert into "organization" ("id", "slug", "name", "time_zone", "default_language", "enabled_language")
-			values (${newId()}, ${slug}, ${name}, ${timeZone}, 'fr', array['fr'])
-		`);
-		return { ouverte: true };
+		try {
+			await superAdminDatabase().execute(sql`
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language", "enabled_language")
+				values (${newId()}, ${slug}, ${name}, ${timeZone}, 'fr', array['fr'])
+			`);
+		} catch (cause) {
+			// L'adresse est unique dans la base (`organization_slug_uq`) : une adresse déjà prise se dit,
+			// au lieu de finir en erreur du serveur.
+			if (codeSql(cause) === '23505') {
+				return fail(400, { error: 'addressTaken' as const, values });
+			}
+			throw cause;
+		}
+		return { created: { name, address: `${publicPrefix(event.url)}${slug}` } };
 	},
 
 	plan: async (event) => {
@@ -72,12 +113,16 @@ export const actions: Actions = {
 		const organizationId = String(form.get('organizationId') ?? '');
 		const plan = String(form.get('plan') ?? '');
 		if (!(PLANS as readonly string[]).includes(plan)) {
-			return fail(400, { erreur: 'Ce plan n’existe pas.' });
+			return fail(400, { error: 'unknownPlan' as const });
 		}
-		await superAdminDatabase().execute(
-			sql`update "organization" set "plan" = ${plan}, "updated_at" = now() where "id" = ${organizationId}`
+		const touched = rows<{ name: string }>(
+			await superAdminDatabase().execute(
+				sql`update "organization" set "plan" = ${plan}, "updated_at" = now()
+					where "id" = ${organizationId} returning "name"`
+			)
 		);
-		return { planChange: true };
+		if (touched.length === 0) return fail(404, { error: 'unknownOrganisation' as const });
+		return { planSaved: touched[0]?.name ?? '' };
 	},
 
 	statut: async (event) => {
@@ -86,13 +131,16 @@ export const actions: Actions = {
 		const organizationId = String(form.get('organizationId') ?? '');
 		const status = String(form.get('status') ?? '');
 		if (!(STATUTS as readonly string[]).includes(status)) {
-			return fail(400, { erreur: 'Cet état n’existe pas.' });
+			return fail(400, { error: 'unknownStatus' as const });
 		}
-		await superAdminDatabase().execute(
-			sql`update "organization" set "status" = ${status}, "updated_at" = now()
-				where "id" = ${organizationId}`
+		const touched = rows<{ name: string }>(
+			await superAdminDatabase().execute(
+				sql`update "organization" set "status" = ${status}, "updated_at" = now()
+					where "id" = ${organizationId} returning "name"`
+			)
 		);
-		return { statutChange: true };
+		if (touched.length === 0) return fail(404, { error: 'unknownOrganisation' as const });
+		return { statusSaved: touched[0]?.name ?? '' };
 	},
 
 	/** Entrer dans l'espace d'une organisation. Le contexte est posé sur la session, jamais sur l'URL. */
@@ -101,7 +149,7 @@ export const actions: Actions = {
 		const form = await event.request.formData();
 		const organizationId = String(form.get('organizationId') ?? '');
 		if (!(await chooseOrganisation(person, organizationId))) {
-			return fail(404, { erreur: 'Cette organisation n’existe pas.' });
+			return fail(404, { error: 'unknownOrganisation' as const });
 		}
 		redirect(303, '/');
 	},
@@ -109,8 +157,10 @@ export const actions: Actions = {
 	/**
 	 * Lien de connexion de secours : le service doit rester utilisable même si le courriel tombe
 	 * entièrement (ADR 0024). Le lien a la même durée de vie et le même usage unique qu'un lien
-	 * envoyé ; il s'affiche à l'écran et se transmet par un autre canal. Chaque production est
-	 * inscrite au registre interne.
+	 * envoyé ; il s'affiche à l'écran et se transmet par un autre canal. Il ouvre une session par
+	 * lien magique, donc sans aucun pouvoir de super-admin (ADR 0025), et crée un compte sans
+	 * organisation pour une adresse qui n'en a pas. Chaque production est inscrite au registre
+	 * interne.
 	 */
 	lienSecours: async (event) => {
 		const person = mustBeSuperAdmin(event);
@@ -118,8 +168,8 @@ export const actions: Actions = {
 		const email = String(form.get('email') ?? '')
 			.trim()
 			.toLowerCase();
-		if (!ADRESSE.test(email)) return fail(400, { erreur: 'Cette adresse est mal écrite.' });
-		const lien = await captureMagicLink(() =>
+		if (!ADRESSE.test(email)) return fail(400, { error: 'invalidEmail' as const });
+		const link = await captureMagicLink(() =>
 			auth().api.signInMagicLink({
 				body: { email, callbackURL: '/organisations' },
 				// L'API serveur exige des en-têtes : ce sont ceux de la requête en cours, ce qui fait
@@ -128,7 +178,7 @@ export const actions: Actions = {
 			})
 		);
 		await recordAdminAccess(person, 'magic_link', event.url.pathname);
-		if (!lien) return fail(500, { erreur: 'Le lien n’a pas pu être produit.' });
-		return { lien, pour: email };
+		if (!link) return fail(500, { error: 'linkFailed' as const });
+		return { link, email };
 	}
 };
