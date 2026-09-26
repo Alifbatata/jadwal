@@ -441,7 +441,7 @@ describe('les sessions du vendredi', () => {
 		expect((await postForm('/vendredi?/retablir', { courseId, date })).status).toBe(200);
 	});
 
-	it('se traduit, et se replie sur sa langue source quand la traduction manque', async () => {
+	it('se traduit, et prend le nom de la prière dans la langue de la page quand la traduction manque', async () => {
 		const session = await maintenance(async (tx) =>
 			rows<{ id: string }>(
 				await tx.execute(sql`
@@ -459,8 +459,10 @@ describe('les sessions du vendredi', () => {
 		);
 		const allemand = await page(`/m/${SLUG}/de`);
 		expect(allemand).toContain('Freitagsgebet');
-		// La seconde session n'est pas traduite : elle sort dans sa langue source, sans mention.
-		expect(allemand).toContain('Prière du vendredi');
+		// La seconde session n'est pas traduite, et porte le nom que le service propose : elle se lit
+		// sous le nom allemand de la prière, sans mention (étape 18). Un titre choisi par l'organisation
+		// garde sa langue source : vendredi-et-partage-en-cinq-langues.test.ts.
+		expect(allemand).not.toContain('Prière du vendredi');
 		expect(allemand).not.toContain('traduction');
 	});
 

@@ -19,6 +19,7 @@ import { shareTexts } from '$lib/i18n/share.js';
 import { weekMessage } from '$lib/messages.js';
 import { qrSvg } from '$lib/qr.js';
 import { withSessionOrg } from '$lib/server/context.js';
+import { fridayTitle } from '$lib/server/friday-title.js';
 import { mustBeInOrganisation } from '$lib/server/guard.js';
 import { readProgramme } from '$lib/server/programme.js';
 import { WIDGET_INTEGRITY, widgetPath } from '$lib/server/widget.js';
@@ -60,6 +61,18 @@ export const load: PageServerLoad = async (event) => {
 	const titres = new Map(
 		traductions.map((ligne) => [`${ligne.course_id} ${ligne.language}`, ligne.title])
 	);
+	const sortes = new Map(programme.courses.map((cours) => [cours.id, cours.kind]));
+	/**
+	 * Le titre d'une séance dans la langue d'un message : sa traduction, sinon son titre source ; et
+	 * pour une session du vendredi qui porte le nom proposé, le nom de la prière dans cette langue,
+	 * comme sur la page publique (`friday-title.ts`).
+	 */
+	const titreEn = (seance: (typeof programme.seances)[number], langue: Langue) =>
+		fridayTitle(
+			titres.get(`${seance.courseId} ${langue}`) ?? seance.title,
+			sortes.get(seance.courseId) ?? 'course',
+			langue
+		);
 	const slug = settings.slug;
 	const lienPublic = `${event.url.origin}/m/${slug}`;
 	const mots = shareTexts[source].codeWords;
@@ -100,7 +113,7 @@ export const load: PageServerLoad = async (event) => {
 				settings.name,
 				programme.seances.map((seance) => ({
 					date: seance.date,
-					title: titres.get(`${seance.courseId} ${langue}`) ?? seance.title,
+					title: titreEn(seance, langue),
 					start: seance.start,
 					end: seance.end,
 					room: seance.room,

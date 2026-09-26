@@ -25,6 +25,7 @@ import {
 	type ResolvedPrayerRow
 } from '@jadwal/db';
 import type { Langue } from '$lib/i18n.js';
+import { fridayTitle } from './friday-title.js';
 import { appliquerVendredi, sessionsDuVendredi } from './vendredi.js';
 import {
 	toException,
@@ -203,7 +204,7 @@ export async function readPublicCourses(organizationId: string, langue: Langue) 
 			where c."organization_id" = ${organizationId}
 			order by lower(coalesce(demandee."title", source."title", '')), c."created_at"
 		`)
-	);
+	).map((course) => ({ ...course, title: fridayTitle(course.title, course.kind, langue) }));
 }
 
 export interface OrganisationListee {
