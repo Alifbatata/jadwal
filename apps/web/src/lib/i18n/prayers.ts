@@ -255,6 +255,10 @@ interface PrayersTexts {
 		readonly previewTitleLater: string;
 		readonly previewLater: (firstDay: string) => string;
 		readonly previewLaterEmpty: string;
+		/** Une telle période plus courte que sept jours (l'Aïd, un jour) : l'aperçu la montre en entier. */
+		readonly previewTitleWhole: string;
+		readonly previewWhole: (firstDay: string, days: number) => string;
+		readonly previewWholeEmpty: string;
 		readonly previewHint: string;
 		readonly save: string;
 	};
@@ -570,6 +574,10 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			previewLater: (firstDay) =>
 				`Cette période commence le ${firstDay} : l’aperçu montre ses sept premiers jours, et non les sept prochains.`,
 			previewLaterEmpty: 'Aucune heure pour ces sept jours.',
+			previewTitleWhole: 'Aperçu de toute cette période',
+			previewWhole: (firstDay, days) =>
+				`Cette période commence le ${firstDay} et dure ${days} ${francais(days, { one: 'jour', other: 'jours' })} : l’aperçu la montre en entier, et non les sept prochains jours.`,
+			previewWholeEmpty: 'Aucune heure pour cette période.',
 			previewHint: 'Rien n’est encore enregistré.',
 			save: 'Enregistrer cette période'
 		},
@@ -886,6 +894,10 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			previewLater: (firstDay) =>
 				`Dieser Zeitraum beginnt am ${firstDay}: Die Vorschau zeigt seine ersten sieben Tage, nicht die nächsten sieben.`,
 			previewLaterEmpty: 'Keine Zeiten für diese sieben Tage.',
+			previewTitleWhole: 'Vorschau des ganzen Zeitraums',
+			previewWhole: (firstDay, days) =>
+				`Dieser Zeitraum beginnt am ${firstDay} und dauert ${days} ${deutsch(days, { one: 'Tag', other: 'Tage' })}: Die Vorschau zeigt ihn vollständig, nicht die nächsten sieben Tage.`,
+			previewWholeEmpty: 'Keine Zeiten für diesen Zeitraum.',
 			previewHint: 'Noch ist nichts gespeichert.',
 			save: 'Diesen Zeitraum speichern'
 		},
@@ -1207,6 +1219,10 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			previewLater: (firstDay) =>
 				`Questo periodo comincia il ${firstDay}: l’anteprima mostra i suoi primi sette giorni, non i prossimi sette.`,
 			previewLaterEmpty: 'Nessun orario per questi sette giorni.',
+			previewTitleWhole: 'Anteprima dell’intero periodo',
+			previewWhole: (firstDay, days) =>
+				`Questo periodo comincia il ${firstDay} e dura ${days} ${italiano(days, { one: 'giorno', other: 'giorni' })}: l’anteprima lo mostra per intero, non i prossimi sette giorni.`,
+			previewWholeEmpty: 'Nessun orario per questo periodo.',
 			previewHint: 'Non è ancora salvato niente.',
 			save: 'Salva questo periodo'
 		},
@@ -1519,6 +1535,10 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			previewLater: (firstDay) =>
 				`This period starts on ${firstDay}: the preview shows its first seven days, not the next seven.`,
 			previewLaterEmpty: 'No times for these seven days.',
+			previewTitleWhole: 'Preview of the whole period',
+			previewWhole: (firstDay, days) =>
+				`This period starts on ${firstDay} and lasts ${days} ${english(days, { one: 'day', other: 'days' })}: the preview shows all of it, not the next seven days.`,
+			previewWholeEmpty: 'No times for this period.',
 			previewHint: 'Nothing has been saved yet.',
 			save: 'Save this period'
 		},
@@ -1833,6 +1853,16 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			previewLater: (firstDay) =>
 				`تبدأ هذه الفترة في ${firstDay}: لذلك تعرض المعاينة أيامها السبعة الأولى، لا الأيام السبعة القادمة.`,
 			previewLaterEmpty: 'لا مواقيت لهذه الأيام السبعة.',
+			previewTitleWhole: 'معاينة الفترة كلها',
+			previewWhole: (firstDay, days) =>
+				`تبدأ هذه الفترة في ${firstDay} وتدوم ${arabic(days, {
+					one: 'يومًا واحدًا',
+					two: 'يومين',
+					few: `${days} أيام`,
+					many: `${days} يومًا`,
+					other: `${days} يوم`
+				})}: لذلك تعرض المعاينة الفترة كلها، لا الأيام السبعة القادمة.`,
+			previewWholeEmpty: 'لا مواقيت لهذه الفترة.',
 			previewHint: 'لم يُحفظ شيء بعد.',
 			save: 'حفظ هذه الفترة'
 		},

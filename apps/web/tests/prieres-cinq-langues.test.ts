@@ -1049,6 +1049,85 @@ describe('l’aperçu d’une période préparée à l’avance (retour B1)', ()
 	// Une période qui commence pendant les sept prochains jours garde « Aperçu des sept prochains
 	// jours avec cette période » : c'est la vue « l’aperçu d’une période » plus haut (premier jour
 	// dans deux jours), que le test « shows, under each answer, the preview… (C1) » lit.
+
+	/** Le titre de l'aperçu d'une période qui commence plus tard et dure moins de sept jours. */
+	const TITRE_ENTIERE: Record<Langue, string> = {
+		fr: 'Aperçu de toute cette période',
+		de: 'Vorschau des ganzen Zeitraums',
+		it: 'Anteprima dell’intero periodo',
+		en: 'Preview of the whole period',
+		ar: 'معاينة الفترة كلها'
+	};
+	/** La phrase qui le dit, avec son premier jour et le nombre de ses jours (un ou trois ici). */
+	const PHRASE_ENTIERE: Record<Langue, (jour: string, jours: 1 | 3) => string> = {
+		fr: (jour, jours) =>
+			`Cette période commence le ${jour} et dure ${jours === 1 ? '1 jour' : '3 jours'} : l’aperçu la montre en entier, et non les sept prochains jours.`,
+		de: (jour, jours) =>
+			`Dieser Zeitraum beginnt am ${jour} und dauert ${jours === 1 ? '1 Tag' : '3 Tage'}: Die Vorschau zeigt ihn vollständig, nicht die nächsten sieben Tage.`,
+		it: (jour, jours) =>
+			`Questo periodo comincia il ${jour} e dura ${jours === 1 ? '1 giorno' : '3 giorni'}: l’anteprima lo mostra per intero, non i prossimi sette giorni.`,
+		en: (jour, jours) =>
+			`This period starts on ${jour} and lasts ${jours === 1 ? '1 day' : '3 days'}: the preview shows all of it, not the next seven days.`,
+		ar: (jour, jours) =>
+			`تبدأ هذه الفترة في ${jour} وتدوم ${jours === 1 ? 'يومًا واحدًا' : '3 أيام'}: لذلك تعرض المعاينة الفترة كلها، لا الأيام السبعة القادمة.`
+	};
+
+	it.each(LANGUES)(
+		'says how many days a shorter period lasts, and previews only its days, in %s',
+		async (langue) => {
+			// L'Aïd, un seul jour, préparé deux mois à l'avance : l'écran annonçait « ses sept premiers
+			// jours », et le calcul remplissait les jours suivants, qui ne sont pas de la période.
+			await poserLangueDuCompte(RESPONSABLE, langue);
+			const debut = addDays(aujourdhui(), 60);
+			for (const jours of [1, 3] as const) {
+				const reponse = await postForm('/prieres?source=manual&/apercuPeriode', {
+					name: 'Aïd des essais',
+					fromDate: debut,
+					toDate: addDays(debut, jours - 1),
+					maghrib: '19:00'
+				});
+				expect(reponse.status).toBe(200);
+				const html = await reponse.text();
+				const lu = visibleText(html);
+				expect(lu).toContain(TITRE_ENTIERE[langue]);
+				expect(lu).toContain(PHRASE_ENTIERE[langue](jjmmaaaa(debut), jours));
+				expect(lu).not.toContain(TITRE[langue]);
+				const apres = html.slice(html.indexOf(`${TITRE_ENTIERE[langue]}</h4>`));
+				const tableau = apres.match(/<tbody>[\s\S]*?<\/tbody>/)?.[0] ?? '';
+				expect(tableau.match(/<tr\b/g)?.length ?? 0).toBe(jours);
+				expect(tableau.match(/19:00/g)?.length ?? 0).toBe(jours);
+				expect(visibleText(`<body>${tableau}</body>`)).not.toContain(
+					jjmmaaaa(addDays(debut, jours))
+				);
+			}
+		}
+	);
+
+	it('keeps « its first seven days » for a period of seven days or more, or without a last day', async () => {
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		// Sept jours tout juste, puis une période sans dernier jour, placée après toutes celles des
+		// tests précédents pour n'en chevaucher aucune.
+		for (const [debut, toDate] of [
+			[addDays(aujourdhui(), 60), addDays(aujourdhui(), 66)],
+			[addDays(aujourdhui(), 9000), '']
+		] as const) {
+			const reponse = await postForm('/prieres?source=manual&/apercuPeriode', {
+				name: 'Période des essais',
+				fromDate: debut,
+				toDate,
+				maghrib: '19:00'
+			});
+			expect(reponse.status).toBe(200);
+			const html = await reponse.text();
+			const lu = visibleText(html);
+			expect(lu).toContain(TITRE.fr);
+			expect(lu).toContain(PHRASE.fr(jjmmaaaa(debut)));
+			expect(lu).not.toContain(TITRE_ENTIERE.fr);
+			const tableau =
+				html.slice(html.indexOf(`${TITRE.fr}</h4>`)).match(/<tbody>[\s\S]*?<\/tbody>/)?.[0] ?? '';
+			expect(tableau.match(/19:00/g)?.length ?? 0).toBe(7);
+		}
+	});
 });
 
 describe('les replis (retour B1)', () => {

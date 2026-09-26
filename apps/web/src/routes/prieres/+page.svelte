@@ -1067,19 +1067,34 @@
 		</div>
 		{#if renvoyee && form?.apercuPeriode}
 			<!-- Une période qui commence après les sept prochains jours : ses sept premiers jours, et
-			     une phrase qui le dit, pour qu'elle ne paraisse pas absente de l'aperçu. -->
+			     une phrase qui le dit, pour qu'elle ne paraisse pas absente de l'aperçu. Plus courte
+			     que sept jours, elle est montrée en entier, et la phrase dit combien de jours elle dure. -->
 			{@const depuis = form.apercuDepuis ?? null}
+			{@const duree = form.apercuDuree ?? 7}
+			{@const entiere = depuis !== null && duree < 7}
 			<h4 id={`apercu-periode-titre-${cleDeLaPeriode}`}>
-				{depuis ? text.periods.previewTitleLater : text.periods.previewTitle}
+				{entiere
+					? text.periods.previewTitleWhole
+					: depuis
+						? text.periods.previewTitleLater
+						: text.periods.previewTitle}
 			</h4>
 			{#if depuis}
-				<p class="aide">{text.periods.previewLater(numericDate(depuis))}</p>
+				<p class="aide">
+					{entiere
+						? text.periods.previewWhole(numericDate(depuis), duree)
+						: text.periods.previewLater(numericDate(depuis))}
+				</p>
 			{/if}
 			<p class="aide">{text.periods.previewHint}</p>
 			{@render tableServie(
 				form.apercuPeriode,
 				{ titre: `apercu-periode-titre-${cleDeLaPeriode}` },
-				depuis ? text.periods.previewLaterEmpty : text.served.empty
+				entiere
+					? text.periods.previewWholeEmpty
+					: depuis
+						? text.periods.previewLaterEmpty
+						: text.served.empty
 			)}
 		{/if}
 		<div class="boutons">
