@@ -5,7 +5,10 @@
 // - sous le choix du rôle, l'écran Membres dit ce que fait un éditeur et ce qui est réservé au
 //   responsable (B3), et cette liste est liée à ce que la base et les routes permettent vraiment :
 //   chaque table que la base réserve au responsable est couverte par un geste dit « réservé », chaque
-//   geste réservé est refusé à une éditrice, chaque geste de l'éditeur lui est ouvert ;
+//   geste réservé est refusé à une éditrice, et chaque geste de l'éditeur, elle le fait elle-même, par
+//   le formulaire de son écran. Les gestes viennent de la liste même que l'écran affiche
+//   (`EDITOR_GESTURES` et `MANAGER_GESTURES`) : un geste ajouté à l'écran sans sa preuve ici, ou
+//   l'inverse, ne compile pas et fait tomber le test ;
 // - annuler une invitation, retirer un membre, changer un rôle : l'écran dit ce qui est fait ;
 // - l'invitation part dans la langue de l'écran de la personne qui invite (D3) ;
 // - les deux écrans dans les cinq langues, erreurs comprises, sans phrase française restée et sans
@@ -20,6 +23,12 @@ import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { createDatabase, newId, sql, type DatabaseHandle } from '@jadwal/db';
+import {
+	EDITOR_GESTURES,
+	MANAGER_GESTURES,
+	type EditorGesture,
+	type ManagerGesture
+} from '../src/lib/i18n/members.js';
 import { timeZoneChoices } from '../src/routes/super-admin/time-zones.server.js';
 import { conditionsAcceptees } from './conditions-acceptees.js';
 import { frenchLeft, ISO_DATE, textSegments, visibleText } from './textes-lus.js';
@@ -47,6 +56,10 @@ const INVITEE = 'mr-invitee@example.test';
 const MEMBRE = 'mr-membre@example.test';
 const SALLE_OCCUPEE = 'Salle de prière';
 const SALLE_LIBRE = 'Petite salle';
+
+/** Deux autres organisations, pour les gestes de l'éditrice qui en demandent plusieurs. */
+const VOISINE = { id: newId(), slug: 'mr-voisine', nom: 'Association voisine de mr' };
+const INVITANTE = { id: newId(), slug: 'mr-invitante', nom: 'Association invitante de mr' };
 
 /**
  * Ce qui est pareil dans toutes les langues par nature : noms, adresses, et les noms des fuseaux de
@@ -173,6 +186,42 @@ function statut(html: string): string {
 	return lu(html.match(/<p\b[^>]*role="status"[^>]*>[\s\S]*?<\/p>/)?.[0] ?? '');
 }
 
+/**
+ * Les champs cachés du premier formulaire de la page dont l'action est `action` et dont les champs
+ * cachés passent `filtre`. `null` si la page n'en montre aucun : le geste n'est pas à l'écran.
+ */
+function formulaireDeLaPage(
+	html: string,
+	action: string,
+	filtre: (caches: Record<string, string>) => boolean = () => true
+): Record<string, string> | null {
+	for (const [bloc] of html.matchAll(/<form\b[^>]*>[\s\S]*?<\/form>/g)) {
+		const ouverture = bloc.match(/<form\b[^>]*>/)?.[0] ?? '';
+		if ((ouverture.match(/\baction="([^"]*)"/)?.[1] ?? '') !== action) continue;
+		const caches: Record<string, string> = {};
+		for (const [champ] of bloc.matchAll(/<input\b[^>]*>/g)) {
+			if (!/\btype="hidden"/.test(champ)) continue;
+			const nom = champ.match(/\bname="([^"]*)"/)?.[1];
+			if (nom) caches[nom] = champ.match(/\bvalue="([^"]*)"/)?.[1] ?? '';
+		}
+		if (filtre(caches)) return caches;
+	}
+	return null;
+}
+
+/** Les champs cachés qui valent ce qui est demandé. */
+function avec(attendus: Record<string, string>) {
+	return (caches: Record<string, string>) =>
+		Object.entries(attendus).every(([nom, valeur]) => caches[nom] === valeur);
+}
+
+/** Le jour d'après, à partir d'une date ISO. */
+function jourSuivant(date: string): string {
+	const jour = new Date(`${date}T12:00:00Z`);
+	jour.setUTCDate(jour.getUTCDate() + 1);
+	return jour.toISOString().slice(0, 10);
+}
+
 /** La balise ouvrante du champ (ou de la liste) qui porte cet identifiant. */
 function champ(html: string, id: string): string {
 	return new RegExp(`<(?:input|select)\\b[^>]*\\bid="${id}"[^>]*>`).exec(html)?.[0] ?? '';
@@ -244,6 +293,31 @@ async function sallesEnBase(): Promise<{ id: string; cours: number }[]> {
 			`)
 		)
 	);
+}
+
+/** Les cours de l'organisation du fichier qui portent ce titre. */
+async function coursNommes(nom: string): Promise<{ id: string; status: string; kind: string }[]> {
+	return maintenance(async (tx) =>
+		lignes<{ id: string; status: string; kind: string }>(
+			await tx.execute(sql`
+				select c."id", c."status", c."kind" from "course" c
+				join "course_translation" t on t."course_id" = c."id"
+				where c."organization_id" = ${organizationId} and t."title" = ${nom}
+			`)
+		)
+	);
+}
+
+/** Ce qui est posé sur une séance : annulée, déplacée, ou rien. */
+async function exceptionDe(courseId: string, date: string): Promise<string | null> {
+	const [ligne] = await maintenance(async (tx) =>
+		lignes<{ kind: string }>(
+			await tx.execute(sql`
+				select "kind" from "session_exception" where "course_id" = ${courseId} and "date" = ${date}
+			`)
+		)
+	);
+	return ligne?.kind ?? null;
 }
 
 interface Reglages {
@@ -346,55 +420,389 @@ afterAll(async () => {
 	await ownerHandle?.close();
 });
 
+/** Un cours tel que le formulaire de l'écran l'envoie, sans salle et loin dans le temps. */
+const COURS_DE_L_EDITRICE = {
+	sourceLanguage: 'fr',
+	audience: 'open',
+	teachingLanguages: 'fr',
+	recurrenceKind: 'weekly',
+	weekdays: '3',
+	interval: '1',
+	timingKind: 'fixed',
+	start: '17:00',
+	end: '18:00',
+	startsOn: '2027-01-06'
+};
+
+/** Une prière du vendredi telle que le formulaire de l'écran l'envoie, sans salle. */
+const VENDREDI_DE_L_EDITRICE = {
+	jumuaOrder: '2',
+	start: '13:30',
+	end: '14:15',
+	sermonLanguages: 'fr',
+	startsOn: '2026-09-04'
+};
+
+/**
+ * Pour chaque geste que l'écran Membres promet à un éditeur, dans l'ordre de l'écran : le texte de
+ * l'écran, et la preuve, que l'éditrice fait elle-même, par le formulaire que son écran lui montre, en
+ * vérifiant dans la base que c'est fait. Le type exige une preuve par geste de `EDITOR_GESTURES`, la
+ * liste même que l'écran affiche.
+ */
+const PREUVES: {
+	readonly [G in EditorGesture]: {
+		readonly texte: string;
+		readonly preuve: (cookie: string) => Promise<void>;
+	};
+} = {
+	week: {
+		texte: 'Voir les séances des sept prochains jours et copier les messages prêts à coller',
+		preuve: async (cookie) => {
+			const html = await page200('/', cookie);
+			// La séance du cours publié, et le message de la semaine, prêt à copier, qui la nomme.
+			expect(visibleText(html)).toContain('Cours published');
+			const semaine = html.slice(html.indexOf('id="semaine-titre"'));
+			expect(semaine.match(/<textarea\b[^>]*>([^<]*)<\/textarea>/)?.[1] ?? '').toContain(
+				'Cours published'
+			);
+		}
+	},
+	sessions: {
+		texte:
+			'Annuler une séance, la déplacer à une autre date ou à une autre heure, puis la rétablir',
+		preuve: async (cookie) => {
+			const cours = coursDeLaSalle[0] as string;
+			const annuler = formulaireDeLaPage(
+				await page200('/', cookie),
+				'?/annuler',
+				avec({ courseId: cours })
+			);
+			expect(annuler, 'le bouton qui annule la séance').not.toBeNull();
+			const date = annuler?.date ?? '';
+			expect((await postForm('/?/annuler', annuler ?? {}, cookie)).status).toBe(200);
+			expect(await exceptionDe(cours, date)).toBe('cancelled');
+
+			const retablir = formulaireDeLaPage(
+				await page200('/', cookie),
+				'?/retablir',
+				avec({ courseId: cours, date })
+			);
+			expect(retablir, 'le bouton qui rétablit la séance annulée').not.toBeNull();
+			expect((await postForm('/?/retablir', retablir ?? {}, cookie)).status).toBe(200);
+			expect(await exceptionDe(cours, date)).toBeNull();
+
+			const deplacer = formulaireDeLaPage(
+				await page200('/', cookie),
+				'?/deplacer',
+				avec({ courseId: cours, date })
+			);
+			expect(deplacer, 'le formulaire qui déplace la séance').not.toBeNull();
+			const deplacee = await postForm(
+				'/?/deplacer',
+				{ ...deplacer, toDate: jourSuivant(date), toStart: '18:30' },
+				cookie
+			);
+			expect(deplacee.status).toBe(200);
+			expect(await exceptionDe(cours, date)).toBe('moved');
+
+			const revenir = formulaireDeLaPage(
+				await page200('/', cookie),
+				'?/retablir',
+				avec({ courseId: cours, date })
+			);
+			expect(revenir, 'le bouton qui rétablit la séance déplacée').not.toBeNull();
+			expect((await postForm('/?/retablir', revenir ?? {}, cookie)).status).toBe(200);
+			expect(await exceptionDe(cours, date)).toBeNull();
+		}
+	},
+	courses: {
+		texte: 'Créer un cours, le modifier, le publier et le supprimer',
+		preuve: async (cookie) => {
+			const nom = 'Cours créé par l’éditrice';
+			const modifie = 'Cours modifié par l’éditrice';
+			expect(await page200('/cours/nouveau', cookie)).toMatch(/<form\b[^>]*method="post"/);
+			const cree = await postForm(
+				'/cours/nouveau',
+				{ ...COURS_DE_L_EDITRICE, 'title.fr': nom, status: 'draft' },
+				cookie
+			);
+			expect(cree.status).toBe(303);
+			expect(cree.headers.get('location')).toBe('/cours');
+			const [cours] = await coursNommes(nom);
+			expect(cours?.status).toBe('draft');
+			const id = cours?.id ?? '';
+
+			// Le modifier et le publier : le formulaire de sa page, l'état « publié » choisi.
+			expect(await page200(`/cours/${id}`, cookie)).toMatch(/<form\b[^>]*method="post"/);
+			const publie = await postForm(
+				`/cours/${id}`,
+				{ ...COURS_DE_L_EDITRICE, 'title.fr': modifie, status: 'published' },
+				cookie
+			);
+			// Un refus répond aussi 303, mais vers l'accueil : c'est l'adresse qui dit que c'est fait.
+			expect(publie.status).toBe(303);
+			expect(publie.headers.get('location')).toBe('/cours');
+			expect(await coursNommes(modifie)).toEqual([{ id, status: 'published', kind: 'course' }]);
+
+			// Le supprimer : l'action de l'écran des cours que l'ADR 0046 nomme. Aucun bouton de
+			// l'écran ne l'appelle encore (trouvaille du lot 3 sur l'écran des cours) : la preuve poste
+			// à l'action elle-même.
+			const supprime = await postForm('/cours?/supprimer', { courseId: id }, cookie);
+			expect(supprime.status).toBe(200);
+			expect(await coursNommes(modifie)).toEqual([]);
+		}
+	},
+	pauses: {
+		texte: 'Poser une pause, par exemple pendant les vacances, puis la retirer',
+		preuve: async (cookie) => {
+			const raison = 'Vacances posées par l’éditrice';
+			const pausesPosees = () =>
+				maintenance(async (tx) =>
+					lignes<{ id: string }>(
+						await tx.execute(sql`select "id" from "pause" where "reason" = ${raison}`)
+					)
+				);
+			expect(formulaireDeLaPage(await page200('/cours', cookie), '?/pause')).not.toBeNull();
+			const posee = await postForm(
+				'/cours?/pause',
+				{ courseId: '', from: '2027-02-01', to: '2027-02-05', reason: raison },
+				cookie
+			);
+			expect(posee.status).toBe(200);
+			const [pause] = await pausesPosees();
+			expect(pause, 'la pause est posée').toBeDefined();
+
+			const retirer = formulaireDeLaPage(
+				await page200('/cours', cookie),
+				'?/supprimerPause',
+				avec({ pauseId: pause?.id ?? '' })
+			);
+			expect(retirer, 'le bouton qui retire la pause').not.toBeNull();
+			expect((await postForm('/cours?/supprimerPause', retirer ?? {}, cookie)).status).toBe(200);
+			expect(await pausesPosees()).toEqual([]);
+		}
+	},
+	friday: {
+		texte:
+			'Quand les heures de prière sont activées : ajouter une prière du vendredi, la modifier, la publier, l’annuler, la déplacer ou la supprimer',
+		preuve: async (cookie) => {
+			const nom = 'Prière ajoutée par l’éditrice';
+			const modifie = 'Prière modifiée par l’éditrice';
+			const ajout = formulaireDeLaPage(
+				await page200('/vendredi', cookie),
+				'?/enregistrer',
+				(caches) => !('courseId' in caches)
+			);
+			expect(ajout, 'le formulaire d’ajout').not.toBeNull();
+			const ajoutee = await postForm(
+				'/vendredi?/enregistrer',
+				{ ...ajout, ...VENDREDI_DE_L_EDITRICE, title: nom },
+				cookie
+			);
+			expect(ajoutee.status).toBe(200);
+			const [session] = await coursNommes(nom);
+			expect(session?.kind).toBe('jumua');
+			const id = session?.id ?? '';
+			const deLaSession = avec({ courseId: id });
+
+			const edition = formulaireDeLaPage(
+				await page200('/vendredi', cookie),
+				'?/enregistrer',
+				deLaSession
+			);
+			expect(edition, 'le formulaire de modification').not.toBeNull();
+			const modifiee = await postForm(
+				'/vendredi?/enregistrer',
+				{ ...edition, ...VENDREDI_DE_L_EDITRICE, end: '14:30', title: modifie },
+				cookie
+			);
+			expect(modifiee.status).toBe(200);
+			expect((await coursNommes(modifie)).map((ligne) => ligne.id)).toEqual([id]);
+
+			// Publier : le bouton bascule d'un état à l'autre ; deux fois, pour finir publiée.
+			for (const vers of ['draft', 'published']) {
+				const bascule = formulaireDeLaPage(
+					await page200('/vendredi', cookie),
+					'?/basculer',
+					avec({ courseId: id, vers })
+				);
+				expect(bascule, `le bouton qui la rend ${vers}`).not.toBeNull();
+				expect((await postForm('/vendredi?/basculer', bascule ?? {}, cookie)).status).toBe(200);
+				expect((await coursNommes(modifie))[0]?.status).toBe(vers);
+			}
+
+			// Ce vendredi-là : annuler, rétablir, déplacer, rétablir. Chaque bouton est pris sur la
+			// page telle qu'elle est après le geste d'avant.
+			const annuler = formulaireDeLaPage(
+				await page200('/vendredi', cookie),
+				'?/annuler',
+				deLaSession
+			);
+			expect(annuler, 'le bouton qui annule ce vendredi').not.toBeNull();
+			const date = annuler?.date ?? '';
+			const ceVendredi = avec({ courseId: id, date });
+			const suite: readonly [string, Record<string, string>, string | null][] = [
+				['?/annuler', {}, 'cancelled'],
+				['?/retablir', {}, null],
+				['?/deplacer', { toDate: jourSuivant(date), toStart: '14:00' }, 'moved'],
+				['?/retablir', {}, null]
+			];
+			for (const [action, saisie, attendu] of suite) {
+				const bouton = formulaireDeLaPage(await page200('/vendredi', cookie), action, ceVendredi);
+				expect(bouton, `le bouton ${action} de ce vendredi`).not.toBeNull();
+				const fait = await postForm(`/vendredi${action}`, { ...bouton, ...saisie }, cookie);
+				expect(fait.status, action).toBe(200);
+				expect(await exceptionDe(id, date), action).toBe(attendu);
+			}
+
+			const supprimer = formulaireDeLaPage(
+				await page200('/vendredi', cookie),
+				'?/supprimer',
+				deLaSession
+			);
+			expect(supprimer, 'le bouton qui la supprime').not.toBeNull();
+			expect((await postForm('/vendredi?/supprimer', supprimer ?? {}, cookie)).status).toBe(200);
+			expect(await coursNommes(modifie)).toEqual([]);
+		}
+	},
+	share: {
+		texte: 'Partager le programme : le lien, le code QR et le code à coller sur un site',
+		preuve: async (cookie) => {
+			const html = await page200('/partager', cookie);
+			expect(html).toContain(`/m/${SLUG}`);
+			expect(html).toMatch(/<svg\b/);
+			expect(html).toMatch(/<textarea\b[^>]*\bid="code-site"[^>]*>[^<]*jadwal-widget/);
+		}
+	},
+	language: {
+		texte: 'Choisir la langue de son espace',
+		preuve: async (cookie) => {
+			const langueDuCompte = async () =>
+				(
+					await maintenance(async (tx) =>
+						lignes<{ language: string | null }>(
+							await tx.execute(sql`select "language" from "user" where "email" = ${EDITRICE}`)
+						)
+					)
+				)[0]?.language;
+			expect(await page200('/cours', cookie)).toMatch(
+				/<form\b[^>]*method="post"[^>]*action="\/langue"/
+			);
+			const choisie = await postForm('/langue', { language: 'de', returnTo: '/cours' }, cookie);
+			expect(choisie.status).toBe(303);
+			expect(choisie.headers.get('location')).toBe('/cours');
+			expect(await langueDuCompte()).toBe('de');
+			expect(baliseHtml(await page200('/cours', cookie))).toBe('<html lang="de" dir="ltr">');
+			await postForm('/langue', { language: 'fr', returnTo: '/cours' }, cookie);
+			expect(await langueDuCompte()).toBe('fr');
+		}
+	},
+	switchOrganisation: {
+		texte: 'Passer d’une organisation à l’autre, quand on est membre de plusieurs',
+		preuve: async (cookie) => {
+			for (const [id, nom] of [
+				[VOISINE.id, VOISINE.nom],
+				[organizationId, ORGANISATION]
+			] as const) {
+				const choisir = formulaireDeLaPage(
+					await page200('/organisations', cookie),
+					'?/choisir',
+					avec({ organizationId: id })
+				);
+				expect(choisir, `le bouton de ${nom}`).not.toBeNull();
+				const choisie = await postForm('/organisations?/choisir', choisir ?? {}, cookie);
+				expect(choisie.status).toBe(303);
+				expect(choisie.headers.get('location')).toBe('/');
+				expect(titre(await page200('/', cookie))).toContain(nom);
+			}
+		}
+	},
+	acceptance: {
+		texte: 'Accepter les conditions d’utilisation et les invitations reçues',
+		preuve: async (cookie) => {
+			const invitation = formulaireDeLaPage(await page200('/organisations', cookie), '?/accepter');
+			expect(invitation, 'le bouton qui accepte l’invitation reçue').not.toBeNull();
+			const acceptee = await postForm('/organisations?/accepter', invitation ?? {}, cookie);
+			expect(acceptee.status).toBe(303);
+			// Une organisation neuve pour elle : la porte mène d'abord à ses conditions.
+			const porte = await get('/', cookie);
+			expect(porte.status).toBe(303);
+			expect(porte.headers.get('location')).toBe('/conditions/accepter');
+			expect(await page200('/conditions/accepter', cookie)).toMatch(/<form\b[^>]*method="post"/);
+			const signees = await postForm('/conditions/accepter', {}, cookie);
+			expect(signees.status).toBe(303);
+			expect(signees.headers.get('location')).toBe('/');
+			expect(titre(await page200('/', cookie))).toContain(INVITANTE.nom);
+			// Et la voilà de retour dans l'organisation du fichier.
+			const retour = formulaireDeLaPage(
+				await page200('/organisations', cookie),
+				'?/choisir',
+				avec({ organizationId })
+			);
+			expect((await postForm('/organisations?/choisir', retour ?? {}, cookie)).status).toBe(303);
+		}
+	}
+};
+
 /**
  * Les gestes que l'écran Membres dit réservés au responsable, dans l'ordre de l'écran, avec les
- * tables que chacun écrit (ADR 0046) et les routes qu'une éditrice se voit refuser.
+ * tables que chacun écrit (ADR 0046) et les routes qu'une éditrice se voit refuser. Le type exige une
+ * entrée par geste de `MANAGER_GESTURES`, la liste même que l'écran affiche.
  */
-const RESERVES = [
-	{
-		geste: 'Voir les membres, leur rôle et les invitations en attente',
+const RESERVES: {
+	readonly [G in ManagerGesture]: {
+		readonly texte: string;
+		readonly tables: readonly string[];
+		readonly refus: readonly {
+			readonly chemin: string;
+			readonly champs?: Readonly<Record<string, string>>;
+		}[];
+	};
+} = {
+	members: {
+		texte: 'Voir les membres, leur rôle et les invitations en attente',
 		tables: [],
 		refus: [{ chemin: '/membres' }]
 	},
-	{
-		geste: 'Inviter une personne, comme éditeur ou comme responsable, et annuler une invitation',
+	invitations: {
+		texte: 'Inviter une personne, comme éditeur ou comme responsable, et annuler une invitation',
 		tables: ['invitation'],
 		refus: [
 			{ chemin: '/membres?/inviter', champs: { email: 'mr-par-l-editrice@example.test' } },
 			{ chemin: '/membres?/annuler', champs: { invitationId: '' } }
 		]
 	},
-	{
-		geste: 'Changer le rôle d’un membre',
+	roles: {
+		texte: 'Changer le rôle d’un membre',
 		tables: ['membership'],
 		refus: [{ chemin: '/membres?/role', champs: { membershipId: '', role: 'org_admin' } }]
 	},
-	{
-		geste: 'Retirer un membre de l’organisation',
+	remove: {
+		texte: 'Retirer un membre de l’organisation',
 		tables: ['membership'],
 		refus: [{ chemin: '/membres?/retirer', champs: { membershipId: '' } }]
 	},
-	{
-		geste:
+	settings: {
+		texte:
 			'Modifier les réglages : nom, fuseau horaire, couleur, formule d’accueil et langues de la page publique',
 		tables: ['organization'],
 		refus: [{ chemin: '/reglages' }, { chemin: '/reglages?/enregistrer', champs: { name: 'Volé' } }]
 	},
-	{
-		geste: 'Ajouter ou supprimer une salle',
+	rooms: {
+		texte: 'Ajouter ou supprimer une salle',
 		tables: ['room'],
 		refus: [
 			{ chemin: '/reglages?/ajouterSalle', champs: { name: 'Salle de l’éditrice' } },
 			{ chemin: '/reglages?/supprimerSalle', champs: { roomId: '', confirm: 'yes' } }
 		]
 	},
-	{
-		geste: 'Activer ou désactiver les heures de prière',
+	prayerSwitch: {
+		texte: 'Activer ou désactiver les heures de prière',
 		tables: ['organization'],
 		refus: [{ chemin: '/reglages?/modulePrieres', champs: { allume: 'non' } }]
 	},
-	{
-		geste:
+	prayerTimes: {
+		texte:
 			'Régler les heures de prière : le calcul, l’import d’un fichier, les horaires saisis à la main et le modèle à télécharger',
 		tables: ['prayer_settings', 'prayer_day', 'prayer_period'],
 		refus: [
@@ -403,41 +811,7 @@ const RESERVES = [
 			{ chemin: '/prieres/modele.csv' }
 		]
 	}
-] as const;
-
-/** Les gestes de l'éditeur, que fait aussi le responsable, avec l'écran qui les ouvre. */
-const OUVERTS = [
-	{
-		geste: 'Voir les séances des sept prochains jours et copier les messages prêts à coller',
-		page: '/'
-	},
-	{
-		geste:
-			'Annuler une séance, la déplacer à une autre date ou à une autre heure, puis la rétablir',
-		page: '/'
-	},
-	{ geste: 'Créer un cours, le modifier, le publier et le supprimer', page: '/cours/nouveau' },
-	{ geste: 'Poser une pause, par exemple pendant les vacances, puis la retirer', page: '/cours' },
-	{
-		geste:
-			'Quand les heures de prière sont activées : ajouter une prière du vendredi, la modifier, la publier, l’annuler, la déplacer ou la supprimer',
-		page: '/vendredi'
-	},
-	{
-		geste: 'Partager le programme : le lien, le code QR et le code à coller sur un site',
-		page: '/partager'
-	},
-	// Le choix de la langue est un formulaire, sans écran à lui : il est éprouvé plus bas.
-	{ geste: 'Choisir la langue de son espace', page: null },
-	{
-		geste: 'Passer d’une organisation à l’autre, quand on est membre de plusieurs',
-		page: '/organisations'
-	},
-	{
-		geste: 'Accepter les conditions d’utilisation et les invitations reçues',
-		page: '/organisations'
-	}
-] as const;
+};
 
 /** Le titre de la liste réservée, dans chaque langue : les mots que la consigne demande. */
 const RESERVE: Record<Langue, string> = {
@@ -450,6 +824,8 @@ const RESERVE: Record<Langue, string> = {
 
 describe('ce que peut faire chaque rôle, sous le choix du rôle (retour B3)', () => {
 	let cookie = '';
+	let editrice = '';
+	let sallesAvant: { id: string; cours: number }[] = [];
 	const rendus: Partial<Record<Langue, string>> = {};
 
 	beforeAll(async () => {
@@ -461,6 +837,42 @@ describe('ce que peut faire chaque rôle, sous le choix du rôle (retour B3)', (
 			rendus[langue] = await reponse.text();
 		}
 		await poserLangueDuCompte(RESPONSABLE, 'fr');
+
+		// L'éditrice est aussi membre d'une organisation voisine, et une troisième l'a invitée : les
+		// deux gestes qui demandent plusieurs organisations ont de quoi se faire.
+		const inviteuse = newId();
+		await maintenance(async (tx) => {
+			for (const autre of [VOISINE, INVITANTE]) {
+				await tx.execute(sql`
+					insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+						"enabled_language")
+					values (${autre.id}, ${autre.slug}, ${autre.nom}, 'Europe/Zurich', 'fr', array['fr'])
+				`);
+			}
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${VOISINE.id}, ${ids[EDITRICE] ?? ''}, 'editor')
+			`);
+			await tx.execute(conditionsAcceptees(VOISINE.id, ids[EDITRICE] ?? ''));
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified")
+				values (${inviteuse}, 'mr-inviteuse@example.test', true)
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${INVITANTE.id}, ${inviteuse}, 'org_admin')
+			`);
+			await tx.execute(sql`
+				insert into "invitation" ("id", "organization_id", "email", "role", "invited_by", "expires_at")
+				values (${newId()}, ${INVITANTE.id}, ${EDITRICE}, 'editor', ${inviteuse},
+					now() + make_interval(hours => 24))
+			`);
+		});
+		editrice = await signIn(EDITRICE);
+		// Deux organisations : la session choisit celle du fichier, comme l'éditrice le ferait.
+		const choisie = await postForm('/organisations?/choisir', { organizationId }, editrice);
+		expect(choisie.status).toBe(303);
+		sallesAvant = await sallesEnBase();
 	});
 
 	it('lists, right under the choice of the role, what an editor does and what is reserved', () => {
@@ -481,8 +893,13 @@ describe('ce que peut faire chaque rôle, sous le choix du rôle (retour B3)', (
 		expect(lu(responsable.match(/<h3\b[\s\S]*?<\/h3>/)?.[0] ?? '')).toBe(
 			'Réservé au responsable, en plus de tout ce que fait un éditeur'
 		);
-		expect(elementsDeListe(editeur)).toEqual(OUVERTS.map((ouvert) => ouvert.geste));
-		expect(elementsDeListe(responsable)).toEqual(RESERVES.map((reserve) => reserve.geste));
+		expect(elementsDeListe(editeur)).toEqual(EDITOR_GESTURES.map((geste) => PREUVES[geste].texte));
+		expect(elementsDeListe(responsable)).toEqual(
+			MANAGER_GESTURES.map((geste) => RESERVES[geste].texte)
+		);
+		// Ni plus ni moins de preuves que de gestes affichés, et dans le même ordre.
+		expect(Object.keys(PREUVES)).toEqual([...EDITOR_GESTURES]);
+		expect(Object.keys(RESERVES)).toEqual([...MANAGER_GESTURES]);
 		expect(lu(aide)).toContain(
 			'Une organisation garde toujours au moins une personne responsable.'
 		);
@@ -502,42 +919,41 @@ describe('ce que peut faire chaque rôle, sous le choix du rôle (retour B3)', (
 			).map((ligne) => ligne.tablename)
 		);
 		expect(reservees.length).toBeGreaterThan(0);
-		const dites = [...new Set(RESERVES.flatMap((reserve) => [...reserve.tables]))].sort();
+		const dites = [
+			...new Set(Object.values(RESERVES).flatMap((reserve) => [...reserve.tables]))
+		].sort();
 		expect(dites).toEqual(reservees);
 	});
 
-	it('refuses an editor every gesture it says reserved, and opens her every other one', async () => {
-		const editrice = await signIn(EDITRICE);
-		const avant = await sallesEnBase();
-		for (const { refus } of RESERVES) {
-			for (const essai of refus) {
-				const reponse =
-					'champs' in essai
-						? await postForm(essai.chemin, essai.champs, editrice)
-						: await get(essai.chemin, editrice);
-				expect(reponse.status, essai.chemin).toBe(303);
-				expect(reponse.headers.get('location'), essai.chemin).toBe('/');
-			}
+	it.each(MANAGER_GESTURES)('refuses an editor the gesture %s, said reserved', async (geste) => {
+		for (const essai of RESERVES[geste].refus) {
+			const reponse = essai.champs
+				? await postForm(essai.chemin, essai.champs, editrice)
+				: await get(essai.chemin, editrice);
+			expect(reponse.status, essai.chemin).toBe(303);
+			expect(reponse.headers.get('location'), essai.chemin).toBe('/');
 		}
-		// Et rien n'a changé : ni salle ajoutée ou retirée, ni invitation partie.
-		expect(await sallesEnBase()).toEqual(avant);
-		expect(await dernierCourrielA('mr-par-l-editrice@example.test')).toBeUndefined();
-
-		for (const { geste, page } of OUVERTS) {
-			if (page === null) continue;
-			expect((await get(page, editrice)).status, geste).toBe(200);
-		}
-		const langue = await postForm('/langue', { language: 'fr', returnTo: '/cours' }, editrice);
-		expect(langue.status).toBe(303);
-		expect(langue.headers.get('location')).toBe('/cours');
 	});
+
+	it('changes nothing when it refuses her', async () => {
+		// Ni salle ajoutée ou retirée, ni invitation partie.
+		expect(await sallesEnBase()).toEqual(sallesAvant);
+		expect(await dernierCourrielA('mr-par-l-editrice@example.test')).toBeUndefined();
+	});
+
+	it.each(EDITOR_GESTURES)(
+		'lets an editor do the gesture %s herself, by her screen',
+		async (geste) => {
+			await PREUVES[geste].preuve(editrice);
+		}
+	);
 
 	it.each(LANGUES)('says it in %s, the reserved list under its own heading', (langue) => {
 		const aide = element(rendus[langue] ?? '', 'roles-aide');
 		const responsable = element(aide, 'peut-org_admin');
 		expect(lu(responsable.match(/<h3\b[\s\S]*?<\/h3>/)?.[0] ?? '')).toContain(RESERVE[langue]);
-		expect(elementsDeListe(element(aide, 'peut-editor'))).toHaveLength(OUVERTS.length);
-		expect(elementsDeListe(responsable)).toHaveLength(RESERVES.length);
+		expect(elementsDeListe(element(aide, 'peut-editor'))).toHaveLength(EDITOR_GESTURES.length);
+		expect(elementsDeListe(responsable)).toHaveLength(MANAGER_GESTURES.length);
 	});
 });
 

@@ -5,8 +5,10 @@
 // La liste des gestes suit la liste qui fait foi, dans l'ADR 0046 : ce que les écrans ouvrent à chaque
 // rôle, et ce que la base réserve au responsable depuis la migration 0059. Un geste ajouté ici doit
 // l'être aussi à cet ADR, et `tests/membres-et-reglages.test.ts` les lie l'un à l'autre : chaque table
-// que la base réserve doit être dite réservée à l'écran, et chaque geste réservé est refusé à une
-// éditrice.
+// que la base réserve doit être dite réservée à l'écran, chaque geste réservé est refusé à une
+// éditrice, et chaque geste de l'éditeur, une éditrice le fait elle-même, par le formulaire de son
+// écran. Le test prend ses gestes dans les deux listes ci-dessous : un geste ajouté ici sans sa preuve
+// là-bas ne compile pas.
 
 import { plural, type PluralForms, type Translations } from './space.js';
 
