@@ -58,6 +58,16 @@ domaine. Un test analyse le HTML servi et échoue à la moindre URL externe.
 Les pages publiques ne lisent même pas le cookie de session : la route ne consulte pas Better Auth
 du tout. C'est structurel plutôt que promis — il n'y a rien à oublier de ne pas lire.
 
+> **Amendement du 2026-09-26, à l'étape 18.** Trois choses changent, et la langue n'en fait pas
+> partie : elle reste dans le chemin, jamais devinée, et le côté public ne lit pas les cookies de
+> langue de l'espace (ADR 0047). Les langues sont cinq, l'anglais britannique compris (ADR 0007).
+> La page d'abonnement et la page d'un cours choisissent le bouton d'agenda selon l'appareil, lu
+> dans les en-têtes `Sec-CH-UA-Platform` et `User-Agent`, et leur réponse le dit par `Vary`
+> (ADR 0048) : l'appareil ne décide que du bouton montré en premier, et le choix complet reste à un
+> lien. Enfin, ces deux pages portent des liens vers Google Agenda et Outlook, que le visiteur
+> choisit de suivre, dans un nouvel onglet. La page ne charge toujours rien d'un autre domaine, et le
+> test n'admet un lien vers ailleurs que pour ces deux services.
+
 ### Le cadre est ouvert, pour ces routes et pour elles seules
 
 `frame-ancestors *` sur `/m/**`, `frame-ancestors 'none'` partout ailleurs.
@@ -105,4 +115,5 @@ Un cours ancré sur une prière dont l'heure n'est pas connue affiche « Après 
 ## Statut
 
 Accepté, 2026-09-20. Étape 5 de la feuille de route. Met en œuvre les ADR 0007 (langues) et 0009
-(vie privée) du côté public.
+(vie privée) du côté public. Amendé le 2026-09-21 (le script du mode intégré) et le 2026-09-26
+(cinq langues, l'agenda selon l'appareil, deux liens vers des services d'agenda).
