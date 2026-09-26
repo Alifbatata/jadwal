@@ -16,7 +16,9 @@ droite à gauche. Les pages publiques ont les leurs dans `../i18n.ts`.
 - `formatting.ts` porte les formes dont `../format.ts` a besoin : rythme, horaire, durée, publics.
 - `language.ts` dit d'où vient la langue d'un écran, dans cet ordre : la langue demandée par
   l'adresse (`?lang=`), celle du compte, celle retenue sur ce navigateur par le choix de la langue,
-  celle du navigateur, et le français.
+  celle du navigateur, et le français. Il dit aussi ce que devient un choix fait avant la connexion :
+  il devient la langue du compte à la connexion, même si le compte en avait une ; ensuite, le compte
+  fait foi (`languageForTheAccount`).
 
 ## Ajouter les textes d'un écran
 
@@ -26,7 +28,14 @@ droite à gauche. Les pages publiques ont les leurs dans `../i18n.ts`.
 2. Dans la page, lire la langue dans les données de la coquille, sans rien charger d'autre :
 
    ```svelte
-   import {membersTexts} from '$lib/i18n/members.js'; let {data} = $props(); const text = $derived(membersTexts[data.language]);
+   <script lang="ts">
+   	import { membersTexts } from '$lib/i18n/members.js';
+
+   	let { data } = $props();
+   	const text = $derived(membersTexts[data.language]);
+   </script>
+
+   <h1>{text.title}</h1>
    ```
 
    `data.language` est posé par `routes/+layout.server.ts` pour chaque écran de l'espace, erreurs
@@ -84,3 +93,10 @@ droite à gauche. Les pages publiques ont les leurs dans `../i18n.ts`.
 `textSegments`, ses morceaux, et `frenchLeft`, les phrases françaises restées telles quelles dans une
 autre langue. `tests/espace-en-cinq-langues.test.ts` montre comment servir un écran dans chaque
 langue : par le cookie du choix avant la connexion, par la langue du compte après.
+`tests/choix-de-la-langue.test.ts` suit un navigateur qui garde ses cookies d'une réponse à l'autre,
+pour éprouver ce que devient un choix à la connexion.
+
+Un contrôle qui ne peut pas tomber ne prouve rien. Chercher une date `2026-09-26` sur un écran qui
+n'affiche aucune date passe avant comme après la traduction : c'est un garde-fou pour la suite, pas
+la preuve du travail fait. Chaque test ajouté est montré en échec avant la correction ; s'il porte
+sur un comportement déjà juste, par un mutant posé le temps d'un passage, puis retiré.
