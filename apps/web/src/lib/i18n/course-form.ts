@@ -397,7 +397,8 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		missing: {
 			title: 'noch nicht geschrieben',
-			descriptionWithoutTitle: (language) => `ohne Titel auf ${language} nicht veröffentlicht`,
+			descriptionWithoutTitle: (language) =>
+				`nicht veröffentlicht, weil der Titel auf ${language} fehlt`,
 			days: 'nicht gewählt',
 			dates: 'noch nicht eingetragen',
 			noDateInPeriod: 'keines wird veröffentlicht',
