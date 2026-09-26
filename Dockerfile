@@ -63,8 +63,10 @@ COPY --chown=node:node --from=build /app/out /app
 
 # La licence est une propriété du **contenu** de l'image : elle se déclare ici, où le contenu se
 # décide, et non dans la CI, qui ne sait que d'où vient la construction. `source` et `revision`
-# restent à la CI, pour la raison inverse.
-LABEL org.opencontainers.image.licenses="MIT"
+# restent à la CI, pour la raison inverse. Le code est sous MIT ; la liste des localités suisses,
+# que le serveur embarque, reste sous les conditions de swisstopo, sans identifiant SPDX, d'où
+# `LicenseRef-` (voir `apps/web/src/lib/server/localites/README.md`).
+LABEL org.opencontainers.image.licenses="MIT AND LicenseRef-swisstopo-OGD"
 
 EXPOSE 3000
 # Pas de `HEALTHCHECK` ici : le conteneur est piloté par Compose, qui porte le sien. Une sonde

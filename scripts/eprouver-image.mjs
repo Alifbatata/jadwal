@@ -117,6 +117,25 @@ const presence = docker([
 ]).trim();
 verifier('le fichier des licences tierces est livré', presence !== 'absent', `${presence} lignes`);
 
+// La liste des localités suisses entre dans le serveur construit depuis que l'écran des prières la
+// lit (étape 18). Elle n'est pas sous MIT : elle reste sous les conditions de swisstopo, qui en
+// permettent la redistribution à condition de citer la source. L'avis des licences doit donc la citer,
+// dans sa section « Données tierces », et l'étiquette le dire. La spécification OCI demande une
+// expression de licence SPDX ; ces conditions n'ont pas d'identifiant SPDX, d'où `LicenseRef-`.
+const avis = docker(['run', '--rm', '--entrypoint', 'sh', IMAGE, '-c', `cat ${licences}`]);
+const donneesTierces =
+	avis.split(/^## /m).find((section) => section.startsWith('Données tierces')) ?? '';
+verifier(
+	'le fichier des licences tierces cite swisstopo, source et conditions, dans « Données tierces »',
+	donneesTierces.includes('apps/web/src/lib/server/localites/localities.csv') &&
+		donneesTierces.includes('Source : Office fédéral de topographie swisstopo.') &&
+		donneesTierces.includes(
+			'https://www.swisstopo.admin.ch/fr/conditions-utilisation-geodonnees-et-geoservices-gratuit'
+		),
+	donneesTierces ? `${donneesTierces.trim().split('\n').length} lignes` : 'section absente'
+);
+
+const LICENCE_DE_L_IMAGE = 'MIT AND LicenseRef-swisstopo-OGD';
 const licenceOci = docker([
 	'image',
 	'inspect',
@@ -124,7 +143,11 @@ const licenceOci = docker([
 	'{{index .Config.Labels "org.opencontainers.image.licenses"}}',
 	IMAGE
 ]).trim();
-verifier('l’étiquette de licence dit MIT', licenceOci === 'MIT', licenceOci || 'absente');
+verifier(
+	`l’étiquette de licence dit « ${LICENCE_DE_L_IMAGE} »`,
+	licenceOci === LICENCE_DE_L_IMAGE,
+	licenceOci || 'absente'
+);
 
 // Les commandes d'exploitant se lancent depuis l'image, par leur chemin sous `node_modules` : c'est
 // la forme que `docs/EXPLOITATION.md` donne à chacune. Une commande que l'image ne porterait pas ne
