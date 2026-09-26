@@ -694,6 +694,9 @@ export const course = pgTable(
 			name: 'course_organization_fk'
 		}).onDelete('cascade'),
 		// Clé étrangère composite : une salle d'une autre organisation est impossible (ADR 0013).
+		// Quand la salle disparaît, la base ne vide que `room_id` : `ON DELETE SET NULL ("room_id")`,
+		// écrit à la main par la migration 0061, parce que Drizzle ne sait pas nommer ces colonnes.
+		// Vider aussi `organization_id`, qui ne peut pas être vide, faisait échouer la suppression.
 		foreignKey({
 			columns: [table.roomId, table.organizationId],
 			foreignColumns: [room.id, room.organizationId],

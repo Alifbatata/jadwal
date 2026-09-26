@@ -201,8 +201,11 @@ pnpm --filter @jadwal/db run generate --name ce_qui_change
 ```
 
 Drizzle Kit compare `src/schema/index.ts` à l'état précédent et écrit un fichier dans `migrations/`.
-Trois choses qu'il ne produit pas et qu'il faut écrire à la main, dans une migration
-supplémentaire : `FORCE ROW LEVEL SECURITY`, les `GRANT`, et tout ce qui touche aux rôles. Un
+Quatre choses qu'il ne produit pas et qu'il faut écrire à la main, dans une migration
+supplémentaire : `FORCE ROW LEVEL SECURITY`, les `GRANT`, tout ce qui touche aux rôles, et l'action
+d'une clé étrangère qui ne vide qu'une partie de ses colonnes. C'est le cas de la salle d'un cours :
+la clé est composite, et seule la salle se vide quand elle disparaît, par la migration 0061
+(`ON DELETE SET NULL ("room_id")`). Le schéma garde `onDelete('set null')` et le dit. Un
 fichier écrit à la main doit être ajouté au journal `migrations/meta/_journal.json`, avec un
 horodatage strictement supérieur au précédent.
 

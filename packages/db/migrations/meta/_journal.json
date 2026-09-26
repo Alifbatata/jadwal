@@ -428,6 +428,13 @@
       "when": 1790378472149,
       "tag": "0060_account_language",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1790378473149,
+      "tag": "0061_course_room_set_null_room_only",
+      "breakpoints": true
     }
   ]
 }

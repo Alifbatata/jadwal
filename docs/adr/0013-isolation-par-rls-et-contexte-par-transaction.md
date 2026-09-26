@@ -162,8 +162,19 @@ La modification de l'organisation est aussi bornée aux colonnes de l'écran des
 celle d'une adhésion l'a été au rôle (addendum précédent) : le plan, l'état et l'identifiant d'URL
 relèvent du super-admin.
 
+## Addendum du 2026-09-26 : une clé composite ne vide que ce qui peut l'être
+
+Une clé étrangère composite qui vide la référence quand la ligne visée disparaît vide toutes ses
+colonnes, l'organisation comprise. C'était le cas de la salle d'un cours : l'organisation d'un cours
+ne peut pas être vide, donc supprimer une salle occupée échouait, et l'écran des réglages rendait une
+erreur 500. Depuis la migration 0061, la clé ne vide que la salle (`ON DELETE SET NULL ("room_id")`,
+PostgreSQL 15 et plus). Elle reste composite : un cours ne peut toujours pas désigner la salle d'une
+autre organisation. C'est la seule clé composite du schéma qui vide une référence ; les autres
+suppriment les lignes qui en dépendent. Un test relit toutes les clés du schéma, et échoue si l'une
+d'elles devait vider une colonne qui ne peut pas être vide.
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 2 de la feuille de route (base, RLS, données de démo) ; complété le
 2026-09-22 (modification d'une adhésion bornée au rôle, voir l'addendum) et le 2026-09-26 (le rôle
-de la personne du contexte, ADR 0046).
+de la personne du contexte, ADR 0046 ; la salle d'un cours, seule vidée quand elle disparaît).
