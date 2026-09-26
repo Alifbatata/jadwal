@@ -197,7 +197,10 @@ function formulaireDeLaPage(
 ): Record<string, string> | null {
 	for (const [bloc] of html.matchAll(/<form\b[^>]*>[\s\S]*?<\/form>/g)) {
 		const ouverture = bloc.match(/<form\b[^>]*>/)?.[0] ?? '';
-		if ((ouverture.match(/\baction="([^"]*)"/)?.[1] ?? '') !== action) continue;
+		// L'ancre qui ramène la page renvoyée sur la bonne carte (`?/enregistrer#ajout`) ne change
+		// pas l'action.
+		const cible = (ouverture.match(/\baction="([^"]*)"/)?.[1] ?? '').replace(/#.*$/, '');
+		if (cible !== action) continue;
 		const caches: Record<string, string> = {};
 		for (const [champ] of bloc.matchAll(/<input\b[^>]*>/g)) {
 			if (!/\btype="hidden"/.test(champ)) continue;
