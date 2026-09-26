@@ -285,6 +285,7 @@ const fr: Dictionnaire = {
 	subscribeIntro: (name) =>
 		`Le programme de ${name} s’ajoute à votre calendrier et se met à jour tout seul. Rien à réinstaller quand un cours change.`,
 	subscribeButton: 'Ajouter à mon calendrier',
+	addToGoogle: 'Ajouter à Google Agenda',
 	subscribeAddress: 'Ou copiez cette adresse dans votre application de calendrier :',
 	subscribeWholeTitle: 'Tout le programme',
 	subscribeOneCourseTitle: 'Un seul cours',
@@ -297,7 +298,9 @@ const fr: Dictionnaire = {
 	subscribeWhole: 'S’abonner à tout le programme',
 	addCourseToCalendar: 'Ajouter ce cours à mon agenda',
 	courseFeedAddress: 'Ou copiez cette adresse, qui ne porte que ce cours :',
-	addToGoogle: 'Ajouter à Google Agenda',
+	// Le libellé du bouton d'Android est rangé sous celui de l'iPhone, et non ici : le correcteur
+	// recolle les chaînes voisines en un paragraphe, et lisait ce libellé, sans point, comme la fin
+	// d'une phrase.
 	appleHelp:
 		'Touchez le bouton, ou cliquez dessus sur un Mac : l’application Calendrier propose de vous abonner. Acceptez, et le calendrier se met à jour tout seul, environ une fois par heure.',
 	googleHelp:
@@ -305,7 +308,9 @@ const fr: Dictionnaire = {
 	googleDelay: 'Google peut mettre jusqu’à 24 heures à rafraîchir un abonnement.',
 	chooseApp: 'Choisissez votre application de calendrier :',
 	choiceGoogle: 'Google Agenda',
-	choiceGoogleHelp: 'Google Agenda propose d’ajouter l’agenda à votre compte Google.',
+	// Un nom d'application, puis la phrase qui dit ce qu'elle fait : le correcteur les lisait d'un
+	// seul tenant.
+	choiceGoogleHelp: 'Il propose d’ajouter l’agenda à votre compte Google.',
 	choiceOutlook: 'Outlook',
 	choiceOutlookHelp:
 		'Outlook sur le web s’ouvre avec l’adresse déjà remplie : choisissez Importer. Avec un compte de travail ou d’école, copiez plutôt l’adresse.',
@@ -341,6 +346,7 @@ const fr: Dictionnaire = {
 	sessionCount: (count) => (count === 1 ? '1 séance' : `${count} séances`),
 	previousMonth: 'Mois précédent',
 	nextMonth: 'Mois suivant',
+	// L'onglet des prières (étape 18, retour C4).
 	prayersTitle: 'Heures de prière',
 	noPrayerTimes: 'Les heures de prière ne sont pas encore publiées.',
 	prayersToday: (date) => `Aujourd’hui, ${date}`,
@@ -355,8 +361,8 @@ const fr: Dictionnaire = {
 	weekBoxHelp:
 		'Dans chaque case, l’heure de l’adhan, et en dessous celle de l’iqama quand elle est fixée.',
 	fridayBoxHelp: 'Le vendredi, la case du Dhuhr donne les heures de la prière du vendredi.',
-	jumuaAt: (times) => `Prière du vendredi : ${times}`,
-	jumuaReplacesDhuhr: 'Elle remplace le Dhuhr chaque vendredi.'
+	jumuaReplacesDhuhr: 'Elle remplace le Dhuhr chaque vendredi.',
+	jumuaAt: (times) => `Prière du vendredi : ${times}`
 };
 
 const de: Dictionnaire = {
@@ -446,7 +452,7 @@ const de: Dictionnaire = {
 	googleDelay: 'Google kann bis zu 24 Stunden brauchen, um ein Abo zu aktualisieren.',
 	chooseApp: 'Wählen Sie Ihre Kalender-App:',
 	choiceGoogle: 'Google Kalender',
-	choiceGoogleHelp: 'Google Kalender bietet an, den Kalender zu Ihrem Google-Konto hinzuzufügen.',
+	choiceGoogleHelp: 'Er bietet an, den Kalender zu Ihrem Google-Konto hinzuzufügen.',
 	choiceOutlook: 'Outlook',
 	choiceOutlookHelp:
 		'Outlook im Web öffnet sich mit der bereits eingetragenen Adresse: Wählen Sie Importieren. Mit einem Geschäfts- oder Schulkonto kopieren Sie besser die Adresse.',
@@ -482,6 +488,7 @@ const de: Dictionnaire = {
 	sessionCount: (count) => (count === 1 ? '1 Termin' : `${count} Termine`),
 	previousMonth: 'Vorheriger Monat',
 	nextMonth: 'Nächster Monat',
+	// L'onglet des prières (étape 18, retour C4).
 	prayersTitle: 'Gebetszeiten',
 	noPrayerTimes: 'Die Gebetszeiten sind noch nicht veröffentlicht.',
 	prayersToday: (date) => `Heute, ${date}`,
@@ -496,8 +503,8 @@ const de: Dictionnaire = {
 	weekBoxHelp:
 		'In jedem Feld steht die Zeit des Adhan, darunter die der Iqama, wenn sie festgelegt ist.',
 	fridayBoxHelp: 'Am Freitag nennt das Feld des Dhuhr die Zeiten des Freitagsgebets.',
-	jumuaAt: (times) => `Freitagsgebet: ${times}`,
-	jumuaReplacesDhuhr: 'Es ersetzt jeden Freitag das Dhuhr-Gebet.'
+	jumuaReplacesDhuhr: 'Es tritt jeden Freitag an die Stelle des Dhuhr.',
+	jumuaAt: (times) => `Freitagsgebet: ${times}`
 };
 
 const it: Dictionnaire = {
@@ -581,13 +588,13 @@ const it: Dictionnaire = {
 	courseFeedAddress: 'Oppure copia questo indirizzo, che contiene solo questo corso:',
 	addToGoogle: 'Aggiungi a Google Calendar',
 	appleHelp:
-		'Tocca il pulsante (su un Mac, fai clic): l’app Calendario propone di iscriverti. Accetta, e il calendario si aggiorna da solo, circa una volta all’ora.',
+		'Tocca il pulsante (sul computer, fai clic): l’app Calendario propone di iscriverti. Accetta, e il calendario si aggiorna da solo, circa una volta all’ora.',
 	googleHelp:
 		'Tocca il pulsante: Google Calendar si apre nel browser e propone di aggiungere il calendario. Conferma, e comparirà anche nell’app Google Calendar del telefono.',
 	googleDelay: 'Google può impiegare fino a 24 ore per aggiornare un’iscrizione.',
 	chooseApp: 'Scegli la tua app di calendario:',
 	choiceGoogle: 'Google Calendar',
-	choiceGoogleHelp: 'Google Calendar propone di aggiungere il calendario al tuo account Google.',
+	choiceGoogleHelp: 'Propone di aggiungere il calendario al tuo account Google.',
 	choiceOutlook: 'Outlook',
 	choiceOutlookHelp:
 		'Outlook sul web si apre con l’indirizzo già inserito: scegli Importa. Con un account di lavoro o di scuola, copia piuttosto l’indirizzo.',
@@ -622,6 +629,7 @@ const it: Dictionnaire = {
 	sessionCount: (count) => (count === 1 ? '1 lezione' : `${count} lezioni`),
 	previousMonth: 'Mese precedente',
 	nextMonth: 'Mese successivo',
+	// L'onglet des prières (étape 18, retour C4).
 	prayersTitle: 'Orari delle preghiere',
 	noPrayerTimes: 'Gli orari delle preghiere non sono ancora pubblicati.',
 	prayersToday: (date) => `Oggi, ${date}`,
@@ -635,8 +643,8 @@ const it: Dictionnaire = {
 	prayersWeek: 'I prossimi sette giorni',
 	weekBoxHelp: 'In ogni casella l’ora dell’adhan e, sotto, quella dell’iqama quando è fissata.',
 	fridayBoxHelp: 'Il venerdì, la casella del Dhuhr indica gli orari della preghiera del venerdì.',
-	jumuaAt: (times) => `Preghiera del venerdì: ${times}`,
-	jumuaReplacesDhuhr: 'Sostituisce il Dhuhr ogni venerdì.'
+	jumuaReplacesDhuhr: 'Sostituisce il Dhuhr ogni venerdì.',
+	jumuaAt: (times) => `Preghiera del venerdì: ${times}`
 };
 
 // L'anglais britannique (étape 18) : « programme », « cancelled », « fortnight », et les guillemets
@@ -729,7 +737,7 @@ const en: Dictionnaire = {
 	googleDelay: 'Google can take up to 24 hours to refresh a subscription.',
 	chooseApp: 'Choose your calendar app:',
 	choiceGoogle: 'Google Calendar',
-	choiceGoogleHelp: 'Google Calendar offers to add the calendar to your Google account.',
+	choiceGoogleHelp: 'It offers to add the calendar to your Google account.',
 	choiceOutlook: 'Outlook',
 	choiceOutlookHelp:
 		'Outlook on the web opens with the address already filled in: choose Import. With a work or school account, copy the address instead.',
@@ -764,6 +772,7 @@ const en: Dictionnaire = {
 	sessionCount: (count) => (count === 1 ? '1 session' : `${count} sessions`),
 	previousMonth: 'Previous month',
 	nextMonth: 'Next month',
+	// L'onglet des prières (étape 18, retour C4).
 	prayersTitle: 'Prayer times',
 	noPrayerTimes: 'The prayer times have not been published yet.',
 	prayersToday: (date) => `Today, ${date}`,
@@ -777,8 +786,8 @@ const en: Dictionnaire = {
 	prayersWeek: 'The next seven days',
 	weekBoxHelp: 'Each box shows the time of the adhan, with the iqama below it when one is set.',
 	fridayBoxHelp: 'On Fridays, the Dhuhr box gives the times of the Friday prayer.',
-	jumuaAt: (times) => `Friday prayer: ${times}`,
-	jumuaReplacesDhuhr: 'It takes the place of Dhuhr every Friday.'
+	jumuaReplacesDhuhr: 'It takes the place of Dhuhr every Friday.',
+	jumuaAt: (times) => `Friday prayer: ${times}`
 };
 
 const ar: Dictionnaire = {
@@ -886,7 +895,7 @@ const ar: Dictionnaire = {
 	courseFeedAddress: 'أو انسخ هذا العنوان، وهو خاص بهذا الدرس وحده:',
 	addToGoogle: 'أضف إلى تقويم Google',
 	appleHelp:
-		'اضغط على الزر، أو انقر عليه على جهاز Mac: يقترح تطبيق التقويم الاشتراك. وافق، وسيُحدَّث التقويم تلقائيًا، مرة كل ساعة تقريبًا.',
+		'اضغط على الزر، أو انقر عليه على الحاسوب: يقترح تطبيق التقويم الاشتراك. وافق، وسيُحدَّث التقويم تلقائيًا، مرة كل ساعة تقريبًا.',
 	googleHelp:
 		'اضغط على الزر: يُفتح تقويم Google في المتصفح ويقترح إضافة التقويم. أكّد، وسيظهر أيضًا في تطبيق تقويم Google على هاتفك.',
 	googleDelay: 'قد يستغرق Google حتى 24 ساعة لتحديث الاشتراك.',
@@ -900,7 +909,7 @@ const ar: Dictionnaire = {
 	choiceOtherHelp:
 		'تقويم Apple أو Thunderbird أو أي تطبيق يمكنه الاشتراك في تقويم: يُفتح ويقترح الاشتراك.',
 	choiceCopy: 'نسخ العنوان',
-	choiceCopyHelp: 'حدّده وانسخه، ثم الصقه في تطبيقك حيث يقترح إضافة تقويم عبر عنوانه.',
+	choiceCopyHelp: 'حدّده وانسخه، ثم الصق العنوان في تطبيقك، في المكان الذي يقترح فيه إضافة تقويم.',
 	otherDevice: 'جهاز آخر؟ اعرض كل الخيارات',
 	manualTitle: 'إضافة العنوان يدويًا',
 	manualIntro: 'إن لم يحدث شيء عند الضغط على الزر، انسخ العنوان واتبع خطوات تطبيقك.',
@@ -936,10 +945,11 @@ const ar: Dictionnaire = {
 		}),
 	previousMonth: 'الشهر السابق',
 	nextMonth: 'الشهر التالي',
+	// L'onglet des prières (étape 18, retour C4).
 	prayersTitle: 'مواقيت الصلاة',
 	noPrayerTimes: 'لم تُنشر مواقيت الصلاة بعد.',
 	prayersToday: (date) => `اليوم، ${date}`,
-	prayersHelp: 'الأذان هو النداء إلى الصلاة، والإقامة هي موعد بدء الصلاة في المصلى.',
+	prayersHelp: 'الأذان هو النداء إلى الصلاة، والإقامة هي موعد إقامة الصلاة في المصلى.',
 	prayerColumn: 'الصلاة',
 	dayColumn: 'اليوم',
 	adhan: 'الأذان',
@@ -948,8 +958,8 @@ const ar: Dictionnaire = {
 	prayersWeek: 'الأيام السبعة القادمة',
 	weekBoxHelp: 'في كل خانة وقت الأذان، وتحته وقت الإقامة إن كان محددًا.',
 	fridayBoxHelp: 'يوم الجمعة، تعرض خانة الظهر مواقيت صلاة الجمعة.',
-	jumuaAt: (times) => `صلاة الجمعة: ${times}`,
-	jumuaReplacesDhuhr: 'تحلّ محلّ صلاة الظهر كل يوم جمعة.'
+	jumuaReplacesDhuhr: 'تحلّ محلّ صلاة الظهر كل يوم جمعة.',
+	jumuaAt: (times) => `صلاة الجمعة: ${times}`
 };
 
 const DICTIONNAIRES: Record<Langue, Dictionnaire> = { fr, de, it, en, ar };
