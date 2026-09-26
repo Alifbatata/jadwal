@@ -787,20 +787,28 @@
 <section aria-labelledby="servies-titre">
 	<h2 id="servies-titre">{text.served.title}</h2>
 	<p class="aide">{text.served.intro}</p>
-	{@render tableServie(data.septJours, 'servies-titre', text.served.empty)}
+	{@render tableServie(data.septJours, { etiquette: text.served.tableLabel }, text.served.empty)}
 </section>
 
-<!-- `titre` : l'identifiant du titre qui nomme le tableau. Un tableau plus large qu'un téléphone
-     défile seul, et le clavier doit pouvoir le faire défiler : il y faut une région nommée qui prend
-     le focus (axe, scrollable-region-focusable). `vide` : ce que dit l'écran quand aucun de ces
+<!-- Un tableau plus large qu'un téléphone défile seul, et le clavier doit pouvoir le faire défiler :
+     il y faut une région nommée qui prend le focus (axe, scrollable-region-focusable). `nom` :
+     l'identifiant du titre qui la nomme (`titre`), ou son nom même (`etiquette`) quand ce titre
+     nomme déjà la section qui l'entoure, puisque deux régions de même nom, l'une dans l'autre, ne
+     se distinguent plus (axe, landmark-unique). `vide` : ce que dit l'écran quand aucun de ces
      jours n'a d'heure. -->
-{#snippet tableServie(jours: Jour[], titre: string, vide: string)}
+{#snippet tableServie(jours: Jour[], nom: { titre: string } | { etiquette: string }, vide: string)}
 	{@const rangs = jours.filter((jour) => PRIERES.some((priere) => jour[priere] !== null))}
 	{#if rangs.length === 0}
 		<p class="aide">{vide}</p>
 	{:else}
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-		<div class="defile" role="region" tabindex="0" aria-labelledby={titre}>
+		<div
+			class="defile"
+			role="region"
+			tabindex="0"
+			aria-labelledby={'titre' in nom ? nom.titre : undefined}
+			aria-label={'etiquette' in nom ? nom.etiquette : undefined}
+		>
 			<table>
 				<thead>
 					<tr>
@@ -1061,7 +1069,7 @@
 			<p class="aide">{text.periods.previewHint}</p>
 			{@render tableServie(
 				form.apercuPeriode,
-				`apercu-periode-titre-${cleDeLaPeriode}`,
+				{ titre: `apercu-periode-titre-${cleDeLaPeriode}` },
 				depuis ? text.periods.previewLaterEmpty : text.served.empty
 			)}
 		{/if}

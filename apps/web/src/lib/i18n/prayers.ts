@@ -258,8 +258,16 @@ interface PrayersTexts {
 		readonly previewHint: string;
 		readonly save: string;
 	};
-	/** Ce que voit le public : les trois sources résolues, sur sept jours. */
-	readonly served: { readonly title: string; readonly intro: string; readonly empty: string };
+	/**
+	 * Ce que voit le public : les trois sources résolues, sur sept jours. Le tableau qui défile a son
+	 * propre nom : celui du titre nomme déjà la section qui l'entoure.
+	 */
+	readonly served: {
+		readonly title: string;
+		readonly intro: string;
+		readonly tableLabel: string;
+		readonly empty: string;
+	};
 	readonly errors: {
 		readonly positionMissing: string;
 		readonly positionUnreadable: string;
@@ -569,6 +577,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			title: 'Ce que voit le public les sept prochains jours',
 			intro:
 				'Sous chaque heure, d’où elle vient, et l’iqama si vous en avez réglé une : c’est elle qui donne l’heure d’un cours « après Maghrib ».',
+			tableLabel: 'Tableau des heures que voit le public',
 			empty: 'Aucune heure pour les sept prochains jours.'
 		},
 		errors: {
@@ -884,6 +893,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			title: 'Was die Öffentlichkeit in den nächsten sieben Tagen sieht',
 			intro:
 				'Unter jeder Uhrzeit steht, woher sie kommt, und die Iqama, wenn Sie eine eingestellt haben: Sie gibt die Zeit eines Kurses «nach Maghrib».',
+			tableLabel: 'Tabelle der Zeiten, die die Öffentlichkeit sieht',
 			empty: 'Keine Zeiten für die nächsten sieben Tage.'
 		},
 		errors: {
@@ -1204,6 +1214,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			title: 'Quello che il pubblico vede nei prossimi sette giorni',
 			intro:
 				'Sotto ogni ora, da dove viene, e l’iqama se ne hai impostata una: è lei a dare l’ora di un corso «dopo Maghrib».',
+			tableLabel: 'Tabella degli orari che vede il pubblico',
 			empty: 'Nessun orario per i prossimi sette giorni.'
 		},
 		errors: {
@@ -1515,6 +1526,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			title: 'What the public sees over the next seven days',
 			intro:
 				'Under each time, where it comes from, and the iqama if you have set one: it gives the time of a course ‘after Maghrib’.',
+			tableLabel: 'Table of the times the public sees',
 			empty: 'No times for the next seven days.'
 		},
 		errors: {
@@ -1827,6 +1839,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 		served: {
 			title: 'ما يراه الجمهور في الأيام السبعة القادمة',
 			intro: 'تحت كل وقت، مصدره، والإقامة إن كنت قد ضبطتها: فهي التي تعطي وقت الدرس «بعد المغرب».',
+			tableLabel: 'جدول المواقيت التي يراها الجمهور',
 			empty: 'لا مواقيت للأيام السبعة القادمة.'
 		},
 		errors: {

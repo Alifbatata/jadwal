@@ -837,6 +837,38 @@ describe('chaque vue de l’écran, dans les cinq langues (retours D2 et A3)', (
 		}
 	);
 
+	/** Le nom du tableau qui défile sous « Ce que voit le public les sept prochains jours ». */
+	const TABLEAU_PUBLIC: Record<Langue, string> = {
+		fr: 'Tableau des heures que voit le public',
+		de: 'Tabelle der Zeiten, die die Öffentlichkeit sieht',
+		it: 'Tabella degli orari che vede il pubblico',
+		en: 'Table of the times the public sees',
+		ar: 'جدول المواقيت التي يراها الجمهور'
+	};
+
+	it.each(LANGUES)('gives each region of the screen a name of its own, in %s', (langue) => {
+		// axe (landmark-unique) : le tableau de « Ce que voit le public les sept prochains jours »
+		// portait le nom de la section qui l'entoure, et un lecteur d'écran listait deux régions de
+		// même nom, l'une dans l'autre. Une section qui a un nom est une région, comme un `role`.
+		for (const { nom } of VUES) {
+			const html = rendus[nom]?.[langue] ?? '';
+			const noms = [...html.matchAll(/<(?:section|div)\b[^>]*>/g)]
+				.map((trouve) => trouve[0])
+				.filter((ouverture) =>
+					ouverture.startsWith('<section')
+						? /\saria-label(?:ledby)?="/.test(ouverture)
+						: /\srole="region"/.test(ouverture)
+				)
+				.map((ouverture) => nomDeLaRegion(html, ouverture));
+			expect(
+				noms.filter((region, rang) => noms.indexOf(region) !== rang),
+				nom
+			).toEqual([]);
+			// Le tableau de ce que voit le public est bien là, sous son propre nom.
+			expect(noms, nom).toContain(TABLEAU_PUBLIC[langue]);
+		}
+	});
+
 	it('writes the question and the priority sentence in each language', () => {
 		for (const langue of LANGUES) {
 			const lu = visibleText(rendus['la question, réglages faits']?.[langue] ?? '');
