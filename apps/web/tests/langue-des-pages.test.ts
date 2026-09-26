@@ -34,8 +34,17 @@ const COURS = {
 	/** Un quart d'heure avant l'Isha : « avant », jamais un signe moins. */
 	isha: newId(),
 	/** Un cours à heure fixe de l'organisation arabophone. */
-	arabe: newId()
+	arabe: newId(),
+	/**
+	 * Un cours qui a une date de fin : sa page dit alors de quand à quand il court, sur la ligne
+	 * « Dates ». Aucun autre cours de ce fichier n'en a, et cette ligne n'était lue par aucun test.
+	 */
+	borne: newId()
 };
+
+/** Le début de chaque cours de ce fichier, et la fin du cours borné, dans trois mois. */
+const DEBUT_DES_COURS = '2026-09-07';
+const FIN_DU_COURS_BORNE = addDays(todayInZone(FUSEAU, new Date()), 90);
 
 /** Les heures de prière posées pour chaque jour : fixes, pour que l'heure attendue se lise ici. */
 const HEURES = { fajr: '05:30', dhuhr: '13:05', asr: '16:30', maghrib: '19:10', isha: '20:40' };
@@ -54,12 +63,16 @@ async function maintenance<T>(
 	});
 }
 
-/** Un cours de tous les jours, posé par le propriétaire : l'application publique ne sait pas écrire. */
+/**
+ * Un cours de tous les jours, posé par le propriétaire : l'application publique ne sait pas écrire.
+ * Sans date de fin, sauf si on lui en donne une.
+ */
 async function poserCours(
 	id: string,
 	organizationId: string,
 	titre: string,
-	horaire: { priere: string; decalage: number } | { debut: string; fin: string }
+	horaire: { priere: string; decalage: number } | { debut: string; fin: string },
+	finDuCours: string | null = null
 ): Promise<void> {
 	const ancre = 'priere' in horaire;
 	await maintenance(async (tx) => {
@@ -67,12 +80,12 @@ async function poserCours(
 			insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",
 				"source_language", "recurrence_kind", "recurrence_weekday", "recurrence_interval",
 				"recurrence_anchor_date", "timing_kind", "timing_start", "timing_end", "timing_prayer",
-				"timing_offset_minutes", "timing_duration_minutes", "starts_on")
+				"timing_offset_minutes", "timing_duration_minutes", "starts_on", "ends_on")
 			values (${id}, ${organizationId}, 'published', 'open', array['fr'], 'fr', 'weekly',
-				array[1,2,3,4,5,6,7]::smallint[], 1, '2026-09-07', ${ancre ? 'prayer' : 'fixed'},
+				array[1,2,3,4,5,6,7]::smallint[], 1, ${DEBUT_DES_COURS}, ${ancre ? 'prayer' : 'fixed'},
 				${ancre ? null : horaire.debut}, ${ancre ? null : horaire.fin},
 				${ancre ? horaire.priere : null}, ${ancre ? horaire.decalage : null},
-				${ancre ? 60 : null}, '2026-09-07')
+				${ancre ? 60 : null}, ${DEBUT_DES_COURS}, ${finDuCours})
 		`);
 		await tx.execute(sql`
 			insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
@@ -191,6 +204,13 @@ beforeAll(async () => {
 	await poserCours(COURS.fajr, organisation, 'Lecture de l’aube', { priere: 'fajr', decalage: 0 });
 	await poserCours(COURS.isha, organisation, 'Veillée', { priere: 'isha', decalage: -15 });
 	await poserCours(COURS.arabe, arabophone, 'Cours du samedi', { debut: '10:00', fin: '11:30' });
+	await poserCours(
+		COURS.borne,
+		organisation,
+		'Atelier d’automne',
+		{ debut: '17:00', fin: '17:45' },
+		FIN_DU_COURS_BORNE
+	);
 });
 
 afterAll(async () => {
@@ -676,6 +696,8 @@ describe('les dates du public', () => {
 		{ langue, chemin: `${base(langue)}?vue=cours`, attendu: AUJOURDHUI },
 		{ langue, chemin: `${base(langue)}?vue=mois&jour=${today}`, attendu: AUJOURDHUI },
 		{ langue, chemin: `${base(langue)}/cours/${COURS.isha}`, attendu: AUJOURDHUI },
+		// La page d'un cours qui finit porte une date de plus, sur sa ligne « Dates ».
+		{ langue, chemin: `${base(langue)}/cours/${COURS.borne}`, attendu: AUJOURDHUI },
 		{ langue, chemin: `${base(langue)}/agenda`, attendu: null }
 	]);
 
@@ -716,5 +738,70 @@ describe('les dates du public', () => {
 		const { statut, html } = await servir(`/m/${SLUG}?vue=mois&jour=2026-02-30`);
 		expect(statut).toBe(200);
 		expect(texteLu(html)).not.toContain('2026-02-30');
+	});
+
+	/** Les termes de la liste d'une page de cours, chacun suivi de sa valeur : « Lieu Grande salle ». */
+	function lignesDuCours(html: string): string[] {
+		const liste = html.match(/<dl\b[^>]*>([\s\S]*?)<\/dl>/)?.[1] ?? '';
+		return [...liste.matchAll(/<dt\b[^>]*>([\s\S]*?)<\/dt>\s*<dd\b[^>]*>([\s\S]*?)<\/dd>/g)].map(
+			(trouve) => `${texte(trouve[1] ?? '')} ${texte(trouve[2] ?? '')}`
+		);
+	}
+
+	// La fin du cours borné, écrite ici sans passer par le code qu'on éprouve.
+	const [finA, finM, finJ] = FIN_DU_COURS_BORNE.split('-');
+	const FIN = `${finJ}.${finM}.${finA}`;
+	const [debutA, debutM, debutJ] = DEBUT_DES_COURS.split('-');
+	const DEBUT = `${debutJ}.${debutM}.${debutA}`;
+
+	it.each([
+		{ langue: 'fr', ligne: `Dates Du ${DEBUT} au ${FIN}` },
+		{ langue: 'de', ligne: `Zeitraum Vom ${DEBUT} bis ${FIN}` },
+		{ langue: 'it', ligne: `Date Dal ${DEBUT} al ${FIN}` },
+		{ langue: 'en', ligne: `Dates From ${DEBUT} to ${FIN}` },
+		{ langue: 'ar', ligne: `الفترة من ${DEBUT} إلى ${FIN}` }
+	])(
+		'says in $langue from when to when a course that ends runs, as JJ.MM.AAAA',
+		async ({ langue, ligne }) => {
+			const { statut, html } = await servir(`${base(langue)}/cours/${COURS.borne}`);
+			expect(statut).toBe(200);
+			expect(lignesDuCours(html)).toContain(ligne);
+		}
+	);
+
+	it('says nothing of an end on the page of a course that has none', async () => {
+		const { html } = await servir(`/m/${SLUG}/en/cours/${COURS.isha}`);
+		expect(lignesDuCours(html).filter((ligne) => ligne.startsWith('Dates'))).toEqual([]);
+	});
+});
+
+/**
+ * Le nom de la liste des langues, dans chacun des trois gabarits qui la portent : l'en-tête des
+ * vues, l'abonnement et la page d'un cours. Il était écrit « Langues » en dur dans les trois, donc
+ * annoncé en français sur une page arabe ; seul l'en-tête était vérifié.
+ */
+describe('le nom de la liste des langues', () => {
+	const NOMS = {
+		fr: 'Langues',
+		de: 'Sprachen',
+		it: 'Lingue',
+		en: 'Languages',
+		ar: 'اللغات'
+	} as const;
+	const base = (langue: string) => (langue === 'fr' ? `/m/${SLUG}` : `/m/${SLUG}/${langue}`);
+	const CAS = (Object.keys(NOMS) as (keyof typeof NOMS)[]).flatMap((langue) =>
+		['', '/agenda', `/cours/${COURS.borne}`].map((suite) => ({
+			langue,
+			chemin: `${base(langue)}${suite}`,
+			nom: NOMS[langue]
+		}))
+	);
+
+	it.each(CAS)('is « $nom » on $chemin', async ({ chemin, nom }) => {
+		const { statut, html } = await servir(chemin);
+		expect(statut).toBe(200);
+		const listes = [...html.matchAll(/<nav\b[^>]*\bclass="langues\b[^"]*"[^>]*>/g)];
+		expect(listes, 'une seule liste des langues').toHaveLength(1);
+		expect(attributs(listes[0]?.[0] ?? '')['aria-label']).toBe(nom);
 	});
 });
