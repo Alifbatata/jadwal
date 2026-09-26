@@ -271,7 +271,7 @@ const de: Dictionnaire = {
 	afterOffset: (offset, prayer) => `${offset} Min. nach ${prayer}`,
 	beforeOffset: (offset, prayer) => `${offset} Min. vor ${prayer}`,
 	emptyPauseNamed: (reason) => `Diese Woche kein Unterricht: ${reason}.`,
-	emptyPause: 'Diese Woche kein Unterricht: es läuft eine Pause.',
+	emptyPause: 'Diese Woche kein Unterricht: Es ist Pause.',
 	emptyNotPublished: 'Das Programm ist noch nicht veröffentlicht.',
 	emptyWeek: 'Diese Woche keine Termine.',
 	emptyFilter: 'Diese Woche keine Termine für dieses Publikum.',
@@ -299,7 +299,7 @@ const de: Dictionnaire = {
 	subscribeWholeTitle: 'Das ganze Programm',
 	subscribeOneCourseTitle: 'Nur ein Kurs',
 	subscribeOneCourseText:
-		'Sie können auch nur einen Kurs hinzufügen. Tippen Sie auf seinen Namen: er kommt allein in den Kalender und aktualisiert sich wie der Rest. Seine https-Adresse steht auf der Seite des Kurses.',
+		'Sie können auch nur einen Kurs hinzufügen. Tippen Sie auf seinen Namen: Er kommt allein in den Kalender und aktualisiert sich wie der Rest. Seine https-Adresse steht auf der Seite des Kurses.',
 	subscribeWhole: 'Das ganze Programm abonnieren',
 	addCourseToCalendar: 'Diesen Kurs zu meinem Kalender hinzufügen',
 	courseFeedAddress: 'Oder kopieren Sie diese Adresse, die nur diesen Kurs enthält:',
@@ -309,7 +309,7 @@ const de: Dictionnaire = {
 	iphoneText:
 		'Tippen Sie auf die Schaltfläche oben: Ihr iPhone bietet an, den Kalender hinzuzufügen. Passiert nichts, öffnen Sie Einstellungen, dann Apps, Kalender, Accounts, Account hinzufügen, Andere, Kalenderabo hinzufügen, und fügen Sie die Adresse ein.',
 	androidText:
-		'Öffnen Sie Google Kalender am Computer: die Telefon-App kann keine Abos hinzufügen. Wählen Sie unter Weitere Kalender die Option Per URL, fügen Sie die Adresse ein und fügen Sie den Kalender hinzu. Danach erscheint er auf Ihrem Telefon.',
+		'Öffnen Sie Google Kalender am Computer: Die Telefon-App kann keine Abos hinzufügen. Wählen Sie unter Weitere Kalender die Option Per URL, fügen Sie die Adresse ein und fügen Sie den Kalender hinzu. Danach erscheint er auf Ihrem Telefon.',
 	outlookText:
 		'Öffnen Sie Outlook im Web, gehen Sie zu Kalender, Kalender hinzufügen, Aus dem Internet abonnieren, fügen Sie die Adresse ein, geben Sie einen Namen ein und importieren Sie.',
 	offeredBy: 'Kostenlos bereitgestellt von jadwal, einem Dienst von Voltia',

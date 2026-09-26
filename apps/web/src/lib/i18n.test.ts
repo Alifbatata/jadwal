@@ -15,7 +15,8 @@ import {
 	monthName,
 	NOM_DE_LANGUE,
 	numericDate,
-	t
+	t,
+	type Langue
 } from './i18n.js';
 
 const ar = t('ar');
@@ -229,6 +230,44 @@ describe('l’anglais britannique', () => {
 		]);
 		expect(en.shortWeekdays).toEqual(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
 		expect(en.months[8]).toBe('September');
+	});
+});
+
+/**
+ * Chaque texte d'un dictionnaire, les phrases à trous remplies d'un exemple : c'est ce que la page
+ * affiche, et ce que les règles de ponctuation ci-dessous relisent.
+ */
+function textesDe(langue: Langue): string[] {
+	const textes: string[] = [];
+	for (const [cle, valeur] of Object.entries(t(langue))) {
+		if (typeof valeur === 'string') textes.push(valeur);
+		else if (Array.isArray(valeur)) textes.push(...(valeur as string[]));
+		else if (typeof valeur === 'function') {
+			const phrase = valeur as (...exemple: unknown[]) => string;
+			textes.push(cle === 'nextSessionsLine' ? phrase(['A', 'B']) : phrase(3, 'Maghrib'));
+		} else textes.push(...Object.values(valeur as Record<string, string>));
+	}
+	return textes;
+}
+
+describe('la ponctuation de chaque langue', () => {
+	// L'espace avant les deux-points, le point-virgule, le point d'interrogation et le point
+	// d'exclamation est une règle du français, et de lui seul. « Upcoming sessions : » était écrit
+	// ainsi dans le gabarit de la vue « Tous les cours », dans toutes les langues.
+	it('puts no space before a colon, a semicolon, a question or an exclamation mark, outside French', () => {
+		for (const langue of ['de', 'it', 'en', 'ar'] as const) {
+			expect(
+				textesDe(langue).filter((texte) => /\s[:;?!؟؛]/.test(texte)),
+				langue
+			).toEqual([]);
+		}
+	});
+
+	// En allemand, une phrase entière qui suit les deux-points prend la majuscule : c'est la règle de
+	// l'orthographe officielle. Aucun texte allemand du public ne met après les deux-points autre
+	// chose qu'une phrase entière ou un texte saisi par l'organisation.
+	it('starts the whole sentence that follows a colon with a capital letter, in German', () => {
+		expect(textesDe('de').filter((texte) => /:\s+\p{Ll}/u.test(texte))).toEqual([]);
 	});
 });
 
