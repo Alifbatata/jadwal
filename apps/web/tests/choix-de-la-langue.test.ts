@@ -5,6 +5,8 @@
 //   en a déjà une ; ensuite, le compte fait foi, et un cookie resté sur un navigateur ne le défait
 //   pas.
 // - Le retour après le choix ne quitte jamais le service, quelle que soit la forme du chemin envoyé.
+// - Un écran de l'espace dit aux caches qu'il change selon le navigateur et le cookie ; une page
+//   publique, qui ne lit aucun cookie, ne le dit pas.
 //
 // Chaque « navigateur » est un bocal de cookies qui retient ce que les réponses posent et retirent,
 // comme un vrai : sans lui, un test renverrait un cookie que le serveur a déjà effacé.
@@ -23,6 +25,7 @@ const testDatabase = inject('testDatabase');
 const DEJA_EN_FRANCAIS = 'choix-deja-fr@example.test';
 /** Un compte qui choisit sa langue une fois connecté. */
 const CHOISIT_CONNECTEE = 'choix-connectee@example.test';
+const SLUG = 'choix-de-la-langue';
 
 let ownerHandle: DatabaseHandle;
 
@@ -146,6 +149,14 @@ async function langueDe(reponse: Response): Promise<string | undefined> {
 	return (await reponse.text()).match(/<html\b[^>]*\blang="([^"]*)"/)?.[1];
 }
 
+/** Les noms que l'en-tête `Vary` d'une réponse énumère, en minuscules. */
+function variations(reponse: Response): string[] {
+	return (reponse.headers.get('vary') ?? '')
+		.split(',')
+		.map((nom) => nom.trim().toLowerCase())
+		.filter(Boolean);
+}
+
 beforeAll(async () => {
 	ownerHandle = createDatabase({ role: 'owner', overrides: { database: testDatabase } });
 	await maintenance(async (tx) => {
@@ -158,6 +169,12 @@ beforeAll(async () => {
 				values (${newId()}, ${email}, true, ${langue})
 			`);
 		}
+		await tx.execute(sql`
+			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+				"enabled_language")
+			values (${newId()}, ${SLUG}, 'Choix de la langue', 'Europe/Zurich', 'fr',
+				array['fr','de','it','en','ar'])
+		`);
 	});
 });
 
@@ -268,4 +285,30 @@ describe('le retour après le choix de la langue', () => {
 			expect(await reponse.text()).toBe('');
 		}
 	);
+});
+
+describe('ce que les caches doivent savoir', () => {
+	it('says that a screen of the space changes with the browser and the cookie', async () => {
+		const anonyme = new Navigateur('it-CH');
+		for (const chemin of ['/connexion', '/conditions', '/nulle-part']) {
+			const reponse = await anonyme.get(chemin);
+			expect(variations(reponse), chemin).toEqual(
+				expect.arrayContaining(['accept-language', 'cookie'])
+			);
+		}
+		const connectee = new Navigateur();
+		await connectee.seConnecter(DEJA_EN_FRANCAIS);
+		const reponse = await connectee.get('/organisations');
+		expect(reponse.status).toBe(200);
+		expect(variations(reponse)).toEqual(expect.arrayContaining(['accept-language', 'cookie']));
+	});
+
+	it('does not say it for a public page, which reads no cookie and speaks the language of its address', async () => {
+		for (const chemin of [`/m/${SLUG}`, `/m/${SLUG}/de`]) {
+			const reponse = await new Navigateur('ar').get(chemin);
+			expect(reponse.status, chemin).toBe(200);
+			expect(variations(reponse), chemin).not.toContain('cookie');
+			expect(variations(reponse), chemin).not.toContain('accept-language');
+		}
+	});
 });
