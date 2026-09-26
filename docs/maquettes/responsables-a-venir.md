@@ -34,10 +34,11 @@ Sans séance : `Aucune séance dans les sept prochains jours.` et le lien `Crée
 
 ## Une séance
 
-Le titre, sa marque (`annulée`, `déplacée`, `date exceptionnelle`), l'heure, la salle,
-l'intervenant et le public, dans la langue de l'écran. Une séance déplacée dit
+Le titre, sa marque (`annulée`, `déplacée`, `date exceptionnelle`, `nouvelle heure`), l'heure, la
+salle, l'intervenant et le public, dans la langue de l'écran. Une séance déplacée dit
 `Déplacée au mardi 29.09.2026 à 18:00` ; sa nouvelle date dit
-`Prévue à l'origine le lundi 28.09.2026`.
+`Prévue à l'origine le lundi 28.09.2026`. Déplacée le même jour à une autre heure, la carte
+d'arrivée porte `nouvelle heure` et `Prévue à l'origine : 19:00 – 20:30`.
 
 **Les options sont fermées** (retour A1). Chaque carte a un repli `Annuler ou déplacer`, fermé au
 chargement, avec ou sans JavaScript, qui n'ouvre que sa carte. Le bouton d'annulation n'existe que
@@ -49,7 +50,8 @@ ensuite.` et le bouton `Annuler cette séance` ;
   - `Nouvelle date`, le calendrier du navigateur, à partir d'aujourd'hui et sans limite, avec
     l'aide `À partir d'aujourd'hui, samedi 26.09.2026, plus tôt ou plus tard que la date prévue.` ;
   - `Heure de début`, avec l'aide `Exemple : 19:30` ;
-  - le bouton `Déplacer la séance`.
+  - le bouton `Déplacer la séance`. Le formulaire envoie aussi, sans le montrer, l'heure que la
+    carte affichait.
 
 Une séance annulée ou déplacée a le bouton `Rétablir la séance`, suivi de `Cela défait le
 changement : la séance retrouve sa date et son heure habituelles.`
@@ -61,22 +63,42 @@ Un titre qui dit ce qui s'est passé : `La séance est annulée.`, `La séance e
 communauté, par exemple dans WhatsApp. Il est écrit dans chaque langue de votre page publique, la
 langue du cours d'abord : ouvrez une langue, puis copiez son texte.`, puis un repli par langue que
 l'organisation publie, le premier ouvert, chacun avec sa zone `Message à copier`. Le titre du cours y
-est traduit quand il l'est.
+est traduit quand il l'est. Un déplacement le même jour se dit comme un changement d'heure, la date
+une seule fois : `Le cours « Cours du soir » du mardi 29.09.2026 commence à 20:30 au lieu de
+19:00.`
 
-Les erreurs s'affichent dans la carte concernée, rouverte, au-dessus des champs, et la saisie est
-gardée :
+Les erreurs d'un déplacement s'affichent dans la carte concernée, rouverte, au-dessus des champs, et
+la saisie est gardée :
 
 - `Cette date est déjà passée. Choisissez une date à partir d'aujourd'hui.`
 - `Cette date n'a pas pu être lue. Choisissez-la dans le calendrier du champ « Nouvelle date ».`
 - `Cette heure n'a pas pu être lue. Écrivez les heures et les minutes, par exemple 19:30.`
+- `La séance est déjà prévue à cette date et à cette heure. Choisissez une autre date ou une autre
+heure.` : un déplacement qui ne change rien est refusé.
+- `L'heure de cette séance a changé depuis l'ouverture de la page. Rien n'a été enregistré. Sa
+nouvelle heure est écrite sous son titre : vérifiez la date et l'heure choisies, puis
+recommencez.` : l'heure du cours a changé dans sa fiche pendant que la page restait ouverte, et la
+  carte envoie l'ancienne.
+
+Les refus qui ne désignent plus aucune carte s'affichent en haut de l'écran :
+
+- `Cette séance a changé depuis l'ouverture de la page : elle a déjà été annulée ou déplacée. Rien
+n'a été enregistré. Le programme ci-dessous est à jour.` : une carte restée ouverte (touche Retour,
+  second onglet, autre personne) sur une séance annulée ou déplacée depuis n'écrit plus rien,
+  qu'on touche `Annuler cette séance` ou `Déplacer la séance`. Juste en dessous, la carte montre
+  l'état réel. Deux déplacements envoyés au même instant n'en écrivent qu'un, et l'autre reçoit
+  ce refus.
 - `Cette séance n'existe plus. Rechargez la page pour voir le programme à jour.`
+- `La date de cette séance n'a pas pu être lue. Rechargez la page, puis recommencez.`
 
 ## Le programme de la semaine
 
 Titre `Le programme de la semaine`, puis `Le programme des sept prochains jours, prêt à copier dans
 WhatsApp. Il est écrit dans chaque langue de votre page publique, la langue par défaut d'abord :
 ouvrez une langue, puis copiez son texte.` Un repli par langue publiée, le premier ouvert, avec sa
-zone `Programme de la semaine`.
+zone `Programme de la semaine`. Une séance déplacée y porte `(date exceptionnelle)`, ou
+`(nouvelle heure)` quand elle n'a changé que d'heure, le même jour. Une session du vendredi qui
+porte le nom proposé par le service y prend le nom de la prière dans chaque langue.
 
 ## Combien votre programme a été vu
 
@@ -89,9 +111,11 @@ comptés. Ces nombres sont un minimum […]`
 
 Relevé par la relecture de l'étape 18, non corrigé à la fin de l'étape :
 
-- ouvrir les options puis toucher `Déplacer la séance` sans rien changer enregistre un déplacement
-  vers la même date et la même heure, puisque les champs sont préremplis ;
-- deux cartes peuvent être ouvertes en même temps ;
 - le programme de la semaine d'À venir compte aussi les cours en brouillon, celui de Partager non ;
 - une carte `date exceptionnelle` n'a pas de `Rétablir`, alors qu'une séance peut maintenant être
-  déplacée loin de sa date.
+  déplacée loin de sa date ;
+- `Cette séance n'existe plus` demande de recharger la page, alors que la page renvoyée est déjà à
+  jour, et que, sans JavaScript, recharger renvoie le formulaire refusé.
+
+Deux cartes peuvent être ouvertes en même temps : c'est la lecture retenue du retour A1, où une
+carte n'ouvre que la sienne sans rien changer aux autres.
