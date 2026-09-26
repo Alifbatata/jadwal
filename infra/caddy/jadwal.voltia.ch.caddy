@@ -112,8 +112,9 @@ jadwal.voltia.ch {
 	# rapportent. `handle_errors` ajoute des routes d'erreur au serveur entier, pas au seul site :
 	# les erreurs `5xx` de tous les sites de ce Caddy, jadwal compris, passeraient du niveau `error`
 	# de son journal au niveau `debug`, qu'il n'écrit pas par défaut. Poser
-	# `Strict-Transport-Security` hors de ce bloc, tout de suite, le doublerait sur chaque réponse
-	# relayée, puisque l'application l'envoie aussi, à moins d'écrire la valeur deux fois dans ce
+	# `Strict-Transport-Security` hors de ce bloc, tout de suite, le doublerait sur les réponses
+	# relayées où l'application l'envoie aussi, celles de ses routes (pas les fichiers de `/_app/`,
+	# qu'adapter-node sert sans passer par elles), à moins d'écrire la valeur deux fois dans ce
 	# fichier.
 	header {
 		# Deux ans, sous-domaines compris. `preload` n'y est pas : il engage `voltia.ch` tout entier
