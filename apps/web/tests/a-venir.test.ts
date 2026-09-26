@@ -8,8 +8,8 @@
 //   date prévue. L'action refuse une date passée, avec une phrase claire, et n'écrit rien. Elle
 //   refuse aussi un déplacement qui ne change rien, la même date à l'heure déjà prévue (relecture du
 //   lot 3), et répond par une phrase, jamais par une erreur 500, à une heure hors plage, à un
-//   identifiant mal formé ou à un cours inconnu. Elle refuse aussi, par une phrase, l'annulation
-//   d'une séance déjà passée.
+//   identifiant mal formé ou à un cours inconnu, pour annuler, déplacer et rétablir. Elle refuse
+//   aussi, par une phrase, l'annulation d'une séance déjà passée.
 // - Une page restée ouverte (Retour, un second onglet, une autre personne) ne défait pas un
 //   changement : annuler ou déplacer une séance déjà annulée ou déplacée est refusé, rien n'est
 //   écrit, et l'écran rendu est à jour (relecture du lot 4). La carte envoie aussi l'heure qu'elle
@@ -822,7 +822,8 @@ describe('A2 : déplacer une séance', () => {
 		for (const courseId of [newId(), tajwid]) {
 			for (const [action, envoi] of [
 				['annuler', { courseId, date: jour(3) }],
-				['deplacer', { courseId, date: jour(3), toDate: jour(4), toStart: '18:00' }]
+				['deplacer', { courseId, date: jour(3), toDate: jour(4), toStart: '18:00' }],
+				['retablir', { courseId, date: jour(3) }]
 			] as const) {
 				const reponse = await postForm(`/?/${action}`, envoi, cookie);
 				expect(reponse.status, `${action} ${courseId}`).toBe(404);

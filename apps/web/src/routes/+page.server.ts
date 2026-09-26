@@ -21,7 +21,8 @@
 // La carte d'un déplacement envoie aussi l'heure qu'elle montrait : quand l'heure du cours a changé
 // depuis dans sa fiche, l'action la refuse, au lieu de déplacer la séance à l'ancienne heure
 // (relecture du lot 5), et la carte rouverte propose l'heure actuelle, sauf une heure tapée.
-// Annuler refuse une séance dont la date est passée.
+// Annuler refuse une séance dont la date est passée ; rétablir répond à un cours inconnu comme les
+// deux autres actions.
 
 import { fail } from '@sveltejs/kit';
 import { isIsoDate, todayInZone } from '@jadwal/core';
@@ -397,15 +398,19 @@ export const actions: Actions = {
 		});
 	},
 
-	/** Rétablir une séance annulée ou déplacée : l'exception disparaît, le rythme reprend. */
+	/**
+	 * Rétablir une séance annulée ou déplacée : l'exception disparaît, le rythme reprend. Un cours
+	 * inconnu, ou d'une autre organisation, reçoit la réponse d'un cours inconnu, et rien ne s'écrit,
+	 * pas même le journal.
+	 */
 	retablir: async (event) => {
 		const context = await mustBeInOrganisation(event);
 		const form = await event.request.formData();
 		const courseId = String(form.get('courseId') ?? '');
 		const date = String(form.get('date') ?? '');
 		if (!isIsoDate(date)) return refuse('unreadableDate', { courseId, date });
-		if (!UUID.test(courseId)) return refuse('sessionGone', { courseId, date }, 404);
-		await withSessionOrg(context, async (tx) => {
+		return withSessionOrg(context, async (tx) => {
+			if (!(await readCourse(tx, courseId))) return refuse('sessionGone', { courseId, date }, 404);
 			await tx.execute(
 				sql`delete from "session_exception" where "course_id" = ${courseId} and "date" = ${date}`
 			);
@@ -415,7 +420,7 @@ export const actions: Actions = {
 				targetId: courseId,
 				before: { date }
 			});
+			return { done: 'restored' as const };
 		});
-		return { done: 'restored' as const };
 	}
 };
