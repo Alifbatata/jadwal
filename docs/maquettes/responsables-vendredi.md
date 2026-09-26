@@ -21,7 +21,9 @@ Le vendredi, elle remplace l'heure du Dhuhr partout : un cours prévu après le 
 de la dernière session.`
    - `La prière a lieu plusieurs fois le même vendredi, par exemple à 12:10 puis à 13:30 ? Ajoutez
 une session pour chaque fois, jusqu'à trois.`
-3. Les erreurs, ou la confirmation du dernier geste.
+3. Les erreurs, ou la confirmation du dernier geste. Un formulaire de session refusé garde les
+   siennes dans sa carte, rouverte, avec la saisie ; un enregistrement réussi est confirmé dans la
+   carte de sa session.
 4. **Les sessions**, dans leur ordre, chacune dans un cadre.
 5. **Ajouter une session**, avec le formulaire vide.
 6. **Ce vendredi**, avec l'annulation et le déplacement.
@@ -67,12 +69,22 @@ Le même formulaire, dans les deux cas, dans cet ordre. Chaque aide est reliée 
 | `Salle`                            | liste, avec `Pas de salle précise`          | `Une personne responsable crée les salles dans Réglages.`                                                         |
 | `Langue du sermon`                 | cases, les langues de la page publique      | `Cochez chaque langue dans laquelle le sermon est dit. Seules les langues de votre page publique sont proposées.` |
 | `Imam ou intervenant (facultatif)` | texte                                       | `Son nom s'affiche sur votre page publique. Exemple : Imam Youssef`                                               |
-| `À partir du`                      | date                                        |                                                                                                                   |
+| `À partir du`                      | date                                        | voir sous le tableau                                                                                              |
 | `Jusqu'au (facultatif)`            | date                                        | `Laissez vide si la session continue sans date de fin.`                                                           |
 | `Description (facultatif)`         | texte long                                  | `Quelques mots pour les visiteurs, sur la page de la session. Exemple : La salle ouvre à 12:00.`                  |
 
+L'aide de `À partir du` dépend du formulaire. Pour une nouvelle session : `La session a lieu chaque
+vendredi à partir de cette date. Gardez la date du jour pour qu'elle commence tout de suite.` Dans
+la carte d'une session enregistrée : `La session a lieu chaque vendredi à partir de cette date.
+Changez cette date seulement pour corriger une erreur.`
+
 Le titre proposé, et celui que prend un champ laissé vide, est le nom de la prière dans la langue où
-la session s'écrit, la première langue que l'organisation publie.
+la session s'écrit : la langue par défaut de l'organisation, celle que l'écran Partager met aussi en
+tête. Avant, c'était la première langue cochée, donc le français dès qu'il l'était. Une session qui
+porte le nom proposé par le service le montre dans la langue de l'organisation, même écrite avant
+l'étape 18 sous « Prière du vendredi », et s'enregistre ainsi la prochaine fois. Ailleurs, sur la
+page publique, dans les messages, le programme sur un site et le flux agenda, ce nom se lit dans la
+langue du lecteur ; un titre écrit par l'organisation reste tel quel.
 
 Sous `Jusqu'au`, la phrase du changement de saison : `L'heure change avec la saison ? Remplissez
 « Jusqu'au » ici, puis ajoutez une nouvelle session : les vendredis passés gardent leur heure.` C'est
@@ -104,6 +116,14 @@ Cette session seulement. Les autres vendredis ne changent pas.
   `Rétablir comme d'habitude`.
 - Une session annulée ou déplacée apparaît ensuite barrée dans la vue Semaine publique, comme une
   séance de cours.
+- `Annuler` et `Déplacer` suivent la règle d'`À venir` : ils n'écrivent que pour une session encore
+  prévue telle quelle ce jour-là. Une page restée ouverte qui envoie une session déjà annulée ou
+  déplacée depuis, sur cet écran ou sur `À venir`, est refusée, et rien n'est écrit, pas même au
+  journal. Le formulaire de déplacement envoie aussi l'heure qu'il montrait : si l'heure de la
+  session a changé depuis l'ouverture de la page, la carte est refusée, vers ce vendredi comme vers
+  un autre jour. Un déplacement vers le jour et l'heure déjà prévus est refusé aussi. Jusqu'au lot
+  5 de l'étape 18, une page restée ouverte défaisait un changement fait ailleurs, et une session
+  supprimée entre-temps donnait une erreur 500.
 
 ## Ce que dit l'écran après un geste
 
@@ -120,6 +140,17 @@ Les erreurs disent quoi faire : `L'heure de fin doit venir après l'heure de dé
 `Donnez une heure de début et une heure de fin. Exemple : 12:10 et 12:50.`,
 `Cochez au moins une langue du sermon.`,
 `Choisissez la date à partir de laquelle la session a lieu.`
+
+Les refus de « Ce vendredi », en tête de l'écran :
+
+- `Cette session a changé depuis l'ouverture de la page : elle a déjà été annulée ou déplacée ce
+jour-là. Rien n'a été enregistré. La partie « Ce vendredi », plus bas, est à jour.` ;
+- `L'heure de cette session a changé depuis l'ouverture de la page. Rien n'a été enregistré. Sa
+nouvelle heure est écrite plus bas, dans « Ce vendredi » : vérifiez le jour et l'heure choisis,
+puis recommencez.` ;
+- `La session est déjà prévue ce jour-là à cette heure : rien n'a été déplacé. Choisissez une autre
+heure ou un autre jour dans « Ce vendredi », plus bas.` ;
+- `Cette session n'existe plus : elle a été supprimée entre-temps. La liste ci-dessous est à jour.`
 
 ## Ce que l'écran dit quand il n'y a rien
 
