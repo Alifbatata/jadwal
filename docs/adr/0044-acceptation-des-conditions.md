@@ -68,8 +68,12 @@ construit pas.
   la paie pas.
 - Pendant que l'acceptation manque, la coquille masque la navigation de l'espace : chacun de ses
   liens ramènerait au même écran. Une personne membre de plusieurs organisations perdrait alors
-  tout chemin vers les autres : pour elle seule, l'écran porte avant le texte un lien « Choisir une
-  autre organisation », vers `/organisations`. Cette page ne passe pas par la porte ; le choix
+  tout chemin vers les autres : pour elle, l'écran porte avant le texte un lien « Choisir une
+  autre organisation », vers `/organisations`. Depuis l'étape 18 (retour H2), il le porte aussi pour
+  une personne d'une seule organisation qu'une invitation encore valable attend : c'est sur
+  `/organisations` qu'elle l'accepte. C'est la même règle que le lien « Changer d'organisation » de
+  la navigation. Une invitation échue ne le fait pas paraître, et une personne d'une seule
+  organisation sans invitation ne le voit pas. Cette page ne passe pas par la porte ; le choix
   fait, c'est la porte de l'autre organisation qui s'applique.
 - La clé vers l'adhésion ne dit à personne qui a accepté. Elle se vérifie aussi quand la personne
   ou l'organisation d'une adhésion change, et le nom de la contrainte dans l'erreur le dirait : le
