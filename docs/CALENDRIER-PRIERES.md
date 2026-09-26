@@ -25,7 +25,7 @@ L'écran commence par une seule question : **D'où viennent vos heures de prièr
 | Réponse                           | Quand la choisir                                                    | Ce qu'elle demande                 |
 | --------------------------------- | ------------------------------------------------------------------- | ---------------------------------- |
 | **Calculées pour votre localité** | vous n'avez ni panneau ni fichier, ou vous voulez remplir les trous | le nom ou le NPA de votre localité |
-| **Importées depuis un fichier**   | votre mosquée ou votre fédération vous donne un fichier             | un fichier CSV                     |
+| **Importées depuis un fichier**   | votre mosquée ou votre fédération vous donne son calendrier         | un fichier CSV                     |
 | **Saisies à la main**             | vous avez un panneau, et ce sont ces heures-là qui font foi         | quelques minutes, deux fois par an |
 
 Chaque réponse ne montre que ce qu'elle demande, puis l'**aperçu des sept prochains jours**, puis le

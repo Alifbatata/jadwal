@@ -30,7 +30,7 @@ cher pour rien.
 
 ### D'où vient la langue d'un écran
 
-Le hook la calcule avant tout chargement (`languageOfTheSpace` dans `apps/web/src/hooks.server.ts`,
+Le serveur la calcule avant tout chargement (`languageOfTheSpace` dans `apps/web/src/hooks.server.ts`,
 `spaceLanguage` dans `apps/web/src/lib/i18n/language.ts`), dans cet ordre :
 
 1. `?lang=`, pour la seule page demandée, sans rien retenir. C'est le lien des conditions au pied
@@ -55,7 +55,7 @@ cours est marquée.
 - **Pas encore connectée**, elle pose le cookie `jadwal_language`, et un second cookie,
   `jadwal_language_pending`, qui dit que ce choix attend d'être donné au compte.
 - Le formulaire revient sur l'écran d'où il part, sans `?lang=`. Le chemin de retour est vérifié
-  deux fois, tel qu'il arrive et tel qu'il repart, et tout ce qui ne reste pas sur le service
+  deux fois, à l'arrivée et après sa normalisation, et tout ce qui ne reste pas sur le service
   renvoie à l'accueil (`returnPath`). Un envoi depuis un autre site est refusé par SvelteKit. Un
   `GET /langue`, tapé à la main, renvoie à l'accueil.
 
@@ -74,10 +74,10 @@ cours est marquée.
 
 ### Les deux cookies
 
-| Cookie                    | Contenu                         | Attributs                                                        |
-| ------------------------- | ------------------------------- | ---------------------------------------------------------------- |
-| `jadwal_language`         | le code de la langue, `fr`…`ar` | `HttpOnly`, `SameSite=Lax`, `Secure` en HTTPS, un an, chemin `/` |
-| `jadwal_language_pending` | `1`                             | les mêmes                                                        |
+| Cookie                    | Contenu                              | Attributs                                                        |
+| ------------------------- | ------------------------------------ | ---------------------------------------------------------------- |
+| `jadwal_language`         | le code de la langue, de `fr` à `ar` | `HttpOnly`, `SameSite=Lax`, `Secure` en HTTPS, un an, chemin `/` |
+| `jadwal_language_pending` | `1`                                  | les mêmes                                                        |
 
 Ils ne sont posés que par un choix fait dans le formulaire, jamais au premier passage. Ils ne
 portent aucune donnée personnelle et ne servent à rien d'autre. Chaque réponse de l'espace porte
@@ -86,13 +86,13 @@ l'arabe.
 
 ### La langue des courriels
 
-Un courriel part dans la langue de l'écran où le geste est fait, jamais dans celle d'un compte lu
-par son adresse :
+Un courriel part dans la langue de l'écran sur lequel le geste est fait, jamais dans celle d'un
+compte lu par son adresse :
 
 - **le lien de connexion**, dans la langue de l'écran de connexion d'où il est demandé ;
 - **l'invitation**, dans la langue de l'écran de la personne qui invite, pour toute adresse.
 
-Le hook pose la langue de la requête dans un stockage de contexte, que le courriel lit au moment de
+Le serveur pose la langue de la requête dans un stockage de contexte, que le courriel lit au moment de
 s'écrire (`mail/language.ts`, dans `apps/web/src/lib/server/`) : Better Auth écrit le lien sans voir
 la requête. L'écran des membres passe aussi la langue en paramètre à l'invitation.
 

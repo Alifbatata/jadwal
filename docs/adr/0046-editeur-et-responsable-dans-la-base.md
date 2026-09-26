@@ -119,7 +119,7 @@ La liste ci-dessus est celle du code à la fin de l'étape 18 :
 - **L'écran Membres montre la liste**, en deux parties : ce que peut faire un éditeur, et ce qui est
   réservé à la personne responsable. `apps/web/tests/membres-et-reglages.test.ts` la lie à la base :
   les tables que les politiques réservent (celles qui appellent `jadwal.is_org_admin()`, lues dans
-  `pg_policies`) doivent être exactement celles des gestes que l'écran dit réservés.
+  `pg_policies`) doivent être exactement celles des gestes que l'écran range dans la seconde partie.
 - **L'écran des prières prévisualise une période** avant de l'enregistrer (`?/apercuPeriode`) : la
   période est écrite, les sept prochains jours sont relus, puis la transaction est annulée. Il passe
   par la même garde et par les mêmes politiques que `?/periode`.
@@ -157,5 +157,5 @@ La liste ci-dessus est celle du code à la fin de l'étape 18 :
 ## Statut
 
 Accepté, 2026-09-26. Étape 18, retour H1 des tests de l'exploitant (les rôles dans la base), et la
-langue du compte. Révisé le même jour, à la fin de l'étape : le choix de la langue a son écran,
-l'écran Membres montre la liste, et l'écran des prières prévisualise une période.
+langue du compte. Révisé le même jour, à la fin de l'étape : la langue se choisit en haut de chaque
+écran, l'écran Membres montre la liste, et l'écran des prières prévisualise une période.

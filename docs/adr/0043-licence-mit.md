@@ -112,15 +112,14 @@ compte en pannes.
 ## Addendum du 2026-09-26 : une exception, la liste des localités suisses
 
 Depuis l'étape 18, l'écran des heures de prière laisse une personne responsable choisir la localité
-de son organisation par son nom ou son NPA. La liste vient du **Répertoire officiel des localités
-avec le code postal et le périmètre**, de l'Office fédéral de topographie swisstopo. Elle est dans
-le dépôt, réduite à ce qui sert, dans
-`apps/web/src/lib/server/localites/localities.csv`, et le serveur l'embarque : aucun service
-extérieur n'est appelé, ni au moment du choix ni plus tard.
+de son organisation par son nom ou son code postal. La liste vient du **Répertoire officiel des
+localités avec le code postal et le périmètre**, de l'Office fédéral de topographie swisstopo. Elle
+est dans le dépôt, réduite à ce qui sert, dans `apps/web/src/lib/server/localites/localities.csv`,
+et le serveur l'embarque : aucun service extérieur n'est appelé, ni au moment du choix ni plus tard.
 
 **Ce fichier n'est pas sous MIT, et ses données ne sont pas à Voltia.** Il reste soumis aux
-conditions d'utilisation des géodonnées gratuites de swisstopo (version du 01.03.2021), qui
-permettent de l'utiliser, de le transformer et de le redistribuer, même à des fins commerciales, à
+conditions d'utilisation des données géographiques gratuites de swisstopo (version du 1er mars
+2021), qui permettent de l'utiliser, de le transformer et de le redistribuer, même à des fins commerciales, à
 une condition : citer la source, sur toute représentation et quand les données sont transmises.
 La licence a été vérifiée avant d'embarquer la liste ; l'adresse des conditions, l'empreinte du
 fichier téléchargé et la marche à suivre pour le refaire sont dans le `README.md` de ce dossier.

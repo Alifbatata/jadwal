@@ -515,3 +515,15 @@ packages/widget/src/element.ts | AR_DIACRITICS_REPLACE | برنامج
 # scripts/conditions-pdf.mjs
 scripts/conditions-pdf.mjs | OU | ou
 scripts/conditions-pdf.mjs | PLACE_DE_LA_VIRGULE |  mais
+
+# Étape 18, la documentation (chantier des documents de l'étape).
+# « NPA » : le numéro postal d'acheminement, le mot de la Suisse romande et du Tessin, déjà accepté
+# pour l'écran des prières (`prayers.ts`). Les deux documents écrits pour une personne responsable le
+# gardent, parce que l'écran dit « Nom ou NPA de la localité » : le document nomme ce que la
+# personne lit. Les autres documents disent « code postal ».
+# « DATE » : le service écrit toutes ses dates avec des points, comme en Suisse (retour A3) ; la
+# règle propose des barres obliques. Même cas que `docs/CONDITIONS.md` plus haut.
+docs/CALENDRIER-PRIERES.md | FR_SPELLING_RULE | NPA
+docs/CALENDRIER-PRIERES.md | DATE | 01.09.2026
+docs/INTEGRATION.md | FR_SPELLING_RULE | NPA
+docs/adr/0007-langues-et-traductions.md | DATE | 26.09.2026

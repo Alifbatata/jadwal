@@ -25,13 +25,13 @@ Ce qu'il sait faire :
   bouton qui convient à son appareil, iPhone, Android ou ordinateur ;
 - des **messages prêts à coller** pour annoncer un changement, dans chaque langue que
   l'organisation publie ;
-- un **espace des responsables** où chaque écran dit ce qu'il fait, pensé pour qu'une personne qui
+- un **espace des responsables** dont chaque écran dit ce qu'il fait, pensé pour qu'une personne qui
   découvre le service s'y retrouve seule ;
 - un **compteur de consultations** qui ne retient aucune donnée personnelle ;
 - des **conditions d'utilisation** en ligne, lisibles sans compte. Chaque personne les accepte avant
   d'entrer dans l'espace d'une organisation, et de nouveau quand le texte change de version ;
 - en option, un **module d'heures de prière** : les horaires d'un lieu de culte, saisis, importés ou
-  calculés pour une localité choisie par son nom ou son NPA, avec l'iqama et la prière du vendredi,
+  calculés pour une localité choisie par son nom ou son code postal, avec l'iqama et la prière du vendredi,
   et un onglet **Prières** sur la page publique. Il est désactivé par défaut, et une organisation
   qui ne l'active pas ne le voit nulle part.
 

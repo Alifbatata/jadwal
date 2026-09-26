@@ -242,7 +242,7 @@ ou pointe ses adresses vers un faux service. C'est une garde contre l'oubli et l
   flux, qui est publique. Ce que ce service apprend ensuite de lui ne relève plus de jadwal.
 - **Un cache partagé qui ignorerait `Vary`** pourrait servir à un visiteur l'écran préparé pour une
   autre langue ou un autre appareil. Le modèle de `infra/` n'en place aucun devant le service ; une
-  instance qui en ajoute un doit respecter `Vary`.
+  instance qui ajoute un cache devant le service vérifie qu'il respecte `Vary`.
 - **L'existence d'un compte reste devinable hors du service** : si une personne est publiquement
   responsable d'une organisation, savoir qu'elle a un compte n'apprend rien. Nous protégeons ce que
   le service révèle, pas ce que le monde sait déjà.

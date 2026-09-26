@@ -32,7 +32,7 @@ dans la langue de celui qui l'envoie.
   les agents Android disent « Linux », aucun ne dit « iPhone ».
 - **Trois cas, pas un nom d'appareil de plus** :
 
-| Cas                                   | Ce que la page propose d'abord                                                                                                              |
+| Cas                                   | Ce que la page propose en premier                                                                                                           |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | iPhone, iPad, Mac                     | le bouton `Ajouter à mon calendrier`, en `webcal:` : l'application Calendrier l'ouvre elle-même                                             |
 | Android                               | le bouton `Ajouter à Google Agenda`, vers `calendar.google.com/calendar/render?cid=` suivi de l'adresse `webcal:` encodée                   |

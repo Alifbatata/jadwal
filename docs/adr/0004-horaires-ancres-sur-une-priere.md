@@ -217,7 +217,7 @@ forme à l'autre est écrit en un seul endroit (`apps/web/src/lib/course-form.ts
 
 **La position vient d'une localité.** Saisir une latitude et une longitude en degrés décimaux
 demandait de savoir où les trouver (retour C2). Une personne responsable choisit maintenant la
-localité de son organisation par son nom ou son NPA, dans la liste officielle des localités de
+localité de son organisation par son nom ou son code postal, dans la liste officielle des localités de
 swisstopo, embarquée dans le serveur (ADR 0043, addendum). Pour une localité choisie, le serveur
 relit la position dans la liste, pas dans ce que le navigateur envoie. Le principe de cette décision
 tient : **aucun

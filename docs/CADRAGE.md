@@ -100,7 +100,7 @@ tout ce qui suit (ADR 0042).
 2. **L'import du calendrier CSV** de l'organisation, avec un modèle téléchargeable prérempli.
 3. **Le calcul** avec la bibliothèque Adhan (MIT), méthode, école, règle des latitudes hautes et
    ajustements par prière réglables par organisation. La position est celle de la localité de
-   l'organisation, choisie par son nom ou son NPA dans la liste officielle des localités de
+   l'organisation, choisie par son nom ou son code postal dans la liste officielle des localités de
    swisstopo, embarquée dans le serveur ; hors de Suisse, une latitude et une longitude.
 
 L'écran des responsables pose une seule question, « D'où viennent vos heures de prière ? », avec

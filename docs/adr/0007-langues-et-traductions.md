@@ -70,14 +70,15 @@ l'écriture du nombre.
 
 **Les dates lues par une personne s'écrivent `JJ.MM.AAAA`**, comme en Suisse, dans les cinq
 langues : écrans, courriels, messages, page publique. Le nom du jour peut la précéder
-(« samedi 26.09.2026 », « Samstag, 26.09.2026 »). Deux fonctions les produisent, `numericDate` et
-`longDate` de `apps/web/src/lib/i18n.ts` ; aucun écran n'écrit une date d'une autre façon. L'API
+(« samedi 26.09.2026 » ; l'allemand met une virgule après le jour). Deux fonctions les produisent,
+`numericDate` et `longDate` de `apps/web/src/lib/i18n.ts` ; aucun écran n'écrit une date d'une
+autre façon. L'API
 publique et les flux agenda gardent `AAAA-MM-JJ` : ce sont des formats d'échange, pas des textes.
 
 **Les textes de l'espace sont rangés par écran**, un dictionnaire par écran dans
 `apps/web/src/lib/i18n/`, avec les cinq langues côte à côte. TypeScript refuse une langue ou une
 clé qui manque. Un test refuse une phrase française restée dans une autre langue, un tiret
-cadratin et un chiffre arabo-indien. La marche à suivre pour un écran nouveau est dans
+cadratin et un chiffre arabe oriental. La marche à suivre pour un écran nouveau est dans
 `apps/web/src/lib/i18n/LISEZMOI.md`. Comment l'espace choisit sa langue est l'objet de
 l'ADR 0047.
 
@@ -95,15 +96,15 @@ prend sa traduction, sinon il garde sa langue source, comme sur la page publique
 
 ### Conséquences
 
-- Les ADR 0005, 0027, 0029, 0033 et 0042 comptaient quatre langues ; depuis l'étape 18, lisez cinq.
-  Pour une organisation qui publie l'anglais, son plan de site compte une entrée de plus par page,
-  et chaque entrée une annotation `hreflang` de plus.
+- Les ADR 0005, 0027, 0029, 0033 et 0042 comptaient quatre langues ; depuis l'étape 18, il y en a
+  cinq. Pour une organisation qui publie l'anglais, son plan de site compte une entrée de plus par
+  page, et chaque entrée une annotation `hreflang` de plus.
 - Le widget a changé une fois pour accepter `lang="en"`, et sa version publiée avec lui.
 - Une organisation active l'anglais depuis l'écran des réglages ; la base refuse toute langue hors
   des cinq.
 - Tout texte nouveau de l'espace s'écrit dans les cinq langues, dans le dictionnaire de son écran.
-  La relecture de l'arabe, de l'allemand et de l'italien par un locuteur reste à faire pour les
-  textes écrits à l'étape 18.
+  Les textes arabes, allemands et italiens écrits à l'étape 18 attendent encore la relecture d'un
+  locuteur.
 
 ## Statut
 
