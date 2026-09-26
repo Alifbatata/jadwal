@@ -1330,15 +1330,15 @@ const HORS_LISTE: Record<Langue, string> = {
 };
 
 /**
- * Ce que Réglages dit d'un fuseau enregistré hors de la liste avec lequel le flux agenda ne marche
- * pas, un alias : la vérité, et quoi faire. « Il est gardé » rassurait à tort.
+ * Ce que Réglages dit d'un fuseau enregistré hors de la liste, un alias : il est gardé, et c'est vrai,
+ * puisque le flux agenda le ramène à son fuseau canonique (relecture du lot 7).
  */
-const SANS_CALENDRIER: Record<Langue, string> = {
-	fr: 'Votre fuseau actuel, Europe/Amsterdam, ne fait pas partie de la liste. Avec ce fuseau, l’abonnement au calendrier de votre page publique ne marche pas. Choisissez dans la liste une ville qui a la même heure que la vôtre, puis enregistrez.',
-	de: 'Ihre aktuelle Zeitzone, Europe/Amsterdam, steht nicht in der Liste. Mit dieser Zeitzone lässt sich der Kalender Ihrer öffentlichen Seite nicht abonnieren. Wählen Sie aus der Liste eine Stadt, in der die gleiche Uhrzeit gilt wie bei Ihnen, und speichern Sie dann.',
-	it: 'Il tuo fuso orario attuale, Europe/Amsterdam, non è nella lista. Con questo fuso orario, l’iscrizione al calendario della tua pagina pubblica non funziona. Scegli dalla lista una città che ha la stessa ora della tua, poi salva.',
-	en: 'Your current time zone, Europe/Amsterdam, is not in the list. With this time zone, subscribing to the calendar of your public page does not work. From the list, choose a city with the same time as yours, then save.',
-	ar: 'منطقتك الزمنية الحالية، Europe/Amsterdam، ليست في القائمة، والاشتراك في تقويم صفحتك العامة لا يعمل معها. اختر من القائمة مدينة لها توقيت مدينتك نفسه، ثم احفظ.'
+const ALIAS_GARDE: Record<Langue, string> = {
+	fr: 'Votre fuseau actuel, Europe/Amsterdam, ne fait pas partie de la liste. Il est gardé tant que vous n’en choisissez pas un autre.',
+	de: 'Ihre aktuelle Zeitzone, Europe/Amsterdam, steht nicht in der Liste. Sie bleibt erhalten, solange Sie keine andere wählen.',
+	it: 'Il tuo fuso orario attuale, Europe/Amsterdam, non è nella lista. Resta tale finché non ne scegli un altro.',
+	en: 'Your current time zone, Europe/Amsterdam, is not in the list. It is kept until you choose another one.',
+	ar: 'منطقتك الزمنية الحالية، Europe/Amsterdam، ليست في القائمة. تبقى كما هي ما لم تختر منطقة أخرى.'
 };
 
 /** Ce qu'il dit d'un fuseau hors de la liste avec lequel le flux marche : un `Etc/`, canonique. */
@@ -1584,7 +1584,7 @@ describe('Réglages après un refus, et le fuseau dans une liste (retour B1)', (
 		expect(
 			optionsDe(element(html, 'timeZone')).filter((zone) => zone === 'Europe/Amsterdam')
 		).toEqual(['Europe/Amsterdam']);
-		expect(lu(element(html, 'timeZone-aide'))).toContain(SANS_CALENDRIER.fr);
+		expect(lu(element(html, 'timeZone-aide'))).toContain(ALIAS_GARDE.fr);
 
 		// Enregistrer sans toucher au fuseau le garde.
 		const garde = await postForm(
@@ -1630,15 +1630,19 @@ describe('Réglages après un refus, et le fuseau dans une liste (retour B1)', (
 	}
 
 	it.each(LANGUES)(
-		'says in %s that the calendar subscription does not work with a saved alias, and what to do',
+		'says in %s that a saved alias is kept, and the calendar of the public page still answers',
 		async (langue) => {
 			await poserLangueDuCompte(RESPONSABLE, langue);
 			await fuseauEnBase('Europe/Amsterdam');
-			expect(lu(element(await page200('/reglages', cookie), 'timeZone-aide'))).toContain(
-				SANS_CALENDRIER[langue]
-			);
-			// La phrase dit vrai : le flux agenda de la page publique ne répond pas avec ce fuseau.
-			expect((await get(`/m/${SLUG}/agenda.ics`, '')).status).not.toBe(200);
+			const aide = lu(element(await page200('/reglages', cookie), 'timeZone-aide'));
+			expect(aide).toContain(ALIAS_GARDE[langue]);
+			// La phrase dit vrai : le flux agenda répond, au fuseau canonique vers lequel l'alias
+			// pointe, et donc aux mêmes heures.
+			const flux = await get(`/m/${SLUG}/agenda.ics`, '');
+			expect(flux.status).toBe(200);
+			const texte = await flux.text();
+			expect(texte).toContain('TZID:Europe/Brussels');
+			expect(texte).not.toContain('Europe/Amsterdam');
 		}
 	);
 

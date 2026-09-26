@@ -126,11 +126,7 @@
 	<p id="timeZone-aide" class="aide">
 		{text.timeZoneHelp}
 		{text.timeZoneNotListed}
-		{#if data.timeZoneKept}
-			{data.timeZoneKeptBreaksCalendar
-				? text.timeZoneKeptNoCalendar(data.timeZoneKept)
-				: text.timeZoneKept(data.timeZoneKept)}
-		{/if}
+		{#if data.timeZoneKept}{text.timeZoneKept(data.timeZoneKept)}{/if}
 	</p>
 
 	<label for="accentColor">{text.colourLabel}</label>

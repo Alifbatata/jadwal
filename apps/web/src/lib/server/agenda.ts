@@ -4,7 +4,12 @@
 // Ce fichier ne fait que rassembler les entrées et choisir les libellés : un cours ancré sur une
 // prière sort avec « Après Maghrib » en tête de description, puisque son heure change chaque jour.
 
-import { buildCalendar, DEFAULT_HORIZON_DAYS, DEFAULT_PAST_DAYS } from '@jadwal/core/ics';
+import {
+	buildCalendar,
+	canonicalTimeZone,
+	DEFAULT_HORIZON_DAYS,
+	DEFAULT_PAST_DAYS
+} from '@jadwal/core/ics';
 import { addDays, todayInZone, type Prayer } from '@jadwal/core';
 import { toException, toPause, toSchedule } from './programme.js';
 import {
@@ -101,7 +106,10 @@ export async function buildAgenda(options: AgendaOptions): Promise<Agenda | unde
 		// organisations se ressembleraient. Un tiret demi-cadratin : ce nom est lu par les abonnés,
 		// et le cadratin n'a pas sa place dans un texte lu par des gens (`pnpm style`).
 		name: titre ? `${organisation.name} – ${titre}` : organisation.name,
-		timeZone: organisation.time_zone,
+		// `buildCalendar` refuse un alias. Une organisation enregistrée avant la liste des fuseaux peut
+		// en avoir un (Europe/Amsterdam) : son flux s'écrit au fuseau canonique vers lequel l'alias
+		// pointe (Europe/Brussels), aux mêmes heures, au lieu d'une erreur.
+		timeZone: canonicalTimeZone(organisation.time_zone) ?? organisation.time_zone,
 		now,
 		uidHost,
 		courses: courses.map((course) => ({

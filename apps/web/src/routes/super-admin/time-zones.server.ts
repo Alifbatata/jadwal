@@ -1,9 +1,10 @@
 // Les fuseaux horaires qu'on propose à la création d'une organisation (étape 18, retour B2).
 //
 // Rien que des noms IANA canoniques : un alias (Europe/Amsterdam, Europe/Oslo…) pointe vers le fuseau
-// d'un autre pays, et pourrait en désigner un autre demain si la base IANA les sépare. Le flux agenda
-// les refuse déjà (`buildCalendar`), et ETAT-PROJET.md les tient pour un risque ouvert : on ne les
-// propose donc pas, et le serveur refuse tout nom qui n'est pas dans la liste.
+// d'un autre pays, et pourrait en désigner un autre demain si la base IANA les sépare. `buildCalendar`
+// les refuse, et le flux agenda d'une organisation enregistrée avant la liste doit ramener le sien au
+// fuseau canonique (`lib/server/agenda.ts`) : on ne les propose donc pas, et le serveur refuse tout
+// nom qui n'est pas dans la liste.
 //
 // Les fuseaux `Etc/` ne sont pas proposés non plus : une organisation a un lieu, et `Etc/GMT-1` veut
 // dire une heure de plus que Greenwich, signe inversé, ce qui tromperait à coup sûr.
