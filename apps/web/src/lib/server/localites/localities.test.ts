@@ -5,6 +5,7 @@
 // pas le nombre exact de localités, qui change d'une version à l'autre, mais ce qu'une recherche
 // doit rendre en premier.
 
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { findLocality, LOCALITIES_SOURCE, searchLocalities } from './localities.js';
 
@@ -13,6 +14,18 @@ function premier(requete: string): string {
 	const [trouve] = searchLocalities(requete);
 	return trouve ? `${trouve.postcode} ${trouve.name} (${trouve.canton})` : 'rien';
 }
+
+/**
+ * Chaque ligne de la liste, lue ici dans le fichier, sans passer par le module qu'on éprouve : NPA,
+ * nom et canton.
+ */
+const LIGNES = readFileSync(new URL('./localities.csv', import.meta.url), 'utf8')
+	.split(/\r?\n/)
+	.filter((ligne) => /^\d{4};/.test(ligne))
+	.map((ligne) => {
+		const [postcode, name, , canton] = ligne.split(';');
+		return { postcode: postcode as string, name: name as string, canton: canton as string };
+	});
 
 describe('LOCALITIES_SOURCE', () => {
 	it('nomme la liste officielle, sa version et la source à citer', () => {
@@ -92,6 +105,100 @@ describe('searchLocalities, par nom', () => {
 		const resultats = searchLocalities('val-de-ruz');
 		expect(resultats.length).toBeGreaterThan(0);
 		expect(resultats.every((localite) => localite.municipality === 'Val-de-Ruz')).toBe(true);
+	});
+
+	it('cherche un nom officiel sans le canton qui le termine', () => {
+		// « Muri AG », « Wil SG » : le canton fait partie du nom officiel, pour distinguer des
+		// homonymes. Qui tape « muri » cherche Muri AG avant Murist, et « wil » doit rendre les trois
+		// Wil avant Willerzell ou Wildhaus.
+		expect(premier('muri')).toBe('5630 Muri AG (AG)');
+		expect(
+			searchLocalities('wil')
+				.slice(0, 3)
+				.map((localite) => localite.name)
+		).toEqual(['Wil AG', 'Wil SG', 'Wil ZH']);
+	});
+
+	it('trouve un nom bilingue écrit dans l’autre ordre', () => {
+		expect(premier('Bienne/Biel')).toBe('2502 Biel/Bienne (BE)');
+		expect(premier('bienne biel')).toBe('2502 Biel/Bienne (BE)');
+	});
+});
+
+describe('searchLocalities, avec le canton', () => {
+	// En Suisse, on lève un homonyme en ajoutant l'abréviation du canton : « Biel BE ». La recherche
+	// cherchait « biel be » comme un seul texte, et le trouvait dans « Biel-Benken BL », à 45 km.
+	it('lit l’abréviation du canton qui suit le nom', () => {
+		expect(premier('Biel BE')).toBe('2502 Biel/Bienne (BE)');
+		expect(premier('Bern BE')).toBe('3004 Bern (BE)');
+		expect(premier('Lausanne VD')).toBe('1003 Lausanne (VD)');
+		expect(premier('Zurich ZH')).toBe('8001 Zürich (ZH)');
+		expect(premier('Genève GE')).toBe('1201 Genève (GE)');
+		expect(premier('Fribourg FR')).toBe('1700 Fribourg (FR)');
+	});
+
+	it('la lit aussi entre parenthèses, en minuscules ou après une virgule', () => {
+		expect(premier('Biel (BE)')).toBe('2502 Biel/Bienne (BE)');
+		expect(premier('Biel/Bienne (BE)')).toBe('2502 Biel/Bienne (BE)');
+		expect(premier('Biel/Bienne(BE)')).toBe('2502 Biel/Bienne (BE)');
+		expect(premier('biel be')).toBe('2502 Biel/Bienne (BE)');
+		expect(premier('Biel, BE')).toBe('2502 Biel/Bienne (BE)');
+	});
+
+	it('met d’abord les localités de ce canton, puis celles dont le nom porte ces lettres', () => {
+		const resultats = searchLocalities('Biel BE');
+		const premiere = resultats.findIndex((localite) => localite.canton !== 'BE');
+		expect(premiere).toBeGreaterThan(0);
+		expect(resultats.slice(premiere).every((localite) => localite.canton !== 'BE')).toBe(true);
+		// « biel be » peut aussi être le début de « Biel-Benken » : la localité reste proposée, après.
+		expect(resultats.map((localite) => localite.name)).toContain('Biel-Benken BL');
+	});
+
+	it('comprend la forme d’affichage « NPA Nom (CANTON) »', () => {
+		expect(premier('2502 Biel/Bienne (BE)')).toBe('2502 Biel/Bienne (BE)');
+		expect(premier('1000 Lausanne 25 (VD)')).toBe('1000 Lausanne 25 (VD)');
+		expect(premier('7032 Laax GR 2 (GR)')).toBe('7032 Laax GR 2 (GR)');
+		expect(premier('1227 Carouge GE (GE)')).toBe('1227 Carouge GE (GE)');
+	});
+
+	it('retrouve en premier chaque localité de la liste sous sa forme d’affichage', () => {
+		// Un écran qui remet dans le champ la localité choisie, sous cette forme, doit la retrouver.
+		const perdues = LIGNES.map(({ postcode, name, canton }) => `${postcode} ${name} (${canton})`)
+			.filter((affichee) => premier(affichee) !== affichee)
+			.map((affichee) => `${affichee} -> ${premier(affichee)}`);
+		expect(perdues).toEqual([]);
+	});
+
+	it('retrouve en premier chaque localité sous « Nom (CANTON) », sans le NPA', () => {
+		const perdues = LIGNES.filter(({ name, canton }) => {
+			const [trouve] = searchLocalities(`${name} (${canton})`);
+			return trouve?.name !== name || trouve.canton !== canton;
+		}).map(({ name, canton }) => `${name} (${canton}) -> ${premier(`${name} (${canton})`)}`);
+		expect([...new Set(perdues)]).toEqual([]);
+	});
+});
+
+describe('searchLocalities, d’autres façons d’écrire', () => {
+	it('lit un NPA suivi d’une virgule, comme dans une adresse', () => {
+		expect(premier('1201, Geneve')).toBe('1201 Genève (GE)');
+		expect(premier('Geneve, 1201')).toBe('1201 Genève (GE)');
+	});
+
+	it('accepte le préfixe CH- devant le NPA', () => {
+		expect(premier('CH-2502')).toBe('2502 Biel/Bienne (BE)');
+		expect(premier('CH-2502 Biel')).toBe('2502 Biel/Bienne (BE)');
+		expect(premier('ch-1201 geneve')).toBe('1201 Genève (GE)');
+	});
+
+	it('lit un NPA que la liste ne connaît pas comme ses trois premiers chiffres', () => {
+		// 8000, 3000, 1200 : des NPA de cases postales ou de grands destinataires, que le répertoire
+		// des localités ne contient pas. Leurs trois premiers chiffres désignent la même ville.
+		expect(premier('8000 Zürich')).toBe('8001 Zürich (ZH)');
+		expect(premier('8000')).toBe('8001 Zürich (ZH)');
+		expect(premier('3000 Bern')).toBe('3004 Bern (BE)');
+		expect(premier('1200 Genève')).toBe('1201 Genève (GE)');
+		// Un NPA que la liste connaît reste pris tel quel : il ne correspond pas à Zurich.
+		expect(searchLocalities('2502 zurich')).toEqual([]);
 	});
 });
 

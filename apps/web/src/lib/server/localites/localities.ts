@@ -8,8 +8,9 @@
 // `$lib/server`.
 //
 // La recherche répond à ce qu'une personne tape : un nom, avec ou sans accents, dans sa langue ; un
-// NPA, entier ou commencé ; les deux à la suite. Elle rend les résultats les plus probables d'abord,
-// et peu : c'est une liste où l'on choisit, pas un annuaire.
+// NPA, entier ou commencé ; les deux à la suite ; un nom suivi de son canton (« Biel BE »), et la
+// forme sous laquelle une localité s'affiche (« 2502 Biel/Bienne (BE) »). Elle rend les résultats
+// les plus probables d'abord, et peu : c'est une liste où l'on choisit, pas un annuaire.
 
 import brut from './localities.csv?raw';
 
@@ -73,9 +74,13 @@ const ABBREVIATIONS = new Map([
 	['sainte', 'ste']
 ]);
 
-/** Les cantons, et `FL`, tels qu'ils terminent un nom pour le distinguer (« Carouge GE »). */
-const CANTON_SUFFIX =
-	/\s+(?:AG|AI|AR|BE|BL|BS|FR|GE|GL|GR|JU|LU|NE|NW|OW|SG|SH|SO|SZ|TG|TI|UR|VD|VS|ZG|ZH|FL)(?:\s+\d+)?$/;
+/** Les abréviations des cantons, et `FL` pour le Liechtenstein, comme la colonne `canton` les écrit. */
+const CANTONS = new Set(
+	'AG AI AR BE BL BS FR GE GL GR JU LU NE NW OW SG SH SO SZ TG TI UR VD VS ZG ZH FL'.split(' ')
+);
+
+/** Un canton qui termine un nom officiel pour le distinguer (« Carouge GE », « Laax GR 2 »). */
+const CANTON_SUFFIX = new RegExp(`\\s+(?:${[...CANTONS].join('|')})(?:\\s+\\d+)?$`);
 
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 50;
@@ -228,18 +233,24 @@ export const LOCALITIES_SOURCE: LocalitiesSource = Object.freeze({
  * Le rang d'une localité pour un texte cherché, du plus sûr au moins sûr, ou `null` si elle ne
  * correspond pas :
  *
- * 0. l'un de ses noms est ce texte ;
- * 1. l'un de ses noms commence par ce texte ;
- * 2. un mot de son nom commence par ce texte (« lancy » pour « Petit-Lancy ») ;
- * 3. son nom contient ce texte ;
- * 4. un mot de sa commune commence par ce texte (« val de ruz » pour Cernier).
+ * 0. son nom officiel entier est ce texte (« biel bienne », « laax gr 2 ») : c'est la localité
+ *    qu'une personne a choisie, remise telle quelle dans le champ ;
+ * 1. l'un de ses noms est ce texte ;
+ * 2. l'un de ses noms commence par ce texte ;
+ * 3. un mot de son nom commence par ce texte (« lancy » pour « Petit-Lancy ») ;
+ * 4. son nom contient ce texte ;
+ * 5. chaque mot du texte commence un mot de son nom, dans n'importe quel ordre (« bienne biel ») ;
+ * 6. un mot de sa commune commence par ce texte (« val de ruz » pour Cernier).
  */
 function rank(entry: Entry, text: string): number | null {
-	if (entry.names.includes(text)) return 0;
-	if (entry.names.some((name) => name.startsWith(text))) return 1;
-	if (` ${entry.name}`.includes(` ${text}`)) return 2;
-	if (entry.name.includes(text)) return 3;
-	if (` ${entry.municipality}`.includes(` ${text}`)) return 4;
+	if (entry.name === text) return 0;
+	if (entry.names.includes(text)) return 1;
+	if (entry.names.some((name) => name.startsWith(text))) return 2;
+	if (` ${entry.name}`.includes(` ${text}`)) return 3;
+	if (entry.name.includes(text)) return 4;
+	const words = text.split(' ');
+	if (words.length > 1 && words.every((word) => ` ${entry.name}`.includes(` ${word}`))) return 5;
+	if (` ${entry.municipality}`.includes(` ${text}`)) return 6;
 	return null;
 }
 
@@ -259,36 +270,59 @@ function compare(a: Entry, b: Entry): number {
 	);
 }
 
+/** Les NPA de la liste : un NPA entier absent se lit comme ses trois premiers chiffres. */
+const POSTCODES = new Set(entries.map((entry) => entry.locality.postcode));
+
+/** Un NPA, éventuellement précédé de « CH- » : entier en `whole`, commencé en `start`. */
+const POSTCODE_WORD = { whole: /^(?:ch-?)?(\d{4})$/i, start: /^(?:ch-?)?(\d{1,4})$/i };
+
 /**
- * Les localités qui répondent à `query`, les plus probables d'abord, `limit` au plus (10 par
- * défaut, jamais plus de 50).
+ * Ce que dit une recherche : le NPA, le nom normalisé, et le canton qui le suit s'il y en a un
+ * (`cantonWord` garde les lettres telles qu'elles ont été tapées).
  *
- * - Un nom : sans tenir compte des accents ni de la casse, dans n'importe quelle langue du nom
- *   officiel (« bienne » trouve Biel/Bienne), et pour les chefs-lieux dans les autres langues
- *   nationales et en anglais (« Genf », « Geneva »). Une localité qui a plusieurs NPA n'est rendue
- *   qu'une fois, sous le plus petit de ceux qui répondent le mieux.
- * - Un NPA : entier, il rend les localités qui le portent ; commencé (deux chiffres au moins), il
- *   rend les NPA qui commencent par ces chiffres, dans l'ordre.
- * - Un NPA et un nom, dans un ordre ou dans l'autre (« 2502 biel », « bienne 2502 ») : les deux
- *   doivent correspondre.
- *
- * Un NPA tapé en chiffres arabes orientaux ou persans se lit comme en chiffres latins.
- *
- * Moins de deux caractères utiles ne donnent rien : une lettre seule correspond à des centaines de
- * localités, et aucune n'est plus probable qu'une autre.
+ * Le NPA vient en tête (« 2502 Biel/Bienne », l'ordre d'une adresse suisse), entier ou commencé, ou
+ * en fin, et alors entier : un nombre plus court en fin fait partie du nom (« Lausanne 25 »). Le
+ * canton vient en fin, après au moins un mot : seul, « BE » reste un nom commencé.
  */
-export function searchLocalities(query: string, limit = DEFAULT_LIMIT): Locality[] {
-	// Un nombre qui n'en est pas un (NaN) ne borne rien : sans ce garde-fou, la liste entière partait.
-	const bound = Number.isNaN(limit)
-		? DEFAULT_LIMIT
-		: Math.min(MAX_LIMIT, Math.max(1, Math.floor(limit)));
-	// Le NPA vient en tête (« 2502 Biel/Bienne », l'ordre d'une adresse suisse), entier ou commencé,
-	// ou en fin, et alors entier : un nombre plus court en fin fait partie du nom (« Lausanne 25 »).
-	const words = latinDigits(query).trim().split(/\s+/);
+function readQuery(query: string): {
+	digits: string;
+	text: string;
+	canton: string | null;
+	cantonWord: string;
+} {
+	// Une virgule sépare comme une espace ; une parenthèse collée au nom s'en détache.
+	const words = latinDigits(query)
+		.replace(/[,;]/g, ' ')
+		.replace(/\(/g, ' (')
+		.trim()
+		.split(/\s+/)
+		.filter((word) => word !== '');
 	let digits = '';
-	if (/^\d{1,4}$/.test(words[0] ?? '')) digits = words.shift() as string;
-	else if (words.length > 1 && /^\d{4}$/.test(words.at(-1) ?? '')) digits = words.pop() as string;
-	const text = normalise(words.join(' '));
+	let canton: string | null = null;
+	let cantonWord = '';
+	const head = POSTCODE_WORD.start.exec(words[0] ?? '');
+	if (head) {
+		digits = head[1] as string;
+		words.shift();
+	}
+	while (words.length > 1) {
+		const last = words.at(-1) as string;
+		const postcode = digits === '' ? POSTCODE_WORD.whole.exec(last) : null;
+		const code = /^\(?([a-z]{2})\)?$/i.exec(last)?.[1]?.toUpperCase();
+		if (postcode) digits = postcode[1] as string;
+		else if (canton === null && code && CANTONS.has(code)) {
+			canton = code;
+			cantonWord = last;
+		} else break;
+		words.pop();
+	}
+	if (digits.length === 4 && !POSTCODES.has(digits)) digits = digits.slice(0, 3);
+	return { digits, text: normalise(words.join(' ')), canton, cantonWord };
+}
+
+/** Les localités d'un NPA, d'un nom, ou des deux, dans ce canton s'il est donné. */
+function find(digits: string, text: string, canton: string | null, bound: number): Locality[] {
+	const inCanton = (entry: Entry) => canton === null || entry.locality.canton === canton;
 
 	if (digits !== '' && text === '') {
 		if (digits.length < MIN_LENGTH) return [];
@@ -296,7 +330,7 @@ export function searchLocalities(query: string, limit = DEFAULT_LIMIT): Locality
 		// puisque rien d'autre ne dit lequel la personne cherche.
 		const exact = digits.length === 4;
 		return entries
-			.filter((entry) => entry.locality.postcode.startsWith(digits))
+			.filter((entry) => entry.locality.postcode.startsWith(digits) && inCanton(entry))
 			.sort((a, b) =>
 				exact || a.locality.postcode === b.locality.postcode
 					? compare(a, b)
@@ -314,11 +348,12 @@ export function searchLocalities(query: string, limit = DEFAULT_LIMIT): Locality
 	// NPA. Avec un NPA dans la recherche, chaque ligne est déjà seule de son nom.
 	const best = new Map<string, { entry: Entry; rank: number }>();
 	for (const entry of entries) {
-		const { postcode, name, canton } = entry.locality;
+		const { postcode, name, canton: itsCanton } = entry.locality;
 		if (digits !== '' && !postcode.startsWith(digits)) continue;
+		if (!inCanton(entry)) continue;
 		const value = rank(entry, text);
 		if (value === null) continue;
-		const key = digits === '' ? `${name}|${canton}` : `${postcode}|${name}`;
+		const key = digits === '' ? `${name}|${itsCanton}` : `${postcode}|${name}`;
 		const known = best.get(key);
 		if (
 			!known ||
@@ -332,6 +367,48 @@ export function searchLocalities(query: string, limit = DEFAULT_LIMIT): Locality
 		.sort((a, b) => a.rank - b.rank || compare(a.entry, b.entry))
 		.slice(0, bound)
 		.map(({ entry }) => entry.locality);
+}
+
+/**
+ * Les localités qui répondent à `query`, les plus probables d'abord, `limit` au plus (10 par
+ * défaut, jamais plus de 50).
+ *
+ * - Un nom : sans tenir compte des accents ni de la casse, dans n'importe quelle langue du nom
+ *   officiel (« bienne » trouve Biel/Bienne), et pour les chefs-lieux dans les autres langues
+ *   nationales et en anglais (« Genf », « Geneva »). Une localité qui a plusieurs NPA n'est rendue
+ *   qu'une fois, sous le plus petit de ceux qui répondent le mieux.
+ * - Un NPA : entier, il rend les localités qui le portent ; commencé (deux chiffres au moins), il
+ *   rend les NPA qui commencent par ces chiffres, dans l'ordre.
+ * - Un NPA et un nom, dans un ordre ou dans l'autre (« 2502 biel », « bienne 2502 ») : les deux
+ *   doivent correspondre. Le NPA peut suivre « CH- » (« CH-2502 ») ou précéder une virgule
+ *   (« 1201, Genève »). Un NPA entier que la liste ne connaît pas (« 8000 », celui d'une case
+ *   postale ou d'un grand destinataire) se lit comme ses trois premiers chiffres, qui désignent la
+ *   même ville.
+ * - Un nom suivi de l'abréviation du canton, avec ou sans parenthèses (« Biel BE », « Biel/Bienne
+ *   (BE) »), comme on lève un homonyme en Suisse : les localités de ce canton d'abord, et, sans
+ *   parenthèses, celles dont le nom porte ces deux lettres ensuite (« biel be » peut être le début
+ *   de « Biel-Benken »). La forme « NPA Nom (CANTON) », celle sous laquelle une localité
+ *   s'affiche, retrouve donc cette localité en premier.
+ *
+ * Un NPA tapé en chiffres arabes orientaux ou persans se lit comme en chiffres latins.
+ *
+ * Moins de deux caractères utiles ne donnent rien : une lettre seule correspond à des centaines de
+ * localités, et aucune n'est plus probable qu'une autre.
+ */
+export function searchLocalities(query: string, limit = DEFAULT_LIMIT): Locality[] {
+	// Un nombre qui n'en est pas un (NaN) ne borne rien : sans ce garde-fou, la liste entière partait.
+	const bound = Number.isNaN(limit)
+		? DEFAULT_LIMIT
+		: Math.min(MAX_LIMIT, Math.max(1, Math.floor(limit)));
+	const { digits, text, canton, cantonWord } = readQuery(query);
+	if (canton === null) return find(digits, text, null, bound);
+	const found = find(digits, text, canton, bound);
+	// Entre parenthèses, les deux lettres ne peuvent être que le canton. Sans elles, elles peuvent
+	// aussi commencer le dernier mot d'un nom : les localités de ce canton d'abord, puis les autres,
+	// sans doublon.
+	if (cantonWord.startsWith('(')) return found;
+	const literal = find(digits, normalise(`${text} ${cantonWord}`), null, bound);
+	return [...found, ...literal.filter((locality) => !found.includes(locality))].slice(0, bound);
 }
 
 /**
