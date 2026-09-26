@@ -303,7 +303,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		timeZoneLabel: 'Fuso orario',
 		timeZoneHint: (zone) =>
 			`Serve a mostrare gli orari del programma all’ora del luogo dell’organizzazione e a calcolare gli orari di preghiera. In Svizzera: ${zone}.`,
-		timeZoneNotListed: `Se la città dell’organizzazione non è nella lista, scegli una città con la stessa ora tutto l’anno. Per la maggior parte dell’Europa: ${ZURICH}, ${PARIS} o ${BERLIN}.`,
+		timeZoneNotListed: `Se la città dell’organizzazione non è nella lista, scegli una città che abbia sempre la stessa ora di quella dell’organizzazione. Per la maggior parte dell’Europa: ${ZURICH}, ${PARIS} o ${BERLIN}.`,
 		timeZoneEurope: 'Europa',
 		timeZoneWorld: 'Resto del mondo',
 		create: 'Crea l’organizzazione',
@@ -380,7 +380,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		timeZoneLabel: 'Time zone',
 		timeZoneHint: (zone) =>
 			`It is used to show the times of the programme in the local time of the organisation, and to work out the prayer times. In Switzerland: ${zone}.`,
-		timeZoneNotListed: `If the town of the organisation is not in the list, choose a city with the same time all year round. For most of Europe: ${ZURICH}, ${PARIS} or ${BERLIN}.`,
+		timeZoneNotListed: `If the town of the organisation is not in the list, choose a city that always has the same time as that town. For most of Europe: ${ZURICH}, ${PARIS} or ${BERLIN}.`,
 		timeZoneEurope: 'Europe',
 		timeZoneWorld: 'Rest of the world',
 		create: 'Create the organisation',
@@ -455,7 +455,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		timeZoneLabel: 'المنطقة الزمنية',
 		timeZoneHint: (zone) =>
 			`تستعمل لعرض المواعيد حسب التوقيت المحلي لمكان المؤسسة، ولحساب مواقيت الصلاة. في سويسرا: ${zone}.`,
-		timeZoneNotListed: `إذا لم تكن مدينة المؤسسة في القائمة، فاختر مدينة لها دائمًا التوقيت نفسه. لمعظم دول أوروبا: ${ZURICH} أو ${PARIS} أو ${BERLIN}.`,
+		timeZoneNotListed: `إذا لم تكن مدينة المؤسسة في القائمة، فاختر مدينة لها دائمًا توقيت مدينة المؤسسة نفسه. لمعظم دول أوروبا: ${ZURICH} أو ${PARIS} أو ${BERLIN}.`,
 		timeZoneEurope: 'أوروبا',
 		timeZoneWorld: 'بقية العالم',
 		create: 'إنشاء المؤسسة',

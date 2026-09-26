@@ -442,14 +442,20 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 			expect(fuseaux(francais).map((option) => option.valeur)).toEqual(
 				expect.arrayContaining(EXEMPLES)
 			);
+			// Chaque langue compare, comme le français : la même heure que la ville de l'organisation,
+			// toute l'année. « La même heure toute l'année », sans le point de comparaison, se lirait
+			// « sans heure d'été », et mènerait au mauvais fuseau.
+			const AIDES: Record<Exclude<Langue, 'fr'>, string> = {
+				de: 'Steht der Ort der Organisation nicht in der Liste, wählen Sie eine Stadt, in der immer die gleiche Uhrzeit gilt wie dort. Für den grössten Teil Europas: Europe/Zurich, Europe/Paris oder Europe/Berlin.',
+				it: 'Se la città dell’organizzazione non è nella lista, scegli una città che abbia sempre la stessa ora di quella dell’organizzazione. Per la maggior parte dell’Europa: Europe/Zurich, Europe/Paris o Europe/Berlin.',
+				en: 'If the town of the organisation is not in the list, choose a city that always has the same time as that town. For most of Europe: Europe/Zurich, Europe/Paris or Europe/Berlin.',
+				ar: 'إذا لم تكن مدينة المؤسسة في القائمة، فاختر مدينة لها دائمًا توقيت مدينة المؤسسة نفسه. لمعظم دول أوروبا: Europe/Zurich أو Europe/Paris أو Europe/Berlin.'
+			};
 			try {
-				for (const langue of LANGUES.slice(1)) {
+				for (const langue of LANGUES.slice(1) as Exclude<Langue, 'fr'>[]) {
 					await langueDuCompte(langue);
 					const lue = aide(await (await get('/super-admin', avecPouvoirs)).text());
-					expect.soft(lue, langue).not.toBe('');
-					expect.soft(lue, langue).not.toBe(aide(francais));
-					for (const exemple of EXEMPLES)
-						expect.soft(lue, `${langue} ${exemple}`).toContain(exemple);
+					expect.soft(lue, langue).toBe(AIDES[langue]);
 				}
 			} finally {
 				await langueDuCompte('fr');
