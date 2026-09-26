@@ -24,6 +24,7 @@ import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { createDatabase, newId, sql, type DatabaseHandle } from '@jadwal/db';
+import { commonTexts } from '../src/lib/i18n/common.js';
 import {
 	EDITOR_GESTURES,
 	MANAGER_GESTURES,
@@ -981,6 +982,20 @@ describe('l’écran Membres dans les cinq langues (retours B1, D2 et A3)', () =
 		}
 		await poserLangueDuCompte(RESPONSABLE, 'fr');
 	});
+
+	it.each(LANGUES)(
+		'keeps in %s the space between the account announcement and the address',
+		(langue) => {
+			// L'annonce de la coquille, pour les lecteurs d'écran seuls. Svelte retirait l'espace écrite
+			// avant `</span>` : l'annonce se lisait collée à l'adresse (« Connecté avec
+			// l’adressemr-responsable@example.test »).
+			const annonce = rendus[langue]?.match(
+				/<span class="pour-lecteur[^"]*">([^<]*)<\/span><bdi>([^<]*)<\/bdi>/
+			);
+			expect(annonce?.[1]).toBe(`${commonTexts[langue].signedInAs} `);
+			expect(annonce?.[2]).toBe(RESPONSABLE);
+		}
+	);
 
 	it.each(LANGUES)('serves /membres with <html lang="%s">', (langue) => {
 		expect(rendus[langue]?.match(/<html\b[^>]*>/g)).toEqual([

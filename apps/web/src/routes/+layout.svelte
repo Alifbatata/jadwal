@@ -120,8 +120,11 @@
 				</nav>
 			{/if}
 			{#if data.person}
+				<!-- L'espace après l'annonce est écrite dans l'expression : Svelte retire celle qui précède
+				     `</span>`, et le lecteur d'écran lisait l'annonce collée à l'adresse. -->
 				<span class="compte"
-					><span class="pour-lecteur">{text.signedInAs} </span><bdi>{data.person.email}</bdi></span
+					><span class="pour-lecteur">{`${text.signedInAs} `}</span><bdi>{data.person.email}</bdi
+					></span
 				>
 				{#if data.person.isSuperAdmin}
 					<a class="compte" href={resolve('/super-admin')}>{text.superAdmin}</a>
