@@ -38,9 +38,12 @@ describe('les phrases arabes relues', () => {
 	});
 
 	it('says the calendar is updated, not that it speaks', () => {
+		// La phrase relue, sans « مرة كل ساعة تقريبًا » depuis l'étape 18 : le délai dépend de
+		// l'application, et il passe sous le bouton de l'iPhone, mot pour mot (retour E2).
 		expect(ar.subscribeIntro('جمعية بلفيدير')).toBe(
-			'يُضاف برنامج جمعية بلفيدير إلى تقويمك ويُحدَّث تلقائيًا، مرة كل ساعة تقريبًا. لا حاجة لإعادة أي إعداد عند تغيّر درس.'
+			'يُضاف برنامج جمعية بلفيدير إلى تقويمك ويُحدَّث تلقائيًا. لا حاجة لإعادة أي إعداد عند تغيّر درس.'
 		);
+		expect(ar.appleHelp).toContain('مرة كل ساعة تقريبًا');
 		expect(ar.subscribeOneCourseText).toBe(
 			'يمكنك أيضًا إضافة درس واحد فقط. اضغط على اسمه: يُضاف وحده ويُحدَّث مثل الباقي. وعنوانه بصيغة https موجود في صفحة الدرس.'
 		);
@@ -203,7 +206,12 @@ describe('l’anglais britannique', () => {
 		expect(en.cancelled).toBe('Cancelled');
 		expect(en.backToProgramme).toBe('Back to the programme');
 		expect(en.rhythms['fortnightly']).toBe('Every fortnight');
-		expect(en.views).toEqual({ week: 'Week', courses: 'All courses', month: 'Month' });
+		expect(en.views).toEqual({
+			week: 'Week',
+			courses: 'All courses',
+			month: 'Month',
+			prayers: 'Prayer times'
+		});
 	});
 
 	it('counts the sessions and the minutes', () => {

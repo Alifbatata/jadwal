@@ -41,7 +41,8 @@ export const NOM_DE_LANGUE: Record<Langue, string> = {
 interface Dictionnaire {
 	readonly weekdays: readonly string[];
 	readonly months: readonly string[];
-	readonly views: { week: string; courses: string; month: string };
+	/** Les onglets de l'en-tête. `prayers` n'est montré que si le module des prières est allumé. */
+	readonly views: { week: string; courses: string; month: string; prayers: string };
 	readonly audiences: Record<string, string>;
 	readonly rhythms: Record<string, string>;
 	readonly today: string;
@@ -96,15 +97,54 @@ interface Dictionnaire {
 	readonly coursePage: string;
 	readonly subscribe: string;
 	readonly subscribeTitle: string;
+	/**
+	 * L'introduction de la page d'abonnement. Elle ne dit plus « environ une fois par heure » depuis
+	 * l'étape 18 : c'est vrai d'un iPhone, pas de Google, qui peut mettre un jour (retour E2). Le
+	 * délai est dit sous chaque bouton, pour l'application qu'il ouvre.
+	 */
 	readonly subscribeIntro: (name: string) => string;
+	/** Le bouton `webcal:` d'un iPhone, d'un iPad ou d'un Mac (étape 18, retour E1). */
 	readonly subscribeButton: string;
 	readonly subscribeAddress: string;
 	readonly subscribeWholeTitle: string;
 	readonly subscribeOneCourseTitle: string;
+	/** Sous « Un seul cours », sur un iPhone : chaque nom de cours ouvre son flux `webcal:`. */
 	readonly subscribeOneCourseText: string;
+	/** Sur Android : chaque nom de cours ouvre Google Agenda. */
+	readonly subscribeOneCourseGoogle: string;
+	/** Ailleurs : chaque nom de cours mène à sa page, qui propose le choix complet. */
+	readonly subscribeOneCourseChoice: string;
 	readonly subscribeWhole: string;
+	/** Le titre du bloc d'abonnement de la page d'un cours, au-dessus de ce que l'appareil propose. */
 	readonly addCourseToCalendar: string;
 	readonly courseFeedAddress: string;
+	/** Le bouton d'un Android : Google Agenda, avec la demande d'abonnement prête. */
+	readonly addToGoogle: string;
+	/** Ce qui se passe quand on touche le bouton `webcal:`, sur un iPhone, un iPad ou un Mac. */
+	readonly appleHelp: string;
+	/** Ce qui se passe quand on touche le bouton de Google Agenda, sur Android. */
+	readonly googleHelp: string;
+	/**
+	 * Le délai de Google (retour E2). Une phrase à elle, reprise partout où Google est proposé :
+	 * sous le bouton d'Android, sous le choix de Google, et dans les étapes à suivre à la main.
+	 */
+	readonly googleDelay: string;
+	/** Le choix complet, quand l'appareil n'est pas reconnu ou que le visiteur le demande. */
+	readonly chooseApp: string;
+	readonly choiceGoogle: string;
+	readonly choiceGoogleHelp: string;
+	readonly choiceOutlook: string;
+	readonly choiceOutlookHelp: string;
+	readonly choiceOther: string;
+	readonly choiceOtherHelp: string;
+	/** « Copier l’adresse » : un texte à sélectionner, la page n'ayant aucun script pour le copier. */
+	readonly choiceCopy: string;
+	readonly choiceCopyHelp: string;
+	/** Le lien vers le choix complet, pour qui n'est pas reconnu comme il faut. */
+	readonly otherDevice: string;
+	/** Les étapes à suivre à la main, quand le bouton ne fait rien. */
+	readonly manualTitle: string;
+	readonly manualIntro: string;
 	readonly onIphone: string;
 	readonly onAndroid: string;
 	readonly onOutlook: string;
@@ -142,6 +182,25 @@ interface Dictionnaire {
 	readonly previousMonth: string;
 	readonly nextMonth: string;
 	readonly shortWeekdays: readonly string[];
+	/** L'onglet des prières (étape 18, retour C4) : son titre, dans l'onglet du navigateur. */
+	readonly prayersTitle: string;
+	readonly noPrayerTimes: string;
+	/** « Aujourd’hui, samedi 26.09.2026 » : la date vient de `longDate`. */
+	readonly prayersToday: (date: string) => string;
+	/** Ce que sont l'adhan et l'iqama, pour qui ne connaît pas les deux mots. */
+	readonly prayersHelp: string;
+	readonly prayerColumn: string;
+	readonly dayColumn: string;
+	readonly adhan: string;
+	readonly iqama: string;
+	/** Dit aux lecteurs d'écran, à la place d'un tiret, qu'aucune iqama n'est fixée. */
+	readonly noIqama: string;
+	readonly prayersWeek: string;
+	readonly weekBoxHelp: string;
+	readonly fridayBoxHelp: string;
+	/** « Prière du vendredi : 12:30 et 13:45 », à la place de l'iqama du Dhuhr, un vendredi. */
+	readonly jumuaAt: (times: string) => string;
+	readonly jumuaReplacesDhuhr: string;
 }
 
 /**
@@ -176,7 +235,7 @@ const fr: Dictionnaire = {
 		'novembre',
 		'décembre'
 	],
-	views: { week: 'Semaine', courses: 'Tous les cours', month: 'Mois' },
+	views: { week: 'Semaine', courses: 'Tous les cours', month: 'Mois', prayers: 'Prières' },
 	audiences: {
 		kids: 'Enfants',
 		youth: 'Jeunes',
@@ -224,16 +283,42 @@ const fr: Dictionnaire = {
 	subscribe: 'S’abonner au calendrier',
 	subscribeTitle: 'S’abonner au calendrier',
 	subscribeIntro: (name) =>
-		`Le programme de ${name} s’ajoute à votre calendrier et se met à jour tout seul, environ une fois par heure. Rien à réinstaller quand un cours change.`,
+		`Le programme de ${name} s’ajoute à votre calendrier et se met à jour tout seul. Rien à réinstaller quand un cours change.`,
 	subscribeButton: 'Ajouter à mon calendrier',
 	subscribeAddress: 'Ou copiez cette adresse dans votre application de calendrier :',
 	subscribeWholeTitle: 'Tout le programme',
 	subscribeOneCourseTitle: 'Un seul cours',
 	subscribeOneCourseText:
 		'Vous pouvez aussi n’ajouter qu’un cours. Touchez son nom : il s’ajoute seul et se met à jour comme le reste. Son adresse en https figure sur la page du cours.',
+	subscribeOneCourseGoogle:
+		'Vous pouvez aussi n’ajouter qu’un cours. Touchez son nom : Google Agenda propose de l’ajouter seul, et il se met à jour comme le reste.',
+	subscribeOneCourseChoice:
+		'Vous pouvez aussi n’ajouter qu’un cours. Touchez son nom : sa page propose les mêmes choix, pour ce cours seul.',
 	subscribeWhole: 'S’abonner à tout le programme',
 	addCourseToCalendar: 'Ajouter ce cours à mon agenda',
 	courseFeedAddress: 'Ou copiez cette adresse, qui ne porte que ce cours :',
+	addToGoogle: 'Ajouter à Google Agenda',
+	appleHelp:
+		'Touchez le bouton, ou cliquez dessus sur un Mac : l’application Calendrier propose de vous abonner. Acceptez, et le calendrier se met à jour tout seul, environ une fois par heure.',
+	googleHelp:
+		'Touchez le bouton : Google Agenda s’ouvre dans votre navigateur et propose d’ajouter l’agenda. Confirmez, et il apparaît aussi dans l’application Google Agenda de votre téléphone.',
+	googleDelay: 'Google peut mettre jusqu’à 24 heures à rafraîchir un abonnement.',
+	chooseApp: 'Choisissez votre application de calendrier :',
+	choiceGoogle: 'Google Agenda',
+	choiceGoogleHelp: 'Google Agenda propose d’ajouter l’agenda à votre compte Google.',
+	choiceOutlook: 'Outlook',
+	choiceOutlookHelp:
+		'Outlook sur le web s’ouvre avec l’adresse déjà remplie : choisissez Importer. Avec un compte de travail ou d’école, copiez plutôt l’adresse.',
+	choiceOther: 'Une autre application',
+	choiceOtherHelp:
+		'Calendrier d’Apple, Thunderbird ou toute application qui sait s’abonner à un calendrier : elle s’ouvre et propose l’abonnement.',
+	choiceCopy: 'Copier l’adresse',
+	choiceCopyHelp:
+		'Sélectionnez-la, copiez-la, puis collez-la dans votre application, là où elle propose d’ajouter un calendrier par son adresse.',
+	otherDevice: 'Un autre appareil ? Voir tous les choix',
+	manualTitle: 'Ajouter l’adresse à la main',
+	manualIntro:
+		'Si le bouton ne fait rien, copiez l’adresse et suivez les étapes de votre application.',
 	onIphone: 'Sur iPhone et iPad',
 	onAndroid: 'Sur Android',
 	onOutlook: 'Sur Outlook',
@@ -255,7 +340,23 @@ const fr: Dictionnaire = {
 	coursesTitle: 'Tous les cours',
 	sessionCount: (count) => (count === 1 ? '1 séance' : `${count} séances`),
 	previousMonth: 'Mois précédent',
-	nextMonth: 'Mois suivant'
+	nextMonth: 'Mois suivant',
+	prayersTitle: 'Heures de prière',
+	noPrayerTimes: 'Les heures de prière ne sont pas encore publiées.',
+	prayersToday: (date) => `Aujourd’hui, ${date}`,
+	prayersHelp:
+		'L’adhan est l’appel à la prière. L’iqama est l’heure à laquelle elle commence dans la salle.',
+	prayerColumn: 'Prière',
+	dayColumn: 'Jour',
+	adhan: 'Adhan',
+	iqama: 'Iqama',
+	noIqama: 'Aucune iqama fixée',
+	prayersWeek: 'Les sept prochains jours',
+	weekBoxHelp:
+		'Dans chaque case, l’heure de l’adhan, et en dessous celle de l’iqama quand elle est fixée.',
+	fridayBoxHelp: 'Le vendredi, la case du Dhuhr donne les heures de la prière du vendredi.',
+	jumuaAt: (times) => `Prière du vendredi : ${times}`,
+	jumuaReplacesDhuhr: 'Elle remplace le Dhuhr chaque vendredi.'
 };
 
 const de: Dictionnaire = {
@@ -275,7 +376,7 @@ const de: Dictionnaire = {
 		'November',
 		'Dezember'
 	],
-	views: { week: 'Woche', courses: 'Alle Kurse', month: 'Monat' },
+	views: { week: 'Woche', courses: 'Alle Kurse', month: 'Monat', prayers: 'Gebetszeiten' },
 	audiences: {
 		kids: 'Kinder',
 		youth: 'Jugendliche',
@@ -323,16 +424,42 @@ const de: Dictionnaire = {
 	subscribe: 'Kalender abonnieren',
 	subscribeTitle: 'Kalender abonnieren',
 	subscribeIntro: (name) =>
-		`Das Programm von ${name} kommt in Ihren Kalender und aktualisiert sich von selbst, etwa einmal pro Stunde. Nichts neu einrichten, wenn sich ein Kurs ändert.`,
+		`Das Programm von ${name} kommt in Ihren Kalender und aktualisiert sich von selbst. Nichts neu einrichten, wenn sich ein Kurs ändert.`,
 	subscribeButton: 'Zu meinem Kalender hinzufügen',
 	subscribeAddress: 'Oder kopieren Sie diese Adresse in Ihre Kalender-App:',
 	subscribeWholeTitle: 'Das ganze Programm',
 	subscribeOneCourseTitle: 'Nur ein Kurs',
 	subscribeOneCourseText:
 		'Sie können auch nur einen Kurs hinzufügen. Tippen Sie auf seinen Namen: Er kommt allein in den Kalender und aktualisiert sich wie der Rest. Seine https-Adresse steht auf der Seite des Kurses.',
+	subscribeOneCourseGoogle:
+		'Sie können auch nur einen Kurs hinzufügen. Tippen Sie auf seinen Namen: Google Kalender bietet an, ihn allein hinzuzufügen, und er aktualisiert sich wie der Rest.',
+	subscribeOneCourseChoice:
+		'Sie können auch nur einen Kurs hinzufügen. Tippen Sie auf seinen Namen: Seine Seite bietet dieselben Möglichkeiten, nur für diesen Kurs.',
 	subscribeWhole: 'Das ganze Programm abonnieren',
 	addCourseToCalendar: 'Diesen Kurs zu meinem Kalender hinzufügen',
 	courseFeedAddress: 'Oder kopieren Sie diese Adresse, die nur diesen Kurs enthält:',
+	addToGoogle: 'Zu Google Kalender hinzufügen',
+	appleHelp:
+		'Tippen Sie auf die Schaltfläche, auf dem Mac klicken Sie darauf: Die App Kalender bietet an, den Kalender zu abonnieren. Bestätigen Sie, und der Kalender aktualisiert sich von selbst, etwa einmal pro Stunde.',
+	googleHelp:
+		'Tippen Sie auf die Schaltfläche: Google Kalender öffnet sich im Browser und bietet an, den Kalender hinzuzufügen. Bestätigen Sie, dann erscheint er auch in der App Google Kalender auf Ihrem Telefon.',
+	googleDelay: 'Google kann bis zu 24 Stunden brauchen, um ein Abo zu aktualisieren.',
+	chooseApp: 'Wählen Sie Ihre Kalender-App:',
+	choiceGoogle: 'Google Kalender',
+	choiceGoogleHelp: 'Google Kalender bietet an, den Kalender zu Ihrem Google-Konto hinzuzufügen.',
+	choiceOutlook: 'Outlook',
+	choiceOutlookHelp:
+		'Outlook im Web öffnet sich mit der bereits eingetragenen Adresse: Wählen Sie Importieren. Mit einem Geschäfts- oder Schulkonto kopieren Sie besser die Adresse.',
+	choiceOther: 'Eine andere App',
+	choiceOtherHelp:
+		'Apple Kalender, Thunderbird oder jede App, die Kalender abonnieren kann: Sie öffnet sich und bietet das Abo an.',
+	choiceCopy: 'Die Adresse kopieren',
+	choiceCopyHelp:
+		'Markieren und kopieren Sie sie, dann fügen Sie sie in Ihrer App dort ein, wo sie anbietet, einen Kalender über seine Adresse hinzuzufügen.',
+	otherDevice: 'Ein anderes Gerät? Alle Möglichkeiten anzeigen',
+	manualTitle: 'Die Adresse von Hand hinzufügen',
+	manualIntro:
+		'Wenn die Schaltfläche nichts bewirkt, kopieren Sie die Adresse und folgen Sie den Schritten Ihrer App.',
 	onIphone: 'Auf iPhone und iPad',
 	onAndroid: 'Auf Android',
 	onOutlook: 'In Outlook',
@@ -354,7 +481,23 @@ const de: Dictionnaire = {
 	coursesTitle: 'Alle Kurse',
 	sessionCount: (count) => (count === 1 ? '1 Termin' : `${count} Termine`),
 	previousMonth: 'Vorheriger Monat',
-	nextMonth: 'Nächster Monat'
+	nextMonth: 'Nächster Monat',
+	prayersTitle: 'Gebetszeiten',
+	noPrayerTimes: 'Die Gebetszeiten sind noch nicht veröffentlicht.',
+	prayersToday: (date) => `Heute, ${date}`,
+	prayersHelp:
+		'Der Adhan ist der Gebetsruf. Die Iqama ist die Zeit, zu der das Gebet im Gebetsraum beginnt.',
+	prayerColumn: 'Gebet',
+	dayColumn: 'Tag',
+	adhan: 'Adhan',
+	iqama: 'Iqama',
+	noIqama: 'Keine Iqama festgelegt',
+	prayersWeek: 'Die nächsten sieben Tage',
+	weekBoxHelp:
+		'In jedem Feld steht die Zeit des Adhan, darunter die der Iqama, wenn sie festgelegt ist.',
+	fridayBoxHelp: 'Am Freitag nennt das Feld des Dhuhr die Zeiten des Freitagsgebets.',
+	jumuaAt: (times) => `Freitagsgebet: ${times}`,
+	jumuaReplacesDhuhr: 'Es ersetzt jeden Freitag das Dhuhr-Gebet.'
 };
 
 const it: Dictionnaire = {
@@ -374,7 +517,7 @@ const it: Dictionnaire = {
 		'novembre',
 		'dicembre'
 	],
-	views: { week: 'Settimana', courses: 'Tutti i corsi', month: 'Mese' },
+	views: { week: 'Settimana', courses: 'Tutti i corsi', month: 'Mese', prayers: 'Preghiere' },
 	audiences: {
 		kids: 'Bambini',
 		youth: 'Giovani',
@@ -422,16 +565,41 @@ const it: Dictionnaire = {
 	subscribe: 'Iscriviti al calendario',
 	subscribeTitle: 'Iscriviti al calendario',
 	subscribeIntro: (name) =>
-		`Il programma di ${name} entra nel tuo calendario e si aggiorna da solo, circa una volta all’ora. Niente da reinstallare quando un corso cambia.`,
+		`Il programma di ${name} entra nel tuo calendario e si aggiorna da solo. Niente da reinstallare quando un corso cambia.`,
 	subscribeButton: 'Aggiungi al mio calendario',
 	subscribeAddress: 'Oppure copia questo indirizzo nella tua app di calendario:',
 	subscribeWholeTitle: 'Tutto il programma',
 	subscribeOneCourseTitle: 'Un solo corso',
 	subscribeOneCourseText:
 		'Puoi anche aggiungere un solo corso. Tocca il suo nome: entra da solo nel calendario e si aggiorna come il resto. Il suo indirizzo https si trova sulla pagina del corso.',
+	subscribeOneCourseGoogle:
+		'Puoi anche aggiungere un solo corso. Tocca il suo nome: Google Calendar propone di aggiungerlo da solo, e si aggiorna come il resto.',
+	subscribeOneCourseChoice:
+		'Puoi anche aggiungere un solo corso. Tocca il suo nome: la sua pagina offre le stesse possibilità, solo per quel corso.',
 	subscribeWhole: 'Iscriviti a tutto il programma',
 	addCourseToCalendar: 'Aggiungi questo corso al mio calendario',
 	courseFeedAddress: 'Oppure copia questo indirizzo, che contiene solo questo corso:',
+	addToGoogle: 'Aggiungi a Google Calendar',
+	appleHelp:
+		'Tocca il pulsante (su un Mac, fai clic): l’app Calendario propone di iscriverti. Accetta, e il calendario si aggiorna da solo, circa una volta all’ora.',
+	googleHelp:
+		'Tocca il pulsante: Google Calendar si apre nel browser e propone di aggiungere il calendario. Conferma, e comparirà anche nell’app Google Calendar del telefono.',
+	googleDelay: 'Google può impiegare fino a 24 ore per aggiornare un’iscrizione.',
+	chooseApp: 'Scegli la tua app di calendario:',
+	choiceGoogle: 'Google Calendar',
+	choiceGoogleHelp: 'Google Calendar propone di aggiungere il calendario al tuo account Google.',
+	choiceOutlook: 'Outlook',
+	choiceOutlookHelp:
+		'Outlook sul web si apre con l’indirizzo già inserito: scegli Importa. Con un account di lavoro o di scuola, copia piuttosto l’indirizzo.',
+	choiceOther: 'Un’altra app',
+	choiceOtherHelp:
+		'Calendario di Apple, Thunderbird o qualsiasi app in grado di iscriversi a un calendario: si apre e propone l’iscrizione.',
+	choiceCopy: 'Copia l’indirizzo',
+	choiceCopyHelp:
+		'Selezionalo, copialo e incollalo nella tua app, là dove propone di aggiungere un calendario tramite indirizzo.',
+	otherDevice: 'Un altro dispositivo? Vedi tutte le possibilità',
+	manualTitle: 'Aggiungere l’indirizzo a mano',
+	manualIntro: 'Se il pulsante non fa nulla, copia l’indirizzo e segui i passaggi della tua app.',
 	onIphone: 'Su iPhone e iPad',
 	onAndroid: 'Su Android',
 	onOutlook: 'Su Outlook',
@@ -453,7 +621,22 @@ const it: Dictionnaire = {
 	coursesTitle: 'Tutti i corsi',
 	sessionCount: (count) => (count === 1 ? '1 lezione' : `${count} lezioni`),
 	previousMonth: 'Mese precedente',
-	nextMonth: 'Mese successivo'
+	nextMonth: 'Mese successivo',
+	prayersTitle: 'Orari delle preghiere',
+	noPrayerTimes: 'Gli orari delle preghiere non sono ancora pubblicati.',
+	prayersToday: (date) => `Oggi, ${date}`,
+	prayersHelp:
+		'L’adhan è la chiamata alla preghiera. L’iqama è l’ora in cui la preghiera comincia nella sala.',
+	prayerColumn: 'Preghiera',
+	dayColumn: 'Giorno',
+	adhan: 'Adhan',
+	iqama: 'Iqama',
+	noIqama: 'Nessuna iqama fissata',
+	prayersWeek: 'I prossimi sette giorni',
+	weekBoxHelp: 'In ogni casella l’ora dell’adhan e, sotto, quella dell’iqama quando è fissata.',
+	fridayBoxHelp: 'Il venerdì, la casella del Dhuhr indica gli orari della preghiera del venerdì.',
+	jumuaAt: (times) => `Preghiera del venerdì: ${times}`,
+	jumuaReplacesDhuhr: 'Sostituisce il Dhuhr ogni venerdì.'
 };
 
 // L'anglais britannique (étape 18) : « programme », « cancelled », « fortnight », et les guillemets
@@ -476,7 +659,7 @@ const en: Dictionnaire = {
 		'November',
 		'December'
 	],
-	views: { week: 'Week', courses: 'All courses', month: 'Month' },
+	views: { week: 'Week', courses: 'All courses', month: 'Month', prayers: 'Prayer times' },
 	audiences: {
 		kids: 'Children',
 		youth: 'Young people',
@@ -524,16 +707,41 @@ const en: Dictionnaire = {
 	subscribe: 'Subscribe to the calendar',
 	subscribeTitle: 'Subscribe to the calendar',
 	subscribeIntro: (name) =>
-		`The programme of ${name} is added to your calendar and updates itself, about once an hour. There is nothing to set up again when a course changes.`,
+		`The programme of ${name} is added to your calendar and updates itself. There is nothing to set up again when a course changes.`,
 	subscribeButton: 'Add to my calendar',
 	subscribeAddress: 'Or copy this address into your calendar app:',
 	subscribeWholeTitle: 'The whole programme',
 	subscribeOneCourseTitle: 'Just one course',
 	subscribeOneCourseText:
 		'You can also add just one course. Tap its name: it is added on its own and updates like the rest. Its https address is on the course page.',
+	subscribeOneCourseGoogle:
+		'You can also add just one course. Tap its name: Google Calendar offers to add it on its own, and it updates like the rest.',
+	subscribeOneCourseChoice:
+		'You can also add just one course. Tap its name: its page offers the same options, for that course alone.',
 	subscribeWhole: 'Subscribe to the whole programme',
 	addCourseToCalendar: 'Add this course to my calendar',
 	courseFeedAddress: 'Or copy this address, which covers only this course:',
+	addToGoogle: 'Add to Google Calendar',
+	appleHelp:
+		'Tap the button, or click it on a Mac: the Calendar app offers to subscribe. Accept, and the calendar updates itself, about once an hour.',
+	googleHelp:
+		'Tap the button: Google Calendar opens in your browser and offers to add the calendar. Confirm, and it also appears in the Google Calendar app on your phone.',
+	googleDelay: 'Google can take up to 24 hours to refresh a subscription.',
+	chooseApp: 'Choose your calendar app:',
+	choiceGoogle: 'Google Calendar',
+	choiceGoogleHelp: 'Google Calendar offers to add the calendar to your Google account.',
+	choiceOutlook: 'Outlook',
+	choiceOutlookHelp:
+		'Outlook on the web opens with the address already filled in: choose Import. With a work or school account, copy the address instead.',
+	choiceOther: 'Another app',
+	choiceOtherHelp:
+		'Apple Calendar, Thunderbird or any app that can subscribe to a calendar: it opens and offers the subscription.',
+	choiceCopy: 'Copy the address',
+	choiceCopyHelp:
+		'Select it, copy it, then paste it into your app, where it offers to add a calendar by its address.',
+	otherDevice: 'Another device? See all the options',
+	manualTitle: 'Adding the address by hand',
+	manualIntro: 'If the button does nothing, copy the address and follow the steps for your app.',
 	onIphone: 'On iPhone and iPad',
 	onAndroid: 'On Android',
 	onOutlook: 'In Outlook',
@@ -555,7 +763,22 @@ const en: Dictionnaire = {
 	coursesTitle: 'All courses',
 	sessionCount: (count) => (count === 1 ? '1 session' : `${count} sessions`),
 	previousMonth: 'Previous month',
-	nextMonth: 'Next month'
+	nextMonth: 'Next month',
+	prayersTitle: 'Prayer times',
+	noPrayerTimes: 'The prayer times have not been published yet.',
+	prayersToday: (date) => `Today, ${date}`,
+	prayersHelp:
+		'The adhan is the call to prayer. The iqama is the time the prayer begins in the prayer hall.',
+	prayerColumn: 'Prayer',
+	dayColumn: 'Day',
+	adhan: 'Adhan',
+	iqama: 'Iqama',
+	noIqama: 'No iqama set',
+	prayersWeek: 'The next seven days',
+	weekBoxHelp: 'Each box shows the time of the adhan, with the iqama below it when one is set.',
+	fridayBoxHelp: 'On Fridays, the Dhuhr box gives the times of the Friday prayer.',
+	jumuaAt: (times) => `Friday prayer: ${times}`,
+	jumuaReplacesDhuhr: 'It takes the place of Dhuhr every Friday.'
 };
 
 const ar: Dictionnaire = {
@@ -577,7 +800,7 @@ const ar: Dictionnaire = {
 		'نوفمبر',
 		'ديسمبر'
 	],
-	views: { week: 'الأسبوع', courses: 'كل الدروس', month: 'الشهر' },
+	views: { week: 'الأسبوع', courses: 'كل الدروس', month: 'الشهر', prayers: 'مواقيت الصلاة' },
 	audiences: {
 		kids: 'الأطفال',
 		youth: 'الشباب',
@@ -644,17 +867,43 @@ const ar: Dictionnaire = {
 	coursePage: 'صفحة الدرس',
 	subscribe: 'الاشتراك في التقويم',
 	subscribeTitle: 'الاشتراك في التقويم',
+	// La phrase relue par le chef de projet, sans « مرة كل ساعة تقريبًا » depuis l'étape 18 : le délai
+	// dépend de l'application, et il est dit sous chaque bouton (retour E2).
 	subscribeIntro: (name) =>
-		`يُضاف برنامج ${name} إلى تقويمك ويُحدَّث تلقائيًا، مرة كل ساعة تقريبًا. لا حاجة لإعادة أي إعداد عند تغيّر درس.`,
+		`يُضاف برنامج ${name} إلى تقويمك ويُحدَّث تلقائيًا. لا حاجة لإعادة أي إعداد عند تغيّر درس.`,
 	subscribeButton: 'أضف إلى تقويمي',
 	subscribeAddress: 'أو انسخ هذا العنوان والصقه في تطبيق التقويم:',
 	subscribeWholeTitle: 'البرنامج كاملًا',
 	subscribeOneCourseTitle: 'درس واحد فقط',
 	subscribeOneCourseText:
 		'يمكنك أيضًا إضافة درس واحد فقط. اضغط على اسمه: يُضاف وحده ويُحدَّث مثل الباقي. وعنوانه بصيغة https موجود في صفحة الدرس.',
+	subscribeOneCourseGoogle:
+		'يمكنك أيضًا إضافة درس واحد فقط. اضغط على اسمه: يقترح تقويم Google إضافته وحده، ويُحدَّث مثل الباقي.',
+	subscribeOneCourseChoice:
+		'يمكنك أيضًا إضافة درس واحد فقط. اضغط على اسمه: تعرض صفحته الخيارات نفسها لهذا الدرس وحده.',
 	subscribeWhole: 'الاشتراك في البرنامج كاملًا',
 	addCourseToCalendar: 'أضف هذا الدرس إلى تقويمي',
 	courseFeedAddress: 'أو انسخ هذا العنوان، وهو خاص بهذا الدرس وحده:',
+	addToGoogle: 'أضف إلى تقويم Google',
+	appleHelp:
+		'اضغط على الزر، أو انقر عليه على جهاز Mac: يقترح تطبيق التقويم الاشتراك. وافق، وسيُحدَّث التقويم تلقائيًا، مرة كل ساعة تقريبًا.',
+	googleHelp:
+		'اضغط على الزر: يُفتح تقويم Google في المتصفح ويقترح إضافة التقويم. أكّد، وسيظهر أيضًا في تطبيق تقويم Google على هاتفك.',
+	googleDelay: 'قد يستغرق Google حتى 24 ساعة لتحديث الاشتراك.',
+	chooseApp: 'اختر تطبيق التقويم الذي تستخدمه:',
+	choiceGoogle: 'تقويم Google',
+	choiceGoogleHelp: 'يقترح تقويم Google إضافة التقويم إلى حسابك في Google.',
+	choiceOutlook: 'Outlook',
+	choiceOutlookHelp:
+		'يُفتح Outlook على الويب والعنوان مُدخل مسبقًا: اختر استيراد. إن كان حسابك حساب عمل أو مدرسة، فانسخ العنوان بدلًا من ذلك.',
+	choiceOther: 'تطبيق آخر',
+	choiceOtherHelp:
+		'تقويم Apple أو Thunderbird أو أي تطبيق يمكنه الاشتراك في تقويم: يُفتح ويقترح الاشتراك.',
+	choiceCopy: 'نسخ العنوان',
+	choiceCopyHelp: 'حدّده وانسخه، ثم الصقه في تطبيقك حيث يقترح إضافة تقويم عبر عنوانه.',
+	otherDevice: 'جهاز آخر؟ اعرض كل الخيارات',
+	manualTitle: 'إضافة العنوان يدويًا',
+	manualIntro: 'إن لم يحدث شيء عند الضغط على الزر، انسخ العنوان واتبع خطوات تطبيقك.',
 	// Décision du chef de projet, à l'étape 17 : ce titre reste tel quel, avec le « و » détaché
 	// devant « iPad ». Une relecture ne doit pas le « corriger ».
 	onIphone: 'على iPhone و iPad',
@@ -686,7 +935,21 @@ const ar: Dictionnaire = {
 			other: `${count} حصة`
 		}),
 	previousMonth: 'الشهر السابق',
-	nextMonth: 'الشهر التالي'
+	nextMonth: 'الشهر التالي',
+	prayersTitle: 'مواقيت الصلاة',
+	noPrayerTimes: 'لم تُنشر مواقيت الصلاة بعد.',
+	prayersToday: (date) => `اليوم، ${date}`,
+	prayersHelp: 'الأذان هو النداء إلى الصلاة، والإقامة هي موعد بدء الصلاة في المصلى.',
+	prayerColumn: 'الصلاة',
+	dayColumn: 'اليوم',
+	adhan: 'الأذان',
+	iqama: 'الإقامة',
+	noIqama: 'لا إقامة محددة',
+	prayersWeek: 'الأيام السبعة القادمة',
+	weekBoxHelp: 'في كل خانة وقت الأذان، وتحته وقت الإقامة إن كان محددًا.',
+	fridayBoxHelp: 'يوم الجمعة، تعرض خانة الظهر مواقيت صلاة الجمعة.',
+	jumuaAt: (times) => `صلاة الجمعة: ${times}`,
+	jumuaReplacesDhuhr: 'تحلّ محلّ صلاة الظهر كل يوم جمعة.'
 };
 
 const DICTIONNAIRES: Record<Langue, Dictionnaire> = { fr, de, it, en, ar };
