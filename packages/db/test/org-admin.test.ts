@@ -21,6 +21,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { newId, withOrg, withUser, type Database, type DatabaseHandle } from '../src/index.js';
 import {
 	allRows,
+	countVisible,
 	firstRow,
 	joinOrganisation,
 	messageOfFailure,
@@ -418,6 +419,20 @@ describe('les gestes réservés : l’éditrice est refusée, la personne respon
 		const settings = sql`update "organization" set "greeting" = 'Sans personne'
 			where "id" = ${a.id} returning "id"`;
 		expect(await attempt(app, a.id, settings)).toEqual({ rows: 0 });
+		// Il lit encore ce que tout membre lit, mais plus les invitations, que seule une personne
+		// responsable lit (addendum de l'ADR 0013).
+		for (const table of [
+			'organization',
+			'room',
+			'prayer_settings',
+			'prayer_day',
+			'prayer_period',
+			'membership'
+		]) {
+			expect(await countVisible(app, a.id, table), table).toBeGreaterThan(0);
+		}
+		expect(await countVisible(app, a.id, 'invitation')).toBe(0);
+		expect(await countVisible(app, inA(a.userId), 'invitation')).toBeGreaterThan(0);
 		// La personne seule, sans organisation.
 		const alone = firstRow<{ admin: boolean }>(
 			await withUser(app, a.userId, (tx) => tx.execute(sql`select jadwal.is_org_admin() as admin`))
