@@ -26,6 +26,11 @@ export interface SeanceLine {
 	room: string | null;
 	anchor?: { prayer: string; offsetMinutes: number } | undefined;
 	status: string;
+	/**
+	 * Pour une séance déplacée ici (`moved_here`), la date où elle était prévue : la même date dit
+	 * qu'elle a seulement changé d'heure (relecture du lot 5).
+	 */
+	originalDate?: IsoDate | undefined;
 }
 
 /**
@@ -40,6 +45,8 @@ interface Phrases {
 	readonly semaine: (organisation: string) => string;
 	readonly annule: string;
 	readonly exceptionnelle: string;
+	/** Une séance déplacée le même jour à une autre heure, comme le dit sa carte sur « À venir ». */
+	readonly nouvelleHeure: string;
 	/** Une séance ancrée sur une prière dont la table ne connaît pas encore l'heure, ni l'ancre. */
 	readonly heureInconnue: string;
 	readonly annulation: (titre: string, date: string) => string;
@@ -61,6 +68,7 @@ const PHRASES: Record<Langue, Phrases> = {
 		semaine: (organisation) => `Programme de la semaine à ${organisation} :`,
 		annule: '(ANNULÉ)',
 		exceptionnelle: '(date exceptionnelle)',
+		nouvelleHeure: '(nouvelle heure)',
 		heureInconnue: 'heure à préciser',
 		annulation: (titre, date) => `Le cours « ${titre} » du ${date} est annulé.`,
 		deplacement: (titre, de, vers, heure) =>
@@ -75,6 +83,7 @@ const PHRASES: Record<Langue, Phrases> = {
 		semaine: (organisation) => `Das Programm dieser Woche bei ${organisation}:`,
 		annule: '(ABGESAGT)',
 		exceptionnelle: '(Ausnahmetermin)',
+		nouvelleHeure: '(neue Uhrzeit)',
 		heureInconnue: 'Zeit noch offen',
 		annulation: (titre, date) => `Der Kurs «${titre}» vom ${date}, fällt aus.`,
 		deplacement: (titre, de, vers, heure) =>
@@ -89,6 +98,7 @@ const PHRASES: Record<Langue, Phrases> = {
 		semaine: (organisation) => `Il programma della settimana di ${organisation}:`,
 		annule: '(ANNULLATO)',
 		exceptionnelle: '(data eccezionale)',
+		nouvelleHeure: '(nuovo orario)',
 		heureInconnue: 'orario da definire',
 		annulation: (titre, date) => `La lezione «${titre}» di ${date} è annullata.`,
 		deplacement: (titre, de, vers, heure) =>
@@ -103,6 +113,7 @@ const PHRASES: Record<Langue, Phrases> = {
 		semaine: (organisation) => `This week’s programme at ${organisation}:`,
 		annule: '(CANCELLED)',
 		exceptionnelle: '(rescheduled)',
+		nouvelleHeure: '(new time)',
 		heureInconnue: 'time to be confirmed',
 		annulation: (titre, date) => `The ‘${titre}’ session on ${date} is cancelled.`,
 		deplacement: (titre, de, vers, heure) =>
@@ -117,6 +128,7 @@ const PHRASES: Record<Langue, Phrases> = {
 		semaine: (organisation) => `برنامج هذا الأسبوع في ${organisation}:`,
 		annule: '(ملغى)',
 		exceptionnelle: '(موعد استثنائي)',
+		nouvelleHeure: '(وقت جديد)',
 		heureInconnue: 'الوقت لم يُحدَّد بعد',
 		annulation: (titre, date) => `أُلغي درس «${titre}» يوم ${date}.`,
 		deplacement: (titre, de, vers, heure) =>
@@ -154,7 +166,9 @@ function heureDansLeMessage(seance: SeanceLine, langue: Langue): string {
 
 /**
  * Le programme de la semaine, jour par jour. Les séances annulées y figurent **barrées en mots** :
- * ne pas les dire serait le meilleur moyen que quelqu'un se déplace pour rien.
+ * ne pas les dire serait le meilleur moyen que quelqu'un se déplace pour rien. Une séance déplacée
+ * ici porte « date exceptionnelle », ou « nouvelle heure » quand elle n'a changé que d'heure, le même
+ * jour.
  */
 export function weekMessage(
 	greeting: string,
@@ -184,7 +198,7 @@ export function weekMessage(
 				seance.status === 'cancelled'
 					? ` ${phrases.annule}`
 					: seance.status === 'moved_here'
-						? ` ${phrases.exceptionnelle}`
+						? ` ${seance.originalDate === seance.date ? phrases.nouvelleHeure : phrases.exceptionnelle}`
 						: '';
 			lignes.push(`- ${seance.title}${virgule(langue)}${heure}${lieu}${marque}`);
 		}

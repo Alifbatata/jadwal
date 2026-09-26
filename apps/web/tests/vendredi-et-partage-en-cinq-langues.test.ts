@@ -93,6 +93,8 @@ let salleId: string;
 const ids: Record<string, string> = {};
 let cookies: string;
 let cookiesDe: string;
+/** Le cours publié chaque jour à 19:00, dont le message de la semaine porte le titre traduit. */
+let coursId: string;
 /** Les trois sessions du vendredi, par rang. */
 const sessions: Record<1 | 2 | 3, string> = { 1: '', 2: '', 3: '' };
 /** Les trois sessions de l'organisation allemande, par rang. */
@@ -275,7 +277,7 @@ beforeAll(async () => {
 		`);
 		// Un cours publié, chaque jour à 19:00, traduit en allemand seulement : le message de la
 		// semaine le nomme dans la langue du message quand la traduction existe, comme la page publique.
-		const coursId = newId();
+		coursId = newId();
 		await tx.execute(sql`
 			insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",
 				"room_id", "source_language", "recurrence_kind", "recurrence_weekday",
@@ -1348,6 +1350,40 @@ describe('le message de la semaine, dans chaque langue publiée (retour D1)', ()
 			for (const autre of LANGUES.filter((une) => une !== langue)) {
 				expect(message.texte, `${langue} : ${autre}`).not.toContain(NOM_DE_LA_PRIERE[autre]);
 			}
+		}
+	});
+
+	it('marks a session moved to another time of the same day with its new time, in each message (relecture du lot 5)', async () => {
+		// Le cours de 19:00 commence à 21:00 demain, seulement ce jour-là : c'est ce que disent la
+		// carte d'« À venir » et le message du déplacement, et le message de la semaine le dit aussi.
+		const demain = addDays(today(), 1);
+		const deplace = await postForm(
+			'/?/deplacer',
+			{ courseId: coursId, date: demain, toDate: demain, toStart: '21:00' },
+			cookies
+		);
+		try {
+			expect(deplace.status).toBe(200);
+			const trouves = messages(await (await get('/partager', cookies)).text());
+			expect(trouves.map((message) => message.langue)).toEqual([...LANGUES]);
+			const NOUVELLE_HEURE: Record<Langue, string> = {
+				fr: 'nouvelle heure',
+				de: 'neue Uhrzeit',
+				it: 'nuovo orario',
+				en: 'new time',
+				ar: 'وقت جديد'
+			};
+			for (const message of trouves) {
+				const langue = message.langue as Langue;
+				const v = VIRGULE[langue];
+				const intitule = langue === 'de' ? COURS_DE : COURS;
+				expect(message.texte.split('\n'), langue).toContain(
+					`- ${intitule}${v}21:00 – 22:30${v}${SALLE} (${NOUVELLE_HEURE[langue]})`
+				);
+			}
+		} finally {
+			await postForm('/?/retablir', { courseId: coursId, date: demain }, cookies);
+			expect(await exceptionDe(coursId, demain)).toBeUndefined();
 		}
 	});
 });

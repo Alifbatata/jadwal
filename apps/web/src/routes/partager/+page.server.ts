@@ -118,7 +118,8 @@ export const load: PageServerLoad = async (event) => {
 					end: seance.end,
 					room: seance.room,
 					anchor: seance.anchor,
-					status: seance.status
+					status: seance.status,
+					originalDate: seance.originalDate
 				})),
 				langue
 			)

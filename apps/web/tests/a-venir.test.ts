@@ -15,7 +15,8 @@
 //   montrait : si l'heure du cours a changé depuis dans sa fiche, son déplacement est refusé. De deux
 //   déplacements envoyés au même instant, un seul s'écrit (relecture du lot 5).
 // - B1 : un déplacement le même jour à une autre heure se dit comme un changement d'heure, sur la
-//   carte et dans le message ; un changement de date garde ses mots (relecture du lot 4).
+//   carte, dans le message et dans le programme de la semaine ; un changement de date garde ses mots
+//   (relectures des lots 4 et 5).
 // - D1 : les messages prêts à coller s'écrivent dans chacune des langues que l'organisation publie,
 //   la langue source d'abord : la langue par défaut pour le programme de la semaine, celle du cours
 //   pour une annulation ou un déplacement. Le nom de chaque zone de texte dit sa langue. Une session
@@ -1224,6 +1225,33 @@ describe('B1 : un déplacement le même jour dit un changement d’heure (relect
 		}
 	});
 
+	it('marks the session with its new time in the week message too, in each language (relecture du lot 5)', async () => {
+		const reponse = await postForm(
+			'/?/deplacer',
+			{ courseId: soir, date: jour(3), toDate: jour(3), toStart: '20:30' },
+			cookie
+		);
+		try {
+			expect(reponse.status).toBe(200);
+			const semaine = messages(section(await reponse.text(), 'semaine-titre'));
+			expect(semaine.map((message) => message.langue)).toEqual([...LANGUES]);
+			// Comme la carte et le message du déplacement : une nouvelle heure, pas une date exceptionnelle.
+			const attendues: Record<Langue, string> = {
+				fr: `- ${SOIR.fr}, 20:30 – 22:00, ${SALLE} (nouvelle heure)`,
+				de: `- ${SOIR.de}, 20:30 – 22:00, ${SALLE} (neue Uhrzeit)`,
+				it: `- ${SOIR.fr}, 20:30 – 22:00, ${SALLE} (nuovo orario)`,
+				en: `- ${SOIR.fr}, 20:30 – 22:00, ${SALLE} (new time)`,
+				ar: `- ${SOIR.ar}، 20:30 – 22:00، ${SALLE} (وقت جديد)`
+			};
+			for (const message of semaine) {
+				const langue = message.langue as Langue;
+				expect(message.texte.split('\n'), langue).toContain(attendues[langue]);
+			}
+		} finally {
+			await retablir(soir, jour(3), cookie);
+		}
+	});
+
 	it('gives the new time alone to a session that had none, on its card and in the message', async () => {
 		// Le calendrier importé s'arrête à J+4 : le cercle de J+5 s'affiche « 15 min après Maghrib ».
 		const reponse = await postForm(
@@ -1265,10 +1293,15 @@ describe('B1 : un déplacement le même jour dit un changement d’heure (relect
 					'u'
 				)
 			);
-			const arrivee = carte(await (await get('/', cookie)).text(), jour(6), CERCLE, 'moved_here');
+			const html = await (await get('/', cookie)).text();
+			const arrivee = carte(html, jour(6), CERCLE, 'moved_here');
 			expect(marque(arrivee)).toBe('date exceptionnelle');
 			expect(texte(arrivee)).toMatch(
 				new RegExp(`Prévue à l’origine le \\p{L}+ ${numerique(jour(4))}`, 'u')
+			);
+			// Le programme de la semaine garde lui aussi ses mots pour une autre date.
+			expect(messages(section(html, 'semaine-titre'))[0]?.texte.split('\n')).toContain(
+				`- ${CERCLE}, 18:00 – 19:00 (date exceptionnelle)`
 			);
 		} finally {
 			await retablir(cercle, jour(4), cookie);

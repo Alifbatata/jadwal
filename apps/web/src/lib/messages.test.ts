@@ -203,6 +203,44 @@ describe('le programme de la semaine, dans les cinq langues', () => {
 	});
 });
 
+describe('le programme de la semaine après un changement d’heure le même jour, dans les cinq langues', () => {
+	// Une séance déplacée à une autre heure du même jour, puis une séance venue d'une autre date.
+	const DEPLACEES = [
+		{
+			date: '2026-09-24' as IsoDate,
+			title: 'Hifz',
+			start: '20:00',
+			end: '21:00',
+			room: null,
+			status: 'moved_here',
+			originalDate: '2026-09-24' as IsoDate
+		},
+		{
+			date: '2026-09-24' as IsoDate,
+			title: 'Tafsir',
+			start: '18:00',
+			end: '19:00',
+			room: null,
+			status: 'moved_here',
+			originalDate: '2026-09-22' as IsoDate
+		}
+	];
+
+	it('marks the first with its new time, as its card and its message do, and the second as before', () => {
+		expect(
+			LANGUES.map((langue) =>
+				weekMessage(SALUT, ORGANISATION, DEPLACEES, langue).split('\n').slice(-2)
+			)
+		).toEqual([
+			['- Hifz, 20:00 – 21:00 (nouvelle heure)', '- Tafsir, 18:00 – 19:00 (date exceptionnelle)'],
+			['- Hifz, 20:00 – 21:00 (neue Uhrzeit)', '- Tafsir, 18:00 – 19:00 (Ausnahmetermin)'],
+			['- Hifz, 20:00 – 21:00 (nuovo orario)', '- Tafsir, 18:00 – 19:00 (data eccezionale)'],
+			['- Hifz, 20:00 – 21:00 (new time)', '- Tafsir, 18:00 – 19:00 (rescheduled)'],
+			['- Hifz، 20:00 – 21:00 (وقت جديد)', '- Tafsir، 18:00 – 19:00 (موعد استثنائي)']
+		]);
+	});
+});
+
 describe('l’annonce d’une annulation, dans les cinq langues', () => {
 	const date = '2026-09-26' as IsoDate;
 
