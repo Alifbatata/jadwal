@@ -13,10 +13,11 @@ Si vous n'avez pas de site, allez directement au **point 5**.
 
 ## 1. Copiez votre code
 
-1. Connectez-vous à jadwal.
+1. Connectez-vous à jadwal. L'espace se lit en français, en allemand, en italien, en anglais ou en
+   arabe : choisissez votre langue en haut de l'écran.
 2. Ouvrez **Partager**, dans le menu du haut.
-3. Descendez jusqu'à la section **Le code à coller sur votre site**.
-4. Cliquez dans le cadre de texte, sélectionnez tout, et copiez.
+3. Descendez jusqu'à la section **Le programme sur votre site**, puis **Le code à coller**.
+4. Cliquez dans le cadre de texte **Code à coller**, sélectionnez tout, et copiez.
 
 Le code ressemble à ceci. Le vôtre porte le nom de votre organisation :
 
@@ -78,7 +79,9 @@ Pour la langue, ajoutez `lang` :
 <jadwal-widget org="mon-organisation" lang="de"></jadwal-widget>
 ```
 
-Les langues possibles sont `fr` (français), `de` (allemand), `it` (italien) et `ar` (arabe).
+Les langues possibles sont `fr` (français), `de` (allemand), `it` (italien), `en` (anglais) et `ar`
+(arabe). Le programme ne propose aux visiteurs que les langues que vous avez cochées dans
+**Réglages**.
 
 Pour la vue, ajoutez `view` :
 
@@ -87,6 +90,10 @@ Pour la vue, ajoutez `view` :
 ```
 
 Les vues possibles sont `semaine`, `cours` (tous les cours, groupés par rythme) et `mois`.
+
+Si votre organisation a activé les heures de prière, le programme a un quatrième onglet,
+**Prières** : les heures du jour et des sept prochains jours, puis la prière du vendredi. Il
+apparaît tout seul, sans rien changer au code. Il ne peut pas être la vue de départ.
 
 Vous pouvez mettre les deux :
 
@@ -116,8 +123,8 @@ d'autres réglages. La ligne du script, elle, ne se met qu'une fois.
 Certains sites, surtout dans les administrations et les entreprises, n'acceptent aucun code venu
 d'ailleurs. Il reste alors une solution, plus simple mais moins jolie.
 
-Dans **Partager**, sous **Si votre site refuse les scripts extérieurs**, copiez le second code. Il
-ressemble à ceci :
+Dans **Partager**, sous **Si votre site refuse ce code**, copiez le second code, **Code du cadre à
+coller**. Il ressemble à ceci :
 
 ```html
 <iframe
@@ -148,8 +155,8 @@ déduisons des règles que suivent les navigateurs, sans l'avoir vu sur un vrai 
 utilisez le lien de l'organisation (**point 5**).
 
 **Si votre site exige une empreinte de sécurité** (votre webmestre saura de quoi il s'agit), prenez
-le code de la section **Si votre site exige une empreinte d'intégrité**. Attention : ce code fige la
-version du programme. À chaque nouvelle publication de jadwal, il faudra revenir le copier. Sinon,
+le code de la section **Pour un site très strict (rare)**, **Code avec empreinte d'intégrité**.
+Attention : ce code fige la version du programme. À chaque nouvelle publication de jadwal, il faudra revenir le copier. Sinon,
 le programme cessera de s'afficher, sans message.
 
 ---
@@ -158,7 +165,7 @@ le programme cessera de s'afficher, sans message.
 
 Vous n'avez besoin de rien d'autre que du lien.
 
-1. Dans **Partager**, copiez **Le lien de l'organisation**. Il ressemble à
+1. Dans **Partager**, copiez **L'adresse de votre page publique**. Elle ressemble à
    `https://exemple.invalid/m/mon-organisation`.
 2. Mettez-le partout où les gens vous cherchent :
    - dans la **bio Instagram** de l'organisation ;
@@ -167,7 +174,8 @@ Vous n'avez besoin de rien d'autre que du lien.
    - dans la signature des courriels.
 
 Ce lien ne changera jamais. Il ouvre la même chose que le programme sur un site : les trois vues,
-les quatre langues, l'abonnement au calendrier.
+l'onglet **Prières** si vous avez activé les heures de prière, les langues que vous publiez (jusqu'à
+cinq), l'abonnement au calendrier.
 
 **Le QR code**, dans la même page, est ce même lien sous forme d'image. Téléchargez-le, puis :
 
@@ -194,14 +202,28 @@ sortir de votre page en une fois, ce qui est le comportement attendu par la plup
 calendrier », un lien mène aux conditions d'utilisation du service : celles que vous avez acceptées
 en entrant dans votre espace. Il s'ouvre toujours dans un nouvel onglet, parce que cette page refuse
 de s'afficher à l'intérieur d'un autre site. Votre page reste ouverte derrière. Le texte du lien
-suit la langue du programme, mais les conditions n'existent qu'en français. Un lecteur d'écran
-annonce aussi le nouvel onglet, pour ce lien comme pour « Voir le programme complet » : « Conditions
+et le titre de la page suivent la langue du programme, mais les conditions elles-mêmes n'existent
+qu'en français : dans les autres langues, une phrase en tête le dit. Un lecteur d'écran annonce
+aussi le nouvel onglet, pour ce lien comme pour « Voir le programme complet » : « Conditions
 d'utilisation (s'ouvre dans un nouvel onglet) ». À l'écran, rien ne change.
+
+**Le lien « S'abonner au calendrier ».** Il mène à une page qui propose d'abord ce que l'appareil
+du visiteur sait ouvrir :
+
+- sur un iPhone, un iPad ou un Mac, le bouton **Ajouter à mon calendrier**, qui ouvre l'application
+  Calendrier ;
+- sur Android, le bouton **Ajouter à Google Agenda**, qui ouvre Google Agenda dans un nouvel onglet ;
+- ailleurs, le choix entre Google Agenda, Outlook, une autre application, et l'adresse à copier.
+
+Le lien **Un autre appareil ? Voir tous les choix** montre toujours tout, et les étapes à suivre à
+la main restent en bas de la page. La page d'un cours fait de même pour ce seul cours. Google peut
+mettre jusqu'à 24 heures à rafraîchir un abonnement : pour un changement de dernière minute,
+envoyez aussi le message prêt à coller que propose l'écran **À venir**.
 
 **Ce que nous voyons, et ce que nous ne voyons pas.** Le programme ne dépose aucun cookie et
 n'apprend rien de vos visiteurs. Une seule chose est comptée : le nombre d'affichages par jour, pour
-que votre espace puisse vous dire « votre widget a été vu 42 fois cette semaine », et vous prévenir
-s'il cesse de l'être. Ce compteur ne retient que votre organisation, la date, le type d'affichage et
+que l'écran **À venir** puisse vous dire combien de fois votre programme a été vu sur votre site
+(ligne « Programme intégré à votre site »), et vous prévenir s'il cesse de l'être. Ce compteur ne retient que votre organisation, la date, le type d'affichage et
 un nombre. Ni adresse, ni page d'où vient le visiteur, ni heure. Il n'y a donc rien à déclarer dans
 votre politique de confidentialité, et rien à faire accepter.
 
@@ -216,37 +238,53 @@ Un cours annoncé « après Maghrib » n'a pas d'heure fixe : elle change chaque
 l'organisation n'a pas dit d'où viennent ses heures de prière, ces cours s'affichent « 45 min après
 Maghrib », sans heure, sur votre site comme sur la page publique.
 
-Pour qu'une heure apparaisse, allez dans **Prières** dans votre espace. Deux possibilités, qui se
-combinent :
+Pour qu'une heure apparaisse, allez dans **Heures de prière**, dans le menu de votre espace. Cet
+écran est réservé à la personne responsable, et il n'existe que si les heures de prière sont
+activées dans **Réglages**.
 
-- **Importer votre calendrier.** Un fichier CSV, une ligne par jour. C'est la meilleure option si
-  l'organisation affiche ses propres heures sur un panneau : ce sont celles-là qui seront publiées.
-  L'écran vous montre ce qu'il a compris **avant** d'écrire quoi que ce soit, et vous confirmez. Le
-  format est décrit dans [`CALENDRIER-PRIERES.md`](CALENDRIER-PRIERES.md), avec un fichier d'exemple.
-- **Laisser le service calculer.** Saisissez la position de l'organisation en degrés décimaux,
-  choisissez la méthode, et comparez l'aperçu des sept prochains jours au panneau de l'organisation
-  avant d'enregistrer. Si l'écart est constant, l'ajustement par prière le rattrape.
+L'écran pose une seule question : **D'où viennent vos heures de prière ?** Trois réponses :
 
-Depuis l'étape 8, une troisième source passe **avant les deux autres** : vos horaires **saisis à la
-main**. Une période (un nom, des dates, et pour chaque prière l'heure affichée et l'heure d'iqama)
-dit ce que porte votre panneau. C'est aussi là que vous réglez vos **iqamas**, en heure fixe ou en
-minutes après l'heure affichée, et ce sont elles que suivent vos cours annoncés « après Maghrib ».
+- **Calculées pour votre localité.** C'est le plus simple. Tapez le nom ou le NPA de votre
+  localité, par exemple Bienne ou 2502, puis choisissez-la dans la liste. La liste officielle des
+  localités suisses est dans le service : aucun autre site n'est interrogé. Hors de Suisse, donnez
+  la latitude et la longitude sous **Hors de Suisse**.
+- **Importées depuis un fichier.** Un fichier CSV, une ligne par jour : le calendrier de votre
+  mosquée ou de votre fédération. L'écran vous montre ce qu'il a compris **avant** d'écrire quoi que
+  ce soit. Le format est décrit dans [`CALENDRIER-PRIERES.md`](CALENDRIER-PRIERES.md), avec un
+  fichier d'exemple.
+- **Saisies à la main.** Une période (un nom, des dates, et pour chaque prière l'heure affichée et
+  l'heure d'iqama) dit ce que porte votre panneau.
 
-La priorité est donc : ce que vous saisissez, puis ce que vous importez, puis le calcul. Vous pouvez
-mélanger, et l'écran vous montre pour les sept prochains jours d'où vient chaque heure. L'écran
-d'accueil vous prévient trente jours avant la fin de votre calendrier importé.
+Chaque réponse montre ce qu'elle demande, puis l'aperçu des sept prochains jours, puis le bouton
+**Enregistrer**. Rien n'est enregistré avant.
+
+Si plusieurs sources donnent une heure pour le même jour, la saisie à la main passe avant le
+fichier, et le fichier avant le calcul. Vous pouvez mélanger : l'écran vous montre, pour les sept
+prochains jours, d'où vient chaque heure. Vos **iqamas** se règlent sous chacune des trois
+réponses, en heure fixe ou en minutes après l'heure affichée, et ce sont elles que suivent vos
+cours annoncés « après Maghrib ». L'écran **À venir** vous prévient trente jours avant la fin de
+votre calendrier importé.
+
+Un cours peut aussi commencer **avant** une prière. Dans le formulaire du cours, à la question
+**Comment fixer l'heure ?**, choisissez « avant une prière », puis le nombre de minutes, de 1 à 120.
+Le programme dira par exemple « 10 min avant Maghrib ».
+
+Quand les heures de prière sont activées, votre page publique et votre programme sur votre site ont
+un onglet **Prières** : les heures du jour et des sept prochains jours, adhan et iqama, puis la
+prière du vendredi.
 
 ## La prière du vendredi
 
-Un écran à part, **Vendredi**, où vous saisissez une, deux ou trois sessions : l'heure, la langue du
-sermon, la salle. Elles apparaissent **en haut** de votre page publique et de votre widget, avant
-tout le reste : c'est l'information la plus cherchée.
+Un écran à part, **Prière du vendredi**, où vous saisissez une, deux ou trois sessions : l'heure, la
+langue du sermon, la salle. Elles apparaissent **en haut** de votre page publique et de votre
+programme sur votre site, avant tout le reste : c'est l'information la plus cherchée. L'onglet
+**Prières** les donne aussi.
 
 Dès qu'une session existe, elle remplace l'heure du Dhuhr du vendredi partout, y compris pour un
 cours annoncé « après le Dhuhr », qui suit alors la dernière session.
 
-Rien de tout cela n'interroge un service extérieur. Il n'y a pas de recherche d'adresse derrière le
-champ de position, et nous n'appelons jamais un service tiers de calendrier de prière.
+Rien de tout cela n'interroge un service extérieur. Le choix de la localité se fait dans une liste
+rangée dans le service, et nous n'appelons jamais un service tiers de calendrier de prière.
 
 ---
 
