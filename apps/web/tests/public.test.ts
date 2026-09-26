@@ -531,7 +531,7 @@ describe('les pages se lisent sans JavaScript et sans rien d’ailleurs', () => 
 	it('asks the browser for nothing from another domain', async () => {
 		// La page d'abonnement et celle d'un cours changent selon l'appareil (étape 18) : chacune est
 		// lue comme un Android, un iPhone et un ordinateur la reçoivent.
-		const appareils = [
+		const appareils: Record<string, string>[] = [
 			{},
 			{
 				'user-agent':
