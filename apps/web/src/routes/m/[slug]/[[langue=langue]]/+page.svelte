@@ -86,10 +86,20 @@
 		);
 	});
 
-	/** Les prochaines dates d'un cours, prises dans l'expansion déjà faite côté serveur. */
+	/**
+	 * Les prochaines dates d'un cours, prises dans l'expansion déjà faite côté serveur. Une séance
+	 * annulée n'en est pas une, ni une séance déplacée ailleurs : elle compte à sa nouvelle date, où
+	 * l'expansion la rend une seconde fois (`moved_here`). Jusqu'à l'étape 18, la vue annonçait le
+	 * lundi d'une séance que la vue Semaine disait « Déplacé au mardi ».
+	 */
 	function prochaines(courseId: string, combien: number) {
 		return data.seances
-			.filter((seance) => seance.courseId === courseId && seance.status !== 'cancelled')
+			.filter(
+				(seance) =>
+					seance.courseId === courseId &&
+					seance.status !== 'cancelled' &&
+					seance.status !== 'moved_away'
+			)
 			.slice(0, combien);
 	}
 
