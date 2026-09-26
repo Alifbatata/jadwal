@@ -46,8 +46,8 @@
  * octet. S'y ajoutent `Vary`, l'ETag et le `304` d'une revalidation, un client qui préfère zstd par
  * son poids, une réponse trop courte pour valoir la peine, un fichier que l'application sert déjà
  * compressé, et les en-têtes que le bloc pose ou retire : `Strict-Transport-Security` est là,
- * `Server` n'y est pas, et aucune des réponses reçues ne porte `Via`. Les tailles envoyées par Caddy
- * sont affichées : c'est la mesure du gain.
+ * `Server` n'y est pas, et aucune des réponses de l'application ne porte `Via`. Les tailles envoyées
+ * par Caddy sont affichées : c'est la mesure du gain.
  *
  * La page HTML est représentative, pas rendue par le serveur : le texte de `/conditions`, mis en
  * mots par le module même de l'application (`apps/web/src/lib/conditions/rendu.js`), dans son
@@ -61,6 +61,14 @@
  * juste avant et juste après la limite, et sur un morceau que **Caddy a vraiment roulé** : ceux-là
  * aussi doivent partir à temps, et Caddy ne les efface pas de lui-même tant qu'il ne roule pas de
  * nouveau. Le calcul des pires cas est refait avant, à partir de la minuterie livrée.
+ *
+ * ## L'application arrêtée
+ *
+ * Toutes les réponses d'avant viennent de l'application, relayées par Caddy. Pour finir, Caddy
+ * repart sans elle, et c'est lui qui répond : `502`. On vérifie que ce `502` ne porte pas `Via`. Ses
+ * en-têtes `Server` et `Strict-Transport-Security` sont affichés, pas vérifiés : la directive
+ * `header` du bloc ne s'applique pas aux erreurs que Caddy écrit lui-même, et le commentaire du
+ * bloc dit pourquoi.
  *
  * ## L'image
  *
@@ -207,13 +215,15 @@ function patienter(millisecondes) {
 	Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, millisecondes);
 }
 
-/** Attendre que Caddy écoute, sans dormir à l'aveugle. */
-function attendreCaddy() {
+/**
+ * Attendre que Caddy écoute, sans dormir à l'aveugle. wget par défaut : curl n'est pas encore
+ * installé au premier démarrage. Mais wget échoue sur un `502` : quand l'application est arrêtée,
+ * c'est curl qui demande, et n'importe quelle réponse dit que Caddy écoute.
+ */
+function attendreCaddy(sonde = ['wget', '-q', '-O', '/dev/null']) {
 	for (let essai = 0; essai < 50; essai += 1) {
 		try {
-			docker(['exec', CONTENEUR, 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1/'], {
-				stdio: 'pipe'
-			});
+			docker(['exec', CONTENEUR, ...sonde, 'http://127.0.0.1/'], { stdio: 'pipe' });
 			return;
 		} catch {
 			patienter(100);
@@ -329,12 +339,13 @@ const page = readFileSync(join(racine, 'apps', 'web', 'src', 'app.html'), 'utf8'
 // depuis une version compressée à côté du fichier, comme adapter-node. `file_server` pose de
 // lui-même `Vary: Accept-Encoding` sur tout ce qu'il sert (relevé avec Caddy 2.11.4) : il est retiré
 // de la page et remplacé sur le widget, sans quoi le `Vary` vérifié plus bas ne viendrait pas du bloc.
-const caddyfile = `{
+// Le second Caddyfile est le même sans l'application : Caddy y répond lui-même, par un `502`.
+const OPTIONS = `{
 	auto_https off
 	admin off
 }
-
-:${portAmont} {
+`;
+const APPLICATION = `:${portAmont} {
 	bind ${hoteAmont}
 	header Set-Cookie "better-auth.session_token=${SECRETS.session}; Path=/; HttpOnly"
 	root * /srv/app
@@ -358,15 +369,17 @@ const caddyfile = `{
 		respond "ok"
 	}
 }
-
-:80 {
+`;
+const JADWAL = `:80 {
 ${corps}
 }
 `;
 
 const dossier = mkdtempSync(join(tmpdir(), 'jadwal-journal-'));
 const chemin = join(dossier, 'Caddyfile');
-writeFileSync(chemin, caddyfile);
+writeFileSync(chemin, `${OPTIONS}\n${APPLICATION}\n${JADWAL}`);
+const sansApplication = join(dossier, 'Caddyfile-sans-application');
+writeFileSync(sansApplication, `${OPTIONS}\n${JADWAL}`);
 const DEJA_COMPRESSE = '/_app/immutable/chunks/deja-compresse.js';
 mkdirSync(join(dossier, 'app', 'widget'), { recursive: true });
 mkdirSync(join(dossier, 'app', '_app', 'immutable', 'chunks'), { recursive: true });
@@ -670,12 +683,13 @@ try {
 
 	// `reverse_proxy` ajoute `Via: 1.1 Caddy` à chaque réponse de l'application, `304` compris.
 	// Le bloc le retire (étape 18, retour H4) : aucune des réponses reçues plus haut ne le porte.
+	// Toutes viennent de l'application ; la réponse que Caddy sert lui-même est vérifiée à la fin.
 	const avecVia = recues.filter((reponse) => reponse.entete('via') !== '');
 	verifier(
 		avecVia.length === 0
-			? `aucune des ${recues.length} réponses reçues ne porte d’en-tête Via`
-			: `aucune réponse ne porte d’en-tête Via : ${avecVia.length} sur ${recues.length} en ` +
-					`portent un (« ${avecVia[0].entete('via')} »), sur ` +
+			? `aucune des ${recues.length} réponses de l’application ne porte d’en-tête Via`
+			: `aucune réponse de l’application ne porte d’en-tête Via : ${avecVia.length} sur ` +
+					`${recues.length} en portent un (« ${avecVia[0].entete('via')} »), sur ` +
 					[...new Set(avecVia.map((reponse) => reponse.chemin))].join(', '),
 		avecVia.length === 0
 	);
@@ -931,6 +945,25 @@ try {
 		const reste = restants.includes(chemin);
 		verifier(`${quoi} (${duree(age)}) ${part ? 'part' : 'reste'}`, part ? !reste : reste);
 	}
+
+	// ---------------------------------------------------------------------------------------------
+	// L'application arrêtée. Caddy repart avec le seul bloc de jadwal : plus rien n'écoute à
+	// l'adresse de l'application, et c'est Caddy qui répond, par un `502`. C'est la seule réponse
+	// de l'épreuve qu'il écrit lui-même : `reverse_proxy` n'y ajoute pas `Via`, faute de réponse de
+	// l'application, et la directive `header` du bloc ne s'y applique pas (voir son commentaire).
+	// ---------------------------------------------------------------------------------------------
+	process.stdout.write('L’application arrêtée, ce que Caddy répond lui-même :\n\n');
+	docker(['cp', sansApplication, `${CONTENEUR}:/etc/caddy/Caddyfile`]);
+	docker(['restart', CONTENEUR]);
+	attendreCaddy(['curl', '-sS', '-o', '/dev/null']);
+	const panne = demander('/', [NAVIGATEUR]);
+	process.stdout.write(
+		`  ${panne.statut}, Server : ${panne.entete('server') || 'absent'}, ` +
+			`Strict-Transport-Security : ${panne.entete('strict-transport-security') || 'absent'}, ` +
+			`Via : ${panne.entete('via') || 'absent'}.\n\n`
+	);
+	verifier(`l’application arrêtée, Caddy répond lui-même : 502`, panne.statut === 502);
+	verifier(`ce 502 ne porte aucun en-tête Via`, panne.entete('via') === '');
 } finally {
 	nettoyer();
 	rmSync(dossier, { recursive: true, force: true });
@@ -948,6 +981,7 @@ if (echecs.length > 0) {
 	process.stdout.write(
 		`Les ${verifications} vérifications passent : aucun secret dans le fichier, adresses tronquées, chemin gardé, ` +
 			`aucune ligne gardée plus de ${JOURS} jours, les pages compressées sans rien perdre, gzip ` +
-			`pour un navigateur, et aucune réponse ne dit Via.\n`
+			`pour un navigateur, et aucun en-tête Via, ni sur les réponses de l’application, ni sur ` +
+			`le 502 que Caddy sert quand elle est arrêtée.\n`
 	);
 }
