@@ -202,6 +202,35 @@ change pas de lui-même — et le test le dit en toutes lettres pour que personn
 plus tard. L'organisation corrigera sa période quand elle le décidera ; ce n'est pas au service de
 décider à sa place.
 
+### Addendum du 2026-09-26 : un cours avant une prière, et la localité (étape 18)
+
+**Un cours avant une prière.** L'écran d'un cours proposait un décalage de −120 à 240 minutes, et
+un cours « 15 minutes avant Maghrib » se saisissait `-15` : personne ne le devinait (retour C3).
+Le formulaire propose maintenant trois façons de fixer l'heure : `heure fixe`, `après une prière`
+et `avant une prière`, avec des minutes toujours positives : de 0 à 240 après, de 1 à 120 avant.
+Zéro n'existe qu'après la prière, puisque « 0 minute avant » voudrait dire « après ». **La base
+garde le décalage signé qu'elle connaît**, sans migration : « avant une prière » avec 10 minutes
+s'écrit −10, et un cours enregistré à −10 se rouvre sur « avant une prière » et 10. Le passage d'une
+forme à l'autre est écrit en un seul endroit (`apps/web/src/lib/course-form.ts`), et la contrainte
+`course_timing_shape_ck` refuse toujours −121 et 241. Partout, la phrase est la même :
+« 10 min avant Maghrib », dans les cinq langues.
+
+**La position vient d'une localité.** Saisir une latitude et une longitude en degrés décimaux
+demandait de savoir où les trouver (retour C2). Une personne responsable choisit maintenant la
+localité de son organisation par son nom ou son NPA, dans la liste officielle des localités de
+swisstopo, embarquée dans le serveur (ADR 0043, addendum). Pour une localité choisie, le serveur
+relit la position dans la liste, pas dans ce que le navigateur envoie. Le principe de cette décision
+tient : **aucun
+géocodage**, aucun service extérieur, ni au moment du choix ni plus tard. Hors de Suisse, la
+latitude et la longitude se saisissent comme avant, sous un repli « Hors de Suisse ».
+
+**L'écran pose une seule question**, « D'où viennent vos heures de prière ? », avec trois réponses :
+calculées pour votre localité, importées depuis un fichier, saisies à la main. Chaque réponse ne
+montre que ce qu'elle demande, puis l'aperçu des sept prochains jours, puis « Enregistrer ». La
+priorité entre les trois sources ne change pas, et l'écran la dit en une phrase. La « source que
+vous déclarez » a disparu de l'écran ; sa colonne `prayer_settings.source` reste en base, et plus
+aucun code ne la lit.
+
 ## Conséquences
 
 - Un cours ancré se saisit une fois (prière, décalage, durée) ; ses heures découlent des heures
@@ -222,4 +251,5 @@ Accepté, 2026-09-19 ; complété avec les règles exactes le 2026-09-20 ; compl
 sources, la fenêtre glissante et la règle des latitudes hautes le 2026-09-21 ; complété avec la
 saisie à la main, l'iqama et la priorité des trois sources le 2026-09-21 (étape 8). Étapes 1, 7 et 8
 de la feuille de route. La tâche quotidienne de remplissage est écrite ; son ordonnancement
-appartient à l'étape 9.
+appartient à l'étape 9. Complété le 2026-09-26 (étape 18) : un cours avant une prière, la
+localité choisie dans la liste de swisstopo, et l'écran en une question.
