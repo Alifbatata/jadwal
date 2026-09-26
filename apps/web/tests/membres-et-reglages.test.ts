@@ -9,7 +9,8 @@
 //   le formulaire de son écran. Les gestes viennent de la liste même que l'écran affiche
 //   (`EDITOR_GESTURES` et `MANAGER_GESTURES`) : un geste ajouté à l'écran sans sa preuve ici, ou
 //   l'inverse, ne compile pas et fait tomber le test ;
-// - annuler une invitation, retirer un membre, changer un rôle : l'écran dit ce qui est fait ;
+// - annuler une invitation, retirer un membre, changer un rôle : l'écran dit ce qui est fait ; une
+//   responsable qui se donne le rôle d'éditeur le lit sur l'écran où elle arrive ;
 // - l'invitation part dans la langue de l'écran de la personne qui invite (D3) ;
 // - les deux écrans dans les cinq langues, erreurs comprises, sans phrase française restée et sans
 //   date écrite comme la base l'écrit (D2, A3) ;
@@ -1183,6 +1184,104 @@ describe('annuler, retirer, changer un rôle : Membres dit ce qui est fait (reto
 		expect(statut(html)).toBe(FAIT[langue].retire);
 		expect(html).not.toContain(MEMBRE);
 		await remettreLeMembre();
+	});
+});
+
+/** Ce que la coquille dit, là où elle arrive, à une responsable qui s'est donné le rôle d'éditeur. */
+const DEVENUE_EDITRICE: Record<Langue, string> = {
+	fr: 'Vous avez maintenant le rôle d’éditeur. Les écrans réservés aux responsables, comme Membres et Réglages, ne vous sont plus ouverts. Pour les retrouver, demandez à une autre personne responsable de vous redonner le rôle de responsable.',
+	de: 'Sie haben jetzt die Rolle «Redaktion». Die Seiten, die der Leitung vorbehalten sind, zum Beispiel «Mitglieder» und «Einstellungen», stehen Ihnen nicht mehr offen. Um sie wieder zu öffnen, bitten Sie eine andere Person in der Leitung, Ihnen die Rolle «Leitung» zurückzugeben.',
+	it: 'Ora hai il ruolo di redattore. Le pagine riservate ai responsabili, come Membri e Impostazioni, non ti sono più accessibili. Per riaverle, chiedi a un altro responsabile di ridarti il ruolo di responsabile.',
+	en: 'You now have the editor role. The screens reserved for managers, such as Members and Settings, are no longer open to you. To get them back, ask another manager to give you the manager role again.',
+	ar: 'لديك الآن دور المحرر. لم تعد الصفحات الخاصة بالمسؤولين، مثل «الأعضاء» و«الإعدادات»، مفتوحة لك. لاستعادتها، اطلب من مسؤول آخر أن يمنحك دور المسؤول من جديد.'
+};
+
+describe('une responsable qui se donne le rôle d’éditeur (retour B1)', () => {
+	const seconde = newId();
+	let cookie = '';
+	let sienne = '';
+
+	/** La responsable du fichier, rendue responsable, comme les groupes qui suivent l'attendent. */
+	async function remettreResponsable(): Promise<void> {
+		await maintenance((tx) =>
+			tx.execute(sql`update "membership" set "role" = 'org_admin' where "id" = ${sienne}`)
+		);
+	}
+
+	beforeAll(async () => {
+		// Une seconde responsable : la base refuse de laisser l'organisation sans responsable.
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified")
+				values (${seconde}, 'mr-seconde@example.test', true)
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${organizationId}, ${seconde}, 'org_admin')
+			`);
+			const [adhesion] = lignes<{ id: string }>(
+				await tx.execute(sql`
+					select "id" from "membership"
+					where "organization_id" = ${organizationId} and "user_id" = ${ids[RESPONSABLE] ?? ''}
+				`)
+			);
+			sienne = adhesion?.id ?? '';
+		});
+		cookie = await signIn(RESPONSABLE);
+	});
+
+	afterAll(async () => {
+		await remettreResponsable();
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		await maintenance((tx) =>
+			tx.execute(sql`delete from "membership" where "user_id" = ${seconde}`)
+		);
+	});
+
+	it.each(LANGUES)(
+		'tells her in %s, on the screen where she arrives, that she is now an editor',
+		async (langue) => {
+			await remettreResponsable();
+			await poserLangueDuCompte(RESPONSABLE, langue);
+			// Le bouton de sa propre ligne, tel que l'écran le montre.
+			const bouton = formulaireDeLaPage(
+				await page200('/membres', cookie),
+				'?/role',
+				avec({ membershipId: sienne, role: 'editor' })
+			);
+			expect(bouton, 'le bouton de sa ligne').not.toBeNull();
+			const reponse = await postForm('/membres?/role', bouton ?? {}, cookie);
+			// Membres ne lui est plus ouvert : elle est envoyée sur « À venir ».
+			expect(reponse.status).toBe(303);
+			const arrivee = reponse.headers.get('location') ?? '';
+			expect(new URL(arrivee, origin).pathname).toBe('/');
+			const html = await page200(arrivee, cookie);
+			const avis = element(html, 'avis-role');
+			expect(avis).toMatch(/role="status"/);
+			expect(lu(avis)).toBe(DEVENUE_EDITRICE[langue]);
+			// Et c'est vrai : Membres la renvoie.
+			expect((await get('/membres', cookie)).status).toBe(303);
+		}
+	);
+
+	it('says nothing when she is not an editor, nor on the next screen', async () => {
+		await remettreResponsable();
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		// Une adresse copiée ne fait rien dire de faux à une responsable.
+		const bouton = formulaireDeLaPage(
+			await page200('/membres', cookie),
+			'?/role',
+			avec({ membershipId: sienne, role: 'editor' })
+		);
+		const reponse = await postForm('/membres?/role', bouton ?? {}, cookie);
+		const arrivee = reponse.headers.get('location') ?? '';
+		await remettreResponsable();
+		expect(element(await page200(arrivee, cookie), 'avis-role')).toBe('');
+		// Éditrice, elle ne le lit qu'en arrivant : l'écran suivant ne le redit pas.
+		await maintenance((tx) =>
+			tx.execute(sql`update "membership" set "role" = 'editor' where "id" = ${sienne}`)
+		);
+		expect(element(await page200('/cours', cookie), 'avis-role')).toBe('');
 	});
 });
 

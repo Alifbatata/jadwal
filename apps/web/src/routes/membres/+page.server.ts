@@ -7,7 +7,7 @@
 // Les actions rendent le nom d'une erreur, jamais sa phrase : la page l'écrit dans la langue de
 // l'écran (`$lib/i18n/members.ts`, étape 18).
 
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import type { IsoDate } from '@jadwal/core';
 import { newId, sql } from '@jadwal/db';
 import { record } from '$lib/server/audit.js';
@@ -16,6 +16,7 @@ import { mustAdminister, mustBeInOrganisation } from '$lib/server/guard.js';
 import { createMailer } from '$lib/server/mail/index.js';
 import { invitationEmail } from '$lib/server/mail/messages.js';
 import type { Actions, PageServerLoad } from './$types.js';
+import { SELF_EDITOR_ARRIVAL } from './self-editor.js';
 
 /** Quatorze jours : assez pour une absence, assez court pour ne pas traîner. */
 const INVITATION_DAYS = 14;
@@ -249,11 +250,15 @@ export const actions: Actions = {
 		if (role !== 'org_admin' && role !== 'editor') {
 			return fail(400, { error: 'unknownRole' as const });
 		}
+		let soiMeme = false;
 		try {
 			await withSessionOrg(context, async (tx) => {
-				await tx.execute(
-					sql`update "membership" set "role" = ${role}, "updated_at" = now() where "id" = ${membershipId}`
+				const changees = rows<{ user_id: string }>(
+					await tx.execute(
+						sql`update "membership" set "role" = ${role}, "updated_at" = now() where "id" = ${membershipId} returning "user_id"`
+					)
 				);
+				soiMeme = changees.some((ligne) => ligne.user_id === context.userId);
 				await record(tx, context.organizationId, context.userId, {
 					action: 'member.role',
 					targetTable: 'membership',
@@ -264,6 +269,9 @@ export const actions: Actions = {
 		} catch (error) {
 			return fail(409, { error: derniereResponsable(error) });
 		}
+		// Une responsable qui se donne le rôle d'éditeur ne peut plus ouvrir cet écran : elle va sur
+		// « À venir », où la coquille lui dit ce qui s'est passé (`self-editor.ts`).
+		if (soiMeme && role === 'editor') redirect(303, SELF_EDITOR_ARRIVAL);
 		// Le nouveau rôle revient à la page, qui le nomme dans son message.
 		return { change: true, role };
 	}

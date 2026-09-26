@@ -5,6 +5,7 @@
 	import { direction, LANGUES, NOM_DE_LANGUE, t } from '$lib/i18n.js';
 	import { commonTexts } from '$lib/i18n/common.js';
 	import { returnPath } from '$lib/i18n/language.js';
+	import { SELF_EDITOR_PARAM, SELF_EDITOR_VALUE } from './membres/self-editor.js';
 
 	let { data, children } = $props();
 	const organisation = $derived(data.organisation);
@@ -16,6 +17,15 @@
 	const text = $derived(commonTexts[language]);
 	/** L'écran où le choix de la langue revient : celui-ci, sans la langue que l'adresse demandait. */
 	const returnTo = $derived(returnPath(`${page.url.pathname}${page.url.search}`, page.url.origin));
+	/**
+	 * Une responsable qui vient de se donner le rôle d'éditeur, envoyée ici par l'écran Membres, qui
+	 * ne lui est plus ouvert. Seulement si elle est bien éditrice : une adresse copiée ne fait rien
+	 * dire de faux.
+	 */
+	const devenueEditrice = $derived(
+		page.url.searchParams.get(SELF_EDITOR_PARAM) === SELF_EDITOR_VALUE &&
+			organisation?.role === 'editor'
+	);
 
 	// Avec JavaScript, passer d'un écran à l'autre ne recharge pas le document : la langue et le sens
 	// que le hook a écrits sur `<html>` au premier rendu suivent donc ici. Le choix de la langue, lui,
@@ -136,6 +146,10 @@
 		</header>
 
 		<main>
+			<!-- Ce qui vient de lui arriver, sur l'écran où elle arrive, avant tout le reste. -->
+			{#if devenueEditrice}
+				<p id="avis-role" class="avis" role="status">{text.becameEditor}</p>
+			{/if}
 			{@render children?.()}
 		</main>
 
@@ -285,6 +299,14 @@
 		overflow: hidden;
 		clip-path: inset(50%);
 		white-space: nowrap;
+	}
+	/* Le mot laissé à une responsable devenue éditrice : un encadré, en tête de l'écran. */
+	.avis {
+		border: 2px solid #0f5c55;
+		border-radius: 0.5rem;
+		background: #f0fdfa;
+		padding: 0.5rem 0.75rem;
+		margin: 0 0 1rem;
 	}
 	.banniere {
 		background: #fef3c7;
