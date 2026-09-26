@@ -97,8 +97,10 @@
  *
  * Un geste impossible arrête son bloc : les vérifications qui le suivent dans ce bloc ne sont pas
  * jouées. Le bilan les compte donc à part : les vérifications jouées, vertes ou rouges, puis les
- * gestes impossibles. Combien de vérifications n'ont jamais tourné se lit en comparant, retour par
- * retour, le tableau du relevé à celui d'un passage strict sur l'image d'aujourd'hui.
+ * gestes impossibles. Combien de vérifications n'ont jamais tourné, et lesquelles, se lit en
+ * comparant ligne par ligne le tableau du relevé à celui d'un passage strict sur l'image
+ * d'aujourd'hui : une ligne du strict qui manque au relevé n'a pas été jouée. Compter retour par
+ * retour donne un nombre, mais pas les lignes.
  *
  * Une vérification faite de plusieurs conditions les nomme (`verifierChaque`) : sa ligne rouge
  * commence par « tombé : » et le nom de celles qui manquent, puis ce que l'écran montrait. Un relevé
