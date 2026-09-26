@@ -65,12 +65,50 @@ cours est marquée.
   son choix sur ce navigateur, sinon celle de son navigateur, sinon le français. Ses courriels et
   ses autres appareils la gardent ensuite.
 - **Un choix fait avant la connexion devient la langue du compte**, même si le compte en avait une :
-  c'est la dernière chose que la personne a dite, sur l'écran même de la connexion. Le cookie
-  d'attente est alors retiré (`languageForTheAccount`).
+  c'est la dernière chose que la personne a dite, sur l'écran même de la connexion.
 - **Ensuite, le compte fait foi.** Un cookie resté sur un navigateur ne défait pas un changement fait
   depuis sur un autre appareil.
 - Une écriture qui échoue ne fait pas échouer la page : la langue n'est qu'une préférence, et le
   cookie d'attente reste, pour une nouvelle tentative à la requête suivante.
+
+### Le choix fait avant la connexion part avec le lien
+
+Quand la personne demande un lien sur le navigateur où son choix attend, l'adresse de retour du lien
+porte la langue choisie : `/organisations?language=de` (`signInCallback`, dans
+`apps/web/src/lib/i18n/language.ts`). La vérification du lien l'écrit sur le compte que le jeton
+désigne (`apps/web/src/lib/server/auth.ts`), sur quelque navigateur que le lien s'ouvre : celui de la
+demande, ou l'application de messagerie d'un téléphone. Un cookie de langue sans choix en attente ne
+part pas, puisqu'il peut dater d'un choix que la personne a défait depuis, ailleurs.
+
+Le paramètre `language` ne compte qu'à ce moment-là. Seul un lien valide ouvre une session neuve, et
+son jeton, secret et à usage unique, désigne le compte : une adresse qui porte ce paramètre, posée
+sur un autre site, ne change ni la page ni le compte. Aucun écran ne le lit ensuite, et le formulaire
+de langue le retire de son chemin de retour. Il reste visible dans l'adresse de l'écran d'arrivée.
+
+La règle exacte, que les commentaires de `hooks.server.ts`, de `language.ts` et de
+`connexion/+page.server.ts` redisent :
+
+- **Le choix attend sur le navigateur où il a été fait**, sous son cookie d'attente, un an au plus.
+- **Il part une seule fois**, au premier de ces deux moments :
+  - la demande d'un lien sur ce navigateur, quel que soit le temps passé depuis le choix, et qu'un
+    courriel parte ou non. Seule une adresse refusée pour sa forme, qui ne demande aucun lien, le
+    laisse attendre ;
+  - sinon, la première requête connectée sur ce navigateur, quelle que soit la façon dont la session
+    s'y est ouverte : une passkey, un lien demandé sur un autre navigateur, un choix refait après la
+    demande du lien. Elle l'écrit sur le compte (`languageForTheAccount`).
+
+  Le cookie d'attente est retiré à ce moment-là.
+
+- **Une fois parti, il ne revient plus.** Un second lien, demandé sans nouveau choix, ne l'emporte
+  pas, et une langue changée ensuite sur un autre appareil reste.
+- **Tant qu'il attend, il passe devant une langue changée entre-temps ailleurs.** Choisir l'allemand
+  ici sans demander de lien, passer à l'italien sur un autre appareil, puis se connecter ici jusqu'à
+  un an plus tard rend l'allemand au compte.
+- **Une demande freinée consomme aussi le choix.** Quand la limite par adresse retient le courriel,
+  ou quand l'envoi échoue, le choix est retiré comme pour un lien parti. L'action ne sait pas si le
+  courriel est parti, et sa réponse, cookies compris, doit rester la même pour toutes les adresses
+  (ADR 0017) : garder le choix dans ce seul cas dirait qu'on a déjà demandé trois liens pour cette
+  adresse dans l'heure.
 
 ### Les deux cookies
 
@@ -108,21 +146,24 @@ adresse, ce que l'ADR 0017 interdit : c'est le point d'arrêt décrit dans son a
 - Un courriel peut partir dans une autre langue que celle du compte : un lien demandé depuis un
   navigateur réglé en français, sans choix fait, part en français. La personne voit la langue de
   l'écran d'où elle l'a demandé, ce qui se comprend.
-- **Limite, relevée par la relecture et non corrigée.** Le choix fait avant la connexion vit dans un
-  cookie de ce seul navigateur. Si le lien de connexion s'ouvre dans un autre navigateur, ce qui est
-  courant sur un téléphone (lien demandé dans le navigateur, ouvert depuis l'application de
-  messagerie), le choix est perdu sur le second. Et le cookie d'attente, qui vit un an, peut remettre
-  plus tard l'ancien choix sur le compte, à une connexion suivante sur le premier navigateur. Deux
-  parades sont possibles : une vie du cookie d'attente égale à celle du lien, ou une langue portée
-  avec la demande de lien. Aucune n'est prise ; le point est ouvert dans `ETAT-PROJET.md`.
+- Un lien de connexion ouvert dans un autre navigateur que celui de la demande, ce qui est courant
+  sur un téléphone, garde le choix fait avant la connexion : il voyage avec le lien.
+- **Ce que la règle laisse, et qui reste ouvert.** Un choix fait sur un navigateur sans demander de
+  lien peut, jusqu'à un an plus tard, remettre sa langue sur le compte par-dessus une langue changée
+  depuis sur un autre appareil. Une demande freinée par la limite de débit consomme le choix, et le
+  lien qui l'aurait porté n'existe pas. L'autre voie serait un repère côté serveur, la date du
+  dernier changement de langue du compte : une colonne et une migration de plus. La question est
+  posée dans `ETAT-PROJET.md`.
 - Les deux cookies sont fonctionnels et posés sur demande. Faut-il les nommer dans
   `docs/CONDITIONS.md`, qui ne parle que des cookies de mesure d'audience ? La question revient au
   juriste.
-- Le lien de connexion ne porte rien de plus qu'avant : son adresse de retour est fixe
-  (`/organisations`), et aucune langue n'y figure.
+- Le lien de connexion porte une chose de plus qu'avant l'étape 18, et une seule : la langue choisie
+  avant la connexion, quand un choix attend. Sans choix en attente, son adresse de retour reste
+  `/organisations`, sans rien d'autre.
 - Un écran ajouté demande ses textes dans les cinq langues avant de compiler (ADR 0007).
 
 ## Statut
 
 Accepté, 2026-09-26. Étape 18, retours D2 (l'espace en cinq langues) et D3 (la langue des
-courriels).
+courriels). Révisé le même jour, à la fin de l'étape : le choix fait avant la connexion part avec le
+lien de connexion, et la règle exacte de son départ est écrite.
