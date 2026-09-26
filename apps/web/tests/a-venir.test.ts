@@ -12,8 +12,9 @@
 // - Une page restée ouverte (Retour, un second onglet, une autre personne) ne défait pas un
 //   changement : annuler ou déplacer une séance déjà annulée ou déplacée est refusé, rien n'est
 //   écrit, et l'écran rendu est à jour (relecture du lot 4). La carte envoie aussi l'heure qu'elle
-//   montrait : si l'heure du cours a changé depuis dans sa fiche, son déplacement est refusé. De deux
-//   déplacements envoyés au même instant, un seul s'écrit (relecture du lot 5).
+//   montrait : si l'heure du cours a changé depuis dans sa fiche, son déplacement est refusé, et la
+//   carte rouverte propose l'heure actuelle du cours, sauf une heure tapée. De deux déplacements
+//   envoyés au même instant, un seul s'écrit (relecture du lot 5).
 // - B1 : un déplacement le même jour à une autre heure se dit comme un changement d'heure, sur la
 //   carte, dans le message et dans le programme de la semaine ; un changement de date garde ses mots
 //   (relectures des lots 4 et 5).
@@ -1030,6 +1031,86 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 		} finally {
 			await changerHeure(soir, '19:00', '20:30');
 			await retablir(soir, jour(2), cookie);
+		}
+	});
+
+	it('reopens that card on the current time of the course, not the old one it proposed, and keeps a time that was typed', async () => {
+		const avant = await (await get('/', cookie)).text();
+		const proposee = formulaireDeLaCarte(avant, 'deplacer', soir, jour(2));
+		expect(proposee).toMatchObject({ plannedStart: '19:00', toDate: jour(2), toStart: '19:00' });
+		await changerHeure(soir, '20:00', '21:30');
+		try {
+			// 19:00 était l'heure que la carte proposait d'elle-même : la personne ne l'a pas choisie, et
+			// la carte rouverte propose l'heure du cours, 20:00. Une heure tapée, 18:00, reste.
+			for (const [envoi, heure] of [
+				[proposee, '20:00'],
+				[{ ...proposee, toDate: jour(4), toStart: '18:00' }, '18:00']
+			] as const) {
+				const reponse = await postForm('/?/deplacer', envoi, cookie);
+				expect(reponse.status, heure).toBe(409);
+				const html = await reponse.text();
+				expect(alerte(html), heure).toBe(HEURE_CHANGEE.fr);
+				expect(formulaireDeLaCarte(html, 'deplacer', soir, jour(2)), heure).toEqual({
+					courseId: soir,
+					date: jour(2),
+					plannedStart: '20:00',
+					toDate: envoi['toDate'],
+					toStart: heure
+				});
+			}
+			// La carte rouverte, renvoyée telle quelle, ne déplace pas la séance à l'ancienne heure : elle
+			// propose le jour et l'heure où la séance est prévue, et rien ne change.
+			const rouverte = formulaireDeLaCarte(
+				await (await postForm('/?/deplacer', proposee, cookie)).text(),
+				'deplacer',
+				soir,
+				jour(2)
+			);
+			const renvoi = await postForm('/?/deplacer', rouverte, cookie);
+			expect(renvoi.status).toBe(400);
+			expect(alerte(await renvoi.text())).toBe(
+				'La séance est déjà prévue à cette date et à cette heure. Choisissez une autre date ou une autre heure.'
+			);
+			expect(await exception(soir, jour(2))).toBeUndefined();
+		} finally {
+			await changerHeure(soir, '19:00', '20:30');
+			await retablir(soir, jour(2), cookie);
+		}
+	});
+
+	it('reopens on the time a session now has, when its card showed none and proposed 19:00', async () => {
+		// Le calendrier importé s'arrête à J+4 : la carte du cercle de J+5 ne montre aucune heure, et
+		// son champ propose 19:00.
+		const avant = await (await get('/', cookie)).text();
+		const proposee = formulaireDeLaCarte(avant, 'deplacer', cercle, jour(5));
+		expect(proposee).toMatchObject({ plannedStart: '', toStart: '19:00' });
+		// Le calendrier est prolongé d'un jour : Maghrib à 19:20, et le cercle à 19:35.
+		await maintenance((tx) =>
+			tx.execute(sql`
+				insert into "prayer_day" ("organization_id", "date", "fajr", "dhuhr", "asr", "maghrib",
+					"isha", "source")
+				values (${organisationA}, ${jour(5)}, '05:30', '13:15', '16:45', '19:20', '20:50', 'import')
+			`)
+		);
+		try {
+			const reponse = await postForm('/?/deplacer', proposee, cookie);
+			expect(reponse.status).toBe(409);
+			// 19:00 était proposé par la carte, pas choisi : la carte rouverte propose 19:35.
+			expect(formulaireDeLaCarte(await reponse.text(), 'deplacer', cercle, jour(5))).toEqual({
+				courseId: cercle,
+				date: jour(5),
+				plannedStart: '19:35',
+				toDate: jour(5),
+				toStart: '19:35'
+			});
+			expect(await exception(cercle, jour(5))).toBeUndefined();
+		} finally {
+			await maintenance((tx) =>
+				tx.execute(sql`
+					delete from "prayer_day" where "organization_id" = ${organisationA} and "date" = ${jour(5)}
+				`)
+			);
+			await retablir(cercle, jour(5), cookie);
 		}
 	});
 

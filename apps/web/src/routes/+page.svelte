@@ -244,13 +244,17 @@
 										/>
 										<p id={`vers-${k}-aide`} class="aide">{text.newDateHelp(date(data.today))}</p>
 									</div>
+									<!-- Après un refus, l'heure envoyée revient, sauf quand l'action la rend à `null` :
+									     la personne ne l'avait pas choisie, et le champ propose l'heure de la séance. -->
 									<div class="champ">
 										<label for={`heure-${k}`}>{text.newTime}</label>
 										<input
 											id={`heure-${k}`}
 											type="time"
 											name="toStart"
-											value={refusee === k ? form?.toStart : (seance.start ?? '19:00')}
+											value={refusee === k && form?.toStart !== null
+												? form?.toStart
+												: (seance.start ?? '19:00')}
 											required
 											aria-describedby={`heure-${k}-aide`}
 										/>

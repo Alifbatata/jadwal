@@ -20,7 +20,7 @@
 // séance vers elle-même. Les deux actions le refusent, n'écrivent rien, et l'écran rendu est à jour.
 // La carte d'un déplacement envoie aussi l'heure qu'elle montrait : quand l'heure du cours a changé
 // depuis dans sa fiche, l'action la refuse, au lieu de déplacer la séance à l'ancienne heure
-// (relecture du lot 5).
+// (relecture du lot 5), et la carte rouverte propose l'heure actuelle, sauf une heure tapée.
 
 import { fail } from '@sveltejs/kit';
 import { isIsoDate, todayInZone } from '@jadwal/core';
@@ -41,6 +41,8 @@ import type { Actions, PageServerLoad } from './$types.js';
 const JOURS_AFFICHES = 7;
 /** Une heure du jour, de 00:00 à 23:59 : ce que la base accepte pour la nouvelle heure. */
 const HEURE = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+/** L'heure que le champ « Heure de début » propose pour une séance sans heure (`+page.svelte`). */
+const HEURE_PROPOSEE = '19:00';
 /** Un identifiant de cours. Autre chose n'atteint pas la base, qui le refuserait en erreur. */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -158,11 +160,12 @@ async function alreadyChanged(tx: Transaction, courseId: string, date: string): 
 
 /**
  * Un refus, avec ce que l'écran doit retrouver : la séance, pour rouvrir ses options sur l'erreur, et
- * ce qui avait été saisi, pour le corriger sans tout refaire.
+ * ce qui avait été saisi, pour le corriger sans tout refaire. `toStart: null` : l'heure envoyée n'a
+ * pas été choisie, et la carte rouverte propose l'heure de la séance.
  */
 function refuse(
 	error: UpcomingError,
-	fields: { courseId: string; date: string; toDate?: string; toStart?: string },
+	fields: { courseId: string; date: string; toDate?: string; toStart?: string | null },
 	status = 400
 ) {
 	return fail(status, {
@@ -170,7 +173,7 @@ function refuse(
 		courseId: fields.courseId,
 		date: fields.date,
 		toDate: fields.toDate ?? '',
-		toStart: fields.toStart ?? ''
+		toStart: fields.toStart === undefined ? '' : fields.toStart
 	});
 }
 
@@ -331,7 +334,11 @@ export const actions: Actions = {
 			// comparé.
 			const shown = form.get('plannedStart');
 			if (shown !== null && seance && (seance.start ?? '') !== String(shown)) {
-				return refuse('timeChanged', fields, 409);
+				// Une heure envoyée telle que la carte la proposait est l'ancienne heure du cours, que la
+				// personne n'a pas choisie : elle ne revient pas dans la carte rouverte, qui propose
+				// l'heure actuelle. Renvoyée telle quelle, elle déplaçait la séance à l'ancienne heure.
+				const typed = toStart !== (String(shown) || HEURE_PROPOSEE);
+				return refuse('timeChanged', { ...fields, toStart: typed ? toStart : null }, 409);
 			}
 			const settings = await readSettings(tx);
 			// Deux dates civiles au même format se comparent comme des chaînes.
