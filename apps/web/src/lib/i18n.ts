@@ -119,8 +119,10 @@ interface Dictionnaire {
 	/** Sous « Un seul cours », sur un iPhone : chaque nom de cours ouvre son flux `webcal:`. */
 	readonly subscribeOneCourseText: string;
 	/**
-	 * Sur Android : chaque nom de cours ouvre Google Agenda, et, à côté, sa page donne l'issue si
-	 * Google ne propose rien sur le téléphone (relecture du lot 4). Le lien porte le mot `coursePage`.
+	 * Sur Android : chaque nom de cours ouvre Google Agenda, et, juste dessous, sa page donne l'issue
+	 * si Google ne propose rien sur le téléphone (relecture du lot 4). Le lien porte le mot
+	 * `coursePage` et prend toute la largeur, sous le nom : la phrase disait « à côté » (relecture du
+	 * lot 5).
 	 */
 	readonly subscribeOneCourseGoogle: string;
 	/** Ailleurs : chaque nom de cours mène à sa page, qui propose le choix complet. */
@@ -345,7 +347,7 @@ const fr: Dictionnaire = {
 	subscribeOneCourseText:
 		'Vous pouvez aussi n’ajouter qu’un cours. Touchez son nom : il s’ajoute seul et se met à jour comme le reste. Son adresse en https figure sur la page du cours.',
 	subscribeOneCourseGoogle:
-		'Vous pouvez aussi n’ajouter qu’un cours. Touchez son nom : Google Agenda s’ouvre pour ce cours seul, comme avec le bouton ci-dessus. Si Google Agenda ne propose rien sur votre téléphone, touchez Page du cours, à côté de son nom : cette page donne l’adresse du cours et la marche à suivre sur un ordinateur.',
+		'Vous pouvez aussi n’ajouter qu’un cours. Touchez son nom : Google Agenda s’ouvre pour ce cours seul, comme avec le bouton ci-dessus. Si Google Agenda ne propose rien sur votre téléphone, touchez Page du cours, juste sous son nom : cette page donne l’adresse du cours et la marche à suivre sur un ordinateur.',
 	subscribeOneCourseChoice:
 		'Vous pouvez aussi n’ajouter qu’un cours. Touchez son nom : sa page propose les mêmes choix, pour ce cours seul.',
 	subscribeWhole: 'S’abonner à tout le programme',
@@ -503,7 +505,7 @@ const de: Dictionnaire = {
 	subscribeOneCourseText:
 		'Sie können auch nur einen Kurs hinzufügen. Tippen Sie auf seinen Namen: Er kommt allein in den Kalender und aktualisiert sich wie der Rest. Seine https-Adresse steht auf der Seite des Kurses.',
 	subscribeOneCourseGoogle:
-		'Sie können auch nur einen Kurs hinzufügen. Tippen Sie auf seinen Namen: Google Kalender öffnet sich für diesen Kurs allein, wie mit der Schaltfläche oben. Wenn Google Kalender auf Ihrem Telefon nichts anbietet, tippen Sie daneben auf Seite des Kurses: Dort stehen die Adresse des Kurses und die Schritte am Computer.',
+		'Sie können auch nur einen Kurs hinzufügen. Tippen Sie auf seinen Namen: Google Kalender öffnet sich für diesen Kurs allein, wie mit der Schaltfläche oben. Wenn Google Kalender auf Ihrem Telefon nichts anbietet, tippen Sie direkt unter seinem Namen auf Seite des Kurses: Dort stehen die Adresse des Kurses und die Schritte am Computer.',
 	subscribeOneCourseChoice:
 		'Sie können auch nur einen Kurs hinzufügen. Tippen Sie auf seinen Namen: Seine Seite bietet dieselben Möglichkeiten, nur für diesen Kurs.',
 	subscribeWhole: 'Das ganze Programm abonnieren',
@@ -657,7 +659,7 @@ const it: Dictionnaire = {
 	subscribeOneCourseText:
 		'Puoi anche aggiungere un solo corso. Tocca il suo nome: entra da solo nel calendario e si aggiorna come il resto. Il suo indirizzo https si trova sulla pagina del corso.',
 	subscribeOneCourseGoogle:
-		'Puoi anche aggiungere un solo corso. Tocca il suo nome: Google Calendar si apre solo per quel corso, come con il pulsante qui sopra. Se Google Calendar non propone nulla sul telefono, tocca Pagina del corso, accanto al suo nome: lì trovi l’indirizzo del corso e i passaggi da fare su un computer.',
+		'Puoi anche aggiungere un solo corso. Tocca il suo nome: Google Calendar si apre solo per quel corso, come con il pulsante qui sopra. Se Google Calendar non propone nulla sul telefono, tocca Pagina del corso, subito sotto il suo nome: lì trovi l’indirizzo del corso e i passaggi da fare su un computer.',
 	subscribeOneCourseChoice:
 		'Puoi anche aggiungere un solo corso. Tocca il suo nome: la sua pagina offre le stesse possibilità, solo per quel corso.',
 	subscribeWhole: 'Iscriviti a tutto il programma',
@@ -812,7 +814,7 @@ const en: Dictionnaire = {
 	subscribeOneCourseText:
 		'You can also add just one course. Tap its name: it is added on its own and updates like the rest. Its https address is on the course page.',
 	subscribeOneCourseGoogle:
-		'You can also add just one course. Tap its name: Google Calendar opens for that course alone, as with the button above. If Google Calendar offers nothing on your phone, tap Course page, next to its name: that page gives the course’s address and the steps to follow on a computer.',
+		'You can also add just one course. Tap its name: Google Calendar opens for that course alone, as with the button above. If Google Calendar offers nothing on your phone, tap Course page, just below its name: that page gives the course’s address and the steps to follow on a computer.',
 	subscribeOneCourseChoice:
 		'You can also add just one course. Tap its name: its page offers the same options, for that course alone.',
 	subscribeWhole: 'Subscribe to the whole programme',
@@ -988,7 +990,7 @@ const ar: Dictionnaire = {
 	subscribeOneCourseText:
 		'يمكنك أيضًا إضافة درس واحد فقط. اضغط على اسمه: يُضاف وحده ويُحدَّث مثل الباقي. وعنوانه بصيغة https موجود في صفحة الدرس.',
 	subscribeOneCourseGoogle:
-		'يمكنك أيضًا إضافة درس واحد فقط. اضغط على اسمه: يُفتح تقويم Google لهذا الدرس وحده، كما مع الزر أعلاه. إن لم يقترح تقويم Google شيئًا على هاتفك، فاضغط على صفحة الدرس بجانب اسمه: فيها عنوان الدرس والخطوات التي تتبعها على الحاسوب.',
+		'يمكنك أيضًا إضافة درس واحد فقط. اضغط على اسمه: يُفتح تقويم Google لهذا الدرس وحده، كما مع الزر أعلاه. إن لم يقترح تقويم Google شيئًا على هاتفك، فاضغط على صفحة الدرس تحت اسمه مباشرةً: فيها عنوان الدرس والخطوات التي تتبعها على الحاسوب.',
 	subscribeOneCourseChoice:
 		'يمكنك أيضًا إضافة درس واحد فقط. اضغط على اسمه: تعرض صفحته الخيارات نفسها لهذا الدرس وحده.',
 	subscribeWhole: 'الاشتراك في البرنامج كاملًا',

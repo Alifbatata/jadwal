@@ -952,13 +952,17 @@ const OU_COPIEZ: Record<Langue, string> = {
 	en: 'Or copy this address into your calendar app:',
 	ar: 'أو انسخ هذا العنوان والصقه في تطبيق التقويم:'
 };
-/** « Un seul cours », sur Android : le nom ouvre Google, et la page du cours est l'issue si rien ne vient. */
+/**
+ * « Un seul cours », sur Android : le nom ouvre Google, et la page du cours est l'issue si rien ne
+ * vient. Son lien s'affiche juste sous le nom, sur toute la largeur : la phrase disait « à côté »
+ * (relecture du lot 5).
+ */
 const UN_SEUL_COURS_ANDROID: Record<Langue, string> = {
-	fr: 'Vous pouvez aussi n’ajouter qu’un cours. Touchez son nom : Google Agenda s’ouvre pour ce cours seul, comme avec le bouton ci-dessus. Si Google Agenda ne propose rien sur votre téléphone, touchez Page du cours, à côté de son nom : cette page donne l’adresse du cours et la marche à suivre sur un ordinateur.',
-	de: 'Sie können auch nur einen Kurs hinzufügen. Tippen Sie auf seinen Namen: Google Kalender öffnet sich für diesen Kurs allein, wie mit der Schaltfläche oben. Wenn Google Kalender auf Ihrem Telefon nichts anbietet, tippen Sie daneben auf Seite des Kurses: Dort stehen die Adresse des Kurses und die Schritte am Computer.',
-	it: 'Puoi anche aggiungere un solo corso. Tocca il suo nome: Google Calendar si apre solo per quel corso, come con il pulsante qui sopra. Se Google Calendar non propone nulla sul telefono, tocca Pagina del corso, accanto al suo nome: lì trovi l’indirizzo del corso e i passaggi da fare su un computer.',
-	en: 'You can also add just one course. Tap its name: Google Calendar opens for that course alone, as with the button above. If Google Calendar offers nothing on your phone, tap Course page, next to its name: that page gives the course’s address and the steps to follow on a computer.',
-	ar: 'يمكنك أيضًا إضافة درس واحد فقط. اضغط على اسمه: يُفتح تقويم Google لهذا الدرس وحده، كما مع الزر أعلاه. إن لم يقترح تقويم Google شيئًا على هاتفك، فاضغط على صفحة الدرس بجانب اسمه: فيها عنوان الدرس والخطوات التي تتبعها على الحاسوب.'
+	fr: 'Vous pouvez aussi n’ajouter qu’un cours. Touchez son nom : Google Agenda s’ouvre pour ce cours seul, comme avec le bouton ci-dessus. Si Google Agenda ne propose rien sur votre téléphone, touchez Page du cours, juste sous son nom : cette page donne l’adresse du cours et la marche à suivre sur un ordinateur.',
+	de: 'Sie können auch nur einen Kurs hinzufügen. Tippen Sie auf seinen Namen: Google Kalender öffnet sich für diesen Kurs allein, wie mit der Schaltfläche oben. Wenn Google Kalender auf Ihrem Telefon nichts anbietet, tippen Sie direkt unter seinem Namen auf Seite des Kurses: Dort stehen die Adresse des Kurses und die Schritte am Computer.',
+	it: 'Puoi anche aggiungere un solo corso. Tocca il suo nome: Google Calendar si apre solo per quel corso, come con il pulsante qui sopra. Se Google Calendar non propone nulla sul telefono, tocca Pagina del corso, subito sotto il suo nome: lì trovi l’indirizzo del corso e i passaggi da fare su un computer.',
+	en: 'You can also add just one course. Tap its name: Google Calendar opens for that course alone, as with the button above. If Google Calendar offers nothing on your phone, tap Course page, just below its name: that page gives the course’s address and the steps to follow on a computer.',
+	ar: 'يمكنك أيضًا إضافة درس واحد فقط. اضغط على اسمه: يُفتح تقويم Google لهذا الدرس وحده، كما مع الزر أعلاه. إن لم يقترح تقويم Google شيئًا على هاتفك، فاضغط على صفحة الدرس تحت اسمه مباشرةً: فيها عنوان الدرس والخطوات التي تتبعها على الحاسوب.'
 };
 /** Le nom du lien vers la page d'un cours, celui de la vue « Tous les cours ». */
 const PAGE_DU_COURS: Record<Langue, string> = {
@@ -1137,7 +1141,7 @@ describe('chaque page d’abonnement ne dit que ce qui est vrai pour elle', () =
 					attrs['target']
 				];
 			});
-			// Le nom ouvre Google, comme avant ; à côté, la page du cours, à son bloc d'abonnement.
+			// Le nom ouvre Google, comme avant ; dessous, la page du cours, à son bloc d'abonnement.
 			expect(liens).toEqual([
 				[google(fluxCoursWebcal(langue, COURS.quotidien)), TITRES.quotidien, '_blank'],
 				[`${base(langue)}/cours/${COURS.quotidien}#agenda`, PAGE_DU_COURS[langue], undefined]
