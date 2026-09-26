@@ -2,16 +2,17 @@
 	import { onMount, untrack } from 'svelte';
 	// Le formulaire de cours, partagé par la création et la modification, dans la langue de l'espace.
 	//
-	// Le résumé en haut reprend tout ce qui sera publié et signale ce qui manque (retour B4). Il se met
-	// à jour à mesure de la saisie quand JavaScript est là. Sans JavaScript, le serveur le calcule par
-	// la même fonction : il montre l'état enregistré, ou, après un envoi refusé, ce que la personne
-	// vient d'envoyer. Le formulaire s'envoie de toute façon : le résumé est un confort, jamais une
-	// condition (règle du dépôt).
+	// Le résumé en haut reprend tout ce qui sera publié, signale ce qui manque et marque « à
+	// corriger » ce que le serveur refuserait (retour B4). Il se met à jour à mesure de la saisie
+	// quand JavaScript est là. Sans JavaScript, le serveur le calcule par la même fonction : il montre
+	// l'état enregistré, ou, après un envoi refusé, ce que la personne vient d'envoyer. Le formulaire
+	// s'envoie de toute façon : le résumé est un confort, jamais une condition (règle du dépôt).
 	import {
 		MAX_DURATION_MINUTES,
 		MAX_OFFSET_MINUTES,
 		MIN_DURATION_MINUTES,
-		MIN_OFFSET_MINUTES
+		MIN_OFFSET_MINUTES,
+		type IsoDate
 	} from '@jadwal/core';
 	import {
 		summarise,
@@ -20,7 +21,6 @@
 		type CourseFormError,
 		type CourseFormValues
 	} from './course-form.js';
-	import type { IsoDate } from '@jadwal/core';
 	import { audienceLabels, joinList, languageLabel, prayerLabel } from './format.js';
 	import { numericDate, t, type Langue } from './i18n.js';
 	import { courseFormTexts } from './i18n/course-form.js';
@@ -87,11 +87,7 @@
 
 	/** La phrase d'une erreur. Celles des dates recopient les dates en cause, en JJ.MM.AAAA. */
 	function message(error: CourseFormError): string {
-		const dates = (list: readonly IsoDate[]) =>
-			joinList(
-				list.map((date) => numericDate(date)),
-				language
-			);
+		const dates = (list: readonly IsoDate[]) => joinList(list.map(numericDate), language);
 		if (error === 'badDates') return text.badDates(joinList(badDates, language), badDates.length);
 		if (error === 'datesBeforeStart') {
 			const earliest = datesBefore[0];
