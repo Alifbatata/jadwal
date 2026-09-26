@@ -49,19 +49,38 @@ remontent donc jamais jusqu'à lui.
 
 - **Annuler** demande une confirmation qui rappelle, en toutes lettres, que le cours continue les
   autres semaines. C'est la confusion la plus probable, et elle se corrige par une phrase.
-- **Déplacer** propose les six jours qui suivent et une heure. Au-delà, c'est un changement de
-  rythme, pas un déplacement.
+- **Déplacer** propose toute date à partir d'aujourd'hui, plus tôt ou plus tard que la date prévue,
+  et une heure. Un déplacement qui ne change ni la date ni l'heure est refusé.
 - **Rétablir** défait l'un comme l'autre.
 - Après une annulation ou un déplacement, **le message prêt à coller s'affiche**. C'est ce que les
   responsables font déjà à la main, dans WhatsApp.
 
+> **Révisé le 2026-09-26, à l'étape 18 (retour A2).** Déplacer proposait les six jours qui suivent
+> la séance, et un changement plus lointain passait pour un changement de rythme. Les essais de
+> l'étape 18 ont montré le défaut : une séance ne pouvait être ni avancée, ni reportée de deux
+> semaines, et un changement de rythme n'est pas fait pour un seul jour. Le champ « Nouvelle date »
+> accepte désormais toute date à partir d'aujourd'hui, dans le fuseau de l'organisation, sans limite
+> vers l'avant. C'est l'action qui refuse une date passée, et non le seul champ du navigateur, qu'un
+> formulaire envoyé à la main contourne.
+>
+> Le champ s'ouvre sur la date et l'heure prévues, pour que changer seulement l'heure reste un geste
+> simple. En contrepartie, l'action refuse un déplacement qui ne change ni la date ni l'heure, avec
+> une phrase qui dit de choisir une autre date ou une autre heure. L'accepter écrivait une exception
+> vers la séance elle-même : la séance s'affichait deux fois le même jour, et le message prêt à
+> coller annonçait « déplacé du mercredi 30.09.2026 au mercredi 30.09.2026 ». L'heure prévue est
+> celle que calcule `@jadwal/core` pour ce jour-là, et non une valeur renvoyée par le formulaire. Le
+> même jour à une autre heure reste un déplacement, comme le même jour pour une séance affichée sans
+> heure, qui en reçoit une.
+
 ### Le JavaScript améliore, il n'est jamais nécessaire
 
 Toutes les écritures passent par des `form` actions. Sans JavaScript : les onglets de langue sont
-tous dépliés, les blocs « annuler ou déplacer » sont tous ouverts, le résumé affiche l'état
-enregistré au lieu de suivre la frappe. Rien ne manque. Les tests postent des formulaires
-`application/x-www-form-urlencoded` avec `accept: text/html`, ce qui est exactement le chemin d'un
-navigateur sans JavaScript.
+tous dépliés, le résumé affiche l'état enregistré au lieu de suivre la frappe. Rien ne manque. Les
+options d'une séance (« Annuler ou déplacer ») sont un élément `details` natif : fermées par
+défaut, elles s'ouvrent et se ferment avec ou sans JavaScript, et n'ouvrent que leur carte
+(révision de l'étape 18, retour A1 ; avant, elles étaient toutes ouvertes au chargement). Les tests
+postent des formulaires `application/x-www-form-urlencoded` avec `accept: text/html`, ce qui est
+exactement le chemin d'un navigateur sans JavaScript.
 
 **Une seule exception**, et elle est bornée : l'écran de passkey du super-admin. WebAuthn est une
 API du navigateur ; il n'existe pas de formulaire qui crée une passkey. L'écran le dit au lieu de
@@ -103,4 +122,6 @@ pré-traduction validée par le responsable est dans la feuille de route, pas da
 ## Statut
 
 Accepté, 2026-09-20. Étape 4 de la feuille de route (espace des responsables). Les numéros 0022 et
-0023 restent libres.
+0023 restent libres. Révisé le 2026-09-26 (étape 18) : une séance se déplace à toute date à partir
+d'aujourd'hui, un déplacement qui ne change rien est refusé, et les options d'une séance sont
+fermées par défaut.
