@@ -4,6 +4,9 @@
 // disparaissait : la base refusait, et l'écran rendait une erreur 500. Ce fichier refait le geste
 // d'une personne responsable, sans JavaScript, sur un vrai serveur et une vraie base : la salle
 // disparaît, le cours reste dans son organisation, sans salle, et la page publique le montre encore.
+//
+// Depuis l'étape 18, l'écran dit avant ce que la suppression fera aux cours qui occupent la salle, et
+// demande de confirmer : un premier envoi ne supprime rien.
 
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -19,12 +22,15 @@ const SLUG = 'salles-occupees';
 const EMAIL = 'responsable-salles@example.test';
 const SALLE = 'Salle du fond';
 const COURS = 'Lecture du mardi';
+/** Un second cours dans la même salle, en brouillon : il perd sa salle lui aussi. */
+const SECOND = 'Atelier du jeudi';
 
 let ownerHandle: DatabaseHandle;
 let cookie = '';
 let organizationId: string;
 let roomId: string;
 let courseId: string;
+let secondId: string;
 
 function rows<T>(result: unknown): T[] {
 	if (Array.isArray(result)) return result as T[];
@@ -73,6 +79,7 @@ beforeAll(async () => {
 	organizationId = newId();
 	roomId = newId();
 	courseId = newId();
+	secondId = newId();
 	const userId = newId();
 	await maintenance(async (tx) => {
 		await tx.execute(sql`
@@ -107,6 +114,18 @@ beforeAll(async () => {
 		await tx.execute(sql`
 			insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
 			values (${newId()}, ${organizationId}, ${courseId}, 'fr', ${COURS})
+		`);
+		await tx.execute(sql`
+			insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",
+				"room_id", "source_language", "recurrence_kind", "recurrence_weekday",
+				"recurrence_interval", "recurrence_anchor_date", "timing_kind", "timing_start",
+				"timing_end", "starts_on")
+			values (${secondId}, ${organizationId}, 'draft', 'open', array['fr'], ${roomId}, 'fr',
+				'weekly', array[4]::smallint[], 1, '2026-09-10', 'fixed', '18:00', '19:00', '2026-09-10')
+		`);
+		await tx.execute(sql`
+			insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
+			values (${newId()}, ${organizationId}, ${secondId}, 'fr', ${SECOND})
 		`);
 		await tx.execute(sql`delete from "rate_limit"`);
 	});
@@ -143,24 +162,46 @@ afterAll(async () => {
 });
 
 describe('supprimer une salle qu’un cours occupe, depuis les réglages', () => {
-	it('removes the room, and the course stays in its organisation, without a room', async () => {
-		expect(await page('/reglages', true)).toContain(SALLE);
+	it('says first what deleting the room does, and deletes nothing until confirmed', async () => {
+		const ecran = await page('/reglages', true);
+		expect(ecran).toContain(SALLE);
+		const phrase =
+			'2 cours utilisent cette salle ; ils n’auront plus de salle si vous la supprimez.';
+		expect(ecran).toContain(phrase);
+
+		const demande = await postForm('/reglages?/supprimerSalle', { roomId });
+		expect(demande.status).toBe(409);
+		const html = await demande.text();
+		expect(html).toMatch(/role="alert"/);
+		expect(html).toContain(phrase);
+		expect(html).toMatch(/<input\b[^>]*name="confirm" value="yes"/);
+		const salles = await maintenance(async (tx) =>
+			rows(await tx.execute(sql`select 1 from "room" where "id" = ${roomId}`))
+		);
+		expect(salles).toHaveLength(1);
+	});
+
+	it('removes the room once confirmed, and the courses stay in their organisation, without a room', async () => {
 		const avant = await page(`/m/${SLUG}`, false);
 		expect(avant).toContain(COURS);
 		expect(avant).toContain(SALLE);
 
-		const response = await postForm('/reglages?/supprimerSalle', { roomId });
+		const response = await postForm('/reglages?/supprimerSalle', { roomId, confirm: 'yes' });
 		expect(response.status).toBe(200);
 		expect(await page('/reglages', true)).not.toContain(SALLE);
 
-		const [course] = await maintenance(async (tx) =>
+		const cours = await maintenance(async (tx) =>
 			rows<{ organization_id: string; room_id: string | null }>(
 				await tx.execute(sql`
-					select "organization_id", "room_id" from "course" where "id" = ${courseId}
+					select "organization_id", "room_id" from "course"
+					where "id" in (${courseId}, ${secondId})
 				`)
 			)
 		);
-		expect(course).toEqual({ organization_id: organizationId, room_id: null });
+		expect(cours).toEqual([
+			{ organization_id: organizationId, room_id: null },
+			{ organization_id: organizationId, room_id: null }
+		]);
 		const rooms = await maintenance(async (tx) =>
 			rows(await tx.execute(sql`select 1 from "room" where "id" = ${roomId}`))
 		);

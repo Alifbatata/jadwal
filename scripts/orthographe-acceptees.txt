@@ -122,6 +122,8 @@ apps/web/src/lib/i18n/friday.ts | AR_HOMOPHONES_REPLACE | الخطبة
 apps/web/src/lib/i18n/friday.ts | AR_DIACRITICS_REPLACE | يوسف
 apps/web/src/lib/i18n/share.ts | AR_DIACRITICS_REPLACE | برنامج
 apps/web/src/lib/i18n/share.ts | AR_DIACRITICS_REPLACE | البرنامج
+# L'écran Réglages : البرنامج sans voyelles, comme ailleurs (famille 6).
+apps/web/src/lib/i18n/settings.ts | AR_DIACRITICS_REPLACE | البرنامج
 
 # apps/web/src/routes/+page.svelte
 apps/web/src/routes/+page.svelte | ACCORD_R_PERS_VERBE | couvrent

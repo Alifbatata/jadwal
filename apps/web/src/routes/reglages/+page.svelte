@@ -1,53 +1,88 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { LANGUAGE_LABELS } from '$lib/format.js';
+	import { resolve } from '$app/paths';
+	import { languageLabel } from '$lib/format.js';
+	import { settingsTexts } from '$lib/i18n/settings.js';
 	import { accentValide, contraste, texteSur, variablesAccent } from '$lib/couleur.js';
 
 	let { data, form } = $props();
+	const text = $derived(settingsTexts[data.language]);
 	const organisation = $derived(data.organisation);
 
 	/**
 	 * La couleur en cours de saisie. Elle part de celle qui est enregistrée : sans JavaScript, le
-	 * champ garde cette valeur et l'aperçu montre la couleur actuelle — ce qui est exact, puisque
+	 * champ garde cette valeur et l'aperçu montre la couleur actuelle, ce qui est exact, puisque
 	 * rien n'a encore changé.
 	 */
 	let couleur = $state(untrack(() => accentValide(data.organisation.accent_color)));
 	const apercu = $derived(variablesAccent(couleur));
 	const rapport = $derived(contraste(couleur, texteSur(couleur)));
+
+	/** Le message d'une erreur, dans la langue de l'écran. */
+	const erreur = $derived(form && 'error' in form && form.error ? text.errors[form.error] : null);
+	/** La salle occupée dont la suppression attend une confirmation. */
+	const aConfirmer = $derived(form && 'roomInUse' in form ? form.roomInUse : null);
 </script>
 
-<svelte:head><title>Réglages | {organisation.name}</title></svelte:head>
+<svelte:head><title>{text.title} | {organisation.name}</title></svelte:head>
 
-<h1>Réglages</h1>
+<h1>{text.title}</h1>
+<p>{text.intro}</p>
 
-{#if form?.erreur}<p class="erreur" role="alert">{form.erreur}</p>{/if}
-{#if form?.enregistre}<p class="succes" role="status">Réglages enregistrés.</p>{/if}
-{#if form?.moduleChange}<p class="succes" role="status">Module mis à jour.</p>{/if}
+{#if erreur}<p class="erreur" role="alert">{erreur}</p>{/if}
+{#if form && 'enregistre' in form}<p class="succes" role="status">{text.saved}</p>{/if}
+{#if form && 'moduleChange' in form}
+	<p class="succes" role="status">{form.allume ? text.turnedOn : text.turnedOff}</p>
+{/if}
+{#if form && 'salleAjoutee' in form}<p class="succes" role="status">{text.roomAdded}</p>{/if}
+{#if form && 'salleSupprimee' in form}<p class="succes" role="status">{text.roomDeleted}</p>{/if}
 
 <form method="post" action="?/enregistrer" class="colonne">
-	<label for="name">Nom de l’organisation</label>
-	<input id="name" name="name" type="text" value={organisation.name} maxlength="120" required />
+	<label for="name">{text.nameLabel}</label>
+	<input
+		id="name"
+		name="name"
+		type="text"
+		value={organisation.name}
+		maxlength="120"
+		required
+		dir="auto"
+		aria-describedby="name-aide"
+	/>
+	<p id="name-aide" class="aide">{text.nameHelp}</p>
 
-	<label for="timeZone">Fuseau horaire</label>
-	<input id="timeZone" name="timeZone" type="text" value={organisation.time_zone} required />
-	<p class="aide">Nom IANA, par exemple Europe/Zurich.</p>
+	<label for="timeZone">{text.timeZoneLabel}</label>
+	<input
+		id="timeZone"
+		name="timeZone"
+		type="text"
+		value={organisation.time_zone}
+		required
+		autocomplete="off"
+		spellcheck="false"
+		dir="ltr"
+		aria-describedby="timeZone-aide"
+	/>
+	<p id="timeZone-aide" class="aide">{text.timeZoneHelp}</p>
 
-	<label for="accentColor">Couleur d’accent</label>
-	<input id="accentColor" name="accentColor" type="color" bind:value={couleur} />
+	<label for="accentColor">{text.colourLabel}</label>
+	<input
+		id="accentColor"
+		name="accentColor"
+		type="color"
+		bind:value={couleur}
+		aria-describedby="accentColor-aide"
+	/>
 	<!-- L'aperçu, et la raison pour laquelle aucune couleur n'est refusée : elle ne sert que de
 	     fond, et le texte posé dessus est choisi noir ou blanc selon celui des deux qui contraste
 	     le mieux. Le pire cas possible reste au-dessus de 4,5:1, seuil AA (ADR 0031). -->
 	<p class="apercu" style={apercu}>
-		<span class="pastille">Exemple de bouton</span>
-		Contraste du texte sur cette couleur : {rapport.toFixed(2)}:1
+		<span class="pastille">{text.colourPreview}</span>
+		{text.colourContrast(rapport)}
 	</p>
-	<p class="aide">
-		Elle sert de fond : sur vos pages publiques, dans le widget et ici. Le texte posé dessus est
-		calculé pour rester lisible, donc aucune couleur n’est refusée. Elle n’est jamais la seule
-		indication de quoi que ce soit : une séance annulée le reste sans elle.
-	</p>
+	<p id="accentColor-aide" class="aide">{text.colourHelp}</p>
 
-	<label for="greeting">Formule d’accueil des messages</label>
+	<label for="greeting">{text.greetingLabel}</label>
 	<input
 		id="greeting"
 		name="greeting"
@@ -55,11 +90,14 @@
 		value={organisation.greeting}
 		maxlength="60"
 		required
+		dir="auto"
+		aria-describedby="greeting-aide"
 	/>
-	<p class="aide">Elle ouvre chaque message prêt à coller.</p>
+	<p id="greeting-aide" class="aide">{text.greetingHelp}</p>
 
-	<fieldset class="cases">
-		<legend>Langues activées</legend>
+	<fieldset class="cases" aria-describedby="langues-aide">
+		<legend>{text.languagesLegend}</legend>
+		<p id="langues-aide" class="aide">{text.languagesHelp}</p>
 		{#each data.languesPossibles as langue (langue)}
 			<label class="case">
 				<input
@@ -68,71 +106,98 @@
 					value={langue}
 					checked={organisation.enabled_language.includes(langue)}
 				/>
-				{LANGUAGE_LABELS[langue] ?? langue}
+				{languageLabel(langue, data.language)}
 			</label>
 		{/each}
 	</fieldset>
 
-	<label for="defaultLanguage">Langue par défaut</label>
-	<select id="defaultLanguage" name="defaultLanguage">
+	<label for="defaultLanguage">{text.defaultLanguageLabel}</label>
+	<select id="defaultLanguage" name="defaultLanguage" aria-describedby="defaultLanguage-aide">
 		{#each data.languesPossibles as langue (langue)}
 			<option value={langue} selected={langue === organisation.default_language}>
-				{LANGUAGE_LABELS[langue] ?? langue}
+				{languageLabel(langue, data.language)}
 			</option>
 		{/each}
 	</select>
+	<p id="defaultLanguage-aide" class="aide">{text.defaultLanguageHelp}</p>
 
-	<button type="submit">Enregistrer</button>
+	<button type="submit">{text.save}</button>
 </form>
 
 <section aria-labelledby="salles-titre">
-	<h2 id="salles-titre">Salles</h2>
-	{#if data.salles.length === 0}
-		<p class="aide">Aucune salle. Un cours peut s’en passer.</p>
+	<h2 id="salles-titre">{text.roomsTitle}</h2>
+	<p class="aide">{text.roomsIntro}</p>
+
+	<!-- Une salle que des cours occupent ne part pas au premier envoi : l'écran dit ce que la
+	     suppression leur fera, et demande de confirmer. « Garder » est un lien, qui ramène à l'écran
+	     sans rien envoyer. -->
+	{#if aConfirmer}
+		<div id="confirmer-salle" class="confirmer" role="alert">
+			<p>{text.confirmIntro} <strong><bdi>{aConfirmer.name}</bdi></strong></p>
+			{#if aConfirmer.courses > 0}<p>{text.roomCourses(aConfirmer.courses)}</p>{/if}
+			{#if aConfirmer.fridays > 0}<p>{text.roomFridays(aConfirmer.fridays)}</p>{/if}
+			<p>{text.nothingElse}</p>
+			<div class="ligne">
+				<form method="post" action="?/supprimerSalle">
+					<input type="hidden" name="roomId" value={aConfirmer.id} />
+					<input type="hidden" name="confirm" value="yes" />
+					<button type="submit">{text.confirmDelete}</button>
+				</form>
+				<a href={resolve('/reglages')}>{text.keepRoom}</a>
+			</div>
+		</div>
 	{/if}
-	<ul>
+
+	{#if data.salles.length === 0}
+		<p class="aide">{text.roomsNone}</p>
+	{/if}
+	<ul id="salles">
 		{#each data.salles as salle (salle.id)}
 			<li>
-				{salle.name}
+				<span class="salle">
+					<bdi>{salle.name}</bdi>
+					{#if salle.courses > 0}<span class="aide">{text.roomCourses(salle.courses)}</span>{/if}
+					{#if salle.fridays > 0}<span class="aide">{text.roomFridays(salle.fridays)}</span>{/if}
+				</span>
 				<form method="post" action="?/supprimerSalle">
 					<input type="hidden" name="roomId" value={salle.id} />
-					<button type="submit">Supprimer</button>
+					<button type="submit">{text.deleteRoom}</button>
 				</form>
 			</li>
 		{/each}
 	</ul>
 	<form method="post" action="?/ajouterSalle" class="ligne">
-		<label for="salle">Nouvelle salle</label>
-		<input id="salle" name="name" type="text" maxlength="80" required />
-		<button type="submit">Ajouter</button>
+		<label for="salle">{text.newRoomLabel}</label>
+		<input
+			id="salle"
+			name="name"
+			type="text"
+			maxlength="80"
+			required
+			dir="auto"
+			aria-describedby="salle-aide"
+		/>
+		<button type="submit">{text.addRoom}</button>
+		<p id="salle-aide" class="aide">{text.newRoomHelp}</p>
 	</form>
 </section>
 
-<!-- Le seul endroit qui propose le module : pas de bannière, pas de suggestion ailleurs. Une
-     organisation à qui cela ne parle pas n'a rien à refuser (ADR 0042). -->
+<!-- Le seul endroit qui propose les heures de prière : pas de bannière, pas de suggestion ailleurs.
+     Une organisation à qui cela ne parle pas n'a rien à refuser (ADR 0042). -->
 <section aria-labelledby="module-titre">
-	<h2 id="module-titre">Heures de prière</h2>
+	<h2 id="module-titre">{text.prayerTitle}</h2>
 	{#if organisation.prayer_module}
-		<p>
-			Le module est <strong>allumé</strong>. Votre espace affiche les heures de prière et la prière
-			du vendredi, un cours peut être réglé sur une prière, et votre page publique les montre.
-		</p>
-		<p class="discret">
-			L'éteindre n'efface rien : vos horaires, vos imports et vos sessions du vendredi restent, et
-			tout revient si vous le rallumez.
-		</p>
+		<p>{text.prayerOn}</p>
+		<p class="discret">{text.prayerOnKeep}</p>
 		<form method="post" action="?/modulePrieres">
 			<input type="hidden" name="allume" value="non" />
-			<button type="submit">Éteindre le module</button>
+			<button type="submit">{text.turnOff}</button>
 		</form>
 	{:else}
-		<p>
-			Le module est <strong>éteint</strong>. Allumez-le si votre organisation publie des heures de
-			prière, une iqama ou une prière du vendredi, ou si un cours commence après une prière.
-		</p>
+		<p>{text.prayerOff}</p>
 		<form method="post" action="?/modulePrieres">
 			<input type="hidden" name="allume" value="oui" />
-			<button type="submit">Allumer le module</button>
+			<button type="submit">{text.turnOn}</button>
 		</form>
 	{/if}
 </section>
@@ -147,7 +212,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.35rem;
-		max-width: 28rem;
+		max-width: 32rem;
 	}
 	.ligne {
 		display: flex;
@@ -166,8 +231,23 @@
 		border-bottom: 1px solid #eee;
 		padding: 0.35rem 0;
 	}
+	.salle {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+	}
+	/* Une propriété logique : en arabe, le bouton va à gauche, au bout de la ligne. */
 	li form {
-		margin-left: auto;
+		margin-inline-start: auto;
+	}
+	.confirmer {
+		border: 2px solid #b91c1c;
+		border-radius: 0.5rem;
+		padding: 0.5rem 0.75rem;
+		max-width: 36rem;
+	}
+	.confirmer p {
+		margin: 0.35rem 0;
 	}
 	fieldset {
 		border: 1px solid #ddd;
@@ -175,6 +255,9 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.75rem;
+	}
+	fieldset .aide {
+		flex-basis: 100%;
 	}
 	legend {
 		font-weight: 600;
@@ -227,6 +310,9 @@
 		font-size: 0.85rem;
 		color: #555;
 		margin: 0;
+	}
+	.ligne .aide {
+		flex-basis: 100%;
 	}
 	.erreur {
 		color: #b91c1c;

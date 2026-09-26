@@ -3,6 +3,9 @@
 // Réservé aux responsables (`org_admin`). Un `editor` n'y entre pas : l'écran le renvoie à
 // l'accueil, et depuis la migration 0059 la base refuse aussi ses écritures sur l'organisation et
 // les salles (ADR 0046). Le test le vérifie route par route.
+//
+// Les actions rendent le nom d'une erreur, jamais sa phrase : la page l'écrit dans la langue de
+// l'écran (`$lib/i18n/settings.ts`, étape 18).
 
 import { fail } from '@sveltejs/kit';
 import { newId, sql } from '@jadwal/db';
@@ -13,29 +16,61 @@ import { LANGUES } from '$lib/i18n.js';
 import { record } from '$lib/server/audit.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { mustAdminister } from '$lib/server/guard.js';
-import { readRooms, readSettings } from '$lib/server/programme.js';
+import { readSettings } from '$lib/server/programme.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
 const COULEUR = /^#[0-9a-fA-F]{6}$/;
 
-/** Ce que dit l'écran quand le module ne peut pas s'éteindre, sans chiffres à accorder. */
-const RETENU =
-	'Des cours sont réglés sur une heure de prière, ou une prière du vendredi existe. ' +
-	'Changez leur horaire, ou supprimez-les, avant d’éteindre le module.';
+type Transaction = Parameters<Parameters<typeof withSessionOrg>[1]>[0];
 
-/** Ce qui retient le module allumé, en une requête, ou `null` s'il peut s'éteindre (ADR 0042). */
-async function compterCeQuiRetient(
-	tx: Parameters<Parameters<typeof withSessionOrg>[1]>[0]
-): Promise<string | null> {
-	const resultat = await tx.execute(sql`
-		select count(*) as "combien" from "course"
-		where "timing_kind" = 'prayer' or "kind" = 'jumua'
-	`);
-	const brut: unknown = Array.isArray(resultat)
-		? resultat
-		: ((resultat as { rows?: unknown[] }).rows ?? []);
-	const lignes = brut as { combien: number | string }[];
-	return Number(lignes[0]?.combien ?? 0) > 0 ? RETENU : null;
+function rows<T>(result: unknown): T[] {
+	if (Array.isArray(result)) return result as T[];
+	const inner = (result as { rows?: unknown[] }).rows;
+	return Array.isArray(inner) ? (inner as T[]) : [];
+}
+
+/** Ce qui retient le module allumé, en une requête (ADR 0042). */
+async function somethingHoldsThePrayerModule(tx: Transaction): Promise<boolean> {
+	const lignes = rows<{ combien: number | string }>(
+		await tx.execute(sql`
+			select count(*) as "combien" from "course"
+			where "timing_kind" = 'prayer' or "kind" = 'jumua'
+		`)
+	);
+	return Number(lignes[0]?.combien ?? 0) > 0;
+}
+
+/**
+ * Une salle, et ce qui l'occupe : les cours d'un côté, les prières du vendredi de l'autre, parce que
+ * l'écran les nomme chacun. Tous les états comptent, brouillons compris : la suppression de la salle
+ * vide la salle de chacun (migration 0061).
+ */
+interface RoomInUse {
+	id: string;
+	name: string;
+	courses: number;
+	fridays: number;
+}
+
+/** Les salles de l'organisation, dans leur ordre, avec ce qui les occupe. */
+async function readRoomsInUse(tx: Transaction, roomId?: string): Promise<RoomInUse[]> {
+	const filtre = roomId === undefined ? sql`true` : sql`r."id" = ${roomId}`;
+	return rows<{ id: string; name: string; courses: number | string; fridays: number | string }>(
+		await tx.execute(sql`
+			select r."id", r."name",
+				count(c."id") filter (where c."kind" <> 'jumua') as "courses",
+				count(c."id") filter (where c."kind" = 'jumua') as "fridays"
+			from "room" r left join "course" c on c."room_id" = r."id"
+			where ${filtre}
+			group by r."id", r."name", r."display_order"
+			order by r."display_order", r."name"
+		`)
+	).map((ligne) => ({
+		id: ligne.id,
+		name: ligne.name,
+		courses: Number(ligne.courses),
+		fridays: Number(ligne.fridays)
+	}));
 }
 
 export const load: PageServerLoad = async (event) => {
@@ -44,7 +79,7 @@ export const load: PageServerLoad = async (event) => {
 		const settings = await readSettings(tx);
 		return {
 			organisation: settings,
-			salles: await readRooms(tx),
+			salles: await readRoomsInUse(tx),
 			languesPossibles: LANGUES
 		};
 	});
@@ -64,23 +99,19 @@ export const actions: Actions = {
 			.filter((value) => (LANGUES as readonly string[]).includes(value));
 		const defaultLanguage = String(form.get('defaultLanguage') ?? '');
 
-		if (name.length === 0) return fail(400, { erreur: 'Le nom est obligatoire.' });
-		if (!COULEUR.test(accentColor)) {
-			return fail(400, { erreur: 'La couleur s’écrit en hexadécimal, par exemple #0f766e.' });
-		}
-		if (greeting.length === 0) {
-			return fail(400, { erreur: 'La formule d’accueil ne peut pas être vide.' });
-		}
-		if (langues.length === 0) return fail(400, { erreur: 'Activez au moins une langue.' });
+		if (name.length === 0) return fail(400, { error: 'nameRequired' as const });
+		if (!COULEUR.test(accentColor)) return fail(400, { error: 'colour' as const });
+		if (greeting.length === 0) return fail(400, { error: 'greetingRequired' as const });
+		if (langues.length === 0) return fail(400, { error: 'noLanguage' as const });
 		if (!langues.includes(defaultLanguage)) {
-			return fail(400, { erreur: 'La langue par défaut doit faire partie des langues activées.' });
+			return fail(400, { error: 'defaultNotEnabled' as const });
 		}
 		// Le fuseau est vérifié par la bibliothèque du système : un nom inventé lève ici, avant
 		// d'être écrit, plutôt que de faire échouer tous les calculs de dates plus tard.
 		try {
 			new Intl.DateTimeFormat('fr', { timeZone });
 		} catch {
-			return fail(400, { erreur: 'Ce fuseau horaire n’existe pas.' });
+			return fail(400, { error: 'timeZone' as const });
 		}
 
 		const literal = langues.map((langue) => `'${langue}'`).join(',');
@@ -94,10 +125,7 @@ export const actions: Actions = {
 				where "id" = ${context.organizationId}
 				returning "id"
 			`);
-			const rows = Array.isArray(touched)
-				? touched
-				: ((touched as { rows?: unknown[] }).rows ?? []);
-			if (rows.length === 0) return false;
+			if (rows(touched).length === 0) return false;
 			await record(tx, context.organizationId, context.userId, {
 				action: 'organization.settings',
 				targetTable: 'organization',
@@ -121,7 +149,7 @@ export const actions: Actions = {
 			});
 			return true;
 		});
-		if (!ok) return fail(404, { erreur: 'Cette organisation n’existe plus.' });
+		if (!ok) return fail(404, { error: 'gone' as const });
 		return { enregistre: true };
 	},
 
@@ -138,11 +166,8 @@ export const actions: Actions = {
 		const form = await event.request.formData();
 		const allume = String(form.get('allume') ?? '') === 'oui';
 		try {
-			const refus = await withSessionOrg(context, async (tx) => {
-				if (!allume) {
-					const quoi = await compterCeQuiRetient(tx);
-					if (quoi) return quoi;
-				}
+			const retenu = await withSessionOrg(context, async (tx) => {
+				if (!allume && (await somethingHoldsThePrayerModule(tx))) return true;
 				await tx.execute(sql`
 					update "organization" set "prayer_module" = ${allume}, "updated_at" = now()
 					where "id" = ${context.organizationId}
@@ -154,23 +179,24 @@ export const actions: Actions = {
 					before: { prayer_module: !allume },
 					after: { prayer_module: allume }
 				});
-				return null;
+				return false;
 			});
-			if (refus) return fail(409, { erreur: refus });
+			if (retenu) return fail(409, { error: 'prayerStillUsed' as const });
 		} catch (cause) {
 			if (String(cause).includes('prayer_module_still_used')) {
-				return fail(409, { erreur: RETENU });
+				return fail(409, { error: 'prayerStillUsed' as const });
 			}
 			throw cause;
 		}
-		return { moduleChange: true };
+		// La page dit ce qui est fait, et non « mis à jour » : allumées ou éteintes.
+		return { moduleChange: true, allume };
 	},
 
 	ajouterSalle: async (event) => {
 		const context = await mustAdminister(event);
 		const form = await event.request.formData();
 		const name = String(form.get('name') ?? '').trim();
-		if (name.length === 0) return fail(400, { erreur: 'Le nom de la salle est obligatoire.' });
+		if (name.length === 0) return fail(400, { error: 'roomNameRequired' as const });
 		const id = newId();
 		await withSessionOrg(context, async (tx) => {
 			await tx.execute(sql`
@@ -188,18 +214,35 @@ export const actions: Actions = {
 		return { salleAjoutee: true };
 	},
 
+	/**
+	 * Supprimer une salle. Si des cours ou des prières du vendredi l'occupent, le premier envoi ne
+	 * supprime rien : l'écran dit combien la perdront, et propose de confirmer (étape 18). La base ne
+	 * vide que la salle de ces cours, qui gardent tout le reste (migration 0061). Une salle libre part
+	 * dès le premier envoi.
+	 */
 	supprimerSalle: async (event) => {
 		const context = await mustAdminister(event);
 		const form = await event.request.formData();
 		const roomId = String(form.get('roomId') ?? '');
-		await withSessionOrg(context, async (tx) => {
-			await tx.execute(sql`delete from "room" where "id" = ${roomId}`);
-			await record(tx, context.organizationId, context.userId, {
-				action: 'room.delete',
-				targetTable: 'room',
-				targetId: roomId
-			});
+		const confirme = String(form.get('confirm') ?? '') === 'yes';
+		const occupee = await withSessionOrg(context, async (tx) => {
+			if (!confirme) {
+				const [salle] = await readRoomsInUse(tx, roomId);
+				if (salle && salle.courses + salle.fridays > 0) return salle;
+			}
+			const supprimees = rows<{ id: string }>(
+				await tx.execute(sql`delete from "room" where "id" = ${roomId} returning "id"`)
+			);
+			if (supprimees.length > 0) {
+				await record(tx, context.organizationId, context.userId, {
+					action: 'room.delete',
+					targetTable: 'room',
+					targetId: roomId
+				});
+			}
+			return null;
 		});
+		if (occupee) return fail(409, { roomInUse: occupee });
 		return { salleSupprimee: true };
 	}
 };
