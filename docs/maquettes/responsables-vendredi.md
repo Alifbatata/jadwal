@@ -82,9 +82,9 @@ Le titre proposé, et celui que prend un champ laissé vide, est le nom de la pr
 la session s'écrit : la langue par défaut de l'organisation, celle que l'écran Partager met aussi en
 tête. Avant, c'était la première langue cochée, donc le français dès qu'il l'était. Une session qui
 porte le nom proposé par le service le montre dans la langue de l'organisation, même écrite avant
-l'étape 18 sous « Prière du vendredi », et s'enregistre sous ce nom la prochaine fois. Ailleurs, sur la
-page publique, dans les messages, le programme sur un site et le flux agenda, ce nom se lit dans la
-langue du lecteur ; un titre écrit par l'organisation reste tel quel.
+l'étape 18 sous « Prière du vendredi », et s'enregistre sous ce nom la prochaine fois. Ailleurs,
+sur la page publique, dans les messages, le programme sur un site et le flux agenda, ce nom se lit
+dans la langue du lecteur ; un titre écrit par l'organisation reste tel quel.
 
 Sous `Jusqu'au`, la phrase du changement de saison : `L'heure change avec la saison ? Remplissez
 « Jusqu'au » ici, puis ajoutez une nouvelle session : les vendredis passés gardent leur heure.` C'est

@@ -83,8 +83,8 @@ vendredi 25.09.2026
 Le titre est celui que l'organisation a saisi, dans la langue demandée, avec le même repli que pour
 un cours. Depuis l'étape 18, une session qui porte le nom que le service propose (`Prière du
 vendredi`, `Freitagsgebet`…) se lit dans la langue de la page : l'organisation n'a rien choisi. Un
-titre qu'elle a écrit elle-même reste tel quel. Le libellé `sermon en …` est le nôtre, traduit dans les cinq langues d'interface : c'est
-le mot juste, et « langue d'enseignement » ne l'est pas ici.
+titre qu'elle a écrit elle-même reste tel quel. Le libellé `sermon en …` est le nôtre, traduit dans
+les cinq langues d'interface : c'est le mot juste, et « langue d'enseignement » ne l'est pas ici.
 
 Répéter les sessions en haut **et** dans le vendredi est voulu : le bloc du haut répond à la question
 sans faire défiler, la vue Semaine les remet dans leur journée avec leurs exceptions.
