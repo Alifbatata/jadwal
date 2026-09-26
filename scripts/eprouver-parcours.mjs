@@ -38,7 +38,8 @@
  *   et le déplacement se lit sur la page publique et dans le flux agenda. Un déplacement qui ne
  *   change ni la date ni l'heure est refusé, avec une phrase. Déplacée le même jour à une autre
  *   heure, une séance porte « nouvelle heure » sur sa carte ; une carte restée ouverte dans un autre
- *   onglet, envoyée après ce déplacement, est refusée, et rien n'est écrit.
+ *   onglet, envoyée après ce déplacement, est refusée, et rien n'est écrit, sur « À venir » comme
+ *   sur l'écran du vendredi.
  * - A3 : aucune date écrite `2026-09-26` dans le texte d'aucun écran traversé (espace, super-admin,
  *   page publique, widget), et la date des conditions et d'une passkey en `JJ.MM.AAAA`.
  * - B1 : les aides sous les champs clés, et des libellés qui disent ce qu'ils font ; sur un
@@ -129,8 +130,9 @@
  * ## En dernier, ce qui change l'organisation
  *
  * Trois pas viennent après tous les autres, parce qu'ils changent ce que les autres lisent. La
- * session du vendredi est déplacée le même jour, sur « À venir », d'où un second onglet, ouvert
- * avant, renvoie sa carte restée telle quelle. Le nom et la formule d'accueil sont tapés dans
+ * session du vendredi est déplacée le même jour, sur « À venir ». Deux onglets ouverts avant, l'un
+ * sur « À venir », l'autre sur l'écran du vendredi, renvoient ensuite leur carte restée telle
+ * quelle. Le nom et la formule d'accueil sont tapés dans
  * Réglages, puis remis. Une seconde personne responsable rejoint l'organisation, la première se
  * donne le rôle d'éditeur, et la seconde lui rend le sien.
  *
@@ -297,13 +299,16 @@ const NOUVELLE_HEURE_DANS_LA_SEMAINE = {
 };
 /**
  * Les phrases lues à la lettre dans les écrans corrigés depuis la relecture du lot 4 : ce que dit
- * l'écran du vendredi après une suppression, et l'aide de « À partir du » dans la carte d'une
- * session (`friday.ts`) ; le refus d'une carte restée ouverte sur « À venir » (`upcoming.ts`) ; ce
- * que lit une responsable qui s'est donné le rôle d'éditeur (`common.ts`).
+ * l'écran du vendredi après une suppression, l'aide de « À partir du » dans la carte d'une session,
+ * et son refus d'une carte restée ouverte (`friday.ts`) ; le refus d'une carte restée ouverte sur
+ * « À venir » (`upcoming.ts`) ; ce que lit une responsable qui s'est donné le rôle d'éditeur
+ * (`common.ts`).
  */
 const SESSION_SUPPRIMEE = 'La session est supprimée.';
 const AIDE_DE_LA_MODIFICATION =
 	'La session a lieu chaque vendredi à partir de cette date. Changez cette date seulement pour corriger une erreur.';
+const SESSION_CHANGEE =
+	'Cette session a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée ce jour-là. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.';
 const SEANCE_CHANGEE =
 	'Cette séance a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée. Rien n’a été enregistré. Le programme ci-dessous est à jour.';
 const DEVENUE_EDITRICE =
@@ -4195,13 +4200,13 @@ async function periodeCopiee(page) {
  * langue de chaque message (D1). Déplacée le même jour à une autre heure, sa carte d'arrivée dit
  * « nouvelle heure » et l'heure prévue (A2), et le message dit un changement d'heure, la date une
  * seule fois (B1), en nommant la prière dans chaque langue (D1) ; le programme de la semaine la
- * marque d'une nouvelle heure, dans chaque langue (B1). Un second onglet, ouvert avant ce
- * déplacement, renvoie ensuite sa carte restée telle quelle : l'écran le refuse, et rien n'est
- * écrit (A2).
+ * marque d'une nouvelle heure, dans chaque langue (B1). Deux onglets, ouverts avant ce
+ * déplacement sur « À venir » et sur l'écran du vendredi, renvoient ensuite leur carte restée telle
+ * quelle : chaque écran le refuse, et rien n'est écrit (A2).
  */
 async function vendrediSurLAccueil(page) {
 	etape(
-		'm. « À venir » : la session du vendredi, ses messages, un changement d’heure, une carte restée ouverte'
+		'm. « À venir » : la session du vendredi, ses messages, un changement d’heure, des cartes restées ouvertes'
 	);
 	const nom = PRIERE_DU_VENDREDI.fr;
 	const jour = VENDREDI_QUI_VIENT;
@@ -4221,10 +4226,13 @@ async function vendrediSurLAccueil(page) {
 			lignesDuVendredi(semaine, fautifs, VENDREDI.debut) || `${semaine.length} message(s)`
 		);
 	});
-	// Le second onglet, ouvert avant le déplacement : sa carte reste celle d'une séance prévue.
+	// Deux onglets, ouverts avant le déplacement : « À venir » et l'écran du vendredi. Leurs cartes
+	// restent celles d'une séance prévue.
 	const ouvertAvant = await page.context().newPage();
+	const vendrediOuvert = await page.context().newPage();
 	try {
 		await ouvrir(ouvertAvant, '/');
+		await ouvrir(vendrediOuvert, '/vendredi');
 		await retour('A2', async () => {
 			const prevue = carte(page, 'scheduled');
 			await prevue.getByText('Annuler ou déplacer', { exact: true }).click();
@@ -4329,9 +4337,56 @@ async function vendrediSurLAccueil(page) {
 				},
 				`« ${phrase} », ${enHaut ? 'avant' : 'pas avant'} le premier jour ; ${messagesPrepares} message(s) préparé(s) ; ${departLu} ; ${arrivees} carte(s) d’arrivée`
 			);
+			// L'écran du vendredi, ouvert lui aussi avant le déplacement, annule la séance qu'il montre
+			// encore prévue à son heure habituelle.
+			const seanceDuVendredi = (cible) =>
+				cible
+					.locator('section[aria-labelledby="ce-vendredi"] div.seance')
+					.filter({ hasText: `${VENDREDI.debut} – ${VENDREDI.fin}` })
+					.filter({ hasText: dateLongue(jour) });
+			await envoyer(
+				vendrediOuvert,
+				seanceDuVendredi(vendrediOuvert).getByRole('button', {
+					name: 'Annuler cette session',
+					exact: true
+				})
+			);
+			const alertes = vendrediOuvert.getByRole('alert');
+			const refusDuVendredi =
+				(await alertes.count()) === 1
+					? await texteDe(alertes)
+					: `${await alertes.count()} alerte(s)`;
+			// En tête : avant la première carte de session.
+			const enTete =
+				(await alertes.count()) === 1 &&
+				(await alertes.evaluate((alerte) => {
+					const premiere = document.querySelector('section.session');
+					return Boolean(
+						premiere && alerte.compareDocumentPosition(premiere) & Node.DOCUMENT_POSITION_FOLLOWING
+					);
+				}));
+			const confirmations = await vendrediOuvert.getByRole('status').count();
+			const seance = seanceDuVendredi(vendrediOuvert);
+			const seanceLue =
+				(await seance.count()) === 1
+					? await texteDe(seance)
+					: `${await seance.count()} séance(s) à ${VENDREDI.debut} dans « Ce vendredi »`;
+			verifierChaque(
+				`sur l’écran du vendredi, une carte restée ouverte dans un autre onglet, envoyée après ce déplacement (« Annuler cette session »), est refusée par une phrase en tête, et rien n’est écrit : la session reste déplacée à ${HEURE_DU_VENDREDI_DEPLACE}`,
+				{
+					'la phrase du refus': refusDuVendredi === SESSION_CHANGEE,
+					'le refus en tête': enTete,
+					'aucune confirmation': confirmations === 0,
+					[`la session déplacée à ${HEURE_DU_VENDREDI_DEPLACE}`]: seanceLue.includes(
+						`Déplacée au ${dateLongue(jour)} à ${HEURE_DU_VENDREDI_DEPLACE}`
+					)
+				},
+				`« ${refusDuVendredi} », ${enTete ? 'avant' : 'pas avant'} la première session ; ${confirmations} confirmation(s) ; ${seanceLue}`
+			);
 		});
 	} finally {
 		await ouvertAvant.close();
+		await vendrediOuvert.close();
 	}
 }
 
