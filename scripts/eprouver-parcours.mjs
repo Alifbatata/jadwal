@@ -100,6 +100,10 @@
  * gestes impossibles. Combien de vérifications n'ont jamais tourné se lit en comparant, retour par
  * retour, le tableau du relevé à celui d'un passage strict sur l'image d'aujourd'hui.
  *
+ * Une vérification faite de plusieurs conditions les nomme (`verifierChaque`) : sa ligne rouge
+ * commence par « tombé : » et le nom de celles qui manquent, puis ce que l'écran montrait. Un relevé
+ * dit donc laquelle est tombée, et pas seulement ce qu'une ligne verte aurait dit.
+ *
  * Les gestes qui ne sont pas l'objet d'une vérification visent les champs par leur `id` ou leur
  * `name`, qui sont le contrat du formulaire avec le serveur, et non par leur libellé : un libellé
  * qu'on récrit ne casse pas le parcours, et les libellés qui comptent sont vérifiés pour eux-mêmes.
@@ -483,6 +487,22 @@ function verifier(quoi, condition, detail = '') {
 		throw new Echec(detail ? `${quoi} : ${detail}` : quoi);
 	}
 	return Boolean(condition);
+}
+
+/**
+ * Une vérification faite de plusieurs conditions, chacune nommée : elle passe quand toutes sont
+ * vraies. Sa ligne rouge commence par le nom de celles qui sont tombées, puis ce que l'écran
+ * montrait ; sa ligne verte ne dit que ce que l'écran montrait.
+ */
+function verifierChaque(quoi, conditions, detail = '') {
+	const tombees = Object.entries(conditions)
+		.filter(([, vraie]) => !vraie)
+		.map(([nom]) => nom);
+	const dit =
+		tombees.length === 0
+			? detail
+			: [`tombé : ${tombees.join(', ')}`, detail].filter(Boolean).join(' ; ');
+	return verifier(quoi, tombees.length === 0, dit);
 }
 
 /**
@@ -2054,12 +2074,19 @@ async function descriptionSansTitre(page) {
 		const refus = (await page.locator('form.colonne [role="alert"] li').allTextContents()).map(
 			(phrase) => phrase.replace(/\s+/g, ' ').trim()
 		);
-		verifier(
+		// Un écran qui accepte le cours n'a plus de champ de description : on ne l'attend pas.
+		const gardee =
+			chemin(page) === '/cours/nouveau' && (await description.count()) === 1
+				? await description.inputValue()
+				: '';
+		verifierChaque(
 			'une description écrite en allemand sans titre en allemand est refusée, avec une phrase qui nomme la langue, et le formulaire revient avec la description',
-			chemin(page) === '/cours/nouveau' &&
-				refus.includes(DESCRIPTION_SANS_TITRE.refus) &&
-				(await description.inputValue()) === DESCRIPTION_SANS_TITRE.texte,
-			`${chemin(page)} ; ${refus.map((phrase) => `« ${phrase} »`).join(', ') || 'aucun refus'}`
+			{
+				'le formulaire revient': chemin(page) === '/cours/nouveau',
+				'la phrase qui nomme la langue': refus.includes(DESCRIPTION_SANS_TITRE.refus),
+				'la description gardée': gardee === DESCRIPTION_SANS_TITRE.texte
+			},
+			`${chemin(page)} ; ${refus.map((phrase) => `« ${phrase} »`).join(', ') || 'aucun refus'} ; description « ${gardee} »`
 		);
 		if (chemin(page) === '/cours/nouveau') {
 			await allemand();
@@ -4018,14 +4045,20 @@ async function vendrediSurLAccueil(page) {
 			const depart = carte(ouvertAvant, 'moved_away');
 			const departLu =
 				(await depart.count()) === 1 ? await texteDe(depart) : 'aucune carte de départ';
-			verifier(
+			const messagesPrepares = await ouvertAvant.locator('#message-titre').count();
+			const arrivees = await carte(ouvertAvant, 'moved_here').count();
+			verifierChaque(
 				`une carte restée ouverte dans un autre onglet, envoyée après ce déplacement, est refusée par une phrase en haut, et rien n’est écrit : la session reste à ${HEURE_DU_VENDREDI_DEPLACE}`,
-				phrase === SEANCE_CHANGEE &&
-					enHaut &&
-					(await ouvertAvant.locator('#message-titre').count()) === 0 &&
-					departLu.includes(`Déplacée au ${dateLongue(jour)} à ${HEURE_DU_VENDREDI_DEPLACE}`) &&
-					(await carte(ouvertAvant, 'moved_here').count()) === 1,
-				`« ${phrase} » ; ${departLu}`
+				{
+					'la phrase du refus': phrase === SEANCE_CHANGEE,
+					'le refus en haut': enHaut,
+					'aucun message préparé': messagesPrepares === 0,
+					[`la session à ${HEURE_DU_VENDREDI_DEPLACE}`]: departLu.includes(
+						`Déplacée au ${dateLongue(jour)} à ${HEURE_DU_VENDREDI_DEPLACE}`
+					),
+					'une seule carte d’arrivée': arrivees === 1
+				},
+				`« ${phrase} », ${enHaut ? 'avant' : 'pas avant'} le premier jour ; ${messagesPrepares} message(s) préparé(s) ; ${departLu} ; ${arrivees} carte(s) d’arrivée`
 			);
 		});
 	} finally {
@@ -4133,18 +4166,24 @@ async function devenirEditrice(navigateur, page) {
 			const avis = page.locator('#avis-role');
 			const texte = (await avis.count()) === 1 ? await texteDe(avis) : '';
 			const boite = texte ? await avis.boundingBox() : null;
+			const role = texte ? await avis.getAttribute('role') : null;
 			const hauteur = page.viewportSize()?.height ?? ECRAN.height;
 			const adresse = new URL(page.url());
-			verifier(
+			const titreLu = await titre(page);
+			verifierChaque(
 				'une responsable qui se donne le rôle d’éditeur arrive sur « À venir », où une phrase, visible sans défiler, lui dit ce qui s’est passé et comment retrouver ses écrans',
-				adresse.pathname === '/' &&
-					(await titre(page)) === 'À venir' &&
-					texte === DEVENUE_EDITRICE &&
-					(await avis.getAttribute('role')) === 'status' &&
-					boite !== null &&
-					boite.y >= 0 &&
-					boite.y + boite.height <= hauteur,
-				`${adresse.pathname}${adresse.search}, « ${await titre(page)} » ; ${texte ? `« ${texte} »` : 'aucune phrase'}`
+				{
+					'l’arrivée sur « À venir »': adresse.pathname === '/' && titreLu === 'À venir',
+					'la phrase': texte === DEVENUE_EDITRICE,
+					'annoncée (role=status)': role === 'status',
+					'visible sans défiler':
+						boite !== null && boite.y >= 0 && boite.y + boite.height <= hauteur
+				},
+				`${adresse.pathname}${adresse.search}, « ${titreLu} » ; ${texte ? `« ${texte} »` : 'aucune phrase'} ; role « ${role ?? 'aucun'} » ; ${
+					boite
+						? `de ${Math.round(boite.y)} à ${Math.round(boite.y + boite.height)} px, fenêtre de ${hauteur} px`
+						: 'aucune boîte'
+				}`
 			);
 			// La seconde responsable lui rend son rôle.
 			await ouvrir(seconde, '/membres');
