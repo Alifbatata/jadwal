@@ -74,6 +74,11 @@
  * parcours s'arrête quand la suite n'a plus de sens, et le tableau dit alors quels retours n'ont pas
  * été atteints.
  *
+ * Un geste impossible arrête son bloc : les vérifications qui le suivent dans ce bloc ne sont pas
+ * jouées. Le bilan les compte donc à part : les vérifications jouées, vertes ou rouges, puis les
+ * gestes impossibles. Combien de vérifications n'ont jamais tourné se lit en comparant, retour par
+ * retour, le tableau du relevé à celui d'un passage strict sur l'image d'aujourd'hui.
+ *
  * Les gestes qui ne sont pas l'objet d'une vérification visent les champs par leur `id` ou leur
  * `name`, qui sont le contrat du formulaire avec le serveur, et non par leur libellé : un libellé
  * qu'on récrit ne casse pas le parcours, et les libellés qui comptent sont vérifiés pour eux-mêmes.
@@ -318,7 +323,10 @@ const RETOURS = [
 	'F1',
 	'H2'
 ];
-/** Chaque vérification d'un retour : `{ retour, quoi, ok, detail }`. */
+/**
+ * Chaque vérification d'un retour : `{ retour, quoi, ok, detail }`, et `impossible` pour un geste
+ * que l'écran n'offre pas, qui a arrêté son bloc.
+ */
 const releve = [];
 /** La lettre du retour dont le bloc est en cours, ou `null` hors de tout bloc. */
 let retourCourant = null;
@@ -356,11 +364,12 @@ async function retour(lettre, corps) {
 	} catch (erreur) {
 		if (!RELEVE) throw erreur;
 		const message = (erreur instanceof Error ? erreur.message : String(erreur)).split('\n')[0];
-		verifications += 1;
+		// Un geste impossible n'est pas une vérification : il n'est pas compté avec elles.
 		releve.push({
 			retour: lettre,
 			quoi: 'geste impossible sur cet écran',
 			ok: false,
+			impossible: true,
 			detail: message
 		});
 		process.stdout.write(`  NON  [${lettre}] geste impossible sur cet écran (${message})\n`);
@@ -3124,8 +3133,8 @@ if (pagesAuditees.length === 0) {
 	}
 }
 
-// Le tableau des retours : une ligne par vérification, et une ligne pour chaque retour que le
-// parcours n'a pas atteint.
+// Le tableau des retours : une ligne par vérification, une ligne par geste impossible (la suite de
+// son bloc n'a pas été jouée), et une ligne pour chaque retour que le parcours n'a pas atteint.
 etape('Les retours du chef de projet, une ligne par vérification');
 process.stdout.write('  retour | vérification | verdict\n');
 for (const lettre of RETOURS) {
@@ -3134,14 +3143,18 @@ for (const lettre of RETOURS) {
 		process.stdout.write(`  ${lettre} | non atteint : le parcours s’est arrêté avant | rouge\n`);
 	}
 	for (const ligne of lignes) {
-		process.stdout.write(`  ${lettre} | ${ligne.quoi} | ${ligne.ok ? 'vert' : 'rouge'}\n`);
+		const verdict = ligne.impossible ? 'impossible' : ligne.ok ? 'vert' : 'rouge';
+		process.stdout.write(`  ${lettre} | ${ligne.quoi} | ${verdict}\n`);
 	}
 }
-const rouges = releve.filter((ligne) => !ligne.ok);
+const jouees = releve.filter((ligne) => !ligne.impossible);
+const impossibles = releve.filter((ligne) => ligne.impossible);
+const rouges = jouees.filter((ligne) => !ligne.ok);
 const sansLigne = RETOURS.filter((lettre) => !releve.some((ligne) => ligne.retour === lettre));
 const duree = Math.round((Date.now() - debut) / 1000);
 process.stdout.write(
-	`\n  ${releve.length} vérifications des retours, ${releve.length - rouges.length} vertes, ${rouges.length} rouges ; ` +
+	`\n  ${jouees.length} vérifications des retours jouées, ${jouees.length - rouges.length} vertes, ${rouges.length} rouges ; ` +
+		`${impossibles.length} geste(s) impossible(s), dont le bloc s’est arrêté là ; ` +
 		`${sansLigne.length} retour(s) non atteint(s) ; ${ecransLus.size} écrans lus ; ${Math.floor(duree / 60)} min ${duree % 60} s\n`
 );
 
@@ -3149,10 +3162,11 @@ if (echoue) {
 	process.stderr.write(`\nLe parcours s’est arrêté après ${verifications} vérifications.\n`);
 	process.exit(1);
 }
-if (rouges.length > 0 || sansLigne.length > 0) {
+if (rouges.length > 0 || impossibles.length > 0 || sansLigne.length > 0) {
 	process.stderr.write(
 		`\nLe parcours va au bout (${verifications} vérifications), mais ${rouges.length} vérification(s) ` +
-			`de retours tombent et ${sansLigne.length} retour(s) n’ont aucune ligne.\n`
+			`de retours tombent, ${impossibles.length} geste(s) sont impossibles et ${sansLigne.length} ` +
+			`retour(s) n’ont aucune ligne.\n`
 	);
 	process.exit(1);
 }
