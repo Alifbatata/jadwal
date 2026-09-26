@@ -28,6 +28,23 @@ export interface Locality {
 	longitude: number;
 }
 
+/**
+ * Ce que l'écran des prières et sa recherche montrent d'une localité : de quoi la nommer, « 2502
+ * Biel/Bienne (BE) », et la placer. La commune n'y est pas : personne ne la cherche par là.
+ */
+export interface LocalityChoice {
+	postcode: string;
+	name: string;
+	canton: string;
+	latitude: number;
+	longitude: number;
+}
+
+export function toChoice(locality: Locality): LocalityChoice {
+	const { postcode, name, canton, latitude, longitude } = locality;
+	return { postcode, name, canton, latitude, longitude };
+}
+
 /** Ce qu'il faut savoir de la liste pour la citer : les conditions de swisstopo l'exigent. */
 export interface LocalitiesSource {
 	title: string;
