@@ -105,6 +105,12 @@ async function page(chemin: string, avecSession = false): Promise<string> {
 	return response.text();
 }
 
+/** « 26.09.2026 » : un jour tel que l'écran l'écrit, sans passer par le code du serveur. */
+function jjmmaaaa(date: string): string {
+	const [annee, mois, jour] = date.split('-');
+	return `${jour}.${mois}.${annee}`;
+}
+
 /** Les jours écrits pour cette organisation, par source. */
 async function joursEnBase(): Promise<{ computed: number; import: number }> {
 	// Le propriétaire ne voit `prayer_day` que sous son drapeau d'entretien (ADR 0019) : hors de
@@ -258,7 +264,8 @@ describe('le calcul', () => {
 		const html = await response.text();
 
 		const today = todayInZone(FUSEAU, new Date());
-		for (let pas = 0; pas < 7; pas += 1) expect(html).toContain(addDays(today, pas));
+		// Les jours s'écrivent JJ.MM.AAAA depuis l'étape 18 (A3).
+		for (let pas = 0; pas < 7; pas += 1) expect(html).toContain(jjmmaaaa(addDays(today, pas)));
 		// L'aperçu n'écrit rien : c'est toute la promesse de l'écran.
 		expect(await joursEnBase()).toEqual(avant);
 	});
@@ -318,8 +325,8 @@ describe('l’import', () => {
 		});
 		expect(response.status).toBe(200);
 		const html = await response.text();
-		expect(html).toContain(today());
-		expect(html).toContain(addDays(today(), 2));
+		expect(html).toContain(jjmmaaaa(today()));
+		expect(html).toContain(jjmmaaaa(addDays(today(), 2)));
 		expect(await joursEnBase()).toEqual(avant);
 
 		const trouve = html.match(/name="aConfirmer" value="([^"]*)"/);

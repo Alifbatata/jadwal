@@ -1,820 +1,1165 @@
 <script lang="ts">
-	// Les heures de prière. Trois sections, dans l'ordre où l'on s'en sert : d'où viennent les
-	// heures aujourd'hui, comment les calculer, comment importer un calendrier.
+	// Les heures de prière (étape 18, retours C1 et C2). Le réglage commence par une seule question,
+	// « D'où viennent vos heures de prière ? », et chaque réponse n'affiche que ce qu'elle demande,
+	// puis l'aperçu des sept prochains jours, puis « Enregistrer ». En bas, ce que voit le public.
+	//
+	// Tout marche sans JavaScript : la question est un formulaire qui recharge l'écran avec la réponse
+	// choisie, la recherche d'une localité un formulaire qui rend la liste. Avec JavaScript, la
+	// réponse s'affiche dès qu'on la coche, et la liste des localités suit la frappe.
+	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
-	import { PRAYER_LABELS } from '$lib/format.js';
+	import type { IsoDate } from '@jadwal/core';
+	import { longDate, numericDate } from '$lib/i18n.js';
+	import { prayersTexts } from '$lib/i18n/prayers.js';
+	import { nomPriere } from '$lib/public/affichage.js';
+	import type { RaisonLue } from '$lib/server/prieres.js';
 
 	let { data, form } = $props();
+	const text = $derived(prayersTexts[data.language]);
 
 	const PRIERES = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
+	const REPONSES = ['computed', 'import', 'manual'] as const;
+	type Reponse = (typeof REPONSES)[number];
+	type Jour = (typeof data.septJours)[number];
+	type Periode = (typeof data.periodes)[number];
 
-	/** Comment chaque source se nomme à l'écran. Trois mots, jamais des codes. */
-	const SOURCES: Record<string, string> = {
-		manual: 'saisi',
-		import: 'importé',
-		computed: 'calculé'
-	};
+	/** Les noms de colonnes que le lecteur de fichiers reconnaît, pour le format en détail. */
+	const COLONNES: [string, string[]][] = [
+		['date', ['date', 'jour', 'day', 'tag']],
+		['fajr', ['fajr', 'fadjr', 'fadjer', 'sobh', 'subh', 'imsak']],
+		['dhuhr', ['dhuhr', 'duhr', 'zuhr', 'dohr', 'dhohr', 'midi']],
+		['asr', ['asr', 'assr', 'aser']],
+		['maghrib', ['maghrib', 'maghreb', 'magrib', 'coucher']],
+		['isha', ['isha', 'icha', 'ishaa', 'ichaa', 'isya']]
+	];
 
-	/** Les sept jours réellement servis, sans les jours qu'aucune source ne couvre. */
-	const servies = $derived(
-		data.septJours.filter((jour) => PRIERES.some((priere) => jour[priere] !== null))
+	const prayer = (code: string) => nomPriere(data.language, code);
+
+	/** « 2502 Biel/Bienne (BE) » : une localité telle qu'on la reconnaît en Suisse. */
+	function label(localite: { postcode: string; name: string; canton: string }): string {
+		return `${localite.postcode} ${localite.name} (${localite.canton})`;
+	}
+
+	/** Ce que le formulaire envoie d'une localité choisie : le serveur y relit la position. */
+	function cle(localite: { postcode: string; name: string }): string {
+		return `${localite.postcode}|${localite.name}`;
+	}
+
+	const coordonnee = (valeur: number) => valeur.toFixed(4);
+	const heure = (valeur: string | null | undefined) => String(valeur ?? '').slice(0, 5);
+	const jourDe = (date: string) => date.slice(0, 10) as IsoDate;
+
+	/** Vrai une fois l'écran repris par JavaScript : le bouton « Continuer » n'a plus lieu d'être. */
+	let hydrated = $state(false);
+	onMount(() => {
+		hydrated = true;
+	});
+
+	/**
+	 * La réponse montrée : celle du formulaire qu'on vient d'envoyer, sinon celle de l'adresse ou des
+	 * sept prochains jours ; puis celle qu'on coche, sans recharger. Une période enregistrée alors
+	 * qu'aucune réponse n'était choisie montre la saisie à la main, où elle se voit.
+	 */
+	let choix = $derived<Reponse | null>(
+		form?.answer ??
+			data.answer ??
+			(form?.periode || form?.periodeEnregistree || form?.periodeDupliquee || form?.periodeSupprimee
+				? 'manual'
+				: null)
 	);
+
+	// La localité : ce qui a été tapé, les localités trouvées, et celle qui a été choisie.
+	const saisie = $derived(form?.saisie ?? null);
+	let recherche = $derived(data.search?.query ?? '');
+	let trouvees = $derived(data.search?.results ?? null);
+	let choisie = $derived(saisie?.locality ?? null);
+	let latitude = $derived(
+		saisie ? saisie.latitude : data.reglages.latitude === null ? '' : String(data.reglages.latitude)
+	);
+	let longitude = $derived(
+		saisie
+			? saisie.longitude
+			: data.reglages.longitude === null
+				? ''
+				: String(data.reglages.longitude)
+	);
+	/** Les cases de la liste : les localités trouvées, sinon celle qui vient d'être choisie. */
+	const options = $derived(trouvees ?? (choisie ? [choisie] : []));
+	const message = $derived.by(() => {
+		if (trouvees === null) return '';
+		if (recherche.trim().length < 2) return text.computed.tooShort;
+		if (trouvees.length === 0) return text.computed.noneFound;
+		return text.computed.found(trouvees.length);
+	});
+
+	/** Choisir une localité remplit sa position, que l'écran montre. */
+	function choisir(localite: NonNullable<typeof choisie>) {
+		choisie = localite;
+		latitude = String(localite.latitude);
+		longitude = String(localite.longitude);
+	}
+
+	let minuterie: ReturnType<typeof setTimeout> | undefined;
+	let demande = 0;
+
+	/** La recherche suit la frappe, un cinquième de seconde après la dernière lettre. */
+	function chercherBientot() {
+		clearTimeout(minuterie);
+		minuterie = setTimeout(chercher, 200);
+	}
+
+	async function chercher() {
+		clearTimeout(minuterie);
+		const texte = recherche.trim();
+		const numero = (demande += 1);
+		if (texte === '') {
+			trouvees = null;
+			return;
+		}
+		if (texte.length < 2) {
+			trouvees = [];
+			return;
+		}
+		try {
+			const reponse = await fetch(
+				`${resolve('/prieres/localites')}?q=${encodeURIComponent(texte)}`,
+				{ headers: { accept: 'application/json' } }
+			);
+			// Une réponse arrivée après une frappe plus récente ne remplace pas la sienne.
+			if (!reponse.ok || numero !== demande) return;
+			trouvees = await reponse.json();
+		} catch {
+			// Sans réponse, le bouton « Chercher » recharge l'écran avec la liste : rien n'est perdu.
+		}
+	}
+
+	// Les réglages du calcul : ceux que le formulaire vient d'envoyer, sinon ceux qui sont enregistrés.
+	const reglage = $derived({
+		method: saisie?.method || data.reglages.method || 'MuslimWorldLeague',
+		madhab: saisie?.madhab || data.reglages.madhab,
+		rule: saisie?.highLatitudeRule || data.reglages.high_latitude_rule,
+		adjustments: saisie?.adjustments ?? {
+			fajr: data.reglages.fajr_adjustment,
+			dhuhr: data.reglages.dhuhr_adjustment,
+			asr: data.reglages.asr_adjustment,
+			maghrib: data.reglages.maghrib_adjustment,
+			isha: data.reglages.isha_adjustment
+		}
+	});
+	/** « Hors de Suisse » s'ouvre quand la position ne vient pas de la liste. */
+	const horsDeSuisse = $derived(
+		saisie
+			? saisie.locality === null && saisie.latitude !== ''
+			: data.reglages.latitude !== null && data.savedLocality === null
+	);
+	/** Les réglages avancés s'ouvrent quand l'un d'eux n'a plus sa valeur proposée. */
+	const avances = $derived(
+		reglage.method !== 'MuslimWorldLeague' ||
+			reglage.madhab !== 'shafi' ||
+			(data.recommandee !== null && reglage.rule !== data.recommandee) ||
+			PRIERES.some((priere) => reglage.adjustments[priere] !== 0)
+	);
+	/** L'aperçu du calcul : celui du formulaire s'il vient d'être demandé, sinon celui des réglages. */
+	const apercu = $derived(form?.apercuCalcule ?? data.apercu);
+	const lecture = $derived(form?.lecture);
+	/** « 512 Ko » plutôt que « 512K », la forme qu'adapter-node lit dans `BODY_SIZE_LIMIT`. */
+	const taille = $derived.by(() => {
+		const trouve = /^(\d+)\s*([KMG])$/i.exec(data.tailleMaximale.trim());
+		if (!trouve) return data.tailleMaximale;
+		const unite = (trouve[2] ?? 'K').toUpperCase() as 'K' | 'M' | 'G';
+		return `${trouve[1]} ${text.file.units[unite]}`;
+	});
+
+	/** Les périodes qui donnent au moins une heure affichée : elles passent avant tout le reste. */
+	const periodesSaisies = $derived(
+		data.periodes.filter((periode) => PRIERES.some((priere) => periode.soleil[priere] !== null))
+			.length
+	);
+	/** La dernière période : une période nouvelle part de ses valeurs. */
+	const derniere = $derived(data.periodes.at(-1) ?? null);
+	/** Le formulaire de période qu'une réponse du serveur (erreur, aperçu) doit rouvrir. */
+	const periodeOuverte = $derived(form?.periode ? (form.periode.id ?? 'nouvelle') : null);
+
+	const erreur = $derived.by(() => {
+		const code = form?.error;
+		if (!code) return null;
+		if (code === 'fileTooLarge') return text.errors.fileTooLarge(taille);
+		if (code === 'iqamaBoth') return text.errors.iqamaBoth(prayer(form?.prayer ?? ''));
+		return text.errors[code];
+	});
+
+	/** Une raison du lecteur de fichiers, dans la langue de l'écran, dates en JJ.MM.AAAA. */
+	function raison(lue: RaisonLue): string {
+		const phrases = text.reasons;
+		switch (lue.code) {
+			case 'empty':
+				return phrases.empty;
+			case 'header':
+				return phrases.header;
+			case 'badDate':
+				return phrases.badDate(lue.raw);
+			case 'badTime':
+				return phrases.badTime(prayer(lue.prayer), lue.raw);
+			case 'noSuchDate':
+				return phrases.noSuchDate;
+			case 'order':
+				return phrases.order(
+					prayer(lue.later),
+					lue.laterTime,
+					prayer(lue.earlier),
+					lue.earlierTime
+				);
+			case 'ishaBeforeMaghrib':
+				return phrases.ishaBeforeMaghrib(prayer('isha'), lue.isha, prayer('maghrib'), lue.maghrib);
+			case 'duplicate':
+				return phrases.duplicate(numericDate(lue.date as IsoDate));
+			case 'jump':
+				return phrases.jump(
+					numericDate(lue.date as IsoDate),
+					prayer(lue.prayer),
+					lue.minutes,
+					lue.before,
+					lue.after
+				);
+			case 'other':
+				return lue.text;
+		}
+	}
 
 	/** Vrai un vendredi, quand des sessions existent : ce sont elles qui tiennent lieu de Dhuhr. */
 	function jumuaCeJourLa(date: string): boolean {
 		if (data.vendredi.length === 0) return false;
 		// Le jour de semaine sans objet `Date` : `1970-01-01` était un jeudi.
 		const jours = Math.round(
-			(Date.parse(`${date}T00:00:00Z`) - Date.parse('1970-01-01T00:00:00Z')) / 86400000
+			(Date.parse(`${date.slice(0, 10)}T00:00:00Z`) - Date.parse('1970-01-01T00:00:00Z')) / 86400000
 		);
 		return ((jours + 3) % 7) + 1 === 5;
 	}
-
-	/** La période dont le formulaire est ouvert : `'nouvelle'`, un identifiant, ou rien. */
-	let periodeOuverte = $state<string | null>(null);
-
-	/**
-	 * La dernière période saisie. Une période nouvelle part de ses valeurs : une organisation qui
-	 * change de saison ne resaisit que ce qui change, et dans la plupart des cas rien ne change sauf
-	 * les heures fixes du Fajr et du Dhuhr.
-	 */
-	const derniere = $derived(data.periodes.at(-1) ?? null);
-
-	const NOM_DE_REGLE: Record<string, string> = {
-		middleofthenight: 'Milieu de la nuit',
-		seventhofthenight: 'Dernier septième de la nuit',
-		twilightangle: 'Proportionnelle à l’angle'
-	};
-	const NOM_D_ECOLE: Record<string, string> = {
-		shafi: 'Shafi’i, Maliki, Hanbali (ombre simple)',
-		hanafi: 'Hanafi (ombre double)'
-	};
-
-	/** L'aperçu montré : celui du formulaire s'il vient d'être demandé, sinon celui des réglages. */
-	const jours = $derived(form?.apercuCalcule ?? data.apercu);
-	const lecture = $derived(form?.lecture);
 </script>
 
-<svelte:head><title>Heures de prière | {data.organisation.name}</title></svelte:head>
+<svelte:head><title>{text.title} | {data.organisation.name}</title></svelte:head>
 
-<h1>Heures de prière</h1>
+<h1>{text.title}</h1>
+<p class="intro">{text.intro}</p>
 
-{#if form?.erreur}<p class="erreur" role="alert">{form.erreur}</p>{/if}
-{#if form?.periodeEnregistree}<p class="succes" role="status">Période enregistrée.</p>{/if}
-{#if form?.periodeDupliquee}
-	<p class="succes" role="status">
-		Période dupliquée aux mêmes dates, un an plus tard. Vérifiez-les, puis enregistrez-la.
-	</p>
-{/if}
-{#if form?.periodeSupprimee}<p class="succes" role="status">Période supprimée.</p>{/if}
+{#if erreur}<p class="erreur" role="alert">{erreur}</p>{/if}
 {#if form?.enregistre}
-	<p class="succes" role="status">
-		Réglages enregistrés. {form.ecrites} jour{form.ecrites > 1 ? 's' : ''} recalculé{form.ecrites >
-		1
-			? 's'
-			: ''}.
-	</p>
+	<p class="succes" role="status">{text.done.settingsSaved(form.ecrites)}</p>
 {/if}
 {#if form?.importe}
 	<p class="succes" role="status">
-		{form.importe} jours importés, du {form.premiere} au {form.derniere}.
+		{text.done.imported(
+			form.importe,
+			numericDate(form.premiere as IsoDate),
+			numericDate(form.derniere as IsoDate)
+		)}
 	</p>
 {/if}
 {#if form?.efface !== undefined}
-	<p class="succes" role="status">
-		{form.efface} jour{form.efface > 1 ? 's' : ''} retiré{form.efface > 1 ? 's' : ''} de l’import. Le
-		calcul reprend la main.
-	</p>
+	<p class="succes" role="status">{text.done.removed(form.efface)}</p>
 {/if}
+{#if form?.periodeEnregistree}<p class="succes" role="status">{text.done.periodSaved}</p>{/if}
+{#if form?.periodeDupliquee}<p class="succes" role="status">{text.done.periodCopied}</p>{/if}
+{#if form?.periodeSupprimee}<p class="succes" role="status">{text.done.periodDeleted}</p>{/if}
 
 <section aria-labelledby="etat-titre">
-	<h2 id="etat-titre">D’où viennent les heures aujourd’hui</h2>
+	<h2 id="etat-titre">{text.status.title}</h2>
 	{#if data.etat.finDeLImport}
 		<p>
-			Votre calendrier importé va jusqu’au <strong>{data.etat.finDeLImport}</strong>.
-			{#if data.etat.calculPossible}
-				Au-delà, les heures sont calculées.
-			{:else}
-				Au-delà, il n’y a aucune heure : renseignez une position ci-dessous pour que le calcul
-				prenne le relais.
-			{/if}
+			{text.status.importUntil(numericDate(data.etat.finDeLImport))}
+			{data.etat.calculPossible ? text.status.thenComputed : text.status.thenNothing}
 		</p>
 		{#if data.etat.alerte}
-			<p class="avertissement" role="status">
-				Il reste {data.etat.joursRestants} jour{(data.etat.joursRestants ?? 0) > 1 ? 's' : ''}
-				de calendrier importé. Importez la suite, ou laissez le calcul prendre le relais.
-			</p>
+			<p class="avertissement">{text.status.importEnding(data.etat.joursRestants ?? 0)}</p>
 		{/if}
 	{:else if data.etat.calculPossible}
-		<p>Toutes les heures sont <strong>calculées</strong>. Aucun calendrier n’a été importé.</p>
-	{:else}
-		<p class="avertissement" role="status">
-			Aucune heure de prière n’est disponible. Les cours qui suivent une prière s’affichent sans
-			heure, par exemple « Après Maghrib ». Renseignez une position, ou importez un calendrier.
-		</p>
+		{#if data.savedLocality}
+			<p>{text.status.computedFor} <strong><bdi>{label(data.savedLocality)}</bdi></strong></p>
+		{:else}
+			<p>{text.status.computedForPosition}</p>
+		{/if}
+	{:else if periodesSaisies === 0}
+		<p class="avertissement">{text.status.nothing}</p>
 	{/if}
+	{#if periodesSaisies > 0}<p>{text.status.manualPeriods(periodesSaisies)}</p>{/if}
 </section>
 
-<section aria-labelledby="calcul-titre">
-	<h2 id="calcul-titre">Calcul</h2>
-	<p class="aide">
-		Les heures calculées ne remplacent jamais un jour importé : elles comblent ce que le calendrier
-		ne couvre pas.
-	</p>
+<!-- La question. Sans JavaScript, « Continuer » recharge l'écran avec la réponse cochée ; avec lui,
+     la réponse s'affiche dès qu'on la coche, et le bouton disparaît. -->
+<form method="get" class="question">
+	<fieldset>
+		<legend>{text.question.legend}</legend>
+		{#each REPONSES as reponse (reponse)}
+			<label class="reponse">
+				<input
+					type="radio"
+					name="source"
+					value={reponse}
+					checked={choix === reponse}
+					onchange={() => (choix = reponse)}
+				/>
+				<span>
+					<strong>{text.question.answers[reponse].label}</strong>
+					<span class="aide">{text.question.answers[reponse].hint}</span>
+				</span>
+			</label>
+		{/each}
+	</fieldset>
+	<p class="aide">{text.question.priority}</p>
+	{#if !hydrated}<button type="submit">{text.question.continue}</button>{/if}
+</form>
 
-	<form method="post" class="colonne">
-		<fieldset>
-			<legend>Position de l’organisation</legend>
-			<div class="position">
-				<div>
-					<label for="latitude">Latitude</label>
-					<input
-						id="latitude"
-						name="latitude"
-						type="text"
-						inputmode="decimal"
-						value={data.reglages.latitude ?? ''}
-						placeholder="47.1368"
-					/>
-				</div>
-				<div>
-					<label for="longitude">Longitude</label>
-					<input
-						id="longitude"
-						name="longitude"
-						type="text"
-						inputmode="decimal"
-						value={data.reglages.longitude ?? ''}
-						placeholder="7.2468"
-					/>
-				</div>
-			</div>
-			<p class="aide">
-				En degrés décimaux. Pour les trouver : ouvrez une carte, faites un clic droit sur
-				l’emplacement de votre organisation, puis copiez les deux nombres qui s’affichent. Le
-				premier est la latitude. Nous n’interrogeons aucun service de cartographie : ces deux
-				nombres restent chez nous.
-			</p>
-		</fieldset>
+{#if choix === 'computed'}
+	<section aria-labelledby="calcul-titre" class="reponse-choisie">
+		<h2 id="calcul-titre">{text.computed.title}</h2>
 
-		<label for="method">Méthode de calcul</label>
-		<select id="method" name="method">
-			{#each data.methodes as methode (methode)}
-				<option
-					value={methode}
-					selected={methode === (data.reglages.method ?? 'MuslimWorldLeague')}
-				>
-					{methode}
-				</option>
-			{/each}
-		</select>
-		<p class="aide">
-			En cas de doute, gardez <code>MuslimWorldLeague</code> : c’est la méthode la plus répandue en Europe.
-		</p>
+		<!-- La recherche sans JavaScript : un formulaire vide ici, que le champ et le bouton de la
+		     localité rejoignent par leur attribut `form`. Deux formulaires ne s'imbriquent pas. -->
+		<form
+			id="recherche-localite"
+			method="get"
+			onsubmit={(event) => {
+				event.preventDefault();
+				chercher();
+			}}
+		>
+			<input type="hidden" name="source" value="computed" />
+		</form>
 
-		<label for="madhab">École pour l’Asr</label>
-		<select id="madhab" name="madhab">
-			{#each data.ecoles as ecole (ecole)}
-				<option value={ecole} selected={ecole === data.reglages.madhab}>
-					{NOM_D_ECOLE[ecole] ?? ecole}
-				</option>
-			{/each}
-		</select>
-
-		<label for="highLatitudeRule">Règle pour les nuits courtes</label>
-		<select id="highLatitudeRule" name="highLatitudeRule">
-			{#each data.regles as regle (regle)}
-				<option value={regle} selected={regle === data.reglages.high_latitude_rule}>
-					{NOM_DE_REGLE[regle] ?? regle}
-				</option>
-			{/each}
-		</select>
-		<p class="aide">
-			En juin, à nos latitudes, la nuit est si courte que l’Isha tombe après minuit. Le
-			<strong>milieu de la nuit</strong> garde les heures astronomiques telles quelles ; le
-			<strong>dernier septième</strong> avance l’Isha et retarde le Fajr, ce qui donne des heures
-			plus praticables. Regardez l’aperçu de juin avant de choisir.
-			{#if data.recommandee}
-				Pour votre position, la valeur usuelle est « {NOM_DE_REGLE[data.recommandee]} ».
-			{/if}
-		</p>
-
-		<fieldset>
-			<legend>Ajustement par prière, en minutes</legend>
-			<div class="decalages">
-				{#each PRIERES as priere (priere)}
-					<label for={`${priere}Adjustment`}>{PRAYER_LABELS[priere] ?? priere}</label>
-					<input
-						id={`${priere}Adjustment`}
-						name={`${priere}Adjustment`}
-						type="number"
-						min="-120"
-						max="120"
-						value={data.reglages[`${priere}_adjustment`]}
-					/>
-				{/each}
-			</div>
-			<p class="aide">Pour aligner le calcul sur ce que votre organisation annonce déjà.</p>
-		</fieldset>
-
-		<label for="source">Source que vous déclarez</label>
-		<select id="source" name="source">
-			<option value="import" selected={data.reglages.source === 'import'}>
-				J’importe mon calendrier
-			</option>
-			<option value="computed" selected={data.reglages.source === 'computed'}>
-				Je m’en remets au calcul
-			</option>
-		</select>
-
-		<div class="boutons">
-			<button type="submit" formaction="?/apercu">Voir l’aperçu</button>
-			<button type="submit" formaction="?/enregistrer" class="principal">Enregistrer</button>
-		</div>
-	</form>
-</section>
-
-<section aria-labelledby="servies-titre">
-	<h2 id="servies-titre">Ce qui est servi les sept prochains jours</h2>
-	<p class="aide">
-		Les trois sources résolues, dans l’ordre : ce que vous avez <strong>saisi</strong> passe avant
-		ce que vous avez <strong>importé</strong>, qui passe avant le <strong>calcul</strong>. Sous
-		chaque heure, l’iqama quand vous en avez réglé une : c’est elle qui donne l’heure d’un cours «
-		après Maghrib ».
-	</p>
-	{#if servies.length === 0}
-		<p class="aide">
-			Aucune heure pour les sept prochains jours. Saisissez une période ci-dessous, importez un
-			calendrier, ou renseignez une position pour que le calcul prenne le relais.
-		</p>
-	{:else}
-		<table>
-			<thead>
-				<tr>
-					<th scope="col">Jour</th>
-					{#each data.prieres as priere (priere)}
-						<th scope="col">{PRAYER_LABELS[priere] ?? priere}</th>
-					{/each}
-				</tr>
-			</thead>
-			<tbody>
-				{#each servies as jour (jour.date)}
-					<tr>
-						<th scope="row">{jour.date}</th>
-						{#each data.prieres as priere (priere)}
-							<td>
-								{#if jour[priere]}
-									<span class="soleil">{String(jour[priere]).slice(0, 5)}</span>
-									<span class="provenance">{SOURCES[jour[`${priere}_source`] ?? ''] ?? ''}</span>
-									{#if priere === 'dhuhr' && jumuaCeJourLa(jour.date)}
-										<!-- Le vendredi, les sessions remplacent le Dhuhr : afficher son iqama
-										     ici ferait exactement la contradiction qu'on veut supprimer. -->
-										<span class="iqama">
-											Jumu’a {data.vendredi.map((session) => session.start).join(', ')}
-										</span>
-									{:else if jour[`${priere}_iqama`]}
-										<span class="iqama">iqama {String(jour[`${priere}_iqama`]).slice(0, 5)}</span>
-									{/if}
-								{:else}
-									<span class="aide">–</span>
-								{/if}
-							</td>
-						{/each}
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-	{/if}
-</section>
-
-<section aria-labelledby="periodes-titre">
-	<h2 id="periodes-titre">Vos horaires, saisis à la main</h2>
-	<p class="aide">
-		Une période, c’est ce que vous imprimez sur votre panneau : un nom, des dates, et pour chaque
-		prière l’heure affichée et l’heure d’iqama. Laissez une heure vide pour que l’import ou le
-		calcul la donne. Laissez la date de fin vide pour « jusqu’à nouvel ordre » : c’est le réglage
-		d’une organisation qui pose ses iqamas une fois et n’y revient plus.
-	</p>
-	<p class="aide">
-		Deux périodes ne peuvent pas se chevaucher : fermez celle qui précède avant d’en ouvrir une
-		autre. Les vendredis, ce sont vos <a href={resolve('/vendredi')}>sessions du vendredi</a> qui remplacent
-		le Dhuhr.
-	</p>
-
-	<!--
-		« Dupliquer pour l'année suivante » reporte les mêmes dates un an plus tard, parce que les
-		heures de prière suivent le soleil. Une période de Ramadan, elle, suit le calendrier hégirien
-		et recule d'environ onze jours dans l'année civile : la copie est un point de départ, pas une
-		réponse. C'est le seul endroit du service où un malentendu ferait afficher de mauvaises heures
-		pendant un mois entier, et c'est pourquoi cet avertissement est écrit dans les quatre langues
-		du service, alors que le reste de cet écran est en français : le responsable d'une organisation
-		ne le lit pas forcément.
-	-->
-	<div class="ramadan">
-		<p lang="fr">
-			<strong>Ramadan :</strong> une période de Ramadan avance d’environ onze jours chaque année. La copie
-			garde vos dates telles quelles ; c’est à vous de les redater à la main.
-		</p>
-		<p lang="de">
-			<strong>Ramadan:</strong> Eine Ramadan-Periode verschiebt sich jedes Jahr um etwa elf Tage. Die
-			Kopie behält Ihre Daten unverändert; Sie müssen sie von Hand neu datieren.
-		</p>
-		<p lang="it">
-			<strong>Ramadan:</strong> un periodo di Ramadan si sposta di circa undici giorni ogni anno. La copia
-			mantiene le vostre date invariate; tocca a voi ridatarle a mano.
-		</p>
-		<p lang="ar" dir="rtl">
-			<strong>رمضان:</strong> تتقدّم فترة رمضان نحو أحد عشر يوماً في كل سنة. تحتفظ النسخة بتواريخكم كما
-			هي، وعليكم تعديلها يدوياً.
-		</p>
-	</div>
-
-	{#each data.periodes as periode (periode.id)}
-		<div class="periode">
-			<h3>
-				{periode.name}
-				{#if periode.needsReview}
-					<span class="marque" title="Dates reportées d’un an par la duplication">
-						dates à vérifier
-					</span>
+		<form method="post" action="?source=computed&/enregistrer" class="colonne">
+			<fieldset>
+				<legend>{text.computed.localityLegend}</legend>
+				{#if data.savedLocality && !choisie}
+					<p>
+						{text.computed.saved}
+						<strong><bdi>{label(data.savedLocality)}</bdi></strong>
+						<br />
+						{text.computed.position(
+							coordonnee(data.savedLocality.latitude),
+							coordonnee(data.savedLocality.longitude)
+						)}
+					</p>
 				{/if}
-			</h3>
-			<p class="aide">
-				Du {periode.fromDate}
-				{periode.toDate ? `au ${periode.toDate}` : '(jusqu’à nouvel ordre)'}
-			</p>
-			{#if periode.needsReview}
-				<p class="avertissement">
-					Ces dates viennent d’une duplication : les mêmes jours, un an plus tard, parce que les
-					heures de prière suivent le soleil et non le calendrier hégirien. Vérifiez-les,
-					corrigez-les si besoin, puis enregistrez : la mention disparaîtra.
+				<label for="lieu">{text.computed.searchLabel}</label>
+				<p class="aide" id="lieu-aide">{text.computed.searchHint}</p>
+				{#if text.computed.latinLetters}
+					<p class="aide" id="lieu-latin">{text.computed.latinLetters}</p>
+				{/if}
+				<div class="ligne">
+					<input
+						id="lieu"
+						name="lieu"
+						type="search"
+						form="recherche-localite"
+						value={recherche}
+						autocomplete="off"
+						aria-describedby={text.computed.latinLetters ? 'lieu-aide lieu-latin' : 'lieu-aide'}
+						oninput={(event) => {
+							recherche = event.currentTarget.value;
+							chercherBientot();
+						}}
+					/>
+					<button type="submit" form="recherche-localite">{text.computed.searchButton}</button>
+				</div>
+				<p class="aide" aria-live="polite">{message}</p>
+				{#if options.length > 0}
+					<fieldset class="resultats">
+						<legend>{text.computed.resultsLegend}</legend>
+						{#each options as localite (cle(localite))}
+							<label class="resultat">
+								<input
+									type="radio"
+									name="localite"
+									value={cle(localite)}
+									checked={choisie !== null && cle(choisie) === cle(localite)}
+									onchange={() => choisir(localite)}
+								/>
+								<bdi>{label(localite)}</bdi>
+							</label>
+						{/each}
+					</fieldset>
+				{/if}
+				{#if choisie}
+					<p class="choisie">
+						{text.computed.chosen}
+						<strong><bdi>{label(choisie)}</bdi></strong>
+						<br />
+						{text.computed.position(coordonnee(choisie.latitude), coordonnee(choisie.longitude))}
+					</p>
+				{/if}
+				<p class="aide credit">
+					{text.computed.credit(
+						data.localities.credit[data.language],
+						numericDate(data.localities.version)
+					)}
 				</p>
+			</fieldset>
+
+			<details class="repli" open={horsDeSuisse}>
+				<summary>{text.computed.abroadSummary}</summary>
+				<p class="aide">{text.computed.abroadHint}</p>
+				<div class="position">
+					<div>
+						<label for="latitude">{text.computed.latitude}</label>
+						<input
+							id="latitude"
+							name="latitude"
+							type="text"
+							inputmode="decimal"
+							value={latitude}
+							placeholder="47.1368"
+							oninput={(event) => {
+								latitude = event.currentTarget.value;
+								choisie = null;
+							}}
+						/>
+					</div>
+					<div>
+						<label for="longitude">{text.computed.longitude}</label>
+						<input
+							id="longitude"
+							name="longitude"
+							type="text"
+							inputmode="decimal"
+							value={longitude}
+							placeholder="7.2468"
+							oninput={(event) => {
+								longitude = event.currentTarget.value;
+								choisie = null;
+							}}
+						/>
+					</div>
+				</div>
+				<p class="aide">{text.computed.abroadExample}</p>
+			</details>
+
+			<details class="repli" open={avances}>
+				<summary>{text.computed.advancedSummary}</summary>
+				<p class="aide">{text.computed.advancedHint}</p>
+				<div class="colonne">
+					<label for="method">{text.computed.methodLabel}</label>
+					<select id="method" name="method" aria-describedby="method-aide">
+						{#each data.methodes as methode (methode)}
+							<option value={methode} selected={methode === reglage.method}>
+								{text.computed.methods[methode]}
+							</option>
+						{/each}
+					</select>
+					<p class="aide" id="method-aide">{text.computed.methodHint}</p>
+
+					<label for="madhab">{text.computed.madhabLabel}</label>
+					<select id="madhab" name="madhab" aria-describedby="madhab-aide">
+						{#each data.ecoles as ecole (ecole)}
+							<option value={ecole} selected={ecole === reglage.madhab}>
+								{text.computed.madhabs[ecole]}
+							</option>
+						{/each}
+					</select>
+					<p class="aide" id="madhab-aide">{text.computed.madhabHint}</p>
+
+					<label for="highLatitudeRule">{text.computed.ruleLabel}</label>
+					<select id="highLatitudeRule" name="highLatitudeRule" aria-describedby="regle-aide">
+						{#each data.regles as regle (regle)}
+							<option value={regle} selected={regle === reglage.rule}>
+								{text.computed.rules[regle]}
+							</option>
+						{/each}
+					</select>
+					<p class="aide" id="regle-aide">
+						{text.computed.ruleHint}
+						{#if data.recommandee}
+							{text.computed.ruleUsual(text.computed.rules[data.recommandee])}
+						{/if}
+					</p>
+
+					<fieldset>
+						<legend>{text.computed.adjustmentsLegend}</legend>
+						<div class="decalages">
+							{#each PRIERES as priere (priere)}
+								<label for={`${priere}Adjustment`}>{prayer(priere)}</label>
+								<input
+									id={`${priere}Adjustment`}
+									name={`${priere}Adjustment`}
+									type="number"
+									min="-120"
+									max="120"
+									value={reglage.adjustments[priere]}
+								/>
+							{/each}
+						</div>
+						<p class="aide">{text.computed.adjustmentsHint}</p>
+					</fieldset>
+				</div>
+			</details>
+
+			<div class="boutons">
+				<button type="submit" formaction="?source=computed&/apercu">
+					{text.computed.previewButton}
+				</button>
+			</div>
+
+			<h3>{text.computed.previewTitle}</h3>
+			{#if apercu.length === 0}
+				<p class="aide">{text.computed.previewEmpty}</p>
+			{:else}
+				<p class="aide">
+					{form?.apercuCalcule ? text.computed.previewUnsaved : text.computed.previewSaved}
+				</p>
+				<div class="defile">
+					<table>
+						<thead>
+							<tr>
+								<th scope="col">{text.table.day}</th>
+								{#each PRIERES as priere (priere)}
+									<th scope="col">{prayer(priere)}</th>
+								{/each}
+							</tr>
+						</thead>
+						<tbody>
+							{#each apercu as jour (jour.date)}
+								<tr>
+									<th scope="row">{longDate(data.language, jourDe(jour.date))}</th>
+									{#each PRIERES as priere (priere)}
+										<td>
+											{jour[priere]}
+											{#if priere === 'isha' && jour.apresMinuit}
+												<span class="marque" title={text.computed.nextDayTitle}>
+													{text.computed.nextDay}
+												</span>
+											{/if}
+										</td>
+									{/each}
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
 			{/if}
-			<table>
+
+			<div class="boutons">
+				<button type="submit" class="principal">{text.computed.save}</button>
+			</div>
+		</form>
+	</section>
+{:else if choix === 'import'}
+	<section aria-labelledby="fichier-titre" class="reponse-choisie">
+		<h2 id="fichier-titre">{text.file.title}</h2>
+		<p class="aide">{text.file.intro(taille)}</p>
+
+		<!-- Un exemple vaut mieux qu'une description : un fichier se lit comme ce tableau. -->
+		<p class="aide"><strong>{text.file.exampleTitle}</strong></p>
+		<div class="defile">
+			<table class="exemple">
 				<thead>
 					<tr>
-						<th scope="col">Prière</th>
-						<th scope="col">Heure affichée</th>
-						<th scope="col">Iqama</th>
+						{#each COLONNES as [colonne] (colonne)}
+							<th scope="col"><code>{colonne}</code></th>
+						{/each}
 					</tr>
 				</thead>
 				<tbody>
-					{#each data.prieres as priere (priere)}
+					<tr>
+						<td>21.09.2026</td>
+						<td>05:42</td>
+						<td>13:22</td>
+						<td>16:48</td>
+						<td>19:23</td>
+						<td>20:51</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+
+		<!-- Le format en entier, replié : la personne qui envoie l'export de sa fédération en a besoin,
+		     celle qui a déjà le bon fichier n'a pas à le lire. `details` n'a besoin d'aucun script. -->
+		<details class="repli">
+			<summary>{text.file.formatSummary}</summary>
+			<p class="aide">{text.file.formatColumns}</p>
+			<ul class="aide">
+				{#each COLONNES as [colonne, noms] (colonne)}
+					<li>
+						<strong>
+							{text.file.columnNames(colonne === 'date' ? text.file.columnDate : prayer(colonne))}
+						</strong>
+						{#each noms as nom, rang (nom)}
+							{#if rang > 0}{text.file.listSeparator}{/if}<code>{nom}</code>
+						{/each}
+					</li>
+				{/each}
+			</ul>
+			<p class="aide">{text.file.formatDates}</p>
+			<p class="aide">{text.file.formatTimes}</p>
+			<p class="aide">{text.file.formatLocal}</p>
+			<p class="aide">{text.file.formatEncoding}</p>
+		</details>
+
+		<p class="aide">
+			<a href={resolve('/prieres/modele.csv')} download>{text.file.template}</a>
+			{text.file.templateHint}
+		</p>
+
+		<form
+			method="post"
+			action="?source=import&/lireFichier"
+			enctype="multipart/form-data"
+			class="colonne"
+		>
+			<label for="calendrier">{text.file.fileLabel}</label>
+			<p class="aide" id="calendrier-aide">{text.file.fileHint}</p>
+			<input
+				id="calendrier"
+				name="calendrier"
+				type="file"
+				accept=".csv,text/csv,text/plain"
+				aria-describedby="calendrier-aide"
+				required
+			/>
+
+			<label for="ordre">{text.file.orderLabel}</label>
+			<select id="ordre" name="ordre" aria-describedby="ordre-aide">
+				<option value="auto">{text.file.orders.auto}</option>
+				<option value="jour-mois">{text.file.orders.dayMonth}</option>
+				<option value="mois-jour">{text.file.orders.monthDay}</option>
+			</select>
+			<p class="aide" id="ordre-aide">{text.file.orderHint}</p>
+
+			<div class="position">
+				<div>
+					<label for="annee">{text.file.yearLabel}</label>
+					<input id="annee" name="annee" type="number" min="2020" max="2100" placeholder="2026" />
+				</div>
+				<div>
+					<label for="mois">{text.file.monthLabel}</label>
+					<input id="mois" name="mois" type="number" min="1" max="12" placeholder="9" />
+				</div>
+			</div>
+			<p class="aide">{text.file.yearMonthHint}</p>
+
+			<div class="boutons"><button type="submit">{text.file.read}</button></div>
+		</form>
+
+		{#if lecture}
+			<div class="rapport">
+				<h3>{text.file.readTitle} <bdi>{lecture.nom}</bdi></h3>
+				<ul>
+					<li>
+						{text.file.encoding(
+							lecture.encodage,
+							lecture.separateur === '\t' ? text.file.tab : lecture.separateur
+						)}
+					</li>
+					<li>
+						<strong>
+							{lecture.premiere && lecture.derniere
+								? text.file.days(
+										lecture.jours,
+										numericDate(lecture.premiere),
+										numericDate(lecture.derniere)
+									)
+								: text.file.daysNone}
+						</strong>
+					</li>
+					{#if lecture.nombreDeManquants > 0}
+						<li>
+							{text.file.missing(
+								lecture.nombreDeManquants,
+								lecture.manquants.map((date) => numericDate(date)).join(text.file.listSeparator) +
+									(lecture.nombreDeManquants > lecture.manquants.length ? '…' : '')
+							)}
+						</li>
+					{/if}
+					{#if lecture.nombreDeRefusees > 0}
+						<li>{text.file.refused(lecture.nombreDeRefusees)}</li>
+					{/if}
+				</ul>
+
+				{#if lecture.ordreAmbigu}
+					<p class="avertissement" role="alert">{text.file.ambiguous}</p>
+				{/if}
+
+				{#if lecture.refusees.length > 0}
+					<h4>{text.file.refusedTitle}</h4>
+					<ul class="refusees">
+						{#each lecture.refusees as refusee, index (index)}
+							<li>{text.file.line(refusee.ligne, raison(refusee.raison))}</li>
+						{/each}
+					</ul>
+					{#if lecture.nombreDeRefusees > lecture.refusees.length}
+						<p class="aide">{text.file.more(lecture.nombreDeRefusees - lecture.refusees.length)}</p>
+					{/if}
+				{/if}
+
+				{#if lecture.avertissements.length > 0}
+					<h4>{text.file.checkTitle}</h4>
+					<ul class="refusees">
+						{#each lecture.avertissements as avertissement, index (index)}
+							<li>{raison(avertissement)}</li>
+						{/each}
+					</ul>
+					{#if lecture.nombreDAvertissements > lecture.avertissements.length}
+						<p class="aide">
+							{text.file.more(lecture.nombreDAvertissements - lecture.avertissements.length)}
+						</p>
+					{/if}
+					<p class="aide">{text.file.checkHint}</p>
+				{/if}
+
+				{#if lecture.extrait.length > 0}
+					<h4>{lecture.extraitAVenir ? text.file.previewFromToday : text.file.previewFirst}</h4>
+					<div class="defile">
+						<table>
+							<thead>
+								<tr>
+									<th scope="col">{text.table.day}</th>
+									{#each PRIERES as priere (priere)}
+										<th scope="col">{prayer(priere)}</th>
+									{/each}
+								</tr>
+							</thead>
+							<tbody>
+								{#each lecture.extrait as jour (jour.date)}
+									<tr>
+										<th scope="row">{longDate(data.language, jourDe(jour.date))}</th>
+										{#each PRIERES as priere (priere)}
+											<td>{jour[priere]}</td>
+										{/each}
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				{/if}
+
+				{#if lecture.jours > 0}
+					<form method="post" action="?source=import&/confirmer">
+						<input type="hidden" name="aConfirmer" value={lecture.aConfirmer} />
+						<p class="aide">{text.file.nothingSaved}</p>
+						<button type="submit" class="principal">{text.file.saveDays(lecture.jours)}</button>
+					</form>
+				{/if}
+			</div>
+		{/if}
+
+		{#if data.etat.finDeLImport}
+			<h3>{text.file.removeTitle}</h3>
+			<p class="aide">{text.file.removeHint}</p>
+			<form method="post" action="?source=import&/effacer" class="colonne">
+				<div class="position">
+					<div>
+						<label for="de">{text.file.removeFrom}</label>
+						<input id="de" name="de" type="date" required />
+					</div>
+					<div>
+						<label for="a">{text.file.removeTo}</label>
+						<input id="a" name="a" type="date" required />
+					</div>
+				</div>
+				<div class="boutons"><button type="submit">{text.file.removeButton}</button></div>
+			</form>
+		{/if}
+	</section>
+{/if}
+
+{#if choix === 'manual'}
+	<section aria-labelledby="main-titre" class="reponse-choisie">
+		<h2 id="main-titre">{text.periods.manualTitle}</h2>
+		<p class="aide">{text.periods.manualIntro}</p>
+		{@render periodes('shown')}
+	</section>
+{:else if choix !== null}
+	<!-- L'iqama vaut pour toutes les sources : elle se règle dans une période, que la réponse soit le
+	     calcul ou le fichier, et les heures affichées y restent repliées. -->
+	<section aria-labelledby="iqama-titre">
+		<h2 id="iqama-titre">{text.periods.iqamaTitle}</h2>
+		<p class="aide">{text.periods.iqamaIntro}</p>
+		{@render periodes('iqama')}
+	</section>
+{/if}
+
+<section aria-labelledby="servies-titre">
+	<h2 id="servies-titre">{text.served.title}</h2>
+	<p class="aide">{text.served.intro}</p>
+	{@render tableServie(data.septJours)}
+</section>
+
+{#snippet tableServie(jours: Jour[])}
+	{@const rangs = jours.filter((jour) => PRIERES.some((priere) => jour[priere] !== null))}
+	{#if rangs.length === 0}
+		<p class="aide">{text.served.empty}</p>
+	{:else}
+		<div class="defile">
+			<table>
+				<thead>
+					<tr>
+						<th scope="col">{text.table.day}</th>
+						{#each PRIERES as priere (priere)}
+							<th scope="col">{prayer(priere)}</th>
+						{/each}
+					</tr>
+				</thead>
+				<tbody>
+					{#each rangs as jour (jour.date)}
 						<tr>
-							<th scope="row">{PRAYER_LABELS[priere] ?? priere}</th>
-							<td>{periode.soleil[priere] ?? '–'}</td>
-							<td>
-								{#if periode.iqama[priere].heure}
-									{periode.iqama[priere].heure}
-								{:else if periode.iqama[priere].decalage !== null}
-									+ {periode.iqama[priere].decalage} min
-								{:else}
-									–
-								{/if}
-							</td>
+							<th scope="row">{longDate(data.language, jourDe(jour.date))}</th>
+							{#each PRIERES as priere (priere)}
+								{@const source = jour[`${priere}_source`]}
+								{@const iqama = jour[`${priere}_iqama`]}
+								<td>
+									{#if jour[priere]}
+										<span class="soleil">{heure(jour[priere])}</span>
+										{#if source === 'manual' || source === 'import' || source === 'computed'}
+											<span class="provenance">{text.table.sources[source]}</span>
+										{/if}
+										{#if priere === 'dhuhr' && jumuaCeJourLa(jour.date)}
+											<!-- Le vendredi, les sessions remplacent le Dhuhr : afficher son iqama
+											     ici ferait exactement la contradiction qu'on veut supprimer. -->
+											<span class="iqama">
+												{text.table.jumua(data.vendredi.map((session) => session.start).join(', '))}
+											</span>
+										{:else if iqama}
+											<span class="iqama">{text.table.iqama(heure(iqama))}</span>
+										{/if}
+									{:else}
+										<span class="aide">–</span>
+									{/if}
+								</td>
+							{/each}
 						</tr>
 					{/each}
 				</tbody>
 			</table>
-			<div class="boutons">
-				<button
-					type="button"
-					aria-expanded={periodeOuverte === periode.id}
-					onclick={() => (periodeOuverte = periodeOuverte === periode.id ? null : periode.id)}
-				>
-					Modifier
-				</button>
-				<form method="post" action="?/dupliquerPeriode">
-					<input type="hidden" name="periodeId" value={periode.id} />
-					<button type="submit">Dupliquer pour l’année suivante</button>
-				</form>
-				<form method="post" action="?/supprimerPeriode">
-					<input type="hidden" name="periodeId" value={periode.id} />
-					<button type="submit">Supprimer</button>
-				</form>
-			</div>
-			<div class="repli" class:ferme={periodeOuverte !== null && periodeOuverte !== periode.id}>
-				{@render formulairePeriode(periode)}
-			</div>
 		</div>
-	{/each}
-
-	<div class="periode">
-		<h3>Ajouter une période</h3>
-		{#if derniere}
-			<p class="aide">
-				Les valeurs de « {derniere.name} » sont déjà remplies : ne changez que ce qui change.
-			</p>
-		{/if}
-		<div class="repli" class:ferme={periodeOuverte !== null && periodeOuverte !== 'nouvelle'}>
-			{@render formulairePeriode(null)}
-		</div>
-		<div class="boutons">
-			<button
-				type="button"
-				aria-expanded={periodeOuverte === 'nouvelle'}
-				onclick={() => (periodeOuverte = periodeOuverte === 'nouvelle' ? null : 'nouvelle')}
-			>
-				Ajouter une période
-			</button>
-		</div>
-	</div>
-</section>
-
-<section aria-labelledby="apercu-titre">
-	<h2 id="apercu-titre">Ce que le calcul donnerait, sur sept jours</h2>
-	{#if jours.length === 0}
-		<p class="aide">
-			Renseignez une position, puis cliquez sur « Voir l’aperçu » : les heures s’affichent ici avant
-			d’être enregistrées.
-		</p>
-	{:else}
-		{#if form?.apercuCalcule}
-			<p class="aide">
-				Calculé avec ce que porte le formulaire, <strong>sans rien enregistrer</strong>. Comparez au
-				panneau de votre organisation, puis cliquez sur « Enregistrer ».
-			</p>
-		{/if}
-		<table>
-			<thead>
-				<tr>
-					<th scope="col">Jour</th>
-					{#each PRIERES as priere (priere)}
-						<th scope="col">{PRAYER_LABELS[priere] ?? priere}</th>
-					{/each}
-				</tr>
-			</thead>
-			<tbody>
-				{#each jours as jour (jour.date)}
-					<tr>
-						<th scope="row">{jour.date}</th>
-						{#each PRIERES as priere (priere)}
-							<td>
-								{jour[priere]}
-								{#if priere === 'isha' && jour.apresMinuit}
-									<span class="marque" title="Cette heure appartient au lendemain"
-										>le lendemain</span
-									>
-								{/if}
-							</td>
-						{/each}
-					</tr>
-				{/each}
-			</tbody>
-		</table>
 	{/if}
-</section>
+{/snippet}
 
-<section aria-labelledby="import-titre">
-	<h2 id="import-titre">Importer un calendrier</h2>
+{#snippet periodes(mode: 'shown' | 'iqama')}
 	<p class="aide">
-		Un fichier CSV, une ligne par jour, avec les colonnes <code>date</code>, <code>fajr</code>,
-		<code>dhuhr</code>, <code>asr</code>, <code>maghrib</code>, <code>isha</code>. Les dates
-		s’écrivent <code>2026-09-21</code> et les heures <code>19:23</code>. Le point-virgule d’Excel
-		est accepté, et une colonne du lever du soleil est ignorée sans erreur. Taille acceptée :
-		{data.tailleMaximale}.
+		{text.periods.noOverlap}
+		{text.periods.fridayBefore}<a href={resolve('/vendredi')}>{text.periods.fridayLink}</a>{text
+			.periods.fridayAfter}
 	</p>
 
-	<!-- Le format en entier, replié : la personne qui envoie l'export de sa fédération en a besoin,
-	     celle qui a déjà le bon fichier n'a pas à le lire. `details` n'a besoin d'aucun script. -->
-	<details class="format">
-		<summary>Le format en détail</summary>
-		<p class="aide">
-			L’ordre des colonnes n’a pas d’importance : c’est le nom de l’en-tête qui compte, lu sans
-			tenir compte de la casse ni des accents.
-		</p>
-		<ul class="aide">
-			<li><code>date</code>, <code>jour</code>, <code>day</code> ou <code>tag</code></li>
-			<li>
-				<code>fajr</code>, <code>fadjr</code>, <code>fadjer</code>, <code>sobh</code>,
-				<code>subh</code> ou <code>imsak</code>
-			</li>
-			<li>
-				<code>dhuhr</code>, <code>duhr</code>, <code>zuhr</code>, <code>dohr</code>,
-				<code>dhohr</code> ou <code>midi</code>
-			</li>
-			<li><code>asr</code>, <code>assr</code> ou <code>aser</code></li>
-			<li>
-				<code>maghrib</code>, <code>maghreb</code>, <code>magrib</code> ou <code>coucher</code>
-			</li>
-			<li>
-				<code>isha</code>, <code>icha</code>, <code>ishaa</code>, <code>ichaa</code> ou
-				<code>isya</code>
-			</li>
-		</ul>
-		<p class="aide">
-			Dates : <code>2027-01-01</code>, <code>01/01/2027</code>, <code>01.01.2027</code> ou
-			<code>1-1-2027</code>. Heures : <code>19:23</code>, <code>9:23</code>,
-			<code>19:23:00</code>, <code>19h23</code> ou <code>7:23 PM</code>. Des secondes non nulles
-			sont refusées, parce qu’elles signalent presque toujours une colonne mal alignée.
-		</p>
-		<p class="aide">
-			Les heures sont locales, dans le fuseau de votre organisation : ne convertissez rien, et ne
-			vous occupez pas du changement d’heure. Une Isha après minuit s’écrit <code>00:41</code> sur la
-			ligne du jour de la prière, pas sur celle du lendemain.
-		</p>
-		<p class="aide">
-			Guillemets, marque d’ordre des octets, fins de ligne Windows, UTF-8, UTF-16 et Windows-1252
-			passent sans rien faire. L’encodage retenu est affiché dans l’aperçu.
-		</p>
-	</details>
-
-	<p class="aide">
-		<a href={resolve('/prieres/modele.csv')} download>
-			Télécharger un modèle des soixante prochains jours
-		</a>
-		: déjà rempli avec vos réglages actuels. Corrigez ce qui diffère de votre panneau dans un tableur,
-		puis renvoyez-le ici.
+	<!-- « Copier pour l'année suivante » reporte les mêmes dates un an plus tard, parce que les heures
+	     de prière suivent le soleil. Une période de Ramadan, elle, suit le calendrier hégirien et
+	     recule d'environ onze jours dans l'année civile : la copie est un point de départ, pas une
+	     réponse. C'est le seul endroit du service où un malentendu ferait afficher de mauvaises
+	     heures pendant un mois entier. -->
+	<p class="ramadan">
+		<strong>{text.periods.ramadanTitle}</strong>
+		{text.periods.ramadanText}
 	</p>
 
-	<form method="post" action="?/lireFichier" enctype="multipart/form-data" class="colonne">
-		<label for="calendrier">Fichier</label>
-		<input
-			id="calendrier"
-			name="calendrier"
-			type="file"
-			accept=".csv,text/csv,text/plain"
-			required
-		/>
-
-		<label for="ordre">Si les dates s’écrivent en chiffres seuls</label>
-		<select id="ordre" name="ordre">
-			<option value="auto">Deviner (recommandé)</option>
-			<option value="jour-mois">Jour puis mois (21/09/2026)</option>
-			<option value="mois-jour">Mois puis jour (09/21/2026)</option>
-		</select>
-
-		<div class="ligne">
-			<label for="annee">Année du fichier</label>
-			<input id="annee" name="annee" type="number" min="2020" max="2100" placeholder="2026" />
-			<label for="mois">Mois, si le fichier n’en couvre qu’un</label>
-			<input id="mois" name="mois" type="number" min="1" max="12" placeholder="9" />
-		</div>
-		<p class="aide">
-			Utile pour un export mensuel dont la colonne de dates ne contient qu’un quantième.
-		</p>
-
-		<button type="submit">Lire le fichier</button>
-	</form>
-
-	{#if lecture}
-		<div class="rapport">
-			<h3>Ce que nous avons lu dans « {lecture.nom} »</h3>
-			<ul>
-				<li>Encodage : {lecture.encodage}. Séparateur : « {lecture.separateur} ».</li>
-				<li>
-					<strong>{lecture.jours} jours</strong>
-					{#if lecture.premiere}, du {lecture.premiere} au {lecture.derniere}{/if}.
-				</li>
-				{#if lecture.manquants.length > 0}
-					<li>
-						{lecture.manquants.length} jour{lecture.manquants.length > 1 ? 's' : ''} manquant{lecture
-							.manquants.length > 1
-							? 's'
-							: ''} dans cet intervalle : {lecture.manquants.slice(0, 8).join(', ')}{lecture
-							.manquants.length > 8
-							? '…'
-							: ''}
-					</li>
+	{#each data.periodes as periode (periode.id)}
+		<div class="periode">
+			<h3>
+				<bdi>{periode.name}</bdi>
+				{#if periode.needsReview}
+					<span class="marque" title={text.periods.toReviewTitle}>{text.periods.toReview}</span>
 				{/if}
-				{#if lecture.refusees.length > 0}
-					<li>
-						{lecture.refusees.length} ligne{lecture.refusees.length > 1 ? 's' : ''} refusée{lecture
-							.refusees.length > 1
-							? 's'
-							: ''}.
-					</li>
-				{/if}
-			</ul>
-
-			{#if lecture.ordreAmbigu}
-				<p class="avertissement" role="alert">
-					Les dates de ce fichier se lisent de deux façons, jour/mois ou mois/jour, et les deux
-					donnent un calendrier valide. Nous ne devinons pas : choisissez l’ordre ci-dessus, puis
-					relisez le fichier.
-				</p>
+			</h3>
+			<p class="aide">
+				{periode.toDate
+					? text.periods.dates(
+							numericDate(periode.fromDate as IsoDate),
+							numericDate(periode.toDate as IsoDate)
+						)
+					: text.periods.datesOpen(numericDate(periode.fromDate as IsoDate))}
+			</p>
+			{#if periode.needsReview}
+				<p class="avertissement">{text.periods.toReviewText}</p>
 			{/if}
-
-			{#if lecture.refusees.length > 0}
-				<h4>Lignes refusées</h4>
-				<ul class="refusees">
-					{#each lecture.refusees.slice(0, 20) as refusee (refusee.ligne + refusee.raison)}
-						<li>Ligne {refusee.ligne} : {refusee.raison}</li>
-					{/each}
-				</ul>
-				{#if lecture.refusees.length > 20}
-					<p class="aide">…et {lecture.refusees.length - 20} autres.</p>
-				{/if}
-			{/if}
-
-			{#if lecture.avertissements.length > 0}
-				<h4>À vérifier</h4>
-				<ul class="refusees">
-					{#each lecture.avertissements.slice(0, 20) as avertissement (avertissement.message)}
-						<li>{avertissement.message}</li>
-					{/each}
-				</ul>
-				<p class="aide">
-					Ces jours seront importés tels quels : un écart peut être une correction volontaire.
-				</p>
-			{/if}
-
-			{#if lecture.extrait.length > 0}
-				<h4>Les premiers jours</h4>
+			<div class="defile">
 				<table>
 					<thead>
 						<tr>
-							<th scope="col">Jour</th>
-							{#each PRIERES as priere (priere)}
-								<th scope="col">{PRAYER_LABELS[priere] ?? priere}</th>
-							{/each}
+							<th scope="col">{text.periods.colPrayer}</th>
+							<th scope="col">{text.periods.colShown}</th>
+							<th scope="col">{text.periods.colIqama}</th>
 						</tr>
 					</thead>
 					<tbody>
-						{#each lecture.extrait as jour (jour.date)}
+						{#each PRIERES as priere (priere)}
 							<tr>
-								<th scope="row">{jour.date}</th>
-								{#each PRIERES as priere (priere)}
-									<td>{jour[priere]}</td>
-								{/each}
+								<th scope="row">{prayer(priere)}</th>
+								<td>{periode.soleil[priere] ?? '–'}</td>
+								<td>
+									{#if periode.iqama[priere].heure}
+										{periode.iqama[priere].heure}
+									{:else if periode.iqama[priere].decalage !== null}
+										{text.periods.iqamaAfter(periode.iqama[priere].decalage ?? 0)}
+									{:else}
+										–
+									{/if}
+								</td>
 							</tr>
 						{/each}
 					</tbody>
 				</table>
-			{/if}
-
-			{#if lecture.jours > 0}
-				<form method="post" action="?/confirmer">
-					<input type="hidden" name="aConfirmer" value={lecture.aConfirmer} />
-					<p class="aide">
-						Rien n’a encore été enregistré. Confirmer remplacera les jours couverts par ce fichier,
-						et ne touchera à aucun autre.
-					</p>
-					<button type="submit" class="principal">
-						Enregistrer ces {lecture.jours} jours
-					</button>
+			</div>
+			<div class="boutons">
+				<form method="post" action={`?source=${choix}&/dupliquerPeriode`}>
+					<input type="hidden" name="periodeId" value={periode.id} />
+					<button type="submit">{text.periods.copy}</button>
 				</form>
-			{/if}
+				<form method="post" action={`?source=${choix}&/supprimerPeriode`}>
+					<input type="hidden" name="periodeId" value={periode.id} />
+					<button type="submit">{text.periods.delete}</button>
+				</form>
+			</div>
+			<details class="repli" open={periodeOuverte === periode.id}>
+				<summary>{text.periods.modify}</summary>
+				{@render formulairePeriode(periode, mode)}
+			</details>
 		</div>
-	{/if}
+	{/each}
 
-	{#if data.etat.finDeLImport}
-		<h3>Retirer des jours importés</h3>
-		<p class="aide">
-			Les jours retirés repassent au calcul, s’il est configuré. Le journal des modifications en
-			garde la trace.
-		</p>
-		<form method="post" action="?/effacer" class="ligne">
-			<label for="de">Du</label>
-			<input id="de" name="de" type="date" required />
-			<label for="a">au</label>
-			<input id="a" name="a" type="date" required />
-			<button type="submit">Retirer</button>
-		</form>
-	{/if}
-</section>
+	<details
+		class="repli periode"
+		open={periodeOuverte === 'nouvelle' || (mode === 'shown' && data.periodes.length === 0)}
+	>
+		<summary>{text.periods.add}</summary>
+		{#if derniere}
+			<p class="aide">{text.periods.prefilled(derniere.name)}</p>
+		{/if}
+		{@render formulairePeriode(null, mode)}
+	</details>
+{/snippet}
 
-{#snippet formulairePeriode(periode: (typeof data.periodes)[number] | null)}
-	{@const cle = periode?.id ?? 'nouvelle'}
-	{@const modele = periode ?? derniere}
-	<form method="post" action="?/periode" class="colonne">
+{#snippet formulairePeriode(periode: Periode | null, mode: 'shown' | 'iqama')}
+	{@const cleDeLaPeriode = periode?.id ?? 'nouvelle'}
+	{@const renvoyee = periodeOuverte === cleDeLaPeriode ? (form?.periode ?? null) : null}
+	{@const modele = renvoyee ?? periode ?? derniere}
+	<form method="post" action={`?source=${choix}&/periode`} class="colonne">
 		{#if periode}<input type="hidden" name="periodeId" value={periode.id} />{/if}
 
-		<label for={`nom-${cle}`}>Nom</label>
+		<label for={`nom-${cleDeLaPeriode}`}>{text.periods.nameLabel}</label>
+		<p class="aide" id={`nom-aide-${cleDeLaPeriode}`}>{text.periods.nameHint}</p>
 		<input
-			id={`nom-${cle}`}
+			id={`nom-${cleDeLaPeriode}`}
 			name="name"
 			type="text"
 			maxlength="60"
-			value={periode?.name ?? ''}
-			placeholder="Hiver 2027"
+			value={renvoyee?.name ?? periode?.name ?? ''}
+			placeholder={text.periods.namePlaceholder}
+			aria-describedby={`nom-aide-${cleDeLaPeriode}`}
 			required
 		/>
 
 		<div class="position">
 			<div>
-				<label for={`de-${cle}`}>À partir du</label>
+				<label for={`de-${cleDeLaPeriode}`}>{text.periods.fromLabel}</label>
 				<input
-					id={`de-${cle}`}
+					id={`de-${cleDeLaPeriode}`}
 					name="fromDate"
 					type="date"
-					value={periode?.fromDate ?? data.today}
+					value={renvoyee?.fromDate ?? periode?.fromDate ?? data.today}
 					required
 				/>
 			</div>
 			<div>
-				<label for={`a-${cle}`}>Jusqu’au</label>
-				<input id={`a-${cle}`} name="toDate" type="date" value={periode?.toDate ?? ''} />
+				<label for={`a-${cleDeLaPeriode}`}>{text.periods.toLabel}</label>
+				<input
+					id={`a-${cleDeLaPeriode}`}
+					name="toDate"
+					type="date"
+					value={renvoyee?.toDate ?? periode?.toDate ?? ''}
+				/>
 			</div>
 		</div>
-		<p class="aide">Laissez la date de fin vide pour « jusqu’à nouvel ordre ».</p>
+		<p class="aide">{text.periods.toHint}</p>
 
-		<!-- Les cinq iqamas, et elles seules. C'est ce qu'une organisation règle vraiment ; les heures
-		     du soleil viennent du calcul ou de l'import dans la quasi-totalité des cas, et les demander
-		     en premier ferait croire qu'il faut les saisir. -->
+		{#if mode === 'shown'}
+			<fieldset>
+				<legend>{text.periods.shownTitle}</legend>
+				<p class="aide">{text.periods.shownHint}</p>
+				{@render heuresAffichees(cleDeLaPeriode, modele)}
+			</fieldset>
+		{/if}
+
+		<!-- Les cinq iqamas. C'est ce qu'une organisation règle vraiment quand ses heures viennent du
+		     calcul ou d'un fichier ; les heures affichées ne se saisissent alors que repliées. -->
+		<fieldset>
+			<legend>{text.periods.iqamaLegend}</legend>
+			<p class="aide">{text.periods.iqamaHint}</p>
+			<div class="defile">
+				<table class="saisie">
+					<thead>
+						<tr>
+							<th scope="col">{text.periods.colPrayer}</th>
+							<th scope="col">{text.periods.iqamaAt}</th>
+							<th scope="col">{text.periods.iqamaOffset}</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each PRIERES as priere (priere)}
+							<tr>
+								<th scope="row">
+									<label for={`${priere}-iqama-${cleDeLaPeriode}`}>{prayer(priere)}</label>
+								</th>
+								<td>
+									<input
+										id={`${priere}-iqama-${cleDeLaPeriode}`}
+										name={`${priere}Iqama`}
+										type="time"
+										value={modele?.iqama[priere].heure ?? ''}
+									/>
+								</td>
+								<td>
+									<input
+										name={`${priere}IqamaOffset`}
+										type="number"
+										min="0"
+										max="120"
+										aria-label={text.periods.iqamaOffsetLabel(prayer(priere))}
+										value={modele?.iqama[priere].decalage ?? ''}
+									/>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		</fieldset>
+
+		{#if mode === 'iqama'}
+			<details class="repli">
+				<summary>{text.periods.shownFold}</summary>
+				<p class="aide">{text.periods.shownFoldHint}</p>
+				{@render heuresAffichees(cleDeLaPeriode, modele)}
+			</details>
+		{/if}
+
+		<div class="boutons">
+			<button type="submit" formaction={`?source=${choix}&/apercuPeriode`}>
+				{text.periods.preview}
+			</button>
+		</div>
+		{#if renvoyee && form?.apercuPeriode}
+			<h4>{text.periods.previewTitle}</h4>
+			<p class="aide">{text.periods.previewHint}</p>
+			{@render tableServie(form.apercuPeriode)}
+		{/if}
+		<div class="boutons">
+			<button type="submit" class="principal">{text.periods.save}</button>
+		</div>
+	</form>
+{/snippet}
+
+{#snippet heuresAffichees(cleDeLaPeriode: string, modele: { soleil: Periode['soleil'] } | null)}
+	<div class="defile">
 		<table class="saisie">
 			<thead>
 				<tr>
-					<th scope="col">Prière</th>
-					<th scope="col">Iqama à</th>
-					<th scope="col">ou après</th>
+					<th scope="col">{text.periods.colPrayer}</th>
+					<th scope="col">{text.periods.colShown}</th>
 				</tr>
 			</thead>
 			<tbody>
-				{#each data.prieres as priere (priere)}
+				{#each PRIERES as priere (priere)}
 					<tr>
 						<th scope="row">
-							<label for={`${priere}-iqama-${cle}`}>{PRAYER_LABELS[priere] ?? priere}</label>
+							<label for={`${priere}-${cleDeLaPeriode}`}>{prayer(priere)}</label>
 						</th>
 						<td>
 							<input
-								id={`${priere}-iqama-${cle}`}
-								name={`${priere}Iqama`}
+								id={`${priere}-${cleDeLaPeriode}`}
+								name={priere}
 								type="time"
-								value={modele?.iqama[priere].heure ?? ''}
-							/>
-						</td>
-						<td>
-							<input
-								name={`${priere}IqamaOffset`}
-								type="number"
-								min="0"
-								max="120"
-								aria-label={`Iqama du ${PRAYER_LABELS[priere] ?? priere}, minutes après`}
-								value={modele?.iqama[priere].decalage ?? ''}
+								value={modele?.soleil[priere] ?? ''}
 							/>
 						</td>
 					</tr>
 				{/each}
 			</tbody>
 		</table>
-		<p class="aide">
-			Pour chaque prière, une heure d’iqama <strong>ou</strong> un nombre de minutes après l’heure affichée
-			: jamais les deux. Un décalage suit le soleil tout seul ; une heure fixe ne bouge pas, pas même
-			au changement d’heure, ce qui est voulu.
-		</p>
-
-		<details class="soleil-saisi">
-			<summary>Saisir aussi les heures affichées</summary>
-			<p class="aide">
-				À ne remplir que si les heures de votre panneau diffèrent de celles que le calcul ou
-				l’import donnent. Une case vide laisse la source précédente décider, prière par prière.
-			</p>
-			<table class="saisie">
-				<thead>
-					<tr>
-						<th scope="col">Prière</th>
-						<th scope="col">Heure affichée</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each data.prieres as priere (priere)}
-						<tr>
-							<th scope="row">
-								<label for={`${priere}-${cle}`}>{PRAYER_LABELS[priere] ?? priere}</label>
-							</th>
-							<td>
-								<input
-									id={`${priere}-${cle}`}
-									name={priere}
-									type="time"
-									value={modele?.soleil[priere] ?? ''}
-								/>
-							</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</details>
-
-		<button type="submit" class="principal">Enregistrer cette période</button>
-	</form>
+	</div>
 {/snippet}
 
 <style>
-	.format {
-		border: 1px solid #ddd;
-		border-radius: 0.5rem;
-		padding: 0.5rem 0.75rem;
-		margin-bottom: 1rem;
+	.intro {
+		max-width: 42rem;
 	}
-	.format summary {
+	.question fieldset {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+	.question legend {
+		font-weight: 700;
+		font-size: 1.1rem;
+		padding: 0 0.25rem;
+	}
+	.reponse {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.6rem;
+		min-height: 44px;
+		padding: 0.5rem;
+		border: 1px solid #ddd;
+		border-radius: 0.375rem;
+		cursor: pointer;
+		font-weight: normal;
+	}
+	.reponse:has(input:checked) {
+		border-color: var(--accent);
+		background: #f6f8fb;
+	}
+	.reponse input {
+		margin-block-start: 0.3rem;
+		min-height: auto;
+	}
+	.reponse span {
+		display: flex;
+		flex-direction: column;
+	}
+	.reponse-choisie {
+		border-block-start: 2px solid #ddd;
+		margin-block-start: 1.5rem;
+	}
+	.repli {
+		border: 1px solid #ddd;
+		border-radius: 0.375rem;
+		padding: 0.5rem 0.75rem;
+		margin-block: 0.5rem;
+	}
+	.repli summary {
 		cursor: pointer;
 		min-height: 44px;
 		display: flex;
 		align-items: center;
+		font-weight: 600;
 	}
-	.format ul {
-		padding-left: 1.25rem;
+	.resultats {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+	.resultat {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		min-height: 44px;
+		font-weight: normal;
+	}
+	.resultat input {
+		min-height: auto;
+	}
+	.choisie {
+		background: #f6f8fb;
+		border-inline-start: 4px solid var(--accent);
+		padding: 0.5rem 0.75rem;
+	}
+	.credit {
+		font-size: 0.8rem;
 	}
 	.periode {
 		border: 1px solid #ddd;
 		border-radius: 0.5rem;
 		padding: 0.75rem;
-		margin-bottom: 1rem;
+		margin-block-end: 1rem;
 	}
 	.periode h3 {
-		margin-top: 0;
+		margin-block-start: 0;
 		font-size: 1rem;
 	}
 	.soleil {
@@ -826,19 +1171,6 @@
 		font-size: 0.8rem;
 		color: #555;
 	}
-	.soleil-saisi {
-		border: 1px solid #ddd;
-		border-radius: 0.375rem;
-		padding: 0.5rem 0.75rem;
-	}
-	.soleil-saisi summary {
-		cursor: pointer;
-		min-height: 44px;
-		display: flex;
-		align-items: center;
-		font-weight: 600;
-		font-size: 0.9rem;
-	}
 	.saisie input[type='time'],
 	.saisie input[type='number'] {
 		width: 100%;
@@ -848,13 +1180,16 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.35rem;
-		max-width: 34rem;
+		max-width: 38rem;
 	}
 	.ligne {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
 		flex-wrap: wrap;
+	}
+	.ligne input {
+		flex: 1 1 12rem;
 	}
 	label {
 		font-weight: 600;
@@ -867,15 +1202,17 @@
 		padding: 0 0.5rem;
 		border-radius: 0.375rem;
 		border: 1px solid #888;
+		max-width: 100%;
 	}
 	fieldset {
 		border: 1px solid #ddd;
 		border-radius: 0.375rem;
 		padding: 0.75rem;
+		min-width: 0;
 	}
 	/* Deux colonnes sur un écran large, une seule sur un téléphone. Chaque étiquette reste
-	   au-dessus de son champ : côte à côte, « Longitude » se retrouvait à droite du champ de
-	   latitude, et son propre champ passait à la ligne suivante. */
+	   au-dessus de son champ : côte à côte, la seconde se retrouvait à côté du premier champ, et son
+	   propre champ passait à la ligne suivante. */
 	.position {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
@@ -896,46 +1233,35 @@
 		color: #555;
 		font-size: 0.9rem;
 	}
-
-	/* Les quatre langues du service, empilées. Chaque paragraphe porte son `lang`, donc sa coupure
-	   de mots et sa voix de synthèse ; l'arabe porte en plus son `dir`. */
 	.ramadan {
 		margin: 1rem 0;
 		padding: 0.75rem 1rem;
 		border-inline-start: 3px solid #b8860b;
 		background: #fdf8ec;
 		border-radius: 4px;
-	}
-
-	.ramadan p {
-		margin: 0.35rem 0;
 		font-size: 0.9rem;
 		color: #4a3c10;
 	}
-
-	.ramadan p[dir='rtl'] {
-		text-align: right;
-	}
 	.erreur {
 		background: #fee2e2;
-		border-left: 4px solid #b91c1c;
+		border-inline-start: 4px solid #b91c1c;
 		padding: 0.5rem 0.75rem;
 	}
 	.succes {
 		background: #dcfce7;
-		border-left: 4px solid #15803d;
+		border-inline-start: 4px solid #15803d;
 		padding: 0.5rem 0.75rem;
 	}
 	.avertissement {
 		background: #fef3c7;
-		border-left: 4px solid #d97706;
+		border-inline-start: 4px solid #d97706;
 		padding: 0.5rem 0.75rem;
 	}
 	.boutons {
 		display: flex;
 		gap: 0.5rem;
 		flex-wrap: wrap;
-		margin-top: 0.5rem;
+		margin-block-start: 0.5rem;
 	}
 	button {
 		min-height: 44px;
@@ -952,16 +1278,22 @@
 		border-color: var(--accent);
 		font-weight: 600;
 	}
+	/* Un tableau de sept jours est plus large qu'un téléphone : il défile seul, sans faire défiler la
+	   page. */
+	.defile {
+		overflow-x: auto;
+		max-width: 100%;
+	}
 	table {
 		border-collapse: collapse;
-		margin-top: 0.5rem;
+		margin-block-start: 0.5rem;
 		font-variant-numeric: tabular-nums;
 	}
 	th,
 	td {
 		border: 1px solid #eee;
 		padding: 0.25rem 0.6rem;
-		text-align: left;
+		text-align: start;
 		font-size: 0.95rem;
 	}
 	thead th {
@@ -978,7 +1310,7 @@
 		border: 1px solid #ddd;
 		border-radius: 0.375rem;
 		padding: 0.75rem 1rem;
-		margin-top: 1rem;
+		margin-block-start: 1rem;
 	}
 	.refusees {
 		font-size: 0.9rem;

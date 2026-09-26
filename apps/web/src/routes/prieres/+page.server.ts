@@ -1,12 +1,23 @@
-// Les heures de prière : réglages, aperçu, import (ADR 0004).
+// Les heures de prière : réglages, aperçu, import (ADR 0004), derrière une seule question (étape 18,
+// retour C1) : « D'où viennent vos heures de prière ? ». Trois réponses, calculées pour une
+// localité, importées depuis un fichier, saisies à la main ; chacune n'affiche que ce qu'elle
+// demande, puis l'aperçu des sept prochains jours, puis « Enregistrer ».
 //
-// Réservé aux responsables, comme les réglages. Trois gestes, et le second ne s'écrit jamais tout
-// seul : on regarde un aperçu, on décide, puis on confirme.
+// La réponse montrée est dans l'adresse (`?source=computed`), et chaque formulaire la garde dans la
+// sienne (`?source=computed&/apercu`) : SvelteKit lit le nom de l'action dans le paramètre qui
+// commence par `/`, où qu'il soit. Sans elle, l'écran montre la réponse que les sept prochains jours
+// donnent déjà, et rien pour une organisation qui n'a encore rien réglé.
 //
-// **L'aperçu ne stocke rien côté serveur.** Le fichier repart au navigateur dans un champ caché,
-// sous la forme normalisée qu'on vient d'en lire — pas le fichier d'origine. Il n'y a donc ni
-// table temporaire à purger, ni état de session à faire expirer, et rien ne survit à un responsable
-// qui ferme son onglet en cours de route.
+// Réservé aux responsables, comme les réglages. Aucun geste ne s'écrit tout seul : on regarde un
+// aperçu, on décide, puis on confirme.
+//
+// **Un aperçu ne stocke rien côté serveur.** Le fichier lu repart au navigateur dans un champ caché,
+// sous la forme normalisée qu'on vient d'en lire, pas le fichier d'origine ; l'aperçu d'une période
+// s'écrit dans une transaction qui est annulée aussitôt la lecture faite. Il n'y a donc ni table
+// temporaire à purger, ni état de session à faire expirer.
+//
+// Les actions rendent le nom d'une erreur, jamais sa phrase : la page l'écrit dans la langue de
+// l'écran (étape 18, retour D2).
 
 import { fail } from '@sveltejs/kit';
 import { addDays, todayInZone, type IsoDate, type PrayerDay } from '@jadwal/core';
@@ -21,8 +32,17 @@ import {
 	recommendedHighLatitudeRule,
 	type OrdreDeDate
 } from '@jadwal/core/prayer';
+import type { ResolvedPrayerRow } from '@jadwal/db';
 import { withSessionOrg } from '$lib/server/context.js';
 import { mustAdministerPrayerModule } from '$lib/server/guard.js';
+import {
+	findLocality,
+	findLocalityAt,
+	LOCALITIES_SOURCE,
+	searchLocalities,
+	toChoice,
+	type LocalityChoice
+} from '$lib/server/localites/localities.js';
 import {
 	apercu,
 	effacerImport,
@@ -31,6 +51,7 @@ import {
 	enregistrerReglages,
 	etatDesSources,
 	importerJours,
+	lireRaison,
 	PRIERES,
 	readPeriodes,
 	readReglages,
@@ -45,6 +66,48 @@ import type { Actions, PageServerLoad } from './$types.js';
 
 /** La taille de corps qu'adapter-node accepte, pour le dire à l'écran plutôt que de la coder en dur. */
 const TAILLE_MAXIMALE = process.env['BODY_SIZE_LIMIT'] ?? '512K';
+
+/** Les trois réponses à la question, dans l'ordre où l'écran les propose. */
+const REPONSES = ['computed', 'import', 'manual'] as const;
+type Reponse = (typeof REPONSES)[number];
+
+/** Ce que l'écran montre d'un fichier lu : les vingt premiers refus et avertissements suffisent. */
+const LIGNES_MONTREES = 20;
+/** Les jours manquants nommés un par un, avant « … ». */
+const MANQUANTS_MONTRES = 8;
+
+/**
+ * La réponse que montre le résultat d'une action du calcul ou du fichier, quelle que soit l'adresse
+ * d'où elle a été envoyée : un fichier lu dont l'écran n'afficherait pas le rapport serait perdu.
+ * Une période, elle, se règle sous chacune des trois réponses.
+ */
+const CALCUL = { answer: 'computed' } as const;
+const FICHIER = { answer: 'import' } as const;
+
+function estUneReponse(valeur: unknown): valeur is Reponse {
+	return (REPONSES as readonly unknown[]).includes(valeur);
+}
+
+/**
+ * La réponse que les sept prochains jours donnent déjà : la source qui fournit le plus d'heures, la
+ * saisie à la main d'abord à égalité, puis le fichier, comme la priorité entre elles. Sans aucune
+ * heure, le calcul si une position est enregistrée, et sinon aucune réponse : la question est alors
+ * posée seule.
+ */
+function reponseDesJours(jours: readonly ResolvedPrayerRow[], position: boolean): Reponse | null {
+	const compte: Record<Reponse, number> = { manual: 0, import: 0, computed: 0 };
+	for (const jour of jours) {
+		for (const priere of PRIERES) {
+			const source = jour[`${priere}_source`];
+			if (estUneReponse(source)) compte[source] += 1;
+		}
+	}
+	const meilleure = (['manual', 'import', 'computed'] as const).reduce((choisie, source) =>
+		compte[source] > compte[choisie] ? source : choisie
+	);
+	if (compte[meilleure] > 0) return meilleure;
+	return position ? 'computed' : null;
+}
 
 function decalage(valeur: FormDataEntryValue | null): number {
 	const nombre = Number(String(valeur ?? '0'));
@@ -61,34 +124,121 @@ function position(valeur: FormDataEntryValue | null): number | null {
 	return Number.isFinite(nombre) ? nombre : Number.NaN;
 }
 
+/** Ce que le formulaire du calcul portait, renvoyé pour qu'il se réaffiche tel quel. */
+interface CalculSaisi {
+	latitude: string;
+	longitude: string;
+	/** La localité choisie dans la liste, s'il y en a une. */
+	locality: LocalityChoice | null;
+	method: string;
+	madhab: string;
+	highLatitudeRule: string;
+	adjustments: Record<Priere, number>;
+}
+
+type ErreurDePosition =
+	'positionUnreadable' | 'positionHalf' | 'positionOffEarth' | 'localityUnknown';
+
+/**
+ * Le formulaire du calcul, lu. La position vient de la localité choisie quand il y en a une : le
+ * serveur la relit dans la liste, et ne croit pas celle que le navigateur envoie. Sinon, elle vient
+ * des deux nombres saisis « Hors de Suisse ».
+ */
+function lireCalcul(form: FormData): {
+	saisie: CalculSaisi;
+	position: { latitude: number; longitude: number } | null;
+	erreur: ErreurDePosition | null;
+} {
+	const adjustments = Object.fromEntries(
+		PRIERES.map((priere) => [priere, decalage(form.get(`${priere}Adjustment`))])
+	) as Record<Priere, number>;
+	const saisie: CalculSaisi = {
+		latitude: String(form.get('latitude') ?? '').trim(),
+		longitude: String(form.get('longitude') ?? '').trim(),
+		locality: null,
+		method: String(form.get('method') ?? ''),
+		madhab: String(form.get('madhab') ?? ''),
+		highLatitudeRule: String(form.get('highLatitudeRule') ?? ''),
+		adjustments
+	};
+
+	const choisie = String(form.get('localite') ?? '').trim();
+	if (choisie !== '') {
+		const separateur = choisie.indexOf('|');
+		const localite =
+			separateur > 0
+				? findLocality(choisie.slice(0, separateur), choisie.slice(separateur + 1))
+				: null;
+		if (!localite) return { saisie, position: null, erreur: 'localityUnknown' };
+		saisie.locality = toChoice(localite);
+		saisie.latitude = String(localite.latitude);
+		saisie.longitude = String(localite.longitude);
+		return {
+			saisie,
+			position: { latitude: localite.latitude, longitude: localite.longitude },
+			erreur: null
+		};
+	}
+
+	const latitude = position(saisie.latitude);
+	const longitude = position(saisie.longitude);
+	if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
+		return { saisie, position: null, erreur: 'positionUnreadable' };
+	}
+	if ((latitude === null) !== (longitude === null)) {
+		return { saisie, position: null, erreur: 'positionHalf' };
+	}
+	if (latitude === null || longitude === null) return { saisie, position: null, erreur: null };
+	if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
+		return { saisie, position: null, erreur: 'positionOffEarth' };
+	}
+	return { saisie, position: { latitude, longitude }, erreur: null };
+}
+
 export const load: PageServerLoad = async (event) => {
 	const context = await mustAdministerPrayerModule(event);
+	const demandee = event.url.searchParams.get('source');
+	// La recherche d'une localité sans JavaScript : le formulaire de l'écran renvoie ce qui a été tapé.
+	const lieu = (event.url.searchParams.get('lieu') ?? '').slice(0, 100);
 	return withSessionOrg(context, async (tx) => {
 		const settings = await readSettings(tx);
 		const reglages = await readReglages(tx);
 		const today = todayInZone(settings.time_zone, new Date());
 		const calcul = versCalcul(reglages, settings.time_zone);
+		// Les sept prochains jours **tels qu'ils seront servis** : les trois sources résolues, avec la
+		// provenance de chaque heure (ADR 0004, étape 8).
+		const septJours = await readPrayerDays(tx, context.organizationId, today, addDays(today, 6));
+		const localite =
+			reglages.latitude === null || reglages.longitude === null
+				? null
+				: findLocalityAt(reglages.latitude, reglages.longitude);
 		return {
 			organisation: { name: settings.name, timeZone: settings.time_zone },
+			answer: estUneReponse(demandee)
+				? demandee
+				: reponseDesJours(septJours, reglages.latitude !== null),
 			reglages,
+			savedLocality: localite ? toChoice(localite) : null,
+			search:
+				lieu.trim() === '' ? null : { query: lieu, results: searchLocalities(lieu).map(toChoice) },
+			// La source de la liste, à citer près du choix dans la langue de l'écran (swisstopo l'exige).
+			localities: {
+				credit: LOCALITIES_SOURCE.credit,
+				version: LOCALITIES_SOURCE.version as IsoDate
+			},
 			methodes: CALCULATION_METHODS,
 			ecoles: MADHABS,
 			regles: HIGH_LATITUDE_RULES,
 			recommandee:
 				reglages.latitude === null ? null : recommendedHighLatitudeRule(reglages.latitude),
 			apercu: calcul ? apercu(calcul, today) : [],
-			// Les périodes saisies à la main, et les sept prochains jours **tels qu'ils seront
-			// servis** — les trois sources résolues, avec la provenance de chaque heure. C'est ce
-			// qui permet à une organisation qui mélange les sources de voir laquelle a gagné,
-			// sans avoir à le déduire (ADR 0004, étape 8).
 			periodes: await readPeriodes(tx),
-			// Les sessions du vendredi : ce jour-là, ce sont elles qui tiennent lieu de Dhuhr, et le
-			// tableau ci-dessous doit le dire plutôt que d'afficher une heure que personne ne suit
-			// (ADR 0033).
+			// Les sessions du vendredi : ce jour-là, ce sont elles qui tiennent lieu de Dhuhr, et les
+			// tableaux le disent plutôt que d'afficher une heure que personne ne suit (ADR 0033).
 			vendredi: sessionsDuVendredi(await readCourses(tx, ['draft', 'published'], ['jumua'])).map(
 				(session) => ({ jumuaOrder: session.jumuaOrder, start: session.start as string })
 			),
-			septJours: await readPrayerDays(tx, context.organizationId, today, addDays(today, 6)),
+			septJours,
 			prieres: PRIERES,
 			etat: await etatDesSources(tx, context.organizationId, reglages, today),
 			tailleMaximale: TAILLE_MAXIMALE,
@@ -97,63 +247,110 @@ export const load: PageServerLoad = async (event) => {
 	});
 };
 
+/** Ce qu'un formulaire de période portait, renvoyé pour qu'il se réaffiche tel quel. */
+interface PeriodeSaisie {
+	id: string | null;
+	name: string;
+	fromDate: string;
+	toDate: string;
+	soleil: Record<Priere, string | null>;
+	iqama: Record<Priere, IqamaSaisie>;
+}
+
+type ErreurDePeriode =
+	'periodName' | 'periodStart' | 'periodEndUnreadable' | 'periodEndBeforeStart' | 'iqamaBoth';
+
+/** Le formulaire d'une période, lu et borné, et la première erreur qu'il porte. */
+function lirePeriode(form: FormData): {
+	saisie: PeriodeSaisie;
+	erreur: { error: ErreurDePeriode; prayer?: Priere } | null;
+} {
+	const soleil = {} as Record<Priere, string | null>;
+	const iqama = {} as Record<Priere, IqamaSaisie>;
+	let deuxFois: Priere | null = null;
+	for (const priere of PRIERES) {
+		soleil[priere] = heureOuRien(form.get(priere));
+		const fixe = heureOuRien(form.get(`${priere}Iqama`));
+		const minutes = decalageOuRien(form.get(`${priere}IqamaOffset`));
+		if (fixe !== null && minutes !== null) deuxFois ??= priere;
+		iqama[priere] = { heure: fixe, decalage: minutes };
+	}
+	const saisie: PeriodeSaisie = {
+		id: String(form.get('periodeId') ?? '') || null,
+		name: String(form.get('name') ?? '').trim(),
+		fromDate: String(form.get('fromDate') ?? ''),
+		toDate: String(form.get('toDate') ?? ''),
+		soleil,
+		iqama
+	};
+	const { name, fromDate, toDate } = saisie;
+	if (name === '') return { saisie, erreur: { error: 'periodName' } };
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(fromDate)) return { saisie, erreur: { error: 'periodStart' } };
+	if (toDate !== '' && !/^\d{4}-\d{2}-\d{2}$/.test(toDate)) {
+		return { saisie, erreur: { error: 'periodEndUnreadable' } };
+	}
+	if (toDate !== '' && toDate < fromDate) {
+		return { saisie, erreur: { error: 'periodEndBeforeStart' } };
+	}
+	if (deuxFois) return { saisie, erreur: { error: 'iqamaBoth', prayer: deuxFois } };
+	return { saisie, erreur: null };
+}
+
+/** La période telle que `enregistrerPeriode` l'attend. */
+function versEnregistrement(saisie: PeriodeSaisie) {
+	return {
+		id: saisie.id,
+		name: saisie.name,
+		fromDate: saisie.fromDate as IsoDate,
+		toDate: saisie.toDate === '' ? null : (saisie.toDate as IsoDate),
+		soleil: saisie.soleil,
+		iqama: saisie.iqama
+	};
+}
+
+/**
+ * Levée pour annuler la transaction de l'aperçu d'une période, une fois les sept jours relus avec
+ * elle : c'est ce qui garantit que l'aperçu n'écrit rien, audit compris.
+ */
+class ApercuSeulement extends Error {
+	constructor(readonly jours: ResolvedPrayerRow[]) {
+		super('aperçu d’une période, transaction annulée');
+	}
+}
+
 export const actions: Actions = {
 	/** Calculer les sept prochains jours avec ce que le formulaire porte, sans rien enregistrer. */
 	apercu: async (event) => {
 		const context = await mustAdministerPrayerModule(event);
 		const form = await event.request.formData();
-		const latitude = position(form.get('latitude'));
-		const longitude = position(form.get('longitude'));
-		if (latitude === null || longitude === null) {
-			return fail(400, { erreur: 'Donnez une latitude et une longitude pour voir un aperçu.' });
-		}
-		if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
-			return fail(400, { erreur: 'La position s’écrit en degrés décimaux, par exemple 47.1368.' });
-		}
-		const methode = String(form.get('method') ?? '');
-		const ecole = String(form.get('madhab') ?? '');
-		const regle = String(form.get('highLatitudeRule') ?? '');
+		const { saisie, position: lue, erreur } = lireCalcul(form);
+		if (erreur) return fail(400, { ...CALCUL, error: erreur, saisie });
+		if (!lue) return fail(400, { ...CALCUL, error: 'positionMissing' as const, saisie });
 		const settings = await withSessionOrg(context, (tx) => readSettings(tx));
 		const jours = apercu(
 			{
-				latitude,
-				longitude,
+				latitude: lue.latitude,
+				longitude: lue.longitude,
 				timeZone: settings.time_zone,
-				method: isCalculationMethod(methode) ? methode : 'MuslimWorldLeague',
-				madhab: isMadhab(ecole) ? ecole : 'shafi',
-				highLatitudeRule: isHighLatitudeRule(regle) ? regle : recommendedHighLatitudeRule(latitude),
-				adjustments: {
-					fajr: decalage(form.get('fajrAdjustment')),
-					dhuhr: decalage(form.get('dhuhrAdjustment')),
-					asr: decalage(form.get('asrAdjustment')),
-					maghrib: decalage(form.get('maghribAdjustment')),
-					isha: decalage(form.get('ishaAdjustment'))
-				}
+				method: isCalculationMethod(saisie.method) ? saisie.method : 'MuslimWorldLeague',
+				madhab: isMadhab(saisie.madhab) ? saisie.madhab : 'shafi',
+				highLatitudeRule: isHighLatitudeRule(saisie.highLatitudeRule)
+					? saisie.highLatitudeRule
+					: recommendedHighLatitudeRule(lue.latitude),
+				adjustments: saisie.adjustments
 			},
 			todayInZone(settings.time_zone, new Date())
 		);
 		// Rien n'est écrit : c'est un aperçu, et il le reste tant que personne n'a cliqué Enregistrer.
-		return { apercuCalcule: jours };
+		return { ...CALCUL, apercuCalcule: jours, saisie };
 	},
 
 	enregistrer: async (event) => {
 		const context = await mustAdministerPrayerModule(event);
 		const form = await event.request.formData();
-		const latitude = position(form.get('latitude'));
-		const longitude = position(form.get('longitude'));
-		if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
-			return fail(400, { erreur: 'La position s’écrit en degrés décimaux, par exemple 47.1368.' });
-		}
-		if ((latitude === null) !== (longitude === null)) {
-			return fail(400, { erreur: 'Donnez les deux valeurs, ou aucune des deux.' });
-		}
-		if (latitude !== null && (Math.abs(latitude) > 90 || Math.abs(longitude as number) > 180)) {
-			return fail(400, { erreur: 'Cette position n’est pas sur Terre.' });
-		}
-		const methode = String(form.get('method') ?? '');
-		const ecole = String(form.get('madhab') ?? '');
-		const regle = String(form.get('highLatitudeRule') ?? '');
-		const source = String(form.get('source') ?? 'import') === 'computed' ? 'computed' : 'import';
+		const { saisie, position: lue, erreur } = lireCalcul(form);
+		if (erreur) return fail(400, { ...CALCUL, error: erreur, saisie });
+		const declaree = String(form.get('source') ?? '');
 
 		const ecrites = await withSessionOrg(context, async (tx) => {
 			const settings = await readSettings(tx);
@@ -164,31 +361,27 @@ export const actions: Actions = {
 				settings.time_zone,
 				avant,
 				{
-					latitude,
-					longitude,
-					method: isCalculationMethod(methode) ? methode : 'MuslimWorldLeague',
-					madhab: isMadhab(ecole) ? ecole : 'shafi',
-					highLatitudeRule: isHighLatitudeRule(regle)
-						? regle
-						: recommendedHighLatitudeRule(latitude ?? 0),
-					source,
-					adjustments: {
-						fajr: decalage(form.get('fajrAdjustment')),
-						dhuhr: decalage(form.get('dhuhrAdjustment')),
-						asr: decalage(form.get('asrAdjustment')),
-						maghrib: decalage(form.get('maghribAdjustment')),
-						isha: decalage(form.get('ishaAdjustment'))
-					}
+					latitude: lue?.latitude ?? null,
+					longitude: lue?.longitude ?? null,
+					method: isCalculationMethod(saisie.method) ? saisie.method : 'MuslimWorldLeague',
+					madhab: isMadhab(saisie.madhab) ? saisie.madhab : 'shafi',
+					highLatitudeRule: isHighLatitudeRule(saisie.highLatitudeRule)
+						? saisie.highLatitudeRule
+						: recommendedHighLatitudeRule(lue?.latitude ?? 0),
+					// L'écran ne demande plus de « source déclarée » (retour C1) : la colonne garde sa
+					// valeur, sauf pour qui l'envoie encore.
+					source: declaree === 'import' || declaree === 'computed' ? declaree : avant.source,
+					adjustments: saisie.adjustments
 				},
 				new Date()
 			);
 		});
-		return { enregistre: true, ecrites };
+		return { ...CALCUL, enregistre: true as const, ecrites };
 	},
 
 	/** Lire le fichier et montrer ce qu'on en a compris. **Rien n'est écrit.** */
 	lireFichier: async (event) => {
-		await mustAdministerPrayerModule(event);
+		const context = await mustAdministerPrayerModule(event);
 		let form: FormData;
 		try {
 			form = await event.request.formData();
@@ -196,16 +389,15 @@ export const actions: Actions = {
 			// adapter-node lève ici, et non à la lecture de la requête : sans ce filet, le
 			// responsable verrait la page d'erreur de SvelteKit, en anglais.
 			if ((cause as { status?: number }).status === 413) {
-				return fail(413, {
-					erreur: `Ce fichier dépasse la taille acceptée (${TAILLE_MAXIMALE}). Un calendrier d’un an en fait environ vingt fois moins : vérifiez que c’est bien un CSV.`
-				});
+				return fail(413, { ...FICHIER, error: 'fileTooLarge' as const });
 			}
 			throw cause;
 		}
 		const fichier = form.get('calendrier');
-		if (!(fichier instanceof File)) return fail(400, { erreur: 'Choisissez un fichier.' });
-		if (fichier.name === '') return fail(400, { erreur: 'Choisissez un fichier.' });
-		if (fichier.size === 0) return fail(400, { erreur: 'Ce fichier est vide.' });
+		if (!(fichier instanceof File) || fichier.name === '') {
+			return fail(400, { ...FICHIER, error: 'fileMissing' as const });
+		}
+		if (fichier.size === 0) return fail(400, { ...FICHIER, error: 'fileEmpty' as const });
 
 		const octets = new Uint8Array(await fichier.arrayBuffer());
 		const { texte, encodage } = decoder(octets);
@@ -217,8 +409,13 @@ export const actions: Actions = {
 			...(annee ? { annee } : {}),
 			...(mois ? { mois } : {})
 		});
+		const settings = await withSessionOrg(context, (tx) => readSettings(tx));
+		const today = todayInZone(settings.time_zone, new Date());
+		// L'aperçu : les sept prochains jours du fichier s'il les couvre, sinon ses sept premiers.
+		const aVenir = lu.jours.filter((jour) => jour.date >= today);
 
 		return {
+			...FICHIER,
 			lecture: {
 				nom: fichier.name,
 				encodage,
@@ -226,13 +423,21 @@ export const actions: Actions = {
 				jours: lu.jours.length,
 				premiere: lu.premiere,
 				derniere: lu.derniere,
-				manquants: lu.manquants,
-				refusees: lu.refusees,
-				avertissements: lu.avertissements,
+				manquants: lu.manquants.slice(0, MANQUANTS_MONTRES),
+				nombreDeManquants: lu.manquants.length,
+				refusees: lu.refusees
+					.slice(0, LIGNES_MONTREES)
+					.map((refusee) => ({ ligne: refusee.ligne, raison: lireRaison(refusee.raison) })),
+				nombreDeRefusees: lu.refusees.length,
+				avertissements: lu.avertissements
+					.slice(0, LIGNES_MONTREES)
+					.map((avertissement) => lireRaison(avertissement.message)),
+				nombreDAvertissements: lu.avertissements.length,
 				ordreAmbigu: lu.ordreAmbigu,
 				// Ce qui repartira à la confirmation : la forme normalisée, pas le fichier d'origine.
 				aConfirmer: serialiser(lu.jours),
-				extrait: lu.jours.slice(0, 5)
+				extrait: (aVenir.length > 0 ? aVenir : lu.jours).slice(0, 7),
+				extraitAVenir: aVenir.length > 0
 			}
 		};
 	},
@@ -242,77 +447,77 @@ export const actions: Actions = {
 		const context = await mustAdministerPrayerModule(event);
 		const form = await event.request.formData();
 		const jours = deserialiser(String(form.get('aConfirmer') ?? ''));
-		if (jours.length === 0) return fail(400, { erreur: 'Il n’y a rien à enregistrer.' });
+		if (jours.length === 0) return fail(400, { ...FICHIER, error: 'nothingToSave' as const });
 		const ecrits = await withSessionOrg(context, (tx) =>
 			importerJours(tx, { organizationId: context.organizationId, userId: context.userId }, jours)
 		);
-		return { importe: ecrits, premiere: jours[0]?.date, derniere: jours.at(-1)?.date };
+		return { ...FICHIER, importe: ecrits, premiere: jours[0]?.date, derniere: jours.at(-1)?.date };
 	},
 
 	/**
 	 * Enregistrer une période d'horaires : ce que l'organisation affiche sur son panneau.
 	 *
 	 * Le chevauchement n'est pas vérifié ici. C'est la contrainte d'exclusion de la base qui le
-	 * refuse, et on attrape son code pour le dire en français : une vérification écrite en double
-	 * finirait par diverger de celle qui compte.
+	 * refuse, et on attrape son code pour le dire dans la langue de l'écran : une vérification écrite
+	 * en double finirait par diverger de celle qui compte.
 	 */
 	periode: async (event) => {
 		const context = await mustAdministerPrayerModule(event);
-		const form = await event.request.formData();
-		const nom = String(form.get('name') ?? '').trim();
-		const de = String(form.get('fromDate') ?? '');
-		const a = String(form.get('toDate') ?? '');
-		if (nom === '') return fail(400, { erreur: 'Donnez un nom à cette période.' });
-		if (!/^\d{4}-\d{2}-\d{2}$/.test(de)) {
-			return fail(400, { erreur: 'Donnez une date de début, au format AAAA-MM-JJ.' });
-		}
-		if (a !== '' && !/^\d{4}-\d{2}-\d{2}$/.test(a)) {
-			return fail(400, { erreur: 'La date de fin est illisible.' });
-		}
-		if (a !== '' && a < de) {
-			return fail(400, { erreur: 'La date de fin vient avant la date de début.' });
-		}
-
-		const soleil = {} as Record<Priere, string | null>;
-		const iqama = {} as Record<Priere, IqamaSaisie>;
-		for (const priere of PRIERES) {
-			soleil[priere] = heureOuRien(form.get(priere));
-			const fixe = heureOuRien(form.get(`${priere}Iqama`));
-			const decalage = decalageOuRien(form.get(`${priere}IqamaOffset`));
-			if (fixe !== null && decalage !== null) {
-				return fail(400, {
-					erreur: `Pour ${priere}, choisissez une heure d’iqama **ou** un décalage, pas les deux.`
-				});
-			}
-			iqama[priere] = { heure: fixe, decalage };
-		}
-
+		const { saisie, erreur } = lirePeriode(await event.request.formData());
+		if (erreur) return fail(400, { ...erreur, periode: saisie });
 		try {
 			await withSessionOrg(context, (tx) =>
 				enregistrerPeriode(
 					tx,
 					{ organizationId: context.organizationId, userId: context.userId },
-					{
-						id: String(form.get('periodeId') ?? '') || null,
-						name: nom,
-						fromDate: de as IsoDate,
-						toDate: a === '' ? null : (a as IsoDate),
-						soleil,
-						iqama
-					}
+					versEnregistrement(saisie)
 				)
 			);
 		} catch (cause) {
 			if (codeSql(cause) === '23P01') {
-				return fail(400, {
-					erreur:
-						'Cette période en chevauche une autre. Fermez d’abord celle qui la précède. Une ' +
-						'période sans date de fin couvre tout ce qui vient après elle.'
-				});
+				return fail(400, { error: 'periodOverlap' as const, periode: saisie });
 			}
 			throw cause;
 		}
-		return { periodeEnregistree: true };
+		return { periodeEnregistree: true as const };
+	},
+
+	/**
+	 * Les sept prochains jours tels qu'ils seraient servis avec cette période, sans l'enregistrer.
+	 *
+	 * La période est écrite, les jours sont relus par la même requête que partout ailleurs
+	 * (`resolvedPrayerDaysQuery`, qui tient la priorité entre les trois sources), puis la transaction
+	 * est annulée : l'aperçu montre exactement ce que l'enregistrement donnera, et un chevauchement
+	 * y est refusé comme il le serait à l'enregistrement.
+	 */
+	apercuPeriode: async (event) => {
+		const context = await mustAdministerPrayerModule(event);
+		const { saisie, erreur } = lirePeriode(await event.request.formData());
+		if (erreur) return fail(400, { ...erreur, periode: saisie });
+		try {
+			await withSessionOrg(context, async (tx) => {
+				const settings = await readSettings(tx);
+				await enregistrerPeriode(
+					tx,
+					{ organizationId: context.organizationId, userId: context.userId },
+					versEnregistrement(saisie)
+				);
+				const today = todayInZone(settings.time_zone, new Date());
+				throw new ApercuSeulement(
+					await readPrayerDays(tx, context.organizationId, today, addDays(today, 6))
+				);
+			});
+		} catch (cause) {
+			if (cause instanceof ApercuSeulement) {
+				return { apercuPeriode: cause.jours, periode: saisie };
+			}
+			if (codeSql(cause) === '23P01') {
+				return fail(400, { error: 'periodOverlap' as const, periode: saisie });
+			}
+			throw cause;
+		}
+		// La transaction ne se termine jamais sans lever : cette ligne n'est pas atteinte.
+		return fail(500, { error: 'nothingToSave' as const });
 	},
 
 	/**
@@ -334,25 +539,13 @@ export const actions: Actions = {
 				);
 				return copie === null ? ('sans-equivalent' as const) : ('faite' as const);
 			});
-			if (fait === 'absente') return fail(404, { erreur: 'Cette période n’existe plus.' });
-			if (fait === 'sans-equivalent') {
-				return fail(400, {
-					erreur:
-						'Cette période ne couvre que le 29 février, et l’année suivante n’en a pas. ' +
-						'Choisissez vous-même la date qui la remplace.'
-				});
-			}
+			if (fait === 'absente') return fail(404, { error: 'periodGone' as const });
+			if (fait === 'sans-equivalent') return fail(400, { error: 'leapDay' as const });
 		} catch (cause) {
-			if (codeSql(cause) === '23P01') {
-				return fail(400, {
-					erreur:
-						'La copie chevaucherait une période existante. Une période sans date de fin couvre ' +
-						'tout ce qui vient après elle : fermez-la d’abord.'
-				});
-			}
+			if (codeSql(cause) === '23P01') return fail(400, { error: 'copyOverlap' as const });
 			throw cause;
 		}
-		return { periodeDupliquee: true };
+		return { periodeDupliquee: true as const };
 	},
 
 	supprimerPeriode: async (event) => {
@@ -362,18 +555,18 @@ export const actions: Actions = {
 		const efface = await withSessionOrg(context, (tx) =>
 			supprimerPeriode(tx, { organizationId: context.organizationId, userId: context.userId }, id)
 		);
-		if (!efface) return fail(404, { erreur: 'Cette période n’existe plus.' });
-		return { periodeSupprimee: true };
+		if (!efface) return fail(404, { error: 'periodGone' as const });
+		return { periodeSupprimee: true as const };
 	},
 
-	/** Retirer les jours importés d'une plage : le calcul reprend aussitôt la main. */
+	/** Retirer les jours importés d'une plage : le calcul les remplit de nouveau à son passage. */
 	effacer: async (event) => {
 		const context = await mustAdministerPrayerModule(event);
 		const form = await event.request.formData();
 		const de = String(form.get('de') ?? '');
 		const a = String(form.get('a') ?? '');
 		if (!/^\d{4}-\d{2}-\d{2}$/.test(de) || !/^\d{4}-\d{2}-\d{2}$/.test(a)) {
-			return fail(400, { erreur: 'Donnez deux dates, au format AAAA-MM-JJ.' });
+			return fail(400, { ...FICHIER, error: 'removeDates' as const });
 		}
 		const efface = await withSessionOrg(context, (tx) =>
 			effacerImport(
@@ -383,7 +576,7 @@ export const actions: Actions = {
 				a as IsoDate
 			)
 		);
-		return { efface };
+		return { ...FICHIER, efface };
 	}
 };
 
