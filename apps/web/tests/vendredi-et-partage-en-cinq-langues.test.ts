@@ -633,6 +633,42 @@ describe('la prière du vendredi dit ce qu’elle demande (retour B1)', () => {
 	});
 });
 
+/** Une session de passage, en brouillon, au rang 3 : le test qui l'ajoute la supprime avant de finir. */
+const SESSION_DE_PASSAGE = {
+	jumuaOrder: '3',
+	start: '16:00',
+	end: '16:40',
+	sermonLanguages: ['fr'],
+	startsOn: '2026-09-04',
+	endsOn: '',
+	status: 'draft'
+} as const;
+
+/**
+ * Ajoute par l'écran une session de passage sous ce titre, et rend la réponse et son identifiant.
+ * Les autres tests comptent trois sessions : celui qui l'ajoute doit la supprimer.
+ */
+async function ajouterUneSessionDePassage(
+	titre: string
+): Promise<{ reponse: Response; id: string }> {
+	const reponse = await postForm(
+		'/vendredi?/enregistrer',
+		{ ...SESSION_DE_PASSAGE, title: titre },
+		cookies
+	);
+	const [trouvee] = await maintenance(async (tx) =>
+		lignes<{ id: string }>(
+			await tx.execute(sql`
+				select c."id" from "course" c join "course_translation" t on t."course_id" = c."id"
+				where c."organization_id" = ${organizationId} and c."kind" = 'jumua'
+					and t."title" = ${titre}
+			`)
+		)
+	);
+	expect(trouvee, `session « ${titre} »`).toBeTruthy();
+	return { reponse, id: trouvee?.id ?? '' };
+}
+
 describe('une modification refusée reste sous les yeux (retour B1)', () => {
 	/** Le texte de chaque liste d'erreurs d'un morceau de page. */
 	function erreurs(html: string): string[][] {
@@ -709,6 +745,42 @@ describe('une modification refusée reste sous les yeux (retour B1)', () => {
 		expect(valeur(formulaire, 'teacher')).toBe('Imam Omar');
 		expect(rangChoisi(formulaire)).toEqual(['2']);
 		expect(formulaire).toContain('action="?/enregistrer#ajout"');
+	});
+});
+
+describe('un enregistrement réussi se confirme là où la page s’ouvre (retour B1)', () => {
+	/** Le texte de chaque confirmation d'un morceau de page. */
+	function confirmations(html: string): string[] {
+		return [...html.matchAll(/<p\b[^>]*role="status"[^>]*>([\s\S]*?)<\/p>/g)].map((trouve) =>
+			visibleText(`<body>${trouve[1] ?? ''}</body>`)
+		);
+	}
+
+	it('confirms an addition in the add section, and a change in the card of the session, not at the top', async () => {
+		// Sans script, la page renvoyée s'ouvre sur la section d'ajout (#ajout) ou sur la carte de la
+		// session (#session-…) : une confirmation écrite en tête resterait hors de la vue.
+		const { reponse: ajoutee, id } = await ajouterUneSessionDePassage('Prière de passage');
+		try {
+			expect(ajoutee.status).toBe(200);
+			const apresAjout = await ajoutee.text();
+			const ajout = section(apresAjout, 'ajout');
+			expect(confirmations(ajout)).toEqual(['La session est ajoutée.']);
+			expect(confirmations(apresAjout.replace(ajout, ''))).toEqual([]);
+
+			const modifiee = await postForm(
+				'/vendredi?/enregistrer',
+				{ ...SESSION_DE_PASSAGE, courseId: id, title: 'Prière de passage', end: '16:50' },
+				cookies
+			);
+			expect(modifiee.status).toBe(200);
+			const apresModification = await modifiee.text();
+			const carte = section(apresModification, `session-${id}`);
+			expect(carte).not.toBe('');
+			expect(confirmations(carte)).toEqual(['Les changements sont enregistrés.']);
+			expect(confirmations(apresModification.replace(carte, ''))).toEqual([]);
+		} finally {
+			await postForm('/vendredi?/supprimer', { courseId: id }, cookies);
+		}
 	});
 });
 
