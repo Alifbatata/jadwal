@@ -168,6 +168,11 @@
 			(data.recommandee !== null && reglage.rule !== data.recommandee) ||
 			PRIERES.some((priere) => reglage.adjustments[priere] !== 0)
 	);
+	// Ouverts ou fermés : ce qui précède au départ et après chaque envoi, puis ce qu'en fait la
+	// personne, par `bind:open`. Avec `open={…}`, Svelte réglait le repli dans le même effet que la
+	// valeur des champs Recherche, Latitude et Longitude : chaque touche tapée le refermait.
+	let horsDeSuisseOuvert = $derived(horsDeSuisse);
+	let avancesOuvert = $derived(avances);
 	/** L'aperçu du calcul : celui du formulaire s'il vient d'être demandé, sinon celui des réglages. */
 	const apercu = $derived(form?.apercuCalcule ?? data.apercu);
 	const lecture = $derived(form?.lecture);
@@ -404,7 +409,7 @@
 				</p>
 			</fieldset>
 
-			<details class="repli" open={horsDeSuisse}>
+			<details class="repli" bind:open={horsDeSuisseOuvert}>
 				<summary>{text.computed.abroadSummary}</summary>
 				<p class="aide">{text.computed.abroadHint}</p>
 				<div class="position">
@@ -442,7 +447,7 @@
 				<p class="aide">{text.computed.abroadExample}</p>
 			</details>
 
-			<details class="repli" open={avances}>
+			<details class="repli" bind:open={avancesOuvert}>
 				<summary>{text.computed.advancedSummary}</summary>
 				<p class="aide">{text.computed.advancedHint}</p>
 				<div class="colonne">
