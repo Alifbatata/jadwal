@@ -80,7 +80,8 @@ latitude et la longitude.
   l'échelle d'une heure de prière, qui ne bouge que d'une minute pour une vingtaine de kilomètres
   d'est en ouest, la différence ne se voit pas.
 - La position est convertie de MN95 en WGS84 par les formules approchées de swisstopo (`lv95.ts`),
-  précises au mètre près, puis arrondie à 4 décimales (une dizaine de mètres).
+  précises à quelques mètres (le document officiel donne 0,12″ en longitude et 0,08″ en latitude,
+  soit environ 2,5 m), puis arrondie à 4 décimales (une dizaine de mètres).
 - Le répertoire couvre aussi le Liechtenstein, dont les localités n'ont pas de canton dans la
   source ; le fichier leur donne le code `FL`.
 
