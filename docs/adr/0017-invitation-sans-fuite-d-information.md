@@ -195,27 +195,25 @@ Depuis l'étape 18, les courriels parlent les cinq langues du service (ADR 0007,
 de l'étape voulait qu'un courriel parte dans la langue du compte qui le reçoit, et qu'une invitation
 à une adresse sans compte parte dans la langue de la personne qui invite.
 
-**Point d'arrêt. Une invitation part dans la langue de la personne qui invite, pour toute
-adresse**, qu'un compte la porte ou non. Deux raisons :
+**Point d'arrêt D3 : l'invitation part dans la langue de la personne qui invite, que l'adresse ait
+un compte ou non.** Trois raisons :
 
-- **Lire la langue du compte qui porte l'adresse invitée consulterait les comptes**, ce que cet ADR
-  interdit : « aucune branche du code ne dépend de l'existence d'un compte ». Une invitation en
-  arabe pour une adresse connue, en français pour une adresse inconnue, dirait à qui la reçoit, et
-  au temps de réponse, ce que le formulaire s'interdit de dire. De plus, le rôle applicatif ne voit
-  pas le compte d'une personne qui n'est pas membre : il faudrait un autre rôle.
-- **L'envoi n'est pas découplé de la réponse.** Le courriel part pendant l'action, qui attend
-  l'envoi avant de répondre. Une différence de traitement se lirait donc dans le temps de réponse.
+- **L'envoi n'est pas découplé de la réponse** : `await createMailer().send(...)` dans l'action, et
+  le hook refuse exprès les promesses laissées courir.
+- **Lire la langue du compte destinataire, c'est chercher un compte par son adresse**, ce que cet
+  ADR interdit à la lettre : « aucune branche du code ne dépend de l'existence d'un compte ».
+- **Le rôle applicatif ne voit pas le compte d'une personne qui n'est pas membre** (`user_select`) :
+  il faudrait le rôle de connexion.
 
 La langue est celle de l'écran de la personne qui invite, passée à la fonction du courriel
 (`apps/web/src/routes/membres/+page.server.ts`). Un test le fige : même objet, même texte et même
-HTML pour une adresse inconnue et pour un compte réglé en arabe. Le lien de connexion suit la même
-règle, dans la langue de l'écran d'où il est demandé.
+HTML pour une adresse inconnue et pour un compte réglé en arabe. Le lien de connexion part dans la
+langue de l'écran d'où il est demandé, et non dans celle du compte, pour la même raison.
 
-**Question posée au chef de projet :** un envoi différé est-il voulu ? Le courriel partirait au
-moment où l'adresse est reconnue, par exemple par une table de courriels à envoyer, relevée par une
-tâche après la réponse. La réponse du formulaire resterait la même pour toute adresse, et le
-courriel pourrait prendre la langue du compte. C'est un changement d'architecture (une table, une
-tâche, la reprise d'un envoi qui échoue) qui demande sa propre décision.
+**Question posée au chef de projet :** accepte-t-il que toute invitation parte dans la langue de la
+personne qui invite ? La seule façon de lire la langue du compte destinataire sans toucher à cet ADR
+serait un envoi différé : une table de courriels à envoyer, relevée par une tâche après la réponse.
+C'est un changement d'architecture (table, tâche, reprise sur échec) qui demande sa propre décision.
 
 ## Statut
 
