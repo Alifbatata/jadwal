@@ -101,9 +101,10 @@ voir.`
 
 La navigation de l'espace (`À venir`, `Cours`, `Partager`…) **n'est pas affichée** : chacun de ses
 liens ramènerait ici. Restent la marque `jadwal`, le choix de la langue, l'adresse de la personne et
-le bouton `Se déconnecter`. Pour qui a plusieurs organisations, le lien `Choisir une autre organisation` est
-donc le seul chemin vers une autre. `/organisations` ne passe pas par la porte de l'espace ; le choix
-fait, c'est la porte de l'autre organisation qui s'applique.
+le bouton `Se déconnecter`. Pour qui a plusieurs organisations, ou une invitation qui court encore,
+le lien `Choisir une autre organisation` est donc le seul chemin vers une autre. `/organisations`
+ne passe pas par la porte de l'espace ; le choix fait, c'est la porte de l'autre organisation qui
+s'applique.
 
 Ailleurs dans l'espace, la navigation se termine par `Changer d'organisation`, vers
 `/organisations`, pour toute personne membre de plusieurs organisations, éditeurs compris. Il vaut
