@@ -484,7 +484,7 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			unchanged:
 				'The session is already planned for this date and time. Choose a different date or time.',
 			changed:
-				'This session has changed since the page was opened: it has already been cancelled or moved. Nothing has been saved. The programme below is up to date.',
+				'This session has changed since the page was opened: it has already been cancelled or moved. Nothing has been saved. The programme below shows the latest changes.',
 			sessionGone: 'This session no longer exists. Reload the page to see the current programme.'
 		}
 	},
@@ -576,7 +576,7 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			pastDate: 'هذا التاريخ قد مضى. اختر اليوم أو يومًا بعده.',
 			unchanged: 'الحصة مقرّرة أصلًا في هذا التاريخ وفي هذا الوقت. اختر تاريخًا آخر أو وقتًا آخر.',
 			changed:
-				'تغيّرت هذه الحصة منذ أن فُتحت الصفحة: سبق أن أُلغيت أو نُقلت. لم يُحفظ أي شيء. البرنامج المعروض أدناه محدَّث.',
+				'تغيّرت هذه الحصة منذ أن فُتحت الصفحة: سبق أن أُلغيت أو نُقلت. لم يُحفظ أي شيء. برنامجك المعروض أدناه محدَّث.',
 			sessionGone: 'هذه الحصة لم تعد موجودة. أعد تحميل الصفحة لترى برنامجك المحدَّث.'
 		}
 	}

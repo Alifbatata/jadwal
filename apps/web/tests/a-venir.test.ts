@@ -72,8 +72,8 @@ const CHANGEE: Record<Langue, string> = {
 	fr: 'Cette séance a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée. Rien n’a été enregistré. Le programme ci-dessous est à jour.',
 	de: 'Dieser Termin hat sich geändert, seit die Seite geöffnet wurde: Er wurde schon abgesagt oder verschoben. Es wurde nichts gespeichert. Das Programm unten ist aktuell.',
 	it: 'Questa lezione è cambiata da quando hai aperto la pagina: è già stata annullata o spostata. Non è stato salvato niente. Il programma qui sotto è aggiornato.',
-	en: 'This session has changed since the page was opened: it has already been cancelled or moved. Nothing has been saved. The programme below is up to date.',
-	ar: 'تغيّرت هذه الحصة منذ أن فُتحت الصفحة: سبق أن أُلغيت أو نُقلت. لم يُحفظ أي شيء. البرنامج المعروض أدناه محدَّث.'
+	en: 'This session has changed since the page was opened: it has already been cancelled or moved. Nothing has been saved. The programme below shows the latest changes.',
+	ar: 'تغيّرت هذه الحصة منذ أن فُتحت الصفحة: سبق أن أُلغيت أو نُقلت. لم يُحفظ أي شيء. برنامجك المعروض أدناه محدَّث.'
 };
 
 /** Ce qui est pareil dans toutes les langues par nature : noms, titres, adresses. */
