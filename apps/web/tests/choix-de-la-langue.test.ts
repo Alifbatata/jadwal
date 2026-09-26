@@ -4,6 +4,7 @@
 // - Un choix fait avant la connexion devient la langue du compte à la connexion, même quand le compte
 //   en a déjà une ; ensuite, le compte fait foi, et un cookie resté sur un navigateur ne le défait
 //   pas.
+// - Le retour après le choix ne quitte jamais le service, quelle que soit la forme du chemin envoyé.
 //
 // Chaque « navigateur » est un bocal de cookies qui retient ce que les réponses posent et retirent,
 // comme un vrai : sans lui, un test renverrait un cookie que le serveur a déjà effacé.
@@ -226,5 +227,33 @@ describe('un choix fait avant la connexion', () => {
 		await ici.seConnecter(CHOISIT_CONNECTEE);
 		expect(await langueDe(await ici.get('/organisations'))).toBe('en');
 		expect(await langueDuCompte(CHOISIT_CONNECTEE)).toBe('en');
+	});
+});
+
+describe('le retour après le choix de la langue', () => {
+	it.each([
+		'//ailleurs.example/piege',
+		'/\\ailleurs.example/piege',
+		'https://ailleurs.example/piege',
+		'/.//ailleurs.example/piege',
+		'/./\\ailleurs.example/piege',
+		'/..//ailleurs.example/piege',
+		'/a/..//ailleurs.example/piege',
+		'/%2e//ailleurs.example/piege',
+		'/%2E%2E//ailleurs.example/piege',
+		'/.%2e//ailleurs.example/piege',
+		'/.\t//ailleurs.example/piege'
+	])('never sends the browser off the service for %j', async (retour) => {
+		const reponse = await new Navigateur().post('/langue', { language: 'de', returnTo: retour });
+		expect(reponse.status).toBe(303);
+		expect(reponse.headers.get('location')).toBe('/');
+	});
+
+	it('comes back to the screen a dot segment names on the service', async () => {
+		const reponse = await new Navigateur().post('/langue', {
+			language: 'de',
+			returnTo: '/./conditions'
+		});
+		expect(reponse.headers.get('location')).toBe('/conditions');
 	});
 });
