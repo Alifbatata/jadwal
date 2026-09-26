@@ -70,9 +70,9 @@ délai ; le bouton d'Apple garde « environ une fois par heure ».
 propose de l'ajouter, confirmez. » Puis, puisque l'aide de Google dit qu'on ne s'abonne à un agenda
 par son adresse que depuis le navigateur d'un ordinateur, le passage par un ordinateur, avec les
 libellés de l'interface de Google (le signe +, « À partir de l'URL », « Ajouter l'agenda »), et
-l'adresse à coller. Pour un seul cours, un lien « Page du cours », juste sous son nom, mène à la page du cours,
-qui donne l'adresse de ce cours et la même marche à suivre. Sur le choix complet, qui n'a que des
-liens, la section à la main ne parle pas d'un bouton.
+l'adresse à coller. Pour un seul cours, un lien « Page du cours », juste sous son nom, mène à la
+page du cours, qui donne l'adresse de ce cours et la même marche à suivre. Sur le choix complet, qui
+n'a que des liens, la section à la main ne parle pas d'un bouton.
 
 Les adresses de Google et d'Outlook sont des constantes du code, et non des variables
 d'environnement : ce sont les adresses fixes de services publics, pas un réglage d'instance.
