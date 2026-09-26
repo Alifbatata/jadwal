@@ -11,9 +11,20 @@ Décrit après le code, à l'étape 18 (retours B1, D2, A3 pour cet écran). Tex
 couleur, ses langues et ses salles.`
 2. **Le formulaire des réglages**, chaque champ avec son aide :
    - `Nom de l'organisation` : `Votre page publique l'affiche tout en haut.`
-   - `Fuseau horaire` : `L'heure de vos cours en dépend. En Suisse, écrivez Europe/Zurich. Ailleurs,
-le nom s'écrit en anglais, le continent puis la ville, par exemple Europe/Paris.` (avant :
-     « Nom IANA »). Le champ se lit de gauche à droite, même en arabe.
+   - `Fuseau horaire` : une liste, la même que celle de la création d'une organisation au
+     super-admin (avant : un champ de texte, « Nom IANA »). Le groupe `Europe` vient en tête, puis
+     `Reste du monde`, avec des noms canoniques seulement, sans alias ni `Etc/`. La liste se lit de
+     gauche à droite, même en arabe. Aide : `L'heure de vos cours en dépend. En Suisse, choisissez
+Europe/Zurich.`, puis `Si la ville de l'organisation n'est pas dans la liste, choisissez une ville
+qui a toujours la même heure qu'elle. Pour la plus grande partie de l'Europe : Europe/Zurich,
+Europe/Paris ou Europe/Berlin.`
+   - Un fuseau enregistré avant la liste, qu'elle ne propose pas (un alias, comme
+     `Europe/Amsterdam`), vient en premier dans la liste, choisi, pour qu'enregistrer le reste des
+     réglages ne le remplace pas sans le dire. L'aide ajoute alors `Votre fuseau actuel,
+Europe/Amsterdam, ne fait pas partie de la liste. Avec ce fuseau, l'abonnement au calendrier de
+votre page publique ne marche pas. Choisissez dans la liste une ville qui a la même heure que la
+vôtre, puis enregistrez.` Pour un fuseau hors de la liste que le flux agenda accepte, comme un nom
+     en `Etc/`, elle dit seulement qu'il est gardé tant qu'on n'en choisit pas un autre.
    - `Couleur de votre page` (avant : « Couleur d'accent »), un `Exemple de bouton`, puis
      `Contraste du texte sur cette couleur : 5,5 pour 1. Il se lit bien à partir de 4,5 pour 1.` et
      `Elle sert de fond sur votre page publique, dans le programme collé sur votre site et ici. […]`
@@ -48,18 +59,19 @@ salle libre part au premier envoi. La base ne vide ensuite que la salle de ces c
 ## Les messages
 
 Toutes les erreurs disent quoi écrire, par exemple `Écrivez le nom de l'organisation.`,
-`Ce fuseau horaire n'existe pas. En Suisse, écrivez Europe/Zurich.`,
+`Choisissez le fuseau horaire dans la liste.`,
 `La langue par défaut doit faire partie des langues cochées.`, et le refus de désactiver les heures
 de prière : `L'heure de certains cours se règle sur une prière, ou une prière du vendredi existe.
 Donnez à ces cours une heure fixe ou supprimez-les avant de désactiver les heures de prière.`
 
-## Ce qui reste à reprendre
+Après un refus, les champs gardent ce qui a été tapé, et non les valeurs enregistrées. Avec
+JavaScript, changer la couleur ne défait pas le nom ni la formule d'accueil en cours de frappe. La
+demande de confirmation d'une salle occupée s'affiche en haut, avec les messages, là où la page
+revient après l'envoi.
 
-Relevé par la relecture de l'étape 18, non corrigé à la fin de l'étape :
+## Ce qui reste à vérifier
 
-- la demande de confirmation d'une salle occupée s'affiche en bas de la page, hors de l'écran,
-  alors que la page revient en haut après l'envoi : on croit que rien ne s'est passé ;
-- après un refus du serveur, les champs reviennent aux valeurs enregistrées au lieu de ce qui a été
-  tapé, et le message contredit l'écran ;
-- le fuseau reste un champ de texte, qui accepte un alias (`Europe/Amsterdam`) que le flux agenda
-  refuse ensuite. La console du super-admin, elle, propose une liste de noms canoniques.
+Le flux agenda refuse un fuseau alias : pour une organisation dont le fuseau enregistré en est un,
+l'abonnement au calendrier répond par une erreur, et l'écran le dit. C'est l'état des lots de
+l'étape 18 ; un chantier mené en même temps que la livraison peut l'avoir corrigé, et la phrase de
+l'écran changerait avec.
