@@ -14,8 +14,8 @@ interface SignInTexts {
 	readonly submit: string;
 	readonly sent: string;
 	readonly sentHint: string;
-	readonly askAgain: string;
 	readonly close: string;
+	readonly askAgain: string;
 	readonly notInvited: string;
 	readonly readTerms: string;
 }
@@ -31,8 +31,8 @@ export const signInTexts: Translations<SignInTexts> = {
 		sent: 'Si cette adresse peut se connecter, un lien vient d’y être envoyé. Ouvrez votre messagerie et touchez le lien : il est valable quinze minutes et ne sert qu’une fois.',
 		sentHint:
 			'Rien reçu après quelques minutes ? Regardez dans les courriels indésirables, ou demandez un autre lien.',
-		askAgain: 'Demander un autre lien',
 		close: 'Vous pouvez fermer cette page.',
+		askAgain: 'Demander un autre lien',
 		notInvited:
 			'Pas encore invité ? Demandez à la personne responsable de votre organisation de vous inviter.',
 		readTerms: 'Lire les conditions d’utilisation'
@@ -48,8 +48,8 @@ export const signInTexts: Translations<SignInTexts> = {
 		sent: 'Wenn sich diese Adresse anmelden kann, wurde soeben ein Link an sie geschickt. Öffnen Sie Ihr Postfach und tippen Sie auf den Link: Er ist fünfzehn Minuten gültig und funktioniert nur einmal.',
 		sentHint:
 			'Nach einigen Minuten nichts erhalten? Schauen Sie im Spam-Ordner nach, oder fordern Sie einen neuen Link an.',
-		askAgain: 'Neuen Link anfordern',
 		close: 'Sie können diese Seite schliessen.',
+		askAgain: 'Neuen Link anfordern',
 		notInvited:
 			'Noch nicht eingeladen? Bitten Sie die verantwortliche Person Ihrer Organisation, Sie einzuladen.',
 		readTerms: 'Nutzungsbedingungen lesen'
@@ -64,8 +64,8 @@ export const signInTexts: Translations<SignInTexts> = {
 		sent: 'Se questo indirizzo può accedere, gli è appena stato inviato un link. Apri la tua casella di posta e tocca il link: è valido quindici minuti e funziona una sola volta.',
 		sentHint:
 			'Non è arrivato niente dopo qualche minuto? Guarda nella posta indesiderata, oppure chiedi un altro link.',
-		askAgain: 'Chiedi un altro link',
 		close: 'Puoi chiudere questa pagina.',
+		askAgain: 'Chiedi un altro link',
 		notInvited:
 			'Non hai ancora ricevuto un invito? Chiedi alla persona responsabile della tua organizzazione di invitarti.',
 		readTerms: 'Leggi le condizioni d’uso'
@@ -79,8 +79,8 @@ export const signInTexts: Translations<SignInTexts> = {
 		submit: 'Send me the sign-in link',
 		sent: 'If this address can sign in, a link has just been sent to it. Open your mailbox and tap the link: it is valid for fifteen minutes and works only once.',
 		sentHint: 'Nothing after a few minutes? Look in your junk mail, or ask for another link.',
-		askAgain: 'Ask for another link',
 		close: 'You can close this page.',
+		askAgain: 'Ask for another link',
 		notInvited: 'Not invited yet? Ask the person in charge of your organisation to invite you.',
 		readTerms: 'Read the terms of use'
 	},
@@ -91,10 +91,10 @@ export const signInTexts: Translations<SignInTexts> = {
 		emailLabel: 'بريدك الإلكتروني',
 		emailHint: 'العنوان الذي وصلتك عليه الدعوة. مثال: name@example.ch',
 		submit: 'أرسل لي رابط الدخول',
-		sent: 'إن كان هذا العنوان يستطيع الدخول، فقد أُرسل إليه رابط الآن. افتح بريدك واضغط على الرابط: فهو صالح لمدة خمس عشرة دقيقة ويعمل مرة واحدة فقط.',
+		sent: 'إن كان هذا العنوان يستطيع الدخول، فقد أُرسل إليه رابط الآن. افتح بريدك واضغط على الرابط: يبقى صالحًا 15 دقيقة، ويعمل مرة واحدة فقط.',
 		sentHint: 'لم يصلك شيء بعد بضع دقائق؟ ابحث في البريد غير المرغوب فيه، أو اطلب رابطًا آخر.',
-		askAgain: 'اطلب رابطًا آخر',
 		close: 'يمكنك إغلاق هذه الصفحة.',
+		askAgain: 'اطلب رابطًا آخر',
 		notInvited: 'لم تصلك دعوة بعد؟ اطلب من المسؤول عن مؤسستك أن يدعوك.',
 		readTerms: 'اقرأ شروط الاستخدام'
 	}

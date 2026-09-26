@@ -46,7 +46,7 @@ describe('le lien de connexion', () => {
 			de: 'Er ist fünfzehn Minuten gültig und kann nur einmal verwendet werden.',
 			it: 'È valido quindici minuti e si può usare una sola volta.',
 			en: 'It is valid for fifteen minutes and can only be used once.',
-			ar: 'الرابط صالح لمدة خمس عشرة دقيقة ولا يُستخدم إلا مرة واحدة.'
+			ar: 'يبقى الرابط صالحًا 15 دقيقة، ولا يُستخدم إلا مرة واحدة.'
 		};
 		for (const langue of LANGUES) {
 			const mail = magicLinkEmail('a@example.test', URL_DU_LIEN, langue);
@@ -106,7 +106,7 @@ describe('l’invitation', () => {
 			de: 'Die Einladung ist vierzehn Tage gültig.',
 			it: 'L’invito è valido quattordici giorni.',
 			en: 'The invitation is valid for fourteen days.',
-			ar: 'الدعوة صالحة لمدة أربعة عشر يومًا.'
+			ar: 'تبقى الدعوة صالحة 14 يومًا.'
 		};
 		for (const langue of LANGUES) {
 			const mail = invitationEmail('b@example.test', ORGANISATION, ORIGINE, langue);

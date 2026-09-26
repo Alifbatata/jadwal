@@ -51,13 +51,15 @@ function signer(language: Langue, texte: string): string {
 ${SIGNATURES[language]}`;
 }
 
+// L'ordre des clés est celui où le correcteur les lit, recollées ligne après ligne : le texte du lien,
+// qui n'a pas de point, vient en dernier, pour ne pas se coller à la phrase qui le suivrait.
 interface MagicLinkTexts {
 	readonly subject: string;
 	readonly greeting: string;
 	readonly intro: string;
-	readonly link: string;
 	readonly validity: string;
 	readonly ignore: string;
+	readonly link: string;
 }
 
 const MAGIC_LINK: Translations<MagicLinkTexts> = {
@@ -65,42 +67,42 @@ const MAGIC_LINK: Translations<MagicLinkTexts> = {
 		subject: 'Votre lien de connexion à jadwal',
 		greeting: 'Bonjour,',
 		intro: 'Voici votre lien de connexion :',
-		link: 'Se connecter à jadwal',
 		validity: 'Il est valable quinze minutes et ne peut servir qu’une fois.',
-		ignore: 'Si vous n’avez rien demandé, ignorez ce message : personne n’a accès à votre compte.'
+		ignore: 'Si vous n’avez rien demandé, ignorez ce message : personne n’a accès à votre compte.',
+		link: 'Se connecter à jadwal'
 	},
 	de: {
 		subject: 'Ihr Anmeldelink für jadwal',
 		greeting: 'Guten Tag',
 		intro: 'Hier ist Ihr Anmeldelink:',
-		link: 'Bei jadwal anmelden',
 		validity: 'Er ist fünfzehn Minuten gültig und kann nur einmal verwendet werden.',
 		ignore:
-			'Wenn Sie nichts angefordert haben, ignorieren Sie diese Nachricht: Niemand hat Zugang zu Ihrem Konto.'
+			'Wenn Sie nichts angefordert haben, ignorieren Sie diese Nachricht: Niemand hat Zugang zu Ihrem Konto.',
+		link: 'Bei jadwal anmelden'
 	},
 	it: {
 		subject: 'Il tuo link di accesso a jadwal',
 		greeting: 'Buongiorno,',
 		intro: 'Ecco il tuo link di accesso:',
-		link: 'Accedi a jadwal',
 		validity: 'È valido quindici minuti e si può usare una sola volta.',
-		ignore: 'Se non hai chiesto nulla, ignora questo messaggio: nessuno ha accesso al tuo account.'
+		ignore: 'Se non hai chiesto nulla, ignora questo messaggio: nessuno ha accesso al tuo account.',
+		link: 'Accedi a jadwal'
 	},
 	en: {
 		subject: 'Your sign-in link for jadwal',
 		greeting: 'Hello,',
 		intro: 'Here is your sign-in link:',
-		link: 'Sign in to jadwal',
 		validity: 'It is valid for fifteen minutes and can only be used once.',
-		ignore: 'If you did not ask for it, ignore this message: nobody has access to your account.'
+		ignore: 'If you did not ask for it, ignore this message: nobody has access to your account.',
+		link: 'Sign in to jadwal'
 	},
 	ar: {
 		subject: 'رابط الدخول إلى jadwal',
 		greeting: 'مرحبًا،',
 		intro: 'إليك رابط الدخول:',
-		link: 'الدخول إلى jadwal',
-		validity: 'الرابط صالح لمدة خمس عشرة دقيقة ولا يُستخدم إلا مرة واحدة.',
-		ignore: 'إن لم تطلب شيئًا، فتجاهل هذه الرسالة: لا أحد يستطيع الدخول إلى حسابك.'
+		validity: 'يبقى الرابط صالحًا 15 دقيقة، ولا يُستخدم إلا مرة واحدة.',
+		ignore: 'إن لم تطلب شيئًا، فتجاهل هذه الرسالة: لا أحد يستطيع الدخول إلى حسابك.',
+		link: 'الدخول إلى jadwal'
 	}
 };
 
@@ -203,7 +205,7 @@ const INVITATION: Translations<InvitationTexts> = {
 		link: 'Sign in to accept',
 		next: 'You will receive a sign-in link, then the invitation will be waiting for you on the ‘Your organisations’ page.',
 		validity: 'The invitation is valid for fourteen days.',
-		nothingShared: 'Until you accept, nothing is shared and your name appears nowhere.',
+		nothingShared: 'Until you accept, nothing is shared, and your name appears nowhere.',
 		ignore: 'If this invitation is not meant for you, ignore this message.'
 	},
 	ar: {
@@ -216,7 +218,7 @@ const INVITATION: Translations<InvitationTexts> = {
 		howTo: 'للقبول، افتح هذه الصفحة وسجّل الدخول بالبريد الإلكتروني الذي وصلته هذه الرسالة:',
 		link: 'سجّل الدخول للقبول',
 		next: 'سيصلك رابط للدخول، ثم تجد الدعوة في صفحة «مؤسساتك».',
-		validity: 'الدعوة صالحة لمدة أربعة عشر يومًا.',
+		validity: 'تبقى الدعوة صالحة 14 يومًا.',
 		nothingShared: 'ما لم تقبل، لا يُشارَك أي شيء ولا يظهر اسمك في أي مكان.',
 		ignore: 'إن لم تكن هذه الدعوة موجّهة إليك، فتجاهل هذه الرسالة.'
 	}

@@ -32,20 +32,20 @@ droite à gauche. Les pages publiques ont les leurs dans `../i18n.ts`.
    `data.language` est posé par `routes/+layout.server.ts` pour chaque écran de l'espace, erreurs
    comprises (`page.data.language` dans `+error.svelte`).
 
-3. Dans un chargement ou une action, la langue est `locals.langue`, que le hook pose avant tout le
-   reste. Une action rend le nom d'une erreur, jamais sa phrase : `fail(400, { error: 'notMember' })`,
-   et la page l'écrit dans sa langue.
+3. Dans un chargement ou une action, la langue est `locals.langue`, que `hooks.server.ts` pose
+   avant tout le reste. Une action rend le nom d'une erreur, jamais sa phrase :
+   `fail(400, { error: 'notMember' })`, et la page l'écrit dans sa langue.
 4. Rien d'autre à modifier. Le correcteur (`pnpm orthographe`), le contrôle de style
    (`node scripts/controle-style.mjs`) et `dictionaries.test.ts` prennent tous les fichiers de ce
-   dossier par motif. Les deux premiers lisent la liste de git : un fichier nouveau doit être ajouté
-   (`git add`) pour être relu.
+   dossier par motif. Les deux premiers ne lisent que les fichiers suivis : un fichier nouveau doit
+   être ajouté (`git add`) pour être relu.
 
 ## Ce qui existe déjà, à ne pas traduire une seconde fois
 
 - `../i18n.ts` : le nom de chaque langue écrit dans cette langue (`NOM_DE_LANGUE`), les jours, les
-  mois, les publics, le lien des conditions (`terms`), et les dates : `numericDate` donne
-  « 26.09.2026 », `longDate` « samedi 26.09.2026 ». Une date ne s'écrit pas ailleurs, et aucune ne
-  s'affiche comme la base l'écrit.
+  mois, les publics, le lien des conditions (`terms`), et les dates : `numericDate` écrit
+  `26.09.2026`, et `longDate` y ajoute le nom du jour. Une date ne s'écrit pas ailleurs, et aucune
+  ne s'affiche comme la base l'écrit.
 - `../public/affichage.ts` : les noms des prières et des langues d'enseignement, les listes
   (`joindre`), et la place d'un cours par rapport à sa prière, « 15 min avant Maghrib » compris.
 - `../format.ts` : chaque fonction prend la langue en dernier paramètre, par exemple
@@ -59,11 +59,11 @@ droite à gauche. Les pages publiques ont les leurs dans `../i18n.ts`.
 ## Écrire les textes
 
 - Des phrases courtes, que comprend une personne qui ne connaît rien au service. Chaque champ et
-  chaque bouton ont un libellé clair, une phrase d'aide quand ce n'est pas évident, et un exemple
+  chaque bouton a un libellé clair, une phrase d'aide quand ce n'est pas évident, et un exemple
   quand il en faut un.
-- Allemand de Suisse : « ss », jamais la lettre eszett, et le vouvoiement. Italien : le tutoiement,
-  comme la page publique. Anglais britannique : « programme », « organisation », « cancelled ».
-  Arabe : chiffres latins (ADR 0007).
+- Allemand de Suisse : `ss`, jamais la lettre eszett, et le vouvoiement. Italien : le tutoiement,
+  comme la page publique. Anglais britannique : `programme`, `organisation`, `cancelled`. Arabe :
+  chiffres latins (ADR 0007).
 - Pas de tiret cadratin, et aucun des mots que refuse `scripts/controle-style.mjs`.
 - Chaque texte se range sous la clé de sa langue : le correcteur relit ce qui est sous `de:` en
   allemand. Pas de ternaire sur la langue, et aucun code de langue écrit dans un texte : le correcteur
@@ -73,7 +73,7 @@ droite à gauche. Les pages publiques ont les leurs dans `../i18n.ts`.
 
 ## L'arabe, de droite à gauche
 
-Le hook écrit `lang` et `dir` sur `<html>`. Dans les feuilles de style, des propriétés logiques
+`hooks.server.ts` écrit `lang` et `dir` sur `<html>`. Dans les feuilles de style, des propriétés logiques
 (`margin-inline-start`, `padding-inline-end`, `border-inline-start`, `text-align: start`), jamais
 `left` ni `right`. Un texte qui reste en français, comme les conditions, porte `lang="fr"` et
 `dir="ltr"`.
