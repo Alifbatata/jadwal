@@ -73,6 +73,7 @@ const TITRES: Record<'/super-admin' | '/super-admin/passkey', Record<Langue, str
 
 let ownerHandle: DatabaseHandle;
 let exploitantId: string;
+let existanteId: string;
 /** Session ouverte par lien magique, qui recevra la preuve de la passkey. */
 let avecPouvoirs: string;
 /** Seconde session du même compte, ouverte par lien magique seulement : aucun pouvoir. */
@@ -263,11 +264,12 @@ function permis(html: string): string[] {
 beforeAll(async () => {
 	ownerHandle = createDatabase({ role: 'owner', overrides: { database: testDatabase } });
 	exploitantId = newId();
+	existanteId = newId();
 	await maintenance(async (tx) => {
 		await tx.execute(sql`
 			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
 				"enabled_language")
-			values (${newId()}, ${EXISTANTE_ADRESSE}, ${EXISTANTE}, 'Europe/Zurich', 'fr', array['fr'])
+			values (${existanteId}, ${EXISTANTE_ADRESSE}, ${EXISTANTE}, 'Europe/Zurich', 'fr', array['fr'])
 		`);
 		await tx.execute(sql`
 			insert into "user" ("id", "email", "email_verified", "is_super_admin", "language")
@@ -504,6 +506,75 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 			expect(lu).toContain(
 				'Il ouvre son compte et ses organisations, sans aucun pouvoir de super-admin, même pour votre propre adresse. Si l’adresse n’a pas encore de compte, il en crée un, rattaché à aucune organisation.'
 			);
+		});
+	});
+
+	describe('B1 : la liste des organisations', () => {
+		/** La carte d'une organisation de la liste, par son nom. */
+		function carte(html: string, nom: string): string {
+			const liste = section(html, 'liste-titre');
+			return (
+				[...liste.matchAll(/<li\b[\s\S]*?<\/li>/g)]
+					.map((trouve) => trouve[0])
+					.find((morceau) => texteDe(morceau).includes(nom)) ?? ''
+			);
+		}
+
+		it('shows the public page of each organisation, and says once what each action does', async () => {
+			const html = await (await get('/super-admin', avecPouvoirs)).text();
+			const lue = texteDe(carte(html, EXISTANTE));
+			// L'adresse complète de sa page publique, et non plus l'identifiant technique seul.
+			expect(lue).toContain(`Page publique : ${HOTE}/m/${EXISTANTE_ADRESSE}`);
+			expect(lue).toContain('Enregistrer le plan');
+			expect(lue).toContain('Enregistrer l’état');
+			expect(lue).not.toContain('Changer');
+			expect(texteDe(section(html, 'liste-titre'))).toContain(
+				[
+					'Entrer dans son espace',
+					'Vous y voyez et modifiez tout, comme sa personne responsable. Une bannière le rappelle en haut de chaque écran.',
+					'Plan',
+					'Noté pour le suivi. Aucun paiement n’est demandé pour le moment, et le plan ne change rien à ce que l’organisation peut faire.',
+					'État',
+					'Une organisation suspendue n’a plus de page publique : ni sa page, ni son widget, ni son agenda ne s’affichent. Rien n’est effacé, et vous pouvez la réactiver.'
+				].join(' ')
+			);
+		});
+
+		it('confirms a saved plan or status by the name of the organisation, and says when it does not exist', async () => {
+			// Le texte tel qu'il s'affiche, balises retirées : le point suit le nom sans espace, ce que
+			// `visibleText`, qui sépare chaque morceau par une espace, ne montrerait pas.
+			const confirmation = (html: string) =>
+				element(html, /<p\b[^>]*class="succes[\s"][^>]*role="status"/, 'p')
+					.replace(/<!--[\s\S]*?-->|<[^>]+>/g, '')
+					.replace(/\s+/g, ' ')
+					.trim();
+			const plan = await postForm(
+				'/super-admin?/plan',
+				{ organizationId: existanteId, plan: 'sponsored' },
+				avecPouvoirs
+			);
+			expect(plan.status).toBe(200);
+			expect(confirmation(await plan.text())).toBe(`Plan enregistré pour ${EXISTANTE}.`);
+			const etat = await postForm(
+				'/super-admin?/statut',
+				{ organizationId: existanteId, status: 'active' },
+				avecPouvoirs
+			);
+			expect(etat.status).toBe(200);
+			expect(confirmation(await etat.text())).toBe(`État enregistré pour ${EXISTANTE}.`);
+
+			// Une organisation qui n'existe pas, ou plus : rien n'est enregistré, et l'écran le dit au
+			// lieu de confirmer.
+			for (const [chemin, champs] of [
+				['/super-admin?/plan', { organizationId: newId(), plan: 'paid' }],
+				['/super-admin?/statut', { organizationId: newId(), status: 'suspended' }]
+			] as const) {
+				const reponse = await postForm(chemin, champs, avecPouvoirs);
+				expect(reponse.status, chemin).toBe(404);
+				expect(erreur(await reponse.text()), chemin).toBe(
+					'Cette organisation n’existe pas, ou plus.'
+				);
+			}
 		});
 	});
 
