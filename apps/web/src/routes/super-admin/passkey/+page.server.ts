@@ -44,6 +44,8 @@ export const load: PageServerLoad = async (event) => {
 			name: entry.name,
 			createdAt: entry.created_at.slice(0, 10) as IsoDate
 		})),
+		/** Le fuseau du jour d'enregistrement, que le nom d'une nouvelle passkey reprend. */
+		timeZone: DEFAULT_TIME_ZONE,
 		hasSuperAdminPowers: person.hasSuperAdminPowers,
 		/** Vrai tant qu'aucune passkey n'existe : c'est la fenêtre d'amorçage. */
 		amorcage: passkeys.length === 0

@@ -4,6 +4,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { numericDate } from '$lib/i18n.js';
 	import { passkeyTexts } from '$lib/i18n/super-admin-passkey.js';
+	import { passkeyName, systemName } from './passkey-name.js';
 	import { afterRegistration, passkeyButtons } from './screen.js';
 
 	let { data } = $props();
@@ -39,13 +40,32 @@
 		detail = erreur instanceof Error ? erreur.message : '';
 	}
 
+	/**
+	 * Le nom de la nouvelle passkey : le système de cet appareil et le jour, « Windows, 26.09.2026 »,
+	 * pareil dans toutes les langues, et distinct de ceux de la liste.
+	 */
+	function newPasskeyName(): string {
+		// `userAgentData` n'existe que dans Chrome et Edge, et TypeScript ne le connaît pas encore.
+		const hints = navigator as Navigator & { userAgentData?: { platform?: string } };
+		return passkeyName({
+			system: systemName({
+				platform: hints.userAgentData?.platform,
+				userAgent: navigator.userAgent,
+				maxTouchPoints: navigator.maxTouchPoints
+			}),
+			now: new Date(),
+			timeZone: data.timeZone,
+			taken: data.passkeys.map((passkey) => passkey.name)
+		});
+	}
+
 	async function enregistrer() {
 		begin();
 		// Le message dépend de la session qui enregistre, lue avant que les données ne changent.
 		const said = afterRegistration(data);
 		try {
 			const authClient = await client();
-			const { error } = await authClient.passkey.addPasskey({ name: text.thisDevice });
+			const { error } = await authClient.passkey.addPasskey({ name: newPasskeyName() });
 			if (error) throw new Error(error.message ?? '');
 			etat = 'repos';
 			// Pas de déconnexion. Pour la première passkey, le bouton « Se connecter avec une

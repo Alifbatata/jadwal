@@ -35,8 +35,6 @@ interface PasskeyTexts {
 	/** « Enregistrée le 26.09.2026 » : la date arrive déjà écrite par `numericDate`. */
 	readonly registeredOn: (date: string) => string;
 	readonly unnamed: string;
-	/** Le nom donné à une passkey enregistrée depuis cet écran, qui s'affiche ensuite dans la liste. */
-	readonly thisDevice: string;
 	readonly delete: string;
 	readonly advice: string;
 }
@@ -68,7 +66,6 @@ export const passkeyTexts: Translations<PasskeyTexts> = {
 		none: 'Aucune pour le moment.',
 		registeredOn: (date) => `Enregistrée le ${date}`,
 		unnamed: 'Sans nom',
-		thisDevice: 'Cet appareil',
 		delete: 'Supprimer',
 		advice:
 			'Enregistrez-en plusieurs, sur plusieurs appareils : perdre son téléphone ne doit pas fermer le service. Si toutes sont perdues, seule une intervention directe dans la base de données permet de repartir : il n’existe ni question secrète ni code envoyé par courriel.'
@@ -99,7 +96,6 @@ export const passkeyTexts: Translations<PasskeyTexts> = {
 		none: 'Noch keiner.',
 		registeredOn: (date) => `Gespeichert am ${date}`,
 		unnamed: 'Ohne Namen',
-		thisDevice: 'Dieses Gerät',
 		delete: 'Löschen',
 		advice:
 			'Speichern Sie mehrere, auf mehreren Geräten: Wer sein Telefon verliert, soll damit nicht den Dienst sperren. Sind alle verloren, hilft nur ein direkter Eingriff in die Datenbank: Es gibt weder eine Sicherheitsfrage noch einen Code per E-Mail.'
@@ -131,7 +127,6 @@ export const passkeyTexts: Translations<PasskeyTexts> = {
 		none: 'Ancora nessuna.',
 		registeredOn: (date) => `Registrata il ${date}`,
 		unnamed: 'Senza nome',
-		thisDevice: 'Questo dispositivo',
 		delete: 'Elimina',
 		advice:
 			'Registrane più di una, su più dispositivi: perdere il telefono non deve chiudere il servizio. Se sono andate tutte perse, solo un intervento diretto nella banca dati permette di ripartire: non esiste né una domanda segreta né un codice per e-mail.'
@@ -161,7 +156,6 @@ export const passkeyTexts: Translations<PasskeyTexts> = {
 		none: 'None yet.',
 		registeredOn: (date) => `Registered on ${date}`,
 		unnamed: 'Unnamed',
-		thisDevice: 'This device',
 		delete: 'Remove',
 		advice:
 			'Register several, on several devices: losing your phone must not close the service. If they are all lost, only a direct change in the database can get you back in: there is no secret question and no code sent by email.'
@@ -190,7 +184,6 @@ export const passkeyTexts: Translations<PasskeyTexts> = {
 		none: 'لا يوجد أي مفتاح بعد.',
 		registeredOn: (date) => `تاريخ التسجيل: ${date}`,
 		unnamed: 'دون اسم',
-		thisDevice: 'هذا الجهاز',
 		delete: 'حذف',
 		advice:
 			'سجل أكثر من مفتاح، على أكثر من جهاز: فقدان الهاتف يجب ألا يغلق الخدمة. وإذا ضاعت كلها، فلا سبيل إلى العودة إلا بتدخل مباشر في قاعدة البيانات: لا يوجد سؤال سري ولا رمز يرسل بالبريد.'
