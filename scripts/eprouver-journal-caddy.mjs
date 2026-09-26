@@ -39,13 +39,14 @@
  * ## La compression
  *
  * Mesuré à l'étape 16 : rien n'était compressé, alors que l'application annonce
- * `Vary: accept-encoding`. La page HTML et le widget sont donc demandés trois fois, comme un
- * navigateur (zstd accepté), comme un client qui n'accepte que gzip, et sans rien demander ; le
- * corps reçu est décodé selon ce que la réponse annonce et comparé à l'original, octet pour octet.
- * S'y ajoutent `Vary`, l'ETag et le `304` d'une revalidation, une réponse trop courte pour valoir la
- * peine, un fichier que l'application sert déjà compressé, et les en-têtes que le bloc pose
- * (`Strict-Transport-Security`, pas de `Server`). Les tailles envoyées par Caddy sont affichées :
- * c'est la mesure du gain.
+ * `Vary: accept-encoding`. La page HTML et le widget sont donc demandés quatre fois : comme un
+ * navigateur, qui accepte gzip et zstd au même poids et doit recevoir gzip (étape 18) ; comme un
+ * client qui n'accepte que gzip ; comme un client qui n'accepte que zstd ; et sans rien demander.
+ * Le corps reçu est décodé selon ce que la réponse annonce et comparé à l'original, octet pour
+ * octet. S'y ajoutent `Vary`, l'ETag et le `304` d'une revalidation, un client qui préfère zstd par
+ * son poids, une réponse trop courte pour valoir la peine, un fichier que l'application sert déjà
+ * compressé, et les en-têtes que le bloc pose (`Strict-Transport-Security`, pas de `Server`). Les
+ * tailles envoyées par Caddy sont affichées : c'est la mesure du gain.
  *
  * La page HTML est représentative, pas rendue par le serveur : le texte de `/conditions`, mis en
  * mots par le module même de l'application (`apps/web/src/lib/conditions/rendu.js`), dans son
@@ -535,9 +536,11 @@ try {
 	// ---------------------------------------------------------------------------------------------
 	process.stdout.write('La compression, mesurée sur ce que Caddy a vraiment envoyé :\n\n');
 
-	// Ce qu'envoie un navigateur d'aujourd'hui : zstd y est, avec brotli, que Caddy n'a pas.
+	// Ce qu'envoie un navigateur d'aujourd'hui : gzip et zstd au même poids, avec brotli, que Caddy
+	// n'a pas. Le bloc doit lui préférer gzip (étape 18, retour H3).
 	const NAVIGATEUR = 'Accept-Encoding: gzip, deflate, br, zstd';
 	const GZIP_SEUL = 'Accept-Encoding: gzip';
+	const ZSTD_SEUL = 'Accept-Encoding: zstd';
 	const servis = [
 		{ quoi: 'la page HTML', chemin: '/conditions', fichier: '/srv/app/conditions.html' },
 		{
@@ -549,26 +552,32 @@ try {
 	const mesures = [];
 	for (const { quoi, chemin, fichier } of servis) {
 		const original = empreinteDe(fichier);
-		const enZstd = demander(chemin, [NAVIGATEUR]);
+		const enNavigateur = demander(chemin, [NAVIGATEUR]);
 		const enGzip = demander(chemin, [GZIP_SEUL]);
+		const enZstd = demander(chemin, [ZSTD_SEUL]);
 		const sans = demander(chemin);
-		mesures.push({ quoi: `${quoi}, ${chemin}`, sans, enGzip, enZstd });
+		mesures.push({ quoi: `${quoi}, ${chemin}`, sans, enGzip, enZstd, enNavigateur });
 
 		verifier(
-			`${quoi} : zstd pour un navigateur qui l’accepte`,
-			enZstd.entete('content-encoding') === 'zstd'
+			`${quoi} : gzip pour un navigateur, qui accepte aussi zstd au même poids`,
+			enNavigateur.entete('content-encoding') === 'gzip'
 		);
 		verifier(
 			`${quoi} : gzip pour un client qui n’accepte que gzip`,
 			enGzip.entete('content-encoding') === 'gzip'
 		);
 		verifier(
+			`${quoi} : zstd pour un client qui n’accepte que zstd`,
+			enZstd.entete('content-encoding') === 'zstd'
+		);
+		verifier(
 			`${quoi} : aucune compression pour un client qui n’en demande aucune`,
 			sans.entete('content-encoding') === ''
 		);
 		for (const [comment, reponse] of [
-			['en zstd', enZstd],
+			['par un navigateur', enNavigateur],
 			['en gzip', enGzip],
+			['en zstd', enZstd],
 			['sans compression', sans]
 		]) {
 			verifier(
@@ -577,8 +586,9 @@ try {
 			);
 		}
 		for (const [comment, reponse] of [
-			['en zstd', enZstd],
-			['en gzip', enGzip]
+			['par un navigateur', enNavigateur],
+			['en gzip', enGzip],
+			['en zstd', enZstd]
 		]) {
 			const vary = reponse
 				.entete('vary')
@@ -587,7 +597,7 @@ try {
 			verifier(`${quoi} : reçu ${comment}, Vary dit Accept-Encoding, une fois`, vary.length === 1);
 		}
 		for (const [comment, reponse] of [
-			['compressée', enZstd],
+			['compressée', enNavigateur],
 			['non compressée', sans]
 		]) {
 			verifier(
@@ -606,18 +616,27 @@ try {
 	// son ajout de `If-None-Match` avant de passer la requête à l'application.
 	const widget = mesures[1];
 	verifier(
-		`le widget en zstd porte une ETag à lui, distincte de celle du fichier brut`,
+		`le widget reçu par un navigateur porte une ETag à lui, terminée par -gzip, distincte de ` +
+			`celle du fichier brut`,
 		widget.sans.entete('etag') !== '' &&
-			widget.enZstd.entete('etag') !== '' &&
-			widget.enZstd.entete('etag') !== widget.sans.entete('etag')
+			widget.enNavigateur.entete('etag').endsWith('-gzip"') &&
+			widget.enNavigateur.entete('etag') !== widget.sans.entete('etag')
 	);
 	const revalidation = demander('/widget/jadwal-widget.js', [
 		NAVIGATEUR,
-		`If-None-Match: ${widget.enZstd.entete('etag')}`
+		`If-None-Match: ${widget.enNavigateur.entete('etag')}`
 	]);
 	verifier(
 		`revalidé avec cette ETag, le widget rend 304, sans corps`,
 		revalidation.statut === 304 && revalidation.octets === 0
+	);
+
+	// L'ordre des formats ne fait que départager deux poids égaux : un client qui préfère zstd par
+	// son poids (`q`) le reçoit.
+	const prefereZstd = demander('/widget/jadwal-widget.js', ['Accept-Encoding: zstd, gzip;q=0.5']);
+	verifier(
+		`un client qui préfère zstd par son poids le reçoit`,
+		prefereZstd.entete('content-encoding') === 'zstd'
 	);
 
 	// Sous 512 octets, compresser coûte plus que ça ne rapporte : Caddy laisse passer.
