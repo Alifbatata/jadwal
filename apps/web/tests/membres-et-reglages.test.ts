@@ -18,7 +18,9 @@
 //   super-admin, qui n'a aucun alias ; d'un fuseau enregistré hors de la liste, l'écran dit si
 //   l'abonnement au calendrier marche avec lui, et le flux agenda le confirme ;
 // - supprimer une salle que des cours occupent : l'écran le dit avant, et demande de confirmer, en
-//   haut de la page, là où l'on arrive après l'envoi.
+//   haut de la page, là où l'on arrive après l'envoi ;
+// - un identifiant de salle ou d'invitation mal formé, dans un formulaire trafiqué, reçoit la réponse
+//   d'une salle ou d'une invitation inconnue, jamais une erreur 500.
 
 import { readFileSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
@@ -1650,6 +1652,49 @@ describe('Réglages après un refus, et le fuseau dans une liste (retour B1)', (
 		expect(aide).not.toContain('abonnement au calendrier');
 		// Et c'est vrai : le flux agenda répond avec ce fuseau.
 		expect((await get(`/m/${SLUG}/agenda.ics`, '')).status).toBe(200);
+	});
+});
+
+describe('un identifiant mal formé, envoyé par un formulaire trafiqué', () => {
+	it('answers a malformed room identifier in Settings as an unknown room, and deletes nothing', async () => {
+		const cookie = await signIn(RESPONSABLE);
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		const avant = await sallesEnBase();
+		expect(avant).toHaveLength(2);
+		// Une salle inconnue, bien écrite : rien à supprimer, et la page le dit en une phrase.
+		const inconnue = await postForm(
+			'/reglages?/supprimerSalle',
+			{ roomId: newId(), confirm: 'yes' },
+			cookie
+		);
+		expect(inconnue.status).toBe(200);
+		const phrase = statut(await inconnue.text());
+		expect(phrase).toBe('Salle supprimée.');
+		// Un identifiant mal écrit était envoyé tel quel à la base, qui le refusait : erreur 500.
+		for (const roomId of ['pas-un-identifiant', '']) {
+			for (const confirm of ['', 'yes']) {
+				const reponse = await postForm('/reglages?/supprimerSalle', { roomId, confirm }, cookie);
+				expect(reponse.status, `« ${roomId} » ${confirm}`).toBe(inconnue.status);
+				expect(statut(await reponse.text()), `« ${roomId} » ${confirm}`).toBe(phrase);
+			}
+		}
+		expect(await sallesEnBase()).toEqual(avant);
+	});
+
+	it('answers a malformed invitation identifier as an unknown invitation, with a sentence', async () => {
+		const cookie = await signIn(RESPONSABLE);
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		const inconnue = await postForm('/organisations?/accepter', { invitationId: newId() }, cookie);
+		expect(inconnue.status).toBe(404);
+		const phrase = alerte(await inconnue.text());
+		expect(phrase).toBe(
+			'Cette invitation n’est plus valable : elle a peut-être expiré ou été annulée. Demandez-en une nouvelle à la personne qui vous a invité.'
+		);
+		for (const invitationId of ['pas-un-identifiant', '']) {
+			const reponse = await postForm('/organisations?/accepter', { invitationId }, cookie);
+			expect(reponse.status, `« ${invitationId} »`).toBe(404);
+			expect(alerte(await reponse.text()), `« ${invitationId} »`).toBe(phrase);
+		}
 	});
 });
 

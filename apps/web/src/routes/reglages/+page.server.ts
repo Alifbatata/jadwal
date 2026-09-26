@@ -24,6 +24,8 @@ import { isOfferedTimeZone, timeZoneChoices } from '../super-admin/time-zones.se
 import type { Actions, PageServerLoad } from './$types.js';
 
 const COULEUR = /^#[0-9a-fA-F]{6}$/;
+/** Un identifiant de salle. Autre chose n'atteint pas la base, qui le refuserait en erreur. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type Transaction = Parameters<Parameters<typeof withSessionOrg>[1]>[0];
 
@@ -245,13 +247,15 @@ export const actions: Actions = {
 	 * Supprimer une salle. Si des cours ou des prières du vendredi l'occupent, le premier envoi ne
 	 * supprime rien : l'écran dit combien la perdront, et propose de confirmer (étape 18). La base ne
 	 * vide que la salle de ces cours, qui gardent tout le reste (migration 0061). Une salle libre part
-	 * dès le premier envoi.
+	 * dès le premier envoi. Un identifiant mal formé ne désigne aucune salle : il reçoit la réponse
+	 * d'une salle inconnue, sans passer par la base.
 	 */
 	supprimerSalle: async (event) => {
 		const context = await mustAdminister(event);
 		const form = await event.request.formData();
 		const roomId = String(form.get('roomId') ?? '');
 		const confirme = String(form.get('confirm') ?? '') === 'yes';
+		if (!UUID.test(roomId)) return { salleSupprimee: true };
 		const occupee = await withSessionOrg(context, async (tx) => {
 			if (!confirme) {
 				const [salle] = await readRoomsInUse(tx, roomId);

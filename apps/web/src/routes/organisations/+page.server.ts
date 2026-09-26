@@ -14,6 +14,9 @@ import { chooseOrganisation, membershipsOf, pendingInvitationsOf } from '$lib/se
 import { record } from '$lib/server/audit.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
+/** Un identifiant d'invitation. Autre chose n'atteint pas la base, qui le refuserait en erreur. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function rows<T>(result: unknown): T[] {
 	if (Array.isArray(result)) return result as T[];
 	const inner = (result as { rows?: unknown[] }).rows;
@@ -54,6 +57,8 @@ export const actions: Actions = {
 		if (!person) redirect(303, '/connexion');
 		const form = await request.formData();
 		const invitationId = String(form.get('invitationId') ?? '');
+		// Un identifiant mal formé ne désigne aucune invitation : la réponse d'une invitation inconnue.
+		if (!UUID.test(invitationId)) return fail(404, { error: 'invitationGone' as const });
 		const accepted = await withUser(appDatabase(), person.userId, async (tx) => {
 			// L'ordre compte. La personne accepte d'abord : la politique de mise à jour la reconnaît
 			// par son adresse, que le lien magique vient de prouver. C'est cette acceptation, et elle
