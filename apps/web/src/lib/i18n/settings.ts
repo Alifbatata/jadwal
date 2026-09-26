@@ -281,7 +281,7 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		nameHelp: 'Compare in alto sulla tua pagina pubblica.',
 		timeZoneLabel: 'Fuso orario',
 		timeZoneHelp: `Dà l’ora dei tuoi corsi. In Svizzera scegli ${SWISS_ZONE}.`,
-		timeZoneNotListed: `Se la città dell’organizzazione non è nella lista, scegli una città con la stessa ora tutto l’anno. Per la maggior parte dell’Europa: ${SWISS_ZONE}, ${PARIS_ZONE} o ${BERLIN_ZONE}.`,
+		timeZoneNotListed: `Se la città dell’organizzazione non è nella lista, scegli una città che abbia sempre la stessa ora di quella dell’organizzazione. Per la maggior parte dell’Europa: ${SWISS_ZONE}, ${PARIS_ZONE} o ${BERLIN_ZONE}.`,
 		timeZoneKept: (zone) =>
 			`Il tuo fuso orario attuale, ${zone}, non è nella lista. Resta tale finché non ne scegli un altro.`,
 		timeZoneKeptNoCalendar: (zone) =>
@@ -358,7 +358,7 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		nameHelp: 'It appears at the top of your public page.',
 		timeZoneLabel: 'Time zone',
 		timeZoneHelp: `It sets the time of your courses. In Switzerland, choose ${SWISS_ZONE}.`,
-		timeZoneNotListed: `If the town of the organisation is not in the list, choose a city with the same time all year round. For most of Europe: ${SWISS_ZONE}, ${PARIS_ZONE} or ${BERLIN_ZONE}.`,
+		timeZoneNotListed: `If the town of the organisation is not in the list, choose a city that always has the same time as that town. For most of Europe: ${SWISS_ZONE}, ${PARIS_ZONE} or ${BERLIN_ZONE}.`,
 		timeZoneKept: (zone) =>
 			`Your current time zone, ${zone}, is not in the list. It is kept until you choose another one.`,
 		timeZoneKeptNoCalendar: (zone) =>
@@ -434,7 +434,7 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		nameHelp: 'يظهر في أعلى صفحتك العامة.',
 		timeZoneLabel: 'المنطقة الزمنية',
 		timeZoneHelp: `تحدد وقت دروسك. في سويسرا اختر ${SWISS_ZONE}.`,
-		timeZoneNotListed: `إذا لم تكن مدينة المؤسسة في القائمة، فاختر مدينة لها دائمًا التوقيت نفسه. لمعظم دول أوروبا: ${SWISS_ZONE} أو ${PARIS_ZONE} أو ${BERLIN_ZONE}.`,
+		timeZoneNotListed: `إذا لم تكن مدينة المؤسسة في القائمة، فاختر مدينة لها دائمًا توقيت مدينة المؤسسة نفسه. لمعظم دول أوروبا: ${SWISS_ZONE} أو ${PARIS_ZONE} أو ${BERLIN_ZONE}.`,
 		timeZoneKept: (zone) =>
 			`منطقتك الزمنية الحالية، ${zone}، ليست في القائمة. تبقى كما هي ما لم تختر منطقة أخرى.`,
 		timeZoneKeptNoCalendar: (zone) =>

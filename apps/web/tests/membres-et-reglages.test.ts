@@ -1313,9 +1313,9 @@ const OCCUPEE: Record<Langue, readonly [string, string]> = {
 const ABSENTE: Record<Langue, string> = {
 	fr: 'Si la ville de l’organisation n’est pas dans la liste, choisissez une ville qui a toujours la même heure qu’elle. Pour la plus grande partie de l’Europe : Europe/Zurich, Europe/Paris ou Europe/Berlin.',
 	de: 'Steht der Ort der Organisation nicht in der Liste, wählen Sie eine Stadt, in der immer die gleiche Uhrzeit gilt wie dort. Für den grössten Teil Europas: Europe/Zurich, Europe/Paris oder Europe/Berlin.',
-	it: 'Se la città dell’organizzazione non è nella lista, scegli una città con la stessa ora tutto l’anno. Per la maggior parte dell’Europa: Europe/Zurich, Europe/Paris o Europe/Berlin.',
-	en: 'If the town of the organisation is not in the list, choose a city with the same time all year round. For most of Europe: Europe/Zurich, Europe/Paris or Europe/Berlin.',
-	ar: 'إذا لم تكن مدينة المؤسسة في القائمة، فاختر مدينة لها دائمًا التوقيت نفسه. لمعظم دول أوروبا: Europe/Zurich أو Europe/Paris أو Europe/Berlin.'
+	it: 'Se la città dell’organizzazione non è nella lista, scegli una città che abbia sempre la stessa ora di quella dell’organizzazione. Per la maggior parte dell’Europa: Europe/Zurich, Europe/Paris o Europe/Berlin.',
+	en: 'If the town of the organisation is not in the list, choose a city that always has the same time as that town. For most of Europe: Europe/Zurich, Europe/Paris or Europe/Berlin.',
+	ar: 'إذا لم تكن مدينة المؤسسة في القائمة، فاختر مدينة لها دائمًا توقيت مدينة المؤسسة نفسه. لمعظم دول أوروبا: Europe/Zurich أو Europe/Paris أو Europe/Berlin.'
 };
 
 /** Le refus d'un fuseau hors de la liste, le même qu'au super-admin. */
