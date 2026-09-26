@@ -1432,6 +1432,20 @@ describe('une séance déplacée le même jour, à une autre heure', () => {
 			expect(parti?.marques).toEqual([DEPLACE_AU[langue](jourEtDate(langue, APRES_DEMAIN))]);
 		}
 	);
+
+	// Relecture du lot 5 : la page d'un cours qui suit une prière disait « Nouvelle heure » sans
+	// l'heure d'avant, que la vue Semaine donne pour la même séance.
+	it.each(LANGUES)(
+		'gives the time before on the page of a course that follows a prayer, in %s, as the week view does',
+		async (langue) => {
+			const page = await servir(`${base(langue, SLUG_HEURES)}/cours/${COURS_HEURES.priere}`);
+			expect(page.statut).toBe(200);
+			const jour = jourEtDate(langue, DEMAIN);
+			expect(prochainesDuCours(page.html).find((ligne) => ligne.startsWith(jour))).toBe(
+				`${jour} 21:00 – 22:00 ${NOUVELLE_HEURE[langue]} ${INITIALEMENT_A[langue]('19:30')}`
+			);
+		}
+	);
 });
 
 // ---------------------------------------------------------------------------------------------

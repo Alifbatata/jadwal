@@ -11,10 +11,13 @@ import {
 	publicDatabase,
 	readPublicCourses,
 	readPublicPauses,
+	readPublicPrayerDays,
+	tableDesPrieres,
 	type Langue
 } from '$lib/server/public.js';
 import { toException, toSchedule } from '$lib/server/programme.js';
 import { nextDates } from '$lib/server/serialise.js';
+import { appliquerVendredi, sessionsDuVendredi } from '$lib/server/vendredi.js';
 import {
 	appareilDuVisiteur,
 	introuvable,
@@ -71,16 +74,32 @@ export const load: PageServerLoad = async (event) => {
 
 	// Une séance déplacée le même jour, à une autre heure : la page dit un changement d'heure, avec
 	// l'heure d'avant (relecture du lot 4), et non « Date exceptionnelle » pour une date qui n'a pas
-	// changé. L'heure d'avant est celle que la règle du cours donne ce jour-là ; elle reste inconnue
-	// pour un cours qui suit une prière, puisque cette page ne lit pas les heures de prière.
+	// changé. L'heure d'avant est celle que la règle du cours donne ce jour-là. Pour un cours qui suit
+	// une prière, elle vient des heures de prière des seuls jours où une séance a changé d'heure, lues
+	// comme pour la vue Semaine : les trois sources résolues, et le vendredi, l'heure de la dernière
+	// session du vendredi à la place de l'iqama du Dhuhr (relecture du lot 5). Les autres séances
+	// gardent leur règle, « 15 min après Maghrib », comme avant. Un jour qu'aucune source ne couvre
+	// laisse l'heure d'avant inconnue, comme dans la vue Semaine.
 	const schedule = toSchedule(cours);
-	const heureDAvant = (date: string, originalDate: string | undefined): string | null =>
-		originalDate === date
-			? (expandOccurrences({
-					schedules: [schedule],
-					range: { from: date as IsoDate, to: date as IsoDate }
-				})[0]?.start ?? null)
+	const prochaines = nextDates(schedule, exceptions, pauses, today, PROCHAINES);
+	const memeJour = prochaines
+		.filter((seance) => seance.status === 'moved_here' && seance.originalDate === seance.date)
+		.map((seance) => seance.date);
+	const premier = memeJour[0];
+	const dernier = memeJour.at(-1);
+	const prieres =
+		schedule.timing.kind === 'prayer' && organisation.prayer_module && premier && dernier
+			? appliquerVendredi(
+					tableDesPrieres(await readPublicPrayerDays(organisation.id, premier, dernier)),
+					sessionsDuVendredi(courses)
+				)
 			: null;
+	const heureDAvant = (date: IsoDate): string | null =>
+		expandOccurrences({
+			schedules: [schedule],
+			range: { from: date, to: date },
+			...(prieres ? { prayerTimes: (jour: IsoDate) => prieres.get(jour) } : {})
+		})[0]?.start ?? null;
 
 	event.setHeaders({ 'cache-control': CACHE_PROGRAMME });
 	// La langue du document, que le hook écrit sur `<html>` (voir la page du programme). Le 404
@@ -129,7 +148,7 @@ export const load: PageServerLoad = async (event) => {
 			timingOffsetMinutes: cours.timing_offset_minutes,
 			timingDurationMinutes: cours.timing_duration_minutes
 		},
-		prochaines: nextDates(schedule, exceptions, pauses, today, PROCHAINES).map((seance) => ({
+		prochaines: prochaines.map((seance) => ({
 			date: seance.date,
 			start: seance.start,
 			end: seance.end,
@@ -137,7 +156,9 @@ export const load: PageServerLoad = async (event) => {
 			anchor: seance.anchor ?? null,
 			originalDate: seance.originalDate ?? null,
 			originalStart:
-				seance.status === 'moved_here' ? heureDAvant(seance.date, seance.originalDate) : null
+				seance.status === 'moved_here' && seance.originalDate === seance.date
+					? heureDAvant(seance.date)
+					: null
 		}))
 	};
 };
