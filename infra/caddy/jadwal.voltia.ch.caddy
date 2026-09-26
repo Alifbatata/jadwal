@@ -106,14 +106,15 @@ jadwal.voltia.ch {
 	# `pnpm caddy:test` l'affiche : ce `502` porte `Server: Caddy`, et pas
 	# `Strict-Transport-Security`.
 	#
-	# C'est une limite connue, et acceptée. Un navigateur déjà venu garde la règle de transport strict
-	# deux ans, et `Server: Caddy` paraît de toute façon sur la redirection de http vers https, que
-	# Caddy sert hors de ce bloc. Les deux corrections possibles coûtent plus qu'elles ne rapportent.
-	# `handle_errors` ajoute des routes d'erreur au serveur entier, pas au seul site : les erreurs
-	# `5xx` de tous les sites de ce Caddy, jadwal compris, passeraient du niveau `error` de son
-	# journal au niveau `debug`, qu'il n'écrit pas par défaut. Poser `Strict-Transport-Security`
-	# hors de ce bloc, tout de suite, le doublerait sur chaque réponse relayée, puisque
-	# l'application l'envoie aussi, à moins d'écrire la valeur deux fois dans ce fichier.
+	# C'est une limite connue, et acceptée. Un navigateur déjà venu garde la règle de transport
+	# strict deux ans, et `Server: Caddy` paraît de toute façon sur la redirection de http vers
+	# https, que Caddy sert hors de ce bloc. Les deux corrections possibles coûtent plus qu'elles ne
+	# rapportent. `handle_errors` ajoute des routes d'erreur au serveur entier, pas au seul site :
+	# les erreurs `5xx` de tous les sites de ce Caddy, jadwal compris, passeraient du niveau `error`
+	# de son journal au niveau `debug`, qu'il n'écrit pas par défaut. Poser
+	# `Strict-Transport-Security` hors de ce bloc, tout de suite, le doublerait sur chaque réponse
+	# relayée, puisque l'application l'envoie aussi, à moins d'écrire la valeur deux fois dans ce
+	# fichier.
 	header {
 		# Deux ans, sous-domaines compris. `preload` n'y est pas : il engage `voltia.ch` tout entier
 		# auprès des navigateurs, et ce n'est pas à jadwal d'en décider. L'application envoie la même
