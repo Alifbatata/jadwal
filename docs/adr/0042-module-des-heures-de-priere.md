@@ -120,10 +120,13 @@ de lui-même, dans les organisations qui ont allumé le module. L'attribut `view
 pas `prieres` : l'accepter changerait le fichier du widget, donc son empreinte, et casserait les
 sites qui l'ont épinglée avec son empreinte d'intégrité.
 
-**Limite, relevée par la relecture et non corrigée.** L'onglet place les sessions du vendredi sur
-chaque vendredi daté d'après leur rythme habituel, sans lire les annulations ni les déplacements de
-ce jour-là : une session annulée un vendredi y figure encore, alors que la vue Semaine de la même
-page la dit annulée. Le point est ouvert dans `ETAT-PROJET.md`.
+**Une ligne datée dit ce qui a lieu ce jour-là**, comme la vue Semaine de la même page. Une session
+du vendredi annulée, ou déplacée à un autre jour, y reste écrite, barrée, avec le mot de la vue
+Semaine ; une session déplacée à une autre heure du même vendredi n'y est écrite qu'à sa nouvelle
+heure ; si aucune n'a lieu, l'iqama du Dhuhr revient. Un autre jour qui reçoit une session déplacée
+garde son iqama du Dhuhr, et la session s'y écrit nommée, avec son vendredi d'origine. Le bloc du
+vendredi, en bas de l'onglet, sans date, garde le rythme habituel. Jusqu'au lot 4 de l'étape 18,
+l'onglet plaçait les sessions d'après leur seul rythme, et une session annulée y figurait encore.
 
 ## Ce que cette décision ne dit pas
 
