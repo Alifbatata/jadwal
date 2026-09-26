@@ -47,6 +47,11 @@ programme.
 - Le titre du navigateur est `<Nom de l'organisation> | Heures de prière`.
 - Aucun script, aucune ressource d'un autre domaine, comme partout côté public.
 - Dans le cadre du widget, l'onglet est là aussi, et s'ouvre en mode intégré.
-- **Limite connue à la fin de l'étape 18** : l'onglet place les sessions du vendredi d'après leur
-  rythme habituel, sans lire les annulations ni les déplacements de ce vendredi-là. La vue Semaine,
-  elle, montre une session annulée comme annulée.
+- **Une ligne datée dit ce qui a lieu ce jour-là**, comme la vue Semaine : une session du vendredi
+  annulée, ou déplacée à un autre jour, reste écrite, barrée, avec `Annulé` ou `Déplacé au …` ; une
+  session déplacée à une autre heure du même vendredi n'est écrite qu'à sa nouvelle heure. Si
+  aucune session n'a lieu un vendredi, l'iqama du Dhuhr revient. Un autre jour qui reçoit une
+  session déplacée garde son iqama du Dhuhr, et la session s'y écrit nommée, avec son vendredi
+  d'origine, et une phrase d'aide le dit. Le bloc `Prière du vendredi` du bas, sans date, garde le
+  rythme habituel. Jusqu'au lot 4 de l'étape 18, l'onglet montrait une session annulée comme si
+  elle avait lieu.
