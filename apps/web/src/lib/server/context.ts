@@ -14,6 +14,7 @@
 import { appDatabase, authDatabase, superAdminDatabase } from './database.js';
 import { auth } from './auth.js';
 import { versionIso as versionDesConditions } from './conditions.js';
+import { isLangue, type Langue } from '$lib/i18n.js';
 import { MEMBERSHIP_ROLES, newId, sql, withOrg, withUser, type Transaction } from '@jadwal/db';
 
 export type MembershipRole = (typeof MEMBERSHIP_ROLES)[number];
@@ -35,6 +36,11 @@ export interface SignedIn {
 	/** Vrai quand le compte est super-admin mais n'a encore enregistré aucune passkey. */
 	needsPasskey: boolean;
 	sessionToken: string;
+	/**
+	 * La langue retenue pour le compte (ADR 0046), lue avec le reste du compte, sans requête de plus.
+	 * `null` tant que la personne n'en a aucune : le hook lui donne alors celle qu'elle voit.
+	 */
+	language: Langue | null;
 }
 
 export interface OrganisationContext extends SignedIn {
@@ -86,9 +92,15 @@ export async function signedIn(headers: Headers): Promise<SignedIn | null> {
 	const found = await auth().api.getSession({ headers });
 	if (!found) return null;
 	const db = authDatabase();
-	const row = firstRow<{ is_super_admin: boolean; email: string; name: string | null }>(
+	const row = firstRow<{
+		is_super_admin: boolean;
+		email: string;
+		name: string | null;
+		language: string | null;
+	}>(
 		await db.execute(
-			sql`select "email", "name", "is_super_admin" from "user" where "id" = ${found.user.id}`
+			sql`select "email", "name", "is_super_admin", "language" from "user"
+				where "id" = ${found.user.id}`
 		)
 	);
 	if (!row) return null;
@@ -121,7 +133,8 @@ export async function signedIn(headers: Headers): Promise<SignedIn | null> {
 		isSuperAdmin: row.is_super_admin,
 		hasSuperAdminPowers: row.is_super_admin && session.passkey_verified_at !== null,
 		needsPasskey: row.is_super_admin && (passkeys?.n ?? 0) === 0,
-		sessionToken: found.session.token
+		sessionToken: found.session.token,
+		language: row.language !== null && isLangue(row.language) ? row.language : null
 	};
 }
 

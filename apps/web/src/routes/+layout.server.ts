@@ -1,3 +1,4 @@
+import type { Langue } from '$lib/i18n.js';
 import { currentOrganisation } from '$lib/server/context.js';
 import type { LayoutServerLoad } from './$types.js';
 
@@ -18,15 +19,34 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 	// Le mode intégré, et le seul endroit du code qui le décide : c'est lui qui fait charger le
 	// script d'annonce de hauteur, et rien d'autre ne l'ajoute jamais (ADR 0005).
 	const integre = PUBLIC.test(url.pathname) && url.searchParams.get('embed') === '1';
+	// La langue de l'espace, que le hook a déjà calculée : chaque écran la lit dans ses données
+	// (`data.language`), sans rien demander d'autre (étape 18). Une page publique porte la sienne
+	// dans ses propres données ; ici, elle n'est lue que par la page d'erreur racine, et c'est le
+	// français que le hook écrit alors sur `<html>`.
+	const language: Langue = PUBLIC.test(url.pathname) ? 'fr' : (locals.langue ?? 'fr');
 	if (PUBLIC.test(url.pathname)) {
-		return { person: null, organisation: null, cotePublic: true, nu: false, integre };
+		return { person: null, organisation: null, cotePublic: true, nu: false, integre, language };
 	}
 	if (NUES.test(url.pathname)) {
-		return { person: null, organisation: null, cotePublic: false, nu: true, integre: false };
+		return {
+			person: null,
+			organisation: null,
+			cotePublic: false,
+			nu: true,
+			integre: false,
+			language
+		};
 	}
 	const person = locals.person;
 	if (!person) {
-		return { person: null, organisation: null, cotePublic: false, nu: false, integre: false };
+		return {
+			person: null,
+			organisation: null,
+			cotePublic: false,
+			nu: false,
+			integre: false,
+			language
+		};
 	}
 	// L'organisation en contexte sert à la navigation et à la bannière du super-admin. Elle vient
 	// de la session, comme partout ailleurs, jamais de l'URL (ADR 0013).
@@ -35,6 +55,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 		cotePublic: false,
 		nu: false,
 		integre: false,
+		language,
 		// Rien d'autre que ce que la page a besoin d'afficher.
 		person: {
 			email: person.email,

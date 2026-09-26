@@ -1,5 +1,5 @@
-// Ce qui s'applique à toutes les requêtes : la session, la garde des passkeys, le registre interne
-// du super-admin, et les en-têtes de sécurité.
+// Ce qui s'applique à toutes les requêtes : la session, la langue de l'espace, la garde des passkeys,
+// le registre interne du super-admin, et les en-têtes de sécurité.
 //
 // Deux choses à ne pas faire ici, toutes deux mesurées : lire le corps de la réponse, qui détruit le
 // rendu différé et ferait attendre la page entière ; et remplacer la réponse par une nouvelle, qui
@@ -8,11 +8,14 @@
 
 import { building } from '$app/environment';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
-import { error, type Handle } from '@sveltejs/kit';
-import { documentDansSaLangue } from '$lib/i18n.js';
+import { error, type Handle, type RequestEvent } from '@sveltejs/kit';
+import { documentDansSaLangue, type Langue } from '$lib/i18n.js';
+import { LANGUAGE_COOKIE, LANGUAGE_PARAMETER, spaceLanguage } from '$lib/i18n/language.js';
+import { writeAccountLanguage } from '$lib/server/account-language.js';
 import { auth } from '$lib/server/auth.js';
 import { passkeyCount, recordAdminAccess, signedIn } from '$lib/server/context.js';
 import { strictTransportSecurity } from '$lib/server/hsts.js';
+import { withMailLanguage } from '$lib/server/mail/language.js';
 import { compter } from '$lib/server/vues.js';
 
 /**
@@ -95,17 +98,53 @@ async function guardPasskeyRoutes(event: Parameters<Handle>[0]['event']): Promis
 	}
 }
 
+/**
+ * La langue d'un écran de l'espace (étape 18, retour D2) : celle que l'adresse demande pour cette
+ * page ; sinon celle du compte de la personne connectée ; sinon celle retenue sur ce navigateur par
+ * le choix de la langue ; sinon la meilleure que le navigateur demande ; sinon le français.
+ *
+ * Une personne connectée dont le compte n'a encore aucune langue reçoit celle qu'elle voyait avant
+ * de se connecter : son choix sur ce navigateur, sinon celle du navigateur. C'est écrit une fois, à
+ * sa première requête connectée, pour que ses courriels et ses prochaines visites, depuis n'importe
+ * quel appareil, gardent la langue dans laquelle elle a découvert le service. Une écriture qui
+ * échoue ne fait pas échouer la page : la langue n'est qu'une préférence, et elle sera retentée.
+ */
+async function languageOfTheSpace(event: RequestEvent): Promise<Langue> {
+	const person = event.locals.person;
+	const cookie = event.cookies.get(LANGUAGE_COOKIE);
+	const browser = event.request.headers.get('accept-language');
+	if (person && person.language === null) {
+		const seen = spaceLanguage({ cookie, browser });
+		try {
+			if (await writeAccountLanguage(person.userId, seen)) person.language = seen;
+		} catch (erreur) {
+			console.error('langue du compte :', erreur);
+		}
+	}
+	return spaceLanguage({
+		asked: event.url.searchParams.get(LANGUAGE_PARAMETER),
+		account: person?.language ?? null,
+		cookie,
+		browser
+	});
+}
+
 export const handle: Handle = async ({ event, resolve }) => {
 	// La session est relue à chaque requête : le cache de session en cookie est désactivé, pour
 	// qu'une session révoquée cesse de valoir tout de suite (ADR 0016), et pour que le plafond de
 	// douze heures d'une session de super-admin morde sans délai (ADR 0025).
 	const cotePublic = PUBLIC.test(event.url.pathname);
 	event.locals.person = cotePublic ? null : await signedIn(event.request.headers);
+	// La langue de l'espace, posée avant le rendu : la coquille la donne à chaque écran, le hook
+	// l'écrit sur `<html>`, et les courriels de la requête la prennent. Le côté public ne passe pas par
+	// ici : sa langue est celle de son adresse, posée par sa route, et il ne lit aucun cookie.
+	if (!cotePublic) event.locals.langue = await languageOfTheSpace(event);
 	if (!cotePublic) await guardPasskeyRoutes(event);
 
-	// La langue du document, écrite sur `<html>` une fois la page rendue : la route publique l'a
-	// posée sur `event.locals.langue` pendant son chargement, qui précède le rendu. `locals` est lu
-	// au moment du morceau, pas avant : lu ici, il serait encore vide. Better Auth appelle `resolve`
+	// La langue du document, écrite sur `<html>` une fois la page rendue : le hook l'a posée juste
+	// au-dessus pour l'espace, la route publique la pose sur `event.locals.langue` pendant son
+	// chargement, qui précède le rendu. `locals` est lu au moment du morceau, pas avant : lu ici, il
+	// serait encore vide pour une page publique. Better Auth appelle `resolve`
 	// sans options ; on lui passe donc un `resolve` qui porte déjà la transformation, au lieu de
 	// contourner son chemin.
 	const dansSaLangue: typeof resolve = (evenement, options) =>
@@ -116,12 +155,19 @@ export const handle: Handle = async ({ event, resolve }) => {
 				return documentDansSaLangue(html, evenement.locals.langue);
 			}
 		});
-	const response = await svelteKitHandler({
-		event,
-		resolve: dansSaLangue,
-		auth: auth(),
-		building
-	});
+	const traiter = () =>
+		svelteKitHandler({
+			event,
+			resolve: dansSaLangue,
+			auth: auth(),
+			building
+		});
+	// Les courriels écrits pendant la requête prennent la langue de l'écran : le lien de connexion,
+	// que Better Auth écrit dans son rappel sans voir la requête, et l'invitation (retour D3).
+	const langueDeLEspace = event.locals.langue;
+	const response = langueDeLEspace
+		? await withMailLanguage(langueDeLEspace, traiter)
+		: await traiter();
 
 	// Le registre interne : une entrée par requête d'un super-admin en exercice, jamais une par
 	// ligne lue. Il ne va pas dans le journal de l'organisation, qui ne voit pas les consultations.
@@ -164,6 +210,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// il est ignoré. On ne le pose donc que pour interdire, en doublon des navigateurs anciens.
 	if (embeddable) response.headers.delete('x-frame-options');
 	else response.headers.set('x-frame-options', 'DENY');
+
+	// Un écran de l'espace change de langue selon le navigateur et le cookie du choix : un cache qui
+	// l'ignorerait servirait l'allemand à qui a demandé l'arabe.
+	if (!cotePublic) response.headers.append('vary', 'Accept-Language, Cookie');
 
 	response.headers.set('x-content-type-options', 'nosniff');
 	response.headers.set('cross-origin-opener-policy', 'same-origin');
