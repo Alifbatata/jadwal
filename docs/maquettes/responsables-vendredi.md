@@ -25,7 +25,12 @@ une session pour chaque fois, jusqu'à trois.`
    siennes dans sa carte, rouverte, avec la saisie ; un enregistrement réussi est confirmé dans la
    carte de sa session.
 4. **Les sessions**, dans leur ordre, chacune dans un cadre.
-5. **Ajouter une session**, avec le formulaire vide.
+5. **Ajouter une session**, avec le formulaire vide, au premier rang libre. Quand trois sessions
+   continuent sans date de fin, il n'y a plus de formulaire, mais la phrase `Vous ne pouvez pas
+ajouter de session : trois sessions continuent déjà sans date de fin, et c'est le maximum. […]`,
+   qui dit quoi faire. Le serveur tient la même règle pour une page ouverte avant : une session sans
+   date de fin envoyée à un rang déjà pris est refusée, `Une autre session sans date de fin occupe
+déjà ce rang. Choisissez un autre rang, ou remplissez d'abord « Jusqu'au » dans l'autre session.`
 6. **Ce vendredi**, avec l'annulation et le déplacement.
 7. `Les cours ont leur propre écran : une session du vendredi n'y figure pas, et un cours ne figure
 pas ici.`, puis le lien `Aller aux cours`.

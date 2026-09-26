@@ -277,7 +277,7 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   sur le site de chaque organisation.
 - **Le widget est écrit en TypeScript pur**, sans dépendance à l'exécution : **1,71 Kio gzip**
   mesurés à l'étape 6, contre 12,48 Kio pour le composant Svelte 5 **vide** de l'étape 0 (2 141
-  octets depuis l'anglais de l'étape 18). Svelte n'apportait plus que son moteur, puisqu'il n'y a
+  octets à l'étape 18, après plusieurs ajouts ; l'anglais n'en ajoute que 61). Svelte n'apportait plus que son moteur, puisqu'il n'y a
   plus rien à rendre. `CLAUDE.md` et `docs/CADRAGE.md` sont corrigés.
 - **Un seul script sur une page publique, et seulement dans un cadre.** `?embed=1` charge
   `/widget/embed.js` (1 856 octets, 1 009 en gzip). Il fait deux choses : annoncer la hauteur — mesurée
@@ -624,7 +624,8 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   19:00 » dans le message, `(nouvelle heure)` dans le programme de la semaine, `Déplacé à 20:30`
   puis `Initialement à 19:00` sur la page publique, page d'un cours comprise. L'écran
   `Prière du vendredi` suit la même règle : une page restée ouverte y défaisait un changement fait
-  ailleurs (ADR 0021, révisé).
+  ailleurs. L'ADR 0021, révisé, dit la règle des dates : toute date à partir d'aujourd'hui, plus tôt
+  ou plus tard que la date prévue.
 - **La clarté (B1).** Chaque écran de l'espace et du super-admin dit ce qu'il fait ; chaque champ a
   un libellé clair, une aide et un exemple ; chaque geste dit ce qu'il a fait ; chaque erreur dit
   quoi faire. « Module », « IANA », « widget », « iframe » et « identifiant d'URL » ont quitté les
@@ -688,9 +689,10 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   l'anglais.
 - **Les courriels (D3).** Le lien de connexion et l'invitation parlent les cinq langues, dans la
   langue de l'écran où le geste est fait. **Point d'arrêt** : une invitation part dans la langue de
-  la personne qui invite, pour toute adresse ; lire la langue du compte invité consulterait les
-  comptes, ce que l'ADR 0017 interdit, et l'envoi n'est pas découplé de la réponse (ADR 0017,
-  addendum). La question d'un envoi différé est posée plus bas.
+  la personne qui invite, que l'adresse ait un compte ou non. Trois raisons (ADR 0017, addendum) :
+  l'envoi n'est pas découplé de la réponse ; lire la langue du compte destinataire, c'est chercher
+  un compte par son adresse, ce que l'ADR 0017 interdit ; le rôle applicatif ne voit pas le compte
+  d'une personne qui n'est pas membre. La question est posée plus bas.
 - **Le correcteur (D5).** `pnpm orthographe` relit l'anglais britannique, chaque dictionnaire de
   l'espace et chaque courriel dans sa langue, l'arabe pour l'orthographe et la ponctuation
   seulement. Les textes arabes, allemands et italiens écrits à cette étape attendent la relecture
@@ -811,9 +813,9 @@ passkeys, paiement.
   pays. Tranché à l'étape 18 : la console du super-admin et l'écran Réglages proposent la même
   liste de noms canoniques, et une phrase dit quoi choisir pour une ville absente. Reste une
   organisation dont le fuseau, enregistré avant la liste, est un alias : Réglages le garde tant
-  qu'elle n'en choisit pas un autre, et le dit. Son flux agenda répondait par une erreur au commit
-  qui intègre les six lots ; c'est **à vérifier** sur le code livré, qu'un chantier mené en même
-  temps a pu corriger.
+  qu'elle n'en choisit pas un autre, et le dit. Son flux agenda s'écrit au fuseau canonique vers
+  lequel l'alias pointe (`Europe/Brussels` pour `Europe/Amsterdam`), aux mêmes heures ; avant la fin
+  de l'étape 18, il répondait par une erreur.
 - L'écriture ne peut plus désigner une personne invisible, mais la lecture reste ouverte à toute
   personne rattachée à l'organisation courante : c'est le flux d'invitation de l'étape 3 qui devra
   décider ce qu'un responsable voit d'un compte existant ailleurs, l'unicité de l'adresse étant
@@ -966,10 +968,8 @@ passkeys, paiement.
 
 ## Défauts relevés à l'étape 18, non corrigés
 
-Relevés par les relectures des six lots, et vérifiés dans le code du commit qui les intègre. Aucune
-relecture ne les a jugés bloquants. Un chantier mené en même temps que la livraison en corrige
-d'autres, qui ne sont pas repris ici. Chaque écran redit les siens dans sa description
-(`docs/maquettes/`).
+Relevés par les relectures des sept lots, et vérifiés dans le code livré. Aucune relecture ne les a
+jugés bloquants. Chaque écran redit les siens dans sa description (`docs/maquettes/`).
 
 - **La base** : une éditrice peut écrire au journal une entrée qui nomme un collègue comme auteur
   (politique `audit_log_insert`, migration 0004), et lire la liste des membres par un appel
@@ -982,23 +982,11 @@ d'autres, qui ne sont pas repris ici. Chaque écran redit les siens dans sa desc
   formulaire ne connaît pas « archivé » (aucun écran n'archive un cours aujourd'hui).
 - **Heures de prière** : sans aucune période, l'aperçu d'une nouvelle période saute un niveau de
   titre (axe, « heading-order », gravité modérée).
-- **Réglages, à vérifier** : le flux agenda d'une organisation dont le fuseau enregistré est un
-  alias répondait par une erreur 500 ; un chantier mené en même temps a pu le corriger.
 - **Super-admin** : sans JavaScript, l'adresse proposée à partir du nom se crée sans avoir été vue,
   et ne se change plus ; la proposition perd les ligatures, et « مسجد النور 2 » donne `/m/2`.
-- **Des corrections sans test** (le code est juste, mais un retour en arrière passerait la suite) :
-  l'onglet rouvert après le refus d'un cours ; les replis de l'écran des prières, qui restent
-  ouverts pendant la frappe ; la comparaison qui laisse choisir une localité quand une autre
-  position est enregistrée ; sur la page d'un cours, l'heure du vendredi et la plage des jours lus
-  pour dire l'heure d'avant ; sur `Prière du vendredi`, le refus d'une carte dont l'heure a changé,
-  quand elle vise un autre jour.
-- **Des commentaires et des outils** : `account-language.ts` (« Pas encore d'écran ») et
-  `scripts/orthographe.mjs` (« ses dix points ») disent faux ; `apps/web/tests/adresse.test.ts` et
-  `global-setup.ts` disent encore que Caddy ajoute son adresse à `X-Forwarded-For`, alors qu'il la
-  remplace ; `scripts/eprouver-journal-caddy.mjs` dit sans date que Caddy ajoute `Via`, ce qui
-  n'est vrai que depuis 2.10.0 ; l'épreuve du PDF ne cherche le nom de l'exploitant que dans une
-  phrase ; le générateur de la liste des localités accepte une date impossible ; les cartes de
-  sources partent dans l'image, qui porte la liste des localités deux fois.
+- **Des outils** : l'épreuve du PDF ne cherche le nom de l'exploitant que dans une phrase ; le
+  générateur de la liste des localités accepte une date impossible ; les cartes de sources partent
+  dans l'image, qui porte la liste des localités deux fois.
 
 ## À poser avant la mise en production
 

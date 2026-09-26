@@ -21,10 +21,9 @@ Europe/Paris ou Europe/Berlin.`
    - Un fuseau enregistré avant la liste, qu'elle ne propose pas (un alias, comme
      `Europe/Amsterdam`), vient en premier dans la liste, choisi, pour qu'enregistrer le reste des
      réglages ne le remplace pas sans le dire. L'aide ajoute alors `Votre fuseau actuel,
-Europe/Amsterdam, ne fait pas partie de la liste. Avec ce fuseau, l'abonnement au calendrier de
-votre page publique ne marche pas. Choisissez dans la liste une ville qui a la même heure que la
-vôtre, puis enregistrez.` Pour un fuseau hors de la liste que le flux agenda accepte, comme un nom
-     en `Etc/`, elle dit seulement qu'il est gardé tant qu'on n'en choisit pas un autre.
+Europe/Amsterdam, ne fait pas partie de la liste. Il est gardé tant que vous n'en choisissez pas un
+autre.` C'est vrai : le flux agenda écrit un alias au fuseau canonique vers lequel il pointe
+     (`Europe/Brussels` pour `Europe/Amsterdam`), aux mêmes heures.
    - `Couleur de votre page` (avant : « Couleur d'accent »), un `Exemple de bouton`, puis
      `Contraste du texte sur cette couleur : 5,5 pour 1. Il se lit bien à partir de 4,5 pour 1.` et
      `Elle sert de fond sur votre page publique, dans le programme collé sur votre site et ici. […]`
@@ -68,10 +67,3 @@ Après un refus, les champs gardent ce qui a été tapé, et non les valeurs enr
 JavaScript, changer la couleur ne défait pas le nom ni la formule d'accueil en cours de frappe. La
 demande de confirmation d'une salle occupée s'affiche en haut, avec les messages, là où la page
 revient après l'envoi.
-
-## Ce qui reste à vérifier
-
-Le flux agenda refuse un fuseau alias : pour une organisation dont le fuseau enregistré en est un,
-l'abonnement au calendrier répond par une erreur, et l'écran le dit. C'est l'état des lots de
-l'étape 18 ; un chantier mené en même temps que la livraison peut l'avoir corrigé, et la phrase de
-l'écran changerait avec.
