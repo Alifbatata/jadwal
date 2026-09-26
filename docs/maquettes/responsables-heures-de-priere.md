@@ -20,7 +20,8 @@ suivent une prière, par exemple « 15 min après Maghrib ». Réglez-les une fo
      `Vos heures sont calculées pour la position que vous avez donnée.` ;
    - `Votre fichier importé donne les heures jusqu'au 31.12.2026.`, puis
      `Ensuite, le calcul les donne.` ou ce qu'il faut faire quand plus rien ne suit ;
-   - `Vous avez saisi 2 périodes à la main : les jours qu'elles couvrent, elles passent avant.` ;
+   - `Vous avez saisi 2 périodes à la main : les jours qu'elles couvrent, leurs heures passent avant
+celles du fichier et du calcul.` ;
    - sans rien de réglé : `Aucune heure de prière n'est réglée. Les cours qui suivent une prière
 s'affichent sans heure, par exemple « Après Maghrib ». Répondez à la question ci-dessous.`
 3. **La question** : `D'où viennent vos heures de prière ?`, trois réponses, chacune avec son aide :
@@ -55,12 +56,26 @@ l'orthographe, ou tapez le NPA.` ou `Tapez au moins deux lettres ou deux chiffre
   personnes (`/prieres/localites`).
 - La liste `Choisissez votre localité`, puis `Localité choisie : 2502 Biel/Bienne (BE). Sa
 position : latitude 47.1421, longitude 7.2481.`, ou `Localité enregistrée :` une fois enregistrée.
-  Le serveur relit la position dans la liste.
+  Le serveur relit la position dans la liste. La localité enregistrée reste dans la liste, en tête ;
+  quand une recherche ne la rend pas, son nom est suivi de `localité enregistrée` (ou
+  `localité choisie`), et le message ne la compte pas : `Büe` donne `1 localité trouvée.` au-dessus
+  de Bienne, puis de Büetigen.
+- La dernière case de la liste : `Hors de Suisse : utiliser la position donnée plus bas`. Elle est
+  cochée quand aucune localité n'est choisie. Sans JavaScript, on ne décoche pas une case : pour
+  passer d'une localité enregistrée à une position hors de Suisse, on coche celle-ci à sa place.
+  Avec JavaScript, taper une position la coche, et la cocher ouvre le repli du même nom. Un clic
+  sur la localité la reprend.
 - Près du choix : `Liste officielle des localités : Office fédéral de topographie swisstopo,
 version du 01.09.2026.` (ADR 0043, addendum).
 - Le repli `Hors de Suisse` : `Votre organisation n'est pas en Suisse ? Donnez sa position en degrés
-décimaux. […] Une localité choisie dans la liste passe avant ces deux nombres.`, `Latitude`,
-  `Longitude`, et `Exemple : latitude 48.8566 et longitude 2.3522 pour Paris.`
+décimaux. […] Si une localité est choisie dans la liste plus haut, choisissez à sa place « Hors de
+Suisse » : sinon, c'est la localité qui compte, et non ces deux nombres.`, `Latitude`, `Longitude`,
+  et `Exemple : latitude 48.8566 et longitude 2.3522 pour Paris.` Une localité envoyée avec deux
+  autres nombres, ni sa position ni celle qui est enregistrée, est refusée sans rien perdre : la
+  position tapée revient, le repli est ouvert, et le message dit quoi choisir.
+- Avec JavaScript, les replis restent ouverts pendant la frappe, et un repli que la personne ferme
+  reste fermé. Jusqu'au lot 6 de l'étape 18, chaque touche dans Latitude ou Longitude refermait
+  `Hors de Suisse`, et une lettre dans la recherche refermait `Méthode de calcul`.
 - Le repli `Méthode de calcul, école et ajustements (facultatif)` : `Méthode de calcul`, avec les
   méthodes par leur nom (`Ligue islamique mondiale`…) et l'aide qui dit qu'elle fixe le Fajr et
   l'Isha ; `École pour l'heure de l'Asr` ; `Règle pour les nuits courtes de l'été`, avec la règle
@@ -102,27 +117,25 @@ l'année : un nom, des dates, et pour chaque prière l'heure affichée et l'heur
 2027, ou Ramadan 2027.`), `Premier jour`, `Dernier jour` (`Laissez vide pour « jusqu'à nouvel
 ordre ».`), `Heures affichées`, `Iqama` (`Heure fixe` ou `ou minutes après`, jamais les deux).
 - `Voir l'aperçu`, puis `Aperçu des sept prochains jours avec cette période` et `Rien n'est encore
-enregistré.` : la période est écrite, les jours relus, puis tout est annulé. Puis
-  `Enregistrer cette période`.
+enregistré.` : la période est écrite, les jours relus, puis tout est annulé. Une période qui
+  commence après les sept prochains jours montre ses sept premiers jours et le dit ; plus courte
+  que sept jours, elle est montrée en entier, avec sa durée. Puis `Enregistrer cette période`.
 
 ## Les messages
 
 Les réussites et les erreurs sont dans la langue de l'écran, par exemple
 `Cette localité n'est pas dans la liste. Cherchez-la de nouveau.`,
 `Cette position n'est pas sur Terre : la latitude va de -90 à 90, la longitude de -180 à 180.`,
-`Donnez le premier jour de la période.` Avant l'étape 18 : `Donnez une date de début, au format
-AAAA-MM-JJ`.
+`Une localité est choisie dans la liste, et une autre position est tapée sous « Hors de Suisse ».
+Pour garder cette position, choisissez « Hors de Suisse » dans la liste. Pour garder la localité,
+effacez la latitude et la longitude.`, `Donnez le premier jour de la période.` Avant l'étape 18 :
+`Donnez une date de début, au format AAAA-MM-JJ`.
 
 ## Ce qui reste à reprendre
 
-Relevé par la relecture de l'étape 18, non corrigé à la fin de l'étape :
+Relevé par la relecture de l'étape 18, non corrigé à la fin de l'étape : sans aucune période,
+l'aperçu d'une nouvelle période saute un niveau de titre (axe, « heading-order », gravité
+modérée).
 
-- les tableaux qui défilent de côté sur un téléphone ne se prennent pas au clavier (axe, « serious »,
-  à 390 pixels de large) ;
-- une période copiée s'appelle `<nom> (année suivante)` en français, quelle que soit la langue ;
-- `©swisstopo` n'est pas isolé dans une ligne arabe, et le symbole change de côté ;
-- avec JavaScript, une localité choisie puis chassée par une nouvelle recherche reste affichée, mais
-  n'est plus envoyée ;
-- l'aperçu d'une période qui commence après les sept prochains jours n'en dit rien ;
-- les replis n'ont pas de triangle, et ressemblent à des boîtes de texte ;
-- `Zuerich` ne trouve pas Zürich ; une saisie en écriture arabe ne trouve rien.
+Une saisie en écriture arabe ne trouve aucune localité, par choix : la liste n'a pas de noms arabes,
+et l'écran arabe dit de taper le nom ou le NPA en lettres latines.
