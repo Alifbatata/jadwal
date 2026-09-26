@@ -44,6 +44,14 @@ const NOM_CHANGE = 'Association du vendredi changé';
  */
 const SLUG_VENUE = 'vendredi-deplace';
 const NOM_VENUE = 'Association du vendredi déplacé';
+/**
+ * Une organisation dont trois cours partent demain (relecture du lot 5) : le premier, à 12:30, pour
+ * un autre jour ; le deuxième, de 15:00 à 16:00 le même jour ; le troisième, qui suit le Maghrib,
+ * à 21:00 le même jour. L'heure d'avant de chacun est la sienne, et non celle d'un autre cours parti
+ * plus tôt ce jour-là.
+ */
+const SLUG_HEURES = 'heures-changees';
+const NOM_HEURES = 'Association des heures changées';
 const DEBUT = '2026-09-07';
 
 const today = todayInZone(FUSEAU, new Date());
@@ -80,6 +88,10 @@ const COURS = {
 };
 /** Les titres, d'un seul mot : un titre saisi par l'organisation n'est pas un texte à traduire. */
 const TITRES = { deplace: 'Tajwid', quotidien: 'Hifz' };
+
+/** Les trois cours des heures changées, qui ont lieu chaque semaine le jour de demain. */
+const COURS_HEURES = { parti: newId(), memeJour: newId(), priere: newId() };
+const TITRES_HEURES = { parti: 'Fiqh', memeJour: 'Sira', priere: 'Tafsir' };
 
 /** Les agents de vrais navigateurs, les mêmes que ceux du test unitaire de la détection. */
 const AGENTS = {
@@ -157,6 +169,7 @@ beforeAll(async () => {
 	const sans = newId();
 	const change = newId();
 	const venue = newId();
+	const heures = newId();
 	await maintenance(async (tx) => {
 		await tx.execute(sql`
 			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
@@ -180,7 +193,13 @@ beforeAll(async () => {
 			values (${venue}, ${SLUG_VENUE}, ${NOM_VENUE}, ${FUSEAU}, 'fr',
 				array['fr','de','it','en','ar'], true)
 		`);
-		for (const avecPrieres of [organisation, change, venue]) {
+		await tx.execute(sql`
+			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+				"enabled_language", "prayer_module")
+			values (${heures}, ${SLUG_HEURES}, ${NOM_HEURES}, ${FUSEAU}, 'fr',
+				array['fr','de','it','en','ar'], true)
+		`);
+		for (const avecPrieres of [organisation, change, venue, heures]) {
 			for (let pas = -2; pas <= 10; pas += 1) {
 				await tx.execute(sql`
 					insert into "prayer_day" ("organization_id", "date", "fajr", "dhuhr", "asr", "maghrib",
@@ -262,6 +281,46 @@ beforeAll(async () => {
 				"to_date", "to_start")
 			values (${newId()}, ${organisation}, ${COURS.deplace}, ${DEMAIN}, 'moved', ${APRES_DEMAIN},
 				'18:00')
+		`);
+		// Les heures changées : deux cours à heure fixe, et un cours 15 minutes après le Maghrib, soit
+		// 19:30 demain (iqama 19:15). Chacun part demain.
+		for (const [id, titre, debut, fin] of [
+			[COURS_HEURES.parti, TITRES_HEURES.parti, '12:30', '13:10'],
+			[COURS_HEURES.memeJour, TITRES_HEURES.memeJour, '15:00', '15:40']
+		] as const) {
+			await tx.execute(sql`
+				insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",
+					"source_language", "recurrence_kind", "recurrence_weekday", "recurrence_interval",
+					"recurrence_anchor_date", "timing_kind", "timing_start", "timing_end", "starts_on")
+				values (${id}, ${heures}, 'published', 'open', array['fr'], 'fr', 'weekly',
+					${sql.raw(`array[${jourDe(DEMAIN)}]::smallint[]`)}, 1, ${DEBUT}, 'fixed', ${debut},
+					${fin}, ${DEBUT})
+			`);
+			await tx.execute(sql`
+				insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
+				values (${newId()}, ${heures}, ${id}, 'fr', ${titre})
+			`);
+		}
+		await tx.execute(sql`
+			insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",
+				"source_language", "recurrence_kind", "recurrence_weekday", "recurrence_interval",
+				"recurrence_anchor_date", "timing_kind", "timing_prayer", "timing_offset_minutes",
+				"timing_duration_minutes", "starts_on")
+			values (${COURS_HEURES.priere}, ${heures}, 'published', 'open', array['fr'], 'fr', 'weekly',
+				${sql.raw(`array[${jourDe(DEMAIN)}]::smallint[]`)}, 1, ${DEBUT}, 'prayer', 'maghrib', 15,
+				60, ${DEBUT})
+		`);
+		await tx.execute(sql`
+			insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
+			values (${newId()}, ${heures}, ${COURS_HEURES.priere}, 'fr', ${TITRES_HEURES.priere})
+		`);
+		await tx.execute(sql`
+			insert into "session_exception" ("id", "organization_id", "course_id", "date", "kind",
+				"to_date", "to_start")
+			values
+				(${newId()}, ${heures}, ${COURS_HEURES.parti}, ${DEMAIN}, 'moved', ${APRES_DEMAIN}, '12:30'),
+				(${newId()}, ${heures}, ${COURS_HEURES.memeJour}, ${DEMAIN}, 'moved', ${DEMAIN}, '16:00'),
+				(${newId()}, ${heures}, ${COURS_HEURES.priere}, ${DEMAIN}, 'moved', ${DEMAIN}, '21:00')
 		`);
 		await tx.execute(sql`delete from "rate_limit"`);
 	});
@@ -1343,6 +1402,34 @@ describe('une séance déplacée le même jour, à une autre heure', () => {
 			expect(prochainesDuCours(autre.html).find((ligne) => ligne.startsWith(arrivee))).toBe(
 				`${arrivee} 18:00 – 19:00 ${DATE_EXCEPTIONNELLE[langue]}`
 			);
+		}
+	);
+
+	// Relecture du lot 5 : l'heure d'avant vient de la séance de départ du même cours. Demain, un
+	// autre cours part plus tôt, à 12:30, vers un autre jour : son heure ne passe pas aux autres.
+	it.each(LANGUES)(
+		'gives each course its own time before in the week view, in %s, when another leaves earlier that day',
+		async (langue) => {
+			const { html } = await servir(base(langue, SLUG_HEURES));
+			const demain = seancesDuJour(html, langue, DEMAIN);
+			const arrivee = (titre: string, heure: string) =>
+				demain.find(
+					(seance) =>
+						!seance.barree && seance.ligne.startsWith(heure) && seance.ligne.includes(titre)
+				);
+			const sira = arrivee(TITRES_HEURES.memeJour, '16:00');
+			expect(sira?.marques, langue).toEqual([NOUVELLE_HEURE[langue]]);
+			expect(sira?.details, langue).toContain(INITIALEMENT_A[langue]('15:00'));
+			expect(sira?.details, langue).not.toContain(INITIALEMENT_A[langue]('12:30'));
+			// Le cours qui suit le Maghrib : l'heure que la prière lui donnait ce jour-là.
+			const tafsir = arrivee(TITRES_HEURES.priere, '21:00');
+			expect(tafsir?.marques, langue).toEqual([NOUVELLE_HEURE[langue]]);
+			expect(tafsir?.details, langue).toContain(INITIALEMENT_A[langue]('19:30'));
+			// Le cours parti à un autre jour garde ses mots, au départ.
+			const parti = demain.find(
+				(seance) => seance.barree && seance.ligne.includes(TITRES_HEURES.parti)
+			);
+			expect(parti?.marques).toEqual([DEPLACE_AU[langue](jourEtDate(langue, APRES_DEMAIN))]);
 		}
 	);
 });
