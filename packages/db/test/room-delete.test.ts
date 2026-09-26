@@ -170,28 +170,48 @@ describe('supprimer une salle qu’un cours occupe', () => {
 
 describe('toutes les clés du schéma', () => {
 	it('never empty a column that cannot be empty', async () => {
-		// Le défaut de la salle, cherché partout : une clé qui vide la référence quand la ligne visée
-		// disparaît (SET NULL), sans liste de colonnes, vide toutes ses colonnes. Si l'une d'elles ne
-		// peut pas être vide, la suppression échoue. Le catalogue est lu tel quel : une clé ajoutée
-		// plus tard est relue sans qu'on la nomme.
-		const keys = allRows<{ key: string; emptied: string[]; not_null: string[] }>(
+		// Le défaut de la salle, cherché partout : une clé qui réécrit la référence quand la ligne visée
+		// disparaît, sans liste de colonnes, réécrit toutes ses colonnes. SET NULL les vide ; SET
+		// DEFAULT leur donne leur valeur par défaut, et une colonne sans défaut, ou dont le défaut est
+		// NULL, est vidée tout autant. Si l'une d'elles ne peut pas être vide, la suppression échoue
+		// (23502). Le catalogue est lu tel quel : une clé ajoutée plus tard est relue sans qu'on la
+		// nomme.
+		const keys = allRows<{
+			key: string;
+			action: 'n' | 'd';
+			rewritten: string[];
+			emptied_but_required: string[];
+		}>(
 			await owner.execute(sql`
 				select con.conrelid::regclass::text || '.' || con.conname as key,
-					array_agg(a.attname::text order by a.attnum) as emptied,
-					coalesce(array_agg(a.attname::text order by a.attnum) filter (where a.attnotnull),
-						'{}') as not_null
+					con.confdeltype::text as action,
+					array_agg(a.attname::text order by a.attnum) as rewritten,
+					coalesce(
+						array_agg(a.attname::text order by a.attnum) filter (
+							where a.attnotnull and (
+								con.confdeltype = 'n'
+								or d.adbin is null
+								or pg_get_expr(d.adbin, d.adrelid) ~* '^[(]*null[)]*(::.*)?$'
+							)
+						),
+						'{}'
+					) as emptied_but_required
 				from pg_constraint con
 				join pg_namespace n on n.oid = con.connamespace
 				join pg_attribute a on a.attrelid = con.conrelid
 					and a.attnum = any (coalesce(con.confdelsetcols, con.conkey))
-				where n.nspname = 'public' and con.contype = 'f' and con.confdeltype = 'n'
-				group by con.conrelid, con.conname
+				left join pg_attrdef d on d.adrelid = a.attrelid and d.adnum = a.attnum
+				where n.nspname = 'public' and con.contype = 'f' and con.confdeltype in ('n', 'd')
+				group by con.conrelid, con.conname, con.confdeltype
 				order by 1
 			`)
 		);
 		// Le relevé ne passe pas à vide : il voit au moins la clé de la salle.
 		expect(keys.map((row) => row.key)).toContain('course.course_room_fk');
-		expect(keys.filter((row) => row.not_null.length > 0)).toEqual([]);
-		expect(keys.find((row) => row.key === 'course.course_room_fk')?.emptied).toEqual(['room_id']);
+		expect(keys.filter((row) => row.emptied_but_required.length > 0)).toEqual([]);
+		expect(keys.find((row) => row.key === 'course.course_room_fk')).toMatchObject({
+			action: 'n',
+			rewritten: ['room_id']
+		});
 	});
 });
