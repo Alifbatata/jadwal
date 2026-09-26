@@ -3,6 +3,7 @@
 // Suisse, et une erreur nommée par champ.
 
 import { describe, expect, it } from 'vitest';
+import { isoDateToDays, ruleDays, type IsoDate } from '@jadwal/core';
 import { readCourseForm } from './course-form.js';
 
 const LANGUES = ['fr', 'de', 'ar'];
@@ -76,16 +77,79 @@ describe('l’horaire par rapport à une prière (C3)', () => {
 });
 
 describe('les dates d’un cours à dates précises (A3)', () => {
-	function aDates(dates: string) {
+	function aDates(dates: string, periode: { startsOn?: string; endsOn?: string } = {}) {
 		return formulaire({
 			...BASE,
 			recurrenceKind: 'dates',
 			dates,
 			timingKind: 'fixed',
 			start: '10:00',
-			end: '11:30'
+			end: '11:30',
+			...periode
 		});
 	}
+
+	it('refuses the dates before the first day, and names them', () => {
+		const lu = readCourseForm(
+			aDates('26.10.2026\n12.10.2026 05.11.2026', { startsOn: '2026-11-01' }),
+			LANGUES
+		);
+		expect(lu.ok).toBe(false);
+		if (lu.ok) return;
+		expect(lu.errors).toEqual(['datesBeforeStart']);
+		expect(lu.datesBefore).toEqual(['2026-10-12', '2026-10-26']);
+		expect(lu.datesAfter).toEqual([]);
+	});
+
+	it('refuses the dates after the last day, and names them', () => {
+		const lu = readCourseForm(
+			aDates('12.10.2026 26.10.2026 09.11.2026', { startsOn: '2026-10-01', endsOn: '2026-10-20' }),
+			LANGUES
+		);
+		expect(lu.ok).toBe(false);
+		if (lu.ok) return;
+		expect(lu.errors).toEqual(['datesAfterEnd']);
+		expect(lu.datesBefore).toEqual([]);
+		expect(lu.datesAfter).toEqual(['2026-10-26', '2026-11-09']);
+	});
+
+	it('accepts a date exactly when the engine publishes it: the first and the last day included', () => {
+		// Le moteur (`courseWindow` dans packages/core/src/expand.ts) ne publie que les dates du
+		// premier au dernier jour, les deux compris : le formulaire refuse les autres, et elles seules.
+		const periode = { startsOn: '2026-10-12', endsOn: '2026-10-26' } as const;
+		const attendu = {
+			'2026-10-11': false,
+			'2026-10-12': true,
+			'2026-10-19': true,
+			'2026-10-26': true,
+			'2026-10-27': false
+		} as const;
+		for (const [date, accepte] of Object.entries(attendu)) {
+			const publiees = ruleDays(
+				{
+					id: 'verification',
+					recurrence: { kind: 'dates', dates: [date as IsoDate] },
+					timing: { kind: 'fixed', start: '10:00', end: '11:30' },
+					sequence: 0,
+					...periode
+				},
+				isoDateToDays('2026-01-01'),
+				isoDateToDays('2026-12-31')
+			);
+			expect(publiees.length === 1, `le moteur, ${date}`).toBe(accepte);
+			const commeEnSuisse = date.split('-').reverse().join('.');
+			const lu = readCourseForm(aDates(commeEnSuisse, periode), LANGUES);
+			expect(lu.ok, `le formulaire, ${commeEnSuisse}`).toBe(accepte);
+		}
+	});
+
+	it('does not judge the dates against a period that is itself to correct', () => {
+		const lu = readCourseForm(
+			aDates('12.10.2026', { startsOn: '2026-11-01', endsOn: '2026-10-01' }),
+			LANGUES
+		);
+		expect(lu.ok ? [] : lu.errors).toEqual(['endsBeforeStarts']);
+	});
 
 	it('reads them as JJ.MM.AAAA, and still as the base writes them', () => {
 		const lu = readCourseForm(aDates('12.10.2026\n2026-10-26'), LANGUES);

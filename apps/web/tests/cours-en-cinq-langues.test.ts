@@ -642,6 +642,108 @@ describe('le résumé en haut du formulaire (B4)', () => {
 	});
 });
 
+describe('les dates hors de la période du cours (B4)', () => {
+	let cookie = '';
+
+	beforeAll(async () => {
+		cookie = await signIn(RESPONSABLE);
+	});
+
+	/** Un cours à dates précises, publié, dont on choisit les dates et la période. */
+	function coursADates(
+		titreDuCours: string,
+		dates: string,
+		periode: readonly (readonly [string, string])[]
+	): (readonly [string, string])[] {
+		return [
+			['sourceLanguage', 'fr'],
+			['title.fr', titreDuCours],
+			['audience', 'kids'],
+			['teachingLanguages', 'ar'],
+			['recurrenceKind', 'dates'],
+			['dates', dates],
+			['timingKind', 'fixed'],
+			['start', '10:00'],
+			['end', '11:30'],
+			...periode,
+			['status', 'published']
+		];
+	}
+
+	function erreurs(html: string): string[] {
+		const alerte = html.match(/<div\b[^>]*role="alert"[^>]*>[\s\S]*?<\/div>/)?.[0] ?? '';
+		return [...alerte.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)].map((t) => lu(t[1] ?? ''));
+	}
+
+	it('refuses dates before the first day, names them and says what to do, in each language', async () => {
+		// Le moteur ne publierait aucune de ces séances : le cours ne s'enregistre pas en silence.
+		const attendu: Record<Langue, string> = {
+			fr: 'Ces dates tombent avant le premier jour du cours et ne seraient pas publiées : 12.10.2026 et 26.10.2026. Choisissez comme premier jour le 12.10.2026 ou un jour plus tôt. Vous pouvez aussi retirer ces dates.',
+			de: 'Diese Daten liegen vor dem ersten Kurstag und werden deshalb nicht veröffentlicht: 12.10.2026 und 26.10.2026. Wählen Sie als ersten Kurstag den 12.10.2026 oder einen früheren Tag. Sie können die Daten auch entfernen.',
+			it: 'Queste date cadono prima del primo giorno del corso e non sarebbero pubblicate: 12.10.2026 e 26.10.2026. Scegli come primo giorno il 12.10.2026 o un giorno precedente. Puoi anche togliere queste date.',
+			en: 'These dates fall before the first day of the course and would not be published: 12.10.2026 and 26.10.2026. Choose 12.10.2026 or an earlier day as the first day. You can also remove these dates.',
+			ar: 'هذان التاريخان يقعان قبل اليوم الأول للدرس، ولن يُنشرا: 12.10.2026 و26.10.2026. اجعل اليوم الأول للدرس 12.10.2026 أو يومًا قبله، أو احذف هذين التاريخين.'
+		};
+		const titreDuCours = 'Dates avant le premier jour';
+		for (const langue of LANGUES) {
+			await poserLangueDuCompte(langue);
+			const reponse = await postForm(
+				'/cours/nouveau',
+				coursADates(titreDuCours, '26.10.2026\n12.10.2026', [['startsOn', '2026-11-01']]),
+				cookie
+			);
+			expect(reponse.status, langue).toBe(400);
+			expect(erreurs(await reponse.text()), langue).toEqual([attendu[langue]]);
+		}
+		await poserLangueDuCompte('fr');
+		expect(await decalageEnBase(titreDuCours)).toEqual([]);
+	});
+
+	it('shows them in the summary as not published, after the refusal', async () => {
+		const reponse = await postForm(
+			'/cours/nouveau',
+			coursADates('Dates hors période', '26.10.2026\n12.10.2026', [['startsOn', '2026-11-01']]),
+			cookie
+		);
+		expect(reponse.status).toBe(400);
+		const html = await reponse.text();
+		// La salle et l'intervenant, facultatifs, manquent aussi : seules les dates sont lues ici.
+		expect(manques(html).filter((ligne) => ligne.startsWith('Dates'))).toEqual([
+			'Dates : aucune ne sera publiée',
+			'Dates avant le premier jour, pas publiées : lundi 12.10.2026 et lundi 26.10.2026'
+		]);
+	});
+
+	it('refuses dates after the last day, and keeps the first and the last day', async () => {
+		const apres = await postForm(
+			'/cours/nouveau',
+			coursADates('Dates après le dernier jour', '12.10.2026\n30.12.2026', [
+				['startsOn', '2026-10-12'],
+				['endsOn', '2026-12-20']
+			]),
+			cookie
+		);
+		expect(apres.status).toBe(400);
+		expect(erreurs(await apres.text())).toEqual([
+			'Cette date tombe après le dernier jour du cours et ne serait pas publiée : 30.12.2026. Choisissez comme dernier jour le 30.12.2026 ou un jour plus tard. Vous pouvez aussi laisser le dernier jour vide ou retirer cette date.'
+		]);
+		expect(await decalageEnBase('Dates après le dernier jour')).toEqual([]);
+
+		const bornes = await postForm(
+			'/cours/nouveau',
+			coursADates('Dates aux deux bornes', '12.10.2026\n20.12.2026', [
+				['startsOn', '2026-10-12'],
+				['endsOn', '2026-12-20']
+			]),
+			cookie
+		);
+		expect(bornes.status).toBe(303);
+		expect(await decalageEnBase('Dates aux deux bornes')).toEqual([
+			{ kind: 'fixed', offset: null }
+		]);
+	});
+});
+
 describe('un cours avant une prière (C3)', () => {
 	let cookie = '';
 

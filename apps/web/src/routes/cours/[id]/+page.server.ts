@@ -109,7 +109,13 @@ export const actions: Actions = {
 		// Les noms des erreurs, jamais leurs phrases : la page les écrit dans sa langue. Ce que la
 		// personne a envoyé revient avec, pour qu'elle n'ait rien à retaper et que le résumé le montre.
 		if (!read.ok) {
-			return fail(400, { errors: read.errors, badDates: read.badDates, values: read.values });
+			return fail(400, {
+				errors: read.errors,
+				badDates: read.badDates,
+				datesBefore: read.datesBefore,
+				datesAfter: read.datesAfter,
+				values: read.values
+			});
 		}
 		const values = read.values;
 		const ok = await withSessionOrg(context, async (tx) => {
@@ -125,6 +131,8 @@ export const actions: Actions = {
 			return fail(404, {
 				errors: ['gone' as const],
 				badDates: [],
+				datesBefore: [],
+				datesAfter: [],
 				values: null
 			});
 		}

@@ -19,8 +19,9 @@
 		type CourseFormError,
 		type CourseFormValues
 	} from './course-form.js';
+	import type { IsoDate } from '@jadwal/core';
 	import { audienceLabels, joinList, languageLabel, prayerLabel } from './format.js';
-	import { t, type Langue } from './i18n.js';
+	import { numericDate, t, type Langue } from './i18n.js';
 	import { courseFormTexts } from './i18n/course-form.js';
 
 	let {
@@ -31,7 +32,9 @@
 		language,
 		submitLabel,
 		errors = [],
-		badDates = []
+		badDates = [],
+		datesBefore = [],
+		datesAfter = []
 	}: {
 		values: CourseFormValues;
 		/** Les langues de l'organisation : celles du texte du cours et de l'enseignement. */
@@ -44,6 +47,9 @@
 		submitLabel: string;
 		errors?: CourseFormError[];
 		badDates?: string[];
+		/** Les dates avant le premier jour et après le dernier, qu'aucune séance ne suivrait. */
+		datesBefore?: IsoDate[];
+		datesAfter?: IsoDate[];
 	} = $props();
 
 	// Une copie, volontairement figée au premier rendu : le formulaire est la source de vérité de
@@ -71,6 +77,33 @@
 			: [...list, day].sort((a, b) => a - b);
 	}
 
+	/** La phrase d'une erreur. Celles des dates recopient les dates en cause, en JJ.MM.AAAA. */
+	function message(error: CourseFormError): string {
+		const dates = (list: readonly IsoDate[]) =>
+			joinList(
+				list.map((date) => numericDate(date)),
+				language
+			);
+		if (error === 'badDates') return text.badDates(joinList(badDates, language), badDates.length);
+		if (error === 'datesBeforeStart') {
+			const earliest = datesBefore[0];
+			return text.datesBeforeStart(
+				dates(datesBefore),
+				datesBefore.length,
+				earliest ? numericDate(earliest) : ''
+			);
+		}
+		if (error === 'datesAfterEnd') {
+			const latest = datesAfter.at(-1);
+			return text.datesAfterEnd(
+				dates(datesAfter),
+				datesAfter.length,
+				latest ? numericDate(latest) : ''
+			);
+		}
+		return text.errors[error];
+	}
+
 	function toggleLanguage(code: string) {
 		entry.teachingLanguages = entry.teachingLanguages.includes(code)
 			? entry.teachingLanguages.filter((value) => value !== code)
@@ -85,11 +118,7 @@
 			<p>{text.errorsTitle}</p>
 			<ul>
 				{#each errors as error (error)}
-					<li>
-						{error === 'badDates'
-							? text.badDates(joinList(badDates, language), badDates.length)
-							: text.errors[error]}
-					</li>
+					<li>{message(error)}</li>
 				{/each}
 			</ul>
 		</div>

@@ -185,6 +185,48 @@ describe('le résumé de ce qui sera publié (B4)', () => {
 		);
 	});
 
+	it('does not announce as published the dates outside the period of the course', () => {
+		const dehors = summarise(
+			{
+				...COMPLET,
+				recurrenceKind: 'dates',
+				dates: '30.12.2026 12.10.2026\n05.09.2026',
+				startsOn: '2026-09-07',
+				endsOn: '2026-12-20'
+			},
+			CONTEXTE,
+			'fr'
+		);
+		const lus = dehors.map((row) => `${row.label} ${row.value}`);
+		expect(lus).toContain('Dates : lundi 12.10.2026');
+		expect(dehors.filter((row) => row.missing).map((row) => `${row.label} ${row.value}`)).toEqual([
+			'Dates avant le premier jour, pas publiées : samedi 05.09.2026',
+			'Dates après le dernier jour, pas publiées : mercredi 30.12.2026'
+		]);
+
+		// Aucune date dans la période : la ligne des dates le dit, au lieu de « pas encore écrites ».
+		const aucune = lignes({
+			...COMPLET,
+			recurrenceKind: 'dates',
+			dates: '12.10.2026',
+			startsOn: '2026-11-01',
+			endsOn: null
+		});
+		expect(aucune).toContain('Dates : aucune ne sera publiée');
+		expect(aucune).toContain('Dates avant le premier jour, pas publiées : lundi 12.10.2026');
+
+		// Le premier et le dernier jour sont publiés, comme le moteur les publie.
+		const bornes = summarise(
+			{ ...COMPLET, recurrenceKind: 'dates', dates: '07.09.2026 20.12.2026' },
+			CONTEXTE,
+			'fr'
+		);
+		expect(bornes.filter((row) => row.missing)).toEqual([]);
+		expect(bornes.map((row) => `${row.label} ${row.value}`)).toContain(
+			'Dates : lundi 07.09.2026 et dimanche 20.12.2026'
+		);
+	});
+
 	it('says the day of a monthly course', () => {
 		const rows = lignes({
 			...COMPLET,

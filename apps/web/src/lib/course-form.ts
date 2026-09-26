@@ -27,9 +27,14 @@ import { formattingTexts } from './i18n/formatting.js';
 
 /**
  * Le nom d'une erreur du formulaire ; sa phrase, dans chaque langue, est dans `i18n/course-form.ts`.
- * `badDates` a la sienne à part, parce qu'elle recopie les dates illisibles et accorde leur nombre.
+ * `badDates`, `datesBeforeStart` et `datesAfterEnd` ont la leur à part, parce qu'elles recopient
+ * les dates en cause et accordent leur nombre.
  */
-export type CourseFormError = keyof (typeof courseFormTexts)['fr']['errors'] | 'badDates';
+export type CourseFormError =
+	| keyof (typeof courseFormTexts)['fr']['errors']
+	| 'badDates'
+	| 'datesBeforeStart'
+	| 'datesAfterEnd';
 
 /** Les trois façons de donner l'heure d'un cours, dans la liste « Comment fixer l'heure ? ». */
 export type TimingChoice = 'fixed' | 'prayer' | 'beforePrayer';
@@ -117,6 +122,28 @@ export function writeDates(dates: readonly string[]): string {
 	return dates.map((date) => numericDate(date as IsoDate)).join('\n');
 }
 
+/**
+ * Les dates d'un cours à dates précises, rangées par rapport à sa période. Le moteur ne publie que
+ * celles du premier au dernier jour, les deux compris (`courseWindow`, packages/core/src/expand.ts) :
+ * une date avant ou après ne donnerait aucune séance. Tant que le premier jour manque, ou que le
+ * dernier vient avant lui, c'est la période qui est à corriger, et aucune date n'est jugée.
+ */
+export function splitByPeriod(
+	dates: readonly IsoDate[],
+	startsOn: string,
+	endsOn: string | null
+): { inside: IsoDate[]; before: IsoDate[]; after: IsoDate[] } {
+	const end = endsOn && isIsoDate(endsOn) ? endsOn : null;
+	if (!isIsoDate(startsOn) || (end !== null && end < startsOn)) {
+		return { inside: [...dates], before: [], after: [] };
+	}
+	return {
+		inside: dates.filter((date) => date >= startsOn && (end === null || date <= end)),
+		before: dates.filter((date) => date < startsOn),
+		after: end === null ? [] : dates.filter((date) => date > end)
+	};
+}
+
 /** Une ligne du résumé. `typed` : une valeur saisie par l'organisation, isolée dans `<bdi>`. */
 export interface SummaryRow {
 	key: string;
@@ -186,10 +213,25 @@ export function summarise(
 		const tokens = splitDates(values.dates);
 		const readable = [...new Set(tokens.map(readDate).filter((date) => date !== null))].sort();
 		const unreadable = tokens.filter((token) => readDate(token) === null);
-		const list = formattingTexts[language].dateList(
-			readable.map((date) => shortDate(date, language))
+		const list = (dates: readonly IsoDate[]) =>
+			formattingTexts[language].dateList(dates.map((date) => shortDate(date, language)));
+		// Seules les dates de la période sont publiées : les autres ont leur ligne, marquée, comme le
+		// serveur les refuse.
+		const { inside, before, after } = splitByPeriod(readable, values.startsOn, values.endsOn);
+		row(
+			'dates',
+			text.summary.dates,
+			inside.length > 0 ? list(inside) : null,
+			readable.length > 0 ? text.missing.noDateInPeriod : text.missing.dates
 		);
-		row('dates', text.summary.dates, readable.length > 0 ? list : null, text.missing.dates);
+		for (const [key, label, dates] of [
+			['datesBefore', text.summary.datesBefore, before],
+			['datesAfter', text.summary.datesAfter, after]
+		] as const) {
+			if (dates.length > 0) {
+				rows.push({ key, label, value: list(dates), missing: true, typed: false });
+			}
+		}
 		if (unreadable.length > 0) {
 			rows.push({
 				key: 'badDates',

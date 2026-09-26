@@ -27,6 +27,8 @@
 	submitLabel={text.submitEdit}
 	errors={form?.errors ?? []}
 	badDates={form?.badDates ?? []}
+	datesBefore={form?.datesBefore ?? []}
+	datesAfter={form?.datesAfter ?? []}
 />
 
 <style>

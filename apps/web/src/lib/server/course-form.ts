@@ -17,12 +17,14 @@ import {
 	MAX_DURATION_MINUTES,
 	MAX_OFFSET_MINUTES,
 	MIN_DURATION_MINUTES,
-	MIN_OFFSET_MINUTES
+	MIN_OFFSET_MINUTES,
+	type IsoDate
 } from '@jadwal/core';
 import {
 	isTimingChoice,
 	readDate,
 	signedOffset,
+	splitByPeriod,
 	splitDates,
 	type CourseFormError,
 	type CourseFormValues,
@@ -40,6 +42,12 @@ export type ReadCourseForm =
 			 * `badDates`, à la place des dates dans l'ordre du formulaire.
 			 */
 			badDates: string[];
+			/**
+			 * Les dates qu'aucune séance ne suivrait, parce qu'elles tombent avant le premier jour ou
+			 * après le dernier. `errors` porte alors `datesBeforeStart` ou `datesAfterEnd`.
+			 */
+			datesBefore: IsoDate[];
+			datesAfter: IsoDate[];
 			/** Ce que la personne a envoyé, pour le lui remontrer avec le résumé qui va avec. */
 			values: CourseFormValues;
 	  };
@@ -115,7 +123,16 @@ export function readCourseForm(form: FormData, languages: readonly string[]): Re
 	const values = sentValues(form, languages);
 	const errors: CourseFormError[] = [];
 	const badDates: string[] = [];
-	const refuse = () => ({ ok: false as const, errors: ['refused' as const], badDates, values });
+	const datesBefore: IsoDate[] = [];
+	const datesAfter: IsoDate[] = [];
+	const refuse = () => ({
+		ok: false as const,
+		errors: ['refused' as const],
+		badDates,
+		datesBefore,
+		datesAfter,
+		values
+	});
 
 	if (!languages.includes(values.sourceLanguage)) return refuse();
 	if (!values.titles[values.sourceLanguage]) errors.push('titleMissing');
@@ -123,7 +140,7 @@ export function readCourseForm(form: FormData, languages: readonly string[]): Re
 	// langue que personne n'a choisie (`parseCourseForm` prendrait la langue de saisie sans le dire).
 	if (values.teachingLanguages.length === 0) errors.push('teachingMissing');
 
-	const isoDates: string[] = [];
+	const isoDates: IsoDate[] = [];
 	if (values.recurrenceKind === 'weekly' && values.weekdays.length === 0) {
 		errors.push('weekdaysMissing');
 	}
@@ -137,6 +154,17 @@ export function readCourseForm(form: FormData, languages: readonly string[]): Re
 		if (tokens.length === 0) errors.push('datesMissing');
 		if (badDates.length > 0) errors.push('badDates');
 		if (new Set(isoDates).size !== isoDates.length) errors.push('datesTwice');
+		// Une date hors de la période ne donnerait aucune séance : le moteur l'écarterait sans rien
+		// dire. Le cours ne s'enregistre pas tant qu'elle y est, et la page la nomme.
+		const { before, after } = splitByPeriod(
+			[...new Set(isoDates)].sort(),
+			values.startsOn,
+			values.endsOn
+		);
+		datesBefore.push(...before);
+		datesAfter.push(...after);
+		if (before.length > 0) errors.push('datesBeforeStart');
+		if (after.length > 0) errors.push('datesAfterEnd');
 	}
 
 	const choice = values.timingKind;
@@ -158,7 +186,7 @@ export function readCourseForm(form: FormData, languages: readonly string[]): Re
 		errors.push('endsBeforeStarts');
 	}
 
-	if (errors.length > 0) return { ok: false, errors, badDates, values };
+	if (errors.length > 0) return { ok: false, errors, badDates, datesBefore, datesAfter, values };
 
 	// Ce que `parseCourseForm` lit : le décalage signé, les dates comme la base les écrit.
 	const normalised = new FormData();

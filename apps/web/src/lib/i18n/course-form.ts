@@ -46,6 +46,13 @@ interface CourseFormTexts {
 	};
 	/** Les dates illisibles ou qui n'existent pas, telles que la personne les a écrites, et leur nombre. */
 	readonly badDates: (list: string, count: number) => string;
+	/**
+	 * Les dates qu'aucune séance ne suivrait, parce qu'elles tombent avant le premier jour, leur
+	 * nombre, et la plus ancienne : le premier jour qui les garderait toutes.
+	 */
+	readonly datesBeforeStart: (list: string, count: number, earliest: string) => string;
+	/** Celles qui tombent après le dernier jour, et la plus récente : le dernier jour à choisir. */
+	readonly datesAfterEnd: (list: string, count: number, latest: string) => string;
 	readonly required: string;
 	readonly optional: string;
 	readonly summary: {
@@ -56,6 +63,8 @@ interface CourseFormTexts {
 		readonly days: string;
 		readonly dates: string;
 		readonly badDates: string;
+		readonly datesBefore: string;
+		readonly datesAfter: string;
 		readonly frequency: string;
 		readonly time: string;
 		readonly room: string;
@@ -72,6 +81,8 @@ interface CourseFormTexts {
 		readonly descriptionWithoutTitle: (language: string) => string;
 		readonly days: string;
 		readonly dates: string;
+		/** Des dates écrites, mais aucune entre le premier et le dernier jour. */
+		readonly noDateInPeriod: string;
 		readonly time: string;
 		readonly room: string;
 		readonly teacher: string;
@@ -187,6 +198,14 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			count === 1
 				? `Cette date n’est pas valable : ${list}. Écrivez chaque date comme ceci : 12.10.2026`
 				: `Ces dates ne sont pas valables : ${list}. Écrivez chaque date comme ceci : 12.10.2026`,
+		datesBeforeStart: (list, count, earliest) =>
+			count === 1
+				? `Cette date tombe avant le premier jour du cours et ne serait pas publiée : ${list}. Choisissez comme premier jour le ${earliest} ou un jour plus tôt. Vous pouvez aussi retirer cette date.`
+				: `Ces dates tombent avant le premier jour du cours et ne seraient pas publiées : ${list}. Choisissez comme premier jour le ${earliest} ou un jour plus tôt. Vous pouvez aussi retirer ces dates.`,
+		datesAfterEnd: (list, count, latest) =>
+			count === 1
+				? `Cette date tombe après le dernier jour du cours et ne serait pas publiée : ${list}. Choisissez comme dernier jour le ${latest} ou un jour plus tard. Vous pouvez aussi laisser le dernier jour vide ou retirer cette date.`
+				: `Ces dates tombent après le dernier jour du cours et ne seraient pas publiées : ${list}. Choisissez comme dernier jour le ${latest} ou un jour plus tard. Vous pouvez aussi laisser le dernier jour vide ou retirer ces dates.`,
 		required: '(obligatoire)',
 		optional: '(facultatif)',
 		summary: {
@@ -197,6 +216,8 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			days: 'Jours :',
 			dates: 'Dates :',
 			badDates: 'Dates à corriger :',
+			datesBefore: 'Dates avant le premier jour, pas publiées :',
+			datesAfter: 'Dates après le dernier jour, pas publiées :',
 			frequency: 'Fréquence :',
 			time: 'Horaire :',
 			room: 'Salle :',
@@ -211,6 +232,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			descriptionWithoutTitle: (language) => `pas publiée sans titre en ${language}`,
 			days: 'pas choisis',
 			dates: 'pas encore écrites',
+			noDateInPeriod: 'aucune ne sera publiée',
 			time: 'à indiquer',
 			room: 'pas choisie',
 			teacher: 'aucun pour l’instant',
@@ -325,6 +347,14 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			count === 1
 				? `Dieses Datum ist nicht gültig: ${list}. Schreiben Sie jedes Datum so: 12.10.2026`
 				: `Diese Daten sind nicht gültig: ${list}. Schreiben Sie jedes Datum so: 12.10.2026`,
+		datesBeforeStart: (list, count, earliest) =>
+			count === 1
+				? `Dieses Datum liegt vor dem ersten Kurstag und wird deshalb nicht veröffentlicht: ${list}. Wählen Sie als ersten Kurstag den ${earliest} oder einen früheren Tag. Sie können das Datum auch entfernen.`
+				: `Diese Daten liegen vor dem ersten Kurstag und werden deshalb nicht veröffentlicht: ${list}. Wählen Sie als ersten Kurstag den ${earliest} oder einen früheren Tag. Sie können die Daten auch entfernen.`,
+		datesAfterEnd: (list, count, latest) =>
+			count === 1
+				? `Dieses Datum liegt nach dem letzten Kurstag und wird deshalb nicht veröffentlicht: ${list}. Wählen Sie als letzten Kurstag den ${latest} oder einen späteren Tag. Sie können den letzten Kurstag auch leer lassen oder das Datum entfernen.`
+				: `Diese Daten liegen nach dem letzten Kurstag und werden deshalb nicht veröffentlicht: ${list}. Wählen Sie als letzten Kurstag den ${latest} oder einen späteren Tag. Sie können den letzten Kurstag auch leer lassen oder die Daten entfernen.`,
 		required: '(Pflichtfeld)',
 		optional: '(freiwillig)',
 		summary: {
@@ -335,6 +365,8 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			days: 'Tage:',
 			dates: 'Daten:',
 			badDates: 'Zu korrigierende Daten:',
+			datesBefore: 'Daten vor dem ersten Tag, nicht veröffentlicht:',
+			datesAfter: 'Daten nach dem letzten Tag, nicht veröffentlicht:',
 			frequency: 'Häufigkeit:',
 			time: 'Zeit:',
 			room: 'Raum:',
@@ -349,6 +381,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			descriptionWithoutTitle: (language) => `ohne Titel auf ${language} nicht veröffentlicht`,
 			days: 'nicht gewählt',
 			dates: 'noch nicht eingetragen',
+			noDateInPeriod: 'keines wird veröffentlicht',
 			time: 'noch nicht angegeben',
 			room: 'kein Raum gewählt',
 			teacher: 'nicht angegeben',
@@ -462,6 +495,14 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			count === 1
 				? `Questa data non è valida: ${list}. Scrivi ogni data così: 12.10.2026`
 				: `Queste date non sono valide: ${list}. Scrivi ogni data così: 12.10.2026`,
+		datesBeforeStart: (list, count, earliest) =>
+			count === 1
+				? `Questa data cade prima del primo giorno del corso e non sarebbe pubblicata: ${list}. Scegli come primo giorno il ${earliest} o un giorno precedente. Puoi anche togliere questa data.`
+				: `Queste date cadono prima del primo giorno del corso e non sarebbero pubblicate: ${list}. Scegli come primo giorno il ${earliest} o un giorno precedente. Puoi anche togliere queste date.`,
+		datesAfterEnd: (list, count, latest) =>
+			count === 1
+				? `Questa data cade dopo l’ultimo giorno del corso e non sarebbe pubblicata: ${list}. Scegli come ultimo giorno il ${latest} o un giorno successivo. Puoi anche lasciare vuoto l’ultimo giorno o togliere questa data.`
+				: `Queste date cadono dopo l’ultimo giorno del corso e non sarebbero pubblicate: ${list}. Scegli come ultimo giorno il ${latest} o un giorno successivo. Puoi anche lasciare vuoto l’ultimo giorno o togliere queste date.`,
 		required: '(obbligatorio)',
 		optional: '(facoltativo)',
 		summary: {
@@ -472,6 +513,8 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			days: 'Giorni:',
 			dates: 'Date:',
 			badDates: 'Date da correggere:',
+			datesBefore: 'Date prima del primo giorno, non pubblicate:',
+			datesAfter: 'Date dopo l’ultimo giorno, non pubblicate:',
 			frequency: 'Frequenza:',
 			time: 'Orario:',
 			room: 'Sala:',
@@ -486,6 +529,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			descriptionWithoutTitle: (language) => `non pubblicata senza un titolo in ${language}`,
 			days: 'non scelti',
 			dates: 'non ancora scritte',
+			noDateInPeriod: 'nessuna sarà pubblicata',
 			time: 'non ancora indicato',
 			room: 'non scelta',
 			teacher: 'non indicato',
@@ -598,6 +642,14 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			count === 1
 				? `This date is not valid: ${list}. Write each date like this: 12.10.2026`
 				: `These dates are not valid: ${list}. Write each date like this: 12.10.2026`,
+		datesBeforeStart: (list, count, earliest) =>
+			count === 1
+				? `This date falls before the first day of the course and would not be published: ${list}. Choose ${earliest} or an earlier day as the first day. You can also remove this date.`
+				: `These dates fall before the first day of the course and would not be published: ${list}. Choose ${earliest} or an earlier day as the first day. You can also remove these dates.`,
+		datesAfterEnd: (list, count, latest) =>
+			count === 1
+				? `This date falls after the last day of the course and would not be published: ${list}. Choose ${latest} or a later day as the last day. You can also leave the last day empty or remove this date.`
+				: `These dates fall after the last day of the course and would not be published: ${list}. Choose ${latest} or a later day as the last day. You can also leave the last day empty or remove these dates.`,
 		required: '(required)',
 		optional: '(optional)',
 		summary: {
@@ -608,6 +660,8 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			days: 'Days:',
 			dates: 'Dates:',
 			badDates: 'Dates to correct:',
+			datesBefore: 'Dates before the first day, not published:',
+			datesAfter: 'Dates after the last day, not published:',
 			frequency: 'Frequency:',
 			time: 'Time:',
 			room: 'Room:',
@@ -622,6 +676,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			descriptionWithoutTitle: (language) => `not published without a title in ${language}`,
 			days: 'none chosen',
 			dates: 'not written yet',
+			noDateInPeriod: 'none will be published',
 			time: 'not given yet',
 			room: 'none chosen',
 			teacher: 'not given',
@@ -737,6 +792,18 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 				two: `هذان التاريخان غير صالحين: ${list}. اكتب كل تاريخ هكذا: 12.10.2026`,
 				other: `هذه التواريخ غير صالحة: ${list}. اكتب كل تاريخ هكذا: 12.10.2026`
 			}),
+		datesBeforeStart: (list, count, earliest) =>
+			arabic(count, {
+				one: `هذا التاريخ يقع قبل اليوم الأول للدرس، ولن يُنشر: ${list}. اجعل اليوم الأول للدرس ${earliest} أو يومًا قبله، أو احذف هذا التاريخ.`,
+				two: `هذان التاريخان يقعان قبل اليوم الأول للدرس، ولن يُنشرا: ${list}. اجعل اليوم الأول للدرس ${earliest} أو يومًا قبله، أو احذف هذين التاريخين.`,
+				other: `هذه التواريخ تقع قبل اليوم الأول للدرس، ولن تُنشر: ${list}. اجعل اليوم الأول للدرس ${earliest} أو يومًا قبله، أو احذف هذه التواريخ.`
+			}),
+		datesAfterEnd: (list, count, latest) =>
+			arabic(count, {
+				one: `هذا التاريخ يقع بعد اليوم الأخير للدرس، ولن يُنشر: ${list}. اجعل اليوم الأخير للدرس ${latest} أو يومًا بعده، أو اترك اليوم الأخير فارغًا، أو احذف هذا التاريخ.`,
+				two: `هذان التاريخان يقعان بعد اليوم الأخير للدرس، ولن يُنشرا: ${list}. اجعل اليوم الأخير للدرس ${latest} أو يومًا بعده، أو اترك اليوم الأخير فارغًا، أو احذف هذين التاريخين.`,
+				other: `هذه التواريخ تقع بعد اليوم الأخير للدرس، ولن تُنشر: ${list}. اجعل اليوم الأخير للدرس ${latest} أو يومًا بعده، أو اترك اليوم الأخير فارغًا، أو احذف هذه التواريخ.`
+			}),
 		required: '(إلزامي)',
 		optional: '(اختياري)',
 		summary: {
@@ -747,6 +814,8 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			days: 'الأيام:',
 			dates: 'التواريخ:',
 			badDates: 'تواريخ يجب تصحيحها:',
+			datesBefore: 'تواريخ قبل اليوم الأول، لن تُنشر:',
+			datesAfter: 'تواريخ بعد اليوم الأخير، لن تُنشر:',
 			frequency: 'التكرار:',
 			time: 'الوقت:',
 			room: 'القاعة:',
@@ -761,6 +830,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			descriptionWithoutTitle: (language) => `لن يُنشر دون عنوان ب${language}`,
 			days: 'لم تُختر بعد',
 			dates: 'لم تُكتب بعد',
+			noDateInPeriod: 'لن يُنشر أي منها',
 			time: 'لم يُحدَّد بعد',
 			room: 'لم تُختر',
 			teacher: 'لم يُذكر',
