@@ -15,15 +15,24 @@ Ce qu'il sait faire :
 
 - des **cours récurrents** : toutes les semaines, une semaine sur deux, un jour du mois, ou des dates
   choisies ; avec leurs annulations, leurs déplacements et leurs pauses ;
-- une **page publique** en quatre langues, sans aucun script ni aucune ressource extérieure ;
+- **cinq langues**, partout : français, allemand, italien, anglais et arabe, écrit de droite à
+  gauche. La page publique, le widget, le flux agenda, l'espace des responsables, le super-admin et
+  les courriels les parlent toutes ; chacun choisit la sienne. Les dates s'écrivent comme en Suisse,
+  `26.09.2026` ;
+- une **page publique** sans aucun script ni aucune ressource extérieure ;
 - un **widget** à coller sur votre site, en une balise ;
-- un **flux agenda** que chacun peut suivre depuis son téléphone ;
-- des **messages prêts à coller** pour annoncer un changement ;
+- un **flux agenda** que chacun peut suivre depuis son téléphone : la page d'abonnement propose le
+  bouton qui convient à son appareil, iPhone, Android ou ordinateur ;
+- des **messages prêts à coller** pour annoncer un changement, dans chaque langue que
+  l'organisation publie ;
+- un **espace des responsables** où chaque écran dit ce qu'il fait, pensé pour qu'une personne qui
+  découvre le service s'y retrouve seule ;
 - un **compteur de consultations** qui ne retient aucune donnée personnelle ;
 - des **conditions d'utilisation** en ligne, lisibles sans compte. Chaque personne les accepte avant
   d'entrer dans l'espace d'une organisation, et de nouveau quand le texte change de version ;
 - en option, un **module d'heures de prière** : les horaires d'un lieu de culte, saisis, importés ou
-  calculés, avec l'iqama et la prière du vendredi. Il est désactivé par défaut, et une organisation
+  calculés pour une localité choisie par son nom ou son NPA, avec l'iqama et la prière du vendredi,
+  et un onglet **Prières** sur la page publique. Il est désactivé par défaut, et une organisation
   qui ne l'active pas ne le voit nulle part.
 
 Le cadrage complet est dans [`docs/CADRAGE.md`](docs/CADRAGE.md), les décisions dans
@@ -60,7 +69,7 @@ pnpm test                       # vitest dans chaque paquet (couverture de core 
 pnpm test:tz                    # suite de core rejouée sous quatre fuseaux de machine
 pnpm build                      # build de chaque paquet
 pnpm style                      # tiret cadratin et chevilles dans les textes lus par les gens
-pnpm orthographe                # LanguageTool hors réseau, en conteneur, en quatre langues
+pnpm orthographe                # LanguageTool hors réseau, en conteneur, en cinq langues
 pnpm image:test                 # l'image de production, construite, lancée et interrogée (Docker)
 pnpm parcours:test              # le parcours d'une organisation dans Chrome, et axe (Docker, Chrome)
 pnpm garde:test                 # la garde du déploiement, cas par cas, contre une fausse API (Docker)
@@ -122,8 +131,9 @@ dans `docker-compose.dev.yml`.
 `jadwal` ("schedule" in Arabic) lets any organisation publish its recurring class schedule from a
 single entry: associations, schools, clubs, companies, places of worship. Staff enter the programme
 once; out come an embeddable widget, a public page, an ICS calendar feed and ready-to-paste WhatsApp
-messages. The service is free. An optional prayer-times module is available for places of worship,
-switched off by default. Everyone who enters an organisation's workspace first accepts the terms of
+messages. Everything speaks five languages: French, German, Italian, British English and Arabic,
+right to left. The service is free. An optional prayer-times module is available for places of
+worship, switched off by default. Everyone who enters an organisation's workspace first accepts the terms of
 use, published online. The same code runs as a hosted service or self-hosted with Docker Compose.
 Status: first version, online since 21 September 2026. Licence: MIT, except the list of Swiss
 localities (`apps/web/src/lib/server/localites/localities.csv`), which remains under the terms of
