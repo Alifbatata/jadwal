@@ -26,8 +26,8 @@
  *
  * ## Une vérification au moins par retour du chef de projet
  *
- * La règle, depuis l'étape 18 : « Chaque retour du chef de projet devient au moins une vérification du
- * parcours automatique, qui tombe sur l'ancien comportement. » Chaque vérification d'un retour
+ * La règle, depuis l'étape 18 : chaque retour du chef de projet devient au moins une vérification
+ * du parcours automatique, qui tombe sur l'ancien comportement. Chaque vérification d'un retour
  * porte sa lettre, et le parcours imprime à la fin un tableau « retour | vérification | verdict ».
  * Un retour sans aucune ligne fait échouer le parcours : on ne perd pas une vérification sans le
  * voir.
@@ -105,8 +105,9 @@
  * jouées. Le bilan les compte donc à part : les vérifications jouées, vertes ou rouges, puis les
  * gestes impossibles. Combien de vérifications n'ont jamais tourné, et lesquelles, se lit en
  * comparant ligne par ligne le tableau du relevé à celui d'un passage strict sur l'image
- * d'aujourd'hui : une ligne du strict qui manque au relevé n'a pas été jouée. Compter retour par
- * retour donne un nombre, mais pas les lignes.
+ * d'aujourd'hui : une ligne du strict qui manque au relevé n'a pas été jouée. Deux libellés portent
+ * le nombre d'écrans lus (A3 et F1), qui change d'une image à l'autre : on le neutralise avant de
+ * comparer. Compter retour par retour donne un nombre, mais pas les lignes.
  *
  * Une vérification faite de plusieurs conditions les nomme (`verifierChaque`) : sa ligne rouge
  * commence par « tombé : » et le nom de celles qui manquent, puis ce que l'écran montrait. Un relevé
