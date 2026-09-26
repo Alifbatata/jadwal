@@ -88,8 +88,19 @@ jadwal.voltia.ch {
 		# Deux ans, sous-domaines compris. `preload` n'y est pas : il engage `voltia.ch` tout entier
 		# auprès des navigateurs, et ce n'est pas à jadwal d'en décider.
 		Strict-Transport-Security "max-age=63072000; includeSubDomains"
-		# Caddy annonce sa version dans `Server` ; rien n'oblige à la publier.
+		# `Server` et `Via` ne disent rien au visiteur, seulement quel logiciel sert le site : rien
+		# n'oblige à le publier. Caddy pose `Server: Caddy` sur ce qu'il sert lui-même, et
+		# `reverse_proxy` ajoute `Via: 1.1 Caddy` à chaque réponse de l'application, `304` compris.
+		#
+		# `Via` se retire ici, et pas par `header_down -Via` dans `reverse_proxy`. `header_down`
+		# modifie les en-têtes reçus de l'application, avant que Caddy les recopie ; `Via`, Caddy
+		# l'écrit directement sur la réponse qu'il envoie, où `header_down` ne le voit pas. Essayé en
+		# 2.11.4 : avec `header_down -Via`, la réponse porte toujours `Via`. Une suppression dans
+		# `header`, elle, attend que la réponse parte vers le client (documentation de Caddy,
+		# directive `header`) : elle passe après `reverse_proxy`. `pnpm caddy:test` vérifie
+		# qu'aucune réponse ne porte `Via`.
 		-Server
+		-Via
 	}
 
 	# `/healthz` ne va pas au journal (ADR 0039 complété). Ce n'est pas du confort : la sonde de

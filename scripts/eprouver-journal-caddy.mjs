@@ -45,8 +45,9 @@
  * Le corps reçu est décodé selon ce que la réponse annonce et comparé à l'original, octet pour
  * octet. S'y ajoutent `Vary`, l'ETag et le `304` d'une revalidation, un client qui préfère zstd par
  * son poids, une réponse trop courte pour valoir la peine, un fichier que l'application sert déjà
- * compressé, et les en-têtes que le bloc pose (`Strict-Transport-Security`, pas de `Server`). Les
- * tailles envoyées par Caddy sont affichées : c'est la mesure du gain.
+ * compressé, et les en-têtes que le bloc pose ou retire : `Strict-Transport-Security` est là,
+ * `Server` n'y est pas, et aucune des réponses reçues ne porte `Via`. Les tailles envoyées par Caddy
+ * sont affichées : c'est la mesure du gain.
  *
  * La page HTML est représentative, pas rendue par le serveur : le texte de `/conditions`, mis en
  * mots par le module même de l'application (`apps/web/src/lib/conditions/rendu.js`), dans son
@@ -226,9 +227,11 @@ function attendreCaddy() {
  * Une requête depuis l'intérieur du conteneur, par curl, qui ne demande aucune compression si on ne
  * le lui dit pas. Rend le code, les en-têtes reçus (nom en minuscules, valeurs répétées jointes par
  * une virgule, chaîne vide si absent), et la taille du corps, laissé **tel que reçu** dans un
- * fichier du conteneur : rien n'est décodé en route.
+ * fichier du conteneur : rien n'est décodé en route. Chaque réponse est gardée dans `recues`, pour
+ * vérifier à la fin ce qu'aucune ne doit porter.
  */
 let requetes = 0;
+const recues = [];
 function demander(chemin, entetes = []) {
 	requetes += 1;
 	const recu = `/tmp/recu-${requetes}`;
@@ -243,7 +246,8 @@ function demander(chemin, entetes = []) {
 		const nom = ligne.slice(0, separateur).trim().toLowerCase();
 		recus.set(nom, [...(recus.get(nom) ?? []), ligne.slice(separateur + 1).trim()]);
 	}
-	return {
+	const reponse = {
+		chemin,
 		statut: Number(/^HTTP\/\S+ (\d{3})/.exec(premiere ?? '')?.[1]),
 		entete: (nom) => (recus.get(nom) ?? []).join(', '),
 		// curl ne crée pas le fichier quand il n'y a aucun corps, un 304 par exemple.
@@ -252,6 +256,8 @@ function demander(chemin, entetes = []) {
 		),
 		recu
 	};
+	recues.push(reponse);
+	return reponse;
 }
 
 /** Les décodeurs, par valeur de `Content-Encoding` ; la chaîne vide veut dire « rien à décoder ». */
@@ -608,6 +614,7 @@ try {
 				`${quoi} : réponse ${comment}, aucun en-tête Server`,
 				reponse.entete('server') === ''
 			);
+			verifier(`${quoi} : réponse ${comment}, aucun en-tête Via`, reponse.entete('via') === '');
 		}
 	}
 
@@ -659,6 +666,18 @@ try {
 	verifier(
 		`et un client qui ne demande rien le reçoit en clair, à l’octet près`,
 		dejaSans.entete('content-encoding') === '' && empreinteLue(dejaSans) === dejaOriginal
+	);
+
+	// `reverse_proxy` ajoute `Via: 1.1 Caddy` à chaque réponse de l'application, `304` compris.
+	// Le bloc le retire (étape 18, retour H4) : aucune des réponses reçues plus haut ne le porte.
+	const avecVia = recues.filter((reponse) => reponse.entete('via') !== '');
+	verifier(
+		avecVia.length === 0
+			? `aucune des ${recues.length} réponses reçues ne porte d’en-tête Via`
+			: `aucune réponse ne porte d’en-tête Via : ${avecVia.length} sur ${recues.length} en ` +
+					`portent un (« ${avecVia[0].entete('via')} »), sur ` +
+					[...new Set(avecVia.map((reponse) => reponse.chemin))].join(', '),
+		avecVia.length === 0
 	);
 
 	const taille = (reponse, reference) =>
@@ -928,6 +947,7 @@ if (echecs.length > 0) {
 } else {
 	process.stdout.write(
 		`Les ${verifications} vérifications passent : aucun secret dans le fichier, adresses tronquées, chemin gardé, ` +
-			`aucune ligne gardée plus de ${JOURS} jours, et les pages compressées sans rien perdre.\n`
+			`aucune ligne gardée plus de ${JOURS} jours, les pages compressées sans rien perdre, gzip ` +
+			`pour un navigateur, et aucune réponse ne dit Via.\n`
 	);
 }
