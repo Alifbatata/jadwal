@@ -387,11 +387,11 @@
 						{text.computed.position(coordonnee(choisie.latitude), coordonnee(choisie.longitude))}
 					</p>
 				{/if}
+				<!-- Le nom de la source dans un `<bdi>` : « ©swisstopo » garde son signe à gauche du
+				     nom au milieu d'une phrase arabe, qui se lit de droite à gauche. -->
 				<p class="aide credit">
-					{text.computed.credit(
-						data.localities.credit[data.language],
-						numericDate(data.localities.version)
-					)}
+					{text.computed.creditBefore}<bdi>{data.localities.credit[data.language]}</bdi
+					>{text.computed.creditAfter(numericDate(data.localities.version))}
 				</p>
 			</fieldset>
 

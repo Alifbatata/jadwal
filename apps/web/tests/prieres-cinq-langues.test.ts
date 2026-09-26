@@ -477,6 +477,35 @@ describe('la localité, par son nom ou son NPA (retour C2)', () => {
 		// La ligne des lettres latines n'est écrite qu'en arabe.
 		expect(lu.includes(LETTRES_LATINES)).toBe(langue === 'ar');
 	});
+
+	/** La phrase entière de la mention, telle qu'on la lit. */
+	const MENTION: Record<Langue, string> = {
+		fr: 'Liste officielle des localités : Office fédéral de topographie swisstopo, version du 01.09.2026.',
+		de: 'Amtliches Ortschaftenverzeichnis: Bundesamt für Landestopografie swisstopo, Stand 01.09.2026.',
+		it: 'Elenco ufficiale delle località: Ufficio federale di topografia swisstopo, versione del 01.09.2026.',
+		en: 'Official list of localities: Federal Office of Topography swisstopo, version of 01.09.2026.',
+		ar: 'القائمة الرسمية للبلدات: ©swisstopo، إصدار 01.09.2026.'
+	};
+
+	it.each(LANGUES)(
+		'isolates the name of the source in the sentence that credits it, in %s',
+		async (langue) => {
+			// En arabe, « ©swisstopo » posé tel quel dans la phrase s'affichait « swisstopo© » : le signe,
+			// neutre, prenait le sens de la phrase. Dans un `<bdi>`, le nom garde le sien.
+			await poserLangueDuCompte(RESPONSABLE, langue);
+			const html = await (await get('/prieres?source=computed')).text();
+			const mention = html.match(
+				/<p\b[^>]*\bclass="[^"]*\bcredit\b[^"]*"[^>]*>([\s\S]*?)<\/p>/
+			)?.[1];
+			expect(mention, 'aucune mention de la source').toBeDefined();
+			expect(mention).toContain(`<bdi>${SWISSTOPO[langue]}</bdi>`);
+			const lue = (mention ?? '')
+				.replace(/<[^>]+>/g, '')
+				.replace(/\s+/g, ' ')
+				.trim();
+			expect(lue).toBe(MENTION[langue]);
+		}
+	);
 });
 
 describe('chaque vue de l’écran, dans les cinq langues (retours D2 et A3)', () => {

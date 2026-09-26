@@ -70,8 +70,13 @@ interface PrayersTexts {
 		/** Suivie du nom de la localité choisie. */
 		readonly chosen: string;
 		readonly position: (latitude: string, longitude: string) => string;
-		/** La mention de la source, que les conditions de swisstopo exigent. */
-		readonly credit: (source: string, version: string) => string;
+		/**
+		 * La mention de la source, que les conditions de swisstopo exigent, en deux morceaux : la page
+		 * met entre eux le nom de la source dans un `<bdi>`, pour que « ©swisstopo » garde son signe à
+		 * sa place au milieu d'une phrase arabe.
+		 */
+		readonly creditBefore: string;
+		readonly creditAfter: (version: string) => string;
 		readonly abroadSummary: string;
 		readonly abroadHint: string;
 		readonly latitude: string;
@@ -347,8 +352,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			chosen: 'Localité choisie :',
 			position: (latitude, longitude) =>
 				`Sa position : latitude ${latitude}, longitude ${longitude}.`,
-			credit: (source, version) =>
-				`Liste officielle des localités : ${source}, version du ${version}.`,
+			creditBefore: 'Liste officielle des localités : ',
+			creditAfter: (version) => `, version du ${version}.`,
 			abroadSummary: 'Hors de Suisse',
 			abroadHint:
 				'Votre organisation n’est pas en Suisse ? Donnez sa position en degrés décimaux. Sur une carte en ligne, un clic droit sur son emplacement affiche ces deux nombres : le premier est la latitude. Une localité choisie dans la liste passe avant ces deux nombres.',
@@ -655,7 +660,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			chosen: 'Gewählter Ort:',
 			position: (latitude, longitude) =>
 				`Seine Lage: Breitengrad ${latitude}, Längengrad ${longitude}.`,
-			credit: (source, version) => `Amtliches Ortschaftenverzeichnis: ${source}, Stand ${version}.`,
+			creditBefore: 'Amtliches Ortschaftenverzeichnis: ',
+			creditAfter: (version) => `, Stand ${version}.`,
 			abroadSummary: 'Ausserhalb der Schweiz',
 			abroadHint:
 				'Ist Ihre Organisation nicht in der Schweiz? Geben Sie ihre Lage in Dezimalgrad an. Auf einer Online-Karte zeigt ein Rechtsklick auf den Standort diese zwei Zahlen: Die erste ist der Breitengrad. Ein in der Liste gewählter Ort geht diesen zwei Zahlen vor.',
@@ -965,8 +971,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			chosen: 'Località scelta:',
 			position: (latitude, longitude) =>
 				`La sua posizione: latitudine ${latitude}, longitudine ${longitude}.`,
-			credit: (source, version) =>
-				`Elenco ufficiale delle località: ${source}, versione del ${version}.`,
+			creditBefore: 'Elenco ufficiale delle località: ',
+			creditAfter: (version) => `, versione del ${version}.`,
 			abroadSummary: 'Fuori dalla Svizzera',
 			abroadHint:
 				'La tua organizzazione non è in Svizzera? Indica la sua posizione in gradi decimali. Su una mappa online, un clic destro sul luogo mostra questi due numeri: il primo è la latitudine. Una località scelta nell’elenco ha la precedenza su questi due numeri.',
@@ -1275,7 +1281,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			chosen: 'Chosen town or village:',
 			position: (latitude, longitude) =>
 				`Its position: latitude ${latitude}, longitude ${longitude}.`,
-			credit: (source, version) => `Official list of localities: ${source}, version of ${version}.`,
+			creditBefore: 'Official list of localities: ',
+			creditAfter: (version) => `, version of ${version}.`,
 			abroadSummary: 'Outside Switzerland',
 			abroadHint:
 				'Is your organisation outside Switzerland? Give its position in decimal degrees. On an online map, a right-click on the place shows these two numbers: the first is the latitude. A town or village chosen from the list comes before these two numbers.',
@@ -1571,7 +1578,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			tooShort: 'اكتب حرفين أو رقمين على الأقل.',
 			chosen: 'البلدة المختارة:',
 			position: (latitude, longitude) => `موقعها: خط العرض ${latitude}، خط الطول ${longitude}.`,
-			credit: (source, version) => `القائمة الرسمية للبلدات: ${source}، إصدار ${version}.`,
+			creditBefore: 'القائمة الرسمية للبلدات: ',
+			creditAfter: (version) => `، إصدار ${version}.`,
 			abroadSummary: 'خارج سويسرا',
 			abroadHint:
 				'مؤسستك ليست في سويسرا؟ أدخل موقعها بالدرجات العشرية. على خريطة في الإنترنت، يُظهر النقر بالزر الأيمن على المكان هذين الرقمين: الأول هو خط العرض. البلدة المختارة من القائمة تسبق هذين الرقمين.',
