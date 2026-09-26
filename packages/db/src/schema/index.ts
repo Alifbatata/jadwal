@@ -153,21 +153,20 @@ export const EXCEPTION_KINDS = ['cancelled', 'moved'] as const;
 export const ADMIN_ACCESS_ACTIONS = ['read', 'write', 'magic_link'] as const;
 
 /**
- * `colonne in ('x', 'y')`, pour une contrainte de vérification d'énumération. Les valeurs sont
- * écrites en littéral : dans une contrainte, un paramètre lié resterait un `$1` que personne ne
- * remplace. Elles viennent des constantes ci-dessus, jamais d'une saisie, et le guillemet simple
- * est tout de même doublé.
+ * Les valeurs d'une liste fixe, écrites en littéral SQL : dans une contrainte, un paramètre lié
+ * resterait un `$1` que personne ne remplace. Elles viennent des constantes ci-dessus, jamais d'une
+ * saisie, et le guillemet simple est tout de même doublé.
  */
-/** Les valeurs d'une liste fixe, écrites comme des littéraux SQL, entre apostrophes. */
 function literalsOf(values: readonly string[]): string {
 	return values.map((value) => `'${value.replaceAll("'", "''")}'`).join(', ');
 }
 
+/** `colonne in ('x', 'y')`, pour une contrainte de vérification d'énumération. */
 function oneOf(column: SQLWrapper, values: readonly string[]) {
 	return sql`${column} in (${sql.raw(literalsOf(values))})`;
 }
 
-/** Chaque élément d'un tableau de textes est l'une des valeurs d'une liste fixe. */
+/** `colonne <@ array['x', 'y']` : chaque élément d'un tableau de textes est l'une des valeurs. */
 function allOf(column: SQLWrapper, values: readonly string[]) {
 	return sql`${column} <@ array[${sql.raw(literalsOf(values))}]::text[]`;
 }
