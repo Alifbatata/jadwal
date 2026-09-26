@@ -60,7 +60,9 @@
  *   axe à 390 px de large sur les trois réponses.
  * - C2 : la localité trouvée par son nom et par son NPA, sans service extérieur, avec l'attribution
  *   de swisstopo, et les heures qu'elle donne : celles que `@jadwal/core` calcule pour la position
- *   de la liste, sur l'écran, sur la page publique et dans le flux.
+ *   de la liste, sur l'écran, sur la page publique et dans le flux. Avec JavaScript, « Hors de
+ *   Suisse » et « Méthode de calcul, école et ajustements » restent ouverts pendant qu'on tape, une
+ *   touche à la fois.
  * - C3 : un cours « avant une prière », des minutes positives à l'écran.
  * - C4 : l'onglet « Prières » de la page publique et du widget, et axe à 390 px de large.
  * - D1 : la page publique, le widget, le flux et une page d'erreur en anglais, sans texte français ;
@@ -243,6 +245,16 @@ const LOCALITE = {
 	libelle: '2502 Biel/Bienne (BE)',
 	liste: '2502;Biel/Bienne;'
 };
+/**
+ * Le résumé des deux replis de la réponse « Calculées pour votre localité », tel que l'écran les
+ * écrit (`apps/web/src/lib/i18n/prayers.ts`), et une position hors de Suisse, celle de Paris, que
+ * le parcours tape sous le premier (retour C2).
+ */
+const REPLIS_DES_PRIERES = {
+	horsDeSuisse: 'Hors de Suisse',
+	methode: 'Méthode de calcul, école et ajustements (facultatif)'
+};
+const POSITION_HORS_DE_SUISSE = { latitude: '48.8566', longitude: '2.3522' };
 /** La liste des localités que le serveur embarque, lue dans le dépôt. */
 const LISTE_DES_LOCALITES = join(
 	racine,
@@ -3307,6 +3319,7 @@ async function prieres(page, navigateur) {
 				`${servies.length} jour(s), position ${reglage.latitude}, ${reglage.longitude}, ${reglage.method}`
 		);
 	});
+	await replisPendantLaFrappe(page);
 	await auditer(page, 'prières');
 
 	await naviguer(page, '/vendredi');
@@ -3445,6 +3458,110 @@ async function prieres(page, navigateur) {
 
 	await ongletDesPrieres(visiteur);
 	await neuf.close();
+}
+
+/** Le repli de l'écran dont le résumé dit exactement ce texte. */
+const repliNomme = (page, resume) =>
+	page.locator('details').filter({ has: page.locator(`summary:text-is("${resume}")`) });
+
+/** Vrai si ce repli est ouvert. */
+const estOuvert = (repli) =>
+	repli.evaluate((details) => /** @type {HTMLDetailsElement} */ (details).open);
+
+/**
+ * Tape un texte dans un champ, au clavier, à la place de ce qu'il contient, une touche à la fois.
+ * Rend le rang de la première touche après laquelle le repli est fermé, ou 0 s'il est resté ouvert.
+ */
+async function taperSansFermer(page, champ, texte, repli) {
+	await champ.click();
+	await page.keyboard.press('ControlOrMeta+A');
+	let fermeApres = 0;
+	for (const [rang, touche] of [...texte].entries()) {
+		await page.keyboard.type(touche);
+		if (fermeApres === 0 && !(await estOuvert(repli))) fermeApres = rang + 1;
+	}
+	return fermeApres;
+}
+
+/**
+ * Avec JavaScript, au clavier (C2) : « Hors de Suisse » reste ouvert pendant qu'on tape la latitude
+ * puis la longitude, et « Méthode de calcul, école et ajustements » pendant qu'on tape dans la
+ * recherche, puis quand la liste arrive. Un repli fermé avant un champ est d'abord ouvert, pour que
+ * chaque champ soit tapé. Rien n'est enregistré : la page est rouverte à la fin.
+ */
+async function replisPendantLaFrappe(page) {
+	const ouvrirLEcran = async () => {
+		await ouvrir(page, '/prieres?source=computed');
+		// Hydratée, la page retire le bouton « Continuer » de la question. Cinq secondes au plus.
+		await page
+			.waitForFunction(
+				() => !document.querySelector('form.question button[type="submit"]'),
+				undefined,
+				{ timeout: 5000 }
+			)
+			.catch(() => undefined);
+	};
+	const ouvrirLe = async (repli) => {
+		if (!(await estOuvert(repli))) await repli.locator(':scope > summary').click();
+	};
+	const recit = (fermeApres, touches) =>
+		fermeApres === 0
+			? `ouvert après les ${touches} touches`
+			: `fermé après la touche ${fermeApres}`;
+
+	await retour('C2', async () => {
+		await ouvrirLEcran();
+		const hors = repliNomme(page, REPLIS_DES_PRIERES.horsDeSuisse);
+		const lus = [];
+		for (const id of ['latitude', 'longitude']) {
+			await ouvrirLe(hors);
+			const champ = page.locator(`#${id}`);
+			const texte = POSITION_HORS_DE_SUISSE[id];
+			const fermeApres = await taperSansFermer(page, champ, texte, hors);
+			lus.push({ id, texte, fermeApres, valeur: await champ.inputValue() });
+		}
+		verifierChaque(
+			`avec JavaScript, « ${REPLIS_DES_PRIERES.horsDeSuisse} » reste ouvert pendant qu’on tape la latitude puis la longitude, touche par touche`,
+			Object.fromEntries(
+				lus.flatMap((lu) => [
+					[`ouvert pendant la frappe de la ${lu.id}`, lu.fermeApres === 0],
+					[`la ${lu.id} tapée entière`, lu.valeur === lu.texte]
+				])
+			),
+			lus
+				.map((lu) => `${lu.id} « ${lu.valeur} », ${recit(lu.fermeApres, lu.texte.length)}`)
+				.join(' ; ')
+		);
+
+		await ouvrirLEcran();
+		const methode = repliNomme(page, REPLIS_DES_PRIERES.methode);
+		await ouvrirLe(methode);
+		const recherche = page.getByLabel('Nom ou NPA de la localité', { exact: true });
+		const fermeApres = await taperSansFermer(page, recherche, LOCALITE.nom, methode);
+		// La liste est arrivée quand l'annonce sous la recherche, vide au chargement, dit ce qu'elle
+		// a trouvé. Cinq secondes au plus.
+		await page
+			.waitForFunction(
+				() => (document.querySelector('p[aria-live="polite"]')?.textContent ?? '').trim() !== '',
+				undefined,
+				{ timeout: 5000 }
+			)
+			.catch(() => undefined);
+		const annonce = page.locator('p[aria-live="polite"]');
+		const trouvees = (await annonce.count()) === 1 ? await texteDe(annonce) : '';
+		const ouvertALaListe = await estOuvert(methode);
+		const tapee = await recherche.inputValue();
+		verifierChaque(
+			`avec JavaScript, « ${REPLIS_DES_PRIERES.methode} » reste ouvert pendant qu’on tape dans la recherche, touche par touche, puis quand la liste arrive`,
+			{
+				'ouvert pendant la frappe': fermeApres === 0,
+				'ouvert quand la liste arrive': ouvertALaListe,
+				'la recherche tapée entière': tapee === LOCALITE.nom
+			},
+			`« ${tapee} », ${recit(fermeApres, LOCALITE.nom.length)}, puis ${ouvertALaListe ? 'ouvert' : 'fermé'} ; « ${trouvees || 'aucune annonce'} »`
+		);
+		await ouvrirLEcran();
+	});
 }
 
 /**
