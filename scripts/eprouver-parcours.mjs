@@ -36,13 +36,16 @@
  *   sa carte, et rien ne s'annule sans l'avoir ouverte, avec ou sans JavaScript.
  * - A2 : une séance se déplace à une date plus tôt que la sienne, toute date à partir d'aujourd'hui,
  *   et le déplacement se lit sur la page publique et dans le flux agenda. Un déplacement qui ne
- *   change ni la date ni l'heure est refusé, avec une phrase.
+ *   change ni la date ni l'heure est refusé, avec une phrase. Déplacée le même jour à une autre
+ *   heure, une séance porte « nouvelle heure » sur sa carte ; une carte restée ouverte dans un autre
+ *   onglet, envoyée après ce déplacement, est refusée, et rien n'est écrit.
  * - A3 : aucune date écrite `2026-09-26` dans le texte d'aucun écran traversé (espace, super-admin,
  *   page publique, widget), et la date des conditions et d'une passkey en `JJ.MM.AAAA`.
  * - B1 : les aides sous les champs clés, et des libellés qui disent ce qu'ils font ; sur un
  *   téléphone, la confirmation avant de supprimer une salle occupée se voit sans défiler ; sans
- *   JavaScript, une session du vendredi se supprime, et l'écran le dit. Dans la carte d'une session
- *   du vendredi, l'aide de « À partir du » est celle d'une modification.
+ *   JavaScript, une session du vendredi se supprime, et l'écran le dit. Le message d'une séance
+ *   déplacée le même jour dit un changement d'heure ; dans la carte d'une session du vendredi,
+ *   l'aide de « À partir du » est celle d'une modification.
  * - B2 : l'écran du super-admin, de « Créer une organisation » au lien de connexion de secours ;
  *   l'adresse proposée pendant la frappe, et par le serveur sans JavaScript ; une seconde passkey,
  *   qui a son propre nom et un message juste.
@@ -59,7 +62,8 @@
  * - C4 : l'onglet « Prières » de la page publique et du widget, et axe à 390 px de large.
  * - D1 : la page publique, le widget, le flux et une page d'erreur en anglais, sans texte français ;
  *   les messages prêts à coller de Partager, un par langue publiée, le nom de la prière du vendredi
- *   dans chacune.
+ *   dans chacune, et de même dans ceux de « À venir », le programme de la semaine et un
+ *   déplacement.
  * - D2 : l'espace et le super-admin en cinq langues, le choix en haut de chaque écran, retenu pour
  *   le compte, la langue du navigateur au premier passage, celle choisie avant la connexion, et la
  *   copie d'une période nommée dans la langue de l'écran.
@@ -100,12 +104,18 @@
  *
  * ## Sur un téléphone, et sans JavaScript
  *
- * Deux passages de plus, à la fin. L'un à 390 px de large, la largeur d'un téléphone courant : axe
- * sur l'écran des prières et sur l'onglet « Prières » du public, dont les tableaux défilent de côté
- * à cette largeur, et la confirmation d'une salle occupée, qui doit se voir sans défiler. L'autre
- * dans un navigateur sans JavaScript, avec la session de la personne responsable : l'espace doit
- * marcher sans script. Le super-admin passe aussi par un navigateur sans JavaScript, dès l'étape a,
- * pour l'adresse que le serveur propose quand personne ne l'a vue se remplir.
+ * Deux passages de plus, vers la fin. L'un à 390 px de large, la largeur d'un téléphone courant :
+ * axe sur l'écran des prières et sur l'onglet « Prières » du public, dont les tableaux défilent de
+ * côté à cette largeur, et la confirmation d'une salle occupée, qui doit se voir sans défiler.
+ * L'autre dans un navigateur sans JavaScript, avec la session de la personne responsable : l'espace
+ * doit marcher sans script. Le super-admin passe aussi par un navigateur sans JavaScript, dès
+ * l'étape a, pour l'adresse que le serveur propose quand personne ne l'a vue se remplir.
+ *
+ * ## En dernier, ce qui change l'organisation
+ *
+ * Un pas vient après tous les autres, parce qu'il change ce que les autres lisent : la session du
+ * vendredi est déplacée le même jour, sur « À venir », d'où un second onglet, ouvert avant, renvoie
+ * sa carte restée telle quelle.
  *
  * ## Les heures de prière attendues
  *
@@ -239,14 +249,18 @@ const PRIERES = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
 const VENDREDI = { debut: '12:30', fin: '13:15' };
 /** Une seconde session, ajoutée puis supprimée dans un navigateur sans JavaScript (retour B1). */
 const SECONDE_SESSION = { debut: '13:40', fin: '14:20' };
+/** La nouvelle heure de la session du vendredi, déplacée le même jour sur « À venir » (A2, B1). */
+const HEURE_DU_VENDREDI_DEPLACE = '13:00';
 /**
- * Les phrases lues à la lettre dans un écran corrigé depuis la relecture du lot 4 : ce que dit
+ * Les phrases lues à la lettre dans les écrans corrigés depuis la relecture du lot 4 : ce que dit
  * l'écran du vendredi après une suppression, et l'aide de « À partir du » dans la carte d'une
- * session (`friday.ts`).
+ * session (`friday.ts`) ; le refus d'une carte restée ouverte sur « À venir » (`upcoming.ts`).
  */
 const SESSION_SUPPRIMEE = 'La session est supprimée.';
 const AIDE_DE_LA_MODIFICATION =
 	'La session a lieu chaque vendredi à partir de cette date. Changez cette date seulement pour corriger une erreur.';
+const SEANCE_CHANGEE =
+	'Cette séance a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée. Rien n’a été enregistré. Le programme ci-dessous est à jour.';
 /**
  * Une description écrite en allemand, le titre allemand laissé vide (retour B4), et le refus qui
  * nomme la langue (`course-form.ts`).
@@ -1123,6 +1137,8 @@ const J3 = plusJours(T, 3);
 const J4 = plusJours(T, 4);
 const J5 = plusJours(T, 5);
 const J6 = plusJours(T, 6);
+/** Le vendredi des sept prochains jours, aujourd'hui compris : celui de la session du vendredi. */
+const VENDREDI_QUI_VIENT = plusJours(T, (5 - jourDeSemaine(T) + 7) % 7);
 
 const etat = {
 	cours1: '',
@@ -3036,29 +3052,56 @@ async function messagesDuPartage(page) {
 				),
 			lus.map((lu) => `lang="${lu.lang}" dir="${lu.dir}"`).join(', ') || 'aucune zone'
 		);
-		const fautifs = LANGUES.filter((langue) => {
-			const texte = lus.find((lu) => lu.lang === langue)?.texte ?? '';
-			return (
-				!texte.includes(PRIERE_DU_VENDREDI[langue]) ||
-				(langue !== 'fr' && texte.includes(PRIERE_DU_VENDREDI.fr))
-			);
-		});
+		const fautifs = sansLeNomDeLaPriere(lus);
 		verifier(
-			`la session du vendredi y porte le nom de la prière dans la langue du message : ${LANGUES.filter(
-				(langue) => langue !== 'fr'
-			)
-				.map((langue) => `« ${PRIERE_DU_VENDREDI[langue]} »`)
-				.join(', ')}`,
+			`la session du vendredi y porte le nom de la prière dans la langue du message : ${NOMS_TRADUITS}`,
 			lus.length > 0 && fautifs.length === 0,
-			fautifs
-				.map((langue) => {
-					const texte = lus.find((lu) => lu.lang === langue)?.texte ?? '';
-					const ligne = texte.split('\n').find((une) => une.includes(VENDREDI.debut));
-					return `${langue} : ${ligne?.trim() ?? `aucune ligne à ${VENDREDI.debut}`}`;
-				})
-				.join(' ; ')
+			lignesDuVendredi(lus, fautifs, VENDREDI.debut)
 		);
 	});
+}
+
+/** Les noms de la prière du vendredi hors du français, tels qu'une vérification les annonce. */
+const NOMS_TRADUITS = LANGUES.filter((langue) => langue !== 'fr')
+	.map((langue) => `« ${PRIERE_DU_VENDREDI[langue]} »`)
+	.join(', ');
+
+/**
+ * Les langues dont le message ne nomme pas la session du vendredi comme il le doit (D1) : chacun
+ * porte le nom de la prière dans sa langue, et, hors du français, jamais le nom français.
+ */
+function sansLeNomDeLaPriere(lus) {
+	return LANGUES.filter((langue) => {
+		const texte = lus.find((lu) => lu.lang === langue)?.texte ?? '';
+		return (
+			!texte.includes(PRIERE_DU_VENDREDI[langue]) ||
+			(langue !== 'fr' && texte.includes(PRIERE_DU_VENDREDI.fr))
+		);
+	});
+}
+
+/** Ce qu'on imprime pour ces langues : la ligne de chaque message qui porte l'heure de la session. */
+function lignesDuVendredi(lus, langues, heure) {
+	return langues
+		.map((langue) => {
+			const texte = lus.find((lu) => lu.lang === langue)?.texte ?? '';
+			const ligne = texte.split('\n').find((une) => une.includes(heure));
+			return `${langue} : ${ligne?.trim() ?? `aucune ligne à ${heure}`}`;
+		})
+		.join(' ; ');
+}
+
+/**
+ * Les messages prêts à coller d'« À venir », dans l'ordre : ceux du programme de la semaine
+ * (`semaine`), ou ceux de la dernière action (`message`), chacun avec sa langue.
+ */
+async function messagesDeLAccueil(page, prefixe) {
+	return page.locator(`details textarea[id^="${prefixe}-"]`).evaluateAll((zones) =>
+		zones.map((zone) => ({
+			lang: zone.getAttribute('lang') ?? '',
+			texte: /** @type {HTMLTextAreaElement} */ (zone).value
+		}))
+	);
 }
 
 /**
@@ -3862,6 +3905,116 @@ async function periodeCopiee(page) {
 	if ((await racineDit(page, 'lang')) !== 'fr') await choisirLaLangue(page, 'fr');
 }
 
+/**
+ * m. « À venir », la session du vendredi en place : le programme de la semaine la nomme dans la
+ * langue de chaque message (D1). Déplacée le même jour à une autre heure, sa carte d'arrivée dit
+ * « nouvelle heure » et l'heure prévue (A2), et le message dit un changement d'heure, la date une
+ * seule fois (B1), en nommant la prière dans chaque langue (D1). Un second onglet, ouvert avant ce
+ * déplacement, renvoie ensuite sa carte restée telle quelle : l'écran le refuse, et rien n'est
+ * écrit (A2).
+ */
+async function vendrediSurLAccueil(page) {
+	etape(
+		'm. « À venir » : la session du vendredi, ses messages, un changement d’heure, une carte restée ouverte'
+	);
+	const nom = PRIERE_DU_VENDREDI.fr;
+	const jour = VENDREDI_QUI_VIENT;
+	/** La carte de la session ce vendredi-là, selon ce qui lui est arrivé : `scheduled`, `moved_here`… */
+	const carte = (cible, statut) =>
+		cible
+			.locator('section', { has: cible.locator(`[id="jour-${jour}"]`) })
+			.locator(`li.${statut}`)
+			.filter({ hasText: nom });
+	await ouvrir(page, '/');
+	await retour('D1', async () => {
+		const semaine = await messagesDeLAccueil(page, 'semaine');
+		const fautifs = sansLeNomDeLaPriere(semaine);
+		verifier(
+			`sur « À venir », le programme de la semaine nomme la session du vendredi dans la langue de chaque message : ${NOMS_TRADUITS}`,
+			semaine.length === LANGUES.length && fautifs.length === 0,
+			lignesDuVendredi(semaine, fautifs, VENDREDI.debut) || `${semaine.length} message(s)`
+		);
+	});
+	// Le second onglet, ouvert avant le déplacement : sa carte reste celle d'une séance prévue.
+	const ouvertAvant = await page.context().newPage();
+	try {
+		await ouvrir(ouvertAvant, '/');
+		await retour('A2', async () => {
+			const prevue = carte(page, 'scheduled');
+			await prevue.getByText('Annuler ou déplacer', { exact: true }).click();
+			await prevue.getByLabel('Heure de début', { exact: true }).fill(HEURE_DU_VENDREDI_DEPLACE);
+			await envoyer(page, prevue.getByRole('button', { name: 'Déplacer la séance', exact: true }));
+			const arrivee = carte(page, 'moved_here');
+			const presente = (await arrivee.count()) === 1;
+			const marque = presente ? await texteDe(arrivee.locator('.marque')) : '';
+			const lue = presente ? await texteDe(arrivee) : `${await arrivee.count()} carte(s) d’arrivée`;
+			const prevueA = `Prévue à l’origine : ${VENDREDI.debut} – ${VENDREDI.fin}`;
+			verifier(
+				`déplacée le même jour de ${VENDREDI.debut} à ${HEURE_DU_VENDREDI_DEPLACE}, la session du vendredi porte sur sa carte « nouvelle heure » et « ${prevueA} »`,
+				marque === 'nouvelle heure' && lue.includes(prevueA),
+				lue
+			);
+			await retour('B1', async () => {
+				const messages = await messagesDeLAccueil(page, 'message');
+				const francais = messages[0]?.lang === 'fr' ? messages[0].texte : '';
+				const phrase = `Le cours « ${nom} » du ${dateLongue(jour)} commence à ${HEURE_DU_VENDREDI_DEPLACE} au lieu de ${VENDREDI.debut}.`;
+				verifier(
+					`le message prêt à coller le dit comme un changement d’heure, la date une seule fois : « ${phrase} »`,
+					francais.includes(phrase) &&
+						!francais.includes('est déplacé au') &&
+						francais.split(dateSuisse(jour)).length === 2,
+					francais.split('\n').find((ligne) => ligne.startsWith('Le cours')) ??
+						'aucun message en français'
+				);
+			});
+			await retour('D1', async () => {
+				const messages = await messagesDeLAccueil(page, 'message');
+				const fautifs = sansLeNomDeLaPriere(messages);
+				verifier(
+					`ce message nomme la session du vendredi dans la langue de chaque message : ${NOMS_TRADUITS}`,
+					messages.length === LANGUES.length && fautifs.length === 0,
+					lignesDuVendredi(messages, fautifs, HEURE_DU_VENDREDI_DEPLACE) ||
+						`${messages.length} message(s)`
+				);
+			});
+			// L'onglet ouvert avant renvoie sa carte, restée celle d'une séance prévue à son heure.
+			const perimee = carte(ouvertAvant, 'scheduled');
+			await perimee.getByText('Annuler ou déplacer', { exact: true }).click();
+			await envoyer(
+				ouvertAvant,
+				perimee.getByRole('button', { name: 'Déplacer la séance', exact: true })
+			);
+			const refus = ouvertAvant.getByRole('alert');
+			const phrase =
+				(await refus.count()) === 1 ? await texteDe(refus) : `${await refus.count()} alerte(s)`;
+			// En haut : avant le premier jour du programme, puisque la carte n'a plus d'options.
+			const enHaut =
+				(await refus.count()) === 1 &&
+				(await refus.evaluate((alerte) => {
+					const premierJour = document.querySelector('section[aria-labelledby^="jour-"]');
+					return Boolean(
+						premierJour &&
+						alerte.compareDocumentPosition(premierJour) & Node.DOCUMENT_POSITION_FOLLOWING
+					);
+				}));
+			const depart = carte(ouvertAvant, 'moved_away');
+			const departLu =
+				(await depart.count()) === 1 ? await texteDe(depart) : 'aucune carte de départ';
+			verifier(
+				`une carte restée ouverte dans un autre onglet, envoyée après ce déplacement, est refusée par une phrase en haut, et rien n’est écrit : la session reste à ${HEURE_DU_VENDREDI_DEPLACE}`,
+				phrase === SEANCE_CHANGEE &&
+					enHaut &&
+					(await ouvertAvant.locator('#message-titre').count()) === 0 &&
+					departLu.includes(`Déplacée au ${dateLongue(jour)} à ${HEURE_DU_VENDREDI_DEPLACE}`) &&
+					(await carte(ouvertAvant, 'moved_here').count()) === 1,
+				`« ${phrase} » ; ${departLu}`
+			);
+		});
+	} finally {
+		await ouvertAvant.close();
+	}
+}
+
 // ---------------------------------------------------------------------------------------------
 // Le déroulé
 // ---------------------------------------------------------------------------------------------
@@ -3906,6 +4059,7 @@ try {
 	await surUnTelephone(navigateur, page);
 	await sansJavaScript(navigateur, page);
 	await periodeCopiee(page);
+	await vendrediSurLAccueil(page);
 	await bilanDesEcrans();
 } catch (erreur) {
 	echoue = true;
