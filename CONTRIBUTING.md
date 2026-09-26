@@ -61,10 +61,16 @@ avant l'option : `vitest run src/x.test.ts -u`.
 ## Accord de contribution (CLA)
 
 Toute contribution externe demandera la signature d'un accord de contribution (CLA). La raison
-tient en deux points. Le dépôt est sous MIT, et l'auteur doit pouvoir proposer le service sous
-d'autres conditions à des organisations payantes pour financer le projet, qui reste gratuit. Et il
-doit pouvoir répondre d'un code dont il connaît la provenance. Le CLA lui donne ce droit sans
-retirer aux contributeurs la propriété de leur travail ni le caractère libre du code publié.
+tient en deux points. Le dépôt est sous MIT, sauf la liste des localités suisses, et l'auteur doit
+pouvoir proposer le service sous d'autres conditions à des organisations payantes pour financer le
+projet, qui reste gratuit. Et il doit pouvoir répondre d'un code dont il connaît la provenance. Le
+CLA lui donne ce droit sans retirer aux contributeurs la propriété de leur travail ni le caractère
+libre du code publié.
+
+La liste des localités suisses (`apps/web/src/lib/server/localites/localities.csv`) n'est pas sous
+MIT : elle reste soumise aux conditions d'utilisation des données gratuites de swisstopo, qui
+demandent d'en citer la source, même quand on transmet le fichier. La section « Licence et droits
+d'auteur » du [`README.md`](README.md) le dit en détail.
 
 Les modalités précises (texte du CLA, outil de signature) seront fixées avant la première
 contribution externe.
