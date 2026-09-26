@@ -882,9 +882,11 @@ describe('copier une période pour l’année suivante (retour D2)', () => {
 			)
 		);
 		expect(copies.map((copie) => copie.name)).toEqual([COPIE[langue]]);
-		const lu = visibleText(await (await get('/prieres?source=manual')).text());
-		expect(lu).toContain(COPIE[langue]);
-		expect(lu.includes('(année suivante)')).toBe(langue === 'fr');
+		// L'écran la montre sous ce nom. (Les copies faites dans les autres langues restent, elles,
+		// sous le leur : un nom est une donnée, il ne se traduit pas après coup.)
+		expect(visibleText(await (await get('/prieres?source=manual')).text())).toContain(
+			COPIE[langue]
+		);
 	});
 });
 
