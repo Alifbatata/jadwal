@@ -175,6 +175,13 @@ function libelle(html: string, pour: string): string {
 	return texteDe(element(html, new RegExp(`<label\\b[^>]*for="${pour}"`), 'label'));
 }
 
+/** La valeur d'un champ de texte, par son identifiant, telle que la page la rend. */
+function valeurDuChamp(html: string, id: string): string | undefined {
+	const champ = html.match(new RegExp(`<input\\b[^>]*\\bid="${id}"[^>]*>`))?.[0] ?? '';
+	const valeur = champ.match(/\bvalue="([^"]*)"/)?.[1];
+	return valeur?.replaceAll('&quot;', '"').replaceAll('&amp;', '&');
+}
+
 /** Le message d'erreur que la page annonce, s'il y en a un. */
 function erreur(html: string): string {
 	return texteDe(element(html, /<p\b[^>]*role="alert"/, 'p'));
@@ -459,6 +466,29 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 		});
 
 		it.each([
+			['Mosquée-Voisine', 'une adresse refusée'],
+			[EXISTANTE_ADRESSE, 'une adresse déjà prise']
+		])(
+			'gives back the name, the address and the time zone typed after an error (%s, %s)',
+			async (adresse) => {
+				const reponse = await postForm(
+					'/super-admin?/ouvrir',
+					{ name: 'Association d’à côté', slug: adresse, timeZone: 'Europe/Berlin' },
+					avecPouvoirs
+				);
+				expect(reponse.status).toBe(400);
+				const html = await reponse.text();
+				expect(erreur(html)).not.toBe('');
+				// Rien n'est à écrire une seconde fois : ni le nom, ni l'adresse, ni le fuseau choisi.
+				expect(valeurDuChamp(html, 'name')).toBe('Association d’à côté');
+				expect(valeurDuChamp(html, 'slug')).toBe(adresse);
+				expect(fuseaux(html).filter((option) => option.choisi)).toEqual([
+					{ valeur: 'Europe/Berlin', groupe: 'Europe', choisi: true }
+				]);
+			}
+		);
+
+		it.each([
 			['Europe/Amsterdam', 'un alias, qui pointe vers le fuseau d’un autre pays'],
 			['Europe/Nulle-Part', 'un nom inventé'],
 			['', 'rien']
@@ -591,9 +621,9 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 					// un premier échec.
 					const reponse = await postForm(chemin, champs, avecPouvoirs);
 					expect.soft(reponse.status, `${chemin} « ${identifiant} »`).toBe(404);
-					expect.soft(erreur(await reponse.text()), `${chemin} « ${identifiant} »`).toBe(
-						'Cette organisation n’existe pas, ou plus.'
-					);
+					expect
+						.soft(erreur(await reponse.text()), `${chemin} « ${identifiant} »`)
+						.toBe('Cette organisation n’existe pas, ou plus.');
 				}
 			}
 		});
@@ -688,6 +718,46 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 				for (const langue of LANGUES.slice(1)) {
 					expect(parLangue[langue], `${nom} ${langue}`).toBeTruthy();
 					expect(parLangue[langue], `${nom} ${langue}`).not.toBe(parLangue.fr);
+				}
+			}
+		});
+
+		it('confirms each success in each language, with no French left', async () => {
+			/** Le bloc qui confirme une création, un plan, un état ou un lien de secours. */
+			const confirmation = (html: string) =>
+				texteDe(
+					element(html, /<section\b[^>]*class="(?:succes|secours)[\s"]/, 'section') ||
+						element(html, /<p\b[^>]*class="succes[\s"]/, 'p')
+				);
+			const pages: Record<string, Partial<Record<Langue, string>>> = {};
+			for (const langue of LANGUES) {
+				await langueDuCompte(langue);
+				const cas = {
+					creation: [
+						'/super-admin?/ouvrir',
+						{ name: `Centre ${langue}`, slug: `centre-succes-${langue}`, timeZone: 'Europe/Zurich' }
+					],
+					plan: ['/super-admin?/plan', { organizationId: existanteId, plan: 'free' }],
+					etat: ['/super-admin?/statut', { organizationId: existanteId, status: 'active' }],
+					secours: ['/super-admin?/lienSecours', { email: `sa-succes-${langue}@example.test` }]
+				} as const;
+				for (const [nom, [chemin, champs]] of Object.entries(cas)) {
+					const reponse = await postForm(chemin, champs, avecPouvoirs);
+					expect(reponse.status, `${nom} ${langue}`).toBe(200);
+					(pages[nom] ??= {})[langue] = await reponse.text();
+				}
+			}
+			for (const [nom, parLangue] of Object.entries(pages)) {
+				const francais = parLangue.fr ?? '';
+				expect(confirmation(francais), nom).not.toBe('');
+				for (const langue of LANGUES.slice(1)) {
+					const html = parLangue[langue] ?? '';
+					expect(baliseHtml(html), `${nom} ${langue}`).toBe(
+						`<html lang="${langue}" dir="${SENS[langue]}">`
+					);
+					expect(confirmation(html), `${nom} ${langue}`).not.toBe('');
+					// `expect.soft` : chaque geste et chaque langue disent ce qui y reste de français.
+					expect.soft(frenchLeft(francais, html, permis(francais)), `${nom} ${langue}`).toEqual([]);
 				}
 			}
 		});
