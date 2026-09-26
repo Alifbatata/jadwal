@@ -72,6 +72,13 @@ let pendingInvitation: string;
 let spareRoom: string;
 /** La période d'horaires de A. */
 let period: string;
+/**
+ * Une organisation dont toutes les invitations sont en attente, et qui n'a pas encore de réglages
+ * des prières : le décor des gestes qui éprouvent une politique d'écriture seule.
+ */
+let c: Organisation;
+/** L'éditrice de C, entrée sans invitation : aucune invitation ne porte son adresse. */
+let quiet: { id: string; email: string };
 
 /** Un compte sans organisation, créé par le propriétaire. */
 async function account(label: string): Promise<{ id: string; email: string }> {
@@ -86,14 +93,21 @@ async function account(label: string): Promise<{ id: string; email: string }> {
 const inA = (userId: string): Context => ({ organizationId: a.id, userId });
 
 /**
- * Joue une instruction dans le contexte donné, puis annule tout : chaque cas part du même décor.
- * Les écritures portent `returning`, pour que le nombre de lignes touchées se lise.
+ * Le nombre de lignes qu'une instruction a touchées, ou qu'une lecture a rendues : celui que le
+ * pilote relève de la réponse du serveur. Une écriture sans `returning` le donne aussi, et c'est ce
+ * qui permet d'éprouver une politique d'écriture sans que celle de lecture s'en mêle.
  */
+function touched(result: unknown): number {
+	const count = (result as { count?: unknown }).count;
+	return typeof count === 'number' ? count : allRows(result).length;
+}
+
+/** Joue une instruction dans le contexte donné, puis annule tout : chaque cas part du même décor. */
 async function attempt(db: Database, context: Context | string, statement: SQL): Promise<Outcome> {
 	let rows = 0;
 	const message = await messageOfFailure(() =>
 		withOrg(db, context, async (tx) => {
-			rows = allRows(await tx.execute(statement)).length;
+			rows = touched(await tx.execute(statement));
 			throw new Error(ROLLED_BACK);
 		})
 	);
@@ -140,6 +154,20 @@ beforeAll(async () => {
 		select "id" from "invitation" where "organization_id" = ${a.id} and "status" = 'pending'
 	`);
 	period = await lookup(sql`select "id" from "prayer_period" where "organization_id" = ${a.id}`);
+	// C garde la seule invitation que `seedOrganisation` pose, en attente. Son éditrice entre par le
+	// propriétaire et non par une invitation : une invitation consommée ne change plus de statut
+	// (migration 0058), et une instruction sans WHERE qui la toucherait lèverait pour cette raison,
+	// pas pour celle qu'on éprouve. Les réglages des prières de C sont retirés : sa première
+	// insertion est une vraie insertion.
+	c = await seedOrganisation(owner, 'roles-c');
+	quiet = await account('editrice-roles-c');
+	await withMaintenance(owner, async (tx) => {
+		await tx.execute(sql`
+			insert into "membership" ("id", "organization_id", "user_id", "role")
+			values (${newId()}, ${c.id}, ${quiet.id}, 'editor')
+		`);
+		await tx.execute(sql`delete from "prayer_settings" where "organization_id" = ${c.id}`);
+	});
 });
 
 afterAll(async () => {
@@ -431,9 +459,83 @@ describe('les gestes réservés : l’éditrice est refusée, la personne respon
 	});
 });
 
+/**
+ * Une modification ou une suppression qui nomme une colonne, dans son WHERE ou son `returning`,
+ * passe aussi par la politique de lecture. L'éditrice ne lit pas les invitations de son
+ * organisation : elle ne touchait donc rien dans les gestes ci-dessus, même si la politique
+ * d'écriture l'avait laissée faire, et c'est la lecture qui répondait à sa place. Une instruction
+ * qui ne nomme aucune colonne atteint tout ce que la politique d'écriture permet, et rien d'autre :
+ * c'est elle qu'on éprouve ici, dans C.
+ *
+ * Même chose pour les réglages des prières : quand la ligne existe, « ajouter ou modifier » devient
+ * une modification, et c'est la politique de modification qui répond. C n'a pas encore de
+ * réglages : la première fois que l'écran les enregistre, c'est une insertion.
+ */
+const WRITE_ONLY_GESTURES: Gesture[] = [
+	{
+		name: 'aucun écran, sans WHERE : clore toutes les invitations de l’organisation (invitation, update)',
+		statement: () => sql`update "invitation" set "status" = 'cancelled', "resolved_at" = now()`,
+		admin: 1
+	},
+	{
+		name: 'aucun écran, sans WHERE : supprimer toutes les invitations de l’organisation (invitation, delete)',
+		statement: () => sql`delete from "invitation"`,
+		admin: 1
+	},
+	{
+		name: '/prieres ?/enregistrer, la première fois : créer les réglages des prières (prayer_settings, insert)',
+		statement: () => sql`
+			insert into "prayer_settings" ("organization_id", "latitude", "longitude")
+			values (${c.id}, 46.2, 6.1)
+			on conflict ("organization_id") do update set "latitude" = 46.2, "longitude" = 6.1
+		`,
+		admin: 1
+	}
+];
+
+describe('les politiques d’écriture elles-mêmes, sans que la lecture réponde à leur place', () => {
+	const inC = (userId: string): Context => ({ organizationId: c.id, userId });
+
+	it.each(WRITE_ONLY_GESTURES.map((gesture) => [gesture.name, gesture] as const))(
+		'%s',
+		async (_, gesture) => {
+			const asEditor = await attempt(app, inC(quiet.id), gesture.statement());
+			if ('refused' in asEditor) expect(asEditor.refused).toMatch(NO_POLICY);
+			else expect(asEditor).toEqual({ rows: 0 });
+
+			expect(await attempt(app, inC(c.userId), gesture.statement())).toEqual({
+				rows: gesture.admin
+			});
+			expect(await attempt(superAdmin, c.id, gesture.statement())).toEqual({
+				rows: gesture.admin
+			});
+		}
+	);
+
+	it('starts from what the three gestures need: one pending invitation, no prayer settings', async () => {
+		// Sans ce décor, les trois gestes ci-dessus ne toucheraient rien, pour personne, et
+		// l'éditrice passerait pour refusée alors qu'il n'y avait rien à toucher.
+		const state = firstRow<{ pending: number; others: number; settings: number }>(
+			await withMaintenance(owner, (tx) =>
+				tx.execute(sql`
+					select
+						(select count(*)::int from "invitation"
+							where "organization_id" = ${c.id} and "status" = 'pending') as pending,
+						(select count(*)::int from "invitation"
+							where "organization_id" = ${c.id} and "status" <> 'pending') as others,
+						(select count(*)::int from "prayer_settings"
+							where "organization_id" = ${c.id}) as settings
+				`)
+			)
+		);
+		expect(state).toEqual({ pending: 1, others: 0, settings: 0 });
+		expect(await isOrgAdmin(inC(quiet.id))).toBe(false);
+	});
+});
+
 describe('ce que ni l’éditeur ni la personne responsable ne font : le plan, l’état, l’adresse', () => {
 	it('leaves the plan, the state and the web address to the super-admin', async () => {
-		// L'écran des réglages n'écrit que sept colonnes. Le plan, l'état et l'identifiant d'URL
+		// L'écran des réglages n'écrit que huit colonnes. Le plan, l'état et l'identifiant d'URL
 		// relèvent du super-admin (ADR 0025) : un appel direct les écrivait sous le rôle applicatif.
 		const writes: [string, SQL][] = [
 			[
