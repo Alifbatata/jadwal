@@ -62,7 +62,8 @@
  *   de swisstopo, et les heures qu'elle donne : celles que `@jadwal/core` calcule pour la position
  *   de la liste, sur l'écran, sur la page publique et dans le flux. Avec JavaScript, « Hors de
  *   Suisse » et « Méthode de calcul, école et ajustements » restent ouverts pendant qu'on tape, une
- *   touche à la fois.
+ *   touche à la fois. Sans JavaScript, une position hors de Suisse s'enregistre à la place de la
+ *   localité, puis la localité revient.
  * - C3 : un cours « avant une prière », des minutes positives à l'écran.
  * - C4 : l'onglet « Prières » de la page publique et du widget, et axe à 390 px de large.
  * - D1 : la page publique, le widget, le flux et une page d'erreur en anglais, sans texte français ;
@@ -119,7 +120,9 @@
  * axe sur l'écran des prières et sur l'onglet « Prières » du public, dont les tableaux défilent de
  * côté à cette largeur, et la confirmation d'une salle occupée, qui doit se voir sans défiler.
  * L'autre dans un navigateur sans JavaScript, avec la session de la personne responsable : l'espace
- * doit marcher sans script. Le super-admin passe aussi par un navigateur sans JavaScript, dès
+ * doit marcher sans script. Une position hors de Suisse y remplace la localité de Bienne, qui est
+ * enregistrée de nouveau avant la suite : les heures de prière redeviennent celles de l'étape g. Le
+ * super-admin passe aussi par un navigateur sans JavaScript, dès
  * l'étape a, pour l'adresse que le serveur propose quand personne ne l'a vue se remplir.
  *
  * ## En dernier, ce qui change l'organisation
@@ -255,6 +258,12 @@ const REPLIS_DES_PRIERES = {
 	methode: 'Méthode de calcul, école et ajustements (facultatif)'
 };
 const POSITION_HORS_DE_SUISSE = { latitude: '48.8566', longitude: '2.3522' };
+/**
+ * Sans JavaScript (retour C2) : la dernière case de la liste des localités, qui choisit la position
+ * tapée sous « Hors de Suisse », et ce que l'écran dit une fois cette position enregistrée.
+ */
+const CHOIX_HORS_DE_SUISSE = 'Hors de Suisse : utiliser la position donnée plus bas';
+const POSITION_DONNEE = 'Vos heures sont calculées pour la position que vous avez donnée.';
 /** La liste des localités que le serveur embarque, lue dans le dépôt. */
 const LISTE_DES_LOCALITES = join(
 	racine,
@@ -3037,15 +3046,16 @@ const radioDeLaLocalite = (page) =>
 
 /**
  * Les réglages du calcul que l'écran des prières vient d'enregistrer, lus dans ses champs par leur
- * `id`, avec la position que la liste donne à la localité et le fuseau de l'organisation.
+ * `id`, avec la position donnée, par défaut celle que la liste donne à la localité, et le fuseau de
+ * l'organisation.
  */
-async function reglageEnregistre(page) {
+async function reglageEnregistre(page, position = positionDeLaListe()) {
 	const valeur = (id) => page.locator(`#${id}`).inputValue();
 	/** @type {Record<string, number>} */
 	const ajustements = {};
 	for (const priere of PRIERES) ajustements[priere] = Number(await valeur(`${priere}Adjustment`));
 	return {
-		...positionDeLaListe(),
+		...position,
 		timeZone: FUSEAU,
 		method: await valeur('method'),
 		madhab: await valeur('madhab'),
@@ -3967,7 +3977,8 @@ async function surUnTelephone(navigateur, page) {
 /**
  * k. Sans JavaScript, avec la session de la personne responsable : les options d'une séance restent
  * fermées et s'ouvrent (A1) ; une session du vendredi s'ajoute et se supprime, et l'écran le dit
- * (B1).
+ * (B1) ; une position hors de Suisse remplace la localité enregistrée, puis la localité revient
+ * (C2).
  */
 async function sansJavaScript(navigateur, page) {
 	etape('k. Sans JavaScript');
@@ -4037,9 +4048,84 @@ async function sansJavaScript(navigateur, page) {
 				`${avant} carte avant, ${await carte().count()} après ; ${annonces.map((texte) => `« ${texte} »`).join(', ') || 'aucun message'}`
 			);
 		});
+		await horsDeSuisseSansScript(sans);
 	} finally {
 		await contexte.close();
 	}
+}
+
+/**
+ * Sans JavaScript, la localité de Bienne enregistrée (C2) : la case « Hors de Suisse » de la liste,
+ * puis une position tapée sous le repli du même nom, s'enregistrent à la place de la localité, et
+ * les heures servies sont celles que le calcul donne pour cette position. Ensuite, la localité est
+ * cherchée, cochée et enregistrée de nouveau : l'écran la nomme, et les heures redeviennent celles
+ * que le calcul donne pour sa position dans la liste. Les heures attendues sont calculées pour les
+ * jours que le tableau montre.
+ */
+async function horsDeSuisseSansScript(sans) {
+	const enregistrer = () =>
+		envoyer(sans, sans.getByRole('button', { name: 'Enregistrer', exact: true }));
+	const confirmation = async () =>
+		(await sans.getByRole('status').count()) > 0
+			? texteDe(sans.getByRole('status'))
+			: 'aucune confirmation';
+	const etatLu = () => texteDe(sans.locator('section', { has: sans.locator('#etat-titre') }));
+	/** Les jours servis, et leurs écarts au calcul pour cette position, avec les réglages de l'écran. */
+	const servies = async (position) => {
+		const jours = await heuresDuTableau(
+			sans.locator('section', { has: sans.locator('#servies-titre') }).locator('tbody tr'),
+			'.soleil'
+		);
+		const calculees = heuresCalculees(
+			jours.map((jour) => jour.date).filter(Boolean),
+			await reglageEnregistre(sans, position)
+		);
+		return { jours, ecarts: ecartsAuCalcul(jours, calculees) };
+	};
+	const localiteNommee = `Vos heures sont calculées pour cette localité : ${LOCALITE.libelle}`;
+	await retour('C2', async () => {
+		await ouvrir(sans, '/prieres?source=computed');
+		// La case manque aux écrans d'avant sa correction : on tape alors la position sans elle.
+		const caseHors = sans.getByRole('radio', { name: CHOIX_HORS_DE_SUISSE, exact: true });
+		const caseOfferte = (await caseHors.count()) === 1;
+		if (caseOfferte) await caseHors.check();
+		await repliNomme(sans, REPLIS_DES_PRIERES.horsDeSuisse).locator(':scope > summary').click();
+		await sans.locator('#latitude').fill(POSITION_HORS_DE_SUISSE.latitude);
+		await sans.locator('#longitude').fill(POSITION_HORS_DE_SUISSE.longitude);
+		await enregistrer();
+		const dite = await confirmation();
+		const ailleurs = await etatLu();
+		const { jours: lues, ecarts } = await servies({
+			latitude: Number(POSITION_HORS_DE_SUISSE.latitude),
+			longitude: Number(POSITION_HORS_DE_SUISSE.longitude)
+		});
+		verifierChaque(
+			`sans JavaScript, ${LOCALITE.nom} enregistrée, la case « Hors de Suisse » et la position ${POSITION_HORS_DE_SUISSE.latitude}, ${POSITION_HORS_DE_SUISSE.longitude} tapée dessous s’enregistrent : l’écran le dit, et les heures servies sont celles de cette position`,
+			{
+				'la case « Hors de Suisse » dans la liste': caseOfferte,
+				'« Réglages enregistrés. »': dite.startsWith('Réglages enregistrés.'),
+				'l’écran dit la position donnée': ailleurs.includes(POSITION_DONNEE),
+				'les heures de cette position': lues.length === 7 && ecarts.length === 0
+			},
+			`« ${dite} » ; ${ailleurs.slice(0, 120)} ; ${ecarts.slice(0, 1).join('') || `${lues.length} jour(s) servis`}`
+		);
+
+		await sans.getByLabel('Nom ou NPA de la localité', { exact: true }).fill(LOCALITE.nom);
+		await envoyer(sans, sans.getByRole('button', { name: 'Chercher', exact: true }));
+		await radioDeLaLocalite(sans).check();
+		await enregistrer();
+		const revenue = await etatLu();
+		const { jours: luesApres, ecarts: ecartsApres } = await servies(positionDeLaListe());
+		verifierChaque(
+			`sans JavaScript, de cette position, ${LOCALITE.nom} se cherche, se coche et s’enregistre de nouveau : l’écran nomme la localité, et les heures redeviennent les siennes`,
+			{
+				'la position hors de Suisse était enregistrée': ailleurs.includes(POSITION_DONNEE),
+				'l’écran nomme la localité': revenue.includes(localiteNommee),
+				'les heures de la localité': luesApres.length === 7 && ecartsApres.length === 0
+			},
+			`« ${await confirmation()} » ; ${revenue.slice(0, 120)} ; ${ecartsApres.slice(0, 1).join('') || `${luesApres.length} jour(s) servis`}`
+		);
+	});
 }
 
 /**
