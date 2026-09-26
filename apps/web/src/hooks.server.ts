@@ -10,7 +10,14 @@ import { building } from '$app/environment';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { error, type Handle, type RequestEvent } from '@sveltejs/kit';
 import { documentDansSaLangue, type Langue } from '$lib/i18n.js';
-import { LANGUAGE_COOKIE, LANGUAGE_PARAMETER, spaceLanguage } from '$lib/i18n/language.js';
+import {
+	LANGUAGE_COOKIE,
+	LANGUAGE_PARAMETER,
+	languageCookieOptions,
+	languageForTheAccount,
+	PENDING_CHOICE_COOKIE,
+	spaceLanguage
+} from '$lib/i18n/language.js';
 import { writeAccountLanguage } from '$lib/server/account-language.js';
 import { auth } from '$lib/server/auth.js';
 import { passkeyCount, recordAdminAccess, signedIn } from '$lib/server/context.js';
@@ -103,22 +110,36 @@ async function guardPasskeyRoutes(event: Parameters<Handle>[0]['event']): Promis
  * page ; sinon celle du compte de la personne connectée ; sinon celle retenue sur ce navigateur par
  * le choix de la langue ; sinon la meilleure que le navigateur demande ; sinon le français.
  *
- * Une personne connectée dont le compte n'a encore aucune langue reçoit celle qu'elle voyait avant
- * de se connecter : son choix sur ce navigateur, sinon celle du navigateur. C'est écrit une fois, à
- * sa première requête connectée, pour que ses courriels et ses prochaines visites, depuis n'importe
- * quel appareil, gardent la langue dans laquelle elle a découvert le service. Une écriture qui
- * échoue ne fait pas échouer la page : la langue n'est qu'une préférence, et elle sera retentée.
+ * À sa première requête connectée, le compte reçoit la langue que la personne voyait
+ * (`languageForTheAccount`) : le choix qu'elle a fait avant de se connecter, même si le compte avait
+ * déjà une langue ; sinon, pour un compte qui n'en a aucune, celle du navigateur. Ses courriels et
+ * ses prochaines visites, depuis n'importe quel appareil, la gardent. Ensuite, le compte fait foi.
+ *
+ * Le choix d'avant la connexion se reconnaît à son cookie d'attente, qui est retiré une fois le
+ * choix écrit sur le compte : un navigateur ne le donne qu'une fois. Une écriture qui échoue ne fait
+ * pas échouer la page, et le cookie d'attente reste : la langue n'est qu'une préférence, et elle sera
+ * retentée à la requête suivante. SvelteKit n'ajoute les cookies qu'aux réponses qu'il rend : une
+ * réponse de Better Auth (`/api/auth/`) ne porte donc pas le retrait, et c'est l'écran suivant qui le
+ * fait. Après un lien de connexion, cet écran est celui vers lequel le lien renvoie.
  */
 async function languageOfTheSpace(event: RequestEvent): Promise<Langue> {
 	const person = event.locals.person;
 	const cookie = event.cookies.get(LANGUAGE_COOKIE);
 	const browser = event.request.headers.get('accept-language');
-	if (person && person.language === null) {
-		const seen = spaceLanguage({ cookie, browser });
-		try {
-			if (await writeAccountLanguage(person.userId, seen)) person.language = seen;
-		} catch (erreur) {
-			console.error('langue du compte :', erreur);
+	if (person) {
+		const pending = event.cookies.get(PENDING_CHOICE_COOKIE) !== undefined;
+		const toWrite = languageForTheAccount({ account: person.language, cookie, pending, browser });
+		let given = toWrite === null;
+		if (toWrite !== null) {
+			try {
+				given = await writeAccountLanguage(person.userId, toWrite);
+				if (given) person.language = toWrite;
+			} catch (erreur) {
+				console.error('langue du compte :', erreur);
+			}
+		}
+		if (pending && given) {
+			event.cookies.delete(PENDING_CHOICE_COOKIE, languageCookieOptions(event.url));
 		}
 	}
 	return spaceLanguage({

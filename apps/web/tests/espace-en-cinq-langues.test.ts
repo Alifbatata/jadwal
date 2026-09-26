@@ -154,6 +154,13 @@ function cookieDeLangue(reponse: Response): string | undefined {
 	return (reponse.headers.getSetCookie?.() ?? []).find((valeur) => valeur.startsWith(`${COOKIE}=`));
 }
 
+/** Le cookie qui dit qu'un choix fait avant la connexion attend d'être donné au compte. */
+function cookieEnAttente(reponse: Response): string | undefined {
+	return (reponse.headers.getSetCookie?.() ?? []).find((valeur) =>
+		valeur.startsWith(`${COOKIE}_pending=`)
+	);
+}
+
 /**
  * Se connecte comme une personne le ferait depuis ce navigateur : le lien est demandé et suivi avec
  * le même cookie de langue, s'il y en a un. Rend les cookies à renvoyer ensuite, session comprise.
@@ -266,6 +273,7 @@ describe('la langue du premier passage', () => {
 			expect(titre(html)).toBe(`${attendu} | jadwal`);
 			// Le premier passage ne pose aucun cookie : seul un choix fait en pose un.
 			expect(cookieDeLangue(reponse)).toBeUndefined();
+			expect(cookieEnAttente(reponse)).toBeUndefined();
 		}
 	);
 });
@@ -309,6 +317,14 @@ describe('le choix de la langue', () => {
 		expect(pose).toMatch(/; HttpOnly/i);
 		expect(pose).toMatch(/; SameSite=Lax/i);
 		expect(pose).toMatch(/; Max-Age=31536000/);
+		// Fait avant la connexion, le choix attend d'être donné au compte : un second cookie le dit,
+		// posé de la même façon, sans rien porter d'autre que sa présence.
+		const enAttente = cookieEnAttente(reponse) ?? '';
+		expect(enAttente).toMatch(/^jadwal_language_pending=1;/);
+		expect(enAttente).toMatch(/; Path=\//);
+		expect(enAttente).toMatch(/; HttpOnly/i);
+		expect(enAttente).toMatch(/; SameSite=Lax/i);
+		expect(enAttente).toMatch(/; Max-Age=31536000/);
 
 		const page = await get('/connexion', { cookie: `${COOKIE}=it`, navigateur: 'de-CH,de' });
 		const html = await page.text();
@@ -321,6 +337,7 @@ describe('le choix de la langue', () => {
 		expect(inconnue.status).toBe(303);
 		expect(inconnue.headers.get('location')).toBe('/conditions');
 		expect(cookieDeLangue(inconnue)).toBeUndefined();
+		expect(cookieEnAttente(inconnue)).toBeUndefined();
 
 		for (const ailleurs of ['https://ailleurs.example/', '//ailleurs.example/', '/\\ailleurs']) {
 			const reponse = await postForm('/langue', { language: 'de', returnTo: ailleurs });
@@ -340,6 +357,7 @@ describe('le choix de la langue', () => {
 		);
 		expect(reponse.status).toBe(403);
 		expect(cookieDeLangue(reponse)).toBeUndefined();
+		expect(cookieEnAttente(reponse)).toBeUndefined();
 	});
 });
 
@@ -379,8 +397,10 @@ describe('la langue du compte', () => {
 		expect(choix.status).toBe(303);
 		expect(choix.headers.get('location')).toBe('/organisations');
 		expect(await langueDuCompte(PAR_LE_COOKIE)).toBe('ar');
-		// Le cookie suit, pour que l'écran de connexion garde la langue après la déconnexion.
+		// Le cookie suit, pour que l'écran de connexion garde la langue après la déconnexion. Le compte
+		// a déjà le choix : rien n'attend d'y être donné.
 		expect(cookieDeLangue(choix)).toMatch(/^jadwal_language=ar;/);
+		expect(cookieEnAttente(choix)).toBeUndefined();
 
 		// L'ancien cookie du navigateur, resté à l'anglais, ne l'emporte pas sur le compte.
 		const page = await get('/organisations', { cookie: `${sessionSeule(cookies)}; ${COOKIE}=it` });

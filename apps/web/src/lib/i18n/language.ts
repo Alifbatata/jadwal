@@ -14,8 +14,40 @@ import { isLangue, type Langue } from '../i18n.js';
  */
 export const LANGUAGE_COOKIE = 'jadwal_language';
 
+/**
+ * Le cookie qui dit qu'un choix fait avant la connexion attend d'être donné au compte. Il est posé
+ * avec le choix, par une personne qui n'est pas connectée, et retiré dès que ce choix est devenu la
+ * langue du compte : à la connexion. Il ne porte rien d'autre que sa présence.
+ *
+ * Sans lui, le serveur ne saurait pas distinguer deux navigateurs qui envoient la même chose : celui
+ * où la personne vient de choisir l'allemand avant de se connecter, et celui où l'allemand est resté
+ * d'un choix ancien, alors que le compte a changé depuis sur un autre appareil.
+ */
+export const PENDING_CHOICE_COOKIE = 'jadwal_language_pending';
+
 /** Un an, en secondes : le choix se garde d'une visite à l'autre. */
 export const LANGUAGE_COOKIE_SECONDS = 31_536_000;
+
+/**
+ * Les attributs des deux cookies, les mêmes pour les poser et pour les retirer : lisibles du seul
+ * serveur, envoyés par les formulaires du service, `Secure` dès que le service est servi en HTTPS,
+ * comme la session (`auth.ts`).
+ */
+export function languageCookieOptions(url: URL): {
+	path: '/';
+	httpOnly: true;
+	sameSite: 'lax';
+	secure: boolean;
+	maxAge: number;
+} {
+	return {
+		path: '/',
+		httpOnly: true,
+		sameSite: 'lax',
+		secure: url.protocol === 'https:',
+		maxAge: LANGUAGE_COOKIE_SECONDS
+	};
+}
 
 /**
  * Le paramètre d'adresse qui demande une langue pour une seule page, sans rien retenir : le lien des
@@ -73,6 +105,35 @@ export function spaceLanguage(sources: LanguageSources): Langue {
 	if (account) return account;
 	if (cookie && isLangue(cookie)) return cookie;
 	return browserLanguage(browser) ?? 'fr';
+}
+
+/** Ce que la requête d'une personne connectée dit de la langue à retenir pour son compte. */
+export interface AccountSources {
+	/** La langue du compte, ou `null` s'il n'en a encore aucune. */
+	account: Langue | null;
+	/** La valeur du cookie du choix, telle que le navigateur l'envoie. */
+	cookie?: string | null | undefined;
+	/** Le choix du cookie a été fait avant la connexion, et n'a pas encore été donné au compte. */
+	pending?: boolean | undefined;
+	/** L'en-tête `Accept-Language`. */
+	browser?: string | null | undefined;
+}
+
+/**
+ * La langue à écrire sur le compte d'une personne connectée, ou `null` s'il n'y a rien à écrire.
+ *
+ * - Un choix fait avant la connexion devient la langue du compte, même si le compte en avait une :
+ *   c'est la dernière chose que la personne a dite, sur l'écran même de la connexion.
+ * - Un compte sans langue reçoit celle que la personne voyait : son choix sur ce navigateur, sinon
+ *   celle du navigateur, sinon le français.
+ * - Ensuite, le compte fait foi : un cookie resté sur un navigateur ne le change pas, puisque la
+ *   personne a pu changer de langue depuis, sur un autre appareil.
+ */
+export function languageForTheAccount(sources: AccountSources): Langue | null {
+	const { account, cookie, pending, browser } = sources;
+	if (pending && cookie && isLangue(cookie)) return cookie === account ? null : cookie;
+	if (account === null) return spaceLanguage({ cookie, browser });
+	return null;
 }
 
 /** Un chemin du service qu'un navigateur ne peut pas lire comme une autre origine. */

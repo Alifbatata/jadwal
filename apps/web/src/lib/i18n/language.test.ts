@@ -1,12 +1,20 @@
 // La langue de l'espace des responsables : d'où elle vient, dans quel ordre, et où revient le choix
 // de la langue une fois fait (étape 18, retour D2).
 //
-// Pur, sans serveur : le hook et la route du choix ne font que lire la requête et appeler ces trois
+// Pur, sans serveur : le hook et la route du choix ne font que lire la requête et appeler ces
 // fonctions. Le parcours complet, cookie et compte compris, est éprouvé par HTTP dans
-// `tests/espace-en-cinq-langues.test.ts`.
+// `tests/espace-en-cinq-langues.test.ts` et `tests/choix-de-la-langue.test.ts`.
 
 import { describe, expect, it } from 'vitest';
-import { browserLanguage, LANGUAGE_COOKIE, returnPath, spaceLanguage } from './language.js';
+import {
+	browserLanguage,
+	LANGUAGE_COOKIE,
+	languageCookieOptions,
+	languageForTheAccount,
+	PENDING_CHOICE_COOKIE,
+	returnPath,
+	spaceLanguage
+} from './language.js';
 
 describe('la langue du navigateur', () => {
 	it.each([
@@ -66,6 +74,58 @@ describe('la langue de l’espace, source par source', () => {
 
 	it('names its cookie after the service', () => {
 		expect(LANGUAGE_COOKIE).toBe('jadwal_language');
+	});
+});
+
+describe('la langue du compte, à la connexion', () => {
+	it('takes the choice made before signing in, over a language the account already has', () => {
+		expect(
+			languageForTheAccount({ account: 'fr', cookie: 'de', pending: true, browser: 'it' })
+		).toBe('de');
+	});
+
+	it('keeps the account afterwards: a language kept on this browser does not change it', () => {
+		// Le cookie reste après la connexion, pour l'écran de connexion d'après la déconnexion ; il ne
+		// défait pas une langue changée depuis, sur un autre appareil.
+		expect(
+			languageForTheAccount({ account: 'it', cookie: 'de', pending: false, browser: 'ar' })
+		).toBeNull();
+	});
+
+	it('writes nothing when the choice is already the language of the account', () => {
+		expect(languageForTheAccount({ account: 'de', cookie: 'de', pending: true })).toBeNull();
+	});
+
+	it('gives an account without language what the person was seeing, choice or browser', () => {
+		expect(languageForTheAccount({ account: null, cookie: 'ar', pending: true })).toBe('ar');
+		// Un cookie sans choix en attente : posé par un choix fait une fois connectée, sur ce
+		// navigateur, par un autre compte peut-être. Il reste la langue que la personne voyait.
+		expect(languageForTheAccount({ account: null, cookie: 'ar', pending: false })).toBe('ar');
+		expect(languageForTheAccount({ account: null, browser: 'en-GB,en;q=0.9' })).toBe('en');
+		expect(languageForTheAccount({ account: null })).toBe('fr');
+	});
+
+	it('ignores a choice in waiting whose language the service does not speak', () => {
+		expect(languageForTheAccount({ account: 'fr', cookie: 'es', pending: true })).toBeNull();
+		expect(
+			languageForTheAccount({ account: null, cookie: 'es', pending: true, browser: 'it' })
+		).toBe('it');
+	});
+
+	it('names the cookie of a choice in waiting after the service, apart from the language', () => {
+		expect(PENDING_CHOICE_COOKIE).toBe('jadwal_language_pending');
+		expect(PENDING_CHOICE_COOKIE).not.toBe(LANGUAGE_COOKIE);
+	});
+
+	it('sets both cookies the same way, Secure over HTTPS only', () => {
+		expect(languageCookieOptions(new URL('https://jadwal.example/langue'))).toEqual({
+			path: '/',
+			httpOnly: true,
+			sameSite: 'lax',
+			secure: true,
+			maxAge: 31_536_000
+		});
+		expect(languageCookieOptions(new URL('http://127.0.0.1:4173/langue')).secure).toBe(false);
 	});
 });
 
