@@ -20,6 +20,8 @@ export type UpcomingDone = 'cancelled' | 'moved' | 'restored';
 /**
  * Les erreurs des actions, par leur nom : l'action rend le nom, jamais la phrase. `unchanged` : un
  * déplacement vers la date et l'heure où la séance est déjà prévue, qui ne déplacerait rien.
+ * `changed` : la séance a été annulée ou déplacée depuis que la page a été ouverte, par Retour, dans
+ * un autre onglet ou par une autre personne ; la carte encore affichée ne défait pas ce changement.
  */
 export type UpcomingError =
 	| 'unreadableDate'
@@ -27,6 +29,7 @@ export type UpcomingError =
 	| 'unreadableTime'
 	| 'pastDate'
 	| 'unchanged'
+	| 'changed'
 	| 'sessionGone';
 
 interface UpcomingTexts {
@@ -191,6 +194,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			pastDate: 'Cette date est déjà passée. Choisissez une date à partir d’aujourd’hui.',
 			unchanged:
 				'La séance est déjà prévue à cette date et à cette heure. Choisissez une autre date ou une autre heure.',
+			changed:
+				'Cette séance a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée. Rien n’a été enregistré. Le programme ci-dessous est à jour.',
 			sessionGone: 'Cette séance n’existe plus. Rechargez la page pour voir le programme à jour.'
 		}
 	},
@@ -275,6 +280,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			pastDate: 'Dieses Datum ist schon vorbei. Wählen Sie heute oder einen späteren Tag.',
 			unchanged:
 				'Der Termin ist schon an diesem Datum und zu dieser Uhrzeit geplant. Wählen Sie ein anderes Datum oder eine andere Uhrzeit.',
+			changed:
+				'Dieser Termin hat sich geändert, seit die Seite geöffnet wurde: Er wurde schon abgesagt oder verschoben. Es wurde nichts gespeichert. Das Programm unten ist aktuell.',
 			sessionGone:
 				'Diesen Termin gibt es nicht mehr. Laden Sie die Seite neu, um das aktuelle Programm zu sehen.'
 		}
@@ -359,6 +366,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			pastDate: 'Questa data è già passata. Scegli oggi o un giorno successivo.',
 			unchanged:
 				'La lezione è già prevista per questa data e questo orario. Scegli un’altra data o un altro orario.',
+			changed:
+				'Questa lezione è cambiata da quando hai aperto la pagina: è già stata annullata o spostata. Non è stato salvato niente. Il programma qui sotto è aggiornato.',
 			sessionGone:
 				'Questa lezione non esiste più. Ricarica la pagina per vedere il programma aggiornato.'
 		}
@@ -441,6 +450,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			pastDate: 'This date has already passed. Choose today or a later day.',
 			unchanged:
 				'The session is already planned for this date and time. Choose a different date or time.',
+			changed:
+				'This session has changed since the page was opened: it has already been cancelled or moved. Nothing has been saved. The programme below is up to date.',
 			sessionGone: 'This session no longer exists. Reload the page to see the current programme.'
 		}
 	},
@@ -525,6 +536,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			unreadableTime: 'تعذّرت قراءة هذا الوقت. اكتب الساعات والدقائق، مثلًا 19:30.',
 			pastDate: 'هذا التاريخ قد مضى. اختر اليوم أو يومًا بعده.',
 			unchanged: 'الحصة مقرّرة أصلًا في هذا التاريخ وفي هذا الوقت. اختر تاريخًا آخر أو وقتًا آخر.',
+			changed:
+				'تغيّرت هذه الحصة منذ أن فُتحت الصفحة: سبق أن أُلغيت أو نُقلت. لم يُحفظ أي شيء. البرنامج المعروض أدناه محدَّث.',
 			sessionGone: 'هذه الحصة لم تعد موجودة. أعد تحميل الصفحة لترى برنامجك المحدَّث.'
 		}
 	}

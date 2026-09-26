@@ -11,6 +11,11 @@
 // l'action qui refuse une date passée, et non le seul champ du navigateur, qu'un formulaire envoyé à
 // la main contourne. Elle refuse aussi un déplacement qui ne change rien, la même date à l'heure où
 // la séance est déjà prévue.
+//
+// Annuler et déplacer ne visent qu'une séance encore prévue telle quelle. Une page restée ouverte
+// (Retour, un autre onglet, une autre personne) montre encore la carte d'une séance annulée ou
+// déplacée depuis ; l'envoyer défaisait ce changement, en écrivant par exemple un déplacement de la
+// séance vers elle-même. Les deux actions le refusent, n'écrivent rien, et l'écran rendu est à jour.
 
 import { fail } from '@sveltejs/kit';
 import { isIsoDate, todayInZone } from '@jadwal/core';
@@ -121,6 +126,21 @@ async function plannedStart(
 }
 
 /**
+ * Vrai quand la séance de ce cours a déjà été annulée ou déplacée ce jour-là : elle n'est plus
+ * prévue telle quelle, et la carte qui l'annule ou la déplace vient d'une page restée ouverte. La
+ * table des exceptions est lue directement, pour toute date, et pas seulement les sept jours de
+ * l'écran.
+ */
+async function alreadyChanged(tx: Transaction, courseId: string, date: string): Promise<boolean> {
+	const found = rows<{ id: string }>(
+		await tx.execute(sql`
+			select "id" from "session_exception" where "course_id" = ${courseId} and "date" = ${date}
+		`)
+	);
+	return found.length > 0;
+}
+
+/**
  * Un refus, avec ce que l'écran doit retrouver : la séance, pour rouvrir ses options sur l'erreur, et
  * ce qui avait été saisi, pour le corriger sans tout refaire.
  */
@@ -225,14 +245,19 @@ export const actions: Actions = {
 		return withSessionOrg(context, async (tx) => {
 			const course = await readCourse(tx, courseId);
 			if (!course) return refuse('sessionGone', { courseId, date }, 404);
-			await tx.execute(sql`
-				insert into "session_exception"
-					("id", "organization_id", "course_id", "date", "kind", "created_by")
-				values (${newId()}, ${context.organizationId}, ${courseId}, ${date}, 'cancelled',
-					${context.userId})
-				on conflict ("course_id", "date") do update
-					set "kind" = 'cancelled', "to_date" = null, "to_start" = null
-			`);
+			// Une séance déjà annulée ou déplacée garde ce qui lui est arrivé : l'annulation ne
+			// s'écrit que si la place est libre, et rien ne s'écrit sinon, pas même le journal.
+			const written = rows<{ id: string }>(
+				await tx.execute(sql`
+					insert into "session_exception"
+						("id", "organization_id", "course_id", "date", "kind", "created_by")
+					values (${newId()}, ${context.organizationId}, ${courseId}, ${date}, 'cancelled',
+						${context.userId})
+					on conflict ("course_id", "date") do nothing
+					returning "id"
+				`)
+			);
+			if (written.length === 0) return refuse('changed', { courseId, date }, 409);
 			await record(tx, context.organizationId, context.userId, {
 				action: 'exception.cancel',
 				targetTable: 'session_exception',
@@ -271,6 +296,9 @@ export const actions: Actions = {
 		return withSessionOrg(context, async (tx) => {
 			const course = await readCourse(tx, courseId);
 			if (!course) return refuse('sessionGone', fields, 404);
+			// Avant les autres refus : une carte restée ouverte sur une séance déjà annulée ou
+			// déplacée n'a rien à corriger, quelle que soit la date choisie.
+			if (await alreadyChanged(tx, courseId, date)) return refuse('changed', fields, 409);
 			const settings = await readSettings(tx);
 			// Deux dates civiles au même format se comparent comme des chaînes.
 			if (toDate < todayInZone(settings.time_zone, now)) {
@@ -282,15 +310,20 @@ export const actions: Actions = {
 			if (toDate === date && (await plannedStart(tx, now, courseId, date)) === toStart) {
 				return refuse('unchanged', fields);
 			}
-			await tx.execute(sql`
-				insert into "session_exception"
-					("id", "organization_id", "course_id", "date", "kind", "to_date", "to_start",
-					"created_by")
-				values (${newId()}, ${context.organizationId}, ${courseId}, ${date}, 'moved',
-					${toDate}, ${toStart}, ${context.userId})
-				on conflict ("course_id", "date") do update
-					set "kind" = 'moved', "to_date" = ${toDate}, "to_start" = ${toStart}
-			`);
+			// Un autre envoi arrivé entre la vérification et cette ligne garde la main : rien n'est
+			// écrasé, et celui-ci est refusé de la même façon.
+			const written = rows<{ id: string }>(
+				await tx.execute(sql`
+					insert into "session_exception"
+						("id", "organization_id", "course_id", "date", "kind", "to_date", "to_start",
+						"created_by")
+					values (${newId()}, ${context.organizationId}, ${courseId}, ${date}, 'moved',
+						${toDate}, ${toStart}, ${context.userId})
+					on conflict ("course_id", "date") do nothing
+					returning "id"
+				`)
+			);
+			if (written.length === 0) return refuse('changed', fields, 409);
 			await record(tx, context.organizationId, context.userId, {
 				action: 'exception.move',
 				targetTable: 'session_exception',

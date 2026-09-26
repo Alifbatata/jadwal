@@ -40,7 +40,10 @@
 	 * phrase qui dit quoi faire, avec ce qui avait été saisi (retour A1).
 	 */
 	const refusee = $derived(form?.error ? cle(form.courseId ?? '', form.date ?? '') : null);
-	/** Une erreur qui ne trouve pas sa carte, une séance disparue par exemple, s'affiche en haut. */
+	/**
+	 * Une erreur qui ne trouve pas sa carte s'affiche en haut : une séance disparue, ou une séance
+	 * annulée ou déplacée depuis l'ouverture de la page, qui n'a plus d'options.
+	 */
 	const erreurEnHaut = $derived(
 		Boolean(form?.error) &&
 			!data.seances.some(
@@ -195,8 +198,9 @@
 								<fieldset>
 									<legend>{text.moveLegend}</legend>
 									<!-- Une erreur qui retrouve sa carte vient toujours d'un déplacement : la date de
-									     la séance illisible ou la séance disparue ne désignent aucune carte, et
-									     s'affichent en haut. Elle se lit donc au-dessus des champs à corriger. -->
+									     la séance illisible, la séance disparue ou déjà changée ne désignent aucune
+									     carte, et s'affichent en haut. Elle se lit donc au-dessus des champs à
+									     corriger. -->
 									{#if form?.error && refusee === k}
 										<p class="erreur" role="alert">{text.errors[form.error]}</p>
 									{/if}

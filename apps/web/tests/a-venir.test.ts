@@ -9,6 +9,9 @@
 //   refuse aussi un déplacement qui ne change rien, la même date à l'heure déjà prévue (relecture du
 //   lot 3), et répond par une phrase, jamais par une erreur 500, à une heure hors plage, à un
 //   identifiant mal formé ou à un cours inconnu.
+// - Une page restée ouverte (Retour, un second onglet, une autre personne) ne défait pas un
+//   changement : annuler ou déplacer une séance déjà annulée ou déplacée est refusé, rien n'est
+//   écrit, et l'écran rendu est à jour (relecture du lot 4).
 // - D1 : les messages prêts à coller s'écrivent dans chacune des langues que l'organisation publie,
 //   la langue source d'abord : la langue par défaut pour le programme de la semaine, celle du cours
 //   pour une annulation ou un déplacement. Le nom de chaque zone de texte dit sa langue.
@@ -56,6 +59,18 @@ const CERCLE = 'Cercle de lecture';
 const TAJWID = { ar: 'حلقة التجويد', fr: 'Cercle de tajwid' } as const;
 const SALLE = 'Salle Ibn Khaldoun';
 const ENSEIGNANT = 'Karim Haddad';
+
+/**
+ * Le refus d'une page restée ouverte, quand la séance a été annulée ou déplacée depuis : ce qui
+ * s'est passé, que rien n'est écrit, et que l'écran rendu est à jour.
+ */
+const CHANGEE: Record<Langue, string> = {
+	fr: 'Cette séance a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée. Rien n’a été enregistré. Le programme ci-dessous est à jour.',
+	de: 'Dieser Termin hat sich geändert, seit die Seite geöffnet wurde: Er wurde schon abgesagt oder verschoben. Es wurde nichts gespeichert. Das Programm unten ist aktuell.',
+	it: 'Questa lezione è cambiata da quando hai aperto la pagina: è già stata annullata o spostata. Non è stato salvato niente. Il programma qui sotto è aggiornato.',
+	en: 'This session has changed since the page was opened: it has already been cancelled or moved. Nothing has been saved. The programme below is up to date.',
+	ar: 'تغيّرت هذه الحصة منذ أن فُتحت الصفحة: سبق أن أُلغيت أو نُقلت. لم يُحفظ أي شيء. البرنامج المعروض أدناه محدَّث.'
+};
 
 /** Ce qui est pareil dans toutes les langues par nature : noms, titres, adresses. */
 const PERMIS = [
@@ -342,6 +357,38 @@ function carte(html: string, date: string, titre: string, statut: string): strin
 					.includes(statut)
 		) ?? ''
 	);
+}
+
+/**
+ * Un formulaire des options d'une séance, tel que la page le propose : chaque champ nommé et sa
+ * valeur. C'est ce qu'envoie une page restée ouverte, même quand la séance a changé depuis.
+ */
+function formulaireDeLaCarte(
+	html: string,
+	action: 'annuler' | 'deplacer',
+	courseId: string,
+	date: string
+): Record<string, string> {
+	const bloc = optionsDesSeances(html).find(
+		(options) =>
+			cache(options.contenu, 'courseId') === courseId && cache(options.contenu, 'date') === date
+	);
+	const formulaire =
+		bloc?.contenu.match(
+			new RegExp(`<form\\b[^>]*action="\\?/${action}"[^>]*>[\\s\\S]*?</form>`)
+		)?.[0] ?? '';
+	return Object.fromEntries(
+		[...formulaire.matchAll(/<input\b[^>]*>/g)].map((champ) => {
+			const lu = attributs(champ[0]);
+			return [lu['name'] ?? '', lu['value'] ?? ''];
+		})
+	);
+}
+
+/** Rétablit une séance et vérifie qu'il n'en reste rien : le test suivant la trouve telle quelle. */
+async function retablir(courseId: string, date: string, cookie: string): Promise<void> {
+	await postForm('/?/retablir', { courseId, date }, cookie);
+	expect(await exception(courseId, date)).toBeUndefined();
 }
 
 async function poserCours(
@@ -756,6 +803,128 @@ describe('A2 : déplacer une séance', () => {
 	});
 });
 
+describe('une page restée ouverte ne défait pas un changement (relecture du lot 4)', () => {
+	let cookie: string;
+
+	beforeAll(async () => {
+		cookie = await signIn(RESPONSABLE);
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+	});
+
+	/**
+	 * Le refus d'une carte périmée : aucun message préparé, la phrase en haut de l'écran, puisque la
+	 * carte n'a plus d'options, et aucune option rouverte.
+	 */
+	function refusee(html: string): void {
+		expect(section(html, 'message-titre')).toBe('');
+		expect(alerte(html)).toBe(CHANGEE.fr);
+		expect(optionsDesSeances(html).filter((options) => options.ouvert)).toEqual([]);
+	}
+
+	it('refuses the card sent again after Back, once the session was moved, and keeps the move', async () => {
+		// La page telle qu'elle était avant le déplacement : c'est elle que Retour remontre.
+		const avant = await (await get('/', cookie)).text();
+		const proposee = formulaireDeLaCarte(avant, 'deplacer', soir, jour(1));
+		expect(proposee).toEqual({ courseId: soir, date: jour(1), toDate: jour(1), toStart: '19:00' });
+		const deplace = await postForm(
+			'/?/deplacer',
+			{ ...proposee, toDate: jour(2), toStart: '20:30' },
+			cookie
+		);
+		try {
+			expect(deplace.status).toBe(200);
+			const deplacement = { kind: 'moved', to_date: jour(2), to_start: '20:30' };
+			expect(await exception(soir, jour(1))).toEqual(deplacement);
+			// Retour, puis « Déplacer la séance » sans rien changer : la carte envoie la date prévue et
+			// l'heure habituelle. L'action écrivait un déplacement vers la séance elle-même, qui
+			// écrasait celui d'avant.
+			const renvoi = await postForm('/?/deplacer', proposee, cookie);
+			expect(renvoi.status).toBe(409);
+			const html = await renvoi.text();
+			expect(await exception(soir, jour(1))).toEqual(deplacement);
+			refusee(html);
+			// L'écran rendu est à jour : la séance y est déplacée, avec de quoi la rétablir.
+			const depart = texte(carte(html, jour(1), SOIR.fr, 'moved_away'));
+			expect(depart).toContain(`${numerique(jour(2))} à 20:30`);
+			expect(depart).toContain('Rétablir la séance');
+		} finally {
+			await retablir(soir, jour(1), cookie);
+		}
+	});
+
+	it('refuses the card of a second tab or of another person, whatever it sends, and keeps their move', async () => {
+		// Le premier onglet est ouvert d'abord ; une autre personne déplace la séance ensuite.
+		const onglet = await (await get('/', cookie)).text();
+		const editeur = await signIn(EDITEUR);
+		await poserLangueDuCompte(EDITEUR, 'fr');
+		const ailleurs = formulaireDeLaCarte(
+			await (await get('/', editeur)).text(),
+			'deplacer',
+			cercle,
+			jour(3)
+		);
+		const deplace = await postForm(
+			'/?/deplacer',
+			{ ...ailleurs, toDate: jour(4), toStart: '21:00' },
+			editeur
+		);
+		try {
+			expect(deplace.status).toBe(200);
+			const deplacement = { kind: 'moved', to_date: jour(4), to_start: '21:00' };
+			const proposee = formulaireDeLaCarte(onglet, 'deplacer', cercle, jour(3));
+			// Maghrib à 19:20 ce jour-là : la carte proposait 19:35.
+			expect(proposee).toEqual({
+				courseId: cercle,
+				date: jour(3),
+				toDate: jour(3),
+				toStart: '19:35'
+			});
+			// Sans rien changer, à une autre date, à une date passée (ce refus-ci passe d'abord : il
+			// n'y a rien à corriger), et l'annulation.
+			for (const [action, envoi] of [
+				['deplacer', proposee],
+				['deplacer', { ...proposee, toDate: jour(5), toStart: '18:00' }],
+				['deplacer', { ...proposee, toDate: jour(-1), toStart: '18:00' }],
+				['annuler', formulaireDeLaCarte(onglet, 'annuler', cercle, jour(3))]
+			] as const) {
+				const reponse = await postForm(`/?/${action}`, envoi, cookie);
+				expect(reponse.status, `${action} ${envoi['toDate'] ?? ''}`).toBe(409);
+				refusee(await reponse.text());
+				// Le déplacement de l'autre personne reste, et une annulation ne le remplace pas.
+				expect(await exception(cercle, jour(3)), action).toEqual(deplacement);
+			}
+		} finally {
+			await retablir(cercle, jour(3), cookie);
+		}
+	});
+
+	it('refuses a move from a card left open after the session was cancelled, and keeps it cancelled', async () => {
+		const page = await (await get('/', cookie)).text();
+		const proposee = formulaireDeLaCarte(page, 'deplacer', soir, today);
+		expect(proposee).toEqual({ courseId: soir, date: today, toDate: today, toStart: '19:00' });
+		const annulation = formulaireDeLaCarte(page, 'annuler', soir, today);
+		expect(annulation).toEqual({ courseId: soir, date: today });
+		const annule = await postForm('/?/annuler', annulation, cookie);
+		try {
+			expect(annule.status).toBe(200);
+			const annulee = { kind: 'cancelled', to_date: null, to_start: null };
+			// La même page, « Déplacer la séance » sans rien changer : l'annulation devenait un
+			// déplacement vers la séance elle-même.
+			const renvoi = await postForm('/?/deplacer', proposee, cookie);
+			expect(renvoi.status).toBe(409);
+			refusee(await renvoi.text());
+			expect(await exception(soir, today)).toEqual(annulee);
+			// Annuler une seconde fois depuis la même page ne réécrit rien non plus.
+			const encore = await postForm('/?/annuler', annulation, cookie);
+			expect(encore.status).toBe(409);
+			refusee(await encore.text());
+			expect(await exception(soir, today)).toEqual(annulee);
+		} finally {
+			await retablir(soir, today, cookie);
+		}
+	});
+});
+
 describe('B1 : chaque mention dit quoi faire, et à qui', () => {
 	/** Les mentions de l'écran, ce qui demande une décision avant le programme. */
 	function mentions(html: string): string[] {
@@ -930,6 +1099,7 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 		'après une annulation',
 		'après un refus',
 		'après un déplacement qui ne change rien',
+		'après une page restée ouverte',
 		'après un rétablissement'
 	];
 	const ATTENDUS: Record<string, number> = {
@@ -937,6 +1107,7 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 		'après une annulation': 200,
 		'après un refus': 400,
 		'après un déplacement qui ne change rien': 400,
+		'après une page restée ouverte': 409,
 		'après un rétablissement': 200
 	};
 
@@ -963,6 +1134,15 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 					await postForm(
 						'/?/deplacer',
 						{ courseId: soir, date: jour(3), toDate: jour(3), toStart: '19:00' },
+						cookie
+					)
+				],
+				[
+					// La carte du cercle de J+1, encore affichée ailleurs, alors qu'il vient d'être annulé.
+					'après une page restée ouverte',
+					await postForm(
+						'/?/deplacer',
+						{ courseId: cercle, date: jour(1), toDate: jour(1), toStart: '19:35' },
 						cookie
 					)
 				],
@@ -1100,6 +1280,20 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 			const ouvertes = optionsDesSeances(html).filter((bloc) => bloc.ouvert);
 			expect(ouvertes, langue).toHaveLength(1);
 			expect(alerte(ouvertes[0]?.contenu ?? ''), langue).toBe(phrases[langue]);
+			expect(section(html, 'message-titre'), langue).toBe('');
+		}
+	});
+
+	it('says in each language that the session changed since the page was opened, above the programme', () => {
+		for (const langue of LANGUES) {
+			const html = rendus['après une page restée ouverte']?.[langue] ?? '';
+			// La carte n'a plus d'options : la phrase se lit en haut de l'écran, avant le programme.
+			expect(alerte(html), langue).toBe(CHANGEE[langue]);
+			expect(html.indexOf('role="alert"'), langue).toBeLessThan(html.indexOf('id="jour-'));
+			expect(
+				optionsDesSeances(html).filter((bloc) => bloc.ouvert),
+				langue
+			).toEqual([]);
 			expect(section(html, 'message-titre'), langue).toBe('');
 		}
 	});
