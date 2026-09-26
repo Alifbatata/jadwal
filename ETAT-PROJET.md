@@ -93,6 +93,16 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   l'autre. La faille est fermée, avec six autres défauts trouvés en chemin. La base tient désormais
   l'échéance, le rôle et les passages de statut d'une invitation (migrations 0056 à 0058), et le
   super-admin entré dans une organisation ne lit plus les autres (0055).
+- **Étape 18** (les retours des tests du chef de projet) : **en cours le 2026-09-26**. Une règle les
+  réunit : une personne qui ne connaît rien au service doit tout comprendre seule, sans aide. Le
+  service parle maintenant cinq langues partout, l'anglais britannique en plus, dans l'espace des
+  responsables, le super-admin et les courriels comme sur la page publique ; les dates s'écrivent
+  `JJ.MM.AAAA`, comme en Suisse ; chaque écran de l'espace dit ce qu'il fait ; les heures de prière
+  se règlent par une seule question, pour une localité choisie dans la liste officielle de
+  swisstopo ; la page publique a un onglet Prières, et l'abonnement au calendrier propose le bouton
+  de l'appareil ; la base sépare enfin l'éditeur du responsable. Les lots 1 à 3 sont intégrés :
+  2 832 tests, tous réussis ; restent le parcours automatique rejoué sur les écrans récrits, la
+  relecture de l'arabe, le bloc de site et le déploiement.
 
 ## Fait
 
@@ -589,6 +599,109 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   sur 29 pages, rien de sérieux. ADR 0045 ; addenda aux ADR 0017, 0019 et 0025 ; ADR 0035, 0037 et
   0044 révisées.
 
+Étape 18 (lots 1 à 3, intégrés le 2026-09-26 ; le lot 4 est en cours) :
+
+Les retours des tests du chef de projet, lettre par lettre. Une règle les réunit : une personne qui
+ne connaît rien au service doit tout comprendre seule, sans aide.
+
+- **Les dates (A3).** `JJ.MM.AAAA` partout où une personne lit une date, dans les cinq langues :
+  écrans, courriels, messages prêts à coller, page publique. Deux fonctions seulement les écrivent,
+  `numericDate` et `longDate` (`apps/web/src/lib/i18n.ts`), et le nom du jour peut précéder la
+  date : « samedi 26.09.2026 ». Aucune date `2026-09-26` ne reste dans le texte d'un écran. L'API et
+  les flux gardent `AAAA-MM-JJ`, qui est un format d'échange.
+- **À venir (A1, A2).** Les options d'une séance étaient toutes ouvertes au chargement, et le bouton
+  d'annulation actif sans rien ouvrir. Elles sont maintenant dans un repli fermé, propre à chaque
+  carte, avec ou sans JavaScript, et le bouton d'annulation n'existe que derrière lui. Une séance se
+  déplace à n'importe quelle date à partir d'aujourd'hui, plus tôt ou plus tard que prévu, et non
+  plus aux six jours qui suivent. Une date passée est refusée avec une phrase ; une date ou une
+  heure illisible ne fait plus d'erreur 500.
+- **La clarté (B1).** Chaque écran de l'espace et du super-admin dit ce qu'il fait ; chaque champ a
+  un libellé clair, une aide et un exemple ; chaque geste dit ce qu'il a fait ; chaque erreur dit
+  quoi faire. « Module », « IANA », « widget », « iframe » et « identifiant d'URL » ont quitté les
+  écrans. La navigation porte le titre des écrans : `Prière du vendredi`, `Heures de prière`. Chaque
+  écran a maintenant sa description dans `docs/maquettes/`, écrite d'après le code.
+- **Le super-admin (B2).** L'adresse de la page publique est proposée à partir du nom, et montrée en
+  entier, dans la liste comme à la création ; le fuseau se choisit dans une liste de noms canoniques,
+  sans alias ; une adresse déjà prise est dite à l'écran, au lieu d'une erreur 500 ; les plans et les
+  états s'écrivent en mots, avec deux boutons distincts ; le lien de secours dit ce qu'il fait ; la
+  date d'une passkey est le jour en Suisse.
+- **Les rôles (H1, B3).** La base elle-même refuse à un éditeur ce que l'écran réserve au
+  responsable : lire et écrire les invitations, changer un rôle, retirer un membre, modifier les
+  réglages, les salles et les heures de prière. Une fonction à droits du définisseur le dit,
+  `jadwal.is_org_admin()` (migration 0059, ADR 0046). Le rôle applicatif ne modifie plus le plan,
+  l'état ni l'identifiant d'URL d'une organisation. L'écran Membres dit, sous le choix du rôle, ce
+  que chaque rôle permet ; un test lie ce texte aux politiques de la base.
+- **Le formulaire d'un cours (B4).** Un résumé de ce qui sera publié, une ligne par information, ce
+  qui manque marqué et dit ; juste sans JavaScript, et qui suit la saisie avec. Un cours sans langue
+  d'enseignement est refusé, au lieu d'en recevoir une en silence.
+- **Les heures de prière (C1, C2).** L'écran pose une question, « D'où viennent vos heures de
+  prière ? », avec trois réponses ; chacune montre ses champs, l'aperçu des sept prochains jours,
+  puis « Enregistrer ». Une période se prévisualise avant d'être enregistrée. La « source que vous
+  déclarez » a disparu. La localité se choisit par son nom ou son NPA, canton compris pour deux noms
+  pareils, dans le répertoire officiel des localités de swisstopo, embarqué dans le serveur : 4 073
+  localités, version du 01.09.2026, licence vérifiée avant de l'embarquer, positions converties de
+  la projection suisse par les formules de swisstopo, et aucun service extérieur. La source est
+  citée dans le fichier, dans l'image et à l'écran (ADR 0043, addendum).
+- **Un cours avant une prière (C3).** « Avant une prière », de 1 à 120 minutes ; « après », de 0
+  à 240. La base garde le décalage négatif qu'elle connaissait, sans migration (ADR 0004,
+  addendum).
+- **L'onglet Prières (C4).** Sur la page publique, quand le module est allumé : les heures du jour
+  et des sept prochains jours, adhan et iqama, puis les sessions du vendredi avec la langue de leur
+  sermon. Il apparaît dans le widget sans que le fichier du widget change (ADR 0042, addendum).
+- **Les langues (D1, D2, D4).** L'anglais britannique est la cinquième langue du public, du widget
+  et du flux agenda, et le widget a publié une nouvelle version pour lui. L'espace des responsables
+  et le super-admin parlent les cinq langues, un dictionnaire par écran, l'arabe de droite à gauche,
+  en chiffres latins (ADR 0007, addendum). La langue se choisit en haut de chaque écran, sans
+  JavaScript, et reste attachée au compte (migration 0060) ; un choix fait avant la connexion
+  devient la langue du compte (ADR 0047). Les messages prêts à coller s'écrivent dans chaque langue
+  que l'organisation publie. Les conditions restent en français ; dans les autres langues, une
+  phrase le dit. La base limite les langues d'une organisation aux cinq (migration 0062), et l'écran
+  des réglages propose enfin l'anglais.
+- **Les courriels (D3).** Le lien de connexion et l'invitation parlent les cinq langues, dans la
+  langue de l'écran où le geste est fait. **Point d'arrêt** : une invitation part dans la langue de
+  la personne qui invite, pour toute adresse ; lire la langue du compte invité consulterait les
+  comptes, ce que l'ADR 0017 interdit, et l'envoi n'est pas découplé de la réponse (ADR 0017,
+  addendum). La question d'un envoi différé est posée plus bas.
+- **Le correcteur (D5).** `pnpm orthographe` relit l'anglais britannique, et chaque dictionnaire de
+  l'espace dans sa langue. La relecture de l'arabe par le chef de projet appartient au lot 4.
+- **L'agenda selon l'appareil (E1, E2).** La page d'abonnement et la page d'un cours proposent
+  d'abord ce que l'appareil sait ouvrir : `webcal:` sur iPhone, iPad et Mac, Google Agenda sur
+  Android, le choix complet ailleurs, avec toujours un lien vers le choix complet. Le serveur lit
+  `Sec-CH-UA-Platform`, sinon `User-Agent`, et la réponse porte `Vary` sur ces en-têtes ; la page
+  reste sans script (ADR 0048). Le délai de Google, jusqu'à 24 heures, est dit dans les cinq langues.
+- **Les conditions (F1 à F3).** Voltia seul, comme exploitant et comme titulaire du droit d'auteur :
+  le nom de la personne a quitté les fichiers du dépôt ; l'historique de git le garde. Une onzième
+  question pour le juriste : « Voltia » seul suffit-il ? Nouvelle version, du 26.09.2026, que
+  chacun accepte de nouveau, sa date écrite comme partout ; le PDF du juriste la suit.
+- **L'acceptation (H2).** `Choisir une autre organisation` s'affiche aussi pour une personne d'une
+  seule organisation qu'une invitation attend encore.
+- **Le parcours dans la CI (H5).** `queue: max` reste sur le flux `parcours` : chaque commit garde
+  son verdict.
+- **Le serveur (G).** Les retours sur la machine de l'exploitant se jouent sur elle, et ne sont pas
+  décrits dans ce dépôt.
+- **Trouvé en chemin et corrigé**, chaque fois test d'abord : supprimer une salle qu'un cours occupe
+  rendait une erreur 500 (la clé composite vidait aussi l'organisation du cours) ; la base ne vide
+  plus que la salle (migration 0061), et l'écran demande d'abord confirmation. Le retour du choix
+  de la langue pouvait quitter le service par un segment en point (`/.//ailleurs`). Un
+  `GET /langue` rendait une erreur en anglais, en texte brut. Un jour impossible tapé dans
+  l'adresse de la vue Mois était recopié dans la page. La vue Tous les cours comptait une séance
+  déplacée à son ancienne date. La liste des langues d'une page publique s'annonçait « Langues » aux
+  lecteurs d'écran, en français, dans toutes les langues. Un test du vendredi tombait tous les
+  samedis. Le contrôle du catalogue ignorait les
+  clés qui vident une colonne obligatoire par `SET DEFAULT`.
+- **La licence.** MIT pour tout le dépôt, sauf la liste des localités, qui reste sous les
+  conditions de swisstopo et se cite « Source : Office fédéral de topographie swisstopo ». Le
+  `package.json` d'`apps/web` et l'étiquette de l'image disent `MIT AND LicenseRef-swisstopo-OGD`,
+  et l'épreuve de l'image le vérifie.
+- 2 832 tests dans le dépôt à l'intégration des lots 1 à 3, tous réussis, aucun sauté : 676 dans
+  `core`, 442 dans la base, 82 pour les sauvegardes, 1 601 dans l'application, 31 pour le widget
+  (2 141 octets en gzip).
+- ADR 0046 (rôles dans la base), 0047 (langue de l'espace), 0048 (agenda selon l'appareil) ;
+  addenda aux ADR 0004, 0007, 0013, 0017, 0025, 0027, 0042 et 0043. Descriptions écran par écran
+  de l'espace et du super-admin dans `docs/maquettes/` ; `docs/CADRAGE.md`, `docs/SECURITE.md`,
+  `docs/INTEGRATION.md`, `docs/CALENDRIER-PRIERES.md`, `docs/API.md`, `docs/EXPLOITATION.md` et le
+  `README` mis à jour.
+
 **Un script ou une commande qu'aucun test ne _lance_ n'est pas éprouvé.** C'est la règle du dépôt
 depuis l'étape 12, et elle répond à la question laissée ouverte à l'étape 11.
 
@@ -617,26 +730,27 @@ tests.
 
 ## Feuille de route
 
-| Étape | Contenu                                                            | État     |
-| ----- | ------------------------------------------------------------------ | -------- |
-| 0     | Dépôt, licences, docs, CI                                          | terminée |
-| 1     | `core` et ses tests                                                | terminée |
-| 2     | Base, RLS, données de démo                                         | terminée |
-| 3     | Connexion, organisations, rôles, invitations, super-admin, journal | terminée |
-| 4     | Espace des responsables, fidèle à la maquette                      | terminée |
-| 5     | API publique, page publique en 4 langues, flux ICS                 | terminée |
-| 6     | Widget, flux agenda par cours, référencement                       | terminée |
-| 7     | Heures de prière, couleur d'accent, compteur de vues               | terminée |
-| 8     | Heures réelles de l'organisation, iqama, prière du vendredi        | terminée |
-| 9     | Finitions, infrastructure en code, mise en production              | terminée |
-| 10    | Mise en ligne : déploiement réel, sauvegarde et déchiffrement      | terminée |
-| 11    | Courriel, fausses alertes, IPv6, premier compte super-admin        | terminée |
-| 12    | Caddy à jour, conteneur de démarrage, finitions                    | terminée |
-| 13    | Organisations de tout genre, conditions exactes, serveur           | terminée |
-| 14    | Licence MIT, correcteur en quatre langues, PDF pour le juriste     | terminée |
-| 15    | Conditions exactes au mot près, relevé de l'arabe                  | terminée |
-| 16    | Conditions en ligne et acceptées, arabe corrigé, parcours complet  | terminée |
-| 17    | 182 jours vérifiés, garde du déploiement, invitations tenues       | terminée |
+| Étape | Contenu                                                             | État     |
+| ----- | ------------------------------------------------------------------- | -------- |
+| 0     | Dépôt, licences, docs, CI                                           | terminée |
+| 1     | `core` et ses tests                                                 | terminée |
+| 2     | Base, RLS, données de démo                                          | terminée |
+| 3     | Connexion, organisations, rôles, invitations, super-admin, journal  | terminée |
+| 4     | Espace des responsables, fidèle à la maquette                       | terminée |
+| 5     | API publique, page publique en 4 langues, flux ICS                  | terminée |
+| 6     | Widget, flux agenda par cours, référencement                        | terminée |
+| 7     | Heures de prière, couleur d'accent, compteur de vues                | terminée |
+| 8     | Heures réelles de l'organisation, iqama, prière du vendredi         | terminée |
+| 9     | Finitions, infrastructure en code, mise en production               | terminée |
+| 10    | Mise en ligne : déploiement réel, sauvegarde et déchiffrement       | terminée |
+| 11    | Courriel, fausses alertes, IPv6, premier compte super-admin         | terminée |
+| 12    | Caddy à jour, conteneur de démarrage, finitions                     | terminée |
+| 13    | Organisations de tout genre, conditions exactes, serveur            | terminée |
+| 14    | Licence MIT, correcteur en quatre langues, PDF pour le juriste      | terminée |
+| 15    | Conditions exactes au mot près, relevé de l'arabe                   | terminée |
+| 16    | Conditions en ligne et acceptées, arabe corrigé, parcours complet   | terminée |
+| 17    | 182 jours vérifiés, garde du déploiement, invitations tenues        | terminée |
+| 18    | Retours des tests : cinq langues, écrans clairs, rôles dans la base | en cours |
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
 passkeys, paiement.
@@ -645,7 +759,10 @@ passkeys, paiement.
 
 - Les alias de fuseau IANA sont refusés à la saisie depuis l'étape 2 : 26 noms européens, dont
   `Europe/Amsterdam`, `Europe/Oslo` et `Europe/Stockholm`, redirigent vers le fuseau d'un autre
-  pays. À trancher avant l'étape 4, quand une organisation choisira son fuseau.
+  pays. Tranché à la création depuis l'étape 18 : la console du super-admin propose une liste de
+  noms canoniques. Pas encore dans l'écran des réglages, où le fuseau reste un texte libre qui
+  accepte un alias, que le flux agenda refuse ensuite. Et la liste de la console n'offre aucun
+  nom pour vingt et une villes d'Europe dont le nom est un alias, sans dire lequel choisir.
 - L'écriture ne peut plus désigner une personne invisible, mais la lecture reste ouverte à toute
   personne rattachée à l'organisation courante : c'est le flux d'invitation de l'étape 3 qui devra
   décider ce qu'un responsable voit d'un compte existant ailleurs, l'unicité de l'adresse étant
@@ -721,6 +838,26 @@ passkeys, paiement.
 - `pnpm audit` signale une vulnérabilité de gravité faible dans `cookie@0.6.0`, dépendance transitive
   de `@sveltejs/kit` 2.70.3 (GHSA-pxg6-pf52-xh8x) : rien à corriger de notre côté, à suivre à la
   prochaine mise à jour de SvelteKit.
+- **Google Agenda sur Android, à vérifier sur un vrai téléphone** (étape 18, E3). L'aide de Google
+  dit qu'on ne s'abonne à un agenda par son adresse que depuis un ordinateur, jamais depuis
+  l'application Android ; le bouton de la page d'abonnement ouvre la version web de Google Agenda
+  dans le navigateur, par un lien que Google ne documente pas (ADR 0048). Tant que l'essai n'est
+  pas fait, la page servie à Android se contredit : sous le bouton, Google Agenda « propose
+  d'ajouter l'agenda » ; plus bas, « ouvrez Google Agenda sur un ordinateur ». Le lien d'Outlook
+  n'est pas documenté non plus.
+- **Le choix de la langue fait avant la connexion vit dans un cookie de ce seul navigateur**
+  (ADR 0047). Si le lien de connexion s'ouvre dans un autre navigateur, courant sur un téléphone,
+  le choix est perdu ; et le cookie d'attente, qui vit un an, peut remettre plus tard l'ancien
+  choix sur le compte, à une connexion suivante sur le premier navigateur.
+- Les pages de l'espace, la page d'abonnement et la page d'un cours changent selon la langue, le
+  cookie ou l'appareil, et le disent par `Vary`. Un cache partagé qui l'ignorerait servirait la
+  mauvaise version ; le modèle de `infra/` n'en place aucun.
+- **Le nom de la personne reste dans l'historique de git** (étape 18, F1). Il a quitté les fichiers
+  du dépôt, mais les commits passés le portent, et les réécrire demanderait une poussée forcée, que
+  rien n'autorise.
+- La liste des localités suisses est celle du 01.09.2026. swisstopo en publie une chaque mois ; une
+  mise à jour par an suffit, ou plus tôt après une fusion de communes (`docs/EXPLOITATION.md`). Le
+  générateur vérifie la forme de la date de version, pas qu'elle existe.
 
 ## Décisions en attente
 
@@ -737,19 +874,61 @@ passkeys, paiement.
   serveur visé.
 - **La destination des sauvegardes** et sa clé publique `age` : à fournir par l'exploitant.
 - Texte du CLA et outil de signature (avant la première contribution externe).
-- **L'avis du juriste** sur les dix points de la page de garde, dont le point 10 : l'acceptation
-  par personne, rattachée à son adhésion, suffit-elle ?
+- **L'avis du juriste** sur les onze points de la page de garde, dont le point 10 : l'acceptation
+  par personne, rattachée à son adhésion, suffit-elle ? Et le point 11, ajouté à l'étape 18 :
+  « Voltia » seul suffit-il comme exploitant et comme titulaire du droit d'auteur ? La question
+  suppose que Voltia est une entreprise individuelle, ce que l'exploitant doit confirmer.
+- **La langue d'une invitation** (étape 18, D3, point d'arrêt). Toute invitation part dans la
+  langue de la personne qui invite, parce que lire la langue du compte invité consulterait les
+  comptes (ADR 0017). Un envoi différé, où le courriel part au moment où l'adresse est reconnue,
+  est-il voulu ? C'est une table, une tâche et une reprise sur échec de plus.
+- **Le choix de la langue doit-il suivre le lien de connexion** (étape 18), par exemple porté avec
+  la demande de lien, ou le cookie d'attente vivre aussi peu que le lien ?
+- **Les deux cookies de langue** sont fonctionnels, posés sur demande, sans donnée personnelle.
+  Faut-il les nommer dans `docs/CONDITIONS.md`, qui ne parle que des cookies de mesure
+  d'audience ? La question revient au juriste.
+- **Ce que la base laisse encore à un éditeur** (ADR 0046) : lire les membres de son organisation
+  par un appel direct, et écrire au journal une entrée qui nomme un collègue comme auteur. Et un
+  éditeur ne peut plus quitter seul une organisation, ce qu'aucun écran ne propose : faut-il un
+  écran « quitter l'organisation » ?
+- **L'attribut `view="prieres"` du widget** : l'ajouter changerait le fichier du widget, donc son
+  empreinte, pour les sites qui l'ont épinglée.
+- **La relecture par des locuteurs** des textes écrits à l'étape 18 en arabe, en allemand et en
+  italien, dont le vocabulaire du vendredi (`Durchgang`, `turno`, `موعد`) et les noms du bloc
+  WordPress donnés en exemple.
 - **La relecture, par le chef de projet, des textes arabes écrits sans lui** : le lien
   « شروط الاستخدام » et les formes en « قبل » d'un décalage négatif (étape 16) ; la page 404
   publique, « الصفحة غير موجودة » et « تحقّق من العنوان. », et la place des parenthèses autour de
   l'annonce qu'il a donnée, « شروط الاستخدام (يُفتح في علامة تبويب جديدة) » (étape 17).
-- **La séparation des rôles dans la base.** Pour le rôle applicatif, la base ne distingue pas
-  l'éditeur du responsable à l'intérieur d'une organisation : c'est l'application qui la tient.
-  Toute personne qui a le contexte de l'organisation peut changer le rôle d'une adhésion, ou
-  s'écrire une invitation de responsable et l'accepter (ADR 0017, « Limite du rôle »). La faille de
-  l'étape 17 montre ce que cela coûte : un rôle mal lu suffisait. La fermer demanderait une
-  fonction qui lit le rôle, sur le modèle de `jadwal.invited`, pour l'écriture des invitations et
-  la modification des adhésions.
+- ~~La séparation des rôles dans la base~~ : tranchée à l'étape 18, ADR 0046. Une fonction de la
+  base, `jadwal.is_org_admin()`, dit si la personne du contexte est responsable de l'organisation
+  du contexte, et les politiques des gestes réservés au responsable l'exigent (migration 0059).
+
+## Défauts relevés à l'étape 18, non corrigés
+
+Relevés par les relectures des lots 1 à 3, et encore là au commit qui les intègre. Chaque écran les
+redit dans sa description (`docs/maquettes/`).
+
+- **À venir** : toucher « Déplacer la séance » sans rien changer enregistre un déplacement vers la
+  même date et la même heure ; deux cartes peuvent être ouvertes en même temps ; le programme de la
+  semaine compte les cours en brouillon, celui de Partager non ; une carte « date exceptionnelle »
+  n'a pas de « Rétablir ».
+- **Cours** : le résumé n'a pas de ligne pour la description ; un cours à dates précises dont les
+  dates tombent avant le premier jour est accepté, et aucune séance ne sera publiée ; les champs
+  de titre et de description n'ont ni `lang` ni `dir` ; la liste n'a pas de bouton pour supprimer
+  un cours.
+- **Heures de prière** : les tableaux qui défilent de côté sur un téléphone ne se prennent pas au
+  clavier (axe, « serious ») ; une période copiée garde en français le suffixe « (année
+  suivante) » ; `©swisstopo` n'est pas isolé dans une ligne arabe ; l'aperçu d'une période lointaine
+  n'en dit rien ; une saisie en écriture arabe, ou `Zuerich`, ne trouve aucune localité.
+- **Réglages** : la confirmation de suppression d'une salle s'affiche hors de l'écran ; après un
+  refus, les champs reviennent aux valeurs enregistrées.
+- **Membres** : annuler une invitation, retirer un membre et changer un rôle ne disent rien.
+- **Super-admin** : après l'ajout d'une seconde passkey, l'écran renvoie à un bouton qui n'existe
+  pas ; sans JavaScript, une adresse proposée se crée sans avoir été vue.
+- **Page publique** : l'onglet Prières montre une session du vendredi annulée ce jour-là ; la page
+  d'abonnement parle d'un bouton sur le choix complet, qui n'a que des liens, et ne dit pas le délai
+  d'Outlook.
 
 ## À poser avant la mise en production
 
