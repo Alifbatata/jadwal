@@ -123,6 +123,14 @@ apps/web/src/lib/i18n/friday.ts | AR_DIACRITICS_REPLACE | يوسف
 apps/web/src/lib/i18n/share.ts | AR_DIACRITICS_REPLACE | برنامج
 apps/web/src/lib/i18n/share.ts | AR_DIACRITICS_REPLACE | البرنامج
 # L'écran Réglages : البرنامج sans voyelles, comme ailleurs (famille 6).
+# Les écrans Membres et Réglages. « espace » : la liste de ce que peut faire un éditeur, dont les
+# éléments n'ont pas de point final ; le corpus recolle « Choisir la langue de son espace » à
+# l'élément suivant. Les voyelles de برنامج, قبول et ملف : sans voyelles, comme ailleurs (famille 6).
+apps/web/src/lib/i18n/members.ts | POINT | espace
+apps/web/src/lib/i18n/members.ts | AR_DIACRITICS_REPLACE | برنامج
+apps/web/src/lib/i18n/members.ts | AR_DIACRITICS_REPLACE | البرنامج
+apps/web/src/lib/i18n/members.ts | AR_DIACRITICS_REPLACE | قبول
+apps/web/src/lib/i18n/members.ts | AR_DIACRITICS_REPLACE | ملف
 apps/web/src/lib/i18n/settings.ts | AR_DIACRITICS_REPLACE | البرنامج
 
 # apps/web/src/routes/+page.svelte

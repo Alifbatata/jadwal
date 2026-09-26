@@ -3,8 +3,12 @@
 // Tout passe par `withSessionOrg` : le contexte vient de la session, jamais de la requête. Une
 // personne qui écrirait l'identifiant d'une autre organisation dans son formulaire ne verrait rien,
 // puisque le contexte n'est pas construit à partir de ce qu'elle envoie.
+//
+// Les actions rendent le nom d'une erreur, jamais sa phrase : la page l'écrit dans la langue de
+// l'écran (`$lib/i18n/members.ts`, étape 18).
 
 import { fail } from '@sveltejs/kit';
+import type { IsoDate } from '@jadwal/core';
 import { newId, sql } from '@jadwal/db';
 import { record } from '$lib/server/audit.js';
 import { withSessionOrg } from '$lib/server/context.js';
@@ -17,11 +21,11 @@ import type { Actions, PageServerLoad } from './$types.js';
 const INVITATION_DAYS = 14;
 const ADRESSE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** La seule réponse que l'invitation sait donner, quelle que soit l'adresse (ADR 0017). */
-const INVITEE = {
-	invitee: true,
-	message: 'L’invitation a été envoyée à cette adresse.'
-} as const;
+/**
+ * La seule réponse que l'invitation sait donner, quelle que soit l'adresse (ADR 0017). La page
+ * l'écrit dans sa langue ; elle ne dépend de rien d'autre que du geste.
+ */
+const INVITEE = { invitee: true } as const;
 
 function rows<T>(result: unknown): T[] {
 	if (Array.isArray(result)) return result as T[];
@@ -41,6 +45,7 @@ export const load: PageServerLoad = async (event) => {
 		organisation: { nom: await organisationName(tx), slug: context.organizationSlug },
 		role: context.role,
 		moi: context.userId,
+		invitationDays: INVITATION_DAYS,
 		membres: rows<{
 			id: string;
 			user_id: string;
@@ -55,15 +60,24 @@ export const load: PageServerLoad = async (event) => {
 				order by m."role", u."email"
 			`)
 		),
-		// Une invitation en attente n'affiche que ce que le responsable a saisi : l'adresse, la date
-		// et qui a invité. Jamais un nom venu d'un compte existant.
-		invitations: rows<{ id: string; email: string; role: string; created_at: string }>(
+		// Une invitation en attente n'affiche que ce que le responsable a saisi : l'adresse, le rôle,
+		// le jour de l'envoi et le dernier jour où elle vaut. Jamais un nom venu d'un compte existant.
+		// Les deux jours sont ceux du fuseau de l'organisation, que la page écrit JJ.MM.AAAA (A3).
+		invitations: rows<{
+			id: string;
+			email: string;
+			role: string;
+			sent_on: IsoDate;
+			expires_on: IsoDate;
+		}>(
 			await tx.execute(sql`
-				select "id", "email", "role", "created_at"::text
-				from "invitation"
-				where "organization_id" = ${context.organizationId}
-					and "status" = 'pending' and "expires_at" > now()
-				order by "created_at"
+				select i."id", i."email", i."role",
+					to_char(i."created_at" at time zone o."time_zone", 'YYYY-MM-DD') as "sent_on",
+					to_char(i."expires_at" at time zone o."time_zone", 'YYYY-MM-DD') as "expires_on"
+				from "invitation" i join "organization" o on o."id" = i."organization_id"
+				where i."organization_id" = ${context.organizationId}
+					and i."status" = 'pending' and i."expires_at" > now()
+				order by i."created_at"
 			`)
 		)
 	}));
@@ -96,19 +110,21 @@ function mustBeAdmin(role: string) {
 
 export const actions: Actions = {
 	inviter: async (event) => {
-		const { request, url } = event;
+		const { request, url, locals } = event;
 		const context = await mustBeInOrganisation(event);
 		if (!mustBeAdmin(context.role)) {
-			return fail(403, { erreur: 'Seule une personne responsable peut inviter.' });
+			return fail(403, { error: 'notManager' as const });
 		}
 		const form = await request.formData();
 		const email = String(form.get('email') ?? '').trim();
 		const role = String(form.get('role') ?? 'editor');
+		// L'adresse et le rôle saisis reviennent au formulaire : sans JavaScript, la page renvoyée
+		// les aurait perdus, et la personne devait tout retaper pour une faute de frappe.
 		if (!ADRESSE.test(email)) {
-			return fail(400, { erreur: 'Cette adresse n’a pas la forme d’une adresse électronique.' });
+			return fail(400, { error: 'invalidEmail' as const, email, role });
 		}
 		if (role !== 'org_admin' && role !== 'editor') {
-			return fail(400, { erreur: 'Ce rôle n’existe pas.' });
+			return fail(400, { error: 'unknownRole' as const, email, role: 'editor' });
 		}
 
 		// Aucune consultation des comptes : on enregistre l'invitation et on envoie le message. Il
@@ -161,7 +177,12 @@ export const actions: Actions = {
 			});
 		});
 		const organisation = await withSessionOrg(context, organisationName);
-		await createMailer().send(invitationEmail(email, organisation, url.origin));
+		// La langue de l'écran de la personne qui invite, donnée à la fonction du courriel : lire celle
+		// du compte invité demanderait de le chercher par son adresse, ce que ce chemin ne fait jamais
+		// (ADR 0017). Le hook la pose avant toute action de l'espace (étape 18, retour D3).
+		await createMailer().send(
+			invitationEmail(email, organisation, url.origin, locals.langue ?? 'fr')
+		);
 		return INVITEE;
 	},
 
@@ -169,7 +190,7 @@ export const actions: Actions = {
 		const { request } = event;
 		const context = await mustBeInOrganisation(event);
 		if (!mustBeAdmin(context.role)) {
-			return fail(403, { erreur: 'Seule une personne responsable peut annuler une invitation.' });
+			return fail(403, { error: 'notManager' as const });
 		}
 		const invitationId = String((await request.formData()).get('invitationId') ?? '');
 		await withSessionOrg(context, async (tx) => {
@@ -198,7 +219,7 @@ export const actions: Actions = {
 		const { request } = event;
 		const context = await mustBeInOrganisation(event);
 		if (!mustBeAdmin(context.role)) {
-			return fail(403, { erreur: 'Seule une personne responsable peut retirer un membre.' });
+			return fail(403, { error: 'notManager' as const });
 		}
 		const membershipId = String((await request.formData()).get('membershipId') ?? '');
 		try {
@@ -211,7 +232,7 @@ export const actions: Actions = {
 				});
 			});
 		} catch (error) {
-			return fail(409, { erreur: derniereResponsable(error) });
+			return fail(409, { error: derniereResponsable(error) });
 		}
 		return { retire: true };
 	},
@@ -220,13 +241,13 @@ export const actions: Actions = {
 		const { request } = event;
 		const context = await mustBeInOrganisation(event);
 		if (!mustBeAdmin(context.role)) {
-			return fail(403, { erreur: 'Seule une personne responsable peut changer un rôle.' });
+			return fail(403, { error: 'notManager' as const });
 		}
 		const form = await request.formData();
 		const membershipId = String(form.get('membershipId') ?? '');
 		const role = String(form.get('role') ?? '');
 		if (role !== 'org_admin' && role !== 'editor') {
-			return fail(400, { erreur: 'Ce rôle n’existe pas.' });
+			return fail(400, { error: 'unknownRole' as const });
 		}
 		try {
 			await withSessionOrg(context, async (tx) => {
@@ -241,7 +262,7 @@ export const actions: Actions = {
 				});
 			});
 		} catch (error) {
-			return fail(409, { erreur: derniereResponsable(error) });
+			return fail(409, { error: derniereResponsable(error) });
 		}
 		return { change: true };
 	}
@@ -249,13 +270,13 @@ export const actions: Actions = {
 
 /**
  * La base refuse de laisser une organisation sans personne responsable (code `restrict_violation`).
- * On traduit ce refus précis ; tout autre échec est relancé, pour ne pas masquer une vraie erreur.
+ * On nomme ce refus précis ; tout autre échec est relancé, pour ne pas masquer une vraie erreur.
  */
-function derniereResponsable(error: unknown): string {
+function derniereResponsable(error: unknown): 'lastManager' {
 	let current: unknown = error;
 	for (let depth = 0; depth < 5 && current instanceof Error; depth += 1) {
 		if ((current as { code?: unknown }).code === '23001') {
-			return 'Une organisation doit toujours garder au moins une personne responsable.';
+			return 'lastManager';
 		}
 		current = (current as { cause?: unknown }).cause;
 	}
