@@ -709,7 +709,7 @@ function corpus() {
 		}
 	}
 
-	// La page de garde du PDF : ses dix points, lus depuis le module qui les porte. Extraire les
+	// La page de garde du PDF : ses onze points, lus depuis le module qui les porte. Extraire les
 	// chaînes de ce fichier rendrait aussi sa feuille de style, qui n'est pas du français.
 	ajouter(
 		'scripts/conditions-pdf.mjs',
