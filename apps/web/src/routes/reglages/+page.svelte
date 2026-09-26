@@ -10,11 +10,31 @@
 	const organisation = $derived(data.organisation);
 
 	/**
-	 * La couleur en cours de saisie. Elle part de celle qui est enregistrée : sans JavaScript, le
-	 * champ garde cette valeur et l'aperçu montre la couleur actuelle, ce qui est exact, puisque
-	 * rien n'a encore changé.
+	 * Ce que montre le formulaire : ce qui a été saisi, après un refus du serveur, pour que le message
+	 * et les champs disent la même chose ; sinon, ce qui est enregistré.
 	 */
-	let couleur = $state(untrack(() => accentValide(data.organisation.accent_color)));
+	const saisie = $derived(
+		form && 'values' in form && form.values
+			? form.values
+			: {
+					name: organisation.name,
+					timeZone: organisation.time_zone,
+					accentColor: organisation.accent_color,
+					greeting: organisation.greeting,
+					enabledLanguages: organisation.enabled_language,
+					defaultLanguage: organisation.default_language
+				}
+	);
+	/** Un fuseau hors de la liste n'est jamais rendu par le serveur : c'est alors celui qui est enregistré. */
+	const fuseauChoisi = $derived(saisie.timeZone ?? organisation.time_zone);
+	/** Un nom de fuseau se lit mieux sans ses traits de soulignement : « America/New York ». */
+	const zoneLabel = (zone: string) => zone.replaceAll('_', ' ');
+
+	/**
+	 * La couleur en cours de saisie. Elle part de celle du formulaire : sans JavaScript, le champ
+	 * garde cette valeur et l'aperçu la montre, ce qui est exact, puisque rien n'a encore changé.
+	 */
+	let couleur = $state(untrack(() => accentValide(saisie.accentColor)));
 	const apercu = $derived(variablesAccent(couleur));
 	const rapport = $derived(contraste(couleur, texteSur(couleur)));
 
@@ -65,7 +85,7 @@
 		id="name"
 		name="name"
 		type="text"
-		value={organisation.name}
+		value={saisie.name}
 		maxlength="120"
 		required
 		dir="auto"
@@ -73,19 +93,32 @@
 	/>
 	<p id="name-aide" class="aide">{text.nameHelp}</p>
 
+	<!-- La liste de la création d'une organisation, l'Europe en tête : un nom tapé à la main laissait
+	     passer un alias (Europe/Amsterdam), que le flux agenda refuse ensuite. Un fuseau enregistré
+	     avant la liste, qu'elle ne propose pas, vient en premier, choisi, pour ne pas être perdu. -->
 	<label for="timeZone">{text.timeZoneLabel}</label>
-	<input
-		id="timeZone"
-		name="timeZone"
-		type="text"
-		value={organisation.time_zone}
-		required
-		autocomplete="off"
-		spellcheck="false"
-		dir="ltr"
-		aria-describedby="timeZone-aide"
-	/>
-	<p id="timeZone-aide" class="aide">{text.timeZoneHelp}</p>
+	<select id="timeZone" name="timeZone" dir="ltr" aria-describedby="timeZone-aide">
+		{#if data.timeZoneKept}
+			<option value={data.timeZoneKept} selected={data.timeZoneKept === fuseauChoisi}>
+				{zoneLabel(data.timeZoneKept)}
+			</option>
+		{/if}
+		<optgroup label={text.timeZoneEurope}>
+			{#each data.timeZones.europe as zone (zone)}
+				<option value={zone} selected={zone === fuseauChoisi}>{zoneLabel(zone)}</option>
+			{/each}
+		</optgroup>
+		<optgroup label={text.timeZoneWorld}>
+			{#each data.timeZones.world as zone (zone)}
+				<option value={zone} selected={zone === fuseauChoisi}>{zoneLabel(zone)}</option>
+			{/each}
+		</optgroup>
+	</select>
+	<p id="timeZone-aide" class="aide">
+		{text.timeZoneHelp}
+		{text.timeZoneNotListed}
+		{#if data.timeZoneKept}{text.timeZoneKept(data.timeZoneKept)}{/if}
+	</p>
 
 	<label for="accentColor">{text.colourLabel}</label>
 	<input
@@ -109,7 +142,7 @@
 		id="greeting"
 		name="greeting"
 		type="text"
-		value={organisation.greeting}
+		value={saisie.greeting}
 		maxlength="60"
 		required
 		dir="auto"
@@ -126,7 +159,7 @@
 					type="checkbox"
 					name="enabledLanguages"
 					value={langue}
-					checked={organisation.enabled_language.includes(langue)}
+					checked={saisie.enabledLanguages.includes(langue)}
 				/>
 				{languageLabel(langue, data.language)}
 			</label>
@@ -136,7 +169,7 @@
 	<label for="defaultLanguage">{text.defaultLanguageLabel}</label>
 	<select id="defaultLanguage" name="defaultLanguage" aria-describedby="defaultLanguage-aide">
 		{#each data.languesPossibles as langue (langue)}
-			<option value={langue} selected={langue === organisation.default_language}>
+			<option value={langue} selected={langue === saisie.defaultLanguage}>
 				{languageLabel(langue, data.language)}
 			</option>
 		{/each}

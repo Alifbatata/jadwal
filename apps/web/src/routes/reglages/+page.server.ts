@@ -17,6 +17,9 @@ import { record } from '$lib/server/audit.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { mustAdminister } from '$lib/server/guard.js';
 import { readSettings } from '$lib/server/programme.js';
+// La liste des fuseaux de la création d'une organisation, pour que les deux écrans proposent les
+// mêmes et refusent les mêmes (étape 18) : des noms canoniques, sans alias ni `Etc/`.
+import { isOfferedTimeZone, timeZoneChoices } from '../super-admin/time-zones.server.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
 const COULEUR = /^#[0-9a-fA-F]{6}$/;
@@ -80,7 +83,11 @@ export const load: PageServerLoad = async (event) => {
 		return {
 			organisation: settings,
 			salles: await readRoomsInUse(tx),
-			languesPossibles: LANGUES
+			languesPossibles: LANGUES,
+			timeZones: timeZoneChoices(),
+			// Un fuseau enregistré avant la liste, qu'elle ne propose pas (un alias) : la page l'ajoute,
+			// choisi, pour qu'enregistrer le reste des réglages ne le remplace pas sans le dire.
+			timeZoneKept: isOfferedTimeZone(settings.time_zone) ? null : settings.time_zone
 		};
 	});
 };
@@ -99,24 +106,37 @@ export const actions: Actions = {
 			.filter((value) => (LANGUES as readonly string[]).includes(value));
 		const defaultLanguage = String(form.get('defaultLanguage') ?? '');
 
-		if (name.length === 0) return fail(400, { error: 'nameRequired' as const });
-		if (!COULEUR.test(accentColor)) return fail(400, { error: 'colour' as const });
-		if (greeting.length === 0) return fail(400, { error: 'greetingRequired' as const });
-		if (langues.length === 0) return fail(400, { error: 'noLanguage' as const });
+		// Ce qui a été saisi revient au formulaire après un refus. Avant, la page réaffichait les
+		// valeurs enregistrées sous un message qui les contredisait : Europe/Zurich sous « ce fuseau
+		// n'existe pas », les cinq langues cochées sous « la langue par défaut doit être cochée », et
+		// le nom tapé perdu. Un fuseau hors de la liste ne revient pas : la liste montre alors celui
+		// qui est enregistré.
+		const values = {
+			name,
+			timeZone: isOfferedTimeZone(timeZone) ? timeZone : null,
+			accentColor,
+			greeting,
+			enabledLanguages: langues,
+			defaultLanguage
+		};
+		if (name.length === 0) return fail(400, { error: 'nameRequired' as const, values });
+		if (!COULEUR.test(accentColor)) return fail(400, { error: 'colour' as const, values });
+		if (greeting.length === 0) return fail(400, { error: 'greetingRequired' as const, values });
+		if (langues.length === 0) return fail(400, { error: 'noLanguage' as const, values });
 		if (!langues.includes(defaultLanguage)) {
-			return fail(400, { error: 'defaultNotEnabled' as const });
-		}
-		// Le fuseau est vérifié par la bibliothèque du système : un nom inventé lève ici, avant
-		// d'être écrit, plutôt que de faire échouer tous les calculs de dates plus tard.
-		try {
-			new Intl.DateTimeFormat('fr', { timeZone });
-		} catch {
-			return fail(400, { error: 'timeZone' as const });
+			return fail(400, { error: 'defaultNotEnabled' as const, values });
 		}
 
 		const literal = langues.map((langue) => `'${langue}'`).join(',');
-		const ok = await withSessionOrg(context, async (tx) => {
+		const result = await withSessionOrg(context, async (tx) => {
 			const before = await readSettings(tx);
+			// Le fuseau se choisit dans la liste, comme à la création : elle n'a aucun alias, que le
+			// flux agenda refuse (`buildCalendar`), ni aucun nom inventé, qui ferait échouer tous les
+			// calculs de dates. Seul reste admis hors de la liste celui que l'organisation a déjà :
+			// enregistrer le reste des réglages ne doit pas lui en imposer un autre.
+			if (!isOfferedTimeZone(timeZone) && timeZone !== before.time_zone) {
+				return 'timeZone' as const;
+			}
 			const touched = await tx.execute(sql`
 				update "organization" set "name" = ${name}, "time_zone" = ${timeZone},
 					"accent_color" = ${accentColor}, "greeting" = ${greeting},
@@ -125,7 +145,7 @@ export const actions: Actions = {
 				where "id" = ${context.organizationId}
 				returning "id"
 			`);
-			if (rows(touched).length === 0) return false;
+			if (rows(touched).length === 0) return 'gone' as const;
 			await record(tx, context.organizationId, context.userId, {
 				action: 'organization.settings',
 				targetTable: 'organization',
@@ -147,9 +167,11 @@ export const actions: Actions = {
 					default_language: defaultLanguage
 				}
 			});
-			return true;
+			return 'saved' as const;
 		});
-		if (!ok) return fail(404, { error: 'gone' as const });
+		if (result !== 'saved') {
+			return fail(result === 'gone' ? 404 : 400, { error: result, values });
+		}
 		return { enregistre: true };
 	},
 

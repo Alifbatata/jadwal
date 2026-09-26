@@ -9,13 +9,17 @@
 // - l'invitation part dans la langue de l'écran de la personne qui invite (D3) ;
 // - les deux écrans dans les cinq langues, erreurs comprises, sans phrase française restée et sans
 //   date écrite comme la base l'écrit (D2, A3) ;
-// - supprimer une salle que des cours occupent : l'écran le dit avant, et demande de confirmer.
+// - après un refus, Réglages rend ce qui a été saisi, et le fuseau se choisit dans la liste du
+//   super-admin, qui n'a aucun alias ;
+// - supprimer une salle que des cours occupent : l'écran le dit avant, et demande de confirmer, en
+//   haut de la page, là où l'on arrive après l'envoi.
 
 import { readFileSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { createDatabase, newId, sql, type DatabaseHandle } from '@jadwal/db';
+import { timeZoneChoices } from '../src/routes/super-admin/time-zones.server.js';
 import { conditionsAcceptees } from './conditions-acceptees.js';
 import { frenchLeft, ISO_DATE, textSegments, visibleText } from './textes-lus.js';
 
@@ -41,8 +45,21 @@ const INVITEE = 'mr-invitee@example.test';
 const SALLE_OCCUPEE = 'Salle de prière';
 const SALLE_LIBRE = 'Petite salle';
 
-/** Ce qui est pareil dans toutes les langues par nature : noms et adresses. */
-const PERMIS = [ORGANISATION, RESPONSABLE, EDITRICE, INVITEE, SALLE_OCCUPEE, SALLE_LIBRE];
+/**
+ * Ce qui est pareil dans toutes les langues par nature : noms, adresses, et les noms des fuseaux de
+ * la liste, tels que Réglages les écrit (« America/Argentina/Buenos Aires »).
+ */
+const PERMIS = [
+	ORGANISATION,
+	RESPONSABLE,
+	EDITRICE,
+	INVITEE,
+	SALLE_OCCUPEE,
+	SALLE_LIBRE,
+	...[...timeZoneChoices().europe, ...timeZoneChoices().world].map((zone) =>
+		zone.replaceAll('_', ' ')
+	)
+];
 
 let ownerHandle: DatabaseHandle;
 let organizationId: string;
@@ -77,12 +94,23 @@ async function get(chemin: string, cookie: string): Promise<Response> {
 	return fetch(`${origin}${chemin}`, { redirect: 'manual', headers: { cookie } });
 }
 
-/** Poste un formulaire comme un navigateur sans JavaScript. */
+/** Une page qui doit s'ouvrir : son statut est vérifié, son HTML rendu. */
+async function page200(chemin: string, cookie: string): Promise<string> {
+	const reponse = await get(chemin, cookie);
+	expect(reponse.status, chemin).toBe(200);
+	return reponse.text();
+}
+
+/** Poste un formulaire comme un navigateur sans JavaScript. Un champ peut porter plusieurs valeurs. */
 async function postForm(
 	chemin: string,
-	champs: Record<string, string>,
+	champs: Record<string, string | readonly string[]>,
 	cookie: string
 ): Promise<Response> {
+	const corps = new URLSearchParams();
+	for (const [nom, valeur] of Object.entries(champs)) {
+		for (const une of typeof valeur === 'string' ? [valeur] : valeur) corps.append(nom, une);
+	}
 	return fetch(`${origin}${chemin}`, {
 		method: 'POST',
 		redirect: 'manual',
@@ -92,7 +120,7 @@ async function postForm(
 			origin,
 			cookie
 		},
-		body: new URLSearchParams(champs).toString()
+		body: corps.toString()
 	});
 }
 
@@ -136,6 +164,42 @@ function alerte(html: string): string {
 	return lu(html.match(/<[a-z]+\b[^>]*role="alert"[^>]*>([\s\S]*?)<\/(?:p|div)>/)?.[1] ?? '');
 }
 
+/** Le message qui dit ce qui vient d'être fait, s'il y en a un. */
+function statut(html: string): string {
+	return lu(html.match(/<p\b[^>]*role="status"[^>]*>[\s\S]*?<\/p>/)?.[0] ?? '');
+}
+
+/** La balise ouvrante du champ (ou de la liste) qui porte cet identifiant. */
+function champ(html: string, id: string): string {
+	return new RegExp(`<(?:input|select)\\b[^>]*\\bid="${id}"[^>]*>`).exec(html)?.[0] ?? '';
+}
+
+function valeurDuChamp(html: string, id: string): string | undefined {
+	return champ(html, id).match(/\bvalue="([^"]*)"/)?.[1];
+}
+
+/** Les valeurs des options choisies d'une liste. */
+function optionsChoisies(html: string, id: string): string[] {
+	return [...element(html, id).matchAll(/<option\b([^>]*)>/g)]
+		.filter(([, attributs]) => /\bselected\b/.test(attributs ?? ''))
+		.map(([, attributs]) => (attributs ?? '').match(/\bvalue="([^"]*)"/)?.[1] ?? '');
+}
+
+/** Toutes les valeurs proposées par une liste, dans l'ordre. */
+function optionsDe(fragment: string): string[] {
+	return [...fragment.matchAll(/<option\b[^>]*\bvalue="([^"]*)"/g)].map(
+		([, valeur]) => valeur ?? ''
+	);
+}
+
+/** Les cases cochées d'un groupe de cases. */
+function casesCochees(html: string, nom: string): string[] {
+	return [...html.matchAll(/<input\b[^>]*>/g)]
+		.map(([balise]) => balise)
+		.filter((balise) => balise.includes(`name="${nom}"`) && /\bchecked\b/.test(balise))
+		.map((balise) => balise.match(/\bvalue="([^"]*)"/)?.[1] ?? '');
+}
+
 interface Courriel {
 	to: string;
 	subject: string;
@@ -176,6 +240,28 @@ async function sallesEnBase(): Promise<{ id: string; cours: number }[]> {
 			`)
 		)
 	);
+}
+
+interface Reglages {
+	name: string;
+	time_zone: string;
+	accent_color: string;
+	greeting: string;
+	enabled_language: string[];
+	default_language: string;
+}
+
+async function reglagesEnBase(): Promise<Reglages> {
+	const [ligne] = await maintenance(async (tx) =>
+		lignes<Reglages>(
+			await tx.execute(sql`
+				select "name", "time_zone", "accent_color", "greeting", "enabled_language",
+					"default_language"
+				from "organization" where "id" = ${organizationId}
+			`)
+		)
+	);
+	return ligne as Reglages;
 }
 
 beforeAll(async () => {
@@ -576,6 +662,24 @@ const OCCUPEE: Record<Langue, readonly [string, string]> = {
 	]
 };
 
+/** La phrase d'aide pour une ville absente de la liste, la même qu'au super-admin. */
+const ABSENTE: Record<Langue, string> = {
+	fr: 'Si la ville de l’organisation n’est pas dans la liste, choisissez une ville qui a toujours la même heure qu’elle. Pour la plus grande partie de l’Europe : Europe/Zurich, Europe/Paris ou Europe/Berlin.',
+	de: 'Steht der Ort der Organisation nicht in der Liste, wählen Sie eine Stadt, in der immer die gleiche Uhrzeit gilt wie dort. Für den grössten Teil Europas: Europe/Zurich, Europe/Paris oder Europe/Berlin.',
+	it: 'Se la città dell’organizzazione non è nella lista, scegli una città con la stessa ora tutto l’anno. Per la maggior parte dell’Europa: Europe/Zurich, Europe/Paris o Europe/Berlin.',
+	en: 'If the town of the organisation is not in the list, choose a city with the same time all year round. For most of Europe: Europe/Zurich, Europe/Paris or Europe/Berlin.',
+	ar: 'إذا لم تكن مدينة المؤسسة في القائمة، فاختر مدينة لها دائمًا التوقيت نفسه. لمعظم دول أوروبا: Europe/Zurich أو Europe/Paris أو Europe/Berlin.'
+};
+
+/** Le refus d'un fuseau hors de la liste, le même qu'au super-admin. */
+const HORS_LISTE: Record<Langue, string> = {
+	fr: 'Choisissez le fuseau horaire dans la liste.',
+	de: 'Wählen Sie die Zeitzone aus der Liste.',
+	it: 'Scegli il fuso orario dalla lista.',
+	en: 'Pick the time zone from the list.',
+	ar: 'اختر المنطقة الزمنية من القائمة.'
+};
+
 describe('l’écran Réglages dans les cinq langues (retours B1, D2 et A3)', () => {
 	let cookie = '';
 	const rendus: Partial<Record<Langue, string>> = {};
@@ -621,7 +725,7 @@ describe('l’écran Réglages dans les cinq langues (retours B1, D2 et A3)', ()
 		}
 		// Le fuseau est une valeur technique, de gauche à droite ; un nom suit sa propre écriture.
 		const html = rendus[langue] ?? '';
-		expect(html).toMatch(/<input\b[^>]*\bname="timeZone"[^>]*\bdir="ltr"/);
+		expect(html).toMatch(/<select\b[^>]*\bname="timeZone"[^>]*\bdir="ltr"/);
 		for (const nom of ['name', 'greeting']) {
 			expect(html).toMatch(new RegExp(`<input\\b[^>]*\\bid="${nom}"[^>]*\\bdir="auto"`));
 		}
@@ -649,7 +753,8 @@ describe('l’écran Réglages dans les cinq langues (retours B1, D2 et A3)', ()
 		const texte = visibleText(rendus.fr ?? '');
 		for (const attendu of [
 			'Votre page publique l’affiche tout en haut.',
-			'En Suisse, écrivez Europe/Zurich.',
+			'En Suisse, choisissez Europe/Zurich.',
+			ABSENTE.fr,
 			'Exemple : Assalamu alaykum',
 			'Langues de votre page publique',
 			'Exemple : Grande salle',
@@ -658,9 +763,10 @@ describe('l’écran Réglages dans les cinq langues (retours B1, D2 et A3)', ()
 		]) {
 			expect(texte).toContain(attendu);
 		}
-		// Plus de mot technique : ni « IANA », ni « module », ni « widget », ni « accent ».
+		// Plus de mot technique : ni « IANA », ni « module », ni « widget », ni « accent ». En début
+		// de mot : la liste des fuseaux nomme « America/Indiana/Indianapolis ».
 		for (const technique of ['IANA', 'module', 'widget', 'accent']) {
-			expect(texte.toLowerCase()).not.toContain(technique.toLowerCase());
+			expect(texte).not.toMatch(new RegExp(`\\b${technique}`, 'i'));
 		}
 		expect(alerte(erreurs.fr ?? '')).toBe('Écrivez le nom de l’organisation.');
 	});
@@ -698,6 +804,160 @@ describe('l’écran Réglages dans les cinq langues (retours B1, D2 et A3)', ()
 	});
 });
 
+describe('Réglages après un refus, et le fuseau dans une liste (retour B1)', () => {
+	let cookie = '';
+	let avant: Reglages;
+
+	/** Les réglages du formulaire, tels qu'ils sont enregistrés, avec ce que le test change. */
+	function champs(change: Partial<Record<string, string | readonly string[]>>) {
+		return {
+			name: avant.name,
+			timeZone: avant.time_zone,
+			accentColor: avant.accent_color,
+			greeting: avant.greeting,
+			enabledLanguages: avant.enabled_language,
+			defaultLanguage: avant.default_language,
+			...change
+		} as Record<string, string | readonly string[]>;
+	}
+
+	beforeAll(async () => {
+		cookie = await signIn(RESPONSABLE);
+		avant = await reglagesEnBase();
+	});
+
+	afterAll(async () => {
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		// Les réglages du début, pour les groupes qui suivent.
+		await maintenance((tx) =>
+			tx.execute(sql`
+				update "organization" set "name" = ${avant.name}, "time_zone" = ${avant.time_zone},
+					"accent_color" = ${avant.accent_color}, "greeting" = ${avant.greeting},
+					"enabled_language" = ${sql.raw(
+						`array[${avant.enabled_language.map((code) => `'${code}'`).join(',')}]::text[]`
+					)},
+					"default_language" = ${avant.default_language}
+				where "id" = ${organizationId}
+			`)
+		);
+	});
+
+	it('shows again, after a refusal, everything that was typed', async () => {
+		const refus = await postForm(
+			'/reglages?/enregistrer',
+			champs({
+				name: 'Nom tapé puis refusé',
+				timeZone: 'Europe/Berlin',
+				accentColor: '#1d4ed8',
+				greeting: 'Salam à tous',
+				enabledLanguages: ['de', 'it'],
+				defaultLanguage: 'fr'
+			}),
+			cookie
+		);
+		expect(refus.status).toBe(400);
+		const html = await refus.text();
+		expect(alerte(html)).toBe('La langue par défaut doit faire partie des langues cochées.');
+		expect(valeurDuChamp(html, 'name')).toBe('Nom tapé puis refusé');
+		expect(optionsChoisies(html, 'timeZone')).toEqual(['Europe/Berlin']);
+		expect(valeurDuChamp(html, 'accentColor')).toBe('#1d4ed8');
+		expect(valeurDuChamp(html, 'greeting')).toBe('Salam à tous');
+		expect(casesCochees(html, 'enabledLanguages')).toEqual(['de', 'it']);
+		expect(optionsChoisies(html, 'defaultLanguage')).toEqual(['fr']);
+		// Et rien n'est enregistré.
+		expect(await reglagesEnBase()).toEqual(avant);
+	});
+
+	it('offers the time zones of the super-admin list, Europe first, and no alias', async () => {
+		const html = await page200('/reglages', cookie);
+		const liste = element(html, 'timeZone');
+		expect(champ(html, 'timeZone')).toMatch(/^<select\b[^>]*\bname="timeZone"/);
+		const groupes = [
+			...liste.matchAll(/<optgroup\b[^>]*\blabel="([^"]*)"[^>]*>([\s\S]*?)<\/optgroup>/g)
+		].map(([, libelle, contenu]) => ({ libelle, zones: optionsDe(contenu ?? '') }));
+		expect(groupes).toEqual([
+			{ libelle: 'Europe', zones: [...timeZoneChoices().europe] },
+			{ libelle: 'Reste du monde', zones: [...timeZoneChoices().world] }
+		]);
+		expect(optionsDe(liste)).not.toContain('Europe/Amsterdam');
+		expect(optionsChoisies(html, 'timeZone')).toEqual(['Europe/Zurich']);
+		const aide = lu(element(html, 'timeZone-aide'));
+		expect(aide).toContain('En Suisse, choisissez Europe/Zurich.');
+		expect(aide).toContain(ABSENTE.fr);
+	});
+
+	it.each(LANGUES)(
+		'refuses in %s a time zone the list does not offer, and keeps the one saved',
+		async (langue) => {
+			await poserLangueDuCompte(RESPONSABLE, langue);
+			const refus = await postForm(
+				'/reglages?/enregistrer',
+				champs({ name: 'Autre nom tapé', timeZone: 'Europe/Amsterdam' }),
+				cookie
+			);
+			expect(refus.status).toBe(400);
+			const html = await refus.text();
+			expect(alerte(html)).toBe(HORS_LISTE[langue]);
+			expect(valeurDuChamp(html, 'name')).toBe('Autre nom tapé');
+			expect(optionsChoisies(html, 'timeZone')).toEqual(['Europe/Zurich']);
+			expect(optionsDe(element(html, 'timeZone'))).not.toContain('Europe/Amsterdam');
+			expect(lu(element(html, 'timeZone-aide'))).toContain(ABSENTE[langue]);
+			expect(await reglagesEnBase()).toEqual(avant);
+		}
+	);
+
+	it('keeps a saved time zone the list does not offer, until another one is chosen', async () => {
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		// Une organisation d'avant la liste, dont le fuseau est un alias.
+		await maintenance((tx) =>
+			tx.execute(
+				sql`update "organization" set "time_zone" = 'Europe/Amsterdam' where "id" = ${organizationId}`
+			)
+		);
+		const html = await page200('/reglages', cookie);
+		expect(optionsChoisies(html, 'timeZone')).toEqual(['Europe/Amsterdam']);
+		expect(
+			optionsDe(element(html, 'timeZone')).filter((zone) => zone === 'Europe/Amsterdam')
+		).toEqual(['Europe/Amsterdam']);
+		expect(lu(element(html, 'timeZone-aide'))).toContain(
+			'Votre fuseau actuel, Europe/Amsterdam, ne fait pas partie de la liste. Il est gardé tant que vous n’en choisissez pas un autre.'
+		);
+
+		// Enregistrer sans toucher au fuseau le garde.
+		const garde = await postForm(
+			'/reglages?/enregistrer',
+			champs({ timeZone: 'Europe/Amsterdam', greeting: 'Salam, fuseau gardé' }),
+			cookie
+		);
+		expect(garde.status).toBe(200);
+		expect(statut(await garde.text())).toBe('Réglages enregistrés.');
+		expect(await reglagesEnBase()).toEqual({
+			...avant,
+			time_zone: 'Europe/Amsterdam',
+			greeting: 'Salam, fuseau gardé'
+		});
+
+		// Un autre alias reste refusé ; un fuseau de la liste le remplace.
+		const autre = await postForm(
+			'/reglages?/enregistrer',
+			champs({ timeZone: 'Europe/Oslo' }),
+			cookie
+		);
+		expect(autre.status).toBe(400);
+		expect((await reglagesEnBase()).time_zone).toBe('Europe/Amsterdam');
+		const choisi = await postForm(
+			'/reglages?/enregistrer',
+			champs({ timeZone: 'Europe/Berlin' }),
+			cookie
+		);
+		expect(choisi.status).toBe(200);
+		expect((await reglagesEnBase()).time_zone).toBe('Europe/Berlin');
+		const apres = await page200('/reglages', cookie);
+		expect(optionsChoisies(apres, 'timeZone')).toEqual(['Europe/Berlin']);
+		expect(optionsDe(element(apres, 'timeZone'))).not.toContain('Europe/Amsterdam');
+	});
+});
+
 describe('supprimer une salle que des cours occupent', () => {
 	it('keeps the room and its courses as long as nobody confirms', async () => {
 		const cookie = await signIn(RESPONSABLE);
@@ -717,9 +977,7 @@ describe('supprimer une salle que des cours occupent', () => {
 			cookie
 		);
 		expect(reponse.status).toBe(200);
-		expect(
-			lu((await reponse.text()).match(/<p\b[^>]*role="status"[^>]*>[\s\S]*?<\/p>/)?.[0] ?? '')
-		).toBe('Salle supprimée.');
+		expect(statut(await reponse.text())).toBe('Salle supprimée.');
 		expect(await sallesEnBase()).toEqual([{ id: salleLibre, cours: 0 }]);
 		const cours = await maintenance(async (tx) =>
 			lignes<{ organization_id: string; room_id: string | null }>(

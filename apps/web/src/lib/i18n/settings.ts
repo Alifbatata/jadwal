@@ -9,11 +9,19 @@
 import { plural, type PluralForms, type Translations } from './space.js';
 
 /**
- * Les valeurs qu'on tape telles quelles, pareilles dans toutes les langues : des noms de fuseau
- * horaire, un code de couleur, une salutation. Ce ne sont pas des mots de la phrase qui les cite.
+ * Les valeurs qu'on tape ou qu'on choisit telles quelles, pareilles dans toutes les langues : des noms
+ * de fuseau horaire, un code de couleur, une salutation. Ce ne sont pas des mots de la phrase qui les
+ * cite.
+ *
+ * Les trois fuseaux ont toujours l'heure de la plus grande partie de l'Europe. Une ville dont le nom
+ * est un alias (Oslo, Amsterdam, Vaduz…) n'est pas dans la liste, parce que le flux agenda refuse les
+ * alias : l'aide dit d'en prendre une à la même heure, avec la phrase du super-admin.
  */
-const SWISS_ZONE = 'Europe/Zurich';
-const OTHER_ZONE = 'Europe/Paris';
+const [SWISS_ZONE, PARIS_ZONE, BERLIN_ZONE] = [
+	'Europe/Zurich',
+	'Europe/Paris',
+	'Europe/Berlin'
+] as const;
 const COLOUR_SAMPLE = '#0f766e';
 const GREETING_SAMPLE = 'Assalamu alaykum';
 
@@ -43,6 +51,15 @@ interface SettingsTexts {
 	readonly nameHelp: string;
 	readonly timeZoneLabel: string;
 	readonly timeZoneHelp: string;
+	/** Quoi choisir quand la ville de l'organisation n'est pas dans la liste (celle du super-admin). */
+	readonly timeZoneNotListed: string;
+	/**
+	 * Un fuseau enregistré avant la liste, qu'elle ne propose pas (un alias) : la liste le montre,
+	 * choisi, pour qu'un enregistrement ne le change pas sans le dire.
+	 */
+	readonly timeZoneKept: (zone: string) => string;
+	readonly timeZoneEurope: string;
+	readonly timeZoneWorld: string;
 	readonly colourLabel: string;
 	readonly colourPreview: string;
 	/** Le contraste du texte posé sur la couleur choisie, écrit à la façon de chaque langue. */
@@ -103,7 +120,12 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		nameLabel: 'Nom de l’organisation',
 		nameHelp: 'Votre page publique l’affiche tout en haut.',
 		timeZoneLabel: 'Fuseau horaire',
-		timeZoneHelp: `L’heure de vos cours en dépend. En Suisse, écrivez ${SWISS_ZONE}. Ailleurs, le nom s’écrit en anglais, le continent puis la ville, par exemple ${OTHER_ZONE}.`,
+		timeZoneHelp: `L’heure de vos cours en dépend. En Suisse, choisissez ${SWISS_ZONE}.`,
+		timeZoneNotListed: `Si la ville de l’organisation n’est pas dans la liste, choisissez une ville qui a toujours la même heure qu’elle. Pour la plus grande partie de l’Europe : ${SWISS_ZONE}, ${PARIS_ZONE} ou ${BERLIN_ZONE}.`,
+		timeZoneKept: (zone) =>
+			`Votre fuseau actuel, ${zone}, ne fait pas partie de la liste. Il est gardé tant que vous n’en choisissez pas un autre.`,
+		timeZoneEurope: 'Europe',
+		timeZoneWorld: 'Reste du monde',
 		colourLabel: 'Couleur de votre page',
 		colourPreview: 'Exemple de bouton',
 		colourContrast: (ratio) =>
@@ -158,7 +180,7 @@ export const settingsTexts: Translations<SettingsTexts> = {
 			greetingRequired: `Écrivez une formule d’accueil, par exemple ${GREETING_SAMPLE}.`,
 			noLanguage: 'Cochez au moins une langue pour votre page publique.',
 			defaultNotEnabled: 'La langue par défaut doit faire partie des langues cochées.',
-			timeZone: `Ce fuseau horaire n’existe pas. En Suisse, écrivez ${SWISS_ZONE}.`,
+			timeZone: 'Choisissez le fuseau horaire dans la liste.',
 			gone: 'Cette organisation n’existe plus.',
 			roomNameRequired: 'Écrivez le nom de la salle.',
 			prayerStillUsed:
@@ -173,7 +195,12 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		nameLabel: 'Name der Organisation',
 		nameHelp: 'Er erscheint oben auf Ihrer öffentlichen Seite.',
 		timeZoneLabel: 'Zeitzone',
-		timeZoneHelp: `Sie bestimmt die Uhrzeit Ihrer Kurse. In der Schweiz schreiben Sie ${SWISS_ZONE}. Anderswo schreibt man den Namen auf Englisch, zuerst den Kontinent, dann die Stadt, zum Beispiel ${OTHER_ZONE}.`,
+		timeZoneHelp: `Sie bestimmt die Uhrzeit Ihrer Kurse. In der Schweiz wählen Sie ${SWISS_ZONE}.`,
+		timeZoneNotListed: `Steht der Ort der Organisation nicht in der Liste, wählen Sie eine Stadt, in der immer die gleiche Uhrzeit gilt wie dort. Für den grössten Teil Europas: ${SWISS_ZONE}, ${PARIS_ZONE} oder ${BERLIN_ZONE}.`,
+		timeZoneKept: (zone) =>
+			`Ihre aktuelle Zeitzone, ${zone}, steht nicht in der Liste. Sie bleibt erhalten, solange Sie keine andere wählen.`,
+		timeZoneEurope: 'Europa',
+		timeZoneWorld: 'Übrige Welt',
 		colourLabel: 'Farbe Ihrer Seite',
 		colourPreview: 'Beispiel für eine Schaltfläche',
 		colourContrast: (ratio) =>
@@ -228,7 +255,7 @@ export const settingsTexts: Translations<SettingsTexts> = {
 			greetingRequired: `Schreiben Sie eine Grussformel, zum Beispiel ${GREETING_SAMPLE}.`,
 			noLanguage: 'Kreuzen Sie mindestens eine Sprache für Ihre öffentliche Seite an.',
 			defaultNotEnabled: 'Die Standardsprache muss zu den angekreuzten Sprachen gehören.',
-			timeZone: `Diese Zeitzone gibt es nicht. In der Schweiz schreiben Sie ${SWISS_ZONE}.`,
+			timeZone: 'Wählen Sie die Zeitzone aus der Liste.',
 			gone: 'Diese Organisation gibt es nicht mehr.',
 			roomNameRequired: 'Schreiben Sie den Namen des Raums.',
 			prayerStillUsed:
@@ -243,7 +270,12 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		nameLabel: 'Nome dell’organizzazione',
 		nameHelp: 'Compare in alto sulla tua pagina pubblica.',
 		timeZoneLabel: 'Fuso orario',
-		timeZoneHelp: `Dà l’ora dei tuoi corsi. In Svizzera scrivi ${SWISS_ZONE}. Altrove il nome si scrive in inglese, prima il continente e poi la città, per esempio ${OTHER_ZONE}.`,
+		timeZoneHelp: `Dà l’ora dei tuoi corsi. In Svizzera scegli ${SWISS_ZONE}.`,
+		timeZoneNotListed: `Se la città dell’organizzazione non è nella lista, scegli una città con la stessa ora tutto l’anno. Per la maggior parte dell’Europa: ${SWISS_ZONE}, ${PARIS_ZONE} o ${BERLIN_ZONE}.`,
+		timeZoneKept: (zone) =>
+			`Il tuo fuso orario attuale, ${zone}, non è nella lista. Resta tale finché non ne scegli un altro.`,
+		timeZoneEurope: 'Europa',
+		timeZoneWorld: 'Resto del mondo',
 		colourLabel: 'Colore della tua pagina',
 		colourPreview: 'Esempio di pulsante',
 		colourContrast: (ratio) =>
@@ -298,7 +330,7 @@ export const settingsTexts: Translations<SettingsTexts> = {
 			greetingRequired: `Scrivi una formula di saluto, per esempio ${GREETING_SAMPLE}.`,
 			noLanguage: 'Seleziona almeno una lingua per la tua pagina pubblica.',
 			defaultNotEnabled: 'La lingua predefinita deve essere tra le lingue selezionate.',
-			timeZone: `Questo fuso orario non esiste. In Svizzera scrivi ${SWISS_ZONE}.`,
+			timeZone: 'Scegli il fuso orario dalla lista.',
 			gone: 'Questa organizzazione non esiste più.',
 			roomNameRequired: 'Scrivi il nome della sala.',
 			prayerStillUsed:
@@ -313,7 +345,12 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		nameLabel: 'Name of the organisation',
 		nameHelp: 'It appears at the top of your public page.',
 		timeZoneLabel: 'Time zone',
-		timeZoneHelp: `It sets the time of your courses. In Switzerland, write ${SWISS_ZONE}. Elsewhere, the name is written in English, the continent first and then the city, for example ${OTHER_ZONE}.`,
+		timeZoneHelp: `It sets the time of your courses. In Switzerland, choose ${SWISS_ZONE}.`,
+		timeZoneNotListed: `If the town of the organisation is not in the list, choose a city with the same time all year round. For most of Europe: ${SWISS_ZONE}, ${PARIS_ZONE} or ${BERLIN_ZONE}.`,
+		timeZoneKept: (zone) =>
+			`Your current time zone, ${zone}, is not in the list. It is kept until you choose another one.`,
+		timeZoneEurope: 'Europe',
+		timeZoneWorld: 'Rest of the world',
 		colourLabel: 'Colour of your page',
 		colourPreview: 'Sample button',
 		colourContrast: (ratio) =>
@@ -368,7 +405,7 @@ export const settingsTexts: Translations<SettingsTexts> = {
 			greetingRequired: `Write a greeting, for example ${GREETING_SAMPLE}.`,
 			noLanguage: 'Tick at least one language for your public page.',
 			defaultNotEnabled: 'The default language must be one of the ticked languages.',
-			timeZone: `This time zone does not exist. In Switzerland, write ${SWISS_ZONE}.`,
+			timeZone: 'Pick the time zone from the list.',
 			gone: 'This organisation no longer exists.',
 			roomNameRequired: 'Write the name of the room.',
 			prayerStillUsed:
@@ -382,7 +419,12 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		nameLabel: 'اسم المؤسسة',
 		nameHelp: 'يظهر في أعلى صفحتك العامة.',
 		timeZoneLabel: 'المنطقة الزمنية',
-		timeZoneHelp: `تحدد وقت دروسك. في سويسرا اكتب ${SWISS_ZONE}. وفي بلد آخر يُكتب الاسم بالإنجليزية، القارة ثم المدينة، مثل ${OTHER_ZONE}.`,
+		timeZoneHelp: `تحدد وقت دروسك. في سويسرا اختر ${SWISS_ZONE}.`,
+		timeZoneNotListed: `إذا لم تكن مدينة المؤسسة في القائمة، فاختر مدينة لها دائمًا التوقيت نفسه. لمعظم دول أوروبا: ${SWISS_ZONE} أو ${PARIS_ZONE} أو ${BERLIN_ZONE}.`,
+		timeZoneKept: (zone) =>
+			`منطقتك الزمنية الحالية، ${zone}، ليست في القائمة. تبقى كما هي ما لم تختر منطقة أخرى.`,
+		timeZoneEurope: 'أوروبا',
+		timeZoneWorld: 'بقية العالم',
 		colourLabel: 'لون صفحتك',
 		colourPreview: 'مثال على زر',
 		colourContrast: (ratio) =>
@@ -443,7 +485,7 @@ export const settingsTexts: Translations<SettingsTexts> = {
 			greetingRequired: 'اكتب عبارة ترحيب، مثل السلام عليكم.',
 			noLanguage: 'حدد لغة واحدة أو أكثر لصفحتك العامة.',
 			defaultNotEnabled: 'يجب أن تكون اللغة الافتراضية من اللغات المحددة.',
-			timeZone: `هذه المنطقة الزمنية غير موجودة. في سويسرا اكتب ${SWISS_ZONE}.`,
+			timeZone: 'اختر المنطقة الزمنية من القائمة.',
 			gone: 'هذه المؤسسة لم تعد موجودة.',
 			roomNameRequired: 'اكتب اسم القاعة.',
 			prayerStillUsed:
