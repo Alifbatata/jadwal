@@ -576,6 +576,27 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 				);
 			}
 		});
+
+		it('answers an organisation id that is not an identifier like an unknown organisation', async () => {
+			// Un formulaire forgé, ou abîmé en route : l'identifiant n'atteint pas la base, qui le
+			// refuserait en erreur du serveur, et l'écran dit la même chose que pour une organisation
+			// inconnue.
+			for (const identifiant of ['pas-un-identifiant', '']) {
+				for (const [chemin, champs] of [
+					['/super-admin?/plan', { organizationId: identifiant, plan: 'paid' }],
+					['/super-admin?/statut', { organizationId: identifiant, status: 'suspended' }],
+					['/super-admin?/entrer', { organizationId: identifiant }]
+				] as const) {
+					// `expect.soft` : chaque action et chaque identifiant disent leur résultat, même après
+					// un premier échec.
+					const reponse = await postForm(chemin, champs, avecPouvoirs);
+					expect.soft(reponse.status, `${chemin} « ${identifiant} »`).toBe(404);
+					expect.soft(erreur(await reponse.text()), `${chemin} « ${identifiant} »`).toBe(
+						'Cette organisation n’existe pas, ou plus.'
+					);
+				}
+			}
+		});
 	});
 
 	describe('D2 et A3 : les écrans en cinq langues', () => {

@@ -24,6 +24,11 @@ import type { Actions, PageServerLoad } from './$types.js';
 const PLANS = ['free', 'sponsored', 'paid'] as const;
 const STATUTS = ['active', 'suspended'] as const;
 const ADRESSE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/**
+ * Un identifiant d'organisation. Autre chose n'atteint pas la base, qui le refuserait en erreur du
+ * serveur : c'est une organisation inconnue, et l'écran le dit comme tel.
+ */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function rows<T>(result: unknown): T[] {
 	if (Array.isArray(result)) return result as T[];
@@ -115,6 +120,7 @@ export const actions: Actions = {
 		if (!(PLANS as readonly string[]).includes(plan)) {
 			return fail(400, { error: 'unknownPlan' as const });
 		}
+		if (!UUID.test(organizationId)) return fail(404, { error: 'unknownOrganisation' as const });
 		const touched = rows<{ name: string }>(
 			await superAdminDatabase().execute(
 				sql`update "organization" set "plan" = ${plan}, "updated_at" = now()
@@ -133,6 +139,7 @@ export const actions: Actions = {
 		if (!(STATUTS as readonly string[]).includes(status)) {
 			return fail(400, { error: 'unknownStatus' as const });
 		}
+		if (!UUID.test(organizationId)) return fail(404, { error: 'unknownOrganisation' as const });
 		const touched = rows<{ name: string }>(
 			await superAdminDatabase().execute(
 				sql`update "organization" set "status" = ${status}, "updated_at" = now()
@@ -148,7 +155,7 @@ export const actions: Actions = {
 		const person = mustBeSuperAdmin(event);
 		const form = await event.request.formData();
 		const organizationId = String(form.get('organizationId') ?? '');
-		if (!(await chooseOrganisation(person, organizationId))) {
+		if (!UUID.test(organizationId) || !(await chooseOrganisation(person, organizationId))) {
 			return fail(404, { error: 'unknownOrganisation' as const });
 		}
 		redirect(303, '/');
