@@ -78,6 +78,7 @@
 <section aria-labelledby="code-titre">
 	<h2 id="code-titre">{text.code.title}</h2>
 	<p class="details">{text.code.intro}</p>
+	<p class="details">{text.code.ownLook}</p>
 
 	<h3>{text.code.simpleTitle}</h3>
 	<p class="details">{text.code.simpleWhere}</p>

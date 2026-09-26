@@ -45,6 +45,8 @@ interface ShareTexts {
 	readonly code: {
 		readonly title: string;
 		readonly intro: string;
+		/** Ce que le programme ne prend pas au site : ses couleurs, ses polices. */
+		readonly ownLook: string;
 		readonly simpleTitle: string;
 		readonly simpleWhere: string;
 		readonly simpleSomeoneElse: string;
@@ -96,6 +98,8 @@ export const shareTexts: Translations<ShareTexts> = {
 			title: 'Le programme sur votre site',
 			intro:
 				'Votre site peut afficher le programme, toujours à jour : quand vous changez un cours ici, votre site suit tout seul.',
+			ownLook:
+				'Le programme garde sa propre présentation : il ne prend ni les couleurs ni les polices de votre site.',
 			simpleTitle: 'Le code à coller',
 			simpleWhere:
 				'Collez ce code sur votre site, à l’endroit où le programme doit apparaître, dans un bloc qui accepte du code HTML. Exemple : sur WordPress, ajoutez un bloc « HTML personnalisé » à la page de vos cours, puis collez-y ce code.',
@@ -145,6 +149,8 @@ export const shareTexts: Translations<ShareTexts> = {
 			title: 'Das Programm auf Ihrer Website',
 			intro:
 				'Ihre Website kann das Programm anzeigen, immer aktuell: Wenn Sie hier einen Kurs ändern, zieht Ihre Website von selbst nach.',
+			ownLook:
+				'Das Programm behält seine eigene Gestaltung: Es übernimmt weder die Farben noch die Schriften Ihrer Website.',
 			simpleTitle: 'Der Code zum Einfügen',
 			simpleWhere:
 				'Fügen Sie diesen Code auf Ihrer Website dort ein, wo das Programm erscheinen soll, in einem Block, der HTML-Code annimmt. Beispiel: In WordPress legen Sie auf der Seite Ihrer Kurse einen Block «Individuelles HTML» an und kopieren diesen Code hinein.',
@@ -195,6 +201,8 @@ export const shareTexts: Translations<ShareTexts> = {
 			title: 'Il programma sul tuo sito',
 			intro:
 				'Il tuo sito può mostrare il programma, sempre aggiornato: quando cambi un corso qui, il tuo sito si aggiorna da solo.',
+			ownLook:
+				'Il programma mantiene il suo aspetto: non prende né i colori né i caratteri del tuo sito.',
 			simpleTitle: 'Il codice da incollare',
 			simpleWhere:
 				'Incolla questo codice sul tuo sito, nel punto in cui deve comparire il programma, in un blocco che accetta codice HTML. Esempio: su WordPress, aggiungi un blocco «HTML personalizzato» alla pagina dei tuoi corsi e incollaci questo codice.',
@@ -244,6 +252,8 @@ export const shareTexts: Translations<ShareTexts> = {
 			title: 'The programme on your website',
 			intro:
 				'Your website can show the programme, always up to date: when you change a course here, your website follows on its own.',
+			ownLook:
+				'The programme keeps its own look: it does not take on the colours or the fonts of your website.',
 			simpleTitle: 'The code to paste',
 			simpleWhere:
 				'Paste this code into your website, where the programme should appear, in a block that accepts HTML code. Example: on WordPress, add a ‘Custom HTML’ block to the page of your courses, then paste this code into it.',
@@ -292,6 +302,7 @@ export const shareTexts: Translations<ShareTexts> = {
 			title: 'البرنامج على موقعك',
 			intro:
 				'يمكن لموقعك أن يعرض البرنامج محدَّثًا دائمًا: عندما تغيّر درسًا هنا، يتبعه موقعك تلقائيًا.',
+			ownLook: 'يحتفظ البرنامج بمظهره الخاص: فهو لا يأخذ ألوان موقعك ولا خطوطه.',
 			simpleTitle: 'الشيفرة التي تلصقها',
 			simpleWhere:
 				'الصق هذه الشيفرة في موقعك، في المكان الذي يجب أن يظهر فيه البرنامج، داخل مكوّن يقبل شيفرة HTML. مثال: في WordPress، أضف مكوّن «HTML مخصص» إلى صفحة دروسك، ثم الصق فيه هذه الشيفرة.',
