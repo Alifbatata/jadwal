@@ -6,7 +6,9 @@
 // la personne, et rien d'autre. Aucune organisation, et aucun compte désigné par la requête : le
 // contexte vient de la session, comme partout (ADR 0013).
 //
-// Pas encore d'écran : le choix de la langue viendra avec l'espace en cinq langues.
+// La personne la choisit en haut de chaque écran de l'espace (`routes/langue/+server.ts`). Deux
+// autres chemins l'écrivent : un choix fait avant la connexion (`auth.ts`, `hooks.server.ts`), et,
+// pour un compte qui n'en a encore aucune, la langue que la personne voyait (`hooks.server.ts`).
 
 import { ACCOUNT_LANGUAGES, sql, withUser, type Database } from '@jadwal/db';
 import { appDatabase } from './database.js';
