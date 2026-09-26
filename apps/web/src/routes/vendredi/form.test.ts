@@ -3,7 +3,7 @@
 // Il rend le nom de chaque erreur, jamais sa phrase : l'écran l'écrit dans la langue de la personne.
 
 import { describe, expect, it } from 'vitest';
-import { parseFridayForm } from './form.js';
+import { parseFridayForm, proposedOrder } from './form.js';
 
 /** Un formulaire tel que l'écran l'envoie, rempli comme il faut ; `champs` remplace ou retire. */
 function formulaire(champs: Record<string, string | readonly string[] | null> = {}): FormData {
@@ -33,7 +33,8 @@ describe('parseFridayForm', () => {
 	it('reads a Friday session: every Friday, fixed times, the languages the organisation publishes', () => {
 		const lu = parseFridayForm(
 			formulaire({ sermonLanguages: ['ar', 'tr', 'fr'], teacher: 'Imam Youssef' }),
-			['fr', 'de', 'ar']
+			['fr', 'de', 'ar'],
+			'fr'
 		);
 		expect(lu.ok).toBe(true);
 		if (!lu.ok) return;
@@ -58,11 +59,16 @@ describe('parseFridayForm', () => {
 		]);
 	});
 
-	it('names an empty title after the prayer, in the language the session is written in', () => {
-		const allemand = parseFridayForm(formulaire({ title: '' }), ['de', 'fr']);
-		const francais = parseFridayForm(formulaire({ title: '  ' }), ['fr', 'de']);
+	it('writes a session in the language of the organisation, even when it is not its first published one', () => {
+		// Réglages enregistre les langues dans l'ordre fr, de, it, en, ar : une organisation de langue
+		// allemande qui publie aussi le français a donc le français en tête de sa liste.
+		const allemand = parseFridayForm(formulaire({ title: '' }), ['fr', 'de'], 'de');
+		const francais = parseFridayForm(formulaire({ title: '  ' }), ['de', 'fr'], 'fr');
 		expect(allemand.ok && allemand.values.title).toBe('Freitagsgebet');
+		expect(allemand.ok && allemand.values.sourceLanguage).toBe('de');
+		expect(allemand.ok && [...allemand.values.translations.keys()]).toEqual(['de']);
 		expect(francais.ok && francais.values.title).toBe('Prière du vendredi');
+		expect(francais.ok && francais.values.sourceLanguage).toBe('fr');
 	});
 
 	it.each([
@@ -80,18 +86,42 @@ describe('parseFridayForm', () => {
 		['endDateUnreadable', { endsOn: 'bientôt' }],
 		['endDateBeforeStart', { endsOn: '2026-09-03' }]
 	] as const)('names the mistake %s, and only that one', (erreur, champs) => {
-		const lu = parseFridayForm(formulaire(champs), ['fr', 'ar']);
+		const lu = parseFridayForm(formulaire(champs), ['fr', 'ar'], 'fr');
 		expect(lu).toEqual({ ok: false, errors: [erreur] });
 	});
 
 	it('names every mistake at once, in the order of the form', () => {
 		const lu = parseFridayForm(
 			formulaire({ jumuaOrder: '0', start: '13:00', end: '12:00', sermonLanguages: null }),
-			['fr']
+			['fr'],
+			'fr'
 		);
 		expect(lu).toEqual({
 			ok: false,
 			errors: ['orderInvalid', 'endBeforeStart', 'sermonLanguageMissing']
 		});
+	});
+});
+
+describe('proposedOrder', () => {
+	const sans = (jumuaOrder: number) => ({ jumuaOrder, endsOn: null });
+
+	it.each([
+		['no session yet: the first', [], 1],
+		['only the second is left: the first', [sans(2)], 1],
+		['the first and the second: the third', [sans(1), sans(2)], 3],
+		[
+			'the first ends, as when the season changes: the first again',
+			[{ jumuaOrder: 1, endsOn: '2026-10-23' }],
+			1
+		],
+		[
+			'the first ends, the second and the third go on: the first',
+			[{ jumuaOrder: 1, endsOn: '2026-10-23' }, sans(2), sans(3)],
+			1
+		],
+		['all three go on: the third, the last there is', [sans(1), sans(2), sans(3)], 3]
+	] as const)('proposes the first free order when %s', (_, existantes, attendu) => {
+		expect(proposedOrder(existantes)).toBe(attendu);
 	});
 });

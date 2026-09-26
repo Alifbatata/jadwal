@@ -32,15 +32,19 @@ function optional(form: FormData, name: string): string | null {
 }
 
 /**
- * Lit une session. La langue dans laquelle elle est écrite est la première que l'organisation
- * publie ; un titre laissé vide prend le nom de la prière dans cette langue.
+ * Lit une session. Elle s'écrit dans la langue de l'organisation (`default_language`), celle que
+ * l'écran Partager met en tête, et non dans la première qu'elle publie : Réglages enregistre les
+ * langues dans l'ordre fr, de, it, en, ar, et une organisation de langue allemande qui publie aussi
+ * le français se voyait proposer « Prière du vendredi ». Un titre laissé vide prend le nom de la
+ * prière dans cette langue.
  */
 export function parseFridayForm(
 	form: FormData,
-	enabledLanguages: readonly string[]
+	enabledLanguages: readonly string[],
+	organisationLanguage: string
 ): FridayFormResult {
 	const errors: FridayError[] = [];
-	const sourceLanguage = enabledLanguages[0] ?? 'fr';
+	const sourceLanguage = organisationLanguage;
 	const title = text(form, 'title') || t(isLangue(sourceLanguage) ? sourceLanguage : 'fr').jumua;
 	if (title.length > TITRE_MAXIMAL) errors.push('titleTooLong');
 
@@ -90,4 +94,48 @@ export function parseFridayForm(
 			translations: new Map([[sourceLanguage, { title, description }]])
 		}
 	};
+}
+
+/** Ce que la personne a saisi dans un formulaire refusé, pour le lui remettre sous les yeux. */
+export interface FridayFormEntry {
+	title: string;
+	jumuaOrder: number;
+	start: string;
+	end: string;
+	roomId: string;
+	sermonLanguages: string[];
+	teacher: string;
+	startsOn: string;
+	endsOn: string;
+	description: string;
+}
+
+/** La saisie d'un formulaire, telle quelle : rien n'est vérifié, elle ne sert qu'à être réaffichée. */
+export function readFridayEntry(form: FormData): FridayFormEntry {
+	return {
+		title: text(form, 'title'),
+		jumuaOrder: Number(text(form, 'jumuaOrder')),
+		start: text(form, 'start'),
+		end: text(form, 'end'),
+		roomId: text(form, 'roomId'),
+		sermonLanguages: form.getAll('sermonLanguages').map(String),
+		teacher: text(form, 'teacher'),
+		startsOn: text(form, 'startsOn'),
+		endsOn: text(form, 'endsOn'),
+		description: text(form, 'description')
+	};
+}
+
+/**
+ * Le rang proposé à l'ajout : le premier qu'aucune session sans date de fin n'occupe. Une session
+ * qui a une date de fin s'en va, au changement de saison, et celle qui la remplace reprend son
+ * rang. Quand les trois sont pris, le troisième, le dernier qui existe.
+ */
+export function proposedOrder(
+	sessions: readonly { jumuaOrder: number; endsOn: string | null }[]
+): number {
+	const taken = new Set(
+		sessions.filter((session) => session.endsOn === null).map((session) => session.jumuaOrder)
+	);
+	return [1, 2, 3].find((order) => !taken.has(order)) ?? 3;
 }

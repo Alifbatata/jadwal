@@ -7,7 +7,7 @@
 	// que le navigateur déplie seul, et la suppression demande sa confirmation sur place.
 	import { resolve } from '$app/paths';
 	import { shortDate } from '$lib/format.js';
-	import { fridayTexts } from '$lib/i18n/friday.js';
+	import { fridayTexts, type FridayDone, type FridayError } from '$lib/i18n/friday.js';
 	import { languesEnClair } from '$lib/public/affichage.js';
 	import type { IsoDate } from '@jadwal/core';
 
@@ -23,8 +23,16 @@
 		return nom.charAt(0).toLocaleUpperCase(data.language) + nom.slice(1);
 	}
 
-	/** Le prochain rang libre, proposé à l'ajout. */
-	const rangPropose = $derived(Math.min(3, data.sessions.length + 1));
+	/**
+	 * Le formulaire d'enregistrement refusé, par la clé de sa session (`''` pour l'ajout). Ses
+	 * erreurs s'écrivent dans sa carte, et sa saisie y reste : la personne n'a rien à rouvrir ni à
+	 * retaper. Les autres refus, qui ne visent pas un formulaire de session, restent en tête.
+	 */
+	const refuse = $derived(form?.errors && form.entry ? (form.courseId ?? '') : null);
+	/** La confirmation d'un enregistrement, par la clé de sa session, ou `null` pour les autres gestes. */
+	const enregistre = $derived(
+		form?.done === 'updated' ? (form.courseId ?? null) : form?.done === 'added' ? '' : null
+	);
 
 	function seancesDe(courseId: string) {
 		return data.prochaines.filter((seance) => seance.courseId === courseId);
@@ -37,12 +45,8 @@
 <p class="aide">{text.intro}</p>
 <p class="aide">{text.severalSessions}</p>
 
-{#if form?.errors}
-	<ul class="erreur" role="alert">
-		{#each form.errors as erreur (erreur)}<li>{text.errors[erreur]}</li>{/each}
-	</ul>
-{/if}
-{#if form?.done}<p class="succes" role="status">{text.done[form.done]}</p>{/if}
+{#if form?.errors && refuse === null}{@render erreurs(form.errors)}{/if}
+{#if form?.done && enregistre === null}{@render confirmation(form.done)}{/if}
 
 {#if data.sessions.length === 0}
 	<p class="vide">{text.empty}</p>
@@ -51,6 +55,7 @@
 {#each data.sessions as session (session.id)}
 	<section class="session" aria-labelledby={`session-${session.id}`}>
 		<h2 id={`session-${session.id}`}>{rang(session.jumuaOrder)}</h2>
+		{#if form?.done && enregistre === session.id}{@render confirmation(form.done)}{/if}
 		<p class="ligne">
 			<strong>{session.start} – {session.end}</strong>
 			<!-- Le nom de la salle garde son sens au milieu d'une ligne arabe. -->
@@ -72,7 +77,8 @@
 			</button>
 		</form>
 
-		<details class="repli">
+		<!-- Fermé au chargement ; rouvert seulement quand son enregistrement vient d'être refusé. -->
+		<details class="repli" open={refuse === session.id}>
 			<summary>{text.edit}</summary>
 			{@render formulaire(session)}
 		</details>
@@ -90,6 +96,7 @@
 
 <section class="session" aria-labelledby="ajout">
 	<h2 id="ajout">{text.add}</h2>
+	{#if form?.done && enregistre === ''}{@render confirmation(form.done)}{/if}
 	{@render formulaire(null)}
 </section>
 
@@ -167,10 +174,32 @@
 	<a href={resolve('/cours')}>{text.coursesLink}</a>
 </p>
 
+{#snippet erreurs(liste: readonly FridayError[])}
+	<!-- Le rôle se pose sur un bloc autour de la liste, et non sur la liste : il effacerait son rôle
+	     de liste, et un lecteur d'écran n'annoncerait plus ses points comme ceux d'une liste. -->
+	<div class="erreur" role="alert">
+		<ul>
+			{#each liste as erreur (erreur)}<li>{text.errors[erreur]}</li>{/each}
+		</ul>
+	</div>
+{/snippet}
+
+{#snippet confirmation(done: FridayDone)}
+	<p class="succes" role="status">{text.done[done]}</p>
+{/snippet}
+
 {#snippet formulaire(session: (typeof data.sessions)[number] | null)}
 	{@const cle = session?.id ?? 'nouvelle'}
-	<form method="post" action="?/enregistrer" class="colonne">
+	<!-- La saisie refusée de ce formulaire, s'il vient de l'être : elle passe avant ce qui est enregistré. -->
+	{@const saisie = refuse === (session?.id ?? '') ? form?.entry : undefined}
+	<!-- Sans script, la page renvoyée s'ouvre sur la carte de la session, où s'écrit la réponse. -->
+	<form
+		method="post"
+		action={`?/enregistrer#${session ? `session-${session.id}` : 'ajout'}`}
+		class="colonne"
+	>
 		{#if session}<input type="hidden" name="courseId" value={session.id} />{/if}
+		{#if saisie && form?.errors}{@render erreurs(form.errors)}{/if}
 
 		<label for={`titre-${cle}`}>{text.form.title}</label>
 		<input
@@ -178,7 +207,7 @@
 			name="title"
 			type="text"
 			maxlength="120"
-			value={session?.title ?? data.titrePropose}
+			value={saisie?.title ?? session?.title ?? data.titrePropose}
 			aria-describedby={`aide-titre-${cle}`}
 		/>
 		<p class="aide" id={`aide-titre-${cle}`}>{text.form.titleHelp}</p>
@@ -186,7 +215,10 @@
 		<label for={`rang-${cle}`}>{text.form.order}</label>
 		<select id={`rang-${cle}`} name="jumuaOrder" aria-describedby={`aide-rang-${cle}`}>
 			{#each [1, 2, 3] as ordre (ordre)}
-				<option value={ordre} selected={ordre === (session?.jumuaOrder ?? rangPropose)}>
+				<option
+					value={ordre}
+					selected={ordre === (saisie?.jumuaOrder ?? session?.jumuaOrder ?? data.rangPropose)}
+				>
 					{rang(ordre)}
 				</option>
 			{/each}
@@ -200,7 +232,7 @@
 					id={`debut-${cle}`}
 					name="start"
 					type="time"
-					value={session?.start ?? '12:10'}
+					value={saisie?.start ?? session?.start ?? '12:10'}
 					required
 					aria-describedby={`aide-heures-${cle}`}
 				/>
@@ -211,7 +243,7 @@
 					id={`fin-${cle}`}
 					name="end"
 					type="time"
-					value={session?.end ?? '12:50'}
+					value={saisie?.end ?? session?.end ?? '12:50'}
 					required
 					aria-describedby={`aide-heures-${cle}`}
 				/>
@@ -223,7 +255,9 @@
 		<select id={`salle-${cle}`} name="roomId" aria-describedby={`aide-salle-${cle}`}>
 			<option value="">{text.form.noRoom}</option>
 			{#each data.salles as salle (salle.id)}
-				<option value={salle.id} selected={salle.id === session?.roomId}>{salle.name}</option>
+				<option value={salle.id} selected={salle.id === (saisie ? saisie.roomId : session?.roomId)}>
+					{salle.name}
+				</option>
 			{/each}
 		</select>
 		<p class="aide" id={`aide-salle-${cle}`}>{text.form.roomHelp}</p>
@@ -236,7 +270,8 @@
 						type="checkbox"
 						name="sermonLanguages"
 						value={langue}
-						checked={session ? session.sermonLanguages.includes(langue) : langue === 'ar'}
+						checked={(saisie?.sermonLanguages ?? session?.sermonLanguages)?.includes(langue) ??
+							langue === 'ar'}
 					/>
 					{nomDeLangue(langue)}
 				</label>
@@ -249,7 +284,7 @@
 			id={`intervenant-${cle}`}
 			name="teacher"
 			type="text"
-			value={session?.teacher ?? ''}
+			value={saisie?.teacher ?? session?.teacher ?? ''}
 			aria-describedby={`aide-intervenant-${cle}`}
 		/>
 		<p class="aide" id={`aide-intervenant-${cle}`}>{text.form.teacherHelp}</p>
@@ -261,8 +296,9 @@
 					id={`du-${cle}`}
 					name="startsOn"
 					type="date"
-					value={session?.startsOn ?? data.today}
+					value={saisie?.startsOn ?? session?.startsOn ?? data.today}
 					required
+					aria-describedby={`aide-du-${cle}`}
 				/>
 			</div>
 			<div>
@@ -271,11 +307,12 @@
 					id={`au-${cle}`}
 					name="endsOn"
 					type="date"
-					value={session?.endsOn ?? ''}
+					value={saisie?.endsOn ?? session?.endsOn ?? ''}
 					aria-describedby={`aide-au-${cle} aide-saison-${cle}`}
 				/>
 			</div>
 		</div>
+		<p class="aide" id={`aide-du-${cle}`}>{text.form.startsOnHelp}</p>
 		<p class="aide" id={`aide-au-${cle}`}>{text.form.endsOnHelp}</p>
 		<p class="aide" id={`aide-saison-${cle}`}>{text.form.season}</p>
 
@@ -284,7 +321,8 @@
 			id={`description-${cle}`}
 			name="description"
 			rows="2"
-			aria-describedby={`aide-description-${cle}`}>{session?.description ?? ''}</textarea
+			aria-describedby={`aide-description-${cle}`}
+			>{saisie?.description ?? session?.description ?? ''}</textarea
 		>
 		<p class="aide" id={`aide-description-${cle}`}>{text.form.descriptionHelp}</p>
 
@@ -443,6 +481,12 @@
 		background: #fee2e2;
 		border-inline-start: 4px solid #b91c1c;
 		padding: 0.5rem 0.75rem;
+		margin-block: 0.5rem;
+	}
+	/* Assez de place au début de la ligne pour que la puce reste dans le cadre, pas sur la bordure. */
+	.erreur ul {
+		margin: 0;
+		padding-inline-start: 1rem;
 	}
 	.succes {
 		background: #dcfce7;

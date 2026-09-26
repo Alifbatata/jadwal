@@ -78,6 +78,7 @@ interface FridayTexts {
 		readonly teacher: string;
 		readonly teacherHelp: string;
 		readonly startsOn: string;
+		readonly startsOnHelp: string;
 		readonly endsOn: string;
 		readonly endsOnHelp: string;
 		/** Le changement de saison : clore la session, puis en ajouter une nouvelle. */
@@ -148,6 +149,8 @@ export const fridayTexts: Translations<FridayTexts> = {
 			teacher: 'Imam ou intervenant (facultatif)',
 			teacherHelp: 'Son nom s’affiche sur votre page publique. Exemple : Imam Youssef',
 			startsOn: 'À partir du',
+			startsOnHelp:
+				'La session a lieu chaque vendredi à partir de cette date. Gardez la date du jour pour qu’elle commence tout de suite.',
 			endsOn: 'Jusqu’au (facultatif)',
 			endsOnHelp: 'Laissez vide si la session continue sans date de fin.',
 			season:
@@ -240,6 +243,8 @@ export const fridayTexts: Translations<FridayTexts> = {
 			teacher: 'Imam oder Referent (optional)',
 			teacherHelp: 'Der Name erscheint auf Ihrer öffentlichen Seite. Beispiel: Imam Youssef',
 			startsOn: 'Gültig ab',
+			startsOnHelp:
+				'Der Durchgang findet ab diesem Datum jeden Freitag statt. Behalten Sie das heutige Datum, damit er sofort beginnt.',
 			endsOn: 'Gültig bis (optional)',
 			endsOnHelp: 'Leer lassen, wenn der Durchgang ohne Enddatum weiterläuft.',
 			season:
@@ -339,6 +344,8 @@ export const fridayTexts: Translations<FridayTexts> = {
 			teacher: 'Imam o relatore (facoltativo)',
 			teacherHelp: 'Il suo nome compare sulla tua pagina pubblica. Esempio: Imam Omar',
 			startsOn: 'Valido dal',
+			startsOnHelp:
+				'Il turno si tiene ogni venerdì a partire da questa data. Lascia la data di oggi perché cominci subito.',
 			endsOn: 'Valido fino al (facoltativo)',
 			endsOnHelp: 'Lascia vuoto se il turno continua senza data di fine.',
 			season:
@@ -431,6 +438,8 @@ export const fridayTexts: Translations<FridayTexts> = {
 			teacher: 'Imam or speaker (optional)',
 			teacherHelp: 'Their name appears on your public page. Example: Imam Youssef',
 			startsOn: 'From',
+			startsOnHelp:
+				'The session takes place every Friday from this date. Keep today’s date for it to start straight away.',
 			endsOn: 'Until (optional)',
 			endsOnHelp: 'Leave empty if the session carries on with no end date.',
 			season:
@@ -521,6 +530,8 @@ export const fridayTexts: Translations<FridayTexts> = {
 			teacher: 'الإمام أو المتحدث (اختياري)',
 			teacherHelp: 'يظهر اسمه على صفحتك العامة. مثال: الإمام يوسف',
 			startsOn: 'يسري ابتداءً من',
+			startsOnHelp:
+				'يُقام هذا الموعد كل يوم جمعة ابتداءً من هذا التاريخ. اترك تاريخ اليوم ليبدأ فورًا.',
 			endsOn: 'يسري حتى (اختياري)',
 			endsOnHelp: 'اتركه فارغًا إن كان الموعد مستمرًا دون تاريخ نهاية.',
 			season:

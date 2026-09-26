@@ -14,14 +14,15 @@
 import { fail } from '@sveltejs/kit';
 import { addDays, todayInZone, type IsoDate } from '@jadwal/core';
 import { newId, sql } from '@jadwal/db';
-import { isLangue, t } from '$lib/i18n.js';
+import { isLangue, t, type Langue } from '$lib/i18n.js';
 import type { FridayDone, FridayError } from '$lib/i18n/friday.js';
 import { record } from '$lib/server/audit.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { insertCourse, updateCourse } from '$lib/server/courses.js';
+import { fridayTitle } from '$lib/server/friday-title.js';
 import { mustHavePrayerModule } from '$lib/server/guard.js';
 import { readCourses, readProgramme, readRooms, readSettings } from '$lib/server/programme.js';
-import { parseFridayForm } from './form.js';
+import { parseFridayForm, proposedOrder, readFridayEntry } from './form.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -29,9 +30,13 @@ const HEURE = /^\d{2}:\d{2}$/;
 /** Sept jours : de quoi couvrir le prochain vendredi, où que l'on soit dans la semaine. */
 const JOURS_AFFICHES = 7;
 
-/** Ce qu'une action refuse, par le nom de chaque erreur. */
+/**
+ * Ce qu'une action refuse, par le nom de chaque erreur. `entry: null` dit qu'il n'y a aucune saisie
+ * à remettre sous les yeux : sans ce champ, TypeScript fondait ce refus dans celui d'un formulaire
+ * de session, qui en porte une, et `entry` disparaissait du type que l'écran reçoit.
+ */
 function refus(status: number, ...errors: FridayError[]) {
-	return fail(status, { errors });
+	return fail(status, { errors, entry: null });
 }
 
 /** Ce qu'une action a fait, par son nom. */
@@ -39,12 +44,25 @@ function fait(done: FridayDone) {
 	return { done };
 }
 
-/** Les sessions du vendredi, dans leur ordre, telles que l'écran les montre. */
-function versSession(course: Awaited<ReturnType<typeof readCourses>>[number]) {
+/**
+ * La langue dans laquelle une session s'écrit : celle de l'organisation, que l'écran Partager met
+ * aussi en tête (`parseFridayForm`).
+ */
+function langueDesSessions(settings: { default_language: string }): Langue {
+	return isLangue(settings.default_language) ? settings.default_language : 'fr';
+}
+
+/**
+ * Les sessions du vendredi, dans leur ordre, telles que l'écran les montre. Une session qui porte
+ * le nom proposé par le service le montre dans la langue de l'organisation : une session écrite
+ * avant l'étape 18 sous « Prière du vendredi » s'affiche « Freitagsgebet » pour une organisation de
+ * langue allemande, et s'enregistre ainsi la prochaine fois.
+ */
+function versSession(course: Awaited<ReturnType<typeof readCourses>>[number], langue: Langue) {
 	return {
 		id: course.id,
 		jumuaOrder: course.jumua_order ?? 1,
-		title: course.title ?? '',
+		title: fridayTitle(course.title ?? '', 'jumua', langue),
 		description: course.description,
 		status: course.status,
 		start: String(course.timing_start ?? '').slice(0, 5),
@@ -69,15 +87,17 @@ export const load: PageServerLoad = async (event) => {
 		const sessions = await readCourses(tx, ['draft', 'published', 'archived'], ['jumua']);
 		const programme = await readProgramme(tx, maintenant, JOURS_AFFICHES);
 		const today = todayInZone(settings.time_zone, maintenant);
-		// Une session s'écrit dans la première langue que l'organisation publie (`parseFridayForm`) :
-		// le titre proposé est le nom de la prière dans cette langue, pas dans celle de l'écran.
-		const source = settings.enabled_language[0] ?? 'fr';
+		// Une session s'écrit dans la langue de l'organisation (`parseFridayForm`) : le titre proposé
+		// est le nom de la prière dans cette langue, pas dans celle de l'écran.
+		const source = langueDesSessions(settings);
+		const lues = sessions.map((session) => versSession(session, source));
 		return {
 			organisation: { name: settings.name },
-			titrePropose: t(isLangue(source) ? source : 'fr').jumua,
+			titrePropose: t(source).jumua,
+			rangPropose: proposedOrder(lues),
 			langues: settings.enabled_language,
 			salles: (await readRooms(tx)).map((salle) => ({ id: salle.id, name: salle.name })),
-			sessions: sessions.map(versSession),
+			sessions: lues,
 			today,
 			// Les séances des sessions dans les sept prochains jours : c'est le prochain vendredi,
 			// avec ses annulations et ses déplacements déjà appliqués.
@@ -100,15 +120,21 @@ export const load: PageServerLoad = async (event) => {
 };
 
 export const actions: Actions = {
-	/** Ajouter une session, ou en modifier une : le même formulaire, la même vérification. */
+	/**
+	 * Ajouter une session, ou en modifier une : le même formulaire, la même vérification. Un refus
+	 * rend aussi la session visée et la saisie : l'écran rouvre le bon formulaire, tel que la
+	 * personne l'a rempli, et y écrit l'erreur.
+	 */
 	enregistrer: async (event) => {
 		const context = await mustHavePrayerModule(event);
 		const form = await event.request.formData();
 		const courseId = String(form.get('courseId') ?? '');
 		return withSessionOrg(context, async (tx) => {
 			const settings = await readSettings(tx);
-			const lu = parseFridayForm(form, settings.enabled_language);
-			if (!lu.ok) return refus(400, ...lu.errors);
+			const lu = parseFridayForm(form, settings.enabled_language, langueDesSessions(settings));
+			if (!lu.ok) {
+				return fail(400, { errors: lu.errors, courseId, entry: readFridayEntry(form) });
+			}
 			if (courseId === '') {
 				await insertCourse(tx, context, lu.values);
 				return fait('added');
@@ -123,7 +149,8 @@ export const actions: Actions = {
 				start: avant.timing_start
 			});
 			if (!ecrit) return refus(404, 'sessionGone');
-			return fait('updated');
+			// La session nommée : l'écran écrit la confirmation dans sa carte, là où la page s'ouvre.
+			return { done: 'updated' as const, courseId };
 		});
 	},
 
