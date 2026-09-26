@@ -678,6 +678,11 @@ describe('l’écran Réglages dans les cinq langues (retours B1, D2 et A3)', ()
 		const html = confirmations[langue] ?? '';
 		const demande = element(html, 'confirmer-salle');
 		expect(demande, langue).toMatch(/role="alert"/);
+		// En haut, sous le titre et avant le formulaire des réglages : après l'envoi, la page s'ouvre
+		// en haut, avec ou sans JavaScript, et la demande doit s'y lire sans chercher.
+		const place = html.indexOf('id="confirmer-salle"');
+		expect(place).toBeGreaterThan(html.indexOf('<h1'));
+		expect(place).toBeLessThan(html.indexOf('action="?/enregistrer"'));
 		const texte = lu(demande);
 		expect(texte).toContain(SALLE_OCCUPEE);
 		for (const phrase of OCCUPEE[langue]) expect(texte).toContain(phrase);

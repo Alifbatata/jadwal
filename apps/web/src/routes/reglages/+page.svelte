@@ -37,6 +37,28 @@
 {#if form && 'salleAjoutee' in form}<p class="succes" role="status">{text.roomAdded}</p>{/if}
 {#if form && 'salleSupprimee' in form}<p class="succes" role="status">{text.roomDeleted}</p>{/if}
 
+<!-- Une salle que des cours occupent ne part pas au premier envoi : l'écran dit ce que la
+     suppression leur fera, et demande de confirmer. En haut, avec les messages : l'envoi recharge la
+     page, qui s'ouvre en haut, avec ou sans JavaScript. Rendue sous le formulaire, la demande tombait
+     hors de l'écran, et l'on croyait que rien ne s'était passé. « Garder » est un lien, qui ramène à
+     l'écran sans rien envoyer. -->
+{#if aConfirmer}
+	<div id="confirmer-salle" class="confirmer" role="alert">
+		<p>{text.confirmIntro} <strong><bdi>{aConfirmer.name}</bdi></strong></p>
+		{#if aConfirmer.courses > 0}<p>{text.roomCourses(aConfirmer.courses)}</p>{/if}
+		{#if aConfirmer.fridays > 0}<p>{text.roomFridays(aConfirmer.fridays)}</p>{/if}
+		<p>{text.nothingElse}</p>
+		<div class="ligne">
+			<form method="post" action="?/supprimerSalle">
+				<input type="hidden" name="roomId" value={aConfirmer.id} />
+				<input type="hidden" name="confirm" value="yes" />
+				<button type="submit">{text.confirmDelete}</button>
+			</form>
+			<a href={resolve('/reglages')}>{text.keepRoom}</a>
+		</div>
+	</div>
+{/if}
+
 <form method="post" action="?/enregistrer" class="colonne">
 	<label for="name">{text.nameLabel}</label>
 	<input
@@ -127,26 +149,6 @@
 <section aria-labelledby="salles-titre">
 	<h2 id="salles-titre">{text.roomsTitle}</h2>
 	<p class="aide">{text.roomsIntro}</p>
-
-	<!-- Une salle que des cours occupent ne part pas au premier envoi : l'écran dit ce que la
-	     suppression leur fera, et demande de confirmer. « Garder » est un lien, qui ramène à l'écran
-	     sans rien envoyer. -->
-	{#if aConfirmer}
-		<div id="confirmer-salle" class="confirmer" role="alert">
-			<p>{text.confirmIntro} <strong><bdi>{aConfirmer.name}</bdi></strong></p>
-			{#if aConfirmer.courses > 0}<p>{text.roomCourses(aConfirmer.courses)}</p>{/if}
-			{#if aConfirmer.fridays > 0}<p>{text.roomFridays(aConfirmer.fridays)}</p>{/if}
-			<p>{text.nothingElse}</p>
-			<div class="ligne">
-				<form method="post" action="?/supprimerSalle">
-					<input type="hidden" name="roomId" value={aConfirmer.id} />
-					<input type="hidden" name="confirm" value="yes" />
-					<button type="submit">{text.confirmDelete}</button>
-				</form>
-				<a href={resolve('/reglages')}>{text.keepRoom}</a>
-			</div>
-		</div>
-	{/if}
 
 	{#if data.salles.length === 0}
 		<p class="aide">{text.roomsNone}</p>
@@ -244,6 +246,7 @@
 		border: 2px solid #b91c1c;
 		border-radius: 0.5rem;
 		padding: 0.5rem 0.75rem;
+		margin-block: 0 1rem;
 		max-width: 36rem;
 	}
 	.confirmer p {
