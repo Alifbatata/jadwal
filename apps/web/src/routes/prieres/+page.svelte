@@ -88,8 +88,14 @@
 				? ''
 				: String(data.reglages.longitude)
 	);
-	/** Les cases de la liste : voir `localityOptions`, qui garde cochée la localité choisie. */
-	const options = $derived(localityOptions(trouvees, choisie));
+	/**
+	 * La localité que la liste garde, même quand la recherche ne la rend pas : celle qui est choisie,
+	 * sinon celle qui est enregistrée. Choisir « Hors de Suisse » ne la retire donc pas : on y revient
+	 * d'un clic, et la case « Hors de Suisse » cochée reste sous les yeux.
+	 */
+	const gardee = $derived(choisie ?? data.savedLocality);
+	/** Les cases de la liste : voir `localityOptions`. Seule la localité choisie y est cochée. */
+	const options = $derived(localityOptions(trouvees, gardee));
 	const message = $derived.by(() => {
 		if (trouvees === null) return '';
 		if (recherche.trim().length < 2) return text.computed.tooShort;
@@ -155,11 +161,15 @@
 			isha: data.reglages.isha_adjustment
 		}
 	});
-	/** « Hors de Suisse » s'ouvre quand la position ne vient pas de la liste. */
+	/**
+	 * « Hors de Suisse » s'ouvre quand la position ne vient pas de la liste, ou quand une position y a
+	 * été tapée alors qu'une localité restait choisie : l'écran la redonne, avec l'erreur.
+	 */
 	const horsDeSuisse = $derived(
-		saisie
-			? saisie.locality === null && saisie.latitude !== ''
-			: data.reglages.latitude !== null && data.savedLocality === null
+		form?.error === 'positionAndLocality' ||
+			(saisie
+				? saisie.locality === null && saisie.latitude !== ''
+				: data.reglages.latitude !== null && data.savedLocality === null)
 	);
 	/** Les réglages avancés s'ouvrent quand l'un d'eux n'a plus sa valeur proposée. */
 	const avances = $derived(
@@ -391,6 +401,21 @@
 								<bdi>{label(localite)}</bdi>
 							</label>
 						{/each}
+						<!-- La position tapée sous « Hors de Suisse », comme une case de plus. Sans
+						     JavaScript, on ne décoche pas une localité : on coche celle-ci à sa place. -->
+						<label class="resultat">
+							<input
+								type="radio"
+								name="localite"
+								value=""
+								checked={choisie === null}
+								onchange={() => {
+									choisie = null;
+									horsDeSuisseOuvert = true;
+								}}
+							/>
+							{text.computed.abroadChoice}
+						</label>
 					</fieldset>
 				{/if}
 				{#if choisie}

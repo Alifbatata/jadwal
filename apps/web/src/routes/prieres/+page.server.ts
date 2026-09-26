@@ -146,14 +146,35 @@ interface CalculSaisi {
 }
 
 type ErreurDePosition =
-	'positionUnreadable' | 'positionHalf' | 'positionOffEarth' | 'localityUnknown';
+	| 'positionUnreadable'
+	| 'positionHalf'
+	| 'positionOffEarth'
+	| 'positionAndLocality'
+	| 'localityUnknown';
+
+/** Vrai quand les deux nombres saisis sont exactement cette position. */
+function memePosition(
+	latitude: number | null,
+	longitude: number | null,
+	position: { latitude: number | null; longitude: number | null }
+): boolean {
+	return latitude === position.latitude && longitude === position.longitude;
+}
 
 /**
  * Le formulaire du calcul, lu. La position vient de la localité choisie quand il y en a une : le
  * serveur la relit dans la liste, et ne croit pas celle que le navigateur envoie. Sinon, elle vient
  * des deux nombres saisis « Hors de Suisse ».
+ *
+ * Le navigateur envoie aussi ces deux nombres avec la localité. S'ils ne sont ni vides, ni la
+ * position de cette localité, ni celle qui est `enregistree`, ils ont été tapés : sans JavaScript,
+ * la case d'une localité reste cochée, puisqu'on ne la décoche pas. Ils ne sont pas ignorés sans
+ * rien dire : le formulaire revient tel quel, avec l'erreur qui dit quoi choisir.
  */
-function lireCalcul(form: FormData): {
+function lireCalcul(
+	form: FormData,
+	enregistree: { latitude: number | null; longitude: number | null }
+): {
 	saisie: CalculSaisi;
 	position: { latitude: number; longitude: number } | null;
 	erreur: ErreurDePosition | null;
@@ -180,6 +201,13 @@ function lireCalcul(form: FormData): {
 				: null;
 		if (!localite) return { saisie, position: null, erreur: 'localityUnknown' };
 		saisie.locality = toChoice(localite);
+		const latitude = position(saisie.latitude);
+		const longitude = position(saisie.longitude);
+		const tapee =
+			(latitude !== null || longitude !== null) &&
+			!memePosition(latitude, longitude, localite) &&
+			!memePosition(latitude, longitude, enregistree);
+		if (tapee) return { saisie, position: null, erreur: 'positionAndLocality' };
 		saisie.latitude = String(localite.latitude);
 		saisie.longitude = String(localite.longitude);
 		return {
@@ -340,10 +368,13 @@ export const actions: Actions = {
 	apercu: async (event) => {
 		const context = await mustAdministerPrayerModule(event);
 		const form = await event.request.formData();
-		const { saisie, position: lue, erreur } = lireCalcul(form);
+		const { settings, reglages } = await withSessionOrg(context, async (tx) => ({
+			settings: await readSettings(tx),
+			reglages: await readReglages(tx)
+		}));
+		const { saisie, position: lue, erreur } = lireCalcul(form, reglages);
 		if (erreur) return fail(400, { ...CALCUL, error: erreur, saisie });
 		if (!lue) return fail(400, { ...CALCUL, error: 'positionMissing' as const, saisie });
-		const settings = await withSessionOrg(context, (tx) => readSettings(tx));
 		const jours = apercu(
 			{
 				latitude: lue.latitude,
@@ -365,7 +396,8 @@ export const actions: Actions = {
 	enregistrer: async (event) => {
 		const context = await mustAdministerPrayerModule(event);
 		const form = await event.request.formData();
-		const { saisie, position: lue, erreur } = lireCalcul(form);
+		const enregistree = await withSessionOrg(context, (tx) => readReglages(tx));
+		const { saisie, position: lue, erreur } = lireCalcul(form, enregistree);
 		if (erreur) return fail(400, { ...CALCUL, error: erreur, saisie });
 		const declaree = String(form.get('source') ?? '');
 
