@@ -25,7 +25,7 @@ import {
  */
 export const versionIso: string = versionLue(source);
 
-/** La même date, telle que le texte l'écrit : « 22 septembre 2026 ». */
+/** La même date, telle que le texte l'écrit : « 26.09.2026 ». */
 export const dateDeLaVersion: string = dateLue(source);
 
 /**

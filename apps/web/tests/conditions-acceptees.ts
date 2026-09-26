@@ -16,7 +16,7 @@ const source = readFileSync(new URL('../../../docs/CONDITIONS.md', import.meta.u
 /** La version en cours, lue dans le même fichier que le serveur et par la même fonction. */
 export const VERSION_DES_CONDITIONS = versionIso(source);
 
-/** La même date, en toutes lettres : « 22 septembre 2026 ». */
+/** La même date, telle que le texte l'écrit : « 26.09.2026 ». */
 export const DATE_DES_CONDITIONS = dateDeLaVersion(source);
 
 /**
