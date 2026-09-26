@@ -3,8 +3,8 @@
 // Quatre familles de tests. Les premiers figent les sorties françaises, allemandes et italiennes
 // telles qu'elles étaient avant la relecture de l'arabe : la restructuration de `affichage.ts` en
 // enregistrements par langue ne devait rien y changer, et ces tests le tiennent. Deux sorties
-// italiennes y ont bougé depuis, à dessein : « l’ultimo », et le rang accordé à la domenica,
-// « la prima domenica ». Les seconds portent les corrections de l'arabe
+// italiennes y ont bougé depuis, à dessein : « l’ultimo », et le rang et l'article accordés à la
+// domenica, « la prima domenica », « la domenica ». Les seconds portent les corrections de l'arabe
 // demandées par le chef de projet (rangs du mois, conjonction, minutes). Les troisièmes disent un
 // décalage négatif par « avant », dans les quatre langues d'avant l'étape 18. Les derniers portent
 // l'anglais britannique, cinquième langue.
@@ -90,6 +90,31 @@ describe('les sorties françaises, allemandes et italiennes ne bougent pas', () 
 		expect(rythmeEnClair('de', dimanche(-1))).toBe('am letzten Sonntag des Monats');
 		expect(rythmeEnClair('en', dimanche(1))).toBe('the first Sunday of the month');
 		expect(rythmeEnClair('ar', dimanche(-1))).toBe('آخر أحد من الشهر');
+	});
+
+	it('agrees the Italian article with « domenica » each week and every other week', () => {
+		// « il domenica » et « un domenica su due » étaient faux : l'article s'accorde au jour.
+		const semaine = (jours: number[], intervalle: number) => ({
+			recurrenceKind: 'weekly',
+			recurrenceWeekdays: jours,
+			recurrenceInterval: intervalle
+		});
+		expect(rythmeEnClair('it', semaine([7], 1))).toBe('la domenica');
+		expect(rythmeEnClair('it', semaine([7], 2))).toBe('una domenica su due');
+		// Des jours de genres différents prennent chacun leur article.
+		expect(rythmeEnClair('it', semaine([6, 7], 1))).toBe('il sabato e la domenica');
+		expect(rythmeEnClair('it', semaine([1, 3, 7], 1))).toBe(
+			'il lunedì, il mercoledì e la domenica'
+		);
+		expect(rythmeEnClair('it', semaine([6, 7], 2))).toBe('un sabato e una domenica su due');
+		// Des jours du même genre partagent le leur, comme avant.
+		expect(rythmeEnClair('it', semaine([1, 3], 1))).toBe('il lunedì e mercoledì');
+		expect(rythmeEnClair('it', semaine([2, 4], 2))).toBe('un martedì e giovedì su due');
+		// Les autres langues n'accordent rien au dimanche.
+		expect(rythmeEnClair('fr', semaine([7], 1))).toBe('le dimanche');
+		expect(rythmeEnClair('de', semaine([6, 7], 2))).toBe('jeden zweiten Samstag und Sonntag');
+		expect(rythmeEnClair('en', semaine([7], 1))).toBe('every Sunday');
+		expect(rythmeEnClair('ar', semaine([7], 2))).toBe('الأحد كل أسبوعين');
 	});
 
 	it('keeps the rhythm of precise dates', () => {

@@ -67,11 +67,34 @@ export interface RythmeAffichable {
 	recurrenceDates?: readonly string[] | null;
 }
 
+/**
+ * Les jours d'un cours de chaque semaine ou d'une semaine sur deux, en italien, avec leur article :
+ * `masculine` ou `feminine` selon le jour, la domenica étant féminine. Des jours du même genre
+ * partagent un seul article, « il lunedì e mercoledì » ; quand les genres se mêlent, chaque jour
+ * prend le sien, « il sabato e la domenica ». `jours` est la liste que `joindre` écrit : un nom de
+ * jour n'a ni espace ni virgule, et elle se redécoupe donc sans erreur. Sert aussi au rythme de
+ * l'espace (`i18n/formatting.ts`).
+ */
+export function italianDaysWithArticles(
+	jours: string,
+	masculine: string,
+	feminine: string
+): string {
+	const feminins = (JOURS_FEMININS.it ?? []).map((numero) => t('it').weekdays[numero - 1]);
+	const noms = jours.split(/, | e /);
+	const articles = noms.map((nom) => (feminins.includes(nom) ? feminine : masculine));
+	if (articles.every((article) => article === articles[0])) return `${articles[0]} ${jours}`;
+	return joindre(
+		'it',
+		noms.map((nom, index) => `${articles[index]} ${nom}`)
+	);
+}
+
 /** « le lundi et mercredi » : un cours de chaque semaine. */
 const CHAQUE_SEMAINE: Record<Langue, (jours: string) => string> = {
 	fr: (jours) => `le ${jours}`,
 	de: (jours) => `jeden ${jours}`,
-	it: (jours) => `il ${jours}`,
+	it: (jours) => italianDaysWithArticles(jours, 'il', 'la'),
 	en: (jours) => `every ${jours}`,
 	ar: (jours) => `كل ${jours}`
 };
@@ -80,7 +103,7 @@ const CHAQUE_SEMAINE: Record<Langue, (jours: string) => string> = {
 const UNE_SEMAINE_SUR_DEUX: Record<Langue, (jours: string) => string> = {
 	fr: (jours) => `un ${jours} sur deux`,
 	de: (jours) => `jeden zweiten ${jours}`,
-	it: (jours) => `un ${jours} su due`,
+	it: (jours) => `${italianDaysWithArticles(jours, 'un', 'una')} su due`,
 	en: (jours) => `every other ${jours}`,
 	ar: (jours) => `${jours} كل أسبوعين`
 };
@@ -110,6 +133,7 @@ const ORDINAUX_FEMININS: Partial<Record<Langue, Record<number, string>>> = {
 	it: { 1: 'la prima', 2: 'la seconda', 3: 'la terza', 4: 'la quarta', [-1]: 'l’ultima' }
 };
 
+/** Les jours féminins, en jours ISO : ils règlent le rang du mois et l'article de chaque semaine. */
 const JOURS_FEMININS: Partial<Record<Langue, readonly number[]>> = {
 	it: [7]
 };

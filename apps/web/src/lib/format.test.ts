@@ -355,6 +355,19 @@ describe('la mise en mots dans les cinq langues de l’espace', () => {
 		]);
 	});
 
+	it('agrees the Italian article with « domenica » in a weekly rhythm', () => {
+		// « ogni settimana, il domenica » était faux : l'article s'accorde au jour.
+		const semaine = (weekdays: number[], interval: number) =>
+			describeRecurrence({ kind: 'weekly', weekdays, interval }, 'it');
+		expect(semaine([7], 1)).toBe('ogni settimana, la domenica');
+		expect(semaine([6, 7], 1)).toBe('ogni settimana, il sabato e la domenica');
+		expect(semaine([1, 3, 7], 1)).toBe('ogni settimana, il lunedì, il mercoledì e la domenica');
+		expect(semaine([7], 2)).toBe('una domenica su due');
+		expect(describeRecurrence({ kind: 'weekly', weekdays: [7], interval: 1 }, 'fr')).toBe(
+			'chaque semaine, le dimanche'
+		);
+	});
+
 	it('says a fortnightly and a monthly rhythm as the public page does', () => {
 		const quinzaine = { kind: 'weekly', weekdays: [6], interval: 2 };
 		expect(LANGUES_DE_L_ESPACE.map((l) => describeRecurrence(quinzaine, l))).toEqual([

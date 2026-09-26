@@ -7,6 +7,7 @@
 // un visiteur lisent la même chose du même cours. Les formes françaises sont celles que l'espace
 // écrivait avant l'étape 18, mot pour mot.
 
+import { italianDaysWithArticles } from '../public/affichage.js';
 import { plural, type PluralForms, type Translations } from './space.js';
 
 /** Les formes arabes selon le nombre (voir `plural`). Le code de la langue reste hors des textes. */
@@ -104,7 +105,7 @@ export const formattingTexts: Translations<FormattingTexts> = {
 		}
 	},
 	it: {
-		weekly: (days) => `ogni settimana, il ${days}`,
+		weekly: (days) => `ogni settimana, ${italianDaysWithArticles(days, 'il', 'la')}`,
 		dateList: (dates) =>
 			dates.length < 2
 				? (dates[0] ?? '')
