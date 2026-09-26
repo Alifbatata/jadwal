@@ -137,6 +137,9 @@ Jimdo
 iCalendar
 Unlicense
 Monotonic
+# L'Office fédéral de topographie, qui écrit son nom ainsi, en minuscules : la liste des localités
+# suisses exige de le citer (README.md, « Licence et droits d'auteur »).
+swisstopo
 
 # --- Mots français que le correcteur ne connaît pas, et qui sont justes ---
 superutilisateur

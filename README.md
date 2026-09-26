@@ -84,9 +84,9 @@ dans `docker-compose.dev.yml`.
   [`apps/web/src/lib/server/localites/localities.csv`](apps/web/src/lib/server/localites/localities.csv).
   Elle n'est pas sous MIT et ses données ne sont pas à Voltia : elle est tirée du Répertoire officiel
   des localités avec le code postal et le périmètre, de l'Office fédéral de topographie swisstopo, et
-  reste soumise à ses
-  [conditions d'utilisation des géodonnées gratuites](https://www.swisstopo.admin.ch/fr/conditions-utilisation-geodonnees-et-geoservices-gratuit).
-  Elles permettent de l'utiliser, de la transformer et de la redistribuer, même à des fins
+  reste soumise aux
+  [conditions d'utilisation](https://www.swisstopo.admin.ch/fr/conditions-utilisation-geodonnees-et-geoservices-gratuit)
+  de ses données gratuites. Elles permettent de l'utiliser, de la transformer et de la redistribuer, même à des fins
   commerciales, à une condition : citer la source, y compris quand on transmet le fichier. La mention
   à reprendre est « Source : Office fédéral de topographie swisstopo ». Le
   [`README.md`](apps/web/src/lib/server/localites/README.md) de ce dossier dit d'où vient le fichier
