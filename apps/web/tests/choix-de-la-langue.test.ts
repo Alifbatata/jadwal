@@ -6,7 +6,7 @@
 //   pas.
 // - Ce choix voyage avec le lien de connexion, quel que soit le temps passé avant de le demander : il
 //   vaut aussi quand le lien s'ouvre sur un autre navigateur, et il n'attend plus, sur le premier,
-//   une fois le lien demandé.
+//   une fois le lien demandé. Une adresse refusée pour sa forme ne demande aucun lien : il attend.
 // - Un lien de connexion dont on change l'écran de retour pour un autre site est refusé, comme en
 //   production : les serveurs de test tournent sans rien qui les dise en test (`global-setup.ts`).
 // - Le retour après le choix ne quitte jamais le service, quelle que soit la forme du chemin envoyé.
@@ -362,6 +362,21 @@ describe('le choix fait avant la connexion, et le lien de connexion', () => {
 		const second = new URL((await ordinateur.demanderLeLien(LIEN_LU)).lien);
 		expect(second.searchParams.get('callbackURL')).toBe('/organisations');
 		expect(await langueDe(await ordinateur.get('/connexion'))).toBe('de');
+	});
+
+	it('keeps the choice waiting when the address is refused for its form, then gives it to the link', async () => {
+		const navigateur = new Navigateur('fr-CH,fr;q=0.9');
+		await navigateur.post('/langue', { language: 'de', returnTo: '/connexion' });
+
+		// Une adresse mal tapée : l'écran la refuse, aucun lien n'est demandé, et le choix attend encore.
+		const refus = await navigateur.post('/connexion', { email: 'choix-lien-lu@example' });
+		expect(refus.status).toBe(400);
+		expect(navigateur.envoie(COOKIE_EN_ATTENTE)).toBe(true);
+
+		// L'adresse corrigée reçoit un lien qui emporte le choix.
+		const lien = new URL((await navigateur.demanderLeLien(LIEN_LU)).lien);
+		expect(lien.searchParams.get('callbackURL')).toBe('/organisations?language=de');
+		expect(navigateur.envoie(COOKIE_EN_ATTENTE)).toBe(false);
 	});
 
 	it('goes with a link asked long after the choice, on the same browser, into the space', async () => {
