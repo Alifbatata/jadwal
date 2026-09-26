@@ -32,13 +32,16 @@ d'une association, d'une école ou d'un club : son programme, ses membres et sa 
      `Exemple : Mosquée Madretsch`. Le champ prend le sens de ce qu'on y tape (`dir="auto"`).
    - `Adresse de la page publique` (avant : « Identifiant d'URL »), facultative : `Elle est proposée
 à partir du nom, et vous pouvez la modifier. Si vous la laissez vide, elle est formée à partir du
-nom.`, la règle `Lettres minuscules sans accent, chiffres et traits d'union.` avec
+nom.`, la règle `Lettres minuscules sans accent ni cédille, chiffres et traits d'union.` avec
      `Exemple : mosquee-madretsch`, `Adresse complète :` qui suit la frappe, et
      `Choisissez-la avec soin : elle ne se change plus ensuite.`
    - `Fuseau horaire` : une liste (avant : un texte libre), `Europe/Zurich` choisi d'avance, le
      groupe `Europe` en tête puis `Reste du monde`, des noms canoniques seulement, sans alias ni
      `Etc/`. Aide : `Il sert à afficher les heures du programme à l'heure du lieu de l'organisation
-et à calculer les heures de prière. En Suisse : Europe/Zurich.`
+et à calculer les heures de prière. En Suisse : Europe/Zurich.`, puis, pour une ville absente de la
+     liste parce que son nom est un alias (Oslo, Stockholm, Amsterdam…) : `Si la ville de
+l'organisation n'est pas dans la liste, choisissez une ville qui a toujours la même heure qu'elle.
+Pour la plus grande partie de l'Europe : Europe/Zurich, Europe/Paris ou Europe/Berlin.`
    - Le bouton `Créer l'organisation`.
 
    Après la création : `L'organisation est créée :` et son nom, `Sa page publique :` et l'adresse,
@@ -78,23 +81,23 @@ depuis cette session. […]`, ou `Vous êtes connecté avec le lien reçu par co
 n'a aucun pouvoir de super-admin. Connectez-vous avec une passkey déjà enregistrée.`
 4. Les boutons `Enregistrer une passkey` et `Se connecter avec une passkey`. Cet écran a besoin de
    JavaScript, et le dit quand il manque : c'est le navigateur qui crée une passkey.
-5. **Passkeys enregistrées** : chacune avec son nom (`Cet appareil`, ou `Sans nom`) et
-   `Enregistrée le 06.03.2026`, le jour en Suisse ; avant l'étape 18, la date s'écrivait comme la
-   base l'écrit, et une passkey enregistrée à minuit et demi portait la veille. Sans passkey :
-   `Aucune pour le moment.`
-6. Le conseil : `Enregistrez-en plusieurs, sur plusieurs appareils : perdre son téléphone ne doit
+5. **Passkeys enregistrées** : chacune avec son nom et `Enregistrée le 06.03.2026`, le jour en
+   Suisse ; avant l'étape 18, la date s'écrivait comme la base l'écrit, et une passkey enregistrée à
+   minuit et demi portait la veille. Une passkey enregistrée depuis cet écran s'appelle d'après le
+   système de l'appareil et le jour, `Windows, 26.09.2026`, et `(2)` s'ajoute à un second nom
+   pareil : deux passkeys de la liste ne portent jamais le même nom. Celles d'avant gardent leur
+   nom, `Cet appareil` ; sans nom, `Sans nom`. Sans passkey : `Aucune pour le moment.`
+6. Après l'enregistrement : `Passkey enregistrée. Utilisez le bouton ci-dessous pour vous connecter
+avec elle, sans quitter la page.` pour la première, et, pouvoirs actifs, `Passkey enregistrée.
+Vous pourrez vous connecter avec elle la prochaine fois. Vous n'avez rien d'autre à faire.` pour
+   une autre, où aucun bouton n'apparaît puisque la session a déjà ses pouvoirs.
+7. Le conseil : `Enregistrez-en plusieurs, sur plusieurs appareils : perdre son téléphone ne doit
 pas fermer le service. […]`
 
 Un échec dit ce qui arrive dans la langue de l'écran, puis `Détail donné par le navigateur :`.
 
 ## Ce qui reste à reprendre
 
-Relevé par la relecture de l'étape 18, non corrigé à la fin de l'étape :
-
-- pouvoirs actifs, après l'ajout d'une seconde passkey, l'écran renvoie à un bouton « ci-dessous »
-  qui n'existe pas ;
-- sans JavaScript, l'adresse proposée à partir du nom est créée sans avoir été vue, et elle ne se
-  change plus (un nom en arabe suivi d'un chiffre donne `/m/2`) ;
-- vingt et une villes d'Europe manquent à la liste des fuseaux, parce que leur nom est un alias
-  (Oslo, Stockholm, Amsterdam…), sans phrase pour dire lequel choisir ;
-- toutes les passkeys s'appellent `Cet appareil`.
+Relevé par la relecture de l'étape 18, non corrigé à la fin de l'étape : sans JavaScript,
+l'adresse proposée à partir du nom est créée sans avoir été vue, et elle ne se change plus. La
+proposition perd aussi les ligatures, et un nom en arabe suivi d'un chiffre donne `/m/2`.
