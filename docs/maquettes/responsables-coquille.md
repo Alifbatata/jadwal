@@ -34,6 +34,22 @@ Dans cet ordre :
 
 Au pied de chaque écran : le lien `Conditions d'utilisation`.
 
+## L'encadré de la responsable devenue éditrice
+
+Une responsable qui se donne elle-même le rôle d'éditeur, sur l'écran Membres, n'a plus accès à cet
+écran. L'action l'envoie sur `À venir`, à l'adresse `/?avis=editeur`, et la coquille affiche en tête
+du contenu, avant tout le reste, un encadré annoncé aux lecteurs d'écran (`role="status"`) :
+
+`Vous avez maintenant le rôle d'éditeur. Les écrans réservés aux responsables, comme Membres et
+Réglages, ne vous sont plus ouverts. Pour les retrouver, demandez à une autre personne responsable
+de vous redonner le rôle de responsable.`
+
+Il existe dans les cinq langues (`becameEditor`, dans `common.ts`). La coquille ne l'affiche qu'à
+une personne qui est bien éditrice de l'organisation : une adresse copiée ne fait rien dire de faux.
+Il passe par un paramètre d'adresse, et non par un cookie : rien à retenir, rien de personnel. Il
+disparaît à l'écran suivant, et revient si elle recharge cette adresse. Avant, elle arrivait sur
+`À venir` sans un mot.
+
 ## Se connecter, `/connexion`
 
 1. Titre de niveau 1 : `Se connecter`.
@@ -51,6 +67,10 @@ vient d'y être envoyé. Ouvrez votre messagerie et touchez le lien : il est val
 ne sert qu'une fois.`, puis `Rien reçu après quelques minutes ? Regardez dans les courriels
 indésirables, ou demandez un autre lien.`, `Vous pouvez fermer cette page.` et le lien
 `Demander un autre lien`. La phrase est la même pour une adresse connue et une adresse inconnue.
+
+**Une langue choisie sur cet écran** part avec le lien : le courriel arrive dans cette langue, et le
+lien en fait la langue du compte, sur quelque navigateur qu'il s'ouvre. La règle exacte est dans
+l'ADR 0047.
 
 **Une adresse mal formée** : `Cette adresse n'a pas la forme d'une adresse électronique. Exemple :
 prenom.nom@exemple.ch`, reliée au champ, et l'adresse tapée reste dans le champ.

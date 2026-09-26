@@ -33,7 +33,7 @@ Sous le choix du rôle, deux listes, qu'une personne lit au moment de choisir.
 
 - Voir les séances des sept prochains jours et copier les messages prêts à coller
 - Annuler une séance, la déplacer à une autre date ou à une autre heure, puis la rétablir
-- Créer un cours, le modifier, le publier et le supprimer
+- Créer un cours, le modifier et le publier
 - Poser une pause, par exemple pendant les vacances, puis la retirer
 - Quand les heures de prière sont activées : ajouter une prière du vendredi, la modifier, la
   publier, l'annuler, la déplacer ou la supprimer
@@ -59,12 +59,27 @@ Puis : `Une organisation garde toujours au moins une personne responsable.`
 
 Cette liste est celle de l'ADR 0046. Un test la lie à la base : les tables que les politiques
 réservent aux responsables doivent être exactement celles des gestes que l'écran dit réservés.
+Jusqu'au lot 4 de l'étape 18, la ligne des cours disait aussi « et le supprimer » : aucun écran ne
+propose de supprimer un cours, et ces mots sont retirés.
 
 ## Les messages
 
-`Seule une personne responsable peut faire cela.`, `Ce rôle n'existe pas. Choisissez éditeur ou
-responsable.`, et, pour la dernière personne responsable : `Une organisation doit toujours garder au
-moins une personne responsable. Donnez d'abord ce rôle à une autre personne.`
+Sous l'introduction, chaque geste dit ce qu'il a fait : `L'invitation est annulée : la personne ne
+peut plus l'accepter.`, `La personne a été retirée de votre organisation.`, `Le rôle a été changé.
+Nouveau rôle : responsable.` Avant l'étape 18, la ligne changeait ou disparaissait sans un mot.
+
+Les erreurs : `Seule une personne responsable peut faire cela.`, `Ce rôle n'existe pas. Choisissez
+éditeur ou responsable.`, et, pour la dernière personne responsable : `Une organisation doit
+toujours garder au moins une personne responsable. Donnez d'abord ce rôle à une autre personne.`
+
+## Une responsable qui se donne le rôle d'éditeur
+
+Quand une autre personne responsable reste, une responsable peut se donner elle-même le rôle
+d'éditeur. L'écran Membres ne lui est alors plus ouvert : elle arrive sur `À venir`, à l'adresse
+`/?avis=editeur`, avec en tête un encadré, `Vous avez maintenant le rôle d'éditeur. Les écrans
+réservés aux responsables, comme Membres et Réglages, ne vous sont plus ouverts. Pour les retrouver,
+demandez à une autre personne responsable de vous redonner le rôle de responsable.` Sa description
+est dans `responsables-coquille.md`.
 
 ## Le courriel d'invitation
 
@@ -74,5 +89,6 @@ Son texte est dans `responsables-coquille.md`.
 
 ## Ce qui reste à reprendre
 
-Relevé par la relecture de l'étape 18, non corrigé à la fin de l'étape : annuler une invitation,
-retirer un membre et changer un rôle se font sans aucun message de réussite, et sans confirmation.
+Relevé par la relecture de l'étape 18, non corrigé à la fin de l'étape : retirer un membre et
+changer un rôle se font sans demande de confirmation. Une responsable qui se retire elle-même de
+l'organisation ne reçoit aucune phrase à l'arrivée.
