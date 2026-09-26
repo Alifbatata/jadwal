@@ -256,4 +256,16 @@ describe('le retour après le choix de la langue', () => {
 		});
 		expect(reponse.headers.get('location')).toBe('/conditions');
 	});
+
+	it.each(['fr', 'de', 'it', 'en', 'ar'])(
+		'sends an address typed by hand back to the service, without a message in English (%s)',
+		async (langue) => {
+			const navigateur = new Navigateur();
+			await navigateur.post('/langue', { language: langue, returnTo: '/connexion' });
+			const reponse = await navigateur.get('/langue');
+			expect(reponse.status).toBe(303);
+			expect(reponse.headers.get('location')).toBe('/');
+			expect(await reponse.text()).toBe('');
+		}
+	);
 });

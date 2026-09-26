@@ -36,3 +36,10 @@ export const POST: RequestHandler = async ({ request, cookies, locals, url }) =>
 	}
 	redirect(303, back);
 };
+
+/**
+ * Une adresse tapée à la main, ou un lien suivi par un robot : rien à choisir sans formulaire. Sans
+ * cette réponse, SvelteKit en rendrait une en anglais, en texte brut, hors de la coquille. On renvoie
+ * à l'accueil, qui mène à la connexion ou à l'espace.
+ */
+export const GET: RequestHandler = () => redirect(303, '/');
