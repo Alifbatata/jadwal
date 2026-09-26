@@ -110,7 +110,10 @@ interface Dictionnaire {
 	readonly subscribeOneCourseTitle: string;
 	/** Sous « Un seul cours », sur un iPhone : chaque nom de cours ouvre son flux `webcal:`. */
 	readonly subscribeOneCourseText: string;
-	/** Sur Android : chaque nom de cours ouvre Google Agenda. */
+	/**
+	 * Sur Android : chaque nom de cours ouvre Google Agenda, et, à côté, sa page donne l'issue si
+	 * Google ne propose rien sur le téléphone (relecture du lot 4). Le lien porte le mot `coursePage`.
+	 */
 	readonly subscribeOneCourseGoogle: string;
 	/** Ailleurs : chaque nom de cours mène à sa page, qui propose le choix complet. */
 	readonly subscribeOneCourseChoice: string;
@@ -118,6 +121,13 @@ interface Dictionnaire {
 	/** Le titre du bloc d'abonnement de la page d'un cours, au-dessus de ce que l'appareil propose. */
 	readonly addCourseToCalendar: string;
 	readonly courseFeedAddress: string;
+	/**
+	 * Sur Android, l'étiquette de l'adresse, sous la phrase qui dit de la coller sur un ordinateur :
+	 * « Ou copiez cette adresse… » la présentait comme un autre choix (relecture du lot 4). Sur un
+	 * iPhone, où elle suit un bouton, `subscribeAddress` et `courseFeedAddress` restent justes.
+	 */
+	readonly androidAddress: string;
+	readonly androidCourseAddress: string;
 	/** Le bouton d'un Android : Google Agenda, avec la demande d'abonnement prête. */
 	readonly addToGoogle: string;
 	/** Ce qui se passe quand on touche le bouton `webcal:`, sur un iPhone, un iPad ou un Mac. */
@@ -137,6 +147,11 @@ interface Dictionnaire {
 	 * Sous le bouton d'Android, ce qu'il faut faire si Google Agenda ne propose rien sur le
 	 * téléphone : passer par un ordinateur, avec l'adresse écrite juste en dessous. La phrase se suffit
 	 * à elle-même : la page d'un cours n'a pas d'étapes à suivre à la main.
+	 *
+	 * Les étapes et leurs libellés sont ceux de l'aide de Google (answer 37100, « Use a link to add a
+	 * public calendar », relue le 26.09.2026 en en, fr, de, it et ar) : le « + » à côté de la
+	 * rubrique des autres agendas, le choix par l'adresse, puis le bouton qui ajoute l'agenda. `androidText`
+	 * dit les mêmes étapes.
 	 */
 	readonly googleComputer: string;
 	/** Le choix complet, quand l'appareil n'est pas reconnu ou que le visiteur le demande. */
@@ -319,12 +334,14 @@ const fr: Dictionnaire = {
 	subscribeOneCourseText:
 		'Vous pouvez aussi n’ajouter qu’un cours. Touchez son nom : il s’ajoute seul et se met à jour comme le reste. Son adresse en https figure sur la page du cours.',
 	subscribeOneCourseGoogle:
-		'Vous pouvez aussi n’ajouter qu’un cours. Touchez son nom : Google Agenda s’ouvre pour ce cours seul, comme avec le bouton ci-dessus.',
+		'Vous pouvez aussi n’ajouter qu’un cours. Touchez son nom : Google Agenda s’ouvre pour ce cours seul, comme avec le bouton ci-dessus. Si Google Agenda ne propose rien sur votre téléphone, touchez Page du cours, à côté de son nom : cette page donne l’adresse du cours et la marche à suivre sur un ordinateur.',
 	subscribeOneCourseChoice:
 		'Vous pouvez aussi n’ajouter qu’un cours. Touchez son nom : sa page propose les mêmes choix, pour ce cours seul.',
 	subscribeWhole: 'S’abonner à tout le programme',
 	addCourseToCalendar: 'Ajouter ce cours à mon agenda',
 	courseFeedAddress: 'Ou copiez cette adresse, qui ne porte que ce cours :',
+	androidAddress: 'L’adresse à coller :',
+	androidCourseAddress: 'L’adresse à coller, qui ne porte que ce cours :',
 	// Le libellé du bouton d'Android est rangé sous celui de l'iPhone, et non ici : le correcteur
 	// recolle les chaînes voisines en un paragraphe, et lisait ce libellé, sans point, comme la fin
 	// d'une phrase.
@@ -334,7 +351,7 @@ const fr: Dictionnaire = {
 		'Touchez le bouton : il ouvre Google Agenda et lui demande d’ajouter cet agenda. Si Google Agenda propose de l’ajouter, confirmez.',
 	googleDelay: 'Google peut mettre jusqu’à 24 heures à rafraîchir un abonnement.',
 	googleComputer:
-		'Si Google Agenda ne propose rien sur votre téléphone, passez par un ordinateur : selon Google, on ne peut ajouter un agenda par son adresse que depuis le navigateur d’un ordinateur. Ouvrez-y Google Agenda, puis, dans Autres agendas, choisissez À partir de l’URL et collez l’adresse ci-dessous. L’agenda apparaîtra ensuite aussi sur votre téléphone.',
+		'Si Google Agenda ne propose rien sur votre téléphone, passez par un ordinateur : selon Google, on ne peut ajouter un agenda par son adresse que depuis le navigateur d’un ordinateur. Ouvrez-y Google Agenda. À gauche, à côté d’Autres agendas, cliquez sur le signe + (Ajouter d’autres agendas), puis choisissez À partir de l’URL. Collez l’adresse ci-dessous et cliquez sur Ajouter l’agenda. L’agenda apparaîtra ensuite aussi sur votre téléphone.',
 	chooseApp: 'Choisissez votre application de calendrier :',
 	choiceGoogle: 'Google Agenda',
 	// Un nom d'application, puis la phrase qui dit ce qu'elle fait : le correcteur les lisait d'un
@@ -362,7 +379,7 @@ const fr: Dictionnaire = {
 	iphoneText:
 		'Ouvrez Réglages, puis Applications, Calendrier, Comptes, Ajouter un compte, Autre, Ajouter un abonnement à un calendrier, et collez l’adresse.',
 	androidText:
-		'Selon Google, on ne peut ajouter un agenda par son adresse que depuis le navigateur d’un ordinateur. Sur l’ordinateur, ouvrez Google Agenda, puis, dans Autres agendas, choisissez À partir de l’URL, collez l’adresse et ajoutez l’agenda. Il apparaîtra ensuite aussi sur votre téléphone.',
+		'Selon Google, on ne peut ajouter un agenda par son adresse que depuis le navigateur d’un ordinateur. Sur l’ordinateur, ouvrez Google Agenda. À gauche, à côté d’Autres agendas, cliquez sur le signe + (Ajouter d’autres agendas), puis choisissez À partir de l’URL. Collez l’adresse et cliquez sur Ajouter l’agenda. Il apparaîtra ensuite aussi sur votre téléphone.',
 	outlookText:
 		'Ouvrez Outlook sur le web, allez dans Calendrier, Ajouter un calendrier, S’abonner à partir du Web, collez l’adresse, donnez-lui un nom, puis importez.',
 	offeredBy: 'Proposé gratuitement par jadwal, un service de Voltia',
@@ -472,12 +489,14 @@ const de: Dictionnaire = {
 	subscribeOneCourseText:
 		'Sie können auch nur einen Kurs hinzufügen. Tippen Sie auf seinen Namen: Er kommt allein in den Kalender und aktualisiert sich wie der Rest. Seine https-Adresse steht auf der Seite des Kurses.',
 	subscribeOneCourseGoogle:
-		'Sie können auch nur einen Kurs hinzufügen. Tippen Sie auf seinen Namen: Google Kalender öffnet sich für diesen Kurs allein, wie mit der Schaltfläche oben.',
+		'Sie können auch nur einen Kurs hinzufügen. Tippen Sie auf seinen Namen: Google Kalender öffnet sich für diesen Kurs allein, wie mit der Schaltfläche oben. Wenn Google Kalender auf Ihrem Telefon nichts anbietet, tippen Sie daneben auf Seite des Kurses: Dort stehen die Adresse des Kurses und die Schritte am Computer.',
 	subscribeOneCourseChoice:
 		'Sie können auch nur einen Kurs hinzufügen. Tippen Sie auf seinen Namen: Seine Seite bietet dieselben Möglichkeiten, nur für diesen Kurs.',
 	subscribeWhole: 'Das ganze Programm abonnieren',
 	addCourseToCalendar: 'Diesen Kurs zu meinem Kalender hinzufügen',
 	courseFeedAddress: 'Oder kopieren Sie diese Adresse, die nur diesen Kurs enthält:',
+	androidAddress: 'Die Adresse zum Einfügen:',
+	androidCourseAddress: 'Die Adresse zum Einfügen, die nur diesen Kurs enthält:',
 	addToGoogle: 'Zu Google Kalender hinzufügen',
 	appleHelp:
 		'Tippen Sie auf die Schaltfläche, auf dem Mac klicken Sie darauf: Die App Kalender bietet an, den Kalender zu abonnieren. Bestätigen Sie, und der Kalender aktualisiert sich von selbst, etwa einmal pro Stunde.',
@@ -485,7 +504,7 @@ const de: Dictionnaire = {
 		'Tippen Sie auf die Schaltfläche: Sie öffnet Google Kalender und bittet darum, diesen Kalender hinzuzufügen. Wenn Google Kalender es Ihnen anbietet, bestätigen Sie.',
 	googleDelay: 'Google kann bis zu 24 Stunden brauchen, um ein Abo zu aktualisieren.',
 	googleComputer:
-		'Wenn Google Kalender auf Ihrem Telefon nichts anbietet, nehmen Sie einen Computer: Laut Google lässt sich ein Kalender über seine Adresse nur im Browser eines Computers hinzufügen. Öffnen Sie dort Google Kalender, wählen Sie unter Weitere Kalender die Option Per URL und fügen Sie die Adresse unten ein. Danach erscheint der Kalender auch auf Ihrem Telefon.',
+		'Wenn Google Kalender auf Ihrem Telefon nichts anbietet, nehmen Sie einen Computer: Laut Google lässt sich ein Kalender über seine Adresse nur im Browser eines Computers hinzufügen. Öffnen Sie dort Google Kalender. Klicken Sie links neben Weitere Kalender auf das Symbol + (Weitere Kalender hinzufügen) und dann auf Per URL. Fügen Sie die Adresse unten ein und klicken Sie auf Kalender hinzufügen. Danach erscheint der Kalender auch auf Ihrem Telefon.',
 	chooseApp: 'Wählen Sie Ihre Kalender-App:',
 	choiceGoogle: 'Google Kalender',
 	choiceGoogleHelp: 'Er bietet an, den Kalender zu Ihrem Google-Konto hinzuzufügen.',
@@ -511,7 +530,7 @@ const de: Dictionnaire = {
 	iphoneText:
 		'Öffnen Sie Einstellungen, dann Apps, Kalender, Accounts, Account hinzufügen, Andere, Kalenderabo hinzufügen, und fügen Sie die Adresse ein.',
 	androidText:
-		'Laut Google lässt sich ein Kalender über seine Adresse nur im Browser eines Computers hinzufügen. Öffnen Sie am Computer Google Kalender, wählen Sie unter Weitere Kalender die Option Per URL, fügen Sie die Adresse ein und fügen Sie den Kalender hinzu. Danach erscheint er auch auf Ihrem Telefon.',
+		'Laut Google lässt sich ein Kalender über seine Adresse nur im Browser eines Computers hinzufügen. Öffnen Sie am Computer Google Kalender. Klicken Sie links neben Weitere Kalender auf das Symbol + (Weitere Kalender hinzufügen) und dann auf Per URL. Fügen Sie die Adresse ein und klicken Sie auf Kalender hinzufügen. Danach erscheint er auch auf Ihrem Telefon.',
 	outlookText:
 		'Öffnen Sie Outlook im Web, gehen Sie zu Kalender, Kalender hinzufügen, Aus dem Internet abonnieren, fügen Sie die Adresse ein, geben Sie einen Namen ein und importieren Sie.',
 	offeredBy: 'Kostenlos bereitgestellt von jadwal, einem Dienst von Voltia',
@@ -621,12 +640,14 @@ const it: Dictionnaire = {
 	subscribeOneCourseText:
 		'Puoi anche aggiungere un solo corso. Tocca il suo nome: entra da solo nel calendario e si aggiorna come il resto. Il suo indirizzo https si trova sulla pagina del corso.',
 	subscribeOneCourseGoogle:
-		'Puoi anche aggiungere un solo corso. Tocca il suo nome: Google Calendar si apre solo per quel corso, come con il pulsante qui sopra.',
+		'Puoi anche aggiungere un solo corso. Tocca il suo nome: Google Calendar si apre solo per quel corso, come con il pulsante qui sopra. Se Google Calendar non propone nulla sul telefono, tocca Pagina del corso, accanto al suo nome: lì trovi l’indirizzo del corso e i passaggi da fare su un computer.',
 	subscribeOneCourseChoice:
 		'Puoi anche aggiungere un solo corso. Tocca il suo nome: la sua pagina offre le stesse possibilità, solo per quel corso.',
 	subscribeWhole: 'Iscriviti a tutto il programma',
 	addCourseToCalendar: 'Aggiungi questo corso al mio calendario',
 	courseFeedAddress: 'Oppure copia questo indirizzo, che contiene solo questo corso:',
+	androidAddress: 'L’indirizzo da incollare:',
+	androidCourseAddress: 'L’indirizzo da incollare, che contiene solo questo corso:',
 	addToGoogle: 'Aggiungi a Google Calendar',
 	appleHelp:
 		'Tocca il pulsante (sul computer, fai clic): l’app Calendario propone di iscriverti. Accetta, e il calendario si aggiorna da solo, circa una volta all’ora.',
@@ -634,7 +655,7 @@ const it: Dictionnaire = {
 		'Tocca il pulsante: apre Google Calendar e gli chiede di aggiungere questo calendario. Se Google Calendar te lo propone, conferma.',
 	googleDelay: 'Google può impiegare fino a 24 ore per aggiornare un’iscrizione.',
 	googleComputer:
-		'Se Google Calendar non propone nulla sul telefono, usa un computer: secondo Google, un calendario si può aggiungere tramite indirizzo solo dal browser di un computer. Apri lì Google Calendar, in Altri calendari scegli Da URL e incolla l’indirizzo qui sotto. Il calendario comparirà poi anche sul telefono.',
+		'Se Google Calendar non propone nulla sul telefono, usa un computer: secondo Google, un calendario si può aggiungere tramite indirizzo solo dal browser di un computer. Apri lì Google Calendar. A sinistra, accanto ad Altri calendari, fai clic sul segno + (Aggiungi altri calendari) e poi su Da URL. Incolla l’indirizzo qui sotto e fai clic su Aggiungi calendario. Il calendario comparirà poi anche sul telefono.',
 	chooseApp: 'Scegli la tua app di calendario:',
 	choiceGoogle: 'Google Calendar',
 	choiceGoogleHelp: 'Propone di aggiungere il calendario al tuo account Google.',
@@ -659,7 +680,7 @@ const it: Dictionnaire = {
 	iphoneText:
 		'Apri Impostazioni, poi App, Calendario, Account, Aggiungi account, Altro, Aggiungi calendario con iscrizione, e incolla l’indirizzo.',
 	androidText:
-		'Secondo Google, un calendario si può aggiungere tramite indirizzo solo dal browser di un computer. Dal computer apri Google Calendar, in Altri calendari scegli Da URL, incolla l’indirizzo e aggiungi il calendario. Comparirà poi anche sul telefono.',
+		'Secondo Google, un calendario si può aggiungere tramite indirizzo solo dal browser di un computer. Dal computer apri Google Calendar. A sinistra, accanto ad Altri calendari, fai clic sul segno + (Aggiungi altri calendari) e poi su Da URL. Incolla l’indirizzo e fai clic su Aggiungi calendario. Comparirà poi anche sul telefono.',
 	outlookText:
 		'Apri Outlook sul web, vai su Calendario, Aggiungi calendario, Iscriviti dal Web, incolla l’indirizzo, dagli un nome e importa.',
 	offeredBy: 'Offerto gratuitamente da jadwal, un servizio di Voltia',
@@ -771,12 +792,14 @@ const en: Dictionnaire = {
 	subscribeOneCourseText:
 		'You can also add just one course. Tap its name: it is added on its own and updates like the rest. Its https address is on the course page.',
 	subscribeOneCourseGoogle:
-		'You can also add just one course. Tap its name: Google Calendar opens for that course alone, as with the button above.',
+		'You can also add just one course. Tap its name: Google Calendar opens for that course alone, as with the button above. If Google Calendar offers nothing on your phone, tap Course page, next to its name: that page gives the course’s address and the steps to follow on a computer.',
 	subscribeOneCourseChoice:
 		'You can also add just one course. Tap its name: its page offers the same options, for that course alone.',
 	subscribeWhole: 'Subscribe to the whole programme',
 	addCourseToCalendar: 'Add this course to my calendar',
 	courseFeedAddress: 'Or copy this address, which covers only this course:',
+	androidAddress: 'The address to paste:',
+	androidCourseAddress: 'The address to paste, which covers only this course:',
 	addToGoogle: 'Add to Google Calendar',
 	appleHelp:
 		'Tap the button, or click it on a Mac: the Calendar app offers to subscribe. Accept, and the calendar updates itself, about once an hour.',
@@ -784,7 +807,7 @@ const en: Dictionnaire = {
 		'Tap the button: it opens Google Calendar and asks it to add this calendar. If Google Calendar offers to do so, confirm.',
 	googleDelay: 'Google can take up to 24 hours to refresh a subscription.',
 	googleComputer:
-		'If Google Calendar offers nothing on your phone, use a computer: according to Google, a calendar can only be added by its address in a computer’s web browser. Open Google Calendar there, choose From URL under Other calendars, and paste the address below. The calendar will then appear on your phone too.',
+		'If Google Calendar offers nothing on your phone, use a computer: according to Google, a calendar can only be added by its address in a computer’s web browser. Open Google Calendar there. On the left, next to Other calendars, click the + sign (Add other calendars), then From URL. Paste the address below and click Add calendar. The calendar will then appear on your phone too.',
 	chooseApp: 'Choose your calendar app:',
 	choiceGoogle: 'Google Calendar',
 	choiceGoogleHelp: 'It offers to add the calendar to your Google account.',
@@ -809,7 +832,7 @@ const en: Dictionnaire = {
 	iphoneText:
 		'Open Settings, then Apps, Calendar, Calendar Accounts, Add Account, Other, Add Subscribed Calendar, and paste the address.',
 	androidText:
-		'According to Google, a calendar can only be added by its address in a computer’s web browser. On the computer, open Google Calendar, choose From URL under Other calendars, paste the address, then add the calendar. It will then appear on your phone too.',
+		'According to Google, a calendar can only be added by its address in a computer’s web browser. On the computer, open Google Calendar. On the left, next to Other calendars, click the + sign (Add other calendars), then From URL. Paste the address and click Add calendar. It will then appear on your phone too.',
 	outlookText:
 		'Open Outlook on the web, go to Calendar, Add calendar, Subscribe from web, paste the address, give it a name, then import.',
 	offeredBy: 'Provided free of charge by jadwal, a service from Voltia',
@@ -942,12 +965,14 @@ const ar: Dictionnaire = {
 	subscribeOneCourseText:
 		'يمكنك أيضًا إضافة درس واحد فقط. اضغط على اسمه: يُضاف وحده ويُحدَّث مثل الباقي. وعنوانه بصيغة https موجود في صفحة الدرس.',
 	subscribeOneCourseGoogle:
-		'يمكنك أيضًا إضافة درس واحد فقط. اضغط على اسمه: يُفتح تقويم Google لهذا الدرس وحده، كما مع الزر أعلاه.',
+		'يمكنك أيضًا إضافة درس واحد فقط. اضغط على اسمه: يُفتح تقويم Google لهذا الدرس وحده، كما مع الزر أعلاه. إن لم يقترح تقويم Google شيئًا على هاتفك، فاضغط على صفحة الدرس بجانب اسمه: فيها عنوان الدرس والخطوات التي تتبعها على الحاسوب.',
 	subscribeOneCourseChoice:
 		'يمكنك أيضًا إضافة درس واحد فقط. اضغط على اسمه: تعرض صفحته الخيارات نفسها لهذا الدرس وحده.',
 	subscribeWhole: 'الاشتراك في البرنامج كاملًا',
 	addCourseToCalendar: 'أضف هذا الدرس إلى تقويمي',
 	courseFeedAddress: 'أو انسخ هذا العنوان، وهو خاص بهذا الدرس وحده:',
+	androidAddress: 'العنوان المراد لصقه:',
+	androidCourseAddress: 'العنوان المراد لصقه، وهو خاص بهذا الدرس وحده:',
 	addToGoogle: 'أضف إلى تقويم Google',
 	appleHelp:
 		'اضغط على الزر، أو انقر عليه على الحاسوب: يقترح تطبيق التقويم الاشتراك. وافق، وسيُحدَّث التقويم تلقائيًا، مرة كل ساعة تقريبًا.',
@@ -955,7 +980,7 @@ const ar: Dictionnaire = {
 		'اضغط على الزر: يفتح تقويم Google ويطلب منه إضافة هذا التقويم. إن اقترح عليك تقويم Google ذلك، فأكّد.',
 	googleDelay: 'قد يستغرق Google حتى 24 ساعة لتحديث الاشتراك.',
 	googleComputer:
-		'إن لم يقترح تقويم Google شيئًا على هاتفك، فاستعن بحاسوب: حسب Google، لا يمكن إضافة تقويم عن طريق عنوانه إلا من متصفح على الحاسوب. افتح فيه تقويم Google، ومن التقاويم الأخرى اختر من عنوان URL، ثم الصق العنوان أدناه. سيظهر التقويم بعدها على هاتفك أيضًا.',
+		'إن لم يقترح تقويم Google شيئًا على هاتفك، فاستعن بحاسوب: حسب Google، لا يمكن إضافة تقويم عن طريق عنوانه إلا من متصفح على الحاسوب. افتح فيه تقويم Google. على يمين الصفحة، بجانب التقاويم الأخرى، انقر على علامة + (إضافة تقاويم أخرى)، ثم اختر من عنوان URL. الصق العنوان أدناه، ثم انقر على إضافة تقويم. سيظهر التقويم بعدها على هاتفك أيضًا.',
 	chooseApp: 'اختر تطبيق التقويم الذي تستخدمه:',
 	choiceGoogle: 'تقويم Google',
 	choiceGoogleHelp: 'يقترح تقويم Google إضافة التقويم إلى حسابك في Google.',
@@ -980,7 +1005,7 @@ const ar: Dictionnaire = {
 	iphoneText:
 		'افتح الإعدادات، ثم التطبيقات، التقويم، الحسابات، إضافة حساب، أخرى، إضافة اشتراك تقويم، والصق العنوان.',
 	androidText:
-		'حسب Google، لا يمكن إضافة تقويم عن طريق عنوانه إلا من متصفح على الحاسوب. افتح تقويم Google على الحاسوب، ومن التقاويم الأخرى اختر من عنوان URL، الصق العنوان ثم أضف التقويم. سيظهر بعدها على هاتفك أيضًا.',
+		'حسب Google، لا يمكن إضافة تقويم عن طريق عنوانه إلا من متصفح على الحاسوب. افتح تقويم Google على الحاسوب. على يمين الصفحة، بجانب التقاويم الأخرى، انقر على علامة + (إضافة تقاويم أخرى)، ثم اختر من عنوان URL. الصق العنوان، ثم انقر على إضافة تقويم. سيظهر بعدها على هاتفك أيضًا.',
 	outlookText:
 		'افتح Outlook على الويب، اذهب إلى التقويم، إضافة تقويم، الاشتراك من الويب، الصق العنوان، سمِّه، ثم استورد.',
 	offeredBy: 'مقدَّم مجانًا من jadwal، خدمة من Voltia',

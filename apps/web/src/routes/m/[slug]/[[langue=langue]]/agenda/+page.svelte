@@ -109,6 +109,13 @@
 									>{cours.title}<span class="pour-lecteur">{annonceNouvelOnglet(data.langue)}</span
 									></a
 								>
+								<!-- L'issue si Google Agenda ne propose rien sur le téléphone : la page du cours, à
+								     son bloc d'abonnement, qui donne l'adresse du cours et le passage par un
+								     ordinateur (relecture du lot 4). Son nom se lit avec celui du cours, dans le
+								     même élément de liste. -->
+								<a class="page-du-cours" href={`${lienCours(adresse, cours.id)}#agenda`}
+									>{mots.coursePage}</a
+								>
 							{:else}
 								<a href={lienDuCours(cours)}>{cours.title}</a>
 							{/if}
@@ -190,6 +197,10 @@
 		align-items: center;
 		min-height: 44px;
 		color: #0f5c55;
+	}
+	/* Sur Android, le second lien d'un cours, sous son nom : plus discret, et toujours à 44 px. */
+	ul.cours a.page-du-cours {
+		font-size: 0.9rem;
 	}
 	.pour-lecteur {
 		position: absolute;

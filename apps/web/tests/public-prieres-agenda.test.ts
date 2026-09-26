@@ -890,21 +890,80 @@ const AIDE_DU_BOUTON_GOOGLE: Record<Langue, string> = {
 	en: 'Tap the button: it opens Google Calendar and asks it to add this calendar. If Google Calendar offers to do so, confirm.',
 	ar: 'اضغط على الزر: يفتح تقويم Google ويطلب منه إضافة هذا التقويم. إن اقترح عليك تقويم Google ذلك، فأكّد.'
 };
-/** Puis ce qu'il faut faire si Google Agenda ne propose rien sur le téléphone. */
+/**
+ * Puis ce qu'il faut faire si Google Agenda ne propose rien sur le téléphone : les étapes de l'aide
+ * de Google (answer 37100, relue le 26.09.2026 dans les cinq langues), avec les libellés de son
+ * interface, le « + » et le dernier clic compris (relecture du lot 4).
+ */
 const PAR_UN_ORDINATEUR: Record<Langue, string> = {
-	fr: 'Si Google Agenda ne propose rien sur votre téléphone, passez par un ordinateur : selon Google, on ne peut ajouter un agenda par son adresse que depuis le navigateur d’un ordinateur. Ouvrez-y Google Agenda, puis, dans Autres agendas, choisissez À partir de l’URL et collez l’adresse ci-dessous. L’agenda apparaîtra ensuite aussi sur votre téléphone.',
-	de: 'Wenn Google Kalender auf Ihrem Telefon nichts anbietet, nehmen Sie einen Computer: Laut Google lässt sich ein Kalender über seine Adresse nur im Browser eines Computers hinzufügen. Öffnen Sie dort Google Kalender, wählen Sie unter Weitere Kalender die Option Per URL und fügen Sie die Adresse unten ein. Danach erscheint der Kalender auch auf Ihrem Telefon.',
-	it: 'Se Google Calendar non propone nulla sul telefono, usa un computer: secondo Google, un calendario si può aggiungere tramite indirizzo solo dal browser di un computer. Apri lì Google Calendar, in Altri calendari scegli Da URL e incolla l’indirizzo qui sotto. Il calendario comparirà poi anche sul telefono.',
-	en: 'If Google Calendar offers nothing on your phone, use a computer: according to Google, a calendar can only be added by its address in a computer’s web browser. Open Google Calendar there, choose From URL under Other calendars, and paste the address below. The calendar will then appear on your phone too.',
-	ar: 'إن لم يقترح تقويم Google شيئًا على هاتفك، فاستعن بحاسوب: حسب Google، لا يمكن إضافة تقويم عن طريق عنوانه إلا من متصفح على الحاسوب. افتح فيه تقويم Google، ومن التقاويم الأخرى اختر من عنوان URL، ثم الصق العنوان أدناه. سيظهر التقويم بعدها على هاتفك أيضًا.'
+	fr: 'Si Google Agenda ne propose rien sur votre téléphone, passez par un ordinateur : selon Google, on ne peut ajouter un agenda par son adresse que depuis le navigateur d’un ordinateur. Ouvrez-y Google Agenda. À gauche, à côté d’Autres agendas, cliquez sur le signe + (Ajouter d’autres agendas), puis choisissez À partir de l’URL. Collez l’adresse ci-dessous et cliquez sur Ajouter l’agenda. L’agenda apparaîtra ensuite aussi sur votre téléphone.',
+	de: 'Wenn Google Kalender auf Ihrem Telefon nichts anbietet, nehmen Sie einen Computer: Laut Google lässt sich ein Kalender über seine Adresse nur im Browser eines Computers hinzufügen. Öffnen Sie dort Google Kalender. Klicken Sie links neben Weitere Kalender auf das Symbol + (Weitere Kalender hinzufügen) und dann auf Per URL. Fügen Sie die Adresse unten ein und klicken Sie auf Kalender hinzufügen. Danach erscheint der Kalender auch auf Ihrem Telefon.',
+	it: 'Se Google Calendar non propone nulla sul telefono, usa un computer: secondo Google, un calendario si può aggiungere tramite indirizzo solo dal browser di un computer. Apri lì Google Calendar. A sinistra, accanto ad Altri calendari, fai clic sul segno + (Aggiungi altri calendari) e poi su Da URL. Incolla l’indirizzo qui sotto e fai clic su Aggiungi calendario. Il calendario comparirà poi anche sul telefono.',
+	en: 'If Google Calendar offers nothing on your phone, use a computer: according to Google, a calendar can only be added by its address in a computer’s web browser. Open Google Calendar there. On the left, next to Other calendars, click the + sign (Add other calendars), then From URL. Paste the address below and click Add calendar. The calendar will then appear on your phone too.',
+	ar: 'إن لم يقترح تقويم Google شيئًا على هاتفك، فاستعن بحاسوب: حسب Google، لا يمكن إضافة تقويم عن طريق عنوانه إلا من متصفح على الحاسوب. افتح فيه تقويم Google. على يمين الصفحة، بجانب التقاويم الأخرى، انقر على علامة + (إضافة تقاويم أخرى)، ثم اختر من عنوان URL. الصق العنوان أدناه، ثم انقر على إضافة تقويم. سيظهر التقويم بعدها على هاتفك أيضًا.'
 };
-/** Les étapes « Sur Android », qui disent la même chose. */
+/** Les étapes « Sur Android », qui disent la même chose, avec les mêmes libellés. */
 const ETAPES_ANDROID: Record<Langue, string> = {
-	fr: 'Selon Google, on ne peut ajouter un agenda par son adresse que depuis le navigateur d’un ordinateur. Sur l’ordinateur, ouvrez Google Agenda, puis, dans Autres agendas, choisissez À partir de l’URL, collez l’adresse et ajoutez l’agenda. Il apparaîtra ensuite aussi sur votre téléphone.',
-	de: 'Laut Google lässt sich ein Kalender über seine Adresse nur im Browser eines Computers hinzufügen. Öffnen Sie am Computer Google Kalender, wählen Sie unter Weitere Kalender die Option Per URL, fügen Sie die Adresse ein und fügen Sie den Kalender hinzu. Danach erscheint er auch auf Ihrem Telefon.',
-	it: 'Secondo Google, un calendario si può aggiungere tramite indirizzo solo dal browser di un computer. Dal computer apri Google Calendar, in Altri calendari scegli Da URL, incolla l’indirizzo e aggiungi il calendario. Comparirà poi anche sul telefono.',
-	en: 'According to Google, a calendar can only be added by its address in a computer’s web browser. On the computer, open Google Calendar, choose From URL under Other calendars, paste the address, then add the calendar. It will then appear on your phone too.',
-	ar: 'حسب Google، لا يمكن إضافة تقويم عن طريق عنوانه إلا من متصفح على الحاسوب. افتح تقويم Google على الحاسوب، ومن التقاويم الأخرى اختر من عنوان URL، الصق العنوان ثم أضف التقويم. سيظهر بعدها على هاتفك أيضًا.'
+	fr: 'Selon Google, on ne peut ajouter un agenda par son adresse que depuis le navigateur d’un ordinateur. Sur l’ordinateur, ouvrez Google Agenda. À gauche, à côté d’Autres agendas, cliquez sur le signe + (Ajouter d’autres agendas), puis choisissez À partir de l’URL. Collez l’adresse et cliquez sur Ajouter l’agenda. Il apparaîtra ensuite aussi sur votre téléphone.',
+	de: 'Laut Google lässt sich ein Kalender über seine Adresse nur im Browser eines Computers hinzufügen. Öffnen Sie am Computer Google Kalender. Klicken Sie links neben Weitere Kalender auf das Symbol + (Weitere Kalender hinzufügen) und dann auf Per URL. Fügen Sie die Adresse ein und klicken Sie auf Kalender hinzufügen. Danach erscheint er auch auf Ihrem Telefon.',
+	it: 'Secondo Google, un calendario si può aggiungere tramite indirizzo solo dal browser di un computer. Dal computer apri Google Calendar. A sinistra, accanto ad Altri calendari, fai clic sul segno + (Aggiungi altri calendari) e poi su Da URL. Incolla l’indirizzo e fai clic su Aggiungi calendario. Comparirà poi anche sul telefono.',
+	en: 'According to Google, a calendar can only be added by its address in a computer’s web browser. On the computer, open Google Calendar. On the left, next to Other calendars, click the + sign (Add other calendars), then From URL. Paste the address and click Add calendar. It will then appear on your phone too.',
+	ar: 'حسب Google، لا يمكن إضافة تقويم عن طريق عنوانه إلا من متصفح على الحاسوب. افتح تقويم Google على الحاسوب. على يمين الصفحة، بجانب التقاويم الأخرى، انقر على علامة + (إضافة تقاويم أخرى)، ثم اختر من عنوان URL. الصق العنوان، ثم انقر على إضافة تقويم. سيظهر بعدها على هاتفك أيضًا.'
+};
+/**
+ * Les libellés de l'interface de Google Agenda dans chaque langue, tels que son aide les écrit
+ * (answer 37100) : la rubrique, le « + » qui l'accompagne, le choix, puis le dernier bouton.
+ */
+const LIBELLES_GOOGLE: Record<Langue, string[]> = {
+	fr: ['Autres agendas', 'Ajouter d’autres agendas', 'À partir de l’URL', 'Ajouter l’agenda'],
+	de: ['Weitere Kalender', 'Weitere Kalender hinzufügen', 'Per URL', 'auf Kalender hinzufügen'],
+	it: ['Altri calendari', 'Aggiungi altri calendari', 'Da URL', 'Aggiungi calendario'],
+	en: ['Other calendars', 'Add other calendars', 'From URL', 'Add calendar'],
+	// « إضافة تقويم » seul se lit déjà plus tôt, dans « لا يمكن إضافة تقويم » : le clic le précède.
+	ar: ['التقاويم الأخرى', 'إضافة تقاويم أخرى', 'من عنوان URL', 'انقر على إضافة تقويم']
+};
+/**
+ * Sur Android, l'étiquette de l'adresse qui suit « collez l'adresse ci-dessous » : c'est l'adresse
+ * dont la phrase vient de parler, et non un autre choix (relecture du lot 4). Sur un iPhone, où elle
+ * suit un bouton, « Ou copiez cette adresse… » reste juste.
+ */
+const ADRESSE_A_COLLER: Record<Langue, string> = {
+	fr: 'L’adresse à coller :',
+	de: 'Die Adresse zum Einfügen:',
+	it: 'L’indirizzo da incollare:',
+	en: 'The address to paste:',
+	ar: 'العنوان المراد لصقه:'
+};
+const ADRESSE_DU_COURS_A_COLLER: Record<Langue, string> = {
+	fr: 'L’adresse à coller, qui ne porte que ce cours :',
+	de: 'Die Adresse zum Einfügen, die nur diesen Kurs enthält:',
+	it: 'L’indirizzo da incollare, che contiene solo questo corso:',
+	en: 'The address to paste, which covers only this course:',
+	ar: 'العنوان المراد لصقه، وهو خاص بهذا الدرس وحده:'
+};
+/** L'étiquette qui présentait la même adresse comme un autre choix. */
+const OU_COPIEZ: Record<Langue, string> = {
+	fr: 'Ou copiez cette adresse dans votre application de calendrier :',
+	de: 'Oder kopieren Sie diese Adresse in Ihre Kalender-App:',
+	it: 'Oppure copia questo indirizzo nella tua app di calendario:',
+	en: 'Or copy this address into your calendar app:',
+	ar: 'أو انسخ هذا العنوان والصقه في تطبيق التقويم:'
+};
+/** « Un seul cours », sur Android : le nom ouvre Google, et la page du cours est l'issue si rien ne vient. */
+const UN_SEUL_COURS_ANDROID: Record<Langue, string> = {
+	fr: 'Vous pouvez aussi n’ajouter qu’un cours. Touchez son nom : Google Agenda s’ouvre pour ce cours seul, comme avec le bouton ci-dessus. Si Google Agenda ne propose rien sur votre téléphone, touchez Page du cours, à côté de son nom : cette page donne l’adresse du cours et la marche à suivre sur un ordinateur.',
+	de: 'Sie können auch nur einen Kurs hinzufügen. Tippen Sie auf seinen Namen: Google Kalender öffnet sich für diesen Kurs allein, wie mit der Schaltfläche oben. Wenn Google Kalender auf Ihrem Telefon nichts anbietet, tippen Sie daneben auf Seite des Kurses: Dort stehen die Adresse des Kurses und die Schritte am Computer.',
+	it: 'Puoi anche aggiungere un solo corso. Tocca il suo nome: Google Calendar si apre solo per quel corso, come con il pulsante qui sopra. Se Google Calendar non propone nulla sul telefono, tocca Pagina del corso, accanto al suo nome: lì trovi l’indirizzo del corso e i passaggi da fare su un computer.',
+	en: 'You can also add just one course. Tap its name: Google Calendar opens for that course alone, as with the button above. If Google Calendar offers nothing on your phone, tap Course page, next to its name: that page gives the course’s address and the steps to follow on a computer.',
+	ar: 'يمكنك أيضًا إضافة درس واحد فقط. اضغط على اسمه: يُفتح تقويم Google لهذا الدرس وحده، كما مع الزر أعلاه. إن لم يقترح تقويم Google شيئًا على هاتفك، فاضغط على صفحة الدرس بجانب اسمه: فيها عنوان الدرس والخطوات التي تتبعها على الحاسوب.'
+};
+/** Le nom du lien vers la page d'un cours, celui de la vue « Tous les cours ». */
+const PAGE_DU_COURS: Record<Langue, string> = {
+	fr: 'Page du cours',
+	de: 'Seite des Kurses',
+	it: 'Pagina del corso',
+	en: 'Course page',
+	ar: 'صفحة الدرس'
 };
 /** Les phrases qui parlaient d'un bouton sur le choix complet, qui n'en a pas. */
 const SI_LE_BOUTON: Record<Langue, string> = {
@@ -1002,10 +1061,13 @@ describe('chaque page d’abonnement ne dit que ce qui est vrai pour elle', () =
 			}
 			const bloc = abonnement(html, chemin);
 			expect(bloc.appareil).toBe('android');
-			// Le bouton, ce qu'il fait, le délai, puis l'ordinateur et l'adresse à copier.
+			// Le bouton, ce qu'il fait, le délai, puis l'ordinateur, et l'adresse dont la phrase parle,
+			// d'une seule suite : plus de « Ou copiez… » juste après « collez l'adresse ci-dessous ».
 			expect(bloc.lu).toContain(
-				`${AIDE_DU_BOUTON_GOOGLE[langue]} ${DELAI_GOOGLE[langue]} ${PAR_UN_ORDINATEUR[langue]}`
+				`${AIDE_DU_BOUTON_GOOGLE[langue]} ${DELAI_GOOGLE[langue]} ${PAR_UN_ORDINATEUR[langue]} ` +
+					`${ADRESSE_A_COLLER[langue]} ${fluxHttps(langue)}`
 			);
+			expect(bloc.lu).not.toContain(OU_COPIEZ[langue]);
 			expect(bloc.code).toEqual([fluxHttps(langue)]);
 			expect(aLaMain(html).etapes[SUR_ANDROID[langue]]).toEqual([
 				ETAPES_ANDROID[langue],
@@ -1014,8 +1076,77 @@ describe('chaque page d’abonnement ne dit que ce qui est vrai pour elle', () =
 			// La page d'un cours, qui n'a pas d'étapes à la main, dit tout dans son bloc.
 			const cours = `${base(langue)}/cours/${COURS.quotidien}`;
 			const blocDuCours = abonnement((await servir(cours, ANDROID)).html, cours);
-			expect(blocDuCours.lu).toContain(PAR_UN_ORDINATEUR[langue]);
+			expect(blocDuCours.lu).toContain(
+				`${PAR_UN_ORDINATEUR[langue]} ${ADRESSE_DU_COURS_A_COLLER[langue]} ` +
+					fluxCoursHttps(langue, COURS.quotidien)
+			);
 			expect(blocDuCours.code).toEqual([fluxCoursHttps(langue, COURS.quotidien)]);
+			// Sur un iPhone, l'adresse suit un bouton : elle y est bien un autre choix.
+			const iphone = abonnement((await servir(chemin, IPHONE)).html, chemin);
+			expect(iphone.lu).toContain(`${OU_COPIEZ[langue]} ${fluxHttps(langue)}`);
+		}
+	);
+
+	it.each(LANGUES)(
+		'gives the steps of Google’s help with the labels of its interface, in %s',
+		async (langue) => {
+			const chemin = `${base(langue)}/agenda`;
+			const { html } = await servir(chemin, ANDROID);
+			const bloc = abonnement(html, chemin).lu;
+			const etapes = aLaMain(html).etapes[SUR_ANDROID[langue]]?.[0] ?? '';
+			for (const texte of [bloc, etapes]) {
+				// Le « + » à côté de la rubrique, puis chaque libellé, dans l'ordre où l'on clique.
+				expect(texte, langue).toContain('+');
+				const places = LIBELLES_GOOGLE[langue].map((libelle) => texte.indexOf(libelle));
+				expect(
+					places.every((place) => place >= 0),
+					`${langue} : ${places.join(', ')}`
+				).toBe(true);
+				expect(
+					[...places].sort((a, b) => a - b),
+					langue
+				).toEqual(places);
+			}
+		}
+	);
+
+	it.each(LANGUES)(
+		'gives each course on Android a way out when Google offers nothing, in %s',
+		async (langue) => {
+			const chemin = `${base(langue)}/agenda`;
+			const { html } = await servir(chemin, ANDROID);
+			const section =
+				[...html.matchAll(/<section\b[^>]*>([\s\S]*?)<\/section>/g)]
+					.map((trouve) => trouve[1] ?? '')
+					.find((contenu) => /<ul\b[^>]*\bclass="cours\b/.test(contenu)) ?? '';
+			expect(lu(section.match(/<p\b[^>]*>([\s\S]*?)<\/p>/)?.[1] ?? '')).toBe(
+				UN_SEUL_COURS_ANDROID[langue]
+			);
+			const ligne =
+				[...section.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)]
+					.map((trouve) => trouve[1] ?? '')
+					.find((contenu) => lu(contenu).startsWith(TITRES.quotidien)) ?? '';
+			const liens = [...ligne.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)].map((lien) => {
+				const attrs = attributs(`<a${lien[1]}>`);
+				return [
+					suivi((attrs['href'] ?? '').replaceAll('&amp;', '&'), chemin),
+					lu(lien[2] ?? ''),
+					attrs['target']
+				];
+			});
+			// Le nom ouvre Google, comme avant ; à côté, la page du cours, à son bloc d'abonnement.
+			expect(liens).toEqual([
+				[google(fluxCoursWebcal(langue, COURS.quotidien)), TITRES.quotidien, '_blank'],
+				[`${base(langue)}/cours/${COURS.quotidien}#agenda`, PAGE_DU_COURS[langue], undefined]
+			]);
+			// Et cette page donne l'adresse du cours et le passage par un ordinateur.
+			const page = `${base(langue)}/cours/${COURS.quotidien}`;
+			const { html: duCours } = await servir(page, ANDROID);
+			expect(duCours).toMatch(/<section\b[^>]*\bid="agenda"/);
+			expect(abonnement(duCours, page).lu).toContain(
+				`${PAR_UN_ORDINATEUR[langue]} ${ADRESSE_DU_COURS_A_COLLER[langue]} ` +
+					fluxCoursHttps(langue, COURS.quotidien)
+			);
 		}
 	);
 

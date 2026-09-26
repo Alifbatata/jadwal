@@ -58,7 +58,8 @@
 		<!-- Le délai de Google dans un paragraphe à lui (retour E2) : il se voit, et un texte resté en
 		     français s'y lirait seul au lieu de se fondre dans la phrase qui le précède. Puis ce qu'il
 		     faut faire si Google Agenda ne propose rien sur le téléphone : son aide dit qu'il faut le
-		     navigateur d'un ordinateur (relecture du lot 3). L'adresse à coller suit. -->
+		     navigateur d'un ordinateur (relecture du lot 3), avec ses étapes et les libellés de son
+		     interface (relecture du lot 4). L'adresse à coller suit. -->
 		<p class="aide">{mots.googleHelp}</p>
 		<p class="aide">{mots.googleDelay}</p>
 		<p class="aide">{mots.googleComputer}</p>
@@ -91,7 +92,16 @@
 		</ul>
 	{/if}
 	{#if appareil !== 'autre'}
-		<p class="adresse">{cours ? mots.courseFeedAddress : mots.subscribeAddress}</p>
+		<!-- Sur Android, la phrase d'avant vient de dire de coller cette adresse : l'étiquette la nomme,
+		     sans « Ou », qui la présentait comme un autre choix (relecture du lot 4). Sur un iPhone,
+		     elle suit un bouton, et c'en est bien un autre. -->
+		<p class="adresse">
+			{#if appareil === 'android'}
+				{cours ? mots.androidCourseAddress : mots.androidAddress}
+			{:else}
+				{cours ? mots.courseFeedAddress : mots.subscribeAddress}
+			{/if}
+		</p>
 		<!-- Une adresse se lit de gauche à droite, même sur une page arabe : sans `dir`, elle se
 		     rangeait à droite, et sa ponctuation de fin changeait de côté. -->
 		<p class="lien"><code dir="ltr">{https}</code></p>
