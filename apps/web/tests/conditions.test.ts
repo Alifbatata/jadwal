@@ -292,8 +292,13 @@ describe('la porte de l’espace des responsables', () => {
 		expect(reponse.status).toBe(200);
 		const html = await reponse.text();
 		expect(html).toContain('<title>Conditions d’utilisation | jadwal</title>');
-		expect(html).toContain(`Avant d’entrer dans l’espace de <strong>${ORGANISATION}</strong>`);
-		expect(html).toContain(`Version du ${DATE_DES_CONDITIONS}`);
+		// Le nom est isolé (`<bdi>`) : un nom latin garde son sens dans une page arabe, et l'inverse.
+		expect(html).toContain(
+			`Avant d’entrer dans l’espace de <strong><bdi>${ORGANISATION}</bdi></strong>`
+		);
+		// JJ.MM.AAAA, comme toutes les dates de l'espace depuis l'étape 18 (retour A3).
+		const [annee, mois, jour] = VERSION_DES_CONDITIONS.split('-');
+		expect(html).toContain(`Version du ${jour}.${mois}.${annee}`);
 		expect(html).toMatch(
 			/<form method="post"[^>]*>\s*<button type="submit"[^>]*>J’accepte les conditions d’utilisation<\/button>/
 		);

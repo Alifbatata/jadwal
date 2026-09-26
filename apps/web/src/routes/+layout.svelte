@@ -2,12 +2,29 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { variablesAccent } from '$lib/couleur.js';
+	import { direction, LANGUES, NOM_DE_LANGUE, t } from '$lib/i18n.js';
+	import { commonTexts } from '$lib/i18n/common.js';
+	import { returnPath } from '$lib/i18n/language.js';
 
 	let { data, children } = $props();
 	const organisation = $derived(data.organisation);
 	const peutAdministrer = $derived(organisation?.role !== 'editor');
 	/** La couleur de l'organisation, et le texte calculé qui va dessus (ADR 0031). */
 	const accent = $derived(variablesAccent(organisation?.accentColor));
+	/** La langue de l'espace, calculée par le hook, et les textes communs dans cette langue. */
+	const language = $derived(data.language);
+	const text = $derived(commonTexts[language]);
+	/** L'écran où le choix de la langue revient : celui-ci, sans la langue que l'adresse demandait. */
+	const returnTo = $derived(returnPath(`${page.url.pathname}${page.url.search}`, page.url.origin));
+
+	// Avec JavaScript, passer d'un écran à l'autre ne recharge pas le document : la langue et le sens
+	// que le hook a écrits sur `<html>` au premier rendu suivent donc ici. Le choix de la langue, lui,
+	// recharge la page, et le hook les réécrit.
+	$effect(() => {
+		if (data.cotePublic || data.nu) return;
+		document.documentElement.lang = language;
+		document.documentElement.dir = direction(language);
+	});
 </script>
 
 <!-- `svelte:head` ne peut pas vivre dans un bloc : la balise est donc unique, et c'est son contenu
@@ -47,46 +64,70 @@
 			<!-- La bannière n'est pas décorative : elle empêche de modifier la mauvaise organisation
 	     par inadvertance, ce qui est le risque propre aux pouvoirs de super-admin (ADR 0025). -->
 			<p class="banniere" role="status">
-				Vous travaillez dans <strong>{organisation.name}</strong> avec vos pouvoirs de super-admin.
-				<a href={resolve('/super-admin')}>Changer d’organisation</a>
+				{text.superAdminBanner.before}
+				<strong><bdi>{organisation.name}</bdi></strong>
+				{text.superAdminBanner.after}
+				<a href={resolve('/super-admin')}>{text.navigation.switchOrganisation}</a>
 			</p>
 		{/if}
 
 		<header>
+			<!-- Le choix de la langue, en haut de chaque écran de l'espace, connexion, erreurs et
+			     super-admin compris (retour D2). Un vrai formulaire, qui marche sans JavaScript et
+			     revient sur cet écran ; chaque langue est écrite dans sa propre langue, pour qu'on
+			     trouve la sienne sans lire celle de la page. -->
+			<form class="langues" method="post" action="/langue">
+				<input type="hidden" name="returnTo" value={returnTo} />
+				<span class="langues-titre" id="choix-de-la-langue">{text.language}</span>
+				<span class="langues-choix" role="group" aria-labelledby="choix-de-la-langue">
+					{#each LANGUES as choice (choice)}
+						<button
+							type="submit"
+							name="language"
+							value={choice}
+							lang={choice}
+							aria-current={choice === language ? 'true' : undefined}
+							>{NOM_DE_LANGUE[choice]}</button
+						>
+					{/each}
+				</span>
+			</form>
 			<a class="marque" href={resolve('/')}>jadwal</a>
 			<!-- Sans les conditions acceptées, pas de navigation : chacun de ses liens ramènerait à
 			     l'écran d'acceptation (ADR 0044). La déconnexion, elle, reste. -->
 			{#if organisation?.termsAccepted}
-				<nav aria-label="Espace des responsables">
-					<a href={resolve('/')}>À venir</a>
-					<a href={resolve('/cours')}>Cours</a>
+				<nav aria-label={text.navigationLabel}>
+					<a href={resolve('/')}>{text.navigation.upcoming}</a>
+					<a href={resolve('/cours')}>{text.navigation.courses}</a>
 					{#if organisation.prayerModule}
-						<a href={resolve('/vendredi')}>Vendredi</a>
+						<a href={resolve('/vendredi')}>{text.navigation.friday}</a>
 					{/if}
-					<a href={resolve('/partager')}>Partager</a>
+					<a href={resolve('/partager')}>{text.navigation.share}</a>
 					{#if peutAdministrer}
-						<a href={resolve('/membres')}>Membres</a>
+						<a href={resolve('/membres')}>{text.navigation.members}</a>
 						{#if organisation.prayerModule}
-							<a href={resolve('/prieres')}>Prières</a>
+							<a href={resolve('/prieres')}>{text.navigation.prayers}</a>
 						{/if}
-						<a href={resolve('/reglages')}>Réglages</a>
+						<a href={resolve('/reglages')}>{text.navigation.settings}</a>
 					{/if}
 					<!-- Pour toute personne membre de plusieurs organisations, éditeurs compris, et
 					     pour qui n'en a qu'une mais a une invitation qui court encore, qu'elle accepte
 					     sur cet écran. Dans la navigation, donc absent de l'écran d'acceptation des
 					     conditions, qui a son propre « Choisir une autre organisation ». -->
 					{#if organisation.canSwitch}
-						<a href={resolve('/organisations')}>Changer d’organisation</a>
+						<a href={resolve('/organisations')}>{text.navigation.switchOrganisation}</a>
 					{/if}
 				</nav>
 			{/if}
 			{#if data.person}
-				<span class="compte">{data.person.email}</span>
+				<span class="compte"
+					><span class="pour-lecteur">{text.signedInAs} </span><bdi>{data.person.email}</bdi></span
+				>
 				{#if data.person.isSuperAdmin}
-					<a class="compte" href={resolve('/super-admin')}>Super-admin</a>
+					<a class="compte" href={resolve('/super-admin')}>{text.superAdmin}</a>
 				{/if}
 				<form method="post" action="/deconnexion?/ici">
-					<button type="submit">Se déconnecter</button>
+					<button type="submit">{text.signOut}</button>
 				</form>
 			{/if}
 		</header>
@@ -102,7 +143,7 @@
 				href={resolve('/conditions')}
 				aria-current={page.url.pathname === '/conditions' ? 'page' : undefined}
 			>
-				Conditions d’utilisation
+				{t(language).terms}
 			</a>
 		</footer>
 	</div>
@@ -198,8 +239,49 @@
 	.compte {
 		font-size: 0.9rem;
 	}
+	/* Des propriétés logiques, jamais `left` ni `right` : en arabe, la page se lit de droite à
+	   gauche, et le compte doit aller au bout de la ligne, qui est alors à gauche (retour D2). */
 	span.compte {
-		margin-left: auto;
+		margin-inline-start: auto;
+	}
+	/* Le choix de la langue : une ligne à lui, en tête de l'en-tête. */
+	.langues {
+		flex-basis: 100%;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.25rem 0.5rem;
+		font-size: 0.9rem;
+	}
+	.langues-titre {
+		color: #4a5560;
+	}
+	.langues-choix {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem;
+	}
+	.langues button {
+		border-color: #c8ced4;
+	}
+	/* La langue en cours : le fond d'accent et la graisse, pas la couleur seule (WCAG 1.4.1). */
+	.langues button[aria-current] {
+		font-weight: 700;
+		background: var(--accent);
+		border-color: var(--accent);
+		color: var(--accent-texte);
+	}
+	/* Hors de la vue, pas hors de l'arbre d'accessibilité, comme au pied des pages publiques. */
+	.pour-lecteur {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		padding: 0;
+		border: 0;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 	.banniere {
 		background: #fef3c7;

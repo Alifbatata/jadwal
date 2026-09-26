@@ -383,7 +383,9 @@ describe('les sessions du vendredi', () => {
 	});
 
 	it('n’apparaît pas dans la liste des cours des responsables', async () => {
-		const html = await page('/cours', { cookie });
+		// Le contenu de l'écran seul : depuis l'étape 18, la navigation de la coquille nomme l'écran
+		// du vendredi « Prière du vendredi », comme son titre, sur chaque page de l'espace.
+		const html = (await page('/cours', { cookie })).match(/<main\b[\s\S]*<\/main>/)?.[0] ?? '';
 		expect(html).toContain('Cercle du soir');
 		expect(html).not.toContain('Prière du vendredi');
 	});

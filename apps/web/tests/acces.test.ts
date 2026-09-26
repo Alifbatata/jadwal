@@ -1028,7 +1028,8 @@ describe('le rôle et l’organisation de la session, et d’aucune autre', () =
 			expect(html, route).not.toContain('Association qui invite');
 			expect(html, route).not.toContain(SLUG_QUI_INVITE);
 			expect(html, route).not.toContain(COULEUR_QUI_INVITE);
-			expect(menuDeLEspace(html), route).not.toContain('Prières');
+			// « Heures de prière » depuis l'étape 18 : « Prières » seul ne disait pas ce qu'on y règle.
+			expect(menuDeLEspace(html), route).not.toContain('Heures de prière');
 		}
 		// Le module des heures de prière est celui de son organisation, éteint : ses écrans n'existent
 		// pas, même si l'organisation qui l'invite a allumé le sien.
@@ -2339,15 +2340,17 @@ describe('le module des heures de prière', () => {
 		const eteint = await (
 			await fetch(`${origin}/cours`, { headers: { cookie: moduleCookie } })
 		).text();
-		expect(eteint).not.toContain('>Prières<');
-		expect(eteint).not.toContain('>Vendredi<');
+		// Les libellés de la navigation depuis l'étape 18 : « Prières » et « Vendredi » seuls ne
+		// disaient pas ce que chaque écran règle.
+		expect(eteint).not.toContain('>Heures de prière<');
+		expect(eteint).not.toContain('>Prière du vendredi<');
 
 		await poserModule(true);
 		const allume = await (
 			await fetch(`${origin}/cours`, { headers: { cookie: moduleCookie } })
 		).text();
-		expect(allume).toContain('>Prières<');
-		expect(allume).toContain('>Vendredi<');
+		expect(allume).toContain('>Heures de prière<');
+		expect(allume).toContain('>Prière du vendredi<');
 	});
 
 	it('ne propose pas l’ancrage sur une prière dans le formulaire d’un cours', async () => {

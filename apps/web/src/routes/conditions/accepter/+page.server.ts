@@ -6,10 +6,11 @@
 // une personne qui a déjà accepté la version en cours.
 
 import { redirect } from '@sveltejs/kit';
+import type { IsoDate } from '@jadwal/core';
 import { newId, sql, withOrg } from '@jadwal/db';
+import { numericDate } from '$lib/i18n.js';
 import { appDatabase } from '$lib/server/database.js';
-import { membershipsOf } from '$lib/server/context.js';
-import { conditionsHtmlSansTitre, dateDeLaVersion, versionIso } from '$lib/server/conditions.js';
+import { conditionsHtmlSansTitre, versionIso } from '$lib/server/conditions.js';
 import { mustHaveTermsToAccept } from '$lib/server/guard.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
@@ -20,12 +21,16 @@ export const load: PageServerLoad = async (event) => {
 	const context = await mustHaveTermsToAccept(event);
 	return {
 		organisation: context.organizationName,
-		date: dateDeLaVersion,
+		// « 26.09.2026 », comme toutes les dates de l'espace depuis l'étape 18 (retour A3).
+		date: numericDate(versionIso as IsoDate),
 		html: conditionsHtmlSansTitre,
-		// La navigation est masquée pendant l'attente : pour qui est membre de plusieurs
-		// organisations, le lien vers le choix est le seul chemin vers une autre. `/organisations` ne
-		// passe pas par la porte, et le choix fait, c'est la porte de l'autre qui s'applique.
-		plusieursOrganisations: (await membershipsOf(context)).length > 1
+		// La navigation est masquée pendant l'attente : le lien vers le choix est alors le seul chemin
+		// vers une autre organisation. Il est là dans les mêmes cas que « Changer d’organisation »
+		// dans la navigation (retour H2) : pour qui est membre de plusieurs organisations, et pour qui
+		// n'en a qu'une mais a une invitation qui court encore, qu'elle accepte sur cet écran. Les deux
+		// nombres viennent du contexte, sans requête de plus. `/organisations` ne passe pas par la
+		// porte, et le choix fait, c'est la porte de l'autre qui s'applique.
+		autreOrganisation: context.membershipCount > 1 || context.pendingInvitationCount > 0
 	};
 };
 

@@ -3,6 +3,9 @@
 // Les invitations visibles ici sont celles adressées à l'adresse de la personne connectée, que le
 // lien magique vient de prouver. Aucune organisation n'est en contexte à ce moment : la personne
 // n'en est pas encore membre. C'est elle qui crée son adhésion en acceptant (ADR 0017).
+//
+// Les actions rendent le nom d'une erreur, jamais sa phrase : la page l'écrit dans la langue de
+// l'espace (`i18n/organisations.ts`).
 
 import { fail, redirect } from '@sveltejs/kit';
 import { newId, sql, withUser } from '@jadwal/db';
@@ -41,7 +44,7 @@ export const actions: Actions = {
 		const organizationId = String(form.get('organizationId') ?? '');
 		// L'appartenance est revérifiée ici : un identifiant venu du formulaire ne donne rien.
 		if (!(await chooseOrganisation(person, organizationId))) {
-			return fail(403, { erreur: 'Vous n’êtes pas membre de cette organisation.' });
+			return fail(403, { error: 'notMember' as const });
 		}
 		redirect(303, '/');
 	},
@@ -91,7 +94,7 @@ export const actions: Actions = {
 			});
 			return claimed.organization_id;
 		});
-		if (!accepted) return fail(404, { erreur: 'Cette invitation n’est plus valable.' });
+		if (!accepted) return fail(404, { error: 'invitationGone' as const });
 		await chooseOrganisation(person, accepted);
 		redirect(303, '/');
 	}
