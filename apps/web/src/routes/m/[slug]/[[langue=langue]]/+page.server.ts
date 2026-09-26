@@ -97,20 +97,39 @@ export const load: PageServerLoad = async (event) => {
 			? programme
 			: await readPublicProgramme(organisation, langue, new Date(), { from, to });
 
+	// Les sessions du vendredi de chaque date, telles que l'expansion les rend : annulées, déplacées
+	// ailleurs, ou venues d'un autre jour. Toutes, quel que soit le filtre par public : il ne
+	// s'applique pas à l'onglet.
+	const vendrediDu = (date: string) =>
+		complet.seances
+			.filter((seance) => seance.kind === 'jumua' && seance.date === date)
+			.map((seance) => ({
+				id: seance.courseId,
+				start: seance.start,
+				status: seance.status,
+				movedTo: seance.movedTo?.date ?? null
+			}));
+
 	// L'onglet des prières : aujourd'hui et les six jours suivants, adhan et iqama de chaque prière,
 	// les trois sources résolues comme pour les cours ancrés. Un jour qu'aucune source ne couvre
-	// n'est pas montré ; une iqama que l'organisation n'a pas réglée reste vide.
+	// n'est pas montré ; une iqama que l'organisation n'a pas réglée reste vide. Chaque jour porte
+	// ses sessions du vendredi réelles (relecture du lot 3) : une ligne datée dit ce qui a lieu ce
+	// jour-là, comme la vue Semaine, et non le rythme habituel.
 	const prieres =
 		vue === 'prieres'
 			? (await readPublicPrayerDays(organisation.id, today, addDays(today, JOURS_SEMAINE - 1)))
-					.map((ligne) => ({
-						date: String(ligne.date).slice(0, 10),
-						heures: PRIERES.map((priere) => ({
-							priere,
-							adhan: minutes(ligne[priere]),
-							iqama: minutes(ligne[`${priere}_iqama`])
-						}))
-					}))
+					.map((ligne) => {
+						const date = String(ligne.date).slice(0, 10);
+						return {
+							date,
+							heures: PRIERES.map((priere) => ({
+								priere,
+								adhan: minutes(ligne[priere]),
+								iqama: minutes(ligne[`${priere}_iqama`])
+							})),
+							vendredi: vendrediDu(date)
+						};
+					})
 					.filter((jour) => jour.heures.some((heure) => heure.adhan !== null))
 			: [];
 

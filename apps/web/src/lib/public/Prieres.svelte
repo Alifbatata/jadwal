@@ -8,6 +8,12 @@
 	// prennent la place de l'iqama du Dhuhr, comme sur l'écran des prières de l'espace, et rien
 	// d'autre de la table ne change.
 	//
+	// Une ligne datée dit ce qui a lieu **ce jour-là** (relecture du lot 3) : les sessions réelles de
+	// la date, telles que la vue Semaine les montre. Une session annulée ou déplacée à un autre jour
+	// reste écrite, barrée, avec le mot de la vue Semaine ; une session déplacée à une autre heure du
+	// même jour n'est écrite qu'à sa nouvelle heure. Si aucune n'a lieu un vendredi, l'iqama du Dhuhr
+	// revient. Le bloc du bas, sans date, garde le rythme habituel.
+	//
 	// Un tableau de sept lignes et six colonnes tient sur un téléphone ; s'il ne tient pas, il défile
 	// dans son cadre, et la page ne défile jamais de côté. Chaque case dit aux lecteurs d'écran ce
 	// qu'est chacune de ses deux heures : l'œil a la phrase d'aide, l'oreille n'a que la case.
@@ -21,6 +27,22 @@
 		iqama: string | null;
 	}
 
+	/** Une session du vendredi à une date, telle que l'expansion la rend. */
+	interface SeanceDuVendredi {
+		id: string;
+		start: string | null;
+		/** `scheduled` et `moved_here` ont lieu ; `cancelled` et `moved_away`, non. */
+		status: string;
+		/** Pour une session déplacée : le jour où elle a lieu. */
+		movedTo: string | null;
+	}
+
+	interface Jour {
+		date: string;
+		heures: readonly Heure[];
+		vendredi: readonly SeanceDuVendredi[];
+	}
+
 	let {
 		langue,
 		today,
@@ -30,8 +52,8 @@
 		langue: Langue;
 		today: string;
 		/** Les jours que couvre au moins une source, dans l'ordre, aujourd'hui compris. */
-		jours: readonly { date: string; heures: readonly Heure[] }[];
-		/** Les sessions du vendredi, dans leur ordre, avec la langue de leur sermon. */
+		jours: readonly Jour[];
+		/** Les sessions du vendredi, dans leur ordre, avec la langue de leur sermon : le rythme habituel. */
 		sessions: readonly {
 			id: string;
 			start: string;
@@ -43,18 +65,44 @@
 	const mots = $derived(t(langue));
 	const PRIERES = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
 
-	/** Vrai un vendredi, quand l'organisation a des sessions : ce sont elles qui tiennent lieu de Dhuhr. */
-	function jumua(date: string, priere: string): boolean {
-		return (
-			priere === 'dhuhr' &&
-			sessions.length > 0 &&
-			weekdayFromDays(isoDateToDays(date as IsoDate)) === 5
+	/**
+	 * La prière du vendredi d'un jour, dans la case du Dhuhr : les sessions qui ont lieu, celles qui
+	 * n'ont pas lieu, et si les premières remplacent l'iqama (un vendredi seulement : une session
+	 * déplacée à un autre jour s'y ajoute sans prendre la place du Dhuhr de ce jour).
+	 */
+	function vendrediDu(jour: Jour) {
+		const ontLieu = jour.vendredi.filter(
+			(seance) => seance.status === 'scheduled' || seance.status === 'moved_here'
 		);
+		const nOntPasLieu = jour.vendredi.filter(
+			(seance) =>
+				seance.status === 'cancelled' ||
+				(seance.status === 'moved_away' && seance.movedTo !== jour.date)
+		);
+		const vendredi = weekdayFromDays(isoDateToDays(jour.date as IsoDate)) === 5;
+		return {
+			ontLieu,
+			nOntPasLieu,
+			remplaceIqama: vendredi && ontLieu.length > 0,
+			heures: ontLieu.map((seance) => seance.start ?? '–')
+		};
+	}
+
+	/** Le mot de la vue Semaine pour une session qui n'a pas lieu : annulée, ou déplacée à tel jour. */
+	function statut(seance: SeanceDuVendredi): string {
+		return seance.status === 'moved_away' && seance.movedTo
+			? mots.movedTo(longDate(langue, seance.movedTo as IsoDate))
+			: mots.cancelled;
 	}
 
 	const aujourdhui = $derived(jours.find((jour) => jour.date === today));
-	const unVendredi = $derived(jours.some((jour) => jumua(jour.date, 'dhuhr')));
-	const heuresDesSessions = $derived(sessions.map((session) => session.start));
+	const vendrediDuJour = $derived(aujourdhui ? vendrediDu(aujourdhui) : null);
+	const unVendredi = $derived(
+		jours.some((jour) => {
+			const vendredi = vendrediDu(jour);
+			return vendredi.ontLieu.length + vendredi.nOntPasLieu.length > 0;
+		})
+	);
 </script>
 
 <p class="aide">{mots.prayersHelp}</p>
@@ -80,12 +128,23 @@
 						<th scope="row">{nomPriere(langue, heure.priere)}</th>
 						<td>{heure.adhan ?? '–'}</td>
 						<td>
-							{#if jumua(today, heure.priere)}
-								{mots.jumuaAt(joindre(langue, heuresDesSessions))}
+							{#if heure.priere === 'dhuhr' && vendrediDuJour?.remplaceIqama}
+								{mots.jumuaAt(joindre(langue, vendrediDuJour.heures))}
 							{:else if heure.iqama}
 								{heure.iqama}
 							{:else}
 								<span aria-hidden="true">–</span><span class="pour-lecteur">{mots.noIqama}</span>
+							{/if}
+							{#if heure.priere === 'dhuhr' && vendrediDuJour}
+								{#if !vendrediDuJour.remplaceIqama && vendrediDuJour.ontLieu.length > 0}
+									<span class="ligne">{mots.jumuaAt(joindre(langue, vendrediDuJour.heures))}</span>
+								{/if}
+								{#each vendrediDuJour.nOntPasLieu as seance, index (index)}
+									<span class="ligne"
+										><s>{mots.jumuaAt(seance.start ?? '–')}</s>
+										<span class="marque">{statut(seance)}</span></span
+									>
+								{/each}
 							{/if}
 						</td>
 					</tr>
@@ -112,29 +171,40 @@
 				</thead>
 				<tbody>
 					{#each jours as jour (jour.date)}
+						{@const vendredi = vendrediDu(jour)}
 						<tr class:courant={jour.date === today}>
 							<th scope="row" aria-current={jour.date === today ? 'date' : undefined}>
 								{longDate(langue, jour.date as IsoDate)}
 							</th>
 							{#each jour.heures as heure (heure.priere)}
+								{@const dhuhr = heure.priere === 'dhuhr'}
 								<td>
 									{#if heure.adhan}
 										<span class="adhan"
-											><span class="pour-lecteur">{mots.adhan} </span>{heure.adhan}</span
+											><span class="pour-lecteur">{`${mots.adhan} `}</span>{heure.adhan}</span
 										>
 									{:else}
 										<span aria-hidden="true">–</span>
 									{/if}
-									{#if jumua(jour.date, heure.priere)}
-										{#each sessions as session (session.id)}
+									{#if heure.iqama && !(dhuhr && vendredi.remplaceIqama)}
+										<span class="iqama"
+											><span class="pour-lecteur">{`${mots.iqama} `}</span>{heure.iqama}</span
+										>
+									{/if}
+									{#if dhuhr}
+										{#each vendredi.heures as debut, index (index)}
 											<span class="jumua"
-												><span class="pour-lecteur">{mots.jumua} </span>{session.start}</span
+												><span class="pour-lecteur">{`${mots.jumua} `}</span>{debut}</span
 											>
 										{/each}
-									{:else if heure.iqama}
-										<span class="iqama"
-											><span class="pour-lecteur">{mots.iqama} </span>{heure.iqama}</span
-										>
+										{#each vendredi.nOntPasLieu as seance, index (index)}
+											<span class="jumua retiree"
+												><span class="pour-lecteur">{`${mots.jumua} `}</span><s
+													>{seance.start ?? '–'}</s
+												>
+												<span class="marque">{statut(seance)}</span></span
+											>
+										{/each}
 									{/if}
 								</td>
 							{/each}
@@ -227,6 +297,21 @@
 	}
 	.jumua {
 		font-weight: 700;
+	}
+	/* Une session qui n'a pas lieu ce jour-là : l'heure barrée, et le mot de la vue Semaine, dans la
+	   même pastille. Le mot se lit, la couleur ne fait que l'accompagner (WCAG 1.4.1). */
+	.jumua.retiree {
+		font-weight: 400;
+	}
+	.ligne {
+		display: block;
+	}
+	.marque {
+		background: #fde68a;
+		border-radius: 0.25rem;
+		padding: 0.05rem 0.4rem;
+		font-size: 0.8rem;
+		font-weight: 600;
 	}
 	ul {
 		list-style: none;
