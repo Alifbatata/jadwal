@@ -44,7 +44,8 @@
  * - B1 : les aides sous les champs clés, et des libellés qui disent ce qu'ils font ; sur un
  *   téléphone, la confirmation avant de supprimer une salle occupée se voit sans défiler ; sans
  *   JavaScript, une session du vendredi se supprime, et l'écran le dit. Le message d'une séance
- *   déplacée le même jour dit un changement d'heure ; dans la carte d'une session du vendredi,
+ *   déplacée le même jour dit un changement d'heure, et le programme de la semaine une nouvelle
+ *   heure, dans chaque langue ; dans la carte d'une session du vendredi,
  *   l'aide de « À partir du » est celle d'une modification ; dans Réglages, le nom et la formule
  *   d'accueil tapés au clavier s'enregistrent, même quand la couleur change ensuite.
  * - B2 : l'écran du super-admin, de « Créer une organisation » au lien de connexion de secours ;
@@ -283,6 +284,17 @@ const VENDREDI = { debut: '12:30', fin: '13:15' };
 const SECONDE_SESSION = { debut: '13:40', fin: '14:20' };
 /** La nouvelle heure de la session du vendredi, déplacée le même jour sur « À venir » (A2, B1). */
 const HEURE_DU_VENDREDI_DEPLACE = '13:00';
+/**
+ * La marque d'une séance déplacée le même jour dans le programme de la semaine, dans chaque langue
+ * (`apps/web/src/lib/messages.ts`, retour B1).
+ */
+const NOUVELLE_HEURE_DANS_LA_SEMAINE = {
+	fr: '(nouvelle heure)',
+	de: '(neue Uhrzeit)',
+	it: '(nuovo orario)',
+	en: '(new time)',
+	ar: '(وقت جديد)'
+};
 /**
  * Les phrases lues à la lettre dans les écrans corrigés depuis la relecture du lot 4 : ce que dit
  * l'écran du vendredi après une suppression, et l'aide de « À partir du » dans la carte d'une
@@ -4182,7 +4194,8 @@ async function periodeCopiee(page) {
  * m. « À venir », la session du vendredi en place : le programme de la semaine la nomme dans la
  * langue de chaque message (D1). Déplacée le même jour à une autre heure, sa carte d'arrivée dit
  * « nouvelle heure » et l'heure prévue (A2), et le message dit un changement d'heure, la date une
- * seule fois (B1), en nommant la prière dans chaque langue (D1). Un second onglet, ouvert avant ce
+ * seule fois (B1), en nommant la prière dans chaque langue (D1) ; le programme de la semaine la
+ * marque d'une nouvelle heure, dans chaque langue (B1). Un second onglet, ouvert avant ce
  * déplacement, renvoie ensuite sa carte restée telle quelle : l'écran le refuse, et rien n'est
  * écrit (A2).
  */
@@ -4248,6 +4261,34 @@ async function vendrediSurLAccueil(page) {
 					messages.length === LANGUES.length && fautifs.length === 0,
 					lignesDuVendredi(messages, fautifs, HEURE_DU_VENDREDI_DEPLACE) ||
 						`${messages.length} message(s)`
+				);
+			});
+			// Le programme de la semaine, sur l'écran rendu après le déplacement : la ligne de la
+			// session, à sa nouvelle heure, finit par la marque d'une nouvelle heure, dans sa langue.
+			await retour('B1', async () => {
+				const semaine = await messagesDeLAccueil(page, 'semaine');
+				const lignes = LANGUES.map((langue) => {
+					const texte = semaine.find((lu) => lu.lang === langue)?.texte ?? '';
+					const ligne = texte
+						.split('\n')
+						.find((une) => une.includes(`${HEURE_DU_VENDREDI_DEPLACE} – `));
+					return {
+						langue,
+						ligne: ligne?.trim() ?? '',
+						marque: NOUVELLE_HEURE_DANS_LA_SEMAINE[langue]
+					};
+				});
+				verifierChaque(
+					`le programme de la semaine dit la session déplacée le même jour comme une nouvelle heure, dans chaque langue : ${lignes.map((lu) => `« ${lu.marque} »`).join(', ')}`,
+					Object.fromEntries(
+						lignes.map((lu) => [`« ${lu.marque} » en ${lu.langue}`, lu.ligne.endsWith(lu.marque)])
+					),
+					lignes
+						.filter((lu) => lu.langue === 'fr' || !lu.ligne.endsWith(lu.marque))
+						.map(
+							(lu) => `${lu.langue} : ${lu.ligne || `aucune ligne à ${HEURE_DU_VENDREDI_DEPLACE}`}`
+						)
+						.join(' ; ')
 				);
 			});
 			// L'onglet ouvert avant renvoie sa carte, restée celle d'une séance prévue à son heure.
