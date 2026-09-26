@@ -56,9 +56,12 @@
 			>
 		</p>
 		<!-- Le délai de Google dans un paragraphe à lui (retour E2) : il se voit, et un texte resté en
-		     français s'y lirait seul au lieu de se fondre dans la phrase qui le précède. -->
+		     français s'y lirait seul au lieu de se fondre dans la phrase qui le précède. Puis ce qu'il
+		     faut faire si Google Agenda ne propose rien sur le téléphone : son aide dit qu'il faut le
+		     navigateur d'un ordinateur (relecture du lot 3). L'adresse à coller suit. -->
 		<p class="aide">{mots.googleHelp}</p>
 		<p class="aide">{mots.googleDelay}</p>
+		<p class="aide">{mots.googleComputer}</p>
 	{:else}
 		<p>{mots.chooseApp}</p>
 		<ul class="choix">
@@ -74,6 +77,7 @@
 					>{mots.choiceOutlook}<span class="pour-lecteur">{nouvelOnglet}</span></a
 				>
 				<p class="aide">{mots.choiceOutlookHelp}</p>
+				<p class="aide">{mots.outlookDelay}</p>
 			</li>
 			<li>
 				<a href={webcal}>{mots.choiceOther}</a>

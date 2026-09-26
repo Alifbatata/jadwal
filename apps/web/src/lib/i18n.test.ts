@@ -56,8 +56,13 @@ describe('les phrases arabes relues', () => {
 	});
 
 	it('presses on the button, with its preposition', () => {
+		// Les phrases qui parlent d'un bouton gardent « اضغط على الزر ». Depuis la relecture du lot 3,
+		// les étapes de l'iPhone n'en parlent plus : elles se lisent aussi sur le choix complet, qui n'a
+		// pas de bouton. Ce sont les mots relus, sans leur première phrase.
+		expect(ar.appleHelp).toMatch(/^اضغط على الزر، /);
+		expect(ar.googleHelp).toMatch(/^اضغط على الزر: /);
 		expect(ar.iphoneText).toBe(
-			'اضغط على الزر أعلاه: سيقترح هاتفك إضافة التقويم. إن لم يحدث شيء، افتح الإعدادات، ثم التطبيقات، التقويم، الحسابات، إضافة حساب، أخرى، إضافة اشتراك تقويم، والصق العنوان.'
+			'افتح الإعدادات، ثم التطبيقات، التقويم، الحسابات، إضافة حساب، أخرى، إضافة اشتراك تقويم، والصق العنوان.'
 		);
 	});
 });
