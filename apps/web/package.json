@@ -3,7 +3,7 @@
 	"version": "0.0.0",
 	"private": true,
 	"description": "Application SvelteKit de jadwal : espace des responsables, pages publiques, API, flux ICS.",
-	"license": "MIT",
+	"license": "MIT AND LicenseRef-swisstopo-OGD",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
