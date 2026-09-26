@@ -156,8 +156,8 @@ utilisez le lien de l'organisation (**point 5**).
 
 **Si votre site exige une empreinte de sécurité** (votre webmestre saura de quoi il s'agit), prenez
 le code de la section **Pour un site très strict (rare)**, **Code avec empreinte d'intégrité**.
-Attention : ce code fige la version du programme. À chaque nouvelle publication de jadwal, il faudra revenir le copier. Sinon,
-le programme cessera de s'afficher, sans message.
+Attention : ce code fige la version du programme. À chaque nouvelle publication de jadwal, il faudra
+revenir le copier. Sinon, le programme cessera de s'afficher, sans message.
 
 ---
 
@@ -223,8 +223,8 @@ envoyez aussi le message prêt à coller que propose l'écran **À venir**.
 **Ce que nous voyons, et ce que nous ne voyons pas.** Le programme ne dépose aucun cookie et
 n'apprend rien de vos visiteurs. Une seule chose est comptée : le nombre d'affichages par jour, pour
 que l'écran **À venir** puisse vous dire combien de fois votre programme a été vu sur votre site
-(ligne « Programme intégré à votre site »), et vous prévenir s'il cesse de l'être. Ce compteur ne retient que votre organisation, la date, le type d'affichage et
-un nombre. Ni adresse, ni page d'où vient le visiteur, ni heure. Il n'y a donc rien à déclarer dans
+(ligne « Programme intégré à votre site »), et vous prévenir s'il cesse de l'être. Ce compteur ne
+retient que votre organisation, la date, le type d'affichage et un nombre. Ni adresse, ni page d'où vient le visiteur, ni heure. Il n'y a donc rien à déclarer dans
 votre politique de confidentialité, et rien à faire accepter.
 
 **Ce qui se passe si notre service tombe.** Le lien placé sous le programme,

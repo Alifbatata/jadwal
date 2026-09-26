@@ -213,8 +213,8 @@ Choisissez le fichier dans **Votre fichier**, puis touchez **Lire le fichier**.
 **Rien n'est écrit tout de suite.** L'écran vous montre d'abord ce qu'il a lu : combien de jours, du
 premier au dernier, les jours manquants, les lignes refusées avec leur numéro et leur raison, et ce
 qu'il faut vérifier. Puis l'aperçu de sept jours du fichier, les sept prochains ou, pour un fichier
-qui commence plus tard, ses sept premiers, et le bouton **Enregistrer ces N jours**. Tant que vous ne l'avez pas touché, rien n'a changé, et fermer l'onglet ne laisse
-rien derrière.
+qui commence plus tard, ses sept premiers, et le bouton **Enregistrer ces N jours**. Tant que vous
+ne l'avez pas touché, rien n'a changé, et fermer l'onglet ne laisse rien derrière.
 
 **Refusé** : une date illisible, une date en double, une heure illisible. La ligne est écartée, les
 autres passent, et rien n'est deviné.
