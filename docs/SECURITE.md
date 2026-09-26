@@ -265,8 +265,8 @@ puis par une personne responsable et par le super-admin. Ceux d'`apps/web` lance
 et suivent le chemin complet d'une connexion. Aucun n'est simulé. Depuis l'étape 18,
 `tests/choix-de-la-langue.test.ts` y vérifie un choix fait avant la connexion, le lien qui
 l'emporte et n'emporte rien d'autre, une adresse qui ne change la langue d'aucun compte, `Vary` et
-le retour du choix de la langue par HTTP, et `src/lib/i18n/language.test.ts` essaie ce retour sous plus de
-deux mille formes de points et de barres ; `tests/espace-en-cinq-langues.test.ts` vérifie les deux
+le retour du choix de la langue par HTTP, et `src/lib/i18n/language.test.ts` essaie ce retour sous
+plus de deux mille formes de points et de barres ; `tests/espace-en-cinq-langues.test.ts` vérifie les deux
 cookies, et compare l'invitation vers un compte connu et vers une adresse inconnue ; `tests/public.test.ts` lit les pages publiques comme un
 Android, un iPhone et un ordinateur, et refuse tout lien vers un autre domaine que les deux services
 d'agenda.

@@ -76,14 +76,15 @@ cours est marquée.
 Quand la personne demande un lien sur le navigateur où son choix attend, l'adresse de retour du lien
 porte la langue choisie : `/organisations?language=de` (`signInCallback`, dans
 `apps/web/src/lib/i18n/language.ts`). La vérification du lien l'écrit sur le compte que le jeton
-désigne (`apps/web/src/lib/server/auth.ts`), sur quelque navigateur que le lien s'ouvre : celui de la
-demande, ou l'application de messagerie d'un téléphone. Un cookie de langue sans choix en attente ne
-part pas, puisqu'il peut dater d'un choix que la personne a défait depuis, ailleurs.
+désigne (`apps/web/src/lib/server/auth.ts`), sur quelque navigateur que le lien s'ouvre : celui de
+la demande, ou l'application de messagerie d'un téléphone. Un cookie de langue sans choix en attente
+ne part pas, puisqu'il peut dater d'un choix que la personne a défait depuis, ailleurs.
 
 Le paramètre `language` ne compte qu'à ce moment-là. Seul un lien valide ouvre une session neuve, et
 son jeton, secret et à usage unique, désigne le compte : une adresse qui porte ce paramètre, posée
-sur un autre site, ne change ni la page ni le compte. Aucun écran ne le lit ensuite, et le formulaire
-de langue le retire de son chemin de retour. Il reste visible dans l'adresse de l'écran d'arrivée.
+sur un autre site, ne change ni la page ni le compte. Aucun écran ne le lit ensuite, et le
+formulaire de langue le retire de son chemin de retour. Il reste visible dans l'adresse de l'écran
+d'arrivée.
 
 La règle exacte, que les commentaires de `hooks.server.ts`, de `language.ts` et de
 `connexion/+page.server.ts` redisent :
