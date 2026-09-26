@@ -12,7 +12,15 @@
 // - les dates d'un cours à dates précises : la base les écrit `2026-10-12`, la personne les lit et
 //   les écrit `12.10.2026` (retour A3).
 
-import { isIsoDate, isLocalTime, type IsoDate } from '@jadwal/core';
+import {
+	isIsoDate,
+	isLocalTime,
+	MAX_DURATION_MINUTES,
+	MAX_OFFSET_MINUTES,
+	MIN_DURATION_MINUTES,
+	MIN_OFFSET_MINUTES,
+	type IsoDate
+} from '@jadwal/core';
 import {
 	audienceLabel,
 	describeRecurrence,
@@ -97,6 +105,27 @@ export function signedOffset(choice: TimingChoice, minutes: number): number {
 	return choice === 'beforePrayer' ? -minutes : minutes;
 }
 
+/**
+ * Les minutes admises pour chaque sens, en nombre entier : de 1 à 120 avant une prière, jamais zéro,
+ * qui voudrait dire « après » ; de 0 à 240 après. Le serveur et le résumé jugent par cette fonction.
+ */
+export function minutesAllowed(choice: TimingChoice, value: number | null): value is number {
+	if (value === null || !Number.isInteger(value)) return false;
+	return choice === 'beforePrayer'
+		? value >= 1 && value <= -MIN_OFFSET_MINUTES
+		: value >= 0 && value <= MAX_OFFSET_MINUTES;
+}
+
+/** La durée d'un cours placé par rapport à une prière : de 5 à 1440 minutes, en nombre entier. */
+export function durationAllowed(value: number | null): value is number {
+	return (
+		value !== null &&
+		Number.isInteger(value) &&
+		value >= MIN_DURATION_MINUTES &&
+		value <= MAX_DURATION_MINUTES
+	);
+}
+
 /** Les dates tapées dans le champ : une par ligne, ou séparées par des espaces, virgules, points-virgules. */
 export function splitDates(text: string): string[] {
 	return text.split(/[\s,;]+/).filter((value) => value.length > 0);
@@ -159,16 +188,13 @@ export interface SummaryContext {
 	rooms: readonly { id: string; name: string }[];
 }
 
-function isWholeNumber(value: number | null | undefined): value is number {
-	return typeof value === 'number' && Number.isInteger(value) && value >= 0;
-}
-
 /**
  * Le résumé de ce qui sera publié, une ligne par information (retour B4) : le titre et la
  * description dans chaque langue remplie, celle de saisie d'abord, le public, les jours, la
- * fréquence, l'horaire, la salle,
- * l'intervenant, la langue d'enseignement, le premier jour, le dernier s'il y en a un, et l'état. Ce
- * qui manque a sa ligne, marquée, avec une phrase qui le dit : rien ne disparaît en silence.
+ * fréquence, l'horaire, la salle, l'intervenant, la langue d'enseignement, le premier jour, le
+ * dernier s'il y en a un, et l'état. Ce qui manque a sa ligne, marquée, avec une phrase qui le dit :
+ * rien ne disparaît en silence. Ce que le serveur refuserait est marqué de même, « à corriger », au
+ * lieu d'être montré comme publié.
  */
 export function summarise(
 	values: CourseFormValues,
@@ -211,12 +237,14 @@ export function summarise(
 
 	if (values.recurrenceKind === 'dates') {
 		const tokens = splitDates(values.dates);
-		const readable = [...new Set(tokens.map(readDate).filter((date) => date !== null))].sort();
+		const read = tokens.map(readDate).filter((date) => date !== null);
+		const readable = [...new Set(read)].sort();
+		const twice = [...new Set(read.filter((date, index) => read.indexOf(date) !== index))].sort();
 		const unreadable = tokens.filter((token) => readDate(token) === null);
 		const list = (dates: readonly IsoDate[]) =>
 			formattingTexts[language].dateList(dates.map((date) => shortDate(date, language)));
-		// Seules les dates de la période sont publiées : les autres ont leur ligne, marquée, comme le
-		// serveur les refuse.
+		// Seules les dates de la période sont publiées. Les autres, et celles que le serveur refuse,
+		// ont leur ligne, marquée, dans l'ordre de ses erreurs.
 		const { inside, before, after } = splitByPeriod(readable, values.startsOn, values.endsOn);
 		row(
 			'dates',
@@ -224,14 +252,6 @@ export function summarise(
 			inside.length > 0 ? list(inside) : null,
 			readable.length > 0 ? text.missing.noDateInPeriod : text.missing.dates
 		);
-		for (const [key, label, dates] of [
-			['datesBefore', text.summary.datesBefore, before],
-			['datesAfter', text.summary.datesAfter, after]
-		] as const) {
-			if (dates.length > 0) {
-				rows.push({ key, label, value: list(dates), missing: true, typed: false });
-			}
-		}
 		if (unreadable.length > 0) {
 			rows.push({
 				key: 'badDates',
@@ -240,6 +260,15 @@ export function summarise(
 				missing: true,
 				typed: true
 			});
+		}
+		for (const [key, label, dates] of [
+			['datesTwice', text.summary.datesTwice, twice],
+			['datesBefore', text.summary.datesBefore, before],
+			['datesAfter', text.summary.datesAfter, after]
+		] as const) {
+			if (dates.length > 0) {
+				rows.push({ key, label, value: list(dates), missing: true, typed: false });
+			}
 		}
 		row('frequency', text.summary.frequency, text.frequencies.dates, '');
 	} else if (values.recurrenceKind === 'monthly') {
@@ -262,7 +291,8 @@ export function summarise(
 		row('frequency', text.summary.frequency, frequency, '');
 	}
 
-	row('time', text.summary.time, timeOf(values, language), text.missing.time);
+	const time = timeOf(values, language);
+	row('time', text.summary.time, time.value, time.missing);
 
 	const room = context.rooms.find((candidate) => candidate.id === values.roomId)?.name ?? null;
 	row('room', text.summary.room, room, text.missing.room, true);
@@ -280,7 +310,13 @@ export function summarise(
 	const startsOn = isIsoDate(values.startsOn) ? shortDate(values.startsOn, language) : null;
 	row('startsOn', text.summary.startsOn, startsOn, text.missing.startsOn);
 	if (values.endsOn && isIsoDate(values.endsOn)) {
-		row('endsOn', text.summary.endsOn, shortDate(values.endsOn, language), '');
+		const beforeStart = isIsoDate(values.startsOn) && values.endsOn < values.startsOn;
+		row(
+			'endsOn',
+			text.summary.endsOn,
+			beforeStart ? null : shortDate(values.endsOn, language),
+			text.missing.endsBeforeStarts
+		);
 	}
 
 	const statuses: Record<string, string> = text.statuses;
@@ -289,24 +325,36 @@ export function summarise(
 }
 
 /**
- * L'horaire tel que la liste des cours le dit, ou `null` tant qu'il n'est pas complet : une heure
- * qui manque, des minutes vides, ou « avant une prière » à zéro minute, qui voudrait dire « après ».
+ * L'horaire tel que la liste des cours le dit, ou, à la place, la phrase de la ligne marquée : « à
+ * indiquer » tant qu'une heure ou des minutes manquent, « à corriger » avec les bornes quand le
+ * serveur refuserait les minutes ou la durée (« avant une prière » à zéro minute compris, qui
+ * voudrait dire « après »).
  */
-function timeOf(values: CourseFormValues, language: Langue): string | null {
+function timeOf(
+	values: CourseFormValues,
+	language: Langue
+): { value: string | null; missing: string } {
+	const missing = courseFormTexts[language].missing;
+	const incomplete = { value: null, missing: missing.time };
 	if (values.timingKind === 'fixed') {
-		if (!isLocalTime(values.start) || !isLocalTime(values.end)) return null;
-		return describeTiming({ kind: 'fixed', start: values.start, end: values.end }, language);
+		if (!isLocalTime(values.start) || !isLocalTime(values.end)) return incomplete;
+		const fixed = { kind: 'fixed', start: values.start, end: values.end };
+		return { value: describeTiming(fixed, language), missing: missing.time };
 	}
 	const minutes = values.offsetMinutes;
-	if (!isWholeNumber(minutes) || !isWholeNumber(values.durationMinutes)) return null;
-	if (values.timingKind === 'beforePrayer' && minutes === 0) return null;
-	return describeTiming(
-		{
-			kind: 'prayer',
-			prayer: values.prayer,
-			offsetMinutes: signedOffset(values.timingKind, minutes),
-			durationMinutes: values.durationMinutes
-		},
-		language
-	);
+	const duration = values.durationMinutes;
+	if (minutes === null || duration === null) return incomplete;
+	if (!minutesAllowed(values.timingKind, minutes)) {
+		const bounds =
+			values.timingKind === 'beforePrayer' ? missing.minutesBefore : missing.minutesAfter;
+		return { value: null, missing: bounds };
+	}
+	if (!durationAllowed(duration)) return { value: null, missing: missing.duration };
+	const timing = {
+		kind: 'prayer',
+		prayer: values.prayer,
+		offsetMinutes: signedOffset(values.timingKind, minutes),
+		durationMinutes: duration
+	};
+	return { value: describeTiming(timing, language), missing: missing.time };
 }

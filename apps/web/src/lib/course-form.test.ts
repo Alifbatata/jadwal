@@ -162,12 +162,50 @@ describe('le résumé de ce qui sera publié (B4)', () => {
 		for (const incomplet of [
 			{ offsetMinutes: null },
 			{ durationMinutes: null },
-			{ timingKind: 'beforePrayer', offsetMinutes: 0 },
 			{ timingKind: 'fixed', start: '' }
 		] as const) {
 			expect(lignes({ ...COMPLET, ...incomplet }), JSON.stringify(incomplet)).toContain(
 				'Horaire : à indiquer'
 			);
+		}
+	});
+
+	it('marks as to correct what the server refuses, instead of showing it as published', () => {
+		const avant = 'Horaire : à corriger, de 1 à 120 minutes avant la prière';
+		const apres = 'Horaire : à corriger, de 0 à 240 minutes après la prière';
+		const duree = 'Horaire : à corriger, une durée de 5 à 1440 minutes';
+		const cas: [Partial<CourseFormValues>, string][] = [
+			[{ timingKind: 'beforePrayer', offsetMinutes: 130 }, avant],
+			[{ timingKind: 'beforePrayer', offsetMinutes: 0 }, avant],
+			[{ timingKind: 'beforePrayer', offsetMinutes: 2.5 }, avant],
+			[{ timingKind: 'prayer', offsetMinutes: 241 }, apres],
+			[{ timingKind: 'prayer', offsetMinutes: -5 }, apres],
+			[{ timingKind: 'prayer', offsetMinutes: 15, durationMinutes: 4 }, duree],
+			[{ timingKind: 'prayer', offsetMinutes: 15, durationMinutes: 1441 }, duree],
+			[{ endsOn: '2026-09-01' }, 'Dernier jour : à corriger, il tombe avant le premier jour'],
+			[
+				{ recurrenceKind: 'dates', dates: '12.10.2026\n2026-10-12 26.10.2026' },
+				'Dates écrites deux fois : lundi 12.10.2026'
+			]
+		];
+		for (const [valeurs, attendu] of cas) {
+			const marquees = summarise({ ...COMPLET, ...valeurs }, CONTEXTE, 'fr')
+				.filter((row) => row.missing)
+				.map((row) => `${row.label} ${row.value}`);
+			expect(marquees, JSON.stringify(valeurs)).toEqual([attendu]);
+		}
+		// Aux bornes, rien n'est à corriger.
+		for (const valeurs of [
+			{ timingKind: 'beforePrayer', offsetMinutes: 120, durationMinutes: 1440 },
+			{ timingKind: 'beforePrayer', offsetMinutes: 1, durationMinutes: 5 },
+			{ timingKind: 'prayer', offsetMinutes: 240 },
+			{ endsOn: '2026-09-07' }
+		] as const) {
+			const rows = summarise({ ...COMPLET, ...valeurs }, CONTEXTE, 'fr');
+			expect(
+				rows.filter((row) => row.missing),
+				JSON.stringify(valeurs)
+			).toEqual([]);
 		}
 	});
 

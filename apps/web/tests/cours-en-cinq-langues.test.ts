@@ -625,6 +625,49 @@ describe('le résumé en haut du formulaire (B4)', () => {
 		expect(await decalageEnBase(titreDuCours)).toEqual([]);
 	});
 
+	it('marks as to correct, after a refusal, the values the server refused', async () => {
+		// 130 minutes avant une prière, et un dernier jour avant le premier : le serveur refuse les
+		// deux, et le résumé ne les montre plus comme publiables.
+		const attendu: Record<Langue, string[]> = {
+			fr: [
+				'Horaire : à corriger, de 1 à 120 minutes avant la prière',
+				'Dernier jour : à corriger, il tombe avant le premier jour'
+			],
+			de: [
+				'Zeit: zu korrigieren, 1 bis 120 Minuten vor dem Gebet',
+				'Letzter Tag: zu korrigieren, er liegt vor dem ersten Tag'
+			],
+			it: [
+				'Orario: da correggere, da 1 a 120 minuti prima della preghiera',
+				'Ultimo giorno: da correggere, viene prima del primo giorno'
+			],
+			en: [
+				'Time: to correct, from 1 to 120 minutes before the prayer',
+				'Last day: to correct, it comes before the first day'
+			],
+			ar: [
+				'الوقت: يجب تصحيحه، من 1 إلى 120 دقيقة قبل الصلاة',
+				'اليوم الأخير: يجب تصحيحه، فهو يأتي قبل اليوم الأول'
+			]
+		};
+		const champs = champsDuFormulaire(await (await get(`/cours/${tafsirId}`, cookie)).text()).map(
+			([nom, valeur]): [string, string] =>
+				nom === 'offsetMinutes'
+					? [nom, '130']
+					: nom === 'endsOn'
+						? [nom, '2026-09-01']
+						: [nom, valeur]
+		);
+		for (const langue of LANGUES) {
+			await poserLangueDuCompte(langue);
+			const reponse = await postForm(`/cours/${tafsirId}`, champs, cookie);
+			expect(reponse.status, langue).toBe(400);
+			expect(manques(await reponse.text()), langue).toEqual(attendu[langue]);
+		}
+		await poserLangueDuCompte('fr');
+		expect(await decalageEnBase(TAFSIR)).toEqual([{ kind: 'prayer', offset: -10 }]);
+	});
+
 	it('says the time in each language', async () => {
 		const horaires: Record<Langue, string> = {
 			fr: '10 min avant Maghrib, pendant 1 h',

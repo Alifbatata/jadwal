@@ -63,6 +63,7 @@ interface CourseFormTexts {
 		readonly days: string;
 		readonly dates: string;
 		readonly badDates: string;
+		readonly datesTwice: string;
 		readonly datesBefore: string;
 		readonly datesAfter: string;
 		readonly frequency: string;
@@ -84,10 +85,15 @@ interface CourseFormTexts {
 		/** Des dates écrites, mais aucune entre le premier et le dernier jour. */
 		readonly noDateInPeriod: string;
 		readonly time: string;
+		/** Ce que le serveur refuserait : la ligne le dit « à corriger », avec les bornes. */
+		readonly minutesBefore: string;
+		readonly minutesAfter: string;
+		readonly duration: string;
 		readonly room: string;
 		readonly teacher: string;
 		readonly teachingLanguage: string;
 		readonly startsOn: string;
+		readonly endsBeforeStarts: string;
 	};
 	readonly frequencies: {
 		readonly weekly: string;
@@ -216,6 +222,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			days: 'Jours :',
 			dates: 'Dates :',
 			badDates: 'Dates à corriger :',
+			datesTwice: 'Dates écrites deux fois :',
 			datesBefore: 'Dates avant le premier jour, pas publiées :',
 			datesAfter: 'Dates après le dernier jour, pas publiées :',
 			frequency: 'Fréquence :',
@@ -234,10 +241,14 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			dates: 'pas encore écrites',
 			noDateInPeriod: 'aucune ne sera publiée',
 			time: 'à indiquer',
+			minutesBefore: 'à corriger, de 1 à 120 minutes avant la prière',
+			minutesAfter: 'à corriger, de 0 à 240 minutes après la prière',
+			duration: 'à corriger, une durée de 5 à 1440 minutes',
 			room: 'pas choisie',
 			teacher: 'aucun pour l’instant',
 			teachingLanguage: 'pas choisie',
-			startsOn: 'pas choisi'
+			startsOn: 'pas choisi',
+			endsBeforeStarts: 'à corriger, il tombe avant le premier jour'
 		},
 		frequencies: {
 			weekly: 'chaque semaine',
@@ -365,6 +376,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			days: 'Tage:',
 			dates: 'Daten:',
 			badDates: 'Zu korrigierende Daten:',
+			datesTwice: 'Doppelt eingetragene Daten:',
 			datesBefore: 'Daten vor dem ersten Tag, nicht veröffentlicht:',
 			datesAfter: 'Daten nach dem letzten Tag, nicht veröffentlicht:',
 			frequency: 'Häufigkeit:',
@@ -383,10 +395,14 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			dates: 'noch nicht eingetragen',
 			noDateInPeriod: 'keines wird veröffentlicht',
 			time: 'noch nicht angegeben',
+			minutesBefore: 'zu korrigieren, 1 bis 120 Minuten vor dem Gebet',
+			minutesAfter: 'zu korrigieren, 0 bis 240 Minuten nach dem Gebet',
+			duration: 'zu korrigieren, eine Dauer von 5 bis 1440 Minuten',
 			room: 'kein Raum gewählt',
 			teacher: 'nicht angegeben',
 			teachingLanguage: 'keine gewählt',
-			startsOn: 'nicht gewählt'
+			startsOn: 'nicht gewählt',
+			endsBeforeStarts: 'zu korrigieren, er liegt vor dem ersten Tag'
 		},
 		frequencies: {
 			weekly: 'jede Woche',
@@ -513,6 +529,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			days: 'Giorni:',
 			dates: 'Date:',
 			badDates: 'Date da correggere:',
+			datesTwice: 'Date scritte due volte:',
 			datesBefore: 'Date prima del primo giorno, non pubblicate:',
 			datesAfter: 'Date dopo l’ultimo giorno, non pubblicate:',
 			frequency: 'Frequenza:',
@@ -531,10 +548,14 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			dates: 'non ancora scritte',
 			noDateInPeriod: 'nessuna sarà pubblicata',
 			time: 'non ancora indicato',
+			minutesBefore: 'da correggere, da 1 a 120 minuti prima della preghiera',
+			minutesAfter: 'da correggere, da 0 a 240 minuti dopo la preghiera',
+			duration: 'da correggere, una durata da 5 a 1440 minuti',
 			room: 'non scelta',
 			teacher: 'non indicato',
 			teachingLanguage: 'non scelta',
-			startsOn: 'non scelto'
+			startsOn: 'non scelto',
+			endsBeforeStarts: 'da correggere, viene prima del primo giorno'
 		},
 		frequencies: {
 			weekly: 'ogni settimana',
@@ -660,6 +681,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			days: 'Days:',
 			dates: 'Dates:',
 			badDates: 'Dates to correct:',
+			datesTwice: 'Dates written twice:',
 			datesBefore: 'Dates before the first day, not published:',
 			datesAfter: 'Dates after the last day, not published:',
 			frequency: 'Frequency:',
@@ -678,10 +700,14 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			dates: 'not written yet',
 			noDateInPeriod: 'none will be published',
 			time: 'not given yet',
+			minutesBefore: 'to correct, from 1 to 120 minutes before the prayer',
+			minutesAfter: 'to correct, from 0 to 240 minutes after the prayer',
+			duration: 'to correct, a length of 5 to 1440 minutes',
 			room: 'none chosen',
 			teacher: 'not given',
 			teachingLanguage: 'none chosen',
-			startsOn: 'not chosen yet'
+			startsOn: 'not chosen yet',
+			endsBeforeStarts: 'to correct, it comes before the first day'
 		},
 		frequencies: {
 			weekly: 'every week',
@@ -814,6 +840,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			days: 'الأيام:',
 			dates: 'التواريخ:',
 			badDates: 'تواريخ يجب تصحيحها:',
+			datesTwice: 'تواريخ مكتوبة مرتين:',
 			datesBefore: 'تواريخ قبل اليوم الأول، لن تُنشر:',
 			datesAfter: 'تواريخ بعد اليوم الأخير، لن تُنشر:',
 			frequency: 'التكرار:',
@@ -832,10 +859,14 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			dates: 'لم تُكتب بعد',
 			noDateInPeriod: 'لن يُنشر أي منها',
 			time: 'لم يُحدَّد بعد',
+			minutesBefore: 'يجب تصحيحه، من 1 إلى 120 دقيقة قبل الصلاة',
+			minutesAfter: 'يجب تصحيحه، من 0 إلى 240 دقيقة بعد الصلاة',
+			duration: 'يجب تصحيحه، مدة من 5 إلى 1440 دقيقة',
 			room: 'لم تُختر',
 			teacher: 'لم يُذكر',
 			teachingLanguage: 'لم تُختر',
-			startsOn: 'لم يُختر بعد'
+			startsOn: 'لم يُختر بعد',
+			endsBeforeStarts: 'يجب تصحيحه، فهو يأتي قبل اليوم الأول'
 		},
 		frequencies: {
 			weekly: 'كل أسبوع',

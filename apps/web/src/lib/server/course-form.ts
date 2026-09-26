@@ -11,24 +11,17 @@
 // encore après ces vérifications est une valeur que le formulaire ne peut pas envoyer (une langue qui
 // n'est pas activée, un public ou une prière qui n'existe pas) : la page le dit sans détail.
 
+import { isIsoDate, isLocalTime, type IsoDate } from '@jadwal/core';
 import {
-	isIsoDate,
-	isLocalTime,
-	MAX_DURATION_MINUTES,
-	MAX_OFFSET_MINUTES,
-	MIN_DURATION_MINUTES,
-	MIN_OFFSET_MINUTES,
-	type IsoDate
-} from '@jadwal/core';
-import {
+	durationAllowed,
 	isTimingChoice,
+	minutesAllowed,
 	readDate,
 	signedOffset,
 	splitByPeriod,
 	splitDates,
 	type CourseFormError,
-	type CourseFormValues,
-	type TimingChoice
+	type CourseFormValues
 } from '../course-form.js';
 import { parseCourseForm, type CourseValues } from './courses.js';
 
@@ -106,14 +99,6 @@ function sentValues(form: FormData, languages: readonly string[]): CourseFormVal
 	};
 }
 
-/** Les minutes admises pour chaque sens : jamais zéro avant une prière, qui voudrait dire « après ». */
-function minutesAllowed(choice: TimingChoice, value: number | null): value is number {
-	if (value === null) return false;
-	return choice === 'beforePrayer'
-		? value >= 1 && value <= -MIN_OFFSET_MINUTES
-		: value <= MAX_OFFSET_MINUTES;
-}
-
 /**
  * Lit le formulaire d'un cours. Rend soit les valeurs que `insertCourse` et `updateCourse`
  * écrivent, soit les erreurs dans l'ordre des cadres du formulaire, de haut en bas (le texte, la
@@ -174,10 +159,7 @@ export function readCourseForm(form: FormData, languages: readonly string[]): Re
 		if (!minutesAllowed(choice, values.offsetMinutes)) {
 			errors.push(choice === 'beforePrayer' ? 'minutesBefore' : 'minutesAfter');
 		}
-		const duration = values.durationMinutes;
-		if (duration === null || duration < MIN_DURATION_MINUTES || duration > MAX_DURATION_MINUTES) {
-			errors.push('duration');
-		}
+		if (!durationAllowed(values.durationMinutes)) errors.push('duration');
 	}
 
 	// La période est le dernier cadre du formulaire : ses erreurs viennent en dernier.
