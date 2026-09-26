@@ -45,7 +45,8 @@
  * - B2 : l'écran du super-admin, de « Créer une organisation » au lien de connexion de secours ;
  *   l'adresse proposée pendant la frappe, et par le serveur sans JavaScript ; une seconde passkey,
  *   qui a son propre nom et un message juste.
- * - B3 : l'écran Membres dit ce que fait un éditeur et ce qui est réservé au responsable.
+ * - B3 : l'écran Membres dit ce que fait un éditeur, sans lui promettre de supprimer un cours, et ce
+ *   qui est réservé au responsable.
  * - B4 : le résumé du formulaire de cours, sa ligne de description, et ce qui manque, signalé.
  * - C1 : « D'où viennent vos heures de prière ? », ses trois réponses et l'aperçu de sept jours ;
  *   axe à 390 px de large sur les trois réponses.
@@ -1647,6 +1648,16 @@ async function ceQueFaitChaqueRole(page) {
 				gestesResponsable.some((geste) => geste.includes('Retirer un membre')) &&
 				gestesResponsable.some((geste) => geste.includes('Inviter une personne')),
 			`${gestesEditeur.length} gestes d’éditeur, ${gestesResponsable.length} réservés`
+		);
+		// Aucun écran ne propose de supprimer un cours : la liste ne le promet pas à l'éditeur.
+		const surLesCours = gestesEditeur
+			.map((geste) => geste.replace(/\s+/g, ' ').trim())
+			.filter((geste) => /\bcours\b/.test(geste));
+		verifier(
+			'ce que peut faire un éditeur ne promet pas de supprimer un cours, qu’aucun écran ne propose : « Créer un cours, le modifier et le publier »',
+			surLesCours.includes('Créer un cours, le modifier et le publier') &&
+				!surLesCours.some((geste) => /supprimer/.test(geste)),
+			surLesCours.map((geste) => `« ${geste} »`).join(', ') || 'aucun geste sur les cours'
 		);
 		const decrit = await page.locator('#role').getAttribute('aria-describedby');
 		verifier(
