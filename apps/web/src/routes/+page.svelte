@@ -244,8 +244,9 @@
 										/>
 										<p id={`vers-${k}-aide`} class="aide">{text.newDateHelp(date(data.today))}</p>
 									</div>
-									<!-- Après un refus, l'heure envoyée revient, sauf quand l'action la rend à `null` :
-									     la personne ne l'avait pas choisie, et le champ propose l'heure de la séance. -->
+									<!-- Après un refus, l'heure envoyée revient dans le champ. L'action la remplace par
+									     `null` quand la personne ne l'avait pas choisie : le champ propose alors l'heure
+									     de la séance. -->
 									<div class="champ">
 										<label for={`heure-${k}`}>{text.newTime}</label>
 										<input
