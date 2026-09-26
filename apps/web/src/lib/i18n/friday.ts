@@ -11,7 +11,12 @@
 
 import type { Translations } from './space.js';
 
-/** Ce qu'une action de l'écran peut refuser : le nom de l'erreur, jamais sa phrase. */
+/**
+ * Ce qu'une action de l'écran peut refuser : le nom de l'erreur, jamais sa phrase. Pour « Ce
+ * vendredi », comme sur « À venir » : `changed`, la session a été annulée ou déplacée ce jour-là
+ * depuis l'ouverture de la page ; `timeChanged`, son heure a changé depuis ; `unchanged`, un
+ * déplacement vers le jour et l'heure où elle est déjà prévue.
+ */
 export type FridayError =
 	| 'titleTooLong'
 	| 'orderInvalid'
@@ -23,7 +28,10 @@ export type FridayError =
 	| 'endDateBeforeStart'
 	| 'sessionGone'
 	| 'dateUnreadable'
-	| 'timeUnreadable';
+	| 'timeUnreadable'
+	| 'changed'
+	| 'timeChanged'
+	| 'unchanged';
 
 /** Ce qu'une action de l'écran a fait, pour la phrase qui le confirme. */
 export type FridayDone =
@@ -208,7 +216,13 @@ export const fridayTexts: Translations<FridayTexts> = {
 			sessionGone:
 				'Cette session n’existe plus : elle a été supprimée entre-temps. La liste ci-dessous est à jour.',
 			dateUnreadable: 'Cette date est illisible. Rechargez la page et recommencez.',
-			timeUnreadable: 'Cette heure est illisible. Exemple : 13:30.'
+			timeUnreadable: 'Cette heure est illisible. Exemple : 13:30.',
+			changed:
+				'Cette session a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée ce jour-là. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.',
+			timeChanged:
+				'L’heure de cette session a changé depuis l’ouverture de la page. Rien n’a été enregistré. Sa nouvelle heure est écrite plus bas, dans « Ce vendredi » : vérifiez le jour et l’heure choisis, puis recommencez.',
+			unchanged:
+				'La session est déjà prévue ce jour-là à cette heure : rien n’a été déplacé. Choisissez une autre heure ou un autre jour dans « Ce vendredi », plus bas.'
 		}
 	},
 	de: {
@@ -310,7 +324,13 @@ export const fridayTexts: Translations<FridayTexts> = {
 				'Diesen Durchgang gibt es nicht mehr: Er wurde inzwischen gelöscht. Die Liste unten ist aktuell.',
 			dateUnreadable:
 				'Dieses Datum ist nicht lesbar. Laden Sie die Seite neu und versuchen Sie es noch einmal.',
-			timeUnreadable: 'Diese Uhrzeit ist nicht lesbar. Beispiel: 13:30.'
+			timeUnreadable: 'Diese Uhrzeit ist nicht lesbar. Beispiel: 13:30.',
+			changed:
+				'Dieser Durchgang hat sich geändert, seit die Seite geöffnet wurde: Er wurde an diesem Tag schon abgesagt oder verschoben. Es wurde nichts gespeichert. Der Abschnitt «Diesen Freitag» weiter unten ist aktuell.',
+			timeChanged:
+				'Die Uhrzeit dieses Durchgangs hat sich geändert, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Die neue Uhrzeit steht weiter unten unter «Diesen Freitag»: Prüfen Sie den gewählten Tag und die gewählte Uhrzeit und versuchen Sie es noch einmal.',
+			unchanged:
+				'Der Durchgang ist schon an diesem Tag zu dieser Uhrzeit geplant: Es wurde nichts verschoben. Wählen Sie weiter unten unter «Diesen Freitag» einen anderen Tag oder eine andere Uhrzeit.'
 		}
 	},
 	it: {
@@ -407,7 +427,13 @@ export const fridayTexts: Translations<FridayTexts> = {
 			sessionGone:
 				'Questo turno non esiste più: nel frattempo è stato eliminato. L’elenco qui sotto è aggiornato.',
 			dateUnreadable: 'Questa data non è leggibile. Ricarica la pagina e riprova.',
-			timeUnreadable: 'Questo orario non è leggibile. Esempio: 13:30.'
+			timeUnreadable: 'Questo orario non è leggibile. Esempio: 13:30.',
+			changed:
+				'Questo turno è cambiato da quando hai aperto la pagina: quel giorno è già stato annullato o spostato. Non è stato salvato niente. La sezione «Questo venerdì», più in basso, è aggiornata.',
+			timeChanged:
+				'L’orario di questo turno è cambiato da quando hai aperto la pagina. Non è stato salvato niente. Il nuovo orario è indicato più in basso, in «Questo venerdì»: controlla il giorno e l’orario scelti, poi riprova.',
+			unchanged:
+				'Il turno è già previsto quel giorno a quell’ora: non è stato spostato niente. Scegli un altro giorno o un altro orario più in basso, in «Questo venerdì».'
 		}
 	},
 	en: {
@@ -503,7 +529,13 @@ export const fridayTexts: Translations<FridayTexts> = {
 			sessionGone:
 				'This session no longer exists: it has been deleted in the meantime. The list below shows the sessions as they are now.',
 			dateUnreadable: 'This date cannot be read. Reload the page and try again.',
-			timeUnreadable: 'This time cannot be read. Example: 13:30.'
+			timeUnreadable: 'This time cannot be read. Example: 13:30.',
+			changed:
+				'This session has changed since the page was opened: it has already been cancelled or moved for that day. Nothing has been saved. The ‘This Friday’ section further down shows the latest changes.',
+			timeChanged:
+				'The time of this session has changed since the page was opened. Nothing has been saved. Its new time is shown further down, under ‘This Friday’: check the day and time you chose, then try again.',
+			unchanged:
+				'The session is already planned for that day at that time: nothing has been moved. Choose a different day or time under ‘This Friday’, further down.'
 		}
 	},
 	ar: {
@@ -593,7 +625,13 @@ export const fridayTexts: Translations<FridayTexts> = {
 			endDateBeforeStart: 'تاريخ «يسري حتى» يسبق تاريخ «يسري ابتداءً من».',
 			sessionGone: 'هذا الموعد لم يعد موجودًا: فقد حُذف في هذه الأثناء. القائمة أدناه محدَّثة.',
 			dateUnreadable: 'تعذّرت قراءة هذا التاريخ. أعد تحميل الصفحة وحاول مرة أخرى.',
-			timeUnreadable: 'تعذّرت قراءة هذا الوقت. مثال: 13:30.'
+			timeUnreadable: 'تعذّرت قراءة هذا الوقت. مثال: 13:30.',
+			changed:
+				'تغيّر هذا الموعد منذ أن فُتحت الصفحة: سبق أن أُلغي أو نُقل في ذلك اليوم. لم يُحفظ أي شيء. قسم «هذه الجمعة» في الأسفل محدَّث.',
+			timeChanged:
+				'تغيّر وقت هذا الموعد منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. وقته الجديد مكتوب في قسم «هذه الجمعة» في الأسفل: راجع ما اخترته من يوم ووقت، ثم حاول مرة أخرى.',
+			unchanged:
+				'الموعد مقرّر أصلًا في هذا اليوم وفي هذا الوقت: لم يُنقل أي شيء. اختر يومًا آخر أو وقتًا آخر في قسم «هذه الجمعة» في الأسفل.'
 		}
 	}
 };

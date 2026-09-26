@@ -149,9 +149,13 @@
 								<input type="hidden" name="date" value={seance.date} />
 								<button type="submit" class="danger">{text.thisFriday.cancel}</button>
 							</form>
+							<!-- L'heure que la carte montre part avec elle : si l'heure de la session change
+							     pendant que la page reste ouverte, l'action refuse la carte, au lieu de la
+							     déplacer à l'ancienne heure. -->
 							<form method="post" action="?/deplacer">
 								<input type="hidden" name="courseId" value={session.id} />
 								<input type="hidden" name="date" value={seance.date} />
+								<input type="hidden" name="plannedStart" value={seance.start ?? ''} />
 								<label for={`vers-${session.id}-${seance.date}`}>{text.thisFriday.newDay}</label>
 								<select id={`vers-${session.id}-${seance.date}`} name="toDate">
 									{#each data.joursSuivants as jour (jour)}

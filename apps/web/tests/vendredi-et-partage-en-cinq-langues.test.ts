@@ -6,6 +6,10 @@
 // demandent. Le partage donne en plus le message de la semaine dans chacune des langues que
 // l'organisation publie, la sienne d'abord (D1), et dit sans jargon où coller chaque code.
 //
+// « Ce vendredi » suit la règle d'« À venir » : une page restée ouverte ne défait pas un changement
+// fait ailleurs, ni ne vise une session supprimée depuis ; un déplacement qui ne change rien est
+// refusé, une carte dont l'heure a changé depuis aussi (relecture du lot 5).
+//
 // Vrai serveur construit, vraie base, formulaires envoyés comme sans JavaScript, sur le modèle de
 // `espace-en-cinq-langues.test.ts`.
 
@@ -538,6 +542,44 @@ const ouvert = (balise: string) => /\sopen(?:[\s=>]|$)/.test(balise);
  */
 const ERREURS = /<div\b[^>]*role="alert"[^>]*>\s*<ul\b[^>]*>([\s\S]*?)<\/ul>/g;
 
+/**
+ * Les refus des gestes de « Ce vendredi », et celui d'une session supprimée entre-temps, dans chaque
+ * langue (relecture du lot 5). Tous s'écrivent en tête de l'écran.
+ */
+const REFUS_DU_VENDREDI: Record<
+	'changed' | 'timeChanged' | 'unchanged' | 'sessionGone',
+	Record<Langue, string>
+> = {
+	changed: {
+		fr: 'Cette session a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée ce jour-là. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.',
+		de: 'Dieser Durchgang hat sich geändert, seit die Seite geöffnet wurde: Er wurde an diesem Tag schon abgesagt oder verschoben. Es wurde nichts gespeichert. Der Abschnitt «Diesen Freitag» weiter unten ist aktuell.',
+		it: 'Questo turno è cambiato da quando hai aperto la pagina: quel giorno è già stato annullato o spostato. Non è stato salvato niente. La sezione «Questo venerdì», più in basso, è aggiornata.',
+		en: 'This session has changed since the page was opened: it has already been cancelled or moved for that day. Nothing has been saved. The ‘This Friday’ section further down shows the latest changes.',
+		ar: 'تغيّر هذا الموعد منذ أن فُتحت الصفحة: سبق أن أُلغي أو نُقل في ذلك اليوم. لم يُحفظ أي شيء. قسم «هذه الجمعة» في الأسفل محدَّث.'
+	},
+	timeChanged: {
+		fr: 'L’heure de cette session a changé depuis l’ouverture de la page. Rien n’a été enregistré. Sa nouvelle heure est écrite plus bas, dans « Ce vendredi » : vérifiez le jour et l’heure choisis, puis recommencez.',
+		de: 'Die Uhrzeit dieses Durchgangs hat sich geändert, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Die neue Uhrzeit steht weiter unten unter «Diesen Freitag»: Prüfen Sie den gewählten Tag und die gewählte Uhrzeit und versuchen Sie es noch einmal.',
+		it: 'L’orario di questo turno è cambiato da quando hai aperto la pagina. Non è stato salvato niente. Il nuovo orario è indicato più in basso, in «Questo venerdì»: controlla il giorno e l’orario scelti, poi riprova.',
+		en: 'The time of this session has changed since the page was opened. Nothing has been saved. Its new time is shown further down, under ‘This Friday’: check the day and time you chose, then try again.',
+		ar: 'تغيّر وقت هذا الموعد منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. وقته الجديد مكتوب في قسم «هذه الجمعة» في الأسفل: راجع ما اخترته من يوم ووقت، ثم حاول مرة أخرى.'
+	},
+	unchanged: {
+		fr: 'La session est déjà prévue ce jour-là à cette heure : rien n’a été déplacé. Choisissez une autre heure ou un autre jour dans « Ce vendredi », plus bas.',
+		de: 'Der Durchgang ist schon an diesem Tag zu dieser Uhrzeit geplant: Es wurde nichts verschoben. Wählen Sie weiter unten unter «Diesen Freitag» einen anderen Tag oder eine andere Uhrzeit.',
+		it: 'Il turno è già previsto quel giorno a quell’ora: non è stato spostato niente. Scegli un altro giorno o un altro orario più in basso, in «Questo venerdì».',
+		en: 'The session is already planned for that day at that time: nothing has been moved. Choose a different day or time under ‘This Friday’, further down.',
+		ar: 'الموعد مقرّر أصلًا في هذا اليوم وفي هذا الوقت: لم يُنقل أي شيء. اختر يومًا آخر أو وقتًا آخر في قسم «هذه الجمعة» في الأسفل.'
+	},
+	sessionGone: {
+		fr: 'Cette session n’existe plus : elle a été supprimée entre-temps. La liste ci-dessous est à jour.',
+		de: 'Diesen Durchgang gibt es nicht mehr: Er wurde inzwischen gelöscht. Die Liste unten ist aktuell.',
+		it: 'Questo turno non esiste più: nel frattempo è stato eliminato. L’elenco qui sotto è aggiornato.',
+		en: 'This session no longer exists: it has been deleted in the meantime. The list below shows the sessions as they are now.',
+		ar: 'هذا الموعد لم يعد موجودًا: فقد حُذف في هذه الأثناء. القائمة أدناه محدَّثة.'
+	}
+};
+
 describe('la prière du vendredi dit ce qu’elle demande (retour B1)', () => {
 	/** Le texte d'un élément de la page par son `id`, sans ses balises. */
 	function texteDeLId(html: string, id: string): string {
@@ -807,10 +849,7 @@ describe('une modification refusée reste sous les yeux (retour B1)', () => {
 		// La page renvoyée montre déjà les sessions telles qu'elles sont : la phrase ne demande pas de
 		// la recharger, ce qui, sans script, renverrait le même formulaire (relecture du lot 5).
 		expect(erreurs(html)).toEqual([
-			[
-				'Cette session n’existe plus : elle a été supprimée entre-temps. La liste ci-dessous est à jour.',
-				'L’heure de fin doit venir après l’heure de début.'
-			]
+			[REFUS_DU_VENDREDI.sessionGone.fr, 'L’heure de fin doit venir après l’heure de début.']
 		]);
 		expect(html.search(ERREURS)).toBeGreaterThan(-1);
 		expect(html.search(ERREURS)).toBeLessThan(html.search(PREMIERE_CARTE));
@@ -976,6 +1015,225 @@ describe('la prière du vendredi répond dans la langue du compte (retour D2)', 
 			expect(retrait, langue).not.toBe(dit.fr?.[0]);
 			expect(publication, langue).not.toBe(dit.fr?.[1]);
 			expect(retrait, langue).not.toBe(publication);
+		}
+	});
+});
+
+/** L'exception posée sur une séance, telle que la base la garde, ou rien. */
+async function exceptionDe(
+	courseId: string,
+	date: string
+): Promise<{ kind: string; to_date: string | null; to_start: string | null } | undefined> {
+	return maintenance(async (tx) =>
+		lignes<{ kind: string; to_date: string | null; to_start: string | null }>(
+			await tx.execute(sql`
+				select "kind", "to_date"::text, left("to_start"::text, 5) as to_start
+				from "session_exception" where "course_id" = ${courseId} and "date" = ${date}
+			`)
+		)
+	).then((trouvees) => trouvees[0]);
+}
+
+/** Change l'heure d'une session, comme une autre personne responsable le ferait dans un autre onglet. */
+async function changerHeureDe(courseId: string, debut: string, fin: string): Promise<void> {
+	await maintenance((tx) =>
+		tx.execute(sql`
+			update "course" set "timing_start" = ${debut}, "timing_end" = ${fin} where "id" = ${courseId}
+		`)
+	);
+}
+
+/**
+ * Un formulaire de « Ce vendredi », tel que la page le propose pour une session et un jour : chaque
+ * champ et sa valeur, et pour une liste l'option choisie d'avance. C'est ce qu'envoie une page restée
+ * ouverte, même quand la session a changé depuis.
+ */
+function formulaireDuVendredi(
+	html: string,
+	action: 'annuler' | 'deplacer',
+	courseId: string,
+	date: string
+): Record<string, string> {
+	const formulaire =
+		[
+			...section(html, 'ce-vendredi').matchAll(
+				new RegExp(`<form\\b[^>]*action="\\?/${action}"[^>]*>[\\s\\S]*?</form>`, 'g')
+			)
+		]
+			.map((trouve) => trouve[0])
+			.find((un) => valeur(un, 'courseId') === courseId && valeur(un, 'date') === date) ?? '';
+	const champs: Record<string, string> = {};
+	for (const champ of formulaire.matchAll(/<input\b[^>]*>/g)) {
+		champs[attribut(champ[0], 'name') ?? ''] = attribut(champ[0], 'value') ?? '';
+	}
+	for (const liste of formulaire.matchAll(
+		/<select\b[^>]*\sname="([^"]*)"[^>]*>([\s\S]*?)<\/select>/g
+	)) {
+		const choisie = [...(liste[2] ?? '').matchAll(/<option\b[^>]*>/g)].find((option) =>
+			/\sselected(?:[\s=>]|$)/.test(option[0])
+		);
+		champs[liste[1] ?? ''] = attribut(choisie?.[0] ?? '', 'value') ?? '';
+	}
+	return champs;
+}
+
+describe('une page /vendredi restée ouverte ne défait pas un changement (relecture du lot 5)', () => {
+	const vendredi = () => prochainVendredi(today());
+
+	/** Les phrases de la liste d'erreurs en tête de l'écran, avant la première carte. */
+	function enTete(html: string): string[] {
+		const premiere = html.search(PREMIERE_CARTE);
+		return [...html.matchAll(ERREURS)]
+			.filter((liste) => premiere < 0 || liste.index < premiere)
+			.flatMap((liste) =>
+				[...(liste[1] ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)].map((point) =>
+					visibleText(`<body>${point[1] ?? ''}</body>`)
+				)
+			);
+	}
+
+	async function retablirCeVendredi(courseId: string): Promise<void> {
+		await postForm('/vendredi?/retablir', { courseId, date: vendredi() }, cookies);
+		expect(await exceptionDe(courseId, vendredi())).toBeUndefined();
+	}
+
+	it('refuses the card of a page left open after the session was moved on the upcoming screen, and keeps the move', async () => {
+		const page = await (await get('/vendredi', cookies)).text();
+		const annulation = formulaireDuVendredi(page, 'annuler', sessions[1], vendredi());
+		const deplacement = formulaireDuVendredi(page, 'deplacer', sessions[1], vendredi());
+		expect(annulation).toEqual({ courseId: sessions[1], date: vendredi() });
+		// Ailleurs, sur « À venir », la session part au lendemain (la veille un samedi), à 15:00.
+		const ailleurs = await postForm(
+			'/?/deplacer',
+			{ courseId: sessions[1], date: vendredi(), toDate: jourDuDeplacement(), toStart: '15:00' },
+			cookies
+		);
+		try {
+			expect(ailleurs.status).toBe(200);
+			const deplacee = { kind: 'moved', to_date: jourDuDeplacement(), to_start: '15:00' };
+			expect(await exceptionDe(sessions[1], vendredi())).toEqual(deplacee);
+			// La page restée ouverte : annuler remplaçait le déplacement, déplacer sans rien changer
+			// écrivait un déplacement de la session vers elle-même, et déplacer ailleurs l'écrasait.
+			for (const [action, envoi] of [
+				['annuler', annulation],
+				['deplacer', deplacement],
+				['deplacer', { ...deplacement, toStart: '16:00' }]
+			] as const) {
+				const reponse = await postForm(`/vendredi?/${action}`, envoi, cookies);
+				expect(reponse.status, `${action} ${envoi['toStart'] ?? ''}`).toBe(409);
+				expect(enTete(await reponse.text()), action).toEqual([REFUS_DU_VENDREDI.changed.fr]);
+				expect(await exceptionDe(sessions[1], vendredi()), action).toEqual(deplacee);
+			}
+		} finally {
+			await retablirCeVendredi(sessions[1]);
+		}
+	});
+
+	it('refuses a move that changes neither the day nor the time, says what to do, and writes nothing', async () => {
+		const page = await (await get('/vendredi', cookies)).text();
+		const deplacement = formulaireDuVendredi(page, 'deplacer', sessions[1], vendredi());
+		// Le jour s'ouvre sur ce vendredi, l'heure sur celle de la session : la carte telle quelle.
+		expect([deplacement['toDate'], deplacement['toStart']]).toEqual([vendredi(), '12:10']);
+		const reponse = await postForm('/vendredi?/deplacer', deplacement, cookies);
+		try {
+			expect(reponse.status).toBe(400);
+			expect(enTete(await reponse.text())).toEqual([REFUS_DU_VENDREDI.unchanged.fr]);
+			expect(await exceptionDe(sessions[1], vendredi())).toBeUndefined();
+		} finally {
+			await retablirCeVendredi(sessions[1]);
+		}
+	});
+
+	it('refuses the card of a page left open while the time of the session changed, and writes nothing', async () => {
+		const page = await (await get('/vendredi', cookies)).text();
+		const deplacement = formulaireDuVendredi(page, 'deplacer', sessions[1], vendredi());
+		// Une autre personne responsable passe la session à 12:20 ; ce vendredi n'a aucune exception.
+		await changerHeureDe(sessions[1], '12:20', '13:00');
+		try {
+			// Sans changement, la carte déplaçait la session à 12:10, l'ancienne heure, ce vendredi-là.
+			for (const envoi of [deplacement, { ...deplacement, toStart: '14:00' }]) {
+				const reponse = await postForm('/vendredi?/deplacer', envoi, cookies);
+				expect(reponse.status, envoi['toStart']).toBe(409);
+				const html = await reponse.text();
+				expect(enTete(html), envoi['toStart']).toEqual([REFUS_DU_VENDREDI.timeChanged.fr]);
+				expect(await exceptionDe(sessions[1], vendredi()), envoi['toStart']).toBeUndefined();
+				// « Ce vendredi » rendu de nouveau montre la nouvelle heure, et sa carte l'envoie.
+				expect(
+					formulaireDuVendredi(html, 'deplacer', sessions[1], vendredi()),
+					envoi['toStart']
+				).toMatchObject({ plannedStart: '12:20', toStart: '12:20' });
+			}
+		} finally {
+			await changerHeureDe(sessions[1], '12:10', '12:50');
+			await retablirCeVendredi(sessions[1]);
+		}
+	});
+
+	it('says that a session deleted in the meantime no longer exists, and writes nothing', async () => {
+		const { id } = await ajouterUneSessionDePassage('Prière supprimée entre-temps');
+		const page = await (await get('/vendredi', cookies)).text();
+		const annulation = formulaireDuVendredi(page, 'annuler', id, vendredi());
+		const deplacement = formulaireDuVendredi(page, 'deplacer', id, vendredi());
+		expect(annulation).toEqual({ courseId: id, date: vendredi() });
+		expect((await postForm('/vendredi?/supprimer', { courseId: id }, cookies)).status).toBe(200);
+		for (const [action, envoi] of [
+			['annuler', annulation],
+			['deplacer', { ...deplacement, toStart: '17:00' }]
+		] as const) {
+			const reponse = await postForm(`/vendredi?/${action}`, envoi, cookies);
+			expect(reponse.status, action).toBe(404);
+			expect(enTete(await reponse.text()), action).toEqual([REFUS_DU_VENDREDI.sessionGone.fr]);
+			expect(await exceptionDe(id, vendredi()), action).toBeUndefined();
+		}
+	});
+
+	it('names each refusal of « Ce vendredi » in each language', async () => {
+		const date = vendredi();
+		// Avant toute exception : le même jour à la même heure, une carte ouverte quand la session
+		// commençait à 11:00, et une session qui n'existe plus.
+		const avantAnnulation = [
+			[
+				'unchanged',
+				400,
+				'deplacer',
+				{ courseId: sessions[1], date, plannedStart: '12:10', toDate: date, toStart: '12:10' }
+			],
+			[
+				'timeChanged',
+				409,
+				'deplacer',
+				{ courseId: sessions[1], date, plannedStart: '11:00', toDate: date, toStart: '11:00' }
+			],
+			['sessionGone', 404, 'annuler', { courseId: newId(), date }]
+		] as const;
+		try {
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				for (const [refus, statut, action, envoi] of avantAnnulation) {
+					const reponse = await postForm(`/vendredi?/${action}`, envoi, cookies);
+					expect(reponse.status, `${refus} ${langue}`).toBe(statut);
+					expect(enTete(await reponse.text()), `${refus} ${langue}`).toEqual([
+						REFUS_DU_VENDREDI[refus][langue]
+					]);
+				}
+			}
+			// La session annulée une fois : l'annuler encore est le refus d'une page restée ouverte.
+			expect(
+				(await postForm('/vendredi?/annuler', { courseId: sessions[1], date }, cookies)).status
+			).toBe(200);
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const reponse = await postForm(
+					'/vendredi?/annuler',
+					{ courseId: sessions[1], date },
+					cookies
+				);
+				expect(reponse.status, langue).toBe(409);
+				expect(enTete(await reponse.text()), langue).toEqual([REFUS_DU_VENDREDI.changed[langue]]);
+			}
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await retablirCeVendredi(sessions[1]);
 		}
 	});
 });
