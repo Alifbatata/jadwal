@@ -577,6 +577,82 @@ describe('le résumé en haut du formulaire (B4)', () => {
 		}
 	});
 
+	it('says the real rule of a monthly course: the nth weekday of the month, with an example', async () => {
+		// Le premier lundi d'octobre 2026 est le 05.10.2026, dans la deuxième semaine du mois : la règle
+		// n'est pas « quelle semaine », mais « quel jour, et lequel dans le mois ».
+		const attendu: Record<Langue, { jour: string; rang: string; rangs: string[]; aide: string }> = {
+			fr: {
+				jour: 'Quel jour de la semaine ?',
+				rang: 'Lequel dans le mois ?',
+				rangs: ['le premier', 'le deuxième', 'le troisième', 'le quatrième', 'le dernier'],
+				aide: 'Exemple : lundi, puis « le premier » : le cours a lieu le premier lundi de chaque mois.'
+			},
+			de: {
+				jour: 'Welcher Wochentag?',
+				rang: 'Welcher davon im Monat?',
+				rangs: ['der erste', 'der zweite', 'der dritte', 'der vierte', 'der letzte'],
+				aide: 'Beispiel: Montag, dann «der erste»: Der Kurs findet am ersten Montag jedes Monats statt.'
+			},
+			it: {
+				jour: 'Quale giorno della settimana?',
+				rang: 'Quale volta nel mese?',
+				rangs: ['la prima', 'la seconda', 'la terza', 'la quarta', 'l’ultima'],
+				aide: 'Esempio: lunedì, poi «la prima»: il corso si tiene il primo lunedì di ogni mese.'
+			},
+			en: {
+				jour: 'Which day of the week?',
+				rang: 'Which one in the month?',
+				rangs: ['the first', 'the second', 'the third', 'the fourth', 'the last'],
+				aide: 'Example: Monday, then ‘the first’: the course takes place on the first Monday of every month.'
+			},
+			ar: {
+				jour: 'أي يوم من أيام الأسبوع؟',
+				rang: 'ترتيبه في الشهر؟',
+				rangs: ['الأول', 'الثاني', 'الثالث', 'الرابع', 'الأخير'],
+				aide: 'مثال: الاثنين ثم «الأول»: يُقام الدرس في أول اثنين من كل شهر.'
+			}
+		};
+		for (const langue of LANGUES) {
+			await poserLangueDuCompte(langue);
+			// Un envoi refusé (sans titre) rend le formulaire tel qu'il a été envoyé : une fois par mois.
+			const reponse = await postForm(
+				'/cours/nouveau',
+				[
+					['sourceLanguage', 'fr'],
+					['title.fr', ''],
+					['teachingLanguages', 'fr'],
+					['recurrenceKind', 'monthly'],
+					['monthlyOrdinal', '1'],
+					['monthlyWeekday', '1'],
+					['timingKind', 'fixed'],
+					['start', '19:00'],
+					['end', '20:30'],
+					['startsOn', '2026-10-01'],
+					['status', 'draft']
+				],
+				cookie
+			);
+			expect(reponse.status, langue).toBe(400);
+			const html = await reponse.text();
+			const { jour, rang, rangs, aide } = attendu[langue];
+			expect(libelle(html, 'monthlyWeekday'), langue).toBe(jour);
+			expect(libelle(html, 'monthlyOrdinal'), langue).toBe(rang);
+			expect(
+				options(html, 'monthlyOrdinal').map((option) => option.texte),
+				langue
+			).toEqual(rangs);
+			expect(
+				lu(html.match(/<p\b[^>]*\bid="monthly-hint"[^>]*>([\s\S]*?)<\/p>/)?.[1] ?? ''),
+				langue
+			).toBe(aide);
+			// Le jour d'abord, puis son rang : « lundi », puis « le premier ».
+			expect(html.indexOf('id="monthlyWeekday"'), langue).toBeLessThan(
+				html.indexOf('id="monthlyOrdinal"')
+			);
+		}
+		await poserLangueDuCompte('fr');
+	});
+
 	it('stays right after a validation error, and the form keeps what was typed', async () => {
 		const reponse = await postForm(
 			'/cours/nouveau',

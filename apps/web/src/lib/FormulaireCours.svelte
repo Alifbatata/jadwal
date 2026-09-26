@@ -282,18 +282,31 @@
 			</select>
 			<p class="aide" id="interval-hint">{text.intervalHint}</p>
 		{:else if entry.recurrenceKind === 'monthly'}
-			<label for="monthlyOrdinal">{text.ordinalLabel}</label>
-			<select id="monthlyOrdinal" name="monthlyOrdinal" bind:value={entry.monthlyOrdinal}>
-				{#each ORDINALS as [value, key] (value)}
-					<option {value}>{text.ordinals[key]}</option>
-				{/each}
-			</select>
+			<!-- Le jour d'abord, puis son rang dans le mois : « lundi », puis « le premier ». La règle
+			     est le premier lundi du mois, pas la première semaine. -->
 			<label for="monthlyWeekday">{text.monthlyWeekdayLabel}</label>
-			<select id="monthlyWeekday" name="monthlyWeekday" bind:value={entry.monthlyWeekday}>
+			<select
+				id="monthlyWeekday"
+				name="monthlyWeekday"
+				bind:value={entry.monthlyWeekday}
+				aria-describedby="monthly-hint"
+			>
 				{#each weekdays as [day, name] (day)}
 					<option value={day}>{name}</option>
 				{/each}
 			</select>
+			<label for="monthlyOrdinal">{text.ordinalLabel}</label>
+			<select
+				id="monthlyOrdinal"
+				name="monthlyOrdinal"
+				bind:value={entry.monthlyOrdinal}
+				aria-describedby="monthly-hint"
+			>
+				{#each ORDINALS as [value, key] (value)}
+					<option {value}>{text.ordinals[key]}</option>
+				{/each}
+			</select>
+			<p class="aide" id="monthly-hint">{text.monthlyHint}</p>
 		{:else}
 			<label for="dates">{text.datesLabel}</label>
 			<textarea

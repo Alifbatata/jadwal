@@ -131,6 +131,11 @@ interface CourseFormTexts {
 	readonly weekdaysLegend: string;
 	readonly intervalLabel: string;
 	readonly intervalHint: string;
+	/**
+	 * Une fois par mois, la règle est le n-ième jour de la semaine du mois, « le premier lundi du
+	 * mois », qui ne tombe pas toujours dans la première semaine : le jour d'abord, puis son rang.
+	 */
+	readonly monthlyWeekdayLabel: string;
 	readonly ordinalLabel: string;
 	readonly ordinals: {
 		readonly first: string;
@@ -139,7 +144,7 @@ interface CourseFormTexts {
 		readonly fourth: string;
 		readonly last: string;
 	};
-	readonly monthlyWeekdayLabel: string;
+	readonly monthlyHint: string;
 	readonly datesLabel: string;
 	readonly datesHint: string;
 	readonly timeLegend: string;
@@ -285,15 +290,17 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		weekdaysLegend: 'Jours',
 		intervalLabel: 'Fréquence',
 		intervalHint: 'Une semaine sur deux : la semaine du premier jour compte comme la première.',
-		ordinalLabel: 'Quelle semaine du mois ?',
+		monthlyWeekdayLabel: 'Quel jour de la semaine ?',
+		ordinalLabel: 'Lequel dans le mois ?',
 		ordinals: {
-			first: 'la première',
-			second: 'la deuxième',
-			third: 'la troisième',
-			fourth: 'la quatrième',
-			last: 'la dernière'
+			first: 'le premier',
+			second: 'le deuxième',
+			third: 'le troisième',
+			fourth: 'le quatrième',
+			last: 'le dernier'
 		},
-		monthlyWeekdayLabel: 'Quel jour de cette semaine ?',
+		monthlyHint:
+			'Exemple : lundi, puis « le premier » : le cours a lieu le premier lundi de chaque mois.',
 		datesLabel: 'Dates, une par ligne',
 		datesHint: 'Exemple : 12.10.2026',
 		timeLegend: 'Horaire',
@@ -439,15 +446,17 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		weekdaysLegend: 'Tage',
 		intervalLabel: 'Häufigkeit',
 		intervalHint: 'Jede zweite Woche: Die Woche des ersten Tages zählt als erste Woche.',
-		ordinalLabel: 'Welche Woche im Monat?',
+		monthlyWeekdayLabel: 'Welcher Wochentag?',
+		ordinalLabel: 'Welcher davon im Monat?',
 		ordinals: {
-			first: 'die erste',
-			second: 'die zweite',
-			third: 'die dritte',
-			fourth: 'die vierte',
-			last: 'die letzte'
+			first: 'der erste',
+			second: 'der zweite',
+			third: 'der dritte',
+			fourth: 'der vierte',
+			last: 'der letzte'
 		},
-		monthlyWeekdayLabel: 'Welcher Tag in dieser Woche?',
+		monthlyHint:
+			'Beispiel: Montag, dann «der erste»: Der Kurs findet am ersten Montag jedes Monats statt.',
 		datesLabel: 'Daten, eines pro Zeile',
 		datesHint: 'Beispiel: 12.10.2026',
 		timeLegend: 'Zeit',
@@ -592,7 +601,9 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		weekdaysLegend: 'Giorni',
 		intervalLabel: 'Frequenza',
 		intervalHint: 'Una settimana su due: la settimana del primo giorno conta come la prima.',
-		ordinalLabel: 'Quale settimana del mese?',
+		monthlyWeekdayLabel: 'Quale giorno della settimana?',
+		// « La prima volta » s'accorde avec « volta », et non avec le jour : « domenica » est féminin.
+		ordinalLabel: 'Quale volta nel mese?',
 		ordinals: {
 			first: 'la prima',
 			second: 'la seconda',
@@ -600,7 +611,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			fourth: 'la quarta',
 			last: 'l’ultima'
 		},
-		monthlyWeekdayLabel: 'Quale giorno di quella settimana?',
+		monthlyHint: 'Esempio: lunedì, poi «la prima»: il corso si tiene il primo lunedì di ogni mese.',
 		datesLabel: 'Date, una per riga',
 		datesHint: 'Esempio: 12.10.2026',
 		timeLegend: 'Orario',
@@ -744,7 +755,8 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		weekdaysLegend: 'Days',
 		intervalLabel: 'Frequency',
 		intervalHint: 'Every other week: the week of the first day counts as the first week.',
-		ordinalLabel: 'Which week of the month?',
+		monthlyWeekdayLabel: 'Which day of the week?',
+		ordinalLabel: 'Which one in the month?',
 		ordinals: {
 			first: 'the first',
 			second: 'the second',
@@ -752,7 +764,8 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			fourth: 'the fourth',
 			last: 'the last'
 		},
-		monthlyWeekdayLabel: 'Which day of that week?',
+		monthlyHint:
+			'Example: Monday, then ‘the first’: the course takes place on the first Monday of every month.',
 		datesLabel: 'Dates, one per line',
 		datesHint: 'Example: 12.10.2026',
 		timeLegend: 'Time',
@@ -903,7 +916,8 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		weekdaysLegend: 'الأيام',
 		intervalLabel: 'التكرار',
 		intervalHint: 'كل أسبوعين: أسبوع اليوم الأول هو الأسبوع الأول.',
-		ordinalLabel: 'أي أسبوع من الشهر؟',
+		monthlyWeekdayLabel: 'أي يوم من أيام الأسبوع؟',
+		ordinalLabel: 'ترتيبه في الشهر؟',
 		ordinals: {
 			first: 'الأول',
 			second: 'الثاني',
@@ -911,7 +925,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			fourth: 'الرابع',
 			last: 'الأخير'
 		},
-		monthlyWeekdayLabel: 'أي يوم من ذلك الأسبوع؟',
+		monthlyHint: 'مثال: الاثنين ثم «الأول»: يُقام الدرس في أول اثنين من كل شهر.',
 		datesLabel: 'التواريخ، تاريخ في كل سطر',
 		datesHint: 'مثال: 12.10.2026',
 		timeLegend: 'الوقت',
