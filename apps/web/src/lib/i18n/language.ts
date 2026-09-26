@@ -75,6 +75,16 @@ export function spaceLanguage(sources: LanguageSources): Langue {
 	return browserLanguage(browser) ?? 'fr';
 }
 
+/** Un chemin du service qu'un navigateur ne peut pas lire comme une autre origine. */
+function staysOnTheService(path: string, origin: string): boolean {
+	if (!path.startsWith('/') || path.startsWith('//') || path.startsWith('/\\')) return false;
+	try {
+		return new URL(path, origin).origin === new URL(origin).origin;
+	} catch {
+		return false;
+	}
+}
+
 /**
  * L'écran où revenir après le choix de la langue : un chemin du service, jamais une autre origine.
  *
@@ -82,20 +92,21 @@ export function spaceLanguage(sources: LanguageSources): Langue {
  * même site renvoie à l'accueil : `//ailleurs`, `/\ailleurs` (qu'un navigateur lit comme `//`), une
  * adresse complète. La langue demandée par l'adresse est retirée, sans quoi elle défait le choix qui
  * vient d'être fait ; et le nom d'une action de formulaire (`?/choisir`) aussi, qui ne se rejoue pas.
+ *
+ * Le chemin est vérifié deux fois : tel qu'il arrive, et tel qu'il repart. Entre les deux, l'adresse
+ * le normalise, et la normalisation peut faire apparaître ce que la valeur ne montrait pas : les
+ * segments en point disparaissent, encodés ou non, une tabulation est effacée, une barre inverse
+ * devient une barre, si bien que `/.//ailleurs` devient `//ailleurs`, qu'un navigateur lit comme une
+ * autre origine. Ce qui ne reste pas sur le service renvoie à l'accueil.
  */
 export function returnPath(value: string, origin: string): string {
-	if (!value.startsWith('/') || value.startsWith('//') || value.startsWith('/\\')) return '/';
-	let url: URL;
-	try {
-		url = new URL(value, origin);
-	} catch {
-		return '/';
-	}
-	if (url.origin !== new URL(origin).origin) return '/';
+	if (!staysOnTheService(value, origin)) return '/';
+	const url = new URL(value, origin);
 	url.searchParams.delete(LANGUAGE_PARAMETER);
 	for (const name of [...url.searchParams.keys()]) {
 		if (name.startsWith('/')) url.searchParams.delete(name);
 	}
 	const search = url.searchParams.toString();
-	return `${url.pathname}${search ? `?${search}` : ''}`;
+	const path = `${url.pathname}${search ? `?${search}` : ''}`;
+	return staysOnTheService(path, origin) ? path : '/';
 }

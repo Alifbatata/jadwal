@@ -91,8 +91,51 @@ describe('le retour après le choix de la langue', () => {
 		['/\\ailleurs.example/piege'],
 		['javascript:alert(1)'],
 		[''],
-		['cours']
-	])('never leaves the service for %s', (valeur) => {
+		['cours'],
+		// Les segments en point : l'adresse les retire, et ce qui reste commence par deux barres, qu'un
+		// navigateur lit comme une autre origine.
+		['/.//ailleurs.example/piege'],
+		['/./\\ailleurs.example/piege'],
+		['/..//ailleurs.example/piege'],
+		['/a/..//ailleurs.example/piege'],
+		['/a/b/../..//ailleurs.example/piege'],
+		// Les mêmes points, encodés : l'adresse les lit comme des points.
+		['/%2e//ailleurs.example/piege'],
+		['/%2E%2E//ailleurs.example/piege'],
+		['/.%2e//ailleurs.example/piege'],
+		['/a/%2e%2e//ailleurs.example/piege'],
+		// Une tabulation ou un retour à la ligne, que l'adresse efface avant de la lire.
+		['/\t/ailleurs.example/piege'],
+		['/\n/ailleurs.example/piege'],
+		['/.\t//ailleurs.example/piege']
+	])('never leaves the service for %j', (valeur) => {
 		expect(returnPath(valeur, ORIGINE)).toBe('/');
+	});
+
+	it.each([
+		// Des points qui restent sur le service : l'écran visé, sans les points.
+		['/./conditions', '/conditions'],
+		['/cours/../conditions', '/conditions'],
+		// Une barre encodée reste une barre encodée : c'est un chemin du service, pas une origine.
+		['/%2F/ailleurs.example', '/%2F/ailleurs.example'],
+		['/%5C/ailleurs.example', '/%5C/ailleurs.example']
+	])('stays on the service for %j, as %s', (valeur, attendu) => {
+		expect(returnPath(valeur, ORIGINE)).toBe(attendu);
+	});
+
+	it('gives back a path that a browser reads on the service, whatever it is sent', () => {
+		// Chaque morceau que la normalisation traite, combiné trois par trois derrière la barre du début.
+		const morceaux = ['/', '\\', '.', '..', '%2e', '%2E%2e', '\t', 'a', '?', '#', '%2f', '@', ':'];
+		for (const premier of morceaux) {
+			for (const second of morceaux) {
+				for (const troisieme of morceaux) {
+					const valeur = `/${premier}${second}${troisieme}ailleurs.example/x`;
+					const rendu = returnPath(valeur, ORIGINE);
+					expect(rendu.startsWith('/'), valeur).toBe(true);
+					expect(rendu.startsWith('//') || rendu.startsWith('/\\'), valeur).toBe(false);
+					expect(new URL(rendu, ORIGINE).origin, valeur).toBe(ORIGINE);
+				}
+			}
+		}
 	});
 });
