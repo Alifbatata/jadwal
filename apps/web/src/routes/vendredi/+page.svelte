@@ -1,19 +1,27 @@
 <script lang="ts">
 	// Voir docs/maquettes/responsables-vendredi.md : c'est la référence, et un désaccord entre ce
 	// fichier et elle est un défaut de l'un ou de l'autre.
+	//
+	// Les textes sont dans `$lib/i18n/friday.ts`, dans les cinq langues de l'espace (étape 18). Tout
+	// l'écran fonctionne sans script : modifier et supprimer une session s'ouvrent dans un `details`,
+	// que le navigateur déplie seul, et la suppression demande sa confirmation sur place.
 	import { resolve } from '$app/paths';
-	import { LANGUAGE_LABELS, shortDate } from '$lib/format.js';
+	import { shortDate } from '$lib/format.js';
+	import { fridayTexts } from '$lib/i18n/friday.js';
+	import { languesEnClair } from '$lib/public/affichage.js';
 	import type { IsoDate } from '@jadwal/core';
 
 	let { data, form } = $props();
 
-	const RANGS = ['Première session', 'Deuxième session', 'Troisième session'];
-	const rang = (ordre: number) => RANGS[ordre - 1] ?? `Session ${ordre}`;
-
-	/** La session dont le formulaire est ouvert : `'nouvelle'`, un identifiant, ou rien. */
-	let ouvert = $state<string | null>(null);
-	/** La session dont la suppression attend une confirmation. */
-	let aSupprimer = $state<string | null>(null);
+	const text = $derived(fridayTexts[data.language]);
+	const rang = (ordre: number) => text.orders[ordre - 1] ?? String(ordre);
+	/** Une date telle que l'écran l'écrit : le nom du jour, puis JJ.MM.AAAA. */
+	const date = (valeur: string) => shortDate(valeur as IsoDate, data.language);
+	/** Le nom d'une langue, avec une majuscule quand il commence une étiquette. */
+	function nomDeLangue(code: string): string {
+		const nom = languesEnClair(data.language, [code]);
+		return nom.charAt(0).toLocaleUpperCase(data.language) + nom.slice(1);
+	}
 
 	/** Le prochain rang libre, proposé à l'ajout. */
 	const rangPropose = $derived(Math.min(3, data.sessions.length + 1));
@@ -23,23 +31,21 @@
 	}
 </script>
 
-<svelte:head><title>Prière du vendredi | {data.organisation.name}</title></svelte:head>
+<svelte:head><title>{text.title} | {data.organisation.name}</title></svelte:head>
 
-<h1>Prière du vendredi</h1>
-<p class="aide">Ces sessions remplacent l’heure du Dhuhr du vendredi partout où elle s’affiche.</p>
+<h1>{text.title}</h1>
+<p class="aide">{text.intro}</p>
+<p class="aide">{text.severalSessions}</p>
 
-{#if form?.erreurs}
+{#if form?.errors}
 	<ul class="erreur" role="alert">
-		{#each form.erreurs as erreur (erreur)}<li>{erreur}</li>{/each}
+		{#each form.errors as erreur (erreur)}<li>{text.errors[erreur]}</li>{/each}
 	</ul>
 {/if}
-{#if form?.fait}<p class="succes" role="status">Enregistré.</p>{/if}
+{#if form?.done}<p class="succes" role="status">{text.done[form.done]}</p>{/if}
 
 {#if data.sessions.length === 0}
-	<p class="vide">
-		Aucune session du vendredi n’est saisie. Tant qu’il n’y en a pas, la page publique n’affiche
-		rien pour le vendredi, et les cours ancrés sur le Dhuhr gardent l’heure du Dhuhr.
-	</p>
+	<p class="vide">{text.empty}</p>
 {/if}
 
 {#each data.sessions as session (session.id)}
@@ -47,110 +53,92 @@
 		<h2 id={`session-${session.id}`}>{rang(session.jumuaOrder)}</h2>
 		<p class="ligne">
 			<strong>{session.start} – {session.end}</strong>
-			{#if session.room}· {session.room}{/if}
+			<!-- Le nom de la salle garde son sens au milieu d'une ligne arabe. -->
+			{#if session.room}· <bdi>{session.room}</bdi>{/if}
 		</p>
-		<p class="details">
-			Sermon en {session.sermonLanguages
-				.map((langue) => LANGUAGE_LABELS[langue] ?? langue)
-				.join(', ')}
-		</p>
-		<p class="details">
-			{session.status === 'published' ? 'Publiée' : 'Brouillon'}
-			{#if session.endsOn}· jusqu’au {shortDate(session.endsOn as IsoDate)}{/if}
-		</p>
+		<p class="details">{text.sermonIn(languesEnClair(data.language, session.sermonLanguages))}</p>
+		<p class="details">{session.status === 'published' ? text.published : text.draft}</p>
+		{#if session.endsOn}<p class="details">{text.until(date(session.endsOn))}</p>{/if}
 
-		<div class="actions">
-			<button
-				type="button"
-				aria-expanded={ouvert === session.id}
-				onclick={() => (ouvert = ouvert === session.id ? null : session.id)}
-			>
-				Modifier
+		<form method="post" action="?/basculer" class="actions">
+			<input type="hidden" name="courseId" value={session.id} />
+			<input
+				type="hidden"
+				name="vers"
+				value={session.status === 'published' ? 'draft' : 'published'}
+			/>
+			<button type="submit">
+				{session.status === 'published' ? text.unpublish : text.publish}
 			</button>
-			<form method="post" action="?/basculer">
-				<input type="hidden" name="courseId" value={session.id} />
-				<input
-					type="hidden"
-					name="vers"
-					value={session.status === 'published' ? 'draft' : 'published'}
-				/>
-				<button type="submit">
-					{session.status === 'published' ? 'Dépublier' : 'Publier'}
-				</button>
-			</form>
-			<button type="button" onclick={() => (aSupprimer = session.id)} class="danger-plat">
-				Supprimer
-			</button>
-		</div>
+		</form>
 
-		{#if aSupprimer === session.id}
+		<details class="repli">
+			<summary>{text.edit}</summary>
+			{@render formulaire(session)}
+		</details>
+
+		<details class="repli">
+			<summary class="danger-plat">{text.remove}</summary>
 			<form method="post" action="?/supprimer" class="confirmation">
 				<input type="hidden" name="courseId" value={session.id} />
-				<p>Supprimer cette session ?</p>
-				<button type="submit" class="danger">Oui, supprimer</button>
-				<button type="button" onclick={() => (aSupprimer = null)}>Annuler</button>
+				<p>{text.removeWarning}</p>
+				<button type="submit" class="danger">{text.removeConfirm}</button>
 			</form>
-		{/if}
-
-		<!-- Sans JavaScript, le formulaire reste ouvert : le bouton ne fait que le replier. -->
-		<div class="repli" class:ferme={ouvert !== null && ouvert !== session.id}>
-			{@render formulaire(session)}
-		</div>
+		</details>
 	</section>
 {/each}
 
 <section class="session" aria-labelledby="ajout">
-	<h2 id="ajout">Ajouter une session</h2>
-	<div class="repli" class:ferme={ouvert !== null && ouvert !== 'nouvelle'}>
-		{@render formulaire(null)}
-	</div>
-	<div class="actions">
-		<button
-			type="button"
-			aria-expanded={ouvert === 'nouvelle'}
-			onclick={() => (ouvert = ouvert === 'nouvelle' ? null : 'nouvelle')}
-		>
-			Ajouter une session
-		</button>
-	</div>
+	<h2 id="ajout">{text.add}</h2>
+	{@render formulaire(null)}
 </section>
 
 {#if data.prochaines.length > 0}
 	<section aria-labelledby="ce-vendredi">
-		<h2 id="ce-vendredi">Ce vendredi</h2>
+		<h2 id="ce-vendredi">{text.thisFriday.title}</h2>
+		<p class="aide">{text.thisFriday.intro}</p>
 		{#each data.sessions as session (session.id)}
 			{#each seancesDe(session.id) as seance (seance.date + seance.status)}
 				<div class="seance" class:barree={seance.status !== 'scheduled'}>
 					<p class="ligne">
 						<strong>{seance.start ?? '–'} – {seance.end ?? '–'}</strong>
 						· {rang(session.jumuaOrder)}
-						· {shortDate(seance.date as IsoDate)}
-						{#if seance.status === 'cancelled'}<span class="marque">annulée</span>{/if}
-						{#if seance.status === 'moved_away'}<span class="marque">déplacée</span>{/if}
-						{#if seance.status === 'moved_here'}<span class="marque">date exceptionnelle</span>{/if}
+						· {date(seance.date)}
+						{#if seance.status === 'cancelled'}
+							<span class="marque">{text.thisFriday.cancelled}</span>
+						{/if}
+						{#if seance.status === 'moved_away' && seance.movedTo}
+							<span class="marque">
+								{text.thisFriday.movedTo(
+									date(seance.movedTo.date),
+									String(seance.movedTo.start).slice(0, 5)
+								)}
+							</span>
+						{/if}
+						{#if seance.status === 'moved_here' && seance.originalDate}
+							<span class="marque">{text.thisFriday.movedFrom(date(seance.originalDate))}</span>
+						{/if}
 					</p>
 					{#if seance.status === 'scheduled'}
-						<p class="avertissement">
-							Cette session seulement. Les autres vendredis ne changent pas.
-						</p>
+						<p class="avertissement">{text.thisFriday.onlyThis}</p>
 						<div class="gestes">
 							<form method="post" action="?/annuler">
 								<input type="hidden" name="courseId" value={session.id} />
 								<input type="hidden" name="date" value={seance.date} />
-								<button type="submit" class="danger">Annuler cette session</button>
+								<button type="submit" class="danger">{text.thisFriday.cancel}</button>
 							</form>
 							<form method="post" action="?/deplacer">
 								<input type="hidden" name="courseId" value={session.id} />
 								<input type="hidden" name="date" value={seance.date} />
-								<label for={`vers-${session.id}-${seance.date}`}>Déplacer au</label>
+								<label for={`vers-${session.id}-${seance.date}`}>{text.thisFriday.newDay}</label>
 								<select id={`vers-${session.id}-${seance.date}`} name="toDate">
 									{#each data.joursSuivants as jour (jour)}
-										<option value={jour} selected={jour === seance.date}>
-											{shortDate(jour as IsoDate)}
-										</option>
+										<option value={jour} selected={jour === seance.date}>{date(jour)}</option>
 									{/each}
 								</select>
-								<label for={`heure-${session.id}-${seance.date}`}>à</label>
+								<label for={`heure-${session.id}-${seance.date}`}>
+									{text.thisFriday.newTime}
+								</label>
 								<input
 									id={`heure-${session.id}-${seance.date}`}
 									type="time"
@@ -158,14 +146,14 @@
 									value={seance.start ?? session.start}
 									required
 								/>
-								<button type="submit">Déplacer</button>
+								<button type="submit">{text.thisFriday.move}</button>
 							</form>
 						</div>
 					{:else if seance.status !== 'moved_here'}
 						<form method="post" action="?/retablir">
 							<input type="hidden" name="courseId" value={session.id} />
 							<input type="hidden" name="date" value={seance.date} />
-							<button type="submit">Rétablir</button>
+							<button type="submit">{text.thisFriday.restore}</button>
 						</form>
 					{/if}
 				</div>
@@ -175,8 +163,8 @@
 {/if}
 
 <p class="aide">
-	<a href={resolve('/cours')}>Les cours</a> ont leur propre écran : une session du vendredi n’y figure
-	pas, et un cours ne figure pas ici.
+	{text.coursesElsewhere}
+	<a href={resolve('/cours')}>{text.coursesLink}</a>
 </p>
 
 {#snippet formulaire(session: (typeof data.sessions)[number] | null)}
@@ -184,51 +172,64 @@
 	<form method="post" action="?/enregistrer" class="colonne">
 		{#if session}<input type="hidden" name="courseId" value={session.id} />{/if}
 
-		<label for={`titre-${cle}`}>Titre</label>
+		<label for={`titre-${cle}`}>{text.form.title}</label>
 		<input
 			id={`titre-${cle}`}
 			name="title"
 			type="text"
 			maxlength="120"
-			value={session?.title ?? 'Prière du vendredi'}
+			value={session?.title ?? data.titrePropose}
+			aria-describedby={`aide-titre-${cle}`}
 		/>
+		<p class="aide" id={`aide-titre-${cle}`}>{text.form.titleHelp}</p>
 
-		<label for={`rang-${cle}`}>Rang</label>
-		<select id={`rang-${cle}`} name="jumuaOrder">
+		<label for={`rang-${cle}`}>{text.form.order}</label>
+		<select id={`rang-${cle}`} name="jumuaOrder" aria-describedby={`aide-rang-${cle}`}>
 			{#each [1, 2, 3] as ordre (ordre)}
 				<option value={ordre} selected={ordre === (session?.jumuaOrder ?? rangPropose)}>
 					{rang(ordre)}
 				</option>
 			{/each}
 		</select>
+		<p class="aide" id={`aide-rang-${cle}`}>{text.form.orderHelp}</p>
 
 		<div class="paire">
 			<div>
-				<label for={`debut-${cle}`}>Début</label>
+				<label for={`debut-${cle}`}>{text.form.start}</label>
 				<input
 					id={`debut-${cle}`}
 					name="start"
 					type="time"
 					value={session?.start ?? '12:10'}
 					required
+					aria-describedby={`aide-heures-${cle}`}
 				/>
 			</div>
 			<div>
-				<label for={`fin-${cle}`}>Fin</label>
-				<input id={`fin-${cle}`} name="end" type="time" value={session?.end ?? '12:50'} required />
+				<label for={`fin-${cle}`}>{text.form.end}</label>
+				<input
+					id={`fin-${cle}`}
+					name="end"
+					type="time"
+					value={session?.end ?? '12:50'}
+					required
+					aria-describedby={`aide-heures-${cle}`}
+				/>
 			</div>
 		</div>
+		<p class="aide" id={`aide-heures-${cle}`}>{text.form.timesHelp}</p>
 
-		<label for={`salle-${cle}`}>Salle</label>
-		<select id={`salle-${cle}`} name="roomId">
-			<option value="">Aucune</option>
+		<label for={`salle-${cle}`}>{text.form.room}</label>
+		<select id={`salle-${cle}`} name="roomId" aria-describedby={`aide-salle-${cle}`}>
+			<option value="">{text.form.noRoom}</option>
 			{#each data.salles as salle (salle.id)}
 				<option value={salle.id} selected={salle.id === session?.roomId}>{salle.name}</option>
 			{/each}
 		</select>
+		<p class="aide" id={`aide-salle-${cle}`}>{text.form.roomHelp}</p>
 
-		<fieldset class="cases">
-			<legend>Sermon en</legend>
+		<fieldset class="cases" aria-describedby={`aide-sermon-${cle}`}>
+			<legend>{text.form.sermon}</legend>
 			{#each data.langues as langue (langue)}
 				<label class="case">
 					<input
@@ -237,17 +238,25 @@
 						value={langue}
 						checked={session ? session.sermonLanguages.includes(langue) : langue === 'ar'}
 					/>
-					{LANGUAGE_LABELS[langue] ?? langue}
+					{nomDeLangue(langue)}
 				</label>
 			{/each}
 		</fieldset>
+		<p class="aide" id={`aide-sermon-${cle}`}>{text.form.sermonHelp}</p>
 
-		<label for={`intervenant-${cle}`}>Intervenant</label>
-		<input id={`intervenant-${cle}`} name="teacher" type="text" value={session?.teacher ?? ''} />
+		<label for={`intervenant-${cle}`}>{text.form.teacher}</label>
+		<input
+			id={`intervenant-${cle}`}
+			name="teacher"
+			type="text"
+			value={session?.teacher ?? ''}
+			aria-describedby={`aide-intervenant-${cle}`}
+		/>
+		<p class="aide" id={`aide-intervenant-${cle}`}>{text.form.teacherHelp}</p>
 
 		<div class="paire">
 			<div>
-				<label for={`du-${cle}`}>À partir du</label>
+				<label for={`du-${cle}`}>{text.form.startsOn}</label>
 				<input
 					id={`du-${cle}`}
 					name="startsOn"
@@ -257,22 +266,30 @@
 				/>
 			</div>
 			<div>
-				<label for={`au-${cle}`}>Jusqu’au</label>
-				<input id={`au-${cle}`} name="endsOn" type="date" value={session?.endsOn ?? ''} />
+				<label for={`au-${cle}`}>{text.form.endsOn}</label>
+				<input
+					id={`au-${cle}`}
+					name="endsOn"
+					type="date"
+					value={session?.endsOn ?? ''}
+					aria-describedby={`aide-au-${cle} aide-saison-${cle}`}
+				/>
 			</div>
 		</div>
-		<p class="aide">
-			Pour un changement de saison, mieux vaut clore cette session et en ajouter une nouvelle : les
-			vendredis passés gardent leur heure.
-		</p>
+		<p class="aide" id={`aide-au-${cle}`}>{text.form.endsOnHelp}</p>
+		<p class="aide" id={`aide-saison-${cle}`}>{text.form.season}</p>
 
-		<label for={`description-${cle}`}>Description</label>
-		<textarea id={`description-${cle}`} name="description" rows="2"
-			>{session?.description ?? ''}</textarea
+		<label for={`description-${cle}`}>{text.form.description}</label>
+		<textarea
+			id={`description-${cle}`}
+			name="description"
+			rows="2"
+			aria-describedby={`aide-description-${cle}`}>{session?.description ?? ''}</textarea
 		>
+		<p class="aide" id={`aide-description-${cle}`}>{text.form.descriptionHelp}</p>
 
 		<input type="hidden" name="status" value={session?.status ?? 'published'} />
-		<button type="submit" class="principal">Enregistrer</button>
+		<button type="submit" class="principal">{session ? text.form.save : text.form.create}</button>
 	</form>
 {/snippet}
 
@@ -281,6 +298,9 @@
 	.details {
 		color: #555;
 		font-size: 0.9rem;
+	}
+	.colonne .aide {
+		margin: 0 0 0.5rem;
 	}
 	.session,
 	.seance {
@@ -318,6 +338,15 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.5rem;
+	}
+	.repli {
+		margin-top: 0.5rem;
+	}
+	/* Le triangle du navigateur reste : c'est lui qui dit qu'on peut ouvrir. */
+	summary {
+		cursor: pointer;
+		font-weight: 600;
+		padding: 0.65rem 0;
 	}
 	.colonne {
 		display: flex;
@@ -389,7 +418,7 @@
 		color: #fff;
 		border-color: #b91c1c;
 	}
-	button.danger-plat {
+	.danger-plat {
 		color: #b91c1c;
 	}
 	.confirmation {
@@ -410,17 +439,14 @@
 		color: #92400e;
 		margin: 0.5rem 0 0;
 	}
-	.repli.ferme {
-		display: none;
-	}
 	.erreur {
 		background: #fee2e2;
-		border-left: 4px solid #b91c1c;
+		border-inline-start: 4px solid #b91c1c;
 		padding: 0.5rem 0.75rem;
 	}
 	.succes {
 		background: #dcfce7;
-		border-left: 4px solid #15803d;
+		border-inline-start: 4px solid #15803d;
 		padding: 0.5rem 0.75rem;
 	}
 	.vide {

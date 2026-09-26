@@ -7,21 +7,37 @@
 //
 // Les deux gestes du bas — annuler, déplacer — sont **exactement** ceux de l'écran d'accueil, et
 // passent par la même table d'exceptions.
+//
+// Depuis l'étape 18, une action rend le nom de ce qu'elle a fait ou de ce qu'elle refuse, jamais
+// une phrase : la page l'écrit dans la langue de la personne (`$lib/i18n/friday.ts`).
 
 import { fail } from '@sveltejs/kit';
 import { addDays, todayInZone, type IsoDate } from '@jadwal/core';
 import { newId, sql } from '@jadwal/db';
+import { isLangue, t } from '$lib/i18n.js';
+import type { FridayDone, FridayError } from '$lib/i18n/friday.js';
 import { record } from '$lib/server/audit.js';
 import { withSessionOrg } from '$lib/server/context.js';
-import { insertCourse, parseJumuaForm, updateCourse } from '$lib/server/courses.js';
+import { insertCourse, updateCourse } from '$lib/server/courses.js';
 import { mustHavePrayerModule } from '$lib/server/guard.js';
 import { readCourses, readProgramme, readRooms, readSettings } from '$lib/server/programme.js';
+import { parseFridayForm } from './form.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const HEURE = /^\d{2}:\d{2}$/;
 /** Sept jours : de quoi couvrir le prochain vendredi, où que l'on soit dans la semaine. */
 const JOURS_AFFICHES = 7;
+
+/** Ce qu'une action refuse, par le nom de chaque erreur. */
+function refus(status: number, ...errors: FridayError[]) {
+	return fail(status, { errors });
+}
+
+/** Ce qu'une action a fait, par son nom. */
+function fait(done: FridayDone) {
+	return { done };
+}
 
 /** Les sessions du vendredi, dans leur ordre, telles que l'écran les montre. */
 function versSession(course: Awaited<ReturnType<typeof readCourses>>[number]) {
@@ -53,8 +69,12 @@ export const load: PageServerLoad = async (event) => {
 		const sessions = await readCourses(tx, ['draft', 'published', 'archived'], ['jumua']);
 		const programme = await readProgramme(tx, maintenant, JOURS_AFFICHES);
 		const today = todayInZone(settings.time_zone, maintenant);
+		// Une session s'écrit dans la première langue que l'organisation publie (`parseFridayForm`) :
+		// le titre proposé est le nom de la prière dans cette langue, pas dans celle de l'écran.
+		const source = settings.enabled_language[0] ?? 'fr';
 		return {
 			organisation: { name: settings.name },
+			titrePropose: t(isLangue(source) ? source : 'fr').jumua,
 			langues: settings.enabled_language,
 			salles: (await readRooms(tx)).map((salle) => ({ id: salle.id, name: salle.name })),
 			sessions: sessions.map(versSession),
@@ -73,7 +93,7 @@ export const load: PageServerLoad = async (event) => {
 					movedTo: seance.movedTo ?? null,
 					originalDate: seance.originalDate ?? null
 				})),
-			/** Les six jours qui suivent, pour le choix de déplacement. */
+			/** Aujourd'hui et les sept jours qui suivent, pour le choix de déplacement. */
 			joursSuivants: Array.from({ length: 8 }, (_, index) => addDays(today, index))
 		};
 	});
@@ -87,23 +107,23 @@ export const actions: Actions = {
 		const courseId = String(form.get('courseId') ?? '');
 		return withSessionOrg(context, async (tx) => {
 			const settings = await readSettings(tx);
-			const lu = parseJumuaForm(form, settings.enabled_language);
-			if (!lu.ok) return fail(400, { erreurs: lu.erreurs });
+			const lu = parseFridayForm(form, settings.enabled_language);
+			if (!lu.ok) return refus(400, ...lu.errors);
 			if (courseId === '') {
 				await insertCourse(tx, context, lu.values);
-				return { fait: 'ajout' };
+				return fait('added');
 			}
 			const avant = (await readCourses(tx, ['draft', 'published', 'archived'], ['jumua'])).find(
 				(session) => session.id === courseId
 			);
-			if (!avant) return fail(404, { erreurs: ['Cette session n’existe plus.'] });
+			if (!avant) return refus(404, 'sessionGone');
 			const ecrit = await updateCourse(tx, context, courseId, lu.values, {
 				title: avant.title,
 				status: avant.status,
 				start: avant.timing_start
 			});
-			if (!ecrit) return fail(404, { erreurs: ['Cette session n’existe plus.'] });
-			return { fait: 'modification' };
+			if (!ecrit) return refus(404, 'sessionGone');
+			return fait('updated');
 		});
 	},
 
@@ -126,7 +146,7 @@ export const actions: Actions = {
 				after: { status: vers }
 			});
 		});
-		return { fait: vers === 'published' ? 'publication' : 'depublication' };
+		return fait(vers === 'published' ? 'published' : 'unpublished');
 	},
 
 	supprimer: async (event) => {
@@ -143,7 +163,7 @@ export const actions: Actions = {
 				targetId: courseId
 			});
 		});
-		return { fait: 'suppression' };
+		return fait('deleted');
 	},
 
 	/** Annuler une session ce vendredi-là. Les autres vendredis ne changent pas. */
@@ -152,7 +172,7 @@ export const actions: Actions = {
 		const form = await event.request.formData();
 		const courseId = String(form.get('courseId') ?? '');
 		const date = String(form.get('date') ?? '');
-		if (!DATE.test(date)) return fail(400, { erreurs: ['Date illisible.'] });
+		if (!DATE.test(date)) return refus(400, 'dateUnreadable');
 		await withSessionOrg(context, async (tx) => {
 			await tx.execute(sql`
 				insert into "session_exception"
@@ -169,7 +189,7 @@ export const actions: Actions = {
 				after: { date, kind: 'cancelled' }
 			});
 		});
-		return { fait: 'annulation' };
+		return fait('cancelled');
 	},
 
 	deplacer: async (event) => {
@@ -179,8 +199,8 @@ export const actions: Actions = {
 		const date = String(form.get('date') ?? '');
 		const toDate = String(form.get('toDate') ?? '');
 		const toStart = String(form.get('toStart') ?? '');
-		if (!DATE.test(date) || !DATE.test(toDate)) return fail(400, { erreurs: ['Date illisible.'] });
-		if (!HEURE.test(toStart)) return fail(400, { erreurs: ['Heure illisible.'] });
+		if (!DATE.test(date) || !DATE.test(toDate)) return refus(400, 'dateUnreadable');
+		if (!HEURE.test(toStart)) return refus(400, 'timeUnreadable');
 		await withSessionOrg(context, async (tx) => {
 			await tx.execute(sql`
 				insert into "session_exception"
@@ -198,7 +218,7 @@ export const actions: Actions = {
 				after: { date, toDate, toStart }
 			});
 		});
-		return { fait: 'deplacement' };
+		return fait('moved');
 	},
 
 	retablir: async (event) => {
@@ -206,7 +226,7 @@ export const actions: Actions = {
 		const form = await event.request.formData();
 		const courseId = String(form.get('courseId') ?? '');
 		const date = String(form.get('date') ?? '');
-		if (!DATE.test(date)) return fail(400, { erreurs: ['Date illisible.'] });
+		if (!DATE.test(date)) return refus(400, 'dateUnreadable');
 		await withSessionOrg(context, async (tx) => {
 			await tx.execute(
 				sql`delete from "session_exception" where "course_id" = ${courseId} and "date" = ${date}`
@@ -218,7 +238,7 @@ export const actions: Actions = {
 				before: { date }
 			});
 		});
-		return { fait: 'retablissement' };
+		return fait('restored');
 	}
 };
 
