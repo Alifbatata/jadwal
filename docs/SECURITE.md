@@ -268,8 +268,8 @@ l'emporte et n'emporte rien d'autre, une adresse qui ne change la langue d'aucun
 le retour du choix de la langue par HTTP, et `src/lib/i18n/language.test.ts` essaie ce retour sous
 plus de deux mille formes de points et de barres ; `tests/espace-en-cinq-langues.test.ts` vérifie
 les deux cookies, et compare l'invitation vers un compte connu et vers une adresse inconnue ;
-`tests/public.test.ts` lit les pages publiques comme un Android, un iPhone et un ordinateur, et refuse tout lien vers un autre domaine que les deux services
-d'agenda.
+`tests/public.test.ts` lit les pages publiques comme un Android, un iPhone et un ordinateur, et
+refuse tout lien vers un autre domaine que les deux services d'agenda.
 
 `pnpm parcours:test` rejoue ce qu'une organisation vit, dans Chrome, sur l'image de production et
 une base neuve lancées par Docker : la passkey du super-admin, l'invitation, les conditions à
