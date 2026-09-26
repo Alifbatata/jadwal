@@ -1,6 +1,8 @@
 <script lang="ts">
-	import { direction, NOM_DE_LANGUE, t, type Langue } from '$lib/i18n.js';
-	import { lienAgenda, lienVue } from '$lib/public/liens.js';
+	import { annonceNouvelOnglet, direction, NOM_DE_LANGUE, t, type Langue } from '$lib/i18n.js';
+	import { lienAgenda, lienCours, lienVue } from '$lib/public/liens.js';
+	import { lienGoogleAgenda, PARAMETRE_APPAREIL, TOUS_LES_CHOIX } from '$lib/public/abonnement.js';
+	import Abonnement from '$lib/public/Abonnement.svelte';
 	import Pied from '$lib/public/Pied.svelte';
 	import { variablesAccent } from '$lib/couleur.js';
 
@@ -15,6 +17,26 @@
 	});
 
 	const versLangue = (langue: Langue) => lienAgenda({ ...adresse, langue });
+	/** Le choix complet, qui ne dépend plus de l'appareil. */
+	const choixComplet = `?${PARAMETRE_APPAREIL}=${TOUS_LES_CHOIX}`;
+
+	/**
+	 * Le lien d'un seul cours, selon l'appareil : son flux `webcal:` sur un iPhone, Google Agenda sur
+	 * Android, et sa page ailleurs, qui propose le choix complet pour ce cours seul.
+	 */
+	function lienDuCours(cours: { id: string; webcal: string }): string {
+		if (data.appareil === 'apple') return cours.webcal;
+		if (data.appareil === 'android') return lienGoogleAgenda(cours.webcal);
+		return `${lienCours(adresse, cours.id)}${data.tousLesChoix ? choixComplet : ''}#agenda`;
+	}
+
+	const texteDesCours = $derived(
+		data.appareil === 'apple'
+			? mots.subscribeOneCourseText
+			: data.appareil === 'android'
+				? mots.subscribeOneCourseGoogle
+				: mots.subscribeOneCourseChoice
+	);
 </script>
 
 <svelte:head>
@@ -63,33 +85,51 @@
 
 		<section>
 			<h2>{mots.subscribeWholeTitle}</h2>
-			<p><a class="bouton" href={data.webcal}>{mots.subscribeButton}</a></p>
-			<p class="adresse">{mots.subscribeAddress}</p>
-			<p class="lien"><code>{data.https}</code></p>
+			<!-- Ce que l'appareil sait ouvrir d'abord, puis, quand la page a choisi pour le visiteur, le
+			     lien vers le choix complet (étape 18, retour E1). -->
+			<Abonnement
+				langue={data.langue}
+				appareil={data.appareil}
+				webcal={data.webcal}
+				https={data.https}
+				nom={data.organisation.name}
+				tousLesChoix={data.appareil === 'autre' ? null : `${lienAgenda(adresse)}${choixComplet}`}
+			/>
 		</section>
 
 		{#if data.cours.length > 0}
 			<section>
 				<h2>{mots.subscribeOneCourseTitle}</h2>
-				<p>{mots.subscribeOneCourseText}</p>
+				<p>{texteDesCours}</p>
 				<ul class="cours">
 					{#each data.cours as cours (cours.id)}
-						<li><a href={cours.webcal}>{cours.title}</a></li>
+						<li>
+							{#if data.appareil === 'android'}
+								<a href={lienDuCours(cours)} target="_blank" rel="noopener"
+									>{cours.title}<span class="pour-lecteur">{annonceNouvelOnglet(data.langue)}</span
+									></a
+								>
+							{:else}
+								<a href={lienDuCours(cours)}>{cours.title}</a>
+							{/if}
+						</li>
 					{/each}
 				</ul>
 			</section>
 		{/if}
 
-		<section>
-			<h2>{mots.onIphone}</h2>
+		<!-- Les étapes à suivre à la main, pour quand le bouton ne fait rien : une application qui ne
+		     connaît pas `webcal:`, un appareil mal reconnu, un compte de travail. Le délai de Google y
+		     est dit aussi (retour E2). -->
+		<section id="a-la-main">
+			<h2>{mots.manualTitle}</h2>
+			<p>{mots.manualIntro}</p>
+			<h3>{mots.onIphone}</h3>
 			<p>{mots.iphoneText}</p>
-		</section>
-		<section>
-			<h2>{mots.onAndroid}</h2>
+			<h3>{mots.onAndroid}</h3>
 			<p>{mots.androidText}</p>
-		</section>
-		<section>
-			<h2>{mots.onOutlook}</h2>
+			<p>{mots.googleDelay}</p>
+			<h3>{mots.onOutlook}</h3>
 			<p>{mots.outlookText}</p>
 		</section>
 	</main>
@@ -114,6 +154,10 @@
 		font-size: 1.1rem;
 		margin-bottom: 0.25rem;
 	}
+	h3 {
+		font-size: 1rem;
+		margin: 1rem 0 0.25rem;
+	}
 	.fil {
 		margin: 0.25rem 0;
 		font-size: 0.9rem;
@@ -131,30 +175,6 @@
 		flex-wrap: wrap;
 		font-size: 0.95rem;
 	}
-	.bouton {
-		display: inline-flex;
-		align-items: center;
-		min-height: 44px;
-		padding: 0 1rem;
-		border-radius: 0.375rem;
-		background: var(--accent);
-		color: var(--accent-texte);
-		text-decoration: none;
-		font-weight: 600;
-	}
-	.adresse {
-		margin-bottom: 0.25rem;
-		color: #555;
-		font-size: 0.95rem;
-	}
-	.lien code {
-		display: block;
-		overflow-wrap: anywhere;
-		background: #f6f6f6;
-		padding: 0.5rem;
-		border-radius: 0.375rem;
-		font-size: 0.9rem;
-	}
 	ul.cours {
 		margin: 0;
 		padding: 0;
@@ -168,5 +188,16 @@
 		align-items: center;
 		min-height: 44px;
 		color: #0f5c55;
+	}
+	.pour-lecteur {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		padding: 0;
+		border: 0;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 </style>

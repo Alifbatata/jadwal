@@ -15,7 +15,13 @@ import {
 } from '$lib/server/public.js';
 import { toException, toSchedule } from '$lib/server/programme.js';
 import { nextDates } from '$lib/server/serialise.js';
-import { introuvable, languesProposees, publicContext, referencement } from '$lib/server/pages.js';
+import {
+	appareilDuVisiteur,
+	introuvable,
+	languesProposees,
+	publicContext,
+	referencement
+} from '$lib/server/pages.js';
 import { lienCours, lienFluxCours } from '$lib/public/liens.js';
 import { sql } from '@jadwal/db';
 
@@ -59,6 +65,10 @@ export const load: PageServerLoad = async (event) => {
 		)
 	);
 
+	// « Ajouter ce cours à mon agenda » propose d'abord ce que l'appareil sait ouvrir (étape 18,
+	// retour E1), comme la page d'abonnement.
+	const { appareil, tousLesChoix } = appareilDuVisiteur(event);
+
 	event.setHeaders({ 'cache-control': CACHE_PROGRAMME });
 	// La langue du document, que le hook écrit sur `<html>` (voir la page du programme). Le 404
 	// d'un cours inconnu la pose lui-même, par `introuvable`, avec le texte de la page d'erreur.
@@ -66,7 +76,15 @@ export const load: PageServerLoad = async (event) => {
 	return {
 		canonical: moteur.canonical,
 		alternates: moteur.alternates,
-		flux: { https: fluxHttps, webcal: fluxHttps.replace(/^https?:/, 'webcal:') },
+		appareil,
+		tousLesChoix,
+		flux: {
+			https: fluxHttps,
+			webcal: fluxHttps.replace(/^https?:/, 'webcal:'),
+			// Le nom que le flux d'un seul cours donne déjà à son calendrier (`buildAgenda`) : Outlook
+			// le reprend, et les deux listes d'agendas se ressemblent.
+			nom: cours.title ? `${organisation.name} – ${cours.title}` : organisation.name
+		},
 		organisation: {
 			slug: organisation.slug,
 			name: organisation.name,

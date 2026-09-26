@@ -94,6 +94,35 @@ async function poserCours(cours: {
 	return id;
 }
 
+/** Une adresse d'un autre domaine que celui du service. */
+const ailleurs = (url: string) => /^(https?:)?\/\//.test(url) && !url.startsWith(origin);
+
+/**
+ * Ce que la page ferait charger d'un autre domaine : toute adresse d'un `src`, et d'un `href` qui
+ * n'est pas celui d'un lien `<a>` (une feuille de style, une icône, un préchargement).
+ */
+function ressourcesExternes(html: string): string[] {
+	return [...html.matchAll(/<([a-z][a-z0-9]*)\b[^>]*>/gi)].flatMap((balise) => {
+		const adresses = [...balise[0].matchAll(/\s(href|src|srcset|poster|data)="([^"]*)"/g)]
+			.filter((attribut) => !(balise[1]?.toLowerCase() === 'a' && attribut[1] === 'href'))
+			.map((attribut) => attribut[2] as string);
+		return adresses.filter(ailleurs);
+	});
+}
+
+/** Les liens `<a>` vers un autre domaine, avec la cible et la relation qu'ils portent. */
+function liensExternes(
+	html: string
+): { href: string; target: string | undefined; rel: string | undefined }[] {
+	return [...html.matchAll(/<a\b[^>]*>/g)]
+		.map((balise) => {
+			const valeur = (nom: string) =>
+				balise[0].match(new RegExp(`\\s${nom}="([^"]*)"`))?.[1]?.replaceAll('&amp;', '&');
+			return { href: valeur('href') ?? '', target: valeur('target'), rel: valeur('rel') };
+		})
+		.filter((lien) => ailleurs(lien.href));
+}
+
 async function json(url: string): Promise<Record<string, unknown>> {
 	const response = await fetch(url);
 	expect(response.status, url).toBe(200);
@@ -500,12 +529,39 @@ describe('les pages se lisent sans JavaScript et sans rien d’ailleurs', () => 
 	});
 
 	it('asks the browser for nothing from another domain', async () => {
-		for (const chemin of [`/m/${SLUG}`, `/m/${SLUG}?vue=cours`, `/m/${SLUG}/agenda`]) {
-			const html = await (await fetch(`${origin}${chemin}`)).text();
-			const externes = [...html.matchAll(/(?:href|src)="([^"]+)"/g)]
-				.map((trouve) => trouve[1] as string)
-				.filter((url) => /^(https?:)?\/\//.test(url) && !url.startsWith(origin));
-			expect(externes, chemin).toEqual([]);
+		// La page d'abonnement et celle d'un cours changent selon l'appareil (étape 18) : chacune est
+		// lue comme un Android, un iPhone et un ordinateur la reçoivent.
+		const appareils = [
+			{},
+			{
+				'user-agent':
+					'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36'
+			},
+			{
+				'user-agent':
+					'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1'
+			}
+		];
+		const cas = [
+			`/m/${SLUG}`,
+			`/m/${SLUG}?vue=cours`,
+			`/m/${SLUG}?vue=prieres`,
+			`/m/${SLUG}/agenda`,
+			`/m/${SLUG}/cours/${publieId}`
+		].flatMap((chemin) => appareils.map((entetes) => ({ chemin, entetes })));
+		for (const { chemin, entetes } of cas) {
+			const html = await (await fetch(`${origin}${chemin}`, { headers: entetes })).text();
+			expect(ressourcesExternes(html), chemin).toEqual([]);
+			// Les seuls liens vers un autre domaine sont ceux qui ouvrent l'abonnement dans Google
+			// Agenda ou dans Outlook (étape 18, retour E1) : des liens qu'on choisit de suivre, dans un
+			// nouvel onglet, et non des ressources que la page charge.
+			for (const lien of liensExternes(html)) {
+				expect(new URL(lien.href).host, chemin).toMatch(
+					/^(calendar\.google\.com|outlook\.live\.com)$/
+				);
+				expect(lien.target, lien.href).toBe('_blank');
+				expect(lien.rel, lien.href).toBe('noopener');
+			}
 		}
 	});
 

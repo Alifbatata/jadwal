@@ -284,12 +284,32 @@ describe('le mode intégré', () => {
 	});
 
 	it('still asks the browser for nothing from another domain, framed or not', async () => {
-		for (const chemin of [`/m/${SLUG}`, `/m/${SLUG}?embed=1`, `/m/${SLUG}/agenda?embed=1`]) {
+		for (const chemin of [
+			`/m/${SLUG}`,
+			`/m/${SLUG}?embed=1`,
+			`/m/${SLUG}?vue=prieres&embed=1`,
+			`/m/${SLUG}/agenda?embed=1`,
+			`/m/${SLUG}/cours/${hebdoId}?embed=1`
+		]) {
 			const html = await texte(`${origin}${chemin}`);
-			const externes = [...html.matchAll(/(?:href|src)="([^"]+)"/g)]
-				.map((trouve) => trouve[1] as string)
-				.filter((url) => /^(https?:)?\/\//.test(url) && !url.startsWith(origin));
-			expect(externes, chemin).toEqual([]);
+			// Aucune ressource d'ailleurs : un `src`, ou le `href` d'autre chose qu'un lien `<a>`.
+			const ressources = [...html.matchAll(/<([a-z][a-z0-9]*)\b[^>]*>/gi)].flatMap((balise) =>
+				[...balise[0].matchAll(/\s(href|src)="([^"]+)"/g)]
+					.filter((attribut) => !(balise[1]?.toLowerCase() === 'a' && attribut[1] === 'href'))
+					.map((attribut) => attribut[2] as string)
+					.filter((url) => /^(https?:)?\/\//.test(url) && !url.startsWith(origin))
+			);
+			expect(ressources, chemin).toEqual([]);
+			// Les liens qui ouvrent l'abonnement dans Google Agenda ou dans Outlook (étape 18) sortent
+			// du cadre par un nouvel onglet : ces deux services refusent d'être encadrés, et `embed.js`
+			// ne touche pas à un lien qui porte une cible.
+			for (const balise of html.matchAll(/<a\b[^>]*\shref="(https?:\/\/[^"]+)"[^>]*>/g)) {
+				if ((balise[1] as string).startsWith(origin)) continue;
+				expect(new URL((balise[1] as string).replaceAll('&amp;', '&')).host, chemin).toMatch(
+					/^(calendar\.google\.com|outlook\.live\.com)$/
+				);
+				expect(balise[0], chemin).toContain('target="_blank"');
+			}
 		}
 	});
 });
@@ -369,11 +389,24 @@ describe('le flux agenda d’un seul cours', () => {
 		expect(html).toContain(`webcal://${new URL(origin).host}/m/${SLUG}/agenda/${hebdoId}.ics`);
 		expect(html).toContain(`${origin}/m/${SLUG}/agenda/${hebdoId}.ics`);
 		// Et la page d'abonnement propose les deux : tout le programme, ou un seul cours.
-		const agenda = await texte(`${origin}/m/${SLUG}/agenda`);
+		// Sur un iPhone, chaque cours y est lié par son flux `webcal:` ; ailleurs, par sa page, qui
+		// propose le choix complet pour ce cours seul (étape 18, retour E1).
+		const iphone = {
+			'user-agent':
+				'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1'
+		};
+		const agenda = await texte(`${origin}/m/${SLUG}/agenda`, iphone);
 		expect(agenda).toContain('Tout le programme');
 		expect(agenda).toContain('Un seul cours');
 		expect(agenda).toContain(`webcal://${new URL(origin).host}/m/${SLUG}/agenda/${hebdoId}.ics`);
 		expect(agenda).not.toContain(brouillonId);
+		const ailleurs = await texte(`${origin}/m/${SLUG}/agenda`);
+		// SvelteKit écrit ce lien en relatif : on le suit comme un navigateur le ferait.
+		const versLeCours = [...ailleurs.matchAll(/<a\b[^>]*\shref="([^"]*)"/g)]
+			.map((trouve) => new URL(trouve[1] as string, `${origin}/m/${SLUG}/agenda`))
+			.filter((url) => url.pathname === `/m/${SLUG}/cours/${hebdoId}`);
+		expect(versLeCours.map((url) => url.hash)).toEqual(['#agenda']);
+		expect(ailleurs).not.toContain(brouillonId);
 	});
 
 	it('changes its version when the course changes, and keeps the feeds apart', async () => {

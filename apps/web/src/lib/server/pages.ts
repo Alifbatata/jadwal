@@ -8,6 +8,13 @@ import { error, type RequestEvent } from '@sveltejs/kit';
 import { findOrganisation, isLangue, type Langue, type OrganisationPublique } from './public.js';
 import { vueDe } from './vues.js';
 import { LANGUES } from '$lib/i18n.js';
+import {
+	appareilDe,
+	ENTETES_DE_L_APPAREIL,
+	PARAMETRE_APPAREIL,
+	TOUS_LES_CHOIX,
+	type Appareil
+} from '$lib/public/abonnement.js';
 
 export interface PublicContext {
 	organisation: OrganisationPublique;
@@ -78,6 +85,31 @@ export function base(organisation: OrganisationPublique, langue: Langue): string
 	return langue === langueParDefaut(organisation)
 		? `/m/${organisation.slug}`
 		: `/m/${organisation.slug}/${langue}`;
+}
+
+/**
+ * L'appareil pour lequel une page d'abonnement se prépare (étape 18, retour E1), et si le visiteur a
+ * demandé le choix complet. Deux pages le lisent : l'abonnement au programme et la page d'un cours.
+ *
+ * Quand la page choisit selon l'appareil, sa réponse le dit par `Vary`. Le `Cache-Control` de ces
+ * pages reste `public` : un cache qui respecte `Vary` garde une version par valeur des deux en-têtes,
+ * ce qui revient, pour `User-Agent`, à une version par navigateur. Le navigateur, lui, n'en change
+ * pas d'une visite à l'autre, et c'est là que le cache sert. Le modèle de `infra/caddy/` ne place
+ * aucun cache partagé devant le service ; une instance qui en ajouterait un qui ignore `Vary`
+ * pourrait servir à un iPhone la page d'un Android, et le lien vers le choix complet resterait sa
+ * porte de sortie.
+ *
+ * Le choix complet, lui, ne dépend d'aucun en-tête : sa réponse ne porte pas ce `Vary`.
+ */
+export function appareilDuVisiteur(event: RequestEvent): {
+	appareil: Appareil;
+	tousLesChoix: boolean;
+} {
+	if (event.url.searchParams.get(PARAMETRE_APPAREIL) === TOUS_LES_CHOIX) {
+		return { appareil: 'autre', tousLesChoix: true };
+	}
+	event.setHeaders({ vary: ENTETES_DE_L_APPAREIL.join(', ') });
+	return { appareil: appareilDe(event.request.headers), tousLesChoix: false };
 }
 
 export interface LienOptions {

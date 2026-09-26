@@ -2,6 +2,8 @@
 	import type { IsoDate } from '@jadwal/core';
 	import { direction, longDate, NOM_DE_LANGUE, numericDate, t, type Langue } from '$lib/i18n.js';
 	import { lienAgenda, lienCours, lienVue } from '$lib/public/liens.js';
+	import { PARAMETRE_APPAREIL, TOUS_LES_CHOIX } from '$lib/public/abonnement.js';
+	import Abonnement from '$lib/public/Abonnement.svelte';
 	import Pied from '$lib/public/Pied.svelte';
 	import { variablesAccent } from '$lib/couleur.js';
 	import {
@@ -119,9 +121,22 @@
 			</ul>
 		{/if}
 
-		<p><a class="bouton" href={data.flux.webcal}>{mots.addCourseToCalendar}</a></p>
-		<p class="adresse">{mots.courseFeedAddress}</p>
-		<p class="lien"><code>{data.flux.https}</code></p>
+		<!-- « Ajouter ce cours à mon agenda », puis ce que l'appareil sait ouvrir (étape 18, retour E1).
+		     L'ancre `#agenda` est celle où mène chaque cours depuis la page d'abonnement. -->
+		<section id="agenda" aria-labelledby="agenda-titre">
+			<h2 id="agenda-titre">{mots.addCourseToCalendar}</h2>
+			<Abonnement
+				langue={data.langue}
+				appareil={data.appareil}
+				webcal={data.flux.webcal}
+				https={data.flux.https}
+				nom={data.flux.nom}
+				cours
+				tousLesChoix={data.appareil === 'autre'
+					? null
+					: `${lienCours(adresse, data.cours.id)}?${PARAMETRE_APPAREIL}=${TOUS_LES_CHOIX}#agenda`}
+			/>
+		</section>
 
 		<p class="liens">
 			<a href={lienAgenda(adresse)}>{mots.subscribeWhole}</a>
@@ -220,29 +235,5 @@
 		gap: 0.75rem;
 		flex-wrap: wrap;
 		font-size: 0.95rem;
-	}
-	.bouton {
-		display: inline-flex;
-		align-items: center;
-		min-height: 44px;
-		padding: 0 1rem;
-		border-radius: 0.375rem;
-		background: var(--accent);
-		color: var(--accent-texte);
-		text-decoration: none;
-		font-weight: 600;
-	}
-	.adresse {
-		margin-bottom: 0.25rem;
-		color: #555;
-		font-size: 0.95rem;
-	}
-	.lien code {
-		display: block;
-		overflow-wrap: anywhere;
-		background: #f6f6f6;
-		padding: 0.5rem;
-		border-radius: 0.375rem;
-		font-size: 0.9rem;
 	}
 </style>

@@ -631,11 +631,19 @@ describe('une page publique en anglais britannique', () => {
 	});
 
 	it('explains the subscription in English', async () => {
-		const lu = texteLu((await servir(`/m/${SLUG}/en/agenda`)).html);
+		// Le bouton dépend de l'appareil depuis l'étape 18 (retour E1) : celui d'un iPhone, ici.
+		const reponse = await fetch(`${origin}/m/${SLUG}/en/agenda`, {
+			headers: {
+				'user-agent':
+					'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1'
+			}
+		});
+		const lu = texteLu(await reponse.text());
 		for (const phrase of [
 			'Subscribe to the calendar',
 			'The whole programme',
 			'Add to my calendar',
+			'Adding the address by hand',
 			'On iPhone and iPad',
 			'On Android',
 			'In Outlook'
