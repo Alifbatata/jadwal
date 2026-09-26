@@ -40,14 +40,21 @@ signale ce qui manque.`
 ### Le résumé, en haut (retour B4)
 
 Une section `Résumé : ce qui sera publié`, une ligne par information : le titre dans chaque langue
-remplie, la langue de saisie d'abord (`Titre en français :`), puis `Public :`, `Jours :` ou
-`Dates :`, `Fréquence :`, `Horaire :`, `Salle :`, `Intervenant :`, `Langue d'enseignement :`,
-`Premier jour :`, `Dernier jour :` s'il y en a un, et `État :`.
+remplie, la langue de saisie d'abord (`Titre en français :`), chacun suivi de sa description
+(`Description en français :`), puis `Public :`, `Jours :` ou `Dates :`, `Fréquence :`,
+`Horaire :`, `Salle :`, `Intervenant :`, `Langue d'enseignement :`, `Premier jour :`,
+`Dernier jour :` s'il y en a un, et `État :`.
 
 Ce qui manque garde sa ligne, marqué par la couleur, le gras et un souligné pointillé, et une phrase
-le dit : `pas encore écrit`, `pas choisis`, `à indiquer`, `pas choisie`, `aucun pour l'instant`. Le
-résumé est juste sans JavaScript, au rendu du serveur et après un envoi refusé ; avec JavaScript, il
-suit la saisie.
+le dit : `pas encore écrit`, `pas choisis`, `à indiquer`, `pas choisie`, `aucun pour l'instant`. Ce
+que le serveur refuserait est marqué `à corriger`, avec la règle : `Horaire : à corriger, de 1 à
+120 minutes avant la prière`, `Dernier jour : à corriger, il tombe avant le premier jour`,
+`Description en allemand : à corriger, il manque le titre en allemand`. Pour un cours à dates
+précises, seules les dates entre le premier et le dernier jour sont montrées comme publiées ; les
+autres ont leur ligne, `Dates avant le premier jour, pas publiées :` ou `Dates après le dernier
+jour, pas publiées :`, et `Dates : aucune ne sera publiée` s'il n'en reste aucune. Le résumé est
+juste sans JavaScript, au rendu du serveur et après un envoi refusé ; avec JavaScript, il suit la
+saisie.
 
 ### Les erreurs
 
@@ -56,24 +63,34 @@ dans l'ordre du formulaire, et le formulaire garde ce qui a été tapé. Par exe
 `Cochez au moins une langue d'enseignement.`, `Avant une prière : de 1 à 120 minutes, en chiffres.
 Exemple : 10`, `Cette date n'est pas valable : 31.02.2026. Écrivez chaque date comme ceci :
 12.10.2026`. Un cours sans langue d'enseignement cochée est refusé ; avant l'étape 18, il prenait la
-langue de saisie sans le dire.
+langue de saisie sans le dire. Sont refusées aussi, au lieu de disparaître sans un mot : les dates
+précises hors de la période (`Ces dates tombent avant le premier jour du cours et ne seraient pas
+publiées : 12.10.2026 et 26.10.2026. Choisissez comme premier jour le 12.10.2026 ou un jour plus
+tôt. Vous pouvez aussi retirer ces dates.`), et une description sans titre dans sa langue (`La
+description en allemand ne peut pas être publiée sans titre dans la même langue. Écrivez aussi le
+titre en allemand, ou effacez cette description.`). Avec JavaScript, la page revient sur l'onglet de
+la première langue que l'encadré nomme.
 
 ### Les cadres du formulaire, dans cet ordre
 
 **Titre et description.** Des onglets `Langue du texte`, la langue de saisie marquée
-`(langue de saisie)`. `Titre en français (obligatoire)`, avec `Le nom du cours sur la page
-publique. Exemple : Arabe pour débutants` ; `Description en français (facultatif)`, avec `Quelques
-phrases : à qui s'adresse le cours, ce qu'on y apprend.` ; `Langue de saisie`, avec `La langue dans
-laquelle vous écrivez. Le titre dans cette langue est obligatoire. Les autres langues sont
-facultatives, et rien n'est traduit automatiquement.`
+`(langue de saisie)`. Sans JavaScript, il n'y a pas d'onglets : les champs de toutes les langues
+sont visibles. Chaque champ porte la langue et le sens de son texte (`lang`, `dir`) : l'arabe se
+lit de droite à gauche, et un texte français se lit de gauche à droite dans l'espace en arabe.
+`Titre en français (obligatoire)`, avec `Le nom du cours sur la page publique. Exemple : Arabe pour
+débutants` ; `Description en français (facultatif)`, avec `Quelques phrases : à qui s'adresse le
+cours, ce qu'on y apprend.` ; `Langue de saisie`, avec `La langue dans laquelle vous écrivez. Le
+titre dans cette langue est obligatoire. Les autres langues sont facultatives, et rien n'est
+traduit automatiquement.`
 
 **Public et langue.** `À qui s'adresse le cours ?`, puis `Langue d'enseignement`, avec `La langue
 parlée pendant le cours. Cochez-en une ou plusieurs.`
 
 **Jours et fréquence.** `Le cours a lieu` : `chaque semaine, ou une semaine sur deux`,
 `une fois par mois`, `à des dates précises`. Puis selon le choix : les jours et `Fréquence` (`Une
-semaine sur deux : la semaine du premier jour compte comme la première.`) ; `Quelle semaine du
-mois ?` et `Quel jour de cette semaine ?` ; ou `Dates, une par ligne`, avec `Exemple : 12.10.2026`.
+semaine sur deux : la semaine du premier jour compte comme la première.`) ; `Quel jour de la
+semaine ?`, puis `Lequel dans le mois ?`, avec `Exemple : lundi, puis « le premier » : le cours a
+lieu le premier lundi de chaque mois.` ; ou `Dates, une par ligne`, avec `Exemple : 12.10.2026`.
 Les dates se lisent et s'écrivent `JJ.MM.AAAA`.
 
 **Horaire** (retour C3). `Comment fixer l'heure ?` : `heure fixe`, `après une prière`,
@@ -103,13 +120,11 @@ dans cet espace. Publiez le cours quand tout est prêt.`
 
 Relevé par la relecture de l'étape 18, non corrigé à la fin de l'étape :
 
-- le résumé n'a pas de ligne pour la description, qui est pourtant publiée ;
-- un cours à dates précises dont les dates tombent avant le premier jour est accepté, et le résumé
-  les annonce, alors qu'aucune séance ne sera publiée ;
-- le résumé montre sans les marquer des valeurs que le serveur refusera (130 minutes avant une
-  prière, un dernier jour avant le premier) ;
-- les champs de titre et de description ne portent ni `lang` ni `dir` : un texte français se range
-  de droite à gauche dans l'espace en arabe ;
-- sans JavaScript, les titres des autres langues restent cachés (défaut antérieur) ;
-- `Quelle semaine du mois ?` ne dit pas la règle réelle, « le premier lundi du mois » ;
-- la liste n'a aucun bouton pour supprimer un cours, et l'état `archivé` n'est pas proposé.
+- la liste n'a aucun bouton pour supprimer un cours ; l'action existe côté serveur, et un éditeur
+  peut l'appeler ;
+- l'état `archivé` n'est pas proposé, et enregistrer un cours archivé le repasse en brouillon ;
+  aucun écran n'archive un cours aujourd'hui ;
+- un cours enregistré avant l'étape 18 peut avoir des dates hors de sa période : sa fiche le
+  signale et demande de corriger, mais la liste des cours le montre encore `publié` ;
+- aucun test du dépôt ne pilote les onglets : le retour sur l'onglet de la langue en cause, après
+  un refus, n'est prouvé que dans un navigateur, par les relectures.
