@@ -2410,9 +2410,9 @@ describe('le module des heures de prière', () => {
 });
 
 describe('la langue du compte', () => {
-	// Pas encore d'écran : l'espace en cinq langues viendra la lire et l'écrire par ces deux
-	// fonctions, qui passent par le rôle applicatif avec la seule personne dans le contexte
-	// (ADR 0046, migration 0060).
+	// Les deux fonctions que le hook et le choix de la langue appellent (étape 18) : elles passent par
+	// le rôle applicatif avec la seule personne dans le contexte (ADR 0046, migration 0060). Le
+	// parcours par les écrans est éprouvé dans `espace-en-cinq-langues.test.ts`.
 	let personne: string;
 	let collegue: string;
 

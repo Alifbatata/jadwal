@@ -45,6 +45,8 @@ const INVITE_EN_ARABE = 'cinq-arabe@example.test';
 /** Des comptes sans organisation, pour la langue retenue à la connexion. */
 const PAR_LE_COOKIE = 'cinq-cookie@example.test';
 const PAR_LE_NAVIGATEUR = 'cinq-navigateur@example.test';
+/** L'exploitant : sa bannière, dans l'organisation où il entre, est celle de la coquille. */
+const EXPLOITANT = 'cinq-exploitant@example.test';
 
 /** Ce qui est pareil dans toutes les langues par nature : noms, adresses, la marque. */
 const PERMIS = [ORGANISATION, INVITANTE, RESPONSABLE, EN_ATTENTE, INVITEUR];
@@ -188,7 +190,8 @@ beforeAll(async () => {
 		INVITEUR,
 		INVITE_EN_ARABE,
 		PAR_LE_COOKIE,
-		PAR_LE_NAVIGATEUR
+		PAR_LE_NAVIGATEUR,
+		EXPLOITANT
 	]) {
 		ids[email] = newId();
 	}
@@ -210,6 +213,8 @@ beforeAll(async () => {
 			`);
 		}
 		await tx.execute(sql`update "user" set "language" = 'ar' where "email" = ${INVITE_EN_ARABE}`);
+		// Le drapeau d'exploitant est une colonne du compte, qu'aucune interface ne pose.
+		await tx.execute(sql`update "user" set "is_super_admin" = true where "email" = ${EXPLOITANT}`);
 		for (const [email, role] of [
 			[RESPONSABLE, 'org_admin'],
 			[EN_ATTENTE, 'editor'],
@@ -682,5 +687,72 @@ describe('les courriels (retour D3)', () => {
 		expect(versCompte?.subject).toBe(versInconnue?.subject);
 		expect(versCompte?.text).toBe(versInconnue?.text);
 		expect(versCompte?.html).toBe(versInconnue?.html);
+	});
+});
+
+describe('les écrans du super-admin', () => {
+	/**
+	 * La preuve qu'une passkey donnerait à la session, comme dans `acces.test.ts` : la cérémonie
+	 * WebAuthn n'existe que dans un navigateur, la règle, elle, est celle du serveur.
+	 */
+	async function preuvePasskey(cookies: string): Promise<void> {
+		const jeton = decodeURIComponent(sessionSeule(cookies).split('=')[1] ?? '').split('.')[0] ?? '';
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "passkey" ("id", "name", "public_key", "user_id", "credential_id", "counter",
+					"device_type", "backed_up")
+				values (${newId()}, 'test', 'cle-publique', ${ids[EXPLOITANT] ?? ''}, ${newId()}, 0,
+					'singleDevice', false)
+			`);
+			await tx.execute(
+				sql`update "session" set "passkey_verified_at" = now() where "token" = ${jeton}`
+			);
+		});
+	}
+
+	it('carry the language on <html> and the language form, before and after the passkey', async () => {
+		const cookies = await signIn(EXPLOITANT);
+		for (const langue of LANGUES) {
+			await poserLangueDuCompte(EXPLOITANT, langue);
+			const html = await (await get('/super-admin/passkey', { cookie: cookies })).text();
+			expect(baliseHtml(html), langue).toBe(`<html lang="${langue}" dir="${SENS[langue]}">`);
+			expect(html, langue).toMatch(/<form\b[^>]*action="\/langue"/);
+		}
+		await preuvePasskey(cookies);
+		for (const langue of LANGUES) {
+			await poserLangueDuCompte(EXPLOITANT, langue);
+			const reponse = await get('/super-admin', { cookie: cookies });
+			expect(reponse.status, langue).toBe(200);
+			const html = await reponse.text();
+			expect(baliseHtml(html), langue).toBe(`<html lang="${langue}" dir="${SENS[langue]}">`);
+			expect(html, langue).toMatch(/<form\b[^>]*action="\/langue"/);
+		}
+	});
+
+	it('translates the banner of an organisation he entered with his powers', async () => {
+		const cookies = await signIn(EXPLOITANT);
+		await preuvePasskey(cookies);
+		expect(
+			(await postForm('/super-admin?/entrer', { organizationId }, { cookie: cookies })).status
+		).toBe(303);
+		const bannieres: Record<string, string> = {};
+		for (const langue of LANGUES) {
+			await poserLangueDuCompte(EXPLOITANT, langue);
+			const html = await (await get('/cours', { cookie: cookies })).text();
+			const banniere = html.match(/<p class="banniere[^"]*"[\s\S]*?<\/p>/)?.[0] ?? '';
+			expect(banniere, langue).toContain(ORGANISATION);
+			bannieres[langue] = `<body>${banniere}</body>`;
+		}
+		expect(visibleText(bannieres['fr'] ?? '')).toBe(
+			`Vous travaillez dans ${ORGANISATION} avec vos pouvoirs de super-admin. Changer d’organisation`
+		);
+		expect(visibleText(bannieres['ar'] ?? '')).toBe(
+			`أنت تعمل في ${ORGANISATION} بصلاحيات المشرف العام. تغيير المؤسسة`
+		);
+		for (const langue of LANGUES.slice(1)) {
+			expect(frenchLeft(bannieres['fr'] ?? '', bannieres[langue] ?? '', PERMIS), langue).toEqual(
+				[]
+			);
+		}
 	});
 });
