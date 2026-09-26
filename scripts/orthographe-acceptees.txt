@@ -29,10 +29,6 @@
 # CONTRIBUTING.md
 CONTRIBUTING.md | D_N_E_OU_E | une pull
 
-# apps/web/src/lib/FormulaireCours.svelte
-apps/web/src/lib/FormulaireCours.svelte | FRENCH_WORD_REPEAT_RULE | Rythme Rythme
-apps/web/src/lib/FormulaireCours.svelte | POINT | )
-
 # apps/web/src/lib/i18n.ts
 apps/web/src/lib/i18n.ts | ALLE | Alle
 apps/web/src/lib/i18n.ts | ARABIC_COMMA_PARENTHESIS_WHITESPACE |  .
@@ -105,6 +101,20 @@ apps/web/src/lib/i18n/organisations.ts | AR_DIACRITICS_REPLACE | قبول
 apps/web/src/lib/i18n/sign-in.ts | AR_DIACRITICS_REPLACE | برنامج
 # « لا توجد كلمة مرور » : la règle lit « كلمة » comme la préposition « ك » suivie d'un mot.
 apps/web/src/lib/i18n/sign-in.ts | syntax_0002_as_ka_1 | توجد كلمة
+# « 12.10.2026 » : l'exemple d'une date, écrite comme en Suisse et comme l'étape 18 l'impose partout
+# (retour A3) ; la règle réclame des barres obliques (famille 3).
+apps/web/src/lib/i18n/course-form.ts | DATE | 12.10.2026
+# Les trois états d'un cours, « brouillon, … page publique », « publié, … », « archivé, … », que le
+# corpus recolle en une phrase : « publique publié » n'est pas un accord, ce sont deux options.
+apps/web/src/lib/i18n/course-form.ts | AGREEMENT_POSTPONED_ADJ | publié
+apps/web/src/lib/i18n/course-form.ts | AGREEMENT_POSTPONED_ADJ | archivé
+# Ce que le résumé dit à la place d'une valeur qui manque, « pas choisis », « pas choisie », « pas
+# choisi », recollé par le corpus : chacune s'accorde avec son libellé, « Salle : pas choisie »,
+# « Langue d'enseignement : pas choisie » (les mots mêmes du retour B4).
+apps/web/src/lib/i18n/course-form.ts | AGREEMENT_POSTPONED_ADJ | choisie
+# Sans voyelles, comme ailleurs (famille 6).
+apps/web/src/lib/i18n/course-form.ts | AR_DIACRITICS_REPLACE | المسودة
+apps/web/src/lib/i18n/courses.ts | AR_DIACRITICS_REPLACE | المسودة
 
 # apps/web/src/routes/+page.svelte
 apps/web/src/routes/+page.svelte | ACCORD_R_PERS_VERBE | couvrent

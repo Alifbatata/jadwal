@@ -7,9 +7,11 @@
 
 import { error, fail, redirect } from '@sveltejs/kit';
 import { sql } from '@jadwal/db';
+import { timingChoice, writeDates, type CourseFormValues } from '$lib/course-form.js';
 import { withSessionOrg } from '$lib/server/context.js';
+import { readCourseForm } from '$lib/server/course-form.js';
 import { mustBeInOrganisation } from '$lib/server/guard.js';
-import { parseCourseForm, updateCourse } from '$lib/server/courses.js';
+import { updateCourse } from '$lib/server/courses.js';
 import { readRooms, readSettings, type CourseRow } from '$lib/server/programme.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
@@ -52,6 +54,33 @@ export const load: PageServerLoad = async (event) => {
 			descriptions[langue] = found?.description ?? '';
 		}
 		const dates = (course.recurrence_dates ?? []).map((date) => String(date).slice(0, 10));
+		// −10 en base s'ouvre sur « avant une prière » et 10 minutes (retour C3).
+		const timing = timingChoice(course.timing_kind, course.timing_offset_minutes);
+		const valeurs: CourseFormValues = {
+			status: course.status,
+			audience: course.audience,
+			teachingLanguages: course.teaching_language,
+			sourceLanguage: course.source_language,
+			roomId: course.room_id,
+			teacher: course.teacher,
+			startsOn: String(course.starts_on).slice(0, 10),
+			endsOn: course.ends_on ? String(course.ends_on).slice(0, 10) : null,
+			recurrenceKind: course.recurrence_kind,
+			weekdays: course.recurrence_weekday ?? [],
+			interval: course.recurrence_interval ?? 1,
+			monthlyWeekday: course.recurrence_ordinal_weekday ?? 1,
+			monthlyOrdinal: course.recurrence_ordinal ?? 1,
+			// Comme la personne les lit et les écrit : « 12.10.2026 », une par ligne (A3).
+			dates: writeDates(dates),
+			timingKind: timing.timingKind,
+			start: (course.timing_start ?? '19:00').slice(0, 5),
+			end: (course.timing_end ?? '20:30').slice(0, 5),
+			prayer: course.timing_prayer ?? 'maghrib',
+			offsetMinutes: timing.offsetMinutes,
+			durationMinutes: course.timing_duration_minutes ?? 60,
+			titles,
+			descriptions
+		};
 		return {
 			organisation: { name: settings.name },
 			// Une clé à elle : `organisation` est déjà posée par cette page et masque celle de la
@@ -60,31 +89,9 @@ export const load: PageServerLoad = async (event) => {
 			langues: settings.enabled_language,
 			salles: (await readRooms(tx)).map((salle) => ({ id: salle.id, name: salle.name })),
 			id,
-			titre: titles[course.source_language] ?? 'Cours',
-			valeurs: {
-				status: course.status,
-				audience: course.audience,
-				teachingLanguages: course.teaching_language,
-				sourceLanguage: course.source_language,
-				roomId: course.room_id,
-				teacher: course.teacher,
-				startsOn: String(course.starts_on).slice(0, 10),
-				endsOn: course.ends_on ? String(course.ends_on).slice(0, 10) : null,
-				recurrenceKind: course.recurrence_kind,
-				weekdays: course.recurrence_weekday ?? [],
-				interval: course.recurrence_interval ?? 1,
-				monthlyWeekday: course.recurrence_ordinal_weekday ?? 1,
-				monthlyOrdinal: course.recurrence_ordinal ?? 1,
-				dates: dates.join('\n'),
-				timingKind: course.timing_kind,
-				start: (course.timing_start ?? '19:00').slice(0, 5),
-				end: (course.timing_end ?? '20:30').slice(0, 5),
-				prayer: course.timing_prayer ?? 'maghrib',
-				offsetMinutes: course.timing_offset_minutes ?? 15,
-				durationMinutes: course.timing_duration_minutes ?? 60,
-				titles,
-				descriptions
-			}
+			// Sans titre dans la langue de saisie, la page en écrit un dans la sienne.
+			titre: titles[course.source_language] || null,
+			valeurs
 		};
 	});
 };
@@ -98,18 +105,29 @@ export const actions: Actions = {
 			context,
 			async (tx) => (await readSettings(tx)).enabled_language
 		);
-		const parsed = parseCourseForm(form, langues);
-		if (!parsed.ok) return fail(400, { erreurs: parsed.erreurs });
+		const read = readCourseForm(form, langues);
+		// Les noms des erreurs, jamais leurs phrases : la page les écrit dans sa langue. Ce que la
+		// personne a envoyé revient avec, pour qu'elle n'ait rien à retaper et que le résumé le montre.
+		if (!read.ok) {
+			return fail(400, { errors: read.errors, badDates: read.badDates, values: read.values });
+		}
+		const values = read.values;
 		const ok = await withSessionOrg(context, async (tx) => {
 			const before = await readCourse(tx, id);
 			if (!before) return false;
-			return updateCourse(tx, context, id, parsed.values, {
+			return updateCourse(tx, context, id, values, {
 				status: before.status,
 				recurrence_kind: before.recurrence_kind,
 				timing_kind: before.timing_kind
 			});
 		});
-		if (!ok) return fail(404, { erreurs: ['Ce cours n’existe plus.'] });
+		if (!ok) {
+			return fail(404, {
+				errors: ['gone' as const],
+				badDates: [],
+				values: null
+			});
+		}
 		redirect(303, '/cours');
 	}
 };

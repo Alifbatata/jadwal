@@ -1,307 +1,396 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	// Le formulaire de cours, partagé par la création et la modification.
+	// Le formulaire de cours, partagé par la création et la modification, dans la langue de l'espace.
 	//
-	// Le résumé en français se met à jour à mesure de la saisie quand JavaScript est là. Sans
-	// JavaScript, il affiche l'état enregistré et le formulaire s'envoie quand même : le résumé est
-	// un confort, jamais une condition (règle du dépôt).
+	// Le résumé en haut reprend tout ce qui sera publié et signale ce qui manque (retour B4). Il se met
+	// à jour à mesure de la saisie quand JavaScript est là. Sans JavaScript, le serveur le calcule par
+	// la même fonction : il montre l'état enregistré, ou, après un envoi refusé, ce que la personne
+	// vient d'envoyer. Le formulaire s'envoie de toute façon : le résumé est un confort, jamais une
+	// condition (règle du dépôt).
 	import {
-		AUDIENCE_LABELS,
-		LANGUAGE_LABELS,
-		describeRecurrence,
-		describeTiming
-	} from './format.js';
-
-	interface Valeurs {
-		status: string;
-		audience: string;
-		teachingLanguages: string[];
-		sourceLanguage: string;
-		roomId: string | null;
-		teacher: string | null;
-		startsOn: string;
-		endsOn: string | null;
-		recurrenceKind: string;
-		weekdays: number[];
-		interval: number;
-		monthlyWeekday: number;
-		monthlyOrdinal: number;
-		dates: string;
-		timingKind: string;
-		start: string;
-		end: string;
-		prayer: string;
-		offsetMinutes: number;
-		durationMinutes: number;
-		titles: Record<string, string>;
-		descriptions: Record<string, string>;
-	}
+		MAX_DURATION_MINUTES,
+		MAX_OFFSET_MINUTES,
+		MIN_DURATION_MINUTES,
+		MIN_OFFSET_MINUTES
+	} from '@jadwal/core';
+	import {
+		summarise,
+		TIMING_CHOICES,
+		type CourseFormError,
+		type CourseFormValues
+	} from './course-form.js';
+	import { audienceLabels, joinList, languageLabel, prayerLabel } from './format.js';
+	import { t, type Langue } from './i18n.js';
+	import { courseFormTexts } from './i18n/course-form.js';
 
 	let {
-		valeurs,
-		langues,
-		salles,
-		action,
-		libelleBouton,
-		modulePrieres
+		values,
+		languages,
+		rooms,
+		prayerModule,
+		language,
+		submitLabel,
+		errors = [],
+		badDates = []
 	}: {
-		valeurs: Valeurs;
-		langues: string[];
-		salles: { id: string; name: string }[];
-		action: string;
-		libelleBouton: string;
+		values: CourseFormValues;
+		/** Les langues de l'organisation : celles du texte du cours et de l'enseignement. */
+		languages: string[];
+		rooms: { id: string; name: string }[];
 		/** Le module des heures de prière de l'organisation (ADR 0042). */
-		modulePrieres: boolean;
+		prayerModule: boolean;
+		/** La langue de l'espace, celle de l'écran. */
+		language: Langue;
+		submitLabel: string;
+		errors?: CourseFormError[];
+		badDates?: string[];
 	} = $props();
 
 	// Une copie, volontairement figée au premier rendu : le formulaire est la source de vérité de
-	// la saisie en cours, et le recharger depuis `valeurs` effacerait ce que la personne tape.
-	let etat = $state({ ...untrack(() => valeurs) });
-	let langueActive = $state(untrack(() => valeurs.sourceLanguage));
+	// la saisie en cours, et le recharger depuis `values` effacerait ce que la personne tape.
+	let entry = $state({ ...untrack(() => values) });
+	let activeLanguage = $state(untrack(() => values.sourceLanguage));
 
-	const JOURS = [
-		[1, 'lundi'],
-		[2, 'mardi'],
-		[3, 'mercredi'],
-		[4, 'jeudi'],
-		[5, 'vendredi'],
-		[6, 'samedi'],
-		[7, 'dimanche']
+	const text = $derived(courseFormTexts[language]);
+	const summary = $derived(summarise(entry, { languages, rooms }, language));
+	const weekdays = $derived(t(language).weekdays.map((name, index) => [index + 1, name] as const));
+	const before = $derived(entry.timingKind === 'beforePrayer');
+
+	const PRAYERS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
+	const ORDINALS = [
+		[1, 'first'],
+		[2, 'second'],
+		[3, 'third'],
+		[4, 'fourth'],
+		[-1, 'last']
 	] as const;
 
-	const PRIERES = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
+	function toggle(list: number[], day: number): number[] {
+		return list.includes(day)
+			? list.filter((value) => value !== day)
+			: [...list, day].sort((a, b) => a - b);
+	}
 
-	const resume = $derived.by(() => {
-		const rythme = describeRecurrence({
-			kind: etat.recurrenceKind,
-			weekdays: etat.weekdays,
-			interval: etat.interval,
-			ordinal: etat.monthlyOrdinal,
-			ordinalWeekday: etat.monthlyWeekday,
-			dates: etat.dates.split(/[\s,;]+/).filter((value) => value.length > 0)
-		});
-		const horaire = describeTiming({
-			kind: etat.timingKind,
-			start: etat.start,
-			end: etat.end,
-			prayer: etat.prayer,
-			offsetMinutes: etat.offsetMinutes,
-			durationMinutes: etat.durationMinutes
-		});
-		const titre = etat.titles[etat.sourceLanguage] || 'Ce cours';
-		const public_ = AUDIENCE_LABELS[etat.audience] ?? etat.audience;
-		const salle = salles.find((salle) => salle.id === etat.roomId)?.name;
-		return `« ${titre} » a lieu ${rythme}, ${horaire}${salle ? `, ${salle}` : ''}, pour ${public_}.`;
-	});
-
-	function bascule(jour: number) {
-		etat.weekdays = etat.weekdays.includes(jour)
-			? etat.weekdays.filter((valeur) => valeur !== jour)
-			: [...etat.weekdays, jour].sort((a, b) => a - b);
+	function toggleLanguage(code: string) {
+		entry.teachingLanguages = entry.teachingLanguages.includes(code)
+			? entry.teachingLanguages.filter((value) => value !== code)
+			: languages.filter((value) => value === code || entry.teachingLanguages.includes(value));
 	}
 </script>
 
-<form method="post" {action} class="colonne">
-	<p class="resume" role="status">{resume}</p>
+<form method="post" class="colonne">
+	{#if errors.length > 0}
+		<!-- Dans l'ordre des cadres du formulaire, de haut en bas : on corrige en descendant. -->
+		<div class="erreurs" role="alert">
+			<p>{text.errorsTitle}</p>
+			<ul>
+				{#each errors as error (error)}
+					<li>
+						{error === 'badDates'
+							? text.badDates(joinList(badDates, language), badDates.length)
+							: text.errors[error]}
+					</li>
+				{/each}
+			</ul>
+		</div>
+	{/if}
+
+	<section id="course-summary" class="resume" aria-labelledby="course-summary-title">
+		<h2 id="course-summary-title">{text.summary.title}</h2>
+		<dl>
+			{#each summary as row (row.key)}
+				<div class:manque={row.missing}>
+					<dt>{row.label}</dt>
+					<dd>
+						{#if row.typed}<bdi>{row.value}</bdi>{:else}{row.value}{/if}
+					</dd>
+				</div>
+			{/each}
+		</dl>
+	</section>
 
 	<fieldset>
-		<legend>Texte du cours</legend>
-		{#if langues.length > 1}
-			<div class="onglets" role="tablist" aria-label="Langues">
-				{#each langues as langue (langue)}
+		<legend>{text.textLegend}</legend>
+		{#if languages.length > 1}
+			<div class="onglets" role="tablist" aria-label={text.languageTabs}>
+				{#each languages as code (code)}
 					<button
 						type="button"
 						role="tab"
-						aria-selected={langueActive === langue}
-						onclick={() => (langueActive = langue)}
+						aria-selected={activeLanguage === code}
+						onclick={() => (activeLanguage = code)}
 					>
-						{LANGUAGE_LABELS[langue] ?? langue}
-						{#if langue === etat.sourceLanguage}(source){/if}
+						{languageLabel(code, language)}
+						{#if code === entry.sourceLanguage}{text.sourceMark}{/if}
 					</button>
 				{/each}
 			</div>
 		{/if}
-		{#each langues as langue (langue)}
+		{#each languages as code (code)}
 			<!-- Les champs des autres langues restent dans la page : sans JavaScript, tout est
-			     visible et saisissable d'un coup. -->
-			<div class="onglet" class:masque={langues.length > 1 && langueActive !== langue}>
-				<label for={`title-${langue}`}>
-					Titre ({LANGUAGE_LABELS[langue] ?? langue})
-					{#if langue === etat.sourceLanguage}*{/if}
+			     visible et saisissable d'un coup. Aucun n'est `required` : caché dans un onglet, il
+			     bloquerait l'envoi sans rien dire, et le serveur dit déjà ce qui manque. -->
+			<div class="onglet" class:masque={languages.length > 1 && activeLanguage !== code}>
+				<label for={`title-${code}`}>
+					{text.titleLabel(languageLabel(code, language))}
+					<span class="marque">
+						{code === entry.sourceLanguage ? text.required : text.optional}
+					</span>
 				</label>
 				<input
-					id={`title-${langue}`}
-					name={`title.${langue}`}
+					id={`title-${code}`}
+					name={`title.${code}`}
 					type="text"
 					maxlength="120"
-					bind:value={etat.titles[langue]}
-					required={langue === etat.sourceLanguage}
+					bind:value={entry.titles[code]}
+					aria-describedby={`title-${code}-hint`}
 				/>
-				<label for={`description-${langue}`}>
-					Description ({LANGUAGE_LABELS[langue] ?? langue})
+				<p class="aide" id={`title-${code}-hint`}>{text.titleHint}</p>
+				<label for={`description-${code}`}>
+					{text.descriptionLabel(languageLabel(code, language))}
+					<span class="marque">{text.optional}</span>
 				</label>
 				<textarea
-					id={`description-${langue}`}
-					name={`description.${langue}`}
+					id={`description-${code}`}
+					name={`description.${code}`}
 					rows="3"
-					bind:value={etat.descriptions[langue]}></textarea>
+					bind:value={entry.descriptions[code]}
+					aria-describedby={`description-${code}-hint`}></textarea>
+				<p class="aide" id={`description-${code}-hint`}>{text.descriptionHint}</p>
 			</div>
 		{/each}
-		<label for="sourceLanguage">Langue de saisie</label>
-		<select id="sourceLanguage" name="sourceLanguage" bind:value={etat.sourceLanguage}>
-			{#each langues as langue (langue)}
-				<option value={langue}>{LANGUAGE_LABELS[langue] ?? langue}</option>
+		<label for="sourceLanguage">{text.sourceLanguageLabel}</label>
+		<select
+			id="sourceLanguage"
+			name="sourceLanguage"
+			bind:value={entry.sourceLanguage}
+			aria-describedby="sourceLanguage-hint"
+		>
+			{#each languages as code (code)}
+				<option value={code}>{languageLabel(code, language)}</option>
 			{/each}
 		</select>
-		<p class="aide">Les traductions sont facultatives. Aucune n’est faite automatiquement.</p>
+		<p class="aide" id="sourceLanguage-hint">{text.sourceLanguageHint}</p>
 	</fieldset>
 
 	<fieldset>
-		<legend>Public et langues d’enseignement</legend>
-		<label for="audience">Public</label>
-		<select id="audience" name="audience" bind:value={etat.audience}>
-			{#each Object.entries(AUDIENCE_LABELS) as [valeur, libelle] (valeur)}
-				<option value={valeur}>{libelle}</option>
+		<legend>{text.audienceLegend}</legend>
+		<label for="audience">{text.audienceLabel}</label>
+		<select id="audience" name="audience" bind:value={entry.audience}>
+			{#each Object.entries(audienceLabels(language)) as [code, label] (code)}
+				<option value={code}>{label}</option>
 			{/each}
 		</select>
-		<fieldset class="cases">
-			<legend>Langues d’enseignement</legend>
-			{#each langues as langue (langue)}
+		<fieldset class="cases" aria-describedby="teaching-hint">
+			<legend>{text.teachingLegend}</legend>
+			{#each languages as code (code)}
 				<label class="case">
 					<input
 						type="checkbox"
 						name="teachingLanguages"
-						value={langue}
-						checked={etat.teachingLanguages.includes(langue)}
+						value={code}
+						checked={entry.teachingLanguages.includes(code)}
+						onchange={() => toggleLanguage(code)}
 					/>
-					{LANGUAGE_LABELS[langue] ?? langue}
+					{languageLabel(code, language)}
 				</label>
 			{/each}
 		</fieldset>
+		<p class="aide" id="teaching-hint">{text.teachingHint}</p>
 	</fieldset>
 
 	<fieldset>
-		<legend>Rythme</legend>
-		<label for="recurrenceKind">Rythme</label>
-		<select id="recurrenceKind" name="recurrenceKind" bind:value={etat.recurrenceKind}>
-			<option value="weekly">chaque semaine, ou une semaine sur deux</option>
-			<option value="monthly">chaque mois</option>
-			<option value="dates">à des dates précises</option>
+		<legend>{text.rhythmLegend}</legend>
+		<label for="recurrenceKind">{text.recurrenceLabel}</label>
+		<select id="recurrenceKind" name="recurrenceKind" bind:value={entry.recurrenceKind}>
+			<option value="weekly">{text.recurrenceOptions.weekly}</option>
+			<option value="monthly">{text.recurrenceOptions.monthly}</option>
+			<option value="dates">{text.recurrenceOptions.dates}</option>
 		</select>
 
-		{#if etat.recurrenceKind === 'weekly'}
+		{#if entry.recurrenceKind === 'weekly'}
 			<fieldset class="cases">
-				<legend>Jours</legend>
-				{#each JOURS as [numero, nom] (numero)}
+				<legend>{text.weekdaysLegend}</legend>
+				{#each weekdays as [day, name] (day)}
 					<label class="case">
 						<input
 							type="checkbox"
 							name="weekdays"
-							value={numero}
-							checked={etat.weekdays.includes(numero)}
-							onchange={() => bascule(numero)}
+							value={day}
+							checked={entry.weekdays.includes(day)}
+							onchange={() => (entry.weekdays = toggle(entry.weekdays, day))}
 						/>
-						{nom}
+						{name}
 					</label>
 				{/each}
 			</fieldset>
-			<label for="interval">Fréquence</label>
-			<select id="interval" name="interval" bind:value={etat.interval}>
-				<option value={1}>chaque semaine</option>
-				<option value={2}>une semaine sur deux</option>
+			<label for="interval">{text.intervalLabel}</label>
+			<select
+				id="interval"
+				name="interval"
+				bind:value={entry.interval}
+				aria-describedby="interval-hint"
+			>
+				<option value={1}>{text.frequencies.weekly}</option>
+				<option value={2}>{text.frequencies.fortnightly}</option>
 			</select>
-		{:else if etat.recurrenceKind === 'monthly'}
-			<label for="monthlyOrdinal">Rang dans le mois</label>
-			<select id="monthlyOrdinal" name="monthlyOrdinal" bind:value={etat.monthlyOrdinal}>
-				<option value={1}>premier</option>
-				<option value={2}>deuxième</option>
-				<option value={3}>troisième</option>
-				<option value={4}>quatrième</option>
-				<option value={-1}>dernier</option>
+			<p class="aide" id="interval-hint">{text.intervalHint}</p>
+		{:else if entry.recurrenceKind === 'monthly'}
+			<label for="monthlyOrdinal">{text.ordinalLabel}</label>
+			<select id="monthlyOrdinal" name="monthlyOrdinal" bind:value={entry.monthlyOrdinal}>
+				{#each ORDINALS as [value, key] (value)}
+					<option {value}>{text.ordinals[key]}</option>
+				{/each}
 			</select>
-			<label for="monthlyWeekday">Jour</label>
-			<select id="monthlyWeekday" name="monthlyWeekday" bind:value={etat.monthlyWeekday}>
-				{#each JOURS as [numero, nom] (numero)}
-					<option value={numero}>{nom}</option>
+			<label for="monthlyWeekday">{text.monthlyWeekdayLabel}</label>
+			<select id="monthlyWeekday" name="monthlyWeekday" bind:value={entry.monthlyWeekday}>
+				{#each weekdays as [day, name] (day)}
+					<option value={day}>{name}</option>
 				{/each}
 			</select>
 		{:else}
-			<label for="dates">Dates (une par ligne)</label>
-			<textarea id="dates" name="dates" rows="4" bind:value={etat.dates}></textarea>
+			<label for="dates">{text.datesLabel}</label>
+			<textarea
+				id="dates"
+				name="dates"
+				rows="4"
+				bind:value={entry.dates}
+				aria-describedby="dates-hint"></textarea>
+			<p class="aide" id="dates-hint">{text.datesHint}</p>
 		{/if}
 	</fieldset>
 
 	<fieldset>
-		<legend>Horaire</legend>
+		<legend>{text.timeLegend}</legend>
 		<!-- Sans le module, un cours n'a qu'une façon d'avoir une heure, et le choix disparaît
 		     plutôt que de rester grisé : une organisation n'a pas à refuser ce qui ne la concerne
 		     pas (ADR 0042). -->
-		{#if modulePrieres}
-			<label for="timingKind">Horaire</label>
-			<select id="timingKind" name="timingKind" bind:value={etat.timingKind}>
-				<option value="fixed">heure fixe</option>
-				<option value="prayer">après une prière</option>
+		{#if prayerModule}
+			<label for="timingKind">{text.timingLabel}</label>
+			<select
+				id="timingKind"
+				name="timingKind"
+				bind:value={entry.timingKind}
+				aria-describedby="timingKind-hint"
+			>
+				{#each TIMING_CHOICES as choice (choice)}
+					<option value={choice}>{text.timingOptions[choice]}</option>
+				{/each}
 			</select>
+			<p class="aide" id="timingKind-hint">{text.timingHint}</p>
 		{:else}
 			<input type="hidden" name="timingKind" value="fixed" />
 		{/if}
 
-		{#if !modulePrieres || etat.timingKind === 'fixed'}
-			<label for="start">Début</label>
-			<input id="start" type="time" name="start" bind:value={etat.start} required />
-			<label for="end">Fin</label>
-			<input id="end" type="time" name="end" bind:value={etat.end} required />
+		{#if !prayerModule || entry.timingKind === 'fixed'}
+			<label for="start">{text.startLabel}</label>
+			<input
+				id="start"
+				type="time"
+				name="start"
+				bind:value={entry.start}
+				required
+				aria-describedby="time-hint"
+			/>
+			<label for="end">{text.endLabel}</label>
+			<input
+				id="end"
+				type="time"
+				name="end"
+				bind:value={entry.end}
+				required
+				aria-describedby="time-hint"
+			/>
+			<p class="aide" id="time-hint">{text.timeHint}</p>
 		{:else}
-			<label for="prayer">Prière</label>
-			<select id="prayer" name="prayer" bind:value={etat.prayer}>
-				{#each PRIERES as priere (priere)}
-					<option value={priere}>{priere}</option>
+			<label for="prayer">{text.prayerLabel}</label>
+			<select id="prayer" name="prayer" bind:value={entry.prayer}>
+				{#each PRAYERS as prayer (prayer)}
+					<option value={prayer}>{prayerLabel(prayer, language)}</option>
 				{/each}
 			</select>
-			<label for="offsetMinutes">Décalage (minutes, de -120 à 240)</label>
+			<!-- Des minutes toujours positives : le sens est dans le choix du dessus (retour C3). -->
+			<label for="offsetMinutes">
+				{before ? text.minutesBeforeLabel : text.minutesAfterLabel}
+			</label>
 			<input
 				id="offsetMinutes"
 				type="number"
 				name="offsetMinutes"
-				min="-120"
-				max="240"
-				bind:value={etat.offsetMinutes}
+				min={before ? 1 : 0}
+				max={before ? -MIN_OFFSET_MINUTES : MAX_OFFSET_MINUTES}
+				step="1"
+				required
+				bind:value={entry.offsetMinutes}
+				aria-describedby="offsetMinutes-hint"
 			/>
-			<label for="durationMinutes">Durée (minutes, de 5 à 1440)</label>
+			<p class="aide" id="offsetMinutes-hint">
+				{before ? text.minutesBeforeHint : text.minutesAfterHint}
+			</p>
+			<label for="durationMinutes">{text.durationLabel}</label>
 			<input
 				id="durationMinutes"
 				type="number"
 				name="durationMinutes"
-				min="5"
-				max="1440"
-				bind:value={etat.durationMinutes}
+				min={MIN_DURATION_MINUTES}
+				max={MAX_DURATION_MINUTES}
+				step="1"
+				required
+				bind:value={entry.durationMinutes}
+				aria-describedby="durationMinutes-hint"
 			/>
+			<p class="aide" id="durationMinutes-hint">{text.durationHint}</p>
 		{/if}
 	</fieldset>
 
 	<fieldset>
-		<legend>Lieu, intervenant et période</legend>
-		<label for="roomId">Salle</label>
-		<select id="roomId" name="roomId" bind:value={etat.roomId}>
-			<option value="">aucune</option>
-			{#each salles as salle (salle.id)}
-				<option value={salle.id}>{salle.name}</option>
+		<legend>{text.placeLegend}</legend>
+		<label for="roomId">{text.roomLabel} <span class="marque">{text.optional}</span></label>
+		<select id="roomId" name="roomId" bind:value={entry.roomId} aria-describedby="roomId-hint">
+			<option value="">{text.noRoom}</option>
+			{#each rooms as room (room.id)}
+				<option value={room.id}>{room.name}</option>
 			{/each}
 		</select>
-		<label for="teacher">Intervenant</label>
-		<input id="teacher" type="text" name="teacher" maxlength="120" bind:value={etat.teacher} />
-		<label for="startsOn">Premier jour</label>
-		<input id="startsOn" type="date" name="startsOn" bind:value={etat.startsOn} required />
-		<label for="endsOn">Dernier jour (facultatif)</label>
-		<input id="endsOn" type="date" name="endsOn" bind:value={etat.endsOn} />
-		<label for="status">État</label>
-		<select id="status" name="status" bind:value={etat.status}>
-			<option value="draft">brouillon</option>
-			<option value="published">publié</option>
+		<p class="aide" id="roomId-hint">{text.roomHint}</p>
+		<label for="teacher">{text.teacherLabel} <span class="marque">{text.optional}</span></label>
+		<input
+			id="teacher"
+			type="text"
+			name="teacher"
+			maxlength="120"
+			bind:value={entry.teacher}
+			aria-describedby="teacher-hint"
+		/>
+		<p class="aide" id="teacher-hint">{text.teacherHint}</p>
+		<label for="startsOn">{text.startsOnLabel} <span class="marque">{text.required}</span></label>
+		<input
+			id="startsOn"
+			type="date"
+			name="startsOn"
+			bind:value={entry.startsOn}
+			required
+			aria-describedby="startsOn-hint"
+		/>
+		<p class="aide" id="startsOn-hint">{text.startsOnHint}</p>
+		<label for="endsOn">{text.endsOnLabel} <span class="marque">{text.optional}</span></label>
+		<input
+			id="endsOn"
+			type="date"
+			name="endsOn"
+			bind:value={entry.endsOn}
+			aria-describedby="endsOn-hint"
+		/>
+		<p class="aide" id="endsOn-hint">{text.endsOnHint}</p>
+		<label for="status">{text.statusLabel}</label>
+		<select id="status" name="status" bind:value={entry.status} aria-describedby="status-hint">
+			<option value="draft">{text.statuses.draft}</option>
+			<option value="published">{text.statuses.published}</option>
 		</select>
+		<p class="aide" id="status-hint">{text.statusHint}</p>
 	</fieldset>
 
-	<button type="submit">{libelleBouton}</button>
+	<button type="submit">{submitLabel}</button>
 </form>
 
 <style>
@@ -338,6 +427,10 @@
 		font-size: 0.9rem;
 		font-weight: 600;
 	}
+	.marque {
+		font-weight: 400;
+		color: #555;
+	}
 	input,
 	select,
 	textarea,
@@ -360,9 +453,49 @@
 	}
 	.resume {
 		background: #ecfdf5;
-		border-left: 4px solid var(--accent);
+		border-inline-start: 4px solid var(--accent);
 		padding: 0.75rem;
+	}
+	.resume h2 {
+		font-size: 1rem;
+		margin: 0 0 0.5rem;
+	}
+	.resume dl {
 		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+	}
+	.resume div {
+		display: flex;
+		flex-wrap: wrap;
+		column-gap: 0.35rem;
+	}
+	.resume dt {
+		font-weight: 600;
+	}
+	.resume dd {
+		margin: 0;
+	}
+	/* Ce qui manque se voit sans la couleur : sa phrase le dit, et le trait le souligne. */
+	.resume .manque dd {
+		color: #92400e;
+		font-weight: 600;
+		text-decoration: underline dotted;
+	}
+	.erreurs {
+		color: #b91c1c;
+		font-weight: 600;
+		border: 1px solid #b91c1c;
+		border-radius: 0.5rem;
+		padding: 0.75rem;
+	}
+	.erreurs p {
+		margin: 0;
+	}
+	.erreurs ul {
+		margin: 0.35rem 0 0;
+		padding-inline-start: 1.25rem;
 	}
 	.aide {
 		font-size: 0.85rem;
