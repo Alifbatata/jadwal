@@ -668,6 +668,29 @@ describe('le résumé en haut du formulaire (B4)', () => {
 		expect(await decalageEnBase(TAFSIR)).toEqual([{ kind: 'prayer', offset: -10 }]);
 	});
 
+	it('gives each text field, and its line in the summary, the language and direction of its language', async () => {
+		// Dans l'espace en arabe, un titre français se lit de gauche à droite, avec son point à droite ;
+		// dans l'espace en français, un titre arabe se lit de droite à gauche.
+		const sens = { fr: 'ltr', de: 'ltr', ar: 'rtl' } as const;
+		for (const langue of ['fr', 'ar'] as const) {
+			await poserLangueDuCompte(langue);
+			const html = await (await get(`/cours/${tafsirId}`, cookie)).text();
+			for (const [code, dir] of Object.entries(sens)) {
+				expect(champ(html, `title-${code}`), `${langue}, titre ${code}`).toMatchObject({
+					lang: code,
+					dir
+				});
+				const zone = html.match(new RegExp(`<textarea\\b[^>]*\\bid="description-${code}"[^>]*>`));
+				expect(zone?.[0], `${langue}, description ${code}`).toMatch(
+					new RegExp(`\\blang="${code}"[^>]*\\bdir="${dir}"`)
+				);
+			}
+			const ligne = resume(html).match(/<bdi\b[^>]*>Lecture commentée, pour adultes\.<\/bdi>/);
+			expect(ligne?.[0], `${langue}, résumé`).toMatch(/\blang="fr"[^>]*\bdir="ltr"/);
+		}
+		await poserLangueDuCompte('fr');
+	});
+
 	it('says the time in each language', async () => {
 		const horaires: Record<Langue, string> = {
 			fr: '10 min avant Maghrib, pendant 1 h',

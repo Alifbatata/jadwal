@@ -15,6 +15,7 @@
 	} from '@jadwal/core';
 	import {
 		summarise,
+		textDirection,
 		TIMING_CHOICES,
 		type CourseFormError,
 		type CourseFormValues
@@ -131,7 +132,10 @@
 				<div class:manque={row.missing}>
 					<dt>{row.label}</dt>
 					<dd>
-						{#if row.typed}<bdi>{row.value}</bdi>{:else}{row.value}{/if}
+						<!-- Un titre ou une description garde la langue et le sens de son texte. -->
+						{#if row.typed}<bdi lang={row.lang} dir={row.lang ? textDirection(row.lang) : 'auto'}
+								>{row.value}</bdi
+							>{:else}{row.value}{/if}
 					</dd>
 				</div>
 			{/each}
@@ -166,11 +170,14 @@
 						{code === entry.sourceLanguage ? text.required : text.optional}
 					</span>
 				</label>
+				<!-- Le texte d'une langue garde son sens d'écriture, quelle que soit celle de l'écran. -->
 				<input
 					id={`title-${code}`}
 					name={`title.${code}`}
 					type="text"
 					maxlength="120"
+					lang={code}
+					dir={textDirection(code)}
 					bind:value={entry.titles[code]}
 					aria-describedby={`title-${code}-hint`}
 				/>
@@ -183,6 +190,8 @@
 					id={`description-${code}`}
 					name={`description.${code}`}
 					rows="3"
+					lang={code}
+					dir={textDirection(code)}
 					bind:value={entry.descriptions[code]}
 					aria-describedby={`description-${code}-hint`}></textarea>
 				<p class="aide" id={`description-${code}-hint`}>{text.descriptionHint}</p>

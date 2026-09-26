@@ -29,7 +29,7 @@ import {
 	languageLabel,
 	shortDate
 } from './format.js';
-import { numericDate, t, type Langue } from './i18n.js';
+import { direction, isLangue, numericDate, t, type Langue } from './i18n.js';
 import { courseFormTexts } from './i18n/course-form.js';
 import { formattingTexts } from './i18n/formatting.js';
 
@@ -180,6 +180,16 @@ export interface SummaryRow {
 	value: string;
 	missing: boolean;
 	typed: boolean;
+	/** La langue d'un titre ou d'une description, qui n'est pas forcément celle de l'écran. */
+	lang?: string;
+}
+
+/**
+ * Le sens d'écriture d'une langue de l'organisation, pour un texte saisi dans cette langue : l'arabe
+ * de droite à gauche, les autres de gauche à droite, quelle que soit la langue de l'écran.
+ */
+export function textDirection(code: string): 'ltr' | 'rtl' {
+	return isLangue(code) ? direction(code) : 'ltr';
 }
 
 /** Ce que le résumé doit savoir en plus des champs : les langues de l'organisation, ses salles. */
@@ -203,10 +213,19 @@ export function summarise(
 ): SummaryRow[] {
 	const text = courseFormTexts[language];
 	const rows: SummaryRow[] = [];
-	const row = (key: string, label: string, value: string | null, missing: string, typed = false) =>
+	// Une phrase qui dit un manque est dans la langue de l'écran : seule une valeur saisie garde la
+	// langue de son texte.
+	const row = (
+		key: string,
+		label: string,
+		value: string | null,
+		missing: string,
+		typed = false,
+		lang?: string
+	) =>
 		rows.push(
 			value
-				? { key, label, value, missing: false, typed }
+				? { key, label, value, missing: false, typed, ...(lang ? { lang } : {}) }
 				: { key, label, value: missing, missing: true, typed: false }
 		);
 
@@ -218,7 +237,8 @@ export function summarise(
 		const description = values.descriptions[code]?.trim() ?? '';
 		const isSource = code === values.sourceLanguage;
 		if (title || isSource) {
-			row(`title-${code}`, text.summary.titleIn(name), title || null, text.missing.title, true);
+			const label = text.summary.titleIn(name);
+			row(`title-${code}`, label, title || null, text.missing.title, true, code);
 		}
 		// `parseCourseForm` ne garde une langue qu'avec son titre : une description seule n'est pas
 		// publiée, et le résumé le dit. Dans la langue de saisie, le titre manquant est déjà signalé.
@@ -228,7 +248,8 @@ export function summarise(
 				text.summary.descriptionIn(name),
 				title || isSource ? description : null,
 				text.missing.descriptionWithoutTitle(name),
-				true
+				true,
+				code
 			);
 		}
 	}
