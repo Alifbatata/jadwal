@@ -498,14 +498,18 @@
 				</button>
 			</div>
 
-			<h3>{text.computed.previewTitle}</h3>
+			<h3 id="apercu-calcul-titre">{text.computed.previewTitle}</h3>
 			{#if apercu.length === 0}
 				<p class="aide">{text.computed.previewEmpty}</p>
 			{:else}
 				<p class="aide">
 					{form?.apercuCalcule ? text.computed.previewUnsaved : text.computed.previewSaved}
 				</p>
-				<div class="defile">
+				<!-- Chaque tableau qui défile est une région nommée qui prend le focus : sans cela, le
+				     clavier ne le fait pas défiler (axe, scrollable-region-focusable). Svelte ne connaît
+				     pas ce cas, d'où la consigne qui suit, posée sur chacun. -->
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+				<div class="defile" role="region" tabindex="0" aria-labelledby="apercu-calcul-titre">
 					<table>
 						<thead>
 							<tr>
@@ -547,8 +551,9 @@
 		<p class="aide">{text.file.intro(taille)}</p>
 
 		<!-- Un exemple vaut mieux qu'une description : un fichier se lit comme ce tableau. -->
-		<p class="aide"><strong>{text.file.exampleTitle}</strong></p>
-		<div class="defile">
+		<p class="aide" id="exemple-titre"><strong>{text.file.exampleTitle}</strong></p>
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<div class="defile" role="region" tabindex="0" aria-labelledby="exemple-titre">
 			<table class="exemple">
 				<thead>
 					<tr>
@@ -705,8 +710,11 @@
 				{/if}
 
 				{#if lecture.extrait.length > 0}
-					<h4>{lecture.extraitAVenir ? text.file.previewFromToday : text.file.previewFirst}</h4>
-					<div class="defile">
+					<h4 id="extrait-titre">
+						{lecture.extraitAVenir ? text.file.previewFromToday : text.file.previewFirst}
+					</h4>
+					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+					<div class="defile" role="region" tabindex="0" aria-labelledby="extrait-titre">
 						<table>
 							<thead>
 								<tr>
@@ -779,15 +787,19 @@
 <section aria-labelledby="servies-titre">
 	<h2 id="servies-titre">{text.served.title}</h2>
 	<p class="aide">{text.served.intro}</p>
-	{@render tableServie(data.septJours)}
+	{@render tableServie(data.septJours, 'servies-titre')}
 </section>
 
-{#snippet tableServie(jours: Jour[])}
+<!-- `titre` : l'identifiant du titre qui nomme le tableau. Un tableau plus large qu'un téléphone
+     défile seul, et le clavier doit pouvoir le faire défiler : il y faut une région nommée qui prend
+     le focus (axe, scrollable-region-focusable). -->
+{#snippet tableServie(jours: Jour[], titre: string)}
 	{@const rangs = jours.filter((jour) => PRIERES.some((priere) => jour[priere] !== null))}
 	{#if rangs.length === 0}
 		<p class="aide">{text.served.empty}</p>
 	{:else}
-		<div class="defile">
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<div class="defile" role="region" tabindex="0" aria-labelledby={titre}>
 			<table>
 				<thead>
 					<tr>
@@ -852,7 +864,7 @@
 	{#each data.periodes as periode (periode.id)}
 		<div class="periode">
 			<h3>
-				<bdi>{periode.name}</bdi>
+				<bdi id={`periode-nom-${periode.id}`}>{periode.name}</bdi>
 				{#if periode.needsReview}
 					<span class="marque" title={text.periods.toReviewTitle}>{text.periods.toReview}</span>
 				{/if}
@@ -868,7 +880,8 @@
 			{#if periode.needsReview}
 				<p class="avertissement">{text.periods.toReviewText}</p>
 			{/if}
-			<div class="defile">
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+			<div class="defile" role="region" tabindex="0" aria-labelledby={`periode-nom-${periode.id}`}>
 				<table>
 					<thead>
 						<tr>
@@ -1035,9 +1048,9 @@
 			</button>
 		</div>
 		{#if renvoyee && form?.apercuPeriode}
-			<h4>{text.periods.previewTitle}</h4>
+			<h4 id={`apercu-periode-titre-${cleDeLaPeriode}`}>{text.periods.previewTitle}</h4>
 			<p class="aide">{text.periods.previewHint}</p>
-			{@render tableServie(form.apercuPeriode)}
+			{@render tableServie(form.apercuPeriode, `apercu-periode-titre-${cleDeLaPeriode}`)}
 		{/if}
 		<div class="boutons">
 			<button type="submit" class="principal">{text.periods.save}</button>
@@ -1279,10 +1292,14 @@
 		font-weight: 600;
 	}
 	/* Un tableau de sept jours est plus large qu'un téléphone : il défile seul, sans faire défiler la
-	   page. */
+	   page. Il prend le focus pour que les flèches du clavier le fassent défiler, et le montre. */
 	.defile {
 		overflow-x: auto;
 		max-width: 100%;
+	}
+	.defile:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
 	}
 	table {
 		border-collapse: collapse;

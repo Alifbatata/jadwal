@@ -741,6 +741,73 @@ describe('chaque vue de l’écran, dans les cinq langues (retours D2 et A3)', (
 		expect(lu).toContain('iqama 19:10');
 	});
 
+	/**
+	 * Les conteneurs qui font défiler un tableau trop large pour un téléphone (`.defile`), chacun
+	 * avec sa balise ouvrante et son contenu. Les `div` sont comptés pour trouver la bonne fermeture.
+	 */
+	function defilants(html: string): { ouverture: string; contenu: string }[] {
+		const trouves: { ouverture: string; contenu: string }[] = [];
+		for (const ouverture of html.matchAll(/<div\b[^>]*\bclass="defile\b[^"]*"[^>]*>/g)) {
+			const debut = (ouverture.index ?? 0) + ouverture[0].length;
+			const balises = /<div\b[^>]*>|<\/div>/g;
+			balises.lastIndex = debut;
+			let profondeur = 1;
+			let fin = html.length;
+			for (let trouve = balises.exec(html); trouve; trouve = balises.exec(html)) {
+				profondeur += trouve[0].startsWith('</') ? -1 : 1;
+				if (profondeur === 0) {
+					fin = trouve.index;
+					break;
+				}
+			}
+			trouves.push({ ouverture: ouverture[0], contenu: html.slice(debut, fin) });
+		}
+		return trouves;
+	}
+
+	/** Le nom d'une région : son `aria-label`, ou le texte de l'élément que désigne `aria-labelledby`. */
+	function nomDeLaRegion(html: string, ouverture: string): string {
+		const etiquette = ouverture.match(/\saria-label="([^"]*)"/)?.[1];
+		if (etiquette !== undefined) return visibleText(`<body>${etiquette}</body>`);
+		const id = ouverture.match(/\saria-labelledby="([^"]*)"/)?.[1];
+		if (!id) return '';
+		const cible = new RegExp(`<([a-z0-9]+)\\b[^>]*\\sid="${id}"[^>]*>([\\s\\S]*?)</\\1>`).exec(
+			html
+		);
+		return visibleText(`<body>${cible?.[2] ?? ''}</body>`);
+	}
+
+	it.each(LANGUES)(
+		'lets the keyboard scroll each table wider than a phone, and names it, in %s',
+		(langue) => {
+			// axe le classe « serious » (scrollable-region-focusable) à 390 px de large : un tableau qui
+			// déborde et que rien ne permet d'atteindre au clavier ne se fait pas défiler sans souris.
+			let regions = 0;
+			for (const { nom } of VUES) {
+				const html = rendus[nom]?.[langue] ?? '';
+				const francais = rendus[nom]?.fr ?? '';
+				const nomsFrancais = new Set(
+					defilants(francais).map(({ ouverture }) => nomDeLaRegion(francais, ouverture))
+				);
+				for (const { ouverture, contenu } of defilants(html)) {
+					// Un tableau de champs se fait défiler en passant d'un champ à l'autre.
+					if (/<(?:input|select|textarea|button)\b/.test(contenu)) continue;
+					regions += 1;
+					expect(ouverture, nom).toMatch(/\stabindex="0"/);
+					expect(ouverture, nom).toMatch(/\srole="region"/);
+					const accessible = nomDeLaRegion(html, ouverture);
+					expect(accessible, `${nom} : ${ouverture}`).not.toBe('');
+					if (langue !== 'fr' && !permis(francais).includes(accessible)) {
+						expect(nomsFrancais.has(accessible), `${nom} : « ${accessible} »`).toBe(false);
+					}
+				}
+			}
+			// L'aperçu du calcul, l'exemple et l'extrait du fichier, les périodes, l'aperçu d'une
+			// période et ce que voit le public, sur onze vues : bien plus de huit.
+			expect(regions).toBeGreaterThanOrEqual(8);
+		}
+	);
+
 	it('writes the question and the priority sentence in each language', () => {
 		for (const langue of LANGUES) {
 			const lu = visibleText(rendus['la question, réglages faits']?.[langue] ?? '');
