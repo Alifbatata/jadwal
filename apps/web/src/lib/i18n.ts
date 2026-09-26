@@ -103,6 +103,13 @@ interface Dictionnaire {
 	 */
 	readonly languagesLabel: string;
 	/**
+	 * Le nom des deux autres listes de liens de l'en-tête, pour les lecteurs d'écran : les vues
+	 * (semaine, tous les cours, mois) et les publics. Elles portaient le nom de leur premier lien,
+	 * « Semaine » et « Tous », qui ne dit pas ce qu'on y choisit.
+	 */
+	readonly viewsLabel: string;
+	readonly audiencesLabel: string;
+	/**
 	 * Ce qu'un lien qui ouvre un nouvel onglet dit aux lecteurs d'écran, et à eux seuls (technique
 	 * G201 des WCAG). Les textes du chef de projet, mot pour mot ; `annonceNouvelOnglet` les met
 	 * entre parenthèses.
@@ -220,6 +227,8 @@ const fr: Dictionnaire = {
 	offeredBy: 'Proposé gratuitement par jadwal, un service de Voltia',
 	terms: 'Conditions d’utilisation',
 	languagesLabel: 'Langues',
+	viewsLabel: 'Affichage',
+	audiencesLabel: 'Filtrer par public',
 	newTab: 's’ouvre dans un nouvel onglet',
 	notFound: 'Page introuvable',
 	notFoundHint: 'Vérifiez l’adresse.',
@@ -315,6 +324,8 @@ const de: Dictionnaire = {
 	offeredBy: 'Kostenlos bereitgestellt von jadwal, einem Dienst von Voltia',
 	terms: 'Nutzungsbedingungen',
 	languagesLabel: 'Sprachen',
+	viewsLabel: 'Ansicht',
+	audiencesLabel: 'Nach Zielgruppe filtern',
 	newTab: 'öffnet sich in einem neuen Tab',
 	notFound: 'Seite nicht gefunden',
 	notFoundHint: 'Bitte prüfen Sie die Adresse.',
@@ -410,6 +421,8 @@ const it: Dictionnaire = {
 	offeredBy: 'Offerto gratuitamente da jadwal, un servizio di Voltia',
 	terms: 'Condizioni d’uso',
 	languagesLabel: 'Lingue',
+	viewsLabel: 'Visualizzazione',
+	audiencesLabel: 'Filtra per pubblico',
 	newTab: 'si apre in una nuova scheda',
 	notFound: 'Pagina non trovata',
 	notFoundHint: 'Controlla l’indirizzo.',
@@ -508,6 +521,8 @@ const en: Dictionnaire = {
 	offeredBy: 'Provided free of charge by jadwal, a service from Voltia',
 	terms: 'Terms of use',
 	languagesLabel: 'Languages',
+	viewsLabel: 'View',
+	audiencesLabel: 'Filter by group',
 	newTab: 'opens in a new tab',
 	notFound: 'Page not found',
 	notFoundHint: 'Please check the address.',
@@ -627,6 +642,8 @@ const ar: Dictionnaire = {
 	offeredBy: 'مقدَّم مجانًا من jadwal، خدمة من Voltia',
 	terms: 'شروط الاستخدام',
 	languagesLabel: 'اللغات',
+	viewsLabel: 'طريقة العرض',
+	audiencesLabel: 'تصفية حسب الفئة',
 	newTab: 'يُفتح في علامة تبويب جديدة',
 	notFound: 'الصفحة غير موجودة',
 	notFoundHint: 'تحقّق من العنوان.',

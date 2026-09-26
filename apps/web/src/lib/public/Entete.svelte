@@ -40,7 +40,7 @@
 
 	{@render vendredi?.()}
 
-	<nav class="vues" aria-label={mots.views.week}>
+	<nav class="vues" aria-label={mots.viewsLabel}>
 		{#each [['semaine', mots.views.week], ['cours', mots.views.courses], ['mois', mots.views.month]] as [cle, libelle] (cle)}
 			<a
 				href={lienVue(cle as 'semaine' | 'cours' | 'mois')}
@@ -52,7 +52,7 @@
 	</nav>
 
 	{#if avecFiltres}
-		<nav class="filtres" aria-label={mots.allAudiences}>
+		<nav class="filtres" aria-label={mots.audiencesLabel}>
 			<a href={lienFiltre(null)} aria-current={filtre === null ? 'true' : undefined}>
 				{mots.allAudiences}
 			</a>

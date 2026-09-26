@@ -805,3 +805,29 @@ describe('le nom de la liste des langues', () => {
 		expect(attributs(listes[0]?.[0] ?? '')['aria-label']).toBe(nom);
 	});
 });
+
+/**
+ * Les deux autres listes de liens de l'en-tête, les vues et les publics, portent chacune un nom qui
+ * dit ce qu'elles font. Elles s'appelaient « Semaine » et « Tous » : un lecteur d'écran annonçait
+ * « Week, navigation » devant les trois vues, et « All, navigation » devant les publics.
+ */
+describe('le nom des vues et des publics, dans l’en-tête', () => {
+	const base = (langue: string) => (langue === 'fr' ? `/m/${SLUG}` : `/m/${SLUG}/${langue}`);
+
+	it.each([
+		{ langue: 'fr', vues: 'Affichage', publics: 'Filtrer par public' },
+		{ langue: 'de', vues: 'Ansicht', publics: 'Nach Zielgruppe filtern' },
+		{ langue: 'it', vues: 'Visualizzazione', publics: 'Filtra per pubblico' },
+		{ langue: 'en', vues: 'View', publics: 'Filter by group' },
+		{ langue: 'ar', vues: 'طريقة العرض', publics: 'تصفية حسب الفئة' }
+	])('names them « $vues » and « $publics » in $langue', async ({ langue, vues, publics }) => {
+		const { statut, html } = await servir(base(langue));
+		expect(statut).toBe(200);
+		const nom = (classe: string) =>
+			[...html.matchAll(new RegExp(`<nav\\b[^>]*\\bclass="${classe}\\b[^"]*"[^>]*>`, 'g'))].map(
+				(trouve) => attributs(trouve[0])['aria-label']
+			);
+		expect(nom('vues')).toEqual([vues]);
+		expect(nom('filtres')).toEqual([publics]);
+	});
+});
