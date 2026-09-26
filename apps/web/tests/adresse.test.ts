@@ -1,15 +1,17 @@
 // L'adresse réelle du visiteur, derrière un mandataire inverse (étape 9).
 //
 // Ce fichier existe pour une raison précise : jusqu'à l'étape 9, l'application lisait la
-// **première** valeur de `X-Forwarded-For`. Un mandataire **ajoute** la sienne à celles que le
-// client a envoyées — un visiteur qui pose `X-Forwarded-For: 1.2.3.4` obtient donc
-// `1.2.3.4, <sa vraie adresse>` après Caddy. Nous lisions `1.2.3.4`, c'est-à-dire ce que le visiteur
-// avait choisi : il lui suffisait d'en changer à chaque requête pour obtenir un seau de limitation
-// neuf, et la limitation de débit publique ne valait rien.
+// **première** valeur de `X-Forwarded-For`. Caddy, sans mandataire de confiance devant lui
+// (`trusted_proxies`), **remplace** cet en-tête par l'adresse de qui s'est connecté à lui : il n'y
+// reste qu'une valeur. Mais derrière un mandataire qui **ajoute** la sienne à celles que le client a
+// envoyées, un visiteur qui pose `X-Forwarded-For: 1.2.3.4` arrive avec
+// `1.2.3.4, <sa vraie adresse>`. Nous lisions `1.2.3.4`, c'est-à-dire ce que le visiteur avait
+// choisi : il lui suffisait d'en changer à chaque requête pour obtenir un seau de limitation neuf,
+// et la limitation de débit publique ne valait rien.
 //
 // Les requêtes de ce fichier vont à la **troisième** instance, la seule configurée comme en
-// production. Et le test joue le rôle du mandataire : il envoie l'en-tête tel que Caddy le
-// laisserait, c'est-à-dire avec la vraie adresse **en dernier**. C'est la seule manière d'éprouver
+// production. Et le test joue le rôle d'un mandataire qui ajoute : il envoie l'en-tête avec la
+// valeur du visiteur d'abord et la vraie adresse **en dernier**. C'est la seule manière d'éprouver
 // la règle plutôt que de la relire.
 
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
@@ -74,7 +76,8 @@ afterAll(async () => {
 describe('un visiteur ne choisit pas son adresse', () => {
 	it('retient celle que le mandataire a ajoutée, pas celle que le visiteur a écrite', async () => {
 		await viderLesSeaux();
-		// Ce que Caddy laisse quand le visiteur a triché : sa valeur d'abord, la vraie ensuite.
+		// Ce qu'un mandataire qui ajoute laisse quand le visiteur a triché : sa valeur d'abord, la
+		// vraie ensuite.
 		await visiter('/api/v1/organisations/inexistante', `${USURPEE}, ${REELLE}`);
 
 		expect(await seauExiste(`public:${REELLE}`), 'le seau de la vraie adresse').toBe(true);

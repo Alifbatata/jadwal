@@ -125,9 +125,9 @@ export default async function setup(project: TestProject) {
 				// sont ainsi éprouvées sur un vrai serveur, et non simulées.
 				...(index === 1 ? { JADWAL_WIDGET_TEST_ORG: 'widget' } : {}),
 				// La troisième instance seulement : adapter-node lit alors `X-Forwarded-For` et prend
-				// la valeur à un rang depuis la droite — celle qu'un mandataire vient d'ajouter. Les
-				// deux autres n'ont pas cet en-tête déclaré et lèveraient sur toute requête qui ne le
-				// porterait pas.
+				// la dernière valeur, à un rang depuis la droite : celle que le mandataire a écrite.
+				// Les deux autres n'ont pas cet en-tête déclaré et lèveraient sur toute requête qui ne
+				// le porterait pas.
 				...(index === 2
 					? {
 							ADDRESS_HEADER: 'x-forwarded-for',
