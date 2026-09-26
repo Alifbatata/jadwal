@@ -8,6 +8,7 @@
 // requête : un écran ne protège rien, seule la route protège.
 
 import { redirect } from '@sveltejs/kit';
+import type { IsoDate } from '@jadwal/core';
 import { sql } from '@jadwal/db';
 import { authDatabase } from '$lib/server/database.js';
 import { mustBeSignedIn } from '$lib/server/guard.js';
@@ -30,10 +31,12 @@ export const load: PageServerLoad = async (event) => {
 		`)
 	);
 	return {
+		// Le nom manquant et la date sont écrits par la page, dans sa langue : la date y passe par
+		// `numericDate` (JJ.MM.AAAA), jamais telle que la base l'écrit (étape 18, retour A3).
 		passkeys: passkeys.map((entry) => ({
 			id: entry.id,
-			name: entry.name ?? 'sans nom',
-			createdAt: entry.created_at.slice(0, 10)
+			name: entry.name,
+			createdAt: entry.created_at.slice(0, 10) as IsoDate
 		})),
 		hasSuperAdminPowers: person.hasSuperAdminPowers,
 		/** Vrai tant qu'aucune passkey n'existe : c'est la fenêtre d'amorçage. */

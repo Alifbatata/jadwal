@@ -2,11 +2,19 @@
 	// Le seul écran qui exige JavaScript : WebAuthn n'existe que dans le navigateur. Le client
 	// Better Auth est importé à la demande, pour que le reste des pages n'en porte pas le poids.
 	import { invalidateAll } from '$app/navigation';
+	import { numericDate } from '$lib/i18n.js';
+	import { passkeyTexts } from '$lib/i18n/super-admin-passkey.js';
 
 	let { data } = $props();
+	const text = $derived(passkeyTexts[data.language]);
+
+	type Outcome = 'registered' | 'registerFailed' | 'signInFailed' | 'deleteFailed';
 
 	let etat = $state<'repos' | 'en-cours' | 'echec'>('repos');
-	let message = $state('');
+	/** Ce qui vient de se passer, dit dans la langue de l'écran. */
+	let outcome = $state<Outcome | null>(null);
+	/** Le message technique du navigateur après un échec, dans la langue qu'il choisit. */
+	let detail = $state('');
 
 	async function client() {
 		const [{ createAuthClient }, { passkeyClient }] = await Promise.all([
@@ -16,126 +24,120 @@
 		return createAuthClient({ plugins: [passkeyClient()] });
 	}
 
-	async function enregistrer() {
+	function begin() {
 		etat = 'en-cours';
-		message = '';
+		outcome = null;
+		detail = '';
+	}
+
+	function failed(what: Outcome, erreur: unknown) {
+		etat = 'echec';
+		outcome = what;
+		detail = erreur instanceof Error ? erreur.message : '';
+	}
+
+	async function enregistrer() {
+		begin();
 		try {
 			const authClient = await client();
-			const { error } = await authClient.passkey.addPasskey({ name: 'Cet appareil' });
-			if (error) throw new Error(error.message ?? 'refusé');
+			const { error } = await authClient.passkey.addPasskey({ name: text.thisDevice });
+			if (error) throw new Error(error.message ?? '');
 			etat = 'repos';
 			// Pas de déconnexion : le bouton « Se connecter avec une passkey » apparaît juste en
 			// dessous dès que les données sont relues, et c'est lui qui donne les pouvoirs à cette
 			// session. L'écran a longtemps demandé de sortir puis de revenir — une marche de plus
 			// pour rien, et la première chose qu'on lit après avoir enregistré sa passkey.
-			message = 'Passkey enregistrée. Connectez-vous avec elle, ci-dessous, sans quitter la page.';
+			outcome = 'registered';
 			await invalidateAll();
 		} catch (erreur) {
-			etat = 'echec';
-			message = erreur instanceof Error ? erreur.message : 'refusé';
+			failed('registerFailed', erreur);
 		}
 	}
 
 	async function seConnecter() {
-		etat = 'en-cours';
-		message = '';
+		begin();
 		try {
 			const authClient = await client();
 			const { error } = await authClient.signIn.passkey();
-			if (error) throw new Error(error.message ?? 'refusé');
+			if (error) throw new Error(error.message ?? '');
 			window.location.assign('/super-admin');
 		} catch (erreur) {
-			etat = 'echec';
-			message = erreur instanceof Error ? erreur.message : 'refusé';
+			failed('signInFailed', erreur);
 		}
 	}
 
 	async function supprimer(id: string) {
-		etat = 'en-cours';
-		message = '';
+		begin();
 		try {
 			const authClient = await client();
 			const { error } = await authClient.passkey.deletePasskey({ id });
-			if (error) throw new Error(error.message ?? 'refusé');
+			if (error) throw new Error(error.message ?? '');
 			etat = 'repos';
 			await invalidateAll();
 		} catch (erreur) {
-			etat = 'echec';
-			message = erreur instanceof Error ? erreur.message : 'refusé';
+			failed('deleteFailed', erreur);
 		}
 	}
 </script>
 
-<svelte:head><title>Passkey | jadwal</title></svelte:head>
+<svelte:head><title>{text.title} | jadwal</title></svelte:head>
 
-<h1>Votre passkey</h1>
+<h1>{text.title}</h1>
 
-<p>
-	Les pouvoirs de super-admin exigent une session ouverte par passkey. Un lien magique seul ne les
-	donne jamais : une boîte aux lettres compromise ne doit pas suffire à ouvrir toutes les
-	organisations.
-</p>
+<p>{text.what}</p>
+<p>{text.why}</p>
 
 <noscript>
-	<p class="erreur">
-		Cet écran a besoin de JavaScript : une passkey est créée par le navigateur lui-même, il n’existe
-		pas de formulaire qui puisse le faire. Tout le reste de l’application fonctionne sans.
-	</p>
+	<p class="erreur">{text.noScript}</p>
 </noscript>
 
 {#if data.hasSuperAdminPowers}
-	<p class="succes" role="status">
-		Cette session est ouverte par passkey : vos pouvoirs sont actifs.
-	</p>
+	<p class="succes" role="status">{text.powersActive}</p>
 {:else if data.amorcage}
-	<p class="avertissement">
-		Aucune passkey enregistrée. Vous pouvez en enregistrer une maintenant, depuis cette session. Dès
-		qu’il y en aura une, il faudra une session ouverte par passkey pour en ajouter ou en retirer.
-	</p>
+	<p class="avertissement">{text.firstTime}</p>
 {:else}
-	<p class="avertissement">
-		Cette session a été ouverte par lien magique : elle n’a aucun pouvoir. Connectez-vous avec une
-		passkey déjà enregistrée.
-	</p>
+	<p class="avertissement">{text.noPowers}</p>
 {/if}
 
-{#if message}
-	<p class={etat === 'echec' ? 'erreur' : 'succes'} role="status">{message}</p>
+{#if outcome}
+	<p class={etat === 'echec' ? 'erreur' : 'succes'} role="status">{text[outcome]}</p>
+	{#if detail}
+		<p class="aide">{text.detail} <bdi>{detail}</bdi></p>
+	{/if}
 {/if}
 
 <div class="actions">
 	{#if data.amorcage || data.hasSuperAdminPowers}
 		<button type="button" onclick={enregistrer} disabled={etat === 'en-cours'}>
-			Enregistrer une passkey
+			{text.register}
 		</button>
 	{/if}
 	{#if !data.hasSuperAdminPowers && !data.amorcage}
 		<button type="button" onclick={seConnecter} disabled={etat === 'en-cours'}>
-			Se connecter avec une passkey
+			{text.signIn}
 		</button>
 	{/if}
 </div>
 
 <section aria-labelledby="liste-titre">
-	<h2 id="liste-titre">Passkeys enregistrées</h2>
+	<h2 id="liste-titre">{text.listTitle}</h2>
 	{#if data.passkeys.length === 0}
-		<p class="aide">Aucune.</p>
+		<p class="aide">{text.none}</p>
 	{/if}
 	<ul>
 		{#each data.passkeys as passkey (passkey.id)}
 			<li>
-				{passkey.name}, enregistrée le {passkey.createdAt}
+				<!-- Le nom et la date, côte à côte : l'espacement de la ligne les sépare dans les cinq
+				     langues, sans virgule à placer du bon côté d'un nom écrit dans un autre sens. -->
+				<strong><bdi>{passkey.name ?? text.unnamed}</bdi></strong>
+				<span>{text.registeredOn(numericDate(passkey.createdAt))}</span>
 				{#if data.hasSuperAdminPowers}
-					<button type="button" onclick={() => supprimer(passkey.id)}>Supprimer</button>
+					<button type="button" onclick={() => supprimer(passkey.id)}>{text.delete}</button>
 				{/if}
 			</li>
 		{/each}
 	</ul>
-	<p class="aide">
-		Enregistrez-en plusieurs : perdre son téléphone ne doit pas fermer le service. Si toutes sont
-		perdues, la remise à zéro se fait côté base, par le propriétaire, jamais par une question
-		secrète ni par un code envoyé par courriel.
-	</p>
+	<p class="aide">{text.advice}</p>
 </section>
 
 <style>
@@ -166,7 +168,7 @@
 		padding: 0.35rem 0;
 	}
 	li button {
-		margin-left: auto;
+		margin-inline-start: auto;
 	}
 	.erreur {
 		color: #b91c1c;
@@ -178,7 +180,7 @@
 	}
 	.avertissement {
 		background: #fef3c7;
-		border-left: 4px solid #d97706;
+		border-inline-start: 4px solid #d97706;
 		padding: 0.5rem 0.75rem;
 	}
 	.aide {
