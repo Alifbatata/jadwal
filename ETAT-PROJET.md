@@ -933,10 +933,11 @@ passkeys, paiement.
   par personne, rattachée à son adhésion, suffit-elle ? Et le point 11, ajouté à l'étape 18 :
   « Voltia » seul suffit-il comme exploitant et comme titulaire du droit d'auteur ? La question
   suppose que Voltia est une entreprise individuelle, ce que l'exploitant doit confirmer.
-- **La langue d'une invitation** (étape 18, D3, point d'arrêt). Toute invitation part dans la
-  langue de la personne qui invite, parce que lire la langue du compte invité consulterait les
-  comptes (ADR 0017). Un envoi différé, où le courriel part au moment où l'adresse est reconnue,
-  est-il voulu ? C'est une table, une tâche et une reprise sur échec de plus.
+- **La langue d'une invitation** (étape 18, D3, point d'arrêt). Le chef de projet accepte-t-il que
+  toute invitation parte dans la langue de la personne qui invite ? La seule façon de lire la langue
+  du compte destinataire sans toucher à l'ADR 0017 serait un envoi différé : une table de courriels
+  à envoyer, relevée par une tâche après la réponse. C'est un changement d'architecture (table,
+  tâche, reprise sur échec) qui demande sa propre décision (ADR 0017, addendum).
 - ~~Le choix de la langue doit-il suivre le lien de connexion~~ : fait à l'étape 18, il part avec
   le lien (ADR 0047). **Reste à accepter** ce que la règle laisse, « quel que soit le délai » : un
   choix fait sans demander de lien peut, jusqu'à un an plus tard, remettre sa langue sur le compte
