@@ -1,9 +1,23 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { addDays, type IsoDate } from '@jadwal/core';
-	import { AUDIENCE_LABELS, describeSessionTime, shortDate } from '$lib/format.js';
+	import type { IsoDate } from '@jadwal/core';
+	import { audienceLabel, describeSessionTime, shortDate } from '$lib/format.js';
+	import { direction, NOM_DE_LANGUE, type Langue } from '$lib/i18n.js';
+	import { commonTexts } from '$lib/i18n/common.js';
+	import { upcomingTexts } from '$lib/i18n/upcoming.js';
 
 	let { data, form } = $props();
+
+	/** La langue de l'espace, calculée par le hook, et les textes de l'écran dans cette langue. */
+	const language = $derived(data.language);
+	const text = $derived(upcomingTexts[language]);
+	/** Le nom de l'écran est celui de son lien dans la navigation. */
+	const title = $derived(commonTexts[language].navigation.upcoming);
+
+	/** Une date lue par une personne : le nom du jour, puis `JJ.MM.AAAA` (retour A3). */
+	function date(value: string): string {
+		return shortDate(value as IsoDate, language);
+	}
 
 	/** Les séances groupées par jour, dans l'ordre. Un jour sans séance n'est pas affiché. */
 	const parJour = $derived.by(() => {
@@ -11,169 +25,207 @@
 		// données, il n'a aucun état à garder entre deux rendus.
 		const groupes: [string, typeof data.seances][] = [];
 		for (const seance of data.seances) {
-			const trouve = groupes.find(([date]) => date === seance.date);
+			const trouve = groupes.find(([jour]) => jour === seance.date);
 			if (trouve) trouve[1].push(seance);
 			else groupes.push([seance.date, [seance]]);
 		}
 		return groupes.sort(([a], [b]) => (a < b ? -1 : 1));
 	});
 
-	/** Les six jours qui suivent une séance, pour le choix de déplacement. */
-	function joursSuivants(date: string): IsoDate[] {
-		return Array.from({ length: 6 }, (_, index) => addDays(date as IsoDate, index + 1));
-	}
+	const cle = (courseId: string, jour: string) => `${courseId}-${jour}`;
 
-	let ouvert = $state<string | null>(null);
-	const cle = (courseId: string, date: string) => `${courseId}|${date}`;
+	/**
+	 * La séance qu'une action vient de refuser : ses options, et elles seules, se rouvrent sur la
+	 * phrase qui dit quoi faire, avec ce qui avait été saisi (retour A1).
+	 */
+	const refusee = $derived(form?.error ? cle(form.courseId ?? '', form.date ?? '') : null);
+	/** Une erreur qui ne trouve pas sa carte, une séance disparue par exemple, s'affiche en haut. */
+	const erreurEnHaut = $derived(
+		Boolean(form?.error) &&
+			!data.seances.some(
+				(seance) => seance.status === 'scheduled' && cle(seance.courseId, seance.date) === refusee
+			)
+	);
 </script>
 
-<svelte:head><title>À venir | {data.organisation.name}</title></svelte:head>
+<!-- Les messages prêts à coller, une langue par bloc, la première ouverte (retour D1). Chaque bloc
+     porte la langue et le sens de son texte : un message arabe se lit de droite à gauche dans un écran
+     français, et un message français de gauche à droite dans un écran arabe. -->
+{#snippet messagesInLanguages(
+	messages: readonly { language: Langue; text: string }[],
+	label: string,
+	rows: number
+)}
+	{#each messages as message, index (message.language)}
+		<details class="langue-du-message" open={index === 0}>
+			<summary lang={message.language}>{NOM_DE_LANGUE[message.language]}</summary>
+			<textarea
+				readonly
+				{rows}
+				aria-label={label}
+				lang={message.language}
+				dir={direction(message.language)}>{message.text}</textarea
+			>
+		</details>
+	{/each}
+{/snippet}
 
-<h1>À venir</h1>
-<p class="periode">Du {shortDate(data.from as IsoDate)} au {shortDate(data.to as IsoDate)}</p>
+<svelte:head><title>{title} | {data.organisation.name}</title></svelte:head>
+
+<h1>{title}</h1>
+<p class="periode">{text.period(date(data.from), date(data.to))}</p>
+<p class="intro">{text.intro}</p>
+
+{#if form?.error && erreurEnHaut}
+	<p class="erreur" role="alert">{text.errors[form.error]}</p>
+{/if}
+
+<!-- Ce que la dernière action a fait, et le message qu'elle prépare : c'est ce que la personne
+     vient de demander, avant tout le reste. -->
+{#if form?.done}
+	<section class="message" aria-labelledby="message-titre">
+		<h2 id="message-titre">{text.done[form.done]}</h2>
+		{#if form.messages}
+			<p class="aide">{text.messageHelp}</p>
+			{@render messagesInLanguages(form.messages, text.messageLabel, 5)}
+		{/if}
+	</section>
+{/if}
 
 <!-- Ce qui demande une décision, avant le programme lui-même. Chaque mention porte le lien qui la
-     résout : un avertissement qui ne dit pas quoi faire ne sert à rien. -->
+     résout, ou dit qui peut la résoudre : un avertissement qui ne dit pas quoi faire ne sert à rien.
+     L'écran des prières est réservé aux responsables ; un éditeur n'y aurait trouvé qu'un renvoi. -->
 {#if data.prieres.seancesSansHeure > 0}
 	<p class="mention" role="status">
-		{data.prieres.seancesSansHeure === 1
-			? 'Une séance de la semaine s’annonce'
-			: `${data.prieres.seancesSansHeure} séances de la semaine s’annoncent`}
-		sans heure : elles suivent une prière, et les heures de prière
-		{#if data.prieres.finDeLImport || data.prieres.calculPossible}
-			ne couvrent pas encore toute la semaine.
-		{:else}
-			ne sont pas encore réglées.
+		{text.untimed(data.prieres.seancesSansHeure)}
+		{data.prieres.finDeLImport || data.prieres.calculPossible
+			? text.untimedNotCovered
+			: text.untimedNotSet}
+		{#if data.canSetPrayers}
+			<a href={resolve('/prieres')}>{text.untimedLink}</a>
+		{:else if data.role === 'editor'}
+			{text.untimedAskManager}
 		{/if}
-		<a href={resolve('/prieres')}>Régler les heures de prière</a>
 	</p>
 {/if}
 
 {#if data.prieres.alerte && data.prieres.finDeLImport}
 	<p class="mention" role="status">
-		Votre calendrier importé s’arrête le {shortDate(data.prieres.finDeLImport as IsoDate)}, dans {data
-			.prieres.joursRestants} jours.
-		{#if data.prieres.calculPossible}
-			Le calcul prendra ensuite le relais, avec les réglages de votre organisation.
-		{:else}
-			Après cette date, les séances qui suivent une prière s’afficheront sans heure.
+		{text.importEnds(date(data.prieres.finDeLImport), data.prieres.joursRestants ?? 0)}
+		{data.prieres.calculPossible ? text.importThenComputed : text.importThenUntimed}
+		{#if data.canSetPrayers}
+			<a href={resolve('/prieres')}>{text.importLink}</a>
+		{:else if data.role === 'editor'}
+			{text.importAskManager}
 		{/if}
-		<a href={resolve('/prieres')}>Importer la suite</a>
 	</p>
 {/if}
 
 {#if data.audience.widgetMuet}
 	<p class="mention" role="status">
-		Votre widget ne semble plus s’afficher : personne n’a vu votre programme en mode intégré depuis
-		sept jours, alors que c’était le cas avant. Vérifiez la page de votre site où vous l’avez collé.
-		Si vous l’avez retiré volontairement, il n’y a rien à faire.
-		<a href={resolve('/partager')}>Revoir le code à coller</a>
+		{text.widgetSilent}
+		<a href={resolve('/partager')}>{text.widgetLink}</a>
 	</p>
-{/if}
-
-{#if form?.erreur}
-	<p class="erreur" role="alert">{form.erreur}</p>
-{/if}
-
-{#if form?.message}
-	<section class="message" aria-labelledby="message-titre">
-		<h2 id="message-titre">Message prêt à coller</h2>
-		<textarea readonly rows="5" aria-label="Message à copier">{form.message}</textarea>
-	</section>
 {/if}
 
 {#if parJour.length === 0}
 	<p class="vide">
-		Aucune séance dans les sept prochains jours.
-		<a href={resolve('/cours/nouveau')}>Créer un cours</a>.
+		{text.empty}
+		<a href={resolve('/cours/nouveau')}>{text.emptyLink}</a>
 	</p>
 {/if}
 
-{#each parJour as [date, seances] (date)}
-	<section aria-labelledby={`jour-${date}`}>
-		<h2 id={`jour-${date}`}>{shortDate(date as IsoDate)}</h2>
+{#each parJour as [jour, seances] (jour)}
+	<section aria-labelledby={`jour-${jour}`}>
+		<h2 id={`jour-${jour}`}>{date(jour)}</h2>
 		<ul>
 			{#each seances as seance (cle(seance.courseId, seance.date) + seance.status)}
-				<li class={seance.status}>
+				{@const k = cle(seance.courseId, seance.date)}
+				<li class="seance {seance.status}">
 					<p class="titre">
-						{seance.title}
-						{#if seance.status === 'cancelled'}<span class="marque">annulée</span>{/if}
-						{#if seance.status === 'moved_here'}<span class="marque">date exceptionnelle</span>{/if}
-						{#if seance.status === 'moved_away'}<span class="marque">déplacée</span>{/if}
+						<bdi>{seance.title}</bdi>
+						{#if seance.status === 'cancelled'}<span class="marque">{text.marks.cancelled}</span
+							>{/if}
+						{#if seance.status === 'moved_here'}<span class="marque">{text.marks.movedHere}</span
+							>{/if}
+						{#if seance.status === 'moved_away'}<span class="marque">{text.marks.movedAway}</span
+							>{/if}
 					</p>
 					<p class="details">
-						{describeSessionTime(seance)}
-						{#if seance.room}· {seance.room}{/if}
-						{#if seance.teacher}· {seance.teacher}{/if}
-						· {AUDIENCE_LABELS[seance.audience] ?? seance.audience}
+						{describeSessionTime(seance, language)}
+						{#if seance.room}· <bdi>{seance.room}</bdi>{/if}
+						{#if seance.teacher}· <bdi>{seance.teacher}</bdi>{/if}
+						· {audienceLabel(seance.audience, language)}
 					</p>
 					{#if seance.status === 'moved_away' && seance.movedTo}
-						<p class="details">
-							Déplacée au {shortDate(seance.movedTo.date as IsoDate)} à {seance.movedTo.start}
-						</p>
+						<p class="details">{text.movedTo(date(seance.movedTo.date), seance.movedTo.start)}</p>
 					{/if}
 					{#if seance.status === 'moved_here' && seance.originalDate}
-						<p class="details">
-							Initialement le {shortDate(seance.originalDate as IsoDate)}
-						</p>
+						<p class="details">{text.originallyOn(date(seance.originalDate))}</p>
 					{/if}
 
 					{#if seance.status === 'scheduled'}
-						<div class="actions">
-							<button
-								type="button"
-								aria-expanded={ouvert === cle(seance.courseId, seance.date)}
-								onclick={() =>
-									(ouvert =
-										ouvert === cle(seance.courseId, seance.date)
-											? null
-											: cle(seance.courseId, seance.date))}
-							>
-								Annuler ou déplacer
-							</button>
-						</div>
-						<!-- Sans JavaScript, le bloc reste ouvert : les deux formulaires sont toujours
-						     dans la page, et le bouton ne fait que les replier. -->
-						<div
-							class="repli"
-							class:ferme={ouvert !== null && ouvert !== cle(seance.courseId, seance.date)}
-						>
+						<!-- Les options d'une séance, fermées par défaut, et propres à sa carte (retour A1) :
+						     un élément natif, qui s'ouvre et se ferme sans JavaScript et sans toucher aux
+						     autres cartes. Le bouton qui annule n'existe que derrière lui. -->
+						<details class="options" open={refusee === k}>
+							<summary>{text.options}</summary>
 							<form method="post" action="?/annuler">
 								<input type="hidden" name="courseId" value={seance.courseId} />
 								<input type="hidden" name="date" value={seance.date} />
-								<input type="hidden" name="title" value={seance.title} />
-								<p class="avertissement">
-									Cette séance seulement. Le cours continue les autres semaines.
-								</p>
-								<button type="submit" class="danger">Annuler cette séance</button>
+								<p class="aide">{text.cancelHelp}</p>
+								<button type="submit" class="danger">{text.cancelButton}</button>
 							</form>
 
 							<form method="post" action="?/deplacer">
 								<input type="hidden" name="courseId" value={seance.courseId} />
 								<input type="hidden" name="date" value={seance.date} />
-								<input type="hidden" name="title" value={seance.title} />
-								<label for={`vers-${cle(seance.courseId, seance.date)}`}>Déplacer au</label>
-								<select id={`vers-${cle(seance.courseId, seance.date)}`} name="toDate">
-									{#each joursSuivants(seance.date) as jour (jour)}
-										<option value={jour}>{shortDate(jour)}</option>
-									{/each}
-								</select>
-								<label for={`heure-${cle(seance.courseId, seance.date)}`}>à</label>
-								<input
-									id={`heure-${cle(seance.courseId, seance.date)}`}
-									type="time"
-									name="toStart"
-									value={seance.start ?? '19:00'}
-									required
-								/>
-								<button type="submit">Déplacer</button>
+								<fieldset>
+									<legend>{text.moveLegend}</legend>
+									<!-- Une erreur qui retrouve sa carte vient toujours d'un déplacement : la date de
+									     la séance illisible ou la séance disparue ne désignent aucune carte, et
+									     s'affichent en haut. Elle se lit donc au-dessus des champs à corriger. -->
+									{#if form?.error && refusee === k}
+										<p class="erreur" role="alert">{text.errors[form.error]}</p>
+									{/if}
+									<!-- Toute date à partir d'aujourd'hui, plus tôt comme plus tard que la date
+									     prévue (retour A2) : aucun plafond, et l'action refuse elle-même une date
+									     passée. Le champ garde sa valeur technique ; l'aide écrit la date. -->
+									<div class="champ">
+										<label for={`vers-${k}`}>{text.newDate}</label>
+										<input
+											id={`vers-${k}`}
+											type="date"
+											name="toDate"
+											min={data.today}
+											value={refusee === k ? form?.toDate : seance.date}
+											required
+											aria-describedby={`vers-${k}-aide`}
+										/>
+										<p id={`vers-${k}-aide`} class="aide">{text.newDateHelp(date(data.today))}</p>
+									</div>
+									<div class="champ">
+										<label for={`heure-${k}`}>{text.newTime}</label>
+										<input
+											id={`heure-${k}`}
+											type="time"
+											name="toStart"
+											value={refusee === k ? form?.toStart : (seance.start ?? '19:00')}
+											required
+											aria-describedby={`heure-${k}-aide`}
+										/>
+										<p id={`heure-${k}-aide`} class="aide">{text.newTimeHelp}</p>
+									</div>
+									<button type="submit">{text.moveButton}</button>
+								</fieldset>
 							</form>
-						</div>
+						</details>
 					{:else if seance.status !== 'moved_here'}
-						<form method="post" action="?/retablir">
+						<form method="post" action="?/retablir" class="retablir">
 							<input type="hidden" name="courseId" value={seance.courseId} />
 							<input type="hidden" name="date" value={seance.date} />
-							<button type="submit">Rétablir</button>
+							<button type="submit">{text.restoreButton}</button>
+							<span class="aide">{text.restoreHelp}</span>
 						</form>
 					{/if}
 				</li>
@@ -183,73 +235,72 @@
 {/each}
 
 <section class="audience" aria-labelledby="audience-titre">
-	<h2 id="audience-titre">Combien votre programme a été vu</h2>
+	<h2 id="audience-titre">{text.audience.title}</h2>
 	<table>
 		<thead>
 			<tr>
-				<th scope="col">Consultations</th>
-				<th scope="col">7 jours</th>
-				<th scope="col">30 jours</th>
+				<th scope="col">{text.audience.where}</th>
+				<th scope="col">{text.audience.last7}</th>
+				<th scope="col">{text.audience.last30}</th>
 			</tr>
 		</thead>
 		<tbody>
 			<tr>
-				<th scope="row">Page publique</th>
+				<th scope="row">{text.audience.page}</th>
 				<td>{data.audience.sept.page}</td>
 				<td>{data.audience.trente.page}</td>
 			</tr>
 			<tr>
-				<th scope="row">Widget sur votre site</th>
+				<th scope="row">{text.audience.embed}</th>
 				<td>{data.audience.sept.embed}</td>
 				<td>{data.audience.trente.embed}</td>
 			</tr>
 			<tr>
-				<th scope="row">Abonnements agenda</th>
+				<th scope="row">{text.audience.feed}</th>
 				<td>{data.audience.sept.feed}</td>
 				<td>{data.audience.trente.feed}</td>
 			</tr>
 		</tbody>
 	</table>
-	<p class="details">
-		Un jour, un type, un nombre : rien d’autre n’est conservé : ni adresse, ni provenance, ni
-		visiteur. Les robots connus ne sont pas comptés. Ces nombres sont un minimum : une page servie
-		par le cache d’un navigateur ou d’un opérateur ne nous parvient pas. Les abonnements agenda
-		comptent les relevés du calendrier, pas les personnes : un agenda relève tout seul, plusieurs
-		fois par jour.
-	</p>
+	<p class="aide">{text.audience.note}</p>
 </section>
 
 <section class="message" aria-labelledby="semaine-titre">
-	<h2 id="semaine-titre">Le programme de la semaine</h2>
-	<p class="details">À copier dans WhatsApp.</p>
-	<textarea readonly rows="8" aria-label="Programme de la semaine">{data.messageSemaine}</textarea>
+	<h2 id="semaine-titre">{text.weekTitle}</h2>
+	<p class="aide">{text.weekHelp}</p>
+	{@render messagesInLanguages(data.weekMessages, text.weekLabel, 8)}
 </section>
 
 <style>
+	/* Des propriétés logiques seulement : en arabe, l'écran se lit de droite à gauche, et la barre
+	   d'une mention, l'alignement du tableau et le retrait des options suivent. */
 	.periode {
 		color: #555;
 		margin-top: -0.5rem;
 	}
+	.intro {
+		max-width: 40rem;
+	}
 	.mention {
 		background: #fef3c7;
-		border-left: 4px solid #d97706;
+		border-inline-start: 4px solid #d97706;
 		border-radius: 0.25rem;
 		padding: 0.75rem;
 	}
 	.audience table {
 		border-collapse: collapse;
 		width: 100%;
-		max-width: 28rem;
+		max-width: 32rem;
 	}
 	.audience th,
 	.audience td {
 		border-bottom: 1px solid #ddd;
 		padding: 0.4rem 0.5rem;
-		text-align: right;
+		text-align: end;
 	}
 	.audience thead th:first-child,
 	.audience tbody th {
-		text-align: left;
+		text-align: start;
 		font-weight: 500;
 	}
 	ul {
@@ -263,15 +314,16 @@
 		padding: 0.75rem;
 		margin-bottom: 0.75rem;
 	}
-	li.cancelled .titre,
-	li.moved_away .titre {
+	li.cancelled .titre bdi,
+	li.moved_away .titre bdi {
 		text-decoration: line-through;
 	}
 	.titre {
 		font-weight: 600;
 		margin: 0;
 	}
-	.details {
+	.details,
+	.aide {
 		color: #555;
 		font-size: 0.95rem;
 		margin: 0.25rem 0 0;
@@ -282,26 +334,70 @@
 		padding: 0.1rem 0.4rem;
 		font-size: 0.8rem;
 		font-weight: 600;
-		text-decoration: none;
 		display: inline-block;
 	}
-	.avertissement {
-		font-size: 0.9rem;
-		color: #92400e;
-		margin: 0.5rem 0;
-	}
-	.repli.ferme {
-		display: none;
-	}
-	form {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-		align-items: center;
+	/* Le résumé des options a l'air de ce qu'il est : un bouton, qu'on touche pour ouvrir. Il garde
+	   le triangle du navigateur, qui pointe du bon côté en arabe et tourne à l'ouverture. */
+	.options {
 		margin-top: 0.5rem;
 	}
+	.options > summary,
+	.langue-du-message > summary {
+		cursor: pointer;
+		box-sizing: border-box;
+		min-height: 44px;
+		padding: 0.6rem 0.75rem;
+		border: 1px solid var(--accent);
+		border-radius: 0.375rem;
+		width: fit-content;
+		font-weight: 500;
+	}
+	.options[open] {
+		border-inline-start: 3px solid var(--accent);
+		padding-inline-start: 0.75rem;
+	}
+	.langue-du-message {
+		margin-top: 0.5rem;
+	}
+	form {
+		margin-top: 0.75rem;
+	}
+	fieldset {
+		border: 1px solid #ddd;
+		border-radius: 0.375rem;
+		padding: 0.5rem 0.75rem 0.75rem;
+		margin: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		align-items: flex-end;
+	}
+	legend {
+		font-weight: 600;
+		padding: 0 0.25rem;
+	}
+	fieldset .erreur {
+		flex-basis: 100%;
+		margin: 0;
+	}
+	.champ {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		max-width: 20rem;
+	}
+	.champ .aide {
+		margin: 0;
+		font-size: 0.85rem;
+	}
+	.retablir {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem;
+	}
 	button,
-	select,
+	input[type='date'],
 	input[type='time'] {
 		min-height: 44px;
 		font: inherit;
@@ -319,9 +415,12 @@
 	button.danger {
 		background: #b91c1c;
 		border-color: #b91c1c;
+		color: #fff;
 	}
 	textarea {
 		width: 100%;
+		box-sizing: border-box;
+		margin-top: 0.5rem;
 		font: inherit;
 		padding: 0.5rem;
 		border-radius: 0.375rem;
