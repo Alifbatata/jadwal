@@ -902,6 +902,70 @@ describe('les dates hors de la période du cours (B4)', () => {
 			{ kind: 'fixed', offset: null }
 		]);
 	});
+
+	it('proposes the latest of several dates after the last day as the last day', async () => {
+		// Le dernier jour qui les garderait toutes est celui de la plus tardive, pas de la première
+		// écrite ni de la première après le dernier jour.
+		const titreDuCours = 'Deux dates après le dernier jour';
+		const reponse = await postForm(
+			'/cours/nouveau',
+			coursADates(titreDuCours, '05.01.2027\n12.10.2026\n30.12.2026', [
+				['startsOn', '2026-10-12'],
+				['endsOn', '2026-12-20']
+			]),
+			cookie
+		);
+		expect(reponse.status).toBe(400);
+		const html = await reponse.text();
+		expect(erreurs(html)).toEqual([
+			'Ces dates tombent après le dernier jour du cours et ne seraient pas publiées : 30.12.2026 et 05.01.2027. Choisissez comme dernier jour le 05.01.2027 ou un jour plus tard. Vous pouvez aussi laisser le dernier jour vide ou retirer ces dates.'
+		]);
+		expect(manques(html).filter((ligne) => ligne.startsWith('Dates'))).toEqual([
+			'Dates après le dernier jour, pas publiées : mercredi 30.12.2026 et mardi 05.01.2027'
+		]);
+		expect(await decalageEnBase(titreDuCours)).toEqual([]);
+	});
+
+	it('refuses them on the page of a course too, names them and keeps the course as it was', async () => {
+		// La fiche d'un cours passe par le même formulaire : le message y garde ses dates et le jour
+		// qu'il propose, et rien n'est écrit.
+		async function periodeEnBase() {
+			return maintenance(async (tx) =>
+				lignes<{ startsOn: string; endsOn: string | null }>(
+					await tx.execute(sql`
+						select "starts_on"::text as "startsOn", "ends_on"::text as "endsOn" from "course"
+						where "id" = ${enfantsId}
+					`)
+				)
+			);
+		}
+		const fiche = champsDuFormulaire(await (await get(`/cours/${enfantsId}`, cookie)).text());
+		expect(fiche).toContainEqual(['dates', '12.10.2026\n26.10.2026']);
+		const avec = (nom: string, valeur: string) =>
+			fiche.map(([champ, ancienne]): [string, string] => [
+				champ,
+				champ === nom ? valeur : ancienne
+			]);
+
+		const avant = await postForm(`/cours/${enfantsId}`, avec('startsOn', '2026-11-01'), cookie);
+		expect(avant.status).toBe(400);
+		const htmlAvant = await avant.text();
+		expect(erreurs(htmlAvant)).toEqual([
+			'Ces dates tombent avant le premier jour du cours et ne seraient pas publiées : 12.10.2026 et 26.10.2026. Choisissez comme premier jour le 12.10.2026 ou un jour plus tôt. Vous pouvez aussi retirer ces dates.'
+		]);
+		expect(manques(htmlAvant).filter((ligne) => ligne.startsWith('Dates'))).toEqual([
+			'Dates : aucune ne sera publiée',
+			'Dates avant le premier jour, pas publiées : lundi 12.10.2026 et lundi 26.10.2026'
+		]);
+
+		const apres = await postForm(`/cours/${enfantsId}`, avec('endsOn', '2026-10-20'), cookie);
+		expect(apres.status).toBe(400);
+		expect(erreurs(await apres.text())).toEqual([
+			'Cette date tombe après le dernier jour du cours et ne serait pas publiée : 26.10.2026. Choisissez comme dernier jour le 26.10.2026 ou un jour plus tard. Vous pouvez aussi laisser le dernier jour vide ou retirer cette date.'
+		]);
+
+		expect(await periodeEnBase()).toEqual([{ startsOn: '2026-10-12', endsOn: null }]);
+	});
 });
 
 describe('un cours avant une prière (C3)', () => {
