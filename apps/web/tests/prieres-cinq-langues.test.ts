@@ -190,6 +190,44 @@ function radios(html: string, nom: string): { valeur: string; cochee: boolean }[
 		}));
 }
 
+/** Une valeur d'attribut telle que le navigateur la lit. */
+function attribut(valeur: string): string {
+	return valeur
+		.replaceAll('&quot;', '"')
+		.replaceAll('&#39;', "'")
+		.replaceAll('&lt;', '<')
+		.replaceAll('&gt;', '>')
+		.replaceAll('&amp;', '&');
+}
+
+/**
+ * Ce qu'un navigateur envoie du formulaire dont l'action est `action` : chaque champ nommé qui lui
+ * appartient, une case radio seulement cochée, un menu sous son option choisie. Un champ rattaché à
+ * un autre formulaire par son attribut `form` n'en fait pas partie.
+ */
+function champsEnvoyes(html: string, action: string): Record<string, string> {
+	const debut = html.indexOf(`action="${action.replaceAll('&', '&amp;')}"`);
+	expect(debut, `aucun formulaire ${action}`).toBeGreaterThan(-1);
+	const formulaire = html.slice(debut, html.indexOf('</form>', debut));
+	const champs: Record<string, string> = {};
+	for (const [balise] of formulaire.matchAll(/<input\b[^>]*>/g)) {
+		const nom = balise.match(/\sname="([^"]*)"/)?.[1];
+		const type = balise.match(/\stype="([^"]*)"/)?.[1] ?? 'text';
+		if (!nom || /\sform="/.test(balise) || ['submit', 'button', 'file'].includes(type)) continue;
+		const cochee = /\schecked(?:=""|\s|\/?>)/.test(balise);
+		if ((type === 'radio' || type === 'checkbox') && !cochee) continue;
+		champs[nom] = attribut(balise.match(/\svalue="([^"]*)"/)?.[1] ?? '');
+	}
+	for (const [, nom, options] of formulaire.matchAll(
+		/<select\b[^>]*\sname="([^"]*)"[^>]*>([\s\S]*?)<\/select>/g
+	)) {
+		const toutes = [...(options ?? '').matchAll(/<option\b[^>]*>/g)].map((trouve) => trouve[0]);
+		const choisie = toutes.find((option) => /\sselected(?:=""|\s|\/?>)/.test(option)) ?? toutes[0];
+		champs[nom ?? ''] = attribut(choisie?.match(/\svalue="([^"]*)"/)?.[1] ?? '');
+	}
+	return champs;
+}
+
 /** Le premier `<details>` dont le résumé porte ce texte, contenu compris. */
 function replie(html: string, resume: string): string {
 	return (
@@ -437,6 +475,38 @@ describe('la localité, par son nom ou son NPA (retour C2)', () => {
 		});
 		expect(reponse.status).toBe(400);
 		expect(visibleText(await reponse.text())).toContain('Cette localité n’est pas dans la liste.');
+		expect(await positionEnregistree()).toEqual(BIENNE);
+	});
+
+	it('checks the saved locality when the screen opens, so that the form sends it again', async () => {
+		// Bienne est enregistrée. Aucune case n'était cochée au chargement : le formulaire n'envoyait
+		// que les deux nombres de « Hors de Suisse », et « Voir l’aperçu » ouvrait ce repli sans plus
+		// nommer la localité, alors que l'écran disait « Localité enregistrée ».
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		expect(await positionEnregistree()).toEqual(BIENNE);
+		const html = await (await get('/prieres?source=computed')).text();
+		expect(radios(html, 'localite')).toEqual([{ valeur: BIENNE_CHOISIE, cochee: true }]);
+		expect(visibleText(html)).toContain(`Localité enregistrée : ${BIENNE_AFFICHEE}`);
+		expect(replie(html, HORS_DE_SUISSE.fr)).not.toMatch(/<details\b[^>]*\sopen/);
+
+		// Une recherche qui ne la rend pas la garde en tête, cochée.
+		const lugano = await (await get('/prieres?source=computed&lieu=Lugano')).text();
+		const cases = radios(lugano, 'localite');
+		expect(cases.length).toBeGreaterThan(1);
+		expect(cases[0]).toEqual({ valeur: BIENNE_CHOISIE, cochee: true });
+		expect(cases.filter((radio) => radio.cochee)).toHaveLength(1);
+
+		// « Voir l’aperçu », le formulaire tel que le navigateur l'envoie, avec ou sans recherche.
+		for (const page of [html, lugano]) {
+			const champs = champsEnvoyes(page, '?source=computed&/enregistrer');
+			expect(champs['localite']).toBe(BIENNE_CHOISIE);
+			const apercu = await postForm('/prieres?source=computed&/apercu', champs);
+			expect(apercu.status).toBe(200);
+			const rendu = await apercu.text();
+			expect(radios(rendu, 'localite')).toEqual([{ valeur: BIENNE_CHOISIE, cochee: true }]);
+			expect(visibleText(rendu)).toContain(`Localité enregistrée : ${BIENNE_AFFICHEE}`);
+			expect(replie(rendu, HORS_DE_SUISSE.fr)).not.toMatch(/<details\b[^>]*\sopen/);
+		}
 		expect(await positionEnregistree()).toEqual(BIENNE);
 	});
 

@@ -64,11 +64,20 @@
 				: null)
 	);
 
-	// La localité : ce qui a été tapé, les localités trouvées, et celle qui a été choisie.
+	// La localité : ce qui a été tapé, les localités trouvées, et celle qui a été choisie. Avant tout
+	// envoi du formulaire, c'est la localité enregistrée : sa case est cochée dès le chargement, et le
+	// formulaire la renvoie. Sans cela, il n'envoyait que les deux nombres de « Hors de Suisse », et
+	// l'écran qui revenait ouvrait ce repli sans plus nommer la localité.
 	const saisie = $derived(form?.saisie ?? null);
 	let recherche = $derived(data.search?.query ?? '');
 	let trouvees = $derived(data.search?.results ?? null);
-	let choisie = $derived(saisie?.locality ?? null);
+	let choisie = $derived(saisie ? saisie.locality : data.savedLocality);
+	/** Vrai quand la localité choisie est celle qui est enregistrée : l'écran le dit ainsi. */
+	const choisieEnregistree = $derived(
+		choisie !== null &&
+			data.savedLocality !== null &&
+			localityKey(choisie) === localityKey(data.savedLocality)
+	);
 	let latitude = $derived(
 		saisie ? saisie.latitude : data.reglages.latitude === null ? '' : String(data.reglages.latitude)
 	);
@@ -381,7 +390,7 @@
 				{/if}
 				{#if choisie}
 					<p class="choisie">
-						{text.computed.chosen}
+						{choisieEnregistree ? text.computed.saved : text.computed.chosen}
 						<strong><bdi>{label(choisie)}</bdi></strong>
 						<br />
 						{text.computed.position(coordonnee(choisie.latitude), coordonnee(choisie.longitude))}
