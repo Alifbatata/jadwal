@@ -25,9 +25,15 @@
 		     Le nouvel onglet est annoncé aux lecteurs d'écran, et à eux seuls (technique G201 des
 		     WCAG) : le nom du lien devient « Conditions d’utilisation (s’ouvre dans un nouvel
 		     onglet) ». Aucun blanc du gabarit entre le texte et l'annonce : l'annonce porte le sien
-		     (`annonceNouvelOnglet`). -->
-		<a href={resolve('/conditions')} hreflang="fr" target="_blank" rel="noopener"
-			>{mots.terms}<span class="pour-lecteur">{annonceNouvelOnglet(langue)}</span></a
+		     (`annonceNouvelOnglet`).
+		     L'adresse passe la langue de la page (`?lang=`, étape 18, retour D4) : les conditions
+		     s'ouvrent dans cette langue, avec la phrase qui dit, dans cette langue, que le texte
+		     n'existe qu'en français. -->
+		<a
+			href={`${resolve('/conditions')}?lang=${langue}`}
+			hreflang="fr"
+			target="_blank"
+			rel="noopener">{mots.terms}<span class="pour-lecteur">{annonceNouvelOnglet(langue)}</span></a
 		>
 	</p>
 	<!-- En mode intégré, la mention est portée par le pied du widget, juste sous le cadre : elle

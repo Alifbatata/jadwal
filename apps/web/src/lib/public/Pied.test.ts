@@ -92,11 +92,13 @@ describe('le pied de la page publique', () => {
 	// `/conditions` refuse d'être encadrée. Le mode intégré n'est pas le seul cadre : celui que
 	// l'écran Partager donne à coller à la main charge la page sans `embed=1`, la même qu'un
 	// visiteur ouvre directement. Le lien ouvre donc un nouvel onglet partout.
+	// Le lien passe la langue de la page (retour D4, étape 18) : les conditions s'ouvrent dans cette
+	// langue, avec la phrase qui dit, dans cette langue, que le texte n'existe qu'en français.
 	it('opens the terms in a new tab outside the widget too, in the language of the page, towards a French text', () => {
 		for (const langue of LANGUES) {
 			const conditions = liens(rendre({ langue, lienAgenda: '/m/belvedere/agenda' }))[1];
 			expect(conditions?.attributs).toEqual({
-				href: '/conditions',
+				href: `/conditions?lang=${langue}`,
 				hreflang: 'fr',
 				target: '_blank',
 				rel: 'noopener'
@@ -109,7 +111,7 @@ describe('le pied de la page publique', () => {
 		for (const langue of LANGUES) {
 			const conditions = liens(rendre({ langue, lienAgenda: '/x', integre: true }))[1];
 			expect(conditions?.attributs).toEqual({
-				href: '/conditions',
+				href: `/conditions?lang=${langue}`,
 				hreflang: 'fr',
 				target: '_blank',
 				rel: 'noopener'
