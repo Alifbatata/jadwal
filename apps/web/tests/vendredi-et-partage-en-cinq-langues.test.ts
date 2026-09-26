@@ -8,7 +8,8 @@
 //
 // « Ce vendredi » suit la règle d'« À venir » : une page restée ouverte ne défait pas un changement
 // fait ailleurs, ni ne vise une session supprimée depuis ; un déplacement qui ne change rien est
-// refusé, une carte dont l'heure a changé depuis aussi (relecture du lot 5).
+// refusé, une carte dont l'heure a changé depuis aussi, quel que soit le jour choisi (relecture du
+// lot 5).
 //
 // Vrai serveur construit, vraie base, formulaires envoyés comme sans JavaScript, sur le modèle de
 // `espace-en-cinq-langues.test.ts`.
@@ -1164,6 +1165,32 @@ describe('une page /vendredi restée ouverte ne défait pas un changement (relec
 					formulaireDuVendredi(html, 'deplacer', sessions[1], vendredi()),
 					envoi['toStart']
 				).toMatchObject({ plannedStart: '12:20', toStart: '12:20' });
+			}
+		} finally {
+			await changerHeureDe(sessions[1], '12:10', '12:50');
+			await retablirCeVendredi(sessions[1]);
+		}
+	});
+
+	it('refuses it too when the card moves the session to another day, and writes nothing', async () => {
+		const page = await (await get('/vendredi', cookies)).text();
+		const deplacement = formulaireDuVendredi(page, 'deplacer', sessions[1], vendredi());
+		await changerHeureDe(sessions[1], '12:20', '13:00');
+		try {
+			// Vers un autre jour, la carte partait aussi d'une heure que la personne n'avait pas vue : à
+			// l'ancienne heure, 12:10, ou à une autre.
+			const envois: Record<string, string>[] = [
+				{ ...deplacement, toDate: jourDuDeplacement() },
+				{ ...deplacement, toDate: jourDuDeplacement(), toStart: '14:00' }
+			];
+			for (const envoi of envois) {
+				expect(envoi['toDate'], envoi['toStart']).not.toBe(vendredi());
+				const reponse = await postForm('/vendredi?/deplacer', envoi, cookies);
+				expect(reponse.status, envoi['toStart']).toBe(409);
+				expect(enTete(await reponse.text()), envoi['toStart']).toEqual([
+					REFUS_DU_VENDREDI.timeChanged.fr
+				]);
+				expect(await exceptionDe(sessions[1], vendredi()), envoi['toStart']).toBeUndefined();
 			}
 		} finally {
 			await changerHeureDe(sessions[1], '12:10', '12:50');
