@@ -711,6 +711,55 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 				}
 			}
 		});
+
+		it('answers the choice of an id that is not an identifier like an unknown organisation, for a member and for the super-admin', async () => {
+			// Le choix de l'organisation, commun aux membres et au super-admin : un identifiant
+			// illisible n'atteint pas la base, qui le refuserait en erreur du serveur. La réponse est
+			// celle d'une organisation inconnue, avec sa phrase.
+			const MEMBRE = 'sa-membre@example.test';
+			const membreId = newId();
+			await maintenance(async (tx) => {
+				await tx.execute(sql`
+					insert into "user" ("id", "email", "email_verified", "language")
+					values (${membreId}, ${MEMBRE}, true, 'fr')
+				`);
+				await tx.execute(sql`
+					insert into "membership" ("id", "organization_id", "user_id", "role")
+					values (${newId()}, ${existanteId}, ${membreId}, 'editor')
+				`);
+			});
+			const sessions = [
+				['un membre', await signIn(MEMBRE)],
+				['le super-admin, pouvoirs actifs', avecPouvoirs]
+			] as const;
+			for (const [qui, cookie] of sessions) {
+				const inconnue = await postForm(
+					'/organisations?/choisir',
+					{ organizationId: newId() },
+					cookie
+				);
+				const attendu = { statut: inconnue.status, phrase: erreur(await inconnue.text()) };
+				expect(attendu, qui).toEqual({
+					statut: 403,
+					phrase: 'Vous n’êtes pas membre de cette organisation.'
+				});
+				for (const identifiant of ['pas-un-identifiant', '']) {
+					const reponse = await postForm(
+						'/organisations?/choisir',
+						{ organizationId: identifiant },
+						cookie
+					);
+					// `expect.soft` : chaque personne et chaque identifiant disent leur résultat, même
+					// après un premier échec.
+					expect
+						.soft(
+							{ statut: reponse.status, phrase: erreur(await reponse.text()) },
+							`${qui} « ${identifiant} »`
+						)
+						.toEqual(attendu);
+				}
+			}
+		});
 	});
 
 	describe('D2 et A3 : les écrans en cinq langues', () => {

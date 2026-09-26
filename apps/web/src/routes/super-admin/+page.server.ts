@@ -155,7 +155,9 @@ export const actions: Actions = {
 		const person = mustBeSuperAdmin(event);
 		const form = await event.request.formData();
 		const organizationId = String(form.get('organizationId') ?? '');
-		if (!UUID.test(organizationId) || !(await chooseOrganisation(person, organizationId))) {
+		// Un identifiant illisible rend `false` comme une organisation inconnue : la garde est dans
+		// `chooseOrganisation`, commune à cet écran et au choix des membres.
+		if (!(await chooseOrganisation(person, organizationId))) {
 			return fail(404, { error: 'unknownOrganisation' as const });
 		}
 		redirect(303, '/');

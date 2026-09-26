@@ -344,13 +344,22 @@ export async function currentOrganisation(person: SignedIn): Promise<Organisatio
 }
 
 /**
+ * Un identifiant d'organisation. Autre chose, venu d'un formulaire forgé ou abîmé, n'atteint pas la
+ * base, qui le refuserait en erreur du serveur : c'est une organisation inconnue.
+ */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
  * Pose le choix de l'organisation sur la session. L'appartenance est vérifiée d'abord — sauf pour
  * un super-admin qui a prouvé sa passkey, pour qui toute organisation est ouverte (ADR 0025).
+ * Un identifiant illisible rend `false`, comme une organisation inconnue, pour un membre comme pour
+ * le super-admin.
  */
 export async function chooseOrganisation(
 	person: SignedIn,
 	organizationId: string
 ): Promise<boolean> {
+	if (!UUID.test(organizationId)) return false;
 	const memberships = await membershipsOf(person);
 	let allowed = memberships.some((entry) => entry.organizationId === organizationId);
 	if (!allowed && person.hasSuperAdminPowers) {
