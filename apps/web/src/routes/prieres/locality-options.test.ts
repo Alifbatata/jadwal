@@ -6,7 +6,7 @@
 // revenait ouvrait « Hors de Suisse » sans nommer la localité.
 
 import { describe, expect, it } from 'vitest';
-import { localityKey, localityOptions } from './locality-options.js';
+import { localityKey, localityOptions, pinnedLocality } from './locality-options.js';
 
 const BIENNE = { postcode: '2502', name: 'Biel/Bienne', canton: 'BE' };
 const LUGANO = { postcode: '6900', name: 'Lugano', canton: 'TI' };
@@ -35,5 +35,21 @@ describe('localityOptions', () => {
 		expect(localityKey(BIENNE)).toBe('2502|Biel/Bienne');
 		// Une autre copie de la même localité, rendue par une autre recherche, n'est pas doublée.
 		expect(localityOptions([{ ...BIENNE }, LUGANO], BIENNE)).toHaveLength(2);
+	});
+});
+
+describe('pinnedLocality', () => {
+	// « Büe » ne rend que Büetigen, et Bienne, enregistrée, reste en tête : l'écran doit dire
+	// pourquoi elle est là, sans quoi on lit « 1 localité trouvée. » au-dessus de deux localités.
+	it('names the locality kept first although the search leaves it out', () => {
+		expect(pinnedLocality([LUGANO, MASSAGNO], BIENNE)).toBe(BIENNE);
+		expect(pinnedLocality([], BIENNE)).toBe(BIENNE);
+	});
+
+	it('names none when the search returns it, or when there is no search', () => {
+		expect(pinnedLocality([{ ...BIENNE }, LUGANO], BIENNE)).toBeNull();
+		// Sans recherche, la liste ne montre qu'elle : il n'y a rien à expliquer.
+		expect(pinnedLocality(null, BIENNE)).toBeNull();
+		expect(pinnedLocality([LUGANO], null)).toBeNull();
 	});
 });

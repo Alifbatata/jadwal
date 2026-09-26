@@ -69,6 +69,12 @@ interface PrayersTexts {
 		readonly foundBest: (count: number) => string;
 		readonly noneFound: string;
 		readonly tooShort: string;
+		/**
+		 * Après le nom de la localité que la liste garde en tête alors que la recherche ne la rend pas :
+		 * celle qui est enregistrée, ou celle qu'on vient de choisir.
+		 */
+		readonly pinnedSaved: string;
+		readonly pinnedChosen: string;
 		/** La dernière case de la liste : la position tapée sous « Hors de Suisse », sans localité. */
 		readonly abroadChoice: string;
 		/** Suivie du nom de la localité choisie. */
@@ -373,6 +379,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 				`Voici les ${count} localités qui correspondent le mieux. Si la vôtre n’y est pas, précisez le nom ou tapez le NPA.`,
 			noneFound: 'Aucune localité ne correspond. Vérifiez l’orthographe, ou tapez le NPA.',
 			tooShort: 'Tapez au moins deux lettres ou deux chiffres.',
+			pinnedSaved: 'localité enregistrée',
+			pinnedChosen: 'localité choisie',
 			abroadChoice: 'Hors de Suisse : utiliser la position donnée plus bas',
 			chosen: 'Localité choisie :',
 			position: (latitude, longitude) =>
@@ -695,6 +703,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			noneFound:
 				'Kein Ort passt. Prüfen Sie die Schreibweise, oder geben Sie die Postleitzahl ein.',
 			tooShort: 'Geben Sie mindestens zwei Buchstaben oder zwei Ziffern ein.',
+			pinnedSaved: 'gespeicherter Ort',
+			pinnedChosen: 'gewählter Ort',
 			abroadChoice: 'Ausserhalb der Schweiz: die weiter unten angegebene Lage verwenden',
 			chosen: 'Gewählter Ort:',
 			position: (latitude, longitude) =>
@@ -1020,6 +1030,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 				`Ecco le ${count} località che corrispondono meglio. Se la tua non c’è, precisa il nome o scrivi il NPA.`,
 			noneFound: 'Nessuna località corrisponde. Controlla l’ortografia, o scrivi il NPA.',
 			tooShort: 'Scrivi almeno due lettere o due cifre.',
+			pinnedSaved: 'località salvata',
+			pinnedChosen: 'località scelta',
 			abroadChoice: 'Fuori dalla Svizzera: usare la posizione indicata più sotto',
 			chosen: 'Località scelta:',
 			position: (latitude, longitude) =>
@@ -1344,6 +1356,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 				`Here are the ${count} places that match best. If yours is not there, type more of the name, or the postcode.`,
 			noneFound: 'No town or village matches. Check the spelling, or type the postcode.',
 			tooShort: 'Type at least two letters or two digits.',
+			pinnedSaved: 'saved town or village',
+			pinnedChosen: 'chosen town or village',
 			abroadChoice: 'Outside Switzerland: use the position given below',
 			chosen: 'Chosen town or village:',
 			position: (latitude, longitude) =>
@@ -1656,6 +1670,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 				`إليك البلدات الأكثر تطابقًا (${count}). إن لم تجد بلدتك بينها، فأكمل الاسم أو اكتب الرمز البريدي.`,
 			noneFound: 'لا توجد بلدة مطابقة. تحقّق من الإملاء، أو اكتب الرمز البريدي.',
 			tooShort: 'اكتب حرفين أو رقمين على الأقل.',
+			pinnedSaved: 'البلدة المحفوظة',
+			pinnedChosen: 'البلدة المختارة',
 			abroadChoice: 'خارج سويسرا: استخدام الموقع المحدد أدناه',
 			chosen: 'البلدة المختارة:',
 			position: (latitude, longitude) => `موقعها: خط العرض ${latitude}، خط الطول ${longitude}.`,

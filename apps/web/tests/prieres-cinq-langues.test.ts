@@ -106,6 +106,14 @@ const CHOIX_HORS_DE_SUISSE: Record<Langue, string> = {
 	en: 'Outside Switzerland: use the position given below',
 	ar: 'خارج سويسرا: استخدام الموقع المحدد أدناه'
 };
+/** Ce qui suit, dans la liste, le nom de la localité enregistrée qu'une recherche ne rend pas. */
+const ENREGISTREE: Record<Langue, string> = {
+	fr: 'localité enregistrée',
+	de: 'gespeicherter Ort',
+	it: 'località salvata',
+	en: 'saved town or village',
+	ar: 'البلدة المحفوظة'
+};
 /** Ce que dit l'écran d'une localité choisie avec une autre position tapée « Hors de Suisse ». */
 const LOCALITE_ET_POSITION: Record<Langue, string> = {
 	fr: 'Une localité est choisie dans la liste, et une autre position est tapée sous « Hors de Suisse ». Pour garder cette position, choisissez « Hors de Suisse » dans la liste. Pour garder la localité, effacez la latitude et la longitude.',
@@ -660,6 +668,30 @@ describe('la localité, par son nom ou son NPA (retour C2)', () => {
 		expect(await positionEnregistree()).toEqual(BIENNE);
 	});
 
+	it('says why the saved locality heads a search that does not return it', async () => {
+		// « Büe » ne rend que Büetigen. Bienne, enregistrée, reste en tête et cochée : sans un mot,
+		// on lisait « 1 localité trouvée. » au-dessus de deux localités.
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		const html = await (
+			await get(`/prieres?source=computed&lieu=${encodeURIComponent('Büe')}`)
+		).text();
+		expect(casesDe(html, 'localite')).toEqual([
+			{ valeur: BIENNE_CHOISIE, cochee: true, texte: `${BIENNE_AFFICHEE} ${ENREGISTREE.fr}` },
+			{ valeur: '3263|Büetigen', cochee: false, texte: '3263 Büetigen (BE)' },
+			{ valeur: caseHorsDeSuisse(html)?.valeur, cochee: false, texte: CHOIX_HORS_DE_SUISSE.fr }
+		]);
+		// Le message compte les localités trouvées, et non les cases.
+		expect(visibleText(html)).toContain('1 localité trouvée.');
+
+		// Une recherche qui la rend ne la distingue pas des autres.
+		const bienne = await (await get('/prieres?source=computed&lieu=bienne')).text();
+		expect(casesDe(bienne, 'localite')[0]).toEqual({
+			valeur: BIENNE_CHOISIE,
+			cochee: true,
+			texte: BIENNE_AFFICHEE
+		});
+	});
+
 	it('keeps coordinates possible, folded under « Outside Switzerland »', async () => {
 		await poserLangueDuCompte(RESPONSABLE, 'fr');
 		const avant = await (await get('/prieres?source=computed')).text();
@@ -756,6 +788,11 @@ describe('chaque vue de l’écran, dans les cinq langues (retours D2 et A3)', (
 			nom: 'la recherche sans JavaScript',
 			statut: 200,
 			rendre: () => get('/prieres?source=computed&lieu=bienne')
+		},
+		{
+			nom: 'une recherche qui ne rend pas la localité enregistrée',
+			statut: 200,
+			rendre: () => get(`/prieres?source=computed&lieu=${encodeURIComponent('Büe')}`)
 		},
 		{
 			nom: 'l’aperçu du calcul',
@@ -1111,13 +1148,18 @@ describe('chaque vue de l’écran, dans les cinq langues (retours D2 et A3)', (
 
 	it('names « Outside Switzerland » in the list, and says what to choose there, in each language', () => {
 		for (const langue of LANGUES) {
-			const calcul = rendus['le calcul']?.[langue] ?? '';
+			const recherche =
+				rendus['une recherche qui ne rend pas la localité enregistrée']?.[langue] ?? '';
 			expect(
-				casesDe(calcul, 'localite').map((radio) => radio.texte),
+				casesDe(recherche, 'localite').map((radio) => radio.texte),
 				langue
-			).toEqual([BIENNE_AFFICHEE, CHOIX_HORS_DE_SUISSE[langue]]);
+			).toEqual([
+				`${BIENNE_AFFICHEE} ${ENREGISTREE[langue]}`,
+				'3263 Büetigen (BE)',
+				CHOIX_HORS_DE_SUISSE[langue]
+			]);
 			expect(
-				visibleText(`<body>${replie(calcul, HORS_DE_SUISSE[langue])}</body>`),
+				visibleText(`<body>${replie(recherche, HORS_DE_SUISSE[langue])}</body>`),
 				langue
 			).toContain(CHOISIR_HORS_DE_SUISSE[langue]);
 			const lu = visibleText(

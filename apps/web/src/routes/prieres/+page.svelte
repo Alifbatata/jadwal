@@ -13,7 +13,7 @@
 	import { prayersTexts } from '$lib/i18n/prayers.js';
 	import { nomPriere } from '$lib/public/affichage.js';
 	import type { RaisonLue } from '$lib/server/prieres.js';
-	import { localityKey, localityOptions } from './locality-options.js';
+	import { localityKey, localityOptions, pinnedLocality } from './locality-options.js';
 
 	let { data, form } = $props();
 	const text = $derived(prayersTexts[data.language]);
@@ -96,6 +96,13 @@
 	const gardee = $derived(choisie ?? data.savedLocality);
 	/** Les cases de la liste : voir `localityOptions`. Seule la localité choisie y est cochée. */
 	const options = $derived(localityOptions(trouvees, gardee));
+	/** La localité gardée en tête alors que la recherche ne la rend pas : l'écran dit pourquoi. */
+	const epinglee = $derived(pinnedLocality(trouvees, gardee));
+	const epingleeEnregistree = $derived(
+		epinglee !== null &&
+			data.savedLocality !== null &&
+			localityKey(epinglee) === localityKey(data.savedLocality)
+	);
 	const message = $derived.by(() => {
 		if (trouvees === null) return '';
 		if (recherche.trim().length < 2) return text.computed.tooShort;
@@ -399,6 +406,11 @@
 									onchange={() => choisir(localite)}
 								/>
 								<bdi>{label(localite)}</bdi>
+								{#if epinglee !== null && localityKey(epinglee) === localityKey(localite)}
+									<span class="aide">
+										{epingleeEnregistree ? text.computed.pinnedSaved : text.computed.pinnedChosen}
+									</span>
+								{/if}
 							</label>
 						{/each}
 						<!-- La position tapée sous « Hors de Suisse », comme une case de plus. Sans

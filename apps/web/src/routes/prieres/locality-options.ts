@@ -25,3 +25,16 @@ export function localityOptions<T extends { postcode: string; name: string }>(
 	const key = localityKey(chosen);
 	return found.some((locality) => localityKey(locality) === key) ? [...found] : [chosen, ...found];
 }
+
+/**
+ * La localité que `localityOptions` met en tête alors que la recherche ne la rend pas, ou `null` :
+ * l'écran dit pourquoi elle est là. Sans recherche, la liste ne montre qu'elle, et rien n'est à dire.
+ */
+export function pinnedLocality<T extends { postcode: string; name: string }>(
+	found: readonly T[] | null,
+	chosen: T | null
+): T | null {
+	if (found === null || chosen === null) return null;
+	const key = localityKey(chosen);
+	return found.some((locality) => localityKey(locality) === key) ? null : chosen;
+}
