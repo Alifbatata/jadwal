@@ -140,6 +140,12 @@ de la personne du contexte. Le rôle de connexion la nomme à la création d'un 
 Drizzle nomme toutes les colonnes d'une insertion (migration 0032), et sa politique exige qu'elle
 reste vide ; il ne peut pas la modifier. `test/account-language.test.ts` le vérifie.
 
+Les langues d'une organisation (`enabled_language`) et sa langue par défaut sont parmi les cinq que
+le public sait écrire, `PUBLIC_LANGUAGES` (migration 0062) : une langue enregistrée hors de cette
+liste serait proposée sur la page publique sans une ligne pour l'écrire. La liste n'est jamais vide,
+et la langue par défaut en fait partie. `test/constraints.test.ts` le vérifie, par le super-admin et
+par l'écran des réglages.
+
 Depuis l'étape 4, le rôle super-admin lit et écrit dans **toutes** les organisations, sans fenêtre à
 ouvrir (ADR 0025). Ses politiques restent bornées par `jadwal.current_org_id()` : ce n'est plus une
 barrière — il entre où il veut — c'est le garde-fou qui l'empêche de modifier la mauvaise

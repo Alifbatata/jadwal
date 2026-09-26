@@ -12,6 +12,7 @@ import { sql, type SQL } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { newId, withOrg, type Database, type DatabaseHandle } from '../src/index.js';
 import {
+	allRows,
 	asAdmin,
 	countIn,
 	firstRow,
@@ -326,6 +327,62 @@ describe('autres contraintes du schéma', () => {
 			);
 			expect(state).toBe(SQLSTATE.checkViolation);
 		}
+	});
+
+	it('refuses a language that the public pages do not speak, from the super-admin and from the settings', async () => {
+		// Les cinq langues des pages publiques, du widget et du flux agenda (ADR 0007, étape 18). Une
+		// autre, enregistrée, serait proposée au public sans une ligne pour l'écrire.
+		const values: Array<SQL> = [
+			// Une langue inconnue, par défaut et seule.
+			sql`'tr', array['tr']`,
+			// Une langue inconnue à côté des connues.
+			sql`'fr', array['fr', 'tr']`,
+			// Une langue connue, mal écrite : la base ne devine pas.
+			sql`'fr', array['fr', 'DE']`,
+			sql`'fr', array['fr', 'de-CH']`,
+			sql`'fr', array['fr', '']`
+		];
+		for (const value of values) {
+			const state = await sqlStateOfFailure(() =>
+				superAdmin.execute(sql`
+					insert into "organization" ("id", "slug", "name", "time_zone", "default_language", "enabled_language")
+					values (${newId()}, ${`refus-${newId().slice(0, 8)}`}, 'Refus', 'Europe/Zurich', ${value})
+				`)
+			);
+			expect(state).toBe(SQLSTATE.checkViolation);
+		}
+
+		// Les réglages : l'instruction de l'écran, sous le contexte qu'il pose pour la responsable.
+		for (const change of [
+			sql`"enabled_language" = array['fr', 'tr']`,
+			sql`"enabled_language" = array['tr'], "default_language" = 'tr'`
+		]) {
+			const refused = await sqlStateOfFailure(() =>
+				withOrg(app, asAdmin(org), (tx) =>
+					tx.execute(sql`update "organization" set ${change} where "id" = ${org.id}`)
+				)
+			);
+			expect(refused).toBe(SQLSTATE.checkViolation);
+		}
+
+		// Les cinq ensemble restent permises, dans n'importe quel ordre, chacune par défaut.
+		for (const langue of ['ar', 'en', 'it', 'de', 'fr']) {
+			const written = await withOrg(app, asAdmin(org), (tx) =>
+				tx.execute(sql`
+					update "organization"
+					set "enabled_language" = array['ar', 'en', 'it', 'de', 'fr'], "default_language" = ${langue}
+					where "id" = ${org.id}
+					returning "id"
+				`)
+			);
+			expect(allRows(written), langue).toEqual([{ id: org.id }]);
+		}
+		await withOrg(app, asAdmin(org), (tx) =>
+			tx.execute(sql`
+				update "organization" set "enabled_language" = array['fr'], "default_language" = 'fr'
+				where "id" = ${org.id}
+			`)
+		);
 	});
 
 	it('refuses a slug, an accent colour and an email that do not have the expected shape', async () => {

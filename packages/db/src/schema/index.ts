@@ -104,6 +104,14 @@ export const MEMBERSHIP_ROLES = ['org_admin', 'editor'] as const;
  * traite que de l'interface publique.
  */
 export const ACCOUNT_LANGUAGES = ['fr', 'de', 'it', 'en', 'ar'] as const;
+/**
+ * Les langues qu'une organisation peut publier : celles des pages publiques, du widget, du flux
+ * agenda et des pages d'erreur publiques (ADR 0007, anglais ajouté à l'étape 18). Ce sont aujourd'hui
+ * les mêmes cinq que celles de l'espace, mais pas pour la même raison : une langue publiée demande
+ * les textes du public, une langue de l'espace ceux des responsables. Une autre langue, enregistrée,
+ * serait proposée au public sans une ligne pour l'écrire (migration 0062).
+ */
+export const PUBLIC_LANGUAGES = ['fr', 'de', 'it', 'en', 'ar'] as const;
 export const COURSE_STATUSES = ['draft', 'published', 'archived'] as const;
 export const AUDIENCES = ['kids', 'youth', 'women', 'adults', 'open'] as const;
 export const RECURRENCE_KINDS = ['weekly', 'monthly', 'dates'] as const;
@@ -150,9 +158,18 @@ export const ADMIN_ACCESS_ACTIONS = ['read', 'write', 'magic_link'] as const;
  * remplace. Elles viennent des constantes ci-dessus, jamais d'une saisie, et le guillemet simple
  * est tout de même doublé.
  */
+/** Les valeurs d'une liste fixe, écrites comme des littéraux SQL, entre apostrophes. */
+function literalsOf(values: readonly string[]): string {
+	return values.map((value) => `'${value.replaceAll("'", "''")}'`).join(', ');
+}
+
 function oneOf(column: SQLWrapper, values: readonly string[]) {
-	const literals = values.map((value) => `'${value.replaceAll("'", "''")}'`).join(', ');
-	return sql`${column} in (${sql.raw(literals)})`;
+	return sql`${column} in (${sql.raw(literalsOf(values))})`;
+}
+
+/** Chaque élément d'un tableau de textes est l'une des valeurs d'une liste fixe. */
+function allOf(column: SQLWrapper, values: readonly string[]) {
+	return sql`${column} <@ array[${sql.raw(literalsOf(values))}]::text[]`;
 }
 
 /**
@@ -313,6 +330,13 @@ export const organization = pgTable(
 		ck(
 			'organization_default_language_ck',
 			sql`${table.defaultLanguage} = any(${table.enabledLanguages})`
+		),
+		// Les langues publiées, et celle par défaut, sont parmi celles que le public sait écrire. La
+		// seconde découle de la première et de la contrainte précédente ; elle est écrite quand même,
+		// pour que la règle se lise en un seul endroit (migration 0062).
+		ck(
+			'organization_language_known_ck',
+			sql`${allOf(table.enabledLanguages, PUBLIC_LANGUAGES)} and ${oneOf(table.defaultLanguage, PUBLIC_LANGUAGES)}`
 		),
 		pgPolicy('organization_select', {
 			as: 'permissive',

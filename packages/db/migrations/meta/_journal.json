@@ -435,6 +435,13 @@
       "when": 1790378473149,
       "tag": "0061_course_room_set_null_room_only",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1790423575078,
+      "tag": "0062_organization_known_languages",
+      "breakpoints": true
     }
   ]
 }
