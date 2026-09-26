@@ -21,6 +21,8 @@ interface SeanceDuVendredi {
 	start: string | null;
 	status: 'scheduled' | 'cancelled' | 'moved_away' | 'moved_here';
 	movedTo: string | null;
+	/** Pour une session venue d'un autre jour : le vendredi où elle était prévue. */
+	originalDate?: string | null;
 }
 interface Proprietes {
 	langue: Langue;
@@ -213,5 +215,85 @@ describe('l’onglet des prières, un vendredi', () => {
 		// lecteur d'écran lisait « Friday prayer12:30 ».
 		expect(annonces.filter((annonce) => !annonce?.endsWith(' '))).toEqual([]);
 		expect(ligne).toMatch(/<span class="pour-lecteur[^"]*">Friday prayer <\/span><s>12:30<\/s>/);
+	});
+});
+
+/**
+ * Relecture du lot 4 : une session du vendredi déplacée à un autre jour s'écrivait dans la case du
+ * Dhuhr de ce jour-là comme une troisième heure en gras, sans nom visible, et après l'iqama même
+ * quand elle venait avant. Seul un lecteur d'écran entendait « Prière du vendredi ».
+ */
+describe('l’onglet des prières, un jour qui reçoit une session du vendredi', () => {
+	/** Trois sessions du vendredi 02.10.2026 déplacées au jeudi : avant l'adhan, entre l'adhan et l'iqama, après l'iqama. */
+	const venues: SeanceDuVendredi[] = ['13:00', '13:10', '14:30'].map((start, rang) => ({
+		id: `s${rang + 1}`,
+		start,
+		status: 'moved_here',
+		movedTo: null,
+		originalDate: VENDREDI
+	}));
+	/** Le jeudi, qui est aujourd'hui : les deux tableaux ont une ligne pour lui. */
+	const jeudi = (langue: Langue): Proprietes => ({
+		langue,
+		today: JEUDI,
+		jours: [
+			{ date: JEUDI, heures: HEURES, vendredi: venues },
+			{
+				date: VENDREDI,
+				heures: HEURES,
+				vendredi: venues.map((seance) => ({
+					id: seance.id,
+					start: SESSIONS.find((session) => session.id === seance.id)?.start ?? null,
+					status: 'moved_away',
+					movedTo: JEUDI,
+					originalDate: null
+				}))
+			}
+		],
+		sessions: SESSIONS
+	});
+
+	it('names each session, says its Friday, keeps the iqama and puts each at its place in time', () => {
+		const html = rendre(jeudi('fr'));
+		const origine = 'Initialement le vendredi 02.10.2026';
+		expect(caseDuDhuhr(html, 0)).toBe(
+			`Prière du vendredi : 13:00 ${origine} 13:05 ` +
+				`Prière du vendredi : 13:10 ${origine} 13:15 ` +
+				`Prière du vendredi : 14:30 ${origine}`
+		);
+		// Dans le tableau du jour, la case de l'iqama : chacune avant ou après l'iqama selon son heure.
+		expect(iqamaDuDhuhr(html)).toBe(
+			`Prière du vendredi : 13:00 ${origine} Prière du vendredi : 13:10 ${origine} 13:15 ` +
+				`Prière du vendredi : 14:30 ${origine}`
+		);
+		// Le vendredi garde son iqama, et chaque session y dit où elle est partie.
+		expect(caseDuDhuhr(html, 1)).toBe(
+			'13:05 13:15 12:30 Déplacé au jeudi 01.10.2026 13:45 Déplacé au jeudi 01.10.2026 ' +
+				'15:00 Déplacé au jeudi 01.10.2026'
+		);
+	});
+
+	it('says this case in the help above the table, and only when it happens', () => {
+		const aides = (html: string) =>
+			[...html.matchAll(/<p class="aide[^"]*">([^<]*)<\/p>/g)].map((trouve) => trouve[1]);
+		const aide =
+			'Quand une prière du vendredi est déplacée à un autre jour, la case du Dhuhr de ce jour-là la donne aussi, avec son nom et sa date d’origine.';
+		expect(aides(rendre(jeudi('fr')))).toContain(aide);
+		expect(aides(rendre(proprietes('fr', changees)))).not.toContain(aide);
+	});
+
+	it('says it in the language of the page', () => {
+		const anglais = rendre(jeudi('en'));
+		expect(caseDuDhuhr(anglais, 0)).toBe(
+			'Friday prayer: 13:00 Originally on Friday 02.10.2026 13:05 ' +
+				'Friday prayer: 13:10 Originally on Friday 02.10.2026 13:15 ' +
+				'Friday prayer: 14:30 Originally on Friday 02.10.2026'
+		);
+		const arabe = rendre(jeudi('ar'));
+		expect(caseDuDhuhr(arabe, 0)).toBe(
+			'صلاة الجمعة: 13:00 كان مقرّرًا في الجمعة 02.10.2026 13:05 ' +
+				'صلاة الجمعة: 13:10 كان مقرّرًا في الجمعة 02.10.2026 13:15 ' +
+				'صلاة الجمعة: 14:30 كان مقرّرًا في الجمعة 02.10.2026'
+		);
 	});
 });

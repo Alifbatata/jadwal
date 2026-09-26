@@ -14,6 +14,11 @@
 	// même jour n'est écrite qu'à sa nouvelle heure. Si aucune n'a lieu un vendredi, l'iqama du Dhuhr
 	// revient. Le bloc du bas, sans date, garde le rythme habituel.
 	//
+	// Un autre jour qui reçoit une session du vendredi déplacée garde son iqama du Dhuhr, et la session
+	// s'y écrit nommée, avec son vendredi d'origine, à sa place dans l'ordre des heures (relecture du
+	// lot 4) : elle se lisait comme une troisième heure en gras, sans nom, après l'iqama même quand elle
+	// venait avant l'adhan. Une aide le dit, quand le cas se présente.
+	//
 	// Un tableau de sept lignes et six colonnes tient sur un téléphone ; s'il ne tient pas, il défile
 	// dans son cadre, et la page ne défile jamais de côté. Chaque case dit aux lecteurs d'écran ce
 	// qu'est chacune de ses deux heures : l'œil a la phrase d'aide, l'oreille n'a que la case.
@@ -35,7 +40,20 @@
 		status: string;
 		/** Pour une session déplacée : le jour où elle a lieu. */
 		movedTo: string | null;
+		/** Pour une session venue d'un autre jour : le vendredi où elle était prévue. */
+		originalDate?: string | null;
 	}
+
+	/**
+	 * Une ligne d'une case, dans l'ordre où elle se lit : l'adhan, l'iqama, une heure de la prière du
+	 * vendredi qui tient lieu d'iqama, une session venue d'un vendredi, une session qui n'a pas lieu.
+	 */
+	type Ligne =
+		| { genre: 'adhan'; heure: string | null }
+		| { genre: 'iqama'; heure: string | null }
+		| { genre: 'jumua'; heure: string }
+		| { genre: 'venue'; seance: SeanceDuVendredi }
+		| { genre: 'retiree'; seance: SeanceDuVendredi };
 
 	interface Jour {
 		date: string;
@@ -67,8 +85,9 @@
 
 	/**
 	 * La prière du vendredi d'un jour, dans la case du Dhuhr : les sessions qui ont lieu, celles qui
-	 * n'ont pas lieu, et si les premières remplacent l'iqama (un vendredi seulement : une session
-	 * déplacée à un autre jour s'y ajoute sans prendre la place du Dhuhr de ce jour).
+	 * n'ont pas lieu, et si les premières remplacent l'iqama (un vendredi seulement). Un autre jour,
+	 * celles qui ont lieu sont venues d'un vendredi : elles s'ajoutent, nommées, sans prendre la place
+	 * du Dhuhr de ce jour.
 	 */
 	function vendrediDu(jour: Jour) {
 		const ontLieu = jour.vendredi.filter(
@@ -84,8 +103,48 @@
 			ontLieu,
 			nOntPasLieu,
 			remplaceIqama: vendredi && ontLieu.length > 0,
-			heures: ontLieu.map((seance) => seance.start ?? '–')
+			heures: vendredi ? ontLieu.map((seance) => seance.start ?? '–') : [],
+			venues: vendredi ? [] : ontLieu
 		};
+	}
+
+	/**
+	 * Les heures d'une case, et chaque session venue d'un vendredi placée avant la première heure plus
+	 * tardive qu'elle : l'ordre des heures, sans changer celui de l'adhan et de l'iqama. Une session
+	 * sans heure connue vient en dernier.
+	 */
+	function dansLOrdre(fixes: readonly Ligne[], venues: readonly SeanceDuVendredi[]): Ligne[] {
+		const lignes: Ligne[] = [];
+		let suivante = 0;
+		for (const fixe of fixes) {
+			const heure = 'heure' in fixe ? fixe.heure : null;
+			for (; suivante < venues.length; suivante += 1) {
+				const debut = venues[suivante]?.start ?? null;
+				if (debut === null || heure === null || debut >= heure) break;
+				lignes.push({ genre: 'venue', seance: venues[suivante] as SeanceDuVendredi });
+			}
+			lignes.push(fixe);
+		}
+		for (const seance of venues.slice(suivante)) lignes.push({ genre: 'venue', seance });
+		return lignes;
+	}
+
+	/** Les lignes d'une case du tableau de la semaine. */
+	function lignesDeLaCase(heure: Heure, vendredi: ReturnType<typeof vendrediDu>): Ligne[] {
+		const fixes: Ligne[] = [{ genre: 'adhan', heure: heure.adhan }];
+		if (heure.priere !== 'dhuhr') {
+			if (heure.iqama) fixes.push({ genre: 'iqama', heure: heure.iqama });
+			return fixes;
+		}
+		if (vendredi.remplaceIqama) {
+			for (const debut of vendredi.heures) fixes.push({ genre: 'jumua', heure: debut });
+		} else if (heure.iqama) {
+			fixes.push({ genre: 'iqama', heure: heure.iqama });
+		}
+		return [
+			...dansLOrdre(fixes, vendredi.venues),
+			...vendredi.nOntPasLieu.map((seance): Ligne => ({ genre: 'retiree', seance }))
+		];
 	}
 
 	/** Le mot de la vue Semaine pour une session qui n'a pas lieu : annulée, ou déplacée à tel jour. */
@@ -103,7 +162,21 @@
 			return vendredi.ontLieu.length + vendredi.nOntPasLieu.length > 0;
 		})
 	);
+	const uneVenue = $derived(jours.some((jour) => vendrediDu(jour).venues.length > 0));
+	/** Le vendredi où était prévue une session venue d'un autre jour, dans les mots de la vue Semaine. */
+	const origine = (seance: SeanceDuVendredi) =>
+		seance.originalDate
+			? mots.originallyOn(longDate(langue, seance.originalDate as IsoDate))
+			: null;
 </script>
+
+<!-- Une session venue d'un vendredi : son nom et son heure, puis le vendredi où elle était prévue.
+     L'espace entre les deux est hors du bloc `if` : Svelte retire celle qu'on écrit au début d'un
+     bloc. -->
+{#snippet venue(seance: SeanceDuVendredi)}
+	{mots.jumuaAt(seance.start ?? '–')}
+	{#if origine(seance)}<span class="marque">{origine(seance)}</span>{/if}
+{/snippet}
 
 <p class="aide">{mots.prayersHelp}</p>
 
@@ -130,15 +203,21 @@
 						<td>
 							{#if heure.priere === 'dhuhr' && vendrediDuJour?.remplaceIqama}
 								{mots.jumuaAt(joindre(langue, vendrediDuJour.heures))}
-							{:else if heure.iqama}
-								{heure.iqama}
 							{:else}
-								<span aria-hidden="true">–</span><span class="pour-lecteur">{mots.noIqama}</span>
+								<!-- Un autre jour que le vendredi, une session venue d'un vendredi se place avant
+								     ou après l'iqama, selon son heure. -->
+								{#each dansLOrdre([{ genre: 'iqama', heure: heure.iqama }], heure.priere === 'dhuhr' ? (vendrediDuJour?.venues ?? []) : []) as ligne, index (index)}
+									{#if ligne.genre === 'venue'}
+										<span class="ligne">{@render venue(ligne.seance)}</span>
+									{:else if heure.iqama}
+										{heure.iqama}
+									{:else}
+										<span aria-hidden="true">–</span><span class="pour-lecteur">{mots.noIqama}</span
+										>
+									{/if}
+								{/each}
 							{/if}
 							{#if heure.priere === 'dhuhr' && vendrediDuJour}
-								{#if !vendrediDuJour.remplaceIqama && vendrediDuJour.ontLieu.length > 0}
-									<span class="ligne">{mots.jumuaAt(joindre(langue, vendrediDuJour.heures))}</span>
-								{/if}
 								{#each vendrediDuJour.nOntPasLieu as seance, index (index)}
 									<span class="ligne"
 										><s>{mots.jumuaAt(seance.start ?? '–')}</s>
@@ -159,6 +238,7 @@
 		<h2 id="prieres-semaine">{mots.prayersWeek}</h2>
 		<p class="aide">{mots.weekBoxHelp}</p>
 		{#if unVendredi}<p class="aide">{mots.fridayBoxHelp}</p>{/if}
+		{#if uneVenue}<p class="aide">{mots.movedJumuaHelp}</p>{/if}
 		<div class="defile">
 			<table class="semaine">
 				<thead>
@@ -177,35 +257,37 @@
 								{longDate(langue, jour.date as IsoDate)}
 							</th>
 							{#each jour.heures as heure (heure.priere)}
-								{@const dhuhr = heure.priere === 'dhuhr'}
 								<td>
-									{#if heure.adhan}
-										<span class="adhan"
-											><span class="pour-lecteur">{`${mots.adhan} `}</span>{heure.adhan}</span
-										>
-									{:else}
-										<span aria-hidden="true">–</span>
-									{/if}
-									{#if heure.iqama && !(dhuhr && vendredi.remplaceIqama)}
-										<span class="iqama"
-											><span class="pour-lecteur">{`${mots.iqama} `}</span>{heure.iqama}</span
-										>
-									{/if}
-									{#if dhuhr}
-										{#each vendredi.heures as debut, index (index)}
-											<span class="jumua"
-												><span class="pour-lecteur">{`${mots.jumua} `}</span>{debut}</span
+									{#each lignesDeLaCase(heure, vendredi) as ligne, index (index)}
+										{#if ligne.genre === 'adhan'}
+											{#if ligne.heure}
+												<span class="adhan"
+													><span class="pour-lecteur">{`${mots.adhan} `}</span>{ligne.heure}</span
+												>
+											{:else}
+												<span aria-hidden="true">–</span>
+											{/if}
+										{:else if ligne.genre === 'iqama'}
+											<span class="iqama"
+												><span class="pour-lecteur">{`${mots.iqama} `}</span>{ligne.heure}</span
 											>
-										{/each}
-										{#each vendredi.nOntPasLieu as seance, index (index)}
+										{:else if ligne.genre === 'jumua'}
+											<span class="jumua"
+												><span class="pour-lecteur">{`${mots.jumua} `}</span>{ligne.heure}</span
+											>
+										{:else if ligne.genre === 'venue'}
+											<!-- Son nom et son vendredi se lisent : une heure seule ne dirait pas ce
+											     qu'elle est. -->
+											<span class="jumua">{@render venue(ligne.seance)}</span>
+										{:else}
 											<span class="jumua retiree"
 												><span class="pour-lecteur">{`${mots.jumua} `}</span><s
-													>{seance.start ?? '–'}</s
+													>{ligne.seance.start ?? '–'}</s
 												>
-												<span class="marque">{statut(seance)}</span></span
+												<span class="marque">{statut(ligne.seance)}</span></span
 											>
-										{/each}
-									{/if}
+										{/if}
+									{/each}
 								</td>
 							{/each}
 						</tr>

@@ -98,8 +98,9 @@ export const load: PageServerLoad = async (event) => {
 			: await readPublicProgramme(organisation, langue, new Date(), { from, to });
 
 	// Les sessions du vendredi de chaque date, telles que l'expansion les rend : annulées, déplacées
-	// ailleurs, ou venues d'un autre jour. Toutes, quel que soit le filtre par public : il ne
-	// s'applique pas à l'onglet.
+	// ailleurs, ou venues d'un autre jour, avec le vendredi d'où elles viennent. Toutes, quel que soit
+	// le filtre par public : l'onglet ne montre aucun filtre, un filtre venu avec le lien ne s'y
+	// verrait pas et ne s'y enlèverait pas, et une heure de prière vaut pour tous.
 	const vendrediDu = (date: string) =>
 		complet.seances
 			.filter((seance) => seance.kind === 'jumua' && seance.date === date)
@@ -107,7 +108,8 @@ export const load: PageServerLoad = async (event) => {
 				id: seance.courseId,
 				start: seance.start,
 				status: seance.status,
-				movedTo: seance.movedTo?.date ?? null
+				movedTo: seance.movedTo?.date ?? null,
+				originalDate: seance.originalDate ?? null
 			}));
 
 	// L'onglet des prières : aujourd'hui et les six jours suivants, adhan et iqama de chaque prière,

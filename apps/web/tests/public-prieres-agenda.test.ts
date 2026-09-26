@@ -37,6 +37,13 @@ const NOM_SANS = 'Association sans module';
  */
 const SLUG_CHANGE = 'vendredi-change';
 const NOM_CHANGE = 'Association du vendredi changé';
+/**
+ * Une organisation dont la seule session du vendredi des sept jours part à un autre jour des sept,
+ * à 13:00, avant l'adhan du Dhuhr de ce jour-là (relecture du lot 4). Une organisation à elle : la
+ * base n'admet que trois sessions du vendredi, et le vendredi changé les a déjà.
+ */
+const SLUG_VENUE = 'vendredi-deplace';
+const NOM_VENUE = 'Association du vendredi déplacé';
 const DEBUT = '2026-09-07';
 
 const today = todayInZone(FUSEAU, new Date());
@@ -60,6 +67,8 @@ const SESSIONS = [
 ];
 /** La troisième session du vendredi changé, déplacée au vendredi suivant. */
 const TROISIEME = { ordre: 3, debut: '15:00', fin: '15:40', langues: ['en'] };
+/** Le jour qui reçoit la session du vendredi déplacé : la veille, ou le lendemain si le vendredi est aujourd'hui. */
+const AUTRE_JOUR = VENDREDI > today ? addDays(VENDREDI, -1) : addDays(VENDREDI, 1);
 
 const COURS = {
 	/** Un cours qui a lieu chaque semaine le jour de demain ; la séance de demain est déplacée. */
@@ -145,6 +154,7 @@ beforeAll(async () => {
 	const organisation = newId();
 	const sans = newId();
 	const change = newId();
+	const venue = newId();
 	await maintenance(async (tx) => {
 		await tx.execute(sql`
 			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
@@ -162,7 +172,13 @@ beforeAll(async () => {
 			values (${change}, ${SLUG_CHANGE}, ${NOM_CHANGE}, ${FUSEAU}, 'fr',
 				array['fr','de','it','en','ar'], true)
 		`);
-		for (const avecPrieres of [organisation, change]) {
+		await tx.execute(sql`
+			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+				"enabled_language", "prayer_module")
+			values (${venue}, ${SLUG_VENUE}, ${NOM_VENUE}, ${FUSEAU}, 'fr',
+				array['fr','de','it','en','ar'], true)
+		`);
+		for (const avecPrieres of [organisation, change, venue]) {
 			for (let pas = -2; pas <= 10; pas += 1) {
 				await tx.execute(sql`
 					insert into "prayer_day" ("organization_id", "date", "fajr", "dhuhr", "asr", "maghrib",
@@ -207,6 +223,8 @@ beforeAll(async () => {
 			ids.push(await sessionDuVendredi(change, session));
 		}
 		const [premiere, deuxieme, troisieme] = ids as [string, string, string];
+		// Le vendredi déplacé : une session, qui part à un autre jour ce vendredi-là.
+		const partie = await sessionDuVendredi(venue, SESSIONS[0] as (typeof SESSIONS)[number]);
 		// Comme les gestes « Annuler » et « Déplacer » de l'écran du vendredi, ce vendredi-là seulement.
 		await tx.execute(sql`
 			insert into "session_exception" ("id", "organization_id", "course_id", "date", "kind",
@@ -214,7 +232,8 @@ beforeAll(async () => {
 			values
 				(${newId()}, ${change}, ${premiere}, ${VENDREDI}, 'cancelled', null, null),
 				(${newId()}, ${change}, ${deuxieme}, ${VENDREDI}, 'moved', ${VENDREDI}, '14:15'),
-				(${newId()}, ${change}, ${troisieme}, ${VENDREDI}, 'moved', ${VENDREDI_SUIVANT}, '15:00')
+				(${newId()}, ${change}, ${troisieme}, ${VENDREDI}, 'moved', ${VENDREDI_SUIVANT}, '15:00'),
+				(${newId()}, ${venue}, ${partie}, ${VENDREDI}, 'moved', ${AUTRE_JOUR}, '13:00')
 		`);
 		const cours: [string, string, number[]][] = [
 			[COURS.deplace, TITRES.deplace, [jourDe(DEMAIN)]],
@@ -329,6 +348,28 @@ const DEPLACE_AU: Record<Langue, (date: string) => string> = {
 	en: (date) => `Moved to ${date}`,
 	ar: (date) => `نُقل إلى ${date}`
 };
+/** « Initialement le vendredi 02.10.2026 » : le mot de la vue Semaine pour une séance venue d'ailleurs. */
+const ORIGINE: Record<Langue, (date: string) => string> = {
+	fr: (date) => `Initialement le ${date}`,
+	de: (date) => `Ursprünglich am ${date}`,
+	it: (date) => `Inizialmente il ${date}`,
+	en: (date) => `Originally on ${date}`,
+	ar: (date) => `كان مقرّرًا في ${date}`
+};
+/** L'aide qui dit qu'une session du vendredi déplacée s'écrit dans la case du Dhuhr de son jour. */
+const AIDE_VENUE: Record<Langue, string> = {
+	fr: 'Quand une prière du vendredi est déplacée à un autre jour, la case du Dhuhr de ce jour-là la donne aussi, avec son nom et sa date d’origine.',
+	de: 'Wird ein Freitagsgebet auf einen anderen Tag verschoben, steht es auch im Feld des Dhuhr an diesem Tag, mit seinem Namen und seinem ursprünglichen Datum.',
+	it: 'Quando una preghiera del venerdì viene spostata a un altro giorno, compare anche nella casella del Dhuhr di quel giorno, con il suo nome e la data prevista in origine.',
+	en: 'When a Friday prayer is moved to another day, it also appears in the Dhuhr box of that day, with its name and its original date.',
+	ar: 'إذا نُقلت صلاة الجمعة إلى يوم آخر، تظهر أيضًا في خانة الظهر لذلك اليوم، باسمها وتاريخها الأصلي.'
+};
+/** Les phrases d'aide de l'onglet, telles que l'œil les lit. */
+function aides(html: string): string[] {
+	return [...html.matchAll(/<p class="aide[^"]*">([\s\S]*?)<\/p>/g)].map((trouve) =>
+		lu(trouve[1] ?? '')
+	);
+}
 /** L'en-tête de la colonne des sept jours. */
 const COLONNE_DES_JOURS: Record<Langue, string> = {
 	fr: 'Jour',
@@ -466,6 +507,62 @@ describe('l’onglet des prières, quand le module est allumé (C4)', () => {
 			expect(vueSemaine).toContain(deplace);
 		}
 	);
+
+	// Relecture du lot 4 : le jour qui recevait une session du vendredi la montrait comme une troisième
+	// heure en gras, sans nom visible, et après l'iqama alors qu'elle venait avant l'adhan.
+	it.each(LANGUES)(
+		'names a Friday session moved to another day, says its Friday, and puts it at its place in time, in %s',
+		async (langue) => {
+			const { html } = await servir(`${base(langue, SLUG_VENUE)}?vue=prieres`);
+			const dates = Array.from({ length: 7 }, (_, pas) => addDays(today, pas));
+			const venue = `${VENDREDI_SEULE[langue]('13:00')} ${ORIGINE[langue](jourEtDate(langue, VENDREDI))}`;
+			const partie = DEPLACE_AU[langue](jourEtDate(langue, AUTRE_JOUR));
+			const semaine = lignes(html, 'semaine');
+			for (const [index, date] of dates.entries()) {
+				expect(semaine[index]?.[2], date).toBe(
+					date === AUTRE_JOUR
+						? // 13:00 vient avant l'adhan de 13:05, et l'iqama reste : ce n'est pas un vendredi.
+							`${venue} ${HEURES.dhuhr} ${IQAMAS.dhuhr}`
+						: date === VENDREDI
+							? `${HEURES.dhuhr} ${IQAMAS.dhuhr} 12:30 ${partie}`
+							: `${HEURES.dhuhr} ${IQAMAS.dhuhr}`
+				);
+			}
+			if (today === AUTRE_JOUR) {
+				expect(lignes(html, 'aujourdhui')[1]?.[2]).toBe(`${venue} ${IQAMAS.dhuhr}`);
+			}
+			// L'aide au-dessus du tableau dit ce cas, et seulement là où il se présente.
+			expect(aides(html)).toContain(AIDE_VENUE[langue]);
+			const sansVenue = await servir(`${base(langue)}?vue=prieres`);
+			expect(aides(sansVenue.html)).not.toContain(AIDE_VENUE[langue]);
+		}
+	);
+
+	// L'onglet ignore le filtre par public, et c'est voulu : il ne montre aucun filtre, donc un filtre
+	// venu avec le lien ne se verrait pas et ne s'enlèverait pas, et une heure de prière vaut pour tous.
+	// Le bloc du bas, le rythme habituel, n'est pas filtré non plus.
+	it('ignores the audience filter a link brings: the tab has no filter to see or remove', async () => {
+		// Le visiteur arrive sur l'onglet depuis une vue filtrée : le lien de l'onglet garde le filtre.
+		const filtree = await servir(`${base('fr', SLUG_CHANGE)}?public=women`);
+		const onglet = new URL(
+			vues(filtree.html)[3]?.href ?? '',
+			`${origin}${base('fr', SLUG_CHANGE)}`
+		);
+		expect(onglet.searchParams.get('vue')).toBe('prieres');
+		expect(onglet.searchParams.get('public')).toBe('women');
+		// Le filtre agit bien ailleurs : la vue Semaine filtrée n'a aucune session, toutes ouvertes à tous.
+		expect(visibleText(filtree.html)).not.toContain('Jumu’a');
+		const avec = await servir(`${onglet.pathname}${onglet.search}`);
+		const sans = await servir(`${base('fr', SLUG_CHANGE)}?vue=prieres`);
+		expect(avec.statut).toBe(200);
+		expect(avec.html).not.toMatch(/<nav\b[^>]*\bclass="filtres\b/);
+		expect(lignes(avec.html, 'semaine')).toEqual(lignes(sans.html, 'semaine'));
+		expect(lignes(avec.html, 'aujourdhui')).toEqual(lignes(sans.html, 'aujourdhui'));
+		expect(aides(avec.html)).toEqual(aides(sans.html));
+		// Et ces lignes portent les sessions : deux tableaux vides seraient égaux aussi.
+		const dhuhr = lignes(avec.html, 'semaine').map((ligne) => ligne[2]);
+		expect(dhuhr.join(' | ')).toContain(`14:15 12:30 ${ANNULE.fr}`);
+	});
 
 	// En arabe, « اليوم » était à la fois le titre « Aujourd'hui » et l'en-tête de la colonne des sept
 	// jours, où il se lisait « aujourd'hui » au-dessus de sept dates.
@@ -1003,6 +1100,7 @@ describe('la vue « Tous les cours » et une séance déplacée ailleurs', () =>
 const PERMIS = [
 	NOM,
 	NOM_CHANGE,
+	NOM_VENUE,
 	TITRES.deplace,
 	TITRES.quotidien,
 	'Jumu’a',
@@ -1013,6 +1111,8 @@ const ECRANS: { nom: string; suite: string; visiteur: Visiteur; slug?: string }[
 	{ nom: 'prayer tab', suite: '?vue=prieres', visiteur: {} },
 	// Un vendredi changé : les mots « Annulé » et « Déplacé au », repris de la vue Semaine.
 	{ nom: 'prayer tab of a changed Friday', suite: '?vue=prieres', visiteur: {}, slug: SLUG_CHANGE },
+	// Une session du vendredi partie à un autre jour : son nom, son vendredi, et l'aide qui le dit.
+	{ nom: 'prayer tab of a moved Friday', suite: '?vue=prieres', visiteur: {}, slug: SLUG_VENUE },
 	{ nom: 'subscription on an iPhone', suite: '/agenda', visiteur: IPHONE },
 	{ nom: 'subscription on Android', suite: '/agenda', visiteur: ANDROID },
 	{ nom: 'subscription elsewhere', suite: '/agenda', visiteur: WINDOWS },
@@ -1069,7 +1169,7 @@ describe('chaque écran touché, dans les cinq langues (D2, A3)', () => {
 	// Relecture du lot 3 : ce test lisait toute la page, et passait sur l'ancienne, où `?vue=prieres`
 	// montrait la semaine et ses sept jours datés. Il lit maintenant le contenu de l'onglet, ses deux
 	// tableaux, et chaque date qui s'y écrit, celle d'une session déplacée comprise.
-	it.each([SLUG, SLUG_CHANGE])(
+	it.each([SLUG, SLUG_CHANGE, SLUG_VENUE])(
 		'writes every date of the prayer tab as JJ.MM.AAAA, in the tab itself (%s)',
 		async (slug) => {
 			const numerique = (date: IsoDate) => date.split('-').reverse().join('.');
