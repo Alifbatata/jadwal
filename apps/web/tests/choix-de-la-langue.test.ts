@@ -6,6 +6,8 @@
 //   pas.
 // - Ce choix voyage avec le lien de connexion : il vaut aussi quand le lien s'ouvre sur un autre
 //   navigateur, et il n'attend pas, sur le premier, plus longtemps que le lien ne vit.
+// - Un lien de connexion dont on change l'écran de retour pour un autre site est refusé, comme en
+//   production : les serveurs de test tournent sans rien qui les dise en test (`global-setup.ts`).
 // - Le retour après le choix ne quitte jamais le service, quelle que soit la forme du chemin envoyé.
 // - Un écran de l'espace dit aux caches qu'il change selon le navigateur et le cookie ; une page
 //   publique, qui ne lit aucun cookie, ne le dit pas.
@@ -32,6 +34,8 @@ const CHOISIT_CONNECTEE = 'choix-connectee@example.test';
 const LIEN_AILLEURS = 'choix-lien-ailleurs@example.test';
 /** Un compte en français dont on lit le lien de connexion. */
 const LIEN_LU = 'choix-lien-lu@example.test';
+/** Un compte en français dont on détourne le lien de connexion vers un autre site. */
+const LIEN_DETOURNE = 'choix-lien-detourne@example.test';
 const SLUG = 'choix-de-la-langue';
 
 const COOKIE_EN_ATTENTE = 'jadwal_language_pending';
@@ -240,7 +244,8 @@ beforeAll(async () => {
 			[DEJA_EN_FRANCAIS, 'fr'],
 			[CHOISIT_CONNECTEE, null],
 			[LIEN_AILLEURS, 'fr'],
-			[LIEN_LU, 'fr']
+			[LIEN_LU, 'fr'],
+			[LIEN_DETOURNE, 'fr']
 		] as const) {
 			await tx.execute(sql`
 				insert into "user" ("id", "email", "email_verified", "language")
@@ -411,6 +416,34 @@ describe('le choix fait avant la connexion, et le lien de connexion', () => {
 		// il ne change ni la page ni le compte.
 		expect(await langueDe(await navigateur.get('/organisations?language=ar'))).toBe('fr');
 		expect(await langueDuCompte(LIEN_LU)).toBe('fr');
+	});
+
+	it('refuses a link whose return leads to another site, as in production', async () => {
+		const navigateur = new Navigateur('fr-CH');
+		await navigateur.post('/langue', { language: 'de', returnTo: '/connexion' });
+		const { lien } = await navigateur.demanderLeLien(LIEN_DETOURNE);
+
+		// Le même jeton, avec un écran de retour pris sur un autre site : refusé, sans session ouverte,
+		// sans rien écrire sur le compte, et sans renvoyer nulle part.
+		for (const ailleurs of [
+			'https://ailleurs.example/organisations?language=de',
+			'//ailleurs.example/organisations?language=de',
+			'/\\ailleurs.example/organisations?language=de'
+		]) {
+			const detourne = new URL(lien);
+			detourne.searchParams.set('callbackURL', ailleurs);
+			const victime = new Navigateur('fr-CH');
+			const reponse = await victime.get(detourne.href);
+			expect(reponse.status, ailleurs).toBe(403);
+			expect(reponse.headers.get('location'), ailleurs).toBeNull();
+			expect(victime.envoie('better-auth.session_token'), ailleurs).toBe(false);
+		}
+		expect(await langueDuCompte(LIEN_DETOURNE)).toBe('fr');
+
+		// Le jeton n'a pas servi : le lien tel qu'il est parti ouvre la session, sur le service.
+		const arrivee = await new Navigateur('fr-CH').suivre(lien);
+		expect(new URL(arrivee.headers.get('location') ?? '', origin).origin).toBe(origin);
+		expect(await langueDuCompte(LIEN_DETOURNE)).toBe('de');
 	});
 });
 

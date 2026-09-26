@@ -52,6 +52,23 @@ function portsDeTest(): readonly [number, number, number] {
  */
 const SECRET = 'secret-de-test-assez-long-pour-ne-pas-etre-refuse';
 
+/**
+ * L'environnement des serveurs de test : celui de ce processus, moins ce qui dit « en test ».
+ *
+ * Vitest pose `TEST=true` et `VITEST=true`, et d'autres `VITEST_*` dans ses processus de travail.
+ * Better Auth lit `TEST` : il se croit alors en test et coupe son contrôle d'origine, si bien qu'un
+ * lien de connexion dont l'écran de retour est pris sur un autre site y renverrait, alors que la
+ * production le refuse. Le serveur doit se croire en production, comme `NODE_ENV` le lui dit plus
+ * bas : ce que la production refuse, les tests le voient refusé.
+ */
+function productionEnvironment(): NodeJS.ProcessEnv {
+	const env: NodeJS.ProcessEnv = { ...process.env };
+	for (const name of Object.keys(env)) {
+		if (name === 'TEST' || name.startsWith('VITEST')) delete env[name];
+	}
+	return env;
+}
+
 const servers: ChildProcess[] = [];
 let outbox: string | undefined;
 
@@ -85,7 +102,7 @@ export default async function setup(project: TestProject) {
 			cwd: appDir,
 			stdio: ['ignore', 'pipe', 'pipe'],
 			env: {
-				...process.env,
+				...productionEnvironment(),
 				NODE_ENV: 'production',
 				PORT: String(port),
 				HOST: '127.0.0.1',
