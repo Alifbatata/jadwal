@@ -27,11 +27,8 @@ import { createMailer } from './mail/index.js';
 import { magicLinkEmail } from './mail/messages.js';
 import { consume, consumeDetailed, emailKey, MAGIC_LINK_BUDGET } from './rate-limit.js';
 
-/**
- * Quinze minutes, en secondes : l'unité de `expiresIn` est la seconde. C'est aussi la vie du cookie
- * d'un choix de langue en attente, qui ne doit pas durer plus qu'un lien (`i18n/language.ts`).
- */
-export const MAGIC_LINK_SECONDS = 900;
+/** Quinze minutes, en secondes : l'unité de `expiresIn` est la seconde. */
+const MAGIC_LINK_SECONDS = 900;
 /** Trente jours, en secondes. */
 const SESSION_SECONDS = 2_592_000;
 /** Un jour : au-delà, l'usage d'une session repousse sa date de fin. */

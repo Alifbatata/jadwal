@@ -9,11 +9,12 @@
 // l'action ne rend qu'un état, jamais une phrase. Le courriel part dans la même langue, celle de la
 // requête, que le hook pose sans lire aucun compte (retour D3).
 //
-// Une langue choisie avant la connexion part avec le lien (`signInCallback`) : il l'emporte sur le
-// navigateur qui l'ouvre, même si ce n'est pas celui-ci, et la vérification du lien en fait la langue
-// du compte (`auth.ts`). Sur ce navigateur, le choix attend encore le temps de ce lien, et pas plus.
-// Ce que l'action lit pour cela vient des cookies de ce navigateur, jamais du compte : la réponse
-// reste la même pour toutes les adresses.
+// Une langue choisie avant la connexion part avec le lien (`signInCallback`), quel que soit le temps
+// passé depuis le choix : il l'emporte sur le navigateur qui l'ouvre, même si ce n'est pas celui-ci,
+// et la vérification du lien en fait la langue du compte (`auth.ts`). Parti avec ce lien, le choix
+// n'attend plus sur ce navigateur : son cookie d'attente est retiré, pour qu'il ne revienne pas plus
+// tard défaire une langue changée entre-temps ailleurs. Ce que l'action lit et retire pour cela vient
+// des cookies de ce navigateur, jamais du compte : la réponse reste la même pour toutes les adresses.
 
 import { fail, redirect } from '@sveltejs/kit';
 import {
@@ -22,7 +23,7 @@ import {
 	PENDING_CHOICE_COOKIE,
 	signInCallback
 } from '$lib/i18n/language.js';
-import { auth, MAGIC_LINK_SECONDS } from '$lib/server/auth.js';
+import { auth } from '$lib/server/auth.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
 const ADRESSE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -41,9 +42,7 @@ export const actions: Actions = {
 		}
 		const pending = cookies.get(PENDING_CHOICE_COOKIE) !== undefined;
 		const callbackURL = signInCallback({ cookie: cookies.get(LANGUAGE_COOKIE), pending });
-		if (pending) {
-			cookies.set(PENDING_CHOICE_COOKIE, '1', languageCookieOptions(url, MAGIC_LINK_SECONDS));
-		}
+		if (pending) cookies.delete(PENDING_CHOICE_COOKIE, languageCookieOptions(url));
 		try {
 			await auth().api.signInMagicLink({
 				body: { email, callbackURL },

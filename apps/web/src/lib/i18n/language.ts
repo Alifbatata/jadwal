@@ -16,17 +16,19 @@ export const LANGUAGE_COOKIE = 'jadwal_language';
 
 /**
  * Le cookie qui dit qu'un choix fait avant la connexion attend d'être donné au compte. Il est posé
- * avec le choix, par une personne qui n'est pas connectée, et retiré dès que ce choix est devenu la
- * langue du compte : à la connexion. Il ne porte rien d'autre que sa présence.
+ * avec le choix, par une personne qui n'est pas connectée, et ne porte rien d'autre que sa présence.
  *
  * Sans lui, le serveur ne saurait pas distinguer deux navigateurs qui envoient la même chose : celui
  * où la personne vient de choisir l'allemand avant de se connecter, et celui où l'allemand est resté
  * d'un choix ancien, alors que le compte a changé depuis sur un autre appareil.
  *
- * Il ne vit pas plus longtemps qu'un lien de connexion : quinze minutes après le choix, et de nouveau
- * quinze minutes à chaque lien demandé. Le lien, lui, emporte le choix (`signInCallback`), sur
- * quelque navigateur qu'il s'ouvre. Ouvert ailleurs, il ne peut pas retirer ce cookie-ci : c'est sa
- * courte vie qui l'empêche de défaire plus tard une langue changée entre-temps sur l'autre appareil.
+ * La règle : un choix fait avant la connexion part avec le lien de connexion (`signInCallback`),
+ * quel que soit le temps passé avant de le demander. Ce cookie vit donc aussi longtemps que la langue
+ * choisie. Il est retiré dès que le choix est parti : à la demande du lien, qui l'emporte, ou à la
+ * connexion, qui l'écrit sur le compte (une connexion par passkey, un choix refait après la demande
+ * du lien). Un navigateur ne donne donc un choix qu'une fois, et ce choix ne revient jamais plus
+ * tard défaire une langue changée entre-temps sur un autre appareil. Le lien, lui, ne vit que quinze
+ * minutes (`auth.ts`).
  */
 export const PENDING_CHOICE_COOKIE = 'jadwal_language_pending';
 
@@ -36,13 +38,9 @@ export const LANGUAGE_COOKIE_SECONDS = 31_536_000;
 /**
  * Les attributs des deux cookies, les mêmes pour les poser et pour les retirer : lisibles du seul
  * serveur, envoyés par les formulaires du service, `Secure` dès que le service est servi en HTTPS,
- * comme la session (`auth.ts`). Seule la vie change : un an pour la langue choisie, celle d'un lien
- * de connexion pour le choix en attente.
+ * comme la session (`auth.ts`), et valables un an.
  */
-export function languageCookieOptions(
-	url: URL,
-	maxAge: number = LANGUAGE_COOKIE_SECONDS
-): {
+export function languageCookieOptions(url: URL): {
 	path: '/';
 	httpOnly: true;
 	sameSite: 'lax';
@@ -54,7 +52,7 @@ export function languageCookieOptions(
 		httpOnly: true,
 		sameSite: 'lax',
 		secure: url.protocol === 'https:',
-		maxAge
+		maxAge: LANGUAGE_COOKIE_SECONDS
 	};
 }
 
@@ -79,7 +77,8 @@ const SIGN_IN_LANDING = '/organisations';
 /**
  * L'écran où ramènera le lien de connexion demandé sur ce navigateur : celui des organisations, avec
  * la langue choisie avant la connexion quand ce choix attend encore d'être donné au compte. Le choix
- * voyage ainsi avec le lien, et vaut sur le navigateur qui l'ouvre, quel qu'il soit.
+ * voyage avec le lien, et vaut sur le navigateur qui l'ouvre, quel qu'il soit. La demande du lien
+ * retire ensuite le cookie d'attente : un second lien, sans nouveau choix, ne l'emporte plus.
  *
  * Un cookie de langue sans choix en attente ne part pas : il peut dater d'un choix ancien, que la
  * personne a défait depuis, sur un autre appareil. Une valeur qui n'est pas l'une des cinq langues ne
@@ -176,9 +175,11 @@ export interface AccountSources {
  * La langue à écrire sur le compte d'une personne connectée, ou `null` s'il n'y a rien à écrire.
  *
  * - Un choix fait avant la connexion devient la langue du compte, même si le compte en avait une :
- *   c'est la dernière chose que la personne a dite, sur l'écran même de la connexion. Le lien de
- *   connexion l'emporte aussi, et la vérification du lien l'écrit (`auth.ts`) ; ici, c'est le
- *   cookie d'attente qui le dit, sur le navigateur où il a été fait.
+ *   c'est la dernière chose que la personne a dite, sur l'écran même de la connexion. D'ordinaire,
+ *   le lien de connexion l'emporte, quel que soit le temps passé depuis le choix, et la vérification
+ *   du lien l'écrit (`auth.ts`). Ici, c'est le cookie d'attente qui le dit, sur le navigateur où il
+ *   a été fait, quand aucun lien ne l'a emporté : une connexion par passkey, un choix refait après
+ *   la demande du lien.
  * - Un compte sans langue reçoit celle que la personne voyait : son choix sur ce navigateur, sinon
  *   celle du navigateur, sinon le français.
  * - Ensuite, le compte fait foi : un cookie resté sur un navigateur ne le change pas, puisque la

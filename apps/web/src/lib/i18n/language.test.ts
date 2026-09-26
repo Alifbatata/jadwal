@@ -120,7 +120,10 @@ describe('la langue du compte, à la connexion', () => {
 		expect(PENDING_CHOICE_COOKIE).not.toBe(LANGUAGE_COOKIE);
 	});
 
-	it('sets both cookies the same way, Secure over HTTPS only', () => {
+	it('sets both cookies the same way, for a year, Secure over HTTPS only', () => {
+		// Le choix en attente vit aussi longtemps que la langue choisie : il part avec le lien de
+		// connexion, quel que soit le temps passé avant de le demander, et c'est la demande du lien
+		// qui le retire.
 		expect(languageCookieOptions(new URL('https://jadwal.example/langue'))).toEqual({
 			path: '/',
 			httpOnly: true,
@@ -129,17 +132,6 @@ describe('la langue du compte, à la connexion', () => {
 			maxAge: 31_536_000
 		});
 		expect(languageCookieOptions(new URL('http://127.0.0.1:4173/langue')).secure).toBe(false);
-	});
-
-	it('gives the cookie of a choice in waiting the life it is asked, that of a sign-in link', () => {
-		// Le choix de la langue garde un an ; le choix en attente, pas plus qu'un lien de connexion.
-		expect(languageCookieOptions(new URL('https://jadwal.example/langue'), 900)).toEqual({
-			path: '/',
-			httpOnly: true,
-			sameSite: 'lax',
-			secure: true,
-			maxAge: 900
-		});
 	});
 });
 

@@ -4,8 +4,9 @@
 // - Un choix fait avant la connexion devient la langue du compte à la connexion, même quand le compte
 //   en a déjà une ; ensuite, le compte fait foi, et un cookie resté sur un navigateur ne le défait
 //   pas.
-// - Ce choix voyage avec le lien de connexion : il vaut aussi quand le lien s'ouvre sur un autre
-//   navigateur, et il n'attend pas, sur le premier, plus longtemps que le lien ne vit.
+// - Ce choix voyage avec le lien de connexion, quel que soit le temps passé avant de le demander : il
+//   vaut aussi quand le lien s'ouvre sur un autre navigateur, et il n'attend plus, sur le premier,
+//   une fois le lien demandé.
 // - Un lien de connexion dont on change l'écran de retour pour un autre site est refusé, comme en
 //   production : les serveurs de test tournent sans rien qui les dise en test (`global-setup.ts`).
 // - Le retour après le choix ne quitte jamais le service, quelle que soit la forme du chemin envoyé.
@@ -34,6 +35,10 @@ const CHOISIT_CONNECTEE = 'choix-connectee@example.test';
 const LIEN_AILLEURS = 'choix-lien-ailleurs@example.test';
 /** Un compte en français dont on lit le lien de connexion. */
 const LIEN_LU = 'choix-lien-lu@example.test';
+/** Un compte en français qui choisit sa langue longtemps avant de demander son lien. */
+const CHOIX_ANCIEN = 'choix-ancien@example.test';
+/** Un compte en français qui choisit de nouveau sa langue après avoir demandé son lien. */
+const CHOIX_REFAIT = 'choix-refait@example.test';
 /** Un compte en français dont on détourne le lien de connexion vers un autre site. */
 const LIEN_DETOURNE = 'choix-lien-detourne@example.test';
 const SLUG = 'choix-de-la-langue';
@@ -41,6 +46,8 @@ const SLUG = 'choix-de-la-langue';
 const COOKIE_EN_ATTENTE = 'jadwal_language_pending';
 /** Quinze minutes, en secondes : la vie d'un lien de connexion (`auth.ts`). */
 const VIE_DU_LIEN = 900;
+/** Un an, en secondes : la vie des deux cookies de langue (`i18n/language.ts`). */
+const UN_AN = 31_536_000;
 
 let ownerHandle: DatabaseHandle;
 
@@ -245,6 +252,8 @@ beforeAll(async () => {
 			[CHOISIT_CONNECTEE, null],
 			[LIEN_AILLEURS, 'fr'],
 			[LIEN_LU, 'fr'],
+			[CHOIX_ANCIEN, 'fr'],
+			[CHOIX_REFAIT, 'fr'],
 			[LIEN_DETOURNE, 'fr']
 		] as const) {
 			await tx.execute(sql`
@@ -334,24 +343,60 @@ describe('un choix fait avant la connexion', () => {
 });
 
 describe('le choix fait avant la connexion, et le lien de connexion', () => {
-	it('keeps a choice waiting no longer than the last sign-in link lives', async () => {
+	it('keeps a choice waiting until a link is asked for, however long that takes, and not after', async () => {
 		const ordinateur = new Navigateur('fr-CH,fr;q=0.9');
 		await ordinateur.post('/langue', { language: 'de', returnTo: '/connexion' });
-		// La langue choisie se garde un an ; le choix en attente, le temps d'un lien de connexion.
-		expect(ordinateur.vies.get('jadwal_language')).toBe(31_536_000);
-		expect(ordinateur.vies.get(COOKIE_EN_ATTENTE)).toBe(VIE_DU_LIEN);
+		// Le choix en attente se garde comme la langue choisie : un an.
+		expect(ordinateur.vies.get('jadwal_language')).toBe(UN_AN);
+		expect(ordinateur.vies.get(COOKIE_EN_ATTENTE)).toBe(UN_AN);
 
-		// Dix minutes plus tard, elle demande son lien : le choix attend le temps de ce lien-là.
-		ordinateur.plusTard(10 * 60);
-		await ordinateur.demanderLeLien(LIEN_LU);
-		expect(ordinateur.vies.get(COOKIE_EN_ATTENTE)).toBe(VIE_DU_LIEN);
-		ordinateur.plusTard(10 * 60);
+		// Une heure plus tard, elle demande son lien : le choix part avec lui, et n'attend plus ici.
+		ordinateur.plusTard(60 * 60);
 		expect(ordinateur.envoie(COOKIE_EN_ATTENTE)).toBe(true);
-
-		// Le lien a expiré : le choix n'attend plus. La langue choisie reste sur ce navigateur.
-		ordinateur.plusTard(6 * 60);
+		const premier = new URL((await ordinateur.demanderLeLien(LIEN_LU)).lien);
+		expect(premier.searchParams.get('callbackURL')).toBe('/organisations?language=de');
 		expect(ordinateur.envoie(COOKIE_EN_ATTENTE)).toBe(false);
+
+		// Un second lien, demandé sans nouveau choix, ne l'emporte plus. La langue choisie reste sur
+		// ce navigateur, pour ses écrans d'avant la connexion.
+		const second = new URL((await ordinateur.demanderLeLien(LIEN_LU)).lien);
+		expect(second.searchParams.get('callbackURL')).toBe('/organisations');
 		expect(await langueDe(await ordinateur.get('/connexion'))).toBe('de');
+	});
+
+	it('goes with a link asked long after the choice, on the same browser, into the space', async () => {
+		expect(await langueDuCompte(CHOIX_ANCIEN)).toBe('fr');
+		// Sur l'écran de connexion, la personne choisit l'allemand, puis fait autre chose.
+		const navigateur = new Navigateur('fr-CH,fr;q=0.9');
+		await navigateur.post('/langue', { language: 'de', returnTo: '/connexion' });
+
+		// Seize minutes plus tard, plus que la vie d'un lien, elle demande son lien sur le même
+		// navigateur, puis le suit : l'espace s'ouvre dans la langue qu'elle a choisie.
+		navigateur.plusTard(VIE_DU_LIEN + 60);
+		expect(await langueDe(await navigateur.get('/connexion'))).toBe('de');
+		const { lien, sujet } = await navigateur.demanderLeLien(CHOIX_ANCIEN);
+		expect(sujet).toBe('Ihr Anmeldelink für jadwal');
+		const arrivee = await navigateur.suivre(lien);
+		expect(new URL(arrivee.headers.get('location') ?? '', origin).origin).toBe(origin);
+		expect(await langueDe(await navigateur.get('/organisations'))).toBe('de');
+		expect(await langueDuCompte(CHOIX_ANCIEN)).toBe('de');
+	});
+
+	it('is given at sign-in when made again after the link was asked for, and then waits no more', async () => {
+		expect(await langueDuCompte(CHOIX_REFAIT)).toBe('fr');
+		// Elle choisit l'allemand et demande son lien, qui l'emporte ; puis, en attendant le courriel,
+		// elle passe à l'italien sur le même navigateur.
+		const navigateur = new Navigateur('fr-CH,fr;q=0.9');
+		await navigateur.post('/langue', { language: 'de', returnTo: '/connexion' });
+		const { lien } = await navigateur.demanderLeLien(CHOIX_REFAIT);
+		await navigateur.post('/langue', { language: 'it', returnTo: '/connexion' });
+		expect(navigateur.envoie(COOKIE_EN_ATTENTE)).toBe(true);
+
+		// Elle suit le lien sur ce navigateur : son dernier choix l'emporte, et n'attend plus.
+		await navigateur.suivre(lien);
+		expect(await langueDe(await navigateur.get('/organisations'))).toBe('it');
+		expect(await langueDuCompte(CHOIX_REFAIT)).toBe('it');
+		expect(navigateur.envoie(COOKIE_EN_ATTENTE)).toBe(false);
 	});
 
 	it('follows the link to another browser, then leaves the account in charge on both', async () => {

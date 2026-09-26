@@ -115,13 +115,15 @@ async function guardPasskeyRoutes(event: Parameters<Handle>[0]['event']): Promis
  * déjà une langue ; sinon, pour un compte qui n'en a aucune, celle du navigateur. Ses courriels et
  * ses prochaines visites, depuis n'importe quel appareil, la gardent. Ensuite, le compte fait foi.
  *
- * Le choix d'avant la connexion voyage avec le lien de connexion, dont la vérification l'écrit sur le
- * compte (`auth.ts`), sur quelque navigateur que le lien s'ouvre. Ici, il se reconnaît à son cookie
- * d'attente, sur le navigateur où il a été fait : pour une connexion par passkey, qui n'a pas de lien,
- * et pour un choix refait après la demande du lien. Ce cookie est retiré une fois le choix écrit sur
- * le compte : un navigateur ne le donne qu'une fois. Il ne vit pas plus longtemps qu'un lien de
- * connexion : ouvert sur un autre navigateur, le lien ne peut pas le retirer ici, et sa courte vie
- * l'empêche de défaire plus tard une langue changée entre-temps sur l'autre appareil.
+ * La règle du choix d'avant la connexion : il part avec le lien de connexion, quel que soit le temps
+ * passé avant de le demander, et la vérification du lien l'écrit sur le compte (`auth.ts`), sur
+ * quelque navigateur que le lien s'ouvre. Son cookie d'attente est retiré dès que le choix est parti :
+ * à la demande du lien (`connexion/+page.server.ts`), ou ici, à la connexion, une fois le choix écrit
+ * sur le compte. Un navigateur ne donne donc un choix qu'une fois, et ce choix ne revient jamais plus
+ * tard défaire une langue changée entre-temps sur un autre appareil. Le lien, lui, ne vit que quinze
+ * minutes. Ici, le choix se reconnaît à son cookie d'attente, sur le navigateur où il a été fait,
+ * quand aucun lien ne l'a emporté : une connexion par passkey, qui n'a pas de lien, et un choix refait
+ * après la demande du lien.
  *
  * Une écriture qui échoue ne fait pas échouer la page, et le cookie d'attente reste : la langue n'est
  * qu'une préférence, et elle sera retentée à la requête suivante. SvelteKit n'ajoute les cookies
