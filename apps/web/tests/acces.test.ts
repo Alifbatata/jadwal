@@ -2198,7 +2198,9 @@ describe('l’espace des responsables', () => {
 		// par les lecteurs d'écran sur le site de l'organisation : un tiret demi-cadratin, pas de
 		// cadratin (`pnpm style`).
 		expect(html).toContain('&lt;iframe src=');
-		const cadre = html.match(/aria-label="Cadre à coller à la main"[^>]*>([^<]*)</)?.[1] ?? '';
+		// Depuis l'étape 18, chaque code a un libellé visible (`<label for>`) : le cadre se trouve par
+		// son identifiant.
+		const cadre = html.match(/<textarea\b[^>]*\sid="code-cadre"[^>]*>([^<]*)</)?.[1] ?? '';
 		expect(cadre).toMatch(/title=(?:"|&quot;)Programme des cours – /);
 		expect(cadre).not.toContain('—');
 	});
