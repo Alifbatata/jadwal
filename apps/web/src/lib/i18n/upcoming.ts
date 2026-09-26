@@ -22,6 +22,8 @@ export type UpcomingDone = 'cancelled' | 'moved' | 'restored';
  * déplacement vers la date et l'heure où la séance est déjà prévue, qui ne déplacerait rien.
  * `changed` : la séance a été annulée ou déplacée depuis que la page a été ouverte, par Retour, dans
  * un autre onglet ou par une autre personne ; la carte encore affichée ne défait pas ce changement.
+ * `timeChanged` : l'heure du cours a changé dans sa fiche depuis ; la séance garde sa carte, qui se
+ * rouvre sur la phrase, sous sa nouvelle heure.
  */
 export type UpcomingError =
 	| 'unreadableDate'
@@ -30,6 +32,7 @@ export type UpcomingError =
 	| 'pastDate'
 	| 'unchanged'
 	| 'changed'
+	| 'timeChanged'
 	| 'sessionGone';
 
 interface UpcomingTexts {
@@ -211,6 +214,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				'La séance est déjà prévue à cette date et à cette heure. Choisissez une autre date ou une autre heure.',
 			changed:
 				'Cette séance a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée. Rien n’a été enregistré. Le programme ci-dessous est à jour.',
+			timeChanged:
+				'L’heure de cette séance a changé depuis l’ouverture de la page. Rien n’a été enregistré. Sa nouvelle heure est écrite sous son titre : vérifiez la date et l’heure choisies, puis recommencez.',
 			sessionGone: 'Cette séance n’existe plus. Rechargez la page pour voir le programme à jour.'
 		}
 	},
@@ -303,6 +308,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				'Der Termin ist schon an diesem Datum und zu dieser Uhrzeit geplant. Wählen Sie ein anderes Datum oder eine andere Uhrzeit.',
 			changed:
 				'Dieser Termin hat sich geändert, seit die Seite geöffnet wurde: Er wurde schon abgesagt oder verschoben. Es wurde nichts gespeichert. Das Programm unten ist aktuell.',
+			timeChanged:
+				'Die Uhrzeit dieses Termins hat sich geändert, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Die neue Uhrzeit steht unter seinem Titel: Prüfen Sie das gewählte Datum und die gewählte Uhrzeit und versuchen Sie es noch einmal.',
 			sessionGone:
 				'Diesen Termin gibt es nicht mehr. Laden Sie die Seite neu, um das aktuelle Programm zu sehen.'
 		}
@@ -395,6 +402,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				'La lezione è già prevista per questa data e questo orario. Scegli un’altra data o un altro orario.',
 			changed:
 				'Questa lezione è cambiata da quando hai aperto la pagina: è già stata annullata o spostata. Non è stato salvato niente. Il programma qui sotto è aggiornato.',
+			timeChanged:
+				'L’orario di questa lezione è cambiato da quando hai aperto la pagina. Non è stato salvato niente. Il nuovo orario è indicato sotto il titolo: controlla la data e l’orario scelti, poi riprova.',
 			sessionGone:
 				'Questa lezione non esiste più. Ricarica la pagina per vedere il programma aggiornato.'
 		}
@@ -485,6 +494,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				'The session is already planned for this date and time. Choose a different date or time.',
 			changed:
 				'This session has changed since the page was opened: it has already been cancelled or moved. Nothing has been saved. The programme below shows the latest changes.',
+			timeChanged:
+				'The time of this session has changed since the page was opened. Nothing has been saved. Its new time is shown under its title: check the date and time you chose, then try again.',
 			sessionGone: 'This session no longer exists. Reload the page to see the current programme.'
 		}
 	},
@@ -577,6 +588,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			unchanged: 'الحصة مقرّرة أصلًا في هذا التاريخ وفي هذا الوقت. اختر تاريخًا آخر أو وقتًا آخر.',
 			changed:
 				'تغيّرت هذه الحصة منذ أن فُتحت الصفحة: سبق أن أُلغيت أو نُقلت. لم يُحفظ أي شيء. برنامجك المعروض أدناه محدَّث.',
+			timeChanged:
+				'تغيّر وقت هذه الحصة منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. وقتها الجديد مكتوب تحت عنوانها: راجع ما اخترته من تاريخ ووقت، ثم حاول مرة أخرى.',
 			sessionGone: 'هذه الحصة لم تعد موجودة. أعد تحميل الصفحة لترى برنامجك المحدَّث.'
 		}
 	}

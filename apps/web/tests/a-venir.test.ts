@@ -11,7 +11,9 @@
 //   identifiant mal formé ou à un cours inconnu.
 // - Une page restée ouverte (Retour, un second onglet, une autre personne) ne défait pas un
 //   changement : annuler ou déplacer une séance déjà annulée ou déplacée est refusé, rien n'est
-//   écrit, et l'écran rendu est à jour (relecture du lot 4).
+//   écrit, et l'écran rendu est à jour (relecture du lot 4). La carte envoie aussi l'heure qu'elle
+//   montrait : si l'heure du cours a changé depuis dans sa fiche, son déplacement est refusé
+//   (relecture du lot 5).
 // - B1 : un déplacement le même jour à une autre heure se dit comme un changement d'heure, sur la
 //   carte et dans le message ; un changement de date garde ses mots (relecture du lot 4).
 // - D1 : les messages prêts à coller s'écrivent dans chacune des langues que l'organisation publie,
@@ -74,6 +76,19 @@ const CHANGEE: Record<Langue, string> = {
 	it: 'Questa lezione è cambiata da quando hai aperto la pagina: è già stata annullata o spostata. Non è stato salvato niente. Il programma qui sotto è aggiornato.',
 	en: 'This session has changed since the page was opened: it has already been cancelled or moved. Nothing has been saved. The programme below shows the latest changes.',
 	ar: 'تغيّرت هذه الحصة منذ أن فُتحت الصفحة: سبق أن أُلغيت أو نُقلت. لم يُحفظ أي شيء. برنامجك المعروض أدناه محدَّث.'
+};
+
+/**
+ * Le refus d'une carte restée ouverte pendant que l'heure du cours changeait dans sa fiche : la
+ * séance est encore prévue, sa carte se rouvre sur cette phrase, sous sa nouvelle heure (relecture
+ * du lot 5).
+ */
+const HEURE_CHANGEE: Record<Langue, string> = {
+	fr: 'L’heure de cette séance a changé depuis l’ouverture de la page. Rien n’a été enregistré. Sa nouvelle heure est écrite sous son titre : vérifiez la date et l’heure choisies, puis recommencez.',
+	de: 'Die Uhrzeit dieses Termins hat sich geändert, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Die neue Uhrzeit steht unter seinem Titel: Prüfen Sie das gewählte Datum und die gewählte Uhrzeit und versuchen Sie es noch einmal.',
+	it: 'L’orario di questa lezione è cambiato da quando hai aperto la pagina. Non è stato salvato niente. Il nuovo orario è indicato sotto il titolo: controlla la data e l’orario scelti, poi riprova.',
+	en: 'The time of this session has changed since the page was opened. Nothing has been saved. Its new time is shown under its title: check the date and time you chose, then try again.',
+	ar: 'تغيّر وقت هذه الحصة منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. وقتها الجديد مكتوب تحت عنوانها: راجع ما اخترته من تاريخ ووقت، ثم حاول مرة أخرى.'
 };
 
 /** Ce qui est pareil dans toutes les langues par nature : noms, titres, adresses. */
@@ -393,6 +408,15 @@ function formulaireDeLaCarte(
 async function retablir(courseId: string, date: string, cookie: string): Promise<void> {
 	await postForm('/?/retablir', { courseId, date }, cookie);
 	expect(await exception(courseId, date)).toBeUndefined();
+}
+
+/** Change l'heure d'un cours, comme une autre personne le ferait dans sa fiche. */
+async function changerHeure(courseId: string, debut: string, fin: string): Promise<void> {
+	await maintenance((tx) =>
+		tx.execute(sql`
+			update "course" set "timing_start" = ${debut}, "timing_end" = ${fin} where "id" = ${courseId}
+		`)
+	);
 }
 
 async function poserCours(
@@ -829,7 +853,13 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 		// La page telle qu'elle était avant le déplacement : c'est elle que Retour remontre.
 		const avant = await (await get('/', cookie)).text();
 		const proposee = formulaireDeLaCarte(avant, 'deplacer', soir, jour(1));
-		expect(proposee).toEqual({ courseId: soir, date: jour(1), toDate: jour(1), toStart: '19:00' });
+		expect(proposee).toEqual({
+			courseId: soir,
+			date: jour(1),
+			plannedStart: '19:00',
+			toDate: jour(1),
+			toStart: '19:00'
+		});
 		const deplace = await postForm(
 			'/?/deplacer',
 			{ ...proposee, toDate: jour(2), toStart: '20:30' },
@@ -880,6 +910,7 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 			expect(proposee).toEqual({
 				courseId: cercle,
 				date: jour(3),
+				plannedStart: '19:35',
 				toDate: jour(3),
 				toStart: '19:35'
 			});
@@ -905,7 +936,13 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 	it('refuses a move from a card left open after the session was cancelled, and keeps it cancelled', async () => {
 		const page = await (await get('/', cookie)).text();
 		const proposee = formulaireDeLaCarte(page, 'deplacer', soir, today);
-		expect(proposee).toEqual({ courseId: soir, date: today, toDate: today, toStart: '19:00' });
+		expect(proposee).toEqual({
+			courseId: soir,
+			date: today,
+			plannedStart: '19:00',
+			toDate: today,
+			toStart: '19:00'
+		});
 		const annulation = formulaireDeLaCarte(page, 'annuler', soir, today);
 		expect(annulation).toEqual({ courseId: soir, date: today });
 		const annule = await postForm('/?/annuler', annulation, cookie);
@@ -925,6 +962,66 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 			expect(await exception(soir, today)).toEqual(annulee);
 		} finally {
 			await retablir(soir, today, cookie);
+		}
+	});
+
+	it('refuses a card left open while the time of the course changed in its page, and writes nothing (relecture du lot 5)', async () => {
+		// La page telle qu'elle était avant : la carte du cours du soir de J+2 montre 19:00.
+		const avant = await (await get('/', cookie)).text();
+		const proposee = formulaireDeLaCarte(avant, 'deplacer', soir, jour(2));
+		// Une autre personne passe le cours à 20:00 dans sa fiche ; la séance n'a aucune exception.
+		await changerHeure(soir, '20:00', '21:30');
+		try {
+			// Renvoyée sans changement, la carte déplaçait la séance à 19:00 le même jour, avec le
+			// message « commence à 19:00 au lieu de 20:00 ». Pour un autre jour, elle partait d'une
+			// heure que la personne n'a pas vue.
+			for (const envoi of [proposee, { ...proposee, toDate: jour(4), toStart: '18:00' }]) {
+				const reponse = await postForm('/?/deplacer', envoi, cookie);
+				expect(reponse.status, envoi['toDate']).toBe(409);
+				const html = await reponse.text();
+				expect(await exception(soir, jour(2)), envoi['toDate']).toBeUndefined();
+				expect(section(html, 'message-titre'), envoi['toDate']).toBe('');
+				// La séance est encore prévue : sa carte se rouvre sur la phrase, et elle seule.
+				const ouvertes = optionsDesSeances(html).filter((options) => options.ouvert);
+				expect(
+					ouvertes.map((options) => [
+						cache(options.contenu, 'courseId'),
+						cache(options.contenu, 'date')
+					]),
+					envoi['toDate']
+				).toEqual([[soir, jour(2)]]);
+				expect(alerte(ouvertes[0]?.contenu ?? ''), envoi['toDate']).toBe(HEURE_CHANGEE.fr);
+				// Sa nouvelle heure est sous son titre, et la carte rendue de nouveau l'envoie.
+				expect(texte(carte(html, jour(2), SOIR.fr, 'scheduled')), envoi['toDate']).toContain(
+					'20:00 – 21:30'
+				);
+				expect(cache(ouvertes[0]?.contenu ?? '', 'plannedStart'), envoi['toDate']).toBe('20:00');
+			}
+		} finally {
+			await changerHeure(soir, '19:00', '20:30');
+			await retablir(soir, jour(2), cookie);
+		}
+	});
+
+	it('sends with each card the time it showed, none for a session shown without one, and takes a card that is up to date', async () => {
+		const html = await (await get('/', cookie)).text();
+		expect(formulaireDeLaCarte(html, 'deplacer', soir, jour(2))['plannedStart']).toBe('19:00');
+		// Maghrib à 19:20 le jour J+2 : le cercle, un quart d'heure après, montre 19:35.
+		expect(formulaireDeLaCarte(html, 'deplacer', cercle, jour(2))['plannedStart']).toBe('19:35');
+		// Le calendrier importé s'arrête à J+4 : le cercle de J+5 ne montre aucune heure.
+		const sansHeure = formulaireDeLaCarte(html, 'deplacer', cercle, jour(5));
+		expect(sansHeure['plannedStart']).toBe('');
+		// Cette carte est à jour : elle passe, et donne à la séance l'heure que le champ propose.
+		const reponse = await postForm('/?/deplacer', sansHeure, cookie);
+		try {
+			expect(reponse.status).toBe(200);
+			expect(await exception(cercle, jour(5))).toEqual({
+				kind: 'moved',
+				to_date: jour(5),
+				to_start: '19:00'
+			});
+		} finally {
+			await retablir(cercle, jour(5), cookie);
 		}
 	});
 });
@@ -1281,6 +1378,7 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 		'après un refus',
 		'après un déplacement qui ne change rien',
 		'après une page restée ouverte',
+		'après une carte dont l’heure a changé',
 		'après un rétablissement'
 	];
 	const ATTENDUS: Record<string, number> = {
@@ -1289,6 +1387,7 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 		'après un refus': 400,
 		'après un déplacement qui ne change rien': 400,
 		'après une page restée ouverte': 409,
+		'après une carte dont l’heure a changé': 409,
 		'après un rétablissement': 200
 	};
 
@@ -1324,6 +1423,22 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 					await postForm(
 						'/?/deplacer',
 						{ courseId: cercle, date: jour(1), toDate: jour(1), toStart: '19:35' },
+						cookie
+					)
+				],
+				[
+					// La carte du cours du soir de J+2, ouverte quand il commençait à 18:00 : son heure
+					// a changé depuis, et la séance est prévue à 19:00.
+					'après une carte dont l’heure a changé',
+					await postForm(
+						'/?/deplacer',
+						{
+							courseId: soir,
+							date: jour(2),
+							plannedStart: '18:00',
+							toDate: jour(2),
+							toStart: '18:00'
+						},
 						cookie
 					)
 				],
@@ -1475,6 +1590,17 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 				optionsDesSeances(html).filter((bloc) => bloc.ouvert),
 				langue
 			).toEqual([]);
+			expect(section(html, 'message-titre'), langue).toBe('');
+		}
+	});
+
+	it('says in each language that the time changed since the page was opened, in the card', () => {
+		for (const langue of LANGUES) {
+			const html = rendus['après une carte dont l’heure a changé']?.[langue] ?? '';
+			// La séance est encore prévue, à sa nouvelle heure : la phrase se lit dans sa carte, rouverte.
+			const ouvertes = optionsDesSeances(html).filter((bloc) => bloc.ouvert);
+			expect(ouvertes, langue).toHaveLength(1);
+			expect(alerte(ouvertes[0]?.contenu ?? ''), langue).toBe(HEURE_CHANGEE[langue]);
 			expect(section(html, 'message-titre'), langue).toBe('');
 		}
 	});

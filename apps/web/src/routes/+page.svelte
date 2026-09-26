@@ -57,7 +57,8 @@
 	const refusee = $derived(form?.error ? cle(form.courseId ?? '', form.date ?? '') : null);
 	/**
 	 * Une erreur qui ne trouve pas sa carte s'affiche en haut : une séance disparue, ou une séance
-	 * annulée ou déplacée depuis l'ouverture de la page, qui n'a plus d'options.
+	 * annulée ou déplacée depuis l'ouverture de la page, qui n'a plus d'options. Une séance dont
+	 * l'heure a changé depuis est encore prévue : son refus se lit dans sa carte.
 	 */
 	const erreurEnHaut = $derived(
 		Boolean(form?.error) &&
@@ -211,15 +212,19 @@
 								<button type="submit" class="danger">{text.cancelButton}</button>
 							</form>
 
+							<!-- L'heure que la carte montre part avec elle, vide pour une séance sans heure : si
+							     l'heure du cours change dans sa fiche pendant que la page reste ouverte,
+							     l'action refuse la carte, au lieu de déplacer la séance à l'ancienne heure. -->
 							<form method="post" action="?/deplacer">
 								<input type="hidden" name="courseId" value={seance.courseId} />
 								<input type="hidden" name="date" value={seance.date} />
+								<input type="hidden" name="plannedStart" value={seance.start ?? ''} />
 								<fieldset>
 									<legend>{text.moveLegend}</legend>
 									<!-- Une erreur qui retrouve sa carte vient toujours d'un déplacement : la date de
-									     la séance illisible, la séance disparue ou déjà changée ne désignent aucune
-									     carte, et s'affichent en haut. Elle se lit donc au-dessus des champs à
-									     corriger. -->
+									     la séance illisible, la séance disparue, déjà annulée ou déjà déplacée ne
+									     désignent aucune carte, et s'affichent en haut. Elle se lit donc au-dessus des
+									     champs à corriger. -->
 									{#if form?.error && refusee === k}
 										<p class="erreur" role="alert">{text.errors[form.error]}</p>
 									{/if}

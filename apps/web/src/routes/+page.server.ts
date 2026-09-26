@@ -18,6 +18,9 @@
 // (Retour, un autre onglet, une autre personne) montre encore la carte d'une séance annulée ou
 // déplacée depuis ; l'envoyer défaisait ce changement, en écrivant par exemple un déplacement de la
 // séance vers elle-même. Les deux actions le refusent, n'écrivent rien, et l'écran rendu est à jour.
+// La carte d'un déplacement envoie aussi l'heure qu'elle montrait : quand l'heure du cours a changé
+// depuis dans sa fiche, l'action la refuse, au lieu de déplacer la séance à l'ancienne heure
+// (relecture du lot 5).
 
 import { fail } from '@sveltejs/kit';
 import { isIsoDate, todayInZone } from '@jadwal/core';
@@ -118,24 +121,24 @@ async function readCourse(
 }
 
 /**
- * L'heure à laquelle une séance est prévue un jour donné, celle que l'écran affiche et que le champ
- * « Heure de début » propose : le calcul de `@jadwal/core`, par `readProgramme`, et non une valeur
- * renvoyée par le formulaire. Rien quand la séance n'est pas prévue ce jour-là dans les sept jours de
- * l'écran, ou quand son heure est inconnue : le champ propose alors 19:00, et l'accepter lui donne
- * une heure.
+ * La séance d'un cours un jour donné, telle que l'écran l'affiche : le calcul de `@jadwal/core`, par
+ * `readProgramme`, et non une valeur renvoyée par le formulaire. Rien quand la séance n'est pas
+ * prévue ce jour-là dans les sept jours de l'écran. Son heure, celle que le champ « Heure de début »
+ * propose, est `null` quand elle est inconnue : le champ propose alors 19:00, et l'accepter lui
+ * donne une heure.
  */
-async function plannedStart(
+async function plannedSeance(
 	tx: Transaction,
 	now: Date,
 	courseId: string,
 	date: string
-): Promise<string | null> {
+): Promise<{ start: string | null } | null> {
 	const { seances } = await readProgramme(tx, now, JOURS_AFFICHES);
 	const seance = seances.find(
 		(candidate) =>
 			candidate.courseId === courseId && candidate.date === date && candidate.status === 'scheduled'
 	);
-	return seance?.start ?? null;
+	return seance ? { start: seance.start ?? null } : null;
 }
 
 /**
@@ -319,6 +322,16 @@ export const actions: Actions = {
 			// Avant les autres refus : une carte restée ouverte sur une séance déjà annulée ou
 			// déplacée n'a rien à corriger, quelle que soit la date choisie.
 			if (await alreadyChanged(tx, courseId, date)) return refuse('changed', fields, 409);
+			const seance = await plannedSeance(tx, now, courseId, date);
+			// La carte envoie l'heure qu'elle montrait (`plannedStart`, vide pour une séance sans
+			// heure). Quand la séance n'est plus prévue à cette heure-là, l'heure du cours a changé
+			// depuis l'ouverture de la page : la carte est périmée, quelle que soit la date choisie.
+			// Un formulaire sans ce champ, ou une séance absente des sept jours de l'écran, n'est pas
+			// comparé.
+			const shown = form.get('plannedStart');
+			if (shown !== null && seance && (seance.start ?? '') !== String(shown)) {
+				return refuse('timeChanged', fields, 409);
+			}
 			const settings = await readSettings(tx);
 			// Deux dates civiles au même format se comparent comme des chaînes.
 			if (toDate < todayInZone(settings.time_zone, now)) {
@@ -328,7 +341,7 @@ export const actions: Actions = {
 			// déplace rien : l'accepter écrivait une exception vers la séance elle-même, affichée deux
 			// fois le même jour, et un message « déplacé du mercredi au mercredi » pour la communauté.
 			// Le même jour, l'heure prévue sert aussi au message, qui dit un changement d'heure.
-			const planned = toDate === date ? await plannedStart(tx, now, courseId, date) : null;
+			const planned = toDate === date ? (seance?.start ?? null) : null;
 			if (toDate === date && planned === toStart) return refuse('unchanged', fields);
 			// Un autre envoi arrivé entre la vérification et cette ligne garde la main : rien n'est
 			// écrasé, et celui-ci est refusé de la même façon.
