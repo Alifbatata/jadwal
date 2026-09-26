@@ -9,7 +9,8 @@
 // langues que l'organisation publie, la langue source d'abord (retour D1). Une séance se déplace à
 // toute date à partir d'aujourd'hui, plus tôt comme plus tard que sa date prévue (retour A2) : c'est
 // l'action qui refuse une date passée, et non le seul champ du navigateur, qu'un formulaire envoyé à
-// la main contourne.
+// la main contourne. Elle refuse aussi un déplacement qui ne change rien, la même date à l'heure où
+// la séance est déjà prévue.
 
 import { fail } from '@sveltejs/kit';
 import { isIsoDate, todayInZone } from '@jadwal/core';
@@ -96,6 +97,27 @@ async function readCourse(
 	const titles = new Map(found.map((row) => [row.language, row.title ?? '']));
 	const fallback = titles.get(source) ?? found.find((row) => row.title)?.title ?? '';
 	return { source, title: (language) => titles.get(language) ?? fallback };
+}
+
+/**
+ * L'heure à laquelle une séance est prévue un jour donné, celle que l'écran affiche et que le champ
+ * « Heure de début » propose : le calcul de `@jadwal/core`, par `readProgramme`, et non une valeur
+ * renvoyée par le formulaire. Rien quand la séance n'est pas prévue ce jour-là dans les sept jours de
+ * l'écran, ou quand son heure est inconnue : le champ propose alors 19:00, et l'accepter lui donne
+ * une heure.
+ */
+async function plannedStart(
+	tx: Transaction,
+	now: Date,
+	courseId: string,
+	date: string
+): Promise<string | null> {
+	const { seances } = await readProgramme(tx, now, JOURS_AFFICHES);
+	const seance = seances.find(
+		(candidate) =>
+			candidate.courseId === courseId && candidate.date === date && candidate.status === 'scheduled'
+	);
+	return seance?.start ?? null;
 }
 
 /**
@@ -231,7 +253,8 @@ export const actions: Actions = {
 
 	/**
 	 * Déplacer une séance : nouvelle date et nouvelle heure, les deux obligatoires. Toute date à partir
-	 * d'aujourd'hui, dans le fuseau de l'organisation, plus tôt comme plus tard que la date prévue.
+	 * d'aujourd'hui, dans le fuseau de l'organisation, plus tôt comme plus tard que la date prévue. Le
+	 * même jour à une autre heure est un déplacement ; le même jour à la même heure n'en est pas un.
 	 */
 	deplacer: async (event) => {
 		const context = await mustBeInOrganisation(event);
@@ -244,13 +267,20 @@ export const actions: Actions = {
 		if (!isIsoDate(date)) return refuse('unreadableDate', fields);
 		if (!isIsoDate(toDate)) return refuse('unreadableNewDate', fields);
 		if (!HEURE.test(toStart)) return refuse('unreadableTime', fields);
+		const now = new Date();
 		return withSessionOrg(context, async (tx) => {
 			const course = await readCourse(tx, courseId);
 			if (!course) return refuse('sessionGone', fields, 404);
 			const settings = await readSettings(tx);
 			// Deux dates civiles au même format se comparent comme des chaînes.
-			if (toDate < todayInZone(settings.time_zone, new Date())) {
+			if (toDate < todayInZone(settings.time_zone, now)) {
 				return refuse('pastDate', fields);
+			}
+			// Le champ s'ouvre sur la date prévue et l'heure habituelle. Les renvoyer tels quels ne
+			// déplace rien : l'accepter écrivait une exception vers la séance elle-même, affichée deux
+			// fois le même jour, et un message « déplacé du mercredi au mercredi » pour la communauté.
+			if (toDate === date && (await plannedStart(tx, now, courseId, date)) === toStart) {
+				return refuse('unchanged', fields);
 			}
 			await tx.execute(sql`
 				insert into "session_exception"

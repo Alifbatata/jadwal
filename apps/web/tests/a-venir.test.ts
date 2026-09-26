@@ -6,8 +6,9 @@
 //   montre sans JavaScript est ce que ces tests voient.
 // - A2 : une séance se déplace à toute date à partir d'aujourd'hui, plus tôt comme plus tard que la
 //   date prévue. L'action refuse une date passée, avec une phrase claire, et n'écrit rien. Elle
-//   répond par une phrase, jamais par une erreur 500, à une heure hors plage, à un identifiant mal
-//   formé ou à un cours inconnu.
+//   refuse aussi un déplacement qui ne change rien, la même date à l'heure déjà prévue (relecture du
+//   lot 3), et répond par une phrase, jamais par une erreur 500, à une heure hors plage, à un
+//   identifiant mal formé ou à un cours inconnu.
 // - D1 : les messages prêts à coller s'écrivent dans chacune des langues que l'organisation publie,
 //   la langue source d'abord : la langue par défaut pour le programme de la semaine, celle du cours
 //   pour une annulation ou un déplacement.
@@ -543,6 +544,95 @@ describe('A2 : déplacer une séance', () => {
 		expect(await exception(soir, jour(3))).toBeUndefined();
 	});
 
+	it('refuses a move that changes neither the date nor the time, says what to do, keeps the form', async () => {
+		// Le champ s'ouvre sur la date prévue et l'heure habituelle : les renvoyer tels quels, c'est
+		// toucher « Déplacer la séance » sans rien changer. Rien ne se déplace, et rien ne s'annonce.
+		const reponse = await postForm(
+			'/?/deplacer',
+			{ courseId: soir, date: jour(3), toDate: jour(3), toStart: '19:00' },
+			cookie
+		);
+		expect(reponse.status).toBe(400);
+		const html = await reponse.text();
+		expect(await exception(soir, jour(3))).toBeUndefined();
+		expect(section(html, 'message-titre')).toBe('');
+		const ouvertes = optionsDesSeances(html).filter((bloc) => bloc.ouvert);
+		expect(ouvertes).toHaveLength(1);
+		const bloc = ouvertes[0]?.contenu ?? '';
+		expect([cache(bloc, 'courseId'), cache(bloc, 'date')]).toEqual([soir, jour(3)]);
+		expect(alerte(bloc)).toBe(
+			'La séance est déjà prévue à cette date et à cette heure. Choisissez une autre date ou une autre heure.'
+		);
+		// Ce qui avait été envoyé reste dans le formulaire.
+		expect(attributs(bloc.match(/<input\b[^>]*name="toDate"[^>]*>/)?.[0] ?? '')['value']).toBe(
+			jour(3)
+		);
+		expect(attributs(bloc.match(/<input\b[^>]*name="toStart"[^>]*>/)?.[0] ?? '')['value']).toBe(
+			'19:00'
+		);
+	});
+
+	it('refuses it for a session that follows a prayer, at the time computed for that day', async () => {
+		// Maghrib à 19:20 le jour J+2, et le cercle un quart d'heure après : 19:35, l'heure que le
+		// champ propose. Le serveur la tient du même calcul que l'écran, pas du formulaire.
+		const reponse = await postForm(
+			'/?/deplacer',
+			{ courseId: cercle, date: jour(2), toDate: jour(2), toStart: '19:35' },
+			cookie
+		);
+		expect(reponse.status).toBe(400);
+		expect(alerte(await reponse.text())).toContain('La séance est déjà prévue');
+		expect(await exception(cercle, jour(2))).toBeUndefined();
+	});
+
+	it('accepts the same day at another time, and says the new time', async () => {
+		const reponse = await postForm(
+			'/?/deplacer',
+			{ courseId: soir, date: jour(3), toDate: jour(3), toStart: '20:30' },
+			cookie
+		);
+		expect(reponse.status).toBe(200);
+		expect(await exception(soir, jour(3))).toEqual({
+			kind: 'moved',
+			to_date: jour(3),
+			to_start: '20:30'
+		});
+		const annonce = messages(section(await reponse.text(), 'message-titre'));
+		expect(annonce[0]?.texte).toContain('20:30');
+		await postForm('/?/retablir', { courseId: soir, date: jour(3) }, cookie);
+		expect(await exception(soir, jour(3))).toBeUndefined();
+	});
+
+	it('accepts another day at the same time', async () => {
+		const reponse = await postForm(
+			'/?/deplacer',
+			{ courseId: soir, date: jour(3), toDate: jour(4), toStart: '19:00' },
+			cookie
+		);
+		expect(reponse.status).toBe(200);
+		expect((await exception(soir, jour(3)))?.to_date).toBe(jour(4));
+		await postForm('/?/retablir', { courseId: soir, date: jour(3) }, cookie);
+		expect(await exception(soir, jour(3))).toBeUndefined();
+	});
+
+	it('accepts the same day for a session shown without a time: it gets one', async () => {
+		// Le calendrier importé s'arrête à J+4 : le cercle de J+5 n'a pas d'heure, et le champ propose
+		// 19:00. L'accepter donne une heure à la séance, ce qui change quelque chose.
+		const reponse = await postForm(
+			'/?/deplacer',
+			{ courseId: cercle, date: jour(5), toDate: jour(5), toStart: '19:00' },
+			cookie
+		);
+		expect(reponse.status).toBe(200);
+		expect(await exception(cercle, jour(5))).toEqual({
+			kind: 'moved',
+			to_date: jour(5),
+			to_start: '19:00'
+		});
+		await postForm('/?/retablir', { courseId: cercle, date: jour(5) }, cookie);
+		expect(await exception(cercle, jour(5))).toBeUndefined();
+	});
+
 	it('refuses an hour out of range with a sentence, instead of failing', async () => {
 		for (const heure of ['25:99', '24:00', '19:60']) {
 			const reponse = await postForm(
@@ -755,11 +845,18 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 	/** Chaque état de l'écran, rendu dans chaque langue, et le code de la réponse. */
 	const rendus: Record<string, Record<Langue, string>> = {};
 	const statuts: Record<string, Record<Langue, number>> = {};
-	const ETATS = ['affiché', 'après une annulation', 'après un refus', 'après un rétablissement'];
+	const ETATS = [
+		'affiché',
+		'après une annulation',
+		'après un refus',
+		'après un déplacement qui ne change rien',
+		'après un rétablissement'
+	];
 	const ATTENDUS: Record<string, number> = {
 		affiché: 200,
 		'après une annulation': 200,
 		'après un refus': 400,
+		'après un déplacement qui ne change rien': 400,
 		'après un rétablissement': 200
 	};
 
@@ -778,6 +875,14 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 					await postForm(
 						'/?/deplacer',
 						{ courseId: cercle, date: jour(2), toDate: jour(-3), toStart: '20:00' },
+						cookie
+					)
+				],
+				[
+					'après un déplacement qui ne change rien',
+					await postForm(
+						'/?/deplacer',
+						{ courseId: soir, date: jour(3), toDate: jour(3), toStart: '19:00' },
 						cookie
 					)
 				],
@@ -899,5 +1004,23 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 		expect(
 			zonesDeTexte(section(rendus['après un rétablissement']?.fr ?? '', 'message-titre'))
 		).toEqual([]);
+	});
+
+	it('says in each language that the session is already there, and what to choose instead', () => {
+		const phrases: Record<Langue, string> = {
+			fr: 'La séance est déjà prévue à cette date et à cette heure. Choisissez une autre date ou une autre heure.',
+			de: 'Der Termin ist schon an diesem Datum und zu dieser Uhrzeit geplant. Wählen Sie ein anderes Datum oder eine andere Uhrzeit.',
+			it: 'La lezione è già prevista per questa data e questo orario. Scegli un’altra data o un altro orario.',
+			en: 'The session is already planned for this date and time. Choose a different date or time.',
+			ar: 'الحصة مقرّرة بالفعل في هذا التاريخ وفي هذا الوقت. اختر تاريخًا آخر أو وقتًا آخر.'
+		};
+		for (const langue of LANGUES) {
+			const html = rendus['après un déplacement qui ne change rien']?.[langue] ?? '';
+			// Le refus se lit dans la carte de la séance, rouverte, et nulle part un « déplacé ».
+			const ouvertes = optionsDesSeances(html).filter((bloc) => bloc.ouvert);
+			expect(ouvertes, langue).toHaveLength(1);
+			expect(alerte(ouvertes[0]?.contenu ?? ''), langue).toBe(phrases[langue]);
+			expect(section(html, 'message-titre'), langue).toBe('');
+		}
 	});
 });

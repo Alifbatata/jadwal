@@ -17,9 +17,17 @@ function arabic(count: number, forms: PluralForms): string {
 /** Ce qu'une action vient de faire, par son nom : l'action le rend, l'écran l'écrit. */
 export type UpcomingDone = 'cancelled' | 'moved' | 'restored';
 
-/** Les erreurs des actions, par leur nom : l'action rend le nom, jamais la phrase. */
+/**
+ * Les erreurs des actions, par leur nom : l'action rend le nom, jamais la phrase. `unchanged` : un
+ * déplacement vers la date et l'heure où la séance est déjà prévue, qui ne déplacerait rien.
+ */
 export type UpcomingError =
-	'unreadableDate' | 'unreadableNewDate' | 'unreadableTime' | 'pastDate' | 'sessionGone';
+	| 'unreadableDate'
+	| 'unreadableNewDate'
+	| 'unreadableTime'
+	| 'pastDate'
+	| 'unchanged'
+	| 'sessionGone';
 
 interface UpcomingTexts {
 	/** Ce que montre l'écran, et où se trouvent les options d'une séance. */
@@ -171,6 +179,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			unreadableTime:
 				'Cette heure n’a pas pu être lue. Écrivez les heures et les minutes, par exemple 19:30.',
 			pastDate: 'Cette date est déjà passée. Choisissez une date à partir d’aujourd’hui.',
+			unchanged:
+				'La séance est déjà prévue à cette date et à cette heure. Choisissez une autre date ou une autre heure.',
 			sessionGone: 'Cette séance n’existe plus. Rechargez la page pour voir le programme à jour.'
 		}
 	},
@@ -252,6 +262,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			unreadableTime:
 				'Diese Uhrzeit konnte nicht gelesen werden. Geben Sie Stunden und Minuten ein, zum Beispiel 19:30.',
 			pastDate: 'Dieses Datum ist schon vorbei. Wählen Sie heute oder einen späteren Tag.',
+			unchanged:
+				'Der Termin ist schon an diesem Datum und zu dieser Uhrzeit geplant. Wählen Sie ein anderes Datum oder eine andere Uhrzeit.',
 			sessionGone:
 				'Diesen Termin gibt es nicht mehr. Laden Sie die Seite neu, um das aktuelle Programm zu sehen.'
 		}
@@ -333,6 +345,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			unreadableTime:
 				'Non è stato possibile leggere questo orario. Scrivi le ore e i minuti, per esempio 19:30.',
 			pastDate: 'Questa data è già passata. Scegli oggi o un giorno successivo.',
+			unchanged:
+				'La lezione è già prevista per questa data e questo orario. Scegli un’altra data o un altro orario.',
 			sessionGone:
 				'Questa lezione non esiste più. Ricarica la pagina per vedere il programma aggiornato.'
 		}
@@ -412,6 +426,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			unreadableTime:
 				'This time could not be read. Enter the hours and minutes, for example 19:30.',
 			pastDate: 'This date has already passed. Choose today or a later day.',
+			unchanged:
+				'The session is already planned for this date and time. Choose a different date or time.',
 			sessionGone: 'This session no longer exists. Reload the page to see the current programme.'
 		}
 	},
@@ -494,6 +510,7 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			unreadableNewDate: 'تعذّرت قراءة هذا التاريخ. اختره من تقويم خانة «التاريخ الجديد».',
 			unreadableTime: 'تعذّرت قراءة هذا الوقت. اكتب الساعات والدقائق، مثلًا 19:30.',
 			pastDate: 'هذا التاريخ قد مضى. اختر اليوم أو يومًا بعده.',
+			unchanged: 'الحصة مقرّرة بالفعل في هذا التاريخ وفي هذا الوقت. اختر تاريخًا آخر أو وقتًا آخر.',
 			sessionGone: 'هذه الحصة لم تعد موجودة. أعد تحميل الصفحة لترى برنامجك المحدَّث.'
 		}
 	}
