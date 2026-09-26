@@ -71,7 +71,11 @@ const SURFACES = [
 	// Ce sont les trois modules que le correcteur relit aussi, langue par langue.
 	{ motif: 'apps/web/src/lib/public/affichage.ts', genre: 'chaines' },
 	{ motif: 'apps/web/src/lib/server/agenda.ts', genre: 'chaines' },
-	{ motif: 'packages/widget/src/element.ts', genre: 'chaines' }
+	{ motif: 'packages/widget/src/element.ts', genre: 'chaines' },
+	// Les textes de l'espace des responsables (étape 18), un fichier par écran : ceux qu'un chantier
+	// ajoute sont pris par le motif, sans qu'on ait à les inscrire ici. Les tests du dossier n'y sont
+	// pas : personne ne les lit à l'écran.
+	{ motif: 'apps/web/src/lib/i18n/*.ts', genre: 'chaines', sauf: /\.test\.ts$/ }
 ];
 
 const racine = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
@@ -162,6 +166,7 @@ let relus = 0;
 
 for (const surface of SURFACES) {
 	for (const chemin of fichiersDe(surface.motif)) {
+		if (surface.sauf?.test(chemin)) continue;
 		const brut = readFileSync(`${racine}/${chemin}`, 'utf8');
 		const texte = EXTRACTEURS[surface.genre](brut);
 		relus += 1;

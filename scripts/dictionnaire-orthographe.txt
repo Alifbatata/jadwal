@@ -39,6 +39,8 @@ widget
 widgets
 monorepo
 playbook
+# Le compte de l'exploitant, dans le menu de l'espace. L'italien l'écrit comme le français.
+super-admin
 
 # --- Les noms de prière, dans les transcriptions que l'import accepte ---
 zuhr

@@ -33,10 +33,12 @@
  * `docs/`, hors `docs/maquettes/`, plus le `README`, `CONTRIBUTING.md` et `SECURITY.md`. Il en
  * oubliait huit, les conditions comprises (`documentsOublies`).
  *
- * Les dictionnaires des pages publiques sont relus langue par langue. Quatre modules rangent aussi
+ * Les dictionnaires des pages publiques sont relus langue par langue. D'autres modules rangent aussi
  * leurs phrases par langue, sous des clés `fr:`, `de:`, `it:`, `en:` et `ar:` : la mise en mots des
  * pages publiques, le libellé d'ancrage du flux agenda, le widget et, depuis l'étape 18, les
- * messages prêts à coller. Chaque chaîne y est relue dans la langue de sa clé (`parLangue`).
+ * messages prêts à coller, les courriels et les dictionnaires de l'espace des responsables
+ * (`apps/web/src/lib/i18n/`, pris par motif). Chaque chaîne y est relue dans la langue de sa clé
+ * (`parLangue`).
  *
  * Le Markdown est nettoyé **ligne à ligne**, en remplaçant par des espaces ce qui n'est pas de la
  * prose : blocs de code, code en ligne, adresses, balises. Le compte de lignes est donc conservé, et
@@ -160,6 +162,12 @@ const REGLES_IGNOREES = [
 		'PAS_DE_VIRGULE',
 		'la virgule avant « et » est un choix d’écriture du dépôt, tenu partout : elle sépare deux ' +
 			'propositions ou ferme une énumération longue, et la règle la refuse sans regarder laquelle'
+	],
+	[
+		'OXFORD_SPELLING_Z_NOT_S',
+		'l’anglais britannique du service écrit « organisation » avec un s, comme la plupart des ' +
+			'Britanniques (étape 18) ; la règle réclame l’orthographe d’Oxford, avec un z, qui est un ' +
+			'choix de maison et non une faute'
 	]
 ];
 
@@ -668,24 +676,33 @@ function corpus() {
 	const anglais = readme.split(/\r?\n/).findIndex((ligne) => /^##\s+English/.test(ligne));
 	ajouter('README.md', 'fr', tranche(prose(readme), 1, anglais > 0 ? anglais : 10_000));
 
+	// La marche à suivre pour ajouter les textes d'un écran de l'espace : les chantiers la suivent à la
+	// lettre, elle doit se lire sans faute.
+	for (const chemin of fichiersDe(':(glob)apps/web/src/lib/i18n/*.md')) {
+		ajouter(chemin, 'fr', prose(readFileSync(join(racine, chemin), 'utf8')));
+	}
+
 	for (const chemin of fichiersDe(':(glob)apps/web/src/**/*.svelte')) {
 		ajouter(chemin, 'fr', gabarit(readFileSync(join(racine, chemin), 'utf8')));
 	}
 
-	for (const chemin of ['apps/web/src/lib/server/mail/messages.ts']) {
-		ajouter(chemin, 'fr', chaines(readFileSync(join(racine, chemin), 'utf8')));
-	}
-
-	// Quatre modules rangent leurs phrases par langue, sous des clés `fr:`, `de:`, `it:`, `en:` et
-	// `ar:` : la mise en mots des pages publiques, le libellé d'ancrage du flux agenda, le widget, et
-	// les messages prêts à coller, qui parlent les cinq langues depuis l'étape 18 et étaient relus en
-	// français de bout en bout jusque-là. Chaque chaîne y est relue dans la langue de sa clé, et rien
-	// d'autre du fichier n'est relu.
+	// Des modules rangent leurs phrases par langue, sous des clés `fr:`, `de:`, `it:`, `en:` et
+	// `ar:` : la mise en mots des pages publiques, le libellé d'ancrage du flux agenda, le widget, les
+	// messages prêts à coller, qui parlent les cinq langues depuis l'étape 18 et étaient relus en
+	// français de bout en bout jusque-là, les courriels, et chaque dictionnaire de l'espace des
+	// responsables (`apps/web/src/lib/i18n/`), qu'il existe déjà ou qu'un chantier l'ajoute : ceux-là
+	// sont pris par le motif, et un nouveau fichier est relu sans qu'on ait à l'inscrire ici. Chaque
+	// chaîne y est relue dans la langue de sa clé, et rien d'autre du fichier n'est relu.
+	const dictionnairesDeLEspace = fichiersDe(':(glob)apps/web/src/lib/i18n/*.ts').filter(
+		(chemin) => !chemin.endsWith('.test.ts')
+	);
 	for (const chemin of [
 		'apps/web/src/lib/public/affichage.ts',
 		'apps/web/src/lib/server/agenda.ts',
 		'packages/widget/src/element.ts',
-		'apps/web/src/lib/messages.ts'
+		'apps/web/src/lib/messages.ts',
+		'apps/web/src/lib/server/mail/messages.ts',
+		...dictionnairesDeLEspace
 	]) {
 		for (const [langue, texte] of parLangue(readFileSync(join(racine, chemin), 'utf8'))) {
 			ajouter(chemin, langue, chaines(texte, { identifiants: false }));

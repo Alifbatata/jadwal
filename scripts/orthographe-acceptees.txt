@@ -72,9 +72,39 @@ apps/web/src/lib/messages.ts | FR_REPEATEDWORDS_NORMALEMENT | normalement
 
 # apps/web/src/lib/server/mail/messages.ts
 apps/web/src/lib/server/mail/messages.ts | TIRET | --
+# « برنامج » sans voyelles, comme ailleurs (famille 6). « دعوة للانضمام… » est l'objet d'un courriel,
+# un titre et non une phrase : la règle d'un sujet indéfini en tête de phrase ne s'y applique pas.
+apps/web/src/lib/server/mail/messages.ts | AR_DIACRITICS_REPLACE | برنامج
+apps/web/src/lib/server/mail/messages.ts | syntax_125_mobtadaa_nakira_3 | دعوة للانضمام
 
-# apps/web/src/routes/+layout.svelte
-apps/web/src/routes/+layout.svelte | JOURS | Vendredi
+# apps/web/src/lib/i18n/ : les dictionnaires de l'espace (étape 18)
+# Les formes de `format.ts`, qui ne sont pas des phrases : des morceaux que le code assemble, recollés
+# par le corpus. « ceci à » : la fin d'une liste de dates (« ceci et ceci ») suivie de « à des dates
+# précises ». « ceci h ceci h » : les heures et les minutes d'une durée, « 1 h 30 ». « ouvert » : les
+# cinq publics à la suite, « enfants jeunes femmes adultes ouvert à tous ». Ce sont les mots d'avant
+# l'étape 18, mot pour mot, qu'aucun écran ne montre ainsi.
+apps/web/src/lib/i18n/formatting.ts | A_ACCENT_A | ceci à
+apps/web/src/lib/i18n/formatting.ts | FRENCH_WORD_REPEAT_RULE | ceci h ceci h
+apps/web/src/lib/i18n/formatting.ts | AGREEMENT_ADJ | ouvert
+# Le titre de l'écran, « Déconnexion », que le corpus recolle à la phrase qui le suit, comme dans
+# l'ancien gabarit de l'écran.
+apps/web/src/lib/i18n/sign-out.ts | PRONOMS_PERSONNELS_MINUSCULE | Déconnexion Vous
+# Un titre de page d'erreur, « Ein Fehler ist aufgetreten », recollé à la phrase qui le suit : deux
+# éléments d'écran, pas une phrase à virgule.
+apps/web/src/lib/i18n/error.ts | KOMMA_ZWISCHEN_HAUPT_UND_NEBENSATZ | ist aufgetreten Der Dienst konnte
+# « تحقّق من العنوان » : un impératif, que la règle lit comme un nom indéfini en tête de phrase.
+# « الصفحة الرئيسية » : le nom usuel de la page d'accueil ; la règle réclame « الرئيسة ».
+apps/web/src/lib/i18n/error.ts | syntax_125_mobtadaa_nakira_2 | تحقّق من العنوان
+apps/web/src/lib/i18n/error.ts | wrong_adj_use | الرئيسية
+# La fin de l'invitation à accepter les conditions, qui suit le nom de l'organisation mis en valeur :
+# « …the area of <nom>, read the terms… ». Le nom est hors de la chaîne, et la virgule reste en tête.
+apps/web/src/lib/i18n/terms.ts | UNLIKELY_OPENING_PUNCTUATION | ,
+# Sans voyelles, comme ailleurs (famille 6).
+apps/web/src/lib/i18n/organisations.ts | AR_DIACRITICS_REPLACE | برنامج
+apps/web/src/lib/i18n/organisations.ts | AR_DIACRITICS_REPLACE | قبول
+apps/web/src/lib/i18n/sign-in.ts | AR_DIACRITICS_REPLACE | برنامج
+# « لا توجد كلمة مرور » : la règle lit « كلمة » comme la préposition « ك » suivie d'un mot.
+apps/web/src/lib/i18n/sign-in.ts | syntax_0002_as_ka_1 | توجد كلمة
 
 # apps/web/src/routes/+page.svelte
 apps/web/src/routes/+page.svelte | ACCORD_R_PERS_VERBE | couvrent
@@ -82,12 +112,6 @@ apps/web/src/routes/+page.svelte | ACCORD_R_PERS_VERBE | sont
 apps/web/src/routes/+page.svelte | ETRE_VPPA_OU_ADJ | réglées
 apps/web/src/routes/+page.svelte | OU_LEQUEL | où
 apps/web/src/routes/+page.svelte | POINT | vu
-
-# apps/web/src/routes/connexion/+page.svelte
-apps/web/src/routes/connexion/+page.svelte | PRONOMS_PERSONNELS_MINUSCULE | ceci Vous
-
-# apps/web/src/routes/deconnexion/+page.svelte
-apps/web/src/routes/deconnexion/+page.svelte | PRONOMS_PERSONNELS_MINUSCULE | Déconnexion Vous
 
 # apps/web/src/routes/prieres/+page.svelte
 apps/web/src/routes/prieres/+page.svelte | ACCORD_V_PPA | refusées
@@ -322,6 +346,13 @@ docs/adr/0041-ce-que-la-base-garde-vraiment-d-une-personne.md | VIRG_NON_TROUVEE
 
 # docs/adr/0042-module-des-heures-de-priere.md
 docs/adr/0042-module-des-heures-de-priere.md | ACCORD_QUEL_QUE_SOIT | quel que soit
+
+# docs/adr/0046-editeur-et-responsable-dans-la-base.md
+# « Le retour H1 […] le demande en une phrase » : « le » est le pronom, pas un article. « exige » :
+# la règle compte les répétitions sur tout le corpus recollé, et « exigent » est au paragraphe
+# précédent, dans une autre section (même cas que la règle de « façon », coupée).
+docs/adr/0046-editeur-et-responsable-dans-la-base.md | D_N_E_OU_E | le demande
+docs/adr/0046-editeur-et-responsable-dans-la-base.md | FR_REPEATEDWORDS_EXIGER | exige
 
 # packages/widget/src/element.ts
 packages/widget/src/element.ts | AR_DIACRITICS_REPLACE | البرنامج
