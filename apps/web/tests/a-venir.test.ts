@@ -12,8 +12,8 @@
 // - Une page restée ouverte (Retour, un second onglet, une autre personne) ne défait pas un
 //   changement : annuler ou déplacer une séance déjà annulée ou déplacée est refusé, rien n'est
 //   écrit, et l'écran rendu est à jour (relecture du lot 4). La carte envoie aussi l'heure qu'elle
-//   montrait : si l'heure du cours a changé depuis dans sa fiche, son déplacement est refusé
-//   (relecture du lot 5).
+//   montrait : si l'heure du cours a changé depuis dans sa fiche, son déplacement est refusé. De deux
+//   déplacements envoyés au même instant, un seul s'écrit (relecture du lot 5).
 // - B1 : un déplacement le même jour à une autre heure se dit comme un changement d'heure, sur la
 //   carte et dans le message ; un changement de date garde ses mots (relecture du lot 4).
 // - D1 : les messages prêts à coller s'écrivent dans chacune des langues que l'organisation publie,
@@ -417,6 +417,35 @@ async function changerHeure(courseId: string, debut: string, fin: string): Promi
 			update "course" set "timing_start" = ${debut}, "timing_end" = ${fin} where "id" = ${courseId}
 		`)
 	);
+}
+
+/**
+ * Des envois qui arrivent au même instant, comme deux personnes qui touchent le bouton à la même
+ * seconde. La table des exceptions est verrouillée en écriture, et la lecture reste permise : chaque
+ * requête passe ses vérifications, puis attend d'écrire. Quand toutes attendent, le verrou tombe, et
+ * elles écrivent ensemble.
+ */
+async function ensemble(envois: readonly (() => Promise<Response>)[]): Promise<Response[]> {
+	let reponses: Promise<Response>[] = [];
+	let enAttente = 0;
+	await ownerHandle.db.transaction(async (tx) => {
+		await tx.execute(sql`lock table "session_exception" in exclusive mode`);
+		reponses = envois.map((envoi) => envoi());
+		for (const limite = Date.now() + 15_000; Date.now() < limite;) {
+			enAttente =
+				lignes<{ n: number }>(
+					await ownerHandle.db.execute(sql`
+						select count(*)::int as n from pg_locks
+						where relation = 'session_exception'::regclass and not granted
+					`)
+				)[0]?.n ?? 0;
+			if (enAttente >= envois.length) return;
+			await new Promise((fini) => setTimeout(fini, 20));
+		}
+	});
+	const rendues = await Promise.all(reponses);
+	expect(enAttente, 'les envois qui attendaient ensemble d’écrire').toBe(envois.length);
+	return rendues;
 }
 
 async function poserCours(
@@ -1022,6 +1051,50 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 			});
 		} finally {
 			await retablir(cercle, jour(5), cookie);
+		}
+	});
+});
+
+describe('deux envois au même instant n’écrasent rien (relecture du lot 5)', () => {
+	let cookie: string;
+
+	beforeAll(async () => {
+		cookie = await signIn(RESPONSABLE);
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+	});
+
+	it('lets one of two moves sent at the same instant through, refuses the other, and keeps the first', async () => {
+		// Deux onglets, ou deux personnes, ouverts sur la même carte, qui déplacent la séance chacun
+		// ailleurs à la même seconde. Les deux passent la vérification d'avant, puisque rien n'est
+		// encore écrit : c'est l'écriture elle-même qui doit laisser la main au premier.
+		const carteDuCercle = formulaireDeLaCarte(
+			await (await get('/', cookie)).text(),
+			'deplacer',
+			cercle,
+			jour(6)
+		);
+		const envois = [
+			{ ...carteDuCercle, toDate: jour(4), toStart: '18:00' },
+			{ ...carteDuCercle, toDate: jour(5), toStart: '21:00' }
+		];
+		try {
+			const reponses = await ensemble(
+				envois.map((envoi) => () => postForm('/?/deplacer', envoi, cookie))
+			);
+			const pages = await Promise.all(reponses.map((reponse) => reponse.text()));
+			expect(reponses.map((reponse) => reponse.status).sort()).toEqual([200, 409]);
+			const gagnant = reponses.findIndex((reponse) => reponse.status === 200);
+			expect(await exception(cercle, jour(6))).toEqual({
+				kind: 'moved',
+				to_date: envois[gagnant]?.toDate,
+				to_start: envois[gagnant]?.toStart
+			});
+			// Le second apprend que la séance a changé, et aucun message n'annonce son déplacement.
+			const refus = pages[1 - gagnant] ?? '';
+			expect(alerte(refus)).toBe(CHANGEE.fr);
+			expect(section(refus, 'message-titre')).toBe('');
+		} finally {
+			await retablir(cercle, jour(6), cookie);
 		}
 	});
 });
