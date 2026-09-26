@@ -804,9 +804,11 @@ describe('une modification refusée reste sous les yeux (retour B1)', () => {
 		const html = await reponse.text();
 		// Aucune carte ne porte plus cette session : la réponse ne peut s'écrire qu'en tête.
 		expect(section(html, `session-${id}`)).toBe('');
+		// La page renvoyée montre déjà les sessions telles qu'elles sont : la phrase ne demande pas de
+		// la recharger, ce qui, sans script, renverrait le même formulaire (relecture du lot 5).
 		expect(erreurs(html)).toEqual([
 			[
-				'Cette session n’existe plus. Rechargez la page pour voir les sessions telles qu’elles sont.',
+				'Cette session n’existe plus : elle a été supprimée entre-temps. La liste ci-dessous est à jour.',
 				'L’heure de fin doit venir après l’heure de début.'
 			]
 		]);

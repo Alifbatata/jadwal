@@ -206,7 +206,7 @@ export const fridayTexts: Translations<FridayTexts> = {
 			endDateUnreadable: 'La date « Jusqu’au » est illisible. Choisissez-la dans le calendrier.',
 			endDateBeforeStart: 'La date « Jusqu’au » vient avant la date « À partir du ».',
 			sessionGone:
-				'Cette session n’existe plus. Rechargez la page pour voir les sessions telles qu’elles sont.',
+				'Cette session n’existe plus : elle a été supprimée entre-temps. La liste ci-dessous est à jour.',
 			dateUnreadable: 'Cette date est illisible. Rechargez la page et recommencez.',
 			timeUnreadable: 'Cette heure est illisible. Exemple : 13:30.'
 		}
@@ -307,7 +307,7 @@ export const fridayTexts: Translations<FridayTexts> = {
 			endDateUnreadable: 'Das Datum «Gültig bis» ist nicht lesbar. Wählen Sie es im Kalender.',
 			endDateBeforeStart: 'Das Datum «Gültig bis» liegt vor dem Datum «Gültig ab».',
 			sessionGone:
-				'Diesen Durchgang gibt es nicht mehr. Laden Sie die Seite neu, um die aktuellen Durchgänge zu sehen.',
+				'Diesen Durchgang gibt es nicht mehr: Er wurde inzwischen gelöscht. Die Liste unten ist aktuell.',
 			dateUnreadable:
 				'Dieses Datum ist nicht lesbar. Laden Sie die Seite neu und versuchen Sie es noch einmal.',
 			timeUnreadable: 'Diese Uhrzeit ist nicht lesbar. Beispiel: 13:30.'
@@ -405,7 +405,7 @@ export const fridayTexts: Translations<FridayTexts> = {
 			endDateUnreadable: 'La data «Valido fino al» non è leggibile. Sceglila nel calendario.',
 			endDateBeforeStart: 'La data «Valido fino al» viene prima della data «Valido dal».',
 			sessionGone:
-				'Questo turno non esiste più. Ricarica la pagina per vedere i turni come sono ora.',
+				'Questo turno non esiste più: nel frattempo è stato eliminato. L’elenco qui sotto è aggiornato.',
 			dateUnreadable: 'Questa data non è leggibile. Ricarica la pagina e riprova.',
 			timeUnreadable: 'Questo orario non è leggibile. Esempio: 13:30.'
 		}
@@ -501,7 +501,7 @@ export const fridayTexts: Translations<FridayTexts> = {
 			endDateUnreadable: 'The ‘Until’ date cannot be read. Pick it in the calendar.',
 			endDateBeforeStart: 'The ‘Until’ date comes before the ‘From’ date.',
 			sessionGone:
-				'This session no longer exists. Reload the page to see the sessions as they are now.',
+				'This session no longer exists: it has been deleted in the meantime. The list below shows the sessions as they are now.',
 			dateUnreadable: 'This date cannot be read. Reload the page and try again.',
 			timeUnreadable: 'This time cannot be read. Example: 13:30.'
 		}
@@ -591,7 +591,7 @@ export const fridayTexts: Translations<FridayTexts> = {
 			startDateMissing: 'اختر التاريخ الذي يبدأ منه هذا الموعد.',
 			endDateUnreadable: 'تعذّرت قراءة تاريخ «يسري حتى». اختره من التقويم.',
 			endDateBeforeStart: 'تاريخ «يسري حتى» يسبق تاريخ «يسري ابتداءً من».',
-			sessionGone: 'هذا الموعد لم يعد موجودًا. أعد تحميل الصفحة لترى المواعيد كما هي الآن.',
+			sessionGone: 'هذا الموعد لم يعد موجودًا: فقد حُذف في هذه الأثناء. القائمة أدناه محدَّثة.',
 			dateUnreadable: 'تعذّرت قراءة هذا التاريخ. أعد تحميل الصفحة وحاول مرة أخرى.',
 			timeUnreadable: 'تعذّرت قراءة هذا الوقت. مثال: 13:30.'
 		}
