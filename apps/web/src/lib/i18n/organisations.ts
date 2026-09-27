@@ -76,7 +76,7 @@ export const organisationsTexts: Translations<OrganisationsTexts> = {
 	},
 	de: {
 		title: 'Ihre Organisationen',
-		left: 'Sie haben die Organisation verlassen. Ihr Bereich steht Ihnen nicht mehr offen. Um zurückzukommen, bitten Sie eine Person in der Leitung, Sie wieder einzuladen.',
+		left: 'Sie haben die Organisation verlassen. Der Bereich der Organisation steht Ihnen nicht mehr offen. Um zurückzukommen, bitten Sie eine Person in der Leitung, Sie wieder einzuladen.',
 		chooseIntro: 'Wählen Sie die Organisation, deren Programm Sie verwalten möchten.',
 		role: (role) => `Rolle: ${role}`,
 		leave: 'Organisation verlassen',

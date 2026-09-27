@@ -1760,7 +1760,7 @@ const SE_RETIRER: Record<Langue, string> = {
 /** L'encadré de « Vos organisations », à l'arrivée, après un départ. */
 const PARTIE: Record<Langue, string> = {
 	fr: 'Vous avez quitté l’organisation. Son espace ne vous est plus ouvert. Pour y revenir, demandez à une personne responsable de vous inviter de nouveau.',
-	de: 'Sie haben die Organisation verlassen. Ihr Bereich steht Ihnen nicht mehr offen. Um zurückzukommen, bitten Sie eine Person in der Leitung, Sie wieder einzuladen.',
+	de: 'Sie haben die Organisation verlassen. Der Bereich der Organisation steht Ihnen nicht mehr offen. Um zurückzukommen, bitten Sie eine Person in der Leitung, Sie wieder einzuladen.',
 	it: 'Hai lasciato l’organizzazione. La sua area non ti è più accessibile. Per tornare, chiedi a un responsabile di invitarti di nuovo.',
 	en: 'You have left the organisation. Its area is no longer open to you. To come back, ask a manager to invite you again.',
 	ar: 'لقد غادرت المؤسسة، ولم تعد مساحتها مفتوحة لك. وللعودة إليها اطلب من أحد المسؤولين أن يدعوك من جديد.'
