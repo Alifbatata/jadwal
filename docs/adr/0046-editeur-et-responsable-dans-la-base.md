@@ -263,4 +263,5 @@ Accepté, 2026-09-26. Étape 18, consigne du chef de projet (les rôles dans la 
 compte. Révisé le même jour, à la fin de l'étape : la langue se choisit en haut de chaque écran,
 l'écran Membres montre la liste, et l'écran des prières prévisualise une période. Complété le
 27.09.2026 (étape 19) : le journal, la liste des membres, la suppression d'un cours et le départ
-d'une organisation ; au lot 2, l'écran de la suppression d'un cours.
+d'une organisation ; au lot 2, l'écran de la suppression d'un cours, celui du départ d'une
+organisation, et le journal signé par le super-admin lui-même.
