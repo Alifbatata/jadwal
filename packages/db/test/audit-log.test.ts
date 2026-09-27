@@ -6,6 +6,7 @@ import { newId, withOrg, type Database, type DatabaseHandle } from '../src/index
 import {
 	allRows,
 	countVisible,
+	messageOfFailure,
 	openDatabase,
 	joinOrganisation,
 	seedOrganisation,
@@ -17,21 +18,26 @@ import {
 
 let ownerHandle: DatabaseHandle;
 let appHandle: DatabaseHandle;
+let superAdminHandle: DatabaseHandle;
 let owner: Database;
 let app: Database;
+let superAdmin: Database;
 let a: Organisation;
 let b: Organisation;
 
 beforeAll(async () => {
 	ownerHandle = openDatabase('owner');
 	appHandle = openDatabase('app');
+	superAdminHandle = openDatabase('superadmin');
 	owner = ownerHandle.db;
 	app = appHandle.db;
+	superAdmin = superAdminHandle.db;
 	a = await seedOrganisation(owner, 'audit-a');
 	b = await seedOrganisation(owner, 'audit-b');
 });
 
 afterAll(async () => {
+	await superAdminHandle?.close();
 	await appHandle?.close();
 	await ownerHandle?.close();
 });
@@ -122,5 +128,98 @@ describe('journal d’audit', () => {
 			withMaintenance(owner, (tx) => tx.execute(sql`delete from "user" where id = ${b.userId}`))
 		);
 		expect(state).toBe(SQLSTATE.restrictViolation);
+	});
+});
+
+/**
+ * L'auteur d'une entrée est la personne du contexte, celle que l'application pose à partir de la
+ * session (migration 0063, ADR 0046). Jusqu'à l'étape 19, la politique ne demandait qu'une personne
+ * visible : une éditrice écrivait au journal une entrée qui nommait un collègue comme auteur.
+ *
+ * Tout se joue dans une organisation à part, C, pour ne rien changer aux comptes des cas précédents.
+ */
+describe('l’auteur d’une entrée est la personne connectée', () => {
+	/** Une insertion refusée par une politique. */
+	const NO_POLICY = /row-level security policy/;
+	let c: Organisation;
+	let editor: string;
+	let colleague: string;
+	let operator: string;
+
+	beforeAll(async () => {
+		c = await seedOrganisation(owner, 'audit-c');
+		editor = newId();
+		colleague = newId();
+		operator = newId();
+		await withMaintenance(owner, (tx) =>
+			tx.execute(sql`
+				insert into "user" ("id", "email", "is_super_admin") values
+					(${editor}, 'editrice-audit-c@example.test', false),
+					(${colleague}, 'collegue-audit-c@example.test', false),
+					(${operator}, 'exploitant-audit-c@example.test', true)
+			`)
+		);
+		await joinOrganisation(owner, app, c.id, editor, 'editrice-audit-c@example.test');
+		await joinOrganisation(owner, app, c.id, colleague, 'collegue-audit-c@example.test');
+	});
+
+	/** Une entrée du journal de C, signée de `actor`, sur la cible donnée. */
+	const entry = (actor: string | null, target: string | null = null) => sql`
+		insert into "audit_log" ("id", "organization_id", "actor_id", "action", "target_table", "target_id")
+		values (${newId()}, ${c.id}, ${actor}, 'course.update', 'course', ${target})
+	`;
+
+	it('refuses an entry that names a colleague as its author', async () => {
+		// L'éditrice nomme sa collègue, puis la personne responsable : toutes deux sont membres de C,
+		// donc visibles, et la politique d'avant acceptait l'une et l'autre.
+		for (const other of [colleague, c.userId]) {
+			const message = await messageOfFailure(() =>
+				withOrg(app, { organizationId: c.id, userId: editor }, (tx) => tx.execute(entry(other)))
+			);
+			expect(message, other).toMatch(NO_POLICY);
+		}
+		// La personne responsable n'écrit pas non plus au nom de l'éditrice.
+		const message = await messageOfFailure(() =>
+			withOrg(app, { organizationId: c.id, userId: c.userId }, (tx) => tx.execute(entry(editor)))
+		);
+		expect(message).toMatch(NO_POLICY);
+	});
+
+	it('refuses an entry without an author, or written without a person in the context', async () => {
+		const attempts: [string, { organizationId: string; userId?: string }, string | null][] = [
+			['sans auteur, la personne posée', { organizationId: c.id, userId: editor }, null],
+			['sans personne ni auteur', { organizationId: c.id }, null],
+			['sans personne, un auteur nommé', { organizationId: c.id }, editor]
+		];
+		for (const [label, context, actor] of attempts) {
+			const message = await messageOfFailure(() =>
+				withOrg(app, context, (tx) => tx.execute(entry(actor)))
+			);
+			expect(message, label).toMatch(NO_POLICY);
+		}
+	});
+
+	it('accepts the entries of the application, each signed by the person connected', async () => {
+		// Ce que fait `record` (apps/web/src/lib/server/audit.ts) : l'auteur est la personne du
+		// contexte, que `withSessionOrg` pose à partir de la session.
+		const target = newId();
+		for (const person of [editor, colleague, c.userId]) {
+			await withOrg(app, { organizationId: c.id, userId: person }, (tx) =>
+				tx.execute(entry(person, target))
+			);
+		}
+		// Le super-admin entré dans C signe de sa propre identité, comme l'écran le fait (ADR 0025).
+		await withOrg(superAdmin, { organizationId: c.id, userId: operator }, (tx) =>
+			tx.execute(entry(operator, target))
+		);
+		const authors = await withOrg(app, { organizationId: c.id, userId: c.userId }, async (tx) =>
+			allRows<{ actor_id: string }>(
+				await tx.execute(sql`
+					select "actor_id" from "audit_log"
+					where "organization_id" = ${c.id} and "target_id" = ${target}
+				`)
+			).map((row) => row.actor_id)
+		);
+		expect(authors.sort()).toEqual([editor, colleague, c.userId, operator].sort());
 	});
 });

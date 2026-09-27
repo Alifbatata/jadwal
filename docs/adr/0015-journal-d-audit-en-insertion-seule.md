@@ -40,6 +40,20 @@ des lignes (ADR 0013) permettent de traiter ce cas à part.
   responsable de l'organisation (ADR 0009 : seules données personnelles du système, les courriels des
   responsables). L'état avant et après ne contient que des données de cours.
 
+## Addendum du 27.09.2026 : l'auteur est la personne connectée
+
+Jusqu'à l'étape 19, la politique d'insertion du rôle applicatif ne demandait qu'un auteur visible
+(ADR 0013). Tout membre voit ses collègues : une éditrice pouvait écrire au journal une entrée qui
+nommait un collègue comme auteur, ou n'en nommait aucun. Depuis la migration 0063, l'auteur d'une
+entrée est la personne du contexte, celle que l'application pose à partir de la session. Une entrée
+sans auteur, ou écrite sans personne dans le contexte, est refusée.
+
+Rien ne change pour les autres chemins : le super-admin signe de sa propre identité, que
+l'application pose comme pour tout le monde (ADR 0025), et sa politique ne change pas ; le
+propriétaire écrit sous son drapeau d'entretien et purge comme avant ; aucun déclencheur n'écrit au
+journal.
+
 ## Statut
 
-Accepté, 2026-09-20. Étape 2 de la feuille de route (base, RLS, données de démo).
+Accepté, 2026-09-20. Étape 2 de la feuille de route (base, RLS, données de démo). Complété le
+27.09.2026 : l'auteur d'une entrée est la personne connectée.

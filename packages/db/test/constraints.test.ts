@@ -286,8 +286,10 @@ describe('autres contraintes du schéma', () => {
 		const statements = [
 			sql`insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
 				values (${newId()}, ${org.id}, ${courseId}, 'de', '   ')`,
-			sql`insert into "audit_log" ("id", "organization_id", "action", "target_table")
-				values (${newId()}, ${org.id}, '  ', 'course')`,
+			// Signée de la personne du contexte, comme la politique l'exige depuis la migration 0063 :
+			// c'est la contrainte qui refuse, pas la politique.
+			sql`insert into "audit_log" ("id", "organization_id", "actor_id", "action", "target_table")
+				values (${newId()}, ${org.id}, ${org.userId}, '  ', 'course')`,
 			sql`update "prayer_settings" set "fajr_adjustment" = 121 where "organization_id" = ${org.id}`
 		];
 		for (const statement of statements) {

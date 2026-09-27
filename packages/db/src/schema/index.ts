@@ -1186,18 +1186,23 @@ export const auditLog = pgTable(
 			to: appRole,
 			using: sql`${table.organizationId} = ${orgContext}`
 		}),
+		// L'auteur d'une entrée est la personne du contexte, que l'application pose à partir de la
+		// session : ni un collègue, ni personne (migration 0063, ADR 0046). Jusqu'à l'étape 19, la
+		// garde des personnes désignées suffisait ici, et une éditrice écrivait au journal une entrée
+		// qui nommait un collègue. La personne du contexte est toujours visible d'elle-même : la
+		// garde n'aurait plus rien à ajouter.
 		pgPolicy('audit_log_insert', {
 			as: 'permissive',
 			for: 'insert',
 			to: appRole,
-			withCheck: sql`${table.organizationId} = ${orgContext}
-				and ${referencesVisibleUser(table.actorId)}`
+			withCheck: sql`${table.organizationId} = ${orgContext} and ${table.actorId} = ${userContext}`
 		}),
 		// Le super-admin lit et écrit le journal de l'organisation où il est entré, comme un
 		// responsable (ADR 0025). Ses écritures y sont signées de son identité, avec l'état avant et
-		// après. Ses **lectures** n'y laissent rien : elles vont au registre interne, que
-		// l'organisation ne voit pas. C'est une décision explicite, et son prix est écrit dans
-		// `docs/SECURITE.md`.
+		// après : c'est l'application qui le fait, et la base ne le borne pas davantage, comme pour
+		// le reste de ses pouvoirs (migration 0063). Ses **lectures** n'y laissent rien : elles vont
+		// au registre interne, que l'organisation ne voit pas. C'est une décision explicite, et son
+		// prix est écrit dans `docs/SECURITE.md`.
 		pgPolicy('audit_log_superadmin_select', {
 			as: 'permissive',
 			for: 'select',
