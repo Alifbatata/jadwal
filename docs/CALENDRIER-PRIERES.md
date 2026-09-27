@@ -104,9 +104,12 @@ de l'import. Elle a seulement dit quand elle appelle la prière. C'est le régla
 il se fait une fois.
 
 Touchez **Voir l'aperçu** : l'écran montre les sept prochains jours tels qu'ils seraient avec cette
-période, sans rien enregistrer. Puis touchez **Enregistrer cette période**. L'aperçu ne montre que
-les sept prochains jours : une période qui commence plus tard, un Ramadan dans trois mois par
-exemple, n'y apparaît pas encore.
+période, sans rien enregistrer. Puis touchez **Enregistrer cette période**. Une période qui
+commence plus tard, un Ramadan dans trois mois par exemple, n'apparaîtrait pas dans les sept
+prochains jours : l'aperçu montre alors ses sept premiers jours, ou tous ses jours si elle en
+compte moins, comme l'Aïd, et l'écran le dit. Une période déjà terminée, l'hiver passé que vous
+voulez recopier par exemple, ne change aucun des sept prochains jours : l'aperçu les montre quand
+même, et l'écran dit à quelle date elle s'est terminée.
 
 ### L'heure affichée et l'iqama
 
