@@ -1004,7 +1004,7 @@ const AIDE_DU_BOUTON_GOOGLE: Record<Langue, string> = {
 	de: 'Tippen Sie auf die Schaltfläche: Sie öffnet Google Kalender und bittet darum, diesen Kalender hinzuzufügen. Wenn Google Kalender es Ihnen anbietet, bestätigen Sie.',
 	it: 'Tocca il pulsante: apre Google Calendar e gli chiede di aggiungere questo calendario. Se Google Calendar te lo propone, conferma.',
 	en: 'Tap the button: it opens Google Calendar and asks it to add this calendar. If Google Calendar offers to do so, confirm.',
-	ar: 'اضغط على الزر: يفتح تقويم Google ويطلب منه إضافة هذا التقويم. إن اقترح عليك تقويم Google ذلك، فأكّد.'
+	ar: 'اضغط على الزر: يُفتح تقويم Google مع طلب إضافة هذا التقويم. إن اقترح عليك ذلك، فأكّد.'
 };
 /**
  * Puis ce qu'il faut faire si Google Agenda ne propose rien sur le téléphone : les étapes de l'aide

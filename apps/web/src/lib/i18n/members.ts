@@ -450,7 +450,7 @@ export const membersTexts: Translations<MembersTexts> = {
 		send: 'إرسال الدعوة',
 		errors: {
 			notManager: 'هذا الإجراء خاص بالمسؤول.',
-			unknownRole: 'هذا الدور غير موجود. اختر محررًا أو مسؤولًا.',
+			unknownRole: 'هذا الدور غير موجود. اختر دور المحرر أو دور المسؤول.',
 			lastManager:
 				'يجب أن يبقى في المؤسسة دائمًا مسؤول واحد أو أكثر. امنح هذا الدور لشخص آخر أولًا.'
 		}
