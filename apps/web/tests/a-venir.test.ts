@@ -2563,7 +2563,7 @@ describe('D1 : la prière du vendredi dans la langue de chaque message (relectur
 			await tx.execute(sql`
 				insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
 					"enabled_language", "prayer_module", "greeting")
-				values (${francophone}, 'a-venir-vendredi', 'Mosquée du vendredi', ${FUSEAU}, 'fr',
+				values (${francophone}, 'a-venir-vendredi', 'Association du vendredi', ${FUSEAU}, 'fr',
 					array['fr','de','it','en','ar'], true, ${ACCUEIL}),
 					(${germanophone}, 'a-venir-freitag', 'Verein am Freitag', ${FUSEAU}, 'de',
 					array['de','fr'], true, ${ACCUEIL})

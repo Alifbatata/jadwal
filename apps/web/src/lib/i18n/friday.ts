@@ -5,9 +5,8 @@
 // n'est pas évidente, et chaque geste dit ce qu'il a fait.
 //
 // Une « session » est une fois où la prière a lieu le vendredi : l'allemand dit « Durchgang »,
-// l'italien « turno », l'arabe « موعد », les mots que les mosquées emploient pour une prière du
-// vendredi tenue en plusieurs fois. Le sermon est « Predigt », « sermone », « الخطبة », comme sur la
-// page publique.
+// l'italien « turno », l'arabe « موعد », les mots en usage pour une prière du vendredi tenue en
+// plusieurs fois. Le sermon est « Predigt », « sermone », « الخطبة », comme sur la page publique.
 
 import type { Translations } from './space.js';
 

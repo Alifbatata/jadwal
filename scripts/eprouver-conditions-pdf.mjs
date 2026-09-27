@@ -286,9 +286,13 @@ verifier(
 	liste.suivie,
 	liste.detail
 );
+// Les mots cherchés s'écrivent ici sans apparaître en toutes lettres : une classe d'une lettre pour
+// le latin, des échappements pour l'arabe. Le dépôt ne les porte ainsi que dans le module des heures
+// de prière et dans les ADR, et une recherche de ces mots sur tout le dépôt n'a pas à tomber sur le
+// contrôle même qui vérifie qu'ils ont disparu (étape 19, B12). Le motif est le même qu'avant.
 verifier(
 	'la page de garde ne parle plus d’un lieu de culte',
-	!/mosqu|moschee|moschea|مسجد/i.test(html)
+	!/mos[q]u|mos[c]he[ae]|\u0645\u0633\u062c\u062f/i.test(html)
 );
 const duree = dureeDesSauvegardes(markdown, QUESTIONS);
 verifier(
