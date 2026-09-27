@@ -206,9 +206,11 @@ un compte ou non.** Trois raisons :
   il faudrait le rôle de connexion.
 
 La langue est celle de l'écran de la personne qui invite, passée à la fonction du courriel
-(`apps/web/src/routes/membres/+page.server.ts`). Un test le fige : même objet, même texte et même
-HTML pour une adresse inconnue et pour un compte réglé en arabe. Le lien de connexion part dans la
-langue de l'écran d'où il est demandé, et non dans celle du compte, pour la même raison.
+(`apps/web/src/routes/membres/+page.server.ts`) ; depuis l'étape 19, elle la choisit dans le
+formulaire, celle de son écran d'abord (addendum du 27.09.2026). Un test le fige : même objet, même
+texte et même HTML pour une adresse inconnue et pour un compte réglé en arabe. Le lien de connexion
+part dans la langue de l'écran d'où il est demandé, et non dans celle du compte, pour la même
+raison.
 
 **Question posée au chef de projet :** accepte-t-il que toute invitation parte dans la langue de la
 personne qui invite ? La seule façon de lire la langue du compte destinataire sans toucher à cet ADR

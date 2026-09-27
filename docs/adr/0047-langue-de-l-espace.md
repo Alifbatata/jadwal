@@ -125,20 +125,23 @@ l'arabe.
 
 ### La langue des courriels
 
-Un courriel part dans la langue de l'écran sur lequel le geste est fait, jamais dans celle d'un
+Un courriel part dans une langue qui vient de la requête ou du formulaire, jamais dans celle d'un
 compte lu par son adresse :
 
 - **le lien de connexion**, dans la langue de l'écran de connexion d'où il est demandé ;
-- **l'invitation**, dans la langue de l'écran de la personne qui invite, pour toute adresse.
+- **l'invitation**, dans la langue que la personne qui invite choisit dans le formulaire, celle de
+  son écran d'abord, pour toute adresse. Jusqu'à l'étape 19, c'était toujours la langue de son
+  écran (voir l'addendum du 27.09.2026).
 
 Le serveur pose la langue de la requête dans un stockage de contexte, que le courriel lit au moment de
 s'écrire (`mail/language.ts`, dans `apps/web/src/lib/server/`) : Better Auth écrit le lien sans voir
-la requête. L'écran des membres passe aussi la langue en paramètre à l'invitation.
+la requête. L'écran des membres passe à l'invitation la langue choisie dans le formulaire.
 
 Le plan de l'étape voulait un courriel dans la langue du compte qui le reçoit. Pour le lien de
 connexion comme pour l'invitation, lire cette langue demanderait de chercher un compte par son
 adresse, ce que l'ADR 0017 interdit : c'est le point d'arrêt décrit dans son addendum du
-2026-09-26.
+2026-09-26. L'étape 19 l'a tranché sans lire aucun compte : la personne qui invite choisit la
+langue (ADR 0017, addendum du 27.09.2026).
 
 ## Conséquences
 
