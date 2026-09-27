@@ -60,10 +60,11 @@ l'écart de temps du lien de connexion.
 
 Leurs marges sont tirées d'une mesure, écrite en commentaire à côté de chacune : le fichier lancé
 cinq fois sur un poste chargé, et le maximum relevé. Un délai vaut **quinze fois** ce maximum,
-arrondi à la seconde : sous la charge de la suite complète, le démarrage de Vite a pris plus de
-treize fois la durée mesurée seule. Un seuil, comme l'écart de 3 ms du lien de connexion, vaut
-**trois fois** le maximum : un seuil qui s'élargit avec le bruit cesse de voir ce qu'il cherche. Une
-marge se remesure quand le test change, jamais pour faire passer un test rouge.
+arrondi à la seconde supérieure : sous la charge de la suite complète, le démarrage de Vite a pris
+plus de treize fois la durée mesurée seule. Un seuil, comme l'écart de temps du lien de connexion,
+vaut **trois fois** le maximum, sans arrondi (3,123 ms pour un maximum de 1,041 ms) : un seuil qui
+s'élargit avec le bruit cesse de voir ce qu'il cherche. Une marge se remesure quand le test change,
+jamais pour faire passer un test rouge.
 
 `pnpm hooks` installe aussi un crochet **`pre-push`** : celui qui exploite une instance de jadwal
 peut lui donner la liste des mots qui ne doivent jamais sortir de chez lui — l'adresse de son

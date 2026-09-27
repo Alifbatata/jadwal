@@ -14,10 +14,24 @@ const testDatabase = inject('testDatabase');
 
 /**
  * Le délai du test, en millisecondes : quinze fois le maximum mesuré à l'étape 19, sur cinq passages
- * sur le poste chargé (1 193 à 1 289 ms), arrondi à la seconde. Le seuil de l'écart est plus bas,
- * dans le test.
+ * sur le poste chargé (1 193 à 1 289 ms), arrondi à la seconde supérieure. Le seuil de l'écart est
+ * plus bas.
  */
 const DELAI = 20_000;
+
+/**
+ * Le plus grand écart apparié médian mesuré à l'étape 19, en millisecondes, sur les mêmes cinq
+ * passages : il allait de 0,017 à 1,041 ms.
+ */
+const ECART_MAXIMUM_MESURE = 1.041;
+
+/**
+ * Le seuil de l'écart : trois fois ce maximum, 3,123 ms, **sans arrondi**. Jusqu'à la relecture de
+ * l'étape 19, il était arrondi à 3 ms, vers le bas, et un écart entre 3 et 3,123 ms, dans la règle,
+ * faisait tomber le test. Il n'est pas non plus arrondi vers le haut, comme les délais, à 4 ms :
+ * un seuil qui s'élargit cesse de voir ce qu'il cherche (voir le test).
+ */
+const SEUIL = 3 * ECART_MAXIMUM_MESURE;
 
 let ownerHandle: DatabaseHandle;
 
@@ -116,10 +130,13 @@ describe('le lien magique', () => {
 			// serré qu'elle, pas plus large.
 			//
 			// Mesuré à l'étape 19, cinq passages sur le poste chargé, commande à part : un écart
-			// apparié médian de 0,02 à 1,04 ms. Le seuil est trois fois ce maximum, arrondi à la
-			// milliseconde : 3 ms. Pas quinze fois, comme les délais : un seuil qui s'élargit avec le
+			// apparié médian de 0,017 à 1,041 ms. Le seuil est trois fois ce maximum, sans arrondi :
+			// `SEUIL`, 3,123 ms. Pas quinze fois, comme les délais : un seuil qui s'élargit avec le
 			// bruit cesse de voir ce qu'il cherche, quand un délai plus long ne fait qu'attendre plus.
-			expect(ecart, `écart apparié médian : ${ecart.toFixed(2)} ms`).toBeLessThan(3);
+			expect(
+				ecart,
+				`écart apparié médian : ${ecart.toFixed(3)} ms, seuil ${SEUIL.toFixed(3)} ms`
+			).toBeLessThan(SEUIL);
 		},
 		DELAI
 	);
