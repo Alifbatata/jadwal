@@ -94,6 +94,14 @@ visiteurs qui demandent des choses différentes ne partagent pas une entrée de 
   est déjà public.
 - Un changement de contrat demandera `/api/v2/`. C'est le prix d'un contrat.
 
+## Addendum du 27.09.2026 : un cours n'est plus jamais archivé
+
+L'état « archivé » n'existe plus depuis la migration 0067 : un cours est un brouillon ou il est
+publié, et la migration a ramené en brouillon toute ligne archivée. Le cours archivé de la liste des
+réponses `404` n'a donc plus de cas. La règle ne change pas : un brouillon, une organisation
+suspendue et un identifiant inventé rendent toujours la même réponse.
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 5 de la feuille de route (API publique, pages publiques, flux agenda).
+Complété le 27.09.2026 : l'état « archivé » n'existe plus.

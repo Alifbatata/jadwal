@@ -76,7 +76,14 @@ cours répond au vrai besoin, qui est « je veux celui-là », et il y répond m
 - Le `docs/API.md` gagne un point d'entrée. Ce n'est pas un changement de contrat : rien de ce qui
   existait ne bouge.
 
+## Addendum du 27.09.2026 : un cours n'est plus jamais archivé
+
+L'état « archivé » n'existe plus depuis la migration 0067 : un cours est un brouillon ou il est
+publié, et la migration a ramené en brouillon toute ligne archivée. Le cours archivé de la liste des
+`404` ci-dessus n'a donc plus de cas. La règle ne change pas : un brouillon, un cours d'une autre
+organisation et un identifiant inventé rendent toujours le même `404`.
+
 ## Statut
 
 Accepté, 2026-09-21. Étape 6 de la feuille de route. Complète l'ADR 0026 (API publique) et
-l'ADR 0003 (export ICS).
+l'ADR 0003 (export ICS). Complété le 27.09.2026 : l'état « archivé » n'existe plus.
