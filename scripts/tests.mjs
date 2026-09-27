@@ -30,6 +30,13 @@
  * par paquet, combien de fichiers tournent à part, et `pnpm test:temps` rend le même tableau pour
  * eux, avec la même règle sur les tests sautés. `CONTRIBUTING.md` dit comment leurs marges sont
  * tirées d'une mesure.
+ *
+ * Le tableau compte ces fichiers sur le disque, sans les lancer. Il ne dit vrai que si chaque paquet
+ * qui en a les laisse bien à `pnpm test:temps` : un script `test:temps` qui les lance, et un script
+ * `test` qui les écarte par l'option `EXCLUSION`, écrite telle quelle. Sinon, un fichier lié au
+ * temps tournerait dans `pnpm test`, ou nulle part, et le tableau dirait le contraire (relecture de
+ * l'étape 19). Les deux commandes refusent donc de rien lancer tant qu'un paquet n'est pas rangé
+ * ainsi, et le nomment. `pnpm tests:test` les éprouve.
  */
 import { execFileSync, execSync, spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
@@ -43,6 +50,8 @@ const SCRIPT = TEMPS ? 'test:temps' : 'test';
 const RESULTATS = TEMPS ? '.vitest-temps-resultats.json' : '.vitest-resultats.json';
 /** Le nom que portent les fichiers des tests liés au temps. */
 const SUFFIXE_TEMPS = '.temps.test.ts';
+/** Ce que porte le script `test` d'un paquet qui a des tests liés au temps, pour les écarter. */
+const EXCLUSION = `--exclude "**/*${SUFFIXE_TEMPS}"`;
 
 const racine = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
 
@@ -51,7 +60,7 @@ function normaliser(chemin) {
 	return chemin.replaceAll('\\', '/').replace(/\/$/, '').toLowerCase();
 }
 
-/** Les paquets de l'espace de travail qui ont un script `test`, tels que pnpm les connaît. */
+/** Les paquets de l'espace de travail, tels que pnpm les connaît, avec leurs scripts. */
 function paquets() {
 	// Une chaîne unique plutôt qu'un tableau d'arguments : sous Windows, `pnpm` est un script `.cmd`
 	// que Node refuse de lancer sans interpréteur, et un tableau passé avec `shell` est concaténé
@@ -66,12 +75,9 @@ function paquets() {
 		.map((projet) => ({
 			nom: projet.name,
 			chemin: projet.path,
-			fichier: join(projet.path, RESULTATS)
+			fichier: join(projet.path, RESULTATS),
+			scripts: JSON.parse(readFileSync(join(projet.path, 'package.json'), 'utf8')).scripts ?? {}
 		}))
-		.filter((projet) => {
-			const manifeste = JSON.parse(readFileSync(join(projet.chemin, 'package.json'), 'utf8'));
-			return Boolean(manifeste.scripts?.[SCRIPT]);
-		})
 		.sort((a, b) => a.nom.localeCompare(b.nom));
 }
 
@@ -93,6 +99,29 @@ function fichiersLiesAuTemps(dossier) {
 		}
 	}
 	return nombre;
+}
+
+/**
+ * Les paquets qui ont des fichiers liés au temps sans les laisser à `pnpm test:temps`, et ce qui leur
+ * manque. Voir l'en-tête.
+ */
+function malRanges(tous) {
+	const problemes = [];
+	for (const projet of tous) {
+		const nombre = fichiersLiesAuTemps(projet.chemin);
+		if (nombre === 0) continue;
+		const manques = [];
+		if (!projet.scripts['test:temps']) manques.push('aucun script « test:temps » ne les lance');
+		if (!projet.scripts['test']?.includes(EXCLUSION)) {
+			manques.push(`son script « test » ne les écarte pas par ${EXCLUSION}`);
+		}
+		if (manques.length > 0) {
+			problemes.push(
+				`${projet.nom} : ${nombre} fichier(s) *${SUFFIXE_TEMPS}, mais ${manques.join(', et ')}`
+			);
+		}
+	}
+	return problemes;
 }
 
 /** Ce qu'un paquet a vraiment joué, ou `null` s'il n'a pas été lancé du tout. */
@@ -120,7 +149,20 @@ function ligne(colonnes, largeurs) {
 		.join('  ');
 }
 
-const projets = paquets();
+const tous = paquets();
+const aRanger = malRanges(tous);
+if (aRanger.length > 0) {
+	process.stderr.write('\nDes tests liés au temps ne tourneraient pas là où le tableau le dit :\n');
+	for (const probleme of aRanger) process.stderr.write(`  ✗ ${probleme}\n`);
+	process.stderr.write(
+		`\nUn paquet qui a des fichiers *${SUFFIXE_TEMPS} a un script « test:temps », et son script ` +
+			`« test » les écarte par ${EXCLUSION} (CONTRIBUTING.md, « Les tests liés au temps »). ` +
+			`Rien n'a été lancé.\n\n`
+	);
+	process.exit(1);
+}
+
+const projets = tous.filter((projet) => Boolean(projet.scripts[SCRIPT]));
 if (projets.length === 0) {
 	process.stderr.write(`Aucun paquet avec un script « ${SCRIPT} » : rien à lancer.\n`);
 	process.exit(1);

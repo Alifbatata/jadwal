@@ -50,7 +50,10 @@ de secrets refuser un commit, à volonté.
 Un test dont un délai ou un seuil de temps peut tomber parce que la machine est chargée, et non parce
 que le code a changé, vit dans un fichier `*.temps.test.ts`. `pnpm test` le laisse de côté, et son
 tableau dit combien de fichiers tournent ainsi à part ; `pnpm test:temps` ne lance qu'eux, avec le
-même tableau et la même règle sur les tests sautés. La CI lance les deux, l'un après l'autre.
+même tableau et la même règle sur les tests sautés. La CI lance les deux, l'un après l'autre. Un
+paquet qui a de tels fichiers porte un script `test:temps`, et son script `test` les écarte par
+`--exclude "**/*.temps.test.ts"`, écrit tel quel, comme dans `apps/web/package.json` : sinon les
+deux commandes refusent de rien lancer, et nomment le paquet (`pnpm tests:test` le fait voir).
 Aujourd'hui : la recherche sur toute la liste des localités, les écritures croisées du transport de
 courriel, les deux composants rendus par un Vite à eux (l'onglet des prières et le pied de page), et
 l'écart de temps du lien de connexion.
