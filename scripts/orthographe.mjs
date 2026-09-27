@@ -25,9 +25,10 @@
  * ## Ce qu'il relit
  *
  * Les documents, les gabarits des écrans, et les chaînes des modules de messages — les mêmes
- * surfaces que le contrôle de style, plus les ADR et le `README`. Les commentaires de code et le
- * code en sont exclus : ils sont écrits pour celui qui reprend le projet. Les maquettes de
- * `docs/maquettes/` aussi : elles décrivent les écrans pour celui qui les construit.
+ * surfaces que le contrôle de style, plus les ADR et le `README`, dont le résumé anglais est relu en
+ * anglais britannique. Les commentaires de code et le code en sont exclus : ils sont écrits pour
+ * celui qui reprend le projet. Les maquettes de `docs/maquettes/` aussi : elles décrivent les
+ * écrans pour celui qui les construit.
  *
  * Avant de relire, il vérifie qu'il n'a oublié aucun document : chaque fichier Markdown suivi de
  * `docs/`, hors `docs/maquettes/`, plus le `README`, `CONTRIBUTING.md` et `SECURITY.md`. Il en
@@ -625,8 +626,9 @@ function fichiersDe(motif) {
 /**
  * Le corpus : un morceau par fichier et par langue.
  *
- * Le `README` porte un résumé en anglais, qui n'est relu par personne ici : un correcteur français
- * le prendrait pour cent fautes. Il est écarté par ses lignes, et c'est dit.
+ * Le `README` porte un résumé en anglais, sous son titre « English summary ». Un correcteur français
+ * le prendrait pour cent fautes : il est relu en anglais britannique, la langue anglaise du service,
+ * et le reste du fichier en français. Jusqu'à l'étape 19, il n'était relu par personne.
  */
 function corpus() {
 	const morceaux = [];
@@ -675,6 +677,7 @@ function corpus() {
 	const readme = readFileSync(join(racine, 'README.md'), 'utf8');
 	const anglais = readme.split(/\r?\n/).findIndex((ligne) => /^##\s+English/.test(ligne));
 	ajouter('README.md', 'fr', tranche(prose(readme), 1, anglais > 0 ? anglais : 10_000));
+	if (anglais > 0) ajouter('README.md', 'en', tranche(prose(readme), anglais + 1, 10_000));
 
 	// La marche à suivre pour ajouter les textes d'un écran de l'espace : les chantiers la suivent à la
 	// lettre, elle doit se lire sans faute.

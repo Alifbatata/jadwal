@@ -132,11 +132,11 @@ dans `docker-compose.dev.yml`.
 
 `jadwal` ("schedule" in Arabic) lets any organisation publish its recurring class schedule from a
 single entry: associations, schools, clubs, companies, places of worship. Staff enter the programme
-once; out come an embeddable widget, a public page, an ICS calendar feed and ready-to-paste WhatsApp
-messages. Everything speaks five languages: French, German, Italian, British English and Arabic,
-right to left. The service is free. An optional prayer-times module is available for places of
-worship, switched off by default. Everyone who enters an organisation's workspace first accepts the terms of
-use, published online. The same code runs as a hosted service or self-hosted with Docker Compose.
+once, and the service turns it into an embeddable widget, a public page, an ICS calendar feed and
+ready-to-paste WhatsApp messages. Everything speaks five languages: French, German, Italian, British
+English and Arabic, right to left. The service is free. An optional prayer-times module is
+available for places of worship, switched off by default. Everyone who enters an organisation's
+workspace first accepts the terms of use, published online. The same code runs as a hosted service or self-hosted with Docker Compose.
 Status: first version, online since 21 September 2026. Licence: MIT, except the list of Swiss
 localities (`apps/web/src/lib/server/localites/localities.csv`), which remains under the terms of
 use of the Federal Office of Topography swisstopo and must be credited as "Source: Federal Office of

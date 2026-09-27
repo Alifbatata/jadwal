@@ -145,51 +145,15 @@ apps/web/src/routes/+page.svelte | POINT | vu
 apps/web/src/routes/prieres/+page.svelte | DATE | 21.09.2026
 
 # apps/web/src/lib/i18n/prayers.ts : l'écran des heures de prière (étape 18)
-# Des noms propres : les écoles (Hanafi, Shafi’i, Maliki, Hanbali), les organismes des méthodes de
-# calcul (Umm al-Qura, Moonsighting Committee, ISNA, Diyanet, Karachi), un tableur (Numbers), et le
-# nom officiel de la liste des localités en allemand, « Amtliches Ortschaftenverzeichnis ».
-# « Jumu » et « ’ » : Jumu’a et Shafi’i, coupés à l'apostrophe. « NPA » : le numéro postal
-# d'acheminement, le mot de la Suisse romande et du Tessin.
+# Les noms des écoles et des méthodes de calcul sont dans le dictionnaire du projet depuis l'étape 19.
+# Restent ici un tableur (Numbers) et le nom officiel de la liste des localités en allemand,
+# « Amtliches Ortschaftenverzeichnis ». « Jumu » et « ’ » : Jumu’a et Shafi’i, coupés à
+# l'apostrophe. « NPA » : le numéro postal d'acheminement, le mot de la Suisse romande et du Tessin.
 apps/web/src/lib/i18n/prayers.ts | FR_SPELLING_RULE | NPA
-apps/web/src/lib/i18n/prayers.ts | FR_SPELLING_RULE | Umm
-apps/web/src/lib/i18n/prayers.ts | FR_SPELLING_RULE | Qura
-apps/web/src/lib/i18n/prayers.ts | FR_SPELLING_RULE | Moonsighting
-apps/web/src/lib/i18n/prayers.ts | FR_SPELLING_RULE | Committee
-apps/web/src/lib/i18n/prayers.ts | FR_SPELLING_RULE | ISNA
-apps/web/src/lib/i18n/prayers.ts | FR_SPELLING_RULE | Diyanet
-apps/web/src/lib/i18n/prayers.ts | FR_SPELLING_RULE | Hanafi
-apps/web/src/lib/i18n/prayers.ts | FR_SPELLING_RULE | Shafi’i
-apps/web/src/lib/i18n/prayers.ts | FR_SPELLING_RULE | Maliki
-apps/web/src/lib/i18n/prayers.ts | FR_SPELLING_RULE | Hanbali
 apps/web/src/lib/i18n/prayers.ts | SWISS_GERMAN_SPELLER_RULE | Ortschaftenverzeichnis
-apps/web/src/lib/i18n/prayers.ts | SWISS_GERMAN_SPELLER_RULE | Umm-al-Qura-Universität
-apps/web/src/lib/i18n/prayers.ts | SWISS_GERMAN_SPELLER_RULE | ISNA
-apps/web/src/lib/i18n/prayers.ts | SWISS_GERMAN_SPELLER_RULE | Diyanet
-apps/web/src/lib/i18n/prayers.ts | SWISS_GERMAN_SPELLER_RULE | Hanafi
-apps/web/src/lib/i18n/prayers.ts | SWISS_GERMAN_SPELLER_RULE | Shafi
-apps/web/src/lib/i18n/prayers.ts | SWISS_GERMAN_SPELLER_RULE | Maliki
-apps/web/src/lib/i18n/prayers.ts | SWISS_GERMAN_SPELLER_RULE | Hanbali
 apps/web/src/lib/i18n/prayers.ts | SWISS_GERMAN_SPELLER_RULE | Numbers
-apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_IT_IT | Karachi
-apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_IT_IT | Umm
-apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_IT_IT | al-Qura
-apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_IT_IT | Moonsighting
-apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_IT_IT | Committee
-apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_IT_IT | Diyanet
-apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_IT_IT | Hanafi
-apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_IT_IT | Shafi
-apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_IT_IT | Maliki
-apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_IT_IT | Hanbali
 apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_IT_IT | Jumu
 apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_IT_IT | Numbers
-apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_EN_GB | al-Qura
-apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_EN_GB | Moonsighting
-apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_EN_GB | ISNA
-apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_EN_GB | Diyanet
-apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_EN_GB | Hanafi
-apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_EN_GB | Shafi
-apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_EN_GB | Maliki
-apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_EN_GB | Hanbali
 apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_EN_GB | Jumu
 apps/web/src/lib/i18n/prayers.ts | EN_UNPAIRED_QUOTES | ’
 # Les formes qu'un fichier peut porter, citées telles quelles pour qu'on les reconnaisse (famille
@@ -229,11 +193,12 @@ apps/web/src/lib/i18n/prayers.ts | MORFOLOGIK_RULE_IT_IT | min
 # الأقل ». Des titres et des libellés, que la règle du sujet indéfini lit comme des phrases
 # (« محسوبة لبلدتك »), et des impératifs (« تحقّق من … »), comme dans `error.ts`. Sans voyelles
 # (famille 6). Des mots en lettres latines, écrits ainsi exprès : Biel et Lugano, que la liste des
-# localités écrit ainsi, les organismes, « h » et « PM » des formes d'heure, le nom d'un fichier
-# d'exemple, celui de la colonne des dates, et Numbers. « بكراتشي » : « à Karachi ». « كيلوبايت »
+# localités écrit ainsi, « h » et « PM » des formes d'heure, le nom d'un fichier d'exemple, celui
+# de la colonne des dates, et Numbers ; les organismes des méthodes de calcul, « بكراتشي » (« à
+# Karachi »), « طهران » et « الحنفية » sont au dictionnaire du projet depuis l'étape 19. « كيلوبايت »
 # et « غيغابايت » : les unités de la taille d'un fichier. « ، » : le séparateur d'une liste de
-# dates, seul dans sa chaîne. « الحنفية » : les hanafites, et non le robinet. « لا نخمّن » et « لا
-# تغطي » : des verbes au présent, que « لا » nie bien ; la règle les croit au passé. « أحد عشر
+# dates, seul dans sa chaîne. « لا نخمّن » et « لا تغطي » : des verbes au présent, que « لا » nie
+# bien ; la règle les croit au passé. « أحد عشر
 # يومًا » : « يوم » est masculin. « كل ما » : « tout ce qui », et non « كلّما », « chaque fois que ».
 apps/web/src/lib/i18n/prayers.ts | AR_SIMPLE_REPLACE | الفترة
 apps/web/src/lib/i18n/prayers.ts | AR_SIMPLE_REPLACE | فترة
@@ -247,25 +212,19 @@ apps/web/src/lib/i18n/prayers.ts | syntax_125_mobtadaa_nakira_5 | مستوردة
 apps/web/src/lib/i18n/prayers.ts | AR_DIACRITICS_REPLACE | ملف
 apps/web/src/lib/i18n/prayers.ts | AR_DIACRITICS_REPLACE | الملف
 apps/web/src/lib/i18n/prayers.ts | AR_DIACRITICS_REPLACE | الشمالية
-apps/web/src/lib/i18n/prayers.ts | AR_DIACRITICS_REPLACE | طهران
 apps/web/src/lib/i18n/prayers.ts | AR_DIACRITICS_REPLACE | برنامج
 apps/web/src/lib/i18n/prayers.ts | AR_DIACRITICS_REPLACE | الجمهور
 apps/web/src/lib/i18n/prayers.ts | HUNSPELL_RULE_AR | Biel
 apps/web/src/lib/i18n/prayers.ts | HUNSPELL_RULE_AR | Lugano
-apps/web/src/lib/i18n/prayers.ts | HUNSPELL_RULE_AR | Moonsighting
-apps/web/src/lib/i18n/prayers.ts | HUNSPELL_RULE_AR | Committee
-apps/web/src/lib/i18n/prayers.ts | HUNSPELL_RULE_AR | ISNA
 apps/web/src/lib/i18n/prayers.ts | HUNSPELL_RULE_AR | h
 apps/web/src/lib/i18n/prayers.ts | HUNSPELL_RULE_AR | PM
 apps/web/src/lib/i18n/prayers.ts | HUNSPELL_RULE_AR | Numbers
 apps/web/src/lib/i18n/prayers.ts | HUNSPELL_RULE_AR | prayer
 apps/web/src/lib/i18n/prayers.ts | HUNSPELL_RULE_AR | times
 apps/web/src/lib/i18n/prayers.ts | HUNSPELL_RULE_AR | date
-apps/web/src/lib/i18n/prayers.ts | HUNSPELL_RULE_AR | بكراتشي
 apps/web/src/lib/i18n/prayers.ts | HUNSPELL_RULE_AR | كيلوبايت
 apps/web/src/lib/i18n/prayers.ts | HUNSPELL_RULE_AR | غيغابايت
 apps/web/src/lib/i18n/prayers.ts | ARABIC_COMMA_PARENTHESIS_WHITESPACE | ،
-apps/web/src/lib/i18n/prayers.ts | AR_SIMPLE_REPLACE | الحنفية
 apps/web/src/lib/i18n/prayers.ts | syntax_1111_La_fa3ala_1 | لا نخمّن
 apps/web/src/lib/i18n/prayers.ts | syntax_1111_La_fa3ala_1 | لا تغطي
 apps/web/src/lib/i18n/prayers.ts | number_one_feminin | أحد
@@ -526,3 +485,4 @@ docs/CALENDRIER-PRIERES.md | FR_SPELLING_RULE | NPA
 docs/CALENDRIER-PRIERES.md | DATE | 01.09.2026
 docs/INTEGRATION.md | FR_SPELLING_RULE | NPA
 docs/adr/0007-langues-et-traductions.md | DATE | 26.09.2026
+

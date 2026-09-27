@@ -42,6 +42,31 @@ playbook
 # Le compte de l'exploitant, dans le menu de l'espace. L'italien l'écrit comme le français.
 super-admin
 
+# --- Les écoles et les méthodes de calcul des heures de prière ---
+# Des noms propres, que l'écran des heures écrit tels quels dans les cinq langues. Ils étaient
+# acceptés fichier par fichier jusqu'à l'étape 19. « Shafi » est Shafi’i coupé à l'apostrophe par
+# les correcteurs allemand, italien et anglais. En arabe : « الحنفية », les hanafites, et non le
+# robinet ; « طهران », Téhéran, sans voyelles comme le reste des écrans (ADR 0007) ; « بكراتشي »,
+# « à Karachi ». « Umm-al-Qura-Universität » est le nom de l'université en allemand.
+Hanafi
+Shafi’i
+Shafi'i
+Shafi
+Maliki
+Hanbali
+Umm
+Qura
+al-Qura
+Umm-al-Qura-Universität
+Moonsighting
+Committee
+ISNA
+Diyanet
+Karachi
+الحنفية
+طهران
+بكراتشي
+
 # --- Les noms de prière, dans les transcriptions que l'import accepte ---
 zuhr
 duhr
