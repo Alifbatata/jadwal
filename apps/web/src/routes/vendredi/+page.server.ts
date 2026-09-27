@@ -26,6 +26,12 @@
 // qui refusait un identifiant mal formé, un 30 février, l'an 0000 ou 25:99 par une erreur 500 ; une
 // date s'accepte de 1970 à 2100 (`isSupportedDate`), et une salle qui n'existe pas, ou plus, a sa
 // phrase dans le formulaire.
+//
+// Étape 19, lot 2 : la langue du sermon se choisit parmi toutes les langues d'enseignement, et non
+// plus parmi les seules langues publiées ; Déplacer refuse un jour passé, comme « À venir » ; la
+// ligne d'une session arrivée d'un autre jour a son « Rétablir » ; et chaque « Rétablir » envoie ce
+// que sa ligne montrait, pour qu'une page restée ouverte n'efface pas un changement fait depuis
+// (`$lib/server/exceptions.ts`).
 
 import { fail } from '@sveltejs/kit';
 import { addDays, isLocalTime, todayInZone, type IsoDate } from '@jadwal/core';

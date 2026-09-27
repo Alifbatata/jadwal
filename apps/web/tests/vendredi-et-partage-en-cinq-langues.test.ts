@@ -2220,6 +2220,144 @@ describe('« Ce vendredi » refuse un déplacement vers un jour passé (étape 1
 	});
 });
 
+/** Le nom de chaque rang, tel que « Ce vendredi » l'écrit sur la ligne d'une session. */
+const PREMIERE_SESSION: Record<Langue, string> = {
+	fr: 'Première session',
+	de: 'Erster Durchgang',
+	it: 'Primo turno',
+	en: 'First session',
+	ar: 'الموعد الأول'
+};
+
+/** La marque d'une session arrivée d'un autre jour (`thisFriday.movedFrom`). */
+const NOUVELLE_DATE: Record<Langue, (date: string) => string> = {
+	fr: (date) => `Nouvelle date, à la place du ${date}`,
+	de: (date) => `Neues Datum, anstelle von ${date}`,
+	it: (date) => `Nuova data, al posto di ${date}`,
+	en: (date) => `New date, instead of ${date}`,
+	ar: (date) => `موعد جديد، بدلًا من يوم ${date}`
+};
+
+/** Le bouton qui défait une annulation ou un déplacement (`thisFriday.restore`). */
+const RETABLIR: Record<Langue, string> = {
+	fr: 'Rétablir comme d’habitude',
+	de: 'Wie gewohnt wiederherstellen',
+	it: 'Ripristina come al solito',
+	en: 'Restore as usual',
+	ar: 'إعادته كالمعتاد'
+};
+
+/** Les lignes de « Ce vendredi », chacune de son début au début de la suivante. */
+function lignesDeCeVendredi(html: string): string[] {
+	return section(html, 'ce-vendredi')
+		.split(/(?=<div\b[^>]*class="seance[\s"])/)
+		.slice(1);
+}
+
+/** Le formulaire « Rétablir » d'une ligne : chaque champ et sa valeur, ou `null` sans formulaire. */
+function retablissementDeLaLigne(ligne: string): Record<string, string> | null {
+	const formulaire = ligne.match(/<form\b[^>]*action="\?\/retablir"[^>]*>[\s\S]*?<\/form>/)?.[0];
+	if (!formulaire) return null;
+	return Object.fromEntries(
+		[...formulaire.matchAll(/<input\b[^>]*>/g)].map((champ) => [
+			attribut(champ[0], 'name') ?? '',
+			attribut(champ[0], 'value') ?? ''
+		])
+	);
+}
+
+describe('« Ce vendredi » : la ligne d’une nouvelle date a « Rétablir » (étape 19, lot 2)', () => {
+	const vendredi = () => prochainVendredi(today());
+	const lu = (fragment: string) => visibleText(`<body>${fragment}</body>`);
+
+	it('gives the line « Nouvelle date, à la place du … » a restore button in each language, which restores the session', async () => {
+		const date = vendredi();
+		const ailleurs = jourDuDeplacement();
+		expect(
+			(
+				await postForm(
+					'/vendredi?/deplacer',
+					{ courseId: sessions[1], date, toDate: ailleurs, toStart: '15:00' },
+					cookies
+				)
+			).status
+		).toBe(200);
+		try {
+			let envoi: Record<string, string> = {};
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const html = await (await get('/vendredi', cookies)).text();
+				// La ligne de la session arrivée ce jour-là : la troisième l'est aussi, depuis le début.
+				const arrivees = lignesDeCeVendredi(html).filter(
+					(ligne) =>
+						lu(ligne).includes(PREMIERE_SESSION[langue]) &&
+						lu(ligne).includes(NOUVELLE_DATE[langue](dateEcrite(langue, date)))
+				);
+				expect(arrivees, langue).toHaveLength(1);
+				const formulaire =
+					arrivees[0]?.match(/<form\b[^>]*action="\?\/retablir"[^>]*>[\s\S]*?<\/form>/)?.[0] ?? '';
+				expect(formulaire, `${langue} : aucun « Rétablir » sur la nouvelle date`).not.toBe('');
+				expect(lu(formulaire), langue).toBe(RETABLIR[langue]);
+				// Le formulaire vise le vendredi que garde le déplacement, et dit ce qu'il montrait.
+				envoi = retablissementDeLaLigne(arrivees[0] ?? '') ?? {};
+				expect(envoi, langue).toEqual({
+					courseId: sessions[1],
+					date,
+					shownKind: 'moved',
+					shownToDate: ailleurs,
+					shownToStart: '15:00'
+				});
+			}
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			const reponse = await postForm('/vendredi?/retablir', envoi, cookies);
+			expect(reponse.status).toBe(200);
+			expect(await exceptionDe(sessions[1], date)).toBeUndefined();
+			expect(
+				lu((await reponse.text()).match(/<p\b[^>]*role="status"[^>]*>[\s\S]*?<\/p>/)?.[0] ?? '')
+			).toBe('La session retrouve son jour et son heure habituels.');
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await effacerLesExceptionsDeLaPremiere();
+		}
+	});
+
+	it('keeps a single restore button for a move within the same day, on the line of the usual time', async () => {
+		// Le même jour à une autre heure, deux lignes : l'heure habituelle, barrée, et la nouvelle.
+		// « À venir » garde le bouton sur la première ; « Ce vendredi » aussi.
+		const date = vendredi();
+		expect(
+			(
+				await postForm(
+					'/vendredi?/deplacer',
+					{ courseId: sessions[1], date, toDate: date, toStart: '15:00' },
+					cookies
+				)
+			).status
+		).toBe(200);
+		try {
+			const html = await (await get('/vendredi', cookies)).text();
+			const lignesDeLaSession = lignesDeCeVendredi(html).filter((ligne) =>
+				lu(ligne).includes(PREMIERE_SESSION.fr)
+			);
+			expect(lignesDeLaSession).toHaveLength(2);
+			const formulaires = lignesDeLaSession
+				.map(retablissementDeLaLigne)
+				.filter((champs) => champs !== null);
+			expect(formulaires).toEqual([
+				{
+					courseId: sessions[1],
+					date,
+					shownKind: 'moved',
+					shownToDate: date,
+					shownToStart: '15:00'
+				}
+			]);
+		} finally {
+			await effacerLesExceptionsDeLaPremiere();
+		}
+	});
+});
+
 describe('le message de la semaine, dans chaque langue publiée (retour D1)', () => {
 	/** Les messages de la section, dans l'ordre de la page, avec leur langue et leur sens. */
 	function messages(html: string) {

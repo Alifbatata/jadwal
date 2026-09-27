@@ -56,8 +56,11 @@
 	/**
 	 * Ce que « Rétablir comme d'habitude » défait sur une ligne, tel que la ligne le montre, ou rien
 	 * quand elle ne le propose pas. `date` est celle que garde le changement : le vendredi annulé ou
-	 * parti ailleurs. Le reste part avec le formulaire : une ligne restée ouverte pendant que la
-	 * session changeait ailleurs est refusée, au lieu d'effacer ce changement (étape 19, lot 2).
+	 * parti ailleurs, et, pour une session arrivée d'un autre jour, le vendredi d'où elle vient
+	 * (étape 19, lot 2 ; avant, cette ligne n'avait pas de bouton). Une session qui n'a changé que
+	 * d'heure se rétablit depuis la ligne de son heure habituelle, le même jour, comme sur « À venir ».
+	 * Le reste part avec le formulaire : une ligne restée ouverte pendant que la session changeait
+	 * ailleurs est refusée, au lieu d'effacer ce changement.
 	 */
 	function aRetablir(seance: (typeof data.prochaines)[number]) {
 		if (seance.status === 'cancelled') {
@@ -69,6 +72,18 @@
 				kind: 'moved',
 				toDate: seance.movedTo?.date ?? '',
 				toStart: String(seance.movedTo?.start ?? '').slice(0, 5)
+			};
+		}
+		if (
+			seance.status === 'moved_here' &&
+			seance.originalDate &&
+			seance.originalDate !== seance.date
+		) {
+			return {
+				date: seance.originalDate,
+				kind: 'moved',
+				toDate: seance.date,
+				toStart: String(seance.start ?? '').slice(0, 5)
 			};
 		}
 		return null;
