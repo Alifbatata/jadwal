@@ -420,7 +420,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			},
 			ruleLabel: 'Règle pour les nuits courtes de l’été',
 			ruleHint:
-				'En juin, la nuit est si courte que l’Isha tombe tard et le Fajr très tôt. Le milieu de la nuit garde les heures astronomiques ; le dernier septième avance l’Isha et retarde le Fajr, pour des heures plus faciles à tenir. « Proportionnelle à l’angle » donne des heures entre les deux, selon l’angle de la méthode choisie.',
+				'En juin, la nuit est si courte que l’Isha tombe tard et le Fajr très tôt. Le milieu de la nuit garde les heures astronomiques ; le dernier septième avance l’Isha et retarde le Fajr, pour des heures plus faciles à tenir. « Proportionnelle à l’angle » donne des heures entre les deux, qui changent avec la méthode de calcul.',
 			rules: {
 				middleofthenight: 'Milieu de la nuit',
 				seventhofthenight: 'Dernier septième de la nuit',
@@ -742,7 +742,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			},
 			ruleLabel: 'Regel für die kurzen Sommernächte',
 			ruleHint:
-				'Im Juni ist die Nacht so kurz, dass Ischa spät und Fadschr sehr früh fällt. Die Nachtmitte behält die astronomischen Zeiten; das letzte Siebtel legt Ischa früher und Fadschr später, damit die Zeiten leichter einzuhalten sind. «Anteilig zum Winkel» ergibt Zeiten zwischen den beiden, je nach dem Winkel der gewählten Methode.',
+				'Im Juni ist die Nacht so kurz, dass Ischa spät und Fadschr sehr früh fällt. Die Nachtmitte behält die astronomischen Zeiten; das letzte Siebtel legt Ischa früher und Fadschr später, damit die Zeiten leichter einzuhalten sind. «Anteilig zum Winkel» ergibt Zeiten zwischen den beiden, die sich mit der Berechnungsmethode ändern.',
 			rules: {
 				middleofthenight: 'Nachtmitte',
 				seventhofthenight: 'Letztes Siebtel der Nacht',
@@ -1067,7 +1067,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			},
 			ruleLabel: 'Regola per le notti corte d’estate',
 			ruleHint:
-				'A giugno la notte è così corta che Isha cade tardi e Fajr molto presto. La metà della notte tiene gli orari astronomici; l’ultimo settimo anticipa Isha e posticipa Fajr, per orari più facili da rispettare. «Proporzionale all’angolo» dà orari tra i due, secondo l’angolo del metodo scelto.',
+				'A giugno la notte è così corta che Isha cade tardi e Fajr molto presto. La metà della notte tiene gli orari astronomici; l’ultimo settimo anticipa Isha e posticipa Fajr, per orari più facili da rispettare. «Proporzionale all’angolo» dà orari tra i due, che cambiano con il metodo di calcolo.',
 			rules: {
 				middleofthenight: 'Metà della notte',
 				seventhofthenight: 'Ultimo settimo della notte',
@@ -1391,7 +1391,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			},
 			ruleLabel: 'Rule for short summer nights',
 			ruleHint:
-				'In June the night is so short that Isha falls late and Fajr very early. The middle of the night keeps the astronomical times; the last seventh brings Isha forward and Fajr back, for times that are easier to keep. ‘In proportion to the angle’ gives times between the two, depending on the angle of the chosen method.',
+				'In June the night is so short that Isha falls late and Fajr very early. The middle of the night keeps the astronomical times; the last seventh brings Isha forward and Fajr back, for times that are easier to keep. ‘In proportion to the angle’ gives times between the two, which change with the calculation method.',
 			rules: {
 				middleofthenight: 'Middle of the night',
 				seventhofthenight: 'Last seventh of the night',
@@ -1702,7 +1702,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			},
 			ruleLabel: 'قاعدة ليالي الصيف القصيرة',
 			ruleHint:
-				'في يونيو يقصر الليل حتى يتأخر العشاء ويبكر الفجر كثيرًا. منتصف الليل يُبقي المواقيت الفلكية كما هي، والسُّبع الأخير يقدّم العشاء ويؤخر الفجر، لمواقيت يسهل الالتزام بها. «بنسبة الزاوية» تعطي مواقيت بين الاثنتين، حسب زاوية الطريقة المختارة.',
+				'في يونيو يقصر الليل حتى يتأخر العشاء ويبكر الفجر كثيرًا. منتصف الليل يُبقي المواقيت الفلكية كما هي، والسُّبع الأخير يقدّم العشاء ويؤخر الفجر، لمواقيت يسهل الالتزام بها. «بنسبة الزاوية» تعطي مواقيت بين الاثنتين، تتغير بحسب طريقة الحساب.',
 			rules: {
 				middleofthenight: 'منتصف الليل',
 				seventhofthenight: 'السُّبع الأخير من الليل',

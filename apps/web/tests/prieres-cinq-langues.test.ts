@@ -1502,11 +1502,11 @@ describe('les formulations relevées par la relecture du lot 3', () => {
 	};
 	/** Ce que fait la troisième règle des nuits courtes, dit avec les deux autres. */
 	const PROPORTIONNELLE: Record<Langue, string> = {
-		fr: '« Proportionnelle à l’angle » donne des heures entre les deux, selon l’angle de la méthode choisie.',
-		de: '«Anteilig zum Winkel» ergibt Zeiten zwischen den beiden, je nach dem Winkel der gewählten Methode.',
-		it: '«Proporzionale all’angolo» dà orari tra i due, secondo l’angolo del metodo scelto.',
-		en: '‘In proportion to the angle’ gives times between the two, depending on the angle of the chosen method.',
-		ar: '«بنسبة الزاوية» تعطي مواقيت بين الاثنتين، حسب زاوية الطريقة المختارة.'
+		fr: '« Proportionnelle à l’angle » donne des heures entre les deux, qui changent avec la méthode de calcul.',
+		de: '«Anteilig zum Winkel» ergibt Zeiten zwischen den beiden, die sich mit der Berechnungsmethode ändern.',
+		it: '«Proporzionale all’angolo» dà orari tra i due, che cambiano con il metodo di calcolo.',
+		en: '‘In proportion to the angle’ gives times between the two, which change with the calculation method.',
+		ar: '«بنسبة الزاوية» تعطي مواقيت بين الاثنتين، تتغير بحسب طريقة الحساب.'
 	};
 
 	it.each(LANGUES)(
