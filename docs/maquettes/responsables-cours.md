@@ -266,12 +266,15 @@ dans cet espace. Publiez le cours quand tout est prêt.` Le calendrier des deux 
   pas pilotés par les tests du dépôt non plus. Ils ont été éprouvés dans un vrai Chrome sans
   interface pendant le lot, et restent à ajouter au parcours automatique, avec le premier jour qui
   suit encore les dates après un envoi refusé, tant qu'on ne l'a pas changé à la main.
-- Les tests HTTP lisent les champs de l'horaire que le serveur rend sans `required` (étape 19,
-  lot 3). Qu'ils le redeviennent une fois la page hydratée, avec JavaScript, ne se voit que dans un
-  navigateur : le parcours automatique le vérifie depuis la relecture du lot 3 (retour C3), avec
-  JavaScript sur l'écran d'un nouveau cours, et sans JavaScript par un choix de prière envoyé
-  heures vidées. Ces deux gestes ont été joués dans un vrai Chrome contre le serveur construit des
-  tests, et chacun tombe sur son mutant ; le parcours entier, sur l'image, reste à passer.
+- Les tests HTTP lisent les champs de l'horaire que le serveur rend sans `required`, et les minutes
+  avec les bornes des deux choix réunies (étape 19, lot 3). Que les champs redeviennent exigés, et
+  que les bornes prennent celles du choix, une fois la page hydratée, ne se voit que dans un
+  navigateur : le parcours automatique le vérifie depuis les relectures du lot 3 (retour C3), avec
+  JavaScript sur l'écran d'un nouveau cours. Sans JavaScript, il envoie un choix de prière heures
+  vidées, puis, sur la page revenue pour `avant une prière`, demande au navigateur s'il laisserait
+  partir 0 et 180 minutes après une prière. Ces gestes ont été joués dans un vrai Chrome contre le
+  serveur construit des tests, et chacun tombe sur son mutant ; le parcours entier, sur l'image,
+  reste à passer.
 - Le parcours automatique ne passe pas non plus, pour l'instant, par les autres gestes du lot 2 dans
   un vrai navigateur : le premier jour laissé vide d'un cours à dates précises, envoyé sans
   JavaScript en deux fois ; `Supprimer ce cours` puis `Oui, supprimer`, avec et sans JavaScript ; le

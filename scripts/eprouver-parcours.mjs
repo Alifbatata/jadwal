@@ -67,8 +67,9 @@
  *   touche à la fois. Sans JavaScript, une position hors de Suisse s'enregistre à la place de la
  *   localité, puis la localité revient.
  * - C3 : un cours « avant une prière », des minutes positives à l'écran. Avec JavaScript, le
- *   navigateur exige les champs de l'horaire choisi, et eux seuls ; sans JavaScript, le choix d'une
- *   prière s'envoie heures vides, et la page revient avec les champs de la prière.
+ *   navigateur exige les champs de l'horaire choisi, et eux seuls, et les minutes prennent les
+ *   bornes du choix ; sans JavaScript, le choix d'une prière s'envoie heures vides, la page revient
+ *   avec les champs de la prière, et « après une prière » y laisse partir 0 minute comme 180.
  * - C4 : l'onglet « Prières » de la page publique et du widget, et axe à 390 px de large.
  * - D1 : la page publique, le widget, le flux et une page d'erreur en anglais, sans texte français ;
  *   les messages prêts à coller de Partager, un par langue publiée, le nom de la prière du vendredi
@@ -3727,6 +3728,18 @@ async function coursAvantUnePriere(page) {
 		await page.locator('#timingKind').selectOption('beforePrayer');
 		const minutesExigees = (await exige('offsetMinutes')) && (await exige('durationMinutes'));
 		const heuresParties = (await page.locator('#start').count()) === 0;
+		// Les bornes des minutes suivent le choix de même : de 1 à 120 avant une prière, de 0 à 240
+		// après. Le serveur rend celles des deux choix réunies, de 0 à 240, pour qu'une page sans
+		// JavaScript parte avec 0 minute après une prière (relecture du lot 3) : les tests HTTP ne
+		// voient pas qu'elles se resserrent une fois la page hydratée.
+		const bornesDesMinutes = async () =>
+			page.locator('#offsetMinutes').evaluate((champ) => {
+				const minutes = /** @type {HTMLInputElement} */ (champ);
+				return `${minutes.min} à ${minutes.max}`;
+			});
+		const bornesAvant = await bornesDesMinutes();
+		await page.locator('#timingKind').selectOption('prayer');
+		const bornesApres = await bornesDesMinutes();
 		await page.locator('#timingKind').selectOption('fixed');
 		const heuresRevenues = await exige('start');
 		verifierChaque(
@@ -3738,6 +3751,14 @@ async function coursAvantUnePriere(page) {
 				'les heures de nouveau exigées pour une heure fixe': heuresRevenues
 			},
 			`heures ${heuresExigees ? 'exigées' : 'libres'}, puis minutes et durée ${minutesExigees ? 'exigées' : 'libres'}, puis heures ${heuresRevenues ? 'exigées' : 'libres'}`
+		);
+		verifierChaque(
+			'avec JavaScript, les minutes prennent les bornes du choix : de 1 à 120 avant une prière, de 0 à 240 après',
+			{
+				'de 1 à 120 avant une prière': bornesAvant === '1 à 120',
+				'de 0 à 240 après une prière': bornesApres === '0 à 240'
+			},
+			`avant : ${bornesAvant} ; après : ${bornesApres}`
 		);
 		const id = await creerCours(page, {
 			titre: COURS_AVANT.titre,
@@ -4126,8 +4147,9 @@ async function surUnTelephone(navigateur, page) {
 /**
  * k. Sans JavaScript, avec la session de la personne responsable : les options d'une séance restent
  * fermées et s'ouvrent (A1) ; une session du vendredi s'ajoute et se supprime, et l'écran le dit
- * (B1) ; le choix d'une prière, sur un nouveau cours, s'envoie heures vides (C3) ; une position
- * hors de Suisse remplace la localité enregistrée, puis la localité revient (C2).
+ * (B1) ; le choix d'une prière, sur un nouveau cours, s'envoie heures vides, puis « après une
+ * prière » y laisse partir 0 minute comme 180 (C3) ; une position hors de Suisse remplace la
+ * localité enregistrée, puis la localité revient (C2).
  */
 async function sansJavaScript(navigateur, page) {
 	etape('k. Sans JavaScript');
@@ -4235,6 +4257,35 @@ async function sansJavaScript(navigateur, page) {
 					)
 				},
 				refus.map((phrase) => `« ${phrase} »`).join(', ') || 'aucun refus'
+			);
+			// La page est revenue pour « avant une prière ». Passer à « après une prière » ne la change
+			// pas : le champ des minutes doit laisser partir 0 minute, juste après la prière, comme 180,
+			// que les bornes d'avant la prière arrêtaient (relecture du lot 3). Rien n'est envoyé : le
+			// navigateur dit seulement s'il laisserait partir la valeur.
+			const minutes = sans.locator('#offsetMinutes');
+			const aLEcran = (await minutes.count()) === 1;
+			const bornes = aLEcran
+				? await minutes.evaluate((champ) => {
+						const saisie = /** @type {HTMLInputElement} */ (champ);
+						return `${saisie.min} à ${saisie.max}`;
+					})
+				: 'aucun champ des minutes';
+			const partirait = async (valeur) => {
+				if (!aLEcran) return false;
+				await minutes.fill(valeur);
+				return minutes.evaluate((champ) => /** @type {HTMLInputElement} */ (champ).validity.valid);
+			};
+			await sans.locator('#timingKind').selectOption('prayer');
+			const zero = await partirait('0');
+			const centQuatreVingts = await partirait('180');
+			verifierChaque(
+				'sans JavaScript, « après une prière » choisi sur la page revenue pour « avant une prière » laisse partir 0 minute comme 180',
+				{
+					'les bornes des deux choix, de 0 à 240': bornes === '0 à 240',
+					'0 minute que le navigateur laisse partir': zero,
+					'180 minutes que le navigateur laisse partir': centQuatreVingts
+				},
+				`bornes ${bornes} ; 0 ${zero ? 'part' : 'arrêté'} ; 180 ${centQuatreVingts ? 'part' : 'arrêté'}`
 			);
 		});
 		await horsDeSuisseSansScript(sans);
