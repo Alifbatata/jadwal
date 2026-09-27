@@ -685,6 +685,45 @@ describe('les langues qu’une organisation propose', () => {
 });
 
 /**
+ * Une langue que l'organisation ne publie pas (décision du chef de projet, 27.09.2026) : l'adresse
+ * renvoie vers la même page dans la langue par défaut, son adresse courte, sans le segment de
+ * langue, filtres gardés. Elle répondait jusque-là, dans une langue que l'organisation n'avait pas
+ * choisie. Un renvoi temporaire, 307 : l'organisation peut l'activer demain.
+ */
+describe('une langue que l’organisation ne publie pas', () => {
+	it.each([
+		{ chemin: `/m/${SLUG_ARABE}/en`, vers: `/m/${SLUG_ARABE}` },
+		{ chemin: `/m/${SLUG_ARABE}/de/agenda`, vers: `/m/${SLUG_ARABE}/agenda` },
+		{
+			chemin: `/m/${SLUG_ARABE}/it/cours/${COURS.arabe}`,
+			vers: `/m/${SLUG_ARABE}/cours/${COURS.arabe}`
+		},
+		{
+			chemin: `/m/${SLUG_ARABE}/en?vue=mois&public=kids`,
+			vers: `/m/${SLUG_ARABE}?vue=mois&public=kids`
+		},
+		{
+			chemin: `/m/${SLUG_ARABE}/de/agenda?appareil=tous`,
+			vers: `/m/${SLUG_ARABE}/agenda?appareil=tous`
+		}
+	])('sends $chemin to $vers', async ({ chemin, vers }) => {
+		const reponse = await fetch(`${origin}${chemin}`, { redirect: 'manual' });
+		await reponse.arrayBuffer();
+		expect(reponse.status).toBe(307);
+		const lieu = new URL(reponse.headers.get('location') ?? '', `${origin}${chemin}`);
+		expect(`${lieu.pathname}${lieu.search}`).toBe(vers);
+		expect(lieu.origin).toBe(origin);
+	});
+
+	it('still answers a language it publishes, and its short address', async () => {
+		expect((await servir(`/m/${SLUG_ARABE}/fr`)).statut).toBe(200);
+		expect((await servir(`/m/${SLUG_ARABE}/fr/agenda`)).statut).toBe(200);
+		expect((await servir(`/m/${SLUG_ARABE}`)).statut).toBe(200);
+		expect((await servir(`/m/${SLUG}/en`)).statut).toBe(200);
+	});
+});
+
+/**
  * La langue de la page pour les aperçus de partage (Open Graph), décision du chef de projet au
  * 27.09.2026 : une langue et un pays, `fr_CH`, `de_CH`, `it_CH`, `en_GB` et `ar_AR`, et une balise
  * `og:locale:alternate` par autre langue que l'organisation publie. La page disait `fr`, `ar`.

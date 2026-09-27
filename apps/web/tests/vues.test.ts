@@ -142,6 +142,22 @@ describe('ce que le compteur distingue', () => {
 		expect(await compteurs()).toEqual(avant);
 	});
 
+	// Une langue que l'organisation ne publie pas renvoie vers sa langue par défaut (27.09.2026) : la
+	// page qui sera lue est celle du renvoi, comptée une fois, et le renvoi lui-même ne l'est pas.
+	it('ne compte pas le renvoi d’une langue que l’organisation ne publie pas', async () => {
+		const avant = await compteurs();
+		const renvoi = await fetch(`${origin}/m/${SLUG}/en`, {
+			redirect: 'manual',
+			headers: {
+				'user-agent':
+					'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36'
+			}
+		});
+		await renvoi.arrayBuffer();
+		expect(renvoi.status).toBe(307);
+		expect(await compteurs()).toEqual(avant);
+	});
+
 	it('n’attribue à une organisation que ses propres vues', async () => {
 		const ailleurs = async () =>
 			Number(

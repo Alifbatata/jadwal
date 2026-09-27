@@ -5,7 +5,10 @@ l'organisation met dans sa bio Instagram et dans son groupe WhatsApp : il doit r
 question, « qu'est-ce qu'il y a cette semaine ? », en un coup d'œil, sur un téléphone.
 
 **Lien** : `/m/<identifiant>` dans la langue par défaut de l'organisation, `/m/<identifiant>/<langue>`
-sinon. Les filtres et la vue passent par la requête : `?public=kids`, `?vue=semaine`.
+sinon. Les filtres et la vue passent par la requête : `?public=kids`, `?vue=semaine`. Une langue que
+l'organisation ne publie pas, `/m/<identifiant>/en` par exemple, renvoie (`307`) vers la même page à
+l'adresse courte, dans la langue par défaut, filtres gardés (27.09.2026) ; la page d'abonnement et
+celle d'un cours font de même.
 
 ## Structure, de haut en bas
 

@@ -4,7 +4,7 @@
 // défaut de l'organisation, `/m/<identifiant>/<langue>` dans les autres. Une langue par lien,
 // partageable telle quelle — jamais un cookie, jamais une détection silencieuse (ADR 0027).
 
-import { error, type RequestEvent } from '@sveltejs/kit';
+import { error, redirect, type RequestEvent } from '@sveltejs/kit';
 import { findOrganisation, isLangue, type Langue, type OrganisationPublique } from './public.js';
 import { vueDe } from './vues.js';
 import { LANGUES } from '$lib/i18n.js';
@@ -60,12 +60,30 @@ export async function publicContext(event: RequestEvent): Promise<PublicContext>
 	const slug = event.params['slug'] ?? '';
 	const organisation = await findOrganisation(slug);
 	if (!organisation) introuvable(event);
+	const segment = event.params['langue'];
+	// Une langue que l'organisation ne publie pas renvoie vers la même page dans sa langue par
+	// défaut, à son adresse courte (décision du chef de projet, 27.09.2026) : la page répondait dans
+	// une langue que l'organisation n'avait pas choisie. Avant de compter la vue : c'est la page du
+	// renvoi qui sera lue, et comptée.
+	if (segment && isLangue(segment) && !languesProposees(organisation).includes(segment)) {
+		redirect(307, sansLeSegmentDeLangue(event.url));
+	}
 	// Une vue de page, à compter après la réponse. C'est le seul endroit qui la pose pour les trois
 	// écrans publics : une page nouvelle est comptée sans qu'on y pense (ADR 0032).
 	event.locals.vue = vueDe(event, organisation);
-	const segment = event.params['langue'];
 	const langue = segment && isLangue(segment) ? segment : langueParDefaut(organisation);
 	return { organisation, langue, explicite: Boolean(segment) };
+}
+
+/**
+ * `/m/<identifiant>/<langue>/…?…` sans son segment de langue, lu à la même place que
+ * `langueDuChemin` : `/m/<identifiant>/…?…`, la requête gardée. Temporaire, 307 : l'organisation
+ * peut activer la langue demain, et l'adresse répondra de nouveau.
+ */
+function sansLeSegmentDeLangue(url: URL): string {
+	const parties = url.pathname.split('/');
+	parties.splice(3, 1);
+	return `${parties.join('/')}${url.search}`;
 }
 
 /** La langue par défaut d'une organisation, ramenée à une des cinq que l'interface parle. */

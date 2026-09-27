@@ -120,6 +120,12 @@ Les décisions du chef de projet sur les langues des pages publiques.
   `it_CH`, `en_GB` ou `ar_AR`, et non plus `fr` ou `ar`, que le protocole Open Graph ne connaît pas.
   Chaque autre langue que l'organisation publie a sa balise `og:locale:alternate`. La table est
   `LOCALE_DE_PARTAGE`, dans `apps/web/src/lib/i18n.ts`.
+- **Une langue que l'organisation ne publie pas renvoie vers sa langue par défaut.**
+  `/m/<identifiant>/<langue>/…` pour une langue du service que l'organisation n'a pas activée
+  répond `307` vers la même adresse sans le segment de langue, requête gardée : son adresse
+  courte, dans sa langue par défaut. La page répondait jusque-là dans une langue que l'organisation
+  n'avait pas choisie, et qu'aucun de ses liens ne proposait. Temporaire, et non `308` : elle peut
+  l'activer demain. Le renvoi n'est pas compté comme une vue (ADR 0032) ; la page où il mène l'est.
 - **Trois liens vers des services d'agenda, et non plus deux.** Le choix complet propose aussi
   Outlook pour les comptes de travail ou d'école, `outlook.office.com` (ADR 0048, addendum du même
   jour) : le test admet ces trois domaines pour un lien `<a>` vers ailleurs, et aucune ressource.
