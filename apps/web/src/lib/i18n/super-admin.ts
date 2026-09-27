@@ -12,8 +12,12 @@
 
 import type { Translations } from './space.js';
 
-/** Le lieu de l'exemple de nom : un nom propre, qui s'écrit de même dans chaque langue. */
-const PLACE = 'Madretsch';
+/**
+ * L'exemple de nom : celui d'une association, un nom propre qui s'écrit de même dans chaque langue en
+ * lettres latines. jadwal sert toute organisation (ADR 0042) : l'exemple ne nomme pas un genre
+ * d'organisation plutôt qu'un autre.
+ */
+const NAME_EXAMPLE = 'Association Horizon';
 
 /**
  * Trois fuseaux de la liste qui ont toujours l'heure de la plus grande partie de l'Europe. Une ville
@@ -138,7 +142,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		example: 'Exemple :',
 		nameLabel: 'Nom de l’organisation',
 		nameHint: 'Tel qu’il s’affichera sur sa page publique.',
-		nameExample: `Mosquée ${PLACE}`,
+		nameExample: NAME_EXAMPLE,
 		addressLabel: 'Adresse de la page publique',
 		addressHint:
 			'Elle est proposée à partir du nom, et vous pouvez la modifier. Si vous la laissez vide, elle est formée à partir du nom.',
@@ -215,7 +219,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		example: 'Beispiel:',
 		nameLabel: 'Name der Organisation',
 		nameHint: 'So, wie er auf der öffentlichen Seite erscheinen wird.',
-		nameExample: `Moschee ${PLACE}`,
+		nameExample: NAME_EXAMPLE,
 		addressLabel: 'Adresse der öffentlichen Seite',
 		addressHint:
 			'Sie wird aus dem Namen vorgeschlagen, und Sie können sie ändern. Wenn Sie das Feld leer lassen, wird sie aus dem Namen gebildet.',
@@ -293,7 +297,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		example: 'Esempio:',
 		nameLabel: 'Nome dell’organizzazione',
 		nameHint: 'Come apparirà sulla sua pagina pubblica.',
-		nameExample: `Moschea ${PLACE}`,
+		nameExample: NAME_EXAMPLE,
 		addressLabel: 'Indirizzo della pagina pubblica',
 		addressHint:
 			'Viene proposto a partire dal nome, e puoi modificarlo. Se lo lasci vuoto, viene formato a partire dal nome.',
@@ -370,7 +374,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		example: 'Example:',
 		nameLabel: 'Name of the organisation',
 		nameHint: 'As it will appear on its public page.',
-		nameExample: `${PLACE} Mosque`,
+		nameExample: NAME_EXAMPLE,
 		addressLabel: 'Address of the public page',
 		addressHint:
 			'It is suggested from the name, and you can change it. If you leave it empty, it is made from the name.',
@@ -445,7 +449,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		example: 'مثال:',
 		nameLabel: 'اسم المؤسسة',
 		nameHint: 'كما سيظهر في صفحتها العامة.',
-		nameExample: 'مسجد السلام',
+		nameExample: 'جمعية الأفق',
 		addressLabel: 'عنوان الصفحة العامة',
 		addressHint:
 			'يقترح العنوان انطلاقًا من الاسم إذا كان بأحرف لاتينية، ويمكنك تعديله. إذا تركته فارغًا، يؤخذ العنوان من الاسم.',

@@ -29,11 +29,12 @@ ci-dessous.`
 3. **Créer une organisation** (avant : « Ouvrir une organisation ») : `Une organisation est l'espace
 d'une association, d'une école ou d'un club : son programme, ses membres et sa page publique.`
    - `Nom de l'organisation`, avec `Tel qu'il s'affichera sur sa page publique.` et
-     `Exemple : Mosquée Madretsch`. Le champ prend le sens de ce qu'on y tape (`dir="auto"`).
+     `Exemple : Association Horizon` (en arabe, `جمعية الأفق`). Le champ prend le sens de ce qu'on y
+     tape (`dir="auto"`).
    - `Adresse de la page publique` (avant : « Identifiant d'URL »), facultative : `Elle est proposée
 à partir du nom, et vous pouvez la modifier. Si vous la laissez vide, elle est formée à partir du
 nom.`, la règle `Lettres minuscules sans accent ni cédille, chiffres et traits d'union.` avec
-     `Exemple : mosquee-madretsch`, `Adresse complète :` qui suit la frappe, et
+     `Exemple : association-horizon`, `Adresse complète :` qui suit la frappe, et
      `Choisissez-la avec soin : elle ne se change plus ensuite.`
    - `Fuseau horaire` : une liste (avant : un texte libre), `Europe/Zurich` choisi d'avance, le
      groupe `Europe` en tête puis `Reste du monde`, des noms canoniques seulement, sans alias ni

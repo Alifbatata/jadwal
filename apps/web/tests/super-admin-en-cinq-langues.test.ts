@@ -351,7 +351,7 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 				'Elle est proposée à partir du nom, et vous pouvez la modifier. Si vous la laissez vide, elle est formée à partir du nom.'
 			);
 			expect(creer).toContain(
-				'Lettres minuscules sans accent ni cédille, chiffres et traits d’union. Exemple : mosquee-madretsch'
+				'Lettres minuscules sans accent ni cédille, chiffres et traits d’union. Exemple : association-horizon'
 			);
 			// L'adresse complète, qui vient de l'origine du serveur, jamais d'un nom écrit en dur.
 			expect(creer).toContain(`Adresse complète : ${HOTE}/m/`);
@@ -361,9 +361,34 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 			expect(champ).toContain('pattern="[a-z0-9]+(-[a-z0-9]+)*"');
 		});
 
+		it('gives as examples the name and the address of an association, in the five languages', async () => {
+			// L'exemple de nom était celui d'un lieu de culte, alors que jadwal sert toute organisation
+			// (étape 13, ADR 0042). Un nom propre, écrit de même dans les langues en lettres latines ; en
+			// arabe, son nom arabe, et l'adresse tirée du nom français, que la page prend alors.
+			const NOMS: Record<Langue, string> = {
+				fr: 'Association Horizon',
+				de: 'Association Horizon',
+				it: 'Association Horizon',
+				en: 'Association Horizon',
+				ar: 'جمعية الأفق'
+			};
+			const aide = (html: string, id: string) =>
+				texteDe(element(html, new RegExp(`<p\\b[^>]*\\bid="${id}"`), 'p'));
+			try {
+				for (const langue of LANGUES) {
+					await langueDuCompte(langue);
+					const html = await (await get('/super-admin', avecPouvoirs)).text();
+					expect.soft(aide(html, 'name-aide').endsWith(` ${NOMS[langue]}`), langue).toBe(true);
+					expect.soft(aide(html, 'slug-regle').endsWith(' association-horizon'), langue).toBe(true);
+				}
+			} finally {
+				await langueDuCompte('fr');
+			}
+		});
+
 		it('says in German that the address takes no Umlaut, in the rule and in both errors', async () => {
 			// Pour qui parle allemand, ä, ö et ü sont des Umlaute, pas des accents : « ohne Akzente »
-			// laissait croire que « zürich-moschee » convenait. Le français dit de même la cédille,
+			// laissait croire que « zürich-verein » convenait. Le français dit de même la cédille,
 			// qui n'est pas un accent non plus : les tests voisins lisent ses textes exacts.
 			await langueDuCompte('de');
 			try {
@@ -371,11 +396,11 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 				expect
 					.soft(texteDe(section(html, 'creer-titre')))
 					.toContain(
-						'Kleinbuchstaben ohne Umlaute und Akzente, Ziffern und Bindestriche. Beispiel: moschee-madretsch'
+						'Kleinbuchstaben ohne Umlaute und Akzente, Ziffern und Bindestriche. Beispiel: association-horizon'
 					);
 				const refusee = await postForm(
 					'/super-admin?/ouvrir',
-					{ name: 'Moschee Zürich', slug: 'zürich-moschee', timeZone: 'Europe/Zurich' },
+					{ name: 'Verein Zürich', slug: 'zürich-verein', timeZone: 'Europe/Zurich' },
 					avecPouvoirs
 				);
 				expect(refusee.status).toBe(400);
@@ -386,7 +411,7 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 					);
 				const sansAdresse = await postForm(
 					'/super-admin?/ouvrir',
-					{ name: 'مسجد السلام', slug: '', timeZone: 'Europe/Zurich' },
+					{ name: 'جمعية الأفق', slug: '', timeZone: 'Europe/Zurich' },
 					avecPouvoirs
 				);
 				expect(sansAdresse.status).toBe(400);
@@ -465,19 +490,19 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 		it('proposes the address from the name when the field arrives empty, without JavaScript', async () => {
 			const reponse = await postForm(
 				'/super-admin?/ouvrir',
-				{ name: 'Mosquée Madretsch', slug: '', timeZone: 'Europe/Zurich' },
+				{ name: 'Association Horizon', slug: '', timeZone: 'Europe/Zurich' },
 				avecPouvoirs
 			);
 			expect(reponse.status).toBe(200);
-			expect(await organisationA('mosquee-madretsch')).toEqual({
-				name: 'Mosquée Madretsch',
+			expect(await organisationA('association-horizon')).toEqual({
+				name: 'Association Horizon',
 				time_zone: 'Europe/Zurich'
 			});
 			const confirme = texteDe(
 				element(await reponse.text(), /<section\b[^>]*class="succes[\s"]/, 'section')
 			);
-			expect(confirme).toContain('L’organisation est créée : Mosquée Madretsch');
-			expect(confirme).toContain(`Sa page publique : ${HOTE}/m/mosquee-madretsch`);
+			expect(confirme).toContain('L’organisation est créée : Association Horizon');
+			expect(confirme).toContain(`Sa page publique : ${HOTE}/m/association-horizon`);
 		});
 
 		it('keeps the address written by hand, and the time zone chosen', async () => {
@@ -494,20 +519,20 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 		});
 
 		it.each([
-			['Mosquée-Madretsch', 'une majuscule et un accent'],
-			['-madretsch', 'un trait d’union au début'],
-			['mosquee--madretsch', 'deux traits d’union de suite'],
-			['mosquee madretsch', 'une espace']
+			['Crèche-Horizon', 'une majuscule et un accent'],
+			['-horizon', 'un trait d’union au début'],
+			['association--horizon', 'deux traits d’union de suite'],
+			['association horizon', 'une espace']
 		])('refuses the address « %s » (%s), and says the rule', async (adresse) => {
 			const avant = await nombreDOrganisations();
 			const reponse = await postForm(
 				'/super-admin?/ouvrir',
-				{ name: 'Mosquée refusée', slug: adresse, timeZone: 'Europe/Zurich' },
+				{ name: 'Association refusée', slug: adresse, timeZone: 'Europe/Zurich' },
 				avecPouvoirs
 			);
 			expect(reponse.status).toBe(400);
 			expect(erreur(await reponse.text())).toBe(
-				'Cette adresse ne convient pas. Elle ne peut contenir que des lettres minuscules sans accent ni cédille, des chiffres et des traits d’union, un seul entre deux mots, jamais au début ni à la fin. Exemple : mosquee-madretsch'
+				'Cette adresse ne convient pas. Elle ne peut contenir que des lettres minuscules sans accent ni cédille, des chiffres et des traits d’union, un seul entre deux mots, jamais au début ni à la fin. Exemple : association-horizon'
 			);
 			expect(await nombreDOrganisations()).toBe(avant);
 		});
@@ -528,18 +553,18 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 			const avant = await nombreDOrganisations();
 			const reponse = await postForm(
 				'/super-admin?/ouvrir',
-				{ name: 'مسجد السلام', slug: '', timeZone: 'Europe/Zurich' },
+				{ name: 'جمعية الأفق', slug: '', timeZone: 'Europe/Zurich' },
 				avecPouvoirs
 			);
 			expect(reponse.status).toBe(400);
 			expect(erreur(await reponse.text())).toBe(
-				'Le nom ne permet pas de proposer une adresse. Écrivez-la vous-même, en lettres minuscules sans accent ni cédille, chiffres et traits d’union. Exemple : mosquee-madretsch'
+				'Le nom ne permet pas de proposer une adresse. Écrivez-la vous-même, en lettres minuscules sans accent ni cédille, chiffres et traits d’union. Exemple : association-horizon'
 			);
 			expect(await nombreDOrganisations()).toBe(avant);
 		});
 
 		it.each([
-			['Mosquée-Voisine', 'une adresse refusée'],
+			['Association-Voisine', 'une adresse refusée'],
 			[EXISTANTE_ADRESSE, 'une adresse déjà prise']
 		])(
 			'gives back the name, the address and the time zone typed after an error (%s, %s)',

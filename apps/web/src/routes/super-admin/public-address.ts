@@ -37,7 +37,7 @@ export function isPublicAddress(value: string): boolean {
 }
 
 /**
- * L'adresse que l'on propose pour un nom : « Mosquée Madretsch » donne `mosquee-madretsch`. Les accents
+ * L'adresse que l'on propose pour un nom : « Crèche Horizon » donne `creche-horizon`. Les accents
  * tombent, tout ce qui n'est ni lettre latine ni chiffre sépare deux mots, et une adresse trop longue
  * est coupée entre deux mots. Un nom sans une seule lettre latine ni un seul chiffre ne donne rien :
  * c'est alors à la personne d'écrire l'adresse.

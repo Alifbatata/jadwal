@@ -21,11 +21,11 @@ describe('la règle de l’adresse', () => {
 		expect(PUBLIC_ADDRESS.source).toBe(contrainte);
 	});
 
-	it.each(['mosquee-madretsch', 'club-7', 'a', '2026'])('accepts « %s »', (adresse) => {
+	it.each(['association-horizon', 'club-7', 'a', '2026'])('accepts « %s »', (adresse) => {
 		expect(isPublicAddress(adresse)).toBe(true);
 	});
 
-	it.each(['', 'Mosquee', 'mosquée', '-club', 'club-', 'club--foot', 'club foot', 'club_foot'])(
+	it.each(['', 'Horizon', 'crèche', '-club', 'club-', 'club--foot', 'club foot', 'club_foot'])(
 		'refuses « %s »',
 		(adresse) => {
 			expect(isPublicAddress(adresse)).toBe(false);
@@ -35,12 +35,12 @@ describe('la règle de l’adresse', () => {
 
 describe('l’adresse proposée à partir du nom', () => {
 	it.each([
-		['Mosquée Madretsch', 'mosquee-madretsch'],
+		['Association Horizon', 'association-horizon'],
 		['  Centre culturel d’Aarau  ', 'centre-culturel-d-aarau'],
 		['École coranique, Straße 12', 'ecole-coranique-strasse-12'],
 		['Œuvre -- Æsir', 'oeuvre-aesir'],
 		['Zürich : Club de foot !', 'zurich-club-de-foot'],
-		['Mosquée مسجد', 'mosquee'],
+		['Crèche الأفق', 'creche'],
 		['CLUB 2000', 'club-2000']
 	])('turns « %s » into « %s »', (nom, adresse) => {
 		expect(proposePublicAddress(nom)).toBe(adresse);
@@ -48,7 +48,7 @@ describe('l’adresse proposée à partir du nom', () => {
 
 	it('proposes nothing for a name without a single Latin letter or digit', () => {
 		// Le serveur demande alors d'écrire l'adresse à la main, au lieu d'en inventer une.
-		expect(proposePublicAddress('مسجد السلام')).toBe('');
+		expect(proposePublicAddress('جمعية الأفق')).toBe('');
 		expect(proposePublicAddress('   ')).toBe('');
 	});
 
@@ -63,7 +63,7 @@ describe('l’adresse proposée à partir du nom', () => {
 
 	it('always proposes an address the rule accepts, or nothing', () => {
 		for (const nom of [
-			'Mosquée Madretsch',
+			'Association Horizon',
 			'--Club--',
 			'L’Étoile d’Or',
 			'Ärzte ohne Grenzen',
@@ -72,7 +72,7 @@ describe('l’adresse proposée à partir du nom', () => {
 			'Łódź',
 			'x'.repeat(200),
 			'a-'.repeat(80),
-			'مسجد',
+			'جمعية',
 			''
 		]) {
 			const adresse = proposePublicAddress(nom);
