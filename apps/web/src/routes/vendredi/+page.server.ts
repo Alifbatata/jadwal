@@ -22,17 +22,19 @@
 // vise une session répond « Cette session n'existe plus » à une session inconnue, ou à un cours, et
 // n'écrit alors rien, pas même le journal : Rétablir, Publier et Supprimer répondaient « fait » et
 // écrivaient au journal. Chaque identifiant, chaque date et chaque heure est vérifié avant la base,
-// qui refusait un identifiant mal formé, un 30 février ou 25:99 par une erreur 500 ; une salle qui
-// n'existe pas, ou plus, a sa phrase dans le formulaire.
+// qui refusait un identifiant mal formé, un 30 février, l'an 0000 ou 25:99 par une erreur 500 ; une
+// date s'accepte de 1970 à 2100 (`isSupportedDate`), et une salle qui n'existe pas, ou plus, a sa
+// phrase dans le formulaire.
 
 import { fail } from '@sveltejs/kit';
-import { addDays, isIsoDate, isLocalTime, todayInZone, type IsoDate } from '@jadwal/core';
+import { addDays, isLocalTime, todayInZone, type IsoDate } from '@jadwal/core';
 import { newId, sql, type Transaction } from '@jadwal/db';
 import { isLangue, t, type Langue } from '$lib/i18n.js';
 import type { FridayDone, FridayError } from '$lib/i18n/friday.js';
 import { record } from '$lib/server/audit.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { insertCourse, updateCourse } from '$lib/server/courses.js';
+import { isSupportedDate } from '$lib/server/dates.js';
 import { fridayTitle } from '$lib/server/friday-title.js';
 import { mustHavePrayerModule } from '$lib/server/guard.js';
 import { readCourses, readProgramme, readRooms, readSettings } from '$lib/server/programme.js';
@@ -314,7 +316,7 @@ export const actions: Actions = {
 		const form = await event.request.formData();
 		const courseId = String(form.get('courseId') ?? '');
 		const date = String(form.get('date') ?? '');
-		if (!isIsoDate(date)) return refus(400, 'dateUnreadable');
+		if (!isSupportedDate(date)) return refus(400, 'dateUnreadable');
 		const maintenant = new Date();
 		return withSessionOrg(context, async (tx) => {
 			if (!(await sessionExiste(tx, courseId))) return refus(404, 'sessionGone');
@@ -354,7 +356,7 @@ export const actions: Actions = {
 		const date = String(form.get('date') ?? '');
 		const toDate = String(form.get('toDate') ?? '');
 		const toStart = String(form.get('toStart') ?? '');
-		if (!isIsoDate(date) || !isIsoDate(toDate)) return refus(400, 'dateUnreadable');
+		if (!isSupportedDate(date) || !isSupportedDate(toDate)) return refus(400, 'dateUnreadable');
 		if (!isLocalTime(toStart)) return refus(400, 'timeUnreadable');
 		const maintenant = new Date();
 		return withSessionOrg(context, async (tx) => {
@@ -407,7 +409,7 @@ export const actions: Actions = {
 		const form = await event.request.formData();
 		const courseId = String(form.get('courseId') ?? '');
 		const date = String(form.get('date') ?? '');
-		if (!isIsoDate(date)) return refus(400, 'dateUnreadable');
+		if (!isSupportedDate(date)) return refus(400, 'dateUnreadable');
 		return withSessionOrg(context, async (tx) => {
 			if (!(await sessionExiste(tx, courseId))) return refus(404, 'sessionGone');
 			await tx.execute(

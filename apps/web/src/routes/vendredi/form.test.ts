@@ -89,7 +89,13 @@ describe('parseFridayForm', () => {
 		['timesMissing', { start: '25:99' }],
 		['timesMissing', { end: '24:00' }],
 		['startDateMissing', { startsOn: '2026-02-30' }],
-		['endDateUnreadable', { endsOn: '2026-13-01' }]
+		['endDateUnreadable', { endsOn: '2026-13-01' }],
+		// Hors des années que le service accepte, de 1970 à 2100 (relecture de D2) : l'an 0000, que
+		// PostgreSQL n'a pas, et le 31.12.9999, qui faisait tomber le flux agenda.
+		['startDateMissing', { startsOn: '0000-01-01' }],
+		['startDateMissing', { startsOn: '1969-12-26' }],
+		['endDateUnreadable', { endsOn: '0000-12-31' }],
+		['endDateUnreadable', { endsOn: '9999-12-31' }]
 	] as const)('names the mistake %s, and only that one', (erreur, champs) => {
 		const lu = parseFridayForm(formulaire(champs), ['fr', 'ar'], 'fr');
 		expect(lu).toEqual({ ok: false, errors: [erreur] });

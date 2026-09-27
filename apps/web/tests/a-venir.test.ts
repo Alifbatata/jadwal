@@ -802,6 +802,63 @@ describe('A2 : déplacer une séance', () => {
 		expect(await exception(soir, jour(3))).toBeUndefined();
 	});
 
+	it('refuses a date the service does not handle, the year 0000 or outside 1970 to 2100, with a sentence instead of an error 500', async () => {
+		// Le calendrier de `@jadwal/core` a un an 0000 (ADR 0012), PostgreSQL non : la requête échouait,
+		// et l'écran répondait par une erreur 500. Une date d'avant 1970 ou d'après 2100 s'écrivait :
+		// le service s'en tient aux années que couvrent les tests du calcul (étape 19, relecture de D2).
+		const DATE_DE_LA_SEANCE =
+			'La date de cette séance n’a pas pu être lue. Rechargez la page, puis recommencez.';
+		const NOUVELLE_DATE =
+			'Cette date n’a pas pu être lue. Choisissez-la dans le calendrier du champ « Nouvelle date ».';
+		const [{ debut } = { debut: '' }] = await maintenance(async (tx) =>
+			lignes<{ debut: string }>(await tx.execute(sql`select now()::text as debut`))
+		);
+		const recus: Record<string, unknown> = {};
+		const attendus: Record<string, unknown> = {};
+		try {
+			for (const [action, envoi, phrase] of [
+				['annuler', { courseId: soir, date: '0000-01-01' }, DATE_DE_LA_SEANCE],
+				['retablir', { courseId: soir, date: '0000-01-01' }, DATE_DE_LA_SEANCE],
+				[
+					'deplacer',
+					{ courseId: soir, date: '0000-01-01', toDate: jour(4), toStart: '18:00' },
+					DATE_DE_LA_SEANCE
+				],
+				[
+					'deplacer',
+					{ courseId: soir, date: jour(3), toDate: '0000-01-01', toStart: '18:00' },
+					NOUVELLE_DATE
+				],
+				['annuler', { courseId: soir, date: '2101-01-03' }, DATE_DE_LA_SEANCE],
+				['retablir', { courseId: soir, date: '9999-12-31' }, DATE_DE_LA_SEANCE],
+				[
+					'deplacer',
+					{ courseId: soir, date: '1969-12-31', toDate: jour(4), toStart: '18:00' },
+					DATE_DE_LA_SEANCE
+				],
+				[
+					'deplacer',
+					{ courseId: soir, date: jour(3), toDate: '9999-12-31', toStart: '18:00' },
+					NOUVELLE_DATE
+				]
+			] as const) {
+				const cas = `${action} ${JSON.stringify(envoi)}`;
+				const reponse = await postForm(`/?/${action}`, envoi, cookie);
+				recus[cas] = { statut: reponse.status, phrase: alerte(await reponse.text()) };
+				attendus[cas] = { statut: 400, phrase };
+			}
+			expect(recus).toEqual(attendus);
+		} finally {
+			// Ce qu'un envoi aurait écrit ne reste pas pour les tests suivants.
+			await maintenance((tx) =>
+				tx.execute(sql`
+					delete from "session_exception"
+					where "course_id" = ${soir} and "created_at" >= ${debut}::timestamptz
+				`)
+			);
+		}
+	});
+
 	it('refuses a move that changes neither the date nor the time, says what to do, keeps the form', async () => {
 		// Le champ s'ouvre sur la date prévue et l'heure habituelle : les renvoyer tels quels, c'est
 		// toucher « Déplacer la séance » sans rien changer. Rien ne se déplace, et rien ne s'annonce.

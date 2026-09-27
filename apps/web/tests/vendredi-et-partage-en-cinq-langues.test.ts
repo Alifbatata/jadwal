@@ -1443,6 +1443,12 @@ describe('D2 : l’écran du vendredi refuse ce qu’il ne peut pas faire, sans 
 	/** Le texte lu d'un morceau de page. */
 	const lu = (fragment: string) => visibleText(`<body>${fragment}</body>`);
 
+	/** Une date envoyée par un geste de « Ce vendredi », puis celles du formulaire d'une session. */
+	const DATE_ILLISIBLE = 'Cette date est illisible. Rechargez la page et recommencez.';
+	const DEBUT_ILLISIBLE = 'Choisissez la date à partir de laquelle la session a lieu.';
+	const FIN_ILLISIBLE = 'La date « Jusqu’au » est illisible. Choisissez-la dans le calendrier.';
+	const FIN_AVANT_DEBUT = 'La date « Jusqu’au » vient avant la date « À partir du ».';
+
 	it('refuses to cancel a past Friday, says so at the top in each language, and writes nothing', async () => {
 		const date = vendrediPasse();
 		const journalAvant = await lignesDuJournal();
@@ -1602,7 +1608,6 @@ describe('D2 : l’écran du vendredi refuse ce qu’il ne peut pas faire, sans 
 		const journalAvant = await lignesDuJournal();
 		const avant = await etatDesSessions();
 		const date = vendredi();
-		const DATE_ILLISIBLE = 'Cette date est illisible. Rechargez la page et recommencez.';
 		// Au bon format, mais impossibles : un 30 février, 25 h 99.
 		for (const [action, envoi, phrase] of [
 			['annuler', { courseId: sessions[1], date: '2026-02-30' }, DATE_ILLISIBLE],
@@ -1628,11 +1633,8 @@ describe('D2 : l’écran du vendredi refuse ce qu’il ne peut pas faire, sans 
 				{ start: '25:99' },
 				'Donnez une heure de début et une heure de fin. Exemple : 12:10 et 12:50.'
 			],
-			[{ startsOn: '2026-02-30' }, 'Choisissez la date à partir de laquelle la session a lieu.'],
-			[
-				{ endsOn: '2026-02-30' },
-				'La date « Jusqu’au » est illisible. Choisissez-la dans le calendrier.'
-			]
+			[{ startsOn: '2026-02-30' }, DEBUT_ILLISIBLE],
+			[{ endsOn: '2026-02-30' }, FIN_ILLISIBLE]
 		] as const) {
 			const reponse = await postForm(
 				'/vendredi?/enregistrer',
@@ -1644,6 +1646,85 @@ describe('D2 : l’écran du vendredi refuse ce qu’il ne peut pas faire, sans 
 		}
 		expect(await etatDesSessions()).toEqual(avant);
 		expect(await lignesDuJournal()).toBe(journalAvant);
+	});
+
+	it('refuses a date the service does not handle, the year 0000 or outside 1970 to 2100, and keeps the agenda feed readable', async () => {
+		// Le calendrier de `@jadwal/core` a un an 0000 (ADR 0012), PostgreSQL non : la requête échouait,
+		// et l'écran répondait par une erreur 500. Le 31.12.9999, la base le range, mais le flux agenda
+		// calcule le lendemain d'une date de fin, en l'an 10000, que le calcul refuse : une session qui
+		// finissait ce jour-là faisait tomber le flux de toute l'organisation. Le service s'en tient aux
+		// années que couvrent les tests du calcul, de 1970 à 2100 (étape 19, relecture de D2).
+		const TITRE = 'Prière hors des années';
+		const journalAvant = await lignesDuJournal();
+		const avant = await etatDesSessions();
+		const date = vendredi();
+		const [{ debut } = { debut: '' }] = await maintenance(async (tx) =>
+			lignes<{ debut: string }>(await tx.execute(sql`select now()::text as debut`))
+		);
+		const recus: Record<string, unknown> = {};
+		const attendus: Record<string, unknown> = {};
+		try {
+			for (const [action, envoi] of [
+				['annuler', { courseId: sessions[1], date: '0000-01-01' }],
+				['retablir', { courseId: sessions[1], date: '0000-01-01' }],
+				['deplacer', { courseId: sessions[1], date: '0000-01-01', toDate: date, toStart: '15:00' }],
+				['deplacer', { courseId: sessions[1], date, toDate: '0000-01-01', toStart: '15:00' }],
+				['annuler', { courseId: sessions[1], date: '2101-01-07' }],
+				['retablir', { courseId: sessions[1], date: '9999-12-31' }],
+				['deplacer', { courseId: sessions[1], date: '1969-12-26', toDate: date, toStart: '15:00' }],
+				['deplacer', { courseId: sessions[1], date, toDate: '9999-12-31', toStart: '15:00' }]
+			] as const) {
+				const cas = `${action} ${JSON.stringify(envoi)}`;
+				const reponse = await postForm(`/vendredi?/${action}`, envoi, cookies);
+				recus[cas] = { statut: reponse.status, phrases: enTete(await reponse.text()) };
+				attendus[cas] = { statut: 400, phrases: [DATE_ILLISIBLE] };
+			}
+			// Le formulaire d'une session : « À partir du » et « Jusqu'au ».
+			for (const [champs, phrases] of [
+				[{ startsOn: '0000-01-01', endsOn: '' }, [DEBUT_ILLISIBLE]],
+				[{ startsOn: '0000-01-01', endsOn: '0000-06-01' }, [DEBUT_ILLISIBLE, FIN_ILLISIBLE]],
+				[{ endsOn: '0000-06-01' }, [FIN_ILLISIBLE]],
+				// Publiée : le flux agenda ne montre que les sessions publiées.
+				[
+					{ startsOn: '9999-12-24', endsOn: '9999-12-31', status: 'published' },
+					[DEBUT_ILLISIBLE, FIN_ILLISIBLE]
+				],
+				[{ startsOn: '1969-12-26' }, [DEBUT_ILLISIBLE]],
+				[{ endsOn: '2101-01-07' }, [FIN_ILLISIBLE]]
+			] as const) {
+				const cas = `enregistrer ${JSON.stringify(champs)}`;
+				const reponse = await postForm(
+					'/vendredi?/enregistrer',
+					{ ...SESSION_DE_PASSAGE, title: TITRE, ...champs },
+					cookies
+				);
+				const ajout = lu(section(await reponse.text(), 'ajout'));
+				recus[cas] = {
+					statut: reponse.status,
+					phrases: [DEBUT_ILLISIBLE, FIN_ILLISIBLE, FIN_AVANT_DEBUT].filter((phrase) =>
+						ajout.includes(phrase)
+					)
+				};
+				attendus[cas] = { statut: 400, phrases };
+			}
+			recus['flux agenda'] = (await fetch(`${origin}/m/${SLUG}/agenda.ics`)).status;
+			attendus['flux agenda'] = 200;
+			expect(recus).toEqual(attendus);
+			expect(await etatDesSessions()).toEqual(avant);
+			expect(await lignesDuJournal()).toBe(journalAvant);
+		} finally {
+			// Ce qu'un envoi aurait écrit ne reste pas pour les tests suivants.
+			await maintenance(async (tx) => {
+				await tx.execute(sql`
+					delete from "session_exception"
+					where "course_id" = ${sessions[1]} and "created_at" >= ${debut}::timestamptz
+				`);
+				await tx.execute(sql`
+					delete from "course" where "id" in
+						(select "course_id" from "course_translation" where "title" = ${TITRE})
+				`);
+			});
+		}
 	});
 });
 

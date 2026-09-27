@@ -9,15 +9,17 @@
 // Ce que le formulaire ne demande pas ne se lit pas : le jour est le vendredi, le rythme chaque
 // semaine, le public tout le monde.
 
-import { isIsoDate, isLocalTime, type IsoDate, type LocalTime } from '@jadwal/core';
+import { isLocalTime, type IsoDate, type LocalTime } from '@jadwal/core';
 import { isLangue, t } from '$lib/i18n.js';
 import type { FridayError } from '$lib/i18n/friday.js';
 import type { CourseValues } from '$lib/server/courses.js';
+import { isSupportedDate } from '$lib/server/dates.js';
 
 // Les deux formes que le formulaire accepte sont celles d'un champ de date et d'heure du navigateur,
-// `AAAA-MM-JJ` et `HH:MM`, et seulement des valeurs qui existent (`isIsoDate`, `isLocalTime`). Un
-// 30 février ou 25:99 envoyé à la main passait la forme, et la base le refusait par une erreur 500
-// (étape 19, D2).
+// `AAAA-MM-JJ` et `HH:MM`, et seulement des valeurs qui existent (`isSupportedDate`, `isLocalTime`).
+// Un 30 février ou 25:99 envoyé à la main passait la forme, et la base le refusait par une erreur
+// 500 (étape 19, D2) ; l'an 0000 aussi, et une date de fin au 31.12.9999 faisait tomber le flux
+// agenda : une date s'écrit de 1970 à 2100 (relecture de D2).
 const TITRE_MAXIMAL = 120;
 
 export type FridayFormResult =
@@ -64,10 +66,10 @@ export function parseFridayForm(
 	if (sermon.length === 0) errors.push('sermonLanguageMissing');
 
 	const startsOn = text(form, 'startsOn');
-	if (!isIsoDate(startsOn)) errors.push('startDateMissing');
+	if (!isSupportedDate(startsOn)) errors.push('startDateMissing');
 	const endsOn = text(form, 'endsOn');
-	if (endsOn !== '' && !isIsoDate(endsOn)) errors.push('endDateUnreadable');
-	if (isIsoDate(startsOn) && isIsoDate(endsOn) && endsOn < startsOn) {
+	if (endsOn !== '' && !isSupportedDate(endsOn)) errors.push('endDateUnreadable');
+	if (isSupportedDate(startsOn) && isSupportedDate(endsOn) && endsOn < startsOn) {
 		errors.push('endDateBeforeStart');
 	}
 

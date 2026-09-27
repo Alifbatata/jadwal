@@ -33,15 +33,18 @@
 // - la seconde annulation d'une même séance, par une autre personne ou depuis une page restée
 //   ouverte, n'écrit rien, mais rend le message prêt à coller : la personne ne sait pas si la
 //   communauté a déjà été prévenue ;
-// - une session du vendredi a ses propres mots dans les messages (`messages.ts`).
+// - une session du vendredi a ses propres mots dans les messages (`messages.ts`) ;
+// - une date envoyée s'accepte de 1970 à 2100 (`isSupportedDate`) : l'an 0000, que PostgreSQL n'a
+//   pas, donnait une erreur 500 à Déplacer et à Rétablir (relecture de D2).
 
 import { fail } from '@sveltejs/kit';
-import { isIsoDate, todayInZone, type IsoDate } from '@jadwal/core';
+import { todayInZone, type IsoDate } from '@jadwal/core';
 import { newId, sql, type Transaction } from '@jadwal/db';
 import { LANGUES, type Langue } from '$lib/i18n.js';
 import type { NamedUpcomingError, UpcomingError } from '$lib/i18n/upcoming.js';
 import { record } from '$lib/server/audit.js';
 import { withSessionOrg } from '$lib/server/context.js';
+import { isSupportedDate } from '$lib/server/dates.js';
 import { fridayTitle } from '$lib/server/friday-title.js';
 import { mustBeInOrganisation } from '$lib/server/guard.js';
 import { etatDesSources, readReglages } from '$lib/server/prieres.js';
@@ -351,7 +354,7 @@ export const actions: Actions = {
 		const form = await event.request.formData();
 		const courseId = String(form.get('courseId') ?? '');
 		const date = String(form.get('date') ?? '');
-		if (!isIsoDate(date)) return refuse('unreadableDate', { courseId, date });
+		if (!isSupportedDate(date)) return refuse('unreadableDate', { courseId, date });
 		const now = new Date();
 		const langue: Langue = event.locals.langue ?? 'fr';
 		return withSessionOrg(context, async (tx) => {
@@ -414,8 +417,8 @@ export const actions: Actions = {
 		const toDate = String(form.get('toDate') ?? '');
 		const toStart = String(form.get('toStart') ?? '');
 		const fields = { courseId, date, toDate, toStart };
-		if (!isIsoDate(date)) return refuse('unreadableDate', fields);
-		if (!isIsoDate(toDate)) return refuse('unreadableNewDate', fields);
+		if (!isSupportedDate(date)) return refuse('unreadableDate', fields);
+		if (!isSupportedDate(toDate)) return refuse('unreadableNewDate', fields);
 		if (!HEURE.test(toStart)) return refuse('unreadableTime', fields);
 		const now = new Date();
 		const langue: Langue = event.locals.langue ?? 'fr';
@@ -504,7 +507,7 @@ export const actions: Actions = {
 		const form = await event.request.formData();
 		const courseId = String(form.get('courseId') ?? '');
 		const date = String(form.get('date') ?? '');
-		if (!isIsoDate(date)) return refuse('unreadableDate', { courseId, date });
+		if (!isSupportedDate(date)) return refuse('unreadableDate', { courseId, date });
 		return withSessionOrg(context, async (tx) => {
 			if (!(await readCourse(tx, courseId))) return refuse('sessionGone', { courseId, date }, 404);
 			await tx.execute(
