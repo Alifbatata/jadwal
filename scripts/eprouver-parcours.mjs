@@ -232,11 +232,23 @@ const SUPER_ADMIN = 'super-admin@example.test';
 const RESPONSABLE = 'responsable@example.test';
 /** Une adresse sans compte, invitée depuis un écran en allemand (retour D3). */
 const INVITEE_EN_ALLEMAND = 'eingeladen@example.test';
-const ORGANISATION = { nom: 'Centre du Parcours', slug: 'centre-parcours' };
+/**
+ * `espaceDe` : « l’espace de … » dans la phrase de l'écran d'acceptation, écrit ici en toutes
+ * lettres. Un nom qui commence par une voyelle y prend « d’ » (relevé D8 du 27.09.2026).
+ */
+const ORGANISATION = {
+	nom: 'Centre du Parcours',
+	slug: 'centre-parcours',
+	espaceDe: 'l’espace de Centre du Parcours'
+};
 /** L'adresse que l'écran du super-admin propose pour ce nom, avant qu'on la change (retour B2). */
 const ADRESSE_PROPOSEE = 'centre-du-parcours';
 /** La seconde organisation de la personne invitée, où elle est éditrice. */
-const VOISINE = { nom: 'Association voisine', slug: 'association-voisine' };
+const VOISINE = {
+	nom: 'Association voisine',
+	slug: 'association-voisine',
+	espaceDe: 'l’espace d’Association voisine'
+};
 const FUSEAU = 'Europe/Zurich';
 const SALLE = 'Grande salle';
 const COURS_1 = { fr: 'Lecture du Coran', ar: 'قراءة القرآن' };
@@ -1852,7 +1864,7 @@ async function ecranDAcceptation(page, organisation, { lienAttendu, pourquoi }) 
 	verifier(
 		'elle voit le texte entier et le bouton « J’accepte les conditions d’utilisation »',
 		(await titre(page)) === 'Conditions d’utilisation' &&
-			raison.includes(`l’espace de ${organisation.nom},`) &&
+			raison.includes(`${organisation.espaceDe},`) &&
 			(await page.locator('main ol > li').count()) === DONNEES_PERSONNELLES &&
 			(await bouton.count()) === 1,
 		raison

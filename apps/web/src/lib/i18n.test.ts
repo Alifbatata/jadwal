@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { IsoDate } from '@jadwal/core';
 import {
+	deDevant,
 	direction,
 	documentDansSaLangue,
 	LANGUES,
@@ -18,6 +19,7 @@ import {
 	t,
 	type Langue
 } from './i18n.js';
+import { termsTexts } from './i18n/terms.js';
 import { upcomingTexts } from './i18n/upcoming.js';
 
 const ar = t('ar');
@@ -53,6 +55,86 @@ describe('l’italien devant un jour de la semaine', () => {
 				longDate('it', '2026-10-10' as IsoDate)
 			)
 		).toBe('Da domenica 04.10.2026 a sabato 10.10.2026');
+	});
+});
+
+/**
+ * « de » devant un nom d'organisation ou de cours, en français (relevé D8 du 27.09.2026) : « le
+ * programme de Organisation d'essai » et « l'espace de Organisation d'essai » s'écrivaient sans
+ * élision. Une seule fonction décide, `deDevant`, et chaque phrase qui écrit « de » devant un nom
+ * passe par elle.
+ */
+describe('l’élision de « de » devant un nom, en français', () => {
+	it('elides before a vowel, accented or not, capital or not', () => {
+		for (const nom of [
+			'Organisation d’essai',
+			'Association des prières',
+			'Espace Dialogue',
+			'Institut du Lac',
+			'Union des étudiants',
+			'École du Lac',
+			'Église du Centre',
+			'Île aux livres',
+			'Œuvre du soir',
+			'Ânes et compagnie',
+			'atelier du mardi',
+			'Yverdon ensemble'
+		]) {
+			expect(deDevant(nom), nom).toBe('d’');
+		}
+	});
+
+	it('keeps « de » before a consonant, an h, a y that sounds like a consonant, and the rest', () => {
+		for (const nom of [
+			'Centre du Parcours',
+			'Bienne',
+			// Le h ne s'élide jamais ici, muet ou aspiré : l'écriture ne dit pas lequel, et « de Hauterive »
+			// se lit sans faute là où « d’Hollande » en serait une.
+			'Hauterive',
+			'Haute école',
+			'hôtel de ville',
+			// Un y suivi d'une voyelle se prononce comme une consonne : « de Yasmine », « du Yémen ».
+			'Yasmine',
+			'Yémen Solidarité',
+			'2 Rives',
+			'« Espace » libre',
+			'جمعية بلفيدير',
+			''
+		]) {
+			expect(deDevant(nom), nom).toBe('de ');
+		}
+	});
+
+	it('writes the programme and the space of an organisation whose name starts with a vowel', () => {
+		expect(t('fr').subscribeIntro('Organisation d’essai')).toBe(
+			'Le programme d’Organisation d’essai s’ajoute à votre calendrier et se met à jour tout seul. Rien à réinstaller quand un cours change.'
+		);
+		expect(t('fr').subscribeIntro('Centre du Lac')).toMatch(/^Le programme de Centre du Lac /);
+		expect(termsTexts.fr.acceptIntro.before('Organisation d’essai')).toBe(
+			'Avant d’entrer dans l’espace d’'
+		);
+		expect(termsTexts.fr.acceptIntro.before('Centre du Lac')).toBe(
+			'Avant d’entrer dans l’espace de '
+		);
+		expect(termsTexts.fr.closedUntil('Organisation d’essai')).toBe(
+			'Tant que vous ne les avez pas acceptées, l’espace d’Organisation d’essai reste fermé.'
+		);
+		expect(termsTexts.fr.closedUntil('Centre du Lac')).toBe(
+			'Tant que vous ne les avez pas acceptées, l’espace de Centre du Lac reste fermé.'
+		);
+	});
+
+	it('leaves the other languages as they were, a space before the name', () => {
+		expect(
+			(['de', 'it', 'en', 'ar'] as const).map((langue) =>
+				termsTexts[langue].acceptIntro.before('Organisation d’essai')
+			)
+		).toEqual([
+			'Bevor Sie den Bereich von ',
+			'Prima di entrare nell’area di ',
+			'Before you enter the area of ',
+			'قبل الدخول إلى مساحة '
+		]);
 	});
 });
 

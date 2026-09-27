@@ -272,6 +272,31 @@ function selonLeNombre(nombre: number, formes: Record<Intl.LDMLPluralRule, strin
 	return formes[PLURIEL_ARABE.select(nombre)];
 }
 
+/**
+ * « de » ou « d’ », devant un nom d'organisation ou de cours, en français : « le programme
+ * d’Organisation d’essai », « l’espace de Centre du Lac ». C'est la seule fonction qui en décide ;
+ * toute phrase française qui écrit « de » devant un nom passe par elle (relevé D8 du 27.09.2026).
+ * Elle rend la préposition avec ce qui la sépare du nom, une espace ou rien, pour qu'un gabarit qui
+ * met le nom en gras puisse le coller derrière.
+ *
+ * La règle, lue sur la première lettre du nom :
+ * - une voyelle, accentuée ou non, majuscule ou non, et « æ », « œ » : « d’ » ;
+ * - un « y » suivi d'une consonne se lit comme une voyelle : « d’Yverdon » ; suivi d'une voyelle, il
+ *   se lit comme une consonne : « de Yasmine » ;
+ * - un « h », muet ou aspiré, garde « de » : l'écriture ne dit pas lequel des deux il est, et
+ *   « de Hauterive » se lit sans faute là où « d’Hollande » en serait une ;
+ * - tout le reste garde « de » : une consonne, un chiffre, un guillemet, une autre écriture.
+ *
+ * La décomposition Unicode ramène une voyelle accentuée à sa lettre de base : « É » devient « E »
+ * suivi de son accent.
+ */
+export function deDevant(nom: string): 'de ' | 'd’' {
+	const lettres = nom.trimStart().normalize('NFD');
+	if (/^[aeiouæœ]/i.test(lettres)) return 'd’';
+	if (/^y[^aeiouy\p{M}\P{L}]/iu.test(lettres)) return 'd’';
+	return 'de ';
+}
+
 const fr: Dictionnaire = {
 	weekdays: ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'],
 	shortWeekdays: ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'],
@@ -340,7 +365,7 @@ const fr: Dictionnaire = {
 	subscribe: 'S’abonner au calendrier',
 	subscribeTitle: 'S’abonner au calendrier',
 	subscribeIntro: (name) =>
-		`Le programme de ${name} s’ajoute à votre calendrier et se met à jour tout seul. Rien à réinstaller quand un cours change.`,
+		`Le programme ${deDevant(name)}${name} s’ajoute à votre calendrier et se met à jour tout seul. Rien à réinstaller quand un cours change.`,
 	subscribeButton: 'Ajouter à mon calendrier',
 	addToGoogle: 'Ajouter à Google Agenda',
 	subscribeAddress: 'Ou copiez cette adresse dans votre application de calendrier :',

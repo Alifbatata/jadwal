@@ -84,7 +84,9 @@ c'est lui qui propose ce texte.
 2. Pourquoi l'écran s'affiche :
    `Avant d'entrer dans l'espace de <organisation>, lisez les conditions d'utilisation et
 acceptez-les. Elles disent ce que le service conserve, combien de temps, et ce que l'exploitant peut
-voir.`
+voir.` Devant un nom qui commence par une voyelle, « de » s'élide : `l'espace d'Organisation
+d'essai` (relevé D8 du 27.09.2026, règle de `deDevant` dans `apps/web/src/lib/i18n.ts` : jamais
+   devant un « h », et devant un « y » seulement quand une consonne le suit).
 3. La version : `Version du <date>`, la même date, par exemple `Version du 26.09.2026`, puis
    `Si le texte change, cet écran vous demandera de nouveau votre accord.`
 4. Pour une personne membre de plusieurs organisations, ou qui a une invitation qui court encore
@@ -95,7 +97,8 @@ voir.`
    `Ce texte s'adresse aux organisations […]`.
 6. Le bouton, seul dans son formulaire : `J'accepte les conditions d'utilisation`.
 7. Sous le bouton :
-   `Tant que vous ne les avez pas acceptées, l'espace de <organisation> reste fermé.`
+   `Tant que vous ne les avez pas acceptées, l'espace de <organisation> reste fermé.`, avec la même
+   élision.
 
 ### L'en-tête, pendant ce temps
 

@@ -5,6 +5,7 @@
 // le juriste, et celui que chacun accepte (retour D4, ADR 0044). Dans les quatre autres langues, une
 // phrase le dit en tête de la page.
 
+import { deDevant } from '../i18n.js';
 import type { Translations } from './space.js';
 
 interface TermsTexts {
@@ -13,9 +14,13 @@ interface TermsTexts {
 	readonly onlyInFrench: string | null;
 	/**
 	 * Ce que l'écran d'acceptation demande, autour du nom de l'organisation, mis en valeur entre les
-	 * deux parties. `after` commence par sa ponctuation.
+	 * deux parties. `before` finit par ce qui le sépare du nom, une espace, ou rien après l'« d’ » du
+	 * français (`deDevant`) ; `after` commence par sa ponctuation.
 	 */
-	readonly acceptIntro: { readonly before: string; readonly after: string };
+	readonly acceptIntro: {
+		readonly before: (organisation: string) => string;
+		readonly after: string;
+	};
 	readonly askedAgain: string;
 	/** « Version du 26.09.2026 ». */
 	readonly version: (date: string) => string;
@@ -29,7 +34,7 @@ export const termsTexts: Translations<TermsTexts> = {
 		title: 'Conditions d’utilisation',
 		onlyInFrench: null,
 		acceptIntro: {
-			before: 'Avant d’entrer dans l’espace de',
+			before: (organisation) => `Avant d’entrer dans l’espace ${deDevant(organisation)}`,
 			after:
 				', lisez les conditions d’utilisation et acceptez-les. Elles disent ce que le service conserve, combien de temps, et ce que l’exploitant peut voir.'
 		},
@@ -38,13 +43,13 @@ export const termsTexts: Translations<TermsTexts> = {
 		otherOrganisation: 'Choisir une autre organisation',
 		accept: 'J’accepte les conditions d’utilisation',
 		closedUntil: (organisation) =>
-			`Tant que vous ne les avez pas acceptées, l’espace de ${organisation} reste fermé.`
+			`Tant que vous ne les avez pas acceptées, l’espace ${deDevant(organisation)}${organisation} reste fermé.`
 	},
 	de: {
 		title: 'Nutzungsbedingungen',
 		onlyInFrench: 'Diesen Text gibt es vorerst nur auf Französisch.',
 		acceptIntro: {
-			before: 'Bevor Sie den Bereich von',
+			before: () => 'Bevor Sie den Bereich von ',
 			after:
 				' betreten, lesen Sie die Nutzungsbedingungen und akzeptieren Sie sie. Sie sagen, was der Dienst speichert, wie lange, und was der Betreiber sehen kann.'
 		},
@@ -59,7 +64,7 @@ export const termsTexts: Translations<TermsTexts> = {
 		title: 'Condizioni d’uso',
 		onlyInFrench: 'Per ora questo testo esiste solo in francese.',
 		acceptIntro: {
-			before: 'Prima di entrare nell’area di',
+			before: () => 'Prima di entrare nell’area di ',
 			after:
 				', leggi le condizioni d’uso e accettale. Dicono che cosa conserva il servizio, per quanto tempo e che cosa può vedere chi lo gestisce.'
 		},
@@ -74,7 +79,7 @@ export const termsTexts: Translations<TermsTexts> = {
 		title: 'Terms of use',
 		onlyInFrench: 'For now, this text only exists in French.',
 		acceptIntro: {
-			before: 'Before you enter the area of',
+			before: () => 'Before you enter the area of ',
 			after:
 				', read the terms of use and accept them. They say what the service keeps, for how long, and what the operator can see.'
 		},
@@ -89,7 +94,7 @@ export const termsTexts: Translations<TermsTexts> = {
 		title: 'شروط الاستخدام',
 		onlyInFrench: 'هذا النص متوفر بالفرنسية فقط في الوقت الحالي.',
 		acceptIntro: {
-			before: 'قبل الدخول إلى مساحة',
+			before: () => 'قبل الدخول إلى مساحة ',
 			after:
 				'، اقرأ شروط الاستخدام ووافق عليها. فهي تبيّن ما تحفظه الخدمة، ولأي مدة، وما يستطيع المشغّل رؤيته.'
 		},

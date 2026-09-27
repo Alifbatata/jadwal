@@ -952,6 +952,19 @@ describe('« Ajouter ce cours à mon agenda » selon l’appareil (E1)', () => {
 	});
 });
 
+describe('« de » devant le nom de l’organisation, en français (D8)', () => {
+	// « Association des prières » commence par une voyelle : « le programme d’Association… », et non
+	// « le programme de Association… » (relevé D8 du 27.09.2026).
+	it('elides « de » before the name, in the page and in its description', async () => {
+		const { html } = await servir(`/m/${SLUG}/agenda`, IPHONE);
+		const phrase = `Le programme d’${NOM} s’ajoute à votre calendrier et se met à jour tout seul.`;
+		expect(lu(html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/)?.[1] ?? '')).toContain(phrase);
+		const description = html.match(/<meta name="description"[^>]*>/)?.[0] ?? '';
+		expect(attributs(description)['content']).toContain(phrase);
+		expect(html).not.toContain(`programme de ${NOM}`);
+	});
+});
+
 describe('le délai de Google, dans les textes d’aide (E2)', () => {
 	it.each(LANGUES)('says in %s that Google can take up to 24 hours', async (langue) => {
 		// Sur Android, sous le bouton ; ailleurs, sous le choix de Google ; et dans les étapes à la main.

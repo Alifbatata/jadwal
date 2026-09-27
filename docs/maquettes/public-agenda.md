@@ -19,8 +19,9 @@ que soit l'appareil : `?appareil=tous`.
    son programme, et les langues qu'elle publie. Pas de vues ni de filtres : le flux porte tout le
    programme.
 2. **Un paragraphe** : `Le programme de <Nom de l'organisation> s'ajoute à votre calendrier et se
-met à jour tout seul. Rien à réinstaller quand un cours change.` Il ne promet plus de délai :
-   Google peut mettre jusqu'à un jour.
+met à jour tout seul. Rien à réinstaller quand un cours change.` Devant un nom qui commence par une
+   voyelle, « de » s'élide : `Le programme d'Organisation d'essai` (relevé D8, `deDevant`). Il ne
+   promet plus de délai : Google peut mettre jusqu'à un jour.
 3. **Tout le programme**, titre de niveau 2, puis le bloc qui dépend de l'appareil (voir plus bas).
 4. **Un seul cours**, titre de niveau 2, quand l'organisation a au moins un cours publié : une
    phrase, puis la liste des cours, un par ligne, chacun en lien vers **son** flux (ADR 0028). Le

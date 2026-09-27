@@ -293,8 +293,10 @@ describe('la porte de l’espace des responsables', () => {
 		const html = await reponse.text();
 		expect(html).toContain('<title>Conditions d’utilisation | jadwal</title>');
 		// Le nom est isolé (`<bdi>`) : un nom latin garde son sens dans une page arabe, et l'inverse.
+		// « Association… » commence par une voyelle : « d’ », collé au nom, sans espace entre les deux
+		// (relevé D8 du 27.09.2026 ; la règle est celle de `deDevant`, dans `i18n.ts`).
 		expect(html).toContain(
-			`Avant d’entrer dans l’espace de <strong><bdi>${ORGANISATION}</bdi></strong>`
+			`Avant d’entrer dans l’espace d’<strong><bdi>${ORGANISATION}</bdi></strong>`
 		);
 		// JJ.MM.AAAA, comme toutes les dates de l'espace depuis l'étape 18 (retour A3).
 		const [annee, mois, jour] = VERSION_DES_CONDITIONS.split('-');
@@ -306,7 +308,7 @@ describe('la porte de l’espace des responsables', () => {
 		// sont déjà enregistrés, « rien n'est enregistré » serait faux.
 		expect(html).toMatch(
 			new RegExp(
-				`<p\\b[^>]*>\\s*Tant que vous ne les avez pas acceptées, l’espace de ${ORGANISATION} reste fermé\\.\\s*</p>`
+				`<p\\b[^>]*>\\s*Tant que vous ne les avez pas acceptées, l’espace d’${ORGANISATION} reste fermé\\.\\s*</p>`
 			)
 		);
 		expect(html).not.toContain('rien n’est enregistré');

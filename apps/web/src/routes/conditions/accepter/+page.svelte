@@ -5,6 +5,11 @@
 
 	let { data } = $props();
 	const text = $derived(termsTexts[data.language]);
+	/**
+	 * Le début de la phrase, jusqu'au nom : il porte lui-même ce qui l'en sépare, une espace, ou
+	 * l'« d’ » du français collé au nom (`deDevant`). Rien ne s'écrit donc entre les deux.
+	 */
+	const avantLeNom = $derived(text.acceptIntro.before(data.organisation));
 </script>
 
 <svelte:head><title>{text.title} | jadwal</title></svelte:head>
@@ -12,8 +17,7 @@
 <h1>{text.title}</h1>
 
 <p class="raison">
-	{text.acceptIntro.before}
-	<strong><bdi>{data.organisation}</bdi></strong>{text.acceptIntro.after}
+	{avantLeNom}<strong><bdi>{data.organisation}</bdi></strong>{text.acceptIntro.after}
 </p>
 <p class="version">{text.version(data.date)}</p>
 <p class="version encore">{text.askedAgain}</p>

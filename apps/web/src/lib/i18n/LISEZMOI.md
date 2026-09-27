@@ -79,6 +79,10 @@ droite à gauche. Les pages publiques ont les leurs dans `../i18n.ts`.
   le lirait comme un mot.
 - Un nom d'organisation ou une adresse électronique va dans `<bdi>` : il garde son sens au milieu
   d'une phrase arabe.
+- En français, « de » devant un nom d'organisation ou de cours passe par `deDevant` de `../i18n.ts`,
+  qui rend « d’ » devant une voyelle : `l’espace d’Organisation d’essai`. Jamais devant un « h », et
+  devant un « y » seulement quand une consonne le suit. Un texte qui écrit « de » en dur devant un
+  nom se trompera un jour sur deux.
 
 ## L'arabe, de droite à gauche
 
