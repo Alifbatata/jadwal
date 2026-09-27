@@ -6,6 +6,11 @@
 //
 // Les actions rendent le nom d'une erreur, jamais sa phrase : la page l'écrit dans la langue de
 // l'écran (`$lib/i18n/members.ts`, étape 18).
+//
+// Retirer un membre et changer un rôle demandent une confirmation (étape 19), comme la suppression
+// d'une salle occupée : le premier envoi ne change rien, il rend ce que la page demande de
+// confirmer, et c'est le second, qui porte `confirm=yes`, qui écrit. Un formulaire ordinaire à
+// chaque fois : sans JavaScript comme avec.
 
 import { fail, redirect } from '@sveltejs/kit';
 import type { IsoDate } from '@jadwal/core';
@@ -22,6 +27,24 @@ import { SELF_EDITOR_ARRIVAL } from './self-editor.js';
 /** Quatorze jours : assez pour une absence, assez court pour ne pas traîner. */
 const INVITATION_DAYS = 14;
 const ADRESSE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** Un identifiant d'adhésion. Autre chose n'atteint pas la base, qui le refuserait en erreur. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+type Transaction = Parameters<Parameters<typeof withSessionOrg>[1]>[0];
+type Role = 'org_admin' | 'editor';
+
+/**
+ * Ce que la page demande de confirmer : le geste, le membre visé, et le rôle qu'il recevrait. La page
+ * renvoie les mêmes valeurs, avec `confirm=yes`, dans le formulaire de la demande.
+ */
+interface Confirmation {
+	geste: 'retirer' | 'role';
+	membershipId: string;
+	email: string;
+	/** La personne se vise elle-même : la page lui parle d'elle, sans son adresse. */
+	soiMeme: boolean;
+	role: Role | null;
+}
 
 /**
  * La seule réponse que l'invitation sait donner, quelle que soit l'adresse (ADR 0017). La page
@@ -93,13 +116,67 @@ export const load: PageServerLoad = async (event) => {
  * depuis la migration 0055 ; avant, il les voyait toutes, et l'invitation envoyée depuis la seconde
  * nommait la première (`readSettings` le dit aussi).
  */
-async function organisationName(tx: Parameters<Parameters<typeof withSessionOrg>[1]>[0]) {
+async function organisationName(tx: Transaction) {
 	const found = rows<{ name: string }>(
 		await tx.execute(
 			sql`select "name" from "organization" where "id" = (select jadwal.current_org_id())`
 		)
 	);
 	return found[0]?.name ?? '';
+}
+
+/** Le membre que vise un geste, tel que la base le montre dans l'organisation du contexte. */
+interface Member {
+	id: string;
+	user_id: string;
+	role: Role;
+	email: string;
+	/** Le nombre de personnes responsables de l'organisation, celle-ci comprise si elle l'est. */
+	managers: number;
+}
+
+/**
+ * Le membre que vise un geste, ou `null`. L'organisation est nommée : la politique rend aussi à la
+ * personne connectée ses adhésions des autres organisations (migration 0022), et un identifiant pris
+ * ailleurs ne doit rien viser ici. Un identifiant mal formé ne désigne personne, sans passer par la
+ * base. Jusqu'à l'étape 19, il la faisait échouer (erreur 500), et une adhésion inconnue était dite
+ * « retirée ».
+ */
+async function readMember(
+	tx: Transaction,
+	organizationId: string,
+	membershipId: string
+): Promise<Member | null> {
+	if (!UUID.test(membershipId)) return null;
+	const [found] = rows<Omit<Member, 'managers'> & { managers: number | string }>(
+		await tx.execute(sql`
+			select m."id", m."user_id", m."role", u."email",
+				(select count(*) from "membership" r
+					where r."organization_id" = m."organization_id" and r."role" = 'org_admin') as "managers"
+			from "membership" m join "user" u on u."id" = m."user_id"
+			where m."id" = ${membershipId} and m."organization_id" = ${organizationId}
+		`)
+	);
+	return found ? { ...found, managers: Number(found.managers) } : null;
+}
+
+/**
+ * Ce que le premier ou le second envoi d'un geste sur un membre a donné : un membre introuvable, un
+ * refus, la demande de confirmation, ou le geste fait.
+ */
+type Issue =
+	| { readonly kind: 'gone' }
+	| { readonly kind: 'lastManager' }
+	| { readonly kind: 'ask'; readonly email: string; readonly soiMeme: boolean }
+	| { readonly kind: 'done'; readonly soiMeme: boolean };
+
+/**
+ * Le geste laisserait l'organisation sans personne responsable. La page le dit avant de demander une
+ * confirmation qui ne mènerait qu'au refus de la base. Le déclencheur de la base reste la vérité : il
+ * est traduit plus bas, au cas où la dernière autre responsable partirait entre les deux envois.
+ */
+function leavesNoManager(member: Member, newRole: Role | null): boolean {
+	return member.role === 'org_admin' && newRole !== 'org_admin' && member.managers <= 1;
 }
 
 /**
@@ -227,18 +304,45 @@ export const actions: Actions = {
 		if (!mustBeAdmin(context.role)) {
 			return fail(403, { error: 'notManager' as const });
 		}
-		const membershipId = String((await request.formData()).get('membershipId') ?? '');
+		const form = await request.formData();
+		const membershipId = String(form.get('membershipId') ?? '');
+		const confirme = String(form.get('confirm') ?? '') === 'yes';
+		let issue: Issue;
 		try {
-			await withSessionOrg(context, async (tx) => {
-				await tx.execute(sql`delete from "membership" where "id" = ${membershipId}`);
+			issue = await withSessionOrg(context, async (tx): Promise<Issue> => {
+				const member = await readMember(tx, context.organizationId, membershipId);
+				if (!member) return { kind: 'gone' };
+				const soiMeme = member.user_id === context.userId;
+				if (!confirme) {
+					if (leavesNoManager(member, null)) return { kind: 'lastManager' };
+					return { kind: 'ask', email: member.email, soiMeme };
+				}
+				await tx.execute(sql`
+					delete from "membership"
+					where "id" = ${member.id} and "organization_id" = ${context.organizationId}
+				`);
 				await record(tx, context.organizationId, context.userId, {
 					action: 'member.remove',
 					targetTable: 'membership',
-					targetId: membershipId
+					targetId: member.id,
+					before: { role: member.role }
 				});
+				return { kind: 'done', soiMeme };
 			});
 		} catch (error) {
 			return fail(409, { error: derniereResponsable(error) });
+		}
+		if (issue.kind === 'gone') return fail(404, { error: 'memberGone' as const });
+		if (issue.kind === 'lastManager') return fail(409, { error: 'lastManager' as const });
+		if (issue.kind === 'ask') {
+			const aConfirmer: Confirmation = {
+				geste: 'retirer',
+				membershipId,
+				email: issue.email,
+				soiMeme: issue.soiMeme,
+				role: null
+			};
+			return { aConfirmer };
 		}
 		return { retire: true };
 	},
@@ -251,32 +355,53 @@ export const actions: Actions = {
 		}
 		const form = await request.formData();
 		const membershipId = String(form.get('membershipId') ?? '');
-		const role = String(form.get('role') ?? '');
-		if (role !== 'org_admin' && role !== 'editor') {
+		const demande = String(form.get('role') ?? '');
+		const confirme = String(form.get('confirm') ?? '') === 'yes';
+		if (demande !== 'org_admin' && demande !== 'editor') {
 			return fail(400, { error: 'unknownRole' as const });
 		}
-		let soiMeme = false;
+		const role: Role = demande;
+		let issue: Issue;
 		try {
-			await withSessionOrg(context, async (tx) => {
-				const changees = rows<{ user_id: string }>(
-					await tx.execute(
-						sql`update "membership" set "role" = ${role}, "updated_at" = now() where "id" = ${membershipId} returning "user_id"`
-					)
-				);
-				soiMeme = changees.some((ligne) => ligne.user_id === context.userId);
+			issue = await withSessionOrg(context, async (tx): Promise<Issue> => {
+				const member = await readMember(tx, context.organizationId, membershipId);
+				if (!member) return { kind: 'gone' };
+				const soiMeme = member.user_id === context.userId;
+				// Le premier envoi ne change rien : il rend la demande de confirmation (étape 19).
+				if (!confirme) {
+					if (leavesNoManager(member, role)) return { kind: 'lastManager' };
+					return { kind: 'ask', email: member.email, soiMeme };
+				}
+				await tx.execute(sql`
+					update "membership" set "role" = ${role}, "updated_at" = now()
+					where "id" = ${member.id} and "organization_id" = ${context.organizationId}
+				`);
 				await record(tx, context.organizationId, context.userId, {
 					action: 'member.role',
 					targetTable: 'membership',
-					targetId: membershipId,
+					targetId: member.id,
 					after: { role }
 				});
+				return { kind: 'done', soiMeme };
 			});
 		} catch (error) {
 			return fail(409, { error: derniereResponsable(error) });
 		}
+		if (issue.kind === 'gone') return fail(404, { error: 'memberGone' as const });
+		if (issue.kind === 'lastManager') return fail(409, { error: 'lastManager' as const });
+		if (issue.kind === 'ask') {
+			const aConfirmer: Confirmation = {
+				geste: 'role',
+				membershipId,
+				email: issue.email,
+				soiMeme: issue.soiMeme,
+				role
+			};
+			return { aConfirmer };
+		}
 		// Une responsable qui se donne le rôle d'éditeur ne peut plus ouvrir cet écran : elle va sur
 		// « À venir », où la coquille lui dit ce qui s'est passé (`self-editor.ts`).
-		if (soiMeme && role === 'editor') redirect(303, SELF_EDITOR_ARRIVAL);
+		if (issue.soiMeme && role === 'editor') redirect(303, SELF_EDITOR_ARRIVAL);
 		// Le nouveau rôle revient à la page, qui le nomme dans son message.
 		return { change: true, role };
 	}

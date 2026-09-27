@@ -1293,22 +1293,237 @@ describe('annuler, retirer, changer un rôle : Membres dit ce qui est fait (reto
 		expect(annulee.status).toBe(200);
 		expect(statut(await annulee.text())).toBe(FAIT[langue].annulee);
 
+		// Retirer et changer un rôle demandent une confirmation (étape 19) : c'est la réponse au second
+		// envoi, celui qui confirme, qui dit ce qui est fait.
 		for (const [role, attendu] of [
 			['org_admin', FAIT[langue].responsable],
 			['editor', FAIT[langue].editeur]
 		] as const) {
-			const change = await postForm('/membres?/role', { membershipId: adhesion, role }, cookie);
+			const change = await postForm(
+				'/membres?/role',
+				{ membershipId: adhesion, role, confirm: 'yes' },
+				cookie
+			);
 			expect(change.status).toBe(200);
 			expect(statut(await change.text())).toBe(attendu);
 		}
 
-		const retire = await postForm('/membres?/retirer', { membershipId: adhesion }, cookie);
+		const retire = await postForm(
+			'/membres?/retirer',
+			{ membershipId: adhesion, confirm: 'yes' },
+			cookie
+		);
 		expect(retire.status).toBe(200);
 		const html = await retire.text();
 		expect(statut(html)).toBe(FAIT[langue].retire);
 		expect(html).not.toContain(MEMBRE);
 		await remettreLeMembre();
 	});
+});
+
+/** Ce que la demande de confirmation dit, devant l'adresse du membre visé, dans chaque langue. */
+const AVANT_DE_CONFIRMER: Record<
+	Langue,
+	{ retirer: string; responsable: string; editeur: string; bouton: string; garder: string }
+> = {
+	fr: {
+		retirer: 'Vous allez retirer cette personne de l’organisation :',
+		responsable: 'Vous allez donner le rôle de responsable à cette personne :',
+		editeur: 'Vous allez donner le rôle d’éditeur à cette personne :',
+		bouton: 'Retirer cette personne',
+		garder: 'Ne rien changer'
+	},
+	de: {
+		retirer: 'Sie sind dabei, diese Person aus der Organisation zu entfernen:',
+		responsable: 'Sie sind dabei, dieser Person die Rolle «Leitung» zu geben:',
+		editeur: 'Sie sind dabei, dieser Person die Rolle «Redaktion» zu geben:',
+		bouton: 'Person entfernen',
+		garder: 'Nichts ändern'
+	},
+	it: {
+		retirer: 'Stai per rimuovere questa persona dall’organizzazione:',
+		responsable: 'Stai per dare il ruolo di responsabile a questa persona:',
+		editeur: 'Stai per dare il ruolo di redattore a questa persona:',
+		bouton: 'Rimuovi questa persona',
+		garder: 'Non cambiare nulla'
+	},
+	en: {
+		retirer: 'You are about to remove this person from the organisation:',
+		responsable: 'You are about to give the manager role to this person:',
+		editeur: 'You are about to give the editor role to this person:',
+		bouton: 'Remove this person',
+		garder: 'Change nothing'
+	},
+	ar: {
+		retirer: 'أنت على وشك إزالة هذا الشخص من المؤسسة:',
+		responsable: 'أنت على وشك منح دور المسؤول لهذا الشخص:',
+		editeur: 'أنت على وشك منح دور المحرر لهذا الشخص:',
+		bouton: 'إزالة هذا الشخص',
+		garder: 'إبقاء كل شيء كما هو'
+	}
+};
+
+/** Ce que Membres répond pour une adhésion qu'il ne trouve pas dans l'organisation. */
+const MEMBRE_DISPARU: Record<Langue, string> = {
+	fr: 'Cette personne ne fait plus partie de l’organisation.',
+	de: 'Diese Person gehört nicht mehr zur Organisation.',
+	it: 'Questa persona non fa più parte dell’organizzazione.',
+	en: 'This person is no longer part of the organisation.',
+	ar: 'لم يعد هذا الشخص عضوًا في المؤسسة.'
+};
+
+/** Le rôle d'une adhésion, relevé par le propriétaire ; `undefined` si elle n'existe plus. */
+async function roleDe(membershipId: string): Promise<string | undefined> {
+	const [ligne] = await maintenance(async (tx) =>
+		lignes<{ role: string }>(
+			await tx.execute(sql`select "role" from "membership" where "id" = ${membershipId}`)
+		)
+	);
+	return ligne?.role;
+}
+
+describe('retirer un membre, changer un rôle : Membres demande de confirmer (étape 19)', () => {
+	const A_CONFIRMER = 'mr-a-confirmer@example.test';
+	const personne = newId();
+	const adhesion = newId();
+	let cookie = '';
+
+	async function remettre(): Promise<void> {
+		await maintenance((tx) =>
+			tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${adhesion}, ${organizationId}, ${personne}, 'editor')
+				on conflict ("id") do update set "role" = 'editor'
+			`)
+		);
+	}
+
+	beforeAll(async () => {
+		await maintenance((tx) =>
+			tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified") values (${personne}, ${A_CONFIRMER}, true)
+			`)
+		);
+		await remettre();
+		cookie = await signIn(RESPONSABLE);
+	});
+
+	afterAll(async () => {
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		await maintenance((tx) => tx.execute(sql`delete from "membership" where "id" = ${adhesion}`));
+	});
+
+	/** La demande, telle qu'elle revient du premier envoi : en haut, annoncée, avec sa réponse. */
+	function demandeDe(html: string): string {
+		const boite = element(html, 'confirmer-membre');
+		expect(boite, 'la demande de confirmation').toMatch(/role="alert"/);
+		// En haut, avant la liste des membres : après l'envoi, la page s'ouvre en haut, avec ou sans
+		// JavaScript, et la demande doit s'y lire sans chercher.
+		const place = html.indexOf('id="confirmer-membre"');
+		expect(place).toBeGreaterThan(html.indexOf('<h1'));
+		expect(place).toBeLessThan(html.indexOf('<ul class="membres'));
+		// « Ne rien changer » est un lien, qui ramène à l'écran sans rien envoyer.
+		const garder = boite.match(/<a\b[^>]*\bhref="([^"]*)"/)?.[1] ?? '';
+		expect(garder).not.toBe('');
+		expect(new URL(garder, `${origin}/membres`).pathname).toBe('/membres');
+		return boite;
+	}
+
+	it.each(LANGUES)(
+		'asks in %s before removing a member, and removes nothing until confirmed',
+		async (langue) => {
+			await remettre();
+			await poserLangueDuCompte(RESPONSABLE, langue);
+			const bouton = formulaireDeLaPage(
+				await page200('/membres', cookie),
+				'?/retirer',
+				avec({ membershipId: adhesion })
+			);
+			expect(bouton).toEqual({ membershipId: adhesion });
+			const demande = await postForm('/membres?/retirer', bouton ?? {}, cookie);
+			expect(demande.status).toBe(200);
+			const boite = demandeDe(await demande.text());
+			expect(lu(boite)).toContain(`${AVANT_DE_CONFIRMER[langue].retirer} ${A_CONFIRMER}`);
+			expect(boite).toContain(`<bdi>${A_CONFIRMER}</bdi>`);
+			expect(lu(boite)).toContain(AVANT_DE_CONFIRMER[langue].garder);
+			expect(await roleDe(adhesion), 'rien n’est retiré avant la confirmation').toBe('editor');
+
+			const confirmer = formulaireDeLaPage(boite, '?/retirer');
+			expect(confirmer).toEqual({ membershipId: adhesion, confirm: 'yes' });
+			expect(lu(boite.match(/<form\b[\s\S]*?<\/form>/)?.[0] ?? '')).toBe(
+				AVANT_DE_CONFIRMER[langue].bouton
+			);
+			const fait = await postForm('/membres?/retirer', confirmer ?? {}, cookie);
+			expect(fait.status).toBe(200);
+			expect(statut(await fait.text())).toBe(FAIT[langue].retire);
+			expect(await roleDe(adhesion)).toBeUndefined();
+		}
+	);
+
+	it.each(LANGUES)(
+		'asks in %s before changing a role, and changes nothing until confirmed',
+		async (langue) => {
+			await remettre();
+			await poserLangueDuCompte(RESPONSABLE, langue);
+			for (const [role, avant, fait] of [
+				['org_admin', AVANT_DE_CONFIRMER[langue].responsable, FAIT[langue].responsable],
+				['editor', AVANT_DE_CONFIRMER[langue].editeur, FAIT[langue].editeur]
+			] as const) {
+				const bouton = formulaireDeLaPage(
+					await page200('/membres', cookie),
+					'?/role',
+					avec({ membershipId: adhesion })
+				);
+				expect(bouton).toEqual({ membershipId: adhesion, role });
+				const demande = await postForm('/membres?/role', bouton ?? {}, cookie);
+				expect(demande.status).toBe(200);
+				const boite = demandeDe(await demande.text());
+				expect(lu(boite)).toContain(`${avant} ${A_CONFIRMER}`);
+				expect(await roleDe(adhesion), 'rien ne change avant la confirmation').toBe(
+					role === 'org_admin' ? 'editor' : 'org_admin'
+				);
+				const confirmer = formulaireDeLaPage(boite, '?/role');
+				expect(confirmer).toEqual({ membershipId: adhesion, role, confirm: 'yes' });
+				const change = await postForm('/membres?/role', confirmer ?? {}, cookie);
+				expect(change.status).toBe(200);
+				expect(statut(await change.text())).toBe(fait);
+				expect(await roleDe(adhesion)).toBe(role);
+			}
+		}
+	);
+
+	it.each(LANGUES)(
+		'answers in %s a member it cannot find with a sentence, never a 500, and changes nothing',
+		async (langue) => {
+			await remettre();
+			await poserLangueDuCompte(RESPONSABLE, langue);
+			// L'adhésion de l'éditrice dans une autre organisation : la base ne la montre pas ici.
+			const [ailleurs] = await maintenance(async (tx) =>
+				lignes<{ id: string }>(
+					await tx.execute(sql`
+						select "id" from "membership"
+						where "organization_id" = ${VOISINE.id} and "user_id" = ${ids[EDITRICE] ?? ''}
+					`)
+				)
+			);
+			const inconnues = [newId(), 'pas-un-identifiant', '', ...(ailleurs ? [ailleurs.id] : [])];
+			for (const membershipId of inconnues) {
+				for (const confirm of ['', 'yes']) {
+					for (const [chemin, champs] of [
+						['/membres?/retirer', { membershipId, confirm }],
+						['/membres?/role', { membershipId, role: 'org_admin', confirm }]
+					] as const) {
+						const reponse = await postForm(chemin, champs, cookie);
+						const cas = `${chemin} « ${membershipId} » ${confirm}`;
+						expect(reponse.status, cas).toBe(404);
+						expect(alerte(await reponse.text()), cas).toBe(MEMBRE_DISPARU[langue]);
+					}
+				}
+			}
+			if (ailleurs) expect(await roleDe(ailleurs.id)).toBe('editor');
+			expect(await roleDe(adhesion)).toBe('editor');
+		}
+	);
 });
 
 /** Ce que la coquille dit, là où elle arrive, à une responsable qui s'est donné le rôle d'éditeur. */
@@ -1318,6 +1533,15 @@ const DEVENUE_EDITRICE: Record<Langue, string> = {
 	it: 'Ora hai il ruolo di redattore. Le pagine riservate ai responsabili, come Membri e Impostazioni, non ti sono più accessibili. Per riaverle, chiedi a un altro responsabile di ridarti il ruolo di responsabile.',
 	en: 'You now have the editor role. The screens reserved for managers, such as Members and Settings, are no longer open to you. To get them back, ask another manager to give you the manager role again.',
 	ar: 'لديك الآن دور المحرر. لم تعد الصفحات الخاصة بالمسؤولين، مثل «الأعضاء» و«الإعدادات»، مفتوحة لك. لاستعادتها، اطلب من مسؤول آخر أن يمنحك دور المسؤول من جديد.'
+};
+
+/** Ce que la demande de confirmation dit à une responsable qui se donne le rôle d'éditeur. */
+const SE_DONNER_EDITEUR: Record<Langue, string> = {
+	fr: 'Vous allez vous donner le rôle d’éditeur.',
+	de: 'Sie sind dabei, sich selbst die Rolle «Redaktion» zu geben.',
+	it: 'Stai per darti il ruolo di redattore.',
+	en: 'You are about to give yourself the editor role.',
+	ar: 'أنت على وشك أن تمنح نفسك دور المحرر.'
 };
 
 describe('une responsable qui se donne le rôle d’éditeur (retour B1)', () => {
@@ -1362,19 +1586,33 @@ describe('une responsable qui se donne le rôle d’éditeur (retour B1)', () =>
 		);
 	});
 
+	/**
+	 * Le bouton de sa propre ligne, tel que l'écran le montre, puis la confirmation, telle que la
+	 * demande la propose (étape 19). Rend la réponse à la confirmation, et la demande lue.
+	 */
+	async function seDonnerLeRoleDEditeur(): Promise<{ reponse: Response; demande: string }> {
+		const bouton = formulaireDeLaPage(
+			await page200('/membres', cookie),
+			'?/role',
+			avec({ membershipId: sienne, role: 'editor' })
+		);
+		expect(bouton, 'le bouton de sa ligne').not.toBeNull();
+		const premier = await postForm('/membres?/role', bouton ?? {}, cookie);
+		expect(premier.status, 'le premier envoi ne change rien').toBe(200);
+		const demande = element(await premier.text(), 'confirmer-membre');
+		const confirmer = formulaireDeLaPage(demande, '?/role');
+		expect(confirmer).toEqual({ membershipId: sienne, role: 'editor', confirm: 'yes' });
+		return { reponse: await postForm('/membres?/role', confirmer ?? {}, cookie), demande };
+	}
+
 	it.each(LANGUES)(
 		'tells her in %s, on the screen where she arrives, that she is now an editor',
 		async (langue) => {
 			await remettreResponsable();
 			await poserLangueDuCompte(RESPONSABLE, langue);
-			// Le bouton de sa propre ligne, tel que l'écran le montre.
-			const bouton = formulaireDeLaPage(
-				await page200('/membres', cookie),
-				'?/role',
-				avec({ membershipId: sienne, role: 'editor' })
-			);
-			expect(bouton, 'le bouton de sa ligne').not.toBeNull();
-			const reponse = await postForm('/membres?/role', bouton ?? {}, cookie);
+			const { reponse, demande } = await seDonnerLeRoleDEditeur();
+			// La demande lui parle d'elle-même, et dit ce qu'elle perdra.
+			expect(lu(demande)).toContain(SE_DONNER_EDITEUR[langue]);
 			// Membres ne lui est plus ouvert : elle est envoyée sur « À venir ».
 			expect(reponse.status).toBe(303);
 			const arrivee = reponse.headers.get('location') ?? '';
@@ -1392,12 +1630,7 @@ describe('une responsable qui se donne le rôle d’éditeur (retour B1)', () =>
 		await remettreResponsable();
 		await poserLangueDuCompte(RESPONSABLE, 'fr');
 		// Une adresse copiée ne fait rien dire de faux à une responsable.
-		const bouton = formulaireDeLaPage(
-			await page200('/membres', cookie),
-			'?/role',
-			avec({ membershipId: sienne, role: 'editor' })
-		);
-		const reponse = await postForm('/membres?/role', bouton ?? {}, cookie);
+		const { reponse } = await seDonnerLeRoleDEditeur();
 		const arrivee = reponse.headers.get('location') ?? '';
 		await remettreResponsable();
 		expect(element(await page200(arrivee, cookie), 'avis-role')).toBe('');

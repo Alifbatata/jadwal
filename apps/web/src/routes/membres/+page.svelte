@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { LANGUES, NOM_DE_LANGUE, numericDate } from '$lib/i18n.js';
 	import { commonTexts } from '$lib/i18n/common.js';
 	import { EDITOR_GESTURES, MANAGER_GESTURES, membersTexts } from '$lib/i18n/members.js';
@@ -27,6 +28,8 @@
 			? { email: form.email, role: form.role, language: form.language }
 			: { email: '', role: 'editor', language: data.language }
 	);
+	/** Le retrait ou le changement de rôle qui attend une confirmation (étape 19). */
+	const aConfirmer = $derived(form && 'aConfirmer' in form ? form.aConfirmer : null);
 </script>
 
 <svelte:head><title>{text.title} | {data.organisation.nom}</title></svelte:head>
@@ -49,6 +52,48 @@
 	<p role="status">{text.done.removed}</p>
 {:else if form && 'change' in form && form.role}
 	<p role="status">{text.done.roleChanged(roleName[form.role] ?? form.role)}</p>
+{/if}
+
+<!-- Retirer un membre ou changer un rôle ne se fait pas au premier envoi (étape 19) : l'écran dit ce
+     que le geste fera, et demande de confirmer, comme pour une salle occupée. En haut, avec les
+     messages : l'envoi recharge la page, qui s'ouvre en haut, avec ou sans JavaScript. « Ne rien
+     changer » est un lien, qui ramène à l'écran sans rien envoyer. Une responsable qui se vise
+     elle-même lit des phrases qui parlent d'elle. -->
+{#if aConfirmer}
+	<div id="confirmer-membre" class="confirmer" role="alert">
+		{#if aConfirmer.geste === 'retirer' && aConfirmer.soiMeme}
+			<p>{text.confirm.removeSelf}</p>
+			<p>{text.confirm.removeSelfWhat}</p>
+		{:else if aConfirmer.geste === 'retirer'}
+			<p>{text.confirm.removeIntro} <strong><bdi>{aConfirmer.email}</bdi></strong></p>
+			<p>{text.removeHelp}</p>
+		{:else if aConfirmer.role === 'editor' && aConfirmer.soiMeme}
+			<p>{text.confirm.selfEditor}</p>
+			<p>{text.confirm.selfEditorWhat}</p>
+		{:else if aConfirmer.role}
+			<p>
+				{text.confirm.roleIntro[aConfirmer.role]} <strong><bdi>{aConfirmer.email}</bdi></strong>
+			</p>
+			<p>{text.confirm.roleWhat[aConfirmer.role]}</p>
+		{/if}
+		<div class="gestes">
+			<form method="post" action={aConfirmer.geste === 'retirer' ? '?/retirer' : '?/role'}>
+				<input type="hidden" name="membershipId" value={aConfirmer.membershipId} />
+				{#if aConfirmer.role}<input type="hidden" name="role" value={aConfirmer.role} />{/if}
+				<input type="hidden" name="confirm" value="yes" />
+				<button type="submit">
+					{#if aConfirmer.geste === 'retirer'}
+						{aConfirmer.soiMeme ? text.confirm.removeSelfButton : text.confirm.removeButton}
+					{:else}
+						{aConfirmer.soiMeme && aConfirmer.role === 'editor'
+							? text.confirm.selfEditorButton
+							: text.confirm.roleButton}
+					{/if}
+				</button>
+			</form>
+			<a href={resolve('/membres')}>{text.confirm.keep}</a>
+		</div>
+	</div>
 {/if}
 
 <h2>{text.membersTitle}</h2>
@@ -188,6 +233,17 @@
 		display: flex;
 		gap: 0.5rem;
 		flex-wrap: wrap;
+		align-items: center;
+	}
+	.confirmer {
+		border: 2px solid #b91c1c;
+		border-radius: 0.5rem;
+		padding: 0.5rem 0.75rem;
+		margin-block: 0 1rem;
+		max-width: 36rem;
+	}
+	.confirmer p {
+		margin: 0.35rem 0;
 	}
 	.inviter {
 		display: grid;

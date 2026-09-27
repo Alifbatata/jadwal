@@ -83,13 +83,46 @@ peut plus l'accepter.`, `La personne a été retirée de votre organisation.`, `
 Nouveau rôle : responsable.` Avant l'étape 18, la ligne changeait ou disparaissait sans un mot.
 
 Les erreurs : `Seule une personne responsable peut faire cela.`, `Ce rôle n'existe pas. Choisissez
-éditeur ou responsable.`, et, pour la dernière personne responsable : `Une organisation doit
-toujours garder au moins une personne responsable. Donnez d'abord ce rôle à une autre personne.`
+éditeur ou responsable.`, pour une adhésion que l'écran ne trouve plus dans l'organisation, ou un
+identifiant mal formé : `Cette personne ne fait plus partie de l'organisation.` (avant l'étape 19,
+une adhésion inconnue était dite « retirée », et un identifiant mal formé rendait une erreur 500),
+et, pour la dernière personne responsable : `Une organisation doit toujours garder au moins une
+personne responsable. Donnez d'abord ce rôle à une autre personne.`
+
+## Retirer un membre, changer un rôle : la confirmation (étape 19)
+
+Les deux gestes ne se font plus au premier envoi, comme la suppression d'une salle occupée
+(`responsables-reglages.md`). Le bouton de la ligne rend l'écran avec, en haut, sous les messages et
+avant la liste, une demande annoncée (`role="alert"`), encadrée de rouge :
+
+- pour retirer : `Vous allez retirer cette personne de l'organisation :` et son adresse, puis l'aide
+  `Une personne retirée n'entre plus dans l'espace de votre organisation. Son compte reste, et vous
+pouvez l'inviter de nouveau.`, le bouton `Retirer cette personne` et le lien `Ne rien changer` ;
+- pour changer un rôle : `Vous allez donner le rôle de responsable à cette personne :` (ou
+  `le rôle d'éditeur`) et son adresse, puis ce que le rôle change : `Elle pourra faire tout ce qui
+est réservé au responsable, membres et réglages compris.`, ou `Elle gérera toujours les cours et le
+programme, mais n'ouvrira plus les écrans réservés aux responsables, comme Membres et Réglages.`,
+  le bouton `Donner ce rôle` et le lien `Ne rien changer`.
+
+Une responsable qui se vise elle-même lit des phrases qui parlent d'elle, sans son adresse :
+`Vous allez vous donner le rôle d'éditeur.`, puis `Les écrans réservés aux responsables, comme
+Membres et Réglages, ne vous seront plus ouverts. Pour les retrouver, il faudra qu'une autre personne
+responsable vous redonne le rôle de responsable.` et le bouton `Prendre le rôle d'éditeur` ; ou
+`Vous allez vous retirer vous-même de l'organisation.`, puis `Son espace ne vous sera plus ouvert.
+Pour y revenir, il faudra qu'une personne responsable vous invite de nouveau.` et le bouton
+`Me retirer de l'organisation`.
+
+Le bouton de la demande renvoie le même formulaire, avec `confirm=yes` : c'est lui qui écrit. Le lien
+`Ne rien changer` ramène à l'écran sans rien envoyer. Tout marche sans JavaScript : ce sont des
+formulaires ordinaires. Quand le geste laisserait l'organisation sans personne responsable, l'écran
+ne demande pas de confirmer : il répond aussitôt par la phrase de la dernière personne responsable.
+La base reste la vérité, et son refus est traduit de la même façon au second envoi.
 
 ## Une responsable qui se donne le rôle d'éditeur
 
 Quand une autre personne responsable reste, une responsable peut se donner elle-même le rôle
-d'éditeur. L'écran Membres ne lui est alors plus ouvert : elle arrive sur `À venir`, à l'adresse
+d'éditeur, après la confirmation. L'écran Membres ne lui est alors plus ouvert : elle arrive sur
+`À venir`, à l'adresse
 `/?avis=editeur`, avec en tête un encadré, `Vous avez maintenant le rôle d'éditeur. Les écrans
 réservés aux responsables, comme Membres et Réglages, ne vous sont plus ouverts. Pour les retrouver,
 demandez à une autre personne responsable de vous redonner le rôle de responsable.` Sa description

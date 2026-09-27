@@ -1165,19 +1165,36 @@ describe('les rôles', () => {
 			return (Array.isArray(rows) ? (rows[0] as { id: string } | undefined) : undefined)?.id;
 		});
 		expect(membershipId).toBeTruthy();
-		const removed = await postForm(
-			'/membres?/retirer',
-			{ membershipId: membershipId as string },
-			cookie
-		);
-		const demoted = await postForm(
-			'/membres?/role',
-			{ membershipId: membershipId as string, role: 'editor' },
-			cookie
-		);
-		// 409 : la base refuse, et l'interface le traduit.
-		expect(removed.status).toBe(409);
-		expect(demoted.status).toBe(409);
+		// Deux fois chaque geste. Sans confirmation, l'écran ne demande pas de confirmer ce que la
+		// base refuserait ; avec, c'est la base qui refuse, et l'interface traduit son refus
+		// (étape 19). Les deux répondent 409, avec la même phrase.
+		for (const confirm of ['', 'yes']) {
+			const removed = await postForm(
+				'/membres?/retirer',
+				{ membershipId: membershipId as string, confirm },
+				cookie
+			);
+			const demoted = await postForm(
+				'/membres?/role',
+				{ membershipId: membershipId as string, role: 'editor', confirm },
+				cookie
+			);
+			expect(removed.status, `retrait, confirmation « ${confirm} »`).toBe(409);
+			expect(demoted.status, `rôle, confirmation « ${confirm} »`).toBe(409);
+			for (const html of [await removed.text(), await demoted.text()]) {
+				expect(/<p role="alert">([\s\S]*?)<\/p>/.exec(html)?.[1]).toBe(
+					'Une organisation doit toujours garder au moins une personne responsable. Donnez d’abord ce rôle à une autre personne.'
+				);
+				expect(html).not.toContain('id="confirmer-membre"');
+			}
+		}
+		const role = await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			return tx.execute<{ role: string }>(
+				sql`select "role" from "membership" where "id" = ${membershipId as string}`
+			);
+		});
+		expect(Array.isArray(role) ? role : []).toEqual([{ role: 'org_admin' }]);
 	});
 });
 

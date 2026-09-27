@@ -4553,9 +4553,10 @@ async function reglagesAuClavier(page) {
 
 /**
  * o. Membres (B3) : une seconde personne responsable rejoint l'organisation, puis la première se
- * donne le rôle d'éditeur sur sa propre ligne. Elle arrive sur « À venir », où une phrase, visible
- * sans défiler, lui dit ce qui s'est passé et comment retrouver ses écrans. La seconde lui rend
- * ensuite son rôle.
+ * donne le rôle d'éditeur sur sa propre ligne, et confirme (étape 19 : un changement de rôle demande
+ * une confirmation, en haut de l'écran). Elle arrive sur « À venir », où une phrase, visible sans
+ * défiler, lui dit ce qui s'est passé et comment retrouver ses écrans. La seconde lui rend ensuite son
+ * rôle, et confirme aussi.
  */
 async function devenirEditrice(navigateur, page) {
 	etape('o. Membres : une responsable se donne le rôle d’éditeur');
@@ -4586,6 +4587,9 @@ async function devenirEditrice(navigateur, page) {
 			await ouvrir(page, '/membres');
 			const ligne = (cible, adresse) =>
 				cible.locator('ul.membres li').filter({ has: cible.getByText(adresse, { exact: true }) });
+			/** Le bouton de la demande de confirmation, en haut de l'écran Membres (étape 19). */
+			const confirmer = (cible, nom) =>
+				cible.locator('#confirmer-membre').getByRole('button', { name: nom, exact: true });
 			await envoyer(
 				page,
 				ligne(page, RESPONSABLE).getByRole('button', {
@@ -4593,6 +4597,7 @@ async function devenirEditrice(navigateur, page) {
 					exact: true
 				})
 			);
+			await envoyer(page, confirmer(page, 'Prendre le rôle d’éditeur'));
 			const avis = page.locator('#avis-role');
 			const texte = (await avis.count()) === 1 ? await texteDe(avis) : '';
 			const boite = texte ? await avis.boundingBox() : null;
@@ -4624,6 +4629,7 @@ async function devenirEditrice(navigateur, page) {
 					exact: true
 				})
 			);
+			await envoyer(seconde, confirmer(seconde, 'Donner ce rôle'));
 		} finally {
 			await ailleurs.close();
 		}
