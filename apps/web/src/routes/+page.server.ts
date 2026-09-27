@@ -25,8 +25,10 @@
 // deux autres actions.
 //
 // Étape 19 (D4, et les décisions du chef de projet) :
-// - le programme de la semaine est celui de Partager : les cours publiés seulement, lus comme
-//   Partager les lit. L'écran, lui, montre aussi les brouillons, et leur carte le dit ;
+// - le programme de la semaine est celui de Partager : les cours publiés seulement. L'écran, lui,
+//   montre aussi les brouillons, et leur carte le dit. Une session du vendredi en brouillon ne
+//   donne pas son heure au Dhuhr (`readProgramme`) : un cours prévu après le Dhuhr a la même heure
+//   sur sa carte, dans le programme de la semaine et dans le message d'un déplacement ;
 // - le titre d'une carte est celui de la langue de l'écran quand le cours y est traduit, sinon celui
 //   de sa langue source, comme avant ;
 // - le refus d'une carte périmée nomme la séance, par son titre et sa date ;
@@ -249,29 +251,29 @@ export const load: PageServerLoad = async (event) => {
 	const maintenant = new Date();
 	/** La langue de l'écran, que le hook a calculée : le titre d'une carte la suit. */
 	const langue: Langue = event.locals.langue ?? 'fr';
-	// Une seule transaction pour tout l'écran : le programme, celui du message de la semaine, les
-	// chiffres d'audience, l'état des deux sources d'heures de prière et les titres traduits.
-	const { programme, publie, audience, prieres, titles } = await withSessionOrg(
-		context,
-		async (tx) => {
-			const programme = await readProgramme(tx, maintenant, JOURS_AFFICHES);
-			const today = programme.today;
-			return {
-				programme,
-				// Le programme de Partager, lu comme Partager le lit (étape 19, D4) : sans les cours en
-				// brouillon, ni leurs sessions du vendredi, dont la dernière donnerait son heure à un
-				// cours prévu après le Dhuhr. Retirer les brouillons des séances de l'écran ne suffisait
-				// pas : celles qui restaient gardaient cette heure-là.
-				publie: await readProgramme(tx, maintenant, JOURS_AFFICHES, { statuses: ['published'] }),
-				audience: await lireAudience(tx, today),
-				prieres: await etatDesSources(tx, context.organizationId, await readReglages(tx), today),
-				titles: await readTitles(tx)
-			};
-		}
-	);
+	// Une seule transaction pour tout l'écran : le programme, les chiffres d'audience, l'état des deux
+	// sources d'heures de prière et les titres traduits.
+	const { programme, audience, prieres, titles } = await withSessionOrg(context, async (tx) => {
+		const programme = await readProgramme(tx, maintenant, JOURS_AFFICHES);
+		const today = programme.today;
+		return {
+			programme,
+			audience: await lireAudience(tx, today),
+			prieres: await etatDesSources(tx, context.organizationId, await readReglages(tx), today),
+			titles: await readTitles(tx)
+		};
+	});
 	const settings = programme.settings;
 	const kinds = new Map(programme.courses.map((course) => [course.id, course.kind]));
 	const statuses = new Map(programme.courses.map((course) => [course.id, course.status]));
+	/**
+	 * Les séances du programme de la semaine : celles des cours publiés, comme dans Partager (étape
+	 * 19, D4). Une session du vendredi en brouillon ne donne pas son heure au Dhuhr (`readProgramme`) :
+	 * les séances qui restent ont l'heure que Partager et la page publique leur donnent.
+	 */
+	const publiees = programme.seances.filter(
+		(seance) => statuses.get(seance.courseId) === 'published'
+	);
 	/**
 	 * Le titre d'une séance dans une langue : celui de cette langue quand le cours y est traduit,
 	 * comme sur la page publique, sinon celui de sa langue source ; une session du vendredi au nom
@@ -310,7 +312,7 @@ export const load: PageServerLoad = async (event) => {
 		text: weekMessage(
 			settings.greeting,
 			settings.name,
-			publie.seances.map((seance) => ({
+			publiees.map((seance) => ({
 				date: seance.date,
 				title: titleIn(seance, language),
 				start: seance.start,

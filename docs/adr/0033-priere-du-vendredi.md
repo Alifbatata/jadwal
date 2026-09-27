@@ -147,6 +147,15 @@ Un cours garde ses mots.
 traduit ; une session qui porte le nom proposé prend donc le nom de la prière dans la langue de
 l'écran, par la même règle des cinq noms (`friday-title.ts`).
 
+**Une session en brouillon ne remplace pas le Dhuhr.** La règle se lit désormais : le vendredi,
+l'iqama du Dhuhr est l'heure de la **dernière session publiée**. C'était déjà le cas sur la page
+publique, qui ne lit pas les brouillons ; l'écran « À venir » comptait aussi les sessions en
+brouillon. Une organisation qui prépare une seconde session à 14:30 voyait alors, sur « À
+venir », un cours prévu après le Dhuhr à 15:00, et son message de déplacement disait « au lieu de
+15:00 » à une communauté qui lisait 14:00 partout ailleurs. Une session en brouillon s'affiche
+toujours à sa propre heure ; elle ne donne la sienne au Dhuhr qu'une fois publiée (relecture de
+D4, addendum du même jour de l'ADR 0021).
+
 **L'écran du vendredi (D2).** Annuler un jour déjà passé est refusé, comme sur « À venir ».
 Rétablir, Publier et Supprimer répondent qu'une session inconnue, ou un cours, n'existe plus, au
 lieu de dire qu'ils l'ont fait et de l'écrire au journal. Chaque identifiant, chaque date et chaque
@@ -157,4 +166,5 @@ formulaire. La liste des refus de l'écran est dans l'addendum du même jour de 
 
 Accepté, 2026-09-21. Étape 8 de la feuille de route. Complète l'ADR 0003 (récurrence) et l'ADR 0004
 (ancrage sur une prière). Complété le 27.09.2026 (étape 19) : le type d'une ligne ne change pas ; les
-mots d'une session dans les messages prêts à coller, et les refus de son écran.
+mots d'une session dans les messages prêts à coller, les refus de son écran, et une session en
+brouillon qui ne remplace pas le Dhuhr.

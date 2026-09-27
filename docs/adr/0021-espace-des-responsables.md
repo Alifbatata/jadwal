@@ -214,11 +214,18 @@ session au lieu de donner une erreur 500.
 
 ### À venir, après la relecture de l'étape 18 (D4)
 
-- **Le programme de la semaine est celui de Partager** : les cours publiés seulement, lus comme
-  Partager les lit. Retirer les brouillons des séances de l'écran ne suffisait pas : la dernière
-  session du vendredi, même en brouillon, donnait son heure à un cours prévu après le Dhuhr. L'écran
-  lit donc le programme une seconde fois, pour ses seuls cours publiés. Il tient toujours en un
-  nombre fixe de requêtes, quel que soit le nombre de cours, mais ce nombre n'est plus cinq.
+- **Le programme de la semaine est celui de Partager** : les cours publiés seulement. Retirer les
+  brouillons des séances de l'écran ne suffisait pas d'abord : la dernière session du vendredi, même
+  en brouillon, donnait son heure à un cours prévu après le Dhuhr. Une seconde lecture du programme,
+  pour les seuls cours publiés, a corrigé le programme de la semaine, mais pas la carte : sa relecture
+  a montré un écran qui se contredisait, 15:00 sur la carte d'un cours publié et 14:00 dans le
+  programme de la semaine, comme sur la page publique, et un message de déplacement qui disait « au
+  lieu de 15:00 » à une communauté qui avait toujours lu 14:00. **Une session du vendredi en
+  brouillon ne donne plus son heure au Dhuhr** (`readProgramme`, ADR 0033) : elle s'affiche à sa
+  propre heure, mais n'a pas encore lieu. La carte, le message d'un déplacement et le programme de
+  la semaine disent la même heure que la page publique, pour un cours publié comme pour un cours en
+  brouillon. L'écran lit le programme une seule fois et en retire les brouillons pour la semaine :
+  cinq requêtes, comme avant.
 - **L'écran montre les brouillons**, et leur carte porte la marque `brouillon`.
 - **Une carte « date exceptionnelle » a « Rétablir »**. Elle envoie la date prévue de la séance,
   celle que garde le changement, qui n'est pas toujours à l'écran : une séance peut être avancée

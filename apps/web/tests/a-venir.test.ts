@@ -1580,8 +1580,8 @@ describe('D4 : un cours en brouillon reste hors du programme de la semaine (éta
 				`);
 			}
 			// Deux sessions du vendredi : la première publiée à 13:30, la seconde en brouillon à 14:30.
-			// Sur cet écran, la seconde compte, et le cours d'après le Dhuhr commence à 15:00 ; sur la page
-			// publique et dans Partager, seule la première compte, et il commence à 14:00.
+			// Seule la première donne son heure au Dhuhr, sur cet écran comme sur la page publique et
+			// dans Partager : le cours d'après le Dhuhr commence à 14:00, et non à 15:00.
 			for (const [id, statut, rang, debut, fin, titre] of [
 				[jumuaPubliee, 'published', 1, '13:30', '14:10', JUMUA_PUBLIEE],
 				[jumuaBrouillon, 'draft', 2, '14:30', '15:10', JUMUA_BROUILLON]
@@ -1638,6 +1638,40 @@ describe('D4 : un cours en brouillon reste hors du programme de la semaine (éta
 		// Le cours d'après le Dhuhr suit la session publiée, à 13:30, et non celle en brouillon.
 		const [francais] = avenir.map((message) => message.texte);
 		expect(francais?.split('\n')).toContain(`- ${APRES_DHUHR}, 14:00 – 15:00`);
+	});
+
+	it('shows on the card of a course after Dhuhr the time of the week message, not one a draft Friday session gives it (relecture de D4)', async () => {
+		const html = await (await get('/', cookie)).text();
+		expect(texte(carte(html, vendredi, APRES_DHUHR, 'scheduled'))).toContain('14:00 – 15:00');
+		expect(formulaireDeLaCarte(html, 'deplacer', apresDhuhr, vendredi)['plannedStart']).toBe(
+			'14:00'
+		);
+		// La session en brouillon garde sa propre heure sur sa carte.
+		expect(texte(carte(html, vendredi, JUMUA_BROUILLON, 'scheduled'))).toContain('14:30 – 15:10');
+	});
+
+	it('says in each message of a move on the same day the time the community read, not one a draft Friday session gives (relecture de D4)', async () => {
+		const html = await (await get('/', cookie)).text();
+		const envoi = {
+			...formulaireDeLaCarte(html, 'deplacer', apresDhuhr, vendredi),
+			toStart: '16:00'
+		};
+		const reponse = await postForm('/?/deplacer', envoi, cookie);
+		try {
+			expect(reponse.status).toBe(200);
+			const recus = messages(section(await reponse.text(), 'message-titre'));
+			expect(recus.map((message) => message.langue)).toEqual([...LANGUES]);
+			for (const message of recus) {
+				expect(message.texte, message.langue).toContain('16:00');
+				expect(message.texte, message.langue).toContain('14:00');
+				expect(message.texte, message.langue).not.toContain('15:00');
+			}
+			expect(recus[0]?.texte.split('\n')).toContain(
+				`Le cours « ${APRES_DHUHR} » du ${dateLue('fr', vendredi)} commence à 16:00 au lieu de 14:00.`
+			);
+		} finally {
+			await retablir(apresDhuhr, vendredi, cookie);
+		}
 	});
 
 	it('marks the card of a draft course « brouillon », in each language, and no other card', async () => {

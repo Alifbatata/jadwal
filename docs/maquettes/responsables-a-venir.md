@@ -41,7 +41,10 @@ l'écran quand le cours y est traduit, sinon celui de sa langue source (étape 1
 un écran allemand, `Cours du soir` sur un écran italien sans traduction italienne. Une session du
 vendredi qui porte le nom proposé par le service prend le nom de la prière dans la langue de
 l'écran. Un cours en brouillon s'affiche aussi, avec la marque `brouillon` : il n'est ni sur la
-page publique ni dans le programme de la semaine. Une séance déplacée dit
+page publique ni dans le programme de la semaine. Une session du vendredi en brouillon s'affiche à
+sa propre heure, mais ne donne pas la sienne au Dhuhr : un cours prévu après le Dhuhr a sur sa
+carte l'heure de la page publique et du programme de la semaine, et un déplacement le même jour
+l'annonce « au lieu de » cette heure-là (étape 19, relecture de D4). Une séance déplacée dit
 `Déplacée au mardi 29.09.2026 à 18:00` ; sa nouvelle date dit
 `Prévue à l'origine le lundi 28.09.2026`. Déplacée le même jour à une autre heure, la carte
 d'arrivée porte `nouvelle heure` et `Prévue à l'origine : 19:00 – 20:30`.
@@ -123,9 +126,9 @@ zone `Programme de la semaine`. Une séance déplacée y porte `(date exceptionn
 `(nouvelle heure)` quand elle n'a changé que d'heure, le même jour. Une session du vendredi qui
 porte le nom proposé par le service y prend le nom de la prière dans chaque langue.
 
-C'est le message de l'écran Partager, mot pour mot (étape 19) : les cours publiés seulement, lus
-comme Partager les lit. Un cours en brouillon n'y est pas, et une session du vendredi en brouillon
-ne donne pas son heure à un cours prévu après le Dhuhr.
+C'est le message de l'écran Partager, mot pour mot (étape 19) : les cours publiés seulement. Un
+cours en brouillon n'y est pas, et une session du vendredi en brouillon ne donne pas son heure à un
+cours prévu après le Dhuhr, ici comme sur les cartes.
 
 ## Combien votre programme a été vu
 
@@ -138,7 +141,9 @@ comptés. Ces nombres sont un minimum […]`
 
 Relevé par la relecture de l'étape 18, corrigé à l'étape 19 (D4) : le programme de la semaine
 comptait aussi les cours en brouillon, une carte `date exceptionnelle` n'avait pas de `Rétablir`, et
-`Cette séance n'existe plus` demandait de recharger une page déjà à jour.
+`Cette séance n'existe plus` demandait de recharger une page déjà à jour. Relevé par la relecture
+de D4 : la carte d'un cours prévu après le Dhuhr prenait l'heure d'une session du vendredi en
+brouillon, que le programme de la semaine et la page publique ne prennent pas.
 
 Deux cartes peuvent être ouvertes en même temps : c'est la lecture retenue du retour A1, où une
 carte n'ouvre que la sienne sans rien changer aux autres.

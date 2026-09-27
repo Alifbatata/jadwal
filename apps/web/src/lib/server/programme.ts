@@ -345,8 +345,14 @@ export async function readProgramme(
 		await readPrayerDays(tx, settings.id, today, to)
 	];
 	// Même règle que côté public : le vendredi, l'iqama du Dhuhr est l'heure de la dernière session
-	// (ADR 0033). Les brouillons de session comptent ici, puisque cet écran les montre.
-	const prayerTable = appliquerVendredi(toPrayerTable(prayerDays), sessionsDuVendredi(courses));
+	// publiée (ADR 0033). Une session en brouillon s'affiche ici, à sa propre heure, mais ne donne pas
+	// la sienne au Dhuhr : elle n'a pas encore lieu. Quand elle comptait, un cours prévu après le Dhuhr
+	// avait sur sa carte, et dans le message d'un déplacement, une autre heure que celle de la page
+	// publique et du programme de la semaine (étape 19, relecture de D4).
+	const prayerTable = appliquerVendredi(
+		toPrayerTable(prayerDays),
+		sessionsDuVendredi(courses.filter((course) => course.status === 'published'))
+	);
 	const byId = new Map(courses.map((course) => [course.id, course]));
 	const occurrences = expandOccurrences({
 		schedules: courses.map(toSchedule),

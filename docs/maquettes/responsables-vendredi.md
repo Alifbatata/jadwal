@@ -51,7 +51,8 @@ Jusqu'au mercredi 25.11.2026
 
 - Le rang est en toutes lettres : `Première session`, `Deuxième session`, `Troisième session`.
 - L'heure est toujours **fixe**, début et fin. Le formulaire ne propose pas d'ancrage sur une
-  prière : c'est cette session qui tient lieu de Dhuhr.
+  prière : c'est cette session qui tient lieu de Dhuhr, une fois publiée. Une session en brouillon
+  ne remplace pas encore le Dhuhr, ni sur la page publique ni sur `À venir` (étape 19).
 - `Sermon en …`, avec les langues écrites dans la langue de l'écran.
 - L'état dit ce qu'il veut dire : `Publiée : visible sur votre page publique.` ou
   `Brouillon : pas encore visible sur votre page publique.` Le bouton qui suit est `Publier` ou
