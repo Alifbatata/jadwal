@@ -3454,7 +3454,9 @@ async function prieres(page, navigateur) {
 		await ajout.getByLabel('Heure de début', { exact: true }).fill(VENDREDI.debut);
 		await ajout.getByLabel('Heure de fin', { exact: true }).fill(VENDREDI.fin);
 		const langues = ajout.locator('input[name="sermonLanguages"]');
-		if ((await langues.locator(':checked').count()) === 0) await langues.first().check();
+		if ((await ajout.locator('input[name="sermonLanguages"]:checked').count()) === 0) {
+			await langues.first().check();
+		}
 		await envoyer(page, ajout.locator('button[type="submit"]'));
 		verifier(
 			'une session du vendredi est ajoutée',
@@ -4200,7 +4202,9 @@ async function sansJavaScript(navigateur, page) {
 			await ajout.locator('input[name="start"]').fill(SECONDE_SESSION.debut);
 			await ajout.locator('input[name="end"]').fill(SECONDE_SESSION.fin);
 			const langues = ajout.locator('input[name="sermonLanguages"]');
-			if ((await langues.locator(':checked').count()) === 0) await langues.first().check();
+			if ((await ajout.locator('input[name="sermonLanguages"]:checked').count()) === 0) {
+				await langues.first().check();
+			}
 			await envoyer(sans, ajout.locator('button[type="submit"]'));
 			const carte = () =>
 				sans
