@@ -240,8 +240,11 @@ quittée, avec la personne : la politique ne lui laisse que sa propre adhésion 
 journal, signé d'elle (`member.leave`), exige que l'auteur soit la personne du contexte (migration
 0063). La seule personne responsable l'apprend dès le premier envoi, avec ce qu'elle doit faire ; le
 refus du déclencheur de la migration 0012 est traduit par la même phrase, s'il arrive encore. Après
-le départ, la session ne désigne plus l'organisation. Le détail de l'écran est dans
-`docs/maquettes/responsables-coquille.md`.
+le départ, la session ne désigne plus l'organisation. Toute personne membre trouve l'écran dans la
+navigation : `Changer d'organisation` quand elle a de quoi choisir, `Vos organisations` sinon. Sans
+ce second lien, qui n'avait qu'une organisation, le cas le plus courant, n'y arrivait qu'après un
+lien de connexion : la liste aurait promis un geste qu'aucun écran ne lui ouvrait. Le détail de
+l'écran est dans `docs/maquettes/responsables-coquille.md`.
 
 ## Statut
 

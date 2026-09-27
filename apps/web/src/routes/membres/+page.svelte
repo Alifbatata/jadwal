@@ -35,8 +35,9 @@
 <svelte:head><title>{text.title} | {data.organisation.nom}</title></svelte:head>
 
 <!-- « Changer d’organisation » est dans l'en-tête de la coquille, pour qui en a plusieurs ou a une
-     invitation qui attend. Il était ici jusqu'à l'étape 17 : les éditeurs n'ouvrent pas cet écran,
-     et il s'y montrait aussi à qui n'a qu'une organisation et rien à choisir. -->
+     invitation qui attend, et « Vos organisations » pour les autres (étape 19). Il était ici
+     jusqu'à l'étape 17 : les éditeurs n'ouvrent pas cet écran, et il s'y montrait aussi à qui n'a
+     qu'une organisation et rien à choisir. -->
 <h1>{data.organisation.nom}</h1>
 <p>{text.intro}</p>
 

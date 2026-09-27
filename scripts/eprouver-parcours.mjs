@@ -1993,8 +1993,9 @@ async function personneInvitee(navigateur) {
 
 	// Membre d'une seule organisation, elle a encore la seconde invitation en attente : la
 	// navigation la mène au choix d'organisation, où elle l'accepte. Qu'une personne d'une seule
-	// organisation sans invitation n'ait pas ce lien, `apps/web/tests/acces.test.ts` le vérifie :
-	// personne, dans ce parcours, n'est dans ce cas.
+	// organisation sans invitation n'ait pas ce lien, mais « Vos organisations » vers le même écran
+	// (étape 19), `apps/web/tests/acces.test.ts` le vérifie : personne, dans ce parcours, n'est dans
+	// ce cas.
 	verifier(
 		`avec une seule organisation et une invitation qui attend, elle trouve « ${CHANGER} » dans la navigation, vers le choix`,
 		(await lienChanger(page).count()) === 1 &&

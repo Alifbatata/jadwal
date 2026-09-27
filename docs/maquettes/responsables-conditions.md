@@ -113,10 +113,11 @@ Ailleurs dans l'espace, la navigation se termine par `Changer d'organisation`, v
 `/organisations`, pour toute personne membre de plusieurs organisations, éditeurs compris. Il vaut
 aussi pour une personne d'une seule organisation qui a une invitation en attente, pas encore échue :
 c'est sur `/organisations` qu'elle l'accepte. Une personne d'une seule organisation sans invitation
-qui court ne le voit pas, et le super-admin entré par ses pouvoirs garde le seul lien de sa
-bannière, invitation ou non. Ce lien part avec la navigation sur cet écran, qui a déjà le sien.
-L'écran `Membres` ne le porte plus : il se montrait aussi à qui n'avait qu'une organisation et rien
-à choisir.
+qui court ne le voit pas ; depuis l'étape 19, elle trouve à sa place `Vos organisations`, vers le
+même écran, où elle peut quitter son organisation. Le super-admin entré par ses pouvoirs garde le
+seul lien de sa bannière, invitation ou non. Ce lien part avec la navigation sur cet écran, qui a
+déjà le sien. L'écran `Membres` ne le porte plus : il se montrait aussi à qui n'avait qu'une
+organisation et rien à choisir.
 
 ### Ce que fait le bouton
 

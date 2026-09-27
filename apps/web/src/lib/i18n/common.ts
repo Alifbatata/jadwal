@@ -20,6 +20,11 @@ interface CommonTexts {
 		readonly prayers: string;
 		readonly settings: string;
 		readonly switchOrganisation: string;
+		/**
+		 * Le même lien, pour qui n'a qu'une organisation et aucune invitation qui attend : rien à
+		 * changer, mais c'est là qu'elle quitte son organisation (étape 19). Le titre de l'écran.
+		 */
+		readonly yourOrganisations: string;
 	};
 	readonly superAdmin: string;
 	readonly signOut: string;
@@ -55,7 +60,8 @@ export const commonTexts: Translations<CommonTexts> = {
 			members: 'Membres',
 			prayers: 'Heures de prière',
 			settings: 'Réglages',
-			switchOrganisation: 'Changer d’organisation'
+			switchOrganisation: 'Changer d’organisation',
+			yourOrganisations: 'Vos organisations'
 		},
 		superAdmin: 'Super-admin',
 		signOut: 'Se déconnecter',
@@ -83,7 +89,8 @@ export const commonTexts: Translations<CommonTexts> = {
 			members: 'Mitglieder',
 			prayers: 'Gebetszeiten',
 			settings: 'Einstellungen',
-			switchOrganisation: 'Organisation wechseln'
+			switchOrganisation: 'Organisation wechseln',
+			yourOrganisations: 'Ihre Organisationen'
 		},
 		superAdmin: 'Super-Admin',
 		signOut: 'Abmelden',
@@ -111,7 +118,8 @@ export const commonTexts: Translations<CommonTexts> = {
 			members: 'Membri',
 			prayers: 'Orari di preghiera',
 			settings: 'Impostazioni',
-			switchOrganisation: 'Cambia organizzazione'
+			switchOrganisation: 'Cambia organizzazione',
+			yourOrganisations: 'Le tue organizzazioni'
 		},
 		superAdmin: 'Super-admin',
 		signOut: 'Esci',
@@ -139,7 +147,8 @@ export const commonTexts: Translations<CommonTexts> = {
 			members: 'Members',
 			prayers: 'Prayer times',
 			settings: 'Settings',
-			switchOrganisation: 'Change organisation'
+			switchOrganisation: 'Change organisation',
+			yourOrganisations: 'Your organisations'
 		},
 		superAdmin: 'Super admin',
 		signOut: 'Sign out',
@@ -167,7 +176,8 @@ export const commonTexts: Translations<CommonTexts> = {
 			members: 'الأعضاء',
 			prayers: 'مواقيت الصلاة',
 			settings: 'الإعدادات',
-			switchOrganisation: 'تغيير المؤسسة'
+			switchOrganisation: 'تغيير المؤسسة',
+			yourOrganisations: 'مؤسساتك'
 		},
 		superAdmin: 'المشرف العام',
 		signOut: 'تسجيل الخروج',

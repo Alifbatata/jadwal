@@ -565,7 +565,9 @@ describe('changer d’organisation', () => {
 	// que les éditeurs n'ouvrent pas, et il s'y montrait même à qui n'a qu'une organisation. Une
 	// éditrice de deux organisations devait connaître l'adresse `/organisations`, ou se déconnecter.
 	// Le lien vaut aussi pour qui n'a qu'une organisation et une invitation qui attend : c'est sur
-	// cet écran qu'elle l'accepte.
+	// cet écran qu'elle l'accepte. Depuis l'étape 19, c'est aussi sur cet écran que chacun quitte une
+	// organisation : qui n'en a qu'une, sans invitation, y va par « Vos organisations », le titre de
+	// l'écran, et jamais par « Changer d'organisation », qui promettrait un choix qu'elle n'a pas.
 	const PREMIERE = newId();
 	const SECONDE = newId();
 	const EDITRICE = newId();
@@ -577,6 +579,7 @@ describe('changer d’organisation', () => {
 	const INVITATION_QUI_COURT = newId();
 	const INVITATION_ECHUE = newId();
 	const LIBELLE = 'Changer d’organisation';
+	const VOS_ORGANISATIONS = 'Vos organisations';
 
 	/**
 	 * Les liens d'un fragment, résolus depuis la page comme un navigateur le ferait. SvelteKit rend
@@ -686,8 +689,15 @@ describe('changer d’organisation', () => {
 		);
 	}
 
-	/** Aucune trace du lien sur ces écrans de l'espace, qui sont bien ceux de cette organisation. */
-	async function aucunLien(cookie: string, routes: string[], nom: string): Promise<void> {
+	/**
+	 * Aucune trace de « Changer d'organisation » sur ces écrans de l'espace, qui sont bien ceux de
+	 * cette organisation, et un seul lien vers le choix : « Vos organisations », dans le menu.
+	 */
+	async function vosOrganisationsSeulement(
+		cookie: string,
+		routes: string[],
+		nom: string
+	): Promise<void> {
 		for (const route of routes) {
 			const page = await fetch(`${origin}${route}`, { headers: { cookie } });
 			expect(page.status, route).toBe(200);
@@ -696,10 +706,17 @@ describe('changer d’organisation', () => {
 			// absence.
 			expect(html, route).toContain(nom);
 			expect(html, route).not.toContain(LIBELLE);
+			const menu =
+				html.match(/<nav\b[^>]*aria-label="Espace des responsables"[^>]*>[\s\S]*?<\/nav>/)?.[0] ??
+				'';
 			expect(
-				liens(html, route).map((lien) => lien.chemin),
+				liens(menu, route).filter((lien) => lien.chemin === '/organisations'),
 				route
-			).not.toContain('/organisations');
+			).toEqual([{ chemin: '/organisations', texte: VOS_ORGANISATIONS }]);
+			expect(
+				liens(html, route).filter((lien) => lien.chemin === '/organisations'),
+				`${route} : une seule fois`
+			).toHaveLength(1);
 		}
 	}
 
@@ -749,10 +766,14 @@ describe('changer d’organisation', () => {
 		}
 	});
 
-	it('is not offered to someone who belongs to one organisation only, on any screen', async () => {
+	it('offers someone who belongs to one organisation only « Vos organisations » instead', async () => {
 		const cookie = await signIn('une-organisation@example.test');
 		// Une responsable : elle ouvre aussi l'écran Membres, qui portait ce lien pour tout le monde.
-		await aucunLien(cookie, ['/', '/cours', '/membres', '/reglages'], 'Association première');
+		await vosOrganisationsSeulement(
+			cookie,
+			['/', '/cours', '/membres', '/reglages'],
+			'Association première'
+		);
 		expect(await invitationsAAccepter(cookie)).toEqual([]);
 	});
 
@@ -770,9 +791,14 @@ describe('changer d’organisation', () => {
 
 	it('is not offered for an expired invitation, which the choice screen omits too', async () => {
 		// Le lien et l'écran lisent les invitations par la même requête : il ne mène jamais à un
-		// écran qui n'aurait rien de plus à proposer.
+		// écran qui n'aurait rien de plus à proposer. Reste « Vos organisations », comme pour toute
+		// personne d'une seule organisation.
 		const cookie = await signIn('une-et-echue@example.test');
-		await aucunLien(cookie, ['/', '/cours', '/membres', '/reglages'], 'Association première');
+		await vosOrganisationsSeulement(
+			cookie,
+			['/', '/cours', '/membres', '/reglages'],
+			'Association première'
+		);
 		expect(await invitationsAAccepter(cookie)).toEqual([]);
 		// L'invitation est bien là, en attente, et c'est son échéance seule qui l'écarte.
 		const ligne = await ownerHandle.db.transaction(async (tx) => {

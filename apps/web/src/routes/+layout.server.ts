@@ -83,7 +83,8 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 					// court encore : c'est sur l'écran du choix qu'elle l'accepte, et aucun autre écran
 					// de l'espace n'y mène. Le super-admin entré par ses pouvoirs a déjà le lien de sa
 					// bannière, vers son propre écran : deux liens du même nom vers deux écrans
-					// tromperaient.
+					// tromperaient. Sinon, la coquille mène au même écran sous son titre, « Vos
+					// organisations », où chacun quitte une organisation (étape 19).
 					canSwitch:
 						!context.asSuperAdmin &&
 						(context.membershipCount > 1 || context.pendingInvitationCount > 0)

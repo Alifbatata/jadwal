@@ -1,11 +1,11 @@
 # La coquille de l'espace, la connexion et les écrans d'entrée
 
 Décrit après le code, à l'étape 18 (retours B1 et D2), et complété à l'étape 19 (le départ d'une
-organisation, l'écran d'arrivée du lien de connexion, la langue de l'invitation). Les textes sont dans
-`apps/web/src/lib/i18n/` : `common.ts` pour la coquille, `sign-in.ts`, `organisations.ts`,
-`sign-out.ts` et `error.ts` pour les écrans ; les courriels dans
-`apps/web/src/lib/server/mail/messages.ts`. Tout existe dans les cinq langues, et l'arabe se lit de
-droite à gauche. Comment l'espace choisit sa langue est dans l'ADR 0047.
+organisation et le lien de la navigation qui y mène, l'écran d'arrivée du lien de connexion, la
+langue de l'invitation). Les textes sont dans `apps/web/src/lib/i18n/` : `common.ts` pour la
+coquille, `sign-in.ts`, `organisations.ts`, `sign-out.ts` et `error.ts` pour les écrans ; les
+courriels dans `apps/web/src/lib/server/mail/messages.ts`. Tout existe dans les cinq langues, et
+l'arabe se lit de droite à gauche. Comment l'espace choisit sa langue est dans l'ADR 0047.
 
 ## La coquille, en haut de chaque écran de l'espace
 
@@ -25,7 +25,11 @@ Dans cet ordre :
    - pour une personne responsable en plus : `Membres`, `Heures de prière` (si les heures de prière
      sont activées), `Réglages` ;
    - `Changer d'organisation`, pour qui est membre de plusieurs organisations, ou qu'une invitation
-     attend encore.
+     attend encore ;
+   - sinon, depuis l'étape 19, `Vos organisations`, vers le même écran, sous son titre : il n'y a
+     rien à changer, mais c'est là que la personne quitte son organisation. Avant, qui n'avait
+     qu'une organisation n'y trouvait aucun chemin pendant sa session. Le super-admin entré par ses
+     pouvoirs n'a ni l'un ni l'autre : il garde le lien de sa bannière.
 
    Avant l'étape 18, les deux entrées des prières s'appelaient `Vendredi` et `Prières` ; elles
    portent maintenant le titre de leur écran.
@@ -79,6 +83,9 @@ que le lien portait, et qu'aucun écran ne lit.
 prenom.nom@exemple.ch`, reliée au champ, et l'adresse tapée reste dans le champ.
 
 ## Vos organisations, `/organisations`
+
+On y arrive après le lien de connexion, et, pendant la session, par la navigation :
+`Changer d'organisation` pour qui a de quoi choisir, `Vos organisations` pour les autres.
 
 1. Titre de niveau 1 : `Vos organisations`.
 2. `Choisissez l'organisation dont vous voulez gérer le programme.`, puis une ligne par

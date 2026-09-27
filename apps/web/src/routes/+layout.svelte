@@ -123,9 +123,15 @@
 					<!-- Pour toute personne membre de plusieurs organisations, éditeurs compris, et
 					     pour qui n'en a qu'une mais a une invitation qui court encore, qu'elle accepte
 					     sur cet écran. Dans la navigation, donc absent de l'écran d'acceptation des
-					     conditions, qui a son propre « Choisir une autre organisation ». -->
+					     conditions, qui a son propre « Choisir une autre organisation ». Qui n'a
+					     qu'une organisation, et rien qui attende, trouve le même écran sous son titre,
+					     « Vos organisations » : rien à y changer, mais c'est là qu'elle quitte son
+					     organisation (étape 19). Le super-admin entré par ses pouvoirs n'est membre de
+					     rien ici, et garde le seul lien de sa bannière. -->
 					{#if organisation.canSwitch}
 						<a href={resolve('/organisations')}>{text.navigation.switchOrganisation}</a>
+					{:else if !organisation.asSuperAdmin}
+						<a href={resolve('/organisations')}>{text.navigation.yourOrganisations}</a>
 					{/if}
 				</nav>
 			{/if}

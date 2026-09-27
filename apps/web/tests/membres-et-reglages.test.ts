@@ -204,6 +204,27 @@ function statut(html: string): string {
 }
 
 /**
+ * Les liens de la navigation de l'espace, résolus depuis la page comme un navigateur le ferait :
+ * SvelteKit rend les chemins de `resolve` relatifs à la page (`./organisations` sous `/cours`).
+ */
+function liensDuMenu(
+	html: string,
+	page: string,
+	langue: Langue
+): { chemin: string; texte: string }[] {
+	const nom = commonTexts[langue].navigationLabel;
+	const menu =
+		new RegExp(`<nav\\b[^>]*aria-label="${nom}"[^>]*>[\\s\\S]*?</nav>`).exec(html)?.[0] ?? '';
+	return [...menu.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)].map((trouve) => ({
+		chemin: new URL(
+			(trouve[1]?.match(/\bhref="([^"]*)"/)?.[1] ?? '').replaceAll('&amp;', '&'),
+			`${origin}${page}`
+		).pathname,
+		texte: lu(trouve[2] ?? '')
+	}));
+}
+
+/**
  * Les champs cachés du premier formulaire de la page dont l'action est `action` et dont les champs
  * cachés passent `filtre`. `null` si la page n'en montre aucun : le geste n'est pas à l'écran.
  */
@@ -764,6 +785,12 @@ const PREUVES: {
 	leave: {
 		texte: 'Quitter une organisation dont on est membre',
 		preuve: async (cookie) => {
+			// Le chemin, depuis un écran de son espace : la navigation mène à « Vos organisations »,
+			// qu'elle soit membre d'une organisation ou de plusieurs.
+			expect(
+				liensDuMenu(await page200('/cours', cookie), '/cours', 'fr').map((lien) => lien.chemin),
+				'le lien de la navigation vers « Vos organisations »'
+			).toContain('/organisations');
 			// L'organisation qu'elle vient de rejoindre en acceptant son invitation (`acceptance`).
 			const quitter = formulaireDeLaPage(
 				await page200('/organisations', cookie),
@@ -1949,6 +1976,24 @@ const AVANT_DE_PARTIR: Record<Langue, string> = {
 /** Ce que « Vos organisations » répond pour une organisation dont la personne n'est pas membre. */
 const PAS_MEMBRE = 'Vous n’êtes pas membre de cette organisation.';
 
+/** Le lien de la navigation vers « Vos organisations », pour qui n'a qu'une organisation. */
+const VOS_ORGANISATIONS: Record<Langue, string> = {
+	fr: 'Vos organisations',
+	de: 'Ihre Organisationen',
+	it: 'Le tue organizzazioni',
+	en: 'Your organisations',
+	ar: 'مؤسساتك'
+};
+
+/** Le même lien, pour qui en a plusieurs ou a une invitation qui attend. */
+const CHANGER: Record<Langue, string> = {
+	fr: 'Changer d’organisation',
+	de: 'Organisation wechseln',
+	it: 'Cambia organizzazione',
+	en: 'Change organisation',
+	ar: 'تغيير المؤسسة'
+};
+
 describe('quitter une organisation depuis « Vos organisations » (étape 19)', () => {
 	/** Celle que l'on quitte : une éditrice, deux responsables. */
 	const QUITTEE = { id: newId(), slug: 'mr-quittee', nom: 'Association que l’on quitte' };
@@ -1958,6 +2003,8 @@ describe('quitter une organisation depuis « Vos organisations » (étape 19)', 
 	const AUSSI = 'mr-responsable-aussi@example.test';
 	const RESTE = 'mr-responsable-reste@example.test';
 	const UNIQUE = 'mr-seule-responsable@example.test';
+	/** Une éditrice d'une seule organisation, sans invitation : le cas le plus courant. */
+	const SOLO = 'mr-une-seule-organisation@example.test';
 	const personnes: Record<string, string> = {};
 	/** Les adhésions, par adresse et par organisation : `adresse organisation`. */
 	const adhesions: Record<string, string> = {};
@@ -2002,13 +2049,14 @@ describe('quitter une organisation depuis « Vos organisations » (étape 19)', 
 
 	beforeAll(async () => {
 		appHandle = createDatabase({ role: 'app', overrides: { database: testDatabase } });
-		for (const email of [PARTANTE, AUSSI, RESTE, UNIQUE]) personnes[email] = newId();
+		for (const email of [PARTANTE, AUSSI, RESTE, UNIQUE, SOLO]) personnes[email] = newId();
 		const membres = [
 			[PARTANTE, QUITTEE.id, 'editor'],
 			[AUSSI, QUITTEE.id, 'org_admin'],
 			[RESTE, QUITTEE.id, 'org_admin'],
 			[PARTANTE, SEULE.id, 'editor'],
-			[UNIQUE, SEULE.id, 'org_admin']
+			[UNIQUE, SEULE.id, 'org_admin'],
+			[SOLO, QUITTEE.id, 'editor']
 		] as const;
 		for (const [email, organisation] of membres) {
 			adhesions[`${email} ${organisation}`] = newId();
@@ -2029,11 +2077,11 @@ describe('quitter une organisation depuis « Vos organisations » (étape 19)', 
 			}
 		});
 		for (const [email, organisation, role] of membres) await remettre(email, organisation, role);
-		for (const email of [PARTANTE, AUSSI, UNIQUE]) cookies[email] = await signIn(email);
+		for (const email of [PARTANTE, AUSSI, UNIQUE, SOLO]) cookies[email] = await signIn(email);
 	});
 
 	afterAll(async () => {
-		for (const email of [PARTANTE, AUSSI, UNIQUE]) await poserLangueDuCompte(email, 'fr');
+		for (const email of [PARTANTE, AUSSI, UNIQUE, SOLO]) await poserLangueDuCompte(email, 'fr');
 		await appHandle?.close();
 	});
 
@@ -2054,6 +2102,47 @@ describe('quitter une organisation depuis « Vos organisations » (étape 19)', 
 				([formulaire]) => lu(formulaire)
 			);
 			expect(boutons).toEqual([QUITTER[langue].bouton, QUITTER[langue].bouton]);
+		}
+	);
+
+	it.each(LANGUES)(
+		'leads someone with one organisation from the menu, in %s, to « Vos organisations », where she leaves',
+		async (langue) => {
+			await remettre(SOLO, QUITTEE.id, 'editor');
+			await poserLangueDuCompte(SOLO, langue);
+			const cookie = cookies[SOLO] ?? '';
+			// Rien à changer pour elle, mais « Vos organisations » lui propose de partir : sans ce lien,
+			// seule l'arrivée d'un lien de connexion ou l'adresse tapée à la main l'y menait.
+			for (const route of ['/', '/cours', '/partager']) {
+				const html = await page200(route, cookie);
+				// La page est bien celle de son espace : un renvoi passerait pour un menu sans lien.
+				expect(html, route).toContain(QUITTEE.nom);
+				expect(
+					liensDuMenu(html, route, langue).filter((lien) => lien.chemin === '/organisations'),
+					route
+				).toEqual([{ chemin: '/organisations', texte: VOS_ORGANISATIONS[langue] }]);
+				expect(html, route).not.toContain(CHANGER[langue]);
+			}
+
+			const quitter = formulaireDeLaPage(
+				await page200('/organisations', cookie),
+				'?/quitter',
+				avec({ organizationId: QUITTEE.id })
+			);
+			expect(quitter, 'le bouton qui la fait partir').toEqual({ organizationId: QUITTEE.id });
+			const demande = await postForm('/organisations?/quitter', quitter ?? {}, cookie);
+			expect(demande.status).toBe(200);
+			const confirmer = formulaireDeLaPage(
+				element(await demande.text(), 'confirmer-depart'),
+				'?/quitter'
+			);
+			expect(confirmer).toEqual({ organizationId: QUITTEE.id, confirm: 'yes' });
+			const partie = await postForm('/organisations?/quitter', confirmer ?? {}, cookie);
+			expect(partie.status).toBe(303);
+			const arrivee = new URL(partie.headers.get('location') ?? '', origin);
+			const html = await page200(`${arrivee.pathname}${arrivee.search}`, cookie);
+			expect(lu(element(html, 'avis-depart'))).toBe(PARTIE[langue]);
+			expect(await roleDans(SOLO, QUITTEE.id)).toBeUndefined();
 		}
 	);
 

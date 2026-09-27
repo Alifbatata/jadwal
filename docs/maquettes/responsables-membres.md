@@ -80,7 +80,9 @@ propre adhésion.
 
 La dernière ligne des gestes de l'éditeur, `Quitter une organisation dont on est membre`, vient à
 l'étape 19 avec le bouton `Quitter l'organisation` de « Vos organisations »
-(`responsables-coquille.md`) : l'éditrice du test la fait elle-même, par cet écran.
+(`responsables-coquille.md`) : l'éditrice du test la fait elle-même, par cet écran, où la
+navigation la mène. Toute personne membre y trouve un lien : `Changer d'organisation` quand elle a
+de quoi choisir, `Vos organisations` quand elle n'a qu'une organisation.
 
 ## Les messages
 
