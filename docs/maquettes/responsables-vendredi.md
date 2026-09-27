@@ -136,12 +136,13 @@ Cette session seulement. Les autres vendredis ne changent pas.
   elle vient, même quand ce vendredi n'est plus à l'écran. Une session déplacée le même jour à une
   autre heure garde un seul bouton, sur la ligne de son heure habituelle, comme sur `À venir`.
   Jusqu'à l'étape 19 (lot 2), la ligne de la nouvelle date n'avait pas de bouton.
-- Chaque `Rétablir comme d'habitude` envoie ce que sa ligne montrait : l'annulation, ou le
-  déplacement avec son jour et son heure. Une page restée ouverte, après qu'une autre personne a
-  rétabli la session puis l'a de nouveau annulée ou déplacée, n'efface plus ce nouveau changement :
-  elle est refusée par la phrase des lignes périmées, `Cette session a changé depuis l'ouverture de
-la page […]`, et rien n'est écrit, pas même au journal (étape 19, lot 2). Un formulaire qui
-  n'envoie pas ce qu'il montrait, écrit à la main, n'est pas comparé.
+- Chaque `Rétablir comme d'habitude` envoie ce que sa ligne montrait : l'annulation ou le
+  déplacement lui-même, par son identifiant, et pour un déplacement son jour et son heure. Une page
+  restée ouverte, après qu'une autre personne a rétabli la session puis l'a de nouveau annulée ou
+  déplacée, même à l'identique, n'efface plus ce nouveau changement : elle est refusée par la phrase
+  des lignes périmées, `Cette session a changé depuis l'ouverture de la page […]`, et rien n'est
+  écrit, pas même au journal (étape 19, lot 2 et sa relecture). Un formulaire qui n'envoie pas ce
+  qu'il montrait, écrit à la main, n'est pas comparé.
 - Une session annulée ou déplacée apparaît ensuite barrée dans la vue Semaine publique, comme une
   séance de cours.
 - `Annuler` et `Déplacer` suivent la règle d'`À venir` : ils n'écrivent que pour une session encore

@@ -68,10 +68,11 @@ changement : la séance retrouve sa date et son heure habituelles.` La carte `da
 l'a aussi (étape 19) : elle envoie la date prévue de la séance, que la carte de départ ne montre pas
 toujours, puisqu'une séance peut être avancée de loin. Une séance qui n'a changé que d'heure, le
 même jour, garde un seul bouton, sur la carte de son heure prévue. Le formulaire envoie aussi, sans
-le montrer, ce que la carte montrait : l'annulation, ou le déplacement avec sa date et son heure
-d'arrivée (étape 19, lot 2). Une carte restée ouverte pendant qu'une autre personne rétablissait la
-séance puis la changeait de nouveau n'efface plus ce changement : elle reçoit le refus d'une carte
-périmée, plus bas.
+le montrer, ce que la carte montrait : l'annulation ou le déplacement lui-même, par son identifiant,
+et pour un déplacement sa date et son heure d'arrivée (étape 19, lot 2). Une carte restée ouverte
+pendant qu'une autre personne rétablissait la séance puis la changeait de nouveau n'efface plus ce
+changement, même quand il ressemble au premier, une annulation refaite par exemple : elle reçoit le
+refus d'une carte périmée, plus bas.
 
 ## Après un geste
 
@@ -116,8 +117,8 @@ elle a déjà été annulée ou déplacée. Rien n'a été enregistré. Le progr
   Juste en dessous, la carte montre l'état réel. Deux déplacements envoyés au même instant n'en
   écrivent qu'un, et l'autre reçoit ce refus. `Rétablir la séance` le reçoit aussi quand sa carte
   montrait un autre changement que celui d'aujourd'hui : la séance a été rétablie puis annulée ou
-  déplacée de nouveau ailleurs, et ce nouveau changement reste (étape 19, lot 2 ; avant, il
-  disparaissait).
+  déplacée de nouveau ailleurs, même à l'identique, et ce nouveau changement reste (étape 19,
+  lot 2 ; avant, il disparaissait).
 - `La séance « Cercle de lecture » du lundi 28.09.2026 a déjà été annulée depuis l'ouverture de la
 page. Rien n'a été enregistré. Si le message n'a pas encore été envoyé, il est prêt ci-dessous.` :
   la même séance annulée une seconde fois, par une autre personne ou depuis une page restée
@@ -162,7 +163,9 @@ comptait aussi les cours en brouillon, une carte `date exceptionnelle` n'avait p
 de D4 : la carte d'un cours prévu après le Dhuhr prenait l'heure d'une session du vendredi en
 brouillon, que le programme de la semaine et la page publique ne prennent pas. Relevé au lot 1 de
 l'étape 19, corrigé au lot 2 : `Rétablir la séance` n'envoyait pas ce que sa carte montrait, et
-effaçait un changement fait ailleurs depuis l'ouverture de la page.
+effaçait un changement fait ailleurs depuis l'ouverture de la page. Relevé par la relecture du
+lot 2 : la carte n'envoyait que l'état montré, et une annulation refaite ailleurs, qui montre la
+même chose que la première, s'effaçait encore ; elle envoie maintenant l'identifiant du changement.
 
 Deux cartes peuvent être ouvertes en même temps : c'est la lecture retenue du retour A1, où une
 carte n'ouvre que la sienne sans rien changer aux autres.
