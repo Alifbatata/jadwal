@@ -83,8 +83,8 @@ en attente ne part pas, puisqu'il peut dater d'un choix que la personne a défai
 Le paramètre `language` ne compte qu'à ce moment-là. Seul un lien valide ouvre une session neuve, et
 son jeton, secret et à usage unique, désigne le compte : une adresse qui porte ce paramètre, posée
 sur un autre site, ne change ni la page ni le compte. Aucun écran ne le lit ensuite, et le
-formulaire de langue le retire de son chemin de retour. Il reste visible dans l'adresse de l'écran
-d'arrivée.
+formulaire de langue le retire de son chemin de retour. Il restait visible dans l'adresse de
+l'écran d'arrivée jusqu'à l'étape 19, qui l'en retire (voir l'addendum du 27.09.2026).
 
 La règle exacte, que les commentaires de `hooks.server.ts`, de `language.ts` et de
 `connexion/+page.server.ts` redisent :
