@@ -21,6 +21,7 @@ import { isLocalTime, type IsoDate } from '@jadwal/core';
 import {
 	descriptionsWithoutTitle,
 	durationAllowed,
+	firstDate,
 	isTimingChoice,
 	minutesAllowed,
 	readDate,
@@ -157,6 +158,13 @@ export function readCourseForm(
 		values
 	});
 
+	// Un cours à dates précises dont le premier jour arrive vide prend sa première date, comme le
+	// formulaire le fait pendant la saisie avec JavaScript (étape 19, lot 2). Un premier jour choisi
+	// n'est jamais remplacé : des dates avant lui restent refusées, et nommées.
+	if (values.recurrenceKind === 'dates' && values.startsOn === '') {
+		values.startsOn = firstDate(values.dates, SUPPORTED) ?? '';
+	}
+
 	if (!languages.includes(values.sourceLanguage)) return refuse();
 	if (!values.titles[values.sourceLanguage]) errors.push('titleMissing');
 	// Une description sans le titre de sa langue serait perdue à l'enregistrement (`parseCourseForm`
@@ -225,7 +233,8 @@ export function readCourseForm(
 		return { ok: false, errors, badDates, datesBefore, datesAfter, untitledDescriptions, values };
 	}
 
-	// Ce que `parseCourseForm` lit : le décalage signé, les dates comme la base les écrit.
+	// Ce que `parseCourseForm` lit : le décalage signé, les dates comme la base les écrit, et le
+	// premier jour, pris à la première date s'il est arrivé vide.
 	const normalised = new FormData();
 	for (const [name, value] of form) normalised.append(name, value);
 	normalised.set('timingKind', choice === 'fixed' ? 'fixed' : 'prayer');
@@ -233,6 +242,7 @@ export function readCourseForm(
 		normalised.set('offsetMinutes', String(signedOffset(choice, values.offsetMinutes ?? 0)));
 	}
 	if (values.recurrenceKind === 'dates') normalised.set('dates', isoDates.join('\n'));
+	normalised.set('startsOn', values.startsOn);
 
 	const parsed = parseCourseForm(normalised, languages);
 	return parsed.ok ? { ok: true, values: parsed.values } : refuse();

@@ -54,6 +54,7 @@
 	prayerModule={data.modulePrieres}
 	language={data.language}
 	submitLabel={text.submitNew}
+	newCourse
 	errors={form?.errors ?? []}
 	badDates={form?.badDates ?? []}
 	datesBefore={form?.datesBefore ?? []}

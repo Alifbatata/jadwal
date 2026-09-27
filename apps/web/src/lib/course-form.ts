@@ -184,6 +184,19 @@ export function readDate(text: string, range: DateRange): IsoDate | null {
 	return inRange(iso, range) ? iso : null;
 }
 
+/**
+ * La première date d'un cours à dates précises, la plus ancienne des dates lisibles et dans les
+ * bornes, ou `null` s'il n'y en a aucune. Le premier jour du cours la prend de lui-même quand il est
+ * vide : pendant la saisie avec JavaScript, et au serveur sans lui (étape 19, lot 2).
+ */
+export function firstDate(text: string, range: DateRange): IsoDate | null {
+	const dates = splitDates(text)
+		.map((token) => readDate(token, range))
+		.filter((date) => date !== null)
+		.sort();
+	return dates[0] ?? null;
+}
+
 /** Les dates de la base, telles que le champ les montre : `12.10.2026`, une par ligne. */
 export function writeDates(dates: readonly string[]): string {
 	return dates.map((date) => numericDate(date as IsoDate)).join('\n');

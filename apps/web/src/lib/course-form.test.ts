@@ -3,6 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+	firstDate,
 	readDate,
 	signedOffset,
 	summarise,
@@ -82,6 +83,14 @@ describe('les dates telles qu’on les écrit', () => {
 
 	it('writes them back as JJ.MM.AAAA, one per line', () => {
 		expect(writeDates(['2026-10-12', '2026-10-26'])).toBe('12.10.2026\n26.10.2026');
+	});
+
+	it('gives the first date written, the earliest, as the first day of the course (étape 19, lot 2)', () => {
+		expect(firstDate('26.10.2026\n12.10.2026 05.11.2026', BORNES)).toBe('2026-10-12');
+		// Une date illisible ou hors des bornes ne compte pas : le serveur la refuse.
+		expect(firstDate('31.02.2026\n01.01.0000 26.10.2026', BORNES)).toBe('2026-10-26');
+		expect(firstDate('31.02.2026', BORNES)).toBeNull();
+		expect(firstDate('  ', BORNES)).toBeNull();
 	});
 });
 

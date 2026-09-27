@@ -15,6 +15,7 @@
 		type IsoDate
 	} from '@jadwal/core';
 	import {
+		firstDate,
 		summarise,
 		textDirection,
 		TIMING_CHOICES,
@@ -34,6 +35,7 @@
 		prayerModule,
 		language,
 		submitLabel,
+		newCourse = false,
 		errors = [],
 		badDates = [],
 		datesBefore = [],
@@ -54,6 +56,8 @@
 		/** La langue de l'espace, celle de l'écran. */
 		language: Langue;
 		submitLabel: string;
+		/** Un nouveau cours, et non la fiche d'un cours enregistré. */
+		newCourse?: boolean;
 		errors?: CourseFormError[];
 		badDates?: string[];
 		/** Les dates avant le premier jour et après le dernier, qu'aucune séance ne suivrait. */
@@ -84,6 +88,27 @@
 		hydrated = true;
 	});
 	const tabs = $derived(hydrated && languages.length > 1);
+
+	// Sur un nouveau cours, la langue de saisie est cochée d'office comme langue d'enseignement (étape
+	// 19, lot 2) : le serveur la coche au premier rendu. Avec JavaScript, la case suit la langue de
+	// saisie quand la personne en choisit une autre, tant qu'elle n'a pas touché aux cases : elle
+	// garde ensuite ce qu'elle a coché. Aucune case cochée reste refusé à l'envoi.
+	let teachingFollowsSource = $state(
+		untrack(
+			() =>
+				newCourse &&
+				values.teachingLanguages.length === 1 &&
+				values.teachingLanguages[0] === values.sourceLanguage
+		)
+	);
+	// Le premier jour d'un cours à dates précises prend la première date tant qu'il est vide, et la
+	// suit pendant que la personne écrit ses dates, jusqu'à ce qu'elle le choisisse elle-même (étape
+	// 19, lot 2). Sans JavaScript, le serveur le remplit à l'envoi.
+	let startsOnFollowsDates = $state(untrack(() => values.startsOn === ''));
+	$effect(() => {
+		if (entry.recurrenceKind !== 'dates' || !startsOnFollowsDates) return;
+		entry.startsOn = firstDate(entry.dates, dateRange) ?? '';
+	});
 
 	const text = $derived(courseFormTexts[language]);
 	const summary = $derived(summarise(entry, { languages, rooms, dateRange }, language));
@@ -141,7 +166,12 @@
 		return text.errors[error];
 	}
 
+	function followSource(source: string) {
+		if (teachingFollowsSource) entry.teachingLanguages = [source];
+	}
+
 	function toggleLanguage(code: string) {
+		teachingFollowsSource = false;
 		entry.teachingLanguages = entry.teachingLanguages.includes(code)
 			? entry.teachingLanguages.filter((value) => value !== code)
 			: languages.filter((value) => value === code || entry.teachingLanguages.includes(value));
@@ -243,6 +273,7 @@
 			id="sourceLanguage"
 			name="sourceLanguage"
 			bind:value={entry.sourceLanguage}
+			onchange={(event) => followSource(event.currentTarget.value)}
 			aria-describedby="sourceLanguage-hint"
 		>
 			{#each languages as code (code)}
@@ -464,6 +495,7 @@
 			min={dateRange.first}
 			max={dateRange.last}
 			bind:value={entry.startsOn}
+			oninput={(event) => (startsOnFollowsDates = event.currentTarget.value === '')}
 			required
 			aria-describedby="startsOn-hint"
 		/>

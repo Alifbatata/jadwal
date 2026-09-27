@@ -387,7 +387,9 @@ const ECRANS: Ecran[] = [
 					['sourceLanguage', 'fr'],
 					['title.fr', ''],
 					['recurrenceKind', 'dates'],
-					['dates', '12.10.2026\n31.02.2026'],
+					// Aucune date lisible : le premier jour vide ne prend pas de première date (étape
+					// 19, lot 2), et sa phrase reste dans la liste.
+					['dates', '31.02.2026'],
 					['timingKind', 'beforePrayer'],
 					['prayer', 'isha'],
 					['offsetMinutes', '0'],
@@ -1132,6 +1134,98 @@ describe('une description sans titre dans sa langue (B4)', () => {
 			{ language: 'ar', title: TAFSIR_AR, description: null },
 			{ language: 'fr', title: TAFSIR, description: DESCRIPTION }
 		]);
+	});
+});
+
+describe('ce que le nouveau cours remplit de lui-même (étape 19, lot 2)', () => {
+	let cookie = '';
+
+	beforeAll(async () => {
+		cookie = await signIn(RESPONSABLE);
+		await poserLangueDuCompte('fr');
+	});
+
+	/** Les cases cochées d'une liste de cases, par leur nom. */
+	function cochees(html: string, nom: string): string[] {
+		return champsDuFormulaire(html)
+			.filter(([champ]) => champ === nom)
+			.map(([, valeur]) => valeur);
+	}
+
+	it('ticks the input language as the teaching language of a new course, without JavaScript', async () => {
+		const html = await (await get('/cours/nouveau', cookie)).text();
+		expect(options(html, 'sourceLanguage').find((option) => option.choisie)?.valeur).toBe('fr');
+		expect(cochees(html, 'teachingLanguages')).toEqual(['fr']);
+		// La langue de saisie d'un nouveau cours est la langue de l'organisation : une organisation de
+		// langue arabe a l'arabe coché d'office.
+		await maintenance((tx) =>
+			tx.execute(
+				sql`update "organization" set "default_language" = 'ar' where "id" = ${organizationId}`
+			)
+		);
+		try {
+			const arabe = await (await get('/cours/nouveau', cookie)).text();
+			expect(options(arabe, 'sourceLanguage').find((option) => option.choisie)?.valeur).toBe('ar');
+			expect(cochees(arabe, 'teachingLanguages')).toEqual(['ar']);
+		} finally {
+			await maintenance((tx) =>
+				tx.execute(
+					sql`update "organization" set "default_language" = 'fr' where "id" = ${organizationId}`
+				)
+			);
+		}
+	});
+
+	it('still refuses a course with no teaching language ticked at all', async () => {
+		const reponse = await postForm(
+			'/cours/nouveau',
+			coursAncre('Toujours sans langue', 'prayer', '15').filter(
+				([nom]) => nom !== 'teachingLanguages'
+			),
+			cookie
+		);
+		expect(reponse.status).toBe(400);
+		expect(erreurs(await reponse.text())).toEqual(['Cochez au moins une langue d’enseignement.']);
+		expect(await decalageEnBase('Toujours sans langue')).toEqual([]);
+	});
+
+	it('takes the first date as the first day when a course at specific dates arrives without one', async () => {
+		// Sans JavaScript, le premier jour ne s'est pas rempli pendant la saisie : le serveur le fait.
+		const champs = (titreDuCours: string): (readonly [string, string])[] => [
+			['sourceLanguage', 'fr'],
+			['title.fr', titreDuCours],
+			['audience', 'kids'],
+			['teachingLanguages', 'ar'],
+			['recurrenceKind', 'dates'],
+			['dates', '26.10.2026\n12.10.2026'],
+			['timingKind', 'fixed'],
+			['start', '10:00'],
+			['end', '11:30'],
+			['startsOn', ''],
+			['status', 'draft']
+		];
+		const reponse = await postForm('/cours/nouveau', champs('Premier jour rempli'), cookie);
+		expect(reponse.status).toBe(303);
+		expect(
+			await maintenance(async (tx) =>
+				lignes<{ startsOn: string }>(
+					await tx.execute(sql`
+						select c."starts_on"::text as "startsOn" from "course" c
+						join "course_translation" t on t."course_id" = c."id"
+						where t."title" = 'Premier jour rempli'
+					`)
+				)
+			)
+		).toEqual([{ startsOn: '2026-10-12' }]);
+
+		// Refusé pour une autre raison, le formulaire revient avec ce premier jour, dans le champ et
+		// dans le résumé.
+		const refuse = await postForm('/cours/nouveau', champs(''), cookie);
+		expect(refuse.status).toBe(400);
+		const html = await refuse.text();
+		expect(erreurs(html)).toEqual(['Écrivez le titre du cours dans la langue de saisie.']);
+		expect(champ(html, 'startsOn')['value']).toBe('2026-10-12');
+		expect(lignesDuResume(html)).toContain('Premier jour : lundi 12.10.2026');
 	});
 });
 

@@ -91,6 +91,62 @@ describe('les dates d’un cours à dates précises (A3)', () => {
 		});
 	}
 
+	it('takes the first date as the first day when the first day arrives empty (étape 19, lot 2)', () => {
+		// Sans JavaScript, le premier jour ne s'est pas rempli pendant la saisie : le serveur le fait.
+		const lu = readCourseForm(
+			aDates('26.10.2026\n12.10.2026 05.11.2026', { startsOn: '' }),
+			LANGUES,
+			SALLES
+		);
+		expect(lu.ok && lu.values.startsOn).toBe('2026-10-12');
+		expect(lu.ok && lu.values.recurrence).toEqual({
+			kind: 'dates',
+			dates: ['2026-10-26', '2026-10-12', '2026-11-05']
+		});
+		// Refusé pour une autre raison, le formulaire revient avec ce premier jour, que le résumé montre.
+		const refuse = readCourseForm(
+			formulaire({
+				...BASE,
+				'title.fr': '',
+				recurrenceKind: 'dates',
+				dates: '26.10.2026\n12.10.2026',
+				timingKind: 'fixed',
+				start: '10:00',
+				end: '11:30',
+				startsOn: ''
+			}),
+			LANGUES,
+			SALLES
+		);
+		expect(refuse.ok ? [] : refuse.errors).toEqual(['titleMissing']);
+		expect(refuse.ok ? '' : refuse.values.startsOn).toBe('2026-10-12');
+	});
+
+	it('keeps a first day that was chosen, and asks for one when no date can be read', () => {
+		const choisi = readCourseForm(
+			aDates('26.10.2026\n12.10.2026', { startsOn: '2026-10-01' }),
+			LANGUES,
+			SALLES
+		);
+		expect(choisi.ok && choisi.values.startsOn).toBe('2026-10-01');
+		const illisibles = readCourseForm(aDates('31.02.2026', { startsOn: '' }), LANGUES, SALLES);
+		expect(illisibles.ok ? [] : illisibles.errors).toEqual(['badDates', 'startsOnMissing']);
+		// Un cours chaque semaine ne prend rien de ses dates : il n'en a pas.
+		const hebdomadaire = readCourseForm(
+			formulaire({
+				...BASE,
+				dates: '12.10.2026',
+				timingKind: 'fixed',
+				start: '19:00',
+				end: '20:00',
+				startsOn: ''
+			}),
+			LANGUES,
+			SALLES
+		);
+		expect(hebdomadaire.ok ? [] : hebdomadaire.errors).toEqual(['startsOnMissing']);
+	});
+
 	it('refuses the dates before the first day, and names them', () => {
 		const lu = readCourseForm(
 			aDates('26.10.2026\n12.10.2026 05.11.2026', { startsOn: '2026-11-01' }),
