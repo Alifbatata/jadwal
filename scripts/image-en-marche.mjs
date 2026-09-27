@@ -30,6 +30,9 @@ export function docker(args, options = {}) {
 	return execFileSync('docker', args, { encoding: 'utf8', ...options });
 }
 
+/** Où le module de l'horloge posée se monte dans le conteneur du serveur (`lancerLeServeur`). */
+const HORLOGE_DANS_LE_CONTENEUR = '/opt/jadwal-horloge-figee.mjs';
+
 /** Un mot de passe tiré au hasard. Il ne sort jamais d'ici, et il meurt avec le conteneur. */
 const motDePasse = () => randomBytes(24).toString('base64url');
 
@@ -151,8 +154,30 @@ export class MiseEnMarche {
 		return { ok: passage.status === 0, derniere };
 	}
 
-	/** Le serveur de l'image, détaché. `publication` est la valeur de `--publish`. */
-	lancerLeServeur(publication, extra = {}) {
+	/**
+	 * Le serveur de l'image, détaché. `publication` est la valeur de `--publish`.
+	 *
+	 * `horloge`, un instant ISO 8601 avec son fuseau, pose l'horloge de ce seul conteneur à cet
+	 * instant : `scripts/horloge-figee.mjs` y est monté en lecture seule, et `NODE_OPTIONS` le fait
+	 * charger par le serveur, sans rien changer à l'image. Le module est celui du dépôt qui lance
+	 * l'épreuve, et non celui de l'image, qui ne le porte pas. `--mount`, et non `--volume` : le
+	 * chemin d'un poste Windows commence par une lettre suivie de deux-points, que `--volume` lit
+	 * comme un séparateur.
+	 */
+	lancerLeServeur(publication, extra = {}, { horloge } = {}) {
+		const horlogeFigee = horloge
+			? [
+					'--mount',
+					`type=bind,source=${join(racine, 'scripts', 'horloge-figee.mjs')},target=${HORLOGE_DANS_LE_CONTENEUR},readonly`
+				]
+			: [];
+		const environnement = horloge
+			? {
+					...extra,
+					NODE_OPTIONS: `--import=${HORLOGE_DANS_LE_CONTENEUR}`,
+					JADWAL_HORLOGE_FIGEE: horloge
+				}
+			: extra;
 		docker([
 			'run',
 			'--detach',
@@ -162,7 +187,8 @@ export class MiseEnMarche {
 			this.reseau,
 			'--publish',
 			publication,
-			...this.environnement(extra),
+			...horlogeFigee,
+			...this.environnement(environnement),
 			this.image
 		]);
 	}
