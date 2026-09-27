@@ -126,7 +126,8 @@
  * doit marcher sans script. Une position hors de Suisse y remplace la localité de Bienne, qui est
  * enregistrée de nouveau avant la suite : les heures de prière redeviennent celles de l'étape g. Le
  * super-admin passe aussi par un navigateur sans JavaScript, dès
- * l'étape a, pour l'adresse que le serveur propose quand personne ne l'a vue se remplir.
+ * l'étape a, pour l'adresse que le serveur propose quand personne ne l'a vue se remplir : il la
+ * montre en entier, et ne crée l'organisation qu'une fois l'adresse confirmée (étape 19, D6).
  *
  * ## En dernier, ce qui change l'organisation
  *
@@ -354,7 +355,8 @@ const SECONDE_RESPONSABLE = 'deuxieme.personne@example.test';
 const DESCRIPTION = 'Pour les enfants de 7 à 12 ans.';
 /**
  * Une organisation créée sans JavaScript, l'adresse laissée vide : le serveur la propose (retour
- * B2), comme l'écran l'aurait fait pendant la frappe.
+ * B2), comme l'écran l'aurait fait pendant la frappe, et la montre avant de créer quoi que ce soit
+ * (étape 19, D6).
  */
 const SANS_SCRIPT = { nom: 'École du Lac', adresse: 'ecole-du-lac' };
 /** Une période préparée à l'avance, puis copiée depuis l'écran en allemand (retour D2). */
@@ -1528,7 +1530,9 @@ async function secondePasskey(page, cdp, premier) {
 /**
  * Le super-admin sans JavaScript (B2) : l'adresse de la page publique ne se remplit pas pendant la
  * frappe, le champ part vide, et le serveur la propose d'après le nom, comme l'écran l'aurait fait.
- * La même session, dans un navigateur qui n'exécute aucun script.
+ * Il la montre alors en entier, dans un champ où on la confirme ou la change, et ne crée
+ * l'organisation qu'à la confirmation (étape 19, D6). La même session, dans un navigateur qui
+ * n'exécute aucun script.
  */
 async function adresseSansScript(navigateur, contexte) {
 	await retour('B2', async () => {
@@ -1542,11 +1546,32 @@ async function adresseSansScript(navigateur, contexte) {
 			await page.locator('#name').fill(SANS_SCRIPT.nom);
 			await envoyer(page, page.locator('form[action="?/ouvrir"] button[type="submit"]'));
 			const adresse = `${new URL(ORIGINE).host}/m/${SANS_SCRIPT.adresse}`;
+			const etape = page.locator('section.a-confirmer');
+			const montree = (await etape.count()) === 1 ? await texteDe(etape) : '';
+			const champ = etape.locator('#slug-confirme');
+			const proposee = (await champ.count()) === 1 ? await champ.inputValue() : 'aucun champ';
+			const pasEncore =
+				(await page.locator('li').filter({ hasText: SANS_SCRIPT.nom }).count()) === 0;
+			verifierChaque(
+				`sans JavaScript, « ${SANS_SCRIPT.nom} », envoyée sans adresse écrite, n’est pas encore créée : l’écran montre en entier l’adresse proposée, « ${adresse} », dans un champ où la confirmer ou la changer`,
+				{
+					'aucune organisation créée': pasEncore,
+					'« Vérifiez l’adresse avant de créer l’organisation »': montree.includes(
+						'Vérifiez l’adresse avant de créer l’organisation'
+					),
+					'l’adresse entière': montree.includes(adresse),
+					'le champ porte l’adresse proposée': proposee === SANS_SCRIPT.adresse
+				},
+				montree || (await texteDe(page.locator('main'))).slice(0, 160)
+			);
+			if ((await etape.count()) === 1) {
+				await envoyer(page, etape.getByRole('button', { name: 'Créer l’organisation' }));
+			}
 			const succes = page.locator('section.succes');
 			const annonce = (await succes.count()) === 1 ? await texteDe(succes) : '';
 			const carte = page.locator('li').filter({ hasText: SANS_SCRIPT.nom });
 			verifier(
-				`sans JavaScript, « ${SANS_SCRIPT.nom} », créée sans adresse écrite, reçoit celle que le serveur propose, « ${SANS_SCRIPT.adresse} », et l’écran dit l’adresse entière`,
+				`sans JavaScript, « ${SANS_SCRIPT.nom} », créée à la confirmation, reçoit l’adresse que le serveur a proposée, « ${SANS_SCRIPT.adresse} », et l’écran dit l’adresse entière`,
 				annonce.includes(SANS_SCRIPT.nom) &&
 					annonce.includes(adresse) &&
 					(await carte.count()) === 1 &&

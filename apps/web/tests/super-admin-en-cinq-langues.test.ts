@@ -182,6 +182,23 @@ function valeurDuChamp(html: string, id: string): string | undefined {
 	return valeur?.replaceAll('&quot;', '"').replaceAll('&amp;', '&');
 }
 
+/**
+ * Les champs d'un formulaire tels qu'un navigateur sans JavaScript les envoie : chaque `<input>`
+ * nommé du fragment, avec sa valeur.
+ */
+function champsDe(fragment: string): Record<string, string> {
+	const champs: Record<string, string> = {};
+	for (const [balise] of fragment.matchAll(/<input\b[^>]*>/g)) {
+		const nom = balise.match(/\sname="([^"]*)"/)?.[1];
+		if (!nom) continue;
+		champs[nom] = (balise.match(/\svalue="([^"]*)"/)?.[1] ?? '')
+			.replaceAll('&quot;', '"')
+			.replaceAll('&#39;', "'")
+			.replaceAll('&amp;', '&');
+	}
+	return champs;
+}
+
 /** Le message d'erreur que la page annonce, s'il y en a un. */
 function erreur(html: string): string {
 	return texteDe(element(html, /<p\b[^>]*role="alert"/, 'p'));
@@ -348,7 +365,7 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 			expect(libelle(html, 'slug')).toBe('Adresse de la page publique');
 			expect(visibleText(html)).not.toContain('Identifiant d’URL');
 			expect(creer).toContain(
-				'Elle est proposée à partir du nom, et vous pouvez la modifier. Si vous la laissez vide, elle est formée à partir du nom.'
+				'Elle est proposée à partir du nom, et vous pouvez la modifier. Si vous la laissez vide, l’écran la forme à partir du nom et vous la montre avant de créer l’organisation.'
 			);
 			expect(creer).toContain(
 				'Lettres minuscules sans accent ni cédille, chiffres et traits d’union, avec au moins une lettre. Exemple : association-horizon'
@@ -489,22 +506,120 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 			}
 		});
 
-		it('proposes the address from the name when the field arrives empty, without JavaScript', async () => {
+		it('shows the proposed address in full without JavaScript, and creates nothing before it is confirmed', async () => {
+			// Sans JavaScript, le champ de l'adresse arrive vide : personne n'a vu l'adresse que le serveur
+			// propose. Avant l'étape 19 (D6), l'organisation était créée avec elle, qui ne se change plus.
+			const avant = await nombreDOrganisations();
 			const reponse = await postForm(
 				'/super-admin?/ouvrir',
-				{ name: 'Association Horizon', slug: '', timeZone: 'Europe/Zurich' },
+				{ name: 'Association Horizon', slug: '', timeZone: 'Europe/Berlin' },
 				avecPouvoirs
 			);
 			expect(reponse.status).toBe(200);
+			const html = await reponse.text();
+			expect(await organisationA('association-horizon')).toBeUndefined();
+			expect(await nombreDOrganisations()).toBe(avant);
+			expect(element(html, /<section\b[^>]*class="succes[\s"]/, 'section')).toBe('');
+
+			const etape = section(html, 'confirmer-titre');
+			expect(texteDe(etape)).toBe(
+				[
+					'Vérifiez l’adresse avant de créer l’organisation',
+					'L’organisation n’est pas encore créée : Association Horizon',
+					`Adresse de sa page publique, proposée à partir du nom : ${HOTE}/m/association-horizon`,
+					'Elle ne se changera plus ensuite. Si elle vous convient, touchez « Créer l’organisation ». Sinon, écrivez-en une autre dans le champ ci-dessous.',
+					'Adresse de la page publique',
+					'Lettres minuscules sans accent ni cédille, chiffres et traits d’union, avec au moins une lettre.',
+					'Créer l’organisation'
+				].join(' ')
+			);
+			// L'adresse proposée, dans un champ qu'on peut changer, que le navigateur exige et vérifie ;
+			// le nom et le fuseau repartent tels quels.
+			expect(champsDe(etape)).toEqual({
+				name: 'Association Horizon',
+				timeZone: 'Europe/Berlin',
+				slug: 'association-horizon'
+			});
+			const champ = etape.match(/<input\b[^>]*\bname="slug"[^>]*>/)?.[0] ?? '';
+			expect(champ).toMatch(/\brequired\b/);
+			expect(champ).toContain('pattern="(?=.*[a-z])[a-z0-9]+(-[a-z0-9]+)*"');
+			expect(libelle(html, 'slug-confirme')).toBe('Adresse de la page publique');
+
+			// Le formulaire de création, plus bas, garde le nom et le fuseau saisis.
+			expect(valeurDuChamp(html, 'name')).toBe('Association Horizon');
+			expect(fuseaux(html).filter((option) => option.choisi)).toEqual([
+				{ valeur: 'Europe/Berlin', groupe: 'Europe', choisi: true }
+			]);
+
+			// Confirmée telle quelle, l'adresse crée l'organisation.
+			const confirmee = await postForm('/super-admin?/ouvrir', champsDe(etape), avecPouvoirs);
+			expect(confirmee.status).toBe(200);
 			expect(await organisationA('association-horizon')).toEqual({
 				name: 'Association Horizon',
+				time_zone: 'Europe/Berlin'
+			});
+			const creee = texteDe(
+				element(await confirmee.text(), /<section\b[^>]*class="succes[\s"]/, 'section')
+			);
+			expect(creee).toContain('L’organisation est créée : Association Horizon');
+			expect(creee).toContain(`Sa page publique : ${HOTE}/m/association-horizon`);
+		});
+
+		it('creates the organisation with the address changed at the confirmation step', async () => {
+			const proposee = await postForm(
+				'/super-admin?/ouvrir',
+				{ name: 'Centre des Tilleuls', slug: '', timeZone: 'Europe/Zurich' },
+				avecPouvoirs
+			);
+			const champs = champsDe(section(await proposee.text(), 'confirmer-titre'));
+			expect(champs['slug']).toBe('centre-des-tilleuls');
+			const confirmee = await postForm(
+				'/super-admin?/ouvrir',
+				{ ...champs, slug: 'tilleuls-bienne' },
+				avecPouvoirs
+			);
+			expect(confirmee.status).toBe(200);
+			expect(await organisationA('tilleuls-bienne')).toEqual({
+				name: 'Centre des Tilleuls',
 				time_zone: 'Europe/Zurich'
 			});
-			const confirme = texteDe(
-				element(await reponse.text(), /<section\b[^>]*class="succes[\s"]/, 'section')
+			expect(await organisationA('centre-des-tilleuls')).toBeUndefined();
+		});
+
+		it('says before the confirmation step that the proposed address is taken, and shows it', async () => {
+			// L'adresse que « Sa deja la » propose est celle d'une organisation qui existe : l'écran le dit
+			// tout de suite, au lieu de la faire confirmer pour la refuser ensuite.
+			const reponse = await postForm(
+				'/super-admin?/ouvrir',
+				{ name: 'Sa deja la', slug: '', timeZone: 'Europe/Zurich' },
+				avecPouvoirs
 			);
-			expect(confirme).toContain('L’organisation est créée : Association Horizon');
-			expect(confirme).toContain(`Sa page publique : ${HOTE}/m/association-horizon`);
+			expect(reponse.status).toBe(400);
+			const html = await reponse.text();
+			expect(erreur(html)).toBe(
+				'Cette adresse est déjà celle d’une autre organisation. Choisissez-en une autre, par exemple en y ajoutant le nom de la ville.'
+			);
+			expect(section(html, 'confirmer-titre')).toBe('');
+			expect(valeurDuChamp(html, 'slug')).toBe(EXISTANTE_ADRESSE);
+		});
+
+		it('asks to type the address under the field when the name has no Latin letter', async () => {
+			// Avec JavaScript, la phrase suit la frappe ; sans lui, le serveur la rend avec le nom saisi.
+			const vide = await (await get('/super-admin', avecPouvoirs)).text();
+			const phrase = (html: string) => texteDe(element(html, /<p\b[^>]*\bid="slug-a-taper"/, 'p'));
+			expect(phrase(vide)).toBe('');
+			const reponse = await postForm(
+				'/super-admin?/ouvrir',
+				{ name: 'جمعية الأفق', slug: '', timeZone: 'Europe/Zurich' },
+				avecPouvoirs
+			);
+			const html = await reponse.text();
+			expect(phrase(html)).toBe(
+				'Ce nom n’a aucune lettre latine : aucune adresse ne peut en être tirée. Écrivez-la vous-même.'
+			);
+			expect(html.match(/<input\b[^>]*\bid="slug"[^>]*>/)?.[0] ?? '').toMatch(
+				/\baria-describedby="[^"]*\bslug-a-taper\b/
+			);
 		});
 
 		it('keeps the address written by hand, and the time zone chosen', async () => {
@@ -923,6 +1038,36 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 					expect(parLangue[langue], `${nom} ${langue}`).toBeTruthy();
 					expect(parLangue[langue], `${nom} ${langue}`).not.toBe(parLangue.fr);
 				}
+			}
+		});
+
+		it('shows the confirmation step in each language, with no French left', async () => {
+			const etapes: Partial<Record<Langue, string>> = {};
+			const pages: Partial<Record<Langue, string>> = {};
+			try {
+				for (const langue of LANGUES) {
+					await langueDuCompte(langue);
+					const reponse = await postForm(
+						'/super-admin?/ouvrir',
+						{ name: `Maison ${langue}`, slug: '', timeZone: 'Europe/Zurich' },
+						avecPouvoirs
+					);
+					expect(reponse.status, langue).toBe(200);
+					const html = await reponse.text();
+					pages[langue] = html;
+					etapes[langue] = texteDe(section(html, 'confirmer-titre'));
+					expect(etapes[langue], langue).toContain(`${HOTE}/m/maison-${langue}`);
+					expect(await organisationA(`maison-${langue}`), langue).toBeUndefined();
+				}
+			} finally {
+				await langueDuCompte('fr');
+			}
+			const francais = pages.fr ?? '';
+			for (const langue of LANGUES.slice(1)) {
+				expect(etapes[langue], langue).not.toBe(etapes.fr);
+				expect
+					.soft(frenchLeft(francais, pages[langue] ?? '', permis(francais)), langue)
+					.toEqual([]);
 			}
 		});
 

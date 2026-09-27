@@ -33,7 +33,7 @@
 	// Le formulaire de création. Après une erreur, il revient avec ce qui avait été saisi. L'adresse
 	// suit le nom pendant la frappe, tant que la personne ne l'a pas écrite elle-même ; si elle
 	// l'efface, la proposition reprend. Sans JavaScript, le champ reste vide et le serveur propose la
-	// même adresse, par la même fonction.
+	// même adresse, par la même fonction, puis la montre avant de rien créer.
 	const saisi = untrack(() => (form && 'values' in form ? form.values : undefined));
 	let name = $state(saisi?.name ?? '');
 	let address = $state(saisi?.slug ?? '');
@@ -46,6 +46,18 @@
 		return listed ? zone : data.defaultTimeZone;
 	});
 	const shownAddress = $derived(address || proposePublicAddress(name));
+	/**
+	 * Un nom sans lettre latine ne propose aucune adresse : la phrase sous le champ demande de
+	 * l'écrire, pendant la frappe, et après un envoi sans JavaScript (étape 19, D6).
+	 */
+	const addressToType = $derived(
+		name.trim() !== '' && address === '' && proposePublicAddress(name) === ''
+	);
+	/**
+	 * L'adresse que le serveur a proposée parce que le champ est arrivé vide : rien n'est créé avant
+	 * qu'elle soit confirmée, ou changée, dans l'étape qui la montre en entier (étape 19, D6).
+	 */
+	const toConfirm = $derived(form && 'toConfirm' in form ? form.toConfirm : null);
 
 	function followName(event: Event & { currentTarget: HTMLInputElement }) {
 		name = event.currentTarget.value;
@@ -67,6 +79,41 @@
 <p class="details">{text.intro}</p>
 
 {#if errorMessage}<p class="erreur" role="alert">{errorMessage}</p>{/if}
+
+<!-- Sans JavaScript, l'adresse proposée à partir du nom n'a été vue par personne : elle se montre
+     ici, en haut de la page qui revient, dans un champ où on la confirme ou la change. Le nom et le
+     fuseau repartent tels quels ; le formulaire de création, plus bas, les garde aussi. -->
+{#if toConfirm}
+	<section class="a-confirmer" aria-labelledby="confirmer-titre">
+		<h2 id="confirmer-titre">{text.confirm.title}</h2>
+		<p>{text.confirm.notYet} <strong><bdi>{toConfirm.name}</bdi></strong></p>
+		<p class="adresse-complete">
+			{text.confirm.proposed}
+			<strong><bdi dir="ltr">{toConfirm.address}</bdi></strong>
+		</p>
+		<p>{text.confirm.check}</p>
+		<form method="post" action="?/ouvrir" class="colonne">
+			<input type="hidden" name="name" value={toConfirm.name} />
+			<input type="hidden" name="timeZone" value={toConfirm.timeZone} />
+			<label for="slug-confirme">{text.addressLabel}</label>
+			<input
+				id="slug-confirme"
+				name="slug"
+				type="text"
+				dir="ltr"
+				autocapitalize="none"
+				autocomplete="off"
+				spellcheck="false"
+				required
+				pattern={PUBLIC_ADDRESS_PATTERN}
+				aria-describedby="slug-confirme-regle"
+				value={toConfirm.slug}
+			/>
+			<p id="slug-confirme-regle" class="aide">{text.addressRule}</p>
+			<button type="submit">{text.create}</button>
+		</form>
+	</section>
+{/if}
 
 {#if form && 'created' in form && form.created}
 	<section class="succes" aria-labelledby="succes-titre">
@@ -195,10 +242,13 @@
 			autocomplete="off"
 			spellcheck="false"
 			pattern={PUBLIC_ADDRESS_PATTERN}
-			aria-describedby="slug-aide slug-regle slug-adresse"
+			aria-describedby="slug-a-taper slug-aide slug-regle slug-adresse"
 			value={address}
 			oninput={writeAddress}
 		/>
+		<p id="slug-a-taper" class="aide" aria-live="polite">
+			{addressToType ? text.addressToType : ''}
+		</p>
 		<p id="slug-aide" class="aide">{text.addressHint}</p>
 		<p id="slug-regle" class="aide">
 			{text.addressRule}
@@ -360,6 +410,18 @@
 		background: #ecfdf5;
 		border-inline-start: 4px solid var(--accent);
 		padding: 0.75rem;
+	}
+	.a-confirmer {
+		background: #fef3c7;
+		border-inline-start: 4px solid #d97706;
+		padding: 0.75rem;
+	}
+	.a-confirmer h2 {
+		margin-block-start: 0;
+		font-size: 1.1rem;
+	}
+	.a-confirmer .adresse-complete bdi {
+		overflow-wrap: anywhere;
 	}
 	.succes p {
 		margin: 0.25rem 0;

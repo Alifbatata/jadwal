@@ -32,11 +32,14 @@ d'une association, d'une école ou d'un club : son programme, ses membres et sa 
      `Exemple : Association Horizon` (en arabe, `جمعية الأفق`). Le champ prend le sens de ce qu'on y
      tape (`dir="auto"`).
    - `Adresse de la page publique` (avant : « Identifiant d'URL »), facultative : `Elle est proposée
-à partir du nom, et vous pouvez la modifier. Si vous la laissez vide, elle est formée à partir du
-nom.`, la règle `Lettres minuscules sans accent ni cédille, chiffres et traits d'union, avec au
-moins une lettre.` avec
+à partir du nom, et vous pouvez la modifier. Si vous la laissez vide, l'écran la forme à partir du
+nom et vous la montre avant de créer l'organisation.`, la règle `Lettres minuscules sans accent ni
+cédille, chiffres et traits d'union, avec au moins une lettre.` avec
      `Exemple : association-horizon`, `Adresse complète :` qui suit la frappe, et
-     `Choisissez-la avec soin : elle ne se change plus ensuite.`
+     `Choisissez-la avec soin : elle ne se change plus ensuite.` Un nom sans aucune lettre latine
+     ne propose rien : sous le champ, `Ce nom n'a aucune lettre latine : aucune adresse ne peut en
+être tirée. Écrivez-la vous-même.`, pendant la frappe avec JavaScript, et au retour du formulaire
+     sans lui.
    - `Fuseau horaire` : une liste (avant : un texte libre), `Europe/Zurich` choisi d'avance, le
      groupe `Europe` en tête puis `Reste du monde`, des noms canoniques seulement, sans alias ni
      `Etc/`. Aide : `Il sert à afficher les heures du programme à l'heure du lieu de l'organisation
@@ -45,6 +48,16 @@ et à calculer les heures de prière. En Suisse : Europe/Zurich.`, puis, pour un
 l'organisation n'est pas dans la liste, choisissez une ville qui a toujours la même heure qu'elle.
 Pour la plus grande partie de l'Europe : Europe/Zurich, Europe/Paris ou Europe/Berlin.`
    - Le bouton `Créer l'organisation`.
+
+   **Sans JavaScript**, le champ de l'adresse part vide, et personne n'a vu l'adresse que le
+   serveur en tire : rien n'est créé (étape 19, D6). La page revient avec, en haut, une étape
+   `Vérifiez l'adresse avant de créer l'organisation` : `L'organisation n'est pas encore créée :` et
+   son nom, `Adresse de sa page publique, proposée à partir du nom :` et l'adresse entière, puis
+   `Elle ne se changera plus ensuite. Si elle vous convient, touchez « Créer l'organisation ». Sinon,
+écrivez-en une autre dans le champ ci-dessous.` Le champ `Adresse de la page publique` porte
+   l'adresse proposée, obligatoire et vérifié par le navigateur, avec la règle ; le nom et le fuseau
+   repartent tels quels, et le formulaire de création, plus bas, les garde aussi. Une adresse
+   proposée déjà prise est dite tout de suite, par l'erreur habituelle, et revient dans le champ.
 
    Après la création : `L'organisation est créée :` et son nom, `Sa page publique :` et l'adresse,
    puis `Pour la préparer, entrez dans son espace depuis la liste des organisations, puis invitez sa
@@ -100,11 +113,10 @@ pas fermer le service. […]`
 
 Un échec dit ce qui arrive dans la langue de l'écran, puis `Détail donné par le navigateur :`.
 
-## Ce qui reste à reprendre
+## Corrigé à l'étape 19
 
-Relevé par la relecture de l'étape 18, non corrigé à la fin de l'étape : sans JavaScript,
-l'adresse proposée à partir du nom est créée sans avoir été vue, et elle ne se change plus.
-
-Corrigé à l'étape 19 (D6) : la proposition décompose les ligatures et les lettres pleine chasse
-(`NFKD` au lieu de `NFD`) ; un nom sans aucune lettre latine, même suivi d'un chiffre, ne propose
-plus d'adresse (il donnait `/m/2`) ; une adresse sans aucune lettre est refusée.
+Relevé par la relecture de l'étape 18 (D6), corrigé à l'étape 19 : sans JavaScript, l'adresse
+proposée à partir du nom était créée sans avoir été vue, et elle ne se change plus ; elle passe
+désormais par l'étape qui la montre. La proposition décompose les ligatures et les lettres pleine
+chasse (`NFKD` au lieu de `NFD`) ; un nom sans aucune lettre latine, même suivi d'un chiffre, ne
+propose plus d'adresse (il donnait `/m/2`) ; une adresse sans aucune lettre est refusée.

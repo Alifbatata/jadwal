@@ -67,8 +67,21 @@ interface SuperAdminTexts {
 	readonly addressHint: string;
 	readonly addressRule: string;
 	readonly addressFixed: string;
+	/** Sous le champ de l'adresse, quand le nom saisi n'a aucune lettre latine (étape 19, D6). */
+	readonly addressToType: string;
 	/** Devant l'adresse complète de la page publique, écrite pendant la frappe. */
 	readonly fullAddress: string;
+	/**
+	 * L'étape qui montre l'adresse proposée avant de créer l'organisation, quand le champ est arrivé
+	 * vide, sans JavaScript (étape 19, D6) : le titre, le texte avant le nom, le texte avant l'adresse
+	 * complète, puis quoi faire. Le bouton est celui du formulaire, `create`.
+	 */
+	readonly confirm: {
+		readonly title: string;
+		readonly notYet: string;
+		readonly proposed: string;
+		readonly check: string;
+	};
 	readonly timeZoneLabel: string;
 	/** À quoi sert le fuseau, et celui de la Suisse, que le serveur donne. */
 	readonly timeZoneHint: (zone: string) => string;
@@ -147,11 +160,20 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		nameExample: NAME_EXAMPLE,
 		addressLabel: 'Adresse de la page publique',
 		addressHint:
-			'Elle est proposée à partir du nom, et vous pouvez la modifier. Si vous la laissez vide, elle est formée à partir du nom.',
+			'Elle est proposée à partir du nom, et vous pouvez la modifier. Si vous la laissez vide, l’écran la forme à partir du nom et vous la montre avant de créer l’organisation.',
 		addressRule:
 			'Lettres minuscules sans accent ni cédille, chiffres et traits d’union, avec au moins une lettre.',
 		addressFixed: 'Choisissez-la avec soin : elle ne se change plus ensuite.',
+		addressToType:
+			'Ce nom n’a aucune lettre latine : aucune adresse ne peut en être tirée. Écrivez-la vous-même.',
 		fullAddress: 'Adresse complète :',
+		confirm: {
+			title: 'Vérifiez l’adresse avant de créer l’organisation',
+			notYet: 'L’organisation n’est pas encore créée :',
+			proposed: 'Adresse de sa page publique, proposée à partir du nom :',
+			check:
+				'Elle ne se changera plus ensuite. Si elle vous convient, touchez « Créer l’organisation ». Sinon, écrivez-en une autre dans le champ ci-dessous.'
+		},
 		timeZoneLabel: 'Fuseau horaire',
 		timeZoneHint: (zone) =>
 			`Il sert à afficher les heures du programme à l’heure du lieu de l’organisation et à calculer les heures de prière. En Suisse : ${zone}.`,
@@ -227,11 +249,20 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		nameExample: NAME_EXAMPLE,
 		addressLabel: 'Adresse der öffentlichen Seite',
 		addressHint:
-			'Sie wird aus dem Namen vorgeschlagen, und Sie können sie ändern. Wenn Sie das Feld leer lassen, wird sie aus dem Namen gebildet.',
+			'Sie wird aus dem Namen vorgeschlagen, und Sie können sie ändern. Wenn Sie das Feld leer lassen, wird sie aus dem Namen gebildet und Ihnen gezeigt, bevor die Organisation erstellt wird.',
 		addressRule:
 			'Kleinbuchstaben ohne Umlaute und Akzente, Ziffern und Bindestriche, mit mindestens einem Buchstaben.',
 		addressFixed: 'Wählen Sie sie sorgfältig: Sie lässt sich danach nicht mehr ändern.',
+		addressToType:
+			'Dieser Name hat keine lateinischen Buchstaben: Es lässt sich keine Adresse daraus bilden. Schreiben Sie sie selbst.',
 		fullAddress: 'Vollständige Adresse:',
+		confirm: {
+			title: 'Prüfen Sie die Adresse, bevor die Organisation erstellt wird',
+			notYet: 'Die Organisation ist noch nicht erstellt:',
+			proposed: 'Adresse ihrer öffentlichen Seite, aus dem Namen vorgeschlagen:',
+			check:
+				'Sie lässt sich danach nicht mehr ändern. Wenn sie passt, tippen Sie auf «Organisation erstellen». Sonst schreiben Sie im Feld unten eine andere.'
+		},
 		timeZoneLabel: 'Zeitzone',
 		timeZoneHint: (zone) =>
 			`Sie dient dazu, die Zeiten des Programms in der Ortszeit der Organisation anzuzeigen und die Gebetszeiten zu berechnen. In der Schweiz: ${zone}.`,
@@ -308,10 +339,19 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		nameExample: NAME_EXAMPLE,
 		addressLabel: 'Indirizzo della pagina pubblica',
 		addressHint:
-			'Viene proposto a partire dal nome, e puoi modificarlo. Se lo lasci vuoto, viene formato a partire dal nome.',
+			'Viene proposto a partire dal nome, e puoi modificarlo. Se lo lasci vuoto, viene formato a partire dal nome e ti viene mostrato prima di creare l’organizzazione.',
 		addressRule: 'Lettere minuscole senza accenti, cifre e trattini, con almeno una lettera.',
 		addressFixed: 'Sceglilo con cura: dopo non si può più cambiare.',
+		addressToType:
+			'Questo nome non ha lettere latine: non se ne può ricavare un indirizzo. Scrivilo tu.',
 		fullAddress: 'Indirizzo completo:',
+		confirm: {
+			title: 'Controlla l’indirizzo prima di creare l’organizzazione',
+			notYet: 'L’organizzazione non è ancora stata creata:',
+			proposed: 'Indirizzo della sua pagina pubblica, proposto a partire dal nome:',
+			check:
+				'Dopo non si potrà più cambiare. Se ti va bene, tocca «Crea l’organizzazione». Altrimenti scrivine un altro nel campo qui sotto.'
+		},
 		timeZoneLabel: 'Fuso orario',
 		timeZoneHint: (zone) =>
 			`Serve a mostrare gli orari del programma all’ora del luogo dell’organizzazione e a calcolare gli orari di preghiera. In Svizzera: ${zone}.`,
@@ -387,11 +427,20 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		nameExample: NAME_EXAMPLE,
 		addressLabel: 'Address of the public page',
 		addressHint:
-			'It is suggested from the name, and you can change it. If you leave it empty, it is made from the name.',
+			'It is suggested from the name, and you can change it. If you leave it empty, it is made from the name and shown to you before the organisation is created.',
 		addressRule:
 			'Lower-case letters without accents, digits and hyphens, with at least one letter.',
 		addressFixed: 'Choose it with care: it cannot be changed afterwards.',
+		addressToType:
+			'This name has no Latin letters, so no address can be made from it. Write it yourself.',
 		fullAddress: 'Full address:',
+		confirm: {
+			title: 'Check the address before the organisation is created',
+			notYet: 'The organisation has not been created yet:',
+			proposed: 'Address of its public page, suggested from the name:',
+			check:
+				'It cannot be changed afterwards. If it suits you, tap ‘Create the organisation’. Otherwise, write another one in the field below.'
+		},
 		timeZoneLabel: 'Time zone',
 		timeZoneHint: (zone) =>
 			`It is used to show the times of the programme in the local time of the organisation, and to work out the prayer times. In Switzerland: ${zone}.`,
@@ -465,10 +514,18 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		nameExample: 'جمعية الأفق',
 		addressLabel: 'عنوان الصفحة العامة',
 		addressHint:
-			'يقترح العنوان انطلاقًا من الاسم إذا كان بأحرف لاتينية، ويمكنك تعديله. إذا تركته فارغًا، يؤخذ العنوان من الاسم.',
+			'يقترح العنوان انطلاقًا من الاسم إذا كان بأحرف لاتينية، ويمكنك تعديله. إذا تركته فارغًا، يؤخذ العنوان من الاسم ويعرض عليك قبل إنشاء المؤسسة.',
 		addressRule: 'أحرف لاتينية صغيرة بلا علامات، وأرقام، وشرطات، مع حرف واحد على الأقل.',
 		addressFixed: 'اختره بعناية: لا يمكن تغييره بعد ذلك.',
+		addressToType: 'ليس في هذا الاسم أي حرف لاتيني، فلا يمكن اقتراح عنوان منه. اكتبه بنفسك.',
 		fullAddress: 'العنوان الكامل:',
+		confirm: {
+			title: 'تحقق من العنوان قبل إنشاء المؤسسة',
+			notYet: 'لم تُنشأ المؤسسة بعد:',
+			proposed: 'عنوان صفحتها العامة، مقترح انطلاقًا من الاسم:',
+			check:
+				'لا يمكن تغييره بعد ذلك. إذا كان مناسبًا، فاضغط «إنشاء المؤسسة». وإلا فاكتب عنوانًا آخر في الحقل أدناه.'
+		},
 		timeZoneLabel: 'المنطقة الزمنية',
 		timeZoneHint: (zone) =>
 			`تستعمل لعرض المواعيد حسب التوقيت المحلي لمكان المؤسسة، ولحساب مواقيت الصلاة. في سويسرا: ${zone}.`,

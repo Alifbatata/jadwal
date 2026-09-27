@@ -48,6 +48,19 @@ function codeSql(error: unknown): string | undefined {
 }
 
 /**
+ * Vrai quand une organisation porte déjà cette adresse. La base reste juge à la création
+ * (`organization_slug_uq`) : ceci ne sert qu'à le dire avant de faire confirmer une adresse.
+ */
+async function addressTaken(slug: string): Promise<boolean> {
+	const found = rows<{ one: number }>(
+		await superAdminDatabase().execute(
+			sql`select 1 as "one" from "organization" where "slug" = ${slug} limit 1`
+		)
+	);
+	return found.length > 0;
+}
+
+/**
  * Le début de l'adresse d'une page publique, tel que l'écran l'écrit : l'hôte de l'origine publique
  * du service (`ORIGIN`, que l'adaptateur donne à `event.url`), sans le protocole, puis `/m/`.
  */
@@ -97,6 +110,18 @@ export const actions: Actions = {
 		if (!isPublicAddress(slug)) return fail(400, { error: 'invalidAddress' as const, values });
 		if (!isOfferedTimeZone(timeZone)) {
 			return fail(400, { error: 'unknownTimeZone' as const, values });
+		}
+		if (written === '') {
+			// Personne n'a vu l'adresse proposée, et elle ne se change plus une fois l'organisation
+			// créée : rien n'est créé. L'écran la montre en entier, dans un champ où on la confirme ou la
+			// change (étape 19, D6). Déjà prise, elle est dite tout de suite, et revient dans le champ.
+			if (await addressTaken(slug)) {
+				return fail(400, { error: 'addressTaken' as const, values: { ...values, slug } });
+			}
+			return {
+				toConfirm: { name, slug, timeZone, address: `${publicPrefix(event.url)}${slug}` },
+				values
+			};
 		}
 		try {
 			await superAdminDatabase().execute(sql`
