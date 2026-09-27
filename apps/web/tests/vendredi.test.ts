@@ -390,6 +390,55 @@ describe('les sessions du vendredi', () => {
 		expect(html).not.toContain('Prière du vendredi');
 	});
 
+	it('ne s’ouvre pas dans la fiche d’un cours, et n’en devient pas un', async () => {
+		// Le formulaire d'un cours écrit un cours : envoyé sur une session, il en faisait un cours.
+		// La base refuse qu'une ligne change de type (migration 0069) ; l'écran répond alors comme
+		// pour un cours inconnu, jamais par une erreur 500. Une session à elle, en brouillon, retirée
+		// à la fin : les autres cas n'en voient rien.
+		const sessionId = newId();
+		await maintenance((tx) =>
+			tx.execute(sql`
+				insert into "course" ("id", "organization_id", "kind", "jumua_order", "status", "audience",
+					"teaching_language", "source_language", "recurrence_kind", "recurrence_weekday",
+					"recurrence_interval", "recurrence_anchor_date", "timing_kind", "timing_start",
+					"timing_end", "starts_on")
+				values (${sessionId}, ${organizationId}, 'jumua', 3, 'draft', 'open', array['ar'], 'fr',
+					'weekly', array[5]::smallint[], 1, '2026-09-04', 'fixed', '14:30', '15:10', '2026-09-04')
+			`)
+		);
+		try {
+			const fiche = await fetch(`${origin}/cours/${sessionId}`, {
+				headers: { accept: 'text/html', cookie }
+			});
+			expect(fiche.status).toBe(404);
+			const envoi = await postForm(`/cours/${sessionId}`, {
+				'title.fr': 'Cours écrit par-dessus',
+				audience: 'open',
+				teachingLanguages: 'fr',
+				sourceLanguage: 'fr',
+				status: 'draft',
+				startsOn: '2026-09-01',
+				recurrenceKind: 'weekly',
+				weekdays: '2',
+				interval: '1',
+				timingKind: 'fixed',
+				start: '18:00',
+				end: '19:00'
+			});
+			expect(envoi.status).toBe(404);
+			const apres = await maintenance(async (tx) =>
+				rows<{ kind: string; jumua_order: number | null }>(
+					await tx.execute(
+						sql`select "kind", "jumua_order" from "course" where "id" = ${sessionId}`
+					)
+				)
+			);
+			expect(apres).toEqual([{ kind: 'jumua', jumua_order: 3 }]);
+		} finally {
+			await maintenance((tx) => tx.execute(sql`delete from "course" where "id" = ${sessionId}`));
+		}
+	});
+
 	it('s’annule pour un vendredi seulement, puis se rétablit', async () => {
 		const session = await maintenance(async (tx) =>
 			rows<{ id: string }>(

@@ -21,6 +21,11 @@ function rows<T>(result: unknown): T[] {
 	return Array.isArray(inner) ? (inner as T[]) : [];
 }
 
+/**
+ * Le cours, et seulement un cours : une session du vendredi a son propre écran. Ce formulaire
+ * écrit `kind = 'course'`, et la base refuse qu'une ligne change de type (migration 0069) ; une
+ * session demandée ici est donc un cours inconnu, pas une erreur 500.
+ */
 async function readCourse(tx: Parameters<typeof readSettings>[0], id: string) {
 	return rows<CourseRow>(
 		await tx.execute(sql`
@@ -28,7 +33,7 @@ async function readCourse(tx: Parameters<typeof readSettings>[0], id: string) {
 				c."starts_on"::text as starts_on, c."ends_on"::text as ends_on,
 				c."recurrence_anchor_date"::text as recurrence_anchor_date,
 				c."timing_start"::text as timing_start, c."timing_end"::text as timing_end
-			from "course" c where c."id" = ${id}
+			from "course" c where c."id" = ${id} and c."kind" = 'course'
 		`)
 	)[0];
 }
