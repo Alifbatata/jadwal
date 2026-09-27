@@ -53,8 +53,8 @@ Pour la plus grande partie de l'Europe : Europe/Zurich, Europe/Paris ou Europe/B
    serveur en tire : rien n'est créé (étape 19, D6). La page revient avec, en haut, une étape
    `Vérifiez l'adresse avant de créer l'organisation` : `L'organisation n'est pas encore créée :` et
    son nom, `Adresse de sa page publique, proposée à partir du nom :` et l'adresse entière, puis
-   `Elle ne se changera plus ensuite. Si elle vous convient, touchez « Créer l'organisation ». Sinon,
-écrivez-en une autre dans le champ ci-dessous.` Le champ `Adresse de la page publique` porte
+   `Elle ne se changera plus ensuite. Si elle vous convient, touchez « Créer l'organisation ».
+Sinon, écrivez-en une autre dans le champ ci-dessous.` Le champ `Adresse de la page publique` porte
    l'adresse proposée, obligatoire et vérifié par le navigateur, avec la règle ; le nom et le fuseau
    repartent tels quels, et le formulaire de création, plus bas, les garde aussi. Une adresse
    proposée déjà prise est dite tout de suite, par l'erreur habituelle, et revient dans le champ.
@@ -79,9 +79,9 @@ le registre des accès du super-admin.`
 Les erreurs sont dites dans la langue de l'écran : nom manquant, adresse refusée avec la règle et un
 exemple, nom qui ne permet pas de proposer d'adresse, `Cette adresse n'a que des chiffres et des
 traits d'union. Ajoutez-y au moins une lettre, par exemple un mot du nom.` (la base prendrait
-`2026` : l'écran est plus strict qu'elle, depuis l'étape 19), `Cette adresse est déjà celle d'une autre
-organisation. Choisissez-en une autre, par exemple en y ajoutant le nom de la ville.` (avant : une
-erreur 500), `Choisissez le fuseau horaire dans la liste.`, `Cette organisation n'existe pas, ou
+`2026` : l'écran est plus strict qu'elle, depuis l'étape 19), `Cette adresse est déjà celle d'une
+autre organisation. Choisissez-en une autre, par exemple en y ajoutant le nom de la ville.` (avant :
+une erreur 500), `Choisissez le fuseau horaire dans la liste.`, `Cette organisation n'existe pas, ou
 plus.`
 
 ## La passkey, `/super-admin/passkey`

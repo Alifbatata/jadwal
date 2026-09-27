@@ -44,7 +44,8 @@ l'iqama.` Les mêmes périodes que la saisie à la main, avec les heures affich�
    `Remplacer aussi les heures affichées`.
 6. **Ce que voit le public les sept prochains jours** : les jours datés (`samedi 26.09.2026`), sous
    chaque heure sa provenance (`saisie`, `importée`, `calculée`), l'iqama, et `Jumu'a` le vendredi,
-   avec l'heure des sessions publiées seulement, comme la page publique, À venir et Partager (ADR 0033) : jusqu'à l'étape 19, une session en brouillon s'y ajoutait.
+   avec l'heure des sessions publiées seulement, comme la page publique, À venir et Partager
+   (ADR 0033) : jusqu'à l'étape 19, une session en brouillon s'y ajoutait.
 
 ## Calculées pour votre localité
 
@@ -131,9 +132,10 @@ enregistré.` : la période est écrite, les jours relus, puis tout est annulé.
   que sept jours, elle est montrée en entier, avec sa durée. Une période déjà terminée montre les
   sept prochains jours, qu'elle ne couvre pas, et le dit depuis l'étape 19 : `Cette période s'est
 terminée le 28.08.2026 : elle ne change aucun des sept prochains jours, que l'aperçu montre.` Puis
-  `Enregistrer cette période`. Le titre de l'aperçu est de niveau 4 sous le nom d'une période enregistrée, et de niveau 3 pour
-  une nouvelle période, dont `Ajouter une période` n'est qu'un repli : sans aucune période, la page
-  passait de h2 à h4 (axe, « heading-order », corrigé à l'étape 19, D5).
+  `Enregistrer cette période`. Le titre de l'aperçu est de niveau 4 sous le nom d'une période
+  enregistrée, et de niveau 3 pour une nouvelle période, dont `Ajouter une période` n'est qu'un
+  repli : sans aucune période, la page passait de h2 à h4 (axe, « heading-order », corrigé à
+  l'étape 19, D5).
 
 ## Les messages
 
