@@ -39,13 +39,13 @@
  * Depuis l'étape 19, le nom est aussi cherché **partout dans le PDF**, et non plus dans une seule
  * phrase : un nom écrit juste à côté de « Voltia », au chapeau ou au milieu d'un paragraphe, passait.
  * Le texte que Chrome a dessiné est relu, page par page, pied de page compris ; chaque « Voltia » y
- * est lu avec toute sa phrase, et chaque phrase qui nomme l'exploitant doit nommer Voltia. Quand
- * le poste porte la liste privée des termes interdits, celle du garde-fou, aucun de ses termes ne
- * doit paraître dans le PDF, ni dans ses pages, ni dans ses métadonnées. Un terme trouvé n'est
- * jamais recopié : seul son numéro dans la liste est donné. Le contrôle du nom ne recopie pas le nom
- * qu'il lit, et tout ce que l'épreuve écrit passe par le même masque (`masquer`) : un terme de la
- * liste n'en sort que par son rang. Le onzième point, enfin, dit comme un fait que Voltia est une
- * entreprise individuelle, ce que l'exploitant a confirmé.
+ * est lu avec toute sa phrase, et chaque phrase qui nomme l'exploitant ou le titulaire des droits
+ * d'auteur doit nommer Voltia. Quand le poste porte la liste privée des termes interdits, celle du
+ * garde-fou, aucun de ses termes ne doit paraître dans le PDF, ni dans ses pages, ni dans ses
+ * métadonnées. Un terme trouvé n'est jamais recopié : seul son numéro dans la liste est donné. Le
+ * contrôle du nom ne recopie pas le nom qu'il lit, et tout ce que l'épreuve écrit passe par le même
+ * masque (`masquer`) : un terme de la liste n'en sort que par son rang. Le onzième point, enfin, dit
+ * comme un fait que Voltia est une entreprise individuelle, ce que l'exploitant a confirmé.
  *
  * ## Ce qu'il joue
  *
@@ -60,11 +60,11 @@
  *
  * Il ne relit le texte dessiné que pour y chercher des noms et des termes : la typographie, elle,
  * est vérifiée sur le HTML qui part chez Chrome. Un nom est reconnu à sa majuscule, dans la phrase
- * de Voltia : une phrase qu'un saut de page coupe est lue page par page, et un nom écrit dans une
- * autre phrase, sans Voltia, n'est vu que par la liste privée, quand le poste en a une. Le texte
- * est retrouvé par la table `ToUnicode` de chaque police (`texteDuPdf`, dans `conditions-pdf.mjs`),
- * sans outil de plus. Le pied de page est aussi prouvé autrement : le même document est rendu deux
- * fois, avec et sans pied, et les deux PDF sont comparés.
+ * de Voltia ou dans celle du titulaire des droits : une phrase qu'un saut de page coupe est lue page
+ * par page, et un nom écrit dans une autre phrase n'est vu que par la liste privée, quand le poste en
+ * a une. Le texte est retrouvé par la table `ToUnicode` de chaque police (`texteDuPdf`, dans
+ * `conditions-pdf.mjs`), sans outil de plus. Le pied de page est aussi prouvé autrement : le même
+ * document est rendu deux fois, avec et sans pied, et les deux PDF sont comparés.
  *
  * Il a besoin de Chrome, comme le script lui-même.
  */
@@ -313,6 +313,20 @@ const MOTS_DE_PHRASE = new Set([
  */
 const FIN_DE_PHRASE = /[.!?…](?=\s|$)/gu;
 
+/** Les mots d'un texte, lettres et chiffres. */
+function mots(texte) {
+	return [...texte.matchAll(/[\p{L}\p{N}]+/gu)].map((trouve) => trouve[0]);
+}
+
+/** Un mot qui commence par une majuscule, et qui n'est ni Voltia ni un mot de `MOTS_DE_PHRASE`. */
+function suspect(mot) {
+	return (
+		/^\p{Lu}/u.test(mot) &&
+		mot.toLocaleLowerCase('fr') !== 'voltia' &&
+		!MOTS_DE_PHRASE.has(mot.toLocaleLowerCase('fr'))
+	);
+}
+
 /**
  * « Voltia », seul, partout où le PDF le dessine : dans le texte, la page de garde, les titres, le
  * chapeau en capitales et le pied de page.
@@ -332,11 +346,6 @@ const FIN_DE_PHRASE = /[.!?…](?=\s|$)/gu;
 function voltiaSeul(pages) {
 	const ecarts = [];
 	let mentions = 0;
-	const mots = (texte) => [...texte.matchAll(/[\p{L}\p{N}]+/gu)].map((trouve) => trouve[0]);
-	const suspect = (mot) =>
-		/^\p{Lu}/u.test(mot) &&
-		mot.toLocaleLowerCase('fr') !== 'voltia' &&
-		!MOTS_DE_PHRASE.has(mot.toLocaleLowerCase('fr'));
 	pages.forEach((texte, index) => {
 		const plat = aplatir(texte);
 		for (const trouve of plat.matchAll(/voltia/gi)) {
@@ -384,6 +393,17 @@ const PHRASES_QUI_NOMMENT = [
 	["« nomme l'exploitant « … » »", /nomme l'exploitant\s+«\s*([^»]+?)\s*»/gi]
 ];
 
+/**
+ * Les phrases qui nomment le **titulaire des droits** d'auteur. Le document ne le fait qu'une fois,
+ * au onzième point : « Le même nom figure seul comme titulaire des droits d'auteur du code publié ».
+ * Aucun mot fixe n'y précède le nom, qui peut être le sujet de la phrase : c'est donc la phrase
+ * entière qui est lue, de la fin de la phrase d'avant à la sienne. Elle doit nommer Voltia, ou
+ * « le même nom » que le point vient de donner, et aucun de ses mots ne prend de majuscule hors de
+ * Voltia et de `MOTS_DE_PHRASE`. Jusqu'à la relecture de l'étape 19, aucune phrase du titulaire
+ * n'était lue : « Une Personne figure comme titulaire des droits » passait.
+ */
+const TITULAIRE_DES_DROITS = /titulaire des droits|droits d'auteur|©|copyright/i;
+
 function exploitantNommePartout(pages) {
 	const texte = aplatir(pages.join('\n')).replace(/\s+/g, ' ');
 	const ecarts = [];
@@ -392,6 +412,19 @@ function exploitantNommePartout(pages) {
 		if (noms.length === 0) ecarts.push(`${phrase} : phrase introuvable`);
 		const autres = noms.filter((nom) => nom.toLocaleLowerCase('fr') !== 'voltia').length;
 		if (autres > 0) ecarts.push(`${phrase} : ${autres} fois un autre nom que Voltia`);
+	}
+	const titulaire = '« … titulaire des droits »';
+	const phrases = texte
+		.split(/(?<=[.!?…])\s+/u)
+		.filter((phrase) => TITULAIRE_DES_DROITS.test(phrase));
+	if (phrases.length === 0) ecarts.push(`${titulaire} : phrase introuvable`);
+	const sansVoltia = phrases.filter((phrase) => !/voltia|\ble même nom\b/i.test(phrase)).length;
+	if (sansVoltia > 0) {
+		ecarts.push(`${titulaire} : ${sansVoltia} phrase(s) qui ne nomment ni Voltia ni le même nom`);
+	}
+	const avecUnNom = phrases.filter((phrase) => mots(phrase).some(suspect)).length;
+	if (avecUnNom > 0) {
+		ecarts.push(`${titulaire} : un mot en majuscule dans ${avecUnNom} phrase(s)`);
 	}
 	return ecarts;
 }
@@ -756,6 +789,17 @@ verifier(
 	sortieDuTemoin
 );
 
+// Un nom glissé dans la phrase du titulaire des droits, qui garde « le même nom » : la phrase est
+// lue en entier, et ce nom y prend une majuscule.
+const titulaireAvecUnNom = exploitantNommePartout([
+	"Le même nom, celui de Jean Exemple, figure seul comme titulaire des droits d'auteur du code."
+]).filter((ecart) => ecart.startsWith('« … titulaire des droits »'));
+verifier(
+	'un nom glissé dans la phrase du titulaire des droits, à côté du « même nom », est vu',
+	titulaireAvecUnNom.some((ecart) => ecart.includes('majuscule')),
+	titulaireAvecUnNom.join(' ; ') || 'rien vu'
+);
+
 ecrire(`\nLes lignes seules, sur des pages construites\n`);
 
 // Une page pleine, qui fixe l'interligne à 15 points, et une dernière page assez garnie : seul le
@@ -866,7 +910,7 @@ try {
 	);
 	const nomme = exploitantNommePartout(pagesLues);
 	verifier(
-		'chaque phrase qui nomme l’exploitant nomme Voltia',
+		'chaque phrase qui nomme l’exploitant ou le titulaire des droits nomme Voltia',
 		nomme.length === 0,
 		nomme.join(' ; ')
 	);
@@ -1002,6 +1046,26 @@ try {
 				vuesDeuxPoints.filter((mention) => mention.startsWith('page 1,')).length === 1 &&
 				vuesDeuxPoints.filter((mention) => !mention.startsWith('page 1,')).length === 2,
 			seulDeuxPoints.ecarts.join(' ; ') || 'rien vu'
+		);
+
+		// Le quatrième témoin rendu : un autre nom que Voltia comme titulaire des droits d'auteur, au
+		// onzième point. La phrase ne dit pas « Voltia » : le contrôle des voisins ne la lit pas, et
+		// seul celui des phrases qui nomment peut la voir (relecture de l'étape 19).
+		const autreTitulaire = html.replace(
+			'Le même nom figure seul comme',
+			'Jean Exemple figure comme'
+		);
+		const cheminTitulaire = join(dossierDuTemoin, 'titulaire.html');
+		writeFileSync(cheminTitulaire, autreTitulaire, 'utf8');
+		await imprimer(cheminTitulaire, join(dossierDuTemoin, 'titulaire.pdf'), piedDePage(version));
+		const nommeTitulaire = exploitantNommePartout(
+			texteDuPdf(readFileSync(join(dossierDuTemoin, 'titulaire.pdf')))
+		);
+		verifier(
+			'un autre nom que Voltia, écrit comme titulaire des droits, est vu',
+			autreTitulaire !== html &&
+				nommeTitulaire.some((ecart) => ecart.startsWith('« … titulaire des droits »')),
+			nommeTitulaire.join(' ; ') || 'rien vu'
 		);
 	} finally {
 		rmSync(dossierDuTemoin, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
