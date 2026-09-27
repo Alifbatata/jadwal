@@ -1157,6 +1157,20 @@ async function exceptionDe(
 	).then((trouvees) => trouvees[0]);
 }
 
+/**
+ * L'identifiant de l'exception posée sur une séance, ou rien. Chaque annulation, chaque déplacement
+ * en écrit une nouvelle : deux changements semblables n'ont pas le même.
+ */
+async function identifiantDe(courseId: string, date: string): Promise<string | undefined> {
+	return maintenance(async (tx) =>
+		lignes<{ id: string }>(
+			await tx.execute(sql`
+				select "id" from "session_exception" where "course_id" = ${courseId} and "date" = ${date}
+			`)
+		)
+	).then((trouvees) => trouvees[0]?.id);
+}
+
 /** Change l'heure d'une session, comme une autre personne responsable le ferait dans un autre onglet. */
 async function changerHeureDe(courseId: string, debut: string, fin: string): Promise<void> {
 	await maintenance((tx) =>
@@ -1520,8 +1534,13 @@ describe('D2 : l’écran du vendredi refuse ce qu’il ne peut pas faire, sans 
 			sessions[1],
 			date
 		);
-		// La carte envoie aussi ce qu'elle montrait : l'annulation (étape 19, lot 2).
-		expect(envoi).toEqual({ courseId: sessions[1], date, shownKind: 'cancelled' });
+		// La carte envoie aussi ce qu'elle montrait : l'annulation, par son identifiant (étape 19,
+		// lot 2).
+		expect(envoi).toEqual({
+			courseId: sessions[1],
+			date,
+			shownId: await identifiantDe(sessions[1], date)
+		});
 		try {
 			expect((await postForm('/vendredi?/retablir', envoi, cookies)).status).toBe(200);
 			const journalAvant = await lignesDuJournal();
@@ -2093,6 +2112,7 @@ describe('« Ce vendredi » : un « Rétablir » resté ouvert ne défait pas un
 		expect(
 			(await postForm('/vendredi?/annuler', { courseId: sessions[1], date }, cookies)).status
 		).toBe(200);
+		const annulation = await identifiantDe(sessions[1], date);
 		const annulee = formulaireDuVendredi(
 			await (await get('/vendredi', cookies)).text(),
 			'retablir',
@@ -2125,17 +2145,19 @@ describe('« Ce vendredi » : un « Rétablir » resté ouvert ne défait pas un
 			await poserLangueDuCompte(RESPONSABLE, 'fr');
 			expect(await lignesDuJournalDeVendredi()).toBe(journalAvant);
 			// La carte envoie ce qu'elle montrait : l'annulation, puis le déplacement.
-			expect(annulee).toEqual({ courseId: sessions[1], date, shownKind: 'cancelled' });
+			expect(annulee).toEqual({ courseId: sessions[1], date, shownId: annulation });
 			const aJour = formulaireDuVendredi(
 				await (await get('/vendredi', cookies)).text(),
 				'retablir',
 				sessions[1],
 				date
 			);
+			const deplacement = await identifiantDe(sessions[1], date);
+			expect(deplacement).not.toBe(annulation);
 			expect(aJour).toEqual({
 				courseId: sessions[1],
 				date,
-				shownKind: 'moved',
+				shownId: deplacement,
 				shownToDate: jourDuDeplacement(),
 				shownToStart: '15:00'
 			});
@@ -2160,6 +2182,76 @@ describe('« Ce vendredi » : un « Rétablir » resté ouvert ne défait pas un
 			);
 			expect((await postForm('/vendredi?/retablir', derniere, cookies)).status).toBe(200);
 			expect(await exceptionDe(sessions[1], date)).toBeUndefined();
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await effacerLesExceptionsDeLaPremiere();
+		}
+	});
+
+	it('refuses « Rétablir » from a page left open after the session was restored then cancelled again, or moved again to another day at the same time, in each language, and keeps the new change (étape 19, reprise du lot 2)', async () => {
+		// Une annulation rétablie puis refaite ailleurs montre la même chose que la première ; un
+		// déplacement refait vers un autre jour, à la même heure, ne diffère que par le jour. La ligne
+		// restée ouverte sur la première effaçait la seconde, qu'elle n'avait jamais vue.
+		const date = vendredi();
+		const ligneDuJour = async () =>
+			formulaireDuVendredi(
+				await (await get('/vendredi', cookies)).text(),
+				'retablir',
+				sessions[1],
+				date
+			);
+		const annuler = () => postForm('/vendredi?/annuler', { courseId: sessions[1], date }, cookies);
+		const deplacer = (toDate: IsoDate) =>
+			postForm(
+				'/vendredi?/deplacer',
+				{ courseId: sessions[1], date, toDate, toStart: '15:00' },
+				cookies
+			);
+		// Un second jour d'arrivée, à côté du premier, et jamais avant aujourd'hui.
+		const premierJour = jourDuDeplacement();
+		const secondJour = addDays(premierJour, premierJour > date ? 1 : -1);
+		try {
+			// L'annulation refaite.
+			expect((await annuler()).status).toBe(200);
+			const premiere = await ligneDuJour();
+			expect((await postForm('/vendredi?/retablir', premiere, cookies)).status).toBe(200);
+			expect((await annuler()).status).toBe(200);
+			const refaite = await identifiantDe(sessions[1], date);
+			const journalAvant = await lignesDuJournalDeVendredi();
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const reponse = await postForm('/vendredi?/retablir', premiere, cookies);
+				expect(reponse.status, langue).toBe(409);
+				expect(enTete(await reponse.text()), langue).toEqual([REFUS_DU_VENDREDI.changed[langue]]);
+				expect(await exceptionDe(sessions[1], date), langue).toEqual({
+					kind: 'cancelled',
+					to_date: null,
+					to_start: null
+				});
+				expect(await identifiantDe(sessions[1], date), langue).toBe(refaite);
+			}
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			expect(await lignesDuJournalDeVendredi()).toBe(journalAvant);
+
+			// Le déplacement refait : vers un jour à 15:00, puis, rétabli, vers le jour d'à côté à la
+			// même heure.
+			expect((await postForm('/vendredi?/retablir', await ligneDuJour(), cookies)).status).toBe(
+				200
+			);
+			expect((await deplacer(premierJour)).status).toBe(200);
+			const versLePremier = await ligneDuJour();
+			expect((await postForm('/vendredi?/retablir', versLePremier, cookies)).status).toBe(200);
+			expect((await deplacer(secondJour)).status).toBe(200);
+			const journalAvantDeplacement = await lignesDuJournalDeVendredi();
+			const reponse = await postForm('/vendredi?/retablir', versLePremier, cookies);
+			expect(reponse.status).toBe(409);
+			expect(enTete(await reponse.text())).toEqual([REFUS_DU_VENDREDI.changed.fr]);
+			expect(await exceptionDe(sessions[1], date)).toEqual({
+				kind: 'moved',
+				to_date: secondJour,
+				to_start: '15:00'
+			});
+			expect(await lignesDuJournalDeVendredi()).toBe(journalAvantDeplacement);
 		} finally {
 			await poserLangueDuCompte(RESPONSABLE, 'fr');
 			await effacerLesExceptionsDeLaPremiere();
@@ -2303,7 +2395,7 @@ describe('« Ce vendredi » : la ligne d’une nouvelle date a « Rétablir » (
 				expect(envoi, langue).toEqual({
 					courseId: sessions[1],
 					date,
-					shownKind: 'moved',
+					shownId: await identifiantDe(sessions[1], date),
 					shownToDate: ailleurs,
 					shownToStart: '15:00'
 				});
@@ -2347,7 +2439,7 @@ describe('« Ce vendredi » : la ligne d’une nouvelle date a « Rétablir » (
 				{
 					courseId: sessions[1],
 					date,
-					shownKind: 'moved',
+					shownId: await identifiantDe(sessions[1], date),
 					shownToDate: date,
 					shownToStart: '15:00'
 				}

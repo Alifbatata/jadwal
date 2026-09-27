@@ -280,6 +280,20 @@ async function exception(
 	).then((trouve) => trouve[0]);
 }
 
+/**
+ * L'identifiant de l'exception posée sur une séance, ou rien. Chaque annulation, chaque déplacement
+ * en écrit une nouvelle : deux changements semblables n'ont pas le même.
+ */
+async function identifiantDe(courseId: string, date: string): Promise<string | undefined> {
+	return maintenance(async (tx) =>
+		lignes<{ id: string }>(
+			await tx.execute(sql`
+				select "id" from "session_exception" where "course_id" = ${courseId} and "date" = ${date}
+			`)
+		)
+	).then((trouve) => trouve[0]?.id);
+}
+
 async function get(chemin: string, cookie: string): Promise<Response> {
 	return fetch(`${origin}${chemin}`, { redirect: 'manual', headers: { cookie } });
 }
@@ -1301,8 +1315,13 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 		const envoi = formulaireDeRetablissement(
 			carte(await (await get('/', cookie)).text(), jour(2), CERCLE, 'cancelled')
 		);
-		// La carte envoie aussi ce qu'elle montrait : l'annulation (étape 19, lot 2).
-		expect(envoi).toEqual({ courseId: cercle, date: jour(2), shownKind: 'cancelled' });
+		// La carte envoie aussi ce qu'elle montrait : l'annulation, par son identifiant (étape 19,
+		// lot 2).
+		expect(envoi).toEqual({
+			courseId: cercle,
+			date: jour(2),
+			shownId: await identifiantDe(cercle, jour(2))
+		});
 		const journal = createDatabase({ role: 'app', overrides: { database: testDatabase } });
 		const lignesDuJournal = async () =>
 			withOrg(
@@ -1339,6 +1358,7 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 		expect((await postForm('/?/annuler', { courseId: cercle, date: jour(2) }, cookie)).status).toBe(
 			200
 		);
+		const annulation = await identifiantDe(cercle, jour(2));
 		const annulee =
 			formulaireDeRetablissement(
 				carte(await (await get('/', cookie)).text(), jour(2), CERCLE, 'cancelled')
@@ -1378,17 +1398,18 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 			await poserLangueDuCompte(RESPONSABLE, 'fr');
 			expect(await lignesDuJournal()).toBe(journalAvant);
 			// La carte envoie ce qu'elle montrait : l'annulation, puis, rechargée, le déplacement.
-			expect(annulee).toEqual({ courseId: cercle, date: jour(2), shownKind: 'cancelled' });
+			expect(annulee).toEqual({ courseId: cercle, date: jour(2), shownId: annulation });
 			const page = await (await get('/', cookie)).text();
 			const depart = formulaireDeRetablissement(carte(page, jour(2), CERCLE, 'moved_away'));
 			const arrivee = formulaireDeRetablissement(carte(page, jour(4), CERCLE, 'moved_here'));
 			const montre = {
 				courseId: cercle,
 				date: jour(2),
-				shownKind: 'moved',
+				shownId: (await identifiantDe(cercle, jour(2))) ?? '',
 				shownToDate: jour(4),
 				shownToStart: '21:00'
 			};
+			expect(montre.shownId).not.toBe(annulation);
 			expect([depart, arrivee]).toEqual([montre, montre]);
 			// Le déplacement change encore d'heure ailleurs : les deux cartes sont périmées à leur tour.
 			await maintenance((tx) =>
@@ -1408,6 +1429,83 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 			expect(aJour).toEqual({ ...montre, shownToStart: '21:30' });
 			expect((await postForm('/?/retablir', aJour ?? {}, cookie)).status).toBe(200);
 			expect(await exception(cercle, jour(2))).toBeUndefined();
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await journal.close();
+			await retablir(cercle, jour(2), cookie);
+		}
+	});
+
+	it('refuses « Rétablir » from a card left open after the session was restored then cancelled again, or moved again to another day at the same time, in each language, and keeps the new change (étape 19, reprise du lot 2)', async () => {
+		// Une annulation rétablie puis refaite ailleurs montre la même chose que la première ; un
+		// déplacement refait vers un autre jour, à la même heure, ne diffère que par le jour. La carte
+		// restée ouverte sur la première effaçait la seconde, qu'elle n'avait jamais vue.
+		const journal = createDatabase({ role: 'app', overrides: { database: testDatabase } });
+		const lignesDuJournal = async () =>
+			withOrg(
+				journal.db,
+				{ organizationId: organisationA, userId: ids[RESPONSABLE] ?? '' },
+				async (tx) =>
+					lignes<{ n: number }>(await tx.execute(sql`select count(*)::int as n from "audit_log"`))
+			).then((trouve) => trouve[0]?.n ?? 0);
+		const carteDuJour = async (statut: string) =>
+			formulaireDeRetablissement(
+				carte(await (await get('/', cookie)).text(), jour(2), CERCLE, statut)
+			) ?? {};
+		try {
+			// L'annulation refaite.
+			expect(
+				(await postForm('/?/annuler', { courseId: cercle, date: jour(2) }, cookie)).status
+			).toBe(200);
+			const premiere = await carteDuJour('cancelled');
+			expect((await postForm('/?/retablir', premiere, cookie)).status).toBe(200);
+			expect(
+				(await postForm('/?/annuler', { courseId: cercle, date: jour(2) }, cookie)).status
+			).toBe(200);
+			const refaite = await identifiantDe(cercle, jour(2));
+			const journalAvant = await lignesDuJournal();
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const reponse = await postForm('/?/retablir', premiere, cookie);
+				expect(reponse.status, langue).toBe(409);
+				const html = await reponse.text();
+				expect(alerte(html), langue).toBe(CHANGEE[langue](CERCLE, dateLue(langue, jour(2))));
+				expect(html.indexOf('role="alert"'), langue).toBeLessThan(html.indexOf('id="jour-'));
+				expect(section(html, 'message-titre'), langue).toBe('');
+				expect(await exception(cercle, jour(2)), langue).toEqual({
+					kind: 'cancelled',
+					to_date: null,
+					to_start: null
+				});
+				expect(await identifiantDe(cercle, jour(2)), langue).toBe(refaite);
+			}
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			expect(await lignesDuJournal()).toBe(journalAvant);
+
+			// Le déplacement refait : vers J+4 à 21:00, puis, rétabli, vers J+5 à la même heure.
+			expect((await postForm('/?/retablir', await carteDuJour('cancelled'), cookie)).status).toBe(
+				200
+			);
+			const deplacer = (toDate: IsoDate) =>
+				postForm(
+					'/?/deplacer',
+					{ courseId: cercle, date: jour(2), toDate, toStart: '21:00' },
+					cookie
+				);
+			expect((await deplacer(jour(4))).status).toBe(200);
+			const versJ4 = await carteDuJour('moved_away');
+			expect((await postForm('/?/retablir', versJ4, cookie)).status).toBe(200);
+			expect((await deplacer(jour(5))).status).toBe(200);
+			const journalAvantDeplacement = await lignesDuJournal();
+			const reponse = await postForm('/?/retablir', versJ4, cookie);
+			expect(reponse.status).toBe(409);
+			expect(alerte(await reponse.text())).toBe(CHANGEE.fr(CERCLE, dateLue('fr', jour(2))));
+			expect(await exception(cercle, jour(2))).toEqual({
+				kind: 'moved',
+				to_date: jour(5),
+				to_start: '21:00'
+			});
+			expect(await lignesDuJournal()).toBe(journalAvantDeplacement);
 		} finally {
 			await poserLangueDuCompte(RESPONSABLE, 'fr');
 			await journal.close();
@@ -1614,11 +1712,12 @@ describe('D4 : une séance déplacée ici se rétablit depuis sa carte (étape 1
 		// Le cours du soir de J+10, avancé à J+1 : sa date prévue n'est pas à l'écran, et seule la carte
 		// d'arrivée peut défaire le changement. J+1 n'a pas d'autre séance arrivée d'ailleurs : les
 		// tests d'A2 en laissent à J+2 et aujourd'hui.
+		const avance = newId();
 		await maintenance((tx) =>
 			tx.execute(sql`
 				insert into "session_exception" ("id", "organization_id", "course_id", "date", "kind",
 					"to_date", "to_start", "created_by")
-				values (${newId()}, ${organisationA}, ${soir}, ${jour(10)}, 'moved', ${jour(1)}, '17:00',
+				values (${avance}, ${organisationA}, ${soir}, ${jour(10)}, 'moved', ${jour(1)}, '17:00',
 					${ids[RESPONSABLE] ?? ''})
 			`)
 		);
@@ -1630,11 +1729,11 @@ describe('D4 : une séance déplacée ici se rétablit depuis sa carte (étape 1
 			expect(texte(arrivee)).toContain('Rétablir la séance');
 			// La carte vise la date où la séance était prévue : c'est celle que garde l'exception.
 			const envoi = formulaireDeRetablissement(arrivee);
-			// Elle envoie aussi ce qu'elle montrait : le déplacement à J+1, 17:00 (étape 19, lot 2).
+			// Elle envoie aussi ce qu'elle montrait : ce déplacement-là, à J+1, 17:00 (étape 19, lot 2).
 			expect(envoi).toEqual({
 				courseId: soir,
 				date: jour(10),
-				shownKind: 'moved',
+				shownId: avance,
 				shownToDate: jour(1),
 				shownToStart: '17:00'
 			});
@@ -1666,7 +1765,7 @@ describe('D4 : une séance déplacée ici se rétablit depuis sa carte (étape 1
 			expect(formulaireDeRetablissement(carte(html, jour(3), SOIR.fr, 'moved_away'))).toEqual({
 				courseId: soir,
 				date: jour(3),
-				shownKind: 'moved',
+				shownId: await identifiantDe(soir, jour(3)),
 				shownToDate: jour(3),
 				shownToStart: '21:00'
 			});

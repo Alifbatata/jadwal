@@ -2,12 +2,16 @@
 // déplacent et rétablissent, « À venir » et « Prière du vendredi », passent par ici (étape 19,
 // lot 2).
 //
-// La carte « Rétablir » envoie ce qu'elle montrait : une annulation, ou un déplacement vers tel jour
-// à telle heure. Sans cela, une page restée ouverte, après qu'une autre personne avait rétabli la
-// séance puis l'avait changée de nouveau, effaçait ce nouveau changement, qu'elle n'avait jamais vu.
-// C'est le défaut que l'étape 18 a corrigé pour Annuler et Déplacer. Un formulaire qui n'envoie rien
-// de ce qu'il montrait, écrit à la main ou venu d'une page ouverte avant ce lot, n'est pas comparé,
-// comme l'heure `plannedStart` d'un déplacement.
+// La carte « Rétablir » envoie ce qu'elle montrait : l'identifiant de l'exception, et pour un
+// déplacement le jour et l'heure d'arrivée. Sans cela, une page restée ouverte, après qu'une autre
+// personne avait rétabli la séance puis l'avait changée de nouveau, effaçait ce nouveau changement,
+// qu'elle n'avait jamais vu. C'est le défaut que l'étape 18 a corrigé pour Annuler et Déplacer.
+// L'identifiant compte : une annulation refaite, ou un déplacement refait vers le même jour à la
+// même heure, montre la même chose que le premier, mais c'est une autre exception, que la carte n'a
+// jamais vue (reprise du lot 2). Le jour et l'heure gardent la carte d'une exception changée sur
+// place, ce que seul l'entretien fait aujourd'hui. Un formulaire qui n'envoie rien de ce qu'il
+// montrait, écrit à la main ou venu d'une page ouverte avant ce lot, n'est pas comparé, comme
+// l'heure `plannedStart` d'un déplacement.
 
 import { sql, type Transaction } from '@jadwal/db';
 
@@ -18,21 +22,23 @@ function rows<T>(result: unknown): T[] {
 }
 
 /**
- * Ce que la carte montrait : `cancelled`, ou `moved` avec le jour et l'heure d'arrivée, `AAAA-MM-JJ`
- * et `HH:MM`, vides pour une annulation.
+ * Ce que la carte montrait : l'identifiant de l'exception, et pour un déplacement le jour et l'heure
+ * d'arrivée, `AAAA-MM-JJ` et `HH:MM`, vides pour une annulation. Le type ne s'envoie pas : la forme
+ * d'une exception (`session_exception_shape_ck`) le fixe, une annulation n'a ni jour ni heure
+ * d'arrivée, un déplacement a les deux.
  */
 export interface ShownChange {
-	kind: string;
+	id: string;
 	toDate: string;
 	toStart: string;
 }
 
 /** Ce que la carte envoie de ce qu'elle montrait, ou `null` quand elle n'en envoie rien. */
 export function shownChange(form: FormData): ShownChange | null {
-	const kind = form.get('shownKind');
-	if (kind === null) return null;
+	const id = form.get('shownId');
+	if (id === null) return null;
 	return {
-		kind: String(kind),
+		id: String(id),
 		toDate: String(form.get('shownToDate') ?? ''),
 		toStart: String(form.get('shownToStart') ?? '')
 	};
@@ -58,8 +64,9 @@ export async function currentChange(
 
 /**
  * Rétablit la séance : retire l'exception de ce cours ce jour-là, et seulement si c'est celle que la
- * carte montrait. Rend `restored`, ou le refus d'une carte périmée, et rien ne s'écrit alors :
- * `changed`, la séance a changé autrement depuis ; `alreadyRestored`, il n'y a plus rien à rétablir.
+ * carte montrait, la même exception, au même jour et à la même heure d'arrivée. Rend `restored`, ou
+ * le refus d'une carte périmée, et rien ne s'écrit alors : `changed`, la séance a changé autrement,
+ * ou de nouveau, depuis ; `alreadyRestored`, il n'y a plus rien à rétablir.
  *
  * La comparaison porte sur le texte des colonnes : une valeur envoyée à la main, même illisible, ne
  * fait pas d'erreur de la base, elle ne correspond à rien. Elle se fait dans la suppression même :
@@ -74,7 +81,7 @@ export async function restore(
 	const asShown =
 		shown === null
 			? sql``
-			: sql`and "kind" = ${shown.kind}
+			: sql`and "id"::text = ${shown.id}
 				and coalesce("to_date"::text, '') = ${shown.toDate}
 				and coalesce(left("to_start"::text, 5), '') = ${shown.toStart}`;
 	const removed = rows<{ id: string }>(

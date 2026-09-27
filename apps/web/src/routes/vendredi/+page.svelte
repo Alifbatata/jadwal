@@ -60,16 +60,18 @@
 	 * (étape 19, lot 2 ; avant, cette ligne n'avait pas de bouton). Une session qui n'a changé que
 	 * d'heure se rétablit depuis la ligne de son heure habituelle, le même jour, comme sur « À venir ».
 	 * Le reste part avec le formulaire : une ligne restée ouverte pendant que la session changeait
-	 * ailleurs est refusée, au lieu d'effacer ce changement.
+	 * ailleurs est refusée, au lieu d'effacer ce changement. `id` est l'exception que la ligne montre :
+	 * une annulation refaite ailleurs ressemble à la première, mais c'en est une autre (reprise du
+	 * lot 2).
 	 */
 	function aRetablir(seance: (typeof data.prochaines)[number]) {
 		if (seance.status === 'cancelled') {
-			return { date: seance.date, kind: 'cancelled', toDate: '', toStart: '' };
+			return { date: seance.date, id: seance.exceptionId, toDate: '', toStart: '' };
 		}
 		if (seance.status === 'moved_away') {
 			return {
 				date: seance.date,
-				kind: 'moved',
+				id: seance.exceptionId,
 				toDate: seance.movedTo?.date ?? '',
 				toStart: String(seance.movedTo?.start ?? '').slice(0, 5)
 			};
@@ -81,7 +83,7 @@
 		) {
 			return {
 				date: seance.originalDate,
-				kind: 'moved',
+				id: seance.exceptionId,
 				toDate: seance.date,
 				toStart: String(seance.start ?? '').slice(0, 5)
 			};
@@ -222,10 +224,12 @@
 						<form method="post" action="?/retablir">
 							<input type="hidden" name="courseId" value={session.id} />
 							<input type="hidden" name="date" value={change?.date} />
-							<input type="hidden" name="shownKind" value={change?.kind} />
-							{#if change?.kind === 'moved'}
-								<input type="hidden" name="shownToDate" value={change.toDate} />
-								<input type="hidden" name="shownToStart" value={change.toStart} />
+							{#if change?.id}
+								<input type="hidden" name="shownId" value={change.id} />
+								{#if change.toDate}
+									<input type="hidden" name="shownToDate" value={change.toDate} />
+									<input type="hidden" name="shownToStart" value={change.toStart} />
+								{/if}
 							{/if}
 							<button type="submit">{text.thisFriday.restore}</button>
 						</form>

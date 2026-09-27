@@ -204,7 +204,9 @@ export const load: PageServerLoad = async (event) => {
 					status: seance.status,
 					title: seance.title,
 					movedTo: seance.movedTo ?? null,
-					originalDate: seance.originalDate ?? null
+					originalDate: seance.originalDate ?? null,
+					/** L'exception que « Rétablir » défait, qu'il envoie (reprise du lot 2). */
+					exceptionId: seance.exceptionId
 				})),
 			/** Aujourd'hui et les sept jours qui suivent, pour le choix de déplacement. */
 			joursSuivants: Array.from({ length: 8 }, (_, index) => addDays(today, index))

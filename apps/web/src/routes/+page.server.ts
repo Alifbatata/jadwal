@@ -281,6 +281,8 @@ export const load: PageServerLoad = async (event) => {
 		status: seance.status,
 		originalDate: seance.originalDate,
 		movedTo: seance.movedTo,
+		/** L'exception que « Rétablir la séance » défait, qu'il envoie (reprise du lot 2). */
+		exceptionId: seance.exceptionId,
 		// Le titre de la carte suit la langue de l'écran (décision du chef de projet, étape 19).
 		title: titleIn(seance, langue),
 		/** Un cours en brouillon : sa carte le dit, et le programme de la semaine ne le montre pas. */

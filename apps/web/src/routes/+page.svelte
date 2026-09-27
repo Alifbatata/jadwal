@@ -62,16 +62,17 @@
 	 * toujours à l'écran (étape 19, D4). Une séance qui n'a changé que d'heure se rétablit depuis la
 	 * carte de son heure prévue, le même jour. Le reste part avec le formulaire : une carte restée
 	 * ouverte pendant que la séance changeait ailleurs est refusée, au lieu d'effacer ce changement
-	 * (étape 19, lot 2).
+	 * (étape 19, lot 2). `id` est l'exception que la carte montre : une annulation refaite ailleurs
+	 * ressemble à la première, mais c'en est une autre (reprise du lot 2).
 	 */
 	function aRetablir(seance: (typeof data.seances)[number]) {
 		if (seance.status === 'cancelled') {
-			return { date: seance.date, kind: 'cancelled', toDate: '', toStart: '' };
+			return { date: seance.date, id: seance.exceptionId, toDate: '', toStart: '' };
 		}
 		if (seance.status === 'moved_away') {
 			return {
 				date: seance.date,
-				kind: 'moved',
+				id: seance.exceptionId,
 				toDate: seance.movedTo?.date ?? '',
 				toStart: String(seance.movedTo?.start ?? '').slice(0, 5)
 			};
@@ -83,7 +84,7 @@
 		) {
 			return {
 				date: seance.originalDate,
-				kind: 'moved',
+				id: seance.exceptionId,
 				toDate: seance.date,
 				toStart: String(seance.start ?? '').slice(0, 5)
 			};
@@ -352,10 +353,12 @@
 						<form method="post" action="?/retablir" class="retablir">
 							<input type="hidden" name="courseId" value={seance.courseId} />
 							<input type="hidden" name="date" value={change?.date} />
-							<input type="hidden" name="shownKind" value={change?.kind} />
-							{#if change?.kind === 'moved'}
-								<input type="hidden" name="shownToDate" value={change.toDate} />
-								<input type="hidden" name="shownToStart" value={change.toStart} />
+							{#if change?.id}
+								<input type="hidden" name="shownId" value={change.id} />
+								{#if change.toDate}
+									<input type="hidden" name="shownToDate" value={change.toDate} />
+									<input type="hidden" name="shownToStart" value={change.toStart} />
+								{/if}
 							{/if}
 							<button type="submit">{text.restoreButton}</button>
 							<span class="aide">{text.restoreHelp}</span>

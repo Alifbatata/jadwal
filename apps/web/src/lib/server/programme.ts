@@ -313,6 +313,13 @@ export interface Seance extends Occurrence {
 	room: string | null;
 	teacher: string | null;
 	audience: string;
+	/**
+	 * L'exception qui a changé la séance, annulée ou déplacée, ou rien pour une séance prévue telle
+	 * quelle. « Rétablir » l'envoie : le service ne modifie jamais une exception, chaque annulation,
+	 * chaque déplacement en écrit une nouvelle, et un autre identifiant est un autre changement, même
+	 * semblable (étape 19, reprise du lot 2).
+	 */
+	exceptionId: string | null;
 }
 
 export interface Programme {
@@ -354,6 +361,9 @@ export async function readProgramme(
 		sessionsDuVendredi(courses.filter((course) => course.status === 'published'))
 	);
 	const byId = new Map(courses.map((course) => [course.id, course]));
+	// Une exception par cours et par jour (`session_exception_course_date_uq`) : celle d'une séance
+	// arrivée d'un autre jour est rangée sous son jour d'origine.
+	const exceptionIds = new Map(exceptions.map((row) => [`${row.course_id} ${row.date}`, row.id]));
 	const occurrences = expandOccurrences({
 		schedules: courses.map(toSchedule),
 		exceptions: exceptions.map(toException),
@@ -368,7 +378,13 @@ export async function readProgramme(
 			title: course?.title ?? 'Cours sans titre',
 			room: course?.room ?? null,
 			teacher: course?.teacher ?? null,
-			audience: course?.audience ?? 'open'
+			audience: course?.audience ?? 'open',
+			exceptionId:
+				occurrence.status === 'scheduled'
+					? null
+					: (exceptionIds.get(
+							`${occurrence.courseId} ${occurrence.originalDate ?? occurrence.date}`
+						) ?? null)
 		};
 	});
 	return { from: today, to, today, courses, pauses, seances, settings };
