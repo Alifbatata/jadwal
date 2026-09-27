@@ -163,8 +163,27 @@ adresse, ce que l'ADR 0017 interdit : c'est le point d'arrêt décrit dans son a
   `/organisations`, sans rien d'autre.
 - Un écran ajouté demande ses textes dans les cinq langues avant de compiler (ADR 0007).
 
+## Addendum du 27.09.2026 : l'écran d'arrivée du lien de connexion (étape 19)
+
+**L'écran où ramène le lien de connexion ne porte plus la langue.** Jusqu'ici, après un lien qui
+emportait un choix, la personne arrivait à `/organisations?language=de` : le paramètre avait déjà
+servi, et aucun écran ne le lit, mais il restait dans l'adresse, où elle le voyait et d'où elle
+pouvait le copier. La vérification du lien, qui écrit la langue sur le compte, renvoie maintenant à
+la même adresse sans lui : `/organisations` (`signInLanding`, dans
+`apps/web/src/lib/i18n/language.ts`, appelée par le crochet « after » de Better Auth dans
+`apps/web/src/lib/server/auth.ts`). La documentation de Better Auth donne ce geste à ce crochet
+(`throw ctx.redirect(...)`) ; les cookies de la session ouverte restent sur la réponse. La langue
+est écrite d'abord, puis la redirection est refaite, que l'écriture ait réussi ou non : la langue
+n'est qu'une préférence. Un lien échu ou déjà servi renvoie aussi sans elle, avec l'erreur que
+Better Auth ajoute (`?error=INVALID_TOKEN`). Une adresse qui ne reste pas sur le service n'est pas
+réécrite : Better Auth l'a déjà refusée. Sans choix en attente, l'adresse de retour est
+`/organisations`, comme avant. Le reste de la règle ne change pas : le paramètre ne compte qu'à la
+vérification du lien, et une adresse qui le porte, posée sur un autre site, ne change ni la page ni
+le compte.
+
 ## Statut
 
 Accepté, 2026-09-26. Étape 18, retours D2 (l'espace en cinq langues) et D3 (la langue des
 courriels). Révisé le même jour, à la fin de l'étape : le choix fait avant la connexion part avec le
-lien de connexion, et la règle exacte de son départ est écrite.
+lien de connexion, et la règle exacte de son départ est écrite. Complété le 27.09.2026 (étape 19) :
+l'écran d'arrivée du lien ne porte plus la langue.

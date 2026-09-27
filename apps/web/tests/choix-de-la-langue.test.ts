@@ -7,6 +7,8 @@
 // - Ce choix voyage avec le lien de connexion, quel que soit le temps passé avant de le demander : il
 //   vaut aussi quand le lien s'ouvre sur un autre navigateur, et il n'attend plus, sur le premier,
 //   une fois le lien demandé. Une adresse refusée pour sa forme ne demande aucun lien : il attend.
+// - L'écran où le lien ramène ne porte plus la langue dans son adresse : la vérification du lien l'a
+//   donnée au compte, puis renvoie sans elle (étape 19).
 // - Un lien de connexion dont on change l'écran de retour pour un autre site est refusé, comme en
 //   production : les serveurs de test tournent sans rien qui les dise en test (`global-setup.ts`).
 // - Le retour après le choix ne quitte jamais le service, quelle que soit la forme du chemin envoyé.
@@ -41,6 +43,8 @@ const CHOIX_ANCIEN = 'choix-ancien@example.test';
 const CHOIX_REFAIT = 'choix-refait@example.test';
 /** Un compte en français dont on détourne le lien de connexion vers un autre site. */
 const LIEN_DETOURNE = 'choix-lien-detourne@example.test';
+/** Un compte en français dont on regarde l'adresse où le lien de connexion ramène. */
+const LIEN_NETTOYE = 'choix-lien-nettoye@example.test';
 const SLUG = 'choix-de-la-langue';
 
 const COOKIE_EN_ATTENTE = 'jadwal_language_pending';
@@ -254,7 +258,8 @@ beforeAll(async () => {
 			[LIEN_LU, 'fr'],
 			[CHOIX_ANCIEN, 'fr'],
 			[CHOIX_REFAIT, 'fr'],
-			[LIEN_DETOURNE, 'fr']
+			[LIEN_DETOURNE, 'fr'],
+			[LIEN_NETTOYE, 'fr']
 		] as const) {
 			await tx.execute(sql`
 				insert into "user" ("id", "email", "email_verified", "language")
@@ -466,6 +471,42 @@ describe('le choix fait avant la connexion, et le lien de connexion', () => {
 		}
 		expect(sansChoix.searchParams.get('callbackURL')).toBe('/organisations');
 		expect(avecChoix.searchParams.get('callbackURL')).toBe('/organisations?language=ar');
+	});
+
+	it('lands on the screen without the language in its address, once the account has it', async () => {
+		expect(await langueDuCompte(LIEN_NETTOYE)).toBe('fr');
+		const ordinateur = new Navigateur('fr-CH,fr;q=0.9');
+		await ordinateur.post('/langue', { language: 'it', returnTo: '/connexion' });
+		const { lien } = await ordinateur.demanderLeLien(LIEN_NETTOYE);
+		// Le lien emporte le choix fait avant la connexion.
+		expect(new URL(lien).searchParams.get('callbackURL')).toBe('/organisations?language=it');
+
+		// L'écran où il ramène ne le porte plus : aucun écran ne le lit, et la vérification du lien
+		// l'a déjà donné au compte (étape 19). Avant, l'adresse d'arrivée le montrait.
+		const telephone = new Navigateur('fr-CH,fr;q=0.9');
+		const arrivee = await telephone.suivre(lien);
+		expect(arrivee.status).toBe(302);
+		const adresse = new URL(arrivee.headers.get('location') ?? '', origin);
+		expect(adresse.origin).toBe(origin);
+		expect(`${adresse.pathname}${adresse.search}`).toBe('/organisations');
+		expect(await langueDuCompte(LIEN_NETTOYE)).toBe('it');
+		expect(await langueDe(await telephone.get(adresse.href))).toBe('it');
+
+		// Suivi une seconde fois, le lien ne vaut plus rien : l'adresse où il renvoie dit l'erreur,
+		// sans la langue, et le compte ne change pas.
+		const perime = await new Navigateur('fr-CH').get(lien);
+		expect(perime.status).toBe(302);
+		const retour = new URL(perime.headers.get('location') ?? '', origin);
+		expect(retour.pathname).toBe('/organisations');
+		expect(retour.searchParams.has('language')).toBe(false);
+		expect(retour.searchParams.get('error')).toBe('INVALID_TOKEN');
+		expect(await langueDuCompte(LIEN_NETTOYE)).toBe('it');
+
+		// Sans choix en attente, l'adresse reste celle d'avant : l'écran, sans rien d'autre.
+		const sansChoix = await new Navigateur('fr-CH').suivre(
+			(await new Navigateur('fr-CH').demanderLeLien(LIEN_NETTOYE)).lien
+		);
+		expect(sansChoix.headers.get('location')).toBe(`${origin}/organisations`);
 	});
 
 	it('lets no address change the language of an account: only the link does, when it is verified', async () => {

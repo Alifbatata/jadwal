@@ -20,7 +20,7 @@ import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { passkey } from '@better-auth/passkey';
 import { getRequestEvent } from '$app/server';
 import { v7 as uuidv7 } from 'uuid';
-import { signInChoice } from '$lib/i18n/language.js';
+import { signInChoice, signInLanding } from '$lib/i18n/language.js';
 import { writeAccountLanguage } from './account-language.js';
 import { authDatabase } from './database.js';
 import { createMailer } from './mail/index.js';
@@ -215,12 +215,20 @@ export function createAuth(env: NodeJS.ProcessEnv = process.env) {
 					// fait pas échouer la connexion : la langue n'est qu'une préférence.
 					const userId = ctx.context.newSession?.user?.id;
 					const choice = signInChoice(ctx.query?.['callbackURL'], origin);
-					if (!userId || !choice) return;
-					try {
-						await writeAccountLanguage(userId, choice);
-					} catch (erreur) {
-						console.error('langue du compte :', erreur);
+					if (userId && choice) {
+						try {
+							await writeAccountLanguage(userId, choice);
+						} catch (erreur) {
+							console.error('langue du compte :', erreur);
+						}
 					}
+					// Puis la redirection de Better Auth est refaite sans la langue (étape 19) : elle a
+					// servi, et aucun écran ne la lit. L'écran d'arrivée la montrait dans son adresse. Un
+					// lien échu y renvoie aussi, avec son erreur : elle part de même. La documentation de
+					// Better Auth donne ce geste aux crochets « after » : `throw ctx.redirect(...)`, et
+					// les cookies de la session ouverte restent sur la réponse.
+					const landing = signInLanding(ctx.context.responseHeaders?.get('location'), origin);
+					if (landing) throw ctx.redirect(landing);
 					return;
 				}
 				if (ctx.path !== PASSKEY_AUTHENTICATED) return;

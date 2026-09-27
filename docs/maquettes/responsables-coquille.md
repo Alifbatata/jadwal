@@ -70,7 +70,9 @@ indésirables, ou demandez un autre lien.`, `Vous pouvez fermer cette page.` et 
 
 **Une langue choisie sur cet écran** part avec le lien : le courriel arrive dans cette langue, et le
 lien en fait la langue du compte, sur quelque navigateur qu'il s'ouvre. La règle exacte est dans
-l'ADR 0047.
+l'ADR 0047. Depuis l'étape 19, l'écran où le lien ramène est `/organisations`, sans rien dans son
+adresse : la vérification du lien donne la langue au compte, puis y renvoie sans le `?language=de`
+que le lien portait, et qu'aucun écran ne lit.
 
 **Une adresse mal formée** : `Cette adresse n'a pas la forme d'une adresse électronique. Exemple :
 prenom.nom@exemple.ch`, reliée au champ, et l'adresse tapée reste dans le champ.

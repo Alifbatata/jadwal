@@ -128,10 +128,11 @@ fait avant la connexion attend sur le navigateur de la demande, son adresse de r
 (`/organisations?language=de`), sinon elle reste `/organisations`. Ce choix vient du cookie de ce
 navigateur, jamais du compte. La vérification du lien l'écrit sur le compte que le jeton désigne, et
 nulle part ailleurs : une adresse qui porte ce paramètre, posée sur un autre site, ne change ni la
-page ni le compte, et aucun écran ne le lit. La demande retire le choix pour toute adresse de forme
-acceptable, qu'un courriel parte ou que la limite par adresse le retienne : garder le choix dans ce
-seul cas changerait les cookies de la réponse, et dirait qu'on a déjà demandé trois liens pour cette
-adresse dans l'heure.
+page ni le compte, et aucun écran ne le lit. Depuis l'étape 19, la vérification renvoie à l'écran
+d'arrivée sans lui : il ne reste pas dans l'adresse que la personne voit et peut copier. La
+demande retire le choix pour toute adresse de forme acceptable, qu'un courriel parte ou que la
+limite par adresse le retienne : garder le choix dans ce seul cas changerait les cookies de la
+réponse, et dirait qu'on a déjà demandé trois liens pour cette adresse dans l'heure.
 
 **9. Le navigateur est bridé.** Politique de sécurité du contenu avec nonce, `frame-ancestors` calculé
 par route, pas de cadre par défaut, protection contre la soumission d'un formulaire depuis un autre

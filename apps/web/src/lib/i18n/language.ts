@@ -70,8 +70,9 @@ export const LANGUAGE_PARAMETER = 'lang';
 /**
  * Le paramètre qui porte, dans le lien de connexion, la langue choisie avant la connexion. Il est
  * ajouté à l'écran où le lien ramène, et lu une seule fois : quand le lien est vérifié (`auth.ts`),
- * pour la personne que son jeton désigne. Ailleurs, il ne compte pas : un écran ne le lit pas, et une
- * adresse qui le porte, posée sur un autre site, ne change ni la page ni le compte.
+ * pour la personne que son jeton désigne. La vérification renvoie ensuite à cet écran sans lui
+ * (`signInLanding`, étape 19). Ailleurs, il ne compte pas : un écran ne le lit pas, et une adresse
+ * qui le porte, posée sur un autre site, ne change ni la page ni le compte.
  */
 export const SIGN_IN_CHOICE_PARAMETER = 'language';
 
@@ -110,6 +111,31 @@ export function signInChoice(callback: string | null | undefined, origin: string
 	} catch {
 		return null;
 	}
+}
+
+/**
+ * L'adresse où renvoie la vérification d'un lien de connexion, sans la langue qu'il emportait, ou
+ * `null` quand il n'y a rien à retirer (étape 19).
+ *
+ * Le paramètre n'a servi qu'à la vérification, qui l'a écrit sur le compte (`auth.ts`) ; aucun écran
+ * ne le lit. Il restait pourtant dans l'adresse de l'écran d'arrivée, où la personne le voyait, et
+ * d'où elle pouvait le copier. La vérification renvoie donc à la même adresse, sans lui : l'écran,
+ * et ce que Better Auth y ajoute en cas d'échec (`?error=`). Une adresse qui ne reste pas sur le
+ * service n'est pas réécrite : Better Auth l'a déjà refusée, et rien ne doit la faire accepter.
+ */
+export function signInLanding(location: string | null | undefined, origin: string): string | null {
+	if (!location) return null;
+	let url: URL;
+	try {
+		url = new URL(location, origin);
+	} catch {
+		return null;
+	}
+	if (url.origin !== new URL(origin).origin || !url.searchParams.has(SIGN_IN_CHOICE_PARAMETER)) {
+		return null;
+	}
+	url.searchParams.delete(SIGN_IN_CHOICE_PARAMETER);
+	return url.href;
 }
 
 /**

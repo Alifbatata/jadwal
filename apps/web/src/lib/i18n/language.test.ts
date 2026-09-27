@@ -16,6 +16,7 @@ import {
 	SIGN_IN_CHOICE_PARAMETER,
 	signInCallback,
 	signInChoice,
+	signInLanding,
 	spaceLanguage
 } from './language.js';
 
@@ -169,6 +170,32 @@ describe('le choix fait avant la connexion, porté par le lien de connexion', ()
 			'http://[ailleurs'
 		]) {
 			expect(signInChoice(retour, ORIGINE), String(retour)).toBeNull();
+		}
+	});
+
+	it('lands on the same screen without the language, once the link is verified (step 19)', () => {
+		// L'adresse où Better Auth renvoie après la vérification : absolue, et, pour un lien échu,
+		// avec son erreur. Seule la langue part.
+		expect(signInLanding(`${ORIGINE}/organisations?language=de`, ORIGINE)).toBe(
+			`${ORIGINE}/organisations`
+		);
+		expect(signInLanding(`${ORIGINE}/organisations?language=ar&error=INVALID_TOKEN`, ORIGINE)).toBe(
+			`${ORIGINE}/organisations?error=INVALID_TOKEN`
+		);
+		expect(signInLanding('/organisations?language=it', ORIGINE)).toBe(`${ORIGINE}/organisations`);
+		// Rien à retirer, ou une adresse qui ne reste pas sur le service : pas de nouvelle
+		// redirection. Better Auth a déjà refusé l'autre site, et rien ne doit le faire accepter.
+		for (const adresse of [
+			`${ORIGINE}/organisations`,
+			`${ORIGINE}/organisations?lang=de`,
+			'https://ailleurs.example/organisations?language=de',
+			'//ailleurs.example/organisations?language=de',
+			'http://[ailleurs',
+			'',
+			null,
+			undefined
+		]) {
+			expect(signInLanding(adresse, ORIGINE), String(adresse)).toBeNull();
 		}
 	});
 });
