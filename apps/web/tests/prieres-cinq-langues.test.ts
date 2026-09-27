@@ -1078,7 +1078,7 @@ describe('chaque vue de l’écran, dans les cinq langues (retours D2 et A3)', (
 
 		const main = entre(
 			rendus['l’aperçu d’une période']?.fr ?? '',
-			'Aperçu des sept prochains jours avec cette période</h4>',
+			'Aperçu des sept prochains jours avec cette période</h3>',
 			/>\s*Enregistrer cette période\s*<\/button>/
 		);
 		expect(lignes(main)).toBe(7);
@@ -1328,7 +1328,7 @@ describe('l’aperçu d’une période préparée à l’avance (retour B1)', ()
 			expect(lu).toContain(TITRE[langue]);
 			expect(lu).toContain(PHRASE[langue](jjmmaaaa(debut)));
 			// Le tableau qui suit le titre : les sept premiers jours de la période, Maghrib saisi.
-			const apres = html.slice(html.indexOf(`${TITRE[langue]}</h4>`));
+			const apres = html.slice(html.indexOf(`${TITRE[langue]}</h3>`));
 			const tableau = apres.match(/<tbody>[\s\S]*?<\/tbody>/)?.[0] ?? '';
 			expect(tableau.match(/<tr\b/g)?.length ?? 0).toBe(7);
 			for (let pas = 0; pas < 7; pas += 1) {
@@ -1385,7 +1385,7 @@ describe('l’aperçu d’une période préparée à l’avance (retour B1)', ()
 				expect(lu).toContain(TITRE_ENTIERE[langue]);
 				expect(lu).toContain(PHRASE_ENTIERE[langue](jjmmaaaa(debut), jours));
 				expect(lu).not.toContain(TITRE[langue]);
-				const apres = html.slice(html.indexOf(`${TITRE_ENTIERE[langue]}</h4>`));
+				const apres = html.slice(html.indexOf(`${TITRE_ENTIERE[langue]}</h3>`));
 				const tableau = apres.match(/<tbody>[\s\S]*?<\/tbody>/)?.[0] ?? '';
 				expect(tableau.match(/<tr\b/g)?.length ?? 0).toBe(jours);
 				expect(tableau.match(/19:00/g)?.length ?? 0).toBe(jours);
@@ -1417,7 +1417,7 @@ describe('l’aperçu d’une période préparée à l’avance (retour B1)', ()
 			expect(lu).toContain(PHRASE.fr(jjmmaaaa(debut)));
 			expect(lu).not.toContain(TITRE_ENTIERE.fr);
 			const tableau =
-				html.slice(html.indexOf(`${TITRE.fr}</h4>`)).match(/<tbody>[\s\S]*?<\/tbody>/)?.[0] ?? '';
+				html.slice(html.indexOf(`${TITRE.fr}</h3>`)).match(/<tbody>[\s\S]*?<\/tbody>/)?.[0] ?? '';
 			expect(tableau.match(/19:00/g)?.length ?? 0).toBe(7);
 		}
 	});
@@ -1571,4 +1571,78 @@ describe('les formulations relevées par la relecture du lot 3', () => {
 		const bienne = visibleText(await (await get('/prieres?source=computed&lieu=2502')).text());
 		expect(bienne).toContain('1 localité trouvée.');
 	});
+});
+
+describe('l’ordre des titres, sans aucune période (étape 19, D5)', () => {
+	/** Responsable d'une organisation qui n'a encore aucune période. */
+	const SANS_PERIODE = 'prieres-cinq-sans-periode@example.test';
+	let sansPeriodeId: string;
+
+	beforeAll(async () => {
+		sansPeriodeId = newId();
+		const personne = newId();
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+					"enabled_language", "prayer_module")
+				values (${sansPeriodeId}, 'prieres-cinq-sans-periode', 'Association sans période',
+					${FUSEAU}, 'fr', array['fr','de','it','en','ar'], true)
+			`);
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified", "language")
+				values (${personne}, ${SANS_PERIODE}, true, 'fr')
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${sansPeriodeId}, ${personne}, 'org_admin')
+			`);
+			await tx.execute(conditionsAcceptees(sansPeriodeId, personne));
+		});
+		sessions[SANS_PERIODE] = await signIn(SANS_PERIODE);
+	});
+
+	/** Les niveaux des titres de la page rendue, dans l'ordre : `<h1>` donne 1. */
+	const niveaux = (html: string) =>
+		[...html.matchAll(/<h([1-6])\b/g)].map((trouve) => Number(trouve[1]));
+	/** Chaque titre plus profond de plus d'un niveau que celui qui le précède. */
+	const sauts = (suite: number[]) =>
+		suite.flatMap((niveau, rang) =>
+			rang > 0 && niveau > (suite[rang - 1] ?? 0) + 1 ? [`h${suite[rang - 1]} puis h${niveau}`] : []
+		);
+
+	it.each([
+		['manual', 'la saisie à la main'],
+		['computed', 'l’iqama, sous le calcul']
+	])(
+		'keeps the heading levels in order in the preview of a new period, under %s (%s)',
+		async (source) => {
+			// axe (heading-order, gravité modérée) : sans aucune période, aucun titre de période ne
+			// sépare le titre de la section de celui de l'aperçu, et la page passait de h2 à h4.
+			const avant = await maintenance(async (tx) =>
+				lignes<{ n: string }>(
+					await tx.execute(sql`
+						select count(*)::text as n from "prayer_period"
+						where "organization_id" = ${sansPeriodeId}
+					`)
+				)
+			);
+			expect(avant[0]?.n).toBe('0');
+			const reponse = await postForm(
+				`/prieres?source=${source}&/apercuPeriode`,
+				{
+					name: 'Première période',
+					fromDate: aujourdhui(),
+					toDate: addDays(aujourdhui(), 30),
+					maghrib: '19:00'
+				},
+				SANS_PERIODE
+			);
+			expect(reponse.status).toBe(200);
+			const html = await reponse.text();
+			expect(visibleText(html)).toContain('Aperçu des sept prochains jours avec cette période');
+			const suite = niveaux(html);
+			expect(suite[0]).toBe(1);
+			expect(sauts(suite), suite.join(' ')).toEqual([]);
+		}
+	);
 });

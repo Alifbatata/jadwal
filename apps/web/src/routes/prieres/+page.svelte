@@ -1114,13 +1114,20 @@
 			{@const depuis = form.apercuDepuis ?? null}
 			{@const duree = form.apercuDuree ?? 7}
 			{@const entiere = depuis !== null && duree < 7}
-			<h4 id={`apercu-periode-titre-${cleDeLaPeriode}`}>
-				{entiere
-					? text.periods.previewTitleWhole
-					: depuis
-						? text.periods.previewTitleLater
-						: text.periods.previewTitle}
-			</h4>
+			{@const titreDeLApercu = entiere
+				? text.periods.previewTitleWhole
+				: depuis
+					? text.periods.previewTitleLater
+					: text.periods.previewTitle}
+			<!-- Sous une période enregistrée, l'aperçu suit son nom, un titre de niveau 3. Une nouvelle
+			     période n'a pas de titre, « Ajouter une période » n'étant qu'un repli : son aperçu est
+			     de niveau 3, sans quoi la page passait de h2 à h4 quand il n'y a encore aucune période
+			     (axe, heading-order, étape 19, D5). -->
+			{#if periode}
+				<h4 id={`apercu-periode-titre-${cleDeLaPeriode}`}>{titreDeLApercu}</h4>
+			{:else}
+				<h3 id={`apercu-periode-titre-${cleDeLaPeriode}`}>{titreDeLApercu}</h3>
+			{/if}
 			{#if depuis}
 				<p class="aide">
 					{entiere

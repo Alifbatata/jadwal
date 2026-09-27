@@ -120,6 +120,9 @@ ordre ».`), `Heures affichées`, `Iqama` (`Heure fixe` ou `ou minutes après`, 
 enregistré.` : la période est écrite, les jours relus, puis tout est annulé. Une période qui
   commence après les sept prochains jours montre ses sept premiers jours et le dit ; plus courte
   que sept jours, elle est montrée en entier, avec sa durée. Puis `Enregistrer cette période`.
+  Le titre de l'aperçu est de niveau 4 sous le nom d'une période enregistrée, et de niveau 3 pour
+  une nouvelle période, dont `Ajouter une période` n'est qu'un repli : sans aucune période, la page
+  passait de h2 à h4 (axe, « heading-order », corrigé à l'étape 19, D5).
 
 ## Les messages
 
@@ -132,10 +135,6 @@ effacez la latitude et la longitude.`, `Donnez le premier jour de la période.` 
 `Donnez une date de début, au format AAAA-MM-JJ`.
 
 ## Ce qui reste à reprendre
-
-Relevé par la relecture de l'étape 18, non corrigé à la fin de l'étape : sans aucune période,
-l'aperçu d'une nouvelle période saute un niveau de titre (axe, « heading-order », gravité
-modérée).
 
 Une saisie en écriture arabe ne trouve aucune localité, par choix : la liste n'a pas de noms arabes,
 et l'écran arabe dit de taper le nom ou le NPA en lettres latines.
