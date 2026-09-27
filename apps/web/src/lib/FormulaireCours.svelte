@@ -19,7 +19,8 @@
 		textDirection,
 		TIMING_CHOICES,
 		type CourseFormError,
-		type CourseFormValues
+		type CourseFormValues,
+		type DateRange
 	} from './course-form.js';
 	import { audienceLabels, joinList, languageLabel, prayerLabel } from './format.js';
 	import { numericDate, t, type Langue } from './i18n.js';
@@ -29,6 +30,7 @@
 		values,
 		languages,
 		rooms,
+		dateRange,
 		prayerModule,
 		language,
 		submitLabel,
@@ -42,6 +44,11 @@
 		/** Les langues de l'organisation : celles du texte du cours et de l'enseignement. */
 		languages: string[];
 		rooms: { id: string; name: string }[];
+		/**
+		 * Les dates que le serveur accepte, de 1970 à 2100 : les bornes des champs de date, et celles
+		 * que le résumé applique (étape 19, lot 2).
+		 */
+		dateRange: DateRange;
 		/** Le module des heures de prière de l'organisation (ADR 0042). */
 		prayerModule: boolean;
 		/** La langue de l'espace, celle de l'écran. */
@@ -79,7 +86,7 @@
 	const tabs = $derived(hydrated && languages.length > 1);
 
 	const text = $derived(courseFormTexts[language]);
-	const summary = $derived(summarise(entry, { languages, rooms }, language));
+	const summary = $derived(summarise(entry, { languages, rooms, dateRange }, language));
 	const weekdays = $derived(t(language).weekdays.map((name, index) => [index + 1, name] as const));
 	const before = $derived(entry.timingKind === 'beforePrayer');
 
@@ -447,10 +454,13 @@
 		/>
 		<p class="aide" id="teacher-hint">{text.teacherHint}</p>
 		<label for="startsOn">{text.startsOnLabel} <span class="marque">{text.required}</span></label>
+		<!-- Les bornes du serveur : le calendrier ne propose pas une date que l'envoi refuserait. -->
 		<input
 			id="startsOn"
 			type="date"
 			name="startsOn"
+			min={dateRange.first}
+			max={dateRange.last}
 			bind:value={entry.startsOn}
 			required
 			aria-describedby="startsOn-hint"
@@ -461,6 +471,8 @@
 			id="endsOn"
 			type="date"
 			name="endsOn"
+			min={dateRange.first}
+			max={dateRange.last}
 			bind:value={entry.endsOn}
 			aria-describedby="endsOn-hint"
 		/>

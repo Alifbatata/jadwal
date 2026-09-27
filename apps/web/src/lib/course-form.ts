@@ -155,16 +155,33 @@ export function splitDates(text: string): string[] {
 const SWISS_DATE = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/;
 
 /**
- * Une date écrite comme en Suisse, `12.10.2026` ou `1.2.2026`, ou comme la base l'écrit, rendue
- * comme la base l'écrit ; `null` pour une date illisible ou qui n'existe pas, comme le 31.02.
+ * Les dates qu'un formulaire de cours accepte, la première et la dernière comprises : celles de
+ * `$lib/server/dates.ts`, du 01.01.1970 au 31.12.2100, que la page reçoit du serveur. Ce module
+ * sert aussi le navigateur, qui ne peut pas importer un module du serveur (étape 19, lot 2).
  */
-export function readDate(text: string): IsoDate | null {
+export interface DateRange {
+	first: IsoDate;
+	last: IsoDate;
+}
+
+/** Une date `AAAA-MM-JJ` qui existe, entre les deux bornes. */
+export function inRange(value: string | null | undefined, range: DateRange): value is IsoDate {
+	return isIsoDate(value) && value >= range.first && value <= range.last;
+}
+
+/**
+ * Une date écrite comme en Suisse, `12.10.2026` ou `1.2.2026`, ou comme la base l'écrit, rendue
+ * comme la base l'écrit ; `null` pour une date illisible, qui n'existe pas, comme le 31.02, ou hors
+ * des bornes : le 01.01.0000, que PostgreSQL n'a pas, ou le 31.12.9999, qui faisait tomber le flux
+ * agenda.
+ */
+export function readDate(text: string, range: DateRange): IsoDate | null {
 	const value = text.trim();
 	const swiss = SWISS_DATE.exec(value);
 	const iso = swiss
 		? `${swiss[3]}-${(swiss[2] ?? '').padStart(2, '0')}-${(swiss[1] ?? '').padStart(2, '0')}`
 		: value;
-	return isIsoDate(iso) ? iso : null;
+	return inRange(iso, range) ? iso : null;
 }
 
 /** Les dates de la base, telles que le champ les montre : `12.10.2026`, une par ligne. */
@@ -175,16 +192,18 @@ export function writeDates(dates: readonly string[]): string {
 /**
  * Les dates d'un cours à dates précises, rangées par rapport à sa période. Le moteur ne publie que
  * celles du premier au dernier jour, les deux compris (`courseWindow`, packages/core/src/expand.ts) :
- * une date avant ou après ne donnerait aucune séance. Tant que le premier jour manque, ou que le
- * dernier vient avant lui, c'est la période qui est à corriger, et aucune date n'est jugée.
+ * une date avant ou après ne donnerait aucune séance. Tant que le premier jour manque, que le
+ * dernier est illisible ou hors des bornes, ou qu'il vient avant le premier, c'est la période qui
+ * est à corriger, et aucune date n'est jugée.
  */
 export function splitByPeriod(
 	dates: readonly IsoDate[],
 	startsOn: string,
-	endsOn: string | null
+	endsOn: string | null,
+	range: DateRange
 ): { inside: IsoDate[]; before: IsoDate[]; after: IsoDate[] } {
-	const end = endsOn && isIsoDate(endsOn) ? endsOn : null;
-	if (!isIsoDate(startsOn) || (end !== null && end < startsOn)) {
+	const end = endsOn && inRange(endsOn, range) ? endsOn : null;
+	if (!inRange(startsOn, range) || (endsOn && end === null) || (end !== null && end < startsOn)) {
 		return { inside: [...dates], before: [], after: [] };
 	}
 	return {
@@ -213,10 +232,14 @@ export function textDirection(code: string): 'ltr' | 'rtl' {
 	return isLangue(code) ? direction(code) : 'ltr';
 }
 
-/** Ce que le résumé doit savoir en plus des champs : les langues de l'organisation, ses salles. */
+/**
+ * Ce que le résumé doit savoir en plus des champs : les langues de l'organisation, ses salles, et
+ * les dates que le serveur accepte.
+ */
 export interface SummaryContext {
 	languages: readonly string[];
 	rooms: readonly { id: string; name: string }[];
+	dateRange: DateRange;
 }
 
 /**
@@ -280,15 +303,22 @@ export function summarise(
 
 	if (values.recurrenceKind === 'dates') {
 		const tokens = splitDates(values.dates);
-		const read = tokens.map(readDate).filter((date) => date !== null);
+		const read = tokens
+			.map((token) => readDate(token, context.dateRange))
+			.filter((date) => date !== null);
 		const readable = [...new Set(read)].sort();
 		const twice = [...new Set(read.filter((date, index) => read.indexOf(date) !== index))].sort();
-		const unreadable = tokens.filter((token) => readDate(token) === null);
+		const unreadable = tokens.filter((token) => readDate(token, context.dateRange) === null);
 		const list = (dates: readonly IsoDate[]) =>
 			formattingTexts[language].dateList(dates.map((date) => shortDate(date, language)));
 		// Seules les dates de la période sont publiées. Les autres, et celles que le serveur refuse,
 		// ont leur ligne, marquée, dans l'ordre de ses erreurs.
-		const { inside, before, after } = splitByPeriod(readable, values.startsOn, values.endsOn);
+		const { inside, before, after } = splitByPeriod(
+			readable,
+			values.startsOn,
+			values.endsOn,
+			context.dateRange
+		);
 		row(
 			'dates',
 			text.summary.dates,
@@ -350,15 +380,20 @@ export function summarise(
 		text.missing.teachingLanguage
 	);
 
-	const startsOn = isIsoDate(values.startsOn) ? shortDate(values.startsOn, language) : null;
+	// Une date hors des bornes est refusée par le serveur, comme une date illisible : le premier jour
+	// est « pas choisi », le dernier « à corriger ».
+	const range = context.dateRange;
+	const startsOn = inRange(values.startsOn, range) ? shortDate(values.startsOn, language) : null;
 	row('startsOn', text.summary.startsOn, startsOn, text.missing.startsOn);
-	if (values.endsOn && isIsoDate(values.endsOn)) {
-		const beforeStart = isIsoDate(values.startsOn) && values.endsOn < values.startsOn;
+	if (values.endsOn) {
+		const endsOn = inRange(values.endsOn, range) ? values.endsOn : null;
+		const beforeStart =
+			endsOn !== null && inRange(values.startsOn, range) && endsOn < values.startsOn;
 		row(
 			'endsOn',
 			text.summary.endsOn,
-			beforeStart ? null : shortDate(values.endsOn, language),
-			text.missing.endsBeforeStarts
+			endsOn !== null && !beforeStart ? shortDate(endsOn, language) : null,
+			endsOn !== null ? text.missing.endsBeforeStarts : text.missing.endsOnUnreadable
 		);
 	}
 

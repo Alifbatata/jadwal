@@ -36,7 +36,14 @@ const COMPLET: CourseFormValues = {
 	descriptions: { fr: 'Lecture commentée, pour adultes.', de: '', ar: '' }
 };
 
-const CONTEXTE = { languages: ['fr', 'de', 'ar'], rooms: [{ id: 'salle', name: 'Grande salle' }] };
+/** Les dates que le service accepte, telles que le serveur les donne à la page (`dates.ts`). */
+const BORNES = { first: '1970-01-01', last: '2100-12-31' } as const;
+
+const CONTEXTE = {
+	languages: ['fr', 'de', 'ar'],
+	rooms: [{ id: 'salle', name: 'Grande salle' }],
+	dateRange: BORNES
+};
 
 function lignes(values: CourseFormValues, langue: Parameters<typeof summarise>[2] = 'fr') {
 	return summarise(values, CONTEXTE, langue).map((row) => `${row.label} ${row.value}`);
@@ -49,15 +56,29 @@ describe('les dates telles qu’on les écrit', () => {
 		['2026-10-12', '2026-10-12'],
 		[' 26.10.2026 ', '2026-10-26']
 	])('reads « %s » as %s', (texte, attendu) => {
-		expect(readDate(texte)).toBe(attendu);
+		expect(readDate(texte, BORNES)).toBe(attendu);
 	});
 
 	it.each(['31.02.2026', '12/10/2026', '12.10.26', '2026-13-01', 'demain', ''])(
 		'refuses « %s »',
 		(texte) => {
-			expect(readDate(texte)).toBeNull();
+			expect(readDate(texte, BORNES)).toBeNull();
 		}
 	);
+
+	it.each(['01.01.0000', '31.12.1969', '01.01.2101', '31.12.9999', '0000-01-01'])(
+		'refuses « %s », outside the years the service handles (étape 19, lot 2)',
+		(texte) => {
+			expect(readDate(texte, BORNES)).toBeNull();
+		}
+	);
+
+	it('accepts the first and the last date the service handles', () => {
+		expect([readDate('01.01.1970', BORNES), readDate('31.12.2100', BORNES)]).toEqual([
+			'1970-01-01',
+			'2100-12-31'
+		]);
+	});
 
 	it('writes them back as JJ.MM.AAAA, one per line', () => {
 		expect(writeDates(['2026-10-12', '2026-10-26'])).toBe('12.10.2026\n26.10.2026');
@@ -204,7 +225,12 @@ describe('le résumé de ce qui sera publié (B4)', () => {
 			[
 				{ recurrenceKind: 'dates', dates: '12.10.2026\n2026-10-12 26.10.2026' },
 				'Dates écrites deux fois : lundi 12.10.2026'
-			]
+			],
+			// Hors des années 1970 à 2100, que le serveur refuse (étape 19, lot 2).
+			[{ endsOn: '9999-12-31' }, 'Dernier jour : à corriger, choisissez-le dans le calendrier'],
+			[{ endsOn: '2026-02-31' }, 'Dernier jour : à corriger, choisissez-le dans le calendrier'],
+			[{ startsOn: '0000-01-01' }, 'Premier jour : pas choisi'],
+			[{ recurrenceKind: 'dates', dates: '12.10.2026 31.12.9999' }, 'Dates à corriger : 31.12.9999']
 		];
 		for (const [valeurs, attendu] of cas) {
 			const marquees = summarise({ ...COMPLET, ...valeurs }, CONTEXTE, 'fr')
@@ -217,7 +243,8 @@ describe('le résumé de ce qui sera publié (B4)', () => {
 			{ timingKind: 'beforePrayer', offsetMinutes: 120, durationMinutes: 1440 },
 			{ timingKind: 'beforePrayer', offsetMinutes: 1, durationMinutes: 5 },
 			{ timingKind: 'prayer', offsetMinutes: 240 },
-			{ endsOn: '2026-09-07' }
+			{ endsOn: '2026-09-07' },
+			{ startsOn: '1970-01-01', endsOn: '2100-12-31' }
 		] as const) {
 			const rows = summarise({ ...COMPLET, ...valeurs }, CONTEXTE, 'fr');
 			expect(

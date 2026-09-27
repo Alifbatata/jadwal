@@ -50,6 +50,7 @@
 	{values}
 	languages={data.langues}
 	rooms={data.salles}
+	dateRange={data.dates}
 	prayerModule={data.modulePrieres}
 	language={data.language}
 	submitLabel={text.submitNew}

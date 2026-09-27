@@ -36,6 +36,10 @@ interface CourseFormTexts {
 		readonly datesTwice: string;
 		readonly startsOnMissing: string;
 		readonly endsBeforeStarts: string;
+		/** Un dernier jour illisible, qui n'existe pas, ou hors des années 1970 à 2100. */
+		readonly endsOnUnreadable: string;
+		/** La salle choisie n'est pas, ou plus, une salle de l'organisation. */
+		readonly roomGone: string;
 		readonly timeMissing: string;
 		readonly minutesAfter: string;
 		readonly minutesBefore: string;
@@ -99,6 +103,7 @@ interface CourseFormTexts {
 		readonly teachingLanguage: string;
 		readonly startsOn: string;
 		readonly endsBeforeStarts: string;
+		readonly endsOnUnreadable: string;
 	};
 	readonly frequencies: {
 		readonly weekly: string;
@@ -202,6 +207,10 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			datesTwice: 'Une date est écrite deux fois.',
 			startsOnMissing: 'Choisissez le premier jour du cours.',
 			endsBeforeStarts: 'Le dernier jour vient avant le premier jour.',
+			endsOnUnreadable:
+				'Le dernier jour est illisible. Choisissez-le dans le calendrier, ou laissez-le vide.',
+			roomGone:
+				'Cette salle n’existe plus : elle a été supprimée entre-temps. Choisissez une autre salle, ou « aucune salle ».',
 			timeMissing: 'Indiquez l’heure de début et l’heure de fin. Exemple : 19:00 et 20:30',
 			minutesAfter: 'Après une prière : de 0 à 240 minutes, en chiffres. Exemple : 15',
 			minutesBefore: 'Avant une prière : de 1 à 120 minutes, en chiffres. Exemple : 10',
@@ -259,7 +268,8 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			teacher: 'aucun pour l’instant',
 			teachingLanguage: 'pas choisie',
 			startsOn: 'pas choisi',
-			endsBeforeStarts: 'à corriger, il tombe avant le premier jour'
+			endsBeforeStarts: 'à corriger, il tombe avant le premier jour',
+			endsOnUnreadable: 'à corriger, choisissez-le dans le calendrier'
 		},
 		frequencies: {
 			weekly: 'chaque semaine',
@@ -357,6 +367,10 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			datesTwice: 'Ein Datum ist zweimal eingetragen.',
 			startsOnMissing: 'Wählen Sie den ersten Kurstag.',
 			endsBeforeStarts: 'Der letzte Tag liegt vor dem ersten Tag.',
+			endsOnUnreadable:
+				'Der letzte Kurstag ist nicht lesbar. Wählen Sie ihn im Kalender oder lassen Sie ihn leer.',
+			roomGone:
+				'Diesen Raum gibt es nicht mehr: Er wurde inzwischen gelöscht. Wählen Sie einen anderen Raum oder «kein Raum».',
 			timeMissing: 'Geben Sie die Anfangszeit und die Endzeit an. Beispiel: 19:00 und 20:30',
 			minutesAfter: 'Nach einem Gebet: 0 bis 240 Minuten, in Ziffern. Beispiel: 15',
 			minutesBefore: 'Vor einem Gebet: 1 bis 120 Minuten, in Ziffern. Beispiel: 10',
@@ -416,7 +430,8 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			teacher: 'nicht angegeben',
 			teachingLanguage: 'keine gewählt',
 			startsOn: 'nicht gewählt',
-			endsBeforeStarts: 'zu korrigieren, er liegt vor dem ersten Tag'
+			endsBeforeStarts: 'zu korrigieren, er liegt vor dem ersten Tag',
+			endsOnUnreadable: 'zu korrigieren, wählen Sie ihn im Kalender'
 		},
 		frequencies: {
 			weekly: 'jede Woche',
@@ -515,6 +530,10 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			datesTwice: 'Una data è scritta due volte.',
 			startsOnMissing: 'Scegli il primo giorno del corso.',
 			endsBeforeStarts: 'L’ultimo giorno viene prima del primo giorno.',
+			endsOnUnreadable:
+				'L’ultimo giorno non è leggibile. Sceglilo nel calendario, oppure lascialo vuoto.',
+			roomGone:
+				'Questa sala non esiste più: nel frattempo è stata eliminata. Scegli un’altra sala, oppure «nessuna sala».',
 			timeMissing: 'Indica l’ora di inizio e l’ora di fine. Esempio: 19:00 e 20:30',
 			minutesAfter: 'Dopo una preghiera: da 0 a 240 minuti, in cifre. Esempio: 15',
 			minutesBefore: 'Prima di una preghiera: da 1 a 120 minuti, in cifre. Esempio: 10',
@@ -572,7 +591,8 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			teacher: 'non indicato',
 			teachingLanguage: 'non scelta',
 			startsOn: 'non scelto',
-			endsBeforeStarts: 'da correggere, viene prima del primo giorno'
+			endsBeforeStarts: 'da correggere, viene prima del primo giorno',
+			endsOnUnreadable: 'da correggere, sceglilo nel calendario'
 		},
 		frequencies: {
 			weekly: 'ogni settimana',
@@ -669,6 +689,9 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			datesTwice: 'A date is written twice.',
 			startsOnMissing: 'Choose the first day of the course.',
 			endsBeforeStarts: 'The last day comes before the first day.',
+			endsOnUnreadable: 'The last day cannot be read. Pick it in the calendar, or leave it empty.',
+			roomGone:
+				'This room no longer exists: it has been deleted in the meantime. Choose another room, or ‘no room’.',
 			timeMissing: 'Enter the start time and the end time. Example: 19:00 and 20:30',
 			minutesAfter: 'After a prayer: from 0 to 240 minutes, in figures. Example: 15',
 			minutesBefore: 'Before a prayer: from 1 to 120 minutes, in figures. Example: 10',
@@ -727,7 +750,8 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			teacher: 'not given',
 			teachingLanguage: 'none chosen',
 			startsOn: 'not chosen yet',
-			endsBeforeStarts: 'to correct, it comes before the first day'
+			endsBeforeStarts: 'to correct, it comes before the first day',
+			endsOnUnreadable: 'to correct, pick it in the calendar'
 		},
 		frequencies: {
 			weekly: 'every week',
@@ -825,6 +849,9 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			datesTwice: 'هناك تاريخ مكتوب مرتين.',
 			startsOnMissing: 'اختر اليوم الأول للدرس.',
 			endsBeforeStarts: 'اليوم الأخير يأتي قبل اليوم الأول.',
+			endsOnUnreadable: 'تعذّرت قراءة اليوم الأخير. اختره من التقويم، أو اتركه فارغًا.',
+			roomGone:
+				'هذه القاعة لم تعد موجودة: فقد حُذفت في هذه الأثناء. اختر قاعة أخرى، أو «بلا قاعة».',
 			timeMissing: 'أدخل وقت البداية ووقت النهاية. مثال: 19:00 و20:30',
 			minutesAfter: 'بعد صلاة: من 0 إلى 240 دقيقة، بالأرقام. مثال: 15',
 			minutesBefore: 'قبل صلاة: من 1 إلى 120 دقيقة، بالأرقام. مثال: 10',
@@ -889,7 +916,8 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 			teacher: 'لم يُذكر',
 			teachingLanguage: 'لم تُختر',
 			startsOn: 'لم يُختر بعد',
-			endsBeforeStarts: 'يجب تصحيحه، فهو يأتي قبل اليوم الأول'
+			endsBeforeStarts: 'يجب تصحيحه، فهو يأتي قبل اليوم الأول',
+			endsOnUnreadable: 'يجب تصحيحه، اختره من التقويم'
 		},
 		frequencies: {
 			weekly: 'كل أسبوع',

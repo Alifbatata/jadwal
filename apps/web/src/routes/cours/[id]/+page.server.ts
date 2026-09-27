@@ -3,17 +3,27 @@
 // L'identifiant est dans l'URL, et ce n'est pas une contradiction avec l'ADR 0013 : c'est
 // l'**organisation** qui ne doit jamais venir de la requête. Elle vient de la session ; la sécurité
 // au niveau des lignes ne rend alors que les cours de cette organisation, et un identifiant
-// emprunté à une autre ne trouve rien.
+// emprunté à une autre ne trouve rien. Un identifiant mal formé n'atteint pas la base, qui le
+// refusait par une erreur 500 : il reçoit la réponse d'un cours inconnu (étape 19, lot 2).
 
 import { error, fail, redirect } from '@sveltejs/kit';
 import { sql } from '@jadwal/db';
 import { timingChoice, writeDates, type CourseFormValues } from '$lib/course-form.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { readCourseForm } from '$lib/server/course-form.js';
+import { FIRST_SUPPORTED_DATE, LAST_SUPPORTED_DATE } from '$lib/server/dates.js';
 import { mustBeInOrganisation } from '$lib/server/guard.js';
 import { updateCourse } from '$lib/server/courses.js';
 import { readRooms, readSettings, type CourseRow } from '$lib/server/programme.js';
 import type { Actions, PageServerLoad } from './$types.js';
+
+/** Un identifiant de cours. Autre chose n'atteint pas la base, qui le refuserait en erreur. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** La réponse d'un cours inconnu, la même pour la page et pour son formulaire. */
+function unknownCourse(): never {
+	error(404, 'Ce cours n’existe pas dans cette organisation.');
+}
 
 function rows<T>(result: unknown): T[] {
 	if (Array.isArray(result)) return result as T[];
@@ -41,10 +51,11 @@ async function readCourse(tx: Parameters<typeof readSettings>[0], id: string) {
 export const load: PageServerLoad = async (event) => {
 	const context = await mustBeInOrganisation(event);
 	const id = event.params.id;
+	if (!UUID.test(id)) unknownCourse();
 	return withSessionOrg(context, async (tx) => {
 		const settings = await readSettings(tx);
 		const course = await readCourse(tx, id);
-		if (!course) error(404, 'Ce cours n’existe pas dans cette organisation.');
+		if (!course) unknownCourse();
 		const translations = rows<{ language: string; title: string; description: string | null }>(
 			await tx.execute(
 				sql`select "language", "title", "description" from "course_translation"
@@ -93,6 +104,8 @@ export const load: PageServerLoad = async (event) => {
 			modulePrieres: context.organizationPrayerModule,
 			langues: settings.enabled_language,
 			salles: (await readRooms(tx)).map((salle) => ({ id: salle.id, name: salle.name })),
+			/** Les dates que l'action accepte : les bornes des champs de date et du résumé. */
+			dates: { first: FIRST_SUPPORTED_DATE, last: LAST_SUPPORTED_DATE },
 			id,
 			// Sans titre dans la langue de saisie, la page en écrit un dans la sienne.
 			titre: titles[course.source_language] || null,
@@ -105,12 +118,13 @@ export const actions: Actions = {
 	default: async (event) => {
 		const context = await mustBeInOrganisation(event);
 		const id = event.params.id;
+		if (!UUID.test(id)) unknownCourse();
 		const form = await event.request.formData();
-		const langues = await withSessionOrg(
-			context,
-			async (tx) => (await readSettings(tx)).enabled_language
-		);
-		const read = readCourseForm(form, langues);
+		const { langues, salles } = await withSessionOrg(context, async (tx) => ({
+			langues: (await readSettings(tx)).enabled_language,
+			salles: (await readRooms(tx)).map((salle) => salle.id)
+		}));
+		const read = readCourseForm(form, langues, salles);
 		// Les noms des erreurs, jamais leurs phrases : la page les écrit dans sa langue. Ce que la
 		// personne a envoyé revient avec, pour qu'elle n'ait rien à retaper et que le résumé le montre.
 		if (!read.ok) {

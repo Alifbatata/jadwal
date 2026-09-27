@@ -10,8 +10,14 @@
 // `parseCourseForm`, `@jadwal/core` et la base restent juges, dans cet ordre. Ce qu'ils refusent
 // encore après ces vérifications est une valeur que le formulaire ne peut pas envoyer (une langue qui
 // n'est pas activée, un public ou une prière qui n'existe pas) : la page le dit sans détail.
+//
+// Étape 19, lot 2 : ce qui atteignait encore la base et revenait en erreur 500 est arrêté ici, comme
+// sur « À venir » et le vendredi au lot 1. Une date s'accepte de 1970 à 2100 (`dates.ts`) : l'an
+// 0000, que PostgreSQL n'a pas, et un dernier jour au 31.12.9999, qui faisait tomber le flux agenda
+// de toute l'organisation. Le caractère nul est retiré de chaque champ. Une salle qui n'est pas, ou
+// plus, une salle de l'organisation est refusée, avec sa phrase.
 
-import { isIsoDate, isLocalTime, type IsoDate } from '@jadwal/core';
+import { isLocalTime, type IsoDate } from '@jadwal/core';
 import {
 	descriptionsWithoutTitle,
 	durationAllowed,
@@ -22,9 +28,14 @@ import {
 	splitByPeriod,
 	splitDates,
 	type CourseFormError,
-	type CourseFormValues
+	type CourseFormValues,
+	type DateRange
 } from '../course-form.js';
 import { parseCourseForm, type CourseValues } from './courses.js';
+import { FIRST_SUPPORTED_DATE, isSupportedDate, LAST_SUPPORTED_DATE } from './dates.js';
+
+/** Les dates que le service accepte, pour lire celles d'un cours à dates précises. */
+const SUPPORTED: DateRange = { first: FIRST_SUPPORTED_DATE, last: LAST_SUPPORTED_DATE };
 
 export type ReadCourseForm =
 	| { ok: true; values: CourseValues }
@@ -56,6 +67,19 @@ const WHOLE = /^\d{1,4}$/;
 
 function text(form: FormData, name: string): string {
 	return String(form.get(name) ?? '').trim();
+}
+
+/**
+ * Le formulaire, sans le caractère nul (U+0000) : aucun clavier ne le tape, mais un formulaire écrit
+ * à la main peut l'envoyer, et PostgreSQL le refuse dans un texte, ce qui donnait une erreur 500. Le
+ * reste du champ est gardé, comme dans le formulaire d'une session du vendredi.
+ */
+function withoutNull(form: FormData): FormData {
+	const clean = new FormData();
+	for (const [name, value] of form) {
+		clean.append(name, typeof value === 'string' ? value.replaceAll('\u0000', '') : value);
+	}
+	return clean;
 }
 
 function minutes(form: FormData, name: string): number | null {
@@ -108,9 +132,15 @@ function sentValues(form: FormData, languages: readonly string[]): CourseFormVal
 /**
  * Lit le formulaire d'un cours. Rend soit les valeurs que `insertCourse` et `updateCourse`
  * écrivent, soit les erreurs dans l'ordre des cadres du formulaire, de haut en bas (le texte, la
- * langue d'enseignement, les jours, l'horaire, la période), avec ce qui a été envoyé.
+ * langue d'enseignement, les jours, l'horaire, la salle, la période), avec ce qui a été envoyé.
+ * `rooms` : les identifiants des salles de l'organisation.
  */
-export function readCourseForm(form: FormData, languages: readonly string[]): ReadCourseForm {
+export function readCourseForm(
+	sent: FormData,
+	languages: readonly string[],
+	rooms: readonly string[]
+): ReadCourseForm {
+	const form = withoutNull(sent);
 	const values = sentValues(form, languages);
 	const errors: CourseFormError[] = [];
 	const badDates: string[] = [];
@@ -144,7 +174,7 @@ export function readCourseForm(form: FormData, languages: readonly string[]): Re
 	if (values.recurrenceKind === 'dates') {
 		const tokens = splitDates(values.dates);
 		for (const token of tokens) {
-			const date = readDate(token);
+			const date = readDate(token, SUPPORTED);
 			if (date) isoDates.push(date);
 			else badDates.push(token);
 		}
@@ -156,7 +186,8 @@ export function readCourseForm(form: FormData, languages: readonly string[]): Re
 		const { before, after } = splitByPeriod(
 			[...new Set(isoDates)].sort(),
 			values.startsOn,
-			values.endsOn
+			values.endsOn,
+			SUPPORTED
 		);
 		datesBefore.push(...before);
 		datesAfter.push(...after);
@@ -174,9 +205,19 @@ export function readCourseForm(form: FormData, languages: readonly string[]): Re
 		if (!durationAllowed(values.durationMinutes)) errors.push('duration');
 	}
 
-	// La période est le dernier cadre du formulaire : ses erreurs viennent en dernier.
-	if (!isIsoDate(values.startsOn)) errors.push('startsOnMissing');
-	else if (values.endsOn && isIsoDate(values.endsOn) && values.endsOn < values.startsOn) {
+	// La salle ouvre le dernier cadre. Une salle supprimée entre-temps, un identifiant mal formé ou
+	// celui d'une salle d'une autre organisation atteignait la base, qui répondait par une erreur 500.
+	if (values.roomId !== null && !rooms.includes(values.roomId)) errors.push('roomGone');
+
+	// La période ferme le dernier cadre : ses erreurs viennent en dernier. Une date hors de 1970 à
+	// 2100 se lit comme une date illisible (`isSupportedDate`).
+	if (!isSupportedDate(values.startsOn)) errors.push('startsOnMissing');
+	if (values.endsOn !== null && !isSupportedDate(values.endsOn)) errors.push('endsOnUnreadable');
+	else if (
+		values.endsOn !== null &&
+		isSupportedDate(values.startsOn) &&
+		values.endsOn < values.startsOn
+	) {
 		errors.push('endsBeforeStarts');
 	}
 

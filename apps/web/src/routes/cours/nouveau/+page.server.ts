@@ -4,6 +4,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { withSessionOrg } from '$lib/server/context.js';
 import { readCourseForm } from '$lib/server/course-form.js';
+import { FIRST_SUPPORTED_DATE, LAST_SUPPORTED_DATE } from '$lib/server/dates.js';
 import { mustBeInOrganisation } from '$lib/server/guard.js';
 import { insertCourse } from '$lib/server/courses.js';
 import { readRooms, readSettings } from '$lib/server/programme.js';
@@ -20,7 +21,9 @@ export const load: PageServerLoad = async (event) => {
 			modulePrieres: context.organizationPrayerModule,
 			langues: settings.enabled_language,
 			langueParDefaut: settings.default_language,
-			salles: (await readRooms(tx)).map((salle) => ({ id: salle.id, name: salle.name }))
+			salles: (await readRooms(tx)).map((salle) => ({ id: salle.id, name: salle.name })),
+			/** Les dates que l'action accepte : les bornes des champs de date et du résumé. */
+			dates: { first: FIRST_SUPPORTED_DATE, last: LAST_SUPPORTED_DATE }
 		};
 	});
 };
@@ -29,11 +32,11 @@ export const actions: Actions = {
 	default: async (event) => {
 		const context = await mustBeInOrganisation(event);
 		const form = await event.request.formData();
-		const langues = await withSessionOrg(
-			context,
-			async (tx) => (await readSettings(tx)).enabled_language
-		);
-		const read = readCourseForm(form, langues);
+		const { langues, salles } = await withSessionOrg(context, async (tx) => ({
+			langues: (await readSettings(tx)).enabled_language,
+			salles: (await readRooms(tx)).map((salle) => salle.id)
+		}));
+		const read = readCourseForm(form, langues, salles);
 		// Les noms des erreurs, jamais leurs phrases : la page les écrit dans sa langue. Ce que la
 		// personne a envoyé revient avec, pour qu'elle n'ait rien à retaper et que le résumé le montre.
 		if (!read.ok) {

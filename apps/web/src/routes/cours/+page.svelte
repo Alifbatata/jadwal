@@ -98,11 +98,26 @@
 			{/each}
 		</select>
 
+		<!-- Les bornes de l'action : le calendrier ne propose pas une date qu'elle refuserait. -->
 		<label for="pause-from">{text.pauseFromLabel}</label>
-		<input id="pause-from" type="date" name="from" required />
+		<input
+			id="pause-from"
+			type="date"
+			name="from"
+			min={data.dates.first}
+			max={data.dates.last}
+			required
+		/>
 
 		<label for="pause-to">{text.pauseToLabel}</label>
-		<input id="pause-to" type="date" name="to" required />
+		<input
+			id="pause-to"
+			type="date"
+			name="to"
+			min={data.dates.first}
+			max={data.dates.last}
+			required
+		/>
 
 		<label for="pause-reason">
 			{text.pauseReasonLabel} <span class="marque">{text.optional}</span>

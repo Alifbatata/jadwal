@@ -1199,3 +1199,253 @@ describe('un cours avant une prière (C3)', () => {
 		expect(await inserer(240)).toBe('accepté');
 	});
 });
+
+describe('aucune erreur 500 sur les écrans des cours (étape 19, lot 2)', () => {
+	// Les défauts corrigés au lot 1 sur « À venir » et le vendredi, cherchés ici : `isIsoDate` suit le
+	// calendrier de `@jadwal/core`, qui a un an 0000 (ADR 0012), et PostgreSQL non ; le flux agenda
+	// calcule le lendemain d'une date de fin, et le 31.12.9999 le faisait tomber pour toute
+	// l'organisation ; PostgreSQL refuse le caractère nul dans un texte. Un identifiant mal formé, ou
+	// celui d'une autre organisation, atteignait aussi la base.
+	let cookie = '';
+	const AUTRE = { organisation: newId(), salle: newId(), cours: newId() };
+	const DEBUT_ILLISIBLE = 'Choisissez le premier jour du cours.';
+	const FIN_ILLISIBLE =
+		'Le dernier jour est illisible. Choisissez-le dans le calendrier, ou laissez-le vide.';
+	const SALLE_DISPARUE =
+		'Cette salle n’existe plus : elle a été supprimée entre-temps. Choisissez une autre salle, ou « aucune salle ».';
+	const COURS_DISPARU = 'Ce cours n’existe plus : il a peut-être déjà été supprimé.';
+
+	beforeAll(async () => {
+		cookie = await signIn(RESPONSABLE);
+		await poserLangueDuCompte('fr');
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+					"enabled_language")
+				values (${AUTRE.organisation}, 'cours-d-a-cote', 'Association d’à côté', 'Europe/Zurich',
+					'fr', array['fr'])
+			`);
+			await tx.execute(sql`
+				insert into "room" ("id", "organization_id", "name", "display_order")
+				values (${AUTRE.salle}, ${AUTRE.organisation}, 'Salle d’à côté', 1)
+			`);
+			await tx.execute(sql`
+				insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",
+					"source_language", "recurrence_kind", "recurrence_weekday", "recurrence_interval",
+					"recurrence_anchor_date", "timing_kind", "timing_start", "timing_end", "starts_on")
+				values (${AUTRE.cours}, ${AUTRE.organisation}, 'published', 'open', array['fr'], 'fr',
+					'weekly', array[2]::smallint[], 1, '2026-10-06', 'fixed', '19:00', '20:00',
+					'2026-10-06')
+			`);
+		});
+	});
+
+	/** Un cours à heure fixe, publié, complet, prêt à poster avec ce qu'on veut y changer. */
+	function coursFixe(
+		titreDuCours: string,
+		changes: readonly (readonly [string, string])[] = []
+	): (readonly [string, string])[] {
+		const noms = new Set(changes.map(([nom]) => nom));
+		return [
+			...(
+				[
+					['sourceLanguage', 'fr'],
+					['title.fr', titreDuCours],
+					['audience', 'adults'],
+					['teachingLanguages', 'fr'],
+					['recurrenceKind', 'weekly'],
+					['weekdays', '2'],
+					['interval', '1'],
+					['timingKind', 'fixed'],
+					['start', '19:00'],
+					['end', '20:00'],
+					['startsOn', '2026-10-06'],
+					['status', 'published']
+				] as const
+			).filter(([nom]) => !noms.has(nom)),
+			...changes
+		];
+	}
+
+	async function coursEnBase(titreDuCours: string) {
+		return maintenance(async (tx) =>
+			lignes<{ id: string; title: string; teacher: string | null; description: string | null }>(
+				await tx.execute(sql`
+					select c."id", t."title", c."teacher", t."description" from "course" c
+					join "course_translation" t on t."course_id" = c."id"
+					where c."organization_id" = ${organizationId} and t."title" like ${`${titreDuCours}%`}
+				`)
+			)
+		);
+	}
+
+	it('refuses a date the service does not handle, the year 0000 or outside 1970 to 2100, and keeps the agenda feed readable', async () => {
+		const TITRE = 'Cours hors des années';
+		const recus: Record<string, unknown> = {};
+		const attendus: Record<string, unknown> = {};
+		for (const [champs, phrases] of [
+			[[['startsOn', '0000-01-01']], [DEBUT_ILLISIBLE]],
+			[[['startsOn', '1969-12-30']], [DEBUT_ILLISIBLE]],
+			[[['endsOn', '9999-12-31']], [FIN_ILLISIBLE]],
+			[[['endsOn', '2101-01-06']], [FIN_ILLISIBLE]],
+			[[['endsOn', '2026-02-31']], [FIN_ILLISIBLE]],
+			[
+				[
+					['recurrenceKind', 'dates'],
+					['dates', '06.10.2026\n31.12.9999']
+				],
+				['Cette date n’est pas valable : 31.12.9999. Écrivez chaque date comme ceci : 12.10.2026']
+			],
+			[
+				[
+					['recurrenceKind', 'dates'],
+					['dates', '01.01.0000']
+				],
+				['Cette date n’est pas valable : 01.01.0000. Écrivez chaque date comme ceci : 12.10.2026']
+			]
+		] as const) {
+			const cas = JSON.stringify(champs);
+			const reponse = await postForm('/cours/nouveau', coursFixe(TITRE, champs), cookie);
+			recus[cas] = { statut: reponse.status, phrases: erreurs(await reponse.text()) };
+			attendus[cas] = { statut: 400, phrases };
+		}
+		// La fiche d'un cours passe par le même formulaire.
+		const fiche = champsDuFormulaire(await (await get(`/cours/${tafsirId}`, cookie)).text()).map(
+			([nom, valeur]): [string, string] => [nom, nom === 'endsOn' ? '9999-12-31' : valeur]
+		);
+		const surLaFiche = await postForm(`/cours/${tafsirId}`, fiche, cookie);
+		recus['fiche'] = { statut: surLaFiche.status, phrases: erreurs(await surLaFiche.text()) };
+		attendus['fiche'] = { statut: 400, phrases: [FIN_ILLISIBLE] };
+		recus['flux agenda'] = (await fetch(`${origin}/m/cours-du-soir/agenda.ics`)).status;
+		attendus['flux agenda'] = 200;
+		expect(recus).toEqual(attendus);
+		expect(await coursEnBase(TITRE)).toEqual([]);
+	});
+
+	it('offers in the calendar of each date field only the dates the service accepts', async () => {
+		for (const [chemin, ids] of [
+			['/cours/nouveau', ['startsOn', 'endsOn']],
+			[`/cours/${tafsirId}`, ['startsOn', 'endsOn']],
+			['/cours', ['pause-from', 'pause-to']]
+		] as const) {
+			const html = await (await get(chemin, cookie)).text();
+			for (const id of ids) {
+				const attributs = champ(html, id);
+				expect([attributs['type'], attributs['min'], attributs['max']], `${chemin} ${id}`).toEqual([
+					'date',
+					'1970-01-01',
+					'2100-12-31'
+				]);
+			}
+		}
+	});
+
+	it('drops the null character from each text field, instead of an error 500', async () => {
+		const reponse = await postForm(
+			'/cours/nouveau',
+			coursFixe('Caractère\u0000 nul', [
+				['teacher', 'Imam\u0000 Karim'],
+				['description.fr', 'Pour\u0000 tous.'],
+				['recurrenceKind', 'dates'],
+				['dates', '06.10.2026\u0000']
+			]),
+			cookie
+		);
+		expect(reponse.status).toBe(303);
+		expect(
+			(await coursEnBase('Caractère nul')).map(({ title, teacher, description }) => ({
+				title,
+				teacher,
+				description
+			}))
+		).toEqual([{ title: 'Caractère nul', teacher: 'Imam Karim', description: 'Pour tous.' }]);
+	});
+
+	it('refuses a room that is not one of the organisation, instead of an error 500', async () => {
+		for (const salle of ['pas-une-salle', AUTRE.salle, newId()]) {
+			const reponse = await postForm(
+				'/cours/nouveau',
+				coursFixe('Salle d’ailleurs', [['roomId', salle]]),
+				cookie
+			);
+			expect(reponse.status, salle).toBe(400);
+			expect(erreurs(await reponse.text()), salle).toEqual([SALLE_DISPARUE]);
+		}
+		expect(await coursEnBase('Salle d’ailleurs')).toEqual([]);
+	});
+
+	it('answers an unknown course to a malformed identifier in the address', async () => {
+		expect((await get('/cours/pas-un-cours', cookie)).status).toBe(404);
+		expect(
+			(await postForm('/cours/pas-un-cours', coursFixe('Adresse mal formée'), cookie)).status
+		).toBe(404);
+		expect(await coursEnBase('Adresse mal formée')).toEqual([]);
+	});
+
+	it('refuses a pause the service does not handle, instead of an error 500', async () => {
+		const PAUSE_ILLISIBLE = 'Choisissez le premier et le dernier jour de la pause.';
+		const recus: Record<string, unknown> = {};
+		const attendus: Record<string, unknown> = {};
+		for (const [champs, statut, phrase] of [
+			[{ from: '0000-01-01', to: '0000-01-02' }, 400, PAUSE_ILLISIBLE],
+			[{ from: '2026-02-31', to: '2026-03-02' }, 400, PAUSE_ILLISIBLE],
+			[{ from: '2026-12-01', to: '9999-12-31' }, 400, PAUSE_ILLISIBLE],
+			[{ from: '2026-12-01', to: '2026-12-02', courseId: 'pas-un-cours' }, 404, COURS_DISPARU],
+			[{ from: '2026-12-01', to: '2026-12-02', courseId: AUTRE.cours }, 404, COURS_DISPARU]
+		] as const) {
+			const cas = JSON.stringify(champs);
+			const reponse = await postForm('/cours?/pause', Object.entries(champs), cookie);
+			const html = await reponse.text();
+			recus[cas] = {
+				statut: reponse.status,
+				phrase: lu(html.match(/<p\b[^>]*role="alert"[^>]*>([\s\S]*?)<\/p>/)?.[1] ?? '')
+			};
+			attendus[cas] = { statut, phrase };
+		}
+		expect(recus).toEqual(attendus);
+		const nul = await postForm(
+			'/cours?/pause',
+			[
+				['from', '2027-02-01'],
+				['to', '2027-02-07'],
+				['reason', 'Relâche\u0000 de février']
+			],
+			cookie
+		);
+		expect(nul.status).toBe(200);
+		expect(
+			await maintenance(async (tx) =>
+				lignes<{ reason: string }>(
+					await tx.execute(sql`
+						select "reason" from "pause"
+						where "organization_id" = ${organizationId} and "from_date" = '2027-02-01'
+					`)
+				)
+			)
+		).toEqual([{ reason: 'Relâche de février' }]);
+	});
+
+	it('says a pause is gone rather than removed, and writes nothing to the journal', async () => {
+		const PAUSE_DISPARUE = 'Cette pause n’existe plus : elle a peut-être déjà été supprimée.';
+		const journal = async () =>
+			maintenance(async (tx) =>
+				lignes<{ n: number }>(
+					await tx.execute(sql`
+						select count(*)::int as n from "audit_log"
+						where "organization_id" = ${organizationId} and "action" = 'pause.delete'
+					`)
+				)
+			);
+		const avant = await journal();
+		for (const pauseId of ['pas-une-pause', newId()]) {
+			const reponse = await postForm('/cours?/supprimerPause', [['pauseId', pauseId]], cookie);
+			expect(reponse.status, pauseId).toBe(404);
+			const html = await reponse.text();
+			expect(lu(html.match(/<p\b[^>]*role="alert"[^>]*>([\s\S]*?)<\/p>/)?.[1] ?? ''), pauseId).toBe(
+				PAUSE_DISPARUE
+			);
+			expect(html, pauseId).not.toContain('La pause est supprimée.');
+		}
+		expect(await journal()).toEqual(avant);
+	});
+});

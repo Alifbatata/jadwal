@@ -7,6 +7,8 @@ import { isoDateToDays, ruleDays, type IsoDate } from '@jadwal/core';
 import { readCourseForm } from './course-form.js';
 
 const LANGUES = ['fr', 'de', 'ar'];
+/** Les salles de l'organisation, par leur identifiant. */
+const SALLES = ['0199a5f0-0000-7000-8000-000000000001'];
 
 function formulaire(champs: Record<string, string | string[]>): FormData {
 	const form = new FormData();
@@ -47,7 +49,7 @@ describe('l’horaire par rapport à une prière (C3)', () => {
 		['prayer', '15', 15],
 		['prayer', '240', 240]
 	])('stores %s with %s minutes as %i', (choix, minutes, attendu) => {
-		const lu = readCourseForm(ancre(choix, minutes), LANGUES);
+		const lu = readCourseForm(ancre(choix, minutes), LANGUES, SALLES);
 		expect(lu.ok && lu.values.timing).toEqual({
 			kind: 'prayer',
 			prayer: 'maghrib',
@@ -66,12 +68,12 @@ describe('l’horaire par rapport à une prière (C3)', () => {
 		['prayer', '1.5', 'minutesAfter'],
 		['prayer', 'dix', 'minutesAfter']
 	])('refuses %s with « %s » minutes: %s', (choix, minutes, erreur) => {
-		const lu = readCourseForm(ancre(choix, minutes), LANGUES);
+		const lu = readCourseForm(ancre(choix, minutes), LANGUES, SALLES);
 		expect(lu.ok ? [] : lu.errors).toEqual([erreur]);
 	});
 
 	it.each(['4', '1441', '', 'une heure'])('refuses a duration of « %s » minutes', (duree) => {
-		const lu = readCourseForm(ancre('prayer', '15', duree), LANGUES);
+		const lu = readCourseForm(ancre('prayer', '15', duree), LANGUES, SALLES);
 		expect(lu.ok ? [] : lu.errors).toEqual(['duration']);
 	});
 });
@@ -92,7 +94,8 @@ describe('les dates d’un cours à dates précises (A3)', () => {
 	it('refuses the dates before the first day, and names them', () => {
 		const lu = readCourseForm(
 			aDates('26.10.2026\n12.10.2026 05.11.2026', { startsOn: '2026-11-01' }),
-			LANGUES
+			LANGUES,
+			SALLES
 		);
 		expect(lu.ok).toBe(false);
 		if (lu.ok) return;
@@ -104,7 +107,8 @@ describe('les dates d’un cours à dates précises (A3)', () => {
 	it('refuses the dates after the last day, and names them', () => {
 		const lu = readCourseForm(
 			aDates('12.10.2026 26.10.2026 09.11.2026', { startsOn: '2026-10-01', endsOn: '2026-10-20' }),
-			LANGUES
+			LANGUES,
+			SALLES
 		);
 		expect(lu.ok).toBe(false);
 		if (lu.ok) return;
@@ -138,7 +142,7 @@ describe('les dates d’un cours à dates précises (A3)', () => {
 			);
 			expect(publiees.length === 1, `le moteur, ${date}`).toBe(accepte);
 			const commeEnSuisse = date.split('-').reverse().join('.');
-			const lu = readCourseForm(aDates(commeEnSuisse, periode), LANGUES);
+			const lu = readCourseForm(aDates(commeEnSuisse, periode), LANGUES, SALLES);
 			expect(lu.ok, `le formulaire, ${commeEnSuisse}`).toBe(accepte);
 		}
 	});
@@ -146,13 +150,14 @@ describe('les dates d’un cours à dates précises (A3)', () => {
 	it('does not judge the dates against a period that is itself to correct', () => {
 		const lu = readCourseForm(
 			aDates('12.10.2026', { startsOn: '2026-11-01', endsOn: '2026-10-01' }),
-			LANGUES
+			LANGUES,
+			SALLES
 		);
 		expect(lu.ok ? [] : lu.errors).toEqual(['endsBeforeStarts']);
 	});
 
 	it('reads them as JJ.MM.AAAA, and still as the base writes them', () => {
-		const lu = readCourseForm(aDates('12.10.2026\n2026-10-26'), LANGUES);
+		const lu = readCourseForm(aDates('12.10.2026\n2026-10-26'), LANGUES, SALLES);
 		expect(lu.ok && lu.values.recurrence).toEqual({
 			kind: 'dates',
 			dates: ['2026-10-12', '2026-10-26']
@@ -160,7 +165,7 @@ describe('les dates d’un cours à dates précises (A3)', () => {
 	});
 
 	it('names the dates it cannot read, as they were written', () => {
-		const lu = readCourseForm(aDates('12.10.2026\n31.02.2026 le 3 mars'), LANGUES);
+		const lu = readCourseForm(aDates('12.10.2026\n31.02.2026 le 3 mars'), LANGUES, SALLES);
 		expect(lu.ok).toBe(false);
 		if (lu.ok) return;
 		expect(lu.errors).toEqual(['badDates']);
@@ -168,9 +173,9 @@ describe('les dates d’un cours à dates précises (A3)', () => {
 	});
 
 	it('says when there is none, or one twice', () => {
-		const vide = readCourseForm(aDates('  '), LANGUES);
+		const vide = readCourseForm(aDates('  '), LANGUES, SALLES);
 		expect(vide.ok ? [] : vide.errors).toEqual(['datesMissing']);
-		const double = readCourseForm(aDates('12.10.2026 2026-10-12'), LANGUES);
+		const double = readCourseForm(aDates('12.10.2026 2026-10-12'), LANGUES, SALLES);
 		expect(double.ok ? [] : double.errors).toEqual(['datesTwice']);
 	});
 });
@@ -183,7 +188,8 @@ describe('une description sans titre dans sa langue (B4)', () => {
 	it('refuses it rather than losing it in silence, and names each language', () => {
 		const lu = readCourseForm(
 			avecTextes({ 'description.ar': 'قراءة مع شرح.', 'description.de': 'Für Erwachsene.' }),
-			LANGUES
+			LANGUES,
+			SALLES
 		);
 		expect(lu.ok).toBe(false);
 		if (lu.ok) return;
@@ -197,13 +203,14 @@ describe('une description sans titre dans sa langue (B4)', () => {
 	it('keeps it with its title, and ignores a description of blanks', () => {
 		const avecTitre = readCourseForm(
 			avecTextes({ 'title.de': 'Tafsir am Abend', 'description.de': 'Für Erwachsene.' }),
-			LANGUES
+			LANGUES,
+			SALLES
 		);
 		expect(avecTitre.ok && avecTitre.values.translations.get('de')).toEqual({
 			title: 'Tafsir am Abend',
 			description: 'Für Erwachsene.'
 		});
-		const blancs = readCourseForm(avecTextes({ 'description.de': '  \n ' }), LANGUES);
+		const blancs = readCourseForm(avecTextes({ 'description.de': '  \n ' }), LANGUES, SALLES);
 		expect(blancs.ok).toBe(true);
 	});
 
@@ -220,7 +227,8 @@ describe('une description sans titre dans sa langue (B4)', () => {
 				start: '19:00',
 				end: '20:00'
 			}),
-			LANGUES
+			LANGUES,
+			SALLES
 		);
 		expect(lu.ok ? [] : lu.errors).toEqual([
 			'titleMissing',
@@ -244,7 +252,8 @@ describe('les erreurs, champ par champ (B1)', () => {
 				startsOn: '2026-10-06',
 				endsOn: '2026-10-01'
 			}),
-			LANGUES
+			LANGUES,
+			SALLES
 		);
 		// Le titre, la langue d'enseignement, les jours, l'horaire, puis la période : l'ordre des
 		// cadres du formulaire, de haut en bas.
@@ -268,7 +277,8 @@ describe('les erreurs, champ par champ (B1)', () => {
 				start: '',
 				end: ''
 			}),
-			LANGUES
+			LANGUES,
+			SALLES
 		);
 		expect(lu.ok ? [] : lu.errors).toEqual(['titleMissing', 'badDates', 'timeMissing']);
 	});
@@ -282,7 +292,8 @@ describe('les erreurs, champ par champ (B1)', () => {
 				start: '19:00',
 				end: '20:00'
 			}),
-			LANGUES
+			LANGUES,
+			SALLES
 		);
 		expect(lu.ok ? [] : lu.errors).toEqual(['teachingMissing']);
 	});
@@ -290,7 +301,8 @@ describe('les erreurs, champ par champ (B1)', () => {
 	it('asks for the first day', () => {
 		const lu = readCourseForm(
 			formulaire({ ...BASE, startsOn: '', timingKind: 'fixed', start: '19:00', end: '20:00' }),
-			LANGUES
+			LANGUES,
+			SALLES
 		);
 		expect(lu.ok ? [] : lu.errors).toEqual(['startsOnMissing']);
 	});
@@ -310,7 +322,8 @@ describe('les erreurs, champ par champ (B1)', () => {
 					durationMinutes: '60',
 					...trafique
 				}),
-				LANGUES
+				LANGUES,
+				SALLES
 			);
 			expect(lu.ok ? [] : lu.errors, JSON.stringify(trafique)).toEqual(['refused']);
 		}
@@ -328,7 +341,8 @@ describe('les erreurs, champ par champ (B1)', () => {
 				offsetMinutes: '10',
 				durationMinutes: '90'
 			}),
-			LANGUES
+			LANGUES,
+			SALLES
 		);
 		expect(lu.ok).toBe(false);
 		if (lu.ok) return;
@@ -343,5 +357,84 @@ describe('les erreurs, champ par champ (B1)', () => {
 			durationMinutes: 90,
 			startsOn: '2026-09-07'
 		});
+	});
+});
+
+describe('ce que la base refusait par une erreur 500 (étape 19, lot 2)', () => {
+	const FIXE = { ...BASE, timingKind: 'fixed', start: '19:00', end: '20:00' };
+
+	it.each(['0000-01-01', '1969-12-31', '2101-01-01', '2026-02-31', ''])(
+		'asks for the first day when it is « %s »',
+		(startsOn) => {
+			const lu = readCourseForm(formulaire({ ...FIXE, startsOn }), LANGUES, SALLES);
+			expect(lu.ok ? [] : lu.errors).toEqual(['startsOnMissing']);
+		}
+	);
+
+	it.each(['9999-12-31', '0000-06-01', '2101-01-01', '2026-02-31', 'demain'])(
+		'refuses the last day « %s », which the agenda feed or the base cannot take',
+		(endsOn) => {
+			const lu = readCourseForm(formulaire({ ...FIXE, endsOn }), LANGUES, SALLES);
+			expect(lu.ok ? [] : lu.errors).toEqual(['endsOnUnreadable']);
+		}
+	);
+
+	it('accepts the first and the last date the service handles', () => {
+		const lu = readCourseForm(
+			formulaire({ ...FIXE, startsOn: '1970-01-01', endsOn: '2100-12-31' }),
+			LANGUES,
+			SALLES
+		);
+		expect(lu.ok && [lu.values.startsOn, lu.values.endsOn]).toEqual(['1970-01-01', '2100-12-31']);
+	});
+
+	it('names a date outside 1970 to 2100 among the dates it cannot read', () => {
+		const lu = readCourseForm(
+			formulaire({
+				...FIXE,
+				recurrenceKind: 'dates',
+				dates: '12.10.2026\n31.12.9999\n01.01.0000\n31.12.1969',
+				startsOn: '2026-10-01'
+			}),
+			LANGUES,
+			SALLES
+		);
+		expect(lu.ok).toBe(false);
+		if (lu.ok) return;
+		expect(lu.errors).toEqual(['badDates']);
+		expect(lu.badDates).toEqual(['31.12.9999', '01.01.0000', '31.12.1969']);
+		expect(lu.datesBefore).toEqual([]);
+	});
+
+	it('drops the null character from every field, and keeps the rest', () => {
+		const lu = readCourseForm(
+			formulaire({
+				...FIXE,
+				'title.fr': 'Caractère\u0000 nul',
+				'description.fr': 'Pour\u0000 tous.',
+				teacher: 'Imam\u0000 Karim',
+				recurrenceKind: 'dates',
+				dates: '12.10.2026\u0000',
+				startsOn: '2026-10-01'
+			}),
+			LANGUES,
+			SALLES
+		);
+		expect(lu.ok && lu.values.title).toBe('Caractère nul');
+		expect(lu.ok && lu.values.teacher).toBe('Imam Karim');
+		expect(lu.ok && lu.values.translations.get('fr')).toEqual({
+			title: 'Caractère nul',
+			description: 'Pour tous.'
+		});
+		expect(lu.ok && lu.values.recurrence).toEqual({ kind: 'dates', dates: ['2026-10-12'] });
+	});
+
+	it('refuses a room that is not one of the organisation, and keeps one that is', () => {
+		for (const roomId of ['pas-une-salle', '0199a5f0-0000-7000-8000-000000000002']) {
+			const lu = readCourseForm(formulaire({ ...FIXE, roomId }), LANGUES, SALLES);
+			expect(lu.ok ? [] : lu.errors, roomId).toEqual(['roomGone']);
+		}
+		const salle = readCourseForm(formulaire({ ...FIXE, roomId: SALLES[0] ?? '' }), LANGUES, SALLES);
+		expect(salle.ok && salle.values.roomId).toBe(SALLES[0]);
 	});
 });

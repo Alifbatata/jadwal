@@ -43,7 +43,14 @@ interface CoursesTexts {
 	readonly pauseReasonHint: string;
 	readonly addPause: string;
 	/** Une phrase par erreur, que l'action nomme sans jamais l'écrire (voir `LISEZMOI.md`). */
-	readonly errors: { readonly pauseDates: string; readonly pauseInverted: string };
+	readonly errors: {
+		readonly pauseDates: string;
+		readonly pauseInverted: string;
+		/** Le cours visé n'existe pas, ou plus, dans l'organisation. */
+		readonly courseGone: string;
+		/** La pause à retirer n'existe pas, ou plus : une autre personne l'a peut-être retirée. */
+		readonly pauseGone: string;
+	};
 }
 
 export const coursesTexts: Translations<CoursesTexts> = {
@@ -79,7 +86,9 @@ export const coursesTexts: Translations<CoursesTexts> = {
 		addPause: 'Ajouter la pause',
 		errors: {
 			pauseDates: 'Choisissez le premier et le dernier jour de la pause.',
-			pauseInverted: 'Le dernier jour de la pause vient avant le premier.'
+			pauseInverted: 'Le dernier jour de la pause vient avant le premier.',
+			courseGone: 'Ce cours n’existe plus : il a peut-être déjà été supprimé.',
+			pauseGone: 'Cette pause n’existe plus : elle a peut-être déjà été supprimée.'
 		}
 	},
 	de: {
@@ -114,7 +123,9 @@ export const coursesTexts: Translations<CoursesTexts> = {
 		addPause: 'Pause hinzufügen',
 		errors: {
 			pauseDates: 'Wählen Sie den ersten und den letzten Tag der Pause.',
-			pauseInverted: 'Der letzte Tag der Pause liegt vor dem ersten.'
+			pauseInverted: 'Der letzte Tag der Pause liegt vor dem ersten.',
+			courseGone: 'Diesen Kurs gibt es nicht mehr. Vielleicht wurde er schon gelöscht.',
+			pauseGone: 'Diese Pause gibt es nicht mehr. Vielleicht wurde sie schon gelöscht.'
 		}
 	},
 	it: {
@@ -150,7 +161,9 @@ export const coursesTexts: Translations<CoursesTexts> = {
 		addPause: 'Aggiungi la pausa',
 		errors: {
 			pauseDates: 'Scegli il primo e l’ultimo giorno della pausa.',
-			pauseInverted: 'L’ultimo giorno della pausa viene prima del primo.'
+			pauseInverted: 'L’ultimo giorno della pausa viene prima del primo.',
+			courseGone: 'Questo corso non esiste più: forse è già stato eliminato.',
+			pauseGone: 'Questa pausa non esiste più: forse è già stata eliminata.'
 		}
 	},
 	en: {
@@ -185,7 +198,9 @@ export const coursesTexts: Translations<CoursesTexts> = {
 		addPause: 'Add the break',
 		errors: {
 			pauseDates: 'Choose the first and the last day of the break.',
-			pauseInverted: 'The last day of the break comes before the first.'
+			pauseInverted: 'The last day of the break comes before the first.',
+			courseGone: 'This course no longer exists. It may already have been deleted.',
+			pauseGone: 'This break no longer exists. It may already have been deleted.'
 		}
 	},
 	ar: {
@@ -221,7 +236,9 @@ export const coursesTexts: Translations<CoursesTexts> = {
 		addPause: 'إضافة العطلة',
 		errors: {
 			pauseDates: 'اختر اليوم الأول واليوم الأخير من العطلة.',
-			pauseInverted: 'اليوم الأخير من العطلة يأتي قبل اليوم الأول.'
+			pauseInverted: 'اليوم الأخير من العطلة يأتي قبل اليوم الأول.',
+			courseGone: 'هذا الدرس لم يعد موجودًا. ربما حُذف من قبل.',
+			pauseGone: 'هذه العطلة لم تعد موجودة. ربما حُذفت من قبل.'
 		}
 	}
 };
