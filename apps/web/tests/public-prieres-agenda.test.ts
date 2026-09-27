@@ -654,10 +654,10 @@ describe('l’onglet des prières, quand le module est allumé (C4)', () => {
 			// Et la vue Semaine de la même page dit la même chose, le mot exact, dans sa marque : « Annulé »
 			// passait pour « Annulée » tant qu'on cherchait le mot dans le texte. Le cours ordinaire
 			// annulé demain garde le sien.
+			const marquesDe = (page: string) =>
+				[...page.matchAll(/<span class="marque[^"]*">([^<]*)<\/span>/g)].map((trouve) => trouve[1]);
 			const vueSemaine = (await servir(base(langue, SLUG_CHANGE))).html;
-			const marques = [...vueSemaine.matchAll(/<span class="marque[^"]*">([^<]*)<\/span>/g)].map(
-				(trouve) => trouve[1]
-			);
+			const marques = marquesDe(vueSemaine);
 			expect(marques, langue).toContain(ANNULE[langue]);
 			expect(marques, langue).toContain(COURS_ANNULE_MARQUE[langue]);
 			expect(
@@ -667,6 +667,13 @@ describe('l’onglet des prières, quand le module est allumé (C4)', () => {
 				langue
 			).toHaveLength(2);
 			expect(visibleText(vueSemaine)).toContain(deplace);
+			// La vue Mois, au jour choisi, montre ses séances par le même composant : le même mot
+			// (reprise 1). La grille ne porte que des nombres ; les marques sont celles de ce jour.
+			const vueMois = await servir(
+				`${base(langue, SLUG_CHANGE)}?vue=mois&mois=${VENDREDI.slice(0, 7)}&jour=${VENDREDI}`
+			);
+			expect(vueMois.statut).toBe(200);
+			expect(marquesDe(vueMois.html), langue).toContain(ANNULE[langue]);
 		}
 	);
 

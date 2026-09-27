@@ -64,8 +64,9 @@ interface Dictionnaire {
 	readonly cancelled: string;
 	/**
 	 * « Annulée » : une session du vendredi annulée, accordée à « Prière du vendredi » là où la langue
-	 * accorde (décision du chef de projet, 27.09.2026). La vue Semaine, l'onglet Prières et la page
-	 * d'une session le disent ainsi ; un cours garde `cancelled`.
+	 * accorde (décision du chef de projet, 27.09.2026). La vue Semaine, la vue Mois (toutes deux par
+	 * `Seance.svelte`) et l'onglet Prières le disent ainsi ; un cours garde `cancelled`. La page d'une
+	 * session ne montre jamais une séance annulée : ses prochaines dates n'en ont pas.
 	 */
 	readonly cancelledJumua: string;
 	readonly exceptionalDate: string;
