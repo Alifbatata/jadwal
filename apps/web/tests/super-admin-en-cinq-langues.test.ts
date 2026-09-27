@@ -351,14 +351,16 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 				'Elle est proposée à partir du nom, et vous pouvez la modifier. Si vous la laissez vide, elle est formée à partir du nom.'
 			);
 			expect(creer).toContain(
-				'Lettres minuscules sans accent ni cédille, chiffres et traits d’union. Exemple : association-horizon'
+				'Lettres minuscules sans accent ni cédille, chiffres et traits d’union, avec au moins une lettre. Exemple : association-horizon'
 			);
 			// L'adresse complète, qui vient de l'origine du serveur, jamais d'un nom écrit en dur.
 			expect(creer).toContain(`Adresse complète : ${HOTE}/m/`);
 			const champ = html.match(/<input\b[^>]*\bid="slug"[^>]*>/)?.[0] ?? '';
 			// Le champ peut rester vide : c'est alors le serveur qui propose l'adresse.
 			expect(champ).not.toMatch(/\brequired\b/);
-			expect(champ).toContain('pattern="[a-z0-9]+(-[a-z0-9]+)*"');
+			// La règle de la base, et au moins une lettre (étape 19, D6) : `public-address.test.ts` lit ce
+			// motif comme un navigateur le lit.
+			expect(champ).toContain('pattern="(?=.*[a-z])[a-z0-9]+(-[a-z0-9]+)*"');
 		});
 
 		it('gives as examples the name and the address of an association, in the five languages', async () => {
@@ -396,7 +398,7 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 				expect
 					.soft(texteDe(section(html, 'creer-titre')))
 					.toContain(
-						'Kleinbuchstaben ohne Umlaute und Akzente, Ziffern und Bindestriche. Beispiel: association-horizon'
+						'Kleinbuchstaben ohne Umlaute und Akzente, Ziffern und Bindestriche, mit mindestens einem Buchstaben. Beispiel: association-horizon'
 					);
 				const refusee = await postForm(
 					'/super-admin?/ouvrir',
@@ -534,6 +536,40 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 			expect(erreur(await reponse.text())).toBe(
 				'Cette adresse ne convient pas. Elle ne peut contenir que des lettres minuscules sans accent ni cédille, des chiffres et des traits d’union, un seul entre deux mots, jamais au début ni à la fin. Exemple : association-horizon'
 			);
+			expect(await nombreDOrganisations()).toBe(avant);
+		});
+
+		it.each(['2026', '12-34'])(
+			'refuses the address « %s », which has no letter, and says why',
+			async (adresse) => {
+				// La base la prendrait : `/m/2026` ne dit pourtant rien de l'organisation qu'elle ouvre.
+				const avant = await nombreDOrganisations();
+				const reponse = await postForm(
+					'/super-admin?/ouvrir',
+					{ name: 'Club des chiffres', slug: adresse, timeZone: 'Europe/Zurich' },
+					avecPouvoirs
+				);
+				expect(reponse.status).toBe(400);
+				expect(erreur(await reponse.text())).toBe(
+					'Cette adresse n’a que des chiffres et des traits d’union. Ajoutez-y au moins une lettre, par exemple un mot du nom. Exemple : association-horizon'
+				);
+				expect(await organisationA(adresse)).toBeUndefined();
+				expect(await nombreDOrganisations()).toBe(avant);
+			}
+		);
+
+		it('asks for the address of a name in Arabic followed by a digit, instead of proposing /m/2', async () => {
+			const avant = await nombreDOrganisations();
+			const reponse = await postForm(
+				'/super-admin?/ouvrir',
+				{ name: 'جمعية الأفق 2', slug: '', timeZone: 'Europe/Zurich' },
+				avecPouvoirs
+			);
+			expect(reponse.status).toBe(400);
+			expect(erreur(await reponse.text())).toBe(
+				'Le nom ne permet pas de proposer une adresse. Écrivez-la vous-même, en lettres minuscules sans accent ni cédille, chiffres et traits d’union. Exemple : association-horizon'
+			);
+			expect(await organisationA('2')).toBeUndefined();
 			expect(await nombreDOrganisations()).toBe(avant);
 		});
 
@@ -851,6 +887,10 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 				adresse: [
 					'/super-admin?/ouvrir',
 					{ name: 'Club', slug: 'Club!', timeZone: 'Europe/Zurich' }
+				],
+				sansLettre: [
+					'/super-admin?/ouvrir',
+					{ name: 'Club', slug: '2026', timeZone: 'Europe/Zurich' }
 				],
 				fuseau: [
 					'/super-admin?/ouvrir',

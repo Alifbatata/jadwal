@@ -33,7 +33,8 @@ d'une association, d'une école ou d'un club : son programme, ses membres et sa 
      tape (`dir="auto"`).
    - `Adresse de la page publique` (avant : « Identifiant d'URL »), facultative : `Elle est proposée
 à partir du nom, et vous pouvez la modifier. Si vous la laissez vide, elle est formée à partir du
-nom.`, la règle `Lettres minuscules sans accent ni cédille, chiffres et traits d'union.` avec
+nom.`, la règle `Lettres minuscules sans accent ni cédille, chiffres et traits d'union, avec au
+moins une lettre.` avec
      `Exemple : association-horizon`, `Adresse complète :` qui suit la frappe, et
      `Choisissez-la avec soin : elle ne se change plus ensuite.`
    - `Fuseau horaire` : une liste (avant : un texte libre), `Europe/Zurich` choisi d'avance, le
@@ -63,7 +64,9 @@ n'a pas encore de compte, il en crée un, rattaché à aucune organisation.` et 
 le registre des accès du super-admin.`
 
 Les erreurs sont dites dans la langue de l'écran : nom manquant, adresse refusée avec la règle et un
-exemple, nom qui ne permet pas de proposer d'adresse, `Cette adresse est déjà celle d'une autre
+exemple, nom qui ne permet pas de proposer d'adresse, `Cette adresse n'a que des chiffres et des
+traits d'union. Ajoutez-y au moins une lettre, par exemple un mot du nom.` (la base prendrait
+`2026` : l'écran est plus strict qu'elle, depuis l'étape 19), `Cette adresse est déjà celle d'une autre
 organisation. Choisissez-en une autre, par exemple en y ajoutant le nom de la ville.` (avant : une
 erreur 500), `Choisissez le fuseau horaire dans la liste.`, `Cette organisation n'existe pas, ou
 plus.`
@@ -100,5 +103,8 @@ Un échec dit ce qui arrive dans la langue de l'écran, puis `Détail donné par
 ## Ce qui reste à reprendre
 
 Relevé par la relecture de l'étape 18, non corrigé à la fin de l'étape : sans JavaScript,
-l'adresse proposée à partir du nom est créée sans avoir été vue, et elle ne se change plus. La
-proposition perd aussi les ligatures, et un nom en arabe suivi d'un chiffre donne `/m/2`.
+l'adresse proposée à partir du nom est créée sans avoir été vue, et elle ne se change plus.
+
+Corrigé à l'étape 19 (D6) : la proposition décompose les ligatures et les lettres pleine chasse
+(`NFKD` au lieu de `NFD`) ; un nom sans aucune lettre latine, même suivi d'un chiffre, ne propose
+plus d'adresse (il donnait `/m/2`) ; une adresse sans aucune lettre est refusée.

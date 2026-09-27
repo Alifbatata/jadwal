@@ -17,7 +17,7 @@ import { auth, captureMagicLink } from '$lib/server/auth.js';
 import { chooseOrganisation, recordAdminAccess } from '$lib/server/context.js';
 import { superAdminDatabase } from '$lib/server/database.js';
 import { mustBeSuperAdmin } from '$lib/server/guard.js';
-import { isPublicAddress, proposePublicAddress } from './public-address.js';
+import { hasNoLetter, isPublicAddress, proposePublicAddress } from './public-address.js';
 import { DEFAULT_TIME_ZONE, isOfferedTimeZone, timeZoneChoices } from './time-zones.server.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
@@ -92,6 +92,8 @@ export const actions: Actions = {
 		// fait pendant la frappe. Une adresse écrite, elle, est gardée telle quelle et vérifiée.
 		const slug = written || proposePublicAddress(name);
 		if (slug === '') return fail(400, { error: 'noAddressFromName' as const, values });
+		// Une adresse faite de chiffres seuls, la base la prendrait : l'écran la refuse, et dit pourquoi.
+		if (hasNoLetter(slug)) return fail(400, { error: 'addressWithoutLetter' as const, values });
 		if (!isPublicAddress(slug)) return fail(400, { error: 'invalidAddress' as const, values });
 		if (!isOfferedTimeZone(timeZone)) {
 			return fail(400, { error: 'unknownTimeZone' as const, values });

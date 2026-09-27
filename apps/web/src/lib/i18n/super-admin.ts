@@ -96,9 +96,11 @@ interface SuperAdminTexts {
 	};
 	readonly errors: {
 		readonly nameRequired: string;
-		/** Les deux erreurs d'adresse finissent sur l'exemple d'adresse que la page leur donne. */
+		/** Les trois erreurs d'adresse finissent sur l'exemple d'adresse que la page leur donne. */
 		readonly invalidAddress: (example: string) => string;
 		readonly noAddressFromName: (example: string) => string;
+		/** Une adresse faite de chiffres et de traits d'union seuls, que la base prendrait (étape 19, D6). */
+		readonly addressWithoutLetter: (example: string) => string;
 		readonly addressTaken: string;
 		readonly unknownTimeZone: string;
 		readonly unknownPlan: string;
@@ -146,7 +148,8 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		addressLabel: 'Adresse de la page publique',
 		addressHint:
 			'Elle est proposée à partir du nom, et vous pouvez la modifier. Si vous la laissez vide, elle est formée à partir du nom.',
-		addressRule: 'Lettres minuscules sans accent ni cédille, chiffres et traits d’union.',
+		addressRule:
+			'Lettres minuscules sans accent ni cédille, chiffres et traits d’union, avec au moins une lettre.',
 		addressFixed: 'Choisissez-la avec soin : elle ne se change plus ensuite.',
 		fullAddress: 'Adresse complète :',
 		timeZoneLabel: 'Fuseau horaire',
@@ -178,6 +181,8 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 				`Cette adresse ne convient pas. Elle ne peut contenir que des lettres minuscules sans accent ni cédille, des chiffres et des traits d’union, un seul entre deux mots, jamais au début ni à la fin. Exemple : ${example}`,
 			noAddressFromName: (example) =>
 				`Le nom ne permet pas de proposer une adresse. Écrivez-la vous-même, en lettres minuscules sans accent ni cédille, chiffres et traits d’union. Exemple : ${example}`,
+			addressWithoutLetter: (example) =>
+				`Cette adresse n’a que des chiffres et des traits d’union. Ajoutez-y au moins une lettre, par exemple un mot du nom. Exemple : ${example}`,
 			addressTaken:
 				'Cette adresse est déjà celle d’une autre organisation. Choisissez-en une autre, par exemple en y ajoutant le nom de la ville.',
 			unknownTimeZone: 'Choisissez le fuseau horaire dans la liste.',
@@ -223,7 +228,8 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		addressLabel: 'Adresse der öffentlichen Seite',
 		addressHint:
 			'Sie wird aus dem Namen vorgeschlagen, und Sie können sie ändern. Wenn Sie das Feld leer lassen, wird sie aus dem Namen gebildet.',
-		addressRule: 'Kleinbuchstaben ohne Umlaute und Akzente, Ziffern und Bindestriche.',
+		addressRule:
+			'Kleinbuchstaben ohne Umlaute und Akzente, Ziffern und Bindestriche, mit mindestens einem Buchstaben.',
 		addressFixed: 'Wählen Sie sie sorgfältig: Sie lässt sich danach nicht mehr ändern.',
 		fullAddress: 'Vollständige Adresse:',
 		timeZoneLabel: 'Zeitzone',
@@ -255,6 +261,8 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 				`Diese Adresse ist nicht möglich. Sie darf nur Kleinbuchstaben ohne Umlaute und Akzente, Ziffern und Bindestriche enthalten, nur einen Bindestrich zwischen zwei Wörtern und keinen am Anfang oder am Ende. Beispiel: ${example}`,
 			noAddressFromName: (example) =>
 				`Aus dem Namen lässt sich keine Adresse bilden. Schreiben Sie sie selbst, mit Kleinbuchstaben ohne Umlaute und Akzente, Ziffern und Bindestrichen. Beispiel: ${example}`,
+			addressWithoutLetter: (example) =>
+				`Diese Adresse besteht nur aus Ziffern und Bindestrichen. Fügen Sie mindestens einen Buchstaben hinzu, zum Beispiel ein Wort aus dem Namen. Beispiel: ${example}`,
 			addressTaken:
 				'Diese Adresse gehört schon einer anderen Organisation. Wählen Sie eine andere, zum Beispiel mit dem Namen des Orts dazu.',
 			unknownTimeZone: 'Wählen Sie die Zeitzone aus der Liste.',
@@ -301,7 +309,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		addressLabel: 'Indirizzo della pagina pubblica',
 		addressHint:
 			'Viene proposto a partire dal nome, e puoi modificarlo. Se lo lasci vuoto, viene formato a partire dal nome.',
-		addressRule: 'Lettere minuscole senza accenti, cifre e trattini.',
+		addressRule: 'Lettere minuscole senza accenti, cifre e trattini, con almeno una lettera.',
 		addressFixed: 'Sceglilo con cura: dopo non si può più cambiare.',
 		fullAddress: 'Indirizzo completo:',
 		timeZoneLabel: 'Fuso orario',
@@ -333,6 +341,8 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 				`Questo indirizzo non va bene. Può contenere solo lettere minuscole senza accenti, cifre e trattini, un solo trattino tra due parole, mai all’inizio né alla fine. Esempio: ${example}`,
 			noAddressFromName: (example) =>
 				`Dal nome non si può proporre un indirizzo. Scrivilo tu, con lettere minuscole senza accenti, cifre e trattini. Esempio: ${example}`,
+			addressWithoutLetter: (example) =>
+				`Questo indirizzo ha solo cifre e trattini. Aggiungi almeno una lettera, per esempio una parola del nome. Esempio: ${example}`,
 			addressTaken:
 				'Questo indirizzo è già di un’altra organizzazione. Scegline un altro, per esempio aggiungendo il nome della città.',
 			unknownTimeZone: 'Scegli il fuso orario dalla lista.',
@@ -378,7 +388,8 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		addressLabel: 'Address of the public page',
 		addressHint:
 			'It is suggested from the name, and you can change it. If you leave it empty, it is made from the name.',
-		addressRule: 'Lower-case letters without accents, digits and hyphens.',
+		addressRule:
+			'Lower-case letters without accents, digits and hyphens, with at least one letter.',
 		addressFixed: 'Choose it with care: it cannot be changed afterwards.',
 		fullAddress: 'Full address:',
 		timeZoneLabel: 'Time zone',
@@ -410,6 +421,8 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 				`This address cannot be used. It may contain only lower-case letters without accents, digits and hyphens, a single hyphen between two words, never at the start or the end. Example: ${example}`,
 			noAddressFromName: (example) =>
 				`No address can be suggested from the name. Write it yourself, in lower-case letters without accents, digits and hyphens. Example: ${example}`,
+			addressWithoutLetter: (example) =>
+				`This address has only digits and hyphens. Add at least one letter, for example a word from the name. Example: ${example}`,
 			addressTaken:
 				'This address already belongs to another organisation. Choose another one, for example by adding the name of the town.',
 			unknownTimeZone: 'Pick the time zone from the list.',
@@ -453,7 +466,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		addressLabel: 'عنوان الصفحة العامة',
 		addressHint:
 			'يقترح العنوان انطلاقًا من الاسم إذا كان بأحرف لاتينية، ويمكنك تعديله. إذا تركته فارغًا، يؤخذ العنوان من الاسم.',
-		addressRule: 'أحرف لاتينية صغيرة بلا علامات، وأرقام، وشرطات.',
+		addressRule: 'أحرف لاتينية صغيرة بلا علامات، وأرقام، وشرطات، مع حرف واحد على الأقل.',
 		addressFixed: 'اختره بعناية: لا يمكن تغييره بعد ذلك.',
 		fullAddress: 'العنوان الكامل:',
 		timeZoneLabel: 'المنطقة الزمنية',
@@ -485,6 +498,8 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 				`هذا العنوان غير مقبول. لا يجوز أن يحتوي إلا على أحرف لاتينية صغيرة بلا علامات، وأرقام، وشرطات غير متتالية، ولا شرطة في أوله ولا في آخره. مثال: ${example}`,
 			noAddressFromName: (example) =>
 				`لا يمكن اقتراح عنوان من هذا الاسم. اكتبه بنفسك، بأحرف لاتينية صغيرة بلا علامات، وأرقام، وشرطات. مثال: ${example}`,
+			addressWithoutLetter: (example) =>
+				`هذا العنوان ليس فيه إلا أرقام وشرطات. أضف إليه حرفًا لاتينيًا واحدًا على الأقل، مثلًا اسم المؤسسة بحروف لاتينية. مثال: ${example}`,
 			addressTaken:
 				'هذا العنوان مستعمل من قبل مؤسسة أخرى. اختر عنوانًا آخر، مثلًا بإضافة اسم المدينة.',
 			unknownTimeZone: 'اختر المنطقة الزمنية من القائمة.',
