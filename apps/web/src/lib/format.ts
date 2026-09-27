@@ -98,7 +98,9 @@ export interface RecurrenceView {
  *
  * Une semaine sur deux et le rang dans le mois se disent comme sur la page publique ; seul le rythme
  * de chaque semaine le précise (« chaque semaine, le lundi »), pour se distinguer d'« un lundi sur
- * deux », et les dates précises montrent les trois premières.
+ * deux », et les dates précises montrent les trois premières du calendrier. Elles sont rangées ici :
+ * un cours enregistré avant le lot 2 de l'étape 19 garde l'ordre de sa saisie, et la première séance
+ * pouvait manquer à la liste comme au message « nouveau cours ».
  */
 export function describeRecurrence(recurrence: RecurrenceView, language: Langue = 'fr'): string {
 	const words = formattingTexts[language];
@@ -115,7 +117,7 @@ export function describeRecurrence(recurrence: RecurrenceView, language: Langue 
 			recurrenceOrdinalWeekday: recurrence.ordinalWeekday ?? 1
 		});
 	}
-	const dates = recurrence.dates ?? [];
+	const dates = [...(recurrence.dates ?? [])].sort();
 	if (dates.length === 0) return words.datesNone;
 	const shown = words.dateList(
 		dates.slice(0, 3).map((date) => shortDate(date as IsoDate, language))

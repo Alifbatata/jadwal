@@ -1253,6 +1253,76 @@ describe('le message « nouveau cours », après la publication (étape 19, lot 
 		for (const message of lus) expect(message.texte, message.langue).not.toMatch(ISO_DATE);
 	});
 
+	it('writes the first dates of the calendar, whatever the order they were written in', async () => {
+		// Écrites dans le désordre, les dates étaient gardées dans cet ordre : le message montrait les
+		// trois premières écrites et taisait la première séance du cours (relecture du lot 2).
+		const reponse = await postForm(
+			'/cours/nouveau',
+			[
+				['sourceLanguage', 'fr'],
+				['title.fr', 'Cours dans le désordre'],
+				['audience', 'adults'],
+				['teachingLanguages', 'fr'],
+				['recurrenceKind', 'dates'],
+				['dates', '26.10.2026\n02.11.2026\n09.11.2026\n12.10.2026'],
+				['timingKind', 'fixed'],
+				['start', '19:00'],
+				['end', '20:00'],
+				['startsOn', ''],
+				['status', 'published']
+			],
+			cookie
+		);
+		expect(reponse.status).toBe(303);
+		const html = await (await get(reponse.headers.get('location') ?? '', cookie)).text();
+		const ligne = (message: { texte: string } | undefined) => message?.texte.split('\n').at(-1);
+		const lus = messages(html);
+		expect(lus.map(ligne)).toEqual([
+			'Nouveau cours : « Cours dans le désordre », à des dates précises : lundi 12.10.2026, lundi 26.10.2026 et lundi 02.11.2026, et 1 autre, de 19:00 à 20:00.',
+			'Neuer Kurs: «Cours dans le désordre», an bestimmten Daten: Montag, 12.10.2026; Montag, 26.10.2026 und Montag, 02.11.2026 sowie 1 weiteres, von 19:00 bis 20:00.',
+			'درس جديد: «Cours dans le désordre»، في تواريخ محددة: الاثنين 12.10.2026 والاثنين 26.10.2026 والاثنين 02.11.2026، وتاريخ آخر، من 19:00 إلى 20:00.'
+		]);
+		// La base les garde dans l'ordre du calendrier, et la liste les montre de même.
+		expect(
+			await maintenance(async (tx) =>
+				lignes<{ dates: string[] }>(
+					await tx.execute(sql`
+						select c."recurrence_date"::text[] as "dates" from "course" c
+						join "course_translation" t on t."course_id" = c."id"
+						where t."title" = 'Cours dans le désordre'
+					`)
+				)
+			)
+		).toEqual([{ dates: ['2026-10-12', '2026-10-26', '2026-11-02', '2026-11-09'] }]);
+		expect(lu(html)).toContain(
+			'à des dates précises : lundi 12.10.2026, lundi 26.10.2026 et lundi 02.11.2026, et 1 autre'
+		);
+	});
+
+	it('lists the first dates of the calendar for a course saved in another order before', async () => {
+		// Un cours enregistré avant garde l'ordre de sa saisie : la liste les range pour l'écrire.
+		const id = newId();
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",
+					"source_language", "recurrence_kind", "recurrence_date", "timing_kind", "timing_start",
+					"timing_end", "starts_on")
+				values (${id}, ${organizationId}, 'draft', 'adults', array['fr'], 'fr', 'dates',
+					array['2026-11-23','2026-11-30','2026-12-07','2026-11-16']::date[], 'fixed', '19:00',
+					'20:00', '2026-11-16')
+			`);
+			await tx.execute(sql`
+				insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
+				values (${newId()}, ${organizationId}, ${id}, 'fr', 'Cours d’avant, dans le désordre')
+			`);
+		});
+		const liste = lu(await (await get('/cours', cookie)).text());
+		expect(liste).toContain(
+			'à des dates précises : lundi 16.11.2026, lundi 23.11.2026 et lundi 30.11.2026, et 1 autre'
+		);
+		expect(liste).not.toContain('lundi 23.11.2026, lundi 30.11.2026 et lundi 07.12.2026');
+	});
+
 	it('speaks the language of the screen around the messages, in each language', async () => {
 		// Le nom de la zone du message allemand : « Message à copier », puis sa langue, dans celle de
 		// l'écran.

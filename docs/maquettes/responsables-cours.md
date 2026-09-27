@@ -59,8 +59,10 @@ Nouveau cours : « Cours du soir », le mardi, de 19:00 à 20:00, Grande salle.
 
 Le titre est celui de la langue du message quand le cours y est traduit, sinon celui de sa langue
 de saisie. Le rythme est celui de la page publique ; pour un cours à dates précises, ses dates, comme
-la liste les écrit (`à des dates précises : lundi 12.10.2026 et lundi 26.10.2026`). L'horaire est
-celui de la liste, avec sa durée. Un brouillon, un cours déjà publié qu'on enregistre de nouveau, ou
+la liste les écrit (`à des dates précises : lundi 12.10.2026 et lundi 26.10.2026`) : les trois
+premières du calendrier, puis `et 1 autre`, quel que soit l'ordre dans lequel on les a écrites. La
+liste et le message montraient d'abord les trois premières écrites, et pouvaient taire la première
+séance. L'horaire est celui de la liste, avec sa durée. Un brouillon, un cours déjà publié qu'on enregistre de nouveau, ou
 une adresse écrite à la main, n'ont pas de bloc.
 
 ### Les pauses, sur le même écran
@@ -171,17 +173,19 @@ cochées (étape 19, lot 2). Aucune case cochée reste refusé.
 semaine sur deux : la semaine du premier jour compte comme la première.`) ; `Quel jour de la
 semaine ?`, puis `Lequel dans le mois ?`, avec `Exemple : lundi, puis « le premier » : le cours a
 lieu le premier lundi de chaque mois.` ; ou `Dates, une par ligne`, avec `Exemple : 12.10.2026`.
-Les dates se lisent et s'écrivent `JJ.MM.AAAA`. Pour un cours à dates précises, le premier jour se
-remplit tout seul avec la première date, la plus ancienne (étape 19, lot 2) : avec JavaScript,
-pendant la saisie, tant qu'il est vide, et il suit les dates jusqu'à ce qu'on le choisisse soi-même ;
-sans JavaScript, le serveur le remplit à l'envoi quand il arrive vide. Un premier jour choisi n'est
-jamais remplacé, et des dates avant lui restent refusées. Sans JavaScript, choisir `à des dates
-précises` ne change pas la page : on l'envoie une première fois, et elle revient avec le champ des
-dates. Pour que ces deux envois partent le premier jour vide, le navigateur ne l'exige pas sans
-JavaScript (pas de `required`). C'est le serveur qui refuse un premier jour vide qu'aucune date ne
-remplit, avec `Choisissez le premier jour du cours.` Avec JavaScript, le navigateur l'exige, sauf pour
-un cours à dates précises. Dans la première version du lot, il l'exigeait toujours, et le
-formulaire sans script ne partait pas sans premier jour.
+Les dates se lisent et s'écrivent `JJ.MM.AAAA`. Elles s'enregistrent dans l'ordre du calendrier,
+quel que soit l'ordre de la saisie, et la fiche les montre dans cet ordre (étape 19, lot 2). Pour un
+cours à dates précises, le premier jour se remplit tout seul avec la première date, la plus
+ancienne : avec JavaScript, pendant la saisie, tant qu'il est vide, et il suit les dates jusqu'à ce
+qu'on le choisisse soi-même ; sans JavaScript, le serveur le remplit à l'envoi quand il arrive vide.
+Un premier jour choisi n'est jamais remplacé, et des dates avant lui restent refusées.
+
+Sans JavaScript, choisir `à des dates précises` ne change pas la page : on l'envoie une première
+fois, et elle revient avec le champ des dates. Pour que ces deux envois partent le premier jour
+vide, le navigateur ne l'exige pas sans JavaScript (pas de `required`). C'est le serveur qui refuse
+un premier jour vide qu'aucune date ne remplit, avec `Choisissez le premier jour du cours.` Avec
+JavaScript, le navigateur l'exige, sauf pour un cours à dates précises. Dans la première version du
+lot, il l'exigeait toujours, et le formulaire sans script ne partait pas sans premier jour.
 
 **Horaire** (retour C3). `Comment fixer l'heure ?` : `heure fixe`, `après une prière`,
 `avant une prière`, avec `Placé par rapport à une prière, le cours suit son heure, qui change au fil

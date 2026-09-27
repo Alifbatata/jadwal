@@ -101,7 +101,7 @@ describe('les dates d’un cours à dates précises (A3)', () => {
 		expect(lu.ok && lu.values.startsOn).toBe('2026-10-12');
 		expect(lu.ok && lu.values.recurrence).toEqual({
 			kind: 'dates',
-			dates: ['2026-10-26', '2026-10-12', '2026-11-05']
+			dates: ['2026-10-12', '2026-10-26', '2026-11-05']
 		});
 		// Refusé pour une autre raison, le formulaire revient avec ce premier jour, que le résumé montre.
 		const refuse = readCourseForm(
@@ -120,6 +120,20 @@ describe('les dates d’un cours à dates précises (A3)', () => {
 		);
 		expect(refuse.ok ? [] : refuse.errors).toEqual(['titleMissing']);
 		expect(refuse.ok ? '' : refuse.values.startsOn).toBe('2026-10-12');
+	});
+
+	it('stores the dates in the order of the calendar, whatever the order they were written in', () => {
+		// La base gardait l'ordre de la saisie : la liste et le message « nouveau cours », qui en
+		// montrent trois, taisaient alors la première séance (relecture du lot 2 de l'étape 19).
+		const lu = readCourseForm(
+			aDates('26.10.2026\n02.11.2026 09.11.2026\n12.10.2026', { startsOn: '2026-10-12' }),
+			LANGUES,
+			SALLES
+		);
+		expect(lu.ok && lu.values.recurrence).toEqual({
+			kind: 'dates',
+			dates: ['2026-10-12', '2026-10-26', '2026-11-02', '2026-11-09']
+		});
 	});
 
 	it('keeps a first day that was chosen, and asks for one when no date can be read', () => {

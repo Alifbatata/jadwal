@@ -418,6 +418,25 @@ describe('la mise en mots dans les cinq langues de l’espace', () => {
 		]);
 	});
 
+	it('shows the first dates of the calendar, whatever the order they were written in, in each language', () => {
+		// Une personne écrit ses dates dans l'ordre qui lui vient, et la base les gardait dans cet
+		// ordre : le message « nouveau cours » et la liste montraient alors les trois premières écrites,
+		// et taisaient la première séance du cours (relecture du lot 2 de l'étape 19).
+		const desordre = {
+			kind: 'dates',
+			dates: ['2026-10-26', '2026-11-02', '2026-11-09', '2026-10-12']
+		};
+		expect(LANGUES_DE_L_ESPACE.map((l) => describeRecurrence(desordre, l))).toEqual([
+			'à des dates précises : lundi 12.10.2026, lundi 26.10.2026 et lundi 02.11.2026, et 1 autre',
+			'an bestimmten Daten: Montag, 12.10.2026; Montag, 26.10.2026 und Montag, 02.11.2026 sowie 1 weiteres',
+			'in date precise: lunedì 12.10.2026, lunedì 26.10.2026 e lunedì 02.11.2026, e un’altra',
+			'on specific dates: Monday 12.10.2026, Monday 26.10.2026 and Monday 02.11.2026, and 1 more',
+			'في تواريخ محددة: الاثنين 12.10.2026 والاثنين 26.10.2026 والاثنين 02.11.2026، وتاريخ آخر'
+		]);
+		// La liste reçue n'est pas touchée.
+		expect(desordre.dates[0]).toBe('2026-10-26');
+	});
+
 	it('agrees the Arabic count of the other dates with its number', () => {
 		/** Trois dates montrées, et `reste` de plus. */
 		const avecUnReste = (reste: number) =>

@@ -233,15 +233,16 @@ export function readCourseForm(
 		return { ok: false, errors, badDates, datesBefore, datesAfter, untitledDescriptions, values };
 	}
 
-	// Ce que `parseCourseForm` lit : le décalage signé, les dates comme la base les écrit, et le
-	// premier jour, pris à la première date s'il est arrivé vide.
+	// Ce que `parseCourseForm` lit : le décalage signé, les dates comme la base les écrit, dans l'ordre
+	// du calendrier et non dans celui de la saisie, et le premier jour, pris à la première date s'il
+	// est arrivé vide.
 	const normalised = new FormData();
 	for (const [name, value] of form) normalised.append(name, value);
 	normalised.set('timingKind', choice === 'fixed' ? 'fixed' : 'prayer');
 	if (choice !== 'fixed') {
 		normalised.set('offsetMinutes', String(signedOffset(choice, values.offsetMinutes ?? 0)));
 	}
-	if (values.recurrenceKind === 'dates') normalised.set('dates', isoDates.join('\n'));
+	if (values.recurrenceKind === 'dates') normalised.set('dates', [...isoDates].sort().join('\n'));
 	normalised.set('startsOn', values.startsOn);
 
 	const parsed = parseCourseForm(normalised, languages);
