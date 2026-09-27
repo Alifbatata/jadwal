@@ -1062,6 +1062,37 @@ describe('« Ajouter ce cours à mon agenda » selon l’appareil (E1)', () => {
 	});
 });
 
+describe('le lien « S’abonner au calendrier » du pied', () => {
+	// À garder tel quel (chef de projet, 27.09.2026) : seuls le bloc d'abonnement et la page d'un
+	// cours choisissent selon l'appareil (ADR 0048). Le pied mène toujours à la page d'abonnement,
+	// sinon toutes les pages du programme varieraient.
+	it('stays the same on every device, on every public page', async () => {
+		for (const chemin of [
+			base('fr'),
+			`${base('fr')}?vue=prieres`,
+			`${base('fr')}/agenda`,
+			`${base('fr')}/cours/${COURS.quotidien}`
+		]) {
+			const liens: string[][] = [];
+			for (const visiteur of [IPHONE, ANDROID, WINDOWS, {}]) {
+				const { html } = await servir(chemin, visiteur);
+				const pied = html.match(/<footer\b[\s\S]*?<\/footer>/)?.[0] ?? '';
+				const premier = pied.match(/<a\b([^>]*)>([\s\S]*?)<\/a>/);
+				liens.push([
+					suivi(
+						(attributs(`<a${premier?.[1] ?? ''}>`)['href'] ?? '').replaceAll('&amp;', '&'),
+						chemin
+					),
+					lu(premier?.[2] ?? '')
+				]);
+			}
+			expect(liens, chemin).toEqual(
+				Array.from({ length: 4 }, () => [`/m/${SLUG}/agenda`, 'S’abonner au calendrier'])
+			);
+		}
+	});
+});
+
 describe('« de » devant le nom de l’organisation, en français (D8)', () => {
 	// « Association des prières » commence par une voyelle : « le programme d’Association… », et non
 	// « le programme de Association… » (relevé D8 du 27.09.2026).
