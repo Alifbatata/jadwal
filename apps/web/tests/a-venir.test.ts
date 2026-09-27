@@ -1301,7 +1301,8 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 		const envoi = formulaireDeRetablissement(
 			carte(await (await get('/', cookie)).text(), jour(2), CERCLE, 'cancelled')
 		);
-		expect(envoi).toEqual({ courseId: cercle, date: jour(2) });
+		// La carte envoie aussi ce qu'elle montrait : l'annulation (étape 19, lot 2).
+		expect(envoi).toEqual({ courseId: cercle, date: jour(2), shownKind: 'cancelled' });
 		const journal = createDatabase({ role: 'app', overrides: { database: testDatabase } });
 		const lignesDuJournal = async () =>
 			withOrg(
@@ -1326,6 +1327,89 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 			expect(await exception(cercle, jour(2))).toBeUndefined();
 			expect(await lignesDuJournal()).toBe(journalAvant);
 		} finally {
+			await journal.close();
+			await retablir(cercle, jour(2), cookie);
+		}
+	});
+
+	it('refuses « Rétablir » from a card left open after the session was restored and changed again, names it at the top in each language, keeps the change, and writes nothing (étape 19, lot 2)', async () => {
+		// Le cercle de J+2 est annulé ; une page le montre annulé. Ailleurs, une autre personne le
+		// rétablit, puis le déplace à J+4. La page restée ouverte touche « Rétablir la séance » : elle
+		// effaçait ce déplacement, qu'elle n'avait jamais vu.
+		expect((await postForm('/?/annuler', { courseId: cercle, date: jour(2) }, cookie)).status).toBe(
+			200
+		);
+		const annulee =
+			formulaireDeRetablissement(
+				carte(await (await get('/', cookie)).text(), jour(2), CERCLE, 'cancelled')
+			) ?? {};
+		const journal = createDatabase({ role: 'app', overrides: { database: testDatabase } });
+		const lignesDuJournal = async () =>
+			withOrg(
+				journal.db,
+				{ organizationId: organisationA, userId: ids[RESPONSABLE] ?? '' },
+				async (tx) =>
+					lignes<{ n: number }>(await tx.execute(sql`select count(*)::int as n from "audit_log"`))
+			).then((trouve) => trouve[0]?.n ?? 0);
+		try {
+			expect((await postForm('/?/retablir', annulee, cookie)).status).toBe(200);
+			expect(
+				(
+					await postForm(
+						'/?/deplacer',
+						{ courseId: cercle, date: jour(2), toDate: jour(4), toStart: '21:00' },
+						cookie
+					)
+				).status
+			).toBe(200);
+			const deplacement = { kind: 'moved', to_date: jour(4), to_start: '21:00' };
+			const journalAvant = await lignesDuJournal();
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const reponse = await postForm('/?/retablir', annulee, cookie);
+				expect(reponse.status, langue).toBe(409);
+				const html = await reponse.text();
+				// La phrase des cartes périmées, qui nomme la séance, en haut, avant le programme.
+				expect(alerte(html), langue).toBe(CHANGEE[langue](CERCLE, dateLue(langue, jour(2))));
+				expect(html.indexOf('role="alert"'), langue).toBeLessThan(html.indexOf('id="jour-'));
+				expect(section(html, 'message-titre'), langue).toBe('');
+				expect(await exception(cercle, jour(2)), langue).toEqual(deplacement);
+			}
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			expect(await lignesDuJournal()).toBe(journalAvant);
+			// La carte envoie ce qu'elle montrait : l'annulation, puis, rechargée, le déplacement.
+			expect(annulee).toEqual({ courseId: cercle, date: jour(2), shownKind: 'cancelled' });
+			const page = await (await get('/', cookie)).text();
+			const depart = formulaireDeRetablissement(carte(page, jour(2), CERCLE, 'moved_away'));
+			const arrivee = formulaireDeRetablissement(carte(page, jour(4), CERCLE, 'moved_here'));
+			const montre = {
+				courseId: cercle,
+				date: jour(2),
+				shownKind: 'moved',
+				shownToDate: jour(4),
+				shownToStart: '21:00'
+			};
+			expect([depart, arrivee]).toEqual([montre, montre]);
+			// Le déplacement change encore d'heure ailleurs : les deux cartes sont périmées à leur tour.
+			await maintenance((tx) =>
+				tx.execute(sql`
+					update "session_exception" set "to_start" = '21:30'
+					where "course_id" = ${cercle} and "date" = ${jour(2)}
+				`)
+			);
+			const perimee = await postForm('/?/retablir', montre, cookie);
+			expect(perimee.status).toBe(409);
+			expect(alerte(await perimee.text())).toBe(CHANGEE.fr(CERCLE, dateLue('fr', jour(2))));
+			expect(await exception(cercle, jour(2))).toEqual({ ...deplacement, to_start: '21:30' });
+			// La carte à jour, elle, rétablit la séance.
+			const aJour = formulaireDeRetablissement(
+				carte(await (await get('/', cookie)).text(), jour(4), CERCLE, 'moved_here')
+			);
+			expect(aJour).toEqual({ ...montre, shownToStart: '21:30' });
+			expect((await postForm('/?/retablir', aJour ?? {}, cookie)).status).toBe(200);
+			expect(await exception(cercle, jour(2))).toBeUndefined();
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
 			await journal.close();
 			await retablir(cercle, jour(2), cookie);
 		}
@@ -1546,7 +1630,14 @@ describe('D4 : une séance déplacée ici se rétablit depuis sa carte (étape 1
 			expect(texte(arrivee)).toContain('Rétablir la séance');
 			// La carte vise la date où la séance était prévue : c'est celle que garde l'exception.
 			const envoi = formulaireDeRetablissement(arrivee);
-			expect(envoi).toEqual({ courseId: soir, date: jour(10) });
+			// Elle envoie aussi ce qu'elle montrait : le déplacement à J+1, 17:00 (étape 19, lot 2).
+			expect(envoi).toEqual({
+				courseId: soir,
+				date: jour(10),
+				shownKind: 'moved',
+				shownToDate: jour(1),
+				shownToStart: '17:00'
+			});
 			const reponse = await postForm('/?/retablir', envoi ?? {}, cookie);
 			expect(reponse.status).toBe(200);
 			expect(await exception(soir, jour(10))).toBeUndefined();
@@ -1574,7 +1665,10 @@ describe('D4 : une séance déplacée ici se rétablit depuis sa carte (étape 1
 			expect(formulaireDeRetablissement(arrivee)).toBeNull();
 			expect(formulaireDeRetablissement(carte(html, jour(3), SOIR.fr, 'moved_away'))).toEqual({
 				courseId: soir,
-				date: jour(3)
+				date: jour(3),
+				shownKind: 'moved',
+				shownToDate: jour(3),
+				shownToStart: '21:00'
 			});
 		} finally {
 			await retablir(soir, jour(3), cookie);

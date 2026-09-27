@@ -52,6 +52,27 @@
 	function seancesDe(courseId: string) {
 		return data.prochaines.filter((seance) => seance.courseId === courseId);
 	}
+
+	/**
+	 * Ce que « Rétablir comme d'habitude » défait sur une ligne, tel que la ligne le montre, ou rien
+	 * quand elle ne le propose pas. `date` est celle que garde le changement : le vendredi annulé ou
+	 * parti ailleurs. Le reste part avec le formulaire : une ligne restée ouverte pendant que la
+	 * session changeait ailleurs est refusée, au lieu d'effacer ce changement (étape 19, lot 2).
+	 */
+	function aRetablir(seance: (typeof data.prochaines)[number]) {
+		if (seance.status === 'cancelled') {
+			return { date: seance.date, kind: 'cancelled', toDate: '', toStart: '' };
+		}
+		if (seance.status === 'moved_away') {
+			return {
+				date: seance.date,
+				kind: 'moved',
+				toDate: seance.movedTo?.date ?? '',
+				toStart: String(seance.movedTo?.start ?? '').slice(0, 5)
+			};
+		}
+		return null;
+	}
 </script>
 
 <svelte:head><title>{text.title} | {data.organisation.name}</title></svelte:head>
@@ -181,10 +202,16 @@
 								<button type="submit">{text.thisFriday.move}</button>
 							</form>
 						</div>
-					{:else if seance.status !== 'moved_here'}
+					{:else if aRetablir(seance)}
+						{@const change = aRetablir(seance)}
 						<form method="post" action="?/retablir">
 							<input type="hidden" name="courseId" value={session.id} />
-							<input type="hidden" name="date" value={seance.date} />
+							<input type="hidden" name="date" value={change?.date} />
+							<input type="hidden" name="shownKind" value={change?.kind} />
+							{#if change?.kind === 'moved'}
+								<input type="hidden" name="shownToDate" value={change.toDate} />
+								<input type="hidden" name="shownToStart" value={change.toStart} />
+							{/if}
 							<button type="submit">{text.thisFriday.restore}</button>
 						</form>
 					{/if}

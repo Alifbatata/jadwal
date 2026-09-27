@@ -37,6 +37,7 @@ import { record } from '$lib/server/audit.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { insertCourse, updateCourse } from '$lib/server/courses.js';
 import { FIRST_SUPPORTED_DATE, isSupportedDate, LAST_SUPPORTED_DATE } from '$lib/server/dates.js';
+import { restore, shownChange } from '$lib/server/exceptions.js';
 import { fridayTitle } from '$lib/server/friday-title.js';
 import { mustHavePrayerModule } from '$lib/server/guard.js';
 import { readCourses, readProgramme, readRooms, readSettings } from '$lib/server/programme.js';
@@ -417,7 +418,9 @@ export const actions: Actions = {
 	 * la réponse d'une session qui n'existe plus, et rien ne s'écrit, pas même le journal. Une session
 	 * qui n'a plus rien à rétablir ce jour-là, parce qu'une page restée ouverte ou une autre personne
 	 * l'a déjà fait, est refusée de même : l'action répondait « fait » et l'écrivait au journal
-	 * (relecture de D2).
+	 * (relecture de D2). La ligne envoie ce qu'elle montrait : une session rétablie puis changée de
+	 * nouveau ailleurs depuis l'ouverture de la page garde ce nouveau changement, et la ligne est
+	 * refusée comme une carte périmée (étape 19, lot 2).
 	 */
 	retablir: async (event) => {
 		const context = await mustHavePrayerModule(event);
@@ -427,13 +430,8 @@ export const actions: Actions = {
 		if (!isSupportedDate(date)) return refus(400, 'dateUnreadable');
 		return withSessionOrg(context, async (tx) => {
 			if (!(await sessionExiste(tx, courseId))) return refus(404, 'sessionGone');
-			const retiree = lignes<{ id: string }>(
-				await tx.execute(sql`
-					delete from "session_exception" where "course_id" = ${courseId} and "date" = ${date}
-					returning "id"
-				`)
-			);
-			if (retiree.length === 0) return refus(409, 'alreadyRestored');
+			const retablie = await restore(tx, courseId, date, shownChange(form));
+			if (retablie !== 'restored') return refus(409, retablie);
 			await record(tx, context.organizationId, context.userId, {
 				action: 'exception.restore',
 				targetTable: 'session_exception',

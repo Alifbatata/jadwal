@@ -39,7 +39,10 @@
 // - rétablir une séance qui n'a plus rien à rétablir est refusé, et n'écrit rien au journal
 //   (relecture de D2) ;
 // - une date envoyée s'accepte de 1970 à 2100 (`isSupportedDate`) : l'an 0000, que PostgreSQL n'a
-//   pas, donnait une erreur 500 à Déplacer et à Rétablir (relecture de D2).
+//   pas, donnait une erreur 500 à Déplacer et à Rétablir (relecture de D2) ;
+// - la carte « Rétablir » envoie ce qu'elle montrait, comme celle d'un déplacement envoie son heure :
+//   une séance rétablie puis changée de nouveau par une autre personne garde ce changement, et la
+//   carte périmée est refusée (lot 2, `$lib/server/exceptions.ts`).
 
 import { fail } from '@sveltejs/kit';
 import { todayInZone, type IsoDate } from '@jadwal/core';
@@ -49,6 +52,7 @@ import type { NamedUpcomingError, UpcomingError } from '$lib/i18n/upcoming.js';
 import { record } from '$lib/server/audit.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { isSupportedDate, LAST_SUPPORTED_DATE } from '$lib/server/dates.js';
+import { currentChange, restore, shownChange } from '$lib/server/exceptions.js';
 import { fridayTitle } from '$lib/server/friday-title.js';
 import { mustBeInOrganisation } from '$lib/server/guard.js';
 import { etatDesSources, readReglages } from '$lib/server/prieres.js';
@@ -184,25 +188,6 @@ async function plannedSeance(
 			candidate.courseId === courseId && candidate.date === date && candidate.status === 'scheduled'
 	);
 	return seance ? { start: seance.start ?? null } : null;
-}
-
-/**
- * Ce qui est déjà arrivé à la séance de ce cours ce jour-là, `cancelled` ou `moved`, ou rien quand
- * elle est encore prévue telle quelle. Une carte qui l'annule ou la déplace alors qu'elle a changé
- * vient d'une page restée ouverte. La table des exceptions est lue directement, pour toute date, et
- * pas seulement les sept jours de l'écran.
- */
-async function alreadyChanged(
-	tx: Transaction,
-	courseId: string,
-	date: string
-): Promise<string | null> {
-	const found = rows<{ kind: string }>(
-		await tx.execute(sql`
-			select "kind" from "session_exception" where "course_id" = ${courseId} and "date" = ${date}
-		`)
-	);
-	return found[0]?.kind ?? null;
 }
 
 /**
@@ -390,7 +375,7 @@ export const actions: Actions = {
 				// la personne voulait. Rien ne s'écrit, mais elle reçoit le message, puisqu'elle ne sait
 				// pas si la communauté a déjà été prévenue (étape 19, D4). Une séance déplacée depuis
 				// n'a pas de message d'annulation.
-				if ((await alreadyChanged(tx, courseId, date)) === 'cancelled') {
+				if ((await currentChange(tx, courseId, date)) === 'cancelled') {
 					return refuseStale('alreadyCancelled', course, langue, {
 						courseId,
 						date,
@@ -433,7 +418,7 @@ export const actions: Actions = {
 			if (!course) return refuse('sessionGone', fields, 404);
 			// Avant les autres refus : une carte restée ouverte sur une séance déjà annulée ou
 			// déplacée n'a rien à corriger, quelle que soit la date choisie.
-			if (await alreadyChanged(tx, courseId, date)) {
+			if ((await currentChange(tx, courseId, date)) !== null) {
 				return refuseStale('changed', course, langue, fields);
 			}
 			const seance = await plannedSeance(tx, now, courseId, date);
@@ -508,7 +493,9 @@ export const actions: Actions = {
 	 * inconnu, ou d'une autre organisation, reçoit la réponse d'un cours inconnu, et rien ne s'écrit,
 	 * pas même le journal. Une séance qui n'a plus rien à rétablir, parce qu'une autre personne ou une
 	 * page restée ouverte l'a déjà fait, est refusée de même : l'action répondait « rétablie » et
-	 * l'écrivait au journal (étape 19, relecture de D2).
+	 * l'écrivait au journal (étape 19, relecture de D2). La carte envoie ce qu'elle montrait : une
+	 * séance rétablie puis changée de nouveau ailleurs depuis l'ouverture de la page garde ce nouveau
+	 * changement, et la carte reçoit le refus nommé des cartes périmées (étape 19, lot 2).
 	 */
 	retablir: async (event) => {
 		const context = await mustBeInOrganisation(event);
@@ -520,14 +507,9 @@ export const actions: Actions = {
 		return withSessionOrg(context, async (tx) => {
 			const course = await readCourse(tx, courseId);
 			if (!course) return refuse('sessionGone', { courseId, date }, 404);
-			const removed = rows<{ id: string }>(
-				await tx.execute(sql`
-					delete from "session_exception" where "course_id" = ${courseId} and "date" = ${date}
-					returning "id"
-				`)
-			);
-			if (removed.length === 0) {
-				return refuseStale('alreadyRestored', course, langue, { courseId, date });
+			const restored = await restore(tx, courseId, date, shownChange(form));
+			if (restored !== 'restored') {
+				return refuseStale(restored, course, langue, { courseId, date });
 			}
 			await record(tx, context.organizationId, context.userId, {
 				action: 'exception.restore',

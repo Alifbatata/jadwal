@@ -1520,7 +1520,8 @@ describe('D2 : l’écran du vendredi refuse ce qu’il ne peut pas faire, sans 
 			sessions[1],
 			date
 		);
-		expect(envoi).toEqual({ courseId: sessions[1], date });
+		// La carte envoie aussi ce qu'elle montrait : l'annulation (étape 19, lot 2).
+		expect(envoi).toEqual({ courseId: sessions[1], date, shownKind: 'cancelled' });
 		try {
 			expect((await postForm('/vendredi?/retablir', envoi, cookies)).status).toBe(200);
 			const journalAvant = await lignesDuJournal();
@@ -2051,6 +2052,118 @@ describe('la langue du sermon se choisit parmi toutes les langues d’enseigneme
 			)
 		);
 		expect(trouvee).toBeUndefined();
+	});
+});
+
+/**
+ * Les lignes du journal de l'organisation, lues par sa responsable, par une connexion à part : le
+ * journal se lit sous le rôle applicatif, le propriétaire ne le lit pas.
+ */
+async function lignesDuJournalDeVendredi(): Promise<number> {
+	const journal = createDatabase({ role: 'app', overrides: { database: testDatabase } });
+	try {
+		const trouve = await withOrg(
+			journal.db,
+			{ organizationId, userId: ids[RESPONSABLE] ?? '' },
+			async (tx) =>
+				lignes<{ n: number }>(await tx.execute(sql`select count(*)::int as n from "audit_log"`))
+		);
+		return trouve[0]?.n ?? 0;
+	} finally {
+		await journal.close();
+	}
+}
+
+/** Retire toute exception de la première session au prochain vendredi, sans passer par l'écran. */
+async function effacerLesExceptionsDeLaPremiere(): Promise<void> {
+	await maintenance((tx) =>
+		tx.execute(sql`
+			delete from "session_exception"
+			where "course_id" = ${sessions[1]} and "date" = ${prochainVendredi(today())}
+		`)
+	);
+}
+
+describe('« Ce vendredi » : un « Rétablir » resté ouvert ne défait pas un changement fait depuis (étape 19, lot 2)', () => {
+	const vendredi = () => prochainVendredi(today());
+
+	it('refuses « Rétablir » from a page left open after the session was restored then changed again, keeps the change, says so in each language, and writes nothing to the journal', async () => {
+		const date = vendredi();
+		// La session annulée ; une page la montre annulée, avec « Rétablir comme d’habitude ».
+		expect(
+			(await postForm('/vendredi?/annuler', { courseId: sessions[1], date }, cookies)).status
+		).toBe(200);
+		const annulee = formulaireDuVendredi(
+			await (await get('/vendredi', cookies)).text(),
+			'retablir',
+			sessions[1],
+			date
+		);
+		try {
+			// Ailleurs, une autre personne la rétablit, puis la déplace au lendemain (la veille un samedi).
+			expect((await postForm('/vendredi?/retablir', annulee, cookies)).status).toBe(200);
+			expect(
+				(
+					await postForm(
+						'/vendredi?/deplacer',
+						{ courseId: sessions[1], date, toDate: jourDuDeplacement(), toStart: '15:00' },
+						cookies
+					)
+				).status
+			).toBe(200);
+			const deplacee = { kind: 'moved', to_date: jourDuDeplacement(), to_start: '15:00' };
+			const journalAvant = await lignesDuJournalDeVendredi();
+			// La page restée ouverte touche « Rétablir » : elle effaçait le déplacement, qu'elle n'avait
+			// jamais vu.
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const reponse = await postForm('/vendredi?/retablir', annulee, cookies);
+				expect(reponse.status, langue).toBe(409);
+				expect(enTete(await reponse.text()), langue).toEqual([REFUS_DU_VENDREDI.changed[langue]]);
+				expect(await exceptionDe(sessions[1], date), langue).toEqual(deplacee);
+			}
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			expect(await lignesDuJournalDeVendredi()).toBe(journalAvant);
+			// La carte envoie ce qu'elle montrait : l'annulation, puis le déplacement.
+			expect(annulee).toEqual({ courseId: sessions[1], date, shownKind: 'cancelled' });
+			const aJour = formulaireDuVendredi(
+				await (await get('/vendredi', cookies)).text(),
+				'retablir',
+				sessions[1],
+				date
+			);
+			expect(aJour).toEqual({
+				courseId: sessions[1],
+				date,
+				shownKind: 'moved',
+				shownToDate: jourDuDeplacement(),
+				shownToStart: '15:00'
+			});
+			// Le déplacement change encore d'heure ailleurs : la carte du déplacement est périmée à son
+			// tour, et refusée de même.
+			await maintenance((tx) =>
+				tx.execute(sql`
+					update "session_exception" set "to_start" = '16:00'
+					where "course_id" = ${sessions[1]} and "date" = ${date}
+				`)
+			);
+			const perimee = await postForm('/vendredi?/retablir', aJour, cookies);
+			expect(perimee.status).toBe(409);
+			expect(enTete(await perimee.text())).toEqual([REFUS_DU_VENDREDI.changed.fr]);
+			expect(await exceptionDe(sessions[1], date)).toEqual({ ...deplacee, to_start: '16:00' });
+			// La carte à jour, elle, rétablit la session.
+			const derniere = formulaireDuVendredi(
+				await (await get('/vendredi', cookies)).text(),
+				'retablir',
+				sessions[1],
+				date
+			);
+			expect((await postForm('/vendredi?/retablir', derniere, cookies)).status).toBe(200);
+			expect(await exceptionDe(sessions[1], date)).toBeUndefined();
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await effacerLesExceptionsDeLaPremiere();
+		}
 	});
 });
 

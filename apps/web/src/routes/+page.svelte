@@ -56,16 +56,37 @@
 	}
 
 	/**
-	 * La date que « Rétablir la séance » envoie pour une carte, ou rien quand la carte ne le propose
-	 * pas. C'est la date que garde le changement : celle de la séance annulée ou partie ailleurs, et,
-	 * pour une séance arrivée d'une autre date, sa date prévue, qui n'est pas toujours à l'écran
-	 * (étape 19, D4). Une séance qui n'a changé que d'heure se rétablit depuis la carte de son heure
-	 * prévue, le même jour.
+	 * Ce que « Rétablir la séance » défait sur une carte, tel que la carte le montre, ou rien quand
+	 * elle ne le propose pas. `date` est celle que garde le changement : celle de la séance annulée ou
+	 * partie ailleurs, et, pour une séance arrivée d'une autre date, sa date prévue, qui n'est pas
+	 * toujours à l'écran (étape 19, D4). Une séance qui n'a changé que d'heure se rétablit depuis la
+	 * carte de son heure prévue, le même jour. Le reste part avec le formulaire : une carte restée
+	 * ouverte pendant que la séance changeait ailleurs est refusée, au lieu d'effacer ce changement
+	 * (étape 19, lot 2).
 	 */
-	function dateARetablir(seance: (typeof data.seances)[number]): string | null {
-		if (seance.status === 'cancelled' || seance.status === 'moved_away') return seance.date;
-		if (seance.status === 'moved_here' && seance.originalDate !== seance.date) {
-			return seance.originalDate ?? null;
+	function aRetablir(seance: (typeof data.seances)[number]) {
+		if (seance.status === 'cancelled') {
+			return { date: seance.date, kind: 'cancelled', toDate: '', toStart: '' };
+		}
+		if (seance.status === 'moved_away') {
+			return {
+				date: seance.date,
+				kind: 'moved',
+				toDate: seance.movedTo?.date ?? '',
+				toStart: String(seance.movedTo?.start ?? '').slice(0, 5)
+			};
+		}
+		if (
+			seance.status === 'moved_here' &&
+			seance.originalDate &&
+			seance.originalDate !== seance.date
+		) {
+			return {
+				date: seance.originalDate,
+				kind: 'moved',
+				toDate: seance.date,
+				toStart: String(seance.start ?? '').slice(0, 5)
+			};
 		}
 		return null;
 	}
@@ -326,10 +347,16 @@
 								</fieldset>
 							</form>
 						</details>
-					{:else if dateARetablir(seance)}
+					{:else if aRetablir(seance)}
+						{@const change = aRetablir(seance)}
 						<form method="post" action="?/retablir" class="retablir">
 							<input type="hidden" name="courseId" value={seance.courseId} />
-							<input type="hidden" name="date" value={dateARetablir(seance)} />
+							<input type="hidden" name="date" value={change?.date} />
+							<input type="hidden" name="shownKind" value={change?.kind} />
+							{#if change?.kind === 'moved'}
+								<input type="hidden" name="shownToDate" value={change.toDate} />
+								<input type="hidden" name="shownToStart" value={change.toStart} />
+							{/if}
 							<button type="submit">{text.restoreButton}</button>
 							<span class="aide">{text.restoreHelp}</span>
 						</form>
