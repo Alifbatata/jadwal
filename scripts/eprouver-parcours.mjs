@@ -132,9 +132,10 @@
  * le nombre d'écrans lus (A3 et F1), qui change d'une image à l'autre : on le neutralise avant de
  * comparer. Compter retour par retour donne un nombre, mais pas les lignes.
  *
- * Une vérification faite de plusieurs conditions les nomme (`verifierChaque`) : sa ligne rouge
- * commence par « tombé : » et le nom de celles qui manquent, puis ce que l'écran montrait. Un relevé
- * dit donc laquelle est tombée, et pas seulement ce qu'une ligne verte aurait dit.
+ * Une vérification faite de plusieurs conditions les nomme (`verifierChaque`), qu'elle soit celle
+ * d'un retour ou non : sa ligne rouge commence par « tombé : » et le nom de celles qui manquent,
+ * puis ce que l'écran montrait. Un relevé dit donc laquelle est tombée, et pas seulement ce qu'une
+ * ligne verte aurait dit.
  *
  * Les gestes qui ne sont pas l'objet d'une vérification visent les champs par leur `id` ou leur
  * `name`, qui sont le contrat du formulaire avec le serveur, et non par leur libellé : un libellé
@@ -974,9 +975,12 @@ async function bilanDesEcrans() {
 	const avecDates = lus.filter(([, lu]) => lu.dates.length > 0);
 	const avecNom = lus.filter(([, lu]) => lu.nomRetire);
 	await retour('A3', async () => {
-		verifier(
+		verifierChaque(
 			`aucune date écrite AAAA-MM-JJ sur les ${lus.length} écrans traversés (espace, super-admin, page publique, widget)`,
-			lus.length > 0 && avecDates.length === 0,
+			{
+				'au moins un écran lu': lus.length > 0,
+				'aucune date AAAA-MM-JJ': avecDates.length === 0
+			},
 			avecDates
 				.slice(0, 8)
 				.map(([cle, lu]) => `${cle} : ${lu.dates.slice(0, 3).join(', ')}`)
@@ -984,9 +988,12 @@ async function bilanDesEcrans() {
 		);
 	});
 	await retour('F1', async () => {
-		verifier(
+		verifierChaque(
 			`aucun des ${lus.length} écrans traversés ne nomme la personne retirée du dépôt`,
-			lus.length > 0 && avecNom.length === 0,
+			{
+				'au moins un écran lu': lus.length > 0,
+				'aucun écran ne nomme la personne retirée': avecNom.length === 0
+			},
 			avecNom
 				.slice(0, 8)
 				.map(([cle]) => cle)
@@ -1367,9 +1374,12 @@ async function premierPassage(navigateur) {
 		await retour('D2', async () => {
 			await ouvrir(page, '/connexion');
 			const lang = await racineDit(page, 'lang');
-			verifier(
+			verifierChaque(
 				'au premier passage, un navigateur réglé en allemand (de-CH) voit /connexion en allemand',
-				lang === 'de' && (await titre(page)) === 'Anmelden',
+				{
+					'<html lang="de">': lang === 'de',
+					'le titre « Anmelden »': (await titre(page)) === 'Anmelden'
+				},
 				`<html lang="${lang}">, « ${await titre(page)} »`
 			);
 		});
@@ -1377,11 +1387,13 @@ async function premierPassage(navigateur) {
 			await ouvrir(page, '/connexion');
 			await demanderUnLien(page, SUPER_ADMIN);
 			const courriel = await attendreCourriel(SUPER_ADMIN, /Anmeldelink/);
-			verifier(
+			verifierChaque(
 				'le lien demandé depuis cet écran allemand part en allemand, <html lang="de"> compris',
-				courriel?.subject === 'Ihr Anmeldelink für jadwal' &&
-					langueDuCourriel(courriel) === 'de' &&
-					Boolean(lienDeConnexion(courriel)),
+				{
+					'l’objet en allemand': courriel?.subject === 'Ihr Anmeldelink für jadwal',
+					'<html lang="de">': langueDuCourriel(courriel) === 'de',
+					'le lien de connexion': Boolean(lienDeConnexion(courriel))
+				},
 				`reçus : ${sujetsRecus(SUPER_ADMIN)}`
 			);
 		});
@@ -1468,16 +1480,22 @@ async function superAdmin(navigateur) {
 		.filter({ hasText: /^(Passkey enregistrée\.|(?!Aucune).+)/ });
 	await annonce.first().waitFor();
 	const { credentials } = await cdp.send('WebAuthn.getCredentials', { authenticatorId });
-	verifier(
+	verifierChaque(
 		'la passkey est enregistrée, et l’authentificateur la garde',
-		(await texteDe(annonce)).startsWith('Passkey enregistrée.') && credentials.length === 1,
+		{
+			'« Passkey enregistrée. »': (await texteDe(annonce)).startsWith('Passkey enregistrée.'),
+			'une passkey dans l’authentificateur': credentials.length === 1
+		},
 		`${await texteDe(annonce)} ; ${credentials.length} dans l’authentificateur`
 	);
 
 	await envoyer(page, page.getByRole('button', { name: 'Se connecter avec une passkey' }));
-	verifier(
+	verifierChaque(
 		'la connexion par passkey mène à l’écran du super-admin',
-		chemin(page) === '/super-admin' && (await titre(page)) === 'Super-admin',
+		{
+			'l’adresse /super-admin': chemin(page) === '/super-admin',
+			'le titre « Super-admin »': (await titre(page)) === 'Super-admin'
+		},
 		chemin(page)
 	);
 	await auditer(page, 'super-admin');
@@ -1513,12 +1531,16 @@ async function superAdmin(navigateur) {
 		.getByRole('status')
 		.filter({ hasText: 'pouvoirs de super-admin' })
 		.getByRole('link', { name: CHANGER, exact: true });
-	verifier(
+	verifierChaque(
 		`le super-admin garde « ${CHANGER} » dans sa bannière, vers son écran, et la navigation n’en a pas d’autre`,
-		(await parLaBanniere.count()) === 1 &&
-			(await cheminDuLien(parLaBanniere)) === '/super-admin' &&
-			(await navigationDeLEspace(page).count()) === 1 &&
-			(await lienChanger(page).count()) === 0,
+		{
+			'le lien dans la bannière': (await parLaBanniere.count()) === 1,
+			'vers /super-admin':
+				(await parLaBanniere.count()) === 1 &&
+				(await cheminDuLien(parLaBanniere)) === '/super-admin',
+			'la navigation de l’espace': (await navigationDeLEspace(page).count()) === 1,
+			'aucun second lien dans la navigation': (await lienChanger(page).count()) === 0
+		},
 		`${await parLaBanniere.count()} dans la bannière, ${await lienChanger(page).count()} dans la navigation`
 	);
 	await suivre(page, parLaBanniere, '/super-admin');
@@ -1571,12 +1593,15 @@ async function secondePasskey(page, cdp, premier) {
 		const boutons = (await page.locator('.actions button').allTextContents()).map((texte) =>
 			texte.trim()
 		);
-		verifier(
+		verifierChaque(
 			'une seconde passkey, pouvoirs actifs : le message dit qu’elle servira à la prochaine connexion, sans renvoyer à un bouton, et l’écran n’en montre pas d’autre que « Enregistrer une passkey »',
-			message.startsWith('Passkey enregistrée.') &&
-				message.includes('la prochaine fois') &&
-				!/bouton/i.test(message) &&
-				boutons.join('|') === 'Enregistrer une passkey',
+			{
+				'« Passkey enregistrée. »': message.startsWith('Passkey enregistrée.'),
+				'« la prochaine fois »': message.includes('la prochaine fois'),
+				'sans renvoyer à un bouton': !/bouton/i.test(message),
+				'un seul bouton, « Enregistrer une passkey »':
+					boutons.join('|') === 'Enregistrer une passkey'
+			},
 			`« ${message || 'aucun message'} » ; boutons : ${boutons.join(', ') || 'aucun'}`
 		);
 		// La liste se relit après le message : on attend la seconde ligne, cinq secondes au plus.
@@ -1586,9 +1611,12 @@ async function secondePasskey(page, cdp, premier) {
 			.waitFor({ timeout: 5000 })
 			.catch(() => undefined);
 		const noms = (await lignes.locator('strong').allTextContents()).map((nom) => nom.trim());
-		verifier(
+		verifierChaque(
 			'son nom se distingue de celui de la première',
-			noms.length === 2 && new Set(noms).size === 2,
+			{
+				'deux passkeys': noms.length === 2,
+				'deux noms distincts': new Set(noms).size === 2
+			},
 			noms.map((nom) => `« ${nom} »`).join(', ') || 'aucun nom'
 		);
 	});
@@ -1637,12 +1665,15 @@ async function adresseSansScript(navigateur, contexte) {
 			const succes = page.locator('section.succes');
 			const annonce = (await succes.count()) === 1 ? await texteDe(succes) : '';
 			const carte = page.locator('li').filter({ hasText: SANS_SCRIPT.nom });
-			verifier(
+			verifierChaque(
 				`sans JavaScript, « ${SANS_SCRIPT.nom} », créée à la confirmation, reçoit l’adresse que le serveur a proposée, « ${SANS_SCRIPT.adresse} », et l’écran dit l’adresse entière`,
-				annonce.includes(SANS_SCRIPT.nom) &&
-					annonce.includes(adresse) &&
-					(await carte.count()) === 1 &&
-					(await texteDe(carte)).includes(adresse),
+				{
+					'l’annonce nomme l’organisation': annonce.includes(SANS_SCRIPT.nom),
+					'l’annonce dit l’adresse entière': annonce.includes(adresse),
+					'une carte de l’organisation': (await carte.count()) === 1,
+					'la carte dit l’adresse entière':
+						(await carte.count()) === 1 && (await texteDe(carte)).includes(adresse)
+				},
 				annonce || (await texteDe(page.locator('main'))).slice(0, 160)
 			);
 		} finally {
@@ -1698,10 +1729,10 @@ async function languesDuSuperAdmin(page) {
 		}
 		await page.reload();
 		await page.waitForLoadState('networkidle');
-		verifier(
-			'la langue choisie reste au rechargement',
-			(await racineDit(page, 'lang')) === 'ar' && (await racineDit(page, 'dir')) === 'rtl'
-		);
+		verifierChaque('la langue choisie reste au rechargement', {
+			'<html lang="ar">': (await racineDit(page, 'lang')) === 'ar',
+			'dir="rtl"': (await racineDit(page, 'dir')) === 'rtl'
+		});
 		await choisirLaLangue(page, 'fr');
 		verifier('retour au français', (await racineDit(page, 'lang')) === 'fr');
 	});
@@ -1713,9 +1744,12 @@ async function lireLesConditions(page, lien, quel) {
 	const listes = page.locator('main ol');
 	const nombreDeListes = await listes.count();
 	const elements = nombreDeListes === 1 ? await listes.locator(':scope > li').count() : 0;
-	verifier(
+	verifierChaque(
 		`${quel} mène à /conditions, qui montre le document`,
-		(await titre(page)) === 'Conditions d’utilisation' && elements === DONNEES_PERSONNELLES,
+		{
+			'le titre « Conditions d’utilisation »': (await titre(page)) === 'Conditions d’utilisation',
+			'la liste des données personnelles': elements === DONNEES_PERSONNELLES
+		},
 		`« ${await titre(page)} », ${nombreDeListes} liste numérotée de ${elements} éléments`
 	);
 	await retour('A3', async () => {
@@ -1730,9 +1764,12 @@ async function lireLesConditions(page, lien, quel) {
 		const texte = await texteLu(page);
 		const exploitant = texte.includes(`exploité par ${EXPLOITANT}`);
 		const nomRetire = nommeLaPersonneRetiree(texte);
-		verifier(
+		verifierChaque(
 			`les conditions nomment ${EXPLOITANT} comme exploitant, et nulle part la personne retirée`,
-			exploitant && !nomRetire,
+			{
+				'l’exploitant nommé': exploitant,
+				'la personne retirée absente': !nomRetire
+			},
 			`${exploitant ? `« exploité par ${EXPLOITANT} » y est` : `« exploité par ${EXPLOITANT} » n’y est pas`} ; ` +
 				`${nomRetire ? 'le nom retiré du dépôt y est' : 'le nom retiré du dépôt n’y est pas'}`
 		);
@@ -1749,11 +1786,15 @@ async function ecranDuSuperAdmin(page) {
 			has: page.getByRole('heading', { name: 'Créer une organisation', exact: true })
 		});
 		const phrase = (await section.count()) === 1 ? await texteDe(section.locator('p').first()) : '';
-		verifier(
+		verifierChaque(
 			'« Créer une organisation », avec la phrase qui dit ce qu’est une organisation',
-			phrase ===
-				'Une organisation est l’espace d’une association, d’une école ou d’un club : son programme, ses membres et sa page publique.' &&
-				(await page.getByText('Ouvrir une organisation').count()) === 0,
+			{
+				'la phrase de la section':
+					phrase ===
+					'Une organisation est l’espace d’une association, d’une école ou d’un club : son programme, ses membres et sa page publique.',
+				'plus d’« Ouvrir une organisation »':
+					(await page.getByText('Ouvrir une organisation').count()) === 0
+			},
 			phrase || 'aucune section de ce nom'
 		);
 		// Le champ du fuseau, par son `id` : son libellé n'est pas l'objet de cette vérification.
@@ -1762,28 +1803,41 @@ async function ecranDuSuperAdmin(page) {
 		const groupes = await fuseau
 			.locator('optgroup')
 			.evaluateAll((tous) => tous.map((groupe) => groupe.getAttribute('label')));
-		verifier(
+		verifierChaque(
 			'le fuseau se choisit dans une liste, les fuseaux d’Europe en tête, Europe/Zurich par défaut',
-			genre === 'select' && (await fuseau.inputValue()) === FUSEAU && groupes[0] === 'Europe',
+			{
+				'une liste': genre === 'select',
+				'Europe/Zurich par défaut': (await fuseau.inputValue()) === FUSEAU,
+				'l’Europe en tête': groupes[0] === 'Europe'
+			},
 			`<${genre}> « ${await fuseau.inputValue()} », groupes ${groupes.join(', ') || 'aucun'}`
 		);
 		const aideDuFuseau = await descriptionDe(fuseau);
-		verifier(
+		verifierChaque(
 			'une phrase sous le fuseau dit à quoi il sert : les heures du programme et celles des prières',
-			aideDuFuseau.includes('heures du programme') && aideDuFuseau.includes('heures de prière'),
+			{
+				'les heures du programme': aideDuFuseau.includes('heures du programme'),
+				'les heures de prière': aideDuFuseau.includes('heures de prière')
+			},
 			aideDuFuseau || 'aucune aide'
 		);
 		const secours = page.locator('section', {
 			has: page.getByRole('heading', { name: 'Lien de connexion de secours', exact: true })
 		});
 		const texte = (await secours.count()) === 1 ? await texteDe(secours) : '';
-		verifier(
+		verifierChaque(
 			'le lien de connexion de secours dit quand s’en servir, ce qui se passe et combien il vaut',
-			texte.includes('quand une personne ne reçoit pas le courriel de connexion') &&
-				texte.includes('Le lien s’affiche ici au lieu de partir par courriel') &&
-				texte.includes('Il est valable quinze minutes et ne sert qu’une fois.') &&
-				(await secours.getByLabel('Adresse électronique de la personne').count()) === 1 &&
-				(await secours.getByRole('button', { name: 'Créer le lien de connexion' }).count()) === 1,
+			{
+				'quand s’en servir': texte.includes(
+					'quand une personne ne reçoit pas le courriel de connexion'
+				),
+				'ce qui se passe': texte.includes('Le lien s’affiche ici au lieu de partir par courriel'),
+				'combien il vaut': texte.includes('Il est valable quinze minutes et ne sert qu’une fois.'),
+				'le champ de l’adresse':
+					(await secours.getByLabel('Adresse électronique de la personne').count()) === 1,
+				'le bouton':
+					(await secours.getByRole('button', { name: 'Créer le lien de connexion' }).count()) === 1
+			},
 			texte.slice(0, 160) || 'aucune section de ce nom'
 		);
 	});
@@ -1803,11 +1857,14 @@ async function ouvrirEtEntrer(page, organisation, { proposee }) {
 			const complete = page.locator('#slug-adresse');
 			const hote = new URL(ORIGINE).host;
 			const lue = (await complete.count()) === 1 ? await texteDe(complete) : 'absente';
-			verifier(
+			verifierChaque(
 				`« Adresse de la page publique » est proposée pendant la frappe, « ${proposee} », adresse complète en direct`,
-				(await page.getByLabel('Adresse de la page publique', { exact: true }).count()) === 1 &&
-					(await adresse.inputValue()) === proposee &&
-					lue === `Adresse complète : ${hote}/m/${proposee}`,
+				{
+					'le champ « Adresse de la page publique »':
+						(await page.getByLabel('Adresse de la page publique', { exact: true }).count()) === 1,
+					'l’adresse proposée': (await adresse.inputValue()) === proposee,
+					'l’adresse complète en direct': lue === `Adresse complète : ${hote}/m/${proposee}`
+				},
 				`« ${await adresse.inputValue()} » ; ${lue}`
 			);
 		});
@@ -1817,12 +1874,16 @@ async function ouvrirEtEntrer(page, organisation, { proposee }) {
 		await retour('B2', async () => {
 			const complete = page.locator('#slug-adresse');
 			const lue = (await complete.count()) === 1 ? await texteDe(complete) : 'absente';
-			verifier(
+			verifierChaque(
 				'l’adresse se modifie, et l’adresse complète la suit',
-				lue === `Adresse complète : ${new URL(ORIGINE).host}/m/${organisation.slug}` &&
-					(await page
-						.getByRole('button', { name: 'Créer l’organisation', exact: true })
-						.count()) === 1,
+				{
+					'l’adresse complète suit':
+						lue === `Adresse complète : ${new URL(ORIGINE).host}/m/${organisation.slug}`,
+					'le bouton « Créer l’organisation »':
+						(await page
+							.getByRole('button', { name: 'Créer l’organisation', exact: true })
+							.count()) === 1
+				},
 				lue
 			);
 		});
@@ -1833,9 +1894,12 @@ async function ouvrirEtEntrer(page, organisation, { proposee }) {
 
 	await envoyer(page, carte.getByRole('button', { name: 'Entrer dans son espace' }));
 	const banniere = await texteDe(page.getByRole('status'));
-	verifier(
+	verifierChaque(
 		'il entre dans son espace, et la bannière le lui rappelle',
-		chemin(page) === '/' && banniere.includes(organisation.nom),
+		{
+			'l’accueil de l’espace': chemin(page) === '/',
+			'la bannière nomme l’organisation': banniere.includes(organisation.nom)
+		},
 		banniere
 	);
 }
@@ -1854,11 +1918,17 @@ async function ceQueFaitChaqueRole(page) {
 		});
 		const gestesEditeur = await editeur.locator('li').allTextContents();
 		const gestesResponsable = await responsable.locator('li').allTextContents();
-		verifier(
+		verifierChaque(
 			'sous le choix du rôle, ce que peut faire un éditeur, et ce qui est réservé au responsable',
-			gestesEditeur.some((geste) => geste.includes('Créer un cours')) &&
-				gestesResponsable.some((geste) => geste.includes('Retirer un membre')) &&
-				gestesResponsable.some((geste) => geste.includes('Inviter une personne')),
+			{
+				'ce que fait un éditeur': gestesEditeur.some((geste) => geste.includes('Créer un cours')),
+				'« Retirer un membre » réservé': gestesResponsable.some((geste) =>
+					geste.includes('Retirer un membre')
+				),
+				'« Inviter une personne » réservé': gestesResponsable.some((geste) =>
+					geste.includes('Inviter une personne')
+				)
+			},
 			`${gestesEditeur.length} gestes d’éditeur, ${gestesResponsable.length} réservés`
 		);
 		// Supprimer un cours est réservé au responsable, à qui seul l'écran Cours le propose (étape 19,
@@ -1869,19 +1939,25 @@ async function ceQueFaitChaqueRole(page) {
 		const reserveSurLesCours = gestesResponsable
 			.map((geste) => geste.replace(/\s+/g, ' ').trim())
 			.filter((geste) => /\bcours\b/.test(geste));
-		verifier(
+		verifierChaque(
 			'ce que peut faire un éditeur ne promet pas de supprimer un cours : « Créer un cours, le modifier et le publier » ; la liste réservée au responsable dit « Supprimer un cours »',
-			surLesCours.includes('Créer un cours, le modifier et le publier') &&
-				!surLesCours.some((geste) => /supprimer/i.test(geste)) &&
-				reserveSurLesCours.includes('Supprimer un cours'),
+			{
+				'« Créer un cours, le modifier et le publier »': surLesCours.includes(
+					'Créer un cours, le modifier et le publier'
+				),
+				'l’éditeur ne supprime pas': !surLesCours.some((geste) => /supprimer/i.test(geste)),
+				'« Supprimer un cours » réservé': reserveSurLesCours.includes('Supprimer un cours')
+			},
 			[...surLesCours, ...reserveSurLesCours].map((geste) => `« ${geste} »`).join(', ') ||
 				'aucun geste sur les cours'
 		);
 		const decrit = await page.locator('#role').getAttribute('aria-describedby');
-		verifier(
+		verifierChaque(
 			'le choix du rôle renvoie à ces deux listes pour les lecteurs d’écran',
-			(decrit ?? '').split(/\s+/).includes('roles-aide') &&
-				(await page.locator('#roles-aide').count()) === 1,
+			{
+				'aria-describedby vers les listes': (decrit ?? '').split(/\s+/).includes('roles-aide'),
+				'les listes à l’écran': (await page.locator('#roles-aide').count()) === 1
+			},
 			`aria-describedby="${decrit}"`
 		);
 	});
@@ -1913,9 +1989,13 @@ async function inviter(page, organisation, role, roleAffiche) {
 			'L’invitation a été envoyée à cette adresse.'
 	);
 	const enAttente = page.locator('li').filter({ hasText: RESPONSABLE });
-	verifier(
+	verifierChaque(
 		`elle attend dans « Invitations en attente », en ${roleAffiche}`,
-		(await enAttente.count()) === 1 && (await texteDe(enAttente)).includes(roleAffiche),
+		{
+			'une invitation en attente': (await enAttente.count()) === 1,
+			'avec son rôle':
+				(await enAttente.count()) === 1 && (await texteDe(enAttente)).includes(roleAffiche)
+		},
 		await texteDe(enAttente)
 	);
 }
@@ -1931,10 +2011,12 @@ async function inviterEnAllemand(page) {
 		await page.locator('#role').selectOption('editor');
 		await envoyer(page, page.locator('form[action="?/inviter"] button[type="submit"]'));
 		const courriel = await attendreCourriel(INVITEE_EN_ALLEMAND, /./);
-		verifier(
+		verifierChaque(
 			'une invitation envoyée depuis l’écran en allemand part en allemand, <html lang="de"> compris',
-			courriel?.subject === `Einladung zu ${VOISINE.nom} auf jadwal` &&
-				langueDuCourriel(courriel) === 'de',
+			{
+				'l’objet en allemand': courriel?.subject === `Einladung zu ${VOISINE.nom} auf jadwal`,
+				'<html lang="de">': langueDuCourriel(courriel) === 'de'
+			},
 			`reçus : ${sujetsRecus(INVITEE_EN_ALLEMAND) || 'rien'}`
 		);
 	});
@@ -1960,35 +2042,43 @@ async function ecranDAcceptation(page, organisation, { lienAttendu, pourquoi }) 
 		name: 'J’accepte les conditions d’utilisation',
 		exact: true
 	});
-	verifier(
+	verifierChaque(
 		'elle voit le texte entier et le bouton « J’accepte les conditions d’utilisation »',
-		(await titre(page)) === 'Conditions d’utilisation' &&
-			raison.includes(`${organisation.espaceDe},`) &&
-			(await page.locator('main ol > li').count()) === DONNEES_PERSONNELLES &&
-			(await bouton.count()) === 1,
+		{
+			'le titre « Conditions d’utilisation »': (await titre(page)) === 'Conditions d’utilisation',
+			'la phrase qui nomme l’organisation': raison.includes(`${organisation.espaceDe},`),
+			'les données personnelles':
+				(await page.locator('main ol > li').count()) === DONNEES_PERSONNELLES,
+			'le bouton': (await bouton.count()) === 1
+		},
 		raison
 	);
 	await retour('A3', async () => {
 		const version = await texteDe(page.locator('main p').filter({ hasText: /^Version du/ }));
 		const date = await texteDe(page.locator('main p').filter({ hasText: /^Dernière mise à jour/ }));
-		verifier(
+		verifierChaque(
 			`la version et la date du texte s’écrivent en JJ.MM.AAAA, « Version du ${DATE_DES_CONDITIONS} »`,
-			version === `Version du ${DATE_DES_CONDITIONS}` &&
-				date === `Dernière mise à jour : ${DATE_DES_CONDITIONS}.`,
+			{
+				'« Version du … »': version === `Version du ${DATE_DES_CONDITIONS}`,
+				'« Dernière mise à jour : … »': date === `Dernière mise à jour : ${DATE_DES_CONDITIONS}.`
+			},
 			`« ${version} », « ${date} »`
 		);
 	});
-	verifier(
-		'la navigation de l’espace est absente, « Se déconnecter » reste',
-		(await navigationDeLEspace(page).count()) === 0 &&
-			(await page.getByRole('button', { name: 'Se déconnecter' }).count()) === 1
-	);
+	verifierChaque('la navigation de l’espace est absente, « Se déconnecter » reste', {
+		'pas de navigation de l’espace': (await navigationDeLEspace(page).count()) === 0,
+		'« Se déconnecter »': (await page.getByRole('button', { name: 'Se déconnecter' }).count()) === 1
+	});
 	const lien = page.getByRole('link', { name: AUTRE_ORGANISATION, exact: true });
 	const verification = async () =>
-		verifier(
+		verifierChaque(
 			`${pourquoi}, le lien « ${AUTRE_ORGANISATION} » est là, vers le choix`,
-			(await lien.count()) === (lienAttendu ? 1 : 0) &&
-				(!lienAttendu || (await cheminDuLien(lien)) === '/organisations'),
+			{
+				'le lien, s’il est attendu': (await lien.count()) === (lienAttendu ? 1 : 0),
+				'vers le choix':
+					!lienAttendu ||
+					((await lien.count()) === 1 && (await cheminDuLien(lien)) === '/organisations')
+			},
 			`${await lien.count()} lien`
 		);
 	if (lienAttendu === 'H2') await retour('H2', verification);
@@ -2021,17 +2111,22 @@ async function personneInvitee(navigateur) {
 	const lien = lienDeConnexion(await attendreCourriel(RESPONSABLE, /lien de connexion/));
 	verifier('son lien de connexion arrive par courriel', Boolean(lien));
 	await ouvrir(page, /** @type {string} */ (lien));
-	verifier(
+	verifierChaque(
 		'le lien mène au choix d’organisation',
-		chemin(page) === '/organisations' && (await titre(page)) === 'Vos organisations',
+		{
+			'l’adresse /organisations': chemin(page) === '/organisations',
+			'le titre « Vos organisations »': (await titre(page)) === 'Vos organisations'
+		},
 		chemin(page)
 	);
 	const recue = page.locator('li').filter({ hasText: ORGANISATION.nom });
 	const recueVoisine = page.locator('li').filter({ hasText: VOISINE.nom });
-	verifier(
+	verifierChaque(
 		'les deux invitations reçues y sont, avec leur rôle',
-		(await texteDe(recue)).includes('responsable') &&
-			(await texteDe(recueVoisine)).includes('éditeur'),
+		{
+			'responsable ici': (await texteDe(recue)).includes('responsable'),
+			'éditrice dans la voisine': (await texteDe(recueVoisine)).includes('éditeur')
+		},
 		`${await texteDe(recue)} | ${await texteDe(recueVoisine)}`
 	);
 	await auditer(page, 'choix d’organisation');
@@ -2045,11 +2140,13 @@ async function personneInvitee(navigateur) {
 	});
 	await auditer(page, 'conditions à accepter');
 	await envoyer(page, bouton);
-	verifier(
+	verifierChaque(
 		'après avoir accepté, elle arrive à l’accueil de son espace, et la navigation revient',
-		chemin(page) === '/' &&
-			(await titre(page)) === 'À venir' &&
-			(await navigationDeLEspace(page).count()) === 1,
+		{
+			'l’accueil': chemin(page) === '/',
+			'le titre « À venir »': (await titre(page)) === 'À venir',
+			'la navigation revient': (await navigationDeLEspace(page).count()) === 1
+		},
 		chemin(page)
 	);
 	await ouvrir(page, '/conditions/accepter');
@@ -2064,17 +2161,24 @@ async function personneInvitee(navigateur) {
 	// organisation sans invitation n'ait pas ce lien, mais « Vos organisations » vers le même écran
 	// (étape 19), `apps/web/tests/acces.test.ts` le vérifie : personne, dans ce parcours, n'est dans
 	// ce cas.
-	verifier(
+	verifierChaque(
 		`avec une seule organisation et une invitation qui attend, elle trouve « ${CHANGER} » dans la navigation, vers le choix`,
-		(await lienChanger(page).count()) === 1 &&
-			(await cheminDuLien(lienChanger(page))) === '/organisations'
+		{
+			'le lien': (await lienChanger(page).count()) === 1,
+			'vers le choix':
+				(await lienChanger(page).count()) === 1 &&
+				(await cheminDuLien(lienChanger(page))) === '/organisations'
+		}
 	);
 	await naviguer(page, '/organisations');
 	const seconde = page.locator('li').filter({ hasText: VOISINE.nom });
-	verifier(
+	verifierChaque(
 		`par ce lien, elle retrouve l’invitation de « ${VOISINE.nom} », à accepter`,
-		(await texteDe(seconde)).includes('éditeur') &&
-			(await seconde.getByRole('button', { name: 'Accepter' }).count()) === 1,
+		{
+			'en éditrice': (await texteDe(seconde)).includes('éditeur'),
+			'le bouton « Accepter »':
+				(await seconde.getByRole('button', { name: 'Accepter' }).count()) === 1
+		},
 		await texteDe(seconde)
 	);
 
@@ -2087,24 +2191,34 @@ async function personneInvitee(navigateur) {
 	});
 	await suivre(page, autre, '/organisations');
 	await envoyer(page, page.getByRole('button', { name: ORGANISATION.nom, exact: true }));
-	verifier(
+	verifierChaque(
 		`par ce lien, elle revient dans « ${ORGANISATION.nom} », qui ne redemande rien`,
-		chemin(page) === '/' && (await page.title()) === `À venir | ${ORGANISATION.nom}`,
+		{
+			'l’accueil': chemin(page) === '/',
+			'le titre de l’organisation': (await page.title()) === `À venir | ${ORGANISATION.nom}`
+		},
 		`${chemin(page)} « ${await page.title()} »`
 	);
 
 	// Membre de deux organisations, elle trouve « Changer d’organisation » dans la navigation, en
 	// responsable ici, puis en éditrice dans la voisine, où elle entre accepter les conditions.
-	verifier(
+	verifierChaque(
 		`membre de deux organisations, elle trouve « ${CHANGER} » dans la navigation, vers le choix`,
-		(await lienChanger(page).count()) === 1 &&
-			(await cheminDuLien(lienChanger(page))) === '/organisations'
+		{
+			'le lien': (await lienChanger(page).count()) === 1,
+			'vers le choix':
+				(await lienChanger(page).count()) === 1 &&
+				(await cheminDuLien(lienChanger(page))) === '/organisations'
+		}
 	);
 	await naviguer(page, '/organisations');
 	await envoyer(page, page.getByRole('button', { name: VOISINE.nom, exact: true }));
-	verifier(
+	verifierChaque(
 		`dans « ${VOISINE.nom} », ses conditions l’attendent encore`,
-		chemin(page) === '/conditions/accepter' && (await navigationDeLEspace(page).count()) === 0,
+		{
+			'l’écran d’acceptation': chemin(page) === '/conditions/accepter',
+			'pas de navigation de l’espace': (await navigationDeLEspace(page).count()) === 0
+		},
 		chemin(page)
 	);
 	await envoyer(
@@ -2112,24 +2226,31 @@ async function personneInvitee(navigateur) {
 		page.getByRole('button', { name: 'J’accepte les conditions d’utilisation', exact: true })
 	);
 	const liensDeLEditrice = await navigationDeLEspace(page).getByRole('link').allTextContents();
-	verifier(
+	verifierChaque(
 		`éditrice dans « ${VOISINE.nom} », elle trouve « ${CHANGER} » dans la navigation, sans « Membres »`,
-		chemin(page) === '/' &&
-			(await page.title()) === `À venir | ${VOISINE.nom}` &&
-			(await lienChanger(page).count()) === 1 &&
-			(await cheminDuLien(lienChanger(page))) === '/organisations' &&
-			!liensDeLEditrice.some((texte) => texte.trim() === 'Membres'),
+		{
+			'l’accueil': chemin(page) === '/',
+			'le titre de la voisine': (await page.title()) === `À venir | ${VOISINE.nom}`,
+			'le lien': (await lienChanger(page).count()) === 1,
+			'vers le choix':
+				(await lienChanger(page).count()) === 1 &&
+				(await cheminDuLien(lienChanger(page))) === '/organisations',
+			'pas de « Membres »': !liensDeLEditrice.some((texte) => texte.trim() === 'Membres')
+		},
 		`« ${await page.title()} » : ${liensDeLEditrice.map((texte) => texte.trim()).join(', ')}`
 	);
 	await naviguer(page, '/organisations');
 	await envoyer(page, page.getByRole('button', { name: ORGANISATION.nom, exact: true }));
-	verifier(
+	verifierChaque(
 		`par ce lien, elle revient en responsable dans « ${ORGANISATION.nom} »`,
-		chemin(page) === '/' &&
-			(await page.title()) === `À venir | ${ORGANISATION.nom}` &&
-			(await navigationDeLEspace(page)
-				.getByRole('link', { name: 'Membres', exact: true })
-				.count()) === 1,
+		{
+			'l’accueil': chemin(page) === '/',
+			'le titre de l’organisation': (await page.title()) === `À venir | ${ORGANISATION.nom}`,
+			'« Membres » dans la navigation':
+				(await navigationDeLEspace(page)
+					.getByRole('link', { name: 'Membres', exact: true })
+					.count()) === 1
+		},
 		`${chemin(page)} « ${await page.title()} »`
 	);
 
@@ -2140,15 +2261,21 @@ async function personneInvitee(navigateur) {
 		.split(/\s+/)
 		.find((mot) => mot.startsWith(`${ORIGINE}/connexion`));
 	await ouvrir(page, adresseDuCourriel ?? '/connexion');
-	verifier(
+	verifierChaque(
 		'une fois connectée, elle suit l’adresse de son second courriel d’invitation et arrive au choix d’organisation',
-		Boolean(adresseDuCourriel) && chemin(page) === '/organisations',
+		{
+			'l’adresse du courriel': Boolean(adresseDuCourriel),
+			'le choix d’organisation': chemin(page) === '/organisations'
+		},
 		`${adresseDuCourriel ?? 'adresse absente du courriel'} : ${chemin(page)}`
 	);
 	await envoyer(page, page.getByRole('button', { name: ORGANISATION.nom, exact: true }));
-	verifier(
+	verifierChaque(
 		`de là, elle rentre dans « ${ORGANISATION.nom} »`,
-		chemin(page) === '/' && (await page.title()) === `À venir | ${ORGANISATION.nom}`,
+		{
+			'l’accueil': chemin(page) === '/',
+			'le titre de l’organisation': (await page.title()) === `À venir | ${ORGANISATION.nom}`
+		},
 		`${chemin(page)} « ${await page.title()} »`
 	);
 	return { contexte, page };
@@ -2165,29 +2292,41 @@ async function clarteDuFormulaire(page, cours) {
 			premierJour: await descriptionDe(page.locator('#startsOn')),
 			publication: await descriptionDe(page.locator('#status'))
 		};
-		verifier(
+		verifierChaque(
 			'le formulaire d’un cours a une aide sous le titre, le premier jour et la publication',
-			aides.titre.includes('Exemple :') &&
-				aides.premierJour.length > 0 &&
-				aides.publication.length > 0,
+			{
+				'l’aide du titre, avec un exemple': aides.titre.includes('Exemple :'),
+				'l’aide du premier jour': aides.premierJour.length > 0,
+				'l’aide de la publication': aides.publication.length > 0
+			},
 			`titre « ${aides.titre} », premier jour « ${aides.premierJour} », publication « ${aides.publication} »`
 		);
 	});
 	await retour('B4', async () => {
 		const resume = page.locator('#course-summary');
 		const ligne = (debut) => resume.locator('div').filter({ hasText: debut });
-		verifier(
+		verifierChaque(
 			'en haut du formulaire, « Résumé : ce qui sera publié », et le premier jour signalé comme manquant',
-			(await resume.getByRole('heading', { name: 'Résumé : ce qui sera publié' }).count()) === 1 &&
-				(await texteDe(ligne('Premier jour'))) === 'Premier jour : pas choisi',
+			{
+				'« Résumé : ce qui sera publié »':
+					(await resume.getByRole('heading', { name: 'Résumé : ce qui sera publié' }).count()) ===
+					1,
+				'« Premier jour : pas choisi »':
+					(await texteDe(ligne('Premier jour'))) === 'Premier jour : pas choisi'
+			},
 			(await resume.count()) === 1 ? await texteDe(ligne('Premier jour')) : 'aucun résumé'
 		);
 		await page.locator('#title-fr').fill(cours.titre);
 		await page.locator('#startsOn').fill(T);
-		verifier(
+		verifierChaque(
 			'le résumé suit la saisie : le titre, puis le premier jour écrit en JJ.MM.AAAA',
-			(await texteDe(ligne('Titre en français'))) === `Titre en français : ${cours.titre}` &&
-				(await texteDe(ligne('Premier jour'))).endsWith(dateSuisse(T)),
+			{
+				'le titre':
+					(await texteDe(ligne('Titre en français'))) === `Titre en français : ${cours.titre}`,
+				'le premier jour en JJ.MM.AAAA': (await texteDe(ligne('Premier jour'))).endsWith(
+					dateSuisse(T)
+				)
+			},
 			`${await texteDe(ligne('Titre en français'))} | ${await texteDe(ligne('Premier jour'))}`
 		);
 		// La description a sa ligne, juste sous le titre de sa langue, marquée facultative (étape 19,
@@ -2313,9 +2452,12 @@ async function creerCours(page, cours) {
 	}
 
 	const ligne = page.locator('li').filter({ hasText: cours.titre });
-	verifier(
+	verifierChaque(
 		`« ${cours.titre} » est créé, ${cours.etat}, le ${JOURS[cours.jour - 1]}`,
-		chemin(page) === '/cours' && (await texteDe(ligne)).includes(cours.etat),
+		{
+			'retour à /cours': chemin(page) === '/cours',
+			'son état': (await texteDe(ligne)).includes(cours.etat)
+		},
 		await texteDe(ligne)
 	);
 	const modifier = await ligne.locator('a[href^="/cours/"]').first().getAttribute('href');
@@ -2347,11 +2489,13 @@ async function optionsDesSeances(page, premiere, seconde) {
 		);
 		const ouvrirLes = premiere.getByText('Annuler ou déplacer', { exact: true });
 		await ouvrirLes.click();
-		verifier(
+		verifierChaque(
 			'« Annuler ou déplacer » n’ouvre que les options de sa carte',
-			(await boutonsDAnnulationVisibles(premiere).count()) === 1 &&
-				(await boutonsDAnnulationVisibles(seconde).count()) === 0 &&
-				(await boutonsDAnnulationVisibles(page).count()) === 1,
+			{
+				'le bouton de sa carte': (await boutonsDAnnulationVisibles(premiere).count()) === 1,
+				'aucun sur l’autre carte': (await boutonsDAnnulationVisibles(seconde).count()) === 0,
+				'un seul en tout': (await boutonsDAnnulationVisibles(page).count()) === 1
+			},
 			`${await boutonsDAnnulationVisibles(page).count()} visibles en tout`
 		);
 		await ouvrirLes.click();
@@ -2373,11 +2517,13 @@ async function deplacerPlusTot(page) {
 	await retour('A2', async () => {
 		await depart.getByText('Annuler ou déplacer', { exact: true }).click();
 		const date = depart.getByLabel('Nouvelle date', { exact: true });
-		verifier(
+		verifierChaque(
 			`le champ « Nouvelle date » accepte toute date à partir d’aujourd’hui (${dateSuisse(T)}), jusqu’au 31.12.2100`,
-			(await date.getAttribute('type')) === 'date' &&
-				(await date.getAttribute('min')) === T &&
-				(await date.getAttribute('max')) === '2100-12-31',
+			{
+				'un champ de date': (await date.getAttribute('type')) === 'date',
+				'à partir d’aujourd’hui': (await date.getAttribute('min')) === T,
+				'jusqu’au 31.12.2100': (await date.getAttribute('max')) === '2100-12-31'
+			},
 			`min="${await date.getAttribute('min')}" max="${await date.getAttribute('max')}"`
 		);
 		await retour('B1', async () => {
@@ -2398,12 +2544,15 @@ async function deplacerPlusTot(page) {
 			(await inchangee.getByRole('alert').count()) === 1
 				? await texteDe(inchangee.getByRole('alert'))
 				: '';
-		verifier(
+		verifierChaque(
 			'« Déplacer la séance » sans rien changer, ni la date ni l’heure, est refusé avec une phrase, dans la carte, et rien n’est déplacé',
-			(await inchangee.count()) === 1 &&
-				/\p{L}{2,}.*\.$/u.test(phrase) &&
-				!phrase.startsWith('Cette date est déjà passée.') &&
-				!(await texteDe(inchangee)).includes('déplacée'),
+			{
+				'une seule carte': (await inchangee.count()) === 1,
+				'une phrase': /\p{L}{2,}.*\.$/u.test(phrase),
+				'pas celle d’une date passée': !phrase.startsWith('Cette date est déjà passée.'),
+				'rien de déplacé':
+					(await inchangee.count()) === 1 && !(await texteDe(inchangee)).includes('déplacée')
+			},
 			`${await inchangee.count()} carte(s) ; « ${phrase || 'aucune phrase'} »`
 		);
 		// Une date passée, que le navigateur refuserait de lui-même : le formulaire est envoyé sans sa
@@ -2415,10 +2564,14 @@ async function deplacerPlusTot(page) {
 		await depart.getByLabel('Heure de début', { exact: true }).fill('20:30');
 		await envoyer(page, depart.getByRole('button', { name: 'Déplacer la séance', exact: true }));
 		const refus = seanceDuJour(page, J3, COURS_2).getByRole('alert');
-		verifier(
+		verifierChaque(
 			'une date passée est refusée, dans la carte de la séance',
-			(await refus.count()) === 1 &&
-				(await texteDe(refus)).startsWith('Cette date est déjà passée.'),
+			{
+				'un refus dans la carte': (await refus.count()) === 1,
+				'« Cette date est déjà passée. »':
+					(await refus.count()) === 1 &&
+					(await texteDe(refus)).startsWith('Cette date est déjà passée.')
+			},
 			(await refus.count()) === 1 ? await texteDe(refus) : 'aucun refus'
 		);
 		const rouverte = seanceDuJour(page, J3, COURS_2);
@@ -2426,17 +2579,25 @@ async function deplacerPlusTot(page) {
 		await rouverte.getByLabel('Heure de début', { exact: true }).fill('20:30');
 		await envoyer(page, rouverte.getByRole('button', { name: 'Déplacer la séance', exact: true }));
 		const parti = seanceDuJour(page, J3, COURS_2);
-		verifier(
+		verifierChaque(
 			`la séance du ${dateSuisse(J3)} part au ${dateSuisse(J2)}, plus tôt que prévu, et se dit déplacée`,
-			(await texteDe(parti)).includes('déplacée') &&
-				(await texteDe(parti)).includes(`Déplacée au ${dateLongue(J2)} à 20:30`),
+			{
+				'« déplacée »': (await texteDe(parti)).includes('déplacée'),
+				'« Déplacée au … à 20:30 »': (await texteDe(parti)).includes(
+					`Déplacée au ${dateLongue(J2)} à 20:30`
+				)
+			},
 			await texteDe(parti)
 		);
 		const arrivee = seanceDuJour(page, J2, COURS_2);
-		verifier(
+		verifierChaque(
 			`elle apparaît le ${dateSuisse(J2)}, en date exceptionnelle, prévue à l’origine le ${dateSuisse(J3)}`,
-			(await texteDe(arrivee)).includes('date exceptionnelle') &&
-				(await texteDe(arrivee)).includes(`Prévue à l’origine le ${dateLongue(J3)}`),
+			{
+				'« date exceptionnelle »': (await texteDe(arrivee)).includes('date exceptionnelle'),
+				'« Prévue à l’origine le … »': (await texteDe(arrivee)).includes(
+					`Prévue à l’origine le ${dateLongue(J3)}`
+				)
+			},
 			await texteDe(arrivee)
 		);
 	});
@@ -2484,19 +2645,23 @@ async function programme(page) {
 		page,
 		page.locator('form:has(input[name="allume"][value="oui"]) button[type="submit"]')
 	);
-	verifier(
-		'les heures de prière sont activées, et la navigation mène à leurs deux écrans',
-		(await navigationDeLEspace(page).locator('a[href="/prieres"]').count()) === 1 &&
+	verifierChaque('les heures de prière sont activées, et la navigation mène à leurs deux écrans', {
+		'le lien vers /prieres':
+			(await navigationDeLEspace(page).locator('a[href="/prieres"]').count()) === 1,
+		'le lien vers /vendredi':
 			(await navigationDeLEspace(page).locator('a[href="/vendredi"]').count()) === 1
-	);
+	});
 	await retour('B1', async () => {
 		const libelles = {
 			prieres: await texteDe(navigationDeLEspace(page).locator('a[href="/prieres"]')),
 			vendredi: await texteDe(navigationDeLEspace(page).locator('a[href="/vendredi"]'))
 		};
-		verifier(
+		verifierChaque(
 			'la navigation nomme ces écrans par leur titre, « Heures de prière » et « Prière du vendredi »',
-			libelles.prieres === 'Heures de prière' && libelles.vendredi === 'Prière du vendredi',
+			{
+				'« Heures de prière »': libelles.prieres === 'Heures de prière',
+				'« Prière du vendredi »': libelles.vendredi === 'Prière du vendredi'
+			},
 			`« ${libelles.prieres} », « ${libelles.vendredi} »`
 		);
 		const statut = await texteDe(page.getByRole('status'));
@@ -2532,9 +2697,12 @@ async function programme(page) {
 	await naviguer(page, '/');
 	const premiere = seanceDuJour(page, J1, COURS_1.fr);
 	const seconde = seanceDuJour(page, J3, COURS_2);
-	verifier(
+	verifierChaque(
 		`les séances du ${dateSuisse(J1)} et du ${dateSuisse(J3)} sont à l’accueil de l’espace`,
-		(await premiere.count()) === 1 && (await seconde.count()) === 1
+		{
+			'celle du premier cours': (await premiere.count()) === 1,
+			'celle du second cours': (await seconde.count()) === 1
+		}
 	);
 	await optionsDesSeances(page, premiere, seconde);
 	const ouverte = premiere.locator('details[open]');
@@ -2542,10 +2710,13 @@ async function programme(page) {
 		await premiere.getByText('Annuler ou déplacer', { exact: true }).click();
 	}
 	await envoyer(page, boutonsDAnnulationVisibles(premiere));
-	verifier(
+	verifierChaque(
 		`la séance du ${dateSuisse(J1)} est annulée, et peut être rétablie`,
-		(await texteDe(premiere)).includes('annulée') &&
-			(await premiere.getByRole('button', { name: 'Rétablir' }).count()) === 1,
+		{
+			'« annulée »': (await texteDe(premiere)).includes('annulée'),
+			'le bouton « Rétablir »':
+				(await premiere.getByRole('button', { name: 'Rétablir' }).count()) === 1
+		},
 		await texteDe(premiere.locator('.titre'))
 	);
 	await deplacerPlusTot(page);
@@ -2578,11 +2749,12 @@ async function programme(page) {
 		.locator('textarea')
 		.evaluateAll((zones) => zones.map((zone) => zone.value));
 	etat.codeEmbarque = codes.find((code) => code.includes('<jadwal-widget')) ?? '';
-	verifier(
-		'l’écran Partager donne le code du widget',
-		etat.codeEmbarque.includes(`${ORIGINE}/widget/jadwal-widget.js`) &&
-			etat.codeEmbarque.includes(`<jadwal-widget org="${ORGANISATION.slug}">`)
-	);
+	verifierChaque('l’écran Partager donne le code du widget', {
+		'le script du widget': etat.codeEmbarque.includes(`${ORIGINE}/widget/jadwal-widget.js`),
+		'l’élément <jadwal-widget>': etat.codeEmbarque.includes(
+			`<jadwal-widget org="${ORGANISATION.slug}">`
+		)
+	});
 	etat.codeCadre = codes.find((code) => code.includes('<iframe')) ?? '';
 	verifier(
 		'l’écran Partager donne le cadre à coller à la main, sans embed=1',
@@ -2591,10 +2763,13 @@ async function programme(page) {
 	);
 	await retour('B1', async () => {
 		const texte = await texteDe(page.locator('main'));
-		verifier(
+		verifierChaque(
 			'l’écran Partager dit où coller le code, avec un exemple, et nomme le cadre sans jargon',
-			texte.includes('Exemple : sur WordPress') &&
-				(await page.getByLabel('Code du cadre à coller', { exact: true }).count()) === 1,
+			{
+				'l’exemple « sur WordPress »': texte.includes('Exemple : sur WordPress'),
+				'« Code du cadre à coller »':
+					(await page.getByLabel('Code du cadre à coller', { exact: true }).count()) === 1
+			},
 			texte.slice(0, 120)
 		);
 	});
@@ -2632,9 +2807,12 @@ async function verifierLaBaliseHtml(page, adresse, langue) {
 	const lang = await racineDit(page, 'lang');
 	const dir = await racineDit(page, 'dir');
 	const dirAttendu = langue === 'ar' ? 'rtl' : 'ltr';
-	verifier(
+	verifierChaque(
 		`${adresse} : <html lang="${langue}" dir="${dirAttendu}">`,
-		lang === langue && dir === dirAttendu,
+		{
+			lang: lang === langue,
+			dir: dir === dirAttendu
+		},
 		`<html lang="${lang}" dir="${dir}">`
 	);
 }
@@ -2674,23 +2852,34 @@ async function pagesPubliques(page) {
 			const lang = await racineDePage.getAttribute('lang');
 			const dir = await racineDePage.getAttribute('dir');
 			const dirAttendu = langue === 'ar' ? 'rtl' : 'ltr';
-			verifier(
+			verifierChaque(
 				`${adresse} s’affiche, lang="${langue}" dir="${dirAttendu}"`,
-				reponse?.status() === 200 && lang === langue && dir === dirAttendu,
+				{
+					200: reponse?.status() === 200,
+					lang: lang === langue,
+					dir: dir === dirAttendu
+				},
 				`rendu ${reponse?.status()}, lang="${lang}" dir="${dir}"`
 			);
 			await verifierLaBaliseHtml(page, adresse, langue);
 			const titre1 = langue === 'ar' ? COURS_1.ar : COURS_1.fr;
 			const premier = await seancesPubliques(page, titre1);
 			const second = await seancesPubliques(page, COURS_2);
-			verifier(
+			verifierChaque(
 				`${adresse} : les deux cours y sont`,
-				premier.length > 0 && second.length > 0,
+				{
+					'le premier cours': premier.length > 0,
+					'le second cours': second.length > 0
+				},
 				`${titre1}, ${COURS_2}`
 			);
-			verifier(
+			verifierChaque(
 				`${adresse} : la séance annulée reste visible, barrée, avec sa mention`,
-				premier.length === 1 && premier[0].barree && premier[0].mention.length > 0,
+				{
+					'une seule séance': premier.length === 1,
+					barrée: premier[0]?.barree === true,
+					'avec sa mention': (premier[0]?.mention.length ?? 0) > 0
+				},
 				premier.map((vue) => vue.mention).join(' | ')
 			);
 			// Au départ, la mention dit où va la séance ; à l'arrivée, la marque dit « date
@@ -2701,14 +2890,16 @@ async function pagesPubliques(page) {
 				const debutDeLaPhrase = arrivee?.texte.indexOf(textes.arrivee) ?? -1;
 				const phraseDArrivee =
 					arrivee && debutDeLaPhrase >= 0 ? arrivee.texte.slice(debutDeLaPhrase) : '';
-				verifier(
+				verifierChaque(
 					`${adresse} : la séance ramenée plus tôt se voit au départ (${dateSuisse(J3)}) et à l’arrivée (${dateSuisse(J2)})`,
-					second.length === 2 &&
-						Boolean(depart?.mention.startsWith(textes.depart)) &&
-						(depart?.mention ?? '').includes(dateSuisse(J2)) &&
-						Boolean(arrivee?.mention) &&
-						arrivee?.texte.includes(textes.arrivee) === true &&
-						phraseDArrivee.includes(dateSuisse(J3)),
+					{
+						'au départ et à l’arrivée': second.length === 2,
+						'le départ dit où elle va': Boolean(depart?.mention.startsWith(textes.depart)),
+						'à sa date': (depart?.mention ?? '').includes(dateSuisse(J2)),
+						'l’arrivée a sa marque': Boolean(arrivee?.mention),
+						'la phrase d’arrivée': arrivee?.texte.includes(textes.arrivee) === true,
+						'd’où elle vient': phraseDArrivee.includes(dateSuisse(J3))
+					},
 					`${depart?.mention ?? 'départ absent'} | ${arrivee?.mention ?? 'arrivée absente'} · ${phraseDArrivee}`
 				);
 			});
@@ -2718,23 +2909,27 @@ async function pagesPubliques(page) {
 			const nomAttendu = avecNouvelOnglet(textes.conditions, langue);
 			const nomsSelonChrome = await nomsDesLiensSelonChrome(page);
 			const conditions = await lienDesConditions(page, langue);
-			verifier(
+			verifierChaque(
 				`${adresse} : le nom accessible du lien des conditions est « ${nomAttendu} », selon playwright et selon Chrome, et l’annonce est cachée aux yeux`,
-				conditions.nombre === 1 &&
-					nomsSelonChrome.includes(nomAttendu) &&
-					conditions.annonce.cachee,
+				{
+					'un lien de ce nom': conditions.nombre === 1,
+					'le même nom selon Chrome': nomsSelonChrome.includes(nomAttendu),
+					'l’annonce cachée aux yeux': conditions.annonce.cachee
+				},
 				`Chrome : ${
 					nomsSelonChrome.filter((nom) => nom.startsWith(textes.conditions)).join(' | ') ||
 					'aucun lien de ce nom'
 				} ; playwright : ${conditions.nombre} lien ; annonce ${conditions.annonce.taille}`
 			);
-			verifier(
+			verifierChaque(
 				`${adresse} : le pied porte ce lien, vers /conditions, dans un nouvel onglet`,
-				conditions.nombre === 1 &&
-					conditions.chemin === '/conditions' &&
-					conditions.hreflang === 'fr' &&
-					conditions.target === '_blank' &&
-					(conditions.rel ?? '').split(' ').includes('noopener'),
+				{
+					'un lien': conditions.nombre === 1,
+					'vers /conditions': conditions.chemin === '/conditions',
+					'hreflang="fr"': conditions.hreflang === 'fr',
+					'target="_blank"': conditions.target === '_blank',
+					'rel="noopener"': (conditions.rel ?? '').split(' ').includes('noopener')
+				},
 				`${conditions.nombre} lien, ${conditions.chemin}, hreflang="${conditions.hreflang}", ` +
 					`target="${conditions.target}" rel="${conditions.rel}"`
 			);
@@ -2793,12 +2988,14 @@ async function conditionsDansUneAutreLangue(page, conditions, langue) {
 		await ouvrir(page, adresse);
 		const phrase = await texteDe(page.locator('main p').first());
 		const texte = page.locator('main div[lang="fr"]');
-		verifier(
+		verifierChaque(
 			`les conditions ouvertes depuis /m/${ORGANISATION.slug}/${langue} disent d’abord, dans cette langue, qu’elles n’existent qu’en français`,
-			(await racineDit(page, 'lang')) === langue &&
-				phrase === CONDITIONS_EN_FRANCAIS_SEULEMENT[langue] &&
-				(await texte.count()) === 1 &&
-				(await texteDe(texte)).includes('Dernière mise à jour'),
+			{
+				'la langue de la page': (await racineDit(page, 'lang')) === langue,
+				'la phrase': phrase === CONDITIONS_EN_FRANCAIS_SEULEMENT[langue],
+				'le texte français': (await texte.count()) === 1,
+				daté: (await texte.count()) === 1 && (await texteDe(texte)).includes('Dernière mise à jour')
+			},
 			`<html lang="${await racineDit(page, 'lang')}">, « ${phrase} »`
 		);
 	});
@@ -2865,9 +3062,12 @@ async function widget(page) {
 		await encadree.waitForLoadState('load');
 		await lireLEcran(encadree);
 		const texte = await encadree.locator('body').innerText();
-		verifier(
+		verifierChaque(
 			'le cadre montre les deux cours',
-			texte.includes(COURS_1.fr) && texte.includes(COURS_2),
+			{
+				'le premier cours': texte.includes(COURS_1.fr),
+				'le second cours': texte.includes(COURS_2)
+			},
 			`${COURS_1.fr}, ${COURS_2}`
 		);
 		etat.segmentsDuCadre = await segmentsLus(encadree);
@@ -2889,22 +3089,27 @@ async function widget(page) {
 			if (Math.abs(mesure.cadre - Math.max(mesure.contenu, HAUTEUR_INITIALE_DU_CADRE)) <= 2) break;
 			await attendre(250);
 		}
-		verifier(
+		verifierChaque(
 			'le cadre a pris la hauteur de son contenu',
-			mesure.cadre > 0 &&
-				Math.abs(mesure.cadre - Math.max(mesure.contenu, HAUTEUR_INITIALE_DU_CADRE)) <= 2,
+			{
+				'un cadre mesuré': mesure.cadre > 0,
+				'à la hauteur du contenu':
+					Math.abs(mesure.cadre - Math.max(mesure.contenu, HAUTEUR_INITIALE_DU_CADRE)) <= 2
+			},
 			`cadre ${Math.round(mesure.cadre)} px, contenu ${Math.round(mesure.contenu)} px, ${HAUTEUR_INITIALE_DU_CADRE} px au départ`
 		);
 		await lienDuWidget(page, 'fr');
 
 		// `/conditions` refuse d'être encadrée : dans le cadre, le lien doit ouvrir un nouvel onglet.
 		const conditions = await lienDesConditions(encadree, 'fr');
-		verifier(
+		verifierChaque(
 			'dans le cadre, le lien des conditions s’ouvre dans un nouvel onglet',
-			conditions.nombre === 1 &&
-				conditions.chemin === '/conditions' &&
-				conditions.target === '_blank' &&
-				(conditions.rel ?? '').split(' ').includes('noopener'),
+			{
+				'un lien': conditions.nombre === 1,
+				'vers /conditions': conditions.chemin === '/conditions',
+				'target="_blank"': conditions.target === '_blank',
+				'rel="noopener"': (conditions.rel ?? '').split(' ').includes('noopener')
+			},
 			`target="${conditions.target}" rel="${conditions.rel}"`
 		);
 		await auditer(page, 'page hôte du widget', { iframes: false });
@@ -2923,12 +3128,14 @@ async function widget(page) {
 		const cadreManuel = /** @type {import('playwright-core').Frame} */ (manuel);
 		await cadreManuel.waitForLoadState('load');
 		const lienManuel = await lienDesConditions(cadreManuel, 'fr');
-		verifier(
+		verifierChaque(
 			'dans le cadre posé à la main, le lien des conditions s’ouvre dans un nouvel onglet',
-			lienManuel.nombre === 1 &&
-				lienManuel.chemin === '/conditions' &&
-				lienManuel.target === '_blank' &&
-				(lienManuel.rel ?? '').split(' ').includes('noopener'),
+			{
+				'un lien': lienManuel.nombre === 1,
+				'vers /conditions': lienManuel.chemin === '/conditions',
+				'target="_blank"': lienManuel.target === '_blank',
+				'rel="noopener"': (lienManuel.rel ?? '').split(' ').includes('noopener')
+			},
 			`target="${lienManuel.target}" rel="${lienManuel.rel}"`
 		);
 		const [onglet] = await Promise.all([
@@ -2937,11 +3144,13 @@ async function widget(page) {
 		]);
 		await onglet.waitForLoadState('load');
 		const titreDeLOnglet = await titre(onglet);
-		verifier(
+		verifierChaque(
 			'le clic ouvre /conditions dans un onglet à part, et le cadre garde le programme',
-			chemin(onglet) === '/conditions' &&
-				titreDeLOnglet === 'Conditions d’utilisation' &&
-				cadreManuel.url() === adresseDuCadre,
+			{
+				'l’onglet sur /conditions': chemin(onglet) === '/conditions',
+				'le titre de l’onglet': titreDeLOnglet === 'Conditions d’utilisation',
+				'le cadre garde le programme': cadreManuel.url() === adresseDuCadre
+			},
 			`onglet ${chemin(onglet)} « ${titreDeLOnglet} », cadre ${new URL(cadreManuel.url()).pathname}`
 		);
 		await onglet.close();
@@ -2967,9 +3176,12 @@ async function widget(page) {
 				await segmentsLus(cadreAnglais),
 				NOMS_SAISIS
 			);
-			verifier(
+			verifierChaque(
 				'dans le cadre anglais, aucune phrase du cadre français ne reste en français',
-				(await cadreAnglais.locator('html').getAttribute('lang')) === 'en' && restes.length === 0,
+				{
+					'<html lang="en">': (await cadreAnglais.locator('html').getAttribute('lang')) === 'en',
+					'rien de resté en français': restes.length === 0
+				},
 				restes.slice(0, 5).join(' | ')
 			);
 		});
@@ -2991,13 +3203,15 @@ async function lienDuWidget(page, langue) {
 	const annonce =
 		nombre === 1 ? await boiteDeLAnnonce(lien, langue) : { cachee: false, taille: '' };
 	const cible = `/m/${ORGANISATION.slug}${langue === 'fr' ? '' : `/${langue}`}`;
-	verifier(
+	verifierChaque(
 		`le nom accessible du lien du widget est « ${nomAttendu} », selon playwright et selon Chrome, et l’annonce est cachée aux yeux`,
-		nombre === 1 &&
-			nomsSurLHote.includes(nomAttendu) &&
-			annonce.cachee &&
-			(await lien.getAttribute('target')) === '_blank' &&
-			(await cheminDuLien(lien)) === cible,
+		{
+			'un lien de ce nom': nombre === 1,
+			'le même nom selon Chrome': nomsSurLHote.includes(nomAttendu),
+			'l’annonce cachée aux yeux': annonce.cachee,
+			'target="_blank"': nombre === 1 && (await lien.getAttribute('target')) === '_blank',
+			'vers la page publique': nombre === 1 && (await cheminDuLien(lien)) === cible
+		},
 		`Chrome : ${nomsSurLHote.join(' | ') || 'aucun lien'} ; playwright : ${nombre} lien ; annonce ${annonce.taille}`
 	);
 }
@@ -3051,10 +3265,14 @@ async function agenda() {
 		const deplace = second.find((evenement) =>
 			champ(evenement, 'RECURRENCE-ID').some((ligne) => ligne.includes(compacte(J3)))
 		);
-		verifier(
+		verifierChaque(
 			`la séance ramenée plus tôt a son RECURRENCE-ID (${dateSuisse(J3)}) et sa nouvelle date, la veille (${dateSuisse(J2)})`,
-			Boolean(deplace) &&
-				champ(deplace ?? [], 'DTSTART').some((ligne) => ligne.includes(`${compacte(J2)}T2030`)),
+			{
+				'le RECURRENCE-ID': Boolean(deplace),
+				'la nouvelle date, à 20:30': champ(deplace ?? [], 'DTSTART').some((ligne) =>
+					ligne.includes(`${compacte(J2)}T2030`)
+				)
+			},
 			deplace
 				? [...champ(deplace, 'RECURRENCE-ID'), ...champ(deplace, 'DTSTART')].join(' ')
 				: 'absente'
@@ -3117,16 +3335,25 @@ async function appareils(navigateur) {
 	const android = await abonnementSelon(navigateur, APPAREILS.android);
 	const windows = await abonnementSelon(navigateur, APPAREILS.windows);
 	await retour('E1', async () => {
-		verifier(
+		verifierChaque(
 			'sur un iPhone, le premier lien est l’abonnement webcal, sans Google ni Outlook',
-			commencePar(iphone.liens[0]?.href ?? '', webcal) &&
-				!iphone.liens.some((lien) => commencePar(lien.href, 'https://calendar.google.com')) &&
-				!iphone.liens.some((lien) => commencePar(lien.href, 'https://outlook.live.com')),
+			{
+				'webcal d’abord': commencePar(iphone.liens[0]?.href ?? '', webcal),
+				'sans Google': !iphone.liens.some((lien) =>
+					commencePar(lien.href, 'https://calendar.google.com')
+				),
+				'sans Outlook': !iphone.liens.some((lien) =>
+					commencePar(lien.href, 'https://outlook.live.com')
+				)
+			},
 			iphone.liens.map((lien) => lien.href).join(' ') || 'aucun lien'
 		);
-		verifier(
+		verifierChaque(
 			'sur un Android, le lien ouvre Google Agenda avec la demande d’abonnement prête, dans un nouvel onglet',
-			commencePar(android.liens[0]?.href ?? '', google) && android.liens[0]?.target === '_blank',
+			{
+				'Google Agenda d’abord': commencePar(android.liens[0]?.href ?? '', google),
+				'dans un nouvel onglet': android.liens[0]?.target === '_blank'
+			},
 			android.liens.map((lien) => lien.href).join(' ') || 'aucun lien'
 		);
 		// La forme de la page, et non ses phrases, qu'un autre chantier récrit : le bouton de Google
@@ -3142,26 +3369,35 @@ async function appareils(navigateur) {
 		);
 		const adresseDeLaPage = android.paragraphes.findIndex((p) => p.adresse === cettePage);
 		const adresse = android.paragraphes.findIndex((p) => p.adresse === adresseACopier);
-		verifier(
+		verifierChaque(
 			'sur un Android, après le bouton de Google, « ouvrez cette page sur un ordinateur » et l’adresse de la page, puis celle du flux',
-			android.appareil === 'android' &&
-				bouton === 0 &&
-				parUnOrdinateur > bouton &&
-				adresseDeLaPage === parUnOrdinateur + 1 &&
-				adresse > adresseDeLaPage,
+			{
+				'le bloc d’Android': android.appareil === 'android',
+				'le bouton de Google d’abord': bouton === 0,
+				'la phrase de l’ordinateur': parUnOrdinateur > bouton,
+				'l’adresse de la page, juste après': adresseDeLaPage === parUnOrdinateur + 1,
+				'l’adresse du flux ensuite': adresse > adresseDeLaPage
+			},
 			`bloc « ${android.appareil} » ; bouton ${bouton}, ordinateur ${parUnOrdinateur}, page ${adresseDeLaPage}, flux ${adresse} sur ${android.paragraphes.length} paragraphes`
 		);
-		verifier(
+		verifierChaque(
 			'sur un PC Windows, le choix entre Google Agenda, Outlook, une autre application, et l’adresse à copier',
-			windows.liens.some((lien) => commencePar(lien.href, google)) &&
-				windows.liens.some((lien) => commencePar(lien.href, outlook)) &&
-				windows.liens.some((lien) => commencePar(lien.href, webcal)) &&
-				windows.texte.includes(`http://${new URL(ORIGINE).host}/m/${ORGANISATION.slug}/agenda.ics`),
+			{
+				'Google Agenda': windows.liens.some((lien) => commencePar(lien.href, google)),
+				Outlook: windows.liens.some((lien) => commencePar(lien.href, outlook)),
+				'une autre application': windows.liens.some((lien) => commencePar(lien.href, webcal)),
+				'l’adresse à copier': windows.texte.includes(
+					`http://${new URL(ORIGINE).host}/m/${ORGANISATION.slug}/agenda.ics`
+				)
+			},
 			windows.liens.map((lien) => lien.texte).join(' | ') || 'aucun lien'
 		);
-		verifier(
+		verifierChaque(
 			'la réponse dit aux caches qu’elle dépend de l’appareil (Vary)',
-			iphone.vary.includes('sec-ch-ua-platform') && iphone.vary.includes('user-agent'),
+			{
+				'Sec-CH-UA-Platform': iphone.vary.includes('sec-ch-ua-platform'),
+				'User-Agent': iphone.vary.includes('user-agent')
+			},
 			`Vary: ${iphone.vary}`
 		);
 	});
@@ -3170,23 +3406,31 @@ async function appareils(navigateur) {
 		// à la page du programme pour un changement de dernière minute.
 		const derniereMinute =
 			'Pour un changement de dernière minute, regardez la page du programme : elle est toujours à jour.';
-		verifier(
+		verifierChaque(
 			'la page renvoie à la page du programme pour un changement de dernière minute, sur Android comme sur un ordinateur, et ne dit plus que Google peut mettre 24 heures',
-			android.texte.includes(derniereMinute) &&
-				windows.texte.includes(derniereMinute) &&
-				!/24 heures/.test(android.texte.replace(/Outlook peut mettre plus de 24 heures/g, '')) &&
-				!/Google peut mettre/.test(`${android.page} ${windows.page}`),
+			{
+				'sous le bouton d’Android': android.texte.includes(derniereMinute),
+				'sur un ordinateur': windows.texte.includes(derniereMinute),
+				'plus de 24 heures de Google sur Android': !/24 heures/.test(
+					android.texte.replace(/Outlook peut mettre plus de 24 heures/g, '')
+				),
+				'plus de « Google peut mettre »': !/Google peut mettre/.test(
+					`${android.page} ${windows.page}`
+				)
+			},
 			`Android : ${android.texte.slice(0, 120)}`
 		);
 		// Un iPhone ne la lit pas dans son bloc : les étapes à la main la disent, une fois, après le
 		// délai d'Outlook (reprise 1).
 		const delaiOutlook = iphone.page.indexOf('Outlook peut mettre plus de 24 heures');
-		verifier(
+		verifierChaque(
 			'sur un iPhone, les étapes à la main renvoient à la page du programme, après le délai d’Outlook',
-			delaiOutlook >= 0 &&
-				iphone.page.indexOf(derniereMinute) > delaiOutlook &&
-				iphone.page.split(derniereMinute).length === 2 &&
-				!/Google peut mettre/.test(iphone.page),
+			{
+				'le délai d’Outlook': delaiOutlook >= 0,
+				'la page du programme après lui': iphone.page.indexOf(derniereMinute) > delaiOutlook,
+				'une seule fois': iphone.page.split(derniereMinute).length === 2,
+				'plus de « Google peut mettre »': !/Google peut mettre/.test(iphone.page)
+			},
 			`iPhone : ${iphone.page.slice(Math.max(0, delaiOutlook), delaiOutlook + 200)}`
 		);
 	});
@@ -3289,27 +3533,34 @@ async function messagesDuPartage(page) {
 			})
 		);
 		const langues = lus.map((lu) => lu.lang);
-		verifier(
+		verifierChaque(
 			`Partager donne un message par langue publiée, les ${LANGUES.length}, le français de l’organisation d’abord et seul ouvert`,
-			lus.length === LANGUES.length &&
-				LANGUES.every((langue) => langues.includes(langue)) &&
-				langues[0] === 'fr' &&
-				lus.every((lu, index) => lu.ouvert === (index === 0)),
+			{
+				'un message par langue': lus.length === LANGUES.length,
+				'toutes les langues': LANGUES.every((langue) => langues.includes(langue)),
+				'le français d’abord': langues[0] === 'fr',
+				'lui seul ouvert': lus.every((lu, index) => lu.ouvert === (index === 0))
+			},
 			lus.map((lu) => `${lu.lang || 'sans langue'}${lu.ouvert ? ' (ouvert)' : ''}`).join(', ') ||
 				'aucun repli'
 		);
-		verifier(
+		verifierChaque(
 			'chaque message porte sa langue et son sens, de droite à gauche en arabe',
-			lus.length > 0 &&
-				lus.every(
+			{
+				'au moins un message': lus.length > 0,
+				'chaque langue et son sens': lus.every(
 					(lu) => LANGUES.includes(lu.lang) && lu.dir === (lu.lang === 'ar' ? 'rtl' : 'ltr')
-				),
+				)
+			},
 			lus.map((lu) => `lang="${lu.lang}" dir="${lu.dir}"`).join(', ') || 'aucune zone'
 		);
 		const fautifs = sansLeNomDeLaPriere(lus);
-		verifier(
+		verifierChaque(
 			`la session du vendredi y porte le nom de la prière dans la langue du message : ${NOMS_TRADUITS}`,
-			lus.length > 0 && fautifs.length === 0,
+			{
+				'au moins un message': lus.length > 0,
+				'le nom de la prière dans chaque langue': fautifs.length === 0
+			},
 			lignesDuVendredi(lus, fautifs, VENDREDI.debut)
 		);
 	});
@@ -3392,10 +3643,13 @@ async function prieres(page, navigateur) {
 			presentes.every((nombre) => nombre === 1),
 			reponses.map((reponse, index) => `${reponse} : ${presentes[index]}`).join(', ')
 		);
-		verifier(
+		verifierChaque(
 			'« Source que vous déclarez » a disparu, et rien du calcul n’est montré avant la réponse',
-			(await page.getByLabel('Source que vous déclarez').count()) === 0 &&
-				(await page.locator('#latitude').count()) === 0,
+			{
+				'plus de « Source que vous déclarez »':
+					(await page.getByLabel('Source que vous déclarez').count()) === 0,
+				'rien du calcul': (await page.locator('#latitude').count()) === 0
+			},
 			`${await page.locator('#latitude').count()} champ de latitude`
 		);
 		await question.getByRole('radio', { name: /^Calculées pour votre localité/ }).check();
@@ -3428,11 +3682,13 @@ async function prieres(page, navigateur) {
 		await radioDeLaLocalite(page).check();
 		const choisie = await texteDe(page.locator('.choisie'));
 		const credit = await texteDe(page.locator('.credit'));
-		verifier(
+		verifierChaque(
 			'la localité choisie donne sa position, et l’attribution de swisstopo est écrite',
-			choisie.startsWith(`Localité choisie : ${LOCALITE.libelle}`) &&
-				choisie.includes('latitude') &&
-				credit.includes('swisstopo'),
+			{
+				'la localité choisie': choisie.startsWith(`Localité choisie : ${LOCALITE.libelle}`),
+				'sa position': choisie.includes('latitude'),
+				'l’attribution de swisstopo': credit.includes('swisstopo')
+			},
 			`${choisie} · ${credit}`
 		);
 		verifier(
@@ -3448,10 +3704,13 @@ async function prieres(page, navigateur) {
 			has: page.getByRole('heading', { name: 'Aperçu des sept prochains jours', exact: true })
 		});
 		const lignes = apercu.locator('.defile tbody tr');
-		verifier(
+		verifierChaque(
 			'« Voir l’aperçu » montre les sept prochains jours avant tout enregistrement, puis « Enregistrer »',
-			(await lignes.count()) === 7 &&
-				(await page.getByRole('button', { name: 'Enregistrer', exact: true }).count()) === 1,
+			{
+				'sept jours': (await lignes.count()) === 7,
+				'le bouton « Enregistrer »':
+					(await page.getByRole('button', { name: 'Enregistrer', exact: true }).count()) === 1
+			},
 			(await lignes.count()) > 0
 				? (await lignes.first().innerText()).replace(/\s+/g, ' ')
 				: 'aucun aperçu'
@@ -3463,10 +3722,14 @@ async function prieres(page, navigateur) {
 		// non d'une position vide, qu'un ancien écran enregistrait aussi sans rien dire.
 		const confirmation = await texteDe(page.getByRole('status'));
 		const etat = await texteDe(page.locator('section', { has: page.locator('#etat-titre') }));
-		verifier(
+		verifierChaque(
 			`la localité de ${LOCALITE.nom} est enregistrée, et l’écran dit que les heures en viennent`,
-			confirmation.startsWith('Réglages enregistrés.') &&
-				etat.includes(`Vos heures sont calculées pour cette localité : ${LOCALITE.libelle}`),
+			{
+				'« Réglages enregistrés. »': confirmation.startsWith('Réglages enregistrés.'),
+				'les heures en viennent': etat.includes(
+					`Vos heures sont calculées pour cette localité : ${LOCALITE.libelle}`
+				)
+			},
 			`${confirmation} · ${etat.slice(0, 120)}`
 		);
 	});
@@ -3484,9 +3747,12 @@ async function prieres(page, navigateur) {
 			'.soleil'
 		);
 		const ecarts = ecartsAuCalcul(servies, etat.heures);
-		verifier(
+		verifierChaque(
 			'les heures des sept prochains jours sont servies au public, celles que le calcul donne pour la position de la localité dans la liste',
-			servies.length === 7 && ecarts.length === 0,
+			{
+				'sept jours servis': servies.length === 7,
+				'les heures du calcul': ecarts.length === 0
+			},
 			ecarts.slice(0, 2).join(' ; ') ||
 				`${servies.length} jour(s), position ${reglage.latitude}, ${reglage.longitude}, ${reglage.method}`
 		);
@@ -3617,11 +3883,13 @@ async function prieres(page, navigateur) {
 				const attendu = maghrib
 					? `${jour}T${debutAncre(maghrib, ancrage.minutes).replace(':', '')}`
 					: 'heure calculée inconnue';
-				verifier(
+				verifierChaque(
 					`le flux agenda${langue === 'fr' ? '' : ` (?lang=${langue})`} dit « ${ancrage.libelle[langue]} » pour « ${ancrage.titre} », comme la page, à l’heure que le calcul donne pour la localité`,
-					ancres.length > 0 &&
-						description === `DESCRIPTION:${ancrage.libelle[langue]}` &&
-						debut.includes(attendu),
+					{
+						'l’événement du cours': ancres.length > 0,
+						'la phrase de la page': description === `DESCRIPTION:${ancrage.libelle[langue]}`,
+						'l’heure du calcul': debut.includes(attendu)
+					},
 					`${description.slice(0, 60)} ; ${debut || 'aucun début ce jour-là'}, attendu ${attendu}`
 				);
 			}
@@ -3842,11 +4110,14 @@ async function coursAvantUnePriere(page) {
 		);
 		await ouvrir(page, `/cours/${id}`);
 		const libelle = await texteDe(page.locator('label[for="offsetMinutes"]'));
-		verifier(
+		verifierChaque(
 			'sa fiche rouverte dit « avant une prière » et garde des minutes positives',
-			(await page.locator('#timingKind').inputValue()) === 'beforePrayer' &&
-				(await page.locator('#offsetMinutes').inputValue()) === String(COURS_AVANT.minutes) &&
-				libelle === 'Combien de minutes avant la prière ?',
+			{
+				'« avant une prière »': (await page.locator('#timingKind').inputValue()) === 'beforePrayer',
+				'les minutes positives':
+					(await page.locator('#offsetMinutes').inputValue()) === String(COURS_AVANT.minutes),
+				'le libellé des minutes': libelle === 'Combien de minutes avant la prière ?'
+			},
 			`${await page.locator('#timingKind').inputValue()}, ${await page.locator('#offsetMinutes').inputValue()}, « ${libelle} »`
 		);
 	});
@@ -3874,14 +4145,18 @@ async function ongletDesPrieres(visiteur) {
 		const entetes = await visiteur.locator('table.aujourdhui thead th').allTextContents();
 		const semaine = visiteur.locator('table.semaine tbody tr');
 		const vendredi = visiteur.locator('#prieres-vendredi');
-		verifier(
+		verifierChaque(
 			'l’onglet montre les heures du jour, adhan et iqama, les sept prochains jours et la prière du vendredi',
-			jour.startsWith('Aujourd’hui, ') &&
-				jour.endsWith(dateSuisse(T)) &&
-				entetes.map((entete) => entete.trim()).join('|') === 'Prière|Adhan|Iqama' &&
-				(await semaine.count()) === 7 &&
-				(await vendredi.count()) === 1 &&
-				(await texteDe(vendredi)).includes(VENDREDI.debut),
+			{
+				'« Aujourd’hui, … »': jour.startsWith('Aujourd’hui, '),
+				'le jour de l’horloge': jour.endsWith(dateSuisse(T)),
+				'Prière, Adhan, Iqama':
+					entetes.map((entete) => entete.trim()).join('|') === 'Prière|Adhan|Iqama',
+				'sept jours': (await semaine.count()) === 7,
+				'la prière du vendredi': (await vendredi.count()) === 1,
+				'à son heure':
+					(await vendredi.count()) === 1 && (await texteDe(vendredi)).includes(VENDREDI.debut)
+			},
 			`« ${jour} », ${entetes.join(', ')}, ${await semaine.count()} jours, vendredi : ${
 				(await vendredi.count()) === 1 ? await texteDe(vendredi) : 'absent'
 			}`
@@ -3889,13 +4164,17 @@ async function ongletDesPrieres(visiteur) {
 		await auditer(visiteur, 'page publique fr, vue prières');
 		await ouvrir(visiteur, `/m/${ORGANISATION.slug}/ar?vue=prieres`);
 		const jourArabe = await texteDe(visiteur.locator('#prieres-aujourdhui'));
-		verifier(
+		verifierChaque(
 			'en arabe, l’onglet « مواقيت الصلاة », de droite à gauche, avec le jour en chiffres latins',
-			(await visiteur.locator('nav.vues a[aria-current="page"]').textContent())?.trim() ===
-				'مواقيت الصلاة' &&
-				(await racineDit(visiteur, 'dir')) === 'rtl' &&
-				jourArabe.startsWith('اليوم، ') &&
-				jourArabe.endsWith(dateSuisse(T)),
+			{
+				'l’onglet « مواقيت الصلاة »':
+					(await visiteur.locator('nav.vues a[aria-current="page"]').count()) === 1 &&
+					(await visiteur.locator('nav.vues a[aria-current="page"]').textContent())?.trim() ===
+						'مواقيت الصلاة',
+				'dir="rtl"': (await racineDit(visiteur, 'dir')) === 'rtl',
+				'« اليوم، … »': jourArabe.startsWith('اليوم، '),
+				'le jour de l’horloge': jourArabe.endsWith(dateSuisse(T))
+			},
 			`« ${jourArabe} »`
 		);
 		sansChiffresOrientaux(await visiteur.content(), `/m/${ORGANISATION.slug}/ar?vue=prieres`);
@@ -3924,10 +4203,13 @@ async function ongletDesPrieres(visiteur) {
 			await cadre.waitForLoadState('load');
 			await lireLEcran(cadre);
 			const adresse = new URL(cadre.url());
-			verifier(
+			verifierChaque(
 				'dans le widget, l’onglet « Prières » s’ouvre dans le cadre, qui reste encadré',
-				adresse.searchParams.get('embed') === '1' &&
-					(await cadre.locator('table.aujourdhui tbody tr').count()) === 5,
+				{
+					'le cadre reste encadré': adresse.searchParams.get('embed') === '1',
+					'les cinq prières du jour':
+						(await cadre.locator('table.aujourdhui tbody tr').count()) === 5
+				},
 				adresse.pathname + adresse.search
 			);
 		} finally {
@@ -3952,23 +4234,27 @@ async function organisationInconnue(page) {
 			const html = await brut.text();
 			const balise = /<html\b[^>]*>/i.exec(html)?.[0] ?? 'aucune balise <html>';
 			const scripts = html.match(/<script\b/gi)?.length ?? 0;
-			verifier(
+			verifierChaque(
 				`${adresse} rend 404, avec <html lang="${langue}" dir="${dirAttendu}"> et aucune balise script`,
-				brut.status === 404 &&
-					balise === `<html lang="${langue}" dir="${dirAttendu}">` &&
-					scripts === 0,
+				{
+					404: brut.status === 404,
+					'la balise <html>': balise === `<html lang="${langue}" dir="${dirAttendu}">`,
+					'aucune balise script': scripts === 0
+				},
 				`rendu ${brut.status}, ${balise}, ${scripts} balise(s) script`
 			);
 
 			const reponse = await ouvrir(page, adresse);
 			const attendu = TEXTES_PUBLICS[langue].introuvable;
 			const phrase = await texteDe(page.locator('main p'));
-			verifier(
+			verifierChaque(
 				`${adresse} : la page d’erreur dit « ${attendu.titre} » et « ${attendu.phrase} »`,
-				reponse?.status() === 404 &&
-					(await page.title()) === attendu.titre &&
-					(await titre(page)) === attendu.titre &&
-					phrase === attendu.phrase,
+				{
+					404: reponse?.status() === 404,
+					'le titre de l’onglet': (await page.title()) === attendu.titre,
+					'le titre de la page': (await titre(page)) === attendu.titre,
+					'la phrase': phrase === attendu.phrase
+				},
 				`« ${await page.title()} », « ${await titre(page)} », « ${phrase} »`
 			);
 			await auditer(page, `404 d’une organisation inconnue, ${langue}`);
@@ -4053,11 +4339,13 @@ async function languesDeLEspace(navigateur, page) {
 			await demanderUnLien(autre, RESPONSABLE);
 			const lien = await nouveauLienDeConnexion(RESPONSABLE, avant);
 			await ouvrir(autre, /** @type {string} */ (lien));
-			verifier(
+			verifierChaque(
 				'reconnectée dans un autre navigateur réglé en français, elle retrouve l’italien de son compte',
-				chemin(autre) === '/organisations' &&
-					(await racineDit(autre, 'lang')) === 'it' &&
-					(await titre(autre)) === 'Le tue organizzazioni',
+				{
+					'l’adresse /organisations': chemin(autre) === '/organisations',
+					'<html lang="it">': (await racineDit(autre, 'lang')) === 'it',
+					'le titre en italien': (await titre(autre)) === 'Le tue organizzazioni'
+				},
 				`${chemin(autre)}, <html lang="${await racineDit(autre, 'lang')}">, « ${await titre(autre)} »`
 			);
 			await choisirLaLangue(autre, 'fr');
@@ -4092,12 +4380,14 @@ async function langueChoisieAvantLaConnexion(navigateur, page) {
 			const lien = await nouveauLienDeConnexion(RESPONSABLE, avant);
 			const arrivee = await ailleurs.newPage();
 			await ouvrir(arrivee, lien ?? '/connexion');
-			verifier(
+			verifierChaque(
 				'une langue choisie sur /connexion avant de demander le lien devient celle du compte : ouvert dans un autre navigateur, réglé en français, le lien arrive en allemand',
-				Boolean(lien) &&
-					chemin(arrivee) === '/organisations' &&
-					(await racineDit(arrivee, 'lang')) === 'de' &&
-					(await titre(arrivee)) === 'Ihre Organisationen',
+				{
+					'le lien reçu': Boolean(lien),
+					'l’adresse /organisations': chemin(arrivee) === '/organisations',
+					'<html lang="de">': (await racineDit(arrivee, 'lang')) === 'de',
+					'le titre en allemand': (await titre(arrivee)) === 'Ihre Organisationen'
+				},
 				`${lien ? 'lien reçu' : 'aucun lien'}, ${chemin(arrivee)}, <html lang="${await racineDit(arrivee, 'lang')}">, « ${await titre(arrivee)} »`
 			);
 			if ((await racineDit(arrivee, 'lang')) !== 'fr') await choisirLaLangue(arrivee, 'fr');
@@ -4140,9 +4430,12 @@ async function surUnTelephone(navigateur, page) {
 				.locator('section[aria-labelledby="servies-titre"] tbody tr')
 				.count();
 			const graves = gravesSur(noms);
-			verifier(
+			verifierChaque(
 				'à 390 px de large, axe ne relève rien de sérieux sur les trois réponses de l’écran des prières, heures servies comprises',
-				servies === 7 && graves.length === 0,
+				{
+					'sept jours servis': servies === 7,
+					'rien de sérieux': graves.length === 0
+				},
 				graves.map((grave) => `${grave.regle} : ${grave.cible}`).join(' ; ') ||
 					`${servies} jour(s) servis`
 			);
@@ -4165,14 +4458,16 @@ async function surUnTelephone(navigateur, page) {
 			const bouton = present
 				? await confirmation.locator('button[type="submit"]').boundingBox()
 				: null;
-			verifier(
+			verifierChaque(
 				`à 390 px, supprimer « ${SALLE} », qu’un cours occupe, demande d’abord de confirmer, et la demande se voit sans défiler`,
-				present &&
-					(await texteDe(confirmation)).includes(SALLE) &&
-					boite !== null &&
-					boite.y >= 0 &&
-					bouton !== null &&
-					bouton.y + bouton.height <= TELEPHONE.height,
+				{
+					'la demande': present,
+					'elle nomme la salle': present && (await texteDe(confirmation)).includes(SALLE),
+					'la demande rendue': boite !== null,
+					'en haut de la fenêtre': boite !== null && boite.y >= 0,
+					'le bouton rendu': bouton !== null,
+					'le bouton sans défiler': bouton !== null && bouton.y + bouton.height <= TELEPHONE.height
+				},
 				boite
 					? `demande de ${Math.round(boite.y)} à ${Math.round(boite.y + boite.height)} px, bouton jusqu’à ${Math.round((bouton?.y ?? 0) + (bouton?.height ?? 0))} px, fenêtre de ${TELEPHONE.height} px`
 					: 'aucune demande de confirmation'
@@ -4199,9 +4494,12 @@ async function surUnTelephone(navigateur, page) {
 				await auditer(visiteur, /** @type {string} */ (noms.at(-1)));
 			}
 			const graves = gravesSur(noms);
-			verifier(
+			verifierChaque(
 				'à 390 px de large, axe ne relève rien de sérieux sur l’onglet « Prières », en français et en arabe, tableau de la semaine compris',
-				semaines.every((nombre) => nombre === 1) && graves.length === 0,
+				{
+					'le tableau de la semaine': semaines.every((nombre) => nombre === 1),
+					'rien de sérieux': graves.length === 0
+				},
 				graves.map((grave) => `${grave.regle} : ${grave.cible}`).join(' ; ') ||
 					`tableau de la semaine : ${semaines.join(', ')}`
 			);
@@ -4231,23 +4529,27 @@ async function sansJavaScript(navigateur, page) {
 			const options = sans.locator('details.options');
 			const nombre = await options.count();
 			const ouvertes = async () => sans.locator('details.options[open]').count();
-			verifier(
+			verifierChaque(
 				'sans JavaScript, les options de chaque séance sont fermées au chargement, et aucun bouton « Annuler cette séance » ne se voit',
-				nombre >= 2 &&
-					(await ouvertes()) === 0 &&
-					(await boutonsDAnnulationVisibles(sans).count()) === 0,
+				{
+					'au moins deux cartes': nombre >= 2,
+					'toutes fermées': (await ouvertes()) === 0,
+					'aucun bouton visible': (await boutonsDAnnulationVisibles(sans).count()) === 0
+				},
 				`${nombre} cartes, ${await ouvertes()} ouvertes, ${await boutonsDAnnulationVisibles(sans).count()} boutons visibles`
 			);
 			const premiere = options.first();
 			await premiere.locator(':scope > summary').click();
-			verifier(
+			verifierChaque(
 				'sans JavaScript, « Annuler ou déplacer » ouvre les options de sa carte, et d’elle seule',
-				(await ouvertes()) === 1 &&
-					(await premiere.evaluate(
+				{
+					'une seule ouverte': (await ouvertes()) === 1,
+					'la sienne': await premiere.evaluate(
 						(details) => /** @type {HTMLDetailsElement} */ (details).open
-					)) &&
-					(await boutonsDAnnulationVisibles(premiere).count()) === 1 &&
-					(await boutonsDAnnulationVisibles(sans).count()) === 1,
+					),
+					'son bouton visible': (await boutonsDAnnulationVisibles(premiere).count()) === 1,
+					'un seul bouton visible': (await boutonsDAnnulationVisibles(sans).count()) === 1
+				},
 				`${await ouvertes()} ouverte(s), ${await boutonsDAnnulationVisibles(sans).count()} bouton(s) visible(s)`
 			);
 		});
@@ -4282,9 +4584,13 @@ async function sansJavaScript(navigateur, page) {
 			const annonces = (await sans.getByRole('status').allTextContents()).map((texte) =>
 				texte.replace(/\s+/g, ' ').trim()
 			);
-			verifier(
+			verifierChaque(
 				`sans JavaScript, une session du vendredi se supprime : ouvrir « Supprimer cette session », confirmer, et elle a disparu, « ${SESSION_SUPPRIMEE} »`,
-				avant === 1 && (await carte().count()) === 0 && annonces.includes(SESSION_SUPPRIMEE),
+				{
+					'la session ajoutée': avant === 1,
+					'elle a disparu': (await carte().count()) === 0,
+					'« La session est supprimée. »': annonces.includes(SESSION_SUPPRIMEE)
+				},
 				`${avant} carte avant, ${await carte().count()} après ; ${annonces.map((texte) => `« ${texte} »`).join(', ') || 'aucun message'}`
 			);
 		});
@@ -4518,9 +4824,12 @@ async function vendrediSurLAccueil(page) {
 	await retour('D1', async () => {
 		const semaine = await messagesDeLAccueil(page, 'semaine');
 		const fautifs = sansLeNomDeLaPriere(semaine);
-		verifier(
+		verifierChaque(
 			`sur « À venir », le programme de la semaine nomme la session du vendredi dans la langue de chaque message : ${NOMS_TRADUITS}`,
-			semaine.length === LANGUES.length && fautifs.length === 0,
+			{
+				'un message par langue': semaine.length === LANGUES.length,
+				'le nom de la prière dans chaque langue': fautifs.length === 0
+			},
 			lignesDuVendredi(semaine, fautifs, VENDREDI.debut) || `${semaine.length} message(s)`
 		);
 	});
@@ -4541,20 +4850,25 @@ async function vendrediSurLAccueil(page) {
 			const marque = presente ? await texteDe(arrivee.locator('.marque')) : '';
 			const lue = presente ? await texteDe(arrivee) : `${await arrivee.count()} carte(s) d’arrivée`;
 			const prevueA = `Prévue à l’origine : ${VENDREDI.debut} – ${VENDREDI.fin}`;
-			verifier(
+			verifierChaque(
 				`déplacée le même jour de ${VENDREDI.debut} à ${HEURE_DU_VENDREDI_DEPLACE}, la session du vendredi porte sur sa carte « nouvelle heure » et « ${prevueA} »`,
-				marque === 'nouvelle heure' && lue.includes(prevueA),
+				{
+					'« nouvelle heure »': marque === 'nouvelle heure',
+					'l’heure prévue à l’origine': lue.includes(prevueA)
+				},
 				lue
 			);
 			await retour('B1', async () => {
 				const messages = await messagesDeLAccueil(page, 'message');
 				const francais = messages[0]?.lang === 'fr' ? messages[0].texte : '';
 				const phrase = `« ${nom} » : la prière du ${dateLongue(jour)} commence à ${HEURE_DU_VENDREDI_DEPLACE} au lieu de ${VENDREDI.debut}.`;
-				verifier(
+				verifierChaque(
 					`le message prêt à coller le dit comme un changement d’heure, la date une seule fois : « ${phrase} »`,
-					francais.includes(phrase) &&
-						!francais.includes('est déplacé au') &&
-						francais.split(dateSuisse(jour)).length === 2,
+					{
+						'la phrase du changement d’heure': francais.includes(phrase),
+						'pas « est déplacé au »': !francais.includes('est déplacé au'),
+						'la date une seule fois': francais.split(dateSuisse(jour)).length === 2
+					},
 					francais.split('\n').find((ligne) => ligne.startsWith(`« ${nom} »`)) ??
 						'aucun message en français'
 				);
@@ -4562,9 +4876,12 @@ async function vendrediSurLAccueil(page) {
 			await retour('D1', async () => {
 				const messages = await messagesDeLAccueil(page, 'message');
 				const fautifs = sansLeNomDeLaPriere(messages);
-				verifier(
+				verifierChaque(
 					`ce message nomme la session du vendredi dans la langue de chaque message : ${NOMS_TRADUITS}`,
-					messages.length === LANGUES.length && fautifs.length === 0,
+					{
+						'un message par langue': messages.length === LANGUES.length,
+						'le nom de la prière dans chaque langue': fautifs.length === 0
+					},
 					lignesDuVendredi(messages, fautifs, HEURE_DU_VENDREDI_DEPLACE) ||
 						`${messages.length} message(s)`
 				);
@@ -4726,14 +5043,16 @@ async function reglagesAuClavier(page) {
 		await envoyer(page, formulaire);
 		const statut = await texteDe(page.getByRole('status'));
 		const enregistre = { nom: await nom.inputValue(), accueil: await accueil.inputValue() };
-		verifier(
+		verifierChaque(
 			'avec JavaScript, le nom et la formule d’accueil tapés au clavier, puis une autre couleur : c’est ce qui a été tapé qui s’enregistre',
-			tape.nom === SAISIE_AU_CLAVIER.nom &&
-				tape.accueil === SAISIE_AU_CLAVIER.accueil &&
-				statut === 'Réglages enregistrés.' &&
-				enregistre.nom === SAISIE_AU_CLAVIER.nom &&
-				enregistre.accueil === SAISIE_AU_CLAVIER.accueil &&
-				(await page.title()) === `Réglages | ${SAISIE_AU_CLAVIER.nom}`,
+			{
+				'le nom tapé': tape.nom === SAISIE_AU_CLAVIER.nom,
+				'la formule tapée': tape.accueil === SAISIE_AU_CLAVIER.accueil,
+				'« Réglages enregistrés. »': statut === 'Réglages enregistrés.',
+				'le nom enregistré': enregistre.nom === SAISIE_AU_CLAVIER.nom,
+				'la formule enregistrée': enregistre.accueil === SAISIE_AU_CLAVIER.accueil,
+				'le titre de l’onglet': (await page.title()) === `Réglages | ${SAISIE_AU_CLAVIER.nom}`
+			},
 			`avant l’envoi « ${tape.nom} », « ${tape.accueil} » ; « ${statut} », enregistré « ${enregistre.nom} », « ${enregistre.accueil} »`
 		);
 		await couleur.fill(avant.couleur);
