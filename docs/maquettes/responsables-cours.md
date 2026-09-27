@@ -1,8 +1,8 @@
 # Les cours, les pauses et le formulaire d'un cours
 
 Décrit après le code, à l'étape 18 (retours B4, C3, et B1, D2, A3 pour ces écrans), et complété aux
-lots 2 et 3 de l'étape 19 (27.09.2026). Textes : `apps/web/src/lib/i18n/courses.ts` et `course-form.ts`,
-dans les cinq langues. Le résumé et le passage entre la base et l'écran sont dans
+lots 2 et 3 de l'étape 19 (27.09.2026). Textes : `apps/web/src/lib/i18n/courses.ts` et
+`course-form.ts`, dans les cinq langues. Le résumé et le passage entre la base et l'écran sont dans
 `apps/web/src/lib/course-form.ts`, le même code pour le serveur et pour le navigateur.
 
 ## La liste des cours, `/cours`
