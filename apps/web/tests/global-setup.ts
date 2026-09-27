@@ -34,7 +34,8 @@ const PORTS = portsDeTest();
 /**
  * Trois ports qui se suivent, à partir de `JADWAL_TEST_PORT_BASE` (4173 par défaut). Deux arbres de
  * travail peuvent ainsi lancer ces tests en même temps, chacun avec sa base (`JADWAL_TEST_DB`) et
- * ses ports, sans se prendre un serveur. `roles-de-base.test.ts` prend le quatrième.
+ * ses ports, sans se prendre un serveur. `roles-de-base.test.ts` prend le quatrième, et
+ * `public-prieres-agenda.test.ts` le cinquième, pour son serveur à l'horloge figée.
  */
 function portsDeTest(): readonly [number, number, number] {
 	const base = Number(process.env['JADWAL_TEST_PORT_BASE'] ?? 4173);
@@ -55,8 +56,8 @@ const SECRET = 'secret-de-test-assez-long-pour-ne-pas-etre-refuse';
 
 // L'environnement des serveurs de test est celui de ce processus, moins ce qui dit « en test » :
 // `productionEnvironment`, dans `environnement-de-production.ts`, dit pourquoi, et ce que cela change
-// pour la limite de débit de Better Auth. Le serveur que lance `roles-de-base.test.ts` le reçoit
-// aussi.
+// pour la limite de débit de Better Auth. Les serveurs que lancent `roles-de-base.test.ts` et
+// `public-prieres-agenda.test.ts` le reçoivent aussi.
 
 const servers: ChildProcess[] = [];
 let outbox: string | undefined;

@@ -1,8 +1,8 @@
 // L'environnement d'un serveur de test : celui du processus qui le lance, moins ce qui dit « en test ».
 //
 // La préparation globale (`global-setup.ts`) lance trois serveurs avec lui, et chaque fichier qui
-// lance le sien, comme `roles-de-base.test.ts`, en fait autant : un serveur qui se croit en test
-// n'éprouve pas ce que la production fait.
+// lance le sien, `roles-de-base.test.ts` et `public-prieres-agenda.test.ts`, en fait autant : un
+// serveur qui se croit en test n'éprouve pas ce que la production fait.
 
 /**
  * Vitest pose `TEST=true` et `VITEST=true`, et d'autres `VITEST_*` dans ses processus de travail.

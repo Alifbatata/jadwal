@@ -6,13 +6,27 @@
 // passer par le code qu'on éprouve : un dictionnaire faux ferait tomber le test au lieu de s'y
 // recopier.
 
+import { spawn, type ChildProcess } from 'node:child_process';
+import { dirname, join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { addDays, isoDateToDays, todayInZone, weekdayFromDays, type IsoDate } from '@jadwal/core';
 import { createDatabase, newId, sql, type DatabaseHandle } from '@jadwal/db';
+import { productionEnvironment } from './environnement-de-production.js';
 import { frenchLeft, ISO_DATE, textSegments, visibleText } from './textes-lus.js';
 
-const origin = inject('origin');
+/**
+ * Le serveur de ce fichier, à lui seul : le même serveur construit que celui de la préparation
+ * globale, lancé de la même façon, avec en plus l'horloge figée (`HORLOGE_FIGEE`, plus bas). Les
+ * trois serveurs de la préparation globale gardent la vraie heure : les autres fichiers calculent
+ * leurs dates sur elle. Un port à part, le cinquième (`global-setup.ts`).
+ */
+const PORT = Number(process.env['JADWAL_TEST_PORT_BASE'] ?? 4173) + 4;
+const origin = `http://127.0.0.1:${PORT}`;
 const testDatabase = inject('testDatabase');
+const appDir = dirname(dirname(fileURLToPath(import.meta.url)));
+/** Le module qui fige l'horloge de Node, chargé par le seul serveur de ce fichier. */
+const HORLOGE = pathToFileURL(join(appDir, '..', '..', 'scripts', 'horloge-figee.mjs')).href;
 
 const LANGUES = ['fr', 'de', 'it', 'en', 'ar'] as const;
 type Langue = (typeof LANGUES)[number];
@@ -56,7 +70,23 @@ const SLUG_HEURES = 'heures-changees';
 const NOM_HEURES = 'Association des heures changées';
 const DEBUT = '2026-09-07';
 
-const today = todayInZone(FUSEAU, new Date());
+/**
+ * L'instant où l'horloge du serveur de ce fichier est figée, et que ce fichier lit aussi : un
+ * vendredi, 10:00 à Zurich.
+ *
+ * Jusqu'à l'étape 19, « aujourd'hui » était calculé au chargement de ce fichier, et le serveur le
+ * recalculait à chaque requête : un passage qui franchissait minuit faisait attendre la veille à ce
+ * fichier quand le serveur servait le lendemain, et treize vérifications tombaient. Le serveur de ce
+ * fichier tourne désormais à l'horloge figée (`scripts/horloge-figee.mjs`), et les deux parlent du
+ * même jour, quelle que soit l'heure du passage.
+ *
+ * Un vendredi, pour que les branches du vendredi jouent à chaque passage : l'iqama du Dhuhr qui
+ * cède la place aux sessions, le tableau du jour du vendredi changé. Celle du jour qui reçoit une
+ * session déplacée (`AUTRE_JOUR`) ne joue plus ; un jeudi la ferait jouer. Après `DEBUT`, loin d'un
+ * changement d'heure, et l'année des données de ce fichier.
+ */
+const HORLOGE_FIGEE = '2026-10-09T08:00:00Z';
+const today = todayInZone(FUSEAU, new Date(HORLOGE_FIGEE));
 /** Le lendemain, et son jour de semaine : le cours déplacé a lieu ce jour-là chaque semaine. */
 const DEMAIN = addDays(today, 1);
 const APRES_DEMAIN = addDays(today, 2);
@@ -176,6 +206,44 @@ function jourEtDate(langue: Langue, date: IsoDate): string {
 	const [a, m, j] = date.split('-');
 	return `${JOURS[langue][jourDe(date) - 1]}${langue === 'de' ? ',' : ''} ${j}.${m}.${a}`;
 }
+
+let serveur: ChildProcess | undefined;
+
+beforeAll(async () => {
+	const journal: string[] = [];
+	serveur = spawn(process.execPath, ['--import', HORLOGE, join(appDir, 'build', 'index.js')], {
+		cwd: appDir,
+		stdio: ['ignore', 'pipe', 'pipe'],
+		env: {
+			...productionEnvironment(),
+			NODE_ENV: 'production',
+			PORT: String(PORT),
+			HOST: '127.0.0.1',
+			ORIGIN: origin,
+			POSTGRES_DB: testDatabase,
+			MAIL_TRANSPORT: 'file',
+			MAIL_OUTBOX_DIR: inject('outbox'),
+			MAIL_FROM: 'jadwal@example.test',
+			BETTER_AUTH_SECRET: inject('authSecret'),
+			JADWAL_HORLOGE_FIGEE: HORLOGE_FIGEE
+		}
+	});
+	serveur.stdout?.on('data', (morceau: Buffer) => journal.push(morceau.toString()));
+	serveur.stderr?.on('data', (morceau: Buffer) => journal.push(morceau.toString()));
+	for (let essai = 1; essai <= 60; essai += 1) {
+		try {
+			if ((await fetch(`${origin}/healthz`)).ok) return;
+		} catch {
+			// Le serveur n'écoute pas encore.
+		}
+		await new Promise((resolve) => setTimeout(resolve, 500));
+	}
+	throw new Error(`Le serveur à l'horloge figée n'a pas démarré.\n${journal.join('')}`);
+}, 120_000);
+
+afterAll(() => {
+	serveur?.kill();
+});
 
 beforeAll(async () => {
 	ownerHandle = createDatabase({ role: 'owner', overrides: { database: testDatabase } });
@@ -509,6 +577,25 @@ const SERMONS: Record<Langue, string[]> = {
 	en: ['12:30 sermon in Arabic and French', '13:45 sermon in German'],
 	ar: ['12:30 لغة الخطبة: العربية والفرنسية', '13:45 لغة الخطبة: الألمانية']
 };
+
+describe('l’horloge figée du serveur de ce fichier (étape 19)', () => {
+	// Le jour est écrit ici en toutes lettres, sans le calcul de `today` : si le serveur servait le
+	// jour du passage, et non celui de son horloge, ce test le dirait quel que soit ce jour.
+	it.each([
+		['fr', 'Aujourd’hui, vendredi 09.10.2026'],
+		['de', 'Heute, Freitag, 09.10.2026'],
+		['ar', 'اليوم، الجمعة 09.10.2026']
+	] as const)(
+		'serves the day of its frozen clock, not the day it runs, in %s',
+		async (langue, jour) => {
+			const { html } = await servir(`${base(langue)}?vue=prieres`);
+			const titres = [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/g)].map((trouve) =>
+				lu(trouve[1] ?? '')
+			);
+			expect(titres).toContain(jour);
+		}
+	);
+});
 
 describe('l’onglet des prières, quand le module est allumé (C4)', () => {
 	it.each(LANGUES)(
