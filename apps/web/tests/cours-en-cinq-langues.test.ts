@@ -1137,6 +1137,200 @@ describe('une description sans titre dans sa langue (B4)', () => {
 	});
 });
 
+describe('le message « nouveau cours », après la publication (étape 19, lot 2)', () => {
+	// `newCourseMessage` existait sans écran : la liste le propose maintenant, prêt à coller, après la
+	// publication d'un nouveau cours, dans chaque langue que l'organisation publie, la langue source
+	// d'abord (règle D1 de l'étape 18).
+	let cookie = '';
+	let salle = '';
+
+	const PUBLIE: Record<Langue, string> = {
+		fr: 'Le cours est publié.',
+		de: 'Der Kurs ist veröffentlicht.',
+		it: 'Il corso è pubblicato.',
+		en: 'The course is published.',
+		ar: 'نُشر الدرس.'
+	};
+
+	/** Le bloc du message, et lui seul. */
+	function blocDuMessage(html: string): string {
+		return html.match(/<section\b[^>]*\bclass="message[^"]*"[^>]*>[\s\S]*?<\/section>/)?.[0] ?? '';
+	}
+
+	/** Les messages prêts à coller, dans l'ordre de la page : leur langue et leur texte. */
+	function messages(html: string): { langue: string; texte: string }[] {
+		return [...blocDuMessage(html).matchAll(/<textarea\b([^>]*)>([\s\S]*?)<\/textarea>/g)].map(
+			(trouve) => ({
+				langue: trouve[1]?.match(/\blang="([^"]*)"/)?.[1] ?? '',
+				texte: decode(trouve[2] ?? '')
+			})
+		);
+	}
+
+	function coursDuSoir(statut: string): (readonly [string, string])[] {
+		return [
+			['sourceLanguage', 'de'],
+			['title.de', 'Abendkurs'],
+			['title.fr', 'Cours du soir'],
+			['audience', 'adults'],
+			['teachingLanguages', 'de'],
+			['recurrenceKind', 'weekly'],
+			['weekdays', '2'],
+			['interval', '1'],
+			['timingKind', 'fixed'],
+			['start', '19:00'],
+			['end', '20:00'],
+			['roomId', salle],
+			['startsOn', '2026-10-06'],
+			['status', statut]
+		];
+	}
+
+	beforeAll(async () => {
+		cookie = await signIn(RESPONSABLE);
+		await poserLangueDuCompte('fr');
+		salle =
+			options(await (await get('/cours/nouveau', cookie)).text(), 'roomId').find(
+				(option) => option.texte === SALLE
+			)?.valeur ?? '';
+		expect(salle).not.toBe('');
+	});
+
+	it('shows it after a new course is published, in each published language, the source language first', async () => {
+		const reponse = await postForm('/cours/nouveau', coursDuSoir('published'), cookie);
+		expect(reponse.status).toBe(303);
+		const adresse = reponse.headers.get('location') ?? '';
+		expect(adresse).toMatch(/^\/cours\?publie=[0-9a-f-]{36}$/);
+		const html = await (await get(adresse, cookie)).text();
+		expect(lu(blocDuMessage(html).match(/<h2\b[\s\S]*?<\/h2>/)?.[0] ?? '')).toBe(PUBLIE.fr);
+		// L'allemand, langue de saisie, puis les autres langues publiées, dans l'ordre du service. En
+		// arabe, où le cours n'a pas de titre, le titre de la langue de saisie.
+		expect(messages(html)).toEqual([
+			{
+				langue: 'de',
+				texte:
+					'Salam alaykoum,\n\nNeuer Kurs: «Abendkurs», jeden Dienstag, von 19:00 bis 20:00, Grande salle.'
+			},
+			{
+				langue: 'fr',
+				texte:
+					'Salam alaykoum,\n\nNouveau cours : « Cours du soir », le mardi, de 19:00 à 20:00, Grande salle.'
+			},
+			{
+				langue: 'ar',
+				texte:
+					'Salam alaykoum،\n\nدرس جديد: «Abendkurs»، كل الثلاثاء، من 19:00 إلى 20:00، Grande salle.'
+			}
+		]);
+	});
+
+	it('writes the dates of a course at specific dates, and its time by a prayer, never as AAAA-MM-JJ', async () => {
+		const reponse = await postForm(
+			'/cours/nouveau',
+			[
+				['sourceLanguage', 'fr'],
+				['title.fr', 'Cours annoncé à dates'],
+				['audience', 'adults'],
+				['teachingLanguages', 'fr'],
+				['recurrenceKind', 'dates'],
+				['dates', '12.10.2026\n26.10.2026'],
+				['timingKind', 'beforePrayer'],
+				['prayer', 'maghrib'],
+				['offsetMinutes', '10'],
+				['durationMinutes', '60'],
+				['startsOn', '2026-10-12'],
+				['status', 'published']
+			],
+			cookie
+		);
+		expect(reponse.status).toBe(303);
+		const html = await (await get(reponse.headers.get('location') ?? '', cookie)).text();
+		const lus = messages(html);
+		expect(lus.map((message) => message.langue)).toEqual(['fr', 'de', 'ar']);
+		expect(lus[0]?.texte.split('\n').at(-1)).toBe(
+			'Nouveau cours : « Cours annoncé à dates », à des dates précises : lundi 12.10.2026 et lundi 26.10.2026, 10 min avant Maghrib, pendant 1 h.'
+		);
+		for (const message of lus) expect(message.texte, message.langue).not.toMatch(ISO_DATE);
+	});
+
+	it('speaks the language of the screen around the messages, in each language', async () => {
+		// Le nom de la zone du message allemand : « Message à copier », puis sa langue, dans celle de
+		// l'écran.
+		const ALLEMAND: Record<Langue, [string, string]> = {
+			fr: ['Message à copier', 'en allemand'],
+			de: ['Nachricht zum Kopieren', 'auf Deutsch'],
+			it: ['Messaggio da copiare', 'in tedesco'],
+			en: ['Message to copy', 'in German'],
+			ar: ['الرسالة المراد نسخها', 'بالألمانية']
+		};
+		const reponse = await postForm('/cours/nouveau', coursDuSoir('published'), cookie);
+		const adresse = reponse.headers.get('location') ?? '';
+		for (const langue of LANGUES) {
+			await poserLangueDuCompte(langue);
+			const html = await (await get(adresse, cookie)).text();
+			const bloc = blocDuMessage(html);
+			expect(lu(bloc.match(/<h2\b[\s\S]*?<\/h2>/)?.[0] ?? ''), langue).toBe(PUBLIE[langue]);
+			const zone = bloc.match(/<textarea\b[^>]*\bid="message-de"[^>]*>/)?.[0] ?? '';
+			expect(
+				[
+					decode(zone.match(/\baria-label="([^"]*)"/)?.[1] ?? ''),
+					lu(bloc.match(/<span\b[^>]*\bid="message-de-langue"[^>]*>([\s\S]*?)<\/span>/)?.[1] ?? '')
+				],
+				langue
+			).toEqual(ALLEMAND[langue]);
+			expect(zone, langue).toMatch(/\baria-labelledby="message-de message-de-langue"/);
+			// Les messages restent dans les langues de la page publique, quelle que soit l'écran.
+			expect(
+				messages(html).map((message) => message.langue),
+				langue
+			).toEqual(['de', 'fr', 'ar']);
+		}
+		await poserLangueDuCompte('fr');
+	});
+
+	it('shows it when a draft is published from its page, and not for a draft or another save', async () => {
+		const brouillon = await postForm('/cours/nouveau', coursDuSoir('draft'), cookie);
+		expect(brouillon.status).toBe(303);
+		expect(brouillon.headers.get('location')).toBe('/cours');
+		const id = await maintenance(
+			async (tx) =>
+				lignes<{ id: string }>(
+					await tx.execute(sql`
+						select c."id" from "course" c where c."status" = 'draft' and exists (
+							select 1 from "course_translation" t
+							where t."course_id" = c."id" and t."title" = 'Abendkurs'
+						)
+					`)
+				)[0]?.id ?? ''
+		);
+		// Un brouillon n'est pas annoncé, même à l'adresse d'une annonce, ni un identifiant mal formé.
+		for (const adresse of [`/cours?publie=${id}`, '/cours?publie=pas-un-cours']) {
+			const html = await (await get(adresse, cookie)).text();
+			expect(blocDuMessage(html), adresse).toBe('');
+		}
+		const champs = champsDuFormulaire(await (await get(`/cours/${id}`, cookie)).text());
+		const publie = await postForm(
+			`/cours/${id}`,
+			champs.map(([nom, valeur]): [string, string] => [
+				nom,
+				nom === 'status' ? 'published' : valeur
+			]),
+			cookie
+		);
+		expect(publie.status).toBe(303);
+		expect(publie.headers.get('location')).toBe(`/cours?publie=${id}`);
+		expect(messages(await (await get(`/cours?publie=${id}`, cookie)).text())).toHaveLength(3);
+		// Enregistré de nouveau, déjà publié : ce n'est plus un nouveau cours.
+		const encore = await postForm(
+			`/cours/${id}`,
+			champsDuFormulaire(await (await get(`/cours/${id}`, cookie)).text()),
+			cookie
+		);
+		expect(encore.status).toBe(303);
+		expect(encore.headers.get('location')).toBe('/cours');
+	});
+});
+
 describe('les dates hors de la période, signalées dans la liste des cours (étape 19, lot 2)', () => {
 	// Un cours enregistré avant la règle de l'étape 18 peut avoir des dates que le moteur ne publie
 	// pas. Sa fiche le signale déjà ; la liste le montrait encore « publié », sans rien de plus.

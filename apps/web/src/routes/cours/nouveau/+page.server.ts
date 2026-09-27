@@ -49,7 +49,8 @@ export const actions: Actions = {
 				values: read.values
 			});
 		}
-		await withSessionOrg(context, (tx) => insertCourse(tx, context, read.values));
-		redirect(303, '/cours');
+		const id = await withSessionOrg(context, (tx) => insertCourse(tx, context, read.values));
+		// Publié tout de suite : la liste propose le message « nouveau cours », prêt à coller.
+		redirect(303, read.values.status === 'published' ? `/cours?publie=${id}` : '/cours');
 	}
 };

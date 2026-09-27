@@ -550,12 +550,14 @@ const PREUVES: {
 				{ ...COURS_DE_L_EDITRICE, 'title.fr': modifie, status: 'published' },
 				cookie
 			);
-			// Un refus répond aussi 303, mais vers l'accueil : c'est l'adresse qui dit que c'est fait.
+			// Un refus répond aussi 303, mais vers l'accueil : c'est l'adresse qui dit que c'est fait. Un
+			// brouillon publié ramène à la liste, qui propose le message « nouveau cours » (étape 19,
+			// lot 2).
 			expect(publie.status).toBe(303);
-			expect(publie.headers.get('location')).toBe('/cours');
+			expect(publie.headers.get('location')).toBe(`/cours?publie=${id}`);
 			expect(await coursNommes(modifie)).toEqual([{ id, status: 'published', kind: 'course' }]);
-			// Pas de suppression : aucun écran ne propose de supprimer un cours, et l'écran Membres ne
-			// la promet plus. Une preuve qui postait directement à l'action restait verte quand même.
+			// Pas de suppression : l'écran Cours ne la propose qu'au responsable, et l'écran Membres la
+			// range parmi les gestes réservés, que `RESERVES` refuse à l'éditrice par sa route.
 		}
 	},
 	pauses: {

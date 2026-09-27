@@ -18,6 +18,14 @@ interface CoursesTexts {
 	readonly untitled: string;
 	readonly pauseRemoved: string;
 	readonly courseDeleted: string;
+	/**
+	 * Après la publication d'un nouveau cours : le titre du bloc, ce que sont les messages, et le nom
+	 * de chaque zone à copier, suivi de `inLanguage` (« Message à copier en allemand »).
+	 */
+	readonly coursePublished: string;
+	readonly messageHelp: string;
+	readonly messageLabel: string;
+	readonly inLanguage: (language: string) => string;
 	readonly statuses: {
 		readonly draft: string;
 		readonly published: string;
@@ -78,6 +86,11 @@ export const coursesTexts: Translations<CoursesTexts> = {
 		untitled: 'Cours sans titre',
 		pauseRemoved: 'La pause est supprimée.',
 		courseDeleted: 'Le cours est supprimé.',
+		coursePublished: 'Le cours est publié.',
+		messageHelp:
+			'Un message pour annoncer ce cours à votre communauté, par exemple dans WhatsApp. Il est écrit dans chaque langue de votre page publique, la langue du cours d’abord : ouvrez une langue, puis copiez son texte.',
+		messageLabel: 'Message à copier',
+		inLanguage: (language) => `en ${language}`,
 		statuses: { draft: 'brouillon', published: 'publié' },
 		schedule: (rhythm, time) => `${rhythm}, ${time}`,
 		audience: 'Public :',
@@ -122,6 +135,11 @@ export const coursesTexts: Translations<CoursesTexts> = {
 		untitled: 'Kurs ohne Titel',
 		pauseRemoved: 'Die Pause ist gelöscht.',
 		courseDeleted: 'Der Kurs ist gelöscht.',
+		coursePublished: 'Der Kurs ist veröffentlicht.',
+		messageHelp:
+			'Eine Nachricht, um diesen Kurs Ihrer Gemeinschaft anzukündigen, zum Beispiel in WhatsApp. Sie steht in jeder Sprache Ihrer öffentlichen Seite bereit, die Sprache des Kurses zuerst: Öffnen Sie eine Sprache und kopieren Sie deren Text.',
+		messageLabel: 'Nachricht zum Kopieren',
+		inLanguage: (language) => `auf ${language}`,
 		statuses: { draft: 'Entwurf', published: 'veröffentlicht' },
 		schedule: (rhythm, time) => `${rhythm}, ${time}`,
 		audience: 'Zielgruppe:',
@@ -166,6 +184,11 @@ export const coursesTexts: Translations<CoursesTexts> = {
 		untitled: 'Corso senza titolo',
 		pauseRemoved: 'La pausa è stata eliminata.',
 		courseDeleted: 'Il corso è stato eliminato.',
+		coursePublished: 'Il corso è pubblicato.',
+		messageHelp:
+			'Un messaggio per annunciare questo corso alla tua comunità, per esempio su WhatsApp. È scritto in ogni lingua della tua pagina pubblica, prima la lingua del corso: apri una lingua, poi copia il suo testo.',
+		messageLabel: 'Messaggio da copiare',
+		inLanguage: (language) => `in ${language}`,
 		statuses: { draft: 'bozza', published: 'pubblicato' },
 		schedule: (rhythm, time) => `${rhythm}, ${time}`,
 		audience: 'Pubblico:',
@@ -211,6 +234,11 @@ export const coursesTexts: Translations<CoursesTexts> = {
 		untitled: 'Untitled course',
 		pauseRemoved: 'The break has been deleted.',
 		courseDeleted: 'The course has been deleted.',
+		coursePublished: 'The course is published.',
+		messageHelp:
+			'A message to announce this course to your community, for example on WhatsApp. It is written in each language of your public page, the language of the course first: open a language, then copy its text.',
+		messageLabel: 'Message to copy',
+		inLanguage: (language) => `in ${language}`,
 		statuses: { draft: 'draft', published: 'published' },
 		schedule: (rhythm, time) => `${rhythm}, ${time}`,
 		audience: 'Audience:',
@@ -255,6 +283,11 @@ export const coursesTexts: Translations<CoursesTexts> = {
 		untitled: 'درس بلا عنوان',
 		pauseRemoved: 'حُذفت العطلة.',
 		courseDeleted: 'حُذف الدرس.',
+		coursePublished: 'نُشر الدرس.',
+		messageHelp:
+			'رسالة تعلن بها هذا الدرس لجماعتك، في WhatsApp مثلًا. هي مكتوبة بكل لغة من لغات صفحتك العامة، ولغة الدرس أولًا: افتح لغة، ثم انسخ نصها.',
+		messageLabel: 'الرسالة المراد نسخها',
+		inLanguage: (language) => `ب${language}`,
 		statuses: { draft: 'مسودة', published: 'منشور' },
 		// La virgule arabe entre le rythme et l'horaire.
 		schedule: (rhythm, time) => `${rhythm}، ${time}`,

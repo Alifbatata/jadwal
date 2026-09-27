@@ -11,17 +11,38 @@
 // Supprimer un cours est réservé à la personne responsable (ADR 0046) : la base le lui réserve depuis
 // la migration 0065, l'écran ne propose le bouton qu'à elle, et l'action refuse l'éditeur par la
 // garde des écrans réservés. Une session du vendredi ne passe pas par ici : elle a son écran.
+//
+// Après la publication d'un nouveau cours, le formulaire renvoie ici avec `?publie=<id>`, et la liste
+// propose le message « nouveau cours », prêt à coller, dans chaque langue que l'organisation publie,
+// la langue source d'abord, comme les messages d'« À venir » (retour D1 de l'étape 18). Le rythme et
+// l'horaire sont ceux que la page publique et la liste écrivent, dans la langue de chaque message.
 
 import { fail } from '@sveltejs/kit';
 import type { IsoDate } from '@jadwal/core';
 import { newId, sql, type Transaction } from '@jadwal/db';
 import { splitByPeriod } from '$lib/course-form.js';
+import { describeRecurrence, describeTiming } from '$lib/format.js';
+import { LANGUES, type Langue } from '$lib/i18n.js';
+import { newCourseMessage } from '$lib/messages.js';
+import { rythmeEnClair } from '$lib/public/affichage.js';
 import { record } from '$lib/server/audit.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { FIRST_SUPPORTED_DATE, isSupportedDate, LAST_SUPPORTED_DATE } from '$lib/server/dates.js';
 import { mustAdminister, mustBeInOrganisation } from '$lib/server/guard.js';
-import { readCourses, readPauses, readSettings, type CourseRow } from '$lib/server/programme.js';
+import {
+	readCourses,
+	readPauses,
+	readSettings,
+	type CourseRow,
+	type OrganisationSettings
+} from '$lib/server/programme.js';
 import type { Actions, PageServerLoad } from './$types.js';
+
+/** Un message prêt à coller, dans une langue. */
+interface Message {
+	language: Langue;
+	text: string;
+}
 
 /** Un identifiant de cours ou de pause. Autre chose n'atteint pas la base, qui le refuserait en erreur. */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -48,6 +69,65 @@ function datesOutsidePeriod(course: CourseRow): boolean {
 	return before.length + after.length > 0;
 }
 
+/**
+ * Les langues des messages : celles que l'organisation publie, dans l'ordre du service, et `first`
+ * devant elles quand elle en fait partie (retour D1 de l'étape 18). La règle d'« À venir ».
+ */
+function messageLanguages(published: readonly string[], first: string): Langue[] {
+	const languages = LANGUES.filter((language) => published.includes(language));
+	const head = languages.find((language) => language === first) ?? languages[0] ?? 'fr';
+	return [head, ...languages.filter((language) => language !== head)];
+}
+
+/**
+ * Le message « nouveau cours » d'un cours publié, dans chaque langue des messages. Le titre est
+ * celui de la langue du message quand le cours y est traduit, sinon celui de sa langue source. Le
+ * rythme est celui de la page publique ; pour un cours à dates précises, ses dates, comme la liste
+ * les écrit. L'horaire est celui de la liste, avec sa durée.
+ */
+async function newCourseMessages(
+	tx: Transaction,
+	settings: OrganisationSettings,
+	course: CourseRow & { title: string | null; room: string | null }
+): Promise<Message[]> {
+	const titles = new Map(
+		rows<{ language: string; title: string }>(
+			await tx.execute(sql`
+				select "language", "title" from "course_translation" where "course_id" = ${course.id}
+			`)
+		).map((row) => [row.language, row.title])
+	);
+	return messageLanguages(settings.enabled_language, course.source_language).map((language) => ({
+		language,
+		text: newCourseMessage(
+			settings.greeting,
+			titles.get(language) ?? course.title ?? '',
+			course.recurrence_kind === 'dates'
+				? describeRecurrence({ kind: 'dates', dates: course.recurrence_dates }, language)
+				: rythmeEnClair(language, {
+						recurrenceKind: course.recurrence_kind,
+						recurrenceWeekdays: course.recurrence_weekday,
+						recurrenceInterval: course.recurrence_interval,
+						recurrenceOrdinal: course.recurrence_ordinal,
+						recurrenceOrdinalWeekday: course.recurrence_ordinal_weekday
+					}),
+			describeTiming(
+				{
+					kind: course.timing_kind,
+					start: course.timing_start,
+					end: course.timing_end,
+					prayer: course.timing_prayer,
+					offsetMinutes: course.timing_offset_minutes,
+					durationMinutes: course.timing_duration_minutes
+				},
+				language
+			),
+			course.room,
+			language
+		)
+	}));
+}
+
 /** Le cours existe dans l'organisation du contexte. Le filtre est écrit ici, en plus de la politique. */
 async function courseExists(tx: Transaction, courseId: string): Promise<boolean> {
 	if (!UUID.test(courseId)) return false;
@@ -67,10 +147,16 @@ export const load: PageServerLoad = async (event) => {
 		const courses = await readCourses(tx, ['draft', 'published'], ['course']);
 		const pauses = await readPauses(tx);
 		const titres = new Map(courses.map((course) => [course.id, course.title]));
+		// Le cours qui vient d'être publié, s'il l'est : un brouillon, un cours inconnu ou une adresse
+		// écrite à la main n'ont pas de message.
+		const publie = event.url.searchParams.get('publie');
+		const annonce = courses.find((course) => course.id === publie && course.status === 'published');
 		return {
 			organisation: { name: settings.name },
 			/** « Supprimer ce cours » : la personne responsable seule, comme la garde de l'action. */
 			canDelete: context.role !== 'editor',
+			/** Le message « nouveau cours », dans chaque langue publiée, ou `null`. */
+			announcement: annonce ? await newCourseMessages(tx, settings, annonce) : null,
 			// Un titre absent reste absent : la page écrit « Cours sans titre » dans sa langue.
 			courses: courses.map((course) => ({
 				id: course.id,

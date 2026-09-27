@@ -321,8 +321,10 @@ export function moveMessage(
 
 /**
  * Le message d'un cours nouveau. Le rythme et l'horaire arrivent déjà écrits, dans la langue du
- * message : `describeRecurrence` et `describeTiming` pour le français de l'espace, `rythmeEnClair`
- * et `horaireEnClair` de la page publique pour les cinq langues.
+ * message. La liste des cours le propose après la publication d'un nouveau cours (étape 19, lot 2),
+ * avec le rythme de la page publique (`rythmeEnClair`), ou, pour un cours à dates précises, ses dates
+ * comme la liste les écrit (`describeRecurrence`), et l'horaire de la liste, durée comprise
+ * (`describeTiming`) : des mots en minuscule, puisqu'ils suivent une virgule.
  */
 export function newCourseMessage(
 	greeting: string,

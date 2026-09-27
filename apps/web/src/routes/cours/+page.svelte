@@ -2,7 +2,9 @@
 	import { resolve } from '$app/paths';
 	import type { IsoDate } from '@jadwal/core';
 	import { audienceLabel, describeRecurrence, describeTiming, shortDate } from '$lib/format.js';
+	import { direction, NOM_DE_LANGUE } from '$lib/i18n.js';
 	import { coursesTexts } from '$lib/i18n/courses.js';
+	import { languesEnClair } from '$lib/public/affichage.js';
 
 	let { data, form } = $props();
 	const text = $derived(coursesTexts[data.language]);
@@ -19,6 +21,34 @@
 {#if form?.pauseAdded}<p class="fait" role="status">{text.pauseAdded}</p>{/if}
 {#if form?.pauseRemoved}<p class="fait" role="status">{text.pauseRemoved}</p>{/if}
 {#if form?.courseDeleted}<p class="fait" role="status">{text.courseDeleted}</p>{/if}
+
+<!-- Après la publication d'un nouveau cours : le message « nouveau cours », prêt à coller, une langue
+     par bloc, la première ouverte, comme sur « À venir » (retour D1 de l'étape 18). Chaque bloc porte
+     la langue et le sens de son texte ; le nom de chaque zone dit sa langue, dans celle de l'écran. -->
+{#if data.announcement}
+	<section class="message" aria-labelledby="message-titre">
+		<h2 id="message-titre">{text.coursePublished}</h2>
+		<p class="details">{text.messageHelp}</p>
+		{#each data.announcement as message, index (message.language)}
+			{@const id = `message-${message.language}`}
+			<details class="langue-du-message" open={index === 0}>
+				<summary lang={message.language}>{NOM_DE_LANGUE[message.language]}</summary>
+				<textarea
+					{id}
+					readonly
+					rows="4"
+					aria-label={text.messageLabel}
+					aria-labelledby={`${id} ${id}-langue`}
+					lang={message.language}
+					dir={direction(message.language)}>{message.text}</textarea
+				>
+				<span id={`${id}-langue`} hidden
+					>{text.inLanguage(languesEnClair(data.language, [message.language]))}</span
+				>
+			</details>
+		{/each}
+	</section>
+{/if}
 
 <p><a class="bouton" href={resolve('/cours/nouveau')}>{text.add}</a></p>
 
@@ -191,6 +221,38 @@
 	}
 	.danger-plat {
 		color: #b91c1c;
+	}
+	.message {
+		border-inline-start: 4px solid var(--accent);
+		background: #ecfdf5;
+		padding: 0.75rem;
+		margin: 0.75rem 0;
+	}
+	.message h2 {
+		font-size: 1rem;
+		margin: 0;
+	}
+	.langue-du-message {
+		margin-top: 0.5rem;
+	}
+	/* Comme sur « À venir » : un bouton qu'on touche pour ouvrir, avec le triangle du navigateur. */
+	.langue-du-message > summary {
+		box-sizing: border-box;
+		min-height: 44px;
+		padding: 0.6rem 0.75rem;
+		border: 1px solid var(--accent);
+		border-radius: 0.375rem;
+		width: fit-content;
+		font-weight: 500;
+	}
+	textarea {
+		width: 100%;
+		box-sizing: border-box;
+		margin-top: 0.5rem;
+		font: inherit;
+		padding: 0.5rem;
+		border-radius: 0.375rem;
+		border: 1px solid #888;
 	}
 	/* La couleur des lignes « à corriger » du résumé d'un cours (`FormulaireCours.svelte`). */
 	.a-corriger {

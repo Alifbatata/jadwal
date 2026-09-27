@@ -138,16 +138,18 @@ export const actions: Actions = {
 			});
 		}
 		const values = read.values;
-		const ok = await withSessionOrg(context, async (tx) => {
+		// L'état d'avant l'enregistrement, ou `null` quand le cours n'existe plus.
+		const statusBefore = await withSessionOrg(context, async (tx) => {
 			const before = await readCourse(tx, id);
-			if (!before) return false;
-			return updateCourse(tx, context, id, values, {
+			if (!before) return null;
+			const ok = await updateCourse(tx, context, id, values, {
 				status: before.status,
 				recurrence_kind: before.recurrence_kind,
 				timing_kind: before.timing_kind
 			});
+			return ok ? before.status : null;
 		});
-		if (!ok) {
+		if (statusBefore === null) {
 			return fail(404, {
 				errors: ['gone' as const],
 				badDates: [],
@@ -157,6 +159,9 @@ export const actions: Actions = {
 				values: null
 			});
 		}
-		redirect(303, '/cours');
+		// Un brouillon publié à l'instant est un cours nouveau pour la communauté : la liste propose le
+		// message « nouveau cours ». Un cours déjà publié ne l'est plus (étape 19, lot 2).
+		const justPublished = statusBefore === 'draft' && values.status === 'published';
+		redirect(303, justPublished ? `/cours?publie=${id}` : '/cours');
 	}
 };
