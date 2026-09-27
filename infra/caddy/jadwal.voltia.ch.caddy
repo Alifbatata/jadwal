@@ -67,23 +67,25 @@ jadwal.voltia.ch {
 	# L'application, sur la boucle locale. Compose n'y publie le port que là : rien d'autre que ce
 	# reverse_proxy ne peut l'atteindre.
 	reverse_proxy 127.0.0.1:3080 {
-		# Caddy pose de lui-même trois en-têtes vers l'application : X-Forwarded-For,
-		# X-Forwarded-Proto et X-Forwarded-Host (documentation de Caddy, `reverse_proxy`,
-		# « Defaults »). Il jette les valeurs que la requête porte déjà pour ces trois en-têtes, sauf
-		# si elle vient d'un mandataire auquel ce Caddy fait confiance (`trusted_proxies`).
-		# X-Forwarded-For porte donc l'adresse de qui s'est connecté à Caddy. C'est le seul des trois
-		# que l'application lit, et adapter-node en prend la **dernière** valeur (`XFF_DEPTH=1`),
-		# celle que Caddy a écrite. Les deux autres, personne ne les lit : l'adresse du site vient
-		# d'`ORIGIN`, et adapter-node ne les lirait que sans `ORIGIN`, et seulement si
-		# `PROTOCOL_HEADER` et `HOST_HEADER` les nommaient.
+		# Caddy pose de lui-même quatre en-têtes vers l'application. Trois sont dans sa
+		# documentation (`reverse_proxy`, « Defaults ») : X-Forwarded-For, X-Forwarded-Proto et
+		# X-Forwarded-Host. Il jette les valeurs que la requête porte déjà pour ces trois-là, sauf
+		# si elle vient d'un mandataire auquel ce Caddy fait confiance (`trusted_proxies`). Le
+		# quatrième, `Via: 1.1 Caddy`, il l'ajoute depuis 2.10.0. `pnpm caddy:test` relit les quatre
+		# tels que l'application les reçoit, en 2.10.0 comme en 2.11.4.
 		#
-		# Les deux lignes ci-dessous redisent ces deux-là. `caddy validate` les dit inutiles, et elles
-		# le sont pour l'application, qui ne les lit pas. Elles ne changent la valeur transmise que
-		# dans deux cas : un en-tête `Host` qui porte un port (`{host}` le retire, Caddy seul le
-		# garderait), et un mandataire de confiance devant ce Caddy (elles imposent ce que Caddy
-		# voit, là où il garderait ce que le mandataire a transmis).
-		header_up X-Forwarded-Proto {scheme}
-		header_up X-Forwarded-Host {host}
+		# X-Forwarded-For porte l'adresse de qui s'est connecté à Caddy. C'est le seul des quatre
+		# que l'application lit, et adapter-node en prend la **dernière** valeur (`XFF_DEPTH=1`),
+		# celle que Caddy a écrite. Les trois autres, personne ne les lit : l'adresse du site vient
+		# d'`ORIGIN`, adapter-node ne lirait X-Forwarded-Proto et X-Forwarded-Host que sans
+		# `ORIGIN`, et seulement si `PROTOCOL_HEADER` et `HOST_HEADER` les nommaient, et rien ne
+		# lit `Via`.
+		#
+		# Jusqu'à l'étape 19, deux lignes `header_up` redisaient X-Forwarded-Proto et
+		# X-Forwarded-Host. `caddy validate` les disait inutiles ; elles sont retirées, et
+		# l'épreuve vérifie qu'il ne signale plus rien. Elles ne changeaient la valeur transmise
+		# que dans deux cas, sans effet sur l'application qui ne la lit pas : un en-tête `Host`
+		# qui porte un port, et un mandataire de confiance devant ce Caddy.
 
 		# Une application qui ne répond plus ne doit pas retenir un visiteur indéfiniment.
 		transport http {
@@ -106,16 +108,17 @@ jadwal.voltia.ch {
 	# `pnpm caddy:test` l'affiche : ce `502` porte `Server: Caddy`, et pas
 	# `Strict-Transport-Security`.
 	#
-	# C'est une limite connue, et acceptée. Un navigateur déjà venu garde la règle de transport
-	# strict deux ans, et `Server: Caddy` paraît de toute façon sur la redirection de http vers
-	# https, que Caddy sert hors de ce bloc. Les deux corrections possibles coûtent plus qu'elles ne
-	# rapportent. `handle_errors` ajoute des routes d'erreur au serveur entier, pas au seul site :
-	# les erreurs `5xx` de tous les sites de ce Caddy, jadwal compris, passeraient du niveau `error`
-	# de son journal au niveau `debug`, qu'il n'écrit pas par défaut. Poser
-	# `Strict-Transport-Security` hors de ce bloc, tout de suite, le doublerait sur les réponses
-	# relayées où l'application l'envoie aussi, celles de ses routes (pas les fichiers de `/_app/`,
-	# qu'adapter-node sert sans passer par elles), à moins d'écrire la valeur deux fois dans ce
-	# fichier.
+	# C'est une limite connue, et acceptée : à l'étape 19, le chef de projet a décidé de ne pas
+	# poser `Strict-Transport-Security` sur ces `502` et `504`. Un navigateur déjà venu garde la
+	# règle de transport strict deux ans, et `Server: Caddy` paraît de toute façon sur la
+	# redirection de http vers https, que Caddy sert hors de ce bloc. Les deux corrections
+	# possibles coûtent plus qu'elles ne rapportent. `handle_errors` ajoute des routes d'erreur au
+	# serveur entier, pas au seul site : les erreurs `5xx` de tous les sites de ce Caddy, jadwal
+	# compris, passeraient du niveau `error` de son journal au niveau `debug`, qu'il n'écrit pas
+	# par défaut. Poser `Strict-Transport-Security` hors de ce bloc, tout de suite, le doublerait
+	# sur les réponses relayées où l'application l'envoie aussi, celles de ses routes (pas les
+	# fichiers de `/_app/`, qu'adapter-node sert sans passer par elles), à moins d'écrire la valeur
+	# deux fois dans ce fichier.
 	header {
 		# Deux ans, sous-domaines compris. `preload` n'y est pas : il engage `voltia.ch` tout entier
 		# auprès des navigateurs, et ce n'est pas à jadwal d'en décider. L'application envoie la même
@@ -123,32 +126,28 @@ jadwal.voltia.ch {
 		# `apps/web/src/lib/server/hsts.test.ts` vérifie que les deux sont identiques.
 		Strict-Transport-Security "max-age=63072000; includeSubDomains"
 		# `Server` et `Via` ne disent rien au visiteur, seulement quel logiciel sert le site : rien
-		# n'oblige à le publier. Caddy pose `Server: Caddy` au début de chaque réponse. Ce que
-		# `reverse_proxy` en fait, et s'il ajoute `Via`, dépend de la version de Caddy (code lu aux
-		# versions 2.8.0, 2.9.0, 2.10.0 et 2.11.4, la dernière publiée à l'étape 18 ; essayé en
-		# 2.8.0, 2.9.1, 2.10.0 et 2.11.4) :
+		# n'oblige à le publier. Le rôle exige Caddy 2.10.0 ou plus, et depuis cette version
+		# (code lu en 2.10.0 et 2.11.4 à l'étape 18) :
 		#
-		#   - en 2.8 et 2.9, `reverse_proxy` laisse `Server: Caddy` sur ce qu'il relaie et n'ajoute
-		#     pas `Via`. C'est `-Server` qui enlève `Server: Caddy` ; `-Via` n'enlève que le `Via`
-		#     qu'enverrait l'application ;
-		#   - depuis 2.10.0, `reverse_proxy` retire lui-même `Server: Caddy` de ce qu'il relaie, et
-		#     ajoute à la place `Via: 1.1 Caddy` à chaque réponse de l'application, `304` compris.
-		#     C'est `-Via` qui l'enlève, et `-Server` n'enlève plus que celui qu'enverrait
-		#     l'application.
+		#   - `reverse_proxy` retire lui-même le `Server: Caddy` que Caddy pose au début de chaque
+		#     réponse, et recopie les en-têtes de l'application. `-Server` enlève donc le `Server`
+		#     qu'enverrait l'application. L'application n'en envoie aujourd'hui aucun ; la fausse
+		#     application de `pnpm caddy:test`, un Caddy, en envoie un ;
+		#   - `reverse_proxy` ajoute `Via: 1.1 Caddy` à chaque réponse de l'application, `304`
+		#     compris. C'est `-Via` qui l'enlève.
 		#
-		# L'application n'envoie aujourd'hui ni l'un ni l'autre. La fausse application de
-		# `pnpm caddy:test`, un Caddy, envoie `Server`, et l'épreuve vérifie qu'il ne passe pas. Le
-		# rôle accepte Caddy 2.8.0 ou plus : les deux lignes restent. Sans `-Server`, un Caddy 2.8
-		# ou 2.9 publie `Server: Caddy` ; sans `-Via`, un Caddy 2.10 ou plus publie `Via: 1.1 Caddy`.
+		# Mesuré à l'étape 19, en 2.10.0 comme en 2.11.4, en retirant une ligne à la fois : sans
+		# `-Server`, les réponses relayées portent un en-tête `Server` ; sans `-Via`, chacune des
+		# quatorze réponses de l'application que l'épreuve demande porte `Via: 1.1 Caddy`. Les
+		# deux lignes restent, et `pnpm caddy:test` vérifie que ni l'un ni l'autre ne passe.
 		#
 		# `Via` se retire ici, et pas par `header_down -Via` dans `reverse_proxy`. `header_down`
 		# modifie les en-têtes reçus de l'application, avant que Caddy les recopie ; `Via`, Caddy
-		# 2.10 ou plus l'écrit directement sur la réponse qu'il envoie, où `header_down` ne le voit
-		# pas. Essayé en 2.11.4 : avec `header_down -Via`, la réponse porte toujours `Via`. Le `502`
-		# de Caddy n'en porte pas, et `-Via` n'y est pour rien : sans réponse de l'application,
+		# l'écrit directement sur la réponse qu'il envoie, où `header_down` ne le voit pas. Essayé
+		# en 2.11.4 : avec `header_down -Via`, la réponse porte toujours `Via`. Le `502` de Caddy
+		# n'en porte pas, et `-Via` n'y est pour rien : sans réponse de l'application,
 		# `reverse_proxy` n'en ajoute pas. `pnpm caddy:test` vérifie qu'aucune réponse ne porte
-		# `Via`, ce `502` compris. En 2.8 et 2.9, rien ne pose `Via` : cette vérification passe
-		# alors avec ou sans `-Via`.
+		# `Via`, ce `502` compris.
 		-Server
 		-Via
 	}

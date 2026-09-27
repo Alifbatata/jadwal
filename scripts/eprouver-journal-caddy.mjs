@@ -70,20 +70,62 @@
  * `header` du bloc ne s'applique pas aux erreurs que Caddy écrit lui-même, et le commentaire du
  * bloc dit pourquoi.
  *
- * ## L'image
+ * ## Ce que l'application reçoit
  *
- * `caddy:2.11.4` par défaut, une version récente de l'éditeur : un filtre qui marche sur une version
- * et pas sur celle qu'on sert ne protégerait rien. Qui sert une autre version l'éprouve en la
- * nommant dans `JADWAL_CADDY_IMAGE`, mais pas en deçà de 2.8.0, où `log_skip` s'appelait `skip_log`
- * et où Caddy refuse le fichier entier plutôt que d'ignorer la directive.
+ * La fausse application répond, à une adresse à elle, les en-têtes que Caddy lui a transmis :
+ * `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host` et `Via`. Ce que le commentaire du bloc
+ * en dit est donc mesuré à chaque passage, et non supposé. Et `caddy validate` relit le bloc seul :
+ * il ne doit rien signaler, pas même une directive inutile.
+ *
+ * ## Les versions
+ *
+ * Sans rien dire, l'épreuve se joue deux fois : sur la plus ancienne version que le rôle Ansible
+ * accepte, lue dans `jadwal_caddy_minimum` (2.10.0), et sur `caddy:2.11.4`, la version récente de
+ * l'éditeur. Un filtre qui marche sur une version et pas sur celle qu'on sert ne protégerait rien,
+ * et le bloc se comporte autrement selon la version : depuis 2.10.0, `reverse_proxy` ajoute `Via`
+ * de lui-même (voir le commentaire du bloc). Qui sert une autre version l'éprouve en la nommant dans
+ * `JADWAL_CADDY_IMAGE`, et seulement elle ; en deçà de 2.10.0, le rôle refuse de poser le bloc.
  */
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const IMAGE = process.env['JADWAL_CADDY_IMAGE'] ?? 'caddy:2.11.4';
+/**
+ * Les deux versions jouées quand `JADWAL_CADDY_IMAGE` n'en nomme aucune. La plus ancienne est celle
+ * que le rôle exige, lue dans ses variables : le jour où le minimum bouge, l'épreuve le suit.
+ */
+function versionsParDefaut() {
+	const variables = readFileSync(
+		fileURLToPath(new URL('../infra/ansible/group_vars/all/main.yml', import.meta.url)),
+		'utf8'
+	);
+	const minimum = /^jadwal_caddy_minimum: '(\d+\.\d+\.\d+)'$/m.exec(variables)?.[1];
+	if (!minimum)
+		throw new Error('jadwal_caddy_minimum est introuvable dans group_vars/all/main.yml.');
+	return [`caddy:${minimum}`, 'caddy:2.11.4'];
+}
+
+if (!process.env['JADWAL_CADDY_IMAGE']) {
+	const tombees = [];
+	for (const image of versionsParDefaut()) {
+		process.stdout.write(`\n══ ${image} ══\n\n`);
+		const passage = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], {
+			stdio: 'inherit',
+			env: { ...process.env, JADWAL_CADDY_IMAGE: image }
+		});
+		if (passage.status !== 0) tombees.push(image);
+	}
+	process.stdout.write(
+		tombees.length === 0
+			? `\nLe bloc tient sur les deux versions : ${versionsParDefaut().join(' et ')}.\n`
+			: `\nLe bloc ne tient pas sur : ${tombees.join(', ')}.\n`
+	);
+	process.exit(tombees.length === 0 ? 0 : 1);
+}
+
+const IMAGE = process.env['JADWAL_CADDY_IMAGE'];
 const CONTENEUR = 'jadwal-epreuve-journal';
 
 /** Le fichier de site livré. Le domaine ne sert qu'à le trouver et à nommer son journal. */
@@ -332,9 +374,16 @@ const page = readFileSync(join(racine, 'apps', 'web', 'src', 'app.html'), 'utf8'
 			`<main>${typographierHtml(versHtml(readFileSync(join(racine, 'docs', 'CONDITIONS.md'), 'utf8')))}</main>`
 	);
 
+/**
+ * L'adresse où la fausse application répond les en-têtes que Caddy lui a transmis, une paire
+ * `nom=valeur` par en-tête, séparées par des barres verticales.
+ */
+const ENTETES_RECUS = '/entetes-recus';
+
 // Le Caddy jetable : l'application d'abord, à l'adresse où le bloc l'attend ; puis le site de
 // jadwal, **le bloc livré tel quel**, sous une adresse locale en HTTP. L'application pose un cookie
-// de session sur toute réponse et répond « ok » à ce qu'elle ne sert pas. Elle sert la page sans
+// de session sur toute réponse, répond à `ENTETES_RECUS` les en-têtes qu'elle a reçus, et répond
+// « ok » à ce qu'elle ne sert pas. Elle sert la page sans
 // `Vary`, comme SvelteKit, le widget avec le type et le `Vary` que l'application pose, et `/_app/`
 // depuis une version compressée à côté du fichier, comme adapter-node. `file_server` pose de
 // lui-même `Vary: Accept-Encoding` sur tout ce qu'il sert (relevé avec Caddy 2.11.4) : il est retiré
@@ -364,6 +413,9 @@ const APPLICATION = `:${portAmont} {
 		file_server {
 			precompressed gzip
 		}
+	}
+	handle ${ENTETES_RECUS} {
+		respond "X-Forwarded-For={http.request.header.X-Forwarded-For}|X-Forwarded-Proto={http.request.header.X-Forwarded-Proto}|X-Forwarded-Host={http.request.header.X-Forwarded-Host}|Via={http.request.header.Via}"
 	}
 	handle {
 		respond "ok"
@@ -547,6 +599,65 @@ try {
 	verifier(
 		`et elle ne va pas au journal : aucune ligne pour /healthz`,
 		!lignes.some((l) => String(l.request?.uri ?? '') === '/healthz')
+	);
+
+	// ---------------------------------------------------------------------------------------------
+	// Ce que l'application reçoit, et ce que `caddy validate` dit du bloc. Le commentaire du bloc
+	// décrit les en-têtes que Caddy transmet ; ils sont relus ici, tels que la fausse application les
+	// a reçus, et non recopiés de la documentation de Caddy.
+	// ---------------------------------------------------------------------------------------------
+	process.stdout.write(
+		'Ce que l’application reçoit de Caddy, et ce que caddy validate en dit :\n\n'
+	);
+
+	docker(['cp', sansApplication, `${CONTENEUR}:/tmp/bloc-seul`]);
+	const validation = spawnSync(
+		'docker',
+		[
+			'exec',
+			CONTENEUR,
+			'caddy',
+			'validate',
+			'--adapter',
+			'caddyfile',
+			'--config',
+			'/tmp/bloc-seul'
+		],
+		{ encoding: 'utf8' }
+	);
+	const avertissements = `${validation.stdout}\n${validation.stderr}`
+		.split('\n')
+		.filter((ligneLue) => /"level":"warn"/.test(ligneLue))
+		.map((ligneLue) => /"msg":"([^"]*)"/.exec(ligneLue)?.[1] ?? ligneLue);
+	for (const avertissement of avertissements)
+		process.stdout.write(`  avertit : ${avertissement}\n`);
+	verifier(`caddy validate accepte le bloc`, validation.status === 0);
+	verifier(
+		avertissements.length === 0
+			? `caddy validate ne signale rien sur le bloc`
+			: `caddy validate ne signale rien sur le bloc : ${avertissements.length} avertissement(s)`,
+		avertissements.length === 0
+	);
+
+	const recus = new Map(
+		docker(['exec', CONTENEUR, 'cat', demander(ENTETES_RECUS).recu])
+			.split('|')
+			.map((paire) => [paire.slice(0, paire.indexOf('=')), paire.slice(paire.indexOf('=') + 1)])
+	);
+	for (const [nom, valeur] of recus)
+		process.stdout.write(`  reçu : ${nom}: ${valeur || '(absent)'}\n`);
+	process.stdout.write('\n');
+	verifier(
+		`l’application reçoit X-Forwarded-For, l’adresse de qui s’est connecté à Caddy`,
+		recus.get('X-Forwarded-For') === '127.0.0.1'
+	);
+	verifier(
+		`l’application reçoit X-Forwarded-Proto et X-Forwarded-Host sans que le bloc les pose`,
+		recus.get('X-Forwarded-Proto') === 'http' && recus.get('X-Forwarded-Host') === '127.0.0.1'
+	);
+	verifier(
+		`l’application reçoit Via: 1.1 Caddy, que Caddy ajoute depuis 2.10.0`,
+		recus.get('Via') === '1.1 Caddy'
 	);
 
 	// ---------------------------------------------------------------------------------------------

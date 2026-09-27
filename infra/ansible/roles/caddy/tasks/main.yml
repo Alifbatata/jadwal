@@ -47,7 +47,8 @@
 # La version de Caddy, **avant** de poser quoi que ce soit. Le bloc de site emploie `log_skip`, qui
 # s'appelait `skip_log` avant la 2.8.0 : sur une version antérieure, Caddy ne saute pas la directive
 # inconnue, il **refuse le Caddyfile entier**. Poser le fichier d'abord et découvrir ensuite, ce
-# serait découvrir en ayant déjà coupé tous les sites de l'hôte.
+# serait découvrir en ayant déjà coupé tous les sites de l'hôte. Le minimum est 2.10.0, la plus
+# ancienne version que `pnpm caddy:test` éprouve : `group_vars/all/main.yml` dit pourquoi.
 #
 # `check_mode: false` : cette tâche lit, elle ne change rien, et elle doit tourner même en
 # vérification — sinon l'assertion suivante porterait sur une sortie vide.
@@ -58,14 +59,15 @@
   check_mode: false
   become: true
 
-- name: Caddy sait garder une requête hors du journal
+- name: Caddy est une version où le bloc de site est éprouvé
   ansible.builtin.assert:
     that: version_installee is version(jadwal_caddy_minimum, '>=')
     fail_msg: >-
       Caddy {{ version_installee | default(caddy_version.stdout | trim) }} est trop ancien : le bloc
-      de site de jadwal emploie « log_skip », qui demande {{ jadwal_caddy_minimum }} ou plus (avant,
-      la directive s'appelait « skip_log »). Une version plus ancienne refuserait le Caddyfile
-      entier, donc tous les sites de cette machine. Rien n'a été écrit. Mettre Caddy à jour depuis le
+      de site de jadwal n'est éprouvé qu'à partir de {{ jadwal_caddy_minimum }}. Avant 2.8.0, la
+      directive « log_skip » s'appelait « skip_log », et Caddy refuserait le Caddyfile entier, donc
+      tous les sites de cette machine ; en 2.8 et 2.9, les en-têtes « Server » et « Via » ne se
+      comportent pas comme le bloc le suppose. Rien n'a été écrit. Mettre Caddy à jour depuis le
       dépôt officiel de l'éditeur avant de rejouer.
   vars:
     # `caddy version` rend « v2.11.4 h1:… » chez l'éditeur et « 2.6.2 » tout court chez certaines
