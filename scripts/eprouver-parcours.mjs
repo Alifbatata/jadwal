@@ -66,7 +66,9 @@
  *   Suisse » et « Méthode de calcul, école et ajustements » restent ouverts pendant qu'on tape, une
  *   touche à la fois. Sans JavaScript, une position hors de Suisse s'enregistre à la place de la
  *   localité, puis la localité revient.
- * - C3 : un cours « avant une prière », des minutes positives à l'écran.
+ * - C3 : un cours « avant une prière », des minutes positives à l'écran. Avec JavaScript, le
+ *   navigateur exige les champs de l'horaire choisi, et eux seuls ; sans JavaScript, le choix d'une
+ *   prière s'envoie heures vides, et la page revient avec les champs de la prière.
  * - C4 : l'onglet « Prières » de la page publique et du widget, et axe à 390 px de large.
  * - D1 : la page publique, le widget, le flux et une page d'erreur en anglais, sans texte français ;
  *   les messages prêts à coller de Partager, un par langue publiée, le nom de la prière du vendredi
@@ -3708,6 +3710,35 @@ async function coursAvantUnePriere(page) {
 			choix.join('|') === 'heure fixe|après une prière|avant une prière',
 			choix.join(', ')
 		);
+		// Avec JavaScript, le navigateur exige les champs de la façon choisie, et eux seuls : les heures
+		// pour une heure fixe, les minutes et la durée pour une prière. Le serveur rend ces champs sans
+		// `required`, pour qu'une page sans JavaScript s'envoie (étape 19, lot 3, et l'étape k) : les
+		// tests HTTP ne voient pas qu'ils le redeviennent une fois la page hydratée.
+		const exige = async (identifiant) =>
+			(await page.locator(`#${identifiant}`).count()) === 1 &&
+			(await page
+				.locator(`#${identifiant}`)
+				.evaluate((champ) => /** @type {HTMLInputElement} */ (champ).required));
+		await page
+			.locator('#start[required]')
+			.waitFor({ timeout: 5000 })
+			.catch(() => undefined);
+		const heuresExigees = (await exige('start')) && (await exige('end'));
+		await page.locator('#timingKind').selectOption('beforePrayer');
+		const minutesExigees = (await exige('offsetMinutes')) && (await exige('durationMinutes'));
+		const heuresParties = (await page.locator('#start').count()) === 0;
+		await page.locator('#timingKind').selectOption('fixed');
+		const heuresRevenues = await exige('start');
+		verifierChaque(
+			'avec JavaScript, le navigateur exige les champs de l’horaire choisi : les heures pour une heure fixe, les minutes et la durée avant une prière, et eux seuls',
+			{
+				'les heures exigées pour une heure fixe': heuresExigees,
+				'les minutes et la durée exigées avant une prière': minutesExigees,
+				'les heures retirées avant une prière': heuresParties,
+				'les heures de nouveau exigées pour une heure fixe': heuresRevenues
+			},
+			`heures ${heuresExigees ? 'exigées' : 'libres'}, puis minutes et durée ${minutesExigees ? 'exigées' : 'libres'}, puis heures ${heuresRevenues ? 'exigées' : 'libres'}`
+		);
 		const id = await creerCours(page, {
 			titre: COURS_AVANT.titre,
 			public: 'open',
@@ -4095,8 +4126,8 @@ async function surUnTelephone(navigateur, page) {
 /**
  * k. Sans JavaScript, avec la session de la personne responsable : les options d'une séance restent
  * fermées et s'ouvrent (A1) ; une session du vendredi s'ajoute et se supprime, et l'écran le dit
- * (B1) ; une position hors de Suisse remplace la localité enregistrée, puis la localité revient
- * (C2).
+ * (B1) ; le choix d'une prière, sur un nouveau cours, s'envoie heures vides (C3) ; une position
+ * hors de Suisse remplace la localité enregistrée, puis la localité revient (C2).
  */
 async function sansJavaScript(navigateur, page) {
 	etape('k. Sans JavaScript');
@@ -4164,6 +4195,46 @@ async function sansJavaScript(navigateur, page) {
 				`sans JavaScript, une session du vendredi se supprime : ouvrir « Supprimer cette session », confirmer, et elle a disparu, « ${SESSION_SUPPRIMEE} »`,
 				avant === 1 && (await carte().count()) === 0 && annonces.includes(SESSION_SUPPRIMEE),
 				`${avant} carte avant, ${await carte().count()} après ; ${annonces.map((texte) => `« ${texte} »`).join(', ') || 'aucun message'}`
+			);
+		});
+		await retour('C3', async () => {
+			// Sans JavaScript, choisir une prière ne change pas la page : on l'envoie, et elle revient
+			// avec les champs de la prière et ce qui manque. Les heures, vidées, ne doivent pas arrêter
+			// le navigateur (étape 19, lot 3) : avant, elles étaient exigées, et il fallait taper des
+			// heures qui ne servent à rien pour voir les champs de la prière. Le serveur refuse le cours
+			// sans minutes ni durée : rien ne s'enregistre.
+			await ouvrir(sans, '/cours/nouveau');
+			const exigee = async (identifiant) =>
+				sans
+					.locator(`#${identifiant}`)
+					.evaluate((champ) => /** @type {HTMLInputElement} */ (champ).required);
+			const libres = !(await exigee('start')) && !(await exigee('end'));
+			await sans.locator('#title-fr').fill('Cours à placer');
+			await sans.locator('#start').fill('');
+			await sans.locator('#end').fill('');
+			await sans.locator('#timingKind').selectOption('beforePrayer');
+			// Un envoi que le navigateur arrête ne recharge rien : on n'attend le chargement que cinq
+			// secondes, et les champs de la page disent ensuite ce qui s'est passé.
+			await Promise.all([
+				sans.waitForEvent('load', { timeout: 5000 }).catch(() => undefined),
+				sans.locator('form.colonne button[type="submit"]').click()
+			]);
+			await sans.waitForLoadState('networkidle');
+			await lireLEcran(sans);
+			const refus = (await sans.locator('[role="alert"] li').allTextContents()).map((phrase) =>
+				phrase.replace(/\s+/g, ' ').trim()
+			);
+			verifierChaque(
+				'sans JavaScript, « avant une prière » choisi sur un nouveau cours, heures vidées, s’envoie, et la page revient avec les champs de la prière et la phrase des minutes',
+				{
+					'les heures non exigées': libres,
+					'les minutes à l’écran': (await sans.locator('#offsetMinutes').count()) === 1,
+					'les heures retirées': (await sans.locator('#start').count()) === 0,
+					'la phrase des minutes': refus.some((phrase) =>
+						phrase.startsWith('Avant une prière : de 1 à 120 minutes')
+					)
+				},
+				refus.map((phrase) => `« ${phrase} »`).join(', ') || 'aucun refus'
 			);
 		});
 		await horsDeSuisseSansScript(sans);
