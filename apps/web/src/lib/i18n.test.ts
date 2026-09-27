@@ -25,18 +25,25 @@ const ar = t('ar');
 describe('l’italien devant un jour de la semaine', () => {
 	// La date longue commence par le nom du jour : « domenica 04.10.2026 ». « Spostato al » et
 	// « Inizialmente il » mettaient un article masculin devant « domenica », qui est féminin
-	// (relecture du lot 7). Sans article, la phrase vaut pour les sept jours.
+	// (relecture du lot 7). Sans article, la phrase vaut pour les sept jours. Le chef de projet a
+	// tranché au 27.09.2026 : « Spostato a domenica … » et « Inizialmente domenica … », et non
+	// « In origine: », qui ne se lisait pas comme une phrase.
 	it('says a session was moved, and where it originally was, with no article before the day', () => {
 		const it_ = t('it');
 		expect(it_.movedTo(longDate('it', '2026-10-04' as IsoDate))).toBe(
 			'Spostato a domenica 04.10.2026'
 		);
 		expect(it_.originallyOn(longDate('it', '2026-10-04' as IsoDate))).toBe(
-			'In origine: domenica 04.10.2026'
+			'Inizialmente domenica 04.10.2026'
 		);
-		expect(it_.movedTo(longDate('it', '2026-10-05' as IsoDate))).toBe(
-			'Spostato a lunedì 05.10.2026'
-		);
+		// Les sept jours, du lundi 05.10.2026 au dimanche 11.10.2026 : aucun article devant aucun.
+		const jours = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'];
+		for (const [index, jour] of jours.entries()) {
+			const date = `2026-10-${String(5 + index).padStart(2, '0')}` as IsoDate;
+			const ecrite = `${jour} ${String(5 + index).padStart(2, '0')}.10.2026`;
+			expect(it_.movedTo(longDate('it', date))).toBe(`Spostato a ${ecrite}`);
+			expect(it_.originallyOn(longDate('it', date))).toBe(`Inizialmente ${ecrite}`);
+		}
 	});
 
 	it('writes the week of the upcoming screen from one day to another, with no article', () => {

@@ -442,7 +442,7 @@ const DEPLACE_AU: Record<Langue, (date: string) => string> = {
 const ORIGINE: Record<Langue, (date: string) => string> = {
 	fr: (date) => `Initialement le ${date}`,
 	de: (date) => `Ursprünglich am ${date}`,
-	it: (date) => `In origine: ${date}`,
+	it: (date) => `Inizialmente ${date}`,
 	en: (date) => `Originally on ${date}`,
 	ar: (date) => `كان مقرّرًا في ${date}`
 };

@@ -391,7 +391,7 @@ const TEXTES_PUBLICS = {
 		conditions: 'Condizioni d’uso',
 		nouvelOnglet: 'si apre in una nuova scheda',
 		depart: 'Spostato a ',
-		arrivee: 'In origine: '
+		arrivee: 'Inizialmente '
 	},
 	en: {
 		conditions: 'Terms of use',
