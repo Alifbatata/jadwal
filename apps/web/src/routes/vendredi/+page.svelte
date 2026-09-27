@@ -289,7 +289,7 @@
 
 		<fieldset class="cases" aria-describedby={`aide-sermon-${cle}`}>
 			<legend>{text.form.sermon}</legend>
-			{#each data.langues as langue (langue)}
+			{#each data.languesDuSermon as langue (langue)}
 				<label class="case">
 					<input
 						type="checkbox"

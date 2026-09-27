@@ -173,7 +173,7 @@ export const fridayTexts: Translations<FridayTexts> = {
 			roomHelp: 'Une personne responsable crée les salles dans Réglages.',
 			sermon: 'Langue du sermon',
 			sermonHelp:
-				'Cochez chaque langue dans laquelle le sermon est dit. Seules les langues de votre page publique sont proposées.',
+				'Cochez chaque langue dans laquelle le sermon est dit, même si votre page publique n’est pas écrite dans cette langue.',
 			teacher: 'Imam ou intervenant (facultatif)',
 			teacherHelp: 'Son nom s’affiche sur votre page publique. Exemple : Imam Youssef',
 			startsOn: 'À partir du',
@@ -285,7 +285,7 @@ export const fridayTexts: Translations<FridayTexts> = {
 			roomHelp: 'Die Räume legt eine verantwortliche Person unter Einstellungen an.',
 			sermon: 'Sprache der Predigt',
 			sermonHelp:
-				'Kreuzen Sie jede Sprache an, in der gepredigt wird. Zur Auswahl stehen nur die Sprachen Ihrer öffentlichen Seite.',
+				'Kreuzen Sie jede Sprache an, in der gepredigt wird, auch wenn Ihre öffentliche Seite nicht in dieser Sprache erscheint.',
 			teacher: 'Imam oder Referent (optional)',
 			teacherHelp: 'Der Name erscheint auf Ihrer öffentlichen Seite. Beispiel: Imam Youssef',
 			startsOn: 'Gültig ab',
@@ -404,7 +404,7 @@ export const fridayTexts: Translations<FridayTexts> = {
 			roomHelp: 'Le sale le crea una persona responsabile in Impostazioni.',
 			sermon: 'Lingua del sermone',
 			sermonHelp:
-				'Seleziona ogni lingua in cui viene detto il sermone. Sono proposte solo le lingue della tua pagina pubblica.',
+				'Seleziona ogni lingua in cui viene detto il sermone, anche se la tua pagina pubblica non è in quella lingua.',
 			teacher: 'Imam o relatore (facoltativo)',
 			teacherHelp: 'Il suo nome compare sulla tua pagina pubblica. Esempio: Imam Omar',
 			startsOn: 'Valido dal',
@@ -516,7 +516,7 @@ export const fridayTexts: Translations<FridayTexts> = {
 			roomHelp: 'A manager creates rooms in Settings.',
 			sermon: 'Language of the sermon',
 			sermonHelp:
-				'Tick each language the sermon is given in. Only the languages of your public page are offered.',
+				'Tick each language the sermon is given in, even if your public page is not in that language.',
 			teacher: 'Imam or speaker (optional)',
 			teacherHelp: 'Their name appears on your public page. Example: Imam Youssef',
 			startsOn: 'From',
@@ -626,7 +626,7 @@ export const fridayTexts: Translations<FridayTexts> = {
 			noRoom: 'دون قاعة محددة',
 			roomHelp: 'ينشئ المسؤول القاعات في الإعدادات.',
 			sermon: 'لغة الخطبة',
-			sermonHelp: 'اختر كل لغة تُلقى بها الخطبة. لا تظهر هنا إلا لغات صفحتك العامة.',
+			sermonHelp: 'اختر كل لغة تُلقى بها الخطبة، حتى إن لم تكن صفحتك العامة مكتوبة بهذه اللغة.',
 			teacher: 'الإمام أو المتحدث (اختياري)',
 			teacherHelp: 'يظهر اسمه على صفحتك العامة. مثال: الإمام يوسف',
 			startsOn: 'يسري ابتداءً من',

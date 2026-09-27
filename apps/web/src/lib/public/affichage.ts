@@ -238,6 +238,14 @@ const NOMS_DE_LANGUE: Record<string, Record<Langue, string>> = {
 	bs: { fr: 'bosnien', de: 'Bosnisch', it: 'bosniaco', en: 'Bosnian', ar: 'البوسنية' }
 };
 
+/**
+ * Les langues d'enseignement, dans l'ordre de la liste des noms. Le sermon d'une session du vendredi
+ * se choisit parmi elles toutes, et non parmi les seules langues que l'organisation publie : une
+ * communauté entend souvent le sermon dans une langue que sa page publique ne parle pas, l'albanais,
+ * le turc ou le bosnien (étape 19, lot 2). Chacune a son nom dans les cinq langues de l'interface.
+ */
+export const LANGUES_D_ENSEIGNEMENT: readonly string[] = Object.keys(NOMS_DE_LANGUE);
+
 /** Les langues d'enseignement, en toutes lettres. */
 export function languesEnClair(langue: Langue, codes: readonly string[]): string {
 	return joindre(

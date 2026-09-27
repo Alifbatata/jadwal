@@ -30,10 +30,9 @@ function formulaire(champs: Record<string, string | readonly string[] | null> = 
 }
 
 describe('parseFridayForm', () => {
-	it('reads a Friday session: every Friday, fixed times, the languages the organisation publishes', () => {
+	it('reads a Friday session: every Friday, fixed times, the sermon in any teaching language', () => {
 		const lu = parseFridayForm(
-			formulaire({ sermonLanguages: ['ar', 'tr', 'fr'], teacher: 'Imam Youssef' }),
-			['fr', 'de', 'ar'],
+			formulaire({ sermonLanguages: ['ar', 'tr', 'tlh', 'fr'], teacher: 'Imam Youssef' }),
 			'fr'
 		);
 		expect(lu.ok).toBe(true);
@@ -43,8 +42,9 @@ describe('parseFridayForm', () => {
 			jumuaOrder: 1,
 			title: 'Prière du vendredi',
 			audience: 'open',
-			// Une langue que l'organisation ne publie pas est écartée.
-			teachingLanguages: ['ar', 'fr'],
+			// Une langue d'enseignement que l'organisation ne publie pas est gardée (étape 19, lot 2) ;
+			// un code hors de la liste des langues d'enseignement est écarté.
+			teachingLanguages: ['ar', 'tr', 'fr'],
 			sourceLanguage: 'fr',
 			roomId: null,
 			teacher: 'Imam Youssef',
@@ -62,8 +62,8 @@ describe('parseFridayForm', () => {
 	it('writes a session in the language of the organisation, even when it is not its first published one', () => {
 		// Réglages enregistre les langues dans l'ordre fr, de, it, en, ar : une organisation de langue
 		// allemande qui publie aussi le français a donc le français en tête de sa liste.
-		const allemand = parseFridayForm(formulaire({ title: '' }), ['fr', 'de'], 'de');
-		const francais = parseFridayForm(formulaire({ title: '  ' }), ['de', 'fr'], 'fr');
+		const allemand = parseFridayForm(formulaire({ title: '' }), 'de');
+		const francais = parseFridayForm(formulaire({ title: '  ' }), 'fr');
 		expect(allemand.ok && allemand.values.title).toBe('Freitagsgebet');
 		expect(allemand.ok && allemand.values.sourceLanguage).toBe('de');
 		expect(allemand.ok && [...allemand.values.translations.keys()]).toEqual(['de']);
@@ -80,7 +80,7 @@ describe('parseFridayForm', () => {
 		['endBeforeStart', { start: '12:50', end: '12:10' }],
 		['endBeforeStart', { start: '12:10', end: '12:10' }],
 		['sermonLanguageMissing', { sermonLanguages: null }],
-		['sermonLanguageMissing', { sermonLanguages: ['tr'] }],
+		['sermonLanguageMissing', { sermonLanguages: ['tlh'] }],
 		['startDateMissing', { startsOn: '' }],
 		['startDateMissing', { startsOn: '04.09.2026' }],
 		['endDateUnreadable', { endsOn: 'bientôt' }],
@@ -97,7 +97,7 @@ describe('parseFridayForm', () => {
 		['endDateUnreadable', { endsOn: '0000-12-31' }],
 		['endDateUnreadable', { endsOn: '9999-12-31' }]
 	] as const)('names the mistake %s, and only that one', (erreur, champs) => {
-		const lu = parseFridayForm(formulaire(champs), ['fr', 'ar'], 'fr');
+		const lu = parseFridayForm(formulaire(champs), 'fr');
 		expect(lu).toEqual({ ok: false, errors: [erreur] });
 	});
 
@@ -108,7 +108,6 @@ describe('parseFridayForm', () => {
 				teacher: '\u0000Imam Youssef',
 				description: 'Sermon court.\u0000'
 			}),
-			['fr', 'ar'],
 			'fr'
 		);
 		expect(lu.ok && [lu.values.title, lu.values.teacher, lu.values.description]).toEqual([
@@ -117,14 +116,13 @@ describe('parseFridayForm', () => {
 			'Sermon court.'
 		]);
 		// Un titre fait de ce seul caractère est un titre vide : il prend le nom de la prière.
-		const vide = parseFridayForm(formulaire({ title: '\u0000' }), ['fr', 'de'], 'de');
+		const vide = parseFridayForm(formulaire({ title: '\u0000' }), 'de');
 		expect(vide.ok && vide.values.title).toBe('Freitagsgebet');
 	});
 
 	it('names every mistake at once, in the order of the form', () => {
 		const lu = parseFridayForm(
 			formulaire({ jumuaOrder: '0', start: '13:00', end: '12:00', sermonLanguages: null }),
-			['fr'],
 			'fr'
 		);
 		expect(lu).toEqual({

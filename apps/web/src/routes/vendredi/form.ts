@@ -12,6 +12,7 @@
 import { isLocalTime, type IsoDate, type LocalTime } from '@jadwal/core';
 import { isLangue, t } from '$lib/i18n.js';
 import type { FridayError } from '$lib/i18n/friday.js';
+import { LANGUES_D_ENSEIGNEMENT } from '$lib/public/affichage.js';
 import type { CourseValues } from '$lib/server/courses.js';
 import { isSupportedDate } from '$lib/server/dates.js';
 
@@ -47,12 +48,12 @@ function optional(form: FormData, name: string): string | null {
  * langues dans l'ordre fr, de, it, en, ar, et une organisation de langue allemande qui publie aussi
  * le français se voyait proposer « Prière du vendredi ». Un titre laissé vide prend le nom de la
  * prière dans cette langue.
+ *
+ * La langue du sermon se choisit parmi toutes les langues d'enseignement, et non plus parmi les
+ * seules langues que l'organisation publie (étape 19, lot 2) : un code hors de cette liste est
+ * écarté, et une session sans aucune langue reste refusée.
  */
-export function parseFridayForm(
-	form: FormData,
-	enabledLanguages: readonly string[],
-	organisationLanguage: string
-): FridayFormResult {
+export function parseFridayForm(form: FormData, organisationLanguage: string): FridayFormResult {
 	const errors: FridayError[] = [];
 	const sourceLanguage = organisationLanguage;
 	const title = text(form, 'title') || t(isLangue(sourceLanguage) ? sourceLanguage : 'fr').jumua;
@@ -69,7 +70,7 @@ export function parseFridayForm(
 	const sermon = form
 		.getAll('sermonLanguages')
 		.map(String)
-		.filter((language) => enabledLanguages.includes(language));
+		.filter((language) => LANGUES_D_ENSEIGNEMENT.includes(language));
 	if (sermon.length === 0) errors.push('sermonLanguageMissing');
 
 	const startsOn = text(form, 'startsOn');

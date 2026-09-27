@@ -32,6 +32,7 @@ import { addDays, isLocalTime, todayInZone, type IsoDate } from '@jadwal/core';
 import { newId, sql, type Transaction } from '@jadwal/db';
 import { isLangue, t, type Langue } from '$lib/i18n.js';
 import type { FridayDone, FridayError } from '$lib/i18n/friday.js';
+import { LANGUES_D_ENSEIGNEMENT } from '$lib/public/affichage.js';
 import { record } from '$lib/server/audit.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { insertCourse, updateCourse } from '$lib/server/courses.js';
@@ -170,7 +171,11 @@ export const load: PageServerLoad = async (event) => {
 			organisation: { name: settings.name },
 			titrePropose: t(source).jumua,
 			rangPropose: proposedOrder(lues),
-			langues: settings.enabled_language,
+			/**
+			 * Les cases de la langue du sermon : toutes les langues d'enseignement, et non plus les
+			 * seules langues que l'organisation publie (étape 19, lot 2).
+			 */
+			languesDuSermon: LANGUES_D_ENSEIGNEMENT,
 			salles: (await readRooms(tx)).map((salle) => ({ id: salle.id, name: salle.name })),
 			sessions: lues,
 			today,
@@ -212,7 +217,7 @@ export const actions: Actions = {
 		const courseId = String(form.get('courseId') ?? '');
 		return withSessionOrg(context, async (tx) => {
 			const settings = await readSettings(tx);
-			const lu = parseFridayForm(form, settings.enabled_language, langueDesSessions(settings));
+			const lu = parseFridayForm(form, langueDesSessions(settings));
 			if (!lu.ok) {
 				return fail(400, { errors: lu.errors, courseId, entry: readFridayEntry(form) });
 			}

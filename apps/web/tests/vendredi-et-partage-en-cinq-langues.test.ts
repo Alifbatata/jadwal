@@ -1832,6 +1832,228 @@ describe('D2 : l’écran du vendredi refuse ce qu’il ne peut pas faire, sans 
 	});
 });
 
+/**
+ * Les langues d'enseignement, dans l'ordre des cases : le sermon se choisit parmi elles toutes, et
+ * plus seulement parmi celles que l'organisation publie (étape 19, lot 2). Le chef de projet citait
+ * l'albanais, le turc et le bosnien : une communauté entend souvent le sermon dans une langue que sa
+ * page publique ne parle pas.
+ */
+const LANGUES_DU_SERMON = ['fr', 'de', 'it', 'ar', 'en', 'sq', 'tr', 'bs'] as const;
+
+/** Le nom de chaque case du sermon, dans chaque langue de l'écran, majuscule comprise. */
+const CASES_DU_SERMON: Record<Langue, readonly string[]> = {
+	fr: ['Français', 'Allemand', 'Italien', 'Arabe', 'Anglais', 'Albanais', 'Turc', 'Bosnien'],
+	de: [
+		'Französisch',
+		'Deutsch',
+		'Italienisch',
+		'Arabisch',
+		'Englisch',
+		'Albanisch',
+		'Türkisch',
+		'Bosnisch'
+	],
+	it: ['Francese', 'Tedesco', 'Italiano', 'Arabo', 'Inglese', 'Albanese', 'Turco', 'Bosniaco'],
+	en: ['French', 'German', 'Italian', 'Arabic', 'English', 'Albanian', 'Turkish', 'Bosnian'],
+	ar: [
+		'الفرنسية',
+		'الألمانية',
+		'الإيطالية',
+		'العربية',
+		'الإنجليزية',
+		'الألبانية',
+		'التركية',
+		'البوسنية'
+	]
+};
+
+/** L'aide des cases du sermon : elle ne dit plus que seules les langues de la page sont proposées. */
+const AIDE_DU_SERMON: Record<Langue, string> = {
+	fr: 'Cochez chaque langue dans laquelle le sermon est dit, même si votre page publique n’est pas écrite dans cette langue.',
+	de: 'Kreuzen Sie jede Sprache an, in der gepredigt wird, auch wenn Ihre öffentliche Seite nicht in dieser Sprache erscheint.',
+	it: 'Seleziona ogni lingua in cui viene detto il sermone, anche se la tua pagina pubblica non è in quella lingua.',
+	en: 'Tick each language the sermon is given in, even if your public page is not in that language.',
+	ar: 'اختر كل لغة تُلقى بها الخطبة، حتى إن لم تكن صفحتك العامة مكتوبة بهذه اللغة.'
+};
+
+/** L'albanais, le turc et le bosnien, tels que chaque langue du lecteur les écrit à la suite. */
+const TROIS_LANGUES: Record<Langue, string> = {
+	fr: 'albanais, turc et bosnien',
+	de: 'Albanisch, Türkisch und Bosnisch',
+	it: 'albanese, turco e bosniaco',
+	en: 'Albanian, Turkish and Bosnian',
+	ar: 'الألبانية والتركية والبوسنية'
+};
+
+/** « Sermon en … » dans la carte d'une session de l'écran du vendredi (`fridayTexts.sermonIn`). */
+const SERMON_DE_LA_CARTE: Record<Langue, (langues: string) => string> = {
+	fr: (langues) => `Sermon en ${langues}`,
+	de: (langues) => `Predigt auf ${langues}`,
+	it: (langues) => `Sermone in ${langues}`,
+	en: (langues) => `Sermon in ${langues}`,
+	ar: (langues) => `لغة الخطبة: ${langues}`
+};
+
+/** « sermon en … » dans l'onglet Prières de la page publique (`t(langue).sermonIn`). */
+const SERMON_DE_LA_PAGE: Record<Langue, (langues: string) => string> = {
+	fr: (langues) => `sermon en ${langues}`,
+	de: (langues) => `Predigt auf ${langues}`,
+	it: (langues) => `sermone in ${langues}`,
+	en: (langues) => `sermon in ${langues}`,
+	ar: (langues) => `لغة الخطبة: ${langues}`
+};
+
+/** Les cases du sermon d'un formulaire : la valeur de chacune, et son nom tel qu'il se lit. */
+function casesDuSermon(formulaire: string): { valeur: string; nom: string }[] {
+	return [...formulaire.matchAll(/<label\b[^>]*class="case[^"]*"[^>]*>([\s\S]*?)<\/label>/g)]
+		.map((trouve) => trouve[1] ?? '')
+		.filter((contenu) => contenu.includes('name="sermonLanguages"'))
+		.map((contenu) => ({
+			valeur: attribut(contenu.match(/<input\b[^>]*>/)?.[0] ?? '', 'value') ?? '',
+			nom: visibleText(`<body>${contenu}</body>`)
+		}));
+}
+
+describe('la langue du sermon se choisit parmi toutes les langues d’enseignement (étape 19, lot 2)', () => {
+	/** L'aide d'un groupe de cases, par l'`aria-describedby` de son `fieldset`. */
+	function aideDesCases(html: string, formulaire: string): string {
+		const groupe =
+			formulaire.match(
+				/<fieldset\b[^>]*>(?:(?!<\/fieldset>)[\s\S])*?name="sermonLanguages"/
+			)?.[0] ?? '';
+		const id = attribut(groupe.match(/<fieldset\b[^>]*>/)?.[0] ?? '', 'aria-describedby') ?? '';
+		const aide = html.match(new RegExp(`<p\\b[^>]*\\sid="${id}"[^>]*>([\\s\\S]*?)</p>`))?.[1];
+		return visibleText(`<body>${aide ?? ''}</body>`);
+	}
+
+	it('offers the eight teaching languages to an organisation that publishes three, in each form and each language, and says so', async () => {
+		// L'organisation allemande publie le français, l'allemand et l'arabe : l'écran ne proposait que
+		// ces trois cases, dans le formulaire d'ajout comme dans celui d'une session enregistrée.
+		try {
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE_DE, langue);
+				const html = await (await get('/vendredi', cookiesDe)).text();
+				const formulaires = {
+					ajout: formulaireDAjout(html),
+					premiere: formulaireDe(html, sessionsDe[1]),
+					deuxieme: formulaireDe(html, sessionsDe[2])
+				};
+				for (const [nom, formulaire] of Object.entries(formulaires)) {
+					expect(formulaire, `${langue} ${nom}`).not.toBe('');
+					expect(casesDuSermon(formulaire), `${langue} ${nom}`).toEqual(
+						LANGUES_DU_SERMON.map((valeur, rang) => ({
+							valeur,
+							nom: CASES_DU_SERMON[langue][rang]
+						}))
+					);
+					expect(aideDesCases(html, formulaire), `${langue} ${nom}`).toBe(AIDE_DU_SERMON[langue]);
+				}
+			}
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE_DE, 'fr');
+		}
+	});
+
+	it('saves a sermon in Albanian, Turkish and Bosnian, which the organisation does not publish, and names them wherever the sermon is read, in each language', async () => {
+		// L'organisation publie les cinq langues du service, et aucune des trois : l'action les
+		// retirait de l'envoi, et refusait la session faute de langue du sermon.
+		const titre = 'Prière en trois langues';
+		const reponse = await postForm(
+			'/vendredi?/enregistrer',
+			{
+				title: titre,
+				jumuaOrder: '3',
+				start: '16:00',
+				end: '16:40',
+				sermonLanguages: ['sq', 'tr', 'bs'],
+				startsOn: '2026-09-04',
+				endsOn: '2027-06-25',
+				status: 'published'
+			},
+			cookies
+		);
+		const [lue] = await maintenance(async (tx) =>
+			lignes<{ id: string; teaching_language: string[] }>(
+				await tx.execute(sql`
+					select c."id", c."teaching_language"
+					from "course" c join "course_translation" t on t."course_id" = c."id"
+					where c."organization_id" = ${organizationId} and c."kind" = 'jumua'
+						and t."title" = ${titre}
+				`)
+			)
+		);
+		try {
+			expect(reponse.status).toBe(200);
+			expect(lue?.teaching_language).toEqual(['sq', 'tr', 'bs']);
+			const id = lue?.id ?? '';
+			for (const langue of LANGUES) {
+				// L'écran du vendredi, dans la langue du compte.
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const ecran = await (await get('/vendredi', cookies)).text();
+				expect(visibleText(`<body>${section(ecran, `session-${id}`)}</body>`), langue).toContain(
+					SERMON_DE_LA_CARTE[langue](TROIS_LANGUES[langue])
+				);
+				// La page publique, son onglet Prières, et la page telle que le widget l'encadre.
+				const page = langue === 'fr' ? `/m/${SLUG}` : `/m/${SLUG}/${langue}`;
+				const vendredi = (await (await fetch(`${origin}${page}`)).text()).match(
+					/<section\b[^>]*aria-labelledby="vendredi-titre"[\s\S]*?<\/section>/
+				)?.[0];
+				expect(visibleText(`<body>${vendredi ?? ''}</body>`), `${langue} page`).toContain(
+					TROIS_LANGUES[langue]
+				);
+				const prieres = (await (await fetch(`${origin}${page}?vue=prieres`)).text()).match(
+					/<section\b[^>]*\bid="prieres-vendredi"[\s\S]*?<\/section>/
+				)?.[0];
+				expect(visibleText(`<body>${prieres ?? ''}</body>`), `${langue} prières`).toContain(
+					SERMON_DE_LA_PAGE[langue](TROIS_LANGUES[langue])
+				);
+				const integree = visibleText(await (await fetch(`${origin}${page}?embed=1`)).text());
+				expect(integree, `${langue} widget`).toContain(TROIS_LANGUES[langue]);
+			}
+			// L'API donne les codes, que le lecteur tiers écrit dans ses propres mots.
+			const programme = (await (
+				await fetch(
+					`${origin}/api/v1/organisations/${SLUG}/schedule?from=${today()}&to=${addDays(today(), 6)}`
+				)
+			).json()) as { sessions: { title: string; kind: string; sermonLanguages?: string[] }[] };
+			const seances = programme.sessions.filter((seance) => seance.title === titre);
+			expect(seances.length).toBeGreaterThan(0);
+			for (const seance of seances) expect(seance.sermonLanguages).toEqual(['sq', 'tr', 'bs']);
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			if (lue) {
+				await maintenance((tx) => tx.execute(sql`delete from "course" where "id" = ${lue.id}`));
+			}
+		}
+	});
+
+	it('still refuses a code that is not a teaching language: without another one, the session has no language of the sermon', async () => {
+		// Une case écrite à la main hors de la liste ne s'enregistre pas : la liste s'ouvre aux huit
+		// langues d'enseignement, pas à n'importe quel texte.
+		const reponse = await postForm(
+			'/vendredi?/enregistrer',
+			{ ...SESSION_DE_PASSAGE, title: 'Prière en klingon', sermonLanguages: ['tlh'] },
+			cookies
+		);
+		expect(reponse.status).toBe(400);
+		const erreurs = [...formulaireDAjout(await reponse.text()).matchAll(ERREURS)].flatMap((liste) =>
+			[...(liste[1] ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)].map((point) =>
+				visibleText(`<body>${point[1] ?? ''}</body>`)
+			)
+		);
+		expect(erreurs).toEqual(['Cochez au moins une langue du sermon.']);
+		const [trouvee] = await maintenance(async (tx) =>
+			lignes<{ id: string }>(
+				await tx.execute(sql`
+					select c."id" from "course" c join "course_translation" t on t."course_id" = c."id"
+					where c."organization_id" = ${organizationId} and t."title" = 'Prière en klingon'
+				`)
+			)
+		);
+		expect(trouvee).toBeUndefined();
+	});
+});
+
 describe('le message de la semaine, dans chaque langue publiée (retour D1)', () => {
 	/** Les messages de la section, dans l'ordre de la page, avec leur langue et leur sens. */
 	function messages(html: string) {
