@@ -224,7 +224,8 @@ du visiteur sait ouvrir :
 - sur un iPhone, un iPad ou un Mac, le bouton **Ajouter à mon calendrier**, qui ouvre l'application
   Calendrier ;
 - sur Android, le bouton **Ajouter à Google Agenda**, qui ouvre Google Agenda dans un nouvel onglet ;
-- ailleurs, le choix entre Google Agenda, Outlook, une autre application, et l'adresse à copier.
+- ailleurs, le choix entre Google Agenda, Outlook (compte personnel), Outlook pour un compte de
+  travail ou d'école, une autre application, et l'adresse à copier.
 
 Le lien **Un autre appareil ? Voir tous les choix** montre toujours tout, et les étapes à suivre à
 la main restent en bas de la page. La page d'un cours fait de même pour ce seul cours. Google peut

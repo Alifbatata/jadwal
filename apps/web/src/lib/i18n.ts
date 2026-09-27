@@ -169,7 +169,15 @@ interface Dictionnaire {
 	readonly choiceGoogle: string;
 	readonly choiceGoogleHelp: string;
 	readonly choiceOutlook: string;
+	/** Sous le lien d'Outlook : ce qu'il ouvre, et qu'il sert aux comptes personnels. */
 	readonly choiceOutlookHelp: string;
+	/**
+	 * L'Outlook des comptes de travail ou d'école, `outlook.office.com`, juste après celui des comptes
+	 * personnels (décision du chef de projet, 27.09.2026). Le premier disait jusque-là à un compte de
+	 * travail de copier l'adresse.
+	 */
+	readonly choiceOutlookWork: string;
+	readonly choiceOutlookWorkHelp: string;
 	/**
 	 * Le délai d'Outlook, comme celui de Google : Microsoft écrit qu'une mise à jour « can take more
 	 * than 24 hours » (Import or subscribe to a calendar in Outlook.com or Outlook on the web).
@@ -399,7 +407,10 @@ const fr: Dictionnaire = {
 	choiceGoogleHelp: 'Il propose d’ajouter l’agenda à votre compte Google.',
 	choiceOutlook: 'Outlook',
 	choiceOutlookHelp:
-		'Outlook sur le web s’ouvre avec l’adresse déjà remplie : choisissez Importer. Avec un compte de travail ou d’école, copiez plutôt l’adresse.',
+		'Outlook sur le web s’ouvre avec l’adresse déjà remplie : choisissez Importer. Ce lien sert aux comptes personnels.',
+	choiceOutlookWork: 'Outlook (travail ou école)',
+	choiceOutlookWorkHelp:
+		'Outlook sur le web s’ouvre avec l’adresse déjà remplie : choisissez Importer. Ce lien sert aux comptes de travail ou d’école.',
 	outlookDelay: 'Outlook peut mettre plus de 24 heures à rafraîchir un abonnement.',
 	choiceOther: 'Une autre application',
 	choiceOtherHelp:
@@ -554,7 +565,10 @@ const de: Dictionnaire = {
 	choiceGoogleHelp: 'Er bietet an, den Kalender zu Ihrem Google-Konto hinzuzufügen.',
 	choiceOutlook: 'Outlook',
 	choiceOutlookHelp:
-		'Outlook im Web öffnet sich mit der bereits eingetragenen Adresse: Wählen Sie Importieren. Mit einem Geschäfts- oder Schulkonto kopieren Sie besser die Adresse.',
+		'Outlook im Web öffnet sich mit der bereits eingetragenen Adresse: Wählen Sie Importieren. Dieser Link ist für private Konten.',
+	choiceOutlookWork: 'Outlook (Arbeit oder Schule)',
+	choiceOutlookWorkHelp:
+		'Outlook im Web öffnet sich mit der bereits eingetragenen Adresse: Wählen Sie Importieren. Dieser Link ist für Geschäfts- oder Schulkonten.',
 	outlookDelay: 'Outlook kann mehr als 24 Stunden brauchen, um ein Abo zu aktualisieren.',
 	choiceOther: 'Eine andere App',
 	choiceOtherHelp:
@@ -711,7 +725,10 @@ const it: Dictionnaire = {
 	choiceGoogleHelp: 'Propone di aggiungere il calendario al tuo account Google.',
 	choiceOutlook: 'Outlook',
 	choiceOutlookHelp:
-		'Outlook sul web si apre con l’indirizzo già inserito: scegli Importa. Con un account di lavoro o di scuola, copia piuttosto l’indirizzo.',
+		'Outlook sul web si apre con l’indirizzo già inserito: scegli Importa. Questo link è per gli account personali.',
+	choiceOutlookWork: 'Outlook (lavoro o scuola)',
+	choiceOutlookWorkHelp:
+		'Outlook sul web si apre con l’indirizzo già inserito: scegli Importa. Questo link è per gli account di lavoro o di scuola.',
 	outlookDelay: 'Outlook può impiegare più di 24 ore per aggiornare un’iscrizione.',
 	choiceOther: 'Un’altra app',
 	choiceOtherHelp:
@@ -867,7 +884,10 @@ const en: Dictionnaire = {
 	choiceGoogleHelp: 'It offers to add the calendar to your Google account.',
 	choiceOutlook: 'Outlook',
 	choiceOutlookHelp:
-		'Outlook on the web opens with the address already filled in: choose Import. With a work or school account, copy the address instead.',
+		'Outlook on the web opens with the address already filled in: choose Import. This link is for personal accounts.',
+	choiceOutlookWork: 'Outlook (work or school)',
+	choiceOutlookWorkHelp:
+		'Outlook on the web opens with the address already filled in: choose Import. This link is for work or school accounts.',
 	outlookDelay: 'Outlook can take more than 24 hours to refresh a subscription.',
 	choiceOther: 'Another app',
 	choiceOtherHelp:
@@ -1044,7 +1064,10 @@ const ar: Dictionnaire = {
 	choiceGoogleHelp: 'يقترح تقويم Google إضافة التقويم إلى حسابك في Google.',
 	choiceOutlook: 'Outlook',
 	choiceOutlookHelp:
-		'يُفتح Outlook على الويب والعنوان مُدخل مسبقًا: اختر استيراد. إن كان حسابك حساب عمل أو مدرسة، فانسخ العنوان بدلًا من ذلك.',
+		'يُفتح Outlook على الويب والعنوان مُدخل مسبقًا: اختر استيراد. هذا الرابط للحسابات الشخصية.',
+	choiceOutlookWork: 'Outlook (عمل أو مدرسة)',
+	choiceOutlookWorkHelp:
+		'يُفتح Outlook على الويب والعنوان مُدخل مسبقًا: اختر استيراد. هذا الرابط لحسابات العمل أو المدرسة.',
 	outlookDelay: 'قد يستغرق Outlook أكثر من 24 ساعة لتحديث الاشتراك.',
 	choiceOther: 'تطبيق آخر',
 	choiceOtherHelp:

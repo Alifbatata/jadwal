@@ -104,4 +104,12 @@ describe('les liens qui ouvrent l’abonnement', () => {
 		// Les espaces s'écrivent %20 : un « + » n'est une espace que dans un formulaire.
 		expect(lien).not.toContain('+');
 	});
+
+	it('opens the Outlook of work or school accounts at the same path, on outlook.office.com', () => {
+		const lien = lienOutlook(WEBCAL, 'Association Belvédère & Cie', 'travail');
+		expect(lien).toBe(
+			'https://outlook.office.com/calendar/0/addfromweb?url=webcal%3A%2F%2Fjadwal.example%2Fm%2Fbelvedere%2Fagenda.ics%3Flang%3Dde&name=Association%20Belv%C3%A9d%C3%A8re%20%26%20Cie'
+		);
+		expect(lienOutlook(WEBCAL, 'x', 'personnel')).toBe(lienOutlook(WEBCAL, 'x'));
+	});
 });

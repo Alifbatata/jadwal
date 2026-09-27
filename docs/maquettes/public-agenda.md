@@ -77,14 +77,17 @@ aussi sur votre téléphone.`
   l'adresse `https:`, et `Un autre appareil ? Voir tous les choix`.
 
 **Ailleurs, ou avec `?appareil=tous`.** `Choisissez votre application de calendrier :`, puis
-quatre choix, chacun avec sa phrase :
+cinq choix, chacun avec sa phrase. `Outlook (travail ou école)` s'est ajouté le 27.09.2026, sur
+décision du chef de projet, juste après `Outlook` : la phrase d'Outlook renvoyait jusque-là un compte
+de travail ou d'école à la copie de l'adresse.
 
-| Choix                   | Ce qu'il fait                                                                                                                                                                                               |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Google Agenda`         | nouvel onglet ; `Il propose d'ajouter l'agenda à votre compte Google.`, puis le délai de Google                                                                                                             |
-| `Outlook`               | nouvel onglet, Outlook sur le web ; `Outlook sur le web s'ouvre avec l'adresse déjà remplie : choisissez Importer. Avec un compte de travail ou d'école, copiez plutôt l'adresse.`, puis le délai d'Outlook |
-| `Une autre application` | lien `webcal:` ; `Calendrier d'Apple, Thunderbird ou toute application qui sait s'abonner à un calendrier : elle s'ouvre et propose l'abonnement.`                                                          |
-| `Copier l'adresse`      | `Sélectionnez-la, copiez-la, puis collez-la dans votre application, là où elle propose d'ajouter un calendrier par son adresse.`, puis l'adresse `https:`                                                   |
+| Choix                        | Ce qu'il fait                                                                                                                                                                                                  |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Google Agenda`              | nouvel onglet ; `Il propose d'ajouter l'agenda à votre compte Google.`, puis le délai de Google                                                                                                                |
+| `Outlook`                    | nouvel onglet, `outlook.live.com` ; `Outlook sur le web s'ouvre avec l'adresse déjà remplie : choisissez Importer. Ce lien sert aux comptes personnels.`, puis le délai d'Outlook                              |
+| `Outlook (travail ou école)` | nouvel onglet, `outlook.office.com`, au même chemin ; `Outlook sur le web s'ouvre avec l'adresse déjà remplie : choisissez Importer. Ce lien sert aux comptes de travail ou d'école.`, puis le délai d'Outlook |
+| `Une autre application`      | lien `webcal:` ; `Calendrier d'Apple, Thunderbird ou toute application qui sait s'abonner à un calendrier : elle s'ouvre et propose l'abonnement.`                                                             |
+| `Copier l'adresse`           | `Sélectionnez-la, copiez-la, puis collez-la dans votre application, là où elle propose d'ajouter un calendrier par son adresse.`, puis l'adresse `https:`                                                      |
 
 Le choix complet ne dépend d'aucun en-tête, et sa réponse ne porte pas ce `Vary`.
 
@@ -123,7 +126,7 @@ page : un menu français dans une page allemande ne servirait à personne.
 - Elle ne cache rien : quand elle choisit pour le visiteur, le choix complet est à un lien, et les
   étapes à la main restent sur la page. Une détection se trompe parfois, et elle ne doit jamais
   cacher la bonne réponse.
-- Elle ne charge aucun script, et ne lit aucun cookie. Les liens de Google et d'Outlook sont les
+- Elle ne charge aucun script, et ne lit aucun cookie. Les liens de Google et des deux Outlook sont les
   seuls à mener vers un autre domaine.
 - Elle ne propose pas de filtrer un flux par public. La question est fermée par l'ADR 0028 : le flux
   par cours répond au vrai besoin, qui est « je veux celui-là ».

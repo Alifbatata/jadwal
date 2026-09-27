@@ -3,8 +3,8 @@
 // La page publique ne charge aucun script (ADR 0027) : c'est le serveur qui lit l'appareil, dans
 // les en-têtes de la requête, et la page qui propose le bon lien d'abord. iPhone, iPad et Mac : le
 // lien `webcal:`, que l'application Calendrier ouvre elle-même. Android : Google Agenda, avec la
-// demande d'abonnement prête. Ailleurs : le choix entre Google Agenda, Outlook, une autre
-// application, et l'adresse à copier.
+// demande d'abonnement prête. Ailleurs : le choix entre Google Agenda, Outlook, celui des comptes de
+// travail ou d'école, une autre application, et l'adresse à copier.
 //
 // Une détection se trompe parfois, et quand elle se trompe elle cache la bonne réponse : la page
 // garde donc toujours un lien vers le choix complet (`?appareil=tous`), et les étapes à suivre à la
@@ -61,11 +61,24 @@ export function lienGoogleAgenda(webcal: string): string {
 }
 
 /**
- * Outlook sur le web, ouvert sur « S'abonner à partir du web » avec l'adresse et le nom déjà remplis.
- * `outlook.live.com` est l'Outlook des comptes personnels, celui d'une communauté ; un compte de
- * travail ou d'école copie l'adresse, et la page le dit. Chaque valeur est encodée à part : un « + »
- * n'est une espace que dans un formulaire.
+ * Les deux Outlook sur le web : `outlook.live.com` pour les comptes personnels, celui d'une
+ * communauté, et `outlook.office.com` pour les comptes de travail ou d'école (décision du chef de
+ * projet, 27.09.2026). Un compte ne s'ouvre que chez le sien.
  */
-export function lienOutlook(webcal: string, nom: string): string {
-	return `https://outlook.live.com/calendar/0/addfromweb?url=${encodeURIComponent(webcal)}&name=${encodeURIComponent(nom)}`;
+const OUTLOOK = {
+	personnel: 'https://outlook.live.com',
+	travail: 'https://outlook.office.com'
+} as const;
+
+/**
+ * Outlook sur le web, ouvert sur « S'abonner à partir du web » avec l'adresse et le nom déjà remplis,
+ * au même chemin chez les deux. Microsoft ne documente pas ce lien (ADR 0048). Chaque valeur est
+ * encodée à part : un « + » n'est une espace que dans un formulaire.
+ */
+export function lienOutlook(
+	webcal: string,
+	nom: string,
+	compte: keyof typeof OUTLOOK = 'personnel'
+): string {
+	return `${OUTLOOK[compte]}/calendar/0/addfromweb?url=${encodeURIComponent(webcal)}&name=${encodeURIComponent(nom)}`;
 }

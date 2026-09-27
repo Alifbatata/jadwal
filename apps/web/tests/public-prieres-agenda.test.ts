@@ -794,6 +794,9 @@ const google = (webcal: string) =>
 	`https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcal)}`;
 const outlook = (webcal: string, nom: string) =>
 	`https://outlook.live.com/calendar/0/addfromweb?url=${encodeURIComponent(webcal)}&name=${encodeURIComponent(nom)}`;
+/** Outlook des comptes de travail ou d'école : le même chemin, chez `outlook.office.com`. */
+const outlookTravail = (webcal: string, nom: string) =>
+	`https://outlook.office.com/calendar/0/addfromweb?url=${encodeURIComponent(webcal)}&name=${encodeURIComponent(nom)}`;
 
 const DELAI_GOOGLE: Record<Langue, string> = {
 	fr: 'Google peut mettre jusqu’à 24 heures à rafraîchir un abonnement.',
@@ -851,6 +854,7 @@ describe('l’abonnement selon l’appareil, sur la page d’abonnement (E1)', (
 			expect(bloc.liens.map((lien) => [lien.href, lien.texte, lien.cible])).toEqual([
 				[google(fluxWebcal('de')), 'Google Kalender', '_blank'],
 				[outlook(fluxWebcal('de'), NOM), 'Outlook', '_blank'],
+				[outlookTravail(fluxWebcal('de'), NOM), 'Outlook (Arbeit oder Schule)', '_blank'],
 				[fluxWebcal('de'), 'Eine andere App', undefined]
 			]);
 			expect(bloc.code).toEqual([fluxHttps('de')]);
@@ -868,6 +872,7 @@ describe('l’abonnement selon l’appareil, sur la page d’abonnement (E1)', (
 		expect(bloc.liens.map((lien) => lien.href)).toEqual([
 			google(fluxWebcal('fr')),
 			outlook(fluxWebcal('fr'), NOM),
+			outlookTravail(fluxWebcal('fr'), NOM),
 			fluxWebcal('fr')
 		]);
 	});
@@ -930,6 +935,7 @@ describe('« Ajouter ce cours à mon agenda » selon l’appareil (E1)', () => {
 		expect(windows.liens.map((lien) => lien.href)).toEqual([
 			google(fluxCoursWebcal('it', COURS.quotidien)),
 			outlook(fluxCoursWebcal('it', COURS.quotidien), `${NOM} – ${TITRES.quotidien}`),
+			outlookTravail(fluxCoursWebcal('it', COURS.quotidien), `${NOM} – ${TITRES.quotidien}`),
 			fluxCoursWebcal('it', COURS.quotidien)
 		]);
 		expect(windows.code).toEqual([fluxCoursHttps('it', COURS.quotidien)]);
@@ -1141,6 +1147,38 @@ const DELAI_OUTLOOK: Record<Langue, string> = {
 	ar: 'قد يستغرق Outlook أكثر من 24 ساعة لتحديث الاشتراك.'
 };
 
+/** Sous le lien d'Outlook, ce qu'il fait et pour quel compte : un compte personnel. */
+const OUTLOOK_PERSONNEL: Record<Langue, string> = {
+	fr: 'Outlook sur le web s’ouvre avec l’adresse déjà remplie : choisissez Importer. Ce lien sert aux comptes personnels.',
+	de: 'Outlook im Web öffnet sich mit der bereits eingetragenen Adresse: Wählen Sie Importieren. Dieser Link ist für private Konten.',
+	it: 'Outlook sul web si apre con l’indirizzo già inserito: scegli Importa. Questo link è per gli account personali.',
+	en: 'Outlook on the web opens with the address already filled in: choose Import. This link is for personal accounts.',
+	ar: 'يُفتح Outlook على الويب والعنوان مُدخل مسبقًا: اختر استيراد. هذا الرابط للحسابات الشخصية.'
+};
+/** Le lien d'Outlook des comptes de travail ou d'école, et sa phrase. */
+const OUTLOOK_TRAVAIL: Record<Langue, [string, string]> = {
+	fr: [
+		'Outlook (travail ou école)',
+		'Outlook sur le web s’ouvre avec l’adresse déjà remplie : choisissez Importer. Ce lien sert aux comptes de travail ou d’école.'
+	],
+	de: [
+		'Outlook (Arbeit oder Schule)',
+		'Outlook im Web öffnet sich mit der bereits eingetragenen Adresse: Wählen Sie Importieren. Dieser Link ist für Geschäfts- oder Schulkonten.'
+	],
+	it: [
+		'Outlook (lavoro o scuola)',
+		'Outlook sul web si apre con l’indirizzo già inserito: scegli Importa. Questo link è per gli account di lavoro o di scuola.'
+	],
+	en: [
+		'Outlook (work or school)',
+		'Outlook on the web opens with the address already filled in: choose Import. This link is for work or school accounts.'
+	],
+	ar: [
+		'Outlook (عمل أو مدرسة)',
+		'يُفتح Outlook على الويب والعنوان مُدخل مسبقًا: اختر استيراد. هذا الرابط لحسابات العمل أو المدرسة.'
+	]
+};
+
 /** La section des étapes à la main : son introduction, puis chaque titre suivi de ses paragraphes. */
 function aLaMain(html: string): { intro: string; etapes: Record<string, string[]>; lu: string } {
 	const section =
@@ -1314,11 +1352,38 @@ describe('chaque page d’abonnement ne dit que ce qui est vrai pour elle', () =
 		const choix = html.match(/<ul\b[^>]*\bclass="choix\b[^"]*"[^>]*>([\s\S]*?)<\/ul>/)?.[1] ?? '';
 		const outlookLi = [...choix.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)]
 			.map((trouve) => lu(trouve[1] ?? ''))
-			.find((texte) => texte.startsWith('Outlook'));
-		expect(outlookLi, langue).toContain(DELAI_OUTLOOK[langue]);
+			.filter((texte) => texte.startsWith('Outlook'));
+		// Les deux Outlook, le personnel et celui du travail ou de l'école : Microsoft donne le même
+		// délai aux deux (« Import or subscribe to a calendar in Outlook.com or Outlook on the web »,
+		// relue le 27.09.2026).
+		expect(outlookLi, langue).toHaveLength(2);
+		for (const texte of outlookLi) {
+			expect(texte, langue).toContain(DELAI_OUTLOOK[langue]);
+			// Et le délai de Google reste sous Google, pas sous Outlook.
+			expect(texte).not.toContain(DELAI_GOOGLE[langue]);
+		}
 		expect(aLaMain(html).etapes[SUR_OUTLOOK[langue]]?.at(-1)).toBe(DELAI_OUTLOOK[langue]);
-		// Et le délai de Google reste sous Google, pas sous Outlook.
-		expect(outlookLi).not.toContain(DELAI_GOOGLE[langue]);
+	});
+
+	// Décision du chef de projet, au 27.09.2026 : le choix complet propose aussi l'Outlook des comptes
+	// de travail ou d'école, `outlook.office.com`, juste après celui des comptes personnels. Chacun dit
+	// à quel compte il sert ; la phrase qui renvoyait un compte de travail à la copie de l'adresse a
+	// disparu.
+	it.each(LANGUES)('offers Outlook for work or school next to Outlook, in %s', async (langue) => {
+		const chemin = `${base(langue)}/agenda`;
+		const { html } = await servir(chemin, WINDOWS);
+		const choix = html.match(/<ul\b[^>]*\bclass="choix\b[^"]*"[^>]*>([\s\S]*?)<\/ul>/)?.[1] ?? '';
+		const lignes = [...choix.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)].map((trouve) =>
+			lu(trouve[1] ?? '')
+		);
+		const [travail, aide] = OUTLOOK_TRAVAIL[langue];
+		expect(lignes[1], langue).toBe(`Outlook ${OUTLOOK_PERSONNEL[langue]} ${DELAI_OUTLOOK[langue]}`);
+		expect(lignes[2], langue).toBe(`${travail} ${aide} ${DELAI_OUTLOOK[langue]}`);
+		expect(abonnement(html, chemin).liens[2]).toEqual({
+			href: outlookTravail(fluxWebcal(langue), NOM),
+			texte: travail,
+			cible: '_blank'
+		});
 	});
 });
 

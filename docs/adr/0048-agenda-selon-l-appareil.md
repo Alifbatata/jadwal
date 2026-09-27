@@ -107,11 +107,25 @@ d'un autre domaine, et n'admet un lien `<a>` vers ailleurs que pour `calendar.go
   demande, puis le passage par un ordinateur.
 - La relecture de l'étape 18 a relu l'aide de Google en six langues : elle ne donne aucun délai de
   rafraîchissement. La phrase qui annonce jusqu'à 24 heures n'a donc plus d'appui écrit.
-- `outlook.live.com` est l'Outlook des comptes personnels. Un compte de travail ou d'école copie
-  l'adresse, et la page le dit.
+- `outlook.live.com` est l'Outlook des comptes personnels. Un compte de travail ou d'école copiait
+  l'adresse ; depuis le 27.09.2026, il a son propre lien, vers `outlook.office.com` (addendum).
 - La maquette `docs/maquettes/public-agenda.md` décrit désormais ce comportement.
+
+## Addendum du 27.09.2026
+
+Les décisions du chef de projet, après les tests de l'étape 18.
+
+- **Outlook pour un compte de travail ou d'école.** Le choix complet propose, juste après
+  `Outlook`, un second lien, `Outlook (travail ou école)`, vers `outlook.office.com`, au même chemin
+  (`/calendar/0/addfromweb?url=…&name=…`) que celui des comptes personnels. Chacun dit à quel compte
+  il sert ; la phrase qui renvoyait un compte de travail à la copie de l'adresse a disparu. Ce lien
+  n'est pas plus documenté par Microsoft que l'autre : il suit le même usage établi, et l'essai
+  avec un vrai compte de travail reste à faire. `apps/web/tests/public.test.ts` admet désormais trois
+  domaines pour un lien `<a>` vers ailleurs : `calendar.google.com`, `outlook.live.com` et
+  `outlook.office.com`.
 
 ## Statut
 
 Accepté, 2026-09-26. Étape 18, retours E1 et E2 du chef de projet. Révisé le même jour, à la fin
-de l'étape : la page servie à Android ne se contredit plus, et le délai d'Outlook est dit.
+de l'étape : la page servie à Android ne se contredit plus, et le délai d'Outlook est dit. Complété
+le 27.09.2026 (addendum ci-dessus).

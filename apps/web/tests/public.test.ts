@@ -539,11 +539,12 @@ describe('les pages se lisent sans JavaScript et sans rien d’ailleurs', () => 
 			const html = await (await fetch(`${origin}${chemin}`, { headers: entetes })).text();
 			expect(ressourcesExternes(html), chemin).toEqual([]);
 			// Les seuls liens vers un autre domaine sont ceux qui ouvrent l'abonnement dans Google
-			// Agenda ou dans Outlook (étape 18, retour E1) : des liens qu'on choisit de suivre, dans un
-			// nouvel onglet, et non des ressources que la page charge.
+			// Agenda ou dans Outlook (étape 18, retour E1), celui des comptes personnels et, depuis le
+			// 27.09.2026, celui des comptes de travail ou d'école : des liens qu'on choisit de suivre,
+			// dans un nouvel onglet, et non des ressources que la page charge.
 			for (const lien of liensExternes(html)) {
 				expect(new URL(lien.href).host, chemin).toMatch(
-					/^(calendar\.google\.com|outlook\.live\.com)$/
+					/^(calendar\.google\.com|outlook\.live\.com|outlook\.office\.com)$/
 				);
 				expect(lien.target, lien.href).toBe('_blank');
 				expect(lien.rel, lien.href).toBe('noopener');

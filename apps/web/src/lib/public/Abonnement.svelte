@@ -4,8 +4,9 @@
 	//
 	// - iPhone, iPad et Mac : le bouton `webcal:`, que l'application Calendrier ouvre elle-même ;
 	// - Android : le bouton de Google Agenda, avec la demande d'abonnement prête ;
-	// - ailleurs, ou quand le visiteur le demande : le choix entre Google Agenda, Outlook, une autre
-	//   application, et l'adresse à copier, en texte sélectionnable puisque la page n'a aucun script.
+	// - ailleurs, ou quand le visiteur le demande : le choix entre Google Agenda, Outlook, celui des
+	//   comptes de travail ou d'école, une autre application, et l'adresse à copier, en texte
+	//   sélectionnable puisque la page n'a aucun script.
 	//
 	// Google Agenda et Outlook s'ouvrent dans un nouvel onglet : ils refusent d'être encadrés, et la
 	// page l'est souvent, dans le widget d'un site. Le lien le dit aux lecteurs d'écran, comme celui
@@ -40,6 +41,7 @@
 	const mots = $derived(t(langue));
 	const google = $derived(lienGoogleAgenda(webcal));
 	const outlook = $derived(lienOutlook(webcal, nom));
+	const outlookTravail = $derived(lienOutlook(webcal, nom, 'travail'));
 	const nouvelOnglet = $derived(annonceNouvelOnglet(langue));
 </script>
 
@@ -78,6 +80,15 @@
 					>{mots.choiceOutlook}<span class="pour-lecteur">{nouvelOnglet}</span></a
 				>
 				<p class="aide">{mots.choiceOutlookHelp}</p>
+				<p class="aide">{mots.outlookDelay}</p>
+			</li>
+			<!-- L'Outlook des comptes de travail ou d'école, juste après celui des comptes personnels
+			     (décision du chef de projet, 27.09.2026). Microsoft donne le même délai aux deux. -->
+			<li>
+				<a href={outlookTravail} target="_blank" rel="noopener"
+					>{mots.choiceOutlookWork}<span class="pour-lecteur">{nouvelOnglet}</span></a
+				>
+				<p class="aide">{mots.choiceOutlookWorkHelp}</p>
 				<p class="aide">{mots.outlookDelay}</p>
 			</li>
 			<li>
