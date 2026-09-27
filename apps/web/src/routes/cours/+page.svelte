@@ -45,6 +45,11 @@
 				{#if course.room}· {text.room} <bdi>{course.room}</bdi>{/if}
 				{#if course.teacher}· {text.teacher} <bdi>{course.teacher}</bdi>{/if}
 			</p>
+			<!-- Un cours d'avant la règle de l'étape 18 : des dates que le moteur ne publie pas. La
+			     phrase se lit sans la couleur ; sa fiche dit lesquelles. -->
+			{#if course.datesOutsidePeriod}
+				<p class="a-corriger">{text.datesOutsidePeriod}</p>
+			{/if}
 			<p>
 				<!-- Le titre du cours complète le nom du lien pour un lecteur d'écran : dix liens
 				     « Modifier ce cours » de suite ne disent pas lequel. -->
@@ -186,6 +191,13 @@
 	}
 	.danger-plat {
 		color: #b91c1c;
+	}
+	/* La couleur des lignes « à corriger » du résumé d'un cours (`FormulaireCours.svelte`). */
+	.a-corriger {
+		color: #92400e;
+		font-weight: 600;
+		font-size: 0.95rem;
+		margin: 0.25rem 0 0;
 	}
 	.confirmation {
 		display: flex;

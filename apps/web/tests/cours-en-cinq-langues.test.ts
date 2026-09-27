@@ -1137,6 +1137,61 @@ describe('une description sans titre dans sa langue (B4)', () => {
 	});
 });
 
+describe('les dates hors de la période, signalées dans la liste des cours (étape 19, lot 2)', () => {
+	// Un cours enregistré avant la règle de l'étape 18 peut avoir des dates que le moteur ne publie
+	// pas. Sa fiche le signale déjà ; la liste le montrait encore « publié », sans rien de plus.
+	const HORS = 'Cours aux dates d’avant la règle';
+	let cookie = '';
+
+	const MARQUE: Record<Langue, string> = {
+		fr: 'À corriger : des dates de ce cours tombent hors de sa période et ne sont pas publiées. Ouvrez « Modifier ce cours » pour voir lesquelles.',
+		de: 'Zu korrigieren: Einige Daten dieses Kurses liegen ausserhalb seines Zeitraums und werden nicht veröffentlicht. Öffnen Sie «Diesen Kurs bearbeiten», um zu sehen, welche.',
+		it: 'Da correggere: alcune date di questo corso cadono fuori dal suo periodo e non sono pubblicate. Apri «Modifica questo corso» per vedere quali.',
+		en: 'To correct: some dates of this course fall outside its period and are not published. Open ‘Edit this course’ to see which ones.',
+		ar: 'يجب التصحيح: بعض تواريخ هذا الدرس تقع خارج فترته ولا تُنشر. افتح «تعديل هذا الدرس» لتعرف أيّها.'
+	};
+
+	/** Le bloc d'un cours dans la liste, par son titre, lu comme une personne le lit. */
+	function blocLu(html: string, titreDuCours: string): string {
+		return (
+			[...html.matchAll(/<li\b[^>]*>[\s\S]*?<\/li>/g)]
+				.map((trouve) => lu(trouve[0]))
+				.find((texte) => texte.includes(titreDuCours)) ?? ''
+		);
+	}
+
+	beforeAll(async () => {
+		cookie = await signIn(RESPONSABLE);
+		const id = newId();
+		await maintenance(async (tx) => {
+			// Le 05.10.2026 tombe avant le premier jour, le 10.10.2026 : la base l'accepte, le
+			// formulaire ne l'accepterait plus.
+			await tx.execute(sql`
+				insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",
+					"source_language", "recurrence_kind", "recurrence_date", "timing_kind", "timing_start",
+					"timing_end", "starts_on")
+				values (${id}, ${organizationId}, 'published', 'kids', array['fr'], 'fr', 'dates',
+					array['2026-10-05','2026-10-12']::date[], 'fixed', '10:00', '11:00', '2026-10-10')
+			`);
+			await tx.execute(sql`
+				insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
+				values (${newId()}, ${organizationId}, ${id}, 'fr', ${HORS})
+			`);
+		});
+	});
+
+	it('marks such a course in the list, in each language, and only it', async () => {
+		for (const langue of LANGUES) {
+			await poserLangueDuCompte(langue);
+			const html = await (await get('/cours', cookie)).text();
+			expect(blocLu(html, HORS), langue).toContain(MARQUE[langue]);
+			// Un cours à dates précises dont les dates sont toutes dans sa période n'a rien à corriger.
+			expect(blocLu(html, ENFANTS), langue).not.toContain(MARQUE[langue]);
+		}
+		await poserLangueDuCompte('fr');
+	});
+});
+
 describe('ce que le nouveau cours remplit de lui-même (étape 19, lot 2)', () => {
 	let cookie = '';
 

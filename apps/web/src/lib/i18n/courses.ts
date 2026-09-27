@@ -27,6 +27,11 @@ interface CoursesTexts {
 	readonly audience: string;
 	readonly room: string;
 	readonly teacher: string;
+	/**
+	 * Un cours dont des dates précises tombent hors de sa période, enregistré avant la règle de
+	 * l'étape 18 : elles ne sont pas publiées, et sa fiche dit lesquelles (étape 19, lot 2).
+	 */
+	readonly datesOutsidePeriod: string;
 	readonly edit: string;
 	/**
 	 * Le geste réservé au responsable (étape 19, lot 2), ce qu'il emporte, et le bouton qui le
@@ -78,6 +83,8 @@ export const coursesTexts: Translations<CoursesTexts> = {
 		audience: 'Public :',
 		room: 'Salle :',
 		teacher: 'Intervenant :',
+		datesOutsidePeriod:
+			'À corriger : des dates de ce cours tombent hors de sa période et ne sont pas publiées. Ouvrez « Modifier ce cours » pour voir lesquelles.',
 		edit: 'Modifier ce cours',
 		deleteCourse: 'Supprimer ce cours',
 		deleteWarning:
@@ -120,6 +127,8 @@ export const coursesTexts: Translations<CoursesTexts> = {
 		audience: 'Zielgruppe:',
 		room: 'Raum:',
 		teacher: 'Lehrperson:',
+		datesOutsidePeriod:
+			'Zu korrigieren: Einige Daten dieses Kurses liegen ausserhalb seines Zeitraums und werden nicht veröffentlicht. Öffnen Sie «Diesen Kurs bearbeiten», um zu sehen, welche.',
 		edit: 'Diesen Kurs bearbeiten',
 		deleteCourse: 'Diesen Kurs löschen',
 		deleteWarning:
@@ -162,6 +171,8 @@ export const coursesTexts: Translations<CoursesTexts> = {
 		audience: 'Pubblico:',
 		room: 'Sala:',
 		teacher: 'Insegnante:',
+		datesOutsidePeriod:
+			'Da correggere: alcune date di questo corso cadono fuori dal suo periodo e non sono pubblicate. Apri «Modifica questo corso» per vedere quali.',
 		edit: 'Modifica questo corso',
 		deleteCourse: 'Elimina questo corso',
 		deleteWarning:
@@ -205,6 +216,8 @@ export const coursesTexts: Translations<CoursesTexts> = {
 		audience: 'Audience:',
 		room: 'Room:',
 		teacher: 'Teacher:',
+		datesOutsidePeriod:
+			'To correct: some dates of this course fall outside its period and are not published. Open ‘Edit this course’ to see which ones.',
 		edit: 'Edit this course',
 		deleteCourse: 'Delete this course',
 		deleteWarning:
@@ -248,6 +261,8 @@ export const coursesTexts: Translations<CoursesTexts> = {
 		audience: 'الفئة:',
 		room: 'القاعة:',
 		teacher: 'المدرّس:',
+		datesOutsidePeriod:
+			'يجب التصحيح: بعض تواريخ هذا الدرس تقع خارج فترته ولا تُنشر. افتح «تعديل هذا الدرس» لتعرف أيّها.',
 		edit: 'تعديل هذا الدرس',
 		deleteCourse: 'حذف هذا الدرس',
 		deleteWarning:

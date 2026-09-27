@@ -13,12 +13,14 @@
 // garde des écrans réservés. Une session du vendredi ne passe pas par ici : elle a son écran.
 
 import { fail } from '@sveltejs/kit';
+import type { IsoDate } from '@jadwal/core';
 import { newId, sql, type Transaction } from '@jadwal/db';
+import { splitByPeriod } from '$lib/course-form.js';
 import { record } from '$lib/server/audit.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { FIRST_SUPPORTED_DATE, isSupportedDate, LAST_SUPPORTED_DATE } from '$lib/server/dates.js';
 import { mustAdminister, mustBeInOrganisation } from '$lib/server/guard.js';
-import { readCourses, readPauses, readSettings } from '$lib/server/programme.js';
+import { readCourses, readPauses, readSettings, type CourseRow } from '$lib/server/programme.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
 /** Un identifiant de cours ou de pause. Autre chose n'atteint pas la base, qui le refuserait en erreur. */
@@ -28,6 +30,22 @@ function rows<T>(result: unknown): T[] {
 	if (Array.isArray(result)) return result as T[];
 	const inner = (result as { rows?: unknown[] }).rows;
 	return Array.isArray(inner) ? (inner as T[]) : [];
+}
+
+/**
+ * Un cours à dates précises dont des dates tombent hors de sa période : le moteur ne les publie pas.
+ * Le formulaire le refuse depuis l'étape 18, mais un cours enregistré avant peut en avoir ; sa fiche
+ * dit lesquelles, et la liste le signale (étape 19, lot 2).
+ */
+function datesOutsidePeriod(course: CourseRow): boolean {
+	if (course.recurrence_kind !== 'dates') return false;
+	const { before, after } = splitByPeriod(
+		(course.recurrence_dates ?? []).map((date) => String(date).slice(0, 10) as IsoDate).sort(),
+		String(course.starts_on).slice(0, 10),
+		course.ends_on ? String(course.ends_on).slice(0, 10) : null,
+		{ first: FIRST_SUPPORTED_DATE, last: LAST_SUPPORTED_DATE }
+	);
+	return before.length + after.length > 0;
 }
 
 /** Le cours existe dans l'organisation du contexte. Le filtre est écrit ici, en plus de la politique. */
@@ -61,6 +79,7 @@ export const load: PageServerLoad = async (event) => {
 				audience: course.audience,
 				room: course.room,
 				teacher: course.teacher,
+				datesOutsidePeriod: datesOutsidePeriod(course),
 				recurrence: {
 					kind: course.recurrence_kind,
 					weekdays: course.recurrence_weekday,
