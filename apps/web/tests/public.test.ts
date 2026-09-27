@@ -434,6 +434,122 @@ describe('le flux agenda', () => {
 	});
 });
 
+describe('la page d’un cours montre une séance annulée, barrée (étape 19, lot 2)', () => {
+	// La maquette (docs/maquettes/public-cours.md) le dit depuis l'étape 5 : une séance annulée
+	// figure, barrée, dans les prochaines dates. Le cœur ne les rendait pas, et la branche « annulée »
+	// du gabarit ne servait jamais. L'API, elle, ne change pas : ses prochaines séances n'en ont pas.
+	const SLUG_ANNULEE = 'publique-annulee';
+	const organisation = newId();
+	const coursId = newId();
+	const vendrediId = newId();
+	let demain = '';
+	let vendredi = '';
+
+	/** Une date civile telle que la page l'écrit : `JJ.MM.AAAA`. */
+	const jjmmaaaa = (date: string) => `${date.slice(8, 10)}.${date.slice(5, 7)}.${date.slice(0, 4)}`;
+
+	/** Les lignes barrées des prochaines dates, lues comme une personne les lit. */
+	function barrees(html: string): string[] {
+		return [...html.matchAll(/<li\b[^>]*class="[^"]*\bbarree\b[^"]*"[^>]*>([\s\S]*?)<\/li>/g)].map(
+			(trouve) =>
+				(trouve[1] ?? '')
+					.replace(/<[^>]*>/g, ' ')
+					.replace(/\s+/g, ' ')
+					.trim()
+		);
+	}
+
+	const MARQUE: Record<string, { cours: string; vendredi: string }> = {
+		fr: { cours: 'Annulé', vendredi: 'Annulée' },
+		de: { cours: 'Abgesagt', vendredi: 'Abgesagt' },
+		it: { cours: 'Annullato', vendredi: 'Annullata' },
+		en: { cours: 'Cancelled', vendredi: 'Cancelled' },
+		ar: { cours: 'ملغى', vendredi: 'ملغاة' }
+	};
+
+	beforeAll(async () => {
+		const today = todayInZone(FUSEAU, new Date());
+		demain = addDays(today, 1);
+		// Le premier vendredi après aujourd'hui.
+		vendredi =
+			[1, 2, 3, 4, 5, 6, 7]
+				.map((jours) => addDays(today, jours))
+				.find((date) => new Date(`${date}T12:00:00Z`).getUTCDay() === 5) ?? '';
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+					"enabled_language", "prayer_module")
+				values (${organisation}, ${SLUG_ANNULEE}, 'Association aux séances annulées', ${FUSEAU},
+					'fr', array['fr','de','it','en','ar'], true)
+			`);
+			// Un cours chaque jour de la semaine : demain en est un, quel que soit le jour du test.
+			await tx.execute(sql`
+				insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",
+					"source_language", "recurrence_kind", "recurrence_weekday", "recurrence_interval",
+					"recurrence_anchor_date", "timing_kind", "timing_start", "timing_end", "starts_on")
+				values (${coursId}, ${organisation}, 'published', 'open', array['fr'], 'fr', 'weekly',
+					array[1,2,3,4,5,6,7]::smallint[], 1, ${DEBUT}, 'fixed', '18:00', '19:00', ${DEBUT})
+			`);
+			await tx.execute(sql`
+				insert into "course" ("id", "organization_id", "kind", "jumua_order", "status", "audience",
+					"teaching_language", "source_language", "recurrence_kind", "recurrence_weekday",
+					"recurrence_interval", "recurrence_anchor_date", "timing_kind", "timing_start",
+					"timing_end", "starts_on")
+				values (${vendrediId}, ${organisation}, 'jumua', 1, 'published', 'open', array['fr'], 'fr',
+					'weekly', array[5]::smallint[], 1, ${DEBUT}, 'fixed', '13:30', '14:00', ${DEBUT})
+			`);
+			await tx.execute(sql`
+				insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
+				values (${newId()}, ${organisation}, ${coursId}, 'fr', 'Cours de chaque jour'),
+					(${newId()}, ${organisation}, ${vendrediId}, 'fr', 'Prière du vendredi')
+			`);
+			await tx.execute(sql`
+				insert into "session_exception" ("id", "organization_id", "course_id", "date", "kind")
+				values (${newId()}, ${organisation}, ${coursId}, ${demain}, 'cancelled'),
+					(${newId()}, ${organisation}, ${vendrediId}, ${vendredi}, 'cancelled')
+			`);
+		});
+	});
+
+	it.each(['fr', 'de', 'it', 'en', 'ar'])(
+		'shows a cancelled session of a course, struck through, with the mark of the week view, in %s',
+		async (langue) => {
+			const base = langue === 'fr' ? `/m/${SLUG_ANNULEE}` : `/m/${SLUG_ANNULEE}/${langue}`;
+			const reponse = await fetch(`${origin}${base}/cours/${coursId}`);
+			expect(reponse.status).toBe(200);
+			const lignes = barrees(await reponse.text());
+			expect(lignes).toHaveLength(1);
+			expect(lignes[0]).toContain(jjmmaaaa(demain));
+			expect(lignes[0]).toContain('18:00');
+			expect(lignes[0]).toMatch(new RegExp(`${MARQUE[langue]?.cours}$`));
+		}
+	);
+
+	it.each(['fr', 'de', 'it', 'en', 'ar'])(
+		'says « Annulée » for a cancelled Friday session, as the week view does, in %s',
+		async (langue) => {
+			const base = langue === 'fr' ? `/m/${SLUG_ANNULEE}` : `/m/${SLUG_ANNULEE}/${langue}`;
+			const html = await (await fetch(`${origin}${base}/cours/${vendrediId}`)).text();
+			const lignes = barrees(html);
+			expect(lignes).toHaveLength(1);
+			expect(lignes[0]).toContain(jjmmaaaa(vendredi));
+			expect(lignes[0]).toMatch(new RegExp(`${MARQUE[langue]?.vendredi}$`));
+		}
+	);
+
+	it('leaves the next sessions of the API as they were: no cancelled session', async () => {
+		const reponse = (await json(`${origin}/api/v1/organisations/${SLUG_ANNULEE}/courses`)) as {
+			groups: { courses: { id: string; nextSessions: { date: string; status: string }[] }[] }[];
+		};
+		const cours = reponse.groups
+			.flatMap((groupe) => groupe.courses)
+			.find((candidat) => candidat.id === coursId);
+		expect(cours?.nextSessions.length).toBeGreaterThan(0);
+		expect(cours?.nextSessions.map((seance) => seance.status)).not.toContain('cancelled');
+		expect(cours?.nextSessions.map((seance) => seance.date)).not.toContain(demain);
+	});
+});
+
 describe('les cinq langues', () => {
 	it.each([
 		['fr', 'Semaine', 'ltr'],

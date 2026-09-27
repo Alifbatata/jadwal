@@ -66,7 +66,7 @@ interface Dictionnaire {
 	 * « Annulée » : une session du vendredi annulée, accordée à « Prière du vendredi » là où la langue
 	 * accorde (décision du chef de projet, 27.09.2026). La vue Semaine, la vue Mois (toutes deux par
 	 * `Seance.svelte`) et l'onglet Prières le disent ainsi ; un cours garde `cancelled`. La page d'une
-	 * session ne montre jamais une séance annulée : ses prochaines dates n'en ont pas.
+	 * session aussi, dans ses prochaines dates, où une séance annulée figure barrée (étape 19, lot 2).
 	 */
 	readonly cancelledJumua: string;
 	readonly exceptionalDate: string;

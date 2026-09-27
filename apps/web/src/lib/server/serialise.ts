@@ -125,13 +125,18 @@ export function scheduleOf(
 	};
 }
 
-/** Les prochaines séances d'un cours, exceptions et pauses comprises. */
+/**
+ * Les prochaines séances d'un cours, exceptions et pauses comprises. L'API n'en rend que celles qui
+ * ont lieu ; la page publique d'un cours demande aussi les séances annulées (`includeCancelled`),
+ * qu'elle montre barrées (étape 19, lot 2). Le contrat de l'API ne change pas.
+ */
 export function nextDates(
 	schedule: CourseSchedule,
 	exceptions: Parameters<typeof nextOccurrences>[0]['exceptions'],
 	pauses: readonly PauseRow[],
 	today: IsoDate,
-	limit: number
+	limit: number,
+	options: { includeCancelled?: boolean } = {}
 ) {
 	return nextOccurrences({
 		schedules: [schedule],
@@ -142,7 +147,8 @@ export function nextDates(
 			...(pause.course_id ? { courseId: pause.course_id } : {})
 		})),
 		from: today,
-		limit
+		limit,
+		includeCancelled: options.includeCancelled === true
 	});
 }
 

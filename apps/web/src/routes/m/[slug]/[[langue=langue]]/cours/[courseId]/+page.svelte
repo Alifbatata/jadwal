@@ -121,10 +121,14 @@
 		{:else}
 			<ul>
 				{#each data.prochaines as seance (seance.date + seance.status)}
+					<!-- Annulée, elle reste là, barrée, avec la marque de la vue Semaine : « Annulée » pour une
+					     session du vendredi, accordée à la prière (étape 19, lot 2). -->
 					<li class:barree={seance.status === 'cancelled'}>
 						{longDate(data.langue, seance.date as IsoDate)}
 						<span class="heure">{heureDeSeance(data.langue, seance)}</span>
-						{#if seance.status === 'cancelled'}<span class="marque">{mots.cancelled}</span>{/if}
+						{#if seance.status === 'cancelled'}<span class="marque"
+								>{data.cours.kind === 'jumua' ? mots.cancelledJumua : mots.cancelled}</span
+							>{/if}
 						<!-- Déplacée le même jour, à une autre heure : un changement d'heure, et l'heure d'avant
 						     quand elle est connue (relecture du lot 4). -->
 						{#if seance.status === 'moved_here' && seance.originalDate === seance.date}

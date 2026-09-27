@@ -81,7 +81,11 @@ export const load: PageServerLoad = async (event) => {
 	// gardent leur règle, « 15 min après Maghrib », comme avant. Un jour qu'aucune source ne couvre
 	// laisse l'heure d'avant inconnue, comme dans la vue Semaine.
 	const schedule = toSchedule(cours);
-	const prochaines = nextDates(schedule, exceptions, pauses, today, PROCHAINES);
+	// Une séance annulée figure dans les prochaines dates, barrée, avec la marque de la vue Semaine
+	// (docs/maquettes/public-cours.md) : elle compte parmi les dix, à sa date (étape 19, lot 2).
+	const prochaines = nextDates(schedule, exceptions, pauses, today, PROCHAINES, {
+		includeCancelled: true
+	});
 	const memeJour = prochaines
 		.filter((seance) => seance.status === 'moved_here' && seance.originalDate === seance.date)
 		.map((seance) => seance.date);
@@ -127,6 +131,8 @@ export const load: PageServerLoad = async (event) => {
 		langues: languesProposees(organisation),
 		cours: {
 			id: cours.id,
+			/** `jumua` : une séance annulée dit « Annulée », accordée à la prière, comme la vue Semaine. */
+			kind: cours.kind,
 			title: cours.title ?? '',
 			description: cours.description,
 			audience: cours.audience,
