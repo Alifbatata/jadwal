@@ -246,7 +246,10 @@ que si elle a supprimé une ligne, comme pour Publier et Supprimer.
   de loin. Une séance qui n'a changé que d'heure garde un seul « Rétablir », sur la carte de son
   heure prévue, le même jour.
 - **Le refus d'une carte périmée nomme la séance**, par son titre et sa date : `changed` et
-  `timeChanged`, et `alreadyCancelled` et `alreadyRestored`, ci-dessous.
+  `timeChanged`, et `alreadyCancelled` et `alreadyRestored`, ci-dessous. Le titre, saisi par une
+  personne, est isolé dans la phrase comme sur la carte (`<bdi>`, ADR 0007) : l'action rend le
+  titre à part, et la page découpe la phrase autour de lui (`upcomingErrorParts`). Inséré tel quel,
+  un titre latin qui finit par une ponctuation se retournait sur un écran arabe (relecture de D4).
 - **Un second « Rétablir »**, par une autre personne ou depuis une page restée ouverte, n'a plus
   rien à rétablir : il est refusé (409, `alreadyRestored`) et n'écrit rien, pas même au journal
   (relecture de D2). Sa phrase s'écrit en haut de l'écran, et non dans la carte de la séance, de

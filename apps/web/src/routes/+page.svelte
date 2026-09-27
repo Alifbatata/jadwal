@@ -4,7 +4,12 @@
 	import { audienceLabel, describeSessionTime, shortDate } from '$lib/format.js';
 	import { direction, NOM_DE_LANGUE, type Langue } from '$lib/i18n.js';
 	import { commonTexts } from '$lib/i18n/common.js';
-	import { upcomingErrorText, upcomingTexts, type UpcomingError } from '$lib/i18n/upcoming.js';
+	import {
+		upcomingErrorParts,
+		upcomingTexts,
+		type UpcomingError,
+		type UpcomingErrorPart
+	} from '$lib/i18n/upcoming.js';
 	import { languesEnClair } from '$lib/public/affichage.js';
 
 	let { data, form } = $props();
@@ -89,11 +94,12 @@
 			: null
 	);
 	/**
-	 * La phrase du refus, dans la langue de l'écran. Le refus d'une carte périmée nomme la séance :
-	 * l'action rend son titre, et la page écrit sa date (étape 19, D4).
+	 * La phrase du refus, dans la langue de l'écran, en morceaux. Le refus d'une carte périmée nomme
+	 * la séance : l'action rend son titre, et la page écrit sa date (étape 19, D4). Le titre est un
+	 * morceau à lui seul, que la page isole (`<bdi>`, ADR 0007).
 	 */
-	const erreur = $derived(
-		form?.error ? upcomingErrorText(text, form.error, form.title ?? '', date(form.date ?? '')) : ''
+	const erreur: readonly UpcomingErrorPart[] = $derived(
+		form?.error ? upcomingErrorParts(text, form.error, form.title ?? '', date(form.date ?? '')) : []
 	);
 	/**
 	 * Une erreur qui ne trouve pas sa carte s'affiche en haut : une séance disparue, une séance
@@ -108,6 +114,16 @@
 			)
 	);
 </script>
+
+<!-- La phrase d'un refus. Le titre d'une séance, saisi par une personne, y est isolé (ADR 0007) :
+     sur un écran arabe, un titre latin qui finit par une ponctuation se retournait. Aucun blanc
+     entre deux morceaux : il s'écrirait dans la phrase. -->
+{#snippet phraseDuRefus(morceaux: readonly UpcomingErrorPart[])}
+	<p class="erreur" role="alert">
+		{#each morceaux as morceau, index (index)}{#if morceau.title}<bdi>{morceau.text}</bdi
+				>{:else}{morceau.text}{/if}{/each}
+	</p>
+{/snippet}
 
 <!-- Les messages prêts à coller, une langue par bloc, la première ouverte (retour D1). Chaque bloc
      porte la langue et le sens de son texte : un message arabe se lit de droite à gauche dans un écran
@@ -149,7 +165,7 @@
 <p class="intro">{text.intro}</p>
 
 {#if form?.error && erreurEnHaut}
-	<p class="erreur" role="alert">{erreur}</p>
+	{@render phraseDuRefus(erreur)}
 {/if}
 
 <!-- Ce que la dernière action a fait, et le message qu'elle prépare : c'est ce que la personne
@@ -269,7 +285,7 @@
 									     (`REFUS_D_UNE_CARTE`) : les autres s'affichent en haut. Elle se lit donc
 									     au-dessus des champs à corriger. -->
 									{#if form?.error && refusee === k}
-										<p class="erreur" role="alert">{erreur}</p>
+										{@render phraseDuRefus(erreur)}
 									{/if}
 									<!-- Toute date à partir d'aujourd'hui, plus tôt comme plus tard que la date
 									     prévue (retour A2), jusqu'au 31.12.2100, la dernière que l'action accepte

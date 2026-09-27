@@ -650,16 +650,38 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 	}
 };
 
+/** Un morceau de la phrase d'un refus : le titre de la séance, ou le texte autour de lui. */
+export interface UpcomingErrorPart {
+	readonly text: string;
+	readonly title: boolean;
+}
+
 /**
- * La phrase d'un refus, dans la langue de l'écran. Un refus qui nomme la séance reçoit son titre et
- * sa date déjà écrite ; les autres n'en ont pas besoin.
+ * Ce qui tient la place du titre le temps de découper la phrase : un caractère d'usage privé,
+ * qu'aucune phrase ni aucune date écrite ne contient.
  */
-export function upcomingErrorText(
+const PLACE_DU_TITRE = '';
+
+/**
+ * La phrase d'un refus, dans la langue de l'écran, en morceaux. Un refus qui nomme la séance reçoit
+ * son titre et sa date déjà écrite ; les autres n'en ont pas besoin. Le titre, saisi par une
+ * personne, est un morceau à lui seul : la page l'isole (`<bdi>`, ADR 0007), sans quoi un titre
+ * latin qui finit par une ponctuation se retournait dans une phrase arabe (relecture de D4).
+ */
+export function upcomingErrorParts(
 	texts: UpcomingTexts,
 	error: UpcomingError,
 	title: string,
 	date: string
-): string {
+): readonly UpcomingErrorPart[] {
 	const phrase = texts.errors[error];
-	return typeof phrase === 'function' ? phrase(title, date) : phrase;
+	if (typeof phrase !== 'function') return [{ text: phrase, title: false }];
+	const [avant = '', ...apres] = phrase(PLACE_DU_TITRE, date).split(PLACE_DU_TITRE);
+	return [
+		{ text: avant, title: false },
+		...apres.flatMap((suite) => [
+			{ text: title, title: true },
+			{ text: suite, title: false }
+		])
+	];
 }

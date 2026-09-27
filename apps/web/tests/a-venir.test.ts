@@ -411,9 +411,14 @@ function cache(fragment: string, nom: string): string | undefined {
 	return balise ? attributs(balise)['value'] : undefined;
 }
 
-/** La phrase d'erreur d'un fragment : le texte de son élément `role="alert"`. */
+/**
+ * La phrase d'erreur d'un fragment : le texte de son élément `role="alert"`. Le titre d'une séance y
+ * est isolé dans un `<bdi>` (ADR 0007), entre les commentaires que Svelte pose autour d'un bloc :
+ * ni l'un ni les autres ne coupent la phrase, et ils sont retirés sans espace.
+ */
 function alerte(fragment: string): string {
-	return texte(fragment.match(/<[a-z]+\b[^>]*role="alert"[^>]*>([\s\S]*?)<\/[a-z]+>/)?.[1] ?? '');
+	const phrase = fragment.match(/<([a-z]+)\b[^>]*role="alert"[^>]*>([\s\S]*?)<\/\1>/)?.[2] ?? '';
+	return texte(phrase.replace(/<!--[\s\S]*?-->|<\/?bdi\b[^>]*>/g, ''));
 }
 
 /**
@@ -2430,6 +2435,30 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 				langue
 			).toEqual([]);
 			expect(section(html, 'message-titre'), langue).toBe('');
+		}
+	});
+
+	it('isolates the title of the session in each refusal that names it, in each language (ADR 0007)', () => {
+		// Un nom saisi par une personne est isolé (`<bdi>`) : sans lui, sur un écran arabe, un titre
+		// latin qui finit par une ponctuation se retourne, « (Tafsir (2 » (relecture de D4).
+		const refus: [string, (langue: Langue) => string][] = [
+			['après une page restée ouverte', () => CERCLE],
+			['après une seconde annulation', () => CERCLE],
+			['après un second rétablissement', () => CERCLE],
+			['après une carte dont l’heure a changé', (langue) => SOIR_LU[langue]]
+		];
+		for (const [etat, titre] of refus) {
+			for (const langue of LANGUES) {
+				const phrase =
+					(rendus[etat]?.[langue] ?? '').match(/<p\b[^>]*role="alert"[^>]*>([\s\S]*?)<\/p>/)?.[1] ??
+					'';
+				expect(
+					[...phrase.matchAll(/<bdi\b[^>]*>([\s\S]*?)<\/bdi>/g)].map((isole) =>
+						decode(isole[1] ?? '')
+					),
+					`${etat} ${langue}`
+				).toEqual([titre(langue)]);
+			}
 		}
 	});
 

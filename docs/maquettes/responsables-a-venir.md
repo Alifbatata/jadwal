@@ -99,9 +99,11 @@ page. Rien n'a été enregistré. Sa nouvelle heure est écrite sous son titre :
 l'heure choisies, puis recommencez.` : l'heure du cours a changé dans sa fiche pendant que la page
   restait ouverte, et la carte envoie l'ancienne.
 
-Les refus qui ne désignent plus aucune carte s'affichent en haut de l'écran. Ceux d'une carte
-périmée (409) nomment la séance, par son titre, dans la langue de l'écran quand le cours y est
-traduit, et par sa date (étape 19) :
+Les refus qui ne désignent plus aucune carte s'affichent en haut de l'écran. Le titre, saisi par
+une personne, y est isolé comme sur la carte (`<bdi>`, ADR 0007) : sur un écran arabe, un titre
+latin qui finit par une ponctuation, `Tafsir (2)`, se lisait `(Tafsir (2`. Ceux d'une carte périmée
+(409) nomment la séance, par son titre, dans la langue de l'écran quand le cours y est traduit, et
+par sa date (étape 19) :
 
 - `La séance « Cercle de lecture » du lundi 28.09.2026 a changé depuis l'ouverture de la page :
 elle a déjà été annulée ou déplacée. Rien n'a été enregistré. Le programme ci-dessous est à jour.` :
