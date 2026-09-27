@@ -273,8 +273,10 @@ export const load: PageServerLoad = async (event) => {
 			apercu: calcul ? apercu(calcul, today) : [],
 			periodes: await readPeriodes(tx),
 			// Les sessions du vendredi : ce jour-là, ce sont elles qui tiennent lieu de Dhuhr, et les
-			// tableaux le disent plutôt que d'afficher une heure que personne ne suit (ADR 0033).
-			vendredi: sessionsDuVendredi(await readCourses(tx, ['draft', 'published'], ['jumua'])).map(
+			// tableaux le disent plutôt que d'afficher une heure que personne ne suit (ADR 0033). Les
+			// publiées seulement, comme la page publique, À venir et Partager : une session en brouillon
+			// n'a lieu nulle part (étape 19).
+			vendredi: sessionsDuVendredi(await readCourses(tx, ['published'], ['jumua'])).map(
 				(session) => ({ jumuaOrder: session.jumuaOrder, start: session.start as string })
 			),
 			septJours,

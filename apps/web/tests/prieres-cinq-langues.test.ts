@@ -1646,3 +1646,73 @@ describe('l’ordre des titres, sans aucune période (étape 19, D5)', () => {
 		}
 	);
 });
+
+describe('le vendredi du tableau, des sessions publiées seulement (étape 19, lot 2)', () => {
+	/** Responsable d'une organisation qui a une session publiée et une autre en brouillon. */
+	const DEUX_SESSIONS = 'prieres-cinq-deux-sessions@example.test';
+	let deuxSessionsId: string;
+
+	beforeAll(async () => {
+		deuxSessionsId = newId();
+		const personne = newId();
+		const debut = addDays(aujourdhui(), -1);
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+					"enabled_language", "prayer_module")
+				values (${deuxSessionsId}, 'prieres-cinq-deux-sessions', 'Association des vendredis',
+					${FUSEAU}, 'fr', array['fr'], true)
+			`);
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified", "language")
+				values (${personne}, ${DEUX_SESSIONS}, true, 'fr')
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${deuxSessionsId}, ${personne}, 'org_admin')
+			`);
+			await tx.execute(conditionsAcceptees(deuxSessionsId, personne));
+			// Des heures pour les sept prochains jours : le tableau de ce que voit le public n'a de
+			// ligne que pour un jour qui en a, et le vendredi en est toujours un.
+			await tx.execute(sql`
+				insert into "prayer_period" ("id", "organization_id", "name", "from_date", "to_date",
+					"fajr", "dhuhr", "asr", "maghrib", "isha")
+				values (${newId()}, ${deuxSessionsId}, 'Automne', ${debut}::date,
+					${addDays(debut, 30)}::date, '06:00', '13:30', '16:30', '19:00', '20:30')
+			`);
+			for (const [ordre, statut, heure] of [
+				[1, 'published', '12:30'],
+				[2, 'draft', '14:15']
+			] as const) {
+				await tx.execute(sql`
+					insert into "course" ("id", "organization_id", "kind", "jumua_order", "status",
+						"audience", "teaching_language", "source_language", "recurrence_kind",
+						"recurrence_weekday", "recurrence_interval", "recurrence_anchor_date", "timing_kind",
+						"timing_start", "timing_end", "starts_on")
+					values (${newId()}, ${deuxSessionsId}, 'jumua', ${ordre}, ${statut}, 'open',
+						array['ar'], 'fr', 'weekly', array[5]::smallint[], 1, '2026-09-04', 'fixed',
+						${heure}, ${addMinutes(heure, 40)}, '2026-09-04')
+				`);
+			}
+		});
+		sessions[DEUX_SESSIONS] = await signIn(DEUX_SESSIONS);
+	});
+
+	/** Une heure `HH:MM` plus tard de ces minutes, le même jour. */
+	function addMinutes(heure: string, minutes: number): string {
+		const [h = 0, m = 0] = heure.split(':').map(Number);
+		const total = h * 60 + m + minutes;
+		return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+	}
+
+	it('writes on Friday only the published sessions, as the public page and À venir do', async () => {
+		// Une session en brouillon n'a lieu nulle part : ni la page publique, ni À venir, ni Partager
+		// ne la montrent (lot 1). Le tableau de cet écran la comptait encore dans la ligne du vendredi.
+		const html = await (await get('/prieres', DEUX_SESSIONS)).text();
+		const section =
+			html.match(/<section\b[^>]*aria-labelledby="servies-titre"[\s\S]*?<\/section>/)?.[0] ?? '';
+		const servies = visibleText(`<body>${section}</body>`);
+		expect(servies).toContain('Jumu’a 12:30');
+		expect(servies).not.toContain('14:15');
+	});
+});

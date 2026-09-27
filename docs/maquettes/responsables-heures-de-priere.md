@@ -43,7 +43,8 @@ est appelée dans la salle. Si vous en avez une, réglez-la ici : un cours « ap
 l'iqama.` Les mêmes périodes que la saisie à la main, avec les heures affichées repliées sous
    `Remplacer aussi les heures affichées`.
 6. **Ce que voit le public les sept prochains jours** : les jours datés (`samedi 26.09.2026`), sous
-   chaque heure sa provenance (`saisie`, `importée`, `calculée`), l'iqama, et `Jumu'a` le vendredi.
+   chaque heure sa provenance (`saisie`, `importée`, `calculée`), l'iqama, et `Jumu'a` le vendredi,
+   avec l'heure des sessions publiées seulement, comme la page publique, À venir et Partager (ADR 0033) : jusqu'à l'étape 19, une session en brouillon s'y ajoutait.
 
 ## Calculées pour votre localité
 
