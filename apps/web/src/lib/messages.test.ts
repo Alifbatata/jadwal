@@ -392,6 +392,101 @@ describe('l’annonce d’un changement d’heure le même jour, dans les cinq l
 	});
 });
 
+describe('les annonces d’une session du vendredi, dans les cinq langues (étape 19)', () => {
+	// La prière du vendredi n'est pas un cours : « Le cours « Freitagsgebet » … » disait le contraire
+	// (décision du chef de projet). Le titre vient d'abord, puis la phrase dit « la prière ».
+	const vendredi = '2026-10-02' as IsoDate;
+	const samedi = '2026-10-03' as IsoDate;
+
+	/** La phrase du milieu et la dernière ligne d'un message. */
+	const fin = (message: string) => message.split('\n').slice(2);
+
+	it('says that the prayer is cancelled, and that the other Friday prayers go on', () => {
+		expect(
+			LANGUES.map((langue) =>
+				fin(cancellationMessage(SALUT, 'Prière du vendredi', vendredi, langue, 'jumua'))
+			)
+		).toEqual([
+			[
+				'« Prière du vendredi » : la prière du vendredi 02.10.2026 est annulée.',
+				'Les autres prières du vendredi ont lieu comme d’habitude.'
+			],
+			[
+				'«Prière du vendredi»: Das Gebet vom Freitag, 02.10.2026, fällt aus.',
+				'Die anderen Freitagsgebete finden wie gewohnt statt.'
+			],
+			[
+				'«Prière du vendredi»: la preghiera di venerdì 02.10.2026 è annullata.',
+				'Le altre preghiere del venerdì si svolgono regolarmente.'
+			],
+			[
+				'‘Prière du vendredi’: the prayer on Friday 02.10.2026 is cancelled.',
+				'The other Friday prayers go ahead as usual.'
+			],
+			[
+				'«Prière du vendredi»: أُلغيت الصلاة يوم الجمعة 02.10.2026.',
+				'تُقام مواعيد صلاة الجمعة الأخرى كالمعتاد.'
+			]
+		]);
+	});
+
+	it('says that the prayer moves to another day, with both dates and the new time', () => {
+		expect(
+			LANGUES.map(
+				(langue) =>
+					fin(moveMessage(SALUT, 'Jumu’a', vendredi, samedi, '15:00', langue, null, 'jumua'))[0]
+			)
+		).toEqual([
+			'« Jumu’a » : la prière du vendredi 02.10.2026 est déplacée au samedi 03.10.2026 à 15:00.',
+			'«Jumu’a»: Das Gebet vom Freitag, 02.10.2026, wird auf Samstag, 03.10.2026, um 15:00 verschoben.',
+			'«Jumu’a»: la preghiera di venerdì 02.10.2026 è spostata a sabato 03.10.2026 alle 15:00.',
+			'‘Jumu’a’: the prayer on Friday 02.10.2026 has been moved to Saturday 03.10.2026 at 15:00.',
+			'«Jumu’a»: نُقلت الصلاة من يوم الجمعة 02.10.2026 إلى يوم السبت 03.10.2026 في الساعة 15:00.'
+		]);
+	});
+
+	it('says that only the time of the prayer changes, the same day', () => {
+		expect(
+			LANGUES.map(
+				(langue) =>
+					fin(
+						moveMessage(SALUT, 'Jumu’a', vendredi, vendredi, '13:45', langue, '13:30', 'jumua')
+					)[0]
+			)
+		).toEqual([
+			'« Jumu’a » : la prière du vendredi 02.10.2026 commence à 13:45 au lieu de 13:30.',
+			'«Jumu’a»: Am Freitag, 02.10.2026, beginnt das Gebet um 13:45 statt um 13:30.',
+			'«Jumu’a»: la preghiera di venerdì 02.10.2026 inizia alle 13:45 anziché alle 13:30.',
+			'‘Jumu’a’: the prayer on Friday 02.10.2026 now starts at 13:45 instead of 13:30.',
+			'«Jumu’a»: تبدأ الصلاة يوم الجمعة 02.10.2026 في الساعة 13:45 بدلًا من الساعة 13:30.'
+		]);
+		expect(
+			LANGUES.map(
+				(langue) =>
+					fin(moveMessage(SALUT, 'Jumu’a', vendredi, vendredi, '13:45', langue, null, 'jumua'))[0]
+			)
+		).toEqual([
+			'« Jumu’a » : la prière du vendredi 02.10.2026 commence à 13:45.',
+			'«Jumu’a»: Am Freitag, 02.10.2026, beginnt das Gebet um 13:45.',
+			'«Jumu’a»: la preghiera di venerdì 02.10.2026 inizia alle 13:45.',
+			'‘Jumu’a’: the prayer on Friday 02.10.2026 starts at 13:45.',
+			'«Jumu’a»: تبدأ الصلاة يوم الجمعة 02.10.2026 في الساعة 13:45.'
+		]);
+	});
+
+	it('keeps the words of a course for a course', () => {
+		for (const langue of LANGUES) {
+			expect(cancellationMessage(SALUT, 'Tafsir', vendredi, langue, 'course'), langue).toBe(
+				cancellationMessage(SALUT, 'Tafsir', vendredi, langue)
+			);
+			expect(
+				moveMessage(SALUT, 'Tafsir', vendredi, samedi, '15:00', langue, null, 'course'),
+				langue
+			).toBe(moveMessage(SALUT, 'Tafsir', vendredi, samedi, '15:00', langue));
+		}
+	});
+});
+
 describe('l’annonce d’un cours nouveau, dans les cinq langues', () => {
 	it('names the course, its rhythm, its time and its room', () => {
 		const rythmes = {

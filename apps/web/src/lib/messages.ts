@@ -13,6 +13,11 @@
 // dans un ternaire : le correcteur (`pnpm orthographe`) relit chaque chaîne dans la langue de sa clé.
 // Les heures et les mots des séances viennent de la page publique (`affichage.ts`) : un message ne
 // dit pas autre chose que la page.
+//
+// Depuis l'étape 19, une session du vendredi a ses propres mots (décision du chef de projet) : la
+// prière du vendredi n'est pas un cours, et « Le cours « Freitagsgebet » du … est annulé » le
+// laissait croire. Son titre vient d'abord, puis la phrase parle de la prière, et la dernière ligne
+// des autres prières du vendredi. Le type de la séance est le dernier paramètre, `course` par défaut.
 
 import type { IsoDate } from '@jadwal/core';
 import { longDate, t, type Langue } from './i18n.js';
@@ -41,14 +46,8 @@ function virgule(langue: Langue): string {
 	return langue === 'ar' ? '، ' : ', ';
 }
 
-interface Phrases {
-	readonly semaine: (organisation: string) => string;
-	readonly annule: string;
-	readonly exceptionnelle: string;
-	/** Une séance déplacée le même jour à une autre heure, comme le dit sa carte sur « À venir ». */
-	readonly nouvelleHeure: string;
-	/** Une séance ancrée sur une prière dont la table ne connaît pas encore l'heure, ni l'ancre. */
-	readonly heureInconnue: string;
+/** Ce qu'un message dit d'une séance qui change : son annulation, son déplacement, et la suite. */
+interface Changement {
 	readonly annulation: (titre: string, date: string) => string;
 	readonly deplacement: (titre: string, de: string, vers: string, heure: string) => string;
 	/** Le même jour à une autre heure : la date une fois, la nouvelle heure, puis celle d'avant. */
@@ -56,7 +55,19 @@ interface Phrases {
 	/** Le même jour, pour une séance qui n'avait pas encore d'heure : la nouvelle heure seule. */
 	readonly heureFixee: (titre: string, date: string, heure: string) => string;
 	readonly lesAutres: string;
+}
+
+interface Phrases extends Changement {
+	readonly semaine: (organisation: string) => string;
+	readonly annule: string;
+	readonly exceptionnelle: string;
+	/** Une séance déplacée le même jour à une autre heure, comme le dit sa carte sur « À venir ». */
+	readonly nouvelleHeure: string;
+	/** Une séance ancrée sur une prière dont la table ne connaît pas encore l'heure, ni l'ancre. */
+	readonly heureInconnue: string;
 	readonly nouveau: (titre: string, suite: string) => string;
+	/** Les mêmes changements pour une session du vendredi, qui n'est pas un cours (étape 19). */
+	readonly vendredi: Changement;
 }
 
 /**
@@ -77,7 +88,17 @@ const PHRASES: Record<Langue, Phrases> = {
 			`Le cours « ${titre} » du ${date} commence à ${heure} au lieu de ${avant}.`,
 		heureFixee: (titre, date, heure) => `Le cours « ${titre} » du ${date} commence à ${heure}.`,
 		lesAutres: 'Les autres séances ont lieu normalement.',
-		nouveau: (titre, suite) => `Nouveau cours : « ${titre} », ${suite}.`
+		nouveau: (titre, suite) => `Nouveau cours : « ${titre} », ${suite}.`,
+		vendredi: {
+			annulation: (titre, date) => `« ${titre} » : la prière du ${date} est annulée.`,
+			deplacement: (titre, de, vers, heure) =>
+				`« ${titre} » : la prière du ${de} est déplacée au ${vers} à ${heure}.`,
+			changementHeure: (titre, date, heure, avant) =>
+				`« ${titre} » : la prière du ${date} commence à ${heure} au lieu de ${avant}.`,
+			heureFixee: (titre, date, heure) =>
+				`« ${titre} » : la prière du ${date} commence à ${heure}.`,
+			lesAutres: 'Les autres prières du vendredi ont lieu comme d’habitude.'
+		}
 	},
 	de: {
 		semaine: (organisation) => `Das Programm dieser Woche bei ${organisation}:`,
@@ -92,7 +113,16 @@ const PHRASES: Record<Langue, Phrases> = {
 			`Am ${date}, beginnt der Kurs «${titre}» um ${heure} statt um ${avant}.`,
 		heureFixee: (titre, date, heure) => `Am ${date}, beginnt der Kurs «${titre}» um ${heure}.`,
 		lesAutres: 'Die anderen Termine finden wie gewohnt statt.',
-		nouveau: (titre, suite) => `Neuer Kurs: «${titre}», ${suite}.`
+		nouveau: (titre, suite) => `Neuer Kurs: «${titre}», ${suite}.`,
+		vendredi: {
+			annulation: (titre, date) => `«${titre}»: Das Gebet vom ${date}, fällt aus.`,
+			deplacement: (titre, de, vers, heure) =>
+				`«${titre}»: Das Gebet vom ${de}, wird auf ${vers}, um ${heure} verschoben.`,
+			changementHeure: (titre, date, heure, avant) =>
+				`«${titre}»: Am ${date}, beginnt das Gebet um ${heure} statt um ${avant}.`,
+			heureFixee: (titre, date, heure) => `«${titre}»: Am ${date}, beginnt das Gebet um ${heure}.`,
+			lesAutres: 'Die anderen Freitagsgebete finden wie gewohnt statt.'
+		}
 	},
 	it: {
 		semaine: (organisation) => `Il programma della settimana di ${organisation}:`,
@@ -107,7 +137,17 @@ const PHRASES: Record<Langue, Phrases> = {
 			`La lezione «${titre}» di ${date} inizia alle ${heure} anziché alle ${avant}.`,
 		heureFixee: (titre, date, heure) => `La lezione «${titre}» di ${date} inizia alle ${heure}.`,
 		lesAutres: 'Le altre lezioni si svolgono regolarmente.',
-		nouveau: (titre, suite) => `Nuovo corso: «${titre}», ${suite}.`
+		nouveau: (titre, suite) => `Nuovo corso: «${titre}», ${suite}.`,
+		vendredi: {
+			annulation: (titre, date) => `«${titre}»: la preghiera di ${date} è annullata.`,
+			deplacement: (titre, de, vers, heure) =>
+				`«${titre}»: la preghiera di ${de} è spostata a ${vers} alle ${heure}.`,
+			changementHeure: (titre, date, heure, avant) =>
+				`«${titre}»: la preghiera di ${date} inizia alle ${heure} anziché alle ${avant}.`,
+			heureFixee: (titre, date, heure) =>
+				`«${titre}»: la preghiera di ${date} inizia alle ${heure}.`,
+			lesAutres: 'Le altre preghiere del venerdì si svolgono regolarmente.'
+		}
 	},
 	en: {
 		semaine: (organisation) => `This week’s programme at ${organisation}:`,
@@ -122,7 +162,16 @@ const PHRASES: Record<Langue, Phrases> = {
 			`The ‘${titre}’ session on ${date} now starts at ${heure} instead of ${avant}.`,
 		heureFixee: (titre, date, heure) => `The ‘${titre}’ session on ${date} starts at ${heure}.`,
 		lesAutres: 'The other sessions go ahead as usual.',
-		nouveau: (titre, suite) => `New course: ‘${titre}’, ${suite}.`
+		nouveau: (titre, suite) => `New course: ‘${titre}’, ${suite}.`,
+		vendredi: {
+			annulation: (titre, date) => `‘${titre}’: the prayer on ${date} is cancelled.`,
+			deplacement: (titre, de, vers, heure) =>
+				`‘${titre}’: the prayer on ${de} has been moved to ${vers} at ${heure}.`,
+			changementHeure: (titre, date, heure, avant) =>
+				`‘${titre}’: the prayer on ${date} now starts at ${heure} instead of ${avant}.`,
+			heureFixee: (titre, date, heure) => `‘${titre}’: the prayer on ${date} starts at ${heure}.`,
+			lesAutres: 'The other Friday prayers go ahead as usual.'
+		}
 	},
 	ar: {
 		semaine: (organisation) => `برنامج هذا الأسبوع في ${organisation}:`,
@@ -137,9 +186,26 @@ const PHRASES: Record<Langue, Phrases> = {
 			`يبدأ درس «${titre}» يوم ${date} في الساعة ${heure} بدلًا من الساعة ${avant}.`,
 		heureFixee: (titre, date, heure) => `يبدأ درس «${titre}» يوم ${date} في الساعة ${heure}.`,
 		lesAutres: 'تُقام الحصص الأخرى كالمعتاد.',
-		nouveau: (titre, suite) => `درس جديد: «${titre}»، ${suite}.`
+		nouveau: (titre, suite) => `درس جديد: «${titre}»، ${suite}.`,
+		vendredi: {
+			annulation: (titre, date) => `«${titre}»: أُلغيت الصلاة يوم ${date}.`,
+			deplacement: (titre, de, vers, heure) =>
+				`«${titre}»: نُقلت الصلاة من يوم ${de} إلى يوم ${vers} في الساعة ${heure}.`,
+			changementHeure: (titre, date, heure, avant) =>
+				`«${titre}»: تبدأ الصلاة يوم ${date} في الساعة ${heure} بدلًا من الساعة ${avant}.`,
+			heureFixee: (titre, date, heure) => `«${titre}»: تبدأ الصلاة يوم ${date} في الساعة ${heure}.`,
+			lesAutres: 'تُقام مواعيد صلاة الجمعة الأخرى كالمعتاد.'
+		}
 	}
 };
+
+/**
+ * Les phrases d'un changement, selon le type de la séance : celles d'une session du vendredi pour
+ * `jumua`, celles d'un cours sinon.
+ */
+function changement(langue: Langue, kind: string): Changement {
+	return kind === 'jumua' ? PHRASES[langue].vendredi : PHRASES[langue];
+}
 
 /** « Salam alaykoum, » : la formule que l'organisation a choisie, suivie de la virgule de la langue. */
 function salutation(greeting: string, langue: Langue): string {
@@ -206,14 +272,18 @@ export function weekMessage(
 	return lignes.join('\n');
 }
 
-/** Le message d'une annulation ponctuelle. Il dit toujours que le cours continue après. */
+/**
+ * Le message d'une annulation ponctuelle. Il dit toujours que le cours continue après, ou, pour une
+ * session du vendredi (`kind` vaut `jumua`), que les autres prières du vendredi ont lieu.
+ */
 export function cancellationMessage(
 	greeting: string,
 	title: string,
 	date: IsoDate,
-	langue: Langue = 'fr'
+	langue: Langue = 'fr',
+	kind = 'course'
 ): string {
-	const phrases = PHRASES[langue];
+	const phrases = changement(langue, kind);
 	return [
 		salutation(greeting, langue),
 		'',
@@ -226,7 +296,7 @@ export function cancellationMessage(
  * Le message d'un déplacement. Les deux dates y sont, sans quoi personne ne s'y retrouve. Le même
  * jour, seule l'heure change, et le message ne parle que d'elle : la date une fois, la nouvelle
  * heure, et `plannedStart`, l'heure prévue, quand la séance en avait une (relecture du lot 4 de
- * l'étape 18).
+ * l'étape 18). Une session du vendredi a ses propres mots, comme pour une annulation.
  */
 export function moveMessage(
 	greeting: string,
@@ -235,9 +305,10 @@ export function moveMessage(
 	to: IsoDate,
 	start: string,
 	langue: Langue = 'fr',
-	plannedStart: string | null = null
+	plannedStart: string | null = null,
+	kind = 'course'
 ): string {
-	const phrases = PHRASES[langue];
+	const phrases = changement(langue, kind);
 	const date = longDate(langue, from);
 	const phrase =
 		from !== to
