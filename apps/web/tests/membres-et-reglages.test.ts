@@ -1210,6 +1210,15 @@ const LANGUE_DU_COURRIEL: Record<Langue, string> = {
 	ar: 'لغة البريد الإلكتروني'
 };
 
+/** L'aide sous ce choix, dans chaque langue de l'écran. */
+const AIDE_LANGUE_DU_COURRIEL: Record<Langue, string> = {
+	fr: 'La personne invitée reçoit le courriel dans cette langue.',
+	de: 'Die eingeladene Person erhält die E-Mail in dieser Sprache.',
+	it: 'La persona invitata riceve l’e-mail in questa lingua.',
+	en: 'The person you invite receives the email in this language.',
+	ar: 'تصل رسالة الدعوة إلى الشخص المدعو بهذه اللغة.'
+};
+
 /** L'objet du courriel d'invitation, dans chaque langue. */
 const OBJET_DE_L_INVITATION: Record<Langue, string> = {
 	fr: `Invitation à rejoindre ${ORGANISATION} sur jadwal`,
@@ -1242,6 +1251,9 @@ describe('la langue du courriel, choisie dans le formulaire d’invitation (éta
 			expect(
 				lu(formulaire.match(/<label\b[^>]*for="emailLanguage"[^>]*>[\s\S]*?<\/label>/)?.[0] ?? '')
 			).toBe(LANGUE_DU_COURRIEL[langue]);
+			// L'aide sous le choix, reliée pour les lecteurs d'écran, dans la langue de l'écran.
+			expect(champ(formulaire, 'emailLanguage')).toMatch(/\baria-describedby="emailLanguage-aide"/);
+			expect(lu(element(formulaire, 'emailLanguage-aide'))).toBe(AIDE_LANGUE_DU_COURRIEL[langue]);
 			// Chaque langue est écrite dans sa langue, comme dans le choix de la langue de l'écran.
 			for (const code of LANGUES) {
 				expect(formulaire).toMatch(
@@ -2137,10 +2149,22 @@ describe('quitter une organisation depuis « Vos organisations » (étape 19)', 
 				);
 				expect(bouton, organisation.nom).toEqual({ organizationId: organisation.id });
 			}
-			const boutons = [...html.matchAll(/<form\b[^>]*action="\?\/quitter"[\s\S]*?<\/form>/g)].map(
-				([formulaire]) => lu(formulaire)
-			);
+			const formulaires = [
+				...html.matchAll(/<form\b[^>]*action="\?\/quitter"[\s\S]*?<\/form>/g)
+			].map(([formulaire]) => formulaire);
+			const boutons = formulaires.map((formulaire) => lu(formulaire));
 			expect(boutons).toEqual([QUITTER[langue].bouton, QUITTER[langue].bouton]);
+			// Les boutons disent tous le même geste : pour un lecteur d'écran, le nom de l'organisation
+			// visée, relié en description, les distingue. C'est le bouton qui la choisit.
+			for (const organisation of [QUITTEE, SEULE]) {
+				const formulaire = formulaires.find((un) => un.includes(`value="${organisation.id}"`));
+				const decrit = formulaire?.match(/<button\b[^>]*\baria-describedby="([^"]*)"/)?.[1] ?? '';
+				expect(decrit, organisation.nom).toBe(`organisation-${organisation.id}`);
+				expect(html.split(`id="${decrit}"`).length - 1, 'un seul élément porte cet id').toBe(1);
+				const description = element(html, decrit);
+				expect(description, organisation.nom).toMatch(/^<button\b/);
+				expect(lu(description)).toBe(organisation.nom);
+			}
 		}
 	);
 

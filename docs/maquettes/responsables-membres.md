@@ -29,7 +29,8 @@ le courriel dans cette langue.`, le choix `Rôle` (`Éditeur` ou `Responsable`),
    le rôle choisis restent dans le formulaire.
 5. **La langue du courriel** (étape 19) propose les cinq langues, chacune écrite dans sa langue
    (`Français`, `Deutsch`, `Italiano`, `English`, `العربية`), comme le choix de la langue en haut de
-   l'écran. Celle de l'écran est choisie d'abord. Sans JavaScript comme avec, c'est un champ du
+   l'écran. Celle de l'écran est choisie d'abord. L'aide sous le choix, dans la langue de l'écran,
+   lui sert de description pour les lecteurs d'écran. Sans JavaScript comme avec, c'est un champ du
    formulaire : une valeur qu'il ne connaît pas, ou son absence, donne la langue de l'écran.
 
 ## Ce que chaque rôle permet (retour B3)
