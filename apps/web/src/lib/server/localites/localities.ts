@@ -412,8 +412,11 @@ interface Query {
  * « Charmey (Gr », il peut aussi être le début du mot qui précise un nom, « Charmey (Gruyère) ».
  */
 function readQuery(query: string): Query {
+	// Un « ü » peut arriver en deux points de code, « u » puis le tréma (U+0308), dans un texte collé
+	// depuis certains systèmes : recomposé, il se voit comme un tréma tapé.
+	const composed = query.normalize('NFC');
 	// Une virgule sépare comme une espace ; une parenthèse collée au nom s'en détache.
-	const words = latinDigits(query)
+	const words = latinDigits(composed)
 		.replace(/[,;]/g, ' ')
 		.replace(/\(/g, ' (')
 		.trim()
@@ -448,7 +451,7 @@ function readQuery(query: string): Query {
 		canton,
 		cantonWord,
 		strict,
-		kept: UMLAUT.test(query) ? normalise(words.join(' '), true) : null
+		kept: UMLAUT.test(composed) ? normalise(words.join(' '), true) : null
 	};
 }
 

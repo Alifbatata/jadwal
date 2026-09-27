@@ -392,6 +392,16 @@ describe('searchLocalities, un nom qui s’écrit vraiment avec « üe » ou « 
 		expect(trouves.indexOf('Rue')).toBeGreaterThan(trouves.indexOf('Rüegsbach'));
 	});
 
+	it('lit de même un tréma qui arrive décomposé, la lettre suivie du tréma qui s’y ajoute', () => {
+		// Un texte collé depuis certains systèmes écrit « ü » en deux points de code, « u » puis
+		// U+0308 : la recherche ne le voyait pas, et Rue repassait en tête.
+		for (const requete of ['Rüe', 'Mün', 'Zür', 'Brü', 'Möh', 'Tä']) {
+			const decompose = requete.normalize('NFD');
+			expect(decompose).not.toBe(requete);
+			expect(noms(decompose), requete).toEqual(noms(requete));
+		}
+	});
+
 	it('ne met jamais, pour un début tapé avec son tréma, un nom qui ne le porte pas avant un nom qui le porte', () => {
 		// Chaque début de 3 à 6 ou de 8 lettres d'un nom de la liste qui porte « ä », « ö » ou « ü »,
 		// tapé tel quel : les localités dont le nom le contient, ou dont un mot de la commune le
