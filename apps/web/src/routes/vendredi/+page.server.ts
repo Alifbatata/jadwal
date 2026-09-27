@@ -17,9 +17,16 @@
 // déplacée ou passée à une autre heure depuis ; l'envoyer défaisait ce changement. Les deux actions
 // le refusent et n'écrivent rien, et l'écran rendu est à jour. Déplacer refuse aussi le jour et
 // l'heure où la session est déjà prévue.
+//
+// Depuis l'étape 19 (D2), Annuler refuse un jour déjà passé, comme « À venir ». Chaque geste qui
+// vise une session répond « Cette session n'existe plus » à une session inconnue, ou à un cours, et
+// n'écrit alors rien, pas même le journal : Rétablir, Publier et Supprimer répondaient « fait » et
+// écrivaient au journal. Chaque identifiant, chaque date et chaque heure est vérifié avant la base,
+// qui refusait un identifiant mal formé, un 30 février ou 25:99 par une erreur 500 ; une salle qui
+// n'existe pas, ou plus, a sa phrase dans le formulaire.
 
 import { fail } from '@sveltejs/kit';
-import { addDays, todayInZone, type IsoDate } from '@jadwal/core';
+import { addDays, isIsoDate, isLocalTime, todayInZone, type IsoDate } from '@jadwal/core';
 import { newId, sql, type Transaction } from '@jadwal/db';
 import { isLangue, t, type Langue } from '$lib/i18n.js';
 import type { FridayDone, FridayError } from '$lib/i18n/friday.js';
@@ -32,9 +39,10 @@ import { readCourses, readProgramme, readRooms, readSettings } from '$lib/server
 import { parseFridayForm, proposedOrder, readFridayEntry } from './form.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
-const DATE = /^\d{4}-\d{2}-\d{2}$/;
-const HEURE = /^\d{2}:\d{2}$/;
-/** Un identifiant de session. Autre chose n'atteint pas la base, qui le refuserait en erreur. */
+/**
+ * Un identifiant de session ou de salle. Autre chose n'atteint pas la base, qui le refuserait en
+ * erreur.
+ */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Sept jours : de quoi couvrir le prochain vendredi, où que l'on soit dans la semaine. */
 const JOURS_AFFICHES = 7;
@@ -56,6 +64,21 @@ async function sessionExiste(tx: Transaction, courseId: string): Promise<boolean
 			select "id" from "course"
 			where "id" = ${courseId} and "kind" = 'jumua'
 				and "organization_id" = (select jadwal.current_org_id())
+		`)
+	);
+	return trouvees.length > 0;
+}
+
+/**
+ * Vrai quand la salle existe dans l'organisation. Une salle supprimée dans Réglages pendant que le
+ * formulaire restait ouvert, ou celle d'une autre organisation, échouait sur la clé étrangère.
+ */
+async function salleExiste(tx: Transaction, roomId: string): Promise<boolean> {
+	if (!UUID.test(roomId)) return false;
+	const trouvees = lignes<{ id: string }>(
+		await tx.execute(sql`
+			select "id" from "room"
+			where "id" = ${roomId} and "organization_id" = (select jadwal.current_org_id())
 		`)
 	);
 	return trouvees.length > 0;
@@ -184,6 +207,13 @@ export const actions: Actions = {
 			if (!lu.ok) {
 				return fail(400, { errors: lu.errors, courseId, entry: readFridayEntry(form) });
 			}
+			if (lu.values.roomId !== null && !(await salleExiste(tx, lu.values.roomId))) {
+				return fail(400, {
+					errors: ['roomGone'] satisfies FridayError[],
+					courseId,
+					entry: readFridayEntry(form)
+				});
+			}
 			if (courseId === '') {
 				// Le rang d'une session sans date de fin est à elle seule, comme l'écran le propose
 				// (`proposedOrder`) : une page ouverte avant, ou un formulaire écrit à la main, ne
@@ -220,43 +250,62 @@ export const actions: Actions = {
 		});
 	},
 
-	/** Publier ou dépublier. Un brouillon ne s'affiche nulle part en public, pas même en haut. */
+	/**
+	 * Publier ou dépublier. Un brouillon ne s'affiche nulle part en public, pas même en haut. Une
+	 * session qui n'existe pas, ou plus, ne change rien, et le journal n'en garde aucune trace.
+	 */
 	basculer: async (event) => {
 		const context = await mustHavePrayerModule(event);
 		const form = await event.request.formData();
 		const courseId = String(form.get('courseId') ?? '');
 		const vers = String(form.get('vers') ?? '') === 'published' ? 'published' : 'draft';
-		await withSessionOrg(context, async (tx) => {
-			await tx.execute(sql`
-				update "course" set "status" = ${vers}, "updated_at" = now(),
-					"updated_by" = ${context.userId}
-				where "id" = ${courseId} and "kind" = 'jumua'
-			`);
+		if (!UUID.test(courseId)) return refus(404, 'sessionGone');
+		return withSessionOrg(context, async (tx) => {
+			const ecrite = lignes<{ id: string }>(
+				await tx.execute(sql`
+					update "course" set "status" = ${vers}, "updated_at" = now(),
+						"updated_by" = ${context.userId}
+					where "id" = ${courseId} and "kind" = 'jumua'
+						and "organization_id" = (select jadwal.current_org_id())
+					returning "id"
+				`)
+			);
+			if (ecrite.length === 0) return refus(404, 'sessionGone');
 			await record(tx, context.organizationId, context.userId, {
 				action: 'course.update',
 				targetTable: 'course',
 				targetId: courseId,
 				after: { status: vers }
 			});
+			return fait(vers === 'published' ? 'published' : 'unpublished');
 		});
-		return fait(vers === 'published' ? 'published' : 'unpublished');
 	},
 
 	supprimer: async (event) => {
 		const context = await mustHavePrayerModule(event);
 		const form = await event.request.formData();
 		const courseId = String(form.get('courseId') ?? '');
-		await withSessionOrg(context, async (tx) => {
+		if (!UUID.test(courseId)) return refus(404, 'sessionGone');
+		return withSessionOrg(context, async (tx) => {
 			// `kind = 'jumua'` dans la clause : cet écran ne peut pas supprimer un cours, même si
-			// quelqu'un lui envoyait l'identifiant d'un cours.
-			await tx.execute(sql`delete from "course" where "id" = ${courseId} and "kind" = 'jumua'`);
+			// quelqu'un lui envoyait l'identifiant d'un cours. Une session déjà supprimée, par un autre
+			// onglet ou une autre personne, n'écrit rien au journal.
+			const supprimee = lignes<{ id: string }>(
+				await tx.execute(sql`
+					delete from "course"
+					where "id" = ${courseId} and "kind" = 'jumua'
+						and "organization_id" = (select jadwal.current_org_id())
+					returning "id"
+				`)
+			);
+			if (supprimee.length === 0) return refus(404, 'sessionGone');
 			await record(tx, context.organizationId, context.userId, {
 				action: 'course.delete',
 				targetTable: 'course',
 				targetId: courseId
 			});
+			return fait('deleted');
 		});
-		return fait('deleted');
 	},
 
 	/** Annuler une session ce vendredi-là. Les autres vendredis ne changent pas. */
@@ -265,9 +314,15 @@ export const actions: Actions = {
 		const form = await event.request.formData();
 		const courseId = String(form.get('courseId') ?? '');
 		const date = String(form.get('date') ?? '');
-		if (!DATE.test(date)) return refus(400, 'dateUnreadable');
+		if (!isIsoDate(date)) return refus(400, 'dateUnreadable');
+		const maintenant = new Date();
 		return withSessionOrg(context, async (tx) => {
 			if (!(await sessionExiste(tx, courseId))) return refus(404, 'sessionGone');
+			// La règle d'« À venir » : aucune carte ne propose un jour passé, mais la page d'une
+			// semaine d'avant restée ouverte, ou un formulaire écrit à la main, peut l'envoyer. Deux
+			// dates civiles au même format se comparent comme des chaînes.
+			const settings = await readSettings(tx);
+			if (date < todayInZone(settings.time_zone, maintenant)) return refus(400, 'pastSession');
 			// Une session déjà annulée ou déplacée ce jour-là garde ce qui lui est arrivé :
 			// l'annulation ne s'écrit que si la place est libre, et rien ne s'écrit sinon, pas même
 			// le journal.
@@ -299,8 +354,8 @@ export const actions: Actions = {
 		const date = String(form.get('date') ?? '');
 		const toDate = String(form.get('toDate') ?? '');
 		const toStart = String(form.get('toStart') ?? '');
-		if (!DATE.test(date) || !DATE.test(toDate)) return refus(400, 'dateUnreadable');
-		if (!HEURE.test(toStart)) return refus(400, 'timeUnreadable');
+		if (!isIsoDate(date) || !isIsoDate(toDate)) return refus(400, 'dateUnreadable');
+		if (!isLocalTime(toStart)) return refus(400, 'timeUnreadable');
 		const maintenant = new Date();
 		return withSessionOrg(context, async (tx) => {
 			if (!(await sessionExiste(tx, courseId))) return refus(404, 'sessionGone');
@@ -343,13 +398,18 @@ export const actions: Actions = {
 		});
 	},
 
+	/**
+	 * Rétablir une session annulée ou déplacée ce jour-là. Une session inconnue, ou un cours, reçoit
+	 * la réponse d'une session qui n'existe plus, et rien ne s'écrit, pas même le journal.
+	 */
 	retablir: async (event) => {
 		const context = await mustHavePrayerModule(event);
 		const form = await event.request.formData();
 		const courseId = String(form.get('courseId') ?? '');
 		const date = String(form.get('date') ?? '');
-		if (!DATE.test(date)) return refus(400, 'dateUnreadable');
-		await withSessionOrg(context, async (tx) => {
+		if (!isIsoDate(date)) return refus(400, 'dateUnreadable');
+		return withSessionOrg(context, async (tx) => {
+			if (!(await sessionExiste(tx, courseId))) return refus(404, 'sessionGone');
 			await tx.execute(
 				sql`delete from "session_exception" where "course_id" = ${courseId} and "date" = ${date}`
 			);
@@ -359,8 +419,8 @@ export const actions: Actions = {
 				targetId: courseId,
 				before: { date }
 			});
+			return fait('restored');
 		});
-		return fait('restored');
 	}
 };
 

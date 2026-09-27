@@ -84,7 +84,12 @@ describe('parseFridayForm', () => {
 		['startDateMissing', { startsOn: '' }],
 		['startDateMissing', { startsOn: '04.09.2026' }],
 		['endDateUnreadable', { endsOn: 'bientôt' }],
-		['endDateBeforeStart', { endsOn: '2026-09-03' }]
+		['endDateBeforeStart', { endsOn: '2026-09-03' }],
+		// Au bon format, mais impossibles : la base les refusait par une erreur 500 (étape 19, D2).
+		['timesMissing', { start: '25:99' }],
+		['timesMissing', { end: '24:00' }],
+		['startDateMissing', { startsOn: '2026-02-30' }],
+		['endDateUnreadable', { endsOn: '2026-13-01' }]
 	] as const)('names the mistake %s, and only that one', (erreur, champs) => {
 		const lu = parseFridayForm(formulaire(champs), ['fr', 'ar'], 'fr');
 		expect(lu).toEqual({ ok: false, errors: [erreur] });

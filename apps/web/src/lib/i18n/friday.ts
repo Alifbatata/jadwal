@@ -15,8 +15,10 @@ import type { Translations } from './space.js';
  * Ce qu'une action de l'écran peut refuser : le nom de l'erreur, jamais sa phrase. Pour « Ce
  * vendredi », comme sur « À venir » : `changed`, la session a été annulée ou déplacée ce jour-là
  * depuis l'ouverture de la page ; `timeChanged`, son heure a changé depuis ; `unchanged`, un
- * déplacement vers le jour et l'heure où elle est déjà prévue. Pour l'ajout : `orderTaken`, une
- * session sans date de fin a déjà ce rang.
+ * déplacement vers le jour et l'heure où elle est déjà prévue ; `pastSession`, l'annulation d'un
+ * jour déjà passé, qu'aucune carte ne propose (étape 19, D2). Pour l'ajout : `orderTaken`, une
+ * session sans date de fin a déjà ce rang. Pour l'ajout et la modification : `roomGone`, la salle
+ * choisie n'existe pas, ou plus, dans l'organisation.
  */
 export type FridayError =
 	| 'titleTooLong'
@@ -27,9 +29,11 @@ export type FridayError =
 	| 'startDateMissing'
 	| 'endDateUnreadable'
 	| 'endDateBeforeStart'
+	| 'roomGone'
 	| 'sessionGone'
 	| 'dateUnreadable'
 	| 'timeUnreadable'
+	| 'pastSession'
 	| 'changed'
 	| 'timeChanged'
 	| 'unchanged'
@@ -222,10 +226,14 @@ export const fridayTexts: Translations<FridayTexts> = {
 			startDateMissing: 'Choisissez la date à partir de laquelle la session a lieu.',
 			endDateUnreadable: 'La date « Jusqu’au » est illisible. Choisissez-la dans le calendrier.',
 			endDateBeforeStart: 'La date « Jusqu’au » vient avant la date « À partir du ».',
+			roomGone:
+				'Cette salle n’existe plus : elle a été supprimée entre-temps. Choisissez une autre salle, ou « Pas de salle précise ».',
 			sessionGone:
 				'Cette session n’existe plus : elle a été supprimée entre-temps. La liste ci-dessous est à jour.',
 			dateUnreadable: 'Cette date est illisible. Rechargez la page et recommencez.',
 			timeUnreadable: 'Cette heure est illisible. Exemple : 13:30.',
+			pastSession:
+				'Cette session est déjà passée : vous ne pouvez annuler que les sessions d’aujourd’hui et des jours suivants.',
 			changed:
 				'Cette session a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée ce jour-là. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.',
 			timeChanged:
@@ -333,11 +341,15 @@ export const fridayTexts: Translations<FridayTexts> = {
 			startDateMissing: 'Wählen Sie das Datum, ab dem der Durchgang gilt.',
 			endDateUnreadable: 'Das Datum «Gültig bis» ist nicht lesbar. Wählen Sie es im Kalender.',
 			endDateBeforeStart: 'Das Datum «Gültig bis» liegt vor dem Datum «Gültig ab».',
+			roomGone:
+				'Diesen Raum gibt es nicht mehr: Er wurde inzwischen gelöscht. Wählen Sie einen anderen Raum oder «Kein bestimmter Raum».',
 			sessionGone:
 				'Diesen Durchgang gibt es nicht mehr: Er wurde inzwischen gelöscht. Die Liste unten ist aktuell.',
 			dateUnreadable:
 				'Dieses Datum ist nicht lesbar. Laden Sie die Seite neu und versuchen Sie es noch einmal.',
 			timeUnreadable: 'Diese Uhrzeit ist nicht lesbar. Beispiel: 13:30.',
+			pastSession:
+				'Dieser Durchgang ist schon vorbei: Sie können nur Durchgänge von heute oder von einem späteren Tag absagen.',
 			changed:
 				'Dieser Durchgang hat sich geändert, seit die Seite geöffnet wurde: Er wurde an diesem Tag schon abgesagt oder verschoben. Es wurde nichts gespeichert. Der Abschnitt «Diesen Freitag» weiter unten ist aktuell.',
 			timeChanged:
@@ -441,10 +453,14 @@ export const fridayTexts: Translations<FridayTexts> = {
 			startDateMissing: 'Scegli la data da cui vale il turno.',
 			endDateUnreadable: 'La data «Valido fino al» non è leggibile. Sceglila nel calendario.',
 			endDateBeforeStart: 'La data «Valido fino al» viene prima della data «Valido dal».',
+			roomGone:
+				'Questa sala non esiste più: nel frattempo è stata eliminata. Scegli un’altra sala, oppure «Nessuna sala precisa».',
 			sessionGone:
 				'Questo turno non esiste più: nel frattempo è stato eliminato. L’elenco qui sotto è aggiornato.',
 			dateUnreadable: 'Questa data non è leggibile. Ricarica la pagina e riprova.',
 			timeUnreadable: 'Questo orario non è leggibile. Esempio: 13:30.',
+			pastSession:
+				'Questo turno è già passato: puoi annullare solo i turni di oggi o dei giorni successivi.',
 			changed:
 				'Questo turno è cambiato da quando hai aperto la pagina: quel giorno è già stato annullato o spostato. Non è stato salvato niente. La sezione «Questo venerdì», più in basso, è aggiornata.',
 			timeChanged:
@@ -547,10 +563,14 @@ export const fridayTexts: Translations<FridayTexts> = {
 			startDateMissing: 'Choose the date from which the session takes place.',
 			endDateUnreadable: 'The ‘Until’ date cannot be read. Pick it in the calendar.',
 			endDateBeforeStart: 'The ‘Until’ date comes before the ‘From’ date.',
+			roomGone:
+				'This room no longer exists: it has been deleted in the meantime. Choose another room, or ‘No particular room’.',
 			sessionGone:
 				'This session no longer exists: it has been deleted in the meantime. The list below shows the sessions as they are now.',
 			dateUnreadable: 'This date cannot be read. Reload the page and try again.',
 			timeUnreadable: 'This time cannot be read. Example: 13:30.',
+			pastSession:
+				'This session has already passed: you can only cancel sessions from today onwards.',
 			changed:
 				'This session has changed since the page was opened: it has already been cancelled or moved for that day. Nothing has been saved. The ‘This Friday’ section further down shows the latest changes.',
 			timeChanged:
@@ -648,9 +668,12 @@ export const fridayTexts: Translations<FridayTexts> = {
 			startDateMissing: 'اختر التاريخ الذي يبدأ منه هذا الموعد.',
 			endDateUnreadable: 'تعذّرت قراءة تاريخ «يسري حتى». اختره من التقويم.',
 			endDateBeforeStart: 'تاريخ «يسري حتى» يسبق تاريخ «يسري ابتداءً من».',
+			roomGone:
+				'هذه القاعة لم تعد موجودة: فقد حُذفت في هذه الأثناء. اختر قاعة أخرى، أو «دون قاعة محددة».',
 			sessionGone: 'هذا الموعد لم يعد موجودًا: فقد حُذف في هذه الأثناء. القائمة أدناه محدَّثة.',
 			dateUnreadable: 'تعذّرت قراءة هذا التاريخ. أعد تحميل الصفحة وحاول مرة أخرى.',
 			timeUnreadable: 'تعذّرت قراءة هذا الوقت. مثال: 13:30.',
+			pastSession: 'هذا الموعد قد مضى: يمكنك إلغاء مواعيد اليوم والأيام التالية فقط.',
 			changed:
 				'تغيّر هذا الموعد منذ أن فُتحت الصفحة: سبق أن أُلغي أو نُقل في ذلك اليوم. لم يُحفظ أي شيء. قسم «هذه الجمعة» في الأسفل محدَّث.',
 			timeChanged:

@@ -10,7 +10,10 @@
 // fait ailleurs, ni ne vise une session supprimée depuis ; un déplacement qui ne change rien est
 // refusé, une carte dont l'heure a changé depuis aussi, quel que soit le jour choisi (relecture du
 // lot 5). Quand trois sessions continuent sans date de fin, l'écran ne propose plus d'en ajouter une,
-// et dit pourquoi et quoi faire.
+// et dit pourquoi et quoi faire. Depuis l'étape 19 (D2), il refuse d'annuler un vendredi passé,
+// comme « À venir », répond à une session inconnue par une phrase dans chaque geste, sans rien
+// écrire au journal, et vérifie chaque identifiant, chaque date et chaque heure avant la base : plus
+// aucune erreur 500.
 //
 // Vrai serveur construit, vraie base, formulaires envoyés comme sans JavaScript, sur le modèle de
 // `espace-en-cinq-langues.test.ts`.
@@ -20,7 +23,7 @@ import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { addDays, isoDateToDays, todayInZone, weekdayFromDays, type IsoDate } from '@jadwal/core';
-import { createDatabase, newId, sql, type DatabaseHandle } from '@jadwal/db';
+import { createDatabase, newId, sql, withOrg, type DatabaseHandle } from '@jadwal/db';
 import { conditionsAcceptees } from './conditions-acceptees.js';
 import { frenchLeft, ISO_DATE, textSegments, visibleText } from './textes-lus.js';
 
@@ -1189,20 +1192,20 @@ function formulaireDuVendredi(
 	return champs;
 }
 
+/** Les phrases de la liste d'erreurs en tête de l'écran, avant la première carte. */
+function enTete(html: string): string[] {
+	const premiere = html.search(PREMIERE_CARTE);
+	return [...html.matchAll(ERREURS)]
+		.filter((liste) => premiere < 0 || liste.index < premiere)
+		.flatMap((liste) =>
+			[...(liste[1] ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)].map((point) =>
+				visibleText(`<body>${point[1] ?? ''}</body>`)
+			)
+		);
+}
+
 describe('une page /vendredi restée ouverte ne défait pas un changement (relecture du lot 5)', () => {
 	const vendredi = () => prochainVendredi(today());
-
-	/** Les phrases de la liste d'erreurs en tête de l'écran, avant la première carte. */
-	function enTete(html: string): string[] {
-		const premiere = html.search(PREMIERE_CARTE);
-		return [...html.matchAll(ERREURS)]
-			.filter((liste) => premiere < 0 || liste.index < premiere)
-			.flatMap((liste) =>
-				[...(liste[1] ?? '').matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)].map((point) =>
-					visibleText(`<body>${point[1] ?? ''}</body>`)
-				)
-			);
-	}
 
 	async function retablirCeVendredi(courseId: string): Promise<void> {
 		await postForm('/vendredi?/retablir', { courseId, date: vendredi() }, cookies);
@@ -1373,6 +1376,274 @@ describe('une page /vendredi restée ouverte ne défait pas un changement (relec
 			await poserLangueDuCompte(RESPONSABLE, 'fr');
 			await retablirCeVendredi(sessions[1]);
 		}
+	});
+});
+
+/**
+ * Le refus d'annuler un vendredi passé, que la page d'une semaine d'avant encore ouverte, ou un
+ * formulaire écrit à la main, peut envoyer : la règle d'« À venir », en tête de l'écran (étape 19,
+ * D2).
+ */
+const VENDREDI_PASSE: Record<Langue, string> = {
+	fr: 'Cette session est déjà passée : vous ne pouvez annuler que les sessions d’aujourd’hui et des jours suivants.',
+	de: 'Dieser Durchgang ist schon vorbei: Sie können nur Durchgänge von heute oder von einem späteren Tag absagen.',
+	it: 'Questo turno è già passato: puoi annullare solo i turni di oggi o dei giorni successivi.',
+	en: 'This session has already passed: you can only cancel sessions from today onwards.',
+	ar: 'هذا الموعد قد مضى: يمكنك إلغاء مواعيد اليوم والأيام التالية فقط.'
+};
+
+/** Le refus d'une salle qui n'existe pas, ou plus, dans le formulaire d'une session (étape 19, D2). */
+const SALLE_DISPARUE: Record<Langue, string> = {
+	fr: 'Cette salle n’existe plus : elle a été supprimée entre-temps. Choisissez une autre salle, ou « Pas de salle précise ».',
+	de: 'Diesen Raum gibt es nicht mehr: Er wurde inzwischen gelöscht. Wählen Sie einen anderen Raum oder «Kein bestimmter Raum».',
+	it: 'Questa sala non esiste più: nel frattempo è stata eliminata. Scegli un’altra sala, oppure «Nessuna sala precisa».',
+	en: 'This room no longer exists: it has been deleted in the meantime. Choose another room, or ‘No particular room’.',
+	ar: 'هذه القاعة لم تعد موجودة: فقد حُذفت في هذه الأثناء. اختر قاعة أخرى، أو «دون قاعة محددة».'
+};
+
+describe('D2 : l’écran du vendredi refuse ce qu’il ne peut pas faire, sans erreur 500 (étape 19)', () => {
+	const vendredi = () => prochainVendredi(today());
+	/** Le vendredi d'une semaine plus tôt : toujours passé, même un vendredi. */
+	const vendrediPasse = () => addDays(vendredi(), -7);
+	let journal: DatabaseHandle;
+
+	beforeAll(() => {
+		journal = createDatabase({ role: 'app', overrides: { database: testDatabase } });
+	});
+
+	afterAll(async () => {
+		await journal?.close();
+	});
+
+	/**
+	 * Les lignes du journal de l'organisation. Il se lit dans l'organisation, par le rôle applicatif :
+	 * le propriétaire ne le lit pas.
+	 */
+	async function lignesDuJournal(): Promise<number> {
+		return withOrg(journal.db, { organizationId, userId: ids[RESPONSABLE] ?? '' }, async (tx) =>
+			lignes<{ n: number }>(await tx.execute(sql`select count(*)::int as n from "audit_log"`))
+		).then((trouve) => trouve[0]?.n ?? 0);
+	}
+
+	/** Les sessions, leur salle, leur heure et leurs exceptions, pour voir que rien ne s'y est écrit. */
+	async function etatDesSessions(): Promise<unknown[]> {
+		return maintenance(async (tx) =>
+			lignes(
+				await tx.execute(sql`
+					select c."id", c."status", c."room_id", c."timing_start"::text,
+						(select count(*)::int from "session_exception" e where e."course_id" = c."id") as n
+					from "course" c
+					where c."organization_id" = ${organizationId}
+					order by c."id"
+				`)
+			)
+		);
+	}
+
+	/** Le texte lu d'un morceau de page. */
+	const lu = (fragment: string) => visibleText(`<body>${fragment}</body>`);
+
+	it('refuses to cancel a past Friday, says so at the top in each language, and writes nothing', async () => {
+		const date = vendrediPasse();
+		const journalAvant = await lignesDuJournal();
+		try {
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const reponse = await postForm(
+					'/vendredi?/annuler',
+					{ courseId: sessions[1], date },
+					cookies
+				);
+				expect(reponse.status, langue).toBe(400);
+				expect(enTete(await reponse.text()), langue).toEqual([VENDREDI_PASSE[langue]]);
+				expect(await exceptionDe(sessions[1], date), langue).toBeUndefined();
+			}
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await maintenance((tx) =>
+				tx.execute(sql`
+					delete from "session_exception" where "course_id" = ${sessions[1]} and "date" = ${date}
+				`)
+			);
+		}
+		expect(await lignesDuJournal()).toBe(journalAvant);
+	});
+
+	it('answers « Rétablir » for a session that does not exist with a sentence in each language, and writes nothing to the journal', async () => {
+		const journalAvant = await lignesDuJournal();
+		try {
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				// Une session inconnue, puis un cours, que cet écran ne rétablit pas.
+				for (const courseId of [newId(), coursId]) {
+					const reponse = await postForm(
+						'/vendredi?/retablir',
+						{ courseId, date: vendredi() },
+						cookies
+					);
+					expect(reponse.status, `${langue} ${courseId}`).toBe(404);
+					expect(enTete(await reponse.text()), `${langue} ${courseId}`).toEqual([
+						REFUS_DU_VENDREDI.sessionGone[langue]
+					]);
+				}
+			}
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+		}
+		expect(await lignesDuJournal()).toBe(journalAvant);
+	});
+
+	it('answers a publication or a removal of a session that does not exist, and writes nothing to the journal', async () => {
+		const journalAvant = await lignesDuJournal();
+		const avant = await etatDesSessions();
+		for (const courseId of [newId(), coursId]) {
+			for (const [action, envoi] of [
+				['basculer', { courseId, vers: 'draft' }],
+				['supprimer', { courseId }]
+			] as const) {
+				const reponse = await postForm(`/vendredi?/${action}`, envoi, cookies);
+				expect(reponse.status, `${action} ${courseId}`).toBe(404);
+				expect(enTete(await reponse.text()), `${action} ${courseId}`).toEqual([
+					REFUS_DU_VENDREDI.sessionGone.fr
+				]);
+			}
+		}
+		expect(await etatDesSessions()).toEqual(avant);
+		expect(await lignesDuJournal()).toBe(journalAvant);
+	});
+
+	it('checks each identifier of each gesture before the database, and answers with a sentence instead of an error 500', async () => {
+		const MAL_FORME = 'pas-un-identifiant';
+		const journalAvant = await lignesDuJournal();
+		const avant = await etatDesSessions();
+		const date = vendredi();
+		for (const [action, envoi] of [
+			['enregistrer', { ...SESSION_DE_PASSAGE, courseId: MAL_FORME, title: 'Prière mal nommée' }],
+			['basculer', { courseId: MAL_FORME, vers: 'published' }],
+			['supprimer', { courseId: MAL_FORME }],
+			['annuler', { courseId: MAL_FORME, date }],
+			['deplacer', { courseId: MAL_FORME, date, toDate: date, toStart: '15:00' }],
+			['retablir', { courseId: MAL_FORME, date }]
+		] as const) {
+			const reponse = await postForm(`/vendredi?/${action}`, envoi, cookies);
+			expect(reponse.status, action).toBe(404);
+			expect(enTete(await reponse.text())[0], action).toBe(REFUS_DU_VENDREDI.sessionGone.fr);
+		}
+		// La salle d'une session : mal formée, inconnue, ou d'une autre organisation, dans le formulaire
+		// d'ajout comme dans celui d'une session. Sa phrase s'écrit dans le formulaire, avec la saisie.
+		const autreSalle = newId();
+		await maintenance((tx) =>
+			tx.execute(sql`
+				insert into "room" ("id", "organization_id", "name", "display_order")
+				values (${autreSalle}, ${organizationDeId}, 'Saal', 1)
+			`)
+		);
+		try {
+			for (const roomId of [MAL_FORME, newId(), autreSalle]) {
+				const ajout = await postForm(
+					'/vendredi?/enregistrer',
+					{ ...SESSION_DE_PASSAGE, title: 'Prière sans salle', roomId },
+					cookies
+				);
+				expect(ajout.status, roomId).toBe(400);
+				const formulaireAjoute = section(await ajout.text(), 'ajout');
+				expect(lu(formulaireAjoute), roomId).toContain(SALLE_DISPARUE.fr);
+				expect(valeur(formulaireDAjout(formulaireAjoute), 'title'), roomId).toBe(
+					'Prière sans salle'
+				);
+
+				const modification = await postForm(
+					'/vendredi?/enregistrer',
+					{
+						...SESSION_DE_PASSAGE,
+						courseId: sessions[2],
+						title: NOM_DE_LA_PRIERE.fr,
+						jumuaOrder: '2',
+						start: '13:30',
+						end: '14:10',
+						sermonLanguages: ['de'],
+						endsOn: '',
+						status: 'published',
+						roomId
+					},
+					cookies
+				);
+				expect(modification.status, roomId).toBe(400);
+				const carte = section(await modification.text(), `session-${sessions[2]}`);
+				expect(lu(carte), roomId).toContain(SALLE_DISPARUE.fr);
+			}
+		} finally {
+			await maintenance((tx) => tx.execute(sql`delete from "room" where "id" = ${autreSalle}`));
+		}
+		expect(await etatDesSessions()).toEqual(avant);
+		expect(await lignesDuJournal()).toBe(journalAvant);
+	});
+
+	it('names the missing room in each language', async () => {
+		try {
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const reponse = await postForm(
+					'/vendredi?/enregistrer',
+					{ ...SESSION_DE_PASSAGE, title: 'Prière sans salle', roomId: newId() },
+					cookies
+				);
+				expect(reponse.status, langue).toBe(400);
+				expect(lu(section(await reponse.text(), 'ajout')), langue).toContain(
+					SALLE_DISPARUE[langue]
+				);
+			}
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+		}
+	});
+
+	it('refuses an impossible date or time with a sentence, instead of an error 500', async () => {
+		const journalAvant = await lignesDuJournal();
+		const avant = await etatDesSessions();
+		const date = vendredi();
+		const DATE_ILLISIBLE = 'Cette date est illisible. Rechargez la page et recommencez.';
+		// Au bon format, mais impossibles : un 30 février, 25 h 99.
+		for (const [action, envoi, phrase] of [
+			['annuler', { courseId: sessions[1], date: '2026-02-30' }, DATE_ILLISIBLE],
+			['retablir', { courseId: sessions[1], date: '2026-02-30' }, DATE_ILLISIBLE],
+			[
+				'deplacer',
+				{ courseId: sessions[1], date, toDate: '2026-02-30', toStart: '15:00' },
+				DATE_ILLISIBLE
+			],
+			[
+				'deplacer',
+				{ courseId: sessions[1], date, toDate: date, toStart: '25:99' },
+				'Cette heure est illisible. Exemple : 13:30.'
+			]
+		] as const) {
+			const cas = `${action} ${JSON.stringify(envoi)}`;
+			const reponse = await postForm(`/vendredi?/${action}`, envoi, cookies);
+			expect(reponse.status, cas).toBe(400);
+			expect(enTete(await reponse.text()), cas).toEqual([phrase]);
+		}
+		for (const [champs, phrase] of [
+			[
+				{ start: '25:99' },
+				'Donnez une heure de début et une heure de fin. Exemple : 12:10 et 12:50.'
+			],
+			[{ startsOn: '2026-02-30' }, 'Choisissez la date à partir de laquelle la session a lieu.'],
+			[
+				{ endsOn: '2026-02-30' },
+				'La date « Jusqu’au » est illisible. Choisissez-la dans le calendrier.'
+			]
+		] as const) {
+			const reponse = await postForm(
+				'/vendredi?/enregistrer',
+				{ ...SESSION_DE_PASSAGE, title: 'Prière impossible', ...champs },
+				cookies
+			);
+			expect(reponse.status, JSON.stringify(champs)).toBe(400);
+			expect(lu(section(await reponse.text(), 'ajout')), JSON.stringify(champs)).toContain(phrase);
+		}
+		expect(await etatDesSessions()).toEqual(avant);
+		expect(await lignesDuJournal()).toBe(journalAvant);
 	});
 });
 
