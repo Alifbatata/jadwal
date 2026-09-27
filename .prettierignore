@@ -1,6 +1,10 @@
 # Fichiers de verrouillage
 pnpm-lock.yaml
 
+# Le dossier d'un outil de développement, propre à chaque poste et jamais suivi par git : il peut
+# porter des arbres de travail entiers, dont les fichiers ne sont pas ceux de ce dépôt.
+.claude/
+
 # Sorties de build et caches
 **/dist
 **/build
