@@ -532,6 +532,265 @@ export function lignesParPage(octets) {
 	});
 }
 
+/**
+ * Les objets du PDF, par numéro : le dictionnaire, et le flux décompressé quand il y en a un.
+ *
+ * La longueur d'un flux est lue dans son dictionnaire quand elle y est écrite : un flux binaire,
+ * une police par exemple, peut porter par hasard les octets de `endobj` ou de `endstream`, et une
+ * recherche de ces mots le couperait.
+ */
+function objetsDuPdf(octets) {
+	const brut = octets.toString('latin1');
+	const objets = new Map();
+	const debutObjet = /(\d+) 0 obj\b/g;
+	let trouve;
+	while ((trouve = debutObjet.exec(brut)) !== null) {
+		const apres = trouve.index + trouve[0].length;
+		const fin = brut.indexOf('endobj', apres);
+		if (fin < 0) break;
+		const flux = brut.indexOf('stream', apres);
+		if (flux < 0 || flux > fin) {
+			objets.set(Number(trouve[1]), { dict: brut.slice(apres, fin), flux: null });
+			debutObjet.lastIndex = fin;
+			continue;
+		}
+		const dict = brut.slice(apres, flux);
+		let depart = flux + 'stream'.length;
+		if (brut[depart] === '\r') depart += 1;
+		if (brut[depart] === '\n') depart += 1;
+		const longueur = /\/Length\s+(\d+)(?!\s+\d+\s+R)/.exec(dict);
+		const arrivee = longueur ? depart + Number(longueur[1]) : brut.indexOf('endstream', depart);
+		let donnees = octets.subarray(depart, arrivee);
+		if (/\/FlateDecode/.test(dict)) {
+			try {
+				donnees = inflateSync(donnees);
+			} catch {
+				donnees = null;
+			}
+		}
+		objets.set(Number(trouve[1]), { dict, flux: donnees });
+		debutObjet.lastIndex = Math.max(brut.indexOf('endobj', arrivee), apres);
+	}
+	return objets;
+}
+
+/** Une suite d'octets UTF-16 gros-boutien, écrite en hexadécimal, rendue en texte. */
+function depuisUtf16(hexa) {
+	const pair = hexa.length % 4 === 0 ? hexa : hexa.padStart(Math.ceil(hexa.length / 4) * 4, '0');
+	return Buffer.from(pair, 'hex').swap16().toString('utf16le');
+}
+
+/**
+ * La table d'une police, du code dessiné au texte qu'il représente, lue dans son `ToUnicode`.
+ *
+ * Chrome pose chaque police en `Type0`, codée `Identity-H` : le flux de contenu ne porte pas des
+ * lettres mais des numéros de glyphes, sur deux octets. Seule cette table dit quelle lettre chacun
+ * dessine. Les deux formes du format y sont lues : `bfchar`, un code pour un texte, et `bfrange`,
+ * une plage de codes pour des textes qui se suivent, ou pour une liste de textes.
+ */
+function tableDUnicode(cmap) {
+	const table = new Map();
+	const espace = /begincodespacerange\s*<([0-9A-Fa-f]+)>/.exec(cmap);
+	const largeur = espace ? espace[1].length / 2 : 2;
+	for (const bloc of cmap.matchAll(/beginbfchar([\s\S]*?)endbfchar/g)) {
+		for (const [, code, cible] of bloc[1].matchAll(/<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g)) {
+			table.set(parseInt(code, 16), depuisUtf16(cible));
+		}
+	}
+	for (const bloc of cmap.matchAll(/beginbfrange([\s\S]*?)endbfrange/g)) {
+		const plages = bloc[1].matchAll(
+			/<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>\s*(<[0-9A-Fa-f]+>|\[[^\]]*\])/g
+		);
+		for (const [, de, a, cible] of plages) {
+			const premier = parseInt(de, 16);
+			const dernier = parseInt(a, 16);
+			const liste = cible.startsWith('[') ? [...cible.matchAll(/<([0-9A-Fa-f]+)>/g)] : null;
+			for (let code = premier; code <= dernier; code += 1) {
+				if (liste) {
+					const hexa = liste[code - premier]?.[1];
+					if (hexa) table.set(code, depuisUtf16(hexa));
+					continue;
+				}
+				// Une plage : le dernier caractère du texte de départ avance avec le code.
+				const depart = depuisUtf16(cible.slice(1, -1));
+				table.set(
+					code,
+					depart.slice(0, -1) +
+						String.fromCharCode(depart.charCodeAt(depart.length - 1) + code - premier)
+				);
+			}
+		}
+	}
+	return { largeur, table };
+}
+
+/** Les octets d'une chaîne du flux de contenu, en hexadécimal ou entre parenthèses. */
+function octetsDeLaChaine(jeton) {
+	if (jeton.startsWith('<')) return Buffer.from(jeton.slice(1, -1).replace(/\s/g, ''), 'hex');
+	const corps = jeton.slice(1, -1).replace(/\\([nrtbf()\\]|[0-7]{1,3})/g, (tout, echappe) => {
+		const simples = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', '(': '(', ')': ')', '\\': '\\' };
+		return simples[echappe] ?? String.fromCharCode(parseInt(echappe, 8));
+	});
+	return Buffer.from(corps, 'latin1');
+}
+
+/** Les pages, dans l'ordre du document : l'arbre des pages, descendu depuis sa racine. */
+function pagesDansLOrdre(objets) {
+	const racine = [...objets.values()].find(
+		({ dict }) => /\/Type\s*\/Pages\b/.test(dict) && !/\/Parent\s/.test(dict)
+	);
+	const pages = [];
+	const descendre = (noeud) => {
+		const enfants = /\/Kids\s*\[([^\]]*)\]/.exec(noeud.dict)?.[1] ?? '';
+		for (const [, numero] of enfants.matchAll(/(\d+)\s+0\s+R/g)) {
+			const enfant = objets.get(Number(numero));
+			if (!enfant) continue;
+			if (/\/Type\s*\/Pages\b/.test(enfant.dict)) descendre(enfant);
+			else pages.push(enfant);
+		}
+	};
+	if (racine) descendre(racine);
+	return pages;
+}
+
+/** Un dictionnaire écrit en place, ou l'objet qu'une référence désigne. */
+function dictionnaire(objets, dict, cle) {
+	const reference = new RegExp(`/${cle}\\s+(\\d+)\\s+0\\s+R`).exec(dict);
+	if (reference) return objets.get(Number(reference[1]))?.dict ?? '';
+	const debut = dict.search(new RegExp(`/${cle}\\s*<<`));
+	if (debut < 0) return '';
+	let profondeur = 0;
+	for (let index = dict.indexOf('<<', debut); index < dict.length; index += 1) {
+		if (dict.startsWith('<<', index)) {
+			profondeur += 1;
+			index += 1;
+		} else if (dict.startsWith('>>', index)) {
+			profondeur -= 1;
+			index += 1;
+			if (profondeur === 0) return dict.slice(debut, index + 1);
+		}
+	}
+	return dict.slice(debut);
+}
+
+/**
+ * Le texte que dessine chaque page, lu dans le PDF : une chaîne par page, dans l'ordre du document.
+ *
+ * ## Pourquoi il le lit, et comment
+ *
+ * Ce qui part chez le juriste, c'est le PDF : un nom qui y serait dessiné, par le texte, par la page
+ * de garde ou par le pied de page, y serait lu, quel que soit l'endroit où il est entré. Le relire
+ * dans le HTML, avant Chrome, laisserait passer le pied de page, que Chrome compose à part, et ce
+ * que la feuille de style change, comme les capitales du chapeau.
+ *
+ * Chrome dessine chaque glyphe par son numéro, et l'espace est un glyphe comme un autre. Le texte
+ * se retrouve donc par la table `ToUnicode` de chaque police, sans rien deviner. Il reste à séparer
+ * les lignes : Chrome ouvre un bloc de texte (`BT`, `Tm`) par ligne et par changement de police.
+ * Un bloc posé à une autre hauteur que le précédent commence une ligne ; un bloc posé loin à droite
+ * du dernier glyphe, sur la même ligne, en est séparé par une espace (une autre cellule de tableau).
+ * Un changement de police au milieu d'un mot, du gras par exemple, ne le coupe pas.
+ */
+export function texteDuPdf(octets) {
+	const objets = objetsDuPdf(octets);
+	const polices = new Map();
+	const policeDe = (numero) => {
+		if (!polices.has(numero)) {
+			const dict = objets.get(numero)?.dict ?? '';
+			const cmap = /\/ToUnicode\s+(\d+)\s+0\s+R/.exec(dict)?.[1];
+			const flux = cmap ? objets.get(Number(cmap))?.flux : null;
+			polices.set(numero, flux ? tableDUnicode(flux.toString('latin1')) : null);
+		}
+		return polices.get(numero);
+	};
+
+	return pagesDansLOrdre(objets).map((page) => {
+		const ressources = dictionnaire(objets, page.dict, 'Resources');
+		const nomsDePolices = new Map(
+			[
+				...dictionnaire(objets, ressources, 'Font').matchAll(/\/([^\s/<>[\]]+)\s+(\d+)\s+0\s+R/g)
+			].map(([, nom, numero]) => [nom, Number(numero)])
+		);
+		const contenus = /\/Contents\s*(\[[^\]]*\]|\d+\s+0\s+R)/.exec(page.dict)?.[1] ?? '';
+		const contenu = [...contenus.matchAll(/(\d+)\s+0\s+R/g)]
+			.map(([, numero]) => objets.get(Number(numero))?.flux?.toString('latin1') ?? '')
+			.join('\n');
+
+		let texte = '';
+		let police = null;
+		let taille = 0;
+		let matrice = IDENTITE;
+		const pile = [];
+		let ligneDeTexte = IDENTITE;
+		/** La hauteur de la ligne en cours, et l'abscisse de son dernier glyphe, sur la page. */
+		let dernier = null;
+		let operandes = [];
+		let tableau = null;
+		const ecrire = (jeton) => {
+			if (!police) return;
+			const brut = octetsDeLaChaine(jeton);
+			for (let index = 0; index + police.largeur <= brut.length; index += police.largeur) {
+				// Un code absent de la table se voit, au lieu de disparaître du texte relu.
+				texte += police.table.get(brut.readUIntBE(index, police.largeur)) ?? '\ufffd';
+			}
+		};
+		const placer = () => {
+			const surLaPage = composer(ligneDeTexte, matrice);
+			const [x, y] = [surLaPage[4], surLaPage[5]];
+			const corps = taille * Math.hypot(surLaPage[2], surLaPage[3]);
+			if (dernier && Math.abs(y - dernier.y) > 1) texte += '\n';
+			else if (dernier && x - dernier.x > 1.5 * corps) texte += ' ';
+			dernier = { x, y };
+		};
+		for (const [jeton] of contenu.matchAll(JETON)) {
+			if (tableau) {
+				if (jeton === ']') {
+					for (const element of tableau) if (/^[(<]/.test(element)) ecrire(element);
+					operandes.push(tableau);
+					tableau = null;
+				} else tableau.push(jeton);
+				continue;
+			}
+			if (jeton === '[') {
+				tableau = [];
+				continue;
+			}
+			if (/^[-+.\d]/.test(jeton) || /^[(<]/.test(jeton) || jeton.startsWith('/')) {
+				operandes.push(jeton);
+				continue;
+			}
+			const nombres = operandes
+				.filter((o) => typeof o === 'string' && /^[-+.\d]/.test(o))
+				.map(Number);
+			const six = nombres.slice(-6);
+			if (jeton === 'q') pile.push(matrice);
+			else if (jeton === 'Q') matrice = pile.pop() ?? IDENTITE;
+			else if (jeton === 'cm' && six.length === 6) matrice = composer(six, matrice);
+			else if (jeton === 'BT') ligneDeTexte = IDENTITE;
+			else if (jeton === 'Tf') {
+				const nom = operandes.findLast((o) => typeof o === 'string' && o.startsWith('/'));
+				police = nom ? policeDe(nomsDePolices.get(nom.slice(1))) : null;
+				taille = nombres.at(-1) ?? taille;
+			} else if (jeton === 'Tm' && six.length === 6) {
+				ligneDeTexte = six;
+				placer();
+			} else if ((jeton === 'Td' || jeton === 'TD') && nombres.length >= 2) {
+				const [dx, dy] = nombres.slice(-2);
+				ligneDeTexte = composer([1, 0, 0, 1, dx, dy], ligneDeTexte);
+				if (dy !== 0) placer();
+				else if (dernier) dernier.x = composer(ligneDeTexte, matrice)[4];
+			} else if (jeton === 'T*') texte += '\n';
+			else if (jeton === 'Tj' || jeton === "'" || jeton === '"') {
+				const chaine = operandes.findLast((o) => typeof o === 'string' && /^[(<]/.test(o));
+				if (jeton !== 'Tj') texte += '\n';
+				if (chaine) ecrire(chaine);
+			}
+			// `TJ` a déjà écrit ses chaînes à la fermeture du tableau.
+			operandes = [];
+		}
+		return texte;
+	});
+}
+
 /** La dernière page doit porter au moins ce nombre de lignes. */
 export const LIGNES_MINIMUM_DERNIERE_PAGE = 8;
 

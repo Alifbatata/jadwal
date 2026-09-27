@@ -49,9 +49,13 @@ function grep(args) {
 }
 
 /** La valeur qui dit « je n'ai pas de liste, et c'est voulu ». Voir plus bas. */
-const AUCUNE = 'aucune';
+export const AUCUNE = 'aucune';
 
-function cheminDeLaListe() {
+/**
+ * Le chemin de la liste, tel que le poste le donne. L'épreuve du PDF du juriste le lit aussi : le
+ * PDF quitte le poste, et les mêmes termes n'y ont pas leur place.
+ */
+export function cheminDeLaListe() {
 	let configure = '';
 	try {
 		configure = git(['config', '--get', 'jadwal.termes-interdits']).trim();
@@ -62,7 +66,7 @@ function cheminDeLaListe() {
 }
 
 /** Un terme, son rang dans la liste, et les chemins où il a le droit d'apparaître. */
-function lireListe(chemin) {
+export function lireListe(chemin) {
 	const termes = [];
 	for (const brut of readFileSync(chemin, 'utf8').split(/\r?\n/)) {
 		const ligne = brut.trim();
@@ -288,4 +292,5 @@ function main() {
 	return 1;
 }
 
-process.exitCode = main();
+// Importé par l'épreuve du PDF, ce fichier ne contrôle rien ; lancé, il contrôle.
+if (import.meta.main) process.exitCode = main();
