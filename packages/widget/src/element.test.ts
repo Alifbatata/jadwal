@@ -87,6 +87,19 @@ describe('l’enregistrement et les attributs', () => {
 		expect(url.searchParams.get('embed')).toBe('1');
 	});
 
+	// L'onglet des prières de la page publique (étape 18) : le widget le demande comme les trois
+	// autres vues. La page montre la semaine à une organisation dont le module est éteint.
+	it('asks the page for the prayer tab, in the language asked, and links to it', () => {
+		const element = poser(`org="belvedere" lang="ar" view="prieres" base="${ORIGINE}"`);
+		const url = new URL(cadreDe(element)?.src ?? '');
+		expect(url.pathname).toBe('/m/belvedere/ar');
+		expect(url.searchParams.get('vue')).toBe('prieres');
+		expect(url.searchParams.get('embed')).toBe('1');
+		// Le lien du pied mène au même onglet, hors du cadre.
+		const lien = element.shadowRoot?.querySelector('footer a') as HTMLAnchorElement | null;
+		expect(new URL(lien?.href ?? '').searchParams.get('vue')).toBe('prieres');
+	});
+
 	it('leaves the language out of the path when none is asked, and the default view out of the query', () => {
 		const element = poser(`org="belvedere" view="semaine" base="${ORIGINE}"`);
 		const url = new URL(cadreDe(element)?.src ?? '');

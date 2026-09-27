@@ -26,7 +26,7 @@ correspond plus. L'élément n'ayant aucun `<slot>`, ce contenu disparaît dès 
 | ------------ | ------------------------------------------ | ----------------------------- |
 | `org`        | l'identifiant d'URL de l'organisation      | obligatoire, sinon rien       |
 | `lang`       | `fr`, `de`, `it`, `en`, `ar`               | la langue de l'organisation   |
-| `view`       | `semaine`, `cours`, `mois`                 | `semaine`                     |
+| `view`       | `semaine`, `cours`, `mois`, `prieres`      | `semaine`                     |
 | `audience`   | `kids`, `youth`, `women`, `adults`, `open` | tous les publics              |
 | `min-height` | un nombre de pixels                        | `320`                         |
 | `base`       | l'origine du service                       | celle d'où le script est venu |
@@ -40,8 +40,13 @@ réponse, et non un message d'erreur sur le site de quelqu'un d'autre.
 `en` s'est ajouté à l'étape 18 : c'est le seul changement du fichier du widget à cette étape, et il
 a publié une nouvelle version. L'onglet `Prières` de la page publique (voir `public-prieres.md`)
 apparaît dans le cadre sans rien changer au fichier, dans les organisations qui ont allumé le module.
-`view` ne le connaît pas : l'accepter changerait le fichier, donc son empreinte, et les sites qui
-l'ont épinglée.
+
+`prieres` s'est ajouté le 27.09.2026, sur décision du chef de projet : `view="prieres"` ouvre le
+cadre sur cet onglet (`?vue=prieres`), et le lien du pied aussi. Une organisation dont le module est
+éteint voit la semaine, comme pour toute vue inconnue : la page en décide, pas le widget. Le fichier
+a changé, donc son empreinte : c'est la version `o6RZrATXsMVS`, archivée dans
+`packages/widget/published/` comme les précédentes, qui restent servies (ADR 0005). Un site qui a
+épinglé une version plus ancienne garde son programme, sans cette vue.
 
 ## Ce que le widget affiche, de haut en bas
 

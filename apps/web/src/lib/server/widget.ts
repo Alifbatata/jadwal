@@ -33,9 +33,8 @@ export const WIDGET_INTEGRITY = `sha384-${createHash('sha384').update(octets(WID
  * contenu. Il change donc exactement quand le fichier change, sans numéro à incrémenter à la main
  * et sans variable d'environnement à oublier de poser.
  *
- * Conséquence assumée : une adresse versionnée cesse d'exister dès la publication suivante. Pour
- * qui a épinglé une empreinte, c'est la même chose qu'une empreinte qui ne correspond plus — le
- * script ne s'exécute pas, et le contenu de repli de la balise reste visible.
+ * Une adresse versionnée ne cesse pas d'exister à la publication suivante : chaque version publiée
+ * reste servie (`VERSIONS`, plus bas, précision de l'étape 7 à l'ADR 0005).
  */
 export const WIDGET_VERSION = createHash('sha256')
 	.update(octets(WIDGET))

@@ -11,11 +11,11 @@ révisé à l'étape 6.
 
 L'onglet des heures de prière de l'étape 18 en est l'exemple : il est apparu dans le widget sans
 qu'une ligne de ce paquet change, parce qu'il est dans la page. Il suit le module des prières de
-l'organisation, comme sur la page. L'attribut `view` ne le connaît pas encore : l'ajouter changerait
-le fichier, donc son empreinte, et les sites qui l'ont épinglée.
+l'organisation, comme sur la page. Depuis le 27.09.2026, `view="prieres"` ouvre le cadre sur cet
+onglet : c'est la seule ligne qui a changé, et elle a publié la version `o6RZrATXsMVS`.
 
-Aucune bibliothèque, aucune dépendance à l'exécution : **2 141 octets gzip** (2,14 ko, soit
-2,09 Kio), mesurés sur la construction de l'étape 18 par `pnpm --filter @jadwal/widget size`.
+Aucune bibliothèque, aucune dépendance à l'exécution : **2 145 octets gzip** (2,15 ko, soit
+2,09 Kio), mesurés le 27.09.2026 par `pnpm --filter @jadwal/widget size`.
 
 Pour un responsable d'organisation, la marche à suivre est dans `docs/INTEGRATION.md`. Ce fichier-ci
 s'adresse à qui travaille sur le paquet.
@@ -42,7 +42,7 @@ peut pas demander à une organisation sans qu'elle la recopie de travers une foi
 | ------------ | ------------------------------------------ | ----------------------------- |
 | `org`        | l'identifiant d'URL de l'organisation      | obligatoire                   |
 | `lang`       | `fr`, `de`, `it`, `en`, `ar`               | la langue de l'organisation   |
-| `view`       | `semaine`, `cours`, `mois`                 | `semaine`                     |
+| `view`       | `semaine`, `cours`, `mois`, `prieres`      | `semaine`                     |
 | `audience`   | `kids`, `youth`, `women`, `adults`, `open` | tous les publics              |
 | `min-height` | un nombre de pixels                        | `320`                         |
 | `base`       | l'origine du service                       | celle d'où le script est venu |
@@ -69,7 +69,7 @@ d'écart. Aucun autre type de message n'est traité.
 
 ```
 pnpm --filter @jadwal/widget build      # produit dist/jadwal-widget.js (un seul fichier, IIFE)
-pnpm --filter @jadwal/widget test       # vitest + jsdom : 31 tests
+pnpm --filter @jadwal/widget test       # vitest + jsdom : 32 tests
 pnpm --filter @jadwal/widget size       # taille brute et gzip
 pnpm --filter @jadwal/widget integrity  # l'empreinte SHA-384 et le code à coller
 ```
@@ -85,13 +85,15 @@ construit dans son serveur : sans lui, `pnpm check` échouerait sur une importat
 3. Ouvrir `/widget/test` sur l'instance et vérifier **de ses yeux** : la hauteur suit le contenu, il
    n'y a aucune barre de défilement à l'intérieur d'un cadre, et les deux widgets côte à côte ne se
    marchent pas dessus.
-4. Déployer. L'adresse `/widget/jadwal-widget.js` sert le nouveau fichier immédiatement ; l'adresse
-   versionnée change, et l'ancienne répond `404`.
+4. Commiter le dossier que la construction a ajouté sous `published/` : c'est la nouvelle version,
+   et `apps/web/tests/widget.test.ts` exige que chaque version archivée réponde encore.
+5. Déployer. L'adresse `/widget/jadwal-widget.js` sert le nouveau fichier immédiatement ; l'adresse
+   versionnée change, et l'ancienne reste servie, pour toujours (ADR 0005).
 
-**Un site qui a épinglé une empreinte cesse d'afficher le programme après une publication**, sans
-message, jusqu'à ce qu'il recopie le nouveau code depuis l'écran « Partager ». C'est le prix d'une
-empreinte, il est dit dans `docs/INTEGRATION.md`, et c'est pourquoi l'adresse ordinaire n'en publie
-aucune.
+**Un site qui a épinglé une empreinte garde la version qu'il a copiée** : elle reste servie, octet
+pour octet, mais ne reçoit ni les corrections ni ce qui s'ajoute, comme `view="prieres"`, tant qu'il
+ne recopie pas le code de l'écran « Partager ». C'est le prix d'une empreinte, il est dit dans
+`docs/INTEGRATION.md`, et c'est pourquoi l'adresse ordinaire n'en publie aucune.
 
 ## Essayer
 

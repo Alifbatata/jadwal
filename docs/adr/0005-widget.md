@@ -184,8 +184,22 @@ fonction pour laquelle cette page existe. À reprendre à l'étape 8, avec un es
   par page ». Ce consommateur n'existe plus : le widget n'appelle plus l'API. Elle reste utile — une
   instance auto-hébergée, un site qui veut ses propres vues — mais son premier client a disparu.
 
+## Addendum du 27.09.2026 : `view="prieres"`
+
+Le chef de projet a décidé que le widget accepte `view="prieres"`, l'onglet des heures de prière que
+la page publique a depuis l'étape 18. C'est une ligne du fichier : `prieres` rejoint la liste des
+vues que le widget transmet à la page (`?vue=prieres`), pour le cadre comme pour le lien du pied. La
+page reste seule juge : sans le module des prières, elle montre la semaine, comme pour toute vue
+inconnue.
+
+Le fichier a changé, donc son empreinte : la construction a archivé la version `o6RZrATXsMVS` dans
+`packages/widget/published/`, et les cinq versions d'avant y restent. `apps/web/tests/widget.test.ts`
+a échoué sur cette nouvelle version tant que le serveur n'avait pas été reconstruit (« expected 404
+to be 200 »), puis réussi : c'est le registre qui fait son travail. Un site qui a épinglé une
+version plus ancienne garde son programme, sans cette vue.
+
 ## Statut
 
 Révisé et accepté, 2026-09-21, étape 6 ; précisé le 2026-09-21 (étape 7) sur la conservation des
-versions publiées. Remplace la décision du 2026-09-19. Amende l'ADR 0027 (pages publiques) et
-complète l'ADR 0029 (référencement).
+versions publiées ; complété le 27.09.2026 (`view="prieres"`). Remplace la décision du 2026-09-19.
+Amende l'ADR 0027 (pages publiques) et complète l'ADR 0029 (référencement).

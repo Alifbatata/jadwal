@@ -34,7 +34,11 @@ const HYSTERESIS = 2;
 
 /** Les cinq langues du service, dans son ordre ; l'anglais britannique depuis l'étape 18. */
 const LANGUES = new Set(['fr', 'de', 'it', 'en', 'ar']);
-const VUES = new Set(['semaine', 'cours', 'mois']);
+/**
+ * Les vues de la page publique. `prieres`, l'onglet des heures de prière, depuis le 27.09.2026 : la
+ * page le montre si le module des prières de l'organisation est allumé, et la semaine sinon.
+ */
+const VUES = new Set(['semaine', 'cours', 'mois', 'prieres']);
 const PUBLICS = new Set(['kids', 'youth', 'women', 'adults', 'open']);
 
 interface Mots {

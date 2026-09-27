@@ -89,11 +89,21 @@ Pour la vue, ajoutez `view` :
 <jadwal-widget org="mon-organisation" view="cours"></jadwal-widget>
 ```
 
-Les vues possibles sont `semaine`, `cours` (tous les cours, groupés par rythme) et `mois`.
+Les vues possibles sont `semaine`, `cours` (tous les cours, groupés par rythme), `mois` et
+`prieres`.
 
 Si votre organisation a activé les heures de prière, le programme a un quatrième onglet,
 **Prières** : les heures du jour et des sept prochains jours, puis la prière du vendredi. Il
-apparaît tout seul, sans rien changer au code. Il ne peut pas être la vue de départ.
+apparaît tout seul, sans rien changer au code. Pour qu'il soit la vue de départ, écrivez
+`view="prieres"` :
+
+```html
+<jadwal-widget org="mon-organisation" view="prieres"></jadwal-widget>
+```
+
+Si les heures de prière ne sont pas activées, `view="prieres"` montre la semaine. Avec le code à
+empreinte (point 4), `view="prieres"` demande le code d'aujourd'hui : un code copié avant le
+27.09.2026 continue de fonctionner, mais ne connaît pas cette vue et montre la semaine.
 
 Vous pouvez mettre les deux :
 
@@ -156,8 +166,9 @@ utilisez le lien de l'organisation (**point 5**).
 
 **Si votre site exige une empreinte de sécurité** (votre webmestre saura de quoi il s'agit), prenez
 le code de la section **Pour un site très strict (rare)**, **Code avec empreinte d'intégrité**.
-Attention : ce code fige la version du programme. À chaque nouvelle publication de jadwal, il faudra
-revenir le copier. Sinon, le programme cessera de s'afficher, sans message.
+Attention : ce code fige la version du widget. Elle reste servie, et le programme continue de
+s'afficher, mais ce qui s'ajoute au widget ensuite, comme `view="prieres"`, demande de revenir
+copier le code.
 
 ---
 
