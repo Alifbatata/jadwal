@@ -39,7 +39,7 @@
  * Depuis l'étape 19, le nom est aussi cherché **partout dans le PDF**, et non plus dans une seule
  * phrase : un nom écrit juste à côté de « Voltia », au chapeau ou au milieu d'un paragraphe, passait.
  * Le texte que Chrome a dessiné est relu, page par page, pied de page compris ; chaque « Voltia » y
- * est lu avec ses deux voisins, et chaque phrase qui nomme l'exploitant doit nommer Voltia. Quand
+ * est lu avec toute sa phrase, et chaque phrase qui nomme l'exploitant doit nommer Voltia. Quand
  * le poste porte la liste privée des termes interdits, celle du garde-fou, aucun de ses termes ne
  * doit paraître dans le PDF, ni dans ses pages, ni dans ses métadonnées. Un terme trouvé n'est
  * jamais recopié : seul son numéro dans la liste est donné. Le onzième point, enfin, dit comme un
@@ -57,10 +57,12 @@
  * ## Ce qu'il ne prouve pas
  *
  * Il ne relit le texte dessiné que pour y chercher des noms et des termes : la typographie, elle,
- * est vérifiée sur le HTML qui part chez Chrome. Le texte est retrouvé par la table `ToUnicode` de
- * chaque police (`texteDuPdf`, dans `conditions-pdf.mjs`), sans outil de plus. Le pied de page est
- * aussi prouvé autrement : le même document est rendu deux fois, avec et sans pied, et les deux PDF
- * sont comparés.
+ * est vérifiée sur le HTML qui part chez Chrome. Un nom est reconnu à sa majuscule, dans la phrase
+ * de Voltia : une phrase qu'un saut de page coupe est lue page par page, et un nom écrit dans une
+ * autre phrase, sans Voltia, n'est vu que par la liste privée, quand le poste en a une. Le texte
+ * est retrouvé par la table `ToUnicode` de chaque police (`texteDuPdf`, dans `conditions-pdf.mjs`),
+ * sans outil de plus. Le pied de page est aussi prouvé autrement : le même document est rendu deux
+ * fois, avec et sans pied, et les deux PDF sont comparés.
  *
  * Il a besoin de Chrome, comme le script lui-même.
  */
@@ -233,26 +235,56 @@ function aplatir(texte) {
 }
 
 /**
- * Les mots qui peuvent toucher « Voltia » sans être un nom : ceux d'une phrase, que le chapeau de
- * la page de garde écrit en capitales comme le reste (« UN SERVICE DE VOLTIA »).
+ * Les mots qui peuvent s'écrire avec une majuscule dans la phrase de « Voltia » sans être un nom :
+ * ceux qui ouvrent une phrase ou un titre, et ceux du chapeau de la page de garde, qui écrit tout en
+ * capitales (« JADWAL, UN SERVICE DE VOLTIA »). La liste est courte à dessein : un mot en majuscule
+ * qui n'y est pas fait tomber l'épreuve, et il ne s'y ajoute qu'après une relecture de sa phrase.
  */
-const MOTS_DE_LIAISON = new Set(['de', 'du', 'des', 'par', 'pour', 'et', 'à', 'chez', 'avec']);
+const MOTS_DE_PHRASE = new Set([
+	// Les mots de liaison, et ceux qui ouvrent une phrase ou un titre.
+	'à',
+	'avec',
+	'chez',
+	'd',
+	'de',
+	'des',
+	'du',
+	'en',
+	'et',
+	'l',
+	'la',
+	'le',
+	'les',
+	'par',
+	'pour',
+	'qui',
+	'sans',
+	'un',
+	'une',
+	// Les mots que le texte écrit avec une majuscule dans une phrase qui nomme Voltia.
+	'jadwal',
+	'service',
+	'suisse'
+]);
 
-/** Ce qui peut séparer deux mots d'un même nom : espaces, guillemets, parenthèses, virgule, tiret. */
-const ENTRE_DEUX_MOTS = String.raw`[\s«»"“”()\[\],&/–-]*`;
+/**
+ * Ce qui finit une phrase : un point, un point d'exclamation ou d'interrogation, un point-virgule ou
+ * un deux-points, suivi d'une espace ou de la fin de la page. Le point de `voltia.ch` n'en est pas un.
+ */
+const FIN_DE_PHRASE = /[.!?;:…](?=\s|$)/gu;
 
 /**
  * « Voltia », seul, partout où le PDF le dessine : dans le texte, la page de garde, les titres, le
  * chapeau en capitales et le pied de page.
  *
  * Le nom qu'on craint de voir revenir est celui d'une personne, écrit **à côté** de Voltia :
- * « Une Personne (Voltia) », « Voltia, Une Personne », « VOLTIA, UNE PERSONNE » en capitales. Un
- * nom propre commence par une majuscule, et un mot de phrase qui touche Voltia n'en porte pas, sauf
- * en capitales, où il reste un mot de liaison. Chaque mention est donc lue avec ses deux voisins, le
- * mot d'avant et le mot d'après, quand rien ne les sépare qu'une espace, un guillemet, une
- * parenthèse, une virgule ou un tiret : un point ou un deux-points finit la phrase, et le mot qui
- * suit n'est plus un voisin. Un voisin en majuscule, qui n'est ni un nombre ni un mot de liaison,
- * est signalé. Une adresse en `voltia.ch` n'a le droit d'être que `contact@voltia.ch`.
+ * « Une Personne (Voltia) », « Voltia, Une Personne », « VOLTIA, UNE PERSONNE » en capitales, ou
+ * derrière un mot de phrase, « Voltia de Une Personne », « Voltia, entreprise de Une Personne ».
+ * Un nom propre commence par une majuscule. Chaque mention est donc lue avec toute sa phrase, du
+ * signe qui finit la phrase d'avant à celui qui finit la sienne, et chaque mot de cette phrase qui
+ * commence par une majuscule doit être Voltia ou l'un des mots de `MOTS_DE_PHRASE`. Jusqu'à la
+ * relecture de l'étape 19, seuls les deux voisins de Voltia étaient lus, et un nom écrit derrière
+ * « de » passait. Une adresse en `voltia.ch` n'a le droit d'être que `contact@voltia.ch`.
  *
  * Ce qui est signalé ne dit jamais le mot trouvé, seulement où : un nom de personne recopié dans la
  * sortie d'une épreuve serait publié par elle, dans un journal ou un rapport.
@@ -260,13 +292,11 @@ const ENTRE_DEUX_MOTS = String.raw`[\s«»"“”()\[\],&/–-]*`;
 function voltiaSeul(pages) {
 	const ecarts = [];
 	let mentions = 0;
-	const avantMot = new RegExp(`([\\p{L}\\p{N}'-]+)${ENTRE_DEUX_MOTS}$`, 'u');
-	const apresMot = new RegExp(`^${ENTRE_DEUX_MOTS}([\\p{L}\\p{N}'-]+)`, 'u');
+	const mots = (texte) => [...texte.matchAll(/[\p{L}\p{N}]+/gu)].map((trouve) => trouve[0]);
 	const suspect = (mot) =>
-		mot !== undefined &&
 		/^\p{Lu}/u.test(mot) &&
-		!/^\p{N}/u.test(mot) &&
-		!MOTS_DE_LIAISON.has(mot.toLocaleLowerCase('fr'));
+		mot.toLocaleLowerCase('fr') !== 'voltia' &&
+		!MOTS_DE_PHRASE.has(mot.toLocaleLowerCase('fr'));
 	pages.forEach((texte, index) => {
 		const plat = aplatir(texte);
 		for (const trouve of plat.matchAll(/voltia/gi)) {
@@ -284,11 +314,17 @@ function voltiaSeul(pages) {
 				ecarts.push(`${ou} : Voltia collé à un autre mot`);
 				continue;
 			}
-			if (suspect(avantMot.exec(avant)?.[1])) {
-				ecarts.push(`${ou} : un mot en majuscule juste avant Voltia`);
-			}
-			if (suspect(apresMot.exec(apres)?.[1])) {
-				ecarts.push(`${ou} : un mot en majuscule juste après Voltia`);
+			const debut = [...avant.matchAll(FIN_DE_PHRASE)].at(-1);
+			const fin = [...apres.matchAll(FIN_DE_PHRASE)][0];
+			const lus = [
+				['avant', mots(avant.slice(debut === undefined ? 0 : debut.index + 1)).reverse()],
+				['après', mots(apres.slice(0, fin === undefined ? apres.length : fin.index))]
+			];
+			for (const [sens, phrase] of lus) {
+				const rang = phrase.findIndex(suspect);
+				if (rang < 0) continue;
+				const place = rang === 0 ? 'juste' : `au ${rang + 1}e mot`;
+				ecarts.push(`${ou} : un mot en majuscule ${place} ${sens} Voltia, dans sa phrase`);
 			}
 		}
 	});
@@ -843,6 +879,37 @@ try {
 			'l’ancien contrôle, qui ne lisait qu’une phrase, laissait passer le nom du chapeau',
 			ancien.accord,
 			ancien.detail
+		);
+
+		// Le second témoin rendu : un nom écrit derrière un mot de phrase, « VOLTIA DE JEAN EXEMPLE »
+		// au chapeau, « Voltia de Jean Exemple » puis « Voltia, entreprise de Jean Exemple » dans le
+		// texte. Le mot qui touche Voltia est un mot de liaison ou un mot en minuscules : un contrôle
+		// qui ne lit que ce voisin laisse passer le nom (relecture de l'étape 19).
+		const derriereAuChapeau = html.replace(
+			'un service de Voltia.',
+			'un service de Voltia de Jean Exemple.'
+		);
+		const derriere = derriereAuChapeau
+			.replace(/(<section class="document">[\s\S]*?exploité par Voltia)/, '$1 de Jean Exemple')
+			.replace(
+				/(<section class="document">[\s\S]*?)Voltia est le responsable/,
+				'$1Voltia, entreprise de Jean Exemple, est le responsable'
+			);
+		const cheminDerriere = join(dossierDuTemoin, 'derriere.html');
+		writeFileSync(cheminDerriere, derriere, 'utf8');
+		await imprimer(cheminDerriere, join(dossierDuTemoin, 'derriere.pdf'), piedDePage(version));
+		const seulDerriere = voltiaSeul(
+			texteDuPdf(readFileSync(join(dossierDuTemoin, 'derriere.pdf')))
+		);
+		const mentionsVues = [...new Set(seulDerriere.ecarts.map((ecart) => ecart.split(' : ')[0]))];
+		verifier(
+			'un nom écrit derrière un mot de liaison ou un mot en minuscules, en capitales au chapeau ' +
+				'puis deux fois dans le texte, est vu',
+			derriereAuChapeau !== html &&
+				derriere.split('Jean Exemple').length - 1 === 3 &&
+				mentionsVues.filter((mention) => mention.startsWith('page 1,')).length === 1 &&
+				mentionsVues.filter((mention) => !mention.startsWith('page 1,')).length === 2,
+			seulDerriere.ecarts.join(' ; ') || 'rien vu'
 		);
 	} finally {
 		rmSync(dossierDuTemoin, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
