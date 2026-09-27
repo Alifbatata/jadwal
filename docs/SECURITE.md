@@ -58,7 +58,9 @@ l'étape 18 (ADR 0046, migration 0059), la base tient la même séparation que l
 rôle applicatif, les gestes réservés aux responsables exigent que la personne du contexte soit
 responsable de l'organisation du contexte : lire et écrire les invitations, lire la liste des
 membres et leurs comptes, changer un rôle, retirer un membre, modifier les réglages et les salles,
-régler les heures de prière, et depuis l'étape 19 supprimer un cours (migrations 0064 et 0065). Une
+régler les heures de prière, et depuis l'étape 19 supprimer un cours (migrations 0064 et 0065). La
+suppression d'une session du vendredi reste à l'éditeur, et un cours ne devient pas une session le
+temps d'être supprimé : le type d'une ligne ne change pas, pour personne (migration 0069). Une
 fonction à droits du définisseur le dit, `jadwal.is_org_admin()`, que seul le rôle applicatif peut
 appeler. L'éditeur garde tout ce qu'il fait à l'écran : les cours, les séances, les pauses, le
 vendredi. Il ne lit plus que sa propre adhésion et son propre compte, ne nomme que lui-même dans ce

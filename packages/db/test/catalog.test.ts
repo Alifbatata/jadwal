@@ -441,6 +441,7 @@ describe('catalogue : intégrité du schéma', () => {
 			'purge_page_views',
 			'purge_rate_limit',
 			'purge_resolved_invitations',
+			'refuse_course_kind_change',
 			'refuse_expired_acceptance',
 			'refuse_invitation_status_change',
 			'refuse_last_org_admin',

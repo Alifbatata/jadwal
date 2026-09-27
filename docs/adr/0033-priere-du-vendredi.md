@@ -113,7 +113,19 @@ Décrit écran par écran dans `docs/maquettes/public-vendredi.md` et
 - La limite : trois sessions au plus. Aucune organisation connue n'en tient davantage, et la
   contrainte se relève d'un chiffre le jour où l'une le fait.
 
+## Addendum du 27.09.2026 : le type d'une ligne ne change pas
+
+Un cours reste un cours, et une session reste une session. Depuis la migration 0065, la suppression
+d'un cours est réservée à la personne responsable, et celle d'une session reste ouverte à l'éditeur,
+qui la fait depuis l'écran Vendredi (ADR 0046). La modification reste ouverte à tout membre : sans
+autre règle, une éditrice faisait d'un cours une session par un appel direct, puis la supprimait.
+
+Le déclencheur `course_kind_fixed` (migration 0069) refuse que le type d'une ligne change, pour tous
+les rôles. Aucun écran ne le faisait volontairement : l'écran Vendredi ne modifie qu'une session.
+Le formulaire d'un cours, lui, écrivait `kind = 'course'` sur la ligne qu'on lui donnait, et faisait
+un cours d'une session envoyée à son adresse ; il répond maintenant qu'il ne la connaît pas.
+
 ## Statut
 
 Accepté, 2026-09-21. Étape 8 de la feuille de route. Complète l'ADR 0003 (récurrence) et l'ADR 0004
-(ancrage sur une prière).
+(ancrage sur une prière). Complété le 27.09.2026 : le type d'une ligne ne change pas.

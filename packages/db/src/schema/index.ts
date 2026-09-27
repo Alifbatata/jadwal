@@ -828,7 +828,9 @@ export const course = pgTable(
 		),
 		// Supprimer un cours est réservé aux responsables (migration 0065, ADR 0046) ; le créer, le
 		// modifier et le publier restent à tout membre. Une session du vendredi garde sa suppression
-		// ouverte : l'écran Vendredi la propose à l'éditeur (ADR 0033).
+		// ouverte : l'écran Vendredi la propose à l'éditeur (ADR 0033). Un cours ne devient pas une
+		// session pour autant : le déclencheur `course_kind_fixed`, écrit à la main par la migration
+		// 0069 parce que Drizzle ne connaît pas les déclencheurs, refuse que le type d'une ligne change.
 		...orgPolicies('course', table.organizationId, [table.updatedBy], {
 			deletable: sql`${table.kind} = 'jumua' or ${orgAdmin}`
 		}),

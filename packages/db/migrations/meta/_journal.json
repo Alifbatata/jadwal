@@ -484,6 +484,13 @@
       "when": 1790508242952,
       "tag": "0068_prayer_settings_without_declared_source",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1790512170803,
+      "tag": "0069_course_kind_fixed",
+      "breakpoints": true
     }
   ]
 }

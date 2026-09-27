@@ -811,6 +811,99 @@ describe('ce que l’éditeur fait toujours', () => {
 	});
 });
 
+/**
+ * Le type d'un cours ne change pas (migration 0069). La suppression d'une session du vendredi reste
+ * ouverte à l'éditeur, et celle d'un cours ne l'est plus (migration 0065) : si un cours pouvait
+ * devenir une session, l'éditrice le supprimerait en deux instructions, la modification qui en fait
+ * une session, puis la suppression. Aucun écran ne change le type d'une ligne, et la base le refuse
+ * à tout le monde.
+ */
+describe('le type d’un cours ne change pas', () => {
+	/** Le refus du déclencheur. */
+	const KIND_KEPT = /keeps its kind/;
+	/** Ce qui fait du cours de A une session du vendredi, pour les contraintes de forme. */
+	const intoFriday = () => sql`
+		update "course" set "kind" = 'jumua', "jumua_order" = 3,
+			"recurrence_weekday" = array[5]::smallint[], "recurrence_anchor_date" = '2026-09-11'
+		where "id" = ${courseOfA}
+		returning "id"
+	`;
+
+	it('refuses an editor who would make a course a Friday session, then delete it', async () => {
+		// L'attaque en deux temps, dans une seule transaction : la modification, puis la suppression
+		// que la politique laisse à l'éditrice pour une session du vendredi.
+		let deleted = -1;
+		const message = await messageOfFailure(() =>
+			withOrg(app, inA(editor.id), async (tx) => {
+				await tx.execute(intoFriday());
+				deleted = touched(
+					await tx.execute(sql`delete from "course" where "id" = ${courseOfA} returning "id"`)
+				);
+				throw new Error(ROLLED_BACK);
+			})
+		);
+		expect(message).toMatch(KIND_KEPT);
+		expect(deleted).toBe(-1);
+		// Le cours est toujours là, et toujours un cours.
+		const kept = firstRow<{ kind: string }>(
+			await withMaintenance(owner, (tx) =>
+				tx.execute(sql`select "kind" from "course" where "id" = ${courseOfA}`)
+			)
+		);
+		expect(kept).toEqual({ kind: 'course' });
+	});
+
+	it('keeps the kind of every row, whoever writes it, in both directions', async () => {
+		// La personne responsable et le super-admin non plus : aucun écran ne le fait, et la règle ne
+		// dépend pas du rôle.
+		for (const [who, db, context] of [
+			['responsable', app, inA(a.userId)],
+			['super-admin', superAdmin, a.id]
+		] as const) {
+			const outcome = await attempt(db, context, intoFriday());
+			expect('refused' in outcome ? outcome.refused : JSON.stringify(outcome), who).toMatch(
+				KIND_KEPT
+			);
+		}
+		// Et une session du vendredi ne devient pas un cours.
+		const outcome = await messageOfFailure(() =>
+			withOrg(app, inA(editor.id), async (tx) => {
+				const sessionId = newId();
+				await tx.execute(sql`
+					insert into "course" (
+						"id", "organization_id", "kind", "jumua_order", "status", "audience",
+						"teaching_language", "source_language", "recurrence_kind", "recurrence_weekday",
+						"recurrence_interval", "recurrence_anchor_date", "timing_kind", "timing_start",
+						"timing_end", "starts_on", "updated_by"
+					) values (
+						${sessionId}, ${a.id}, 'jumua', 2, 'published', 'open', array['fr'], 'fr',
+						'weekly', array[5]::smallint[], 1, '2026-09-11', 'fixed', '13:30', '14:10',
+						'2026-09-11', ${editor.id}
+					)
+				`);
+				await tx.execute(sql`
+					update "course" set "kind" = 'course', "jumua_order" = null where "id" = ${sessionId}
+				`);
+				throw new Error(ROLLED_BACK);
+			})
+		);
+		expect(outcome).toMatch(KIND_KEPT);
+	});
+
+	it('lets every write that keeps the kind pass, as the screens write it', async () => {
+		// `updateCourse` réécrit le type à chaque modification, avec la valeur qu'il a déjà : ce
+		// n'est pas un changement, et rien n'est refusé.
+		const same = sql`
+			update "course" set "kind" = 'course', "jumua_order" = null, "teacher" = 'Intervenant'
+			where "id" = ${courseOfA}
+			returning "id"
+		`;
+		expect(await attempt(app, inA(editor.id), same)).toEqual({ rows: 1 });
+		expect(await attempt(app, inA(a.userId), same)).toEqual({ rows: 1 });
+		expect(await attempt(superAdmin, a.id, same)).toEqual({ rows: 1 });
+	});
+});
+
 describe('le parcours ordinaire', () => {
 	it('gives the invited person the role of her invitation, and the base reads it', async () => {
 		for (const role of ['editor', 'org_admin'] as const) {

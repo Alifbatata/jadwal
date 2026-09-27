@@ -66,7 +66,8 @@ Deux gestes n'ont pas encore d'écran, et la base les tient déjà depuis l'éta
   d'autre garde que l'appartenance : appelée par un éditeur, elle ne supprime plus rien. L'écran
   Cours la proposera au lot suivant, et elle rejoindra alors la colonne de droite. Une session du
   vendredi n'est pas concernée : l'écran Vendredi en propose la suppression à l'éditeur, et la base
-  la lui laisse.
+  la lui laisse. Un cours ne devient pas une session le temps d'être supprimé : le type d'une ligne
+  ne change pas, pour personne (migration 0069, ADR 0033).
 - **Quitter l'organisation** (`membership`, suppression de sa propre adhésion) est ouvert à chacun,
   pour soi seulement (migration 0066). L'écran viendra dans « Vos organisations ». La dernière
   personne responsable ne part pas : le déclencheur de la migration 0012 la retient.
@@ -89,7 +90,8 @@ Deux gestes n'ont pas encore d'écran, et la base les tient déjà depuis l'éta
   l'organisation), `membership` (lecture et suppression pour la branche de l'organisation,
   modification), `organization` (modification), `room`, `prayer_settings`, `prayer_day`,
   `prayer_period` (insertion, modification, suppression), et `course` (suppression, sauf une
-  session du vendredi). La lecture de ces tables reste ouverte à tous les membres, invitations et
+  session du vendredi). Un déclencheur tient le type de chaque cours : sans lui, la modification,
+  ouverte à tout membre, ferait d'un cours une session, que l'éditeur supprimerait. La lecture de ces tables reste ouverte à tous les membres, invitations et
   adhésions exceptées : l'écran des cours lit les salles et les heures, et le programme en dépend.
 - **Chacun garde ce qui est à lui.** La lecture des adhésions a une seconde branche, ses propres
   adhésions, dans toutes ses organisations : c'est d'elles que l'application part pour savoir de
@@ -117,7 +119,7 @@ Deux gestes n'ont pas encore d'écran, et la base les tient déjà depuis l'éta
   Une personne responsable qui se passe elle-même éditrice le peut donc, tant qu'une autre reste
   responsable.
 
-La migration 0059 porte tout cela, et les migrations 0063 à 0066 le complètent. La 0059
+La migration 0059 porte tout cela, et les migrations 0063 à 0066 et 0069 le complètent. La 0059
 vérifiait dans la même transaction la liste exacte des politiques qui exigent la fonction ; depuis
 que d'autres la complètent, elle n'en vérifie que le minimum, pour rester rejouable après elles.
 `packages/db/test/org-admin.test.ts` tient la liste exacte, et rejoue chaque geste de la liste : une
@@ -186,7 +188,8 @@ auteur. Le chef de projet a demandé de les fermer, avec deux gestes de plus.
   personnes désignées ne passe pas par une fonction de plus : elle suit ce que la personne voit, et
   l'application ne fait jamais nommer à un éditeur que lui-même.
 - **Supprimer un cours** (migration 0065) : réservé à la personne responsable, sauf une session du
-  vendredi.
+  vendredi. Le type d'une ligne ne change pas (migration 0069) : un cours ne devient pas une
+  session le temps d'être supprimé.
 - **Quitter l'organisation** (migration 0066) : chacun peut supprimer sa propre adhésion, et rien
   de plus ; la dernière personne responsable reste retenue.
 
