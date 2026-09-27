@@ -44,7 +44,12 @@ async function maintenance<T>(
 	});
 }
 
-async function postForm(chemin: string, champs: Record<string, string | string[]>) {
+/** Poste un formulaire sans JavaScript, avec la session du responsable, ou avec celle donnée. */
+async function postForm(
+	chemin: string,
+	champs: Record<string, string | string[]>,
+	session: string = cookie
+) {
 	const corps = new URLSearchParams();
 	for (const [cle, valeur] of Object.entries(champs)) {
 		for (const un of Array.isArray(valeur) ? valeur : [valeur]) corps.append(cle, un);
@@ -56,10 +61,41 @@ async function postForm(chemin: string, champs: Record<string, string | string[]
 			'content-type': 'application/x-www-form-urlencoded',
 			accept: 'text/html',
 			origin,
-			cookie
+			cookie: session
 		},
 		body: corps.toString()
 	});
+}
+
+/** Connexion par lien magique, comme un vrai responsable : rend le cookie de sa session. */
+async function seConnecter(email: string): Promise<string> {
+	await maintenance((tx) => tx.execute(sql`delete from "rate_limit"`));
+	await fetch(`${origin}/connexion`, {
+		method: 'POST',
+		redirect: 'manual',
+		headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'text/html', origin },
+		body: new URLSearchParams({ email }).toString()
+	});
+	const { readdir, readFile } = await import('node:fs/promises');
+	const { join } = await import('node:path');
+	const noms = (await readdir(outbox)).filter((nom) => nom.endsWith('.json')).sort();
+	const messages = await Promise.all(
+		noms.map(
+			async (nom) =>
+				JSON.parse(await readFile(join(outbox, nom), 'utf8')) as { to: string; text: string }
+		)
+	);
+	const lien = messages
+		.filter((message) => message.to === email)
+		.at(-1)
+		?.text.match(/https?:\/\/\S+/)?.[0];
+	expect(lien, `aucun lien magique reçu pour ${email}`).toBeTruthy();
+	const suivi = await fetch(lien as string, { redirect: 'manual' });
+	const pose = (suivi.headers.getSetCookie?.() ?? []).find((valeur) =>
+		valeur.startsWith('better-auth.session_token=')
+	);
+	expect(pose, `aucune session posée pour ${email}`).toBeTruthy();
+	return (pose as string).split(';')[0] as string;
 }
 
 async function page(chemin: string, entetes: Record<string, string> = {}): Promise<string> {
@@ -174,36 +210,9 @@ beforeAll(async () => {
 		await tx.execute(sql`
 			insert into "prayer_settings" ("organization_id") values (${organizationId})
 		`);
-		await tx.execute(sql`delete from "rate_limit"`);
 	});
 
-	// Connexion par lien magique, comme un vrai responsable.
-	await fetch(`${origin}/connexion`, {
-		method: 'POST',
-		redirect: 'manual',
-		headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'text/html', origin },
-		body: new URLSearchParams({ email: EMAIL }).toString()
-	});
-	const { readdir, readFile } = await import('node:fs/promises');
-	const { join } = await import('node:path');
-	const noms = (await readdir(outbox)).filter((nom) => nom.endsWith('.json')).sort();
-	const messages = await Promise.all(
-		noms.map(
-			async (nom) =>
-				JSON.parse(await readFile(join(outbox, nom), 'utf8')) as { to: string; text: string }
-		)
-	);
-	const lien = messages
-		.filter((message) => message.to === EMAIL)
-		.at(-1)
-		?.text.match(/https?:\/\/\S+/)?.[0];
-	expect(lien, 'aucun lien magique reçu').toBeTruthy();
-	const suivi = await fetch(lien as string, { redirect: 'manual' });
-	const pose = (suivi.headers.getSetCookie?.() ?? []).find((valeur) =>
-		valeur.startsWith('better-auth.session_token=')
-	);
-	expect(pose, 'aucune session posée').toBeTruthy();
-	cookie = (pose as string).split(';')[0] as string;
+	cookie = await seConnecter(EMAIL);
 });
 
 afterAll(async () => {
@@ -572,9 +581,19 @@ describe('un jour où la session n’a pas lieu (étape 19, lot 3)', () => {
 	/** Le lundi qui suit le prochain vendredi : aucune session n'a lieu ce jour-là. */
 	const lundi = () => addDays(vendredi(), 3);
 	let journal: DatabaseHandle;
-	/** La première session, close hier (« change de saison »), et la deuxième, qui continue. */
-	let close = '';
-	let continue_ = '';
+	// Une organisation à ce bloc, avec ses deux sessions : il se lance seul (`-t "lot 3"`), et ne
+	// dépend pas de ce que les blocs d'avant laissent dans celle du fichier (relecture du lot 3).
+	const organisation = newId();
+	const utilisateur = newId();
+	const EMAIL_DU_BLOC = 'vendredi-jour-sans-session@example.test';
+	let session = '';
+	/** La première session, close hier, et la deuxième, qui continue. */
+	const close = newId();
+	const continue_ = newId();
+
+	/** Poste un formulaire avec la session de la personne responsable de cette organisation. */
+	const poster = (chemin: string, champs: Record<string, string>) =>
+		postForm(chemin, champs, session);
 
 	/** Les phrases du bloc des erreurs en tête de l'écran. */
 	function enTete(html: string): string[] {
@@ -586,7 +605,7 @@ describe('un jour où la session n’a pas lieu (étape 19, lot 3)', () => {
 
 	/** Les lignes du journal de l'organisation, lues par le rôle applicatif. */
 	async function lignesDuJournal(): Promise<number> {
-		return withOrg(journal.db, { organizationId, userId }, async (tx) =>
+		return withOrg(journal.db, { organizationId: organisation, userId: utilisateur }, async (tx) =>
 			rows<{ n: number }>(await tx.execute(sql`select count(*)::int as n from "audit_log"`))
 		).then((trouve) => trouve[0]?.n ?? 0);
 	}
@@ -597,7 +616,7 @@ describe('un jour où la session n’a pas lieu (étape 19, lot 3)', () => {
 			rows(
 				await tx.execute(sql`
 					select "course_id", "date"::text, "kind", "to_date"::text from "session_exception"
-					where "organization_id" = ${organizationId} order by "course_id", "date"
+					where "organization_id" = ${organisation} order by "course_id", "date"
 				`)
 			)
 		);
@@ -605,30 +624,55 @@ describe('un jour où la session n’a pas lieu (étape 19, lot 3)', () => {
 
 	async function poserLangue(langue: string): Promise<void> {
 		await maintenance((tx) =>
-			tx.execute(sql`update "user" set "language" = ${langue} where "id" = ${userId}`)
+			tx.execute(sql`update "user" set "language" = ${langue} where "id" = ${utilisateur}`)
 		);
 	}
 
 	beforeAll(async () => {
 		journal = createDatabase({ role: 'app', overrides: { database: testDatabase } });
-		const sessions = await maintenance(async (tx) =>
-			rows<{ id: string; jumua_order: number }>(
-				await tx.execute(sql`
-					select "id", "jumua_order" from "course"
-					where "organization_id" = ${organizationId} and "kind" = 'jumua'
-				`)
-			)
-		);
-		close = sessions.find((session) => session.jumua_order === 1)?.id ?? '';
-		continue_ = sessions.find((session) => session.jumua_order === 2)?.id ?? '';
-		expect([close, continue_].every(Boolean), 'les deux sessions des tests d’avant').toBe(true);
+		const hier = addDays(todayInZone(FUSEAU, new Date()), -1);
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+					"enabled_language", "prayer_module")
+				values (${organisation}, 'vendredi-jour-sans-session', 'Association des vendredis',
+					${FUSEAU}, 'fr', array['fr','de','ar'], true)
+			`);
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "name", "email_verified", "language")
+				values (${utilisateur}, ${EMAIL_DU_BLOC}, 'Responsable (personne fictive)', true, 'fr')
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${organisation}, ${utilisateur}, 'org_admin')
+			`);
+			await tx.execute(conditionsAcceptees(organisation, utilisateur));
+			await tx.execute(sql`
+				insert into "prayer_settings" ("organization_id") values (${organisation})
+			`);
+			// Deux sessions publiées chaque vendredi depuis le 04.09.2026 : la première close hier, comme
+			// une saison qui change, la deuxième sans date de fin.
+			await tx.execute(sql`
+				insert into "course" ("id", "organization_id", "kind", "jumua_order", "status", "audience",
+					"teaching_language", "source_language", "recurrence_kind", "recurrence_weekday",
+					"recurrence_interval", "recurrence_anchor_date", "timing_kind", "timing_start",
+					"timing_end", "starts_on", "ends_on")
+				values
+					(${close}, ${organisation}, 'jumua', 1, 'published', 'open', array['ar'], 'fr', 'weekly',
+						array[5]::smallint[], 1, '2026-09-04', 'fixed', '12:10', '12:50', '2026-09-04', ${hier}),
+					(${continue_}, ${organisation}, 'jumua', 2, 'published', 'open', array['ar'], 'fr',
+						'weekly', array[5]::smallint[], 1, '2026-09-04', 'fixed', '13:30', '14:10',
+						'2026-09-04', null)
+			`);
+		});
+		session = await seConnecter(EMAIL_DU_BLOC);
 	});
 
 	// Ce qu'un envoi aurait écrit ne reste pas pour le test suivant.
 	afterEach(async () => {
 		await maintenance((tx) =>
 			tx.execute(sql`
-				delete from "session_exception" where "organization_id" = ${organizationId}
+				delete from "session_exception" where "organization_id" = ${organisation}
 			`)
 		);
 	});
@@ -649,7 +693,7 @@ describe('un jour où la session n’a pas lieu (étape 19, lot 3)', () => {
 						{ courseId: continue_, date: lundi(), toDate: addDays(lundi(), 1), toStart: '13:30' }
 					]
 				] as const) {
-					const reponse = await postForm(`/vendredi?/${action}`, envoi);
+					const reponse = await poster(`/vendredi?/${action}`, envoi);
 					expect(reponse.status, `${action} ${langue}`).toBe(400);
 					expect(enTete(await reponse.text()), `${action} ${langue}`).toEqual([
 						PAS_CE_JOUR[langue]
@@ -669,7 +713,7 @@ describe('un jour où la session n’a pas lieu (étape 19, lot 3)', () => {
 			['annuler', { courseId: close, date: vendredi() }],
 			['deplacer', { courseId: close, date: vendredi(), toDate: vendredi(), toStart: '12:30' }]
 		] as const) {
-			const reponse = await postForm(`/vendredi?/${action}`, envoi);
+			const reponse = await poster(`/vendredi?/${action}`, envoi);
 			expect(reponse.status, action).toBe(400);
 			expect(enTete(await reponse.text()), action).toEqual([PAS_CE_JOUR.fr]);
 		}
@@ -678,7 +722,7 @@ describe('un jour où la session n’a pas lieu (étape 19, lot 3)', () => {
 
 	it('still cancels a session on a Friday after the seven days of the screen', async () => {
 		const plusTard = addDays(vendredi(), 7);
-		const reponse = await postForm('/vendredi?/annuler', { courseId: continue_, date: plusTard });
+		const reponse = await poster('/vendredi?/annuler', { courseId: continue_, date: plusTard });
 		expect(reponse.status).toBe(200);
 		expect(await exceptions()).toEqual([
 			{ course_id: continue_, date: plusTard, kind: 'cancelled', to_date: null }
@@ -694,7 +738,7 @@ describe('un jour où la session n’a pas lieu (étape 19, lot 3)', () => {
 		const versLe = addDays(date, 1) > addDays(today, 6) ? addDays(date, -1) : addDays(date, 1);
 		expect(
 			(
-				await postForm('/vendredi?/deplacer', {
+				await poster('/vendredi?/deplacer', {
 					courseId: continue_,
 					date,
 					toDate: versLe,
@@ -708,7 +752,7 @@ describe('un jour où la session n’a pas lieu (étape 19, lot 3)', () => {
 			['annuler', { courseId: continue_, date: versLe }],
 			['deplacer', { courseId: continue_, date: versLe, toDate: versLe, toStart: '16:00' }]
 		] as const) {
-			const reponse = await postForm(`/vendredi?/${action}`, envoi);
+			const reponse = await poster(`/vendredi?/${action}`, envoi);
 			expect(reponse.status, action).toBe(409);
 			expect(enTete(await reponse.text()), action).toEqual([CHANGEE]);
 		}
@@ -719,7 +763,7 @@ describe('un jour où la session n’a pas lieu (étape 19, lot 3)', () => {
 	it('answers « Rétablir » on a Monday with a refusal, and writes nothing, not even the journal', async () => {
 		// Il n'y a rien à rétablir ce jour-là : rien ne s'écrit (étape 19, lot 1).
 		const journalAvant = await lignesDuJournal();
-		const reponse = await postForm('/vendredi?/retablir', { courseId: continue_, date: lundi() });
+		const reponse = await poster('/vendredi?/retablir', { courseId: continue_, date: lundi() });
 		expect(reponse.status).toBe(409);
 		expect(enTete(await reponse.text())).toEqual([DEJA_RETABLIE]);
 		expect(await exceptions()).toEqual([]);
