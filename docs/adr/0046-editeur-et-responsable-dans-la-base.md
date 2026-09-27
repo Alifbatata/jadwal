@@ -187,9 +187,10 @@ et leurs comptes par un appel direct, et écrire au journal une entrée qui nomm
 auteur. Le chef de projet a demandé de les fermer, avec deux gestes de plus.
 
 - **Le journal** (migration 0063) : l'auteur d'une entrée est la personne du contexte. Le
-  super-admin signe de sa propre identité, comme avant ; sa politique ne change pas. La lecture est
-  réservée à la personne responsable (migration 0070) : le journal nomme les membres et les
-  personnes invitées, et un éditeur y retrouvait la liste que la migration 0064 lui retire.
+  super-admin signe de sa propre identité, comme avant, et depuis le lot 2 la base le tient aussi
+  pour lui (migration 0071, addendum ci-dessous). La lecture est réservée à la personne responsable
+  (migration 0070) : le journal nomme les membres et les personnes invitées, et un éditeur y
+  retrouvait la liste que la migration 0064 lui retire.
 - **La liste des membres** (migration 0064) : la personne responsable et le super-admin la lisent
   comme avant ; un éditeur ne lit plus que sa propre adhésion et son propre compte. La garde des
   personnes désignées ne passe pas par une fonction de plus : elle suit ce que la personne voit, et
@@ -245,6 +246,16 @@ navigation : `Changer d'organisation` quand elle a de quoi choisir, `Vos organis
 ce second lien, qui n'avait qu'une organisation, le cas le plus courant, n'y arrivait qu'après un
 lien de connexion : la liste aurait promis un geste qu'aucun écran ne lui ouvrait. Le détail de
 l'écran est dans `docs/maquettes/responsables-coquille.md`.
+
+## Addendum du 27.09.2026 : le journal, pour le super-admin aussi (étape 19, lot 2)
+
+La migration 0063 ne visait que le rôle applicatif. La politique d'insertion du super-admin ne
+demandait que l'organisation du contexte, et un test de la base y écrivait une entrée au nom de la
+personne responsable, sans personne dans le contexte. La migration 0071 lui applique la même
+règle : l'auteur d'une entrée est la personne du contexte, celle que l'application pose, pour lui
+comme pour tout le monde (ADR 0015 et 0025, addenda du même jour). Ce n'est pas un geste réservé :
+la politique ne passe pas par `jadwal.is_org_admin()`, et la liste des gestes réservés ne change
+pas.
 
 ## Statut
 

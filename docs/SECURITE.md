@@ -90,7 +90,8 @@ lui échappe (ADR 0015, 0020). Un compte compromis ne peut pas effacer ses trace
 pour le super-admin, qui a pourtant tous les autres droits : il y écrit, il n'y récrit rien. Le
 propriétaire, lui, purge sans lire. Depuis l'étape 19, l'auteur d'une entrée écrite par le rôle
 applicatif est la personne du contexte, et aucune autre : un membre ne signe plus au nom d'un
-collègue (migration 0063). Sa lecture est réservée à la personne responsable (migration 0070) : le
+collègue (migration 0063), et le super-admin ne signe plus au nom d'un membre, ni de personne
+(migration 0071). Sa lecture est réservée à la personne responsable (migration 0070) : le
 journal nomme les membres et les personnes invitées, et un éditeur y relisait la liste que la
 barrière 4 bis lui retire. Le super-admin le lit comme avant. L'acceptation des conditions suit la
 même règle : le rôle applicatif lit et ajoute ses propres acceptations, sans rien modifier ni
@@ -180,7 +181,8 @@ ne les donne jamais, la session qui les porte dure au plus douze heures sans ren
 limitation de débit y est plus stricte qu'ailleurs. Une passkey nouvelle ne s'enregistre que depuis
 une session déjà prouvée par passkey, sauf pour la toute première — sans cette règle, une boîte aux
 lettres compromise se fabriquerait la sienne. Ses **écritures** restent signées dans le journal de
-l'organisation, comme celles d'un responsable ; ses lectures vont dans un registre interne
+l'organisation, comme celles d'un responsable, de sa propre identité, que la base exige depuis la
+migration 0071 ; ses lectures vont dans un registre interne
 qu'aucune organisation ne peut atteindre, ni directement ni par une jointure. La base le borne
 pourtant à l'organisation où il est entré, table des organisations comprise depuis la migration
 0055 : entré dans l'une, il ne lit et ne modifie plus qu'elle, et une instruction sans filtre ne

@@ -142,6 +142,35 @@ plus ancienne garde son programme ; avec `view="prieres"`, elle s'ouvre sur la s
 reste dans le cadre. Le module éteint, `view="prieres"` montre la semaine, comme `?vue=prieres` :
 le point 5 tient toujours.
 
+## Addendum du 27.09.2026 : l'allumage de 0050, réparé (étape 19, lot 2)
+
+La migration 0050 a posé la colonne, éteinte par défaut, puis a voulu allumer le module pour toute
+organisation qui se servait déjà des heures de prière : des réglages, des jours importés, une
+période d'horaires, un cours ancré sur une prière ou une session du vendredi. Cette mise à jour a
+tourné sous le propriétaire **sans son drapeau d'entretien** : le propriétaire est soumis à la
+sécurité au niveau des lignes (ADR 0019), ne voit hors de ce drapeau aucune ligne, et un `update`
+rend alors « 0 ligne » sans rien dire. Sur une base qui avait déjà des organisations, elle n'a rien
+allumé. Sur une base vide, comme celle des tests, il n'y avait rien à allumer : aucun test ne
+pouvait le voir. `packages/db/test/prayer-module-repair.test.ts` reconstitue l'état d'avant 0050,
+joue le fichier tel qu'il est, et montre que rien ne change ; sous le drapeau, la même mise à jour
+fait son travail.
+
+Une nuance, lue dans le code : le bloc `$efface$` de la migration 0049 pose ce drapeau et ne le
+coupe pas. Drizzle joue un lot de migrations dans une seule transaction. Une base qui a reçu 0049
+et 0050 dans le même lot a donc vu sa mise à jour aboutir ; une base déjà à 0049 ne l'a pas vue.
+
+Ce qui a pu rester, et que la base interdit de créer autrement : une organisation au module éteint
+qui garde un cours ancré sur une prière ou une session du vendredi. Le déclencheur de 0050 refuse
+d'éteindre le module sous un tel cours, et de créer un tel cours sous un module éteint ; la page
+publique ne sait pas afficher un cours ancré sans heures de prière. **La migration 0072 rallume le
+module pour ces organisations-là, et pour elles seules**, sous le drapeau, posé puis coupé comme
+dans la migration 0067, avec sa preuve. Une organisation qui n'a que des réglages, des jours
+importés ou des périodes d'horaires n'est pas touchée : elle a pu éteindre le module exprès depuis,
+et rien ne dit le contraire. Le rejeu ne trouve plus rien à rallumer.
+
+Les autres écritures de données des migrations ont été relevées une à une (ADR 0019, addendum du
+même jour) : aucune autre n'a pu rester sans effet.
+
 ## Ce que cette décision ne dit pas
 
 Elle ne dit rien d'un catalogue de modules. Il y en a un, il est prévu pour un besoin connu, et

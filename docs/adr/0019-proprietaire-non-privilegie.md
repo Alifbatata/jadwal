@@ -107,9 +107,32 @@ reconnecté sous ce rôle. La suppression
 d'une organisation et la remise à zéro des passkeys ne sont pas concernées : elles passent par le
 rôle du serveur. C'est beaucoup de mécanique pour borner un rôle que rien d'extérieur n'atteint.
 
+## Addendum du 27.09.2026 : les écritures de données des migrations
+
+Les migrations tournent sous le propriétaire, donc sous la même règle : hors de son drapeau, un
+`update` ou un `delete` d'une migration ne touche aucune ligne, sans rien dire. Une base de test
+part vide, où il n'y a rien à toucher : aucun test ne le voit. L'étape 19 (lot 2) l'a trouvé dans
+la migration 0050, et a relevé toutes les écritures de données des migrations 0000 à 0071. Celles
+qui écrivent dans le corps d'une fonction (les purges, `consume_invitation`, `count_view`) ne sont
+pas jouées par la migration ; restent celles que la migration joue elle-même :
+
+| Migration | Écriture                                                | A-t-elle pu ne rien faire ?                                                                                                                                                                                                                                                                                                                                                                                         |
+| --------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0043      | `delete from "rate_limit"`, les clés en clair           | Non : une politique temporaire, `using (true)`, l'ouvre au propriétaire le temps de l'instruction, qui n'a pas de `where` et ne passe donc pas par une politique de lecture. Écrit d'abord sans elle, le fichier avait laissé une ligne à sa première application (son commentaire le dit). Une ligne restée ailleurs ne vivrait pas : la purge périodique (`purge_rate_limit`) retire tout seau de plus d'un jour. |
+| 0049      | `update "session"`, adresses et navigateurs effacés     | Non : le drapeau est posé dans le bloc, et la preuve relit sous lui. Il n'est pas coupé ensuite : le reste du lot tourne sous le drapeau (voir 0050).                                                                                                                                                                                                                                                               |
+| 0050      | `update "organization"`, le module des heures de prière | **Oui**, sur une base déjà à 0049 : pas de drapeau, pas de preuve. Dans un lot qui jouait aussi 0049, le drapeau que 0049 laisse posé l'a fait aboutir. Réparé par la migration 0072, pour les organisations qui gardent un cours qui dépend du module (ADR 0042, addendum du même jour).                                                                                                                           |
+| 0058      | `update "invitation"`, les acceptations consommées      | Non : le drapeau est posé dans le bloc, puis rendu à sa valeur d'avant ; la preuve relit sous lui.                                                                                                                                                                                                                                                                                                                  |
+| 0067      | `update "course"`, l'état « archivé » devenu brouillon  | Non : le drapeau est posé puis coupé, et la contrainte validée ensuite lit toutes les lignes sans politique : une ligne archivée restante ferait échouer la migration.                                                                                                                                                                                                                                              |
+
+Les autres migrations n'écrivent aucune donnée : elles changent le schéma, les droits, les
+politiques et les fonctions, que la sécurité au niveau des lignes ne filtre pas. Une écriture de
+données à venir pose le drapeau pour elle seule, le coupe, et prouve son effet sous lui, comme 0067
+et 0072.
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 3 de la feuille de route (connexion, organisations, rôles, invitations,
 super-admin, journal). Remplace, sur ce point, la décision de l'ADR 0013 qui annonçait un
 propriétaire non superutilisateur sans le créer. Complété le 2026-09-23 (le droit `TRUNCATE` du
-propriétaire, écrit comme limite, voir l'addendum).
+propriétaire, écrit comme limite, voir l'addendum). Complété le 27.09.2026 (les écritures de données
+des migrations, relevées une à une, voir l'addendum).

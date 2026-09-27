@@ -68,8 +68,23 @@ ne lit le journal que sous une personne responsable de l'organisation du context
 (`jadwal.is_org_admin()`, ADR 0046). Aucun écran ne le montre. Tout membre continue d'y écrire, sans
 relire ce qu'il écrit ; le super-admin le lit comme avant (ADR 0025).
 
+## Addendum du 27.09.2026 : le super-admin signe de sa propre identité (étape 19, lot 2)
+
+Le premier addendum de ce jour laissait la politique d'insertion du super-admin telle quelle : elle
+ne demandait que l'organisation du contexte. L'application le faisait signer de sa propre identité,
+mais la base acceptait de lui une entrée au nom d'une personne responsable, d'une éditrice, ou de
+personne : un test de la base en écrivait une au nom de la personne responsable, sans personne dans
+le contexte. Depuis la migration 0071, sa politique exige la même chose que celle du rôle
+applicatif : l'auteur est la personne du contexte. Une entrée sans auteur, ou écrite sans personne
+dans le contexte, lui est refusée aussi.
+
+La base ne sait pas qui tient la connexion : la personne du contexte est celle que l'application
+pose, pour le super-admin comme pour le rôle applicatif (`docs/SECURITE.md`, barrières 1 et 10). Ce
+que la règle arrête, c'est l'erreur d'un chemin qui signerait au nom d'un autre, ou de personne ; ce
+qu'elle n'arrête pas, c'est qui tient le mot de passe d'un rôle et pose lui-même le contexte.
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 2 de la feuille de route (base, RLS, données de démo). Complété le
-27.09.2026 : l'auteur d'une entrée est la personne connectée, et seule la personne responsable lit
-le journal.
+27.09.2026 : l'auteur d'une entrée est la personne connectée, pour le rôle applicatif puis pour le
+super-admin, et seule la personne responsable lit le journal.

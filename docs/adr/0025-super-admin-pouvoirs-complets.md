@@ -168,6 +168,19 @@ Il est désormais seul à changer le plan, l'état et l'identifiant d'URL d'une 
 applicatif ne modifie plus que les colonnes de l'écran des réglages. C'est ce que disait déjà
 l'ADR 0006 pour le plan ; la base le tient.
 
+## Addendum du 27.09.2026 : ses écritures au journal portent son identité, et la base le tient
+
+La décision dit que toute modification du super-admin entre au journal de l'organisation « avec son
+identité ». L'application le faisait : `withSessionOrg` pose sa personne dans le contexte comme pour
+tout le monde, et `record` signe de cette personne. La base, elle, acceptait de lui une entrée au
+nom d'une personne responsable, d'une éditrice, ou de personne, alors que la migration 0063 le
+refusait déjà au rôle applicatif. Depuis la migration 0071 (étape 19, lot 2), sa politique
+d'insertion exige que l'auteur soit la personne du contexte (ADR 0015, addendum du même jour).
+
+Comme les passages de statut d'une invitation, c'est une règle d'intégrité et non un pouvoir
+retiré : une entrée du journal dit qui a fait quoi, et le super-admin ne signe pas au nom d'un
+autre. Ce qu'il écrit ailleurs, et comment, ne change pas.
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 4 de la feuille de route. **Remplace l'ADR 0018** et corrige l'ADR 0013
