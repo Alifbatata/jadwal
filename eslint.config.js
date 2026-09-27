@@ -16,8 +16,9 @@ export default defineConfig(
 		// jamais avec son empreinte d'intégrité (ADR 0005). Le corriger n'aurait aucun sens : le
 		// corrigé ne serait plus ce que les organisations reçoivent, et son empreinte ne vaudrait plus.
 		// De même pour les jeux de référence copiés tels quels depuis adhan-js. Et `.claude/`, le
-		// dossier d'un outil de développement, propre à chaque poste et jamais suivi par git : il peut
-		// porter des arbres de travail entiers, dont les fichiers ne sont pas ceux de ce dépôt.
+		// dossier d'un outil de développement, propre à chaque poste : il peut porter des arbres de
+		// travail entiers, dont les fichiers ne sont pas ceux de ce dépôt. Le dépôt n'en suit aucun
+		// fichier, mais rien ne l'y oblige : voir `.prettierignore`.
 		ignores: ['packages/widget/published/**', 'packages/core/src/prayer/reference/**', '.claude/**']
 	},
 	js.configs.recommended,
