@@ -14,8 +14,9 @@
  *    principale vient tantôt en premier, tantôt en second ; un ordre d'arrivée qui n'est pas celui
  *    des NPA.
  * 2. Le même générateur sur des fichiers qu'il doit refuser : une colonne renommée, une ligne
- *    amputée, des coordonnées qui ne sont pas du MN95, une date de version illisible. Un fichier
- *    officiel qui changerait de forme doit arrêter la génération, pas produire une liste fausse.
+ *    amputée, des coordonnées qui ne sont pas du MN95, une date de version illisible ou qui n'existe
+ *    pas. Un fichier officiel qui changerait de forme doit arrêter la génération, pas produire une
+ *    liste fausse.
  * 3. `scripts/licences-tierces.mjs` sur deux arbres déployés factices : l'un dont le serveur
  *    construit contient la liste, l'autre non. La mention de swisstopo doit figurer dans le premier,
  *    et seulement dans le premier.
@@ -210,6 +211,15 @@ const refus = [
 		/MN95/
 	],
 	['une date de version illisible', source('date.csv', LIGNES), '01.09.2026', /AAAA-MM-JJ/],
+	// La bonne forme ne suffit pas : un treizième mois, un quarante-cinquième jour, un 30 février
+	// s'écrivent aussi AAAA-MM-JJ, et l'en-tête de la liste les recopierait tels quels.
+	[
+		'une date de version impossible, au treizième mois',
+		source('date-impossible.csv', LIGNES),
+		'2026-13-45',
+		/n'existe pas/
+	],
+	['un 30 février', source('trente-fevrier.csv', LIGNES), '2026-02-30', /n'existe pas/],
 	['une date de version absente', source('sans-date.csv', LIGNES), undefined, /usage/]
 ];
 for (const [quoi, entree, version, motif] of refus) {

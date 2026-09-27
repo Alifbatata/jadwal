@@ -29,8 +29,10 @@
  *
  * Une colonne absente, une ligne qui n'a pas le bon nombre de champs, un nombre illisible, un point
  * hors du cadre MN95 de la Suisse : le fichier officiel a changé de forme, ou ce n'est pas le bon
- * fichier (celui en WGS84, ou un ancien en MN03). Le script s'arrête alors sans rien écrire, plutôt
- * que de produire une liste fausse que personne ne remarquerait.
+ * fichier (celui en WGS84, ou un ancien en MN03). Une date de version qui n'existe pas, 2026-13-45 ou
+ * 2026-02-30, bien qu'elle ait la bonne forme : l'en-tête de la liste la recopierait telle quelle.
+ * Le script s'arrête alors sans rien écrire, plutôt que de produire une liste fausse que personne ne
+ * remarquerait.
  *
  * Le résultat ne dépend que du fichier d'entrée et de la date : deux passages donnent le même
  * fichier, octet pour octet, et une mise à jour se relit comme un diff.
@@ -76,6 +78,18 @@ if (!entree || !version) {
 }
 const date = /^(\d{4})-(\d{2})-(\d{2})$/.exec(version);
 if (!date) arreter(`la date de la version s'écrit AAAA-MM-JJ, pas « ${version} »`);
+// La forme ne suffit pas : « 2026-13-45 » et « 2026-02-30 » l'ont aussi. Le jour est reconstruit par
+// le calendrier, et il doit retomber sur les trois nombres écrits : un mois ou un jour de trop se
+// reporte sur le suivant, et la date rendue n'est plus celle qu'on a donnée.
+const [annee, mois, jour] = [Number(date[1]), Number(date[2]), Number(date[3])];
+const reconstruite = new Date(Date.UTC(annee, mois - 1, jour));
+if (
+	reconstruite.getUTCFullYear() !== annee ||
+	reconstruite.getUTCMonth() !== mois - 1 ||
+	reconstruite.getUTCDate() !== jour
+) {
+	arreter(`la date de la version n'existe pas : « ${version} »`);
+}
 const versionSuisse = `${date[3]}.${date[2]}.${date[1]}`;
 
 let texte;
