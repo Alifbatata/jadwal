@@ -18,8 +18,36 @@ import {
 	t,
 	type Langue
 } from './i18n.js';
+import { upcomingTexts } from './i18n/upcoming.js';
 
 const ar = t('ar');
+
+describe('l’italien devant un jour de la semaine', () => {
+	// La date longue commence par le nom du jour : « domenica 04.10.2026 ». « Spostato al » et
+	// « Inizialmente il » mettaient un article masculin devant « domenica », qui est féminin
+	// (relecture du lot 7). Sans article, la phrase vaut pour les sept jours.
+	it('says a session was moved, and where it originally was, with no article before the day', () => {
+		const it_ = t('it');
+		expect(it_.movedTo(longDate('it', '2026-10-04' as IsoDate))).toBe(
+			'Spostato a domenica 04.10.2026'
+		);
+		expect(it_.originallyOn(longDate('it', '2026-10-04' as IsoDate))).toBe(
+			'In origine: domenica 04.10.2026'
+		);
+		expect(it_.movedTo(longDate('it', '2026-10-05' as IsoDate))).toBe(
+			'Spostato a lunedì 05.10.2026'
+		);
+	});
+
+	it('writes the week of the upcoming screen from one day to another, with no article', () => {
+		expect(
+			upcomingTexts.it.period(
+				longDate('it', '2026-10-04' as IsoDate),
+				longDate('it', '2026-10-10' as IsoDate)
+			)
+		).toBe('Da domenica 04.10.2026 a sabato 10.10.2026');
+	});
+});
 
 describe('les phrases arabes relues', () => {
 	it('uses the one-letter short weekdays of the CLDR, Monday first', () => {

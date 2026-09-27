@@ -390,8 +390,8 @@ const TEXTES_PUBLICS = {
 	it: {
 		conditions: 'Condizioni d’uso',
 		nouvelOnglet: 'si apre in una nuova scheda',
-		depart: 'Spostato al ',
-		arrivee: 'Inizialmente il '
+		depart: 'Spostato a ',
+		arrivee: 'In origine: '
 	},
 	en: {
 		conditions: 'Terms of use',

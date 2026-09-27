@@ -323,7 +323,7 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 	it: {
 		intro:
 			'Le lezioni dei prossimi sette giorni, giorno per giorno. Se una lezione non si tiene o cambia data, apri «Annulla o sposta» sotto il suo titolo.',
-		period: (from, to) => `Dal ${from} al ${to}`,
+		period: (from, to) => `Da ${from} a ${to}`,
 		untimed: (count) =>
 			count === 1
 				? 'Una lezione della settimana appare senza orario, perché il suo orario dipende da una preghiera.'

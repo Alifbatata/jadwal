@@ -434,7 +434,7 @@ const ANNULE: Record<Langue, string> = {
 const DEPLACE_AU: Record<Langue, (date: string) => string> = {
 	fr: (date) => `Déplacé au ${date}`,
 	de: (date) => `Verschoben auf ${date}`,
-	it: (date) => `Spostato al ${date}`,
+	it: (date) => `Spostato a ${date}`,
 	en: (date) => `Moved to ${date}`,
 	ar: (date) => `نُقل إلى ${date}`
 };
@@ -442,7 +442,7 @@ const DEPLACE_AU: Record<Langue, (date: string) => string> = {
 const ORIGINE: Record<Langue, (date: string) => string> = {
 	fr: (date) => `Initialement le ${date}`,
 	de: (date) => `Ursprünglich am ${date}`,
-	it: (date) => `Inizialmente il ${date}`,
+	it: (date) => `In origine: ${date}`,
 	en: (date) => `Originally on ${date}`,
 	ar: (date) => `كان مقرّرًا في ${date}`
 };

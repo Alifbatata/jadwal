@@ -618,8 +618,9 @@ const it: Dictionnaire = {
 	period: (from, to) => `Dal ${from} al ${to}`,
 	cancelled: 'Annullato',
 	exceptionalDate: 'Data eccezionale',
-	movedTo: (date) => `Spostato al ${date}`,
-	originallyOn: (date) => `Inizialmente il ${date}`,
+	// Sans article devant le nom du jour, qui ouvre la date longue : « al domenica » serait faux.
+	movedTo: (date) => `Spostato a ${date}`,
+	originallyOn: (date) => `In origine: ${date}`,
 	movedToTime: (time) => `Spostato alle ${time}`,
 	newTime: 'Nuovo orario',
 	originallyAt: (time) => `Inizialmente alle ${time}`,
