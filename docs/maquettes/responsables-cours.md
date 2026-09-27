@@ -263,21 +263,21 @@ dans cet espace. Publiez le cours quand tout est prêt.` Le calendrier des deux 
   un refus, n'est prouvé que dans un navigateur, par les relectures.
 - Les deux gestes que le formulaire fait avec JavaScript au lot 2 de l'étape 19, la case de la
   langue d'enseignement qui suit la langue de saisie et le premier jour qui suit les dates, ne sont
-  pas pilotés par les tests du dépôt non plus. Ils ont été éprouvés dans un vrai Chrome sans
-  interface pendant le lot, et restent à ajouter au parcours automatique, avec le premier jour qui
-  suit encore les dates après un envoi refusé, tant qu'on ne l'a pas changé à la main.
+  pas pilotés par les tests du dépôt non plus. Le parcours automatique les joue dans un vrai
+  navigateur, sur l'image de production (`19-cours-langue-de-saisie`, `19-cours-premier-jour`). Le
+  premier jour qui suit encore les dates après un envoi refusé, tant qu'on ne l'a pas changé à la
+  main, n'y est pas encore.
 - Les tests HTTP lisent les champs de l'horaire que le serveur rend sans `required`, et les minutes
   avec les bornes des deux choix réunies (étape 19, lot 3). Que les champs redeviennent exigés, et
   que les bornes prennent celles du choix, une fois la page hydratée, ne se voit que dans un
-  navigateur : le parcours automatique le vérifie depuis les relectures du lot 3 (retour C3), avec
-  JavaScript sur l'écran d'un nouveau cours. Sans JavaScript, il envoie un choix de prière heures
-  vidées, puis, sur la page revenue pour `avant une prière`, demande au navigateur s'il laisserait
-  partir 0 et 180 minutes après une prière. Ces gestes ont été joués dans un vrai Chrome contre le
-  serveur construit des tests, et chacun tombe sur son mutant ; le parcours entier, sur l'image,
-  reste à passer.
-- Le parcours automatique ne passe pas non plus, pour l'instant, par les autres gestes du lot 2 dans
-  un vrai navigateur : le premier jour laissé vide d'un cours à dates précises, envoyé sans
-  JavaScript en deux fois ; `Supprimer ce cours` puis `Oui, supprimer`, avec et sans JavaScript ; le
-  bloc `Le cours est publié.` et son message ; la séance annulée, barrée, sur la page publique d'un
-  cours. Les tests HTTP lisent ce que le serveur rend pour chacun, et un vrai Chrome les a joués
-  pendant la relecture du lot, avec et sans JavaScript.
+  navigateur : le parcours automatique le vérifie avec JavaScript sur l'écran d'un nouveau cours.
+  Sans JavaScript, il envoie un choix de prière heures vidées, puis, sur la page revenue pour
+  `avant une prière`, demande au navigateur s'il laisserait partir 0 et 180 minutes après une
+  prière (`19-cours-sans-js`).
+- Les autres gestes du lot 2 passent aussi par le parcours automatique, dans un vrai navigateur : le
+  premier jour laissé vide d'un cours à dates précises, envoyé sans JavaScript en deux fois
+  (`19-cours-premier-jour`) ; `Supprimer ce cours` puis `Oui, supprimer`, avec et sans JavaScript
+  (`19-D3`) ; le bloc `Le cours est publié.` et son message (`19-cours-message`) ; la phrase
+  `À corriger` d'un cours dont une date tombe hors de sa période, que le parcours obtient en donnant
+  au cours, dans la base, un dernier jour que le formulaire refuse (`19-cours-hors-periode`) ; la
+  séance annulée, barrée, sur la page publique d'un cours (`19-cours-seance-barree`).
