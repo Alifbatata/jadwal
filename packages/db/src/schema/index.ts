@@ -1231,11 +1231,14 @@ export const auditLog = pgTable(
 			withCheck: sql`${table.organizationId} = ${orgContext} and ${table.actorId} = ${userContext}`
 		}),
 		// Le super-admin lit et écrit le journal de l'organisation où il est entré, comme un
-		// responsable (ADR 0025). Ses écritures y sont signées de son identité, avec l'état avant et
-		// après : c'est l'application qui le fait, et la base ne le borne pas davantage, comme pour
-		// le reste de ses pouvoirs (migration 0063). Ses **lectures** n'y laissent rien : elles vont
-		// au registre interne, que l'organisation ne voit pas. C'est une décision explicite, et son
-		// prix est écrit dans `docs/SECURITE.md`.
+		// responsable (ADR 0025). Ses écritures y sont signées de sa propre identité, la personne du
+		// contexte que `withSessionOrg` pose pour lui comme pour tout le monde, avec l'état avant et
+		// après. Jusqu'à l'étape 19, lot 2, sa politique ne demandait que l'organisation : il écrivait
+		// au nom d'une personne responsable, ou de personne (migration 0071). Comme les passages de
+		// statut d'une invitation, c'est une règle d'intégrité, pas un pouvoir retiré : le journal dit
+		// qui a fait quoi (ADR 0015). Ses **lectures** n'y laissent rien : elles vont au registre
+		// interne, que l'organisation ne voit pas. C'est une décision explicite, et son prix est écrit
+		// dans `docs/SECURITE.md`.
 		pgPolicy('audit_log_superadmin_select', {
 			as: 'permissive',
 			for: 'select',
@@ -1246,7 +1249,7 @@ export const auditLog = pgTable(
 			as: 'permissive',
 			for: 'insert',
 			to: superAdminRole,
-			withCheck: sql`${table.organizationId} = ${orgContext}`
+			withCheck: sql`${table.organizationId} = ${orgContext} and ${table.actorId} = ${userContext}`
 		})
 	]
 );

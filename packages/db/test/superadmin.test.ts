@@ -21,7 +21,8 @@ import {
 	seedOrganisation,
 	SQLSTATE,
 	sqlStateOfFailure,
-	type Organisation
+	type Organisation,
+	withMaintenance
 } from './helpers.js';
 
 let ownerHandle: DatabaseHandle;
@@ -32,6 +33,8 @@ let superAdmin: Database;
 let app: Database;
 let a: Organisation;
 let b: Organisation;
+/** Le compte de l'exploitant, qui porte le drapeau du super-admin. */
+let operator: string;
 
 beforeAll(async () => {
 	ownerHandle = openDatabase('owner');
@@ -42,6 +45,13 @@ beforeAll(async () => {
 	app = appHandle.db;
 	a = await seedOrganisation(owner, 'superadmin-a');
 	b = await seedOrganisation(owner, 'superadmin-b');
+	operator = newId();
+	await withMaintenance(owner, (tx) =>
+		tx.execute(sql`
+			insert into "user" ("id", "email", "is_super_admin")
+			values (${operator}, 'exploitant-superadmin@example.test', true)
+		`)
+	);
 });
 
 afterAll(async () => {
@@ -104,21 +114,43 @@ describe('ce que le super-admin écrit', () => {
 		expect(vu).toBe(1);
 	});
 
-	it('signs its writes in the journal, and the organisation sees them', async () => {
+	it('signs its writes in the journal with its own identity, and the organisation sees them', async () => {
+		// Le super-admin signe de sa propre identité, celle que `withSessionOrg` pose dans le contexte
+		// comme pour tout le monde (ADR 0025). Jusqu'à l'étape 19, lot 2, ce test écrivait au nom de la
+		// personne responsable, sans personne dans le contexte, et la base l'acceptait : la migration
+		// 0063 avait fermé ce chemin au rôle applicatif seulement.
 		const target = newId();
-		await withOrg(superAdmin, a.id, (tx) =>
+		await withOrg(superAdmin, { organizationId: a.id, userId: operator }, (tx) =>
 			tx.execute(sql`
 				insert into "audit_log" ("id", "organization_id", "actor_id", "action", "target_table",
 					"target_id")
-				values (${newId()}, ${a.id}, ${a.userId}, 'course.update', 'course', ${target})
+				values (${newId()}, ${a.id}, ${operator}, 'course.update', 'course', ${target})
 			`)
 		);
 		// C'est le contrat de l'ADR 0025 : le contenu est tracé, la consultation ne l'est pas. Le
-		// journal se lit par la personne responsable de l'organisation (migration 0070).
-		const vu = await withOrg(app, asAdmin(a), (tx) =>
-			countIn(tx, 'audit_log', sql.raw(`where "target_id" = '${target}'`))
+		// journal se lit par la personne responsable de l'organisation (migration 0070), et il nomme
+		// le super-admin.
+		const auteurs = await withOrg(app, asAdmin(a), async (tx) =>
+			allRows<{ actor_id: string }>(
+				await tx.execute(sql`select "actor_id" from "audit_log" where "target_id" = ${target}`)
+			)
 		);
-		expect(vu).toBe(1);
+		expect(auteurs).toEqual([{ actor_id: operator }]);
+	});
+
+	it('does not sign in the name of a manager of the organisation, nor without a person in the context (étape 19, lot 2)', async () => {
+		// L'écriture d'avant ce lot : au nom de la personne responsable de A, contexte sans personne.
+		for (const context of [a.id, { organizationId: a.id, userId: operator }]) {
+			const message = await messageOfFailure(() =>
+				withOrg(superAdmin, context, (tx) =>
+					tx.execute(sql`
+						insert into "audit_log" ("id", "organization_id", "actor_id", "action", "target_table")
+						values (${newId()}, ${a.id}, ${a.userId}, 'course.update', 'course')
+					`)
+				)
+			);
+			expect(message, JSON.stringify(context)).toContain('row-level security policy');
+		}
 	});
 
 	it('writes nothing outside the organisation it entered', async () => {

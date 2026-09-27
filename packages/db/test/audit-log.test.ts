@@ -201,6 +201,27 @@ describe('l’auteur d’une entrée est la personne connectée', () => {
 		}
 	});
 
+	it('refuses an entry of the super-admin that names someone else as its author, or nobody (étape 19, lot 2)', async () => {
+		// Le super-admin entré dans C signe de sa propre identité (ADR 0025). Sa politique ne demandait
+		// que l'organisation du contexte : il écrivait au journal une entrée au nom de la personne
+		// responsable, d'une éditrice, ou de personne, et l'organisation y lisait un geste qu'aucun de
+		// ses membres n'avait fait.
+		const attempts: [string, { organizationId: string; userId?: string }, string | null][] = [
+			['au nom de la personne responsable', { organizationId: c.id, userId: operator }, c.userId],
+			['au nom d’une éditrice', { organizationId: c.id, userId: operator }, editor],
+			['sans auteur', { organizationId: c.id, userId: operator }, null],
+			['sans personne, en son nom', { organizationId: c.id }, operator],
+			['sans personne, au nom de la responsable', { organizationId: c.id }, c.userId],
+			['sans personne ni auteur', { organizationId: c.id }, null]
+		];
+		for (const [label, context, actor] of attempts) {
+			const message = await messageOfFailure(() =>
+				withOrg(superAdmin, context, (tx) => tx.execute(entry(actor)))
+			);
+			expect(message, label).toMatch(NO_POLICY);
+		}
+	});
+
 	it('accepts the entries of the application, each signed by the person connected', async () => {
 		// Ce que fait `record` (apps/web/src/lib/server/audit.ts) : l'auteur est la personne du
 		// contexte, que `withSessionOrg` pose à partir de la session.
