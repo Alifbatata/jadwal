@@ -300,13 +300,14 @@ describe('le mode intégré', () => {
 					.filter((url) => /^(https?:)?\/\//.test(url) && !url.startsWith(origin))
 			);
 			expect(ressources, chemin).toEqual([]);
-			// Les liens qui ouvrent l'abonnement dans Google Agenda ou dans Outlook (étape 18) sortent
-			// du cadre par un nouvel onglet : ces deux services refusent d'être encadrés, et `embed.js`
-			// ne touche pas à un lien qui porte une cible.
+			// Les liens qui ouvrent l'abonnement dans Google Agenda ou dans Outlook (étape 18), celui des
+			// comptes personnels et, depuis le 27.09.2026, celui des comptes de travail ou d'école,
+			// sortent du cadre par un nouvel onglet : ces services refusent d'être encadrés, et
+			// `embed.js` ne touche pas à un lien qui porte une cible.
 			for (const balise of html.matchAll(/<a\b[^>]*\shref="(https?:\/\/[^"]+)"[^>]*>/g)) {
 				if ((balise[1] as string).startsWith(origin)) continue;
 				expect(new URL((balise[1] as string).replaceAll('&amp;', '&')).host, chemin).toMatch(
-					/^(calendar\.google\.com|outlook\.live\.com)$/
+					/^(calendar\.google\.com|outlook\.live\.com|outlook\.office\.com)$/
 				);
 				expect(balise[0], chemin).toContain('target="_blank"');
 			}
