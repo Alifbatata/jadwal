@@ -18,6 +18,7 @@
 {#if form?.error}<p class="erreur" role="alert">{text.errors[form.error]}</p>{/if}
 {#if form?.pauseAdded}<p class="fait" role="status">{text.pauseAdded}</p>{/if}
 {#if form?.pauseRemoved}<p class="fait" role="status">{text.pauseRemoved}</p>{/if}
+{#if form?.courseDeleted}<p class="fait" role="status">{text.courseDeleted}</p>{/if}
 
 <p><a class="bouton" href={resolve('/cours/nouveau')}>{text.add}</a></p>
 
@@ -51,6 +52,21 @@
 					>{text.edit}</a
 				>
 			</p>
+			<!-- La personne responsable seule (ADR 0046). Un élément `details` natif : fermé, il ne montre
+			     que « Supprimer ce cours » ; le navigateur l'ouvre seul, sans script, sur ce que la
+			     suppression emporte et le bouton qui la confirme, comme pour une session du vendredi. -->
+			{#if data.canDelete}
+				<details class="repli">
+					<summary class="danger-plat" aria-describedby={`course-${course.id}`}
+						>{text.deleteCourse}</summary
+					>
+					<form method="post" action="?/supprimer" class="confirmation">
+						<input type="hidden" name="courseId" value={course.id} />
+						<p>{text.deleteWarning}</p>
+						<button type="submit" class="danger">{text.deleteConfirm}</button>
+					</form>
+				</details>
+			{/if}
 		</li>
 	{/each}
 </ul>
@@ -160,6 +176,33 @@
 		background: #e5e7eb;
 		border-radius: 0.25rem;
 		padding: 0.1rem 0.4rem;
+	}
+	/* Le triangle du navigateur reste : c'est lui qui dit qu'on peut ouvrir. La hauteur de la ligne
+	   donne au résumé une cible de 44 pixels. */
+	summary {
+		cursor: pointer;
+		font-weight: 600;
+		padding: 0.65rem 0;
+	}
+	.danger-plat {
+		color: #b91c1c;
+	}
+	.confirmation {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem;
+		background: #fee2e2;
+		border-radius: 0.375rem;
+		padding: 0.5rem 0.75rem;
+	}
+	.confirmation p {
+		margin: 0;
+	}
+	button.danger {
+		background: #b91c1c;
+		border-color: #b91c1c;
+		color: #fff;
 	}
 	.colonne {
 		display: flex;

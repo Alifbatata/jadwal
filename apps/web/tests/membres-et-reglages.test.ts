@@ -5,8 +5,7 @@
 // - sous le choix du rôle, l'écran Membres dit ce que fait un éditeur et ce qui est réservé au
 //   responsable (B3), et cette liste est liée à ce que la base et les routes permettent vraiment :
 //   chaque table que la base réserve au responsable est couverte par un geste dit « réservé » (sauf
-//   la suppression d'un cours, qu'aucun écran ne propose encore, et la lecture du journal, qu'aucun
-//   écran ne montre : `RESERVEES_SANS_ECRAN`), chaque
+//   la lecture du journal, qu'aucun écran ne montre : `RESERVEES_SANS_ECRAN`), chaque
 //   geste réservé est refusé à une éditrice, et chaque geste de l'éditeur, elle le fait elle-même, par
 //   le formulaire de son écran. Les gestes viennent de la liste même que l'écran affiche
 //   (`EDITOR_GESTURES` et `MANAGER_GESTURES`) : un geste ajouté à l'écran sans sa preuve ici, ou
@@ -766,6 +765,14 @@ const RESERVES: {
 		}[];
 	};
 } = {
+	// L'écran Cours le propose à la personne responsable depuis le lot 2 de l'étape 19 ; la base le
+	// lui réserve depuis le lot 1 (migration 0065). Un identifiant vide : la garde de la route refuse
+	// l'éditrice avant de le lire.
+	deleteCourse: {
+		texte: 'Supprimer un cours',
+		tables: ['course'],
+		refus: [{ chemin: '/cours?/supprimer', champs: { courseId: '' } }]
+	},
 	members: {
 		texte: 'Voir les membres, leur rôle et les invitations en attente',
 		tables: [],
@@ -822,7 +829,7 @@ const RESERVES: {
 
 /**
  * Ce que l'écran promet des cours à un éditeur, dans chaque langue : rien de plus que ce que les
- * écrans des cours proposent. Aucun ne propose de supprimer un cours.
+ * écrans des cours lui proposent. Supprimer un cours n'est proposé qu'au responsable.
  */
 const COURS_DE_L_EDITEUR: Record<Langue, string> = {
 	fr: 'Créer un cours, le modifier et le publier',
@@ -833,12 +840,11 @@ const COURS_DE_L_EDITEUR: Record<Langue, string> = {
 };
 
 /**
- * Ce que la base réserve déjà au responsable sans qu'aucun écran le propose. Supprimer un cours
- * (migration 0065, étape 19) : l'écran Cours et son action le proposeront au lot suivant ; ce jour-là,
- * le geste entre dans la liste que l'écran Membres affiche, et sa table quitte celle-ci. Lire le
- * journal (migration 0070) : aucun écran ne le montre, à personne.
+ * Ce que la base réserve déjà au responsable sans qu'aucun écran le propose : lire le journal
+ * (migration 0070), qu'aucun écran ne montre, à personne. Supprimer un cours (migration 0065) en est
+ * sorti au lot 2 de l'étape 19, avec le bouton de l'écran Cours.
  */
-const RESERVEES_SANS_ECRAN = ['audit_log', 'course'] as const;
+const RESERVEES_SANS_ECRAN = ['audit_log'] as const;
 
 /** Le titre de la liste réservée, dans chaque langue : les mots que la consigne demande. */
 const RESERVE: Record<Langue, string> = {

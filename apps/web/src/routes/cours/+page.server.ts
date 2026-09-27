@@ -7,13 +7,17 @@
 // mal formé, ou celui d'une autre organisation, n'atteint pas la base, et le caractère nul est retiré
 // de la raison. Chacun donnait une erreur 500. Retirer une pause qui n'existe plus le dit, au lieu de
 // répondre « supprimée » et de l'écrire au journal.
+//
+// Supprimer un cours est réservé à la personne responsable (ADR 0046) : la base le lui réserve depuis
+// la migration 0065, l'écran ne propose le bouton qu'à elle, et l'action refuse l'éditeur par la
+// garde des écrans réservés. Une session du vendredi ne passe pas par ici : elle a son écran.
 
 import { fail } from '@sveltejs/kit';
 import { newId, sql, type Transaction } from '@jadwal/db';
 import { record } from '$lib/server/audit.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { FIRST_SUPPORTED_DATE, isSupportedDate, LAST_SUPPORTED_DATE } from '$lib/server/dates.js';
-import { mustBeInOrganisation } from '$lib/server/guard.js';
+import { mustAdminister, mustBeInOrganisation } from '$lib/server/guard.js';
 import { readCourses, readPauses, readSettings } from '$lib/server/programme.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
@@ -47,6 +51,8 @@ export const load: PageServerLoad = async (event) => {
 		const titres = new Map(courses.map((course) => [course.id, course.title]));
 		return {
 			organisation: { name: settings.name },
+			/** « Supprimer ce cours » : la personne responsable seule, comme la garde de l'action. */
+			canDelete: context.role !== 'editor',
 			// Un titre absent reste absent : la page écrit « Cours sans titre » dans sa langue.
 			courses: courses.map((course) => ({
 				id: course.id,
@@ -155,22 +161,37 @@ export const actions: Actions = {
 		return { pauseRemoved: true };
 	},
 
+	/**
+	 * Supprimer un cours, après la confirmation que l'écran demande. L'éditeur est renvoyé à l'accueil
+	 * sans rien lire. La base ne répond pas par une erreur à une suppression qu'elle refuse : elle ne
+	 * supprime aucune ligne. Le nombre de lignes supprimées décide donc de la réponse, comme pour une
+	 * session du vendredi : zéro, et le cours n'existe pas, ou plus, ou c'est une session, et rien ne
+	 * s'écrit au journal.
+	 */
 	supprimer: async (event) => {
-		const context = await mustBeInOrganisation(event);
+		const context = await mustAdminister(event);
 		const form = await event.request.formData();
 		const courseId = String(form.get('courseId') ?? '');
-		await withSessionOrg(context, async (tx) => {
-			const before = await tx.execute(
-				sql`select "id", "status", "starts_on"::text from "course" where "id" = ${courseId}`
-			);
-			await tx.execute(sql`delete from "course" where "id" = ${courseId}`);
+		if (!UUID.test(courseId)) return fail(404, { error: 'courseGone' as const });
+		const deleted = await withSessionOrg(context, async (tx) => {
+			const before = rows<{ id: string; status: string; starts_on: string }>(
+				await tx.execute(sql`
+					delete from "course"
+					where "id" = ${courseId} and "kind" = 'course'
+						and "organization_id" = (select jadwal.current_org_id())
+					returning "id", "status", "starts_on"::text
+				`)
+			)[0];
+			if (!before) return false;
 			await record(tx, context.organizationId, context.userId, {
 				action: 'course.delete',
 				targetTable: 'course',
 				targetId: courseId,
-				before: Array.isArray(before) ? before[0] : null
+				before
 			});
+			return true;
 		});
-		return { coursSupprime: true };
+		if (!deleted) return fail(404, { error: 'courseGone' as const });
+		return { courseDeleted: true };
 	}
 };

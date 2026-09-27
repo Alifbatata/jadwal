@@ -12,7 +12,7 @@ import { readFileSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
-import { createDatabase, newId, sql, type DatabaseHandle } from '@jadwal/db';
+import { createDatabase, newId, sql, withOrg, type DatabaseHandle } from '@jadwal/db';
 import { conditionsAcceptees } from './conditions-acceptees.js';
 import { frenchLeft, ISO_DATE, textSegments, visibleText } from './textes-lus.js';
 
@@ -56,6 +56,8 @@ const PERMIS = [
 ];
 
 let ownerHandle: DatabaseHandle;
+/** Le rôle applicatif, pour lire le journal, que le propriétaire ne lit pas (migration 0070). */
+let appHandle: DatabaseHandle;
 let organizationId: string;
 let userId: string;
 let tafsirId: string;
@@ -74,6 +76,22 @@ function lignes<T>(result: unknown): T[] {
 	if (Array.isArray(result)) return result as T[];
 	const rows = (result as { rows?: unknown[] }).rows;
 	return Array.isArray(rows) ? (rows as T[]) : [];
+}
+
+/**
+ * Les entrées du journal de l'organisation pour une action, et une cible s'il y en a une. Il se lit
+ * dans l'organisation, par le rôle applicatif, comme la personne responsable le lirait.
+ */
+async function auJournal(action: string, cible?: string): Promise<number> {
+	const trouvees = await withOrg(appHandle.db, { organizationId, userId }, async (tx) =>
+		lignes<{ n: number }>(
+			await tx.execute(sql`
+				select count(*)::int as n from "audit_log"
+				where "action" = ${action} and (${cible ?? null}::uuid is null or "target_id" = ${cible ?? null}::uuid)
+			`)
+		)
+	);
+	return trouvees[0]?.n ?? 0;
 }
 
 async function get(chemin: string, cookie: string): Promise<Response> {
@@ -271,6 +289,7 @@ function coursAncre(
 
 beforeAll(async () => {
 	ownerHandle = createDatabase({ role: 'owner', overrides: { database: testDatabase } });
+	appHandle = createDatabase({ role: 'app', overrides: { database: testDatabase } });
 	organizationId = newId();
 	userId = newId();
 	tafsirId = newId();
@@ -332,6 +351,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
 	await ownerHandle?.close();
+	await appHandle?.close();
 });
 
 /** Une demande d'écran : une page lue, ou un formulaire refusé qui revient avec son erreur. */
@@ -1427,25 +1447,206 @@ describe('aucune erreur 500 sur les écrans des cours (étape 19, lot 2)', () =>
 
 	it('says a pause is gone rather than removed, and writes nothing to the journal', async () => {
 		const PAUSE_DISPARUE = 'Cette pause n’existe plus : elle a peut-être déjà été supprimée.';
-		const journal = async () =>
-			maintenance(async (tx) =>
-				lignes<{ n: number }>(
-					await tx.execute(sql`
-						select count(*)::int as n from "audit_log"
-						where "organization_id" = ${organizationId} and "action" = 'pause.delete'
-					`)
-				)
-			);
-		const avant = await journal();
-		for (const pauseId of ['pas-une-pause', newId()]) {
-			const reponse = await postForm('/cours?/supprimerPause', [['pauseId', pauseId]], cookie);
-			expect(reponse.status, pauseId).toBe(404);
+		const pauseId = newId();
+		await maintenance((tx) =>
+			tx.execute(sql`
+				insert into "pause" ("id", "organization_id", "from_date", "to_date")
+				values (${pauseId}, ${organizationId}, '2027-04-05', '2027-04-18')
+			`)
+		);
+		const retiree = await postForm('/cours?/supprimerPause', [['pauseId', pauseId]], cookie);
+		expect(retiree.status).toBe(200);
+		expect(await auJournal('pause.delete', pauseId)).toBe(1);
+		const avant = await auJournal('pause.delete');
+		// La même pause une seconde fois, depuis une page restée ouverte, puis un identifiant mal formé
+		// et un identifiant qu'aucune pause ne porte.
+		for (const id of [pauseId, 'pas-une-pause', newId()]) {
+			const reponse = await postForm('/cours?/supprimerPause', [['pauseId', id]], cookie);
+			expect(reponse.status, id).toBe(404);
 			const html = await reponse.text();
-			expect(lu(html.match(/<p\b[^>]*role="alert"[^>]*>([\s\S]*?)<\/p>/)?.[1] ?? ''), pauseId).toBe(
+			expect(lu(html.match(/<p\b[^>]*role="alert"[^>]*>([\s\S]*?)<\/p>/)?.[1] ?? ''), id).toBe(
 				PAUSE_DISPARUE
 			);
-			expect(html, pauseId).not.toContain('La pause est supprimée.');
+			expect(html, id).not.toContain('La pause est supprimée.');
 		}
-		expect(await journal()).toEqual(avant);
+		expect(await auJournal('pause.delete')).toBe(avant);
+	});
+});
+
+describe('supprimer un cours, réservé au responsable (étape 19, lot 2, D3)', () => {
+	// La base réserve déjà la suppression d'un cours à la personne responsable (migration 0065) :
+	// l'écran la lui propose, à elle seule, avec une confirmation qui marche sans JavaScript, et
+	// l'action la ferme à l'éditeur. Un cours qui n'existe plus reçoit une phrase, pas « supprimé ».
+	const EDITRICE = 'cours-editrice@example.test';
+	let responsable = '';
+	let editrice = '';
+	let vendrediId = '';
+
+	const BOUTON: Record<Langue, string> = {
+		fr: 'Supprimer ce cours',
+		de: 'Diesen Kurs löschen',
+		it: 'Elimina questo corso',
+		en: 'Delete this course',
+		ar: 'حذف هذا الدرس'
+	};
+	const CONFIRMER: Record<Langue, string> = {
+		fr: 'Oui, supprimer',
+		de: 'Ja, löschen',
+		it: 'Sì, elimina',
+		en: 'Yes, delete',
+		ar: 'نعم، احذف'
+	};
+	const SUPPRIME: Record<Langue, string> = {
+		fr: 'Le cours est supprimé.',
+		de: 'Der Kurs ist gelöscht.',
+		it: 'Il corso è stato eliminato.',
+		en: 'The course has been deleted.',
+		ar: 'حُذف الدرس.'
+	};
+	const DISPARU = 'Ce cours n’existe plus : il a peut-être déjà été supprimé.';
+
+	/** Un cours publié, posé par le propriétaire, sous ce titre. */
+	async function poserCours(titreDuCours: string, kind: 'course' | 'jumua' = 'course') {
+		const id = newId();
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "course" ("id", "organization_id", "kind", "jumua_order", "status", "audience",
+					"teaching_language", "source_language", "recurrence_kind", "recurrence_weekday",
+					"recurrence_interval", "recurrence_anchor_date", "timing_kind", "timing_start",
+					"timing_end", "starts_on")
+				values (${id}, ${organizationId}, ${kind}, ${kind === 'jumua' ? 1 : null}, 'published',
+					'open', array['fr'], 'fr', 'weekly', ${sql.raw(kind === 'jumua' ? 'array[5]' : 'array[3]')}::smallint[],
+					1, '2026-10-07', 'fixed', '13:30', '14:00', '2026-10-07')
+			`);
+			await tx.execute(sql`
+				insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
+				values (${newId()}, ${organizationId}, ${id}, 'fr', ${titreDuCours})
+			`);
+		});
+		return id;
+	}
+
+	async function existe(id: string): Promise<boolean> {
+		return maintenance(
+			async (tx) =>
+				lignes(await tx.execute(sql`select "id" from "course" where "id" = ${id}`)).length > 0
+		);
+	}
+
+	async function suppressionsAuJournal(id: string): Promise<number> {
+		return auJournal('course.delete', id);
+	}
+
+	/** Le bloc d'un cours dans la liste, par son titre. */
+	function blocDuCours(html: string, titreDuCours: string): string {
+		return (
+			[...html.matchAll(/<li\b[^>]*>[\s\S]*?<\/li>/g)]
+				.map((trouve) => trouve[0])
+				.find((bloc) => bloc.includes(titreDuCours)) ?? ''
+		);
+	}
+
+	/** La phrase en haut de la liste après un geste : `role="status"`, ou `role="alert"`. */
+	function phrase(html: string, role: 'status' | 'alert'): string {
+		return lu(html.match(new RegExp(`<p\\b[^>]*role="${role}"[^>]*>([\\s\\S]*?)</p>`))?.[1] ?? '');
+	}
+
+	beforeAll(async () => {
+		const editriceId = newId();
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified") values (${editriceId}, ${EDITRICE}, true)
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${organizationId}, ${editriceId}, 'editor')
+			`);
+			await tx.execute(conditionsAcceptees(organizationId, editriceId));
+		});
+		vendrediId = await poserCours('Prière du vendredi à garder', 'jumua');
+		responsable = await signIn(RESPONSABLE);
+		editrice = await signIn(EDITRICE);
+		await poserLangueDuCompte('fr');
+	});
+
+	it('offers the manager « Supprimer ce cours », behind a confirmation that works without JavaScript', async () => {
+		const id = await poserCours('Cours à confirmer');
+		const bloc = blocDuCours(await (await get('/cours', responsable)).text(), 'Cours à confirmer');
+		// Un élément `details` natif : fermé, il ne montre que son résumé ; le navigateur l'ouvre seul,
+		// sans script, sur la phrase qui dit ce que la suppression emporte et le bouton qui confirme.
+		const repli = bloc.match(/<details\b[^>]*>[\s\S]*?<\/details>/)?.[0] ?? '';
+		expect(repli).not.toMatch(/<details\b[^>]*\bopen\b/);
+		expect(lu(repli.match(/<summary\b[^>]*>[\s\S]*?<\/summary>/)?.[0] ?? '')).toBe(
+			'Supprimer ce cours'
+		);
+		// Le titre du cours complète le nom du geste pour un lecteur d'écran, comme « Modifier ce cours ».
+		expect(repli.match(/<summary\b[^>]*>/)?.[0]).toContain(`aria-describedby="course-${id}"`);
+		const formulaire = repli.match(/<form\b[^>]*>[\s\S]*?<\/form>/)?.[0] ?? '';
+		expect(formulaire).toMatch(/\bmethod="post"/);
+		expect(formulaire).toMatch(/\baction="\?\/supprimer"/);
+		expect(formulaire).toContain(`name="courseId" value="${id}"`);
+		expect(lu(formulaire)).toBe(
+			'Le cours disparaîtra de cet écran, de votre page publique et des agendas abonnés, avec ses pauses et les changements de ses séances. Cela ne peut pas être annulé. Pour arrêter le cours à une date, indiquez plutôt son dernier jour dans « Modifier ce cours ». Oui, supprimer'
+		);
+		expect(await existe(id)).toBe(true);
+	});
+
+	it('shows no such button to an editor', async () => {
+		await poserCours('Cours vu par l’éditrice');
+		const html = await (await get('/cours', editrice)).text();
+		const bloc = blocDuCours(html, 'Cours vu par l’éditrice');
+		expect(lu(bloc)).toContain('Modifier ce cours');
+		expect(html).not.toContain('Supprimer ce cours');
+		expect(html).not.toContain('action="?/supprimer"');
+	});
+
+	it('refuses it to an editor on the server, deletes nothing and writes nothing', async () => {
+		const id = await poserCours('Cours gardé malgré l’éditrice');
+		const reponse = await postForm('/cours?/supprimer', [['courseId', id]], editrice);
+		expect(reponse.status).toBe(303);
+		expect(reponse.headers.get('location')).toBe('/');
+		expect(await existe(id)).toBe(true);
+		expect(await suppressionsAuJournal(id)).toBe(0);
+	});
+
+	it('deletes it for the manager, says so on the list, in each language, and writes the journal once', async () => {
+		for (const langue of LANGUES) {
+			await poserLangueDuCompte(langue);
+			const titreDuCours = `Cours supprimé en ${langue}`;
+			const id = await poserCours(titreDuCours);
+			const avant = await (await get('/cours', responsable)).text();
+			const bloc = blocDuCours(avant, titreDuCours);
+			expect(lu(bloc.match(/<summary\b[^>]*>[\s\S]*?<\/summary>/)?.[0] ?? ''), langue).toBe(
+				BOUTON[langue]
+			);
+			expect(lu(bloc.match(/<button\b[^>]*>[\s\S]*?<\/button>/)?.[0] ?? ''), langue).toBe(
+				CONFIRMER[langue]
+			);
+			const reponse = await postForm('/cours?/supprimer', [['courseId', id]], responsable);
+			expect(reponse.status, langue).toBe(200);
+			const html = await reponse.text();
+			expect(phrase(html, 'status'), langue).toBe(SUPPRIME[langue]);
+			expect(html, langue).not.toContain(titreDuCours);
+			expect(await existe(id), langue).toBe(false);
+			expect(await suppressionsAuJournal(id), langue).toBe(1);
+		}
+		await poserLangueDuCompte('fr');
+	});
+
+	it('says a course that no longer exists is gone, not deleted, and writes nothing more', async () => {
+		const id = await poserCours('Cours supprimé deux fois');
+		expect((await postForm('/cours?/supprimer', [['courseId', id]], responsable)).status).toBe(200);
+		// Une seconde fois, depuis une page restée ouverte, un identifiant mal formé, et une session du
+		// vendredi, que cet écran ne supprime pas : l'écran du vendredi s'en charge.
+		for (const courseId of [id, 'pas-un-cours', newId(), vendrediId]) {
+			const reponse = await postForm('/cours?/supprimer', [['courseId', courseId]], responsable);
+			expect(reponse.status, courseId).toBe(404);
+			const html = await reponse.text();
+			expect(phrase(html, 'alert'), courseId).toBe(DISPARU);
+			expect(html, courseId).not.toContain('Le cours est supprimé.');
+		}
+		expect(await suppressionsAuJournal(id)).toBe(1);
+		expect(await existe(vendrediId)).toBe(true);
+		expect(await suppressionsAuJournal(vendrediId)).toBe(0);
 	});
 });

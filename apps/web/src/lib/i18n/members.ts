@@ -25,8 +25,13 @@ export const EDITOR_GESTURES = [
 	'acceptance'
 ] as const;
 
-/** Ce qui est réservé au responsable, en plus, dans l'ordre de l'écran. */
+/**
+ * Ce qui est réservé au responsable, en plus, dans l'ordre de l'écran. Supprimer un cours vient
+ * d'abord, comme l'écran Cours dans la navigation : la base le réserve depuis la migration 0065, et
+ * l'écran le propose depuis le lot 2 de l'étape 19.
+ */
 export const MANAGER_GESTURES = [
+	'deleteCourse',
 	'members',
 	'invitations',
 	'roles',
@@ -145,6 +150,7 @@ export const membersTexts: Translations<MembersTexts> = {
 				acceptance: 'Accepter les conditions d’utilisation et les invitations reçues'
 			},
 			manager: {
+				deleteCourse: 'Supprimer un cours',
 				members: 'Voir les membres, leur rôle et les invitations en attente',
 				invitations:
 					'Inviter une personne, comme éditeur ou comme responsable, et annuler une invitation',
@@ -215,6 +221,7 @@ export const membersTexts: Translations<MembersTexts> = {
 				acceptance: 'Die Nutzungsbedingungen und erhaltene Einladungen annehmen'
 			},
 			manager: {
+				deleteCourse: 'Einen Kurs löschen',
 				members: 'Die Mitglieder, ihre Rolle und die offenen Einladungen sehen',
 				invitations:
 					'Eine Person für die Redaktion oder die Leitung einladen und eine Einladung zurückziehen',
@@ -287,6 +294,7 @@ export const membersTexts: Translations<MembersTexts> = {
 				acceptance: 'Accettare le condizioni d’uso e gli inviti ricevuti'
 			},
 			manager: {
+				deleteCourse: 'Eliminare un corso',
 				members: 'Vedere i membri, il loro ruolo e gli inviti in attesa',
 				invitations:
 					'Invitare una persona, come redattore o come responsabile, e annullare un invito',
@@ -356,6 +364,7 @@ export const membersTexts: Translations<MembersTexts> = {
 				acceptance: 'Accept the terms of use and the invitations received'
 			},
 			manager: {
+				deleteCourse: 'Delete a course',
 				members: 'See the members, their role and the pending invitations',
 				invitations: 'Invite someone, as an editor or as a manager, and cancel an invitation',
 				roles: 'Change the role of a member',
@@ -428,6 +437,7 @@ export const membersTexts: Translations<MembersTexts> = {
 				acceptance: 'قبول شروط الاستخدام والدعوات الواردة'
 			},
 			manager: {
+				deleteCourse: 'حذف درس',
 				members: 'عرض الأعضاء وأدوارهم والدعوات المعلقة',
 				invitations: 'دعوة شخص بصفة محرر أو مسؤول، وإلغاء دعوة',
 				roles: 'تغيير دور عضو',

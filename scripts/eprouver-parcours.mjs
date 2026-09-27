@@ -1768,15 +1768,21 @@ async function ceQueFaitChaqueRole(page) {
 				gestesResponsable.some((geste) => geste.includes('Inviter une personne')),
 			`${gestesEditeur.length} gestes d’éditeur, ${gestesResponsable.length} réservés`
 		);
-		// Aucun écran ne propose de supprimer un cours : la liste ne le promet pas à l'éditeur.
+		// Supprimer un cours est réservé au responsable, à qui seul l'écran Cours le propose (étape 19,
+		// lot 2) : la liste de l'éditeur ne le promet pas, la liste réservée le dit.
 		const surLesCours = gestesEditeur
 			.map((geste) => geste.replace(/\s+/g, ' ').trim())
 			.filter((geste) => /\bcours\b/.test(geste));
+		const reserveSurLesCours = gestesResponsable
+			.map((geste) => geste.replace(/\s+/g, ' ').trim())
+			.filter((geste) => /\bcours\b/.test(geste));
 		verifier(
-			'ce que peut faire un éditeur ne promet pas de supprimer un cours, qu’aucun écran ne propose : « Créer un cours, le modifier et le publier »',
+			'ce que peut faire un éditeur ne promet pas de supprimer un cours : « Créer un cours, le modifier et le publier » ; la liste réservée au responsable dit « Supprimer un cours »',
 			surLesCours.includes('Créer un cours, le modifier et le publier') &&
-				!surLesCours.some((geste) => /supprimer/.test(geste)),
-			surLesCours.map((geste) => `« ${geste} »`).join(', ') || 'aucun geste sur les cours'
+				!surLesCours.some((geste) => /supprimer/i.test(geste)) &&
+				reserveSurLesCours.includes('Supprimer un cours'),
+			[...surLesCours, ...reserveSurLesCours].map((geste) => `« ${geste} »`).join(', ') ||
+				'aucun geste sur les cours'
 		);
 		const decrit = await page.locator('#role').getAttribute('aria-describedby');
 		verifier(
