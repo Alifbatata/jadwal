@@ -32,6 +32,8 @@ indexe.
    seul (voir `public-agenda.md`) : le bouton `Ajouter à mon calendrier` en `webcal:` sur un
    iPhone, un iPad ou un Mac ; `Ajouter à Google Agenda` sur Android ; le choix complet ailleurs.
    Outlook reçoit le nom `<Nom de l'organisation> – <Titre du cours>`, celui que porte le flux.
+   Sur Android, la phrase de secours donne l'adresse courte de **cette** page, celle du cours
+   (`Si Google Agenda ne propose rien sur votre téléphone, ouvrez cette page sur un ordinateur :`).
    Puis `Ou copiez cette adresse, qui ne porte que ce cours :` et l'adresse en `https:`, et
    `Un autre appareil ? Voir tous les choix`, vers `?appareil=tous#agenda`. La réponse porte
    `Vary: Sec-CH-UA-Platform, User-Agent`, sauf pour le choix complet.

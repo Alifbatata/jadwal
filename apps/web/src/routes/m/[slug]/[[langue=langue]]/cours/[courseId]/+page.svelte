@@ -138,6 +138,7 @@
 				webcal={data.flux.webcal}
 				https={data.flux.https}
 				nom={data.flux.nom}
+				adresse={data.canonical}
 				cours
 				tousLesChoix={data.appareil === 'autre'
 					? null

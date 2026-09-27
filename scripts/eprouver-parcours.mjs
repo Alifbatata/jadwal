@@ -3029,21 +3029,26 @@ async function appareils(navigateur) {
 			android.liens.map((lien) => lien.href).join(' ') || 'aucun lien'
 		);
 		// La forme de la page, et non ses phrases, qu'un autre chantier récrit : le bouton de Google
-		// d'abord, puis une phrase qui propose de passer par un ordinateur, et l'adresse à y coller
-		// après elle.
-		const adresseACopier = `http://${new URL(ORIGINE).host}/m/${ORGANISATION.slug}/agenda.ics`;
+		// d'abord, puis une phrase qui propose d'ouvrir cette page sur un ordinateur, suivie de
+		// l'adresse courte de la page (décision du chef de projet, 27.09.2026), et l'adresse du flux
+		// après elles.
+		const hote = `http://${new URL(ORIGINE).host}`;
+		const adresseACopier = `${hote}/m/${ORGANISATION.slug}/agenda.ics`;
+		const cettePage = `${hote}/m/${ORGANISATION.slug}/agenda`;
 		const bouton = android.paragraphes.findIndex((p) => commencePar(p.lien, google));
 		const parUnOrdinateur = android.paragraphes.findIndex(
 			(p, index) => index > bouton && !p.lien && !p.adresse && /ordinateur/i.test(p.texte)
 		);
+		const adresseDeLaPage = android.paragraphes.findIndex((p) => p.adresse === cettePage);
 		const adresse = android.paragraphes.findIndex((p) => p.adresse === adresseACopier);
 		verifier(
-			'sur un Android, après le bouton de Google, une issue par un ordinateur, puis l’adresse à y coller',
+			'sur un Android, après le bouton de Google, « ouvrez cette page sur un ordinateur » et l’adresse de la page, puis celle du flux',
 			android.appareil === 'android' &&
 				bouton === 0 &&
 				parUnOrdinateur > bouton &&
-				adresse > parUnOrdinateur,
-			`bloc « ${android.appareil} » ; bouton ${bouton}, ordinateur ${parUnOrdinateur}, adresse ${adresse} sur ${android.paragraphes.length} paragraphes`
+				adresseDeLaPage === parUnOrdinateur + 1 &&
+				adresse > adresseDeLaPage,
+			`bloc « ${android.appareil} » ; bouton ${bouton}, ordinateur ${parUnOrdinateur}, page ${adresseDeLaPage}, flux ${adresse} sur ${android.paragraphes.length} paragraphes`
 		);
 		verifier(
 			'sur un PC Windows, le choix entre Google Agenda, Outlook, une autre application, et l’adresse à copier',

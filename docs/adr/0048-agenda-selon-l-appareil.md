@@ -123,6 +123,13 @@ Les décisions du chef de projet, après les tests de l'étape 18.
   avec un vrai compte de travail reste à faire. `apps/web/tests/public.test.ts` admet désormais trois
   domaines pour un lien `<a>` vers ailleurs : `calendar.google.com`, `outlook.live.com` et
   `outlook.office.com`.
+- **Sur Android, la phrase de secours tient en une ligne.** « Si Google Agenda ne propose rien sur
+  votre téléphone, ouvrez cette page sur un ordinateur : », suivie de l'adresse courte de la page,
+  son adresse canonique : sur l'ordinateur, la page propose le choix complet, dont le lien de
+  Google Agenda. Elle remplace les étapes de l'aide de Google et « collez l'adresse ci-dessous »,
+  qui restent dans la section à la main. L'adresse du flux suit, sous l'étiquette de l'iPhone,
+  « Ou copiez cette adresse… » : l'étiquette « L'adresse à coller » n'avait de sens qu'après la
+  phrase qui disait de la coller.
 
 ## Statut
 

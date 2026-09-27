@@ -93,6 +93,7 @@
 				webcal={data.webcal}
 				https={data.https}
 				nom={data.organisation.name}
+				adresse={data.canonical}
 				tousLesChoix={data.appareil === 'autre' ? null : `${lienAgenda(adresse)}${choixComplet}`}
 			/>
 		</section>

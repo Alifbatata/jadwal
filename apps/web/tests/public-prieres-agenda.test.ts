@@ -1026,9 +1026,20 @@ const AIDE_DU_BOUTON_GOOGLE: Record<Langue, string> = {
 	ar: 'اضغط على الزر: يُفتح تقويم Google مع طلب إضافة هذا التقويم. إن اقترح عليك ذلك، فأكّد.'
 };
 /**
- * Puis ce qu'il faut faire si Google Agenda ne propose rien sur le téléphone : les étapes de l'aide
- * de Google (answer 37100, relue le 26.09.2026 dans les cinq langues), avec les libellés de son
- * interface, le « + » et le dernier clic compris (relecture du lot 4).
+ * Puis ce qu'il faut faire si Google Agenda ne propose rien sur le téléphone : ouvrir cette page sur
+ * un ordinateur, dont l'adresse suit (décision du chef de projet, 27.09.2026). Sur l'ordinateur, la
+ * page propose le choix complet, et le lien de Google Agenda y fonctionne.
+ */
+const SUR_UN_ORDINATEUR: Record<Langue, string> = {
+	fr: 'Si Google Agenda ne propose rien sur votre téléphone, ouvrez cette page sur un ordinateur :',
+	de: 'Wenn Google Kalender auf Ihrem Telefon nichts anbietet, öffnen Sie diese Seite an einem Computer:',
+	it: 'Se Google Calendar non propone nulla sul telefono, apri questa pagina su un computer:',
+	en: 'If Google Calendar offers nothing on your phone, open this page on a computer:',
+	ar: 'إن لم يقترح تقويم Google شيئًا على هاتفك، فافتح هذه الصفحة على حاسوب:'
+};
+/**
+ * La phrase d'avant, qui ne doit plus se lire : les étapes de l'aide de Google (answer 37100), avec
+ * l'adresse à coller ci-dessous. Elles restent dans « Ajouter l'adresse à la main ».
  */
 const PAR_UN_ORDINATEUR: Record<Langue, string> = {
 	fr: 'Si Google Agenda ne propose rien sur votre téléphone, passez par un ordinateur : selon Google, on ne peut ajouter un agenda par son adresse que depuis le navigateur d’un ordinateur. Ouvrez-y Google Agenda. À gauche, à côté d’Autres agendas, cliquez sur le signe + (Ajouter d’autres agendas), puis choisissez À partir de l’URL. Collez l’adresse ci-dessous et cliquez sur Ajouter l’agenda. L’agenda apparaîtra ensuite aussi sur votre téléphone.',
@@ -1058,9 +1069,9 @@ const LIBELLES_GOOGLE: Record<Langue, string[]> = {
 	ar: ['التقاويم الأخرى', 'إضافة تقاويم أخرى', 'من عنوان URL', 'انقر على إضافة تقويم']
 };
 /**
- * Sur Android, l'étiquette de l'adresse qui suit « collez l'adresse ci-dessous » : c'est l'adresse
- * dont la phrase vient de parler, et non un autre choix (relecture du lot 4). Sur un iPhone, où elle
- * suit un bouton, « Ou copiez cette adresse… » reste juste.
+ * Sur Android, l'étiquette de l'adresse qui suivait « collez l'adresse ci-dessous » (relecture du
+ * lot 4). La phrase ne dit plus de la coller : l'étiquette ne se lit plus, et l'adresse du flux y
+ * reprend celle de l'iPhone, « Ou copiez cette adresse… », un autre choix.
  */
 const ADRESSE_A_COLLER: Record<Langue, string> = {
 	fr: 'L’adresse à coller :',
@@ -1076,13 +1087,21 @@ const ADRESSE_DU_COURS_A_COLLER: Record<Langue, string> = {
 	en: 'The address to paste, which covers only this course:',
 	ar: 'العنوان المراد لصقه، وهو خاص بهذا الدرس وحده:'
 };
-/** L'étiquette qui présentait la même adresse comme un autre choix. */
+/** L'étiquette qui présente l'adresse du flux comme un autre choix. */
 const OU_COPIEZ: Record<Langue, string> = {
 	fr: 'Ou copiez cette adresse dans votre application de calendrier :',
 	de: 'Oder kopieren Sie diese Adresse in Ihre Kalender-App:',
 	it: 'Oppure copia questo indirizzo nella tua app di calendario:',
 	en: 'Or copy this address into your calendar app:',
 	ar: 'أو انسخ هذا العنوان والصقه في تطبيق التقويم:'
+};
+/** La même, sur la page d'un cours. */
+const OU_COPIEZ_CE_COURS: Record<Langue, string> = {
+	fr: 'Ou copiez cette adresse, qui ne porte que ce cours :',
+	de: 'Oder kopieren Sie diese Adresse, die nur diesen Kurs enthält:',
+	it: 'Oppure copia questo indirizzo, che contiene solo questo corso:',
+	en: 'Or copy this address, which covers only this course:',
+	ar: 'أو انسخ هذا العنوان، وهو خاص بهذا الدرس وحده:'
 };
 /**
  * « Un seul cours », sur Android : le nom ouvre Google, et la page du cours est l'issue si rien ne
@@ -1232,26 +1251,33 @@ describe('chaque page d’abonnement ne dit que ce qui est vrai pour elle', () =
 			}
 			const bloc = abonnement(html, chemin);
 			expect(bloc.appareil).toBe('android');
-			// Le bouton, ce qu'il fait, le délai, puis l'ordinateur, et l'adresse dont la phrase parle,
-			// d'une seule suite : plus de « Ou copiez… » juste après « collez l'adresse ci-dessous ».
+			// Le bouton, ce qu'il fait, le délai, puis l'ordinateur et l'adresse courte de cette page,
+			// d'une seule suite (décision du chef de projet, 27.09.2026). L'adresse du flux suit, comme
+			// un autre choix : la phrase ne dit plus de la coller.
+			const cettePage = `${origin}${base(langue)}/agenda`;
 			expect(bloc.lu).toContain(
-				`${AIDE_DU_BOUTON_GOOGLE[langue]} ${DELAI_GOOGLE[langue]} ${PAR_UN_ORDINATEUR[langue]} ` +
-					`${ADRESSE_A_COLLER[langue]} ${fluxHttps(langue)}`
+				`${AIDE_DU_BOUTON_GOOGLE[langue]} ${DELAI_GOOGLE[langue]} ${SUR_UN_ORDINATEUR[langue]} ` +
+					`${cettePage} ${OU_COPIEZ[langue]} ${fluxHttps(langue)}`
 			);
-			expect(bloc.lu).not.toContain(OU_COPIEZ[langue]);
-			expect(bloc.code).toEqual([fluxHttps(langue)]);
+			expect(bloc.lu).not.toContain(PAR_UN_ORDINATEUR[langue]);
+			expect(bloc.lu).not.toContain(ADRESSE_A_COLLER[langue]);
+			expect(bloc.code).toEqual([cettePage, fluxHttps(langue)]);
 			expect(aLaMain(html).etapes[SUR_ANDROID[langue]]).toEqual([
 				ETAPES_ANDROID[langue],
 				DELAI_GOOGLE[langue]
 			]);
-			// La page d'un cours, qui n'a pas d'étapes à la main, dit tout dans son bloc.
+			// La page d'un cours, qui n'a pas d'étapes à la main, donne sa propre adresse.
 			const cours = `${base(langue)}/cours/${COURS.quotidien}`;
 			const blocDuCours = abonnement((await servir(cours, ANDROID)).html, cours);
 			expect(blocDuCours.lu).toContain(
-				`${PAR_UN_ORDINATEUR[langue]} ${ADRESSE_DU_COURS_A_COLLER[langue]} ` +
+				`${SUR_UN_ORDINATEUR[langue]} ${origin}${cours} ${OU_COPIEZ_CE_COURS[langue]} ` +
 					fluxCoursHttps(langue, COURS.quotidien)
 			);
-			expect(blocDuCours.code).toEqual([fluxCoursHttps(langue, COURS.quotidien)]);
+			expect(blocDuCours.lu).not.toContain(ADRESSE_DU_COURS_A_COLLER[langue]);
+			expect(blocDuCours.code).toEqual([
+				`${origin}${cours}`,
+				fluxCoursHttps(langue, COURS.quotidien)
+			]);
 			// Sur un iPhone, l'adresse suit un bouton : elle y est bien un autre choix.
 			const iphone = abonnement((await servir(chemin, IPHONE)).html, chemin);
 			expect(iphone.lu).toContain(`${OU_COPIEZ[langue]} ${fluxHttps(langue)}`);
@@ -1263,21 +1289,20 @@ describe('chaque page d’abonnement ne dit que ce qui est vrai pour elle', () =
 		async (langue) => {
 			const chemin = `${base(langue)}/agenda`;
 			const { html } = await servir(chemin, ANDROID);
-			const bloc = abonnement(html, chemin).lu;
+			// Les étapes à la main ; le bloc du bouton, lui, envoie sur un ordinateur ouvrir cette page,
+			// qui y propose le choix complet (27.09.2026).
 			const etapes = aLaMain(html).etapes[SUR_ANDROID[langue]]?.[0] ?? '';
-			for (const texte of [bloc, etapes]) {
-				// Le « + » à côté de la rubrique, puis chaque libellé, dans l'ordre où l'on clique.
-				expect(texte, langue).toContain('+');
-				const places = LIBELLES_GOOGLE[langue].map((libelle) => texte.indexOf(libelle));
-				expect(
-					places.every((place) => place >= 0),
-					`${langue} : ${places.join(', ')}`
-				).toBe(true);
-				expect(
-					[...places].sort((a, b) => a - b),
-					langue
-				).toEqual(places);
-			}
+			// Le « + » à côté de la rubrique, puis chaque libellé, dans l'ordre où l'on clique.
+			expect(etapes, langue).toContain('+');
+			const places = LIBELLES_GOOGLE[langue].map((libelle) => etapes.indexOf(libelle));
+			expect(
+				places.every((place) => place >= 0),
+				`${langue} : ${places.join(', ')}`
+			).toBe(true);
+			expect(
+				[...places].sort((a, b) => a - b),
+				langue
+			).toEqual(places);
 		}
 	);
 
@@ -1310,12 +1335,13 @@ describe('chaque page d’abonnement ne dit que ce qui est vrai pour elle', () =
 				[google(fluxCoursWebcal(langue, COURS.quotidien)), TITRES.quotidien, '_blank'],
 				[`${base(langue)}/cours/${COURS.quotidien}#agenda`, PAGE_DU_COURS[langue], undefined]
 			]);
-			// Et cette page donne l'adresse du cours et le passage par un ordinateur.
+			// Et cette page donne le passage par un ordinateur, avec sa propre adresse, puis celle du
+			// flux du cours.
 			const page = `${base(langue)}/cours/${COURS.quotidien}`;
 			const { html: duCours } = await servir(page, ANDROID);
 			expect(duCours).toMatch(/<section\b[^>]*\bid="agenda"/);
 			expect(abonnement(duCours, page).lu).toContain(
-				`${PAR_UN_ORDINATEUR[langue]} ${ADRESSE_DU_COURS_A_COLLER[langue]} ` +
+				`${SUR_UN_ORDINATEUR[langue]} ${origin}${page} ${OU_COPIEZ_CE_COURS[langue]} ` +
 					fluxCoursHttps(langue, COURS.quotidien)
 			);
 		}

@@ -68,13 +68,15 @@ propose de l'ajouter, confirmez.`
 - `Google peut mettre jusqu'à 24 heures à rafraîchir un abonnement.`, dans un paragraphe à lui.
 - Ce qu'il faut faire si rien ne se passe, puisque l'aide de Google dit qu'on ne s'abonne à un
   agenda par son adresse que depuis le navigateur d'un ordinateur : `Si Google Agenda ne propose
-rien sur votre téléphone, passez par un ordinateur : selon Google, on ne peut ajouter un agenda par
-son adresse que depuis le navigateur d'un ordinateur. Ouvrez-y Google Agenda. À gauche, à côté
-d'Autres agendas, cliquez sur le signe + (Ajouter d'autres agendas), puis choisissez À partir de
-l'URL. Collez l'adresse ci-dessous et cliquez sur Ajouter l'agenda. L'agenda apparaîtra ensuite
-aussi sur votre téléphone.`
-- `L'adresse à coller :`, sans « Ou », puisque la phrase d'avant vient de dire de la coller, puis
-  l'adresse `https:`, et `Un autre appareil ? Voir tous les choix`.
+rien sur votre téléphone, ouvrez cette page sur un ordinateur :`, puis l'adresse courte de cette
+  page, en texte sélectionnable : son adresse canonique, `https://…/m/<identifiant>/agenda`, avec
+  la langue quand ce n'est pas celle de l'organisation, sans `?appareil=` ni ancre. Sur
+  l'ordinateur, la page propose le choix complet, où le lien de Google Agenda fonctionne (décision
+  du chef de projet, 27.09.2026). La phrase disait jusque-là les étapes de l'aide de Google et
+  « collez l'adresse ci-dessous » ; ces étapes restent dans `Ajouter l'adresse à la main`.
+- `Ou copiez cette adresse dans votre application de calendrier :`, comme sur un iPhone, puis
+  l'adresse `https:` du flux, et `Un autre appareil ? Voir tous les choix`. L'étiquette
+  `L'adresse à coller :` a disparu avec la phrase qui disait de coller l'adresse.
 
 **Ailleurs, ou avec `?appareil=tous`.** `Choisissez votre application de calendrier :`, puis
 cinq choix, chacun avec sa phrase. `Outlook (travail ou école)` s'est ajouté le 27.09.2026, sur
