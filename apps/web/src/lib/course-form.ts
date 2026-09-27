@@ -65,6 +65,12 @@ export interface CourseFormValues {
 	teacher: string | null;
 	/** La valeur d'un champ de date du navigateur, `2026-09-07`, ou vide. */
 	startsOn: string;
+	/**
+	 * Le premier jour tel que le service l'a pris à la première date d'un cours à dates précises,
+	 * tant que la personne ne l'a pas choisi, ou vide. Un champ caché le porte : renvoyé tel quel, le
+	 * premier jour suit encore les dates, après un refus comme avant (relecture du lot 2, étape 19).
+	 */
+	startsOnFromDates: string;
 	endsOn: string | null;
 	recurrenceKind: string;
 	weekdays: number[];

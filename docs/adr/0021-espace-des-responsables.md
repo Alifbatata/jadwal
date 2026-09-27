@@ -329,7 +329,11 @@ Et quatre gestes de plus, décidés par le chef de projet :
   saisie avec JavaScript, et par le serveur quand il arrive vide. Un premier jour choisi n'est
   jamais remplacé. Le champ n'est `required` qu'avec JavaScript, et jamais pour un cours à dates
   précises : sans script, le navigateur refusait d'envoyer un premier jour vide, et le serveur ne
-  le remplissait donc jamais.
+  le remplissait donc jamais. Un premier jour pris par le service n'est pas choisi : après un envoi
+  refusé, il revient rempli avec un champ caché qui le porte (`startsOnFromDates`), et le serveur
+  le reprend de la première date tant qu'il revient tel quel, avec ou sans JavaScript ; changé à la
+  main, il est choisi. Sans cette marque, il passait pour choisi au renvoi, et une coquille corrigée
+  dans la date la plus ancienne faisait refuser le cours (relecture du lot 2).
 - **Le résumé** marque en discret, avec « (facultatif) », chaque champ facultatif, rempli ou non,
   ne marque plus comme un manque un champ facultatif laissé vide, et donne une ligne au titre de
   chaque langue publiée. Sauf un titre qu'une description de sa langue attend : il est un manque,

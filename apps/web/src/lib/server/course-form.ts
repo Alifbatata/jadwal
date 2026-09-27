@@ -108,6 +108,7 @@ function sentValues(form: FormData, languages: readonly string[]): CourseFormVal
 		roomId: text(form, 'roomId') || null,
 		teacher: text(form, 'teacher') || null,
 		startsOn: text(form, 'startsOn'),
+		startsOnFromDates: text(form, 'startsOnFromDates'),
 		endsOn: text(form, 'endsOn') || null,
 		recurrenceKind: ['weekly', 'monthly', 'dates'].includes(kind) ? kind : 'weekly',
 		weekdays: [...new Set(form.getAll('weekdays').map(Number))]
@@ -158,12 +159,17 @@ export function readCourseForm(
 		values
 	});
 
-	// Un cours à dates précises dont le premier jour arrive vide prend sa première date, comme le
-	// formulaire le fait pendant la saisie avec JavaScript (étape 19, lot 2). Un premier jour choisi
-	// n'est jamais remplacé : des dates avant lui restent refusées, et nommées.
-	if (values.recurrenceKind === 'dates' && values.startsOn === '') {
+	// Un cours à dates précises dont le premier jour n'est pas choisi prend sa première date, comme le
+	// formulaire le fait pendant la saisie avec JavaScript (étape 19, lot 2). Pas choisi : arrivé
+	// vide, ou tel que le service l'avait pris, que le champ caché `startsOnFromDates` renvoie. Après
+	// un refus, le champ revient rempli, et passait pour choisi : une coquille corrigée dans la date
+	// la plus ancienne faisait refuser le cours (relecture du lot 2). Un premier jour choisi n'est
+	// jamais remplacé : des dates avant lui restent refusées, et nommées.
+	const notChosen = values.startsOn === '' || values.startsOn === values.startsOnFromDates;
+	if (values.recurrenceKind === 'dates' && notChosen) {
 		values.startsOn = firstDate(values.dates, SUPPORTED) ?? '';
 	}
+	values.startsOnFromDates = notChosen ? values.startsOn : '';
 
 	if (!languages.includes(values.sourceLanguage)) return refuse();
 	if (!values.titles[values.sourceLanguage]) errors.push('titleMissing');

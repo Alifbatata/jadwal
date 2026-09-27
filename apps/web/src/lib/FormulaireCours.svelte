@@ -103,8 +103,12 @@
 	);
 	// Le premier jour d'un cours à dates précises prend la première date tant qu'il est vide, et la
 	// suit pendant que la personne écrit ses dates, jusqu'à ce qu'elle le choisisse elle-même (étape
-	// 19, lot 2). Sans JavaScript, le serveur le remplit à l'envoi.
-	let startsOnFollowsDates = $state(untrack(() => values.startsOn === ''));
+	// 19, lot 2). Sans JavaScript, le serveur le remplit à l'envoi. Après un refus, le jour que le
+	// service avait pris revient dans le champ avec sa marque (`startsOnFromDates`) : il suit encore
+	// les dates, et ne passe pas pour choisi (relecture du lot 2).
+	let startsOnFollowsDates = $state(
+		untrack(() => values.startsOn === '' || values.startsOn === values.startsOnFromDates)
+	);
 	$effect(() => {
 		if (entry.recurrenceKind !== 'dates' || !startsOnFollowsDates) return;
 		entry.startsOn = firstDate(entry.dates, dateRange) ?? '';
@@ -504,6 +508,14 @@
 			oninput={(event) => (startsOnFollowsDates = event.currentTarget.value === '')}
 			required={hydrated && entry.recurrenceKind !== 'dates'}
 			aria-describedby="startsOn-hint"
+		/>
+		<!-- Le premier jour tant qu'il suit les dates, vide dès que la personne le choisit. Renvoyé
+		     tel quel avec le champ, sans JavaScript aussi, il dit au serveur de le reprendre de la
+		     première date ; changé à la main, il ne correspond plus, et le jour est choisi. -->
+		<input
+			type="hidden"
+			name="startsOnFromDates"
+			value={startsOnFollowsDates ? entry.startsOn : ''}
 		/>
 		<p class="aide" id="startsOn-hint">{text.startsOnHint}</p>
 		<label for="endsOn">{text.endsOnLabel} <span class="marque">{text.optional}</span></label>

@@ -79,7 +79,10 @@ describe('l’horaire par rapport à une prière (C3)', () => {
 });
 
 describe('les dates d’un cours à dates précises (A3)', () => {
-	function aDates(dates: string, periode: { startsOn?: string; endsOn?: string } = {}) {
+	function aDates(
+		dates: string,
+		periode: { startsOn?: string; endsOn?: string; startsOnFromDates?: string } = {}
+	) {
 		return formulaire({
 			...BASE,
 			recurrenceKind: 'dates',
@@ -159,6 +162,50 @@ describe('les dates d’un cours à dates précises (A3)', () => {
 			SALLES
 		);
 		expect(hebdomadaire.ok ? [] : hebdomadaire.errors).toEqual(['startsOnMissing']);
+	});
+
+	it('keeps taking the first date after a refusal, until the person chooses a first day', () => {
+		// Relecture du lot 2 : le premier jour que le serveur avait pris revenait dans le champ, puis
+		// passait pour choisi. Une coquille dans la date la plus ancienne, corrigée, faisait refuser
+		// le cours pour une date « avant le premier jour ». Le jour pris revient avec sa marque.
+		const refuse = readCourseForm(
+			aDates('05.10.20266\n12.10.2026', { startsOn: '' }),
+			LANGUES,
+			SALLES
+		);
+		expect(refuse.ok ? [] : refuse.errors).toEqual(['badDates']);
+		expect(refuse.ok ? null : [refuse.values.startsOn, refuse.values.startsOnFromDates]).toEqual([
+			'2026-10-12',
+			'2026-10-12'
+		]);
+		// La coquille corrigée, le premier jour renvoyé tel que le service l'avait pris : il suit.
+		const corrige = readCourseForm(
+			aDates('05.10.2026\n12.10.2026', {
+				startsOn: '2026-10-12',
+				startsOnFromDates: '2026-10-12'
+			}),
+			LANGUES,
+			SALLES
+		);
+		expect(corrige.ok && corrige.values.startsOn).toBe('2026-10-05');
+		// Changé à la main, sans JavaScript, il n'est plus celui du service : il est choisi, et gardé.
+		const change = readCourseForm(
+			aDates('05.10.2026\n12.10.2026', {
+				startsOn: '2026-10-01',
+				startsOnFromDates: '2026-10-12'
+			}),
+			LANGUES,
+			SALLES
+		);
+		expect(change.ok && change.values.startsOn).toBe('2026-10-01');
+		// Choisi avec JavaScript, il part sans la marque : il n'est jamais remplacé.
+		const choisi = readCourseForm(
+			aDates('05.10.2026\n12.10.2026', { startsOn: '2026-10-12', startsOnFromDates: '' }),
+			LANGUES,
+			SALLES
+		);
+		expect(choisi.ok ? [] : choisi.errors).toEqual(['datesBeforeStart']);
+		expect(choisi.ok ? '' : choisi.values.startsOnFromDates).toBe('');
 	});
 
 	it('refuses the dates before the first day, and names them', () => {

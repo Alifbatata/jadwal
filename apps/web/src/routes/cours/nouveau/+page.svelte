@@ -20,6 +20,7 @@
 				roomId: null,
 				teacher: null,
 				startsOn: '',
+				startsOnFromDates: '',
 				endsOn: null,
 				recurrenceKind: 'weekly',
 				weekdays: [1],

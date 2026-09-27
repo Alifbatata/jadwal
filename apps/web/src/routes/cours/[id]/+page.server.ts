@@ -80,6 +80,8 @@ export const load: PageServerLoad = async (event) => {
 			roomId: course.room_id,
 			teacher: course.teacher,
 			startsOn: String(course.starts_on).slice(0, 10),
+			// Enregistré, le premier jour est choisi : il ne suit plus les dates.
+			startsOnFromDates: '',
 			endsOn: course.ends_on ? String(course.ends_on).slice(0, 10) : null,
 			recurrenceKind: course.recurrence_kind,
 			weekdays: course.recurrence_weekday ?? [],

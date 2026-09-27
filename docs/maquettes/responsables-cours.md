@@ -191,6 +191,15 @@ ancienne : avec JavaScript, pendant la saisie, tant qu'il est vide, et il suit l
 qu'on le choisisse soi-même ; sans JavaScript, le serveur le remplit à l'envoi quand il arrive vide.
 Un premier jour choisi n'est jamais remplacé, et des dates avant lui restent refusées.
 
+Un premier jour que le service a pris n'est pas un premier jour choisi, même quand il revient
+rempli. Après un envoi refusé pour une autre raison, il revient dans le champ, et il suit encore les
+dates, avec ou sans JavaScript : un champ caché, `startsOnFromDates`, le porte, et le serveur le
+reprend de la première date tant qu'il revient tel quel. Changé à la main, il ne correspond plus au
+champ caché : il est choisi. Dans la première version du lot, il passait pour choisi au renvoi. Une
+coquille corrigée dans la date la plus ancienne (`05.10.20266` devenu `05.10.2026`) faisait alors
+refuser le cours : la date corrigée tombait « avant le premier jour », un jour que personne n'avait
+choisi (relecture du lot 2).
+
 Sans JavaScript, choisir `à des dates précises` ne change pas la page : on l'envoie une première
 fois, et elle revient avec le champ des dates. Pour que ces deux envois partent le premier jour
 vide, le navigateur ne l'exige pas sans JavaScript (pas de `required`). C'est le serveur qui refuse
@@ -229,7 +238,8 @@ dans cet espace. Publiez le cours quand tout est prêt.` Le calendrier des deux 
 - Les deux gestes que le formulaire fait avec JavaScript au lot 2 de l'étape 19, la case de la
   langue d'enseignement qui suit la langue de saisie et le premier jour qui suit les dates, ne sont
   pas pilotés par les tests du dépôt non plus. Ils ont été éprouvés dans un vrai Chrome sans
-  interface pendant le lot, et restent à ajouter au parcours automatique.
+  interface pendant le lot, et restent à ajouter au parcours automatique, avec le premier jour qui
+  suit encore les dates après un envoi refusé, tant qu'on ne l'a pas changé à la main.
 - Le parcours automatique ne passe pas non plus, pour l'instant, par les autres gestes du lot 2 dans
   un vrai navigateur : le premier jour laissé vide d'un cours à dates précises, envoyé sans
   JavaScript en deux fois ; `Supprimer ce cours` puis `Oui, supprimer`, avec et sans JavaScript ; le

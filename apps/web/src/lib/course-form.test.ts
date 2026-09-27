@@ -20,6 +20,7 @@ const COMPLET: CourseFormValues = {
 	roomId: 'salle',
 	teacher: 'Imam Karim Haddad',
 	startsOn: '2026-09-07',
+	startsOnFromDates: '',
 	endsOn: '2026-12-20',
 	recurrenceKind: 'weekly',
 	weekdays: [1, 3],

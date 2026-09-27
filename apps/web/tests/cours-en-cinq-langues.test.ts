@@ -1542,13 +1542,96 @@ describe('ce que le nouveau cours remplit de lui-même (étape 19, lot 2)', () =
 		).toEqual([{ startsOn: '2026-10-12' }]);
 
 		// Refusé pour une autre raison, le formulaire revient avec ce premier jour, dans le champ et
-		// dans le résumé.
+		// dans le résumé, et avec la marque d'un jour pris par le service, qui n'est pas choisi.
 		const refuse = await postForm('/cours/nouveau', champs(''), cookie);
 		expect(refuse.status).toBe(400);
 		const html = await refuse.text();
 		expect(erreurs(html)).toEqual(['Écrivez le titre du cours dans la langue de saisie.']);
 		expect(champ(html, 'startsOn')['value']).toBe('2026-10-12');
+		expect(champsDuFormulaire(html)).toContainEqual(['startsOnFromDates', '2026-10-12']);
 		expect(lignesDuResume(html)).toContain('Premier jour : lundi 12.10.2026');
+	});
+
+	it('keeps taking the first date after a refusal, without JavaScript, until the person chooses a day', async () => {
+		// Relecture du lot 2 : le premier jour que le serveur avait pris revenait dans le champ, puis
+		// passait pour choisi au renvoi. Une coquille dans la date la plus ancienne, corrigée, faisait
+		// refuser le cours pour une date « avant le premier jour », qu'elle n'avait jamais choisi.
+		const champs = (titreDuCours: string, dates: string): (readonly [string, string])[] => [
+			['sourceLanguage', 'fr'],
+			['title.fr', titreDuCours],
+			['audience', 'kids'],
+			['teachingLanguages', 'ar'],
+			['recurrenceKind', 'dates'],
+			['dates', dates],
+			['timingKind', 'fixed'],
+			['start', '10:00'],
+			['end', '11:30'],
+			['startsOn', ''],
+			['status', 'draft']
+		];
+		/** Ce que le navigateur renvoie : la page telle qu'elle est revenue, avec ces champs changés. */
+		const renvoi = (html: string, changes: Record<string, string>): [string, string][] =>
+			champsDuFormulaire(html).map(([nom, valeur]) => [nom, changes[nom] ?? valeur]);
+		async function premierJourEnBase(titreDuCours: string): Promise<string[]> {
+			return maintenance(async (tx) =>
+				lignes<{ startsOn: string }>(
+					await tx.execute(sql`
+						select c."starts_on"::text as "startsOn" from "course" c
+						join "course_translation" t on t."course_id" = c."id"
+						where t."title" = ${titreDuCours}
+					`)
+				).map((ligne) => ligne.startsOn)
+			);
+		}
+
+		// Une coquille dans la date la plus ancienne : le service prend la suivante, et refuse.
+		const coquille = await postForm(
+			'/cours/nouveau',
+			champs('Coquille corrigée', '05.10.20266\n12.10.2026'),
+			cookie
+		);
+		expect(coquille.status).toBe(400);
+		const page = await coquille.text();
+		expect(erreurs(page)).toEqual([
+			'Cette date n’est pas valable : 05.10.20266. Écrivez chaque date comme ceci : 12.10.2026'
+		]);
+		expect(champ(page, 'startsOn')['value']).toBe('2026-10-12');
+		// Corrigée, sans toucher au premier jour : il suit la date corrigée.
+		const corrige = await postForm(
+			'/cours/nouveau',
+			renvoi(page, { dates: '05.10.2026\n12.10.2026' }),
+			cookie
+		);
+		expect(corrige.status, erreurs(await corrige.clone().text()).join(' | ')).toBe(303);
+		expect(await premierJourEnBase('Coquille corrigée')).toEqual(['2026-10-05']);
+
+		// Refusé faute de titre, puis complété d'une date plus ancienne : le premier jour la prend.
+		const sansTitre = await postForm('/cours/nouveau', champs('', '26.10.2026'), cookie);
+		expect(sansTitre.status).toBe(400);
+		const pageSansTitre = await sansTitre.text();
+		expect(champ(pageSansTitre, 'startsOn')['value']).toBe('2026-10-26');
+		const complete = await postForm(
+			'/cours/nouveau',
+			renvoi(pageSansTitre, { 'title.fr': 'Date ajoutée', dates: '26.10.2026\n12.10.2026' }),
+			cookie
+		);
+		expect(complete.status, erreurs(await complete.clone().text()).join(' | ')).toBe(303);
+		expect(await premierJourEnBase('Date ajoutée')).toEqual(['2026-10-12']);
+
+		// Un premier jour changé à la main est choisi : le service ne le remplace pas.
+		const change = await postForm(
+			'/cours/nouveau',
+			renvoi(pageSansTitre, {
+				'title.fr': 'Premier jour changé',
+				dates: '26.10.2026\n12.10.2026',
+				startsOn: '2026-10-19'
+			}),
+			cookie
+		);
+		expect(change.status).toBe(400);
+		expect(erreurs(await change.text())).toEqual([
+			'Cette date tombe avant le premier jour du cours et ne serait pas publiée : 12.10.2026. Choisissez comme premier jour le 12.10.2026 ou un jour plus tôt. Vous pouvez aussi retirer cette date.'
+		]);
 	});
 
 	it('lets a browser without JavaScript send a course at specific dates with its first day empty', async () => {
@@ -1591,6 +1674,8 @@ describe('ce que le nouveau cours remplit de lui-même (étape 19, lot 2)', () =
 		// La fiche d'un cours à dates précises n'exige pas non plus son premier jour.
 		const fiche = await (await get(`/cours/${enfantsId}`, cookie)).text();
 		expect(champ(fiche, 'startsOn')).not.toHaveProperty('required');
+		// Son premier jour, enregistré, est choisi : il ne porte pas la marque d'un jour pris aux dates.
+		expect(champsDuFormulaire(fiche)).toContainEqual(['startsOnFromDates', '']);
 		expect((await postForm('/cours/nouveau', envoye, cookie)).status).toBe(303);
 		expect(
 			await maintenance(async (tx) =>
