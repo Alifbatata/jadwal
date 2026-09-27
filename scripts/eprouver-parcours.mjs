@@ -30,7 +30,9 @@
  * du parcours automatique, qui tombe sur l'ancien comportement. Chaque vérification d'un retour
  * porte sa lettre, et le parcours imprime à la fin un tableau « retour | vérification | verdict ».
  * Un retour sans aucune ligne fait échouer le parcours : on ne perd pas une vérification sans le
- * voir.
+ * voir. L'étape 19 suit la même règle pour chacune de ses corrections qui se voient à l'écran.
+ *
+ * ### Les retours de l'étape 18
  *
  * - A1 : sur « À venir », les options d'une séance sont fermées, « Annuler ou déplacer » n'ouvre que
  *   sa carte, et rien ne s'annule sans l'avoir ouverte, avec ou sans JavaScript.
@@ -46,9 +48,9 @@
  *   téléphone, la confirmation avant de supprimer une salle occupée se voit sans défiler ; sans
  *   JavaScript, une session du vendredi se supprime, et l'écran le dit. Le message d'une séance
  *   déplacée le même jour dit un changement d'heure, et le programme de la semaine une nouvelle
- *   heure, dans chaque langue ; dans la carte d'une session du vendredi,
- *   l'aide de « À partir du » est celle d'une modification ; dans Réglages, le nom et la formule
- *   d'accueil tapés au clavier s'enregistrent, même quand la couleur change ensuite.
+ *   heure, dans chaque langue ; dans la carte d'une session du vendredi, l'aide de « À partir du »
+ *   est celle d'une modification ; dans Réglages, le nom et la formule d'accueil tapés au clavier
+ *   s'enregistrent, même quand la couleur change ensuite.
  * - B2 : l'écran du super-admin, de « Créer une organisation » au lien de connexion de secours ;
  *   l'adresse proposée pendant la frappe, et par le serveur sans JavaScript ; une seconde passkey,
  *   qui a son propre nom et un message juste.
@@ -64,12 +66,11 @@
  *   de swisstopo, et les heures qu'elle donne : celles que `@jadwal/core` calcule pour la position
  *   de la liste, sur l'écran, sur la page publique et dans le flux. Avec JavaScript, « Hors de
  *   Suisse » et « Méthode de calcul, école et ajustements » restent ouverts pendant qu'on tape, une
- *   touche à la fois. Sans JavaScript, une position hors de Suisse s'enregistre à la place de la
+ *   touche à la fois, et une position tapée coche « Hors de Suisse » à la place de la localité.
+ *   Sans JavaScript, une position hors de Suisse, cette case cochée, s'enregistre à la place de la
  *   localité, puis la localité revient.
- * - C3 : un cours « avant une prière », des minutes positives à l'écran. Avec JavaScript, le
- *   navigateur exige les champs de l'horaire choisi, et eux seuls, et les minutes prennent les
- *   bornes du choix ; sans JavaScript, le choix d'une prière s'envoie heures vides, la page revient
- *   avec les champs de la prière, et « après une prière » y laisse partir 0 minute comme 180.
+ * - C3 : un cours « avant une prière », des minutes positives à l'écran ; avec JavaScript, le
+ *   navigateur exige les champs de l'horaire choisi, et eux seuls.
  * - C4 : l'onglet « Prières » de la page publique et du widget, et axe à 390 px de large.
  * - D1 : la page publique, le widget, le flux et une page d'erreur en anglais, sans texte français ;
  *   les messages prêts à coller de Partager, un par langue publiée, le nom de la prière du vendredi
@@ -82,8 +83,10 @@
  *   partent.
  * - D4 : les conditions restent en français, précédées d'une phrase dans la langue de la page, en
  *   allemand, en italien, en anglais et en arabe.
- * - E1, E2 : l'agenda selon l'appareil, iPhone (ni Google ni Outlook), Android (le bouton de
- *   Google, puis une issue par un ordinateur, avec l'adresse), ordinateur, et le délai de Google.
+ * - E1 : l'agenda selon l'appareil, iPhone (ni Google ni Outlook), Android (le bouton de Google),
+ *   ordinateur (le choix complet), et une réponse qui dit aux caches qu'elle en dépend.
+ * - E2 : le délai d'Outlook, dit sous Outlook. Celui de Google, que l'étape 18 disait aussi, a
+ *   laissé la place à la page du programme (19-agenda-derniere-minute).
  * - F1 : l'exploitant est Voltia ; le nom de personne retiré du dépôt ne s'affiche nulle part.
  * - H2 : l'écran d'acceptation compte une invitation en attente, comme la navigation.
  *
@@ -92,6 +95,101 @@
  * bloc de site de Caddy, dans `infra/caddy/`, qui a ses propres vérifications. H5 (`queue: max`) est
  * lu dans `.github/workflows/parcours.yml` par `scripts/eprouver-garde-deploiement.mjs`. G et I sont
  * des gestes sur le serveur, relevés dans le rapport de l'étape.
+ *
+ * ### Les corrections de l'étape 19
+ *
+ * L'arabe relu, l'exemple du super-admin, la langue du courriel d'invitation :
+ *
+ * - 19-B1 à 19-B11 : chaque phrase arabe relue, à sa place, écran en arabe. Partager (B1, B9),
+ *   « À venir » (B2, B9 ; B10, l'alerte d'un programme qui ne s'affiche plus sur le site, une vue
+ *   du widget datée d'avant la semaine écrite dans la base), l'écran du vendredi après « Retirer de
+ *   la page publique » (B3), la lecture d'un fichier d'heures séparé par des tabulations, dont
+ *   vingt-cinq lignes sont refusées (B4 à B6), l'aide d'une nouvelle période (B7), Membres et un
+ *   rôle inconnu, que le parcours ajoute au choix du rôle comme un formulaire écrit à la main (B8),
+ *   l'aide du bouton de Google sur Android (B11).
+ * - 19-B12 : l'exemple du super-admin, « Association Horizon » et « association-horizon », en
+ *   arabe « جمعية الأفق », et la règle de l'adresse.
+ * - 19-C : l'invitation part dans la langue choisie sous l'adresse, et non dans celle de l'écran.
+ *
+ * Les défauts :
+ *
+ * - 19-D2, le vendredi : un vendredi passé, une salle ou une session supprimées entre-temps depuis
+ *   un autre onglet, refusés par une phrase, sans erreur 500 ni rien d'écrit.
+ * - 19-D3, les cours : la responsable supprime un cours depuis /cours, avec et sans JavaScript.
+ * - 19-D4, « À venir » : un cours en brouillon marqué, et hors du programme de la semaine ; une
+ *   carte « date exceptionnelle » qui se rétablit ; le refus d'une carte restée ouverte qui nomme la
+ *   séance ; le calendrier de « Nouvelle date » borné au 31.12.2100.
+ * - 19-D5, les prières : l'aperçu d'une nouvelle période sous un titre de niveau 3, et axe n'y
+ *   relève plus « heading-order ».
+ * - 19-D6, le super-admin : l'adresse proposée d'après « Club № 5 » ou « Horizon™ », rien pour un
+ *   nom sans lettre latine, et, sans JavaScript, l'adresse montrée avant de créer l'organisation.
+ * - 19-D7, l'italien : « Inizialmente <giorno> JJ.MM.AAAA », sans « In origine: » ni article.
+ * - 19-D8, le français : « l’espace d’Association voisine », « Le programme d’Association
+ *   voisine ».
+ *
+ * Les décisions appliquées, sur la page publique et l'agenda :
+ *
+ * - 19-agenda-outlook : « Outlook (travail ou école) », et à quels comptes sert chaque Outlook.
+ * - 19-agenda-android : sur Android, « ouvrez cette page sur un ordinateur », puis l'adresse de la
+ *   page, sur la page d'abonnement et sur celle d'un cours.
+ * - 19-agenda-derniere-minute : la page du programme pour un changement de dernière minute, à la
+ *   place du délai de Google.
+ * - 19-agenda-page-du-cours : « Page du cours » sous chaque cours, sur un iPhone.
+ * - 19-agenda-autre-appareil : « Une autre application ou un autre appareil ? », puis le lien
+ *   « Voir tous les choix », seul.
+ * - 19-annulee : une session du vendredi annulée porte « Annulée », accordé à la prière, dans la vue
+ *   Semaine, l'onglet « Prières » et la vue Mois.
+ * - 19-widget-prieres : le widget posé avec `view="prieres"` s'ouvre sur l'onglet « Prières ».
+ * - 19-og-locale : `og:locale` et un `og:locale:alternate` par autre langue publiée.
+ * - 19-langue-non-activee : une langue que l'organisation ne publie pas renvoie à sa langue par
+ *   défaut, choix de l'appareil gardé.
+ * - 19-404-organisation : sous une organisation connue, le 404 dans sa langue.
+ *
+ * Sur les cours :
+ *
+ * - 19-cours-langue-de-saisie : la langue de saisie coche la langue d'enseignement.
+ * - 19-cours-facultatif : chaque ligne facultative du résumé porte « (facultatif) ».
+ * - 19-cours-premier-jour : le premier jour d'un cours à dates précises suit la première date, avec
+ *   JavaScript, et le serveur le remplit sans.
+ * - 19-cours-hors-periode : un cours dont des dates tombent hors de sa période porte « À corriger »
+ *   dans la liste ; la base lui donne ce dernier jour, que le formulaire refuse depuis l'étape 18.
+ * - 19-cours-titre-manquant : une description sans le titre de sa langue se signale dans le résumé.
+ * - 19-cours-message : un cours publié donne le message « nouveau cours », prêt à coller.
+ * - 19-cours-seance-barree : sur la page publique d'un cours, la séance annulée reste, barrée.
+ * - 19-cours-sans-js : le formulaire d'un cours sans JavaScript, le choix d'une prière envoyé heures
+ *   vides, et « après une prière » qui laisse partir 0 minute comme 180.
+ *
+ * Sur les prières :
+ *
+ * - 19-prieres-rue : « Rüe » propose d'abord les noms qui portent « Rüe », « ü » d'un ou de deux
+ *   points de code.
+ * - 19-prieres-copie : la copie d'une période au nom de soixante signes garde sa marque entière.
+ * - 19-prieres-periode-passee : l'aperçu d'une période terminée le dit.
+ * - 19-prieres-hors-de-suisse : sans JavaScript, une position tapée l'emporte sur la localité
+ *   cochée, sans toucher à la liste : le serveur coche lui-même « Hors de Suisse ». Avec
+ *   JavaScript, la case se cochait déjà pendant la frappe à l'étape 18 : C2 le vérifie.
+ *
+ * Sur les membres :
+ *
+ * - 19-membres-confirmations : changer un rôle se confirme en haut de l'écran.
+ * - 19-membres-depart : une responsable qui se retire elle-même lit un encadré à l'arrivée.
+ * - 19-membres-quitter : « Quitter l’organisation » depuis « Vos organisations ».
+ * - 19-membres-salle : une salle déjà supprimée dans un autre onglet, « Cette salle n’existe
+ *   plus. ».
+ *
+ * Sur « À venir » et le vendredi :
+ *
+ * - 19-titre-langue-ecran : une séance porte son titre dans la langue de l'écran.
+ * - 19-texte-vendredi : le message d'une session du vendredi annulée parle d'une prière.
+ * - 19-sermon : la langue du sermon parmi les huit langues d'enseignement.
+ * - 19-retablir-nouvelle-date : « Rétablir comme d’habitude » sur la ligne « Nouvelle date ».
+ * - 19-jour-sans-seance : annuler un jour sans séance, par un formulaire modifié dans la page, est
+ *   refusé par une phrase, sur « À venir » et sur l'écran du vendredi.
+ *
+ * Ce que l'étape 19 a changé sans que cela se voie à l'écran n'est pas ici : la base (le journal
+ * signé, les droits de lecture, la suppression réservée, le type figé, le départ permis) est
+ * éprouvée par les tests de `packages/db`, et les outils (l'épreuve du PDF, l'image, le bloc de
+ * site, les tests liés au temps) par leurs propres épreuves.
  *
  * ## La date figée (étape 19, D9)
  *
@@ -122,15 +220,18 @@
  * l'ancien écran (un champ qui n'existe pas encore) est noté comme tel, « impossible », pour son
  * retour. Les vérifications qui ne sont pas celles d'un retour restent strictes dans les deux
  * modes : le parcours s'arrête quand la suite n'a plus de sens, et le tableau dit alors quels
- * retours n'ont pas été atteints.
+ * retours n'ont pas été atteints. Les gestes que l'étape 19 a changés et dont la suite dépend
+ * (confirmer un rôle, par exemple) ne sont joués que si l'écran les offre : sur l'image de
+ * l'étape 18, les vérifications de ses propres retours restent ainsi jouables.
  *
  * Un geste impossible arrête son bloc : les vérifications qui le suivent dans ce bloc ne sont pas
- * jouées. Le bilan les compte donc à part : les vérifications jouées, vertes ou rouges, puis les
- * gestes impossibles. Combien de vérifications n'ont jamais tourné, et lesquelles, se lit en
- * comparant ligne par ligne le tableau du relevé à celui d'un passage strict sur l'image
- * d'aujourd'hui : une ligne du strict qui manque au relevé n'a pas été jouée. Deux libellés portent
- * le nombre d'écrans lus (A3 et F1), qui change d'une image à l'autre : on le neutralise avant de
- * comparer. Compter retour par retour donne un nombre, mais pas les lignes.
+ * jouées. Le parcours les compte lui-même, depuis l'étape 19 : il connaît la liste entière des
+ * vérifications de ses retours, le **catalogue** (section du même nom, plus bas), et imprime à la
+ * fin celles qui n'ont pas été jouées, une par ligne, puis leur nombre. Un libellé s'y écrit sous
+ * une forme neutre : les dates, l'hôte et son port, et le nombre d'écrans lus de A3 et F1, qui
+ * change d'une image à l'autre, y sont remplacés par un mot. Un passage strict échoue si une
+ * vérification du catalogue n'a pas été jouée, ou si une vérification jouée n'y est pas. Le bilan
+ * donne ces nombres pour l'étape 18 et pour l'étape 19, à part.
  *
  * Une vérification faite de plusieurs conditions les nomme (`verifierChaque`), qu'elle soit celle
  * d'un retour ou non : sa ligne rouge commence par « tombé : » et le nom de celles qui manquent,
@@ -155,12 +256,15 @@
  *
  * ## En dernier, ce qui change l'organisation
  *
- * Trois pas viennent après tous les autres, parce qu'ils changent ce que les autres lisent. La
- * session du vendredi est déplacée le même jour, sur « À venir ». Deux onglets ouverts avant, l'un
- * sur « À venir », l'autre sur l'écran du vendredi, renvoient ensuite leur carte restée telle
- * quelle. Le nom et la formule d'accueil sont tapés dans
- * Réglages, puis remis. Une seconde personne responsable rejoint l'organisation, la première se
- * donne le rôle d'éditeur, et la seconde lui rend le sien.
+ * Les derniers pas viennent après tous les autres, parce qu'ils changent ce que les autres lisent.
+ * L'écran du vendredi et « À venir » reçoivent d'abord ce que l'étape 19 y a corrigé, chaque geste
+ * défait à la fin de son bloc (étape p). La session du vendredi est ensuite déplacée le même jour,
+ * sur « À venir ». Deux onglets ouverts avant, l'un sur « À venir », l'autre sur l'écran du
+ * vendredi, renvoient ensuite leur carte restée telle quelle ; la session, rétablie, est annulée
+ * pour ce vendredi, lue sur la page publique, puis rétablie. Le nom et la formule d'accueil sont
+ * tapés dans Réglages, puis remis. Une seconde personne responsable rejoint l'organisation, la
+ * première se donne le rôle d'éditeur, la seconde lui rend le sien, puis s'en va. Enfin, la
+ * personne du parcours quitte l'organisation voisine (étape q).
  *
  * ## Les heures de prière attendues
  *
@@ -258,6 +362,8 @@ const SUPER_ADMIN = 'super-admin@example.test';
 const RESPONSABLE = 'responsable@example.test';
 /** Une adresse sans compte, invitée depuis un écran en allemand (retour D3). */
 const INVITEE_EN_ALLEMAND = 'eingeladen@example.test';
+/** Une adresse sans compte, invitée en italien depuis l'écran en français (étape 19, C). */
+const INVITEE_EN_ITALIEN = 'invitata@example.test';
 /**
  * `espaceDe` : « l’espace de … » dans la phrase de l'écran d'acceptation, écrit ici en toutes
  * lettres. Un nom qui commence par une voyelle y prend « d’ » (relevé D8 du 27.09.2026).
@@ -293,6 +399,13 @@ const COURS_ANCRE = 'Tafsir du soir';
 const COURS_SANS_DECALAGE = 'Cercle de lecture';
 /** Un cours placé avant une prière, avec des minutes positives (retour C3). */
 const COURS_AVANT = { titre: 'Hifz avant Maghrib', minutes: 10 };
+/**
+ * Un cours à dates précises, tapées dans le désordre, publié puis supprimé (étape 19) : le message
+ * « nouveau cours », le premier jour tiré des dates, une date hors de sa période, la suppression.
+ */
+const ANNONCE_EN_DESORDRE = 'Annoncé dans le désordre';
+/** Un cours à dates précises saisi sans JavaScript, en brouillon, puis supprimé (étape 19). */
+const DATES_SANS_SCRIPT = 'Dates sans script';
 /**
  * La localité du parcours, cherchée par son nom puis par son NPA (retour C2) ; `liste`, le début de
  * sa ligne dans la liste des localités, d'où vient sa position.
@@ -336,6 +449,12 @@ const PRIERES = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
 const VENDREDI = { debut: '12:30', fin: '13:15' };
 /** Une seconde session, ajoutée puis supprimée dans un navigateur sans JavaScript (retour B1). */
 const SECONDE_SESSION = { debut: '13:40', fin: '14:20' };
+/**
+ * L'étape p (étape 19) : une salle libre, supprimée depuis un autre onglet, et une session d'une
+ * autre heure, ajoutée dans cette salle, puis au sermon en albanais et en turc.
+ */
+const SALLE_PROVISOIRE = 'Salle provisoire';
+const SESSION_DANS_LA_SALLE = { debut: '14:30', fin: '15:10' };
 /** La nouvelle heure de la session du vendredi, déplacée le même jour sur « À venir » (A2, B1). */
 const HEURE_DU_VENDREDI_DEPLACE = '13:00';
 /**
@@ -535,8 +654,8 @@ class Echec extends Error {}
 
 let verifications = 0;
 
-/** Les retours du chef de projet que le parcours vérifie, dans l'ordre du tableau final. */
-const RETOURS = [
+/** Les retours du chef de projet à l'étape 18, dans l'ordre du tableau final. */
+const RETOURS_DE_L_ETAPE_18 = [
 	'A1',
 	'A2',
 	'A3',
@@ -558,12 +677,88 @@ const RETOURS = [
 	'H2'
 ];
 /**
+ * Les corrections de l'étape 19 qui se voient à l'écran, dans l'ordre du prompt du chef de projet :
+ * l'arabe relu et l'exemple du super-admin (B1 à B12), la langue du courriel d'invitation (C), les
+ * défauts (D2 à D8), puis les décisions appliquées. L'en-tête du script dit ce que chacune vérifie.
+ */
+const RETOURS_DE_L_ETAPE_19 = [
+	'19-B1',
+	'19-B2',
+	'19-B3',
+	'19-B4',
+	'19-B5',
+	'19-B6',
+	'19-B7',
+	'19-B8',
+	'19-B9',
+	'19-B10',
+	'19-B11',
+	'19-B12',
+	'19-C',
+	'19-D2',
+	'19-D3',
+	'19-D4',
+	'19-D5',
+	'19-D6',
+	'19-D7',
+	'19-D8',
+	'19-agenda-outlook',
+	'19-agenda-android',
+	'19-agenda-derniere-minute',
+	'19-agenda-page-du-cours',
+	'19-agenda-autre-appareil',
+	'19-annulee',
+	'19-widget-prieres',
+	'19-og-locale',
+	'19-langue-non-activee',
+	'19-404-organisation',
+	'19-cours-langue-de-saisie',
+	'19-cours-facultatif',
+	'19-cours-premier-jour',
+	'19-cours-hors-periode',
+	'19-cours-titre-manquant',
+	'19-cours-message',
+	'19-cours-seance-barree',
+	'19-cours-sans-js',
+	'19-prieres-rue',
+	'19-prieres-copie',
+	'19-prieres-periode-passee',
+	'19-prieres-hors-de-suisse',
+	'19-membres-confirmations',
+	'19-membres-depart',
+	'19-membres-quitter',
+	'19-membres-salle',
+	'19-titre-langue-ecran',
+	'19-texte-vendredi',
+	'19-sermon',
+	'19-retablir-nouvelle-date',
+	'19-jour-sans-seance'
+];
+/** Tous les retours, dans l'ordre du tableau final. */
+const RETOURS = [...RETOURS_DE_L_ETAPE_18, ...RETOURS_DE_L_ETAPE_19];
+/**
  * Chaque vérification d'un retour : `{ retour, quoi, ok, detail }`, et `impossible` pour un geste
  * que l'écran n'offre pas, qui a arrêté son bloc.
  */
 const releve = [];
 /** La lettre du retour dont le bloc est en cours, ou `null` hors de tout bloc. */
 let retourCourant = null;
+
+/**
+ * Le libellé d'une vérification, sans ce qui change d'un passage à l'autre : l'hôte et son port,
+ * les dates (celles du jour de l'horloge posée), le jour de la semaine qui les précède, et le nombre
+ * d'écrans lus, qui change d'une image à l'autre (A3 et F1). C'est sous cette forme que le catalogue
+ * les connaît.
+ */
+function neutre(quoi) {
+	return quoi
+		.replace(/\b(?:localhost|127\.0\.0\.1):\d+/g, 'HÔTE')
+		.replace(/\d{2}\.\d{2}\.\d{4}/g, 'JJ.MM.AAAA')
+		.replace(/\d{4}-\d{2}-\d{2}/g, 'AAAA-MM-JJ')
+		.replace(/\b(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)(?= JJ\.MM\.AAAA)/g, 'JOUR')
+		.replace(/, le (?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)$/, ', le JOUR')
+		.replace(/\b\d+ écrans\b/g, 'N écrans');
+}
 
 /**
  * Une vérification du parcours. Hors d'un retour, ou en mode strict, le premier échec arrête tout :
@@ -647,14 +842,15 @@ const GRAVES = new Set(['serious', 'critical']);
 /**
  * Passe axe sur une page ou sur un cadre. `iframes: false` pour une page qui contient un cadre
  * d'une autre origine : axe attendrait une minute une réponse que le cadre, sans axe, ne donnera
- * jamais. Le cadre est audité à part.
+ * jamais. Le cadre est audité à part. `recharger: false` pour une page qui n'existe que comme
+ * réponse d'un formulaire, comme l'aperçu d'une période : la recharger la perdrait.
  */
-async function auditer(cible, nom, { iframes = true } = {}) {
+async function auditer(cible, nom, { iframes = true, recharger = true } = {}) {
 	// Une page atteinte par un lien de SvelteKit garde le `<title>` de la précédente quand elle n'en
 	// pose pas : axe n'y verrait rien. On la recharge donc d'abord, en GET, sans l'action d'un
 	// formulaire qu'un rechargement renverrait. Mesuré : l'écran Membres, sans titre, portait celui
 	// de l'accueil.
-	if (typeof cible.mainFrame === 'function' && cible.url().startsWith(ORIGINE)) {
+	if (recharger && typeof cible.mainFrame === 'function' && cible.url().startsWith(ORIGINE)) {
 		const adresse = new URL(cible.url());
 		await ouvrir(
 			cible,
@@ -864,6 +1060,36 @@ function lienDeConnexion(courriel) {
 /** La langue écrite sur la balise `<html>` du courriel, que les clients de messagerie lisent. */
 const langueDuCourriel = (courriel) =>
 	/<html\b[^>]*\blang="([^"]+)"/i.exec(courriel?.html ?? '')?.[1];
+
+/**
+ * Une requête jouée dans la base du parcours, par son propriétaire, là où aucun écran ne mène : une
+ * vue du widget datée d'avant la semaine (B10), un cours enregistré avant la règle de l'étape 18
+ * (dates hors de sa période). Le texte de la requête ne vient que de ce script.
+ */
+function ecrireDansLaBase(requete) {
+	const passage = spawnSync(
+		'docker',
+		[
+			'exec',
+			marche.base,
+			'psql',
+			'-U',
+			'jadwal',
+			'-d',
+			'jadwal',
+			'-v',
+			'ON_ERROR_STOP=1',
+			'-At',
+			'-c',
+			requete
+		],
+		{ encoding: 'utf8' }
+	);
+	return {
+		ok: passage.status === 0,
+		sortie: `${passage.stdout ?? ''}${passage.stderr ?? ''}`.trim().split('\n').pop() ?? ''
+	};
+}
 
 function dernieresLignesDuServeur(combien = 30) {
 	return marche.journal().trim().split('\n').slice(-combien);
@@ -1075,6 +1301,16 @@ async function texteDe(locator) {
 const racineDit = (page, attribut) => page.locator('html').getAttribute(attribut);
 
 /**
+ * L'élément dont le geste suivant a besoin. S'il manque, le geste est impossible sur cet écran : le
+ * bloc s'arrête tout de suite, en le nommant, au lieu d'attendre quinze secondes un élément qu'une
+ * ancienne image n'a pas.
+ */
+async function exiger(locator, quoi) {
+	if ((await locator.count()) === 0) throw new Error(`${quoi} : absent de cet écran`);
+	return locator;
+}
+
+/**
  * La description accessible d'un champ : le texte des éléments que son `aria-describedby` désigne,
  * celui qu'un lecteur d'écran lit après son nom.
  */
@@ -1229,7 +1465,10 @@ const NOMS_SAISIS = [
 	COURS_ANCRE,
 	COURS_SANS_DECALAGE,
 	COURS_AVANT.titre,
+	ANNONCE_EN_DESORDRE,
+	DATES_SANS_SCRIPT,
 	SALLE,
+	SALLE_PROVISOIRE,
 	SUPER_ADMIN,
 	RESPONSABLE
 ];
@@ -1517,6 +1756,8 @@ async function superAdmin(navigateur) {
 
 	await ouvrir(page, '/super-admin');
 	await ecranDuSuperAdmin(page);
+	await superAdminEtape19(page);
+	await ouvrir(page, '/super-admin');
 	await ouvrirEtEntrer(page, ORGANISATION, { proposee: ADRESSE_PROPOSEE });
 	await naviguer(page, '/membres');
 	await auditer(page, 'membres');
@@ -1547,6 +1788,7 @@ async function superAdmin(navigateur) {
 	await ouvrirEtEntrer(page, VOISINE, {});
 	await naviguer(page, '/membres');
 	await inviterEnAllemand(page);
+	await inviterDansLaLangueChoisie(page);
 	await inviter(page, VOISINE, 'editor', 'éditeur');
 
 	verifier(
@@ -1647,32 +1889,36 @@ async function adresseSansScript(navigateur, contexte) {
 			const proposee = (await champ.count()) === 1 ? await champ.inputValue() : 'aucun champ';
 			const pasEncore =
 				(await page.locator('li').filter({ hasText: SANS_SCRIPT.nom }).count()) === 0;
-			verifierChaque(
-				`sans JavaScript, « ${SANS_SCRIPT.nom} », envoyée sans adresse écrite, n’est pas encore créée : l’écran montre en entier l’adresse proposée, « ${adresse} », dans un champ où la confirmer ou la changer`,
-				{
-					'aucune organisation créée': pasEncore,
-					'« Vérifiez l’adresse avant de créer l’organisation »': montree.includes(
-						'Vérifiez l’adresse avant de créer l’organisation'
-					),
-					'l’adresse entière': montree.includes(adresse),
-					'le champ porte l’adresse proposée': proposee === SANS_SCRIPT.adresse
-				},
-				montree || (await texteDe(page.locator('main'))).slice(0, 160)
-			);
+			// L'étape qui montre l'adresse avant de créer est de l'étape 19 (D6) ; l'adresse que le
+			// serveur propose, vérifiée plus bas, est celle du retour B2.
+			await retour('19-D6', async () => {
+				verifierChaque(
+					`sans JavaScript, « ${SANS_SCRIPT.nom} », envoyée sans adresse écrite, n’est pas encore créée : l’écran montre en entier l’adresse proposée, « ${adresse} », dans un champ où la confirmer ou la changer`,
+					{
+						'aucune organisation créée': pasEncore,
+						'« Vérifiez l’adresse avant de créer l’organisation »': montree.includes(
+							'Vérifiez l’adresse avant de créer l’organisation'
+						),
+						'l’adresse entière': montree.includes(adresse),
+						'le champ porte l’adresse proposée': proposee === SANS_SCRIPT.adresse
+					},
+					montree || (await texteDe(page.locator('main'))).slice(0, 160)
+				);
+			});
 			if ((await etape.count()) === 1) {
 				await envoyer(page, etape.getByRole('button', { name: 'Créer l’organisation' }));
 			}
 			const succes = page.locator('section.succes');
 			const annonce = (await succes.count()) === 1 ? await texteDe(succes) : '';
 			const carte = page.locator('li').filter({ hasText: SANS_SCRIPT.nom });
+			const cartes = await carte.count();
 			verifierChaque(
 				`sans JavaScript, « ${SANS_SCRIPT.nom} », créée à la confirmation, reçoit l’adresse que le serveur a proposée, « ${SANS_SCRIPT.adresse} », et l’écran dit l’adresse entière`,
 				{
 					'l’annonce nomme l’organisation': annonce.includes(SANS_SCRIPT.nom),
 					'l’annonce dit l’adresse entière': annonce.includes(adresse),
-					'une carte de l’organisation': (await carte.count()) === 1,
-					'la carte dit l’adresse entière':
-						(await carte.count()) === 1 && (await texteDe(carte)).includes(adresse)
+					'une carte de l’organisation': cartes === 1,
+					'la carte dit l’adresse entière': cartes === 1 && (await texteDe(carte)).includes(adresse)
 				},
 				annonce || (await texteDe(page.locator('main'))).slice(0, 160)
 			);
@@ -1939,18 +2185,27 @@ async function ceQueFaitChaqueRole(page) {
 		const reserveSurLesCours = gestesResponsable
 			.map((geste) => geste.replace(/\s+/g, ' ').trim())
 			.filter((geste) => /\bcours\b/.test(geste));
+		const gestesSurLesCours =
+			[...surLesCours, ...reserveSurLesCours].map((geste) => `« ${geste} »`).join(', ') ||
+			'aucun geste sur les cours';
 		verifierChaque(
-			'ce que peut faire un éditeur ne promet pas de supprimer un cours : « Créer un cours, le modifier et le publier » ; la liste réservée au responsable dit « Supprimer un cours »',
+			'ce que peut faire un éditeur ne promet pas de supprimer un cours : « Créer un cours, le modifier et le publier »',
 			{
 				'« Créer un cours, le modifier et le publier »': surLesCours.includes(
 					'Créer un cours, le modifier et le publier'
 				),
-				'l’éditeur ne supprime pas': !surLesCours.some((geste) => /supprimer/i.test(geste)),
-				'« Supprimer un cours » réservé': reserveSurLesCours.includes('Supprimer un cours')
+				'l’éditeur ne supprime pas': !surLesCours.some((geste) => /supprimer/i.test(geste))
 			},
-			[...surLesCours, ...reserveSurLesCours].map((geste) => `« ${geste} »`).join(', ') ||
-				'aucun geste sur les cours'
+			gestesSurLesCours
 		);
+		// Depuis l'étape 19, la responsable supprime un cours depuis l'écran Cours (D3).
+		await retour('19-D3', async () => {
+			verifier(
+				'la liste réservée au responsable dit « Supprimer un cours »',
+				reserveSurLesCours.includes('Supprimer un cours'),
+				gestesSurLesCours
+			);
+		});
 		const decrit = await page.locator('#role').getAttribute('aria-describedby');
 		verifierChaque(
 			'le choix du rôle renvoie à ces deux listes pour les lecteurs d’écran',
@@ -2023,6 +2278,113 @@ async function inviterEnAllemand(page) {
 	if ((await racineDit(page, 'lang')) !== 'fr') await choisirLaLangue(page, 'fr');
 }
 
+/**
+ * Une invitation dans la langue choisie sous l'adresse, et non dans celle de l'écran (étape 19, C) :
+ * depuis l'écran en français, le courriel part en italien. Le choix propose les cinq langues, celle
+ * de l'écran d'abord choisie.
+ */
+async function inviterDansLaLangueChoisie(page) {
+	await retour('19-C', async () => {
+		await ouvrir(page, '/membres');
+		const choix = await exiger(page.locator('#emailLanguage'), 'le choix « Langue du courriel »');
+		const options = await choix.locator('option').evaluateAll((toutes) =>
+			toutes.map((option) => ({
+				valeur: /** @type {HTMLOptionElement} */ (option).value,
+				choisie: /** @type {HTMLOptionElement} */ (option).selected
+			}))
+		);
+		await page.locator('#email').fill(INVITEE_EN_ITALIEN);
+		await page.locator('#role').selectOption('editor');
+		await choix.selectOption('it');
+		await envoyer(page, page.locator('form[action="?/inviter"] button[type="submit"]'));
+		const statut = await texteDe(page.getByRole('status').last());
+		const courriel = await attendreCourriel(INVITEE_EN_ITALIEN, /./);
+		verifierChaque(
+			'depuis l’écran en français, l’invitation part dans la langue choisie sous l’adresse, « Italiano », objet et <html lang="it"> compris',
+			{
+				'le choix des cinq langues, celle de l’écran choisie':
+					options.map((option) => option.valeur).join('|') === LANGUES.join('|') &&
+					options.find((option) => option.choisie)?.valeur === 'fr',
+				'« L’invitation a été envoyée à cette adresse. »':
+					statut === 'L’invitation a été envoyée à cette adresse.',
+				'l’objet en italien': courriel?.subject === `Invito a unirti a ${VOISINE.nom} su jadwal`,
+				'<html lang="it">': langueDuCourriel(courriel) === 'it'
+			},
+			`« ${statut} » ; reçus : ${sujetsRecus(INVITEE_EN_ITALIEN) || 'rien'}`
+		);
+	});
+}
+
+/**
+ * L'écran du super-admin, ce que l'étape 19 y a changé, avant de créer quoi que ce soit. L'exemple
+ * sous le nom et sous l'adresse (B12), en français et en arabe. L'adresse proposée pendant la
+ * frappe (D6) : un signe hors de l'alphabet latin, « № », devient les lettres qu'il porte, une
+ * marque disparaît, et un nom sans lettre latine ne propose rien, avec une phrase qui dit d'écrire
+ * l'adresse. Rien n'est envoyé ; l'écran revient au français.
+ */
+async function superAdminEtape19(page) {
+	await retour('19-B12', async () => {
+		const lus = {};
+		for (const langue of ['fr', 'ar']) {
+			await ouvrir(page, '/super-admin');
+			if (langue !== 'fr') await choisirLaLangue(page, langue);
+			lus[langue] = {
+				nom: await texteDe(await exiger(page.locator('#name-aide'), 'l’aide du nom')),
+				adresse: await texteDe(await exiger(page.locator('#slug-regle'), 'la règle de l’adresse'))
+			};
+		}
+		verifierChaque(
+			`sous le nom et sous l’adresse d’une organisation, l’exemple est « ${EXEMPLE_DU_SUPER_ADMIN.nom} » et « ${EXEMPLE_DU_SUPER_ADMIN.adresse} », en arabe « ${EXEMPLE_DU_SUPER_ADMIN.nomArabe} », et la règle de l’adresse demande une lettre`,
+			{
+				[`« ${EXEMPLE_DU_SUPER_ADMIN.nom} » sous le nom`]: lus.fr.nom.endsWith(
+					`Exemple : ${EXEMPLE_DU_SUPER_ADMIN.nom}`
+				),
+				'la règle de l’adresse': lus.fr.adresse.startsWith(
+					'Lettres minuscules sans accent ni cédille, chiffres et traits d’union, avec au moins une lettre.'
+				),
+				[`« ${EXEMPLE_DU_SUPER_ADMIN.adresse} » sous l’adresse`]: lus.fr.adresse.endsWith(
+					`Exemple : ${EXEMPLE_DU_SUPER_ADMIN.adresse}`
+				),
+				[`« ${EXEMPLE_DU_SUPER_ADMIN.nomArabe} » sous le nom, en arabe`]: lus.ar.nom.endsWith(
+					EXEMPLE_DU_SUPER_ADMIN.nomArabe
+				),
+				[`« ${EXEMPLE_DU_SUPER_ADMIN.adresse} » sous l’adresse, en arabe`]: lus.ar.adresse.endsWith(
+					EXEMPLE_DU_SUPER_ADMIN.adresse
+				)
+			},
+			`« ${lus.fr.nom} » ; « ${lus.fr.adresse} » ; « ${lus.ar.nom} » ; « ${lus.ar.adresse} »`
+		);
+	});
+	if ((await racineDit(page, 'lang')) !== 'fr') await choisirLaLangue(page, 'fr');
+
+	await retour('19-D6', async () => {
+		await ouvrir(page, '/super-admin');
+		const nom = page.locator('#name');
+		const adresse = page.locator('#slug');
+		const proposee = async (texte) => {
+			await nom.fill(texte);
+			return adresse.inputValue();
+		};
+		const club = await proposee('Club № 5');
+		const marque = await proposee('Horizon™');
+		const arabe = await proposee(EXEMPLE_DU_SUPER_ADMIN.nomArabe);
+		const aTaper = page.locator('#slug-a-taper');
+		const phrase = (await aTaper.count()) === 1 ? await texteDe(aTaper) : 'aucune phrase';
+		verifierChaque(
+			'avec JavaScript, l’adresse proposée pendant la frappe : « Club № 5 » donne « club-no-5 », « Horizon™ » donne « horizon », et un nom sans lettre latine ne propose rien et dit d’écrire l’adresse',
+			{
+				'« club-no-5 »': club === 'club-no-5',
+				'« horizon »': marque === 'horizon',
+				'rien de proposé pour un nom arabe': arabe === '',
+				'la phrase qui dit d’écrire l’adresse':
+					phrase ===
+					'Ce nom n’a aucune lettre latine : aucune adresse ne peut en être tirée. Écrivez-la vous-même.'
+			},
+			`« ${club} », « ${marque} », « ${arabe} » ; « ${phrase} »`
+		);
+	});
+}
+
 const AUTRE_ORGANISATION = 'Choisir une autre organisation';
 
 /**
@@ -2046,13 +2408,32 @@ async function ecranDAcceptation(page, organisation, { lienAttendu, pourquoi }) 
 		'elle voit le texte entier et le bouton « J’accepte les conditions d’utilisation »',
 		{
 			'le titre « Conditions d’utilisation »': (await titre(page)) === 'Conditions d’utilisation',
-			'la phrase qui nomme l’organisation': raison.includes(`${organisation.espaceDe},`),
-			'les données personnelles':
+			'la phrase qui nomme l’organisation': raison.includes(organisation.nom),
+			[`les ${DONNEES_PERSONNELLES} données personnelles`]:
 				(await page.locator('main ol > li').count()) === DONNEES_PERSONNELLES,
 			'le bouton': (await bouton.count()) === 1
 		},
 		raison
 	);
+	// « l’espace d’Association voisine », et non « de Association » : l'élision devant une voyelle
+	// (étape 19, D8), dans la phrase du haut comme dans celle sous le bouton.
+	if (organisation.espaceDe.includes('d’')) {
+		await retour('19-D8', async () => {
+			const sousLeBouton = await texteDe(
+				page.locator('main p').filter({ hasText: /^Tant que vous ne les avez pas acceptées/ })
+			);
+			verifierChaque(
+				`l’écran d’acceptation écrit « ${organisation.espaceDe} », en haut et sous le bouton`,
+				{
+					'en haut': raison.includes(`${organisation.espaceDe},`),
+					'sous le bouton':
+						sousLeBouton ===
+						`Tant que vous ne les avez pas acceptées, ${organisation.espaceDe} reste fermé.`
+				},
+				`« ${raison.slice(0, 80)} » ; « ${sousLeBouton} »`
+			);
+		});
+	}
 	await retour('A3', async () => {
 		const version = await texteDe(page.locator('main p').filter({ hasText: /^Version du/ }));
 		const date = await texteDe(page.locator('main p').filter({ hasText: /^Dernière mise à jour/ }));
@@ -2329,9 +2710,9 @@ async function clarteDuFormulaire(page, cours) {
 			},
 			`${await texteDe(ligne('Titre en français'))} | ${await texteDe(ligne('Premier jour'))}`
 		);
-		// La description a sa ligne, juste sous le titre de sa langue, marquée facultative (étape 19,
-		// lot 2). Elle est retirée ensuite : le cours du parcours n'en a pas, et les écrans lus dans les
-		// autres langues n'ont rien à écarter.
+		// La description a sa ligne, juste sous le titre de sa langue, marquée facultative depuis
+		// l'étape 19 (lot 2). Elle est retirée ensuite : le cours du parcours n'en a pas, et les écrans
+		// lus dans les autres langues n'ont rien à écarter.
 		await page.locator('#description-fr').fill(DESCRIPTION);
 		const lignes = (await resume.locator('dl > div').allTextContents()).map((texte) =>
 			texte.replace(/\s+/g, ' ').trim()
@@ -2339,10 +2720,17 @@ async function clarteDuFormulaire(page, cours) {
 		const titreLu = lignes.indexOf(`Titre en français : ${cours.titre}`);
 		const apresLeTitre = titreLu >= 0 ? (lignes[titreLu + 1] ?? '') : '';
 		verifier(
-			'le résumé a une ligne pour la description, sous le titre de sa langue, marquée « (facultatif) »',
-			apresLeTitre === `Description en français : ${DESCRIPTION} (facultatif)`,
+			'le résumé a une ligne pour la description, sous le titre de sa langue',
+			apresLeTitre.startsWith(`Description en français : ${DESCRIPTION}`),
 			apresLeTitre || lignes.slice(0, 3).join(' | ')
 		);
+		await retour('19-cours-facultatif', async () => {
+			verifier(
+				'la ligne de la description, remplie, finit par « (facultatif) »',
+				apresLeTitre === `Description en français : ${DESCRIPTION} (facultatif)`,
+				apresLeTitre || 'aucune ligne'
+			);
+		});
 		await page.locator('#description-fr').fill('');
 	});
 }
@@ -2517,15 +2905,23 @@ async function deplacerPlusTot(page) {
 	await retour('A2', async () => {
 		await depart.getByText('Annuler ou déplacer', { exact: true }).click();
 		const date = depart.getByLabel('Nouvelle date', { exact: true });
+		const bornes = `min="${await date.getAttribute('min')}" max="${await date.getAttribute('max')}"`;
 		verifierChaque(
-			`le champ « Nouvelle date » accepte toute date à partir d’aujourd’hui (${dateSuisse(T)}), jusqu’au 31.12.2100`,
+			`le champ « Nouvelle date » accepte toute date à partir d’aujourd’hui (${dateSuisse(T)})`,
 			{
 				'un champ de date': (await date.getAttribute('type')) === 'date',
-				'à partir d’aujourd’hui': (await date.getAttribute('min')) === T,
-				'jusqu’au 31.12.2100': (await date.getAttribute('max')) === '2100-12-31'
+				'à partir d’aujourd’hui': (await date.getAttribute('min')) === T
 			},
-			`min="${await date.getAttribute('min')}" max="${await date.getAttribute('max')}"`
+			bornes
 		);
+		// La dernière date que l'action accepte, le calendrier du navigateur s'y arrête (étape 19).
+		await retour('19-D4', async () => {
+			verifier(
+				'le calendrier de « Nouvelle date » s’arrête au 31.12.2100, la dernière date que l’action accepte',
+				(await date.getAttribute('max')) === '2100-12-31',
+				bornes
+			);
+		});
 		await retour('B1', async () => {
 			const aide = await descriptionDe(date);
 			verifier(
@@ -2700,10 +3096,27 @@ async function programme(page) {
 	verifierChaque(
 		`les séances du ${dateSuisse(J1)} et du ${dateSuisse(J3)} sont à l’accueil de l’espace`,
 		{
-			'celle du premier cours': (await premiere.count()) === 1,
-			'celle du second cours': (await seconde.count()) === 1
+			[`celle du ${dateSuisse(J1)}`]: (await premiere.count()) === 1,
+			[`celle du ${dateSuisse(J3)}`]: (await seconde.count()) === 1
 		}
 	);
+	// Le second cours est encore en brouillon : sa carte le dit, et le programme de la semaine, prêt
+	// à coller, ne l'annonce pas (étape 19, D4).
+	await retour('19-D4', async () => {
+		const marque = seconde.locator('.titre .marque');
+		const marques = (await marque.allTextContents()).map((texte) => texte.trim());
+		const semaine = await messagesDeLAccueil(page, 'semaine');
+		const annonce = semaine.filter((message) => message.texte.includes(COURS_2));
+		verifierChaque(
+			`sur « À venir », la carte de « ${COURS_2} », en brouillon, porte « brouillon », et le programme de la semaine ne l’annonce dans aucune langue`,
+			{
+				'la marque « brouillon »': marques.includes('brouillon'),
+				[`un programme de la semaine par langue publiée`]: semaine.length === LANGUES.length,
+				'le brouillon absent du programme': annonce.length === 0
+			},
+			`marques : ${marques.join(', ') || 'aucune'} ; ${annonce.map((message) => message.lang).join(', ') || 'aucun'} programme(s) qui l’annoncent`
+		);
+	});
 	await optionsDesSeances(page, premiere, seconde);
 	const ouverte = premiere.locator('details[open]');
 	if ((await ouverte.count()) === 0 && (await boutonsDAnnulationVisibles(premiere).count()) === 0) {
@@ -2720,6 +3133,24 @@ async function programme(page) {
 		await texteDe(premiere.locator('.titre'))
 	);
 	await deplacerPlusTot(page);
+	// La carte d'arrivée, « date exceptionnelle », défait le déplacement elle aussi (étape 19, D4). Le
+	// bouton n'est pas touché : la séance déplacée sert à la suite du parcours.
+	await retour('19-D4', async () => {
+		const arrivee = seanceDuJour(page, J2, COURS_2);
+		const bouton = arrivee.locator('form[action="?/retablir"] button[type="submit"]');
+		const aide = arrivee.locator('form[action="?/retablir"] .aide');
+		verifierChaque(
+			`la carte d’arrivée du ${dateSuisse(J2)}, « date exceptionnelle », a son bouton « Rétablir la séance », avec l’aide qui dit ce qu’il défait`,
+			{
+				'le bouton « Rétablir la séance »':
+					(await bouton.count()) === 1 && (await texteDe(bouton)) === 'Rétablir la séance',
+				'l’aide « Cela défait le changement »':
+					(await aide.count()) === 1 &&
+					(await texteDe(aide)).startsWith('Cela défait le changement')
+			},
+			await texteDe(arrivee)
+		);
+	});
 	await auditer(page, 'accueil de l’espace');
 
 	// Publier le second cours : c'est le champ de publication de sa fiche.
@@ -2773,6 +3204,324 @@ async function programme(page) {
 			texte.slice(0, 120)
 		);
 	});
+	await arabeDeLEspace(page);
+	await formulaireDUnCours(page);
+}
+
+/**
+ * Le formulaire d'un cours avec JavaScript, ce que l'étape 19 y a changé : chaque ligne facultative
+ * du résumé le dit ; une description sans le titre de sa langue se signale ; la langue de saisie
+ * coche la langue d'enseignement ; le premier jour d'un cours à dates précises suit la première
+ * date. Puis un cours à dates précises, tapées dans le désordre, est publié : l'écran donne le
+ * message « nouveau cours ». La base lui donne ensuite un dernier jour avant sa dernière date, comme
+ * un cours enregistré avant la règle de l'étape 18 : la liste le signale. Enfin, la responsable le
+ * supprime, ce que seule une personne responsable peut faire (D3). Il ne reste rien du cours.
+ */
+async function formulaireDUnCours(page) {
+	etape('c, le formulaire d’un cours (étape 19)');
+	const nouveau = async () => {
+		await ouvrir(page, '/cours/nouveau');
+		// Les onglets des langues n'existent qu'une fois la page hydratée. Cinq secondes au plus.
+		await page
+			.getByRole('tab')
+			.first()
+			.waitFor({ timeout: 5000 })
+			.catch(() => undefined);
+	};
+	/** Les lignes du résumé : leur texte, et si elles sont marquées comme un manque. */
+	const resume = () =>
+		page.locator('#course-summary dl > div').evaluateAll((lignes) =>
+			lignes.map((ligne) => ({
+				texte: (ligne.textContent ?? '').replace(/\s+/g, ' ').trim(),
+				manque: ligne.classList.contains('manque')
+			}))
+		);
+	const ligne = (lignes, debut) =>
+		lignes.find((lue) => lue.texte.startsWith(debut)) ?? { texte: '', manque: false };
+	const onglet = (nom) => page.getByRole('tab', { name: new RegExp(`^${nom}`) });
+
+	await nouveau();
+	await retour('19-cours-facultatif', async () => {
+		const lignes = await resume();
+		const attendues = [
+			'Salle : pas choisie (facultatif)',
+			'Intervenant : aucun pour l’instant (facultatif)',
+			'Titre en allemand : pas encore écrit, le titre en français s’affichera à sa place (facultatif)'
+		];
+		verifierChaque(
+			'le résumé d’un nouveau cours marque « (facultatif) » chaque ligne facultative, sans la signaler comme un manque',
+			Object.fromEntries(
+				attendues.map((attendue) => [
+					`« ${attendue} »`,
+					lignes.some((lue) => lue.texte === attendue && !lue.manque)
+				])
+			),
+			attendues
+				.map((attendue) => ligne(lignes, attendue.split(' : ')[0] ?? attendue).texte || 'absente')
+				.join(' | ')
+		);
+	});
+	await retour('19-cours-titre-manquant', async () => {
+		await (await exiger(onglet('allemand'), 'l’onglet « allemand »')).click();
+		await page.locator('#description-de').fill(DESCRIPTION_SANS_TITRE.texte);
+		const avecDescription = await resume();
+		await page.locator('#title-de').fill('Kommentierte Lesung');
+		const avecTitre = await resume();
+		const titre = ligne(avecDescription, 'Titre en allemand');
+		const description = ligne(avecDescription, 'Description en allemand');
+		verifierChaque(
+			'une description allemande sans titre allemand : le résumé signale le titre qui manque, et la description à corriger ; écrire le titre retire la marque',
+			{
+				'« Titre en allemand : pas encore écrit (facultatif) », marqué':
+					titre.texte === 'Titre en allemand : pas encore écrit (facultatif)' && titre.manque,
+				'la description à corriger':
+					description.texte ===
+					'Description en allemand : à corriger, il manque le titre en allemand (facultatif)',
+				'le titre écrit, plus de marque': !ligne(avecTitre, 'Titre en allemand').manque
+			},
+			`« ${titre.texte} »${titre.manque ? ', marqué' : ''} ; « ${description.texte} »`
+		);
+	});
+	await nouveau();
+	await retour('19-cours-langue-de-saisie', async () => {
+		await page.locator('#sourceLanguage').selectOption('ar');
+		const cochees = await page
+			.locator('input[name="teachingLanguages"]:checked')
+			.evaluateAll((cases) => cases.map((une) => /** @type {HTMLInputElement} */ (une).value));
+		const enseignement = ligne(await resume(), 'Langue d’enseignement').texte;
+		verifierChaque(
+			'sur un nouveau cours, choisir l’arabe comme langue de saisie coche l’arabe comme langue d’enseignement, à la place du français',
+			{
+				'l’arabe seul coché': cochees.join('|') === 'ar',
+				'« Langue d’enseignement : arabe »': enseignement === 'Langue d’enseignement : arabe'
+			},
+			`cochées : ${cochees.join(', ') || 'aucune'} ; « ${enseignement} »`
+		);
+	});
+
+	await nouveau();
+	const dates = [plusJours(T, 67), plusJours(T, 60)];
+	const plusTot = plusJours(T, 53);
+	await page.locator('#title-fr').fill(ANNONCE_EN_DESORDRE);
+	await page.locator('#recurrenceKind').selectOption('dates');
+	await retour('19-cours-premier-jour', async () => {
+		const champ = await exiger(page.locator('#dates'), 'le champ « Dates, une par ligne »');
+		await champ.fill(dates.map(dateSuisse).join('\n'));
+		const suivi = await page.locator('#startsOn').inputValue();
+		const resumeSuivi = ligne(await resume(), 'Premier jour').texte;
+		await champ.fill([...dates, plusTot].map(dateSuisse).join('\n'));
+		const plusTotSuivi = await page.locator('#startsOn').inputValue();
+		verifierChaque(
+			`un cours à dates précises : « Premier jour du cours » prend la première date, ${dateSuisse(dates[1] ?? '')}, puis suit une date plus tôt, ${dateSuisse(plusTot)}`,
+			{
+				'la première date': suivi === dates[1],
+				'le résumé la dit': resumeSuivi === `Premier jour : ${dateLongue(dates[1] ?? '')}`,
+				'une date plus tôt': plusTotSuivi === plusTot
+			},
+			`« ${suivi} », « ${resumeSuivi} », puis « ${plusTotSuivi} »`
+		);
+	});
+	let id = '';
+	await retour('19-cours-message', async () => {
+		await page.locator('#start').fill('19:00');
+		await page.locator('#end').fill('20:00');
+		await page.locator('#status').selectOption('published');
+		// Un premier jour resté vide et exigé, le navigateur n'enverrait rien : c'est l'ancien
+		// comportement, un geste impossible ici, dit tel quel plutôt qu'attendu quinze secondes.
+		const premierJour = page.locator('#startsOn');
+		if (
+			!(await premierJour.evaluate((champ) =>
+				/** @type {HTMLInputElement} */ (champ).checkValidity()
+			))
+		) {
+			throw new Error(
+				'le navigateur n’envoie pas le cours : « Premier jour du cours » est vide et exigé'
+			);
+		}
+		await envoyer(page, page.locator('form.colonne button[type="submit"]'));
+		const adresse = new URL(page.url());
+		id = adresse.pathname === '/cours' ? (adresse.searchParams.get('publie') ?? '') : '';
+		const bloc = page.locator('section.message');
+		const titreDuBloc =
+			(await bloc.count()) === 1 ? await texteDe(bloc.locator('#message-titre')) : '';
+		const ouverts = await bloc.locator('details[open]').count();
+		const francais =
+			(await bloc.locator('#message-fr').count()) === 1
+				? await bloc.locator('#message-fr').inputValue()
+				: '';
+		const ordre = [plusTot, ...[...dates].reverse()].map(dateSuisse);
+		verifierChaque(
+			`un cours publié : l’écran revient sur /cours?publie=<id>, « Le cours est publié. », et le message « Nouveau cours : « ${ANNONCE_EN_DESORDRE} » » prêt à coller, ses dates dans l’ordre`,
+			{
+				'l’adresse /cours?publie=<id>': id !== '',
+				'« Le cours est publié. »': titreDuBloc === 'Le cours est publié.',
+				'le français d’abord, seul ouvert':
+					ouverts === 1 && (await bloc.locator('details[open] #message-fr').count()) === 1,
+				'« Nouveau cours : … »': francais.includes(
+					`Nouveau cours : « ${ANNONCE_EN_DESORDRE} », à des dates précises :`
+				),
+				'les dates dans l’ordre':
+					ordre.every((date) => francais.includes(date)) &&
+					francais.indexOf(ordre[0] ?? '') < francais.indexOf(ordre[2] ?? '')
+			},
+			`${adresse.pathname}${adresse.search} ; « ${titreDuBloc} » ; ${francais.split('\n').find((une) => une.startsWith('Nouveau cours')) ?? 'aucun message'}`
+		);
+	});
+	await retour('19-cours-hors-periode', async () => {
+		if (!id) throw new Error('le cours à dates précises n’a pas été créé');
+		// Un dernier jour avant sa dernière date : le formulaire le refuse depuis l'étape 18, seul un
+		// cours enregistré avant peut l'avoir.
+		const periode = ecrireDansLaBase(
+			`update course set ends_on = '${dates[1]}' where id = '${id}'`
+		);
+		await ouvrir(page, '/cours');
+		const bloc = page.locator('li').filter({ hasText: ANNONCE_EN_DESORDRE });
+		const aCorriger = page.locator('p.a-corriger');
+		verifierChaque(
+			'un cours à dates précises dont une date tombe après son dernier jour : son bloc, et lui seul, dit « À corriger : … »',
+			{
+				'la base garde le dernier jour': periode.ok,
+				'la phrase dans son bloc':
+					(await bloc.locator('p.a-corriger').count()) === 1 &&
+					(await texteDe(bloc.locator('p.a-corriger'))) ===
+						'À corriger : des dates de ce cours tombent hors de sa période et ne sont pas publiées. Ouvrez « Modifier ce cours » pour voir lesquelles.',
+				'dans aucun autre bloc': (await aCorriger.count()) === 1
+			},
+			`${periode.sortie} ; ${await aCorriger.count()} bloc(s) à corriger`
+		);
+	});
+	await retour('19-D3', async () => {
+		await ouvrir(page, '/cours');
+		const bloc = page.locator('li').filter({ hasText: ANNONCE_EN_DESORDRE });
+		const repli = bloc.locator('details').filter({
+			has: page.locator('summary', { hasText: 'Supprimer ce cours' })
+		});
+		await exiger(repli, 'le repli « Supprimer ce cours »');
+		const fermeAuChargement = !(await repli.evaluate(
+			(details) => /** @type {HTMLDetailsElement} */ (details).open
+		));
+		await repli.locator(':scope > summary').click();
+		const avertissement = await texteDe(repli.locator('form p'));
+		await envoyer(page, repli.getByRole('button', { name: 'Oui, supprimer', exact: true }));
+		const statut = (await page.getByRole('status').allTextContents()).map((texte) => texte.trim());
+		verifierChaque(
+			'sur /cours, la responsable supprime un cours : « Supprimer ce cours », fermé au chargement, dit ce que la suppression emporte, et « Oui, supprimer » le retire',
+			{
+				'fermé au chargement': fermeAuChargement,
+				'ce que la suppression emporte': avertissement.startsWith(
+					'Le cours disparaîtra de cet écran, de votre page publique et des agendas abonnés'
+				),
+				'« Le cours est supprimé. »': statut.includes('Le cours est supprimé.'),
+				'le cours a quitté la liste':
+					(await page.locator('li').filter({ hasText: ANNONCE_EN_DESORDRE }).count()) === 0
+			},
+			`« ${avertissement.slice(0, 60)}… » ; ${statut.map((texte) => `« ${texte} »`).join(', ') || 'aucun message'}`
+		);
+	});
+}
+
+/**
+ * L'espace en arabe, les phrases que le chef de projet a relues (étape 19, B1, B2, B8, B9, B10), sur
+ * « À venir », Partager et Membres. L'alerte d'un programme qui ne s'affiche plus sur le site (B10)
+ * demande des vues du widget avant les sept derniers jours, et aucune depuis : le parcours en écrit
+ * une dans la base, dix jours plus tôt, seul moyen de dater une vue, avant que le widget ne soit vu
+ * à l'étape e. Le rôle inconnu (B8) ne part que d'un formulaire écrit à la main : le parcours ajoute
+ * au choix du rôle une valeur que l'écran ne propose pas, comme il ôte ailleurs la validation du
+ * navigateur à un formulaire. L'écran revient au français.
+ */
+async function arabeDeLEspace(page) {
+	etape('c, en arabe : les phrases relues par le chef de projet (étape 19)');
+	const vue = ecrireDansLaBase(
+		`insert into page_view (organization_id, day, kind, count) select id, '${plusJours(T, -10)}', 'embed', 3 from organization where slug = '${ORGANISATION.slug}'`
+	);
+	verifier(
+		`la base garde trois vues du widget il y a dix jours, le ${dateSuisse(plusJours(T, -10))}`,
+		vue.ok,
+		vue.sortie
+	);
+	await ouvrir(page, '/');
+	await choisirLaLangue(page, 'ar');
+	try {
+		await retour('19-B2', async () => {
+			const note = await texteDe(
+				await exiger(page.locator('section.audience p.aide'), 'la note de l’audience')
+			);
+			verifier(
+				'« À venir » en arabe : la note de l’audience dit « فالتقويم يُحدَّث من تلقاء نفسه »',
+				note.includes('فالتقويم يُحدَّث من تلقاء نفسه'),
+				note
+			);
+		});
+		await retour('19-B10', async () => {
+			const alerte = page.locator('p.mention').filter({ has: page.locator('a[href="/partager"]') });
+			const lue = (await alerte.count()) === 1 ? await texteDe(alerte) : '';
+			const lien = (await alerte.count()) === 1 ? await texteDe(alerte.locator('a')) : '';
+			verifierChaque(
+				'« À venir » en arabe, le programme qui ne s’affiche plus sur le site : l’alerte parle de « الشيفرة », et son lien dit « عرض الشيفرة المراد لصقها مرة أخرى »',
+				{
+					'l’alerte, vues du widget avant la semaine et aucune depuis': lue !== '',
+					'« الشيفرة » dans l’alerte': lue.includes('لصقت فيها الشيفرة'),
+					'le lien': lien === 'عرض الشيفرة المراد لصقها مرة أخرى'
+				},
+				lue || 'aucune alerte'
+			);
+		});
+		await retour('19-B9', async () => {
+			const aVenir = await texteDe(page.locator('section[aria-labelledby="semaine-titre"] p.aide'));
+			await ouvrir(page, '/partager');
+			const partager = await texteDe(
+				page.locator('section[aria-labelledby="semaine-titre"] p.details')
+			);
+			verifierChaque(
+				'en arabe, le programme de la semaine se copie puis se colle : « لتنسخه وتلصقه في WhatsApp » sur « À venir », « انسخ هذه الرسالة والصقها في مجموعة WhatsApp الخاصة بك » dans Partager',
+				{
+					'sur « À venir »': aVenir.includes('لتنسخه وتلصقه في WhatsApp'),
+					'dans Partager': partager.includes(
+						'انسخ هذه الرسالة والصقها في مجموعة WhatsApp الخاصة بك'
+					)
+				},
+				`« ${aVenir} » ; « ${partager} »`
+			);
+		});
+		await retour('19-B1', async () => {
+			await ouvrir(page, '/partager');
+			const ouCollerLeCode = await texteDe(
+				await exiger(
+					page.locator('label[for="code-verrouille"]').locator('xpath=preceding-sibling::p[1]'),
+					'la phrase du code pour un site très strict'
+				)
+			);
+			verifier(
+				'Partager en arabe : le code pour un site très strict « وهي لا تُحدَّث تلقائيًا »',
+				ouCollerLeCode.includes('وهي لا تُحدَّث تلقائيًا'),
+				ouCollerLeCode
+			);
+		});
+		await retour('19-B8', async () => {
+			await ouvrir(page, '/membres');
+			// Une valeur que le choix du rôle ne propose pas, comme un formulaire écrit à la main.
+			await page.locator('#role').evaluate((choix) => {
+				const inconnu = document.createElement('option');
+				inconnu.value = 'owner';
+				inconnu.textContent = 'owner';
+				choix.append(inconnu);
+				/** @type {HTMLSelectElement} */ (choix).value = 'owner';
+			});
+			await page.locator('#email').fill('role.inconnu@example.test');
+			await envoyer(page, page.locator('form[action="?/inviter"] button[type="submit"]'));
+			const refus = (await page.getByRole('alert').allTextContents()).map((texte) =>
+				texte.replace(/\s+/g, ' ').trim()
+			);
+			verifier(
+				'Membres en arabe, un rôle inconnu envoyé par un formulaire écrit à la main : « هذا الدور غير موجود. اختر دور المحرر أو دور المسؤول. »',
+				refus.includes('هذا الدور غير موجود. اختر دور المحرر أو دور المسؤول.'),
+				refus.map((phrase) => `« ${phrase} »`).join(', ') || 'aucun refus'
+			);
+		});
+	} finally {
+		await ouvrir(page, '/');
+		if ((await racineDit(page, 'lang')) !== 'fr') await choisirLaLangue(page, 'fr');
+	}
 }
 
 /** Les deux cours tels qu'une page publique les montre : ce qu'on voit, barré ou non. */
@@ -2884,25 +3633,39 @@ async function pagesPubliques(page) {
 			);
 			// Au départ, la mention dit où va la séance ; à l'arrivée, la marque dit « date
 			// exceptionnelle » et le détail d'où elle vient. Chacune avec sa date entière, JJ.MM.AAAA.
+			const depart = second.find((vue) => vue.barree);
+			const arrivee = second.find((vue) => !vue.barree);
 			await retour('A2', async () => {
-				const depart = second.find((vue) => vue.barree);
-				const arrivee = second.find((vue) => !vue.barree);
-				const debutDeLaPhrase = arrivee?.texte.indexOf(textes.arrivee) ?? -1;
-				const phraseDArrivee =
-					arrivee && debutDeLaPhrase >= 0 ? arrivee.texte.slice(debutDeLaPhrase) : '';
 				verifierChaque(
 					`${adresse} : la séance ramenée plus tôt se voit au départ (${dateSuisse(J3)}) et à l’arrivée (${dateSuisse(J2)})`,
 					{
 						'au départ et à l’arrivée': second.length === 2,
-						'le départ dit où elle va': Boolean(depart?.mention.startsWith(textes.depart)),
-						'à sa date': (depart?.mention ?? '').includes(dateSuisse(J2)),
+						'le départ dit où elle va':
+							Boolean(depart?.mention.startsWith(textes.depart)) &&
+							(depart?.mention ?? '').includes(dateSuisse(J2)),
 						'l’arrivée a sa marque': Boolean(arrivee?.mention),
-						'la phrase d’arrivée': arrivee?.texte.includes(textes.arrivee) === true,
-						'd’où elle vient': phraseDArrivee.includes(dateSuisse(J3))
+						'l’arrivée dit d’où elle vient': (arrivee?.texte ?? '').includes(dateSuisse(J3))
 					},
-					`${depart?.mention ?? 'départ absent'} | ${arrivee?.mention ?? 'arrivée absente'} · ${phraseDArrivee}`
+					`${depart?.mention ?? 'départ absent'} | ${arrivee?.mention ?? 'arrivée absente'} · ${arrivee?.texte ?? ''}`
 				);
 			});
+			// En italien, « Inizialmente », sans article devant le jour (étape 19, D7).
+			if (langue === 'it') {
+				await retour('19-D7', async () => {
+					const lue = arrivee?.texte ?? '';
+					const attendue = `${textes.arrivee}${GIORNI[jourDeSemaine(J3) - 1]} ${dateSuisse(J3)}`;
+					verifierChaque(
+						`${adresse} : à l’arrivée, « ${textes.arrivee}<giorno> JJ.MM.AAAA », sans « In origine: » ni « il » devant le jour`,
+						{
+							[`« ${textes.arrivee}<giorno> JJ.MM.AAAA »`]: lue.includes(attendue),
+							'sans « In origine: »': !lue.includes('In origine'),
+							'sans « il » devant le jour': !lue.includes(` il ${GIORNI[jourDeSemaine(J3) - 1]}`)
+						},
+						lue || 'arrivée absente'
+					);
+				});
+			}
+			await retour('19-og-locale', () => localeDePartage(page, adresse, langue));
 			// Un nouvel onglet ici aussi : la même adresse, sans `embed=1`, est celle du cadre que
 			// l'écran Partager donne à coller à la main, et `/conditions` refuse d'être encadrée. Le
 			// lien le dit aux lecteurs d'écran, dans la langue de la page, et à eux seuls.
@@ -2966,14 +3729,101 @@ async function pagesPubliques(page) {
 			verifier(`${base}/cours/<id> s’affiche`, reponse?.status() === 200, await titre(page));
 			if (langue !== 'fr') await verifierLaBaliseHtml(page, `${base}/cours/<id>`, langue);
 			if (langue === 'ar') sansChiffresOrientaux(await page.content(), `${base}/cours/<id>`);
+			await retour('19-cours-seance-barree', () =>
+				seanceAnnuleeSurLaPageDuCours(page, base, langue)
+			);
+			await retour('19-og-locale', () => localeDePartage(page, `${base}/cours/<id>`, langue));
 			if (langue !== 'en') await auditer(page, `page d’un cours ${langue}`);
 			const abonnement = await ouvrir(page, `${base}/agenda`);
 			verifier(`${base}/agenda s’affiche`, abonnement?.status() === 200, await titre(page));
 			if (langue !== 'fr') await verifierLaBaliseHtml(page, `${base}/agenda`, langue);
 			if (langue === 'ar') sansChiffresOrientaux(await page.content(), `${base}/agenda`);
+			await retour('19-og-locale', () => localeDePartage(page, `${base}/agenda`, langue));
 			if (langue !== 'en') await auditer(page, `page d’abonnement ${langue}`);
 		});
 	}
+	await retour('19-D8', async () => {
+		const adresse = `/m/${VOISINE.slug}/agenda`;
+		await ouvrir(page, adresse);
+		const introduction = await texteDe(page.locator('main > p').first());
+		const description =
+			(await page.locator('meta[name="description"]').getAttribute('content')) ?? '';
+		const attendue = `Le programme d’${VOISINE.nom} s’ajoute à votre calendrier`;
+		verifierChaque(
+			`${adresse} : « ${attendue} », dans la page et dans sa description, jamais « de Association »`,
+			{
+				'dans la page': introduction.startsWith(attendue),
+				'dans la description': description.startsWith(attendue)
+			},
+			`« ${introduction.slice(0, 80)} » ; « ${description.slice(0, 80)} »`
+		);
+	});
+}
+
+/** Les jours de la semaine en italien, comme la page publique les écrit devant une date (D7). */
+const GIORNI = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'];
+
+/**
+ * La langue d'une page pour les aperçus de partage (étape 19) : `og:locale`, une langue et un pays,
+ * puis un `og:locale:alternate` pour chaque autre langue que l'organisation publie.
+ */
+const LOCALE_DE_PARTAGE = { fr: 'fr_CH', de: 'de_CH', it: 'it_CH', en: 'en_GB', ar: 'ar_AR' };
+
+async function localeDePartage(page, adresse, langue) {
+	const lues = await page
+		.locator('meta[property="og:locale"], meta[property="og:locale:alternate"]')
+		.evaluateAll((metas) =>
+			metas.map((meta) => ({
+				propriete: meta.getAttribute('property'),
+				valeur: meta.getAttribute('content')
+			}))
+		);
+	const locale = lues.filter((lue) => lue.propriete === 'og:locale').map((lue) => lue.valeur);
+	const autres = lues
+		.filter((lue) => lue.propriete === 'og:locale:alternate')
+		.map((lue) => lue.valeur)
+		.sort();
+	const attendues = LANGUES.filter((autre) => autre !== langue)
+		.map((autre) => LOCALE_DE_PARTAGE[autre])
+		.sort();
+	verifierChaque(
+		`${adresse} : <meta property="og:locale" content="${LOCALE_DE_PARTAGE[langue]}">, et un og:locale:alternate par autre langue publiée`,
+		{
+			[`og:locale ${LOCALE_DE_PARTAGE[langue]}`]:
+				locale.length === 1 && locale[0] === LOCALE_DE_PARTAGE[langue],
+			'les quatre autres langues': autres.join('|') === attendues.join('|')
+		},
+		`og:locale ${locale.join(', ') || 'absent'} ; alternate ${autres.join(', ') || 'aucun'}`
+	);
+}
+
+/** « Annulé » dans chaque langue de la page publique (`apps/web/src/lib/i18n.ts`). */
+const ANNULE = { fr: 'Annulé', de: 'Abgesagt', it: 'Annullato', en: 'Cancelled', ar: 'ملغى' };
+
+/**
+ * La page publique d'un cours (étape 19, lot 2) : dans « Prochaines séances », la séance annulée
+ * reste à sa date, barrée, avec « Annulé », au lieu de disparaître.
+ */
+async function seanceAnnuleeSurLaPageDuCours(page, base, langue) {
+	const barrees = page.locator('main ul li.barree');
+	const nombre = await barrees.count();
+	const lue = nombre === 1 ? await texteDe(barrees) : '';
+	const marque = nombre === 1 ? await texteDe(barrees.locator('.marque')) : '';
+	const trait =
+		nombre === 1 &&
+		(await barrees.evaluate((ligne) =>
+			getComputedStyle(ligne).textDecorationLine.includes('line-through')
+		));
+	verifierChaque(
+		`${base}/cours/<id> : dans « Prochaines séances », la séance annulée du ${dateSuisse(J1)} reste, barrée, avec « ${ANNULE[langue]} »`,
+		{
+			'une séance barrée': nombre === 1,
+			'à sa date': lue.includes(dateSuisse(J1)),
+			[`« ${ANNULE[langue]} »`]: marque === ANNULE[langue],
+			'le trait sur le texte': trait
+		},
+		lue || `${nombre} séance(s) barrée(s)`
+	);
 }
 
 /**
@@ -3284,11 +4134,11 @@ async function agenda() {
  * Ce que la page d'abonnement propose à un appareil donné (E1, E2) : le bloc de « Tout le
  * programme », ses liens, et ce qu'il dit du délai de Google.
  */
-async function abonnementSelon(navigateur, agent) {
+async function abonnementSelon(navigateur, agent, adresse = `/m/${ORGANISATION.slug}/agenda`) {
 	const contexte = await nouveauContexte(navigateur, { userAgent: agent });
 	try {
 		const page = await contexte.newPage();
-		const reponse = await ouvrir(page, `/m/${ORGANISATION.slug}/agenda`);
+		const reponse = await ouvrir(page, adresse);
 		const bloc = page.locator('.abonnement').first();
 		const present = (await bloc.count()) === 1;
 		const liens = present
@@ -3300,21 +4150,34 @@ async function abonnementSelon(navigateur, agent) {
 					}))
 				)
 			: [];
-		// Les paragraphes du bloc, dans l'ordre : un lien, une adresse à copier, ou une phrase.
+		// Les paragraphes du bloc, dans l'ordre : un lien, une adresse à copier, ou une phrase, et le
+		// texte du lien seul, sans la phrase qui le précède.
 		const paragraphes = present
 			? await bloc.locator('p').evaluateAll((tous) =>
 					tous.map((p) => ({
 						lien: /** @type {HTMLAnchorElement | null} */ (p.querySelector('a'))?.href ?? '',
+						texteDuLien: (p.querySelector('a')?.textContent ?? '').replace(/\s+/g, ' ').trim(),
 						adresse: (p.querySelector('code')?.textContent ?? '').trim(),
 						texte: (p.textContent ?? '').replace(/\s+/g, ' ').trim()
 					}))
 				)
 			: [];
+		// Sous le nom de chaque cours, « Page du cours », sur un téléphone (étape 19).
+		const pagesDesCours = await page.locator('ul.cours li a.page-du-cours').evaluateAll((tous) =>
+			tous.map((a) => ({
+				href: /** @type {HTMLAnchorElement} */ (a).href,
+				texte: (a.textContent ?? '').replace(/\s+/g, ' ').trim(),
+				hauteur: a.getBoundingClientRect().height
+			}))
+		);
 		return {
 			vary: (reponse?.headers()['vary'] ?? '').toLowerCase(),
 			appareil: present ? await bloc.getAttribute('data-appareil') : null,
 			liens,
 			paragraphes,
+			cours: await page.locator('ul.cours li').count(),
+			pagesDesCours,
+			nomsDesLiens: present ? await nomsDesLiensSelonChrome(page) : [],
 			texte: present ? await texteDe(bloc) : '',
 			page: present ? await texteDe(page.locator('main')) : ''
 		};
@@ -3323,12 +4186,19 @@ async function abonnementSelon(navigateur, agent) {
 	}
 }
 
-/** E. L'agenda selon l'appareil : iPhone, Android, ordinateur (E1), et le délai de Google (E2). */
+/**
+ * E. L'agenda selon l'appareil : iPhone, Android, ordinateur (E1), et le délai d'Outlook (E2). Puis
+ * ce que l'étape 19 y a changé : l'issue d'Android par un ordinateur, la page du programme pour un
+ * changement de dernière minute, l'Outlook des comptes de travail ou d'école, « Page du cours » sur
+ * un iPhone, le lien vers tous les choix, et l'aide du bouton de Google en arabe (B11).
+ */
 async function appareils(navigateur) {
 	etape('E. La page d’abonnement selon l’appareil du visiteur');
+	const hote = `http://${new URL(ORIGINE).host}`;
 	const webcal = `webcal://${new URL(ORIGINE).host}/m/${ORGANISATION.slug}/agenda.ics`;
 	const google = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcal)}`;
 	const outlook = `https://outlook.live.com/calendar/0/addfromweb?url=${encodeURIComponent(webcal)}`;
+	const outlookTravail = `https://outlook.office.com/calendar/0/addfromweb?url=${encodeURIComponent(webcal)}`;
 	const commencePar = (href, debut) => href.startsWith(debut);
 
 	const iphone = await abonnementSelon(navigateur, APPAREILS.iphone);
@@ -3342,9 +4212,7 @@ async function appareils(navigateur) {
 				'sans Google': !iphone.liens.some((lien) =>
 					commencePar(lien.href, 'https://calendar.google.com')
 				),
-				'sans Outlook': !iphone.liens.some((lien) =>
-					commencePar(lien.href, 'https://outlook.live.com')
-				)
+				'sans Outlook': !iphone.liens.some((lien) => /^https:\/\/outlook\./.test(lien.href))
 			},
 			iphone.liens.map((lien) => lien.href).join(' ') || 'aucun lien'
 		);
@@ -3356,39 +4224,13 @@ async function appareils(navigateur) {
 			},
 			android.liens.map((lien) => lien.href).join(' ') || 'aucun lien'
 		);
-		// La forme de la page, et non ses phrases, qu'un autre chantier récrit : le bouton de Google
-		// d'abord, puis une phrase qui propose d'ouvrir cette page sur un ordinateur, suivie de
-		// l'adresse courte de la page (décision du chef de projet, 27.09.2026), et l'adresse du flux
-		// après elles.
-		const hote = `http://${new URL(ORIGINE).host}`;
-		const adresseACopier = `${hote}/m/${ORGANISATION.slug}/agenda.ics`;
-		const cettePage = `${hote}/m/${ORGANISATION.slug}/agenda`;
-		const bouton = android.paragraphes.findIndex((p) => commencePar(p.lien, google));
-		const parUnOrdinateur = android.paragraphes.findIndex(
-			(p, index) => index > bouton && !p.lien && !p.adresse && /ordinateur/i.test(p.texte)
-		);
-		const adresseDeLaPage = android.paragraphes.findIndex((p) => p.adresse === cettePage);
-		const adresse = android.paragraphes.findIndex((p) => p.adresse === adresseACopier);
-		verifierChaque(
-			'sur un Android, après le bouton de Google, « ouvrez cette page sur un ordinateur » et l’adresse de la page, puis celle du flux',
-			{
-				'le bloc d’Android': android.appareil === 'android',
-				'le bouton de Google d’abord': bouton === 0,
-				'la phrase de l’ordinateur': parUnOrdinateur > bouton,
-				'l’adresse de la page, juste après': adresseDeLaPage === parUnOrdinateur + 1,
-				'l’adresse du flux ensuite': adresse > adresseDeLaPage
-			},
-			`bloc « ${android.appareil} » ; bouton ${bouton}, ordinateur ${parUnOrdinateur}, page ${adresseDeLaPage}, flux ${adresse} sur ${android.paragraphes.length} paragraphes`
-		);
 		verifierChaque(
 			'sur un PC Windows, le choix entre Google Agenda, Outlook, une autre application, et l’adresse à copier',
 			{
 				'Google Agenda': windows.liens.some((lien) => commencePar(lien.href, google)),
 				Outlook: windows.liens.some((lien) => commencePar(lien.href, outlook)),
 				'une autre application': windows.liens.some((lien) => commencePar(lien.href, webcal)),
-				'l’adresse à copier': windows.texte.includes(
-					`http://${new URL(ORIGINE).host}/m/${ORGANISATION.slug}/agenda.ics`
-				)
+				'l’adresse à copier': windows.texte.includes(`${hote}/m/${ORGANISATION.slug}/agenda.ics`)
 			},
 			windows.liens.map((lien) => lien.texte).join(' | ') || 'aucun lien'
 		);
@@ -3401,21 +4243,74 @@ async function appareils(navigateur) {
 			`Vary: ${iphone.vary}`
 		);
 	});
+	// Ce qui reste du retour E2 depuis l'étape 19 : le délai d'Outlook, que Microsoft donne. Celui de
+	// Google, qu'aucune aide de Google ne donne, a laissé la place à la page du programme (plus bas).
 	await retour('E2', async () => {
-		// Depuis le 27.09.2026, plus de délai de Google, que son aide ne donne pas : la page renvoie
-		// à la page du programme pour un changement de dernière minute.
+		verifier(
+			'sur un ordinateur, sous Outlook, le délai qu’il met à rafraîchir un abonnement : « Outlook peut mettre plus de 24 heures à rafraîchir un abonnement. »',
+			windows.texte.includes('Outlook peut mettre plus de 24 heures à rafraîchir un abonnement.'),
+			windows.texte.slice(0, 160)
+		);
+	});
+
+	// Sur Android, la forme du bloc (décision du chef de projet, 27.09.2026) : le bouton de Google,
+	// puis la phrase qui propose d'ouvrir cette page sur un ordinateur, suivie de l'adresse courte de
+	// la page dans son propre paragraphe, et l'adresse du flux après elles. De même sur la page d'un
+	// cours, avec l'adresse de ce cours.
+	const androidDuCours = await abonnementSelon(
+		navigateur,
+		APPAREILS.android,
+		`/m/${ORGANISATION.slug}/cours/${etat.cours1}`
+	);
+	await retour('19-agenda-android', async () => {
+		const parUnOrdinateur =
+			'Si Google Agenda ne propose rien sur votre téléphone, ouvrez cette page sur un ordinateur :';
+		for (const [ou, lu, cettePage, flux] of [
+			[
+				'la page d’abonnement',
+				android,
+				`${hote}/m/${ORGANISATION.slug}/agenda`,
+				`${hote}/m/${ORGANISATION.slug}/agenda.ics`
+			],
+			[
+				'la page d’un cours',
+				androidDuCours,
+				`${hote}/m/${ORGANISATION.slug}/cours/${etat.cours1}`,
+				`${hote}/m/${ORGANISATION.slug}/agenda/${etat.cours1}.ics`
+			]
+		]) {
+			const bouton = lu.paragraphes.findIndex((p) =>
+				commencePar(p.lien, 'https://calendar.google.com')
+			);
+			const phrase = lu.paragraphes.findIndex((p) => p.texte === parUnOrdinateur);
+			const adresseDeLaPage = lu.paragraphes.findIndex((p) => p.adresse === cettePage);
+			const adresseDuFlux = lu.paragraphes.findIndex((p) => p.adresse.startsWith(flux));
+			verifierChaque(
+				`sur un Android, ${ou} : après le bouton de Google, « ${parUnOrdinateur} », puis l’adresse de la page dans son propre paragraphe, puis celle du flux, et plus « L’adresse à coller »`,
+				{
+					'le bouton de Google d’abord': lu.appareil === 'android' && bouton === 0,
+					'la phrase de l’ordinateur': phrase > bouton,
+					'l’adresse de la page, juste après': phrase >= 0 && adresseDeLaPage === phrase + 1,
+					'l’adresse du flux ensuite': adresseDuFlux > adresseDeLaPage,
+					'plus « L’adresse à coller »': !lu.texte.includes('L’adresse à coller')
+				},
+				`bouton ${bouton}, phrase ${phrase}, page ${adresseDeLaPage}, flux ${adresseDuFlux} sur ${lu.paragraphes.length} paragraphes`
+			);
+		}
+	});
+	// La page du programme pour un changement de dernière minute, là où la page disait le délai de
+	// Google (décision du chef de projet, 27.09.2026).
+	await retour('19-agenda-derniere-minute', async () => {
 		const derniereMinute =
 			'Pour un changement de dernière minute, regardez la page du programme : elle est toujours à jour.';
+		const fois = (texte) => texte.split(derniereMinute).length - 1;
 		verifierChaque(
-			'la page renvoie à la page du programme pour un changement de dernière minute, sur Android comme sur un ordinateur, et ne dit plus que Google peut mettre 24 heures',
+			'la page renvoie à la page du programme pour un changement de dernière minute, sous l’aide du bouton d’Android et une fois sous le choix complet, et ne dit plus que Google peut mettre 24 heures',
 			{
 				'sous le bouton d’Android': android.texte.includes(derniereMinute),
-				'sur un ordinateur': windows.texte.includes(derniereMinute),
-				'plus de 24 heures de Google sur Android': !/24 heures/.test(
-					android.texte.replace(/Outlook peut mettre plus de 24 heures/g, '')
-				),
-				'plus de « Google peut mettre »': !/Google peut mettre/.test(
-					`${android.page} ${windows.page}`
+				'une fois sous le choix complet': fois(windows.texte) === 1,
+				'plus de délai de Google': !/Google peut mettre/.test(
+					`${android.page} ${windows.page} ${iphone.page}`
 				)
 			},
 			`Android : ${android.texte.slice(0, 120)}`
@@ -3424,14 +4319,85 @@ async function appareils(navigateur) {
 		// délai d'Outlook (reprise 1).
 		const delaiOutlook = iphone.page.indexOf('Outlook peut mettre plus de 24 heures');
 		verifierChaque(
-			'sur un iPhone, les étapes à la main renvoient à la page du programme, après le délai d’Outlook',
+			'sur un iPhone, les étapes à la main renvoient à la page du programme, une fois, après le délai d’Outlook',
 			{
 				'le délai d’Outlook': delaiOutlook >= 0,
 				'la page du programme après lui': iphone.page.indexOf(derniereMinute) > delaiOutlook,
-				'une seule fois': iphone.page.split(derniereMinute).length === 2,
-				'plus de « Google peut mettre »': !/Google peut mettre/.test(iphone.page)
+				'une seule fois': fois(iphone.page) === 1
 			},
 			`iPhone : ${iphone.page.slice(Math.max(0, delaiOutlook), delaiOutlook + 200)}`
+		);
+	});
+	await retour('19-agenda-outlook', async () => {
+		const travail = windows.liens.find((lien) =>
+			lien.texte.startsWith('Outlook (travail ou école)')
+		);
+		verifierChaque(
+			'sur un ordinateur, « Outlook (travail ou école) » ouvre outlook.office.com dans un nouvel onglet, et chaque Outlook dit à quels comptes il sert',
+			{
+				'le lien « Outlook (travail ou école) »': Boolean(travail),
+				'vers outlook.office.com': commencePar(travail?.href ?? '', outlookTravail),
+				'dans un nouvel onglet': travail?.target === '_blank',
+				'« Ce lien sert aux comptes personnels. »': windows.texte.includes(
+					'Ce lien sert aux comptes personnels.'
+				),
+				'« Ce lien sert aux comptes de travail ou d’école. »': windows.texte.includes(
+					'Ce lien sert aux comptes de travail ou d’école.'
+				)
+			},
+			windows.liens.map((lien) => lien.texte).join(' | ') || 'aucun lien'
+		);
+	});
+	await retour('19-agenda-page-du-cours', async () => {
+		const cours = `${hote}/m/${ORGANISATION.slug}/cours/`;
+		verifierChaque(
+			'sur un iPhone, sous le nom de chaque cours, un lien « Page du cours » vers le bloc d’abonnement de sa page, d’au moins 44 px de haut',
+			{
+				'un lien par cours': iphone.cours > 0 && iphone.pagesDesCours.length === iphone.cours,
+				'« Page du cours »': iphone.pagesDesCours.every((lien) => lien.texte === 'Page du cours'),
+				'vers …/cours/<id>#agenda': iphone.pagesDesCours.every(
+					(lien) => lien.href.startsWith(cours) && lien.href.endsWith('#agenda')
+				),
+				'44 px de haut': iphone.pagesDesCours.every((lien) => lien.hauteur >= 44)
+			},
+			`${iphone.pagesDesCours.length} lien(s) pour ${iphone.cours} cours ; ${iphone.pagesDesCours
+				.slice(0, 2)
+				.map((lien) => `« ${lien.texte} » ${Math.round(lien.hauteur)} px`)
+				.join(', ')}`
+		);
+	});
+	await retour('19-agenda-autre-appareil', async () => {
+		for (const [appareil, lu] of [
+			['un iPhone', iphone],
+			['un Android', android]
+		]) {
+			const dernier = lu.paragraphes.at(-1);
+			verifierChaque(
+				`sur ${appareil}, le bloc finit par « Une autre application ou un autre appareil ? » en texte, puis le lien « Voir tous les choix », seul, vers ?appareil=tous`,
+				{
+					'la question en texte':
+						(dernier?.texte ?? '').startsWith('Une autre application ou un autre appareil ?') &&
+						!(dernier?.texteDuLien ?? '').includes('?'),
+					'le lien « Voir tous les choix »': dernier?.texteDuLien === 'Voir tous les choix',
+					'son nom accessible': lu.nomsDesLiens.includes('Voir tous les choix'),
+					'vers ?appareil=tous': (dernier?.lien ?? '').endsWith('?appareil=tous')
+				},
+				`« ${dernier?.texte ?? 'aucun paragraphe'} », lien « ${dernier?.texteDuLien ?? ''} »`
+			);
+		}
+	});
+	await retour('19-B11', async () => {
+		const arabe = await abonnementSelon(
+			navigateur,
+			APPAREILS.android,
+			`/m/${ORGANISATION.slug}/ar/agenda`
+		);
+		const aide = arabe.paragraphes[1]?.texte ?? '';
+		verifier(
+			'la page d’abonnement en arabe, sur un Android : l’aide du bouton de Google est exactement celle relue',
+			aide ===
+				'اضغط على الزر: يُفتح تقويم Google مع طلب إضافة هذا التقويم. إن اقترح عليك ذلك، فأكّد.',
+			aide || 'aucune aide'
 		);
 	});
 }
@@ -3758,6 +4724,9 @@ async function prieres(page, navigateur) {
 		);
 	});
 	await replisPendantLaFrappe(page);
+	await rechercheDUneLocalite(page);
+	await importEnArabe(page);
+	await ouvrir(page, '/prieres?source=computed');
 	await auditer(page, 'prières');
 
 	await naviguer(page, '/vendredi');
@@ -3770,6 +4739,29 @@ async function prieres(page, navigateur) {
 				'l’heure d’une session du vendredi a son aide, avec un exemple',
 				aide.includes('Exemple : de 12:10 à 12:50.'),
 				aide || 'aucune aide'
+			);
+		});
+		// Les langues du sermon sont les huit langues d'enseignement, que la page publique soit écrite
+		// dans chacune ou non (étape 19).
+		await retour('19-sermon', async () => {
+			const groupe = await exiger(
+				ajout
+					.locator('fieldset')
+					.filter({ has: page.locator('legend', { hasText: 'Langue du sermon' }) }),
+				'le groupe « Langue du sermon »'
+			);
+			const noms = (await groupe.locator('label').allTextContents()).map((nom) => nom.trim());
+			const aide = await descriptionDe(groupe);
+			verifierChaque(
+				'dans « Ajouter une session », « Langue du sermon » propose les huit langues d’enseignement, dans l’ordre, et son aide le dit',
+				{
+					'les huit langues, dans l’ordre':
+						noms.join('|') === 'Français|Allemand|Italien|Arabe|Anglais|Albanais|Turc|Bosnien',
+					'l’aide':
+						aide ===
+						'Cochez chaque langue dans laquelle le sermon est dit, même si votre page publique n’est pas écrite dans cette langue.'
+				},
+				`${noms.join(', ')} ; « ${aide} »`
 			);
 		});
 		await ajout.getByLabel('Heure de début', { exact: true }).fill(VENDREDI.debut);
@@ -3930,8 +4922,7 @@ async function taperSansFermer(page, champ, texte, repli) {
  * puis la longitude, et « Méthode de calcul, école et ajustements » pendant qu'on tape dans la
  * recherche, puis quand la liste arrive. Un repli fermé avant un champ est d'abord ouvert, pour que
  * chaque champ soit tapé. La position tapée coche « Hors de Suisse » à la place de la localité
- * enregistrée, cochée au départ (étape 19, lot 2). Rien n'est enregistré : la page est rouverte à
- * la fin.
+ * enregistrée, cochée au départ. Rien n'est enregistré : la page est rouverte à la fin.
  */
 async function replisPendantLaFrappe(page) {
 	const ouvrirLEcran = async () => {
@@ -3988,6 +4979,9 @@ async function replisPendantLaFrappe(page) {
 		const dites = (valeurs) =>
 			valeurs.map((valeur) => (valeur === '' ? '« Hors de Suisse »' : valeur)).join(', ') ||
 			'aucune';
+		// Rangée sous C2, et non sous l'étape 19 : l'image de l'étape 18 cochait déjà « Hors de Suisse »
+		// pendant la frappe (relevé du 28.09.2026). Ce que l'étape 19 y a ajouté, le serveur qui coche
+		// lui-même sans JavaScript, est vérifié à l'étape k.
 		verifierChaque(
 			`avec JavaScript, ${LOCALITE.nom} enregistrée et cochée, taper une position coche « ${CHOIX_HORS_DE_SUISSE} » à sa place`,
 			{
@@ -4028,6 +5022,126 @@ async function replisPendantLaFrappe(page) {
 		);
 		await ouvrirLEcran();
 	});
+}
+
+/**
+ * La recherche d'une localité, avec JavaScript (étape 19) : « Rüe » propose d'abord les localités
+ * dont le nom porte « Rüe », et Rue (FR) seulement après elles, que le « ü » soit tapé d'un seul
+ * point de code ou de deux, « u » puis le tréma. Rien n'est enregistré.
+ */
+async function rechercheDUneLocalite(page) {
+	await retour('19-prieres-rue', async () => {
+		for (const [forme, texte] of [
+			['d’un seul point de code', 'Rüe'.normalize('NFC')],
+			['de deux points de code', 'Rüe'.normalize('NFD')]
+		]) {
+			await ouvrir(page, '/prieres?source=computed');
+			await page.getByLabel('Nom ou NPA de la localité', { exact: true }).fill(texte);
+			await page
+				.locator('label.resultat bdi', { hasText: 'Rüe' })
+				.first()
+				.waitFor({ timeout: 5000 })
+				.catch(() => undefined);
+			// Les réponses de la recherche, sans la localité enregistrée, épinglée en tête, ni la case
+			// « Hors de Suisse ».
+			const noms = await page
+				.locator('label.resultat')
+				.evaluateAll((cases) =>
+					cases
+						.filter((une) => une.querySelector('bdi') && !une.querySelector('.aide'))
+						.map((une) => (une.querySelector('bdi')?.textContent ?? '').trim())
+				);
+			const avecTrema = noms.filter((nom) => nom.includes('Rüe'));
+			const derniereAvecTrema = noms.findLastIndex((nom) => nom.includes('Rüe'));
+			const rue = noms.findIndex((nom) => /\bRue \(FR\)/.test(nom));
+			verifierChaque(
+				`« Rüe », le « ü » tapé ${forme} : les premières localités proposées portent « Rüe », et Rue (FR) ne vient qu’après elles`,
+				{
+					'les trois premières portent « Rüe »':
+						noms.length >= 3 && noms.slice(0, 3).every((nom) => nom.includes('Rüe')),
+					'Rue (FR) après elles': rue === -1 || rue > derniereAvecTrema
+				},
+				`${noms.slice(0, 5).join(', ') || 'aucune localité'} ; ${avecTrema.length} avec « Rüe », Rue (FR) au rang ${rue + 1}`
+			);
+		}
+	});
+}
+
+/**
+ * La lecture d'un fichier d'heures, l'écran en arabe (étape 19, B4 à B6) : l'aide du modèle, puis
+ * un fichier séparé par des tabulations dont vingt-cinq lignes sont refusées, plus que la liste
+ * n'en montre (vingt). Le fichier est lu, rien n'est enregistré ; l'écran revient au français.
+ */
+async function importEnArabe(page) {
+	await ouvrir(page, '/prieres?source=import');
+	await choisirLaLangue(page, 'ar');
+	try {
+		await retour('19-B4', async () => {
+			const aide = await texteDe(
+				await exiger(
+					page.locator('p.aide').filter({ has: page.locator('a[href="/prieres/modele.csv"]') }),
+					'l’aide du modèle'
+				)
+			);
+			verifierChaque(
+				'l’écran des prières en arabe, « importées depuis un fichier » : l’aide du modèle dit « النموذج مُعبّأ » et « ثم ارفعه هنا »',
+				{
+					'« النموذج مُعبّأ »': aide.includes('النموذج مُعبّأ'),
+					'« ثم ارفعه هنا »': aide.includes('ثم ارفعه هنا')
+				},
+				aide
+			);
+		});
+		const valides = [1, 2, 3].map((pas) =>
+			[dateSuisse(plusJours(T, pas)), '05:40', '13:20', '16:40', '19:20', '20:50'].join('\t')
+		);
+		// Une heure illisible, et non une date : une date impossible, « 32.01 », ferait lire au service
+		// les dates du fichier dans l'autre ordre, et refuser aussi les trois bonnes lignes.
+		const refusees = Array.from({ length: 25 }, (_, rang) =>
+			[
+				`${String(rang + 1).padStart(2, '0')}.01.2027`,
+				'99:99',
+				'13:20',
+				'16:40',
+				'19:20',
+				'20:50'
+			].join('\t')
+		);
+		const fichier = [
+			['date', 'fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].join('\t'),
+			...valides,
+			...refusees
+		].join('\n');
+		await page.locator('#calendrier').setInputFiles({
+			name: 'horaires.csv',
+			mimeType: 'text/csv',
+			buffer: Buffer.from(`${fichier}\n`, 'utf8')
+		});
+		await envoyer(page, page.locator('form[action$="/lireFichier"] button[type="submit"]'));
+		const rapport = page.locator('.rapport');
+		await retour('19-B5', async () => {
+			const lecture = await texteDe(
+				await exiger(rapport.locator('ul li'), 'le rapport de lecture')
+			);
+			verifier(
+				'un fichier séparé par des tabulations, lu en arabe : le séparateur se lit « علامة الجدولة (Tab) »',
+				lecture.includes('علامة الجدولة (Tab)'),
+				lecture
+			);
+		});
+		await retour('19-B6', async () => {
+			const suite = await texteDe(
+				await exiger(rapport.locator('ul.refusees + p.aide'), 'la ligne qui compte les autres')
+			);
+			verifier(
+				'vingt-cinq lignes refusées, vingt montrées : la ligne finale se lit « … و5 أخرى. »',
+				suite === '… و5 أخرى.',
+				suite
+			);
+		});
+	} finally {
+		if ((await racineDit(page, 'lang')) !== 'fr') await choisirLaLangue(page, 'fr');
+	}
 }
 
 /**
@@ -4216,6 +5330,57 @@ async function ongletDesPrieres(visiteur) {
 			await new Promise((resolue) => hote.close(() => resolue(undefined)));
 		}
 	});
+	await widgetSurLesPrieres(visiteur);
+}
+
+/**
+ * Le widget posé avec `view="prieres"` (étape 19) : son cadre s'ouvre sur l'onglet « Prières » de
+ * la page encadrée, et le lien de son pied mène au même onglet de la page publique.
+ */
+async function widgetSurLesPrieres(visiteur) {
+	await retour('19-widget-prieres', async () => {
+		const code = etat.codeEmbarque.replace('<jadwal-widget ', '<jadwal-widget view="prieres" ');
+		const hote = createServer((_requete, reponse) => {
+			reponse.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+			reponse.end(
+				'<!doctype html>\n<html lang="fr">\n<head>\n<meta charset="utf-8">\n' +
+					'<title>Le site d’une organisation</title>\n</head>\n<body>\n<main>\n' +
+					`<h1>Nos prières</h1>\n${code}\n</main>\n</body>\n</html>\n`
+			);
+		});
+		await new Promise((resolue) => hote.listen(0, '127.0.0.1', () => resolue(undefined)));
+		try {
+			const { port } = /** @type {import('node:net').AddressInfo} */ (hote.address());
+			await ouvrir(visiteur, `http://127.0.0.1:${port}/`);
+			const cadre = /** @type {import('playwright-core').Frame} */ (
+				await cadreDuWidget(visiteur, `${ORIGINE}/m/${ORGANISATION.slug}`)
+			);
+			await cadre.waitForLoadState('load');
+			await lireLEcran(cadre);
+			const adresse = new URL(cadre.url());
+			const ongletCourant = await cadre
+				.locator('nav.vues a[aria-current="page"]')
+				.allTextContents();
+			const pied = await visiteur
+				.locator('jadwal-widget')
+				.getByRole('link', { name: avecNouvelOnglet(LIEN_DU_WIDGET.fr, 'fr'), exact: true })
+				.evaluateAll((liens) => liens.map((lien) => /** @type {HTMLAnchorElement} */ (lien).href));
+			verifierChaque(
+				'le widget posé avec view="prieres" ouvre son cadre sur l’onglet « Prières », encadré, et son pied mène au même onglet',
+				{
+					'le cadre sur ?vue=prieres': adresse.searchParams.get('vue') === 'prieres',
+					'encadré (embed=1)': adresse.searchParams.get('embed') === '1',
+					'l’onglet « Prières » choisi':
+						ongletCourant.map((texte) => texte.trim()).join('|') === 'Prières',
+					'le pied vers ?vue=prieres':
+						pied.length === 1 && new URL(pied[0] ?? ORIGINE).searchParams.get('vue') === 'prieres'
+				},
+				`${adresse.pathname}${adresse.search} ; onglet « ${ongletCourant.join(', ') || 'aucun'} » ; pied ${pied.join(', ') || 'absent'}`
+			);
+		} finally {
+			await new Promise((resolue) => hote.close(() => resolue(undefined)));
+		}
+	});
 }
 
 /**
@@ -4238,7 +5403,8 @@ async function organisationInconnue(page) {
 				`${adresse} rend 404, avec <html lang="${langue}" dir="${dirAttendu}"> et aucune balise script`,
 				{
 					404: brut.status === 404,
-					'la balise <html>': balise === `<html lang="${langue}" dir="${dirAttendu}">`,
+					[`<html lang="${langue}" dir="${dirAttendu}">`]:
+						balise === `<html lang="${langue}" dir="${dirAttendu}">`,
 					'aucune balise script': scripts === 0
 				},
 				`rendu ${brut.status}, ${balise}, ${scripts} balise(s) script`
@@ -4260,6 +5426,53 @@ async function organisationInconnue(page) {
 			await auditer(page, `404 d’une organisation inconnue, ${langue}`);
 		});
 	}
+	await langueDeLOrganisation(page);
+}
+
+/**
+ * Sous une organisation connue, la langue que l'adresse demande, si l'organisation la publie, et
+ * sa langue par défaut sinon (décisions du chef de projet, 27.09.2026). La voisine ne publie que le
+ * français : une adresse inventée sous `/en/` rend son 404 en français, et sa page d'abonnement
+ * demandée en anglais renvoie à la française, choix de l'appareil gardé.
+ */
+async function langueDeLOrganisation(page) {
+	await retour('19-404-organisation', async () => {
+		const adresse = `/m/${VOISINE.slug}/en/nulle-part`;
+		const reponse = await ouvrir(page, adresse);
+		const attendu = TEXTES_PUBLICS.fr.introuvable;
+		const phrase = await texteDe(page.locator('main p'));
+		const lang = await racineDit(page, 'lang');
+		verifierChaque(
+			`${adresse}, une langue que l’organisation ne publie pas : le 404 est dans sa langue, le français, « ${attendu.titre} »`,
+			{
+				404: reponse?.status() === 404,
+				'<html lang="fr">': lang === 'fr',
+				[`« ${attendu.titre} »`]: (await titre(page)) === attendu.titre,
+				[`« ${attendu.phrase} »`]: phrase === attendu.phrase
+			},
+			`rendu ${reponse?.status()}, <html lang="${lang}">, « ${await titre(page)} », « ${phrase} »`
+		);
+	});
+	await retour('19-langue-non-activee', async () => {
+		const demandee = `/m/${VOISINE.slug}/en/agenda?appareil=tous`;
+		const attendue = `/m/${VOISINE.slug}/agenda?appareil=tous`;
+		const brut = await fetch(`http://127.0.0.1:${PORT}${demandee}`, { redirect: 'manual' });
+		const vers = brut.headers.get('location') ?? '';
+		await ouvrir(page, demandee);
+		const arrivee = new URL(page.url());
+		const lang = await racineDit(page, 'lang');
+		verifierChaque(
+			`${demandee}, une langue que l’organisation ne publie pas : 307 vers ${attendue}, la page dans sa langue par défaut`,
+			{
+				307: brut.status === 307,
+				[`vers ${attendue}`]:
+					new URL(vers, ORIGINE).pathname + new URL(vers, ORIGINE).search === attendue,
+				'le navigateur y arrive': arrivee.pathname + arrivee.search === attendue,
+				'<html lang="fr">': lang === 'fr'
+			},
+			`rendu ${brut.status} vers « ${vers} » ; arrivée ${arrivee.pathname}${arrivee.search}, <html lang="${lang}">`
+		);
+	});
 }
 
 /**
@@ -4594,7 +5807,7 @@ async function sansJavaScript(navigateur, page) {
 				`${avant} carte avant, ${await carte().count()} après ; ${annonces.map((texte) => `« ${texte} »`).join(', ') || 'aucun message'}`
 			);
 		});
-		await retour('C3', async () => {
+		await retour('19-cours-sans-js', async () => {
 			// Sans JavaScript, choisir une prière ne change pas la page : on l'envoie, et elle revient
 			// avec les champs de la prière et ce qui manque. Les heures, vidées, ne doivent pas arrêter
 			// le navigateur (étape 19, lot 3) : avant, elles étaient exigées, et il fallait taper des
@@ -4663,6 +5876,7 @@ async function sansJavaScript(navigateur, page) {
 				`bornes ${bornes} ; 0 ${zero ? 'part' : 'arrêté'} ; 180 ${centQuatreVingts ? 'part' : 'arrêté'}`
 			);
 		});
+		await datesPrecisesSansScript(sans);
 		await horsDeSuisseSansScript(sans);
 	} finally {
 		await contexte.close();
@@ -4670,13 +5884,89 @@ async function sansJavaScript(navigateur, page) {
 }
 
 /**
- * Sans JavaScript, la localité de Bienne enregistrée et cochée (C2) : une position tapée sous le repli
- * « Hors de Suisse », sans toucher à la liste, s'enregistre à la place de la localité, puisque le
- * serveur coche alors « Hors de Suisse » lui-même (étape 19, lot 2), et les heures servies sont
- * celles que le calcul donne pour cette position. Ensuite, la localité est
- * cherchée, cochée et enregistrée de nouveau : l'écran la nomme, et les heures redeviennent celles
- * que le calcul donne pour sa position dans la liste. Les heures attendues sont calculées pour les
- * jours que le tableau montre.
+ * Sans JavaScript, un cours à dates précises (étape 19, lot 2) : choisir « à des dates précises »
+ * ne change pas la page, qu'on envoie une première fois pour recevoir le champ des dates. Les dates
+ * tapées dans le désordre, le premier jour laissé vide, le cours s'enregistre avec la première date
+ * pour premier jour. Puis la responsable le supprime, sans script aussi (D3) : le repli s'ouvre, et
+ * « Oui, supprimer » le retire. Le cours reste en brouillon : rien n'en paraît en public.
+ */
+async function datesPrecisesSansScript(sans) {
+	const dates = [plusJours(T, 81), plusJours(T, 74)];
+	await retour('19-cours-premier-jour', async () => {
+		await ouvrir(sans, '/cours/nouveau');
+		await sans.locator('#title-fr').fill(DATES_SANS_SCRIPT);
+		await sans.locator('#recurrenceKind').selectOption('dates');
+		// Le premier envoi ne crée rien : il ramène la page avec le champ des dates. Un navigateur qui
+		// exigeait le premier jour arrêtait cet envoi, et le serveur ne voyait jamais le premier jour
+		// vide : c'est l'ancien comportement, un geste impossible ici.
+		await Promise.all([
+			sans.waitForEvent('load', { timeout: 5000 }).catch(() => undefined),
+			sans.locator('form.colonne button[type="submit"]').click()
+		]);
+		await sans.waitForLoadState('networkidle');
+		const champ = await exiger(sans.locator('#dates'), 'le champ « Dates, une par ligne »');
+		const premierJourExige = await sans
+			.locator('#startsOn')
+			.evaluate((date) => /** @type {HTMLInputElement} */ (date).required);
+		await champ.fill(dates.map(dateSuisse).join('\n'));
+		await sans.locator('#startsOn').fill('');
+		await envoyer(sans, sans.locator('form.colonne button[type="submit"]'));
+		const bloc = sans.locator('li').filter({ hasText: DATES_SANS_SCRIPT });
+		const enregistre = chemin(sans) === '/cours' && (await bloc.count()) === 1;
+		// Sans JavaScript, le lien reste relatif, tel que le serveur l'écrit : c'est l'adresse résolue
+		// qu'on suit.
+		const modifier = bloc.getByRole('link', { name: 'Modifier ce cours', exact: true });
+		const fiche =
+			enregistre && (await modifier.count()) === 1 ? await cheminDuLien(modifier) : null;
+		if (fiche) await ouvrir(sans, fiche);
+		const premierJour = fiche ? await sans.locator('#startsOn').inputValue() : '';
+		verifierChaque(
+			`sans JavaScript, un cours à dates précises tapées dans le désordre, le premier jour vide : il s’enregistre, avec la première date, ${dateSuisse(dates[1] ?? '')}, pour premier jour`,
+			{
+				'le premier jour pas exigé': !premierJourExige,
+				'le cours enregistré': enregistre,
+				'la première date pour premier jour': premierJour === dates[1]
+			},
+			`${chemin(sans)} ; premier jour « ${premierJour || 'aucun'} »`
+		);
+	});
+	await retour('19-D3', async () => {
+		await ouvrir(sans, '/cours');
+		const bloc = sans.locator('li').filter({ hasText: DATES_SANS_SCRIPT });
+		const repli = await exiger(
+			bloc.locator('details').filter({
+				has: sans.locator('summary', { hasText: 'Supprimer ce cours' })
+			}),
+			'le repli « Supprimer ce cours »'
+		);
+		await repli.locator(':scope > summary').click();
+		const ouvert = await repli.evaluate(
+			(details) => /** @type {HTMLDetailsElement} */ (details).open
+		);
+		await envoyer(sans, repli.getByRole('button', { name: 'Oui, supprimer', exact: true }));
+		const statut = (await sans.getByRole('status').allTextContents()).map((texte) => texte.trim());
+		verifierChaque(
+			'sans JavaScript, « Supprimer ce cours » s’ouvre, et « Oui, supprimer » retire le cours',
+			{
+				'le repli s’ouvre sans script': ouvert,
+				'« Le cours est supprimé. »': statut.includes('Le cours est supprimé.'),
+				'le cours a quitté la liste':
+					(await sans.locator('li').filter({ hasText: DATES_SANS_SCRIPT }).count()) === 0
+			},
+			statut.map((texte) => `« ${texte} »`).join(', ') || 'aucun message'
+		);
+	});
+}
+
+/**
+ * Sans JavaScript, la localité de Bienne enregistrée et cochée (C2) : une position tapée sous le
+ * repli « Hors de Suisse », la case « Hors de Suisse » cochée, s'enregistre à la place de la
+ * localité, et les heures servies sont celles que le calcul donne pour cette position. Ensuite, la
+ * localité est cherchée, cochée et enregistrée de nouveau : l'écran la nomme, et les heures
+ * redeviennent celles que le calcul donne pour sa position dans la liste. Depuis l'étape 19, la
+ * position tapée l'emporte aussi sans toucher à la liste : le serveur coche lui-même « Hors de
+ * Suisse ». La localité est enregistrée une dernière fois pour la suite. Les heures attendues sont
+ * calculées pour les jours que le tableau montre.
  */
 async function horsDeSuisseSansScript(sans) {
 	const enregistrer = () =>
@@ -4698,31 +5988,36 @@ async function horsDeSuisseSansScript(sans) {
 		);
 		return { jours, ecarts: ecartsAuCalcul(jours, calculees) };
 	};
+	const paris = {
+		latitude: Number(POSITION_HORS_DE_SUISSE.latitude),
+		longitude: Number(POSITION_HORS_DE_SUISSE.longitude)
+	};
 	const localiteNommee = `Vos heures sont calculées pour cette localité : ${LOCALITE.libelle}`;
-	await retour('C2', async () => {
-		await ouvrir(sans, '/prieres?source=computed');
-		// La case « Hors de Suisse » est offerte, mais la personne ne la coche pas : la case de la
-		// localité reste cochée, et la position tapée doit l'emporter quand même.
-		const caseHors = sans.getByRole('radio', { name: CHOIX_HORS_DE_SUISSE, exact: true });
-		const caseOfferte = (await caseHors.count()) === 1;
-		const cocheesAvant = await casesCochees(sans);
-		const localiteCochee =
-			cocheesAvant.length === 1 && cocheesAvant[0].startsWith(`${LOCALITE.npa}|`);
+	const caseHors = sans.getByRole('radio', { name: CHOIX_HORS_DE_SUISSE, exact: true });
+	/** La position tapée sous le repli, la case « Hors de Suisse » cochée ou non, puis enregistrée. */
+	const taperLaPosition = async (cocher) => {
 		await repliNomme(sans, REPLIS_DES_PRIERES.horsDeSuisse).locator(':scope > summary').click();
 		await sans.locator('#latitude').fill(POSITION_HORS_DE_SUISSE.latitude);
 		await sans.locator('#longitude').fill(POSITION_HORS_DE_SUISSE.longitude);
+		if (cocher) await caseHors.check();
 		await enregistrer();
+	};
+	/** La localité, cherchée, cochée et enregistrée de nouveau. */
+	const revenirALaLocalite = async () => {
+		await sans.getByLabel('Nom ou NPA de la localité', { exact: true }).fill(LOCALITE.nom);
+		await envoyer(sans, sans.getByRole('button', { name: 'Chercher', exact: true }));
+		await radioDeLaLocalite(sans).check();
+		await enregistrer();
+	};
+	await retour('C2', async () => {
+		await ouvrir(sans, '/prieres?source=computed');
+		await taperLaPosition(true);
 		const dite = await confirmation();
 		const ailleurs = await etatLu();
-		const { jours: lues, ecarts } = await servies({
-			latitude: Number(POSITION_HORS_DE_SUISSE.latitude),
-			longitude: Number(POSITION_HORS_DE_SUISSE.longitude)
-		});
+		const { jours: lues, ecarts } = await servies(paris);
 		verifierChaque(
-			`sans JavaScript, ${LOCALITE.nom} enregistrée et cochée, la position ${POSITION_HORS_DE_SUISSE.latitude}, ${POSITION_HORS_DE_SUISSE.longitude} tapée sous « Hors de Suisse », sans toucher à la liste, s’enregistre à sa place : l’écran le dit, et les heures servies sont celles de cette position`,
+			`sans JavaScript, ${LOCALITE.nom} enregistrée, la position ${POSITION_HORS_DE_SUISSE.latitude}, ${POSITION_HORS_DE_SUISSE.longitude} tapée sous « Hors de Suisse », cette case cochée, s’enregistre à sa place : l’écran le dit, et les heures servies sont celles de cette position`,
 			{
-				'la case « Hors de Suisse » dans la liste': caseOfferte,
-				[`${LOCALITE.nom} seule cochée avant la frappe`]: localiteCochee,
 				'« Réglages enregistrés. »': dite.startsWith('Réglages enregistrés.'),
 				'l’écran dit la position donnée': ailleurs.includes(POSITION_DONNEE),
 				'les heures de cette position': lues.length === 7 && ecarts.length === 0
@@ -4730,10 +6025,7 @@ async function horsDeSuisseSansScript(sans) {
 			`« ${dite} » ; ${ailleurs.slice(0, 120)} ; ${ecarts.slice(0, 1).join('') || `${lues.length} jour(s) servis`}`
 		);
 
-		await sans.getByLabel('Nom ou NPA de la localité', { exact: true }).fill(LOCALITE.nom);
-		await envoyer(sans, sans.getByRole('button', { name: 'Chercher', exact: true }));
-		await radioDeLaLocalite(sans).check();
-		await enregistrer();
+		await revenirALaLocalite();
 		const revenue = await etatLu();
 		const { jours: luesApres, ecarts: ecartsApres } = await servies(positionDeLaListe());
 		verifierChaque(
@@ -4746,6 +6038,168 @@ async function horsDeSuisseSansScript(sans) {
 			`« ${await confirmation()} » ; ${revenue.slice(0, 120)} ; ${ecartsApres.slice(0, 1).join('') || `${luesApres.length} jour(s) servis`}`
 		);
 	});
+	await retour('19-prieres-hors-de-suisse', async () => {
+		await ouvrir(sans, '/prieres?source=computed');
+		// La case « Hors de Suisse » est offerte, mais la personne ne la coche pas : la case de la
+		// localité reste cochée, et la position tapée doit l'emporter quand même.
+		const caseOfferte = (await caseHors.count()) === 1;
+		const cocheesAvant = await casesCochees(sans);
+		await taperLaPosition(false);
+		const dite = await confirmation();
+		const ailleurs = await etatLu();
+		const { jours: lues, ecarts } = await servies(paris);
+		verifierChaque(
+			`sans JavaScript, ${LOCALITE.nom} enregistrée et cochée, la position tapée sous « Hors de Suisse », sans toucher à la liste, s’enregistre à sa place : l’écran le dit, et les heures servies sont celles de cette position`,
+			{
+				'la case « Hors de Suisse » dans la liste': caseOfferte,
+				[`${LOCALITE.nom} seule cochée avant la frappe`]:
+					cocheesAvant.length === 1 && cocheesAvant[0].startsWith(`${LOCALITE.npa}|`),
+				'« Réglages enregistrés. »': dite.startsWith('Réglages enregistrés.'),
+				'l’écran dit la position donnée': ailleurs.includes(POSITION_DONNEE),
+				'les heures de cette position': lues.length === 7 && ecarts.length === 0
+			},
+			`« ${dite} » ; ${ailleurs.slice(0, 120)} ; ${ecarts.slice(0, 1).join('') || `${lues.length} jour(s) servis`}`
+		);
+	});
+	// Hors de tout retour : la localité, de nouveau, pour les heures de la suite du parcours.
+	await ouvrir(sans, '/prieres?source=computed');
+	await revenirALaLocalite();
+	const revenue = await etatLu();
+	verifier(
+		`sans JavaScript, ${LOCALITE.nom} est enregistrée de nouveau pour la suite du parcours`,
+		revenue.includes(localiteNommee),
+		revenue.slice(0, 120)
+	);
+}
+
+/** Une période au nom de soixante signes, le plus long que le champ accepte (étape 19). */
+const PERIODE_AU_NOM_LONG = 'Horaires d’hiver de la grande salle, rue du Marché 12, Nidau';
+/** La marque d'une copie pour l'année suivante, dans l'écran en français. */
+const ANNEE_SUIVANTE = ' (année suivante)';
+
+/**
+ * Les périodes des heures saisies à la main, ce que l'étape 19 y a changé, avant toute autre
+ * période. L'aperçu d'une nouvelle période vient sous un titre de niveau 3, et axe n'y relève plus
+ * « heading-order » (D5) ; celui d'une période déjà terminée le dit. En arabe, l'aide de « Ajouter
+ * une période » dit que ses valeurs viennent de la précédente (B7). Une période au nom de soixante
+ * signes se copie pour l'année suivante avec la marque entière, le nom raccourci. Les périodes
+ * enregistrées ici sont supprimées à la fin.
+ */
+async function periodesEtape19(page) {
+	const nouvelle = () => page.locator('details', { has: page.locator('#nom-nouvelle') });
+	const ouvrirLaNouvelle = async () => {
+		const repli = await exiger(nouvelle(), 'le repli « Ajouter une période »');
+		if (!(await repli.evaluate((details) => /** @type {HTMLDetailsElement} */ (details).open))) {
+			await repli.locator(':scope > summary').click();
+		}
+	};
+	const remplir = async (nom, de, a) => {
+		await ouvrir(page, '/prieres?source=manual');
+		await ouvrirLaNouvelle();
+		await page.locator('#nom-nouvelle').fill(nom);
+		await page.locator('#de-nouvelle').fill(de);
+		await page.locator('#a-nouvelle').fill(a);
+	};
+	const formulaire = () => page.locator('form', { has: page.locator('#nom-nouvelle') });
+	const apercu = async (nom, de, a) => {
+		await remplir(nom, de, a);
+		await envoyer(page, formulaire().locator('button[formaction$="/apercuPeriode"]'));
+	};
+
+	await retour('19-D5', async () => {
+		await apercu('Aperçu', T, plusJours(T, 30));
+		const titre = page.locator('#apercu-periode-titre-nouvelle');
+		const niveau =
+			(await titre.count()) === 1 ? await titre.evaluate((element) => element.tagName) : 'aucun';
+		const niveaux = await page
+			.locator('h1, h2, h3, h4, h5, h6')
+			.evaluateAll((titres) => titres.map((element) => element.tagName.toLowerCase()).join(', '));
+		const nom = 'aperçu d’une nouvelle période, sans autre période';
+		await auditer(page, nom, { recharger: false });
+		const ordre = trouvaillesAxe.filter(
+			(trouvaille) => trouvaille.page === nom && trouvaille.regle === 'heading-order'
+		);
+		verifierChaque(
+			'sans autre période, l’aperçu d’une nouvelle période vient sous un titre de niveau 3, et axe n’y relève plus « heading-order »',
+			{
+				'un titre de niveau 3': niveau === 'H3',
+				'aucun « heading-order »': ordre.length === 0
+			},
+			`<${niveau.toLowerCase()}> ; titres : ${niveaux} ; ${ordre.length} « heading-order »`
+		);
+	});
+	await retour('19-prieres-periode-passee', async () => {
+		const fin = plusJours(T, -30);
+		await apercu('Passée', plusJours(T, -60), fin);
+		const phrase = page.locator('p.aide').filter({ hasText: /^Cette période s’est terminée le/ });
+		const lue = (await phrase.count()) === 1 ? await texteDe(phrase) : '';
+		verifier(
+			`l’aperçu d’une période terminée le ${dateSuisse(fin)} le dit : « Cette période s’est terminée le ${dateSuisse(fin)} : elle ne change aucun des sept prochains jours, que l’aperçu montre. »`,
+			lue ===
+				`Cette période s’est terminée le ${dateSuisse(fin)} : elle ne change aucun des sept prochains jours, que l’aperçu montre.`,
+			lue || 'aucune phrase'
+		);
+	});
+
+	// Une période enregistrée, loin des sept prochains jours : l'aide de la suivante et la copie.
+	await remplir(PERIODE_AU_NOM_LONG, plusJours(T, 120), plusJours(T, 150));
+	await envoyer(page, formulaire().locator('button.principal'));
+	const noms = async () =>
+		(await page.locator('div.periode h3 bdi').allTextContents()).map((texte) => texte.trim());
+	verifier(
+		`la période « ${PERIODE_AU_NOM_LONG} » (${[...PERIODE_AU_NOM_LONG].length} signes) est enregistrée`,
+		(await noms()).includes(PERIODE_AU_NOM_LONG),
+		(await noms()).map((nom) => `« ${nom} »`).join(', ') || 'aucune période'
+	);
+	await retour('19-B7', async () => {
+		await ouvrir(page, '/prieres?source=manual');
+		await choisirLaLangue(page, 'ar');
+		const aide = await texteDe(
+			await exiger(nouvelle().locator(':scope > p.aide'), 'l’aide de « Ajouter une période »')
+		);
+		verifier(
+			'en arabe, après une période, l’aide de « Ajouter une période » dit que ses valeurs sont « مُعبّأة مسبقًا »',
+			aide.includes('مُعبّأة مسبقًا'),
+			aide
+		);
+	});
+	if ((await racineDit(page, 'lang')) !== 'fr') await choisirLaLangue(page, 'fr');
+	await retour('19-prieres-copie', async () => {
+		await ouvrir(page, '/prieres?source=manual');
+		await envoyer(
+			page,
+			page
+				.locator('div.periode')
+				.filter({ has: page.locator('h3 bdi').getByText(PERIODE_AU_NOM_LONG, { exact: true }) })
+				.locator('form[action$="/dupliquerPeriode"] button[type="submit"]')
+		);
+		const copie = (await noms()).find((nom) => nom !== PERIODE_AU_NOM_LONG) ?? '';
+		const debut = copie.endsWith(ANNEE_SUIVANTE) ? copie.slice(0, -ANNEE_SUIVANTE.length) : '';
+		verifierChaque(
+			`une période au nom de soixante signes se copie pour l’année suivante : la marque « ${ANNEE_SUIVANTE.trim()} » entière, le nom raccourci, soixante signes au plus`,
+			{
+				'la marque entière': debut !== '',
+				'le début du nom': debut !== '' && PERIODE_AU_NOM_LONG.startsWith(debut),
+				'soixante signes au plus': [...copie].length <= 60
+			},
+			`« ${copie || 'aucune copie'} », ${[...copie].length} signes`
+		);
+	});
+	// Toutes les périodes de l'écran sont celles de ce pas : elles s'en vont.
+	await ouvrir(page, '/prieres?source=manual');
+	for (let reste = await page.locator('div.periode').count(); reste > 0; reste -= 1) {
+		await envoyer(
+			page,
+			page
+				.locator('div.periode')
+				.first()
+				.locator('form[action$="/supprimerPeriode"] button[type="submit"]')
+		);
+	}
+	verifier(
+		'les périodes de ce pas sont supprimées',
+		(await page.locator('div.periode').count()) === 0
+	);
 }
 
 /**
@@ -4755,6 +6209,7 @@ async function horsDeSuisseSansScript(sans) {
  */
 async function periodeCopiee(page) {
 	etape('l. Une période copiée pour l’année suivante, depuis l’écran en allemand');
+	await periodesEtape19(page);
 	await retour('D2', async () => {
 		await ouvrir(page, '/prieres?source=manual');
 		await choisirLaLangue(page, 'de');
@@ -4858,19 +6313,33 @@ async function vendrediSurLAccueil(page) {
 				},
 				lue
 			);
+			const messagesDuDeplacement = await messagesDeLAccueil(page, 'message');
+			const francais =
+				messagesDuDeplacement[0]?.lang === 'fr' ? messagesDuDeplacement[0].texte : '';
+			const ligneDuVendredi =
+				francais.split('\n').find((ligne) => ligne.includes(nom)) ?? 'aucun message en français';
 			await retour('B1', async () => {
-				const messages = await messagesDeLAccueil(page, 'message');
-				const francais = messages[0]?.lang === 'fr' ? messages[0].texte : '';
-				const phrase = `« ${nom} » : la prière du ${dateLongue(jour)} commence à ${HEURE_DU_VENDREDI_DEPLACE} au lieu de ${VENDREDI.debut}.`;
+				const changement = `commence à ${HEURE_DU_VENDREDI_DEPLACE} au lieu de ${VENDREDI.debut}.`;
 				verifierChaque(
-					`le message prêt à coller le dit comme un changement d’heure, la date une seule fois : « ${phrase} »`,
+					`le message prêt à coller le dit comme un changement d’heure, la date une seule fois : « … ${changement} »`,
 					{
-						'la phrase du changement d’heure': francais.includes(phrase),
+						'le changement d’heure': francais.includes(changement),
 						'pas « est déplacé au »': !francais.includes('est déplacé au'),
 						'la date une seule fois': francais.split(dateSuisse(jour)).length === 2
 					},
-					francais.split('\n').find((ligne) => ligne.startsWith(`« ${nom} »`)) ??
-						'aucun message en français'
+					ligneDuVendredi
+				);
+			});
+			// Les mots d'une prière, et non ceux d'un cours (étape 19).
+			await retour('19-texte-vendredi', async () => {
+				const phrase = `« ${nom} » : la prière du ${dateLongue(jour)} commence à ${HEURE_DU_VENDREDI_DEPLACE} au lieu de ${VENDREDI.debut}.`;
+				verifierChaque(
+					`déplacée le même jour, la session du vendredi : le message dit « « Prière du vendredi » : la prière du vendredi JJ.MM.AAAA commence à ${HEURE_DU_VENDREDI_DEPLACE} au lieu de ${VENDREDI.debut}. », sans « Le cours »`,
+					{
+						'la prière et sa nouvelle heure': francais.includes(phrase),
+						'sans « Le cours »': francais !== '' && !francais.includes('Le cours')
+					},
+					ligneDuVendredi
 				);
 			});
 			await retour('D1', async () => {
@@ -4940,9 +6409,9 @@ async function vendrediSurLAccueil(page) {
 			const messagesPrepares = await ouvertAvant.locator('#message-titre').count();
 			const arrivees = await carte(ouvertAvant, 'moved_here').count();
 			verifierChaque(
-				`une carte restée ouverte dans un autre onglet, envoyée après ce déplacement, est refusée par une phrase en haut qui nomme la séance, et rien n’est écrit : la session reste à ${HEURE_DU_VENDREDI_DEPLACE}`,
+				`une carte restée ouverte dans un autre onglet, envoyée après ce déplacement, est refusée par une phrase en haut, et rien n’est écrit : la session reste à ${HEURE_DU_VENDREDI_DEPLACE}`,
 				{
-					'la phrase du refus': phrase === SEANCE_CHANGEE(nom, dateLongue(jour)),
+					'une phrase de refus': / a changé depuis l’ouverture de la page /.test(phrase),
 					'le refus en haut': enHaut,
 					'aucun message préparé': messagesPrepares === 0,
 					[`la session à ${HEURE_DU_VENDREDI_DEPLACE}`]: departLu.includes(
@@ -4952,6 +6421,14 @@ async function vendrediSurLAccueil(page) {
 				},
 				`« ${phrase} », ${enHaut ? 'avant' : 'pas avant'} le premier jour ; ${messagesPrepares} message(s) préparé(s) ; ${departLu} ; ${arrivees} carte(s) d’arrivée`
 			);
+			// La phrase nomme la séance par son titre et sa date (étape 19, D4).
+			await retour('19-D4', async () => {
+				verifier(
+					'sur « À venir », le refus d’une carte restée ouverte nomme la séance : « La séance « Prière du vendredi » du vendredi JJ.MM.AAAA a changé depuis l’ouverture de la page : … »',
+					phrase === SEANCE_CHANGEE(nom, dateLongue(jour)),
+					phrase
+				);
+			});
 			// L'écran du vendredi, ouvert lui aussi avant le déplacement, annule la séance qu'il montre
 			// encore prévue à son heure habituelle.
 			const seanceDuVendredi = (cible) =>
@@ -5003,6 +6480,489 @@ async function vendrediSurLAccueil(page) {
 		await ouvertAvant.close();
 		await vendrediOuvert.close();
 	}
+	await vendrediAnnule(page);
+}
+
+/**
+ * La session du vendredi, rétablie à son heure, puis annulée pour ce vendredi sur « À venir »
+ * (étape 19) : le message prêt à coller parle d'une prière, et dit que les autres ont lieu comme
+ * d'habitude, sans les mots d'un cours. La page publique la marque « Annulée », accordé à la
+ * prière, dans la vue Semaine, dans l'onglet « Prières » et dans la vue Mois, en français comme en
+ * arabe. La session est rétablie à la fin.
+ */
+async function vendrediAnnule(page) {
+	const nom = PRIERE_DU_VENDREDI.fr;
+	const jour = VENDREDI_QUI_VIENT;
+	const carte = (statut) =>
+		page
+			.locator('section', { has: page.locator(`[id="jour-${jour}"]`) })
+			.locator(`li.${statut}`)
+			.filter({ hasText: nom });
+	await ouvrir(page, '/');
+	await envoyer(
+		page,
+		carte('moved_away').locator('form[action="?/retablir"] button[type="submit"]')
+	);
+	verifier(
+		`la session du vendredi retrouve son heure habituelle, ${VENDREDI.debut}`,
+		(await carte('scheduled').count()) === 1,
+		`${await carte('scheduled').count()} carte(s) prévue(s)`
+	);
+	await carte('scheduled').getByText('Annuler ou déplacer', { exact: true }).click();
+	await envoyer(
+		page,
+		carte('scheduled').getByRole('button', { name: 'Annuler cette séance', exact: true })
+	);
+	verifier(
+		'annulée sur « À venir », la session du vendredi porte « annulée »',
+		(await carte('cancelled').count()) === 1,
+		`${await carte('cancelled').count()} carte(s) annulée(s)`
+	);
+	await retour('19-texte-vendredi', async () => {
+		const messages = await messagesDeLAccueil(page, 'message');
+		const francais = messages.find((message) => message.lang === 'fr')?.texte ?? '';
+		const annonce = `« ${nom} » : la prière du ${dateLongue(jour)} est annulée.`;
+		verifierChaque(
+			'annulée, la session du vendredi : le message dit « « Prière du vendredi » : la prière du vendredi JJ.MM.AAAA est annulée. », puis « Les autres prières du vendredi ont lieu comme d’habitude. », sans « Le cours »',
+			{
+				'la prière annulée': francais.includes(annonce),
+				'les autres prières du vendredi': francais.includes(
+					'Les autres prières du vendredi ont lieu comme d’habitude.'
+				),
+				'sans « Le cours »': francais !== '' && !francais.includes('Le cours')
+			},
+			francais.split('\n').filter(Boolean).slice(1, 3).join(' | ') || 'aucun message en français'
+		);
+	});
+	await retour('19-annulee', async () => {
+		const contexte = await nouveauContexte(
+			/** @type {import('playwright-core').Browser} */ (page.context().browser())
+		);
+		try {
+			const visiteur = await contexte.newPage();
+			const marques = {};
+			for (const [langue, titreDeLaSession, annulee] of [
+				['fr', nom, 'Annulée'],
+				['ar', PRIERE_DU_VENDREDI.ar, 'ملغاة']
+			]) {
+				const base = `/m/${ORGANISATION.slug}${langue === 'fr' ? '' : `/${langue}`}`;
+				await ouvrir(visiteur, base);
+				const semaine = (await seancesPubliques(visiteur, titreDeLaSession)).find(
+					(vue) => vue.barree
+				);
+				await ouvrir(visiteur, `${base}?vue=prieres`);
+				const prieres = await texteDe(visiteur.locator('table.semaine'));
+				await ouvrir(visiteur, `${base}?vue=mois&mois=${jour.slice(0, 7)}&jour=${jour}`);
+				const mois = (await seancesPubliques(visiteur, titreDeLaSession)).find((vue) => vue.barree);
+				marques[langue] = {
+					annulee,
+					semaine: semaine?.mention ?? 'absente',
+					prieres: prieres.includes(annulee),
+					mois: mois?.mention ?? 'absente'
+				};
+			}
+			verifierChaque(
+				'annulée, la session du vendredi porte « Annulée » (en arabe « ملغاة »), accordé à la prière, dans la vue Semaine, l’onglet « Prières » et la vue Mois',
+				Object.fromEntries(
+					Object.entries(marques).flatMap(([langue, lu]) => [
+						[`vue Semaine, ${langue}`, lu.semaine === lu.annulee],
+						[`onglet « Prières », ${langue}`, lu.prieres],
+						[`vue Mois, ${langue}`, lu.mois === lu.annulee]
+					])
+				),
+				Object.entries(marques)
+					.map(([langue, lu]) => `${langue} : « ${lu.semaine} », « ${lu.mois} »`)
+					.join(' ; ')
+			);
+		} finally {
+			await contexte.close();
+		}
+	});
+	await ouvrir(page, '/');
+	await envoyer(
+		page,
+		carte('cancelled').locator('form[action="?/retablir"] button[type="submit"]')
+	);
+	verifier(
+		'la session du vendredi est rétablie pour la suite du parcours',
+		(await carte('scheduled').count()) === 1,
+		`${await carte('scheduled').count()} carte(s) prévue(s)`
+	);
+}
+
+/**
+ * p. L'écran du vendredi et « À venir », ce que l'étape 19 y a corrigé, la session du vendredi
+ * encore prévue à son heure. Chaque geste est défait à la fin de son bloc : l'étape m part de la
+ * même session, seule, prévue à 12:30.
+ *
+ * - D2 : annuler un vendredi passé, par un formulaire modifié dans la page ; ajouter une session
+ *   dans une salle supprimée entre-temps depuis un autre onglet ; publier une session supprimée
+ *   entre-temps. Chaque fois une phrase en tête, et rien d'écrit.
+ * - La salle supprimée deux fois, depuis deux onglets de Réglages : « Cette salle n’existe plus. ».
+ * - Une session au sermon en albanais et en turc, deux langues que la page publique ne publie pas,
+ *   puis retirée de la page publique, l'écran en arabe (B3).
+ * - « Rétablir comme d’habitude » sur la ligne « Nouvelle date » d'une session déplacée à un autre
+ *   jour.
+ * - Un jour sans séance, sur l'écran du vendredi et sur « À venir », par un formulaire modifié dans
+ *   la page : une phrase qui le dit, et rien d'écrit.
+ * - Sur « À venir », le titre d'une séance dans la langue de l'écran.
+ */
+async function vendrediEtape19(page) {
+	etape('p. Le vendredi et « À venir » : ce que l’étape 19 a corrigé');
+	const jour = VENDREDI_QUI_VIENT;
+	const contexte = page.context();
+	/** La première ligne de « Ce vendredi », celle de la session du parcours, ce jour-là. */
+	const ceVendredi = (cible) =>
+		cible
+			.locator('section[aria-labelledby="ce-vendredi"] div.seance')
+			.filter({ hasText: `${VENDREDI.debut} – ${VENDREDI.fin}` });
+	/** Le refus en tête de l'écran du vendredi : sa phrase, et s'il vient avant la première session. */
+	const refusEnTete = async (cible) => {
+		const alertes = cible.getByRole('alert');
+		const phrase =
+			(await alertes.count()) === 1 ? await texteDe(alertes) : `${await alertes.count()} alerte(s)`;
+		const enTete =
+			(await alertes.count()) === 1 &&
+			(await alertes.evaluate((alerte) => {
+				const premiere = document.querySelector('section.session');
+				return Boolean(
+					premiere && alerte.compareDocumentPosition(premiere) & Node.DOCUMENT_POSITION_FOLLOWING
+				);
+			}));
+		return { phrase, enTete, confirmations: await cible.getByRole('status').count() };
+	};
+	/** Une valeur cachée d'un formulaire, changée dans la page, comme un formulaire écrit à la main. */
+	const changer = (champ, valeur) =>
+		champ.evaluate((element, nouvelle) => {
+			/** @type {HTMLInputElement} */ (element).value = nouvelle;
+		}, valeur);
+
+	await retour('19-D2', async () => {
+		await ouvrir(page, '/vendredi');
+		const annuler = await exiger(
+			ceVendredi(page).locator('form[action="?/annuler"]'),
+			'« Annuler cette session » dans « Ce vendredi »'
+		);
+		await changer(annuler.locator('input[name="date"]'), plusJours(jour, -7));
+		await envoyer(page, annuler.locator('button[type="submit"]'));
+		const { phrase, enTete, confirmations } = await refusEnTete(page);
+		verifierChaque(
+			'sur l’écran du vendredi, « Annuler cette session » envoyé pour le vendredi passé (formulaire modifié dans la page) est refusé en tête : « Cette session est déjà passée : … », et rien n’est annulé',
+			{
+				'la phrase':
+					phrase ===
+					'Cette session est déjà passée : vous ne pouvez annuler que les sessions d’aujourd’hui et des jours suivants.',
+				'en tête': enTete,
+				'aucune confirmation': confirmations === 0
+			},
+			phrase
+		);
+	});
+
+	// Une salle libre, supprimée depuis un onglet de Réglages pendant qu'un second onglet de Réglages
+	// et l'ajout d'une session sur l'écran du vendredi la montrent encore.
+	await ouvrir(page, '/reglages');
+	await page.locator('#salle').fill(SALLE_PROVISOIRE);
+	await envoyer(page, page.locator('form:has(#salle) button[type="submit"]'));
+	const salleProvisoire = (cible) =>
+		cible.locator('#salles li').filter({ hasText: SALLE_PROVISOIRE });
+	verifier(
+		`la salle « ${SALLE_PROVISOIRE} » est créée`,
+		(await salleProvisoire(page).count()) === 1
+	);
+	const reglagesB = await contexte.newPage();
+	const vendrediA = await contexte.newPage();
+	try {
+		await ouvrir(reglagesB, '/reglages');
+		await ouvrir(vendrediA, '/vendredi');
+		const ajout = vendrediA.getByRole('region', { name: 'Ajouter une session' });
+		await ajout.getByLabel('Salle', { exact: true }).selectOption({ label: SALLE_PROVISOIRE });
+		await ajout.getByLabel('Heure de début', { exact: true }).fill(SESSION_DANS_LA_SALLE.debut);
+		await ajout.getByLabel('Heure de fin', { exact: true }).fill(SESSION_DANS_LA_SALLE.fin);
+		await envoyer(
+			page,
+			salleProvisoire(page).locator('form[action="?/supprimerSalle"] button[type="submit"]')
+		);
+		verifier(
+			`la salle « ${SALLE_PROVISOIRE} », libre, est supprimée depuis un premier onglet`,
+			(await salleProvisoire(page).count()) === 0
+		);
+		await retour('19-membres-salle', async () => {
+			await envoyer(
+				reglagesB,
+				salleProvisoire(reglagesB).locator('form[action="?/supprimerSalle"] button[type="submit"]')
+			);
+			const alertes = (await reglagesB.getByRole('alert').allTextContents()).map((texte) =>
+				texte.trim()
+			);
+			const statuts = (await reglagesB.getByRole('status').allTextContents()).map((texte) =>
+				texte.trim()
+			);
+			verifierChaque(
+				'dans Réglages, « Supprimer » sur une salle déjà supprimée depuis un autre onglet dit « Cette salle n’existe plus. », et non « Salle supprimée. »',
+				{
+					'« Cette salle n’existe plus. »': alertes.includes('Cette salle n’existe plus.'),
+					'pas « Salle supprimée. »': !statuts.includes('Salle supprimée.')
+				},
+				`${alertes.map((texte) => `« ${texte} »`).join(', ') || 'aucune alerte'} ; ${statuts.map((texte) => `« ${texte} »`).join(', ') || 'aucun message'}`
+			);
+		});
+		await retour('19-D2', async () => {
+			const [reponse] = await Promise.all([
+				vendrediA.waitForResponse((une) => une.request().method() === 'POST'),
+				envoyer(vendrediA, ajout.locator('button[type="submit"]'))
+			]);
+			const section = vendrediA.getByRole('region', { name: 'Ajouter une session' });
+			const alertes = (await section.getByRole('alert').allTextContents()).map((texte) =>
+				texte.replace(/\s+/g, ' ').trim()
+			);
+			const debut = section.getByLabel('Heure de début', { exact: true });
+			const gardee =
+				(await debut.count()) === 1
+					? await debut.inputValue()
+					: `aucune section d’ajout, réponse ${reponse.status()}`;
+			verifierChaque(
+				'sur l’écran du vendredi, une session ajoutée dans une salle supprimée entre-temps est refusée, dans la section d’ajout, saisie gardée : « Cette salle n’existe plus : … »',
+				{
+					'la phrase': alertes.some((texte) =>
+						texte.includes(
+							'Cette salle n’existe plus : elle a été supprimée entre-temps. Choisissez une autre salle, ou « Pas de salle précise ».'
+						)
+					),
+					'la saisie gardée': gardee === SESSION_DANS_LA_SALLE.debut,
+					'rien d’ajouté':
+						(await vendrediA
+							.locator('section.session')
+							.filter({ hasText: `${SESSION_DANS_LA_SALLE.debut} – ` })
+							.count()) === 0
+				},
+				`${alertes.map((texte) => `« ${texte} »`).join(', ') || 'aucune alerte'} ; début « ${gardee} »`
+			);
+		});
+	} finally {
+		await reglagesB.close();
+		await vendrediA.close();
+	}
+
+	// Une seconde session, au sermon en albanais et en turc (étape 19), ajoutée puis retirée de la
+	// page publique en arabe (B3), puis supprimée depuis un autre onglet pendant que le premier la
+	// montre encore (D2).
+	const seconde = (cible) =>
+		cible.locator('section.session').filter({ hasText: `${SESSION_DANS_LA_SALLE.debut} – ` });
+	await ouvrir(page, '/vendredi');
+	const ajout = page.getByRole('region', { name: 'Ajouter une session' });
+	await ajout.getByLabel('Heure de début', { exact: true }).fill(SESSION_DANS_LA_SALLE.debut);
+	await ajout.getByLabel('Heure de fin', { exact: true }).fill(SESSION_DANS_LA_SALLE.fin);
+	await retour('19-sermon', async () => {
+		for (const langue of ['sq', 'tr']) {
+			await exiger(
+				ajout.locator(`input[name="sermonLanguages"][value="${langue}"]`),
+				`la case de la langue « ${langue} »`
+			);
+		}
+		// L'albanais et le turc seuls : les cases que l'écran coche d'avance sont décochées.
+		const cases = ajout.locator('input[name="sermonLanguages"]');
+		for (let rang = 0; rang < (await cases.count()); rang += 1) {
+			const caseDeLaLangue = cases.nth(rang);
+			if (['sq', 'tr'].includes((await caseDeLaLangue.getAttribute('value')) ?? '')) {
+				await caseDeLaLangue.check();
+			} else {
+				await caseDeLaLangue.uncheck();
+			}
+		}
+	});
+	const langues = ajout.locator('input[name="sermonLanguages"]');
+	if ((await ajout.locator('input[name="sermonLanguages"]:checked').count()) === 0) {
+		await langues.first().check();
+	}
+	await envoyer(page, ajout.locator('button[type="submit"]'));
+	verifier(
+		`une seconde session, à ${SESSION_DANS_LA_SALLE.debut}, est ajoutée`,
+		(await seconde(page).count()) === 1,
+		await texteDe(page.getByRole('status').last())
+	);
+	await retour('19-sermon', async () => {
+		const carte = await texteDe(seconde(page));
+		const contexteVisiteur = await nouveauContexte(
+			/** @type {import('playwright-core').Browser} */ (contexte.browser())
+		);
+		try {
+			const visiteur = await contexteVisiteur.newPage();
+			await ouvrir(visiteur, `/m/${ORGANISATION.slug}`);
+			const enHaut = await texteDe(visiteur.locator('section.vendredi'));
+			verifierChaque(
+				'une session au sermon en albanais et en turc, deux langues que la page publique ne publie pas : sa carte dit « Sermon en albanais et turc », et la page publique « albanais et turc »',
+				{
+					'la carte': carte.includes('Sermon en albanais et turc'),
+					'la page publique': enHaut.includes('albanais et turc')
+				},
+				`carte : ${carte.slice(0, 100)} ; page publique : ${enHaut}`
+			);
+		} finally {
+			await contexteVisiteur.close();
+		}
+	});
+	await choisirLaLangue(page, 'ar');
+	await retour('19-B3', async () => {
+		await envoyer(page, seconde(page).locator('form[action="?/basculer"] button[type="submit"]'));
+		const dit = (await page.getByRole('status').allTextContents()).map((texte) =>
+			texte.replace(/\s+/g, ' ').trim()
+		);
+		verifier(
+			'l’écran du vendredi en arabe, après « Retirer de la page publique » : « لكنه يبقى هنا كمسودة »',
+			dit.some((texte) => texte.includes('لكنه يبقى هنا كمسودة')),
+			dit.map((texte) => `« ${texte} »`).join(', ') || 'aucun message'
+		);
+	});
+	await choisirLaLangue(page, 'fr');
+	const autreOnglet = await contexte.newPage();
+	try {
+		await ouvrir(autreOnglet, '/vendredi');
+		const repli = seconde(page).locator('details.repli').nth(1);
+		await repli.locator(':scope > summary').click();
+		await envoyer(page, repli.getByRole('button', { name: 'Oui, supprimer', exact: true }));
+		verifier(
+			'la seconde session est supprimée, depuis un premier onglet',
+			(await seconde(page).count()) === 0
+		);
+		await retour('19-D2', async () => {
+			await envoyer(
+				autreOnglet,
+				seconde(autreOnglet).locator('form[action="?/basculer"] button[type="submit"]')
+			);
+			const { phrase, enTete, confirmations } = await refusEnTete(autreOnglet);
+			verifierChaque(
+				'dans un second onglet, « Publier » sur une session supprimée entre-temps est refusé en tête : « Cette session n’existe plus : elle a été supprimée entre-temps. La liste ci-dessous est à jour. »',
+				{
+					'la phrase':
+						phrase ===
+						'Cette session n’existe plus : elle a été supprimée entre-temps. La liste ci-dessous est à jour.',
+					'en tête': enTete,
+					'aucune confirmation': confirmations === 0
+				},
+				phrase
+			);
+		});
+	} finally {
+		await autreOnglet.close();
+	}
+
+	// « Rétablir comme d’habitude » sur la ligne « Nouvelle date » d'une session déplacée à un autre
+	// jour. Si l'écran ne l'offre pas, la ligne « Déplacée au … » rétablit la session à sa place.
+	await retour('19-retablir-nouvelle-date', async () => {
+		await ouvrir(page, '/vendredi');
+		const ligne = ceVendredi(page).filter({ hasText: dateLongue(jour) });
+		const deplacer = ligne.locator('form[action="?/deplacer"]');
+		const autreJour = await deplacer
+			.locator('select[name="toDate"] option')
+			.evaluateAll(
+				(options, date) =>
+					options
+						.map((option) => /** @type {HTMLOptionElement} */ (option).value)
+						.find((valeur) => valeur !== date) ?? '',
+				jour
+			);
+		await deplacer.locator('select[name="toDate"]').selectOption(autreJour);
+		await envoyer(page, deplacer.locator('button[type="submit"]'));
+		const nouvelleDate = ceVendredi(page).filter({
+			hasText: `Nouvelle date, à la place du ${dateLongue(jour)}`
+		});
+		const bouton = nouvelleDate.locator('form[action="?/retablir"] button[type="submit"]');
+		const present =
+			(await bouton.count()) === 1 && (await texteDe(bouton)) === 'Rétablir comme d’habitude';
+		if (present) await envoyer(page, bouton);
+		const dit = (await page.getByRole('status').allTextContents()).map((texte) => texte.trim());
+		verifierChaque(
+			'une session déplacée à un autre jour : sur la ligne « Nouvelle date, à la place du vendredi JJ.MM.AAAA », « Rétablir comme d’habitude » la ramène à son vendredi',
+			{
+				'le bouton sur la ligne « Nouvelle date »': present,
+				'« La session retrouve son jour et son heure habituels. »': dit.includes(
+					'La session retrouve son jour et son heure habituels.'
+				),
+				'la session de nouveau prévue ce vendredi':
+					(await ceVendredi(page)
+						.filter({ hasText: dateLongue(jour) })
+						.locator('form[action="?/annuler"]')
+						.count()) === 1
+			},
+			dit.map((texte) => `« ${texte} »`).join(', ') || 'aucun message'
+		);
+	});
+	const deplacee = ceVendredi(page).filter({ hasText: 'Déplacée au' });
+	if ((await deplacee.count()) === 1) {
+		await envoyer(page, deplacee.locator('form[action="?/retablir"] button[type="submit"]'));
+	}
+	verifier(
+		`la session du vendredi est prévue à ${VENDREDI.debut}, ce vendredi, pour la suite du parcours`,
+		(await ceVendredi(page)
+			.filter({ hasText: dateLongue(jour) })
+			.locator('form[action="?/annuler"]')
+			.count()) === 1
+	);
+
+	await retour('19-jour-sans-seance', async () => {
+		await ouvrir(page, '/vendredi');
+		const annuler = ceVendredi(page)
+			.filter({ hasText: dateLongue(jour) })
+			.locator('form[action="?/annuler"]');
+		const lundi = plusJours(jour, 3);
+		await changer(annuler.locator('input[name="date"]'), lundi);
+		await envoyer(page, annuler.locator('button[type="submit"]'));
+		const vendredi = await refusEnTete(page);
+		await ouvrir(page, '/');
+		const carte = seanceDuJour(page, J4, COURS_ANCRE);
+		await carte.getByText('Annuler ou déplacer', { exact: true }).click();
+		const formulaire = carte.locator('form[action="?/annuler"]');
+		await changer(formulaire.locator('input[name="date"]'), J5);
+		await envoyer(page, formulaire.locator('button[type="submit"]'));
+		const alertes = page.getByRole('alert');
+		const aVenir =
+			(await alertes.count()) === 1 ? await texteDe(alertes) : `${await alertes.count()} alerte(s)`;
+		verifierChaque(
+			'« Annuler » envoyé pour un jour où il n’y a pas de séance (formulaire modifié dans la page) : une phrase qui le dit, en tête, et rien d’écrit, sur l’écran du vendredi comme sur « À venir »',
+			{
+				'le vendredi : « Cette session n’a pas lieu ce jour-là. … »':
+					vendredi.phrase ===
+					'Cette session n’a pas lieu ce jour-là. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.',
+				'le vendredi : en tête, sans confirmation': vendredi.enTete && vendredi.confirmations === 0,
+				[`« À venir » : « Aucune séance « ${COURS_ANCRE} » n’est prévue le … »`]:
+					aVenir ===
+					`Aucune séance « ${COURS_ANCRE} » n’est prévue le ${dateLongue(J5)}. Rien n’a été enregistré. Le programme ci-dessous est à jour.`,
+				'« À venir » : rien d’annulé': (await page.locator('#message-titre').count()) === 0
+			},
+			`« ${vendredi.phrase} » ; « ${aVenir} »`
+		);
+	});
+
+	await retour('19-titre-langue-ecran', async () => {
+		const titres = {};
+		for (const [langue, jourDeLaCarte, source, attendu] of [
+			['de', jour, PRIERE_DU_VENDREDI.fr, PRIERE_DU_VENDREDI.de],
+			['ar', J1, COURS_1.fr, COURS_1.ar]
+		]) {
+			await ouvrir(page, '/');
+			await choisirLaLangue(page, langue);
+			const cartes = await page
+				.locator('section', { has: page.locator(`[id="jour-${jourDeLaCarte}"]`) })
+				.locator('li .titre bdi')
+				.allTextContents();
+			titres[langue] = { lus: cartes.map((titre) => titre.trim()), source, attendu };
+		}
+		verifierChaque(
+			'sur « À venir », une séance porte son titre dans la langue de l’écran : « Freitagsgebet » en allemand, « قراءة القرآن » en arabe',
+			Object.fromEntries(
+				Object.entries(titres).map(([langue, lu]) => [
+					`« ${lu.attendu} » en ${langue}, et non « ${lu.source} »`,
+					lu.lus.includes(lu.attendu) && !lu.lus.includes(lu.source)
+				])
+			),
+			Object.entries(titres)
+				.map(([langue, lu]) => `${langue} : ${lu.lus.join(', ') || 'aucune carte'}`)
+				.join(' ; ')
+		);
+	});
+	await ouvrir(page, '/');
+	if ((await racineDit(page, 'lang')) !== 'fr') await choisirLaLangue(page, 'fr');
 }
 
 /**
@@ -5108,7 +7068,32 @@ async function devenirEditrice(navigateur, page) {
 					exact: true
 				})
 			);
-			await envoyer(page, confirmer(page, 'Prendre le rôle d’éditeur'));
+			await retour('19-membres-confirmations', async () => {
+				const demande = page.locator('#confirmer-membre');
+				const texte = (await demande.count()) === 1 ? await texteDe(demande) : '';
+				verifierChaque(
+					'sur sa propre ligne, « Donner le rôle d’éditeur » ne change rien au premier envoi : en haut, « Vous allez vous donner le rôle d’éditeur. », « Prendre le rôle d’éditeur » et « Ne rien changer »',
+					{
+						'la demande en haut, annoncée (role=alert)':
+							texte !== '' && (await demande.getAttribute('role')) === 'alert',
+						'« Vous allez vous donner le rôle d’éditeur. »': texte.startsWith(
+							'Vous allez vous donner le rôle d’éditeur.'
+						),
+						'« Prendre le rôle d’éditeur »':
+							(await confirmer(page, 'Prendre le rôle d’éditeur').count()) === 1,
+						'« Ne rien changer »':
+							(await demande
+								.getByRole('link', { name: 'Ne rien changer', exact: true })
+								.count()) === 1,
+						'le rôle pas encore changé': chemin(page) === '/membres'
+					},
+					texte || `aucune demande, ${chemin(page)}`
+				);
+			});
+			// Depuis l'étape 19, le rôle ne change qu'à la confirmation ; avant, au premier envoi.
+			if ((await confirmer(page, 'Prendre le rôle d’éditeur').count()) === 1) {
+				await envoyer(page, confirmer(page, 'Prendre le rôle d’éditeur'));
+			}
 			const avis = page.locator('#avis-role');
 			const texte = (await avis.count()) === 1 ? await texteDe(avis) : '';
 			const boite = texte ? await avis.boundingBox() : null;
@@ -5140,12 +7125,387 @@ async function devenirEditrice(navigateur, page) {
 					exact: true
 				})
 			);
-			await envoyer(seconde, confirmer(seconde, 'Donner ce rôle'));
+			await retour('19-membres-confirmations', async () => {
+				const demande = seconde.locator('#confirmer-membre');
+				const texte = (await demande.count()) === 1 ? await texteDe(demande) : '';
+				verifierChaque(
+					'sur la ligne d’un autre membre, « Donner le rôle de responsable » demande d’abord de confirmer : « Vous allez donner le rôle de responsable à cette personne : <adresse> », ce qu’elle pourra faire, et « Donner ce rôle »',
+					{
+						'la personne nommée': texte.includes(
+							`Vous allez donner le rôle de responsable à cette personne : ${RESPONSABLE}`
+						),
+						'ce qu’elle pourra faire': texte.includes(
+							'Elle pourra faire tout ce qui est réservé au responsable, membres et réglages compris.'
+						),
+						'« Donner ce rôle »': (await confirmer(seconde, 'Donner ce rôle').count()) === 1
+					},
+					texte || `aucune demande, ${chemin(seconde)}`
+				);
+			});
+			if ((await confirmer(seconde, 'Donner ce rôle').count()) === 1) {
+				await envoyer(seconde, confirmer(seconde, 'Donner ce rôle'));
+			}
+			await seRetirerDeMembres(seconde, ligne);
 		} finally {
 			await ailleurs.close();
 		}
 	});
 }
+
+/**
+ * La seconde responsable se retire elle-même de l'organisation, depuis Membres (étape 19) : l'écran
+ * demande d'abord de confirmer, avec des phrases qui parlent d'elle, puis elle arrive sur « Vos
+ * organisations », où un encadré, avant le titre et visible sans défiler, dit ce qui s'est passé.
+ * Rechargé sans paramètre, l'écran ne le montre plus.
+ */
+async function seRetirerDeMembres(seconde, ligne) {
+	await retour('19-membres-depart', async () => {
+		await ouvrir(seconde, '/membres');
+		await envoyer(
+			seconde,
+			ligne(seconde, SECONDE_RESPONSABLE).getByRole('button', {
+				name: 'Retirer de l’organisation',
+				exact: true
+			})
+		);
+		const demande = seconde.locator('#confirmer-membre');
+		const texteDeLaDemande = (await demande.count()) === 1 ? await texteDe(demande) : '';
+		await envoyer(
+			seconde,
+			await exiger(
+				demande.getByRole('button', { name: 'Me retirer de l’organisation', exact: true }),
+				'le bouton « Me retirer de l’organisation »'
+			)
+		);
+		const adresse = new URL(seconde.url());
+		const avis = seconde.locator('#avis-depart');
+		const texte = (await avis.count()) === 1 ? await texteDe(avis) : '';
+		const boite = texte ? await avis.boundingBox() : null;
+		const role = texte ? await avis.getAttribute('role') : null;
+		const hauteur = seconde.viewportSize()?.height ?? ECRAN.height;
+		const avantLeTitre =
+			texte !== '' &&
+			(await avis.evaluate((encadre) => {
+				const titre = document.querySelector('h1');
+				return Boolean(
+					titre && encadre.compareDocumentPosition(titre) & Node.DOCUMENT_POSITION_FOLLOWING
+				);
+			}));
+		await ouvrir(seconde, '/organisations');
+		const apresRechargement = await seconde.locator('#avis-depart').count();
+		verifierChaque(
+			'une responsable qui se retire elle-même, depuis Membres, confirme d’abord, puis arrive sur « Vos organisations », où un encadré, avant le titre et visible sans défiler, dit qu’elle a quitté l’organisation',
+			{
+				'la demande « Vous allez vous retirer vous-même de l’organisation. »':
+					texteDeLaDemande.startsWith('Vous allez vous retirer vous-même de l’organisation.'),
+				'l’arrivée sur « Vos organisations »': adresse.pathname === '/organisations',
+				'l’encadré':
+					texte ===
+					'Vous avez quitté l’organisation. Son espace ne vous est plus ouvert. Pour y revenir, demandez à une personne responsable de vous inviter de nouveau.',
+				'annoncé (role=status), avant le titre': avantLeTitre && role === 'status',
+				'visible sans défiler': boite !== null && boite.y >= 0 && boite.y + boite.height <= hauteur,
+				'plus d’encadré au rechargement': apresRechargement === 0
+			},
+			`${adresse.pathname}${adresse.search} ; « ${texte || 'aucun encadré'} »`
+		);
+	});
+}
+
+/**
+ * q. « Vos organisations » (étape 19) : la personne du parcours quitte l'organisation voisine, où
+ * elle est éditrice. Le bouton « Quitter l’organisation » a pour description le nom de
+ * l'organisation ; l'écran demande de confirmer en la nommant ; puis l'encadré dit le départ, et
+ * l'organisation a quitté la liste.
+ */
+async function quitterLaVoisine(page) {
+	etape('q. Vos organisations : quitter une organisation');
+	await retour('19-membres-quitter', async () => {
+		await ouvrir(page, '/organisations');
+		const ligne = page
+			.locator('li')
+			.filter({ has: page.getByRole('button', { name: VOISINE.nom, exact: true }) });
+		const quitter = await exiger(
+			ligne.getByRole('button', { name: 'Quitter l’organisation', exact: true }),
+			'le bouton « Quitter l’organisation »'
+		);
+		const description = await descriptionDe(quitter);
+		await envoyer(page, quitter);
+		const demande = page.locator('#confirmer-depart');
+		const texteDeLaDemande = (await demande.count()) === 1 ? await texteDe(demande) : '';
+		await envoyer(
+			page,
+			await exiger(
+				demande.getByRole('button', { name: 'Confirmer le départ', exact: true }),
+				'le bouton « Confirmer le départ »'
+			)
+		);
+		const avis = page.locator('#avis-depart');
+		const texte = (await avis.count()) === 1 ? await texteDe(avis) : '';
+		const restantes = await page.getByRole('button', { name: VOISINE.nom, exact: true }).count();
+		verifierChaque(
+			`dans « Vos organisations », « Quitter l’organisation » sur « ${VOISINE.nom} » : le bouton porte son nom pour les lecteurs d’écran, l’écran demande de confirmer en la nommant, puis l’encadré dit le départ, et l’organisation a quitté la liste`,
+			{
+				'la description du bouton': description === VOISINE.nom,
+				'la demande nomme l’organisation': texteDeLaDemande.startsWith(
+					`Vous allez quitter cette organisation : ${VOISINE.nom}`
+				),
+				'l’encadré du départ':
+					texte ===
+					'Vous avez quitté l’organisation. Son espace ne vous est plus ouvert. Pour y revenir, demandez à une personne responsable de vous inviter de nouveau.',
+				'l’organisation a quitté la liste': restantes === 0
+			},
+			`« ${description} » ; « ${texteDeLaDemande.slice(0, 80)} » ; « ${texte || 'aucun encadré'} »`
+		);
+	});
+}
+
+// ---------------------------------------------------------------------------------------------
+// Le catalogue des vérifications des retours
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * Chaque vérification d'un retour, sous la forme neutre de son libellé (`neutre`), `retour |
+ * libellé`, une par ligne, dans l'ordre d'un passage entier. Le parcours sait ainsi lui-même,
+ * contre une ancienne image, lesquelles n'ont jamais été jouées, et les imprime une par ligne. Un
+ * passage strict échoue si l'une d'elles ne l'est pas, ou si une vérification jouée n'y est pas :
+ * le catalogue ne peut pas s'écarter du script sans que le parcours le dise.
+ */
+const CATALOGUE = `
+D2 | au premier passage, un navigateur réglé en allemand (de-CH) voit /connexion en allemand
+D3 | le lien demandé depuis cet écran allemand part en allemand, <html lang="de"> compris
+B1 | la connexion dit, sous le champ, quelle adresse écrire, avec un exemple
+A3 | les conditions sont datées en JJ.MM.AAAA, « Dernière mise à jour : JJ.MM.AAAA. »
+F1 | les conditions nomment Voltia comme exploitant, et nulle part la personne retirée
+A3 | la passkey est datée du jour en Suisse, « Enregistrée le JJ.MM.AAAA »
+B2 | une seconde passkey, pouvoirs actifs : le message dit qu’elle servira à la prochaine connexion, sans renvoyer à un bouton, et l’écran n’en montre pas d’autre que « Enregistrer une passkey »
+B2 | son nom se distingue de celui de la première
+D2 | /super-admin porte en haut le choix des cinq langues, le français choisi
+D2 | /super-admin/passkey porte en haut le choix des cinq langues, le français choisi
+D2 | en Deutsch, les écrans du super-admin sont dans cette langue, rien en français
+D2 | en Italiano, les écrans du super-admin sont dans cette langue, rien en français
+D2 | en English, les écrans du super-admin sont dans cette langue, rien en français
+D2 | en العربية, les écrans du super-admin sont dans cette langue, rien en français
+D2 | la langue choisie reste au rechargement
+D2 | retour au français
+B2 | « Créer une organisation », avec la phrase qui dit ce qu’est une organisation
+B2 | le fuseau se choisit dans une liste, les fuseaux d’Europe en tête, Europe/Zurich par défaut
+B2 | une phrase sous le fuseau dit à quoi il sert : les heures du programme et celles des prières
+B2 | le lien de connexion de secours dit quand s’en servir, ce qui se passe et combien il vaut
+19-B12 | sous le nom et sous l’adresse d’une organisation, l’exemple est « Association Horizon » et « association-horizon », en arabe « جمعية الأفق », et la règle de l’adresse demande une lettre
+19-D6 | avec JavaScript, l’adresse proposée pendant la frappe : « Club № 5 » donne « club-no-5 », « Horizon™ » donne « horizon », et un nom sans lettre latine ne propose rien et dit d’écrire l’adresse
+B2 | « Adresse de la page publique » est proposée pendant la frappe, « centre-du-parcours », adresse complète en direct
+B2 | l’adresse se modifie, et l’adresse complète la suit
+B3 | sous le choix du rôle, ce que peut faire un éditeur, et ce qui est réservé au responsable
+B3 | ce que peut faire un éditeur ne promet pas de supprimer un cours : « Créer un cours, le modifier et le publier »
+19-D3 | la liste réservée au responsable dit « Supprimer un cours »
+B3 | le choix du rôle renvoie à ces deux listes pour les lecteurs d’écran
+B1 | l’invitation dit, sous l’adresse, un exemple de la bonne forme
+D3 | une invitation envoyée depuis l’écran en allemand part en allemand, <html lang="de"> compris
+19-C | depuis l’écran en français, l’invitation part dans la langue choisie sous l’adresse, « Italiano », objet et <html lang="it"> compris
+19-D6 | sans JavaScript, « École du Lac », envoyée sans adresse écrite, n’est pas encore créée : l’écran montre en entier l’adresse proposée, « HÔTE/m/ecole-du-lac », dans un champ où la confirmer ou la changer
+B2 | sans JavaScript, « École du Lac », créée à la confirmation, reçoit l’adresse que le serveur a proposée, « ecole-du-lac », et l’écran dit l’adresse entière
+A3 | la version et la date du texte s’écrivent en JJ.MM.AAAA, « Version du JJ.MM.AAAA »
+H2 | avec une organisation et une invitation qui attend, le lien « Choisir une autre organisation » est là, vers le choix
+19-D8 | l’écran d’acceptation écrit « l’espace d’Association voisine », en haut et sous le bouton
+D1 | les réglages proposent l’anglais parmi les langues de la page publique
+B1 | la navigation nomme ces écrans par leur titre, « Heures de prière » et « Prière du vendredi »
+B1 | l’écran le confirme sans jargon, « Les heures de prière sont activées. »
+B1 | le formulaire d’un cours a une aide sous le titre, le premier jour et la publication
+B4 | en haut du formulaire, « Résumé : ce qui sera publié », et le premier jour signalé comme manquant
+B4 | le résumé suit la saisie : le titre, puis le premier jour écrit en JJ.MM.AAAA
+B4 | le résumé a une ligne pour la description, sous le titre de sa langue
+19-cours-facultatif | la ligne de la description, remplie, finit par « (facultatif) »
+B4 | une description écrite en allemand sans titre en allemand est refusée, avec une phrase qui nomme la langue, et le formulaire revient avec la description
+B4 | avec JavaScript, après ce refus, l’écran revient sur l’onglet de la langue en cause, « allemand », où la description est en vue
+19-D4 | sur « À venir », la carte de « Arabe pour adultes », en brouillon, porte « brouillon », et le programme de la semaine ne l’annonce dans aucune langue
+A1 | avant tout geste, aucun bouton « Annuler cette séance » n’est visible
+A1 | « Annuler ou déplacer » n’ouvre que les options de sa carte
+A1 | un second geste la referme, sans rouvrir les autres
+A2 | le champ « Nouvelle date » accepte toute date à partir d’aujourd’hui (JJ.MM.AAAA)
+19-D4 | le calendrier de « Nouvelle date » s’arrête au JJ.MM.AAAA, la dernière date que l’action accepte
+B1 | l’aide de la nouvelle date dit : à partir d’aujourd’hui, plus tôt ou plus tard
+A2 | « Déplacer la séance » sans rien changer, ni la date ni l’heure, est refusé avec une phrase, dans la carte, et rien n’est déplacé
+A2 | une date passée est refusée, dans la carte de la séance
+A2 | la séance du JJ.MM.AAAA part au JJ.MM.AAAA, plus tôt que prévu, et se dit déplacée
+A2 | elle apparaît le JJ.MM.AAAA, en date exceptionnelle, prévue à l’origine le JJ.MM.AAAA
+19-D4 | la carte d’arrivée du JJ.MM.AAAA, « date exceptionnelle », a son bouton « Rétablir la séance », avec l’aide qui dit ce qu’il défait
+B1 | l’écran Partager dit où coller le code, avec un exemple, et nomme le cadre sans jargon
+19-B2 | « À venir » en arabe : la note de l’audience dit « فالتقويم يُحدَّث من تلقاء نفسه »
+19-B10 | « À venir » en arabe, le programme qui ne s’affiche plus sur le site : l’alerte parle de « الشيفرة », et son lien dit « عرض الشيفرة المراد لصقها مرة أخرى »
+19-B9 | en arabe, le programme de la semaine se copie puis se colle : « لتنسخه وتلصقه في WhatsApp » sur « À venir », « انسخ هذه الرسالة والصقها في مجموعة WhatsApp الخاصة بك » dans Partager
+19-B1 | Partager en arabe : le code pour un site très strict « وهي لا تُحدَّث تلقائيًا »
+19-B8 | Membres en arabe, un rôle inconnu envoyé par un formulaire écrit à la main : « هذا الدور غير موجود. اختر دور المحرر أو دور المسؤول. »
+19-cours-facultatif | le résumé d’un nouveau cours marque « (facultatif) » chaque ligne facultative, sans la signaler comme un manque
+19-cours-titre-manquant | une description allemande sans titre allemand : le résumé signale le titre qui manque, et la description à corriger ; écrire le titre retire la marque
+19-cours-langue-de-saisie | sur un nouveau cours, choisir l’arabe comme langue de saisie coche l’arabe comme langue d’enseignement, à la place du français
+19-cours-premier-jour | un cours à dates précises : « Premier jour du cours » prend la première date, JJ.MM.AAAA, puis suit une date plus tôt, JJ.MM.AAAA
+19-cours-message | un cours publié : l’écran revient sur /cours?publie=<id>, « Le cours est publié. », et le message « Nouveau cours : « Annoncé dans le désordre » » prêt à coller, ses dates dans l’ordre
+19-cours-hors-periode | un cours à dates précises dont une date tombe après son dernier jour : son bloc, et lui seul, dit « À corriger : … »
+19-D3 | sur /cours, la responsable supprime un cours : « Supprimer ce cours », fermé au chargement, dit ce que la suppression emporte, et « Oui, supprimer » le retire
+A2 | /m/centre-parcours : la séance ramenée plus tôt se voit au départ (JJ.MM.AAAA) et à l’arrivée (JJ.MM.AAAA)
+19-og-locale | /m/centre-parcours : <meta property="og:locale" content="fr_CH">, et un og:locale:alternate par autre langue publiée
+A2 | /m/centre-parcours/de : la séance ramenée plus tôt se voit au départ (JJ.MM.AAAA) et à l’arrivée (JJ.MM.AAAA)
+19-og-locale | /m/centre-parcours/de : <meta property="og:locale" content="de_CH">, et un og:locale:alternate par autre langue publiée
+D4 | les conditions ouvertes depuis /m/centre-parcours/de disent d’abord, dans cette langue, qu’elles n’existent qu’en français
+A2 | /m/centre-parcours/it : la séance ramenée plus tôt se voit au départ (JJ.MM.AAAA) et à l’arrivée (JJ.MM.AAAA)
+19-D7 | /m/centre-parcours/it : à l’arrivée, « Inizialmente <giorno> JJ.MM.AAAA », sans « In origine: » ni « il » devant le jour
+19-og-locale | /m/centre-parcours/it : <meta property="og:locale" content="it_CH">, et un og:locale:alternate par autre langue publiée
+D4 | les conditions ouvertes depuis /m/centre-parcours/it disent d’abord, dans cette langue, qu’elles n’existent qu’en français
+D1 | /m/centre-parcours/en s’affiche, lang="en" dir="ltr"
+D1 | /m/centre-parcours/en : <html lang="en" dir="ltr">
+D1 | /m/centre-parcours/en : les deux cours y sont
+D1 | /m/centre-parcours/en : la séance annulée reste visible, barrée, avec sa mention
+A2 | /m/centre-parcours/en : la séance ramenée plus tôt se voit au départ (JJ.MM.AAAA) et à l’arrivée (JJ.MM.AAAA)
+19-og-locale | /m/centre-parcours/en : <meta property="og:locale" content="en_GB">, et un og:locale:alternate par autre langue publiée
+D1 | /m/centre-parcours/en : le nom accessible du lien des conditions est « Terms of use (opens in a new tab) », selon playwright et selon Chrome, et l’annonce est cachée aux yeux
+D1 | /m/centre-parcours/en : le pied porte ce lien, vers /conditions, dans un nouvel onglet
+D1 | /m/centre-parcours/en : aucune phrase de la page française n’y reste en français
+D4 | les conditions ouvertes depuis /m/centre-parcours/en disent d’abord, dans cette langue, qu’elles n’existent qu’en français
+A2 | /m/centre-parcours/ar : la séance ramenée plus tôt se voit au départ (JJ.MM.AAAA) et à l’arrivée (JJ.MM.AAAA)
+19-og-locale | /m/centre-parcours/ar : <meta property="og:locale" content="ar_AR">, et un og:locale:alternate par autre langue publiée
+D4 | les conditions ouvertes depuis /m/centre-parcours/ar disent d’abord, dans cette langue, qu’elles n’existent qu’en français
+19-cours-seance-barree | /m/centre-parcours/cours/<id> : dans « Prochaines séances », la séance annulée du JJ.MM.AAAA reste, barrée, avec « Annulé »
+19-og-locale | /m/centre-parcours/cours/<id> : <meta property="og:locale" content="fr_CH">, et un og:locale:alternate par autre langue publiée
+19-og-locale | /m/centre-parcours/agenda : <meta property="og:locale" content="fr_CH">, et un og:locale:alternate par autre langue publiée
+D1 | /m/centre-parcours/en/cours/<id> s’affiche
+D1 | /m/centre-parcours/en/cours/<id> : <html lang="en" dir="ltr">
+19-cours-seance-barree | /m/centre-parcours/en/cours/<id> : dans « Prochaines séances », la séance annulée du JJ.MM.AAAA reste, barrée, avec « Cancelled »
+19-og-locale | /m/centre-parcours/en/cours/<id> : <meta property="og:locale" content="en_GB">, et un og:locale:alternate par autre langue publiée
+D1 | /m/centre-parcours/en/agenda s’affiche
+D1 | /m/centre-parcours/en/agenda : <html lang="en" dir="ltr">
+19-og-locale | /m/centre-parcours/en/agenda : <meta property="og:locale" content="en_GB">, et un og:locale:alternate par autre langue publiée
+19-cours-seance-barree | /m/centre-parcours/ar/cours/<id> : dans « Prochaines séances », la séance annulée du JJ.MM.AAAA reste, barrée, avec « ملغى »
+19-og-locale | /m/centre-parcours/ar/cours/<id> : <meta property="og:locale" content="ar_AR">, et un og:locale:alternate par autre langue publiée
+19-og-locale | /m/centre-parcours/ar/agenda : <meta property="og:locale" content="ar_AR">, et un og:locale:alternate par autre langue publiée
+19-D8 | /m/association-voisine/agenda : « Le programme d’Association voisine s’ajoute à votre calendrier », dans la page et dans sa description, jamais « de Association »
+D1 | le widget demandé en anglais pose le cadre de la page anglaise
+D1 | le nom accessible du lien du widget est « See the full programme (opens in a new tab) », selon playwright et selon Chrome, et l’annonce est cachée aux yeux
+D1 | dans le cadre anglais, aucune phrase du cadre français ne reste en français
+A2 | la séance ramenée plus tôt a son RECURRENCE-ID (JJ.MM.AAAA) et sa nouvelle date, la veille (JJ.MM.AAAA)
+E1 | sur un iPhone, le premier lien est l’abonnement webcal, sans Google ni Outlook
+E1 | sur un Android, le lien ouvre Google Agenda avec la demande d’abonnement prête, dans un nouvel onglet
+E1 | sur un PC Windows, le choix entre Google Agenda, Outlook, une autre application, et l’adresse à copier
+E1 | la réponse dit aux caches qu’elle dépend de l’appareil (Vary)
+E2 | sur un ordinateur, sous Outlook, le délai qu’il met à rafraîchir un abonnement : « Outlook peut mettre plus de 24 heures à rafraîchir un abonnement. »
+19-agenda-android | sur un Android, la page d’abonnement : après le bouton de Google, « Si Google Agenda ne propose rien sur votre téléphone, ouvrez cette page sur un ordinateur : », puis l’adresse de la page dans son propre paragraphe, puis celle du flux, et plus « L’adresse à coller »
+19-agenda-android | sur un Android, la page d’un cours : après le bouton de Google, « Si Google Agenda ne propose rien sur votre téléphone, ouvrez cette page sur un ordinateur : », puis l’adresse de la page dans son propre paragraphe, puis celle du flux, et plus « L’adresse à coller »
+19-agenda-derniere-minute | la page renvoie à la page du programme pour un changement de dernière minute, sous l’aide du bouton d’Android et une fois sous le choix complet, et ne dit plus que Google peut mettre 24 heures
+19-agenda-derniere-minute | sur un iPhone, les étapes à la main renvoient à la page du programme, une fois, après le délai d’Outlook
+19-agenda-outlook | sur un ordinateur, « Outlook (travail ou école) » ouvre outlook.office.com dans un nouvel onglet, et chaque Outlook dit à quels comptes il sert
+19-agenda-page-du-cours | sur un iPhone, sous le nom de chaque cours, un lien « Page du cours » vers le bloc d’abonnement de sa page, d’au moins 44 px de haut
+19-agenda-autre-appareil | sur un iPhone, le bloc finit par « Une autre application ou un autre appareil ? » en texte, puis le lien « Voir tous les choix », seul, vers ?appareil=tous
+19-agenda-autre-appareil | sur un Android, le bloc finit par « Une autre application ou un autre appareil ? » en texte, puis le lien « Voir tous les choix », seul, vers ?appareil=tous
+19-B11 | la page d’abonnement en arabe, sur un Android : l’aide du bouton de Google est exactement celle relue
+D1 | /m/organisation-inconnue/en rend 404, avec <html lang="en" dir="ltr"> et aucune balise script
+D1 | /m/organisation-inconnue/en : la page d’erreur dit « Page not found » et « Please check the address. »
+19-404-organisation | /m/association-voisine/en/nulle-part, une langue que l’organisation ne publie pas : le 404 est dans sa langue, le français, « Page introuvable »
+19-langue-non-activee | /m/association-voisine/en/agenda?appareil=tous, une langue que l’organisation ne publie pas : 307 vers /m/association-voisine/agenda?appareil=tous, la page dans sa langue par défaut
+D2 | les N écrans de l’espace portent en haut le choix des cinq langues
+D2 | en Deutsch, les N écrans sont dans cette langue, rien en français
+D2 | en Italiano, les N écrans sont dans cette langue, rien en français
+D2 | en English, les N écrans sont dans cette langue, rien en français
+D2 | en العربية, les N écrans sont dans cette langue, rien en français
+D2 | la langue choisie, l’italien, reste au rechargement
+D2 | reconnectée dans un autre navigateur réglé en français, elle retrouve l’italien de son compte
+D2 | revenue au français par le compte, le premier navigateur le suit
+D2 | une langue choisie sur /connexion avant de demander le lien devient celle du compte : ouvert dans un autre navigateur, réglé en français, le lien arrive en allemand
+C1 | l’écran commence par « D’où viennent vos heures de prière ? », avec ses trois réponses
+C1 | « Source que vous déclarez » a disparu, et rien du calcul n’est montré avant la réponse
+C2 | par son nom, « Bienne », la localité « 2502 Biel/Bienne (BE) » est proposée
+C2 | par son NPA, « 2502 », elle est proposée aussi
+C2 | la localité choisie donne sa position, et l’attribution de swisstopo est écrite
+C2 | la recherche n’a interrogé aucun service extérieur
+C1 | « Voir l’aperçu » montre les sept prochains jours avant tout enregistrement, puis « Enregistrer »
+C2 | la localité de Bienne est enregistrée, et l’écran dit que les heures en viennent
+C2 | les heures des sept prochains jours sont servies au public, celles que le calcul donne pour la position de la localité dans la liste
+C2 | avec JavaScript, « Hors de Suisse » reste ouvert pendant qu’on tape la latitude puis la longitude, touche par touche
+C2 | avec JavaScript, Bienne enregistrée et cochée, taper une position coche « Hors de Suisse : utiliser la position donnée plus bas » à sa place
+C2 | avec JavaScript, « Méthode de calcul, école et ajustements (facultatif) » reste ouvert pendant qu’on tape dans la recherche, touche par touche, puis quand la liste arrive
+19-prieres-rue | « Rüe », le « ü » tapé d’un seul point de code : les premières localités proposées portent « Rüe », et Rue (FR) ne vient qu’après elles
+19-prieres-rue | « Rüe », le « ü » tapé de deux points de code : les premières localités proposées portent « Rüe », et Rue (FR) ne vient qu’après elles
+19-B4 | l’écran des prières en arabe, « importées depuis un fichier » : l’aide du modèle dit « النموذج مُعبّأ » et « ثم ارفعه هنا »
+19-B5 | un fichier séparé par des tabulations, lu en arabe : le séparateur se lit « علامة الجدولة (Tab) »
+19-B6 | vingt-cinq lignes refusées, vingt montrées : la ligne finale se lit « … و5 أخرى. »
+B1 | l’heure d’une session du vendredi a son aide, avec un exemple
+19-sermon | dans « Ajouter une session », « Langue du sermon » propose les huit langues d’enseignement, dans l’ordre, et son aide le dit
+C4 | une session du vendredi est ajoutée
+B1 | dans la carte d’une session, « À partir du » a l’aide d’une modification : « Changez cette date seulement pour corriger une erreur. »
+D1 | Partager donne un message par langue publiée, les 5, le français de l’organisation d’abord et seul ouvert
+D1 | chaque message porte sa langue et son sens, de droite à gauche en arabe
+D1 | la session du vendredi y porte le nom de la prière dans la langue du message : « Freitagsgebet », « Preghiera del venerdì », « Friday prayer », « صلاة الجمعة »
+C3 | l’horaire propose « heure fixe », « après une prière », « avant une prière »
+C3 | avec JavaScript, le navigateur exige les champs de l’horaire choisi : les heures pour une heure fixe, les minutes et la durée avant une prière, et eux seuls
+C3 | avec JavaScript, les minutes prennent les bornes du choix : de 1 à 120 avant une prière, de 0 à 240 après
+C3 | « Hifz avant Maghrib » est créé, publié, le JOUR
+C3 | la liste des cours dit « 10 min avant Maghrib »
+C3 | sa fiche rouverte dit « avant une prière » et garde des minutes positives
+C2 | /m/centre-parcours : « Tafsir du soir » affiche son heure, celle que le calcul donne pour la localité
+C2 | /m/centre-parcours : « Cercle de lecture » affiche son heure, celle que le calcul donne pour la localité
+C2 | /m/centre-parcours/ar : « Tafsir du soir » affiche son heure, celle que le calcul donne pour la localité
+C2 | /m/centre-parcours/ar : « Cercle de lecture » affiche son heure, celle que le calcul donne pour la localité
+C3 | la page publique dit « 10 min avant Maghrib », avec l’heure
+C2 | le flux agenda dit « 15 min après Maghrib » pour « Tafsir du soir », comme la page, à l’heure que le calcul donne pour la localité
+C2 | le flux agenda dit « Après Maghrib » pour « Cercle de lecture », comme la page, à l’heure que le calcul donne pour la localité
+D1 | le flux agenda (?lang=en) dit « 15 min after Maghrib » pour « Tafsir du soir », comme la page, à l’heure que le calcul donne pour la localité
+D1 | le flux agenda (?lang=en) dit « After Maghrib » pour « Cercle de lecture », comme la page, à l’heure que le calcul donne pour la localité
+C2 | le flux agenda (?lang=ar) dit « بعد المغرب بـ15 دقيقة » pour « Tafsir du soir », comme la page, à l’heure que le calcul donne pour la localité
+C2 | le flux agenda (?lang=ar) dit « بعد المغرب » pour « Cercle de lecture », comme la page, à l’heure que le calcul donne pour la localité
+C4 | la page publique propose quatre vues, dont « Prières »
+C4 | l’onglet montre les heures du jour, adhan et iqama, les sept prochains jours et la prière du vendredi
+C4 | en arabe, l’onglet « مواقيت الصلاة », de droite à gauche, avec le jour en chiffres latins
+C4 | /m/centre-parcours/ar?vue=prieres : aucun chiffre arabe oriental
+C4 | dans le widget, l’onglet « Prières » s’ouvre dans le cadre, qui reste encadré
+19-widget-prieres | le widget posé avec view="prieres" ouvre son cadre sur l’onglet « Prières », encadré, et son pied mène au même onglet
+C1 | à 390 px de large, axe ne relève rien de sérieux sur les trois réponses de l’écran des prières, heures servies comprises
+B1 | à 390 px, supprimer « Grande salle », qu’un cours occupe, demande d’abord de confirmer, et la demande se voit sans défiler
+C4 | à 390 px de large, axe ne relève rien de sérieux sur l’onglet « Prières », en français et en arabe, tableau de la semaine compris
+A1 | sans JavaScript, les options de chaque séance sont fermées au chargement, et aucun bouton « Annuler cette séance » ne se voit
+A1 | sans JavaScript, « Annuler ou déplacer » ouvre les options de sa carte, et d’elle seule
+B1 | sans JavaScript, une session du vendredi se supprime : ouvrir « Supprimer cette session », confirmer, et elle a disparu, « La session est supprimée. »
+19-cours-sans-js | sans JavaScript, « avant une prière » choisi sur un nouveau cours, heures vidées, s’envoie, et la page revient avec les champs de la prière et la phrase des minutes
+19-cours-sans-js | sans JavaScript, « après une prière » choisi sur la page revenue pour « avant une prière » laisse partir 0 minute comme 180
+19-cours-premier-jour | sans JavaScript, un cours à dates précises tapées dans le désordre, le premier jour vide : il s’enregistre, avec la première date, JJ.MM.AAAA, pour premier jour
+19-D3 | sans JavaScript, « Supprimer ce cours » s’ouvre, et « Oui, supprimer » retire le cours
+C2 | sans JavaScript, Bienne enregistrée, la position 48.8566, 2.3522 tapée sous « Hors de Suisse », cette case cochée, s’enregistre à sa place : l’écran le dit, et les heures servies sont celles de cette position
+C2 | sans JavaScript, de cette position, Bienne se cherche, se coche et s’enregistre de nouveau : l’écran nomme la localité, et les heures redeviennent les siennes
+19-prieres-hors-de-suisse | sans JavaScript, Bienne enregistrée et cochée, la position tapée sous « Hors de Suisse », sans toucher à la liste, s’enregistre à sa place : l’écran le dit, et les heures servies sont celles de cette position
+19-D5 | sans autre période, l’aperçu d’une nouvelle période vient sous un titre de niveau 3, et axe n’y relève plus « heading-order »
+19-prieres-periode-passee | l’aperçu d’une période terminée le JJ.MM.AAAA le dit : « Cette période s’est terminée le JJ.MM.AAAA : elle ne change aucun des sept prochains jours, que l’aperçu montre. »
+19-B7 | en arabe, après une période, l’aide de « Ajouter une période » dit que ses valeurs sont « مُعبّأة مسبقًا »
+19-prieres-copie | une période au nom de soixante signes se copie pour l’année suivante : la marque « (année suivante) » entière, le nom raccourci, soixante signes au plus
+D2 | depuis l’écran en allemand, la copie de « Winter » pour l’année suivante s’appelle « Winter (nächstes Jahr) »
+19-D2 | sur l’écran du vendredi, « Annuler cette session » envoyé pour le vendredi passé (formulaire modifié dans la page) est refusé en tête : « Cette session est déjà passée : … », et rien n’est annulé
+19-membres-salle | dans Réglages, « Supprimer » sur une salle déjà supprimée depuis un autre onglet dit « Cette salle n’existe plus. », et non « Salle supprimée. »
+19-D2 | sur l’écran du vendredi, une session ajoutée dans une salle supprimée entre-temps est refusée, dans la section d’ajout, saisie gardée : « Cette salle n’existe plus : … »
+19-sermon | une session au sermon en albanais et en turc, deux langues que la page publique ne publie pas : sa carte dit « Sermon en albanais et turc », et la page publique « albanais et turc »
+19-B3 | l’écran du vendredi en arabe, après « Retirer de la page publique » : « لكنه يبقى هنا كمسودة »
+19-D2 | dans un second onglet, « Publier » sur une session supprimée entre-temps est refusé en tête : « Cette session n’existe plus : elle a été supprimée entre-temps. La liste ci-dessous est à jour. »
+19-retablir-nouvelle-date | une session déplacée à un autre jour : sur la ligne « Nouvelle date, à la place du JOUR JJ.MM.AAAA », « Rétablir comme d’habitude » la ramène à son vendredi
+19-jour-sans-seance | « Annuler » envoyé pour un jour où il n’y a pas de séance (formulaire modifié dans la page) : une phrase qui le dit, en tête, et rien d’écrit, sur l’écran du vendredi comme sur « À venir »
+19-titre-langue-ecran | sur « À venir », une séance porte son titre dans la langue de l’écran : « Freitagsgebet » en allemand, « قراءة القرآن » en arabe
+D1 | sur « À venir », le programme de la semaine nomme la session du vendredi dans la langue de chaque message : « Freitagsgebet », « Preghiera del venerdì », « Friday prayer », « صلاة الجمعة »
+A2 | déplacée le même jour de 12:30 à 13:00, la session du vendredi porte sur sa carte « nouvelle heure » et « Prévue à l’origine : 12:30 – 13:15 »
+B1 | le message prêt à coller le dit comme un changement d’heure, la date une seule fois : « … commence à 13:00 au lieu de 12:30. »
+19-texte-vendredi | déplacée le même jour, la session du vendredi : le message dit « « Prière du vendredi » : la prière du JOUR JJ.MM.AAAA commence à 13:00 au lieu de 12:30. », sans « Le cours »
+D1 | ce message nomme la session du vendredi dans la langue de chaque message : « Freitagsgebet », « Preghiera del venerdì », « Friday prayer », « صلاة الجمعة »
+B1 | le programme de la semaine dit la session déplacée le même jour comme une nouvelle heure, dans chaque langue : « (nouvelle heure) », « (neue Uhrzeit) », « (nuovo orario) », « (new time) », « (وقت جديد) »
+A2 | une carte restée ouverte dans un autre onglet, envoyée après ce déplacement, est refusée par une phrase en haut, et rien n’est écrit : la session reste à 13:00
+19-D4 | sur « À venir », le refus d’une carte restée ouverte nomme la séance : « La séance « Prière du vendredi » du JOUR JJ.MM.AAAA a changé depuis l’ouverture de la page : … »
+A2 | sur l’écran du vendredi, une carte restée ouverte dans un autre onglet, envoyée après ce déplacement (« Annuler cette session »), est refusée par une phrase en tête, et rien n’est écrit : la session reste déplacée à 13:00
+19-texte-vendredi | annulée, la session du vendredi : le message dit « « Prière du vendredi » : la prière du JOUR JJ.MM.AAAA est annulée. », puis « Les autres prières du vendredi ont lieu comme d’habitude. », sans « Le cours »
+19-annulee | annulée, la session du vendredi porte « Annulée » (en arabe « ملغاة »), accordé à la prière, dans la vue Semaine, l’onglet « Prières » et la vue Mois
+B1 | avec JavaScript, le nom et la formule d’accueil tapés au clavier, puis une autre couleur : c’est ce qui a été tapé qui s’enregistre
+19-membres-confirmations | sur sa propre ligne, « Donner le rôle d’éditeur » ne change rien au premier envoi : en haut, « Vous allez vous donner le rôle d’éditeur. », « Prendre le rôle d’éditeur » et « Ne rien changer »
+B3 | une responsable qui se donne le rôle d’éditeur arrive sur « À venir », où une phrase, visible sans défiler, lui dit ce qui s’est passé et comment retrouver ses écrans
+19-membres-confirmations | sur la ligne d’un autre membre, « Donner le rôle de responsable » demande d’abord de confirmer : « Vous allez donner le rôle de responsable à cette personne : <adresse> », ce qu’elle pourra faire, et « Donner ce rôle »
+19-membres-depart | une responsable qui se retire elle-même, depuis Membres, confirme d’abord, puis arrive sur « Vos organisations », où un encadré, avant le titre et visible sans défiler, dit qu’elle a quitté l’organisation
+19-membres-quitter | dans « Vos organisations », « Quitter l’organisation » sur « Association voisine » : le bouton porte son nom pour les lecteurs d’écran, l’écran demande de confirmer en la nommant, puis l’encadré dit le départ, et l’organisation a quitté la liste
+A3 | aucune date écrite AAAA-MM-JJ sur les N écrans traversés (espace, super-admin, page publique, widget)
+F1 | aucun des N écrans traversés ne nomme la personne retirée du dépôt
+`
+	.trim()
+	.split('\n')
+	.filter(Boolean);
 
 // ---------------------------------------------------------------------------------------------
 // Le déroulé
@@ -5191,9 +7551,11 @@ try {
 	await surUnTelephone(navigateur, page);
 	await sansJavaScript(navigateur, page);
 	await periodeCopiee(page);
+	await vendrediEtape19(page);
 	await vendrediSurLAccueil(page);
 	await reglagesAuClavier(page);
 	await devenirEditrice(navigateur, page);
+	await quitterLaVoisine(page);
 	await bilanDesEcrans();
 } catch (erreur) {
 	echoue = true;
@@ -5256,9 +7618,44 @@ const impossibles = releve.filter((ligne) => ligne.impossible);
 const rouges = jouees.filter((ligne) => !ligne.ok);
 const sansLigne = RETOURS.filter((lettre) => !releve.some((ligne) => ligne.retour === lettre));
 const duree = Math.round((Date.now() - debut) / 1000);
+
+// Le catalogue, comparé à ce qui a été joué : une vérification du catalogue qui n'a pas tourné n'a
+// pas été jouée ; une vérification jouée qui n'est pas au catalogue manque à la liste.
+const cle = (ligne) => `${ligne.retour} | ${neutre(ligne.quoi)}`;
+const catalogue = new Set(CATALOGUE);
+const joueesParCle = new Set(jouees.map(cle));
+const jamaisJouees = CATALOGUE.filter((entree) => !joueesParCle.has(entree));
+const horsCatalogue = [...joueesParCle].filter((entree) => !catalogue.has(entree));
+if (RELEVE || jamaisJouees.length > 0) {
+	etape(`Les vérifications du catalogue jamais jouées, une par ligne (${jamaisJouees.length})`);
+	for (const entree of jamaisJouees) process.stdout.write(`  ${entree}\n`);
+}
+if (horsCatalogue.length > 0) {
+	etape(
+		`Les vérifications jouées qui manquent au catalogue, une par ligne (${horsCatalogue.length})`
+	);
+	for (const entree of horsCatalogue) process.stdout.write(`  ${entree}\n`);
+}
+
+/** Le bilan d'un groupe de retours : jouées, vertes, rouges, impossibles, jamais jouées. */
+function bilanDe(nom, lettres) {
+	const dans = (ligne) => lettres.includes(ligne.retour);
+	const sesJouees = jouees.filter(dans);
+	const sesRouges = sesJouees.filter((ligne) => !ligne.ok);
+	const sesJamais = jamaisJouees.filter((entree) => lettres.includes(entree.split(' | ')[0] ?? ''));
+	process.stdout.write(
+		`  ${nom} : ${lettres.length} retours, ${sesJouees.length} vérifications jouées, ${sesJouees.length - sesRouges.length} vertes, ` +
+			`${sesRouges.length} rouges ; ${impossibles.filter(dans).length} geste(s) impossible(s) ; ` +
+			`${sesJamais.length} jamais jouée(s) ; ${lettres.filter((lettre) => sansLigne.includes(lettre)).length} retour(s) sans ligne\n`
+	);
+}
+process.stdout.write('\n');
+bilanDe('étape 18', RETOURS_DE_L_ETAPE_18);
+bilanDe('étape 19', RETOURS_DE_L_ETAPE_19);
 process.stdout.write(
 	`\n  ${jouees.length} vérifications des retours jouées, ${jouees.length - rouges.length} vertes, ${rouges.length} rouges ; ` +
 		`${impossibles.length} geste(s) impossible(s), dont le bloc s’est arrêté là ; ` +
+		`${jamaisJouees.length} vérification(s) du catalogue (${CATALOGUE.length}) jamais jouée(s) ; ` +
 		`${sansLigne.length} retour(s) non atteint(s) ; ${ecransLus.size} écrans lus ; ${Math.floor(duree / 60)} min ${duree % 60} s\n`
 );
 
@@ -5266,11 +7663,18 @@ if (echoue) {
 	process.stderr.write(`\nLe parcours s’est arrêté après ${verifications} vérifications.\n`);
 	process.exit(1);
 }
-if (rouges.length > 0 || impossibles.length > 0 || sansLigne.length > 0) {
+if (
+	rouges.length > 0 ||
+	impossibles.length > 0 ||
+	sansLigne.length > 0 ||
+	jamaisJouees.length > 0 ||
+	horsCatalogue.length > 0
+) {
 	process.stderr.write(
 		`\nLe parcours va au bout (${verifications} vérifications), mais ${rouges.length} vérification(s) ` +
-			`de retours tombent, ${impossibles.length} geste(s) sont impossibles et ${sansLigne.length} ` +
-			`retour(s) n’ont aucune ligne.\n`
+			`de retours tombent, ${impossibles.length} geste(s) sont impossibles, ${sansLigne.length} ` +
+			`retour(s) n’ont aucune ligne, ${jamaisJouees.length} vérification(s) du catalogue n’ont pas ` +
+			`été jouées et ${horsCatalogue.length} vérification(s) jouées manquent au catalogue.\n`
 	);
 	process.exit(1);
 }
