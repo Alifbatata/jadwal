@@ -239,7 +239,10 @@
 		<p class="aide">{mots.weekBoxHelp}</p>
 		{#if unVendredi}<p class="aide">{mots.fridayBoxHelp}</p>{/if}
 		{#if uneVenue}<p class="aide">{mots.movedJumuaHelp}</p>{/if}
-		<div class="defile">
+		<!-- Sur un téléphone, c'est ce cadre qui défile, et rien dedans ne prend le focus : il le prend
+		     lui-même, sous un nom à lui, pour qu'on le fasse défiler au clavier (axe,
+		     « scrollable-region-focusable »). Aucun script : la page publique n'en charge pas. -->
+		<div class="defile" role="region" tabindex="0" aria-label={mots.weekTableLabel}>
 			<table class="semaine">
 				<thead>
 					<tr>

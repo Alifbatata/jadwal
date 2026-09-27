@@ -244,6 +244,8 @@ interface Dictionnaire {
 	readonly noIqama: string;
 	readonly prayersWeek: string;
 	readonly weekBoxHelp: string;
+	/** Le nom du cadre qui fait défiler le tableau de la semaine sur un téléphone. */
+	readonly weekTableLabel: string;
 	readonly fridayBoxHelp: string;
 	/**
 	 * Montrée quand une session du vendredi est déplacée à un autre jour des sept : la case du Dhuhr
@@ -422,6 +424,7 @@ const fr: Dictionnaire = {
 	prayersWeek: 'Les sept prochains jours',
 	weekBoxHelp:
 		'Dans chaque case, l’heure de l’adhan, et en dessous celle de l’iqama quand elle est fixée.',
+	weekTableLabel: 'Tableau des sept prochains jours',
 	fridayBoxHelp: 'Le vendredi, la case du Dhuhr donne les heures de la prière du vendredi.',
 	movedJumuaHelp:
 		'Quand une prière du vendredi est déplacée à un autre jour, la case du Dhuhr de ce jour-là la donne aussi, avec son nom et sa date d’origine.',
@@ -576,6 +579,7 @@ const de: Dictionnaire = {
 	prayersWeek: 'Die nächsten sieben Tage',
 	weekBoxHelp:
 		'In jedem Feld steht die Zeit des Adhan, darunter die der Iqama, wenn sie festgelegt ist.',
+	weekTableLabel: 'Tabelle der nächsten sieben Tage',
 	fridayBoxHelp: 'Am Freitag nennt das Feld des Dhuhr die Zeiten des Freitagsgebets.',
 	movedJumuaHelp:
 		'Wird ein Freitagsgebet auf einen anderen Tag verschoben, steht es auch im Feld des Dhuhr an diesem Tag, mit seinem Namen und seinem ursprünglichen Datum.',
@@ -729,6 +733,7 @@ const it: Dictionnaire = {
 	noIqama: 'Nessuna iqama fissata',
 	prayersWeek: 'I prossimi sette giorni',
 	weekBoxHelp: 'In ogni casella l’ora dell’adhan e, sotto, quella dell’iqama quando è fissata.',
+	weekTableLabel: 'Tabella dei prossimi sette giorni',
 	fridayBoxHelp: 'Il venerdì, la casella del Dhuhr indica gli orari della preghiera del venerdì.',
 	movedJumuaHelp:
 		'Quando una preghiera del venerdì viene spostata a un altro giorno, compare anche nella casella del Dhuhr di quel giorno, con il suo nome e la data prevista in origine.',
@@ -884,6 +889,7 @@ const en: Dictionnaire = {
 	noIqama: 'No iqama set',
 	prayersWeek: 'The next seven days',
 	weekBoxHelp: 'Each box shows the time of the adhan, with the iqama below it when one is set.',
+	weekTableLabel: 'Table of the next seven days',
 	fridayBoxHelp: 'On Fridays, the Dhuhr box gives the times of the Friday prayer.',
 	movedJumuaHelp:
 		'When a Friday prayer is moved to another day, it also appears in the Dhuhr box of that day, with its name and its original date.',
@@ -1069,6 +1075,7 @@ const ar: Dictionnaire = {
 	noIqama: 'لا إقامة محددة',
 	prayersWeek: 'الأيام السبعة القادمة',
 	weekBoxHelp: 'في كل خانة وقت الأذان، وتحته وقت الإقامة إن كان محددًا.',
+	weekTableLabel: 'جدول الأيام السبعة القادمة',
 	fridayBoxHelp: 'يوم الجمعة، تعرض خانة الظهر مواقيت صلاة الجمعة.',
 	movedJumuaHelp:
 		'إذا نُقلت صلاة الجمعة إلى يوم آخر، تظهر أيضًا في خانة الظهر لذلك اليوم، باسمها وتاريخها الأصلي.',

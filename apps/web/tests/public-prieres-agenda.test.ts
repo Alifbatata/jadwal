@@ -546,6 +546,32 @@ describe('l’onglet des prières, quand le module est allumé (C4)', () => {
 	);
 
 	it.each(LANGUES)(
+		'lets the table of the week scroll from the keyboard, under a name of its own, in %s',
+		async (langue) => {
+			// Sur un téléphone, le tableau déborde et c'est son cadre qui défile. Un cadre qui défile
+			// sans rien qu'on puisse atteindre au clavier ne se fait pas défiler : axe le classe
+			// « serious » (scrollable-region-focusable), et la CI l'a vu à 390 px avec ses polices.
+			// Le cadre porte son propre nom, et non celui de la section, qui en ferait deux régions
+			// du même nom l'une dans l'autre.
+			const NOM_DU_TABLEAU: Record<Langue, string> = {
+				fr: 'Tableau des sept prochains jours',
+				de: 'Tabelle der nächsten sieben Tage',
+				it: 'Tabella dei prossimi sette giorni',
+				en: 'Table of the next seven days',
+				ar: 'جدول الأيام السبعة القادمة'
+			};
+			const { html } = await servir(`${base(langue)}?vue=prieres`);
+			const cadre =
+				html.match(/<div\b[^>]*\bclass="defile[^"]*"[^>]*>\s*<table\b[^>]*\bclass="semaine/)?.[0] ??
+				'';
+			expect(cadre, 'le cadre du tableau de la semaine').not.toBe('');
+			expect(cadre).toMatch(/\btabindex="0"/);
+			expect(cadre).toMatch(/\brole="region"/);
+			expect(cadre.match(/\baria-label="([^"]*)"/)?.[1]).toBe(NOM_DU_TABLEAU[langue]);
+		}
+	);
+
+	it.each(LANGUES)(
 		'lists the Friday sessions with the languages of their sermon, in %s',
 		async (langue) => {
 			const { html } = await servir(`${base(langue)}?vue=prieres`);
