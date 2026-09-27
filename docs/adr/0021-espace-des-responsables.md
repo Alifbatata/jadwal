@@ -329,8 +329,9 @@ Et quatre gestes de plus, décidés par le chef de projet :
   le remplissait donc jamais.
 - **Le résumé** marque en discret, avec « (facultatif) », chaque champ facultatif, rempli ou non,
   ne marque plus comme un manque un champ facultatif laissé vide, et donne une ligne au titre de
-  chaque langue publiée. La liste signale un cours dont des dates précises tombent hors de sa
-  période.
+  chaque langue publiée. Sauf un titre qu'une description de sa langue attend : il est un manque,
+  puisque le serveur refuse le cours sans lui. La liste signale un cours dont des dates précises
+  tombent hors de sa période.
 
 ## Statut
 

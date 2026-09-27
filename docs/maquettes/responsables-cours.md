@@ -118,7 +118,11 @@ publie, la salle, l'intervenant et le dernier jour. `Salle : Grande salle (facul
 un champ facultatif garde sa ligne, sans marque de manque : `Salle : pas choisie (facultatif)`,
 `Intervenant : aucun pour l'instant (facultatif)`, `Titre en allemand : pas encore écrit, le titre
 en français s'affichera à sa place (facultatif)`. Une description à corriger reste marquée comme
-telle, et facultative : l'effacer est l'une des deux corrections. Jusque-là, la salle et
+telle, et facultative : l'effacer est l'une des deux corrections. Le titre qui lui manque est marqué
+de même, `Titre en allemand : pas encore écrit (facultatif)`, sans la phrase du titre qui
+s'afficherait à sa place : le serveur refuse le cours tant qu'il manque, et l'écrire est l'autre
+correction. La première version du lot lui donnait cette phrase, et le résumé se contredisait d'une
+ligne à l'autre. Jusque-là, la salle et
 l'intervenant laissés vides étaient marqués comme le titre manquant, et le titre d'une autre langue
 n'avait pas de ligne tant qu'il n'était pas écrit.
 

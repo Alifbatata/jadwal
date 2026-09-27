@@ -1055,6 +1055,9 @@ describe('une description sans titre dans sa langue (B4)', () => {
 	// La description est facultative, même à corriger : l'effacer est l'une des deux corrections.
 	const MANQUE =
 		'Description en allemand : à corriger, il manque le titre en allemand (facultatif)';
+	// Le titre qui lui manque est marqué aussi, sans la phrase qui promettait le titre de la langue de
+	// saisie à sa place (relecture du lot 2 de l'étape 19). L'écrire est l'autre correction.
+	const TITRE_MANQUE = 'Titre en allemand : pas encore écrit (facultatif)';
 	const MESSAGE: Record<Langue, string> = {
 		fr: 'La description en allemand ne peut pas être publiée sans titre dans la même langue. Écrivez aussi le titre en allemand, ou effacez cette description.',
 		de: 'Die Beschreibung auf Deutsch kann ohne Titel in derselben Sprache nicht veröffentlicht werden. Schreiben Sie auch den Titel auf Deutsch oder löschen Sie diese Beschreibung.',
@@ -1106,6 +1109,7 @@ describe('une description sans titre dans sa langue (B4)', () => {
 		const html = await reponse.text();
 		expect(champsDuFormulaire(html)).toContainEqual(['description.de', DESCRIPTION_DE]);
 		expect(manques(html)).toContain(MANQUE);
+		expect(manques(html)).toContain(TITRE_MANQUE);
 
 		// Le titre ajouté, comme le message le demande : le cours s'enregistre avec la description.
 		const corrige = await postForm(
@@ -1129,7 +1133,7 @@ describe('une description sans titre dans sa langue (B4)', () => {
 		const html = await reponse.text();
 		expect(erreurs(html)).toEqual([MESSAGE.fr]);
 		expect(champsDuFormulaire(html)).toContainEqual(['description.de', DESCRIPTION_DE]);
-		expect(manques(html)).toEqual([MANQUE]);
+		expect(manques(html)).toEqual([TITRE_MANQUE, MANQUE]);
 		expect(await traductionsDe(TAFSIR)).toEqual([
 			{ language: 'ar', title: TAFSIR_AR, description: null },
 			{ language: 'fr', title: TAFSIR, description: DESCRIPTION }

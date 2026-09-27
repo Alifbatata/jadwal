@@ -221,14 +221,25 @@ describe('le résumé de ce qui sera publié (B4)', () => {
 			CONTEXTE,
 			'fr'
 		);
+		// Le titre qui manque à cette description est un manque, et sa ligne ne dit plus que le titre
+		// de la langue de saisie s'affichera à sa place : le serveur refuse le cours tant qu'il manque
+		// (relecture du lot 2 de l'étape 19). Les deux restent facultatifs : écrire le titre ou effacer
+		// la description corrige le cours.
 		expect(rows.slice(0, 5).map((row) => `${row.label} ${row.value}`)).toEqual([
 			'Titre en français : Tafsir du soir',
-			'Titre en allemand : pas encore écrit, le titre en français s’affichera à sa place',
+			'Titre en allemand : pas encore écrit',
 			'Description en allemand : à corriger, il manque le titre en allemand',
 			'Titre en arabe : تفسير المساء',
 			'Description en arabe : قراءة مع شرح.'
 		]);
-		expect(rows.filter((row) => row.missing).map((row) => row.key)).toEqual(['description-de']);
+		expect(rows.filter((row) => row.missing).map((row) => row.key)).toEqual([
+			'title-de',
+			'description-de'
+		]);
+		expect(rows.find((row) => row.key === 'title-de')).toMatchObject({
+			missing: true,
+			optional: true
+		});
 		const marquee = (langue: Parameters<typeof summarise>[2]) =>
 			summarise(
 				{ ...COMPLET, descriptions: { fr: '', de: 'Für Erwachsene.', ar: '' } },
@@ -237,16 +248,26 @@ describe('le résumé de ce qui sera publié (B4)', () => {
 			)
 				.filter((row) => row.missing)
 				.map((row) => `${row.label} ${row.value}`);
+		expect(marquee('fr')).toEqual([
+			'Titre en allemand : pas encore écrit',
+			'Description en allemand : à corriger, il manque le titre en allemand'
+		]);
 		expect(marquee('de')).toEqual([
+			'Titel auf Deutsch: noch nicht geschrieben',
 			'Beschreibung auf Deutsch: zu korrigieren, der Titel auf Deutsch fehlt'
 		]);
 		expect(marquee('it')).toEqual([
+			'Titolo in tedesco: non ancora scritto',
 			'Descrizione in tedesco: da correggere, manca il titolo in tedesco'
 		]);
 		expect(marquee('en')).toEqual([
+			'Title in German: not written yet',
 			'Description in German: to correct, the title in German is missing'
 		]);
-		expect(marquee('ar')).toEqual(['الوصف بالألمانية: يجب تصحيحه، ينقصه العنوان بالألمانية']);
+		expect(marquee('ar')).toEqual([
+			'العنوان بالألمانية: لم يُكتب بعد',
+			'الوصف بالألمانية: يجب تصحيحه، ينقصه العنوان بالألمانية'
+		]);
 	});
 
 	it('puts the title of the input language first', () => {

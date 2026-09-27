@@ -239,7 +239,8 @@ export interface SummaryRow {
 	 * Un champ facultatif : le titre d'une autre langue, une description, la salle, l'intervenant, le
 	 * dernier jour. Sa ligne porte « (facultatif) », en discret (étape 19, lot 2). Laissé vide, il
 	 * n'est pas un manque : sa ligne dit ce qui sera publié à la place, sans la marque de `missing`,
-	 * qui reste pour une valeur à corriger.
+	 * qui reste pour une valeur à corriger. Le titre d'une autre langue dont la description est
+	 * écrite est l'exception : le serveur refuse le cours sans lui, et sa ligne est un manque.
 	 */
 	optional?: true;
 }
@@ -333,6 +334,12 @@ export function summarise(
 		const label = text.summary.titleIn(name);
 		if (code === values.sourceLanguage) {
 			row(`title-${code}`, label, title || null, text.missing.title, true, code);
+		} else if (untitled.includes(code)) {
+			// Une description attend ce titre : il manque, et le titre de la langue de saisie ne le
+			// remplacera pas, puisque le serveur refuse le cours (relecture du lot 2). Il reste
+			// facultatif : effacer la description corrige aussi le cours.
+			row(`title-${code}`, label, null, text.missing.title);
+			markOptional();
 		} else {
 			optionalRow(`title-${code}`, label, title || null, text.missing.otherTitle(sourceName), code);
 		}
