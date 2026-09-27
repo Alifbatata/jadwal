@@ -12,15 +12,15 @@ pour des communautés religieuses.
 
 ## Contre qui
 
-| Adversaire                                   | Ce qu'il cherche                                          |
-| -------------------------------------------- | --------------------------------------------------------- |
-| Un responsable d'une autre organisation      | lire ou modifier les données d'une organisation voisine   |
-| Un éditeur de l'organisation                 | se faire responsable, inviter, changer rôles et réglages  |
-| Un curieux sans compte                       | savoir si telle adresse est responsable quelque part      |
-| Quelqu'un qui a volé une boîte aux lettres   | entrer dans l'espace d'une organisation                   |
-| Un compte applicatif compromis               | lire toutes les organisations, effacer ses propres traces |
-| Qui vole la boîte aux lettres du super-admin | obtenir la clé maîtresse du service                       |
-| Nous-mêmes, par erreur                       | une requête sans filtre, un script d'entretien de trop    |
+| Adversaire                                   | Ce qu'il cherche                                                                                 |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Un responsable d'une autre organisation      | lire ou modifier les données d'une organisation voisine                                          |
+| Un éditeur de l'organisation                 | se faire responsable, inviter, changer rôles et réglages, lire les membres, signer pour un autre |
+| Un curieux sans compte                       | savoir si telle adresse est responsable quelque part                                             |
+| Quelqu'un qui a volé une boîte aux lettres   | entrer dans l'espace d'une organisation                                                          |
+| Un compte applicatif compromis               | lire toutes les organisations, effacer ses propres traces                                        |
+| Qui vole la boîte aux lettres du super-admin | obtenir la clé maîtresse du service                                                              |
+| Nous-mêmes, par erreur                       | une requête sans filtre, un script d'entretien de trop                                           |
 
 ## Les barrières
 
@@ -56,10 +56,14 @@ formulaire, une URL ou un en-tête ne donne rien.
 **4 bis. Dans une organisation, l'éditeur n'est pas responsable, pour la base non plus.** Depuis
 l'étape 18 (ADR 0046, migration 0059), la base tient la même séparation que les écrans. Pour le
 rôle applicatif, les gestes réservés aux responsables exigent que la personne du contexte soit
-responsable de l'organisation du contexte : lire et écrire les invitations, changer un rôle,
-retirer un membre, modifier les réglages et les salles, régler les heures de prière. Une fonction à
-droits du définisseur le dit, `jadwal.is_org_admin()`, que seul le rôle applicatif peut appeler.
-L'éditeur garde tout ce qu'il fait à l'écran : les cours, les séances, les pauses, le vendredi.
+responsable de l'organisation du contexte : lire et écrire les invitations, lire la liste des
+membres et leurs comptes, changer un rôle, retirer un membre, modifier les réglages et les salles,
+régler les heures de prière, et depuis l'étape 19 supprimer un cours (migrations 0064 et 0065). Une
+fonction à droits du définisseur le dit, `jadwal.is_org_admin()`, que seul le rôle applicatif peut
+appeler. L'éditeur garde tout ce qu'il fait à l'écran : les cours, les séances, les pauses, le
+vendredi. Il ne lit plus que sa propre adhésion et son propre compte, ne nomme que lui-même dans ce
+qu'il écrit, et peut quitter l'organisation, lui seul et pour lui seul (migration 0066) ; la
+dernière personne responsable ne part pas.
 Cette barrière arrête les erreurs de l'application : un écran qui oublierait sa garde, un rôle lu
 dans la mauvaise adhésion, comme à l'étape 17. Elle n'arrête pas qui tient le mot de passe du rôle
 applicatif, qui pose lui-même la personne du contexte (barrière 1). Le super-admin n'est pas
@@ -80,7 +84,9 @@ qui existe.
 **6. Le journal d'audit est en ajout seul**, y compris pour le compte qui l'écrit, et son horodatage
 lui échappe (ADR 0015, 0020). Un compte compromis ne peut pas effacer ses traces, et cela vaut aussi
 pour le super-admin, qui a pourtant tous les autres droits : il y écrit, il n'y récrit rien. Le
-propriétaire, lui, purge sans lire. L'acceptation des conditions suit la même règle : le rôle
+propriétaire, lui, purge sans lire. Depuis l'étape 19, l'auteur d'une entrée écrite par le rôle
+applicatif est la personne du contexte, et aucune autre : un membre ne signe plus au nom d'un
+collègue (migration 0063). L'acceptation des conditions suit la même règle : le rôle
 applicatif lit et ajoute ses propres acceptations, sans rien modifier ni supprimer, et le moment est
 posé par la base, jamais par l'application. Le super-admin les lit, sans en écrire aucune. Elles
 partent avec l'adhésion, par la clé en cascade, et par aucun autre chemin (ADR 0044), hors le
@@ -237,11 +243,6 @@ ou pointe ses adresses vers un faux service. C'est une garde contre l'oubli et l
 - **Le déni de service.** La limitation de débit protège les boîtes aux lettres, pas le service.
 - **Une personne responsable malveillante dans sa propre organisation** peut effacer le programme de
   son organisation. Le journal dit qui et quand, et l'état avant permet de revenir en arrière.
-- **Ce que la base laisse encore lire ou écrire à un éditeur.** Elle lui laisse lire les membres de
-  son organisation, avec leur nom et leur adresse : aucun écran ne les lui montre, mais une erreur
-  de l'application qui les afficherait ne serait pas arrêtée. Fermer cette lecture priverait la
-  garde des personnes désignées de ce qu'elle doit voir (barrière 5). Le journal accepte aussi
-  d'un membre une entrée qui en nomme un autre comme auteur (ADR 0046).
 - **Une invitation ouvre la fiche de l'organisation à son destinataire**, entière, avant même qu'il
   accepte : une politique porte sur des lignes, pas sur des colonnes. Rien de cette ligne n'est une
   donnée personnelle, et le nom sera public dès l'étape 5 (ADR 0017).

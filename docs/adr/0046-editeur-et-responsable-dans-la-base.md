@@ -20,8 +20,8 @@ La faille de l'étape 17 a montré ce que cela coûte. L'application lisait le r
 adhésion venue : une personne responsable d'une organisation et éditrice d'une autre était traitée
 en responsable dans les deux. L'erreur était dans le code, et la base ne l'arrêtait pas.
 
-Le retour H1 des tests de l'étape 18 tient en une phrase : « à l'intérieur d'une organisation, la
-base distingue l'éditeur du responsable pour tout ce qu'un éditeur ne doit pas pouvoir faire ».
+La consigne du chef de projet, après les tests de l'étape 18 : à l'intérieur d'une organisation, la
+base distingue l'éditeur du responsable pour tout ce qu'un éditeur ne doit pas pouvoir faire.
 
 ## Décision
 
@@ -59,10 +59,17 @@ aux mêmes tables : supprimer une invitation, renommer une salle, supprimer les 
 prières. Le super-admin fait tout ce que fait une personne responsable, dans l'organisation où il
 est entré (ADR 0025).
 
-Une écriture ne vient d'aucun écran et reste ouverte à l'éditeur : supprimer un cours
-(`/cours?/supprimer` · `course`, suppression). L'action existe, mais aucun écran ne l'appelle : elle
-n'est donc pas dans la liste, et l'écran Membres ne la promet pas. Si un écran la proposait un jour,
-elle rejoindrait la colonne de l'éditeur, et le test des gestes la prouverait par ce formulaire.
+Deux gestes n'ont pas encore d'écran, et la base les tient déjà depuis l'étape 19 :
+
+- **Supprimer un cours** (`/cours?/supprimer` · `course`, suppression) est réservé à la personne
+  responsable (migration 0065). L'action existe, mais aucun écran ne l'appelle, et sa route n'a pas
+  d'autre garde que l'appartenance : appelée par un éditeur, elle ne supprime plus rien. L'écran
+  Cours la proposera au lot suivant, et elle rejoindra alors la colonne de droite. Une session du
+  vendredi n'est pas concernée : l'écran Vendredi en propose la suppression à l'éditeur, et la base
+  la lui laisse.
+- **Quitter l'organisation** (`membership`, suppression de sa propre adhésion) est ouvert à chacun,
+  pour soi seulement (migration 0066). L'écran viendra dans « Vos organisations ». La dernière
+  personne responsable ne part pas : le déclencheur de la migration 0012 la retient.
 
 ### Comment la base la tient
 
@@ -79,10 +86,20 @@ elle rejoindrait la colonne de l'éditeur, et le test des gestes la prouverait p
   fonction sans récursion.
 - **Les politiques des gestes réservés l'exigent**, pour le rôle applicatif, dans chacune de leurs
   clauses : `invitation` (lecture, insertion, modification, suppression, pour la branche de
-  l'organisation), `membership` (modification, suppression), `organization` (modification),
-  `room`, `prayer_settings`, `prayer_day`, `prayer_period` (insertion, modification, suppression).
-  La lecture de ces tables reste ouverte à tous les membres, invitations exceptées : l'écran des
-  cours lit les salles et les heures, et le programme en dépend.
+  l'organisation), `membership` (lecture et suppression pour la branche de l'organisation,
+  modification), `organization` (modification), `room`, `prayer_settings`, `prayer_day`,
+  `prayer_period` (insertion, modification, suppression), et `course` (suppression, sauf une
+  session du vendredi). La lecture de ces tables reste ouverte à tous les membres, invitations et
+  adhésions exceptées : l'écran des cours lit les salles et les heures, et le programme en dépend.
+- **Chacun garde ce qui est à lui.** La lecture des adhésions a une seconde branche, ses propres
+  adhésions, dans toutes ses organisations : c'est d'elles que l'application part pour savoir de
+  quelles organisations une personne est membre, et avec quel rôle. La suppression en a une aussi,
+  sa propre adhésion dans l'organisation du contexte : c'est quitter l'organisation. Les comptes
+  suivent la lecture des adhésions, puisque la politique de `user` passe par elle : un éditeur ne
+  lit plus que le sien, la personne responsable lit ceux de ses membres.
+- **Le journal est signé de la personne du contexte.** Ce n'est pas un geste réservé : tout membre
+  écrit au journal. Mais l'auteur d'une entrée est la personne que l'application pose, et aucune
+  autre (migration 0063, ADR 0015).
 - **La branche de la personne invitée ne change pas.** Reconnue par son adresse, sans contexte
   d'organisation, elle voit, accepte ou décline l'invitation reçue. L'adhésion qu'elle crée porte le
   rôle de son invitation (migration 0058) : c'est l'écriture de l'invitation qui est réservée, et
@@ -100,10 +117,12 @@ elle rejoindrait la colonne de l'éditeur, et le test des gestes la prouverait p
   Une personne responsable qui se passe elle-même éditrice le peut donc, tant qu'une autre reste
   responsable.
 
-La migration 0059 porte tout cela, et vérifie dans la même transaction la liste exacte des
-politiques qui exigent la fonction. `packages/db/test/org-admin.test.ts` rejoue chaque geste de la
-liste : une éditrice est refusée, une personne responsable et le super-admin passent, le parcours
-d'une personne invitée reste le même.
+La migration 0059 porte tout cela, et les migrations 0063 à 0066 le complètent. La 0059
+vérifiait dans la même transaction la liste exacte des politiques qui exigent la fonction ; depuis
+que d'autres la complètent, elle n'en vérifie que le minimum, pour rester rejouable après elles.
+`packages/db/test/org-admin.test.ts` tient la liste exacte, et rejoue chaque geste de la liste : une
+éditrice est refusée, une personne responsable et le super-admin passent, le parcours d'une
+personne invitée reste le même.
 
 ### La langue du compte
 
@@ -141,26 +160,45 @@ La liste ci-dessus est celle du code à la fin de l'étape 18 :
   rôle applicatif : il pose lui-même le contexte, personne comprise, et peut donc se dire
   responsable. C'est la même limite que celle de l'isolation entre organisations
   (`docs/SECURITE.md`, barrière 1).
-- **Ce que l'éditeur lit encore.** Par un appel direct, un éditeur lit les membres de son
-  organisation, avec leur nom et leur adresse. Aucun écran ne les lui montre. Fermer cette lecture
-  changerait ce que voit la garde des personnes désignées (ADR 0013), sur laquelle s'appuient des
-  écritures ordinaires : une éditrice qui annule une séance qu'un collègue avait déplacée écrit une
-  ligne qui nomme ce collègue.
-- **Ce que l'éditeur écrit encore au nom d'un autre.** Le journal accepte d'un membre une entrée
-  qui nomme comme auteur un autre membre de l'organisation : sa politique ne demande qu'une personne
-  visible. Rien de la liste ci-dessus n'en dépend ; c'est une question à part.
-- Un éditeur ne peut plus retirer sa propre adhésion. Aucun écran ne le propose. Si un écran
-  « quitter l'organisation » voyait le jour, la politique de suppression devrait l'autoriser pour
-  soi.
+- **Un éditeur ne nomme que lui-même.** La garde des personnes désignées (ADR 0013) passe par ce
+  que la personne voit, et un éditeur ne voit plus ses collègues : dans une ligne qu'il écrit
+  (`created_by`, `updated_by`), il ne peut nommer que lui-même. C'est ce que l'application écrit
+  toujours, et chaque modification d'un cours réécrit `updated_by` : aucune écriture ordinaire ne
+  dépendait de la lecture des collègues. La personne responsable nomme tout membre, comme avant.
 - Un script ou un test qui écrit des réglages, des salles, des heures de prière, des invitations ou
-  des adhésions sous le seul contexte d'une organisation n'écrit plus rien : il doit poser la
-  personne responsable, comme le font les écrans (`asAdmin` dans les tests de `packages/db`). Une
-  modification ou une suppression écartée ne lève pas d'erreur, elle touche zéro ligne.
+  des adhésions, ou qui supprime un cours, sous le seul contexte d'une organisation n'écrit plus
+  rien : il doit poser la personne responsable, comme le font les écrans (`asAdmin` dans les tests
+  de `packages/db`). Il ne lit pas non plus les adhésions ni les comptes, et n'écrit rien au
+  journal. Une modification ou une suppression écartée ne lève pas d'erreur, elle touche zéro ligne.
 - Ajouter un écran réservé aux responsables, c'est ajouter sa table à cette liste, à la migration
   qui exige la fonction et au test des gestes, dans le même changement.
 
+## Addendum du 27.09.2026 : les deux limites de l'étape 18 sont fermées
+
+L'étape 18 laissait à l'éditeur deux choses, écrites ici comme limites : lire la liste des membres
+et leurs comptes par un appel direct, et écrire au journal une entrée qui nommait un collègue comme
+auteur. Le chef de projet a demandé de les fermer, avec deux gestes de plus.
+
+- **Le journal** (migration 0063) : l'auteur d'une entrée est la personne du contexte. Le
+  super-admin signe de sa propre identité, comme avant ; sa politique ne change pas.
+- **La liste des membres** (migration 0064) : la personne responsable et le super-admin la lisent
+  comme avant ; un éditeur ne lit plus que sa propre adhésion et son propre compte. La garde des
+  personnes désignées ne passe pas par une fonction de plus : elle suit ce que la personne voit, et
+  l'application ne fait jamais nommer à un éditeur que lui-même.
+- **Supprimer un cours** (migration 0065) : réservé à la personne responsable, sauf une session du
+  vendredi.
+- **Quitter l'organisation** (migration 0066) : chacun peut supprimer sa propre adhésion, et rien
+  de plus ; la dernière personne responsable reste retenue.
+
+Les écrans de ces deux derniers gestes viennent au lot suivant de l'étape 19 : le bouton de l'écran
+Cours, et « Quitter l'organisation » dans « Vos organisations ». Jusque-là, l'écran Membres ne
+promet ni l'un ni l'autre, et le test qui lie sa liste à la base nomme la table des cours comme
+réservée sans écran.
+
 ## Statut
 
-Accepté, 2026-09-26. Étape 18, retour H1 des tests de l'exploitant (les rôles dans la base), et la
-langue du compte. Révisé le même jour, à la fin de l'étape : la langue se choisit en haut de chaque
-écran, l'écran Membres montre la liste, et l'écran des prières prévisualise une période.
+Accepté, 2026-09-26. Étape 18, consigne du chef de projet (les rôles dans la base), et la langue du
+compte. Révisé le même jour, à la fin de l'étape : la langue se choisit en haut de chaque écran,
+l'écran Membres montre la liste, et l'écran des prières prévisualise une période. Complété le
+27.09.2026 (étape 19) : le journal, la liste des membres, la suppression d'un cours et le départ
+d'une organisation.
