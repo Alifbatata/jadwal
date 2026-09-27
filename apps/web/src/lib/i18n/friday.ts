@@ -19,7 +19,7 @@ import type { Translations } from './space.js';
  * « Rétablir » depuis une page restée ouverte, qui n'a plus rien à rétablir (relecture de D2) ;
  * `pastDate`, un déplacement vers un jour déjà passé, qu'aucune liste ne propose mais qu'un
  * formulaire écrit à la main peut envoyer (étape 19, lot 2). Un « Rétablir » envoyé depuis une page
- * qui montrait un autre changement que celui d'aujourd'hui reçoit `changed`. Pour l'ajout :
+ * qui montrait un autre changement que celui qui est en place reçoit `changed`. Pour l'ajout :
  * `orderTaken`, une session sans date de fin a déjà ce rang. Pour l'ajout et la modification :
  * `roomGone`, la salle choisie n'existe pas, ou plus, dans l'organisation.
  */

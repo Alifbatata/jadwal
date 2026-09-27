@@ -116,7 +116,7 @@ elle a déjà été annulée ou déplacée. Rien n'a été enregistré. Le progr
   déplacée depuis n'écrit plus rien, qu'on touche `Annuler cette séance` ou `Déplacer la séance`.
   Juste en dessous, la carte montre l'état réel. Deux déplacements envoyés au même instant n'en
   écrivent qu'un, et l'autre reçoit ce refus. `Rétablir la séance` le reçoit aussi quand sa carte
-  montrait un autre changement que celui d'aujourd'hui : la séance a été rétablie puis annulée ou
+  montrait un autre changement que celui qui est en place : la séance a été rétablie puis annulée ou
   déplacée de nouveau ailleurs, même à l'identique, et ce nouveau changement reste (étape 19,
   lot 2 ; avant, il disparaissait).
 - `La séance « Cercle de lecture » du lundi 28.09.2026 a déjà été annulée depuis l'ouverture de la
