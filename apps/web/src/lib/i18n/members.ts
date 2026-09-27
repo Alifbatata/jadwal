@@ -22,7 +22,8 @@ export const EDITOR_GESTURES = [
 	'share',
 	'language',
 	'switchOrganisation',
-	'acceptance'
+	'acceptance',
+	'leave'
 ] as const;
 
 /**
@@ -178,7 +179,8 @@ export const membersTexts: Translations<MembersTexts> = {
 				// Pas « Changer d’organisation » : c'est le libellé du lien de la coquille, qui doit
 				// rester le seul de la page à le porter.
 				switchOrganisation: 'Passer d’une organisation à l’autre, quand on est membre de plusieurs',
-				acceptance: 'Accepter les conditions d’utilisation et les invitations reçues'
+				acceptance: 'Accepter les conditions d’utilisation et les invitations reçues',
+				leave: 'Quitter une organisation dont on est membre'
 			},
 			manager: {
 				deleteCourse: 'Supprimer un cours',
@@ -276,7 +278,8 @@ export const membersTexts: Translations<MembersTexts> = {
 				share: 'Das Programm teilen: den Link, den QR-Code und den Code für eine Website',
 				language: 'Die Sprache des eigenen Bereichs wählen',
 				switchOrganisation: 'Zwischen Organisationen wechseln, wenn man Mitglied mehrerer ist',
-				acceptance: 'Die Nutzungsbedingungen und erhaltene Einladungen annehmen'
+				acceptance: 'Die Nutzungsbedingungen und erhaltene Einladungen annehmen',
+				leave: 'Eine Organisation verlassen, in der man Mitglied ist'
 			},
 			manager: {
 				deleteCourse: 'Einen Kurs löschen',
@@ -376,7 +379,8 @@ export const membersTexts: Translations<MembersTexts> = {
 				language: 'Scegliere la lingua della propria area',
 				switchOrganisation:
 					'Passare da un’organizzazione all’altra, per chi è membro di più di una',
-				acceptance: 'Accettare le condizioni d’uso e gli inviti ricevuti'
+				acceptance: 'Accettare le condizioni d’uso e gli inviti ricevuti',
+				leave: 'Lasciare un’organizzazione di cui si è membri'
 			},
 			manager: {
 				deleteCourse: 'Eliminare un corso',
@@ -473,7 +477,8 @@ export const membersTexts: Translations<MembersTexts> = {
 				share: 'Share the programme: the link, the QR code and the code to paste into a website',
 				language: 'Choose the language of their own area',
 				switchOrganisation: 'Switch between organisations, for someone who is a member of several',
-				acceptance: 'Accept the terms of use and the invitations received'
+				acceptance: 'Accept the terms of use and the invitations received',
+				leave: 'Leave an organisation they are a member of'
 			},
 			manager: {
 				deleteCourse: 'Delete a course',
@@ -573,7 +578,8 @@ export const membersTexts: Translations<MembersTexts> = {
 				share: 'مشاركة البرنامج: الرابط ورمز QR والشيفرة التي تُلصق في موقع',
 				language: 'اختيار لغة مساحته',
 				switchOrganisation: 'الانتقال من مؤسسة إلى أخرى لمن هو عضو في أكثر من مؤسسة',
-				acceptance: 'قبول شروط الاستخدام والدعوات الواردة'
+				acceptance: 'قبول شروط الاستخدام والدعوات الواردة',
+				leave: 'مغادرة مؤسسة هو عضو فيها'
 			},
 			manager: {
 				deleteCourse: 'حذف درس',

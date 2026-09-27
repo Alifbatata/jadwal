@@ -379,6 +379,19 @@ export async function chooseOrganisation(
 }
 
 /**
+ * Retire de la session le choix de cette organisation, si c'est celle qu'elle désigne : la personne
+ * vient de la quitter (étape 19). Sans cela, la session nommait encore une organisation dont elle
+ * n'est plus membre ; une personne ordinaire retombait ailleurs sans dommage, mais le super-admin, qui
+ * garde son choix, y rentrait par ses pouvoirs (`currentOrganisation`).
+ */
+export async function forgetOrganisation(person: SignedIn, organizationId: string): Promise<void> {
+	await authDatabase().execute(
+		sql`update "session" set "active_organization_id" = null
+			where "token" = ${person.sessionToken} and "active_organization_id" = ${organizationId}`
+	);
+}
+
+/**
  * Ouvre une transaction dans le contexte de l'organisation de la session. C'est le seul chemin par
  * lequel une route touche aux données d'une organisation — pour un responsable comme pour un
  * super-admin. Seule la connexion change, et donc les politiques qui s'appliquent.

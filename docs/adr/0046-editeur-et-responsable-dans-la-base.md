@@ -229,6 +229,20 @@ premier, comme l'écran Cours dans la navigation : `Supprimer un cours`, dans le
 lie l'écran à la base : ce test ne connaît plus que la lecture du journal comme geste réservé sans
 écran, et il refuse le geste à une éditrice par sa route.
 
+## Addendum du 27.09.2026 : « Quitter l'organisation » a son écran (étape 19)
+
+Le bouton est dans « Vos organisations », pour chaque organisation de la liste, avec une demande de
+confirmation (`/organisations?/quitter` · `membership`, suppression de sa propre adhésion). Le geste
+rejoint la colonne de l'éditeur, puisqu'il est ouvert à chacun : `Quitter une organisation dont on
+est membre`, la dernière ligne de la liste que l'écran Membres montre sous le choix du rôle, que
+l'éditrice du test fait elle-même, par son écran. L'action pose le contexte de l'organisation
+quittée, avec la personne : la politique ne lui laisse que sa propre adhésion (migration 0066), et le
+journal, signé d'elle (`member.leave`), exige que l'auteur soit la personne du contexte (migration
+0063). La seule personne responsable l'apprend dès le premier envoi, avec ce qu'elle doit faire ; le
+refus du déclencheur de la migration 0012 est traduit par la même phrase, s'il arrive encore. Après
+le départ, la session ne désigne plus l'organisation. Le détail de l'écran est dans
+`docs/maquettes/responsables-coquille.md`.
+
 ## Statut
 
 Accepté, 2026-09-26. Étape 18, consigne du chef de projet (les rôles dans la base), et la langue du

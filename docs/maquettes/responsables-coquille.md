@@ -1,6 +1,7 @@
 # La coquille de l'espace, la connexion et les écrans d'entrée
 
-Décrit après le code, à l'étape 18 (retours B1 et D2). Les textes sont dans
+Décrit après le code, à l'étape 18 (retours B1 et D2), et complété à l'étape 19 (le départ d'une
+organisation, l'écran d'arrivée du lien de connexion, la langue de l'invitation). Les textes sont dans
 `apps/web/src/lib/i18n/` : `common.ts` pour la coquille, `sign-in.ts`, `organisations.ts`,
 `sign-out.ts` et `error.ts` pour les écrans ; les courriels dans
 `apps/web/src/lib/server/mail/messages.ts`. Tout existe dans les cinq langues, et l'arabe se lit de
@@ -81,19 +82,52 @@ prenom.nom@exemple.ch`, reliée au champ, et l'adresse tapée reste dans le cham
 
 1. Titre de niveau 1 : `Vos organisations`.
 2. `Choisissez l'organisation dont vous voulez gérer le programme.`, puis une ligne par
-   organisation, avec `Rôle : responsable` ou `Rôle : éditeur`.
+   organisation : le bouton qui la choisit, à son nom, `Rôle : responsable` ou `Rôle : éditeur`, et,
+   depuis l'étape 19, le bouton `Quitter l'organisation`, que le nom de l'organisation décrit pour
+   les lecteurs d'écran.
 3. `Une personne responsable gère tout, membres et réglages compris. Un éditeur gère les cours et le
 programme.`
 4. **Invitations reçues**, s'il y en a : `En acceptant une invitation, vous devenez membre de
 l'organisation et vous gérez son programme avec elle.`, puis, pour chacune, le bouton
    `Accepter l'invitation`.
 
+**Quitter une organisation** (étape 19). Le bouton ne fait rien partir au premier envoi : l'écran
+revient avec, en haut, sous le titre et avant la liste, une demande annoncée (`role="alert"`),
+encadrée de rouge : `Vous allez quitter cette organisation :` et son nom, puis `Son espace ne vous
+sera plus ouvert. Pour y revenir, il faudra qu'une personne responsable vous invite de nouveau.`, le
+bouton `Confirmer le départ` et le lien `Rester dans l'organisation`, qui ramène à l'écran sans rien
+envoyer. Confirmé, le départ supprime l'adhésion de la personne, et avec elle son acceptation des
+conditions dans cette organisation ; son compte reste, comme ce qu'elle a écrit. Le journal de
+l'organisation le consigne, signé d'elle (`member.leave`). La session ne désigne plus
+l'organisation, et l'écran revient avec l'encadré du départ. Sans JavaScript comme avec : ce sont
+des formulaires ordinaires.
+
+**La seule personne responsable ne part pas.** Dès le premier envoi, sans demande de confirmation,
+l'écran le dit en haut (`role="alert"`) : `Vous êtes la seule personne responsable de cette
+organisation :` et son nom, puis `Une organisation garde toujours au moins une personne responsable.
+Avant de la quitter, ouvrez-la, puis, dans l'écran Membres, donnez le rôle de responsable à un autre
+membre ou invitez une personne comme responsable.` La base tient la même règle (migration 0012), et
+son refus est traduit par la même phrase si l'autre responsable part entre les deux envois.
+
+**L'encadré du départ.** Après un départ, d'ici ou depuis l'écran Membres pour une responsable qui
+s'est retirée elle-même, la personne arrive à l'adresse
+`/organisations?avis=depart&organisation=<identifiant>`. En tête du contenu, avant le titre, un
+encadré annoncé (`role="status"`) : `Vous avez quitté l'organisation. Son espace ne vous est plus
+ouvert. Pour y revenir, demandez à une personne responsable de vous inviter de nouveau.` Il ne nomme
+pas l'organisation : la base ne la montre plus à qui l'a quittée, et une adresse ne doit pas pouvoir
+faire écrire un nom à l'écran. Comme celui de la responsable devenue éditrice, il passe par un
+paramètre d'adresse, et non par un cookie. Il ne s'affiche qu'à une personne qui n'est pas membre de
+l'organisation que l'adresse nomme : une adresse copiée ne fait rien dire de faux à qui en est
+membre.
+
 **Sans organisation** : `Votre compte n'est rattaché à aucune organisation pour le moment. Pour
 gérer le programme d'une organisation, il faut y être invité : demandez à la personne responsable
 de vous envoyer une invitation à votre adresse.`, puis `Votre adresse :` et l'adresse du compte.
 
 **Les erreurs disent quoi faire** : `Cette invitation n'est plus valable : elle a peut-être expiré ou
-été annulée. Demandez-en une nouvelle à la personne qui vous a invité.`
+été annulée. Demandez-en une nouvelle à la personne qui vous a invité.` Pour une organisation dont la
+personne n'est pas membre, ou un identifiant mal formé : `Vous n'êtes pas membre de cette
+organisation.`
 
 ## Se déconnecter, `/deconnexion`
 

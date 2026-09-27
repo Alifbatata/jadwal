@@ -1,6 +1,7 @@
 # L'écran Membres
 
-Décrit après le code, à l'étape 18 (retours B3, B1, D2, A3 pour cet écran, et D3). Textes :
+Décrit après le code, à l'étape 18 (retours B3, B1, D2, A3 pour cet écran, et D3), et complété à
+l'étape 19 (la langue du courriel, les confirmations, le départ de soi-même). Textes :
 `apps/web/src/lib/i18n/members.ts`, dans les cinq langues.
 
 **Lien** : `/membres`, réservé à la personne responsable : un éditeur est renvoyé à l'accueil, et la
@@ -47,6 +48,7 @@ Sous le choix du rôle, deux listes, qu'une personne lit au moment de choisir.
 - Choisir la langue de son espace
 - Passer d'une organisation à l'autre, quand on est membre de plusieurs
 - Accepter les conditions d'utilisation et les invitations reçues
+- Quitter une organisation dont on est membre
 
 **Réservé au responsable, en plus de tout ce que fait un éditeur**
 
@@ -75,6 +77,10 @@ supprimer » : l'éditeur ne peut pas supprimer un cours, et ces mots sont retir
 liste des membres elle-même, que la ligne « Voir les membres »
 réserve, l'est aussi dans la base depuis l'étape 19 (migration 0064) : un éditeur ne lit plus que sa
 propre adhésion.
+
+La dernière ligne des gestes de l'éditeur, `Quitter une organisation dont on est membre`, vient à
+l'étape 19 avec le bouton `Quitter l'organisation` de « Vos organisations »
+(`responsables-coquille.md`) : l'éditrice du test la fait elle-même, par cet écran.
 
 ## Les messages
 
@@ -128,14 +134,19 @@ réservés aux responsables, comme Membres et Réglages, ne vous sont plus ouver
 demandez à une autre personne responsable de vous redonner le rôle de responsable.` Sa description
 est dans `responsables-coquille.md`.
 
+## Une responsable qui se retire elle-même (étape 19)
+
+Quand une autre personne responsable reste, une responsable peut se retirer elle-même, après la
+confirmation. L'organisation ne lui est plus ouverte, et la session ne la désigne plus : elle arrive
+sur « Vos organisations », à l'adresse `/organisations?avis=depart&organisation=<identifiant>`, avec
+en tête l'encadré `Vous avez quitté l'organisation. Son espace ne vous est plus ouvert. Pour y
+revenir, demandez à une personne responsable de vous inviter de nouveau.` C'est l'encadré du départ
+depuis « Vos organisations », décrit dans `responsables-coquille.md`. Avant, elle arrivait sans un
+mot.
+
 ## Le courriel d'invitation
 
-Il part dans la langue de l'écran de la personne qui invite, pour toute adresse : lire la langue du
-compte invité demanderait de chercher ce compte par son adresse (ADR 0017, addendum du 2026-09-26).
-Son texte est dans `responsables-coquille.md`.
-
-## Ce qui reste à reprendre
-
-Relevé par la relecture de l'étape 18, non corrigé à la fin de l'étape : retirer un membre et
-changer un rôle se font sans demande de confirmation. Une responsable qui se retire elle-même de
-l'organisation ne reçoit aucune phrase à l'arrivée.
+Il part dans la langue que la personne qui invite choisit, celle de son écran d'abord, pour toute
+adresse : lire la langue du compte invité demanderait de chercher ce compte par son adresse
+(ADR 0017, addendum du 27.09.2026). Jusqu'à l'étape 19, il partait toujours dans la langue de
+l'écran. Son texte est dans `responsables-coquille.md`.

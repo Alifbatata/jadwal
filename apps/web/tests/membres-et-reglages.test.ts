@@ -21,13 +21,24 @@
 // - supprimer une salle que des cours occupent : l'écran le dit avant, et demande de confirmer, en
 //   haut de la page, là où l'on arrive après l'envoi ;
 // - un identifiant de salle ou d'invitation mal formé, dans un formulaire trafiqué, reçoit la réponse
-//   d'une salle ou d'une invitation inconnue, jamais une erreur 500.
+//   d'une salle ou d'une invitation inconnue, jamais une erreur 500 ; une salle inconnue n'est plus
+//   dite « supprimée » (étape 19).
+//
+// Depuis l'étape 19 :
+//
+// - le formulaire d'invitation propose la langue du courriel, celle de l'écran d'abord, et
+//   l'invitation part dans la langue choisie ;
+// - retirer un membre et changer un rôle demandent une confirmation, et une adhésion introuvable
+//   reçoit une phrase ;
+// - une responsable qui se retire elle-même, ou toute personne qui quitte une organisation depuis
+//   « Vos organisations », lit à l'arrivée un encadré qui le dit ; la seule personne responsable ne
+//   part pas, et le refus dit quoi faire.
 
 import { readFileSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
-import { createDatabase, newId, sql, type DatabaseHandle } from '@jadwal/db';
+import { createDatabase, newId, sql, withOrg, type DatabaseHandle } from '@jadwal/db';
 import { commonTexts } from '../src/lib/i18n/common.js';
 import {
 	EDITOR_GESTURES,
@@ -748,6 +759,39 @@ const PREUVES: {
 				avec({ organizationId })
 			);
 			expect((await postForm('/organisations?/choisir', retour ?? {}, cookie)).status).toBe(303);
+		}
+	},
+	leave: {
+		texte: 'Quitter une organisation dont on est membre',
+		preuve: async (cookie) => {
+			// L'organisation qu'elle vient de rejoindre en acceptant son invitation (`acceptance`).
+			const quitter = formulaireDeLaPage(
+				await page200('/organisations', cookie),
+				'?/quitter',
+				avec({ organizationId: INVITANTE.id })
+			);
+			expect(quitter, 'le bouton qui la fait partir').not.toBeNull();
+			const demande = await postForm('/organisations?/quitter', quitter ?? {}, cookie);
+			expect(demande.status).toBe(200);
+			const confirmer = formulaireDeLaPage(
+				element(await demande.text(), 'confirmer-depart'),
+				'?/quitter'
+			);
+			expect(confirmer, 'la confirmation').toEqual({
+				organizationId: INVITANTE.id,
+				confirm: 'yes'
+			});
+			const partie = await postForm('/organisations?/quitter', confirmer ?? {}, cookie);
+			expect(partie.status).toBe(303);
+			const restantes = await maintenance(async (tx) =>
+				lignes<{ organization_id: string }>(
+					await tx.execute(sql`
+						select "organization_id" from "membership" where "user_id" = ${ids[EDITRICE] ?? ''}
+					`)
+				).map((ligne) => ligne.organization_id)
+			);
+			expect(restantes).not.toContain(INVITANTE.id);
+			expect(restantes).toContain(organizationId);
 		}
 	}
 };
@@ -1639,6 +1683,470 @@ describe('une responsable qui se donne le rôle d’éditeur (retour B1)', () =>
 			tx.execute(sql`update "membership" set "role" = 'editor' where "id" = ${sienne}`)
 		);
 		expect(element(await page200('/cours', cookie), 'avis-role')).toBe('');
+	});
+});
+
+/** Ce que la demande de confirmation dit à une responsable qui se retire elle-même. */
+const SE_RETIRER: Record<Langue, string> = {
+	fr: 'Vous allez vous retirer vous-même de l’organisation.',
+	de: 'Sie sind dabei, sich selbst aus der Organisation zu entfernen.',
+	it: 'Stai per lasciare l’organizzazione.',
+	en: 'You are about to remove yourself from the organisation.',
+	ar: 'أنت على وشك إزالة نفسك من المؤسسة.'
+};
+
+/** L'encadré de « Vos organisations », à l'arrivée, après un départ. */
+const PARTIE: Record<Langue, string> = {
+	fr: 'Vous avez quitté l’organisation. Son espace ne vous est plus ouvert. Pour y revenir, demandez à une personne responsable de vous inviter de nouveau.',
+	de: 'Sie haben die Organisation verlassen. Ihr Bereich steht Ihnen nicht mehr offen. Um zurückzukommen, bitten Sie eine Person in der Leitung, Sie wieder einzuladen.',
+	it: 'Hai lasciato l’organizzazione. La sua area non ti è più accessibile. Per tornare, chiedi a un responsabile di invitarti di nuovo.',
+	en: 'You have left the organisation. Its area is no longer open to you. To come back, ask a manager to invite you again.',
+	ar: 'لقد غادرت المؤسسة، ولم تعد مساحتها مفتوحة لك. وللعودة إليها اطلب من أحد المسؤولين أن يدعوك من جديد.'
+};
+
+/** L'organisation que désigne la session de ce cookie, relevée par le propriétaire. */
+async function organisationDeLaSession(cookie: string): Promise<string | null | undefined> {
+	const jeton = decodeURIComponent(cookie.split('=')[1] ?? '').split('.')[0] ?? '';
+	const [ligne] = await maintenance(async (tx) =>
+		lignes<{ active_organization_id: string | null }>(
+			await tx.execute(sql`select "active_organization_id" from "session" where "token" = ${jeton}`)
+		)
+	);
+	return ligne?.active_organization_id;
+}
+
+describe('une responsable qui se retire elle-même de l’organisation (étape 19)', () => {
+	const seconde = newId();
+	let cookie = '';
+	let sienne = '';
+
+	/**
+	 * Son adhésion de responsable, et son acceptation des conditions, que le retrait emporte : les
+	 * groupes qui suivent l'attendent dans l'organisation du fichier.
+	 */
+	async function remettre(): Promise<void> {
+		await maintenance(async (tx) => {
+			const rendue = lignes(
+				await tx.execute(sql`
+					insert into "membership" ("id", "organization_id", "user_id", "role")
+					values (${sienne}, ${organizationId}, ${ids[RESPONSABLE] ?? ''}, 'org_admin')
+					on conflict ("id") do nothing
+					returning "id"
+				`)
+			);
+			if (rendue.length > 0) {
+				await tx.execute(conditionsAcceptees(organizationId, ids[RESPONSABLE] ?? ''));
+			}
+		});
+	}
+
+	beforeAll(async () => {
+		// Une seconde responsable : la base refuse de laisser l'organisation sans responsable.
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified")
+				values (${seconde}, 'mr-seconde-depart@example.test', true)
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${organizationId}, ${seconde}, 'org_admin')
+			`);
+			const [adhesion] = lignes<{ id: string }>(
+				await tx.execute(sql`
+					select "id" from "membership"
+					where "organization_id" = ${organizationId} and "user_id" = ${ids[RESPONSABLE] ?? ''}
+				`)
+			);
+			sienne = adhesion?.id ?? '';
+		});
+		cookie = await signIn(RESPONSABLE);
+	});
+
+	afterAll(async () => {
+		await remettre();
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		await maintenance((tx) =>
+			tx.execute(sql`delete from "membership" where "user_id" = ${seconde}`)
+		);
+	});
+
+	it.each(LANGUES)(
+		'asks her in %s, then tells her on « Vos organisations » that she has left',
+		async (langue) => {
+			await remettre();
+			await poserLangueDuCompte(RESPONSABLE, langue);
+			// Le bouton de sa propre ligne, tel que l'écran le montre.
+			const bouton = formulaireDeLaPage(
+				await page200('/membres', cookie),
+				'?/retirer',
+				avec({ membershipId: sienne })
+			);
+			expect(bouton, 'le bouton de sa ligne').not.toBeNull();
+			const premier = await postForm('/membres?/retirer', bouton ?? {}, cookie);
+			expect(premier.status).toBe(200);
+			const demande = element(await premier.text(), 'confirmer-membre');
+			// La demande lui parle d'elle-même, sans recopier son adresse.
+			expect(lu(demande)).toContain(SE_RETIRER[langue]);
+			expect(demande).not.toContain(RESPONSABLE);
+			expect(await roleDe(sienne), 'rien n’est retiré avant la confirmation').toBe('org_admin');
+
+			const confirmer = formulaireDeLaPage(demande, '?/retirer');
+			expect(confirmer).toEqual({ membershipId: sienne, confirm: 'yes' });
+			const reponse = await postForm('/membres?/retirer', confirmer ?? {}, cookie);
+			// Membres ne lui est plus ouvert : elle est envoyée sur « Vos organisations ».
+			expect(reponse.status).toBe(303);
+			const arrivee = new URL(reponse.headers.get('location') ?? '', origin);
+			expect(arrivee.pathname).toBe('/organisations');
+			expect(await roleDe(sienne)).toBeUndefined();
+			// La session ne désigne plus l'organisation qu'elle vient de quitter.
+			expect(await organisationDeLaSession(cookie)).toBeNull();
+
+			const html = await page200(`${arrivee.pathname}${arrivee.search}`, cookie);
+			const avis = element(html, 'avis-depart');
+			expect(avis).toMatch(/role="status"/);
+			expect(lu(avis)).toBe(PARTIE[langue]);
+			// Avant tout le reste, titre compris, comme l'encadré de la responsable devenue éditrice.
+			expect(html.indexOf('id="avis-depart"')).toBeLessThan(html.indexOf('<h1'));
+			// Et c'est vrai : Membres la renvoie.
+			expect((await get('/membres', cookie)).status).toBe(303);
+		}
+	);
+
+	it('says nothing to someone who is still a member of the organisation the address names', async () => {
+		await remettre();
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		// Une adresse copiée, ouverte par une personne qui est membre : rien de faux.
+		const adresse = `/organisations?avis=depart&organisation=${organizationId}`;
+		expect(element(await page200(adresse, cookie), 'avis-depart')).toBe('');
+		// Ni pour une adresse qui ne nomme aucune organisation.
+		for (const organisation of ['', 'pas-un-identifiant']) {
+			const autre = `/organisations?avis=depart&organisation=${organisation}`;
+			expect(element(await page200(autre, cookie), 'avis-depart'), autre).toBe('');
+		}
+	});
+});
+
+/** « Quitter l'organisation », sa demande de confirmation et son refus, dans chaque langue. */
+const QUITTER: Record<
+	Langue,
+	{ bouton: string; demande: string; confirmer: string; rester: string; seule: string }
+> = {
+	fr: {
+		bouton: 'Quitter l’organisation',
+		demande: 'Vous allez quitter cette organisation :',
+		confirmer: 'Confirmer le départ',
+		rester: 'Rester dans l’organisation',
+		seule: 'Vous êtes la seule personne responsable de cette organisation :'
+	},
+	de: {
+		bouton: 'Organisation verlassen',
+		demande: 'Sie sind dabei, diese Organisation zu verlassen:',
+		confirmer: 'Austritt bestätigen',
+		rester: 'In der Organisation bleiben',
+		seule: 'Sie sind die einzige Person in der Leitung dieser Organisation:'
+	},
+	it: {
+		bouton: 'Lascia l’organizzazione',
+		demande: 'Stai per lasciare questa organizzazione:',
+		confirmer: 'Conferma l’uscita',
+		rester: 'Resta nell’organizzazione',
+		seule: 'Sei l’unica persona responsabile di questa organizzazione:'
+	},
+	en: {
+		bouton: 'Leave the organisation',
+		demande: 'You are about to leave this organisation:',
+		confirmer: 'Confirm leaving',
+		rester: 'Stay in the organisation',
+		seule: 'You are the only manager of this organisation:'
+	},
+	ar: {
+		bouton: 'مغادرة المؤسسة',
+		demande: 'أنت على وشك مغادرة هذه المؤسسة:',
+		confirmer: 'تأكيد المغادرة',
+		rester: 'البقاء في المؤسسة',
+		seule: 'أنت المسؤول الوحيد عن هذه المؤسسة:'
+	}
+};
+
+/** Ce que le refus dit de faire à la seule personne responsable qui voudrait partir. */
+const AVANT_DE_PARTIR: Record<Langue, string> = {
+	fr: 'Une organisation garde toujours au moins une personne responsable. Avant de la quitter, ouvrez-la, puis, dans l’écran Membres, donnez le rôle de responsable à un autre membre ou invitez une personne comme responsable.',
+	de: 'Eine Organisation behält immer mindestens eine Person in der Leitung. Bevor Sie sie verlassen, öffnen Sie sie und geben Sie auf der Seite «Mitglieder» einem anderen Mitglied die Rolle «Leitung», oder laden Sie eine Person für die Leitung ein.',
+	it: 'Un’organizzazione ha sempre almeno un responsabile. Prima di lasciarla, aprila e, nella pagina Membri, dai il ruolo di responsabile a un altro membro o invita una persona come responsabile.',
+	en: 'An organisation always keeps at least one manager. Before leaving it, open it, then, on the Members screen, give the manager role to another member or invite someone as a manager.',
+	ar: 'تحتفظ المؤسسة دائمًا بمسؤول واحد أو أكثر. قبل مغادرتها، افتحها، ثم امنح في صفحة «الأعضاء» دور المسؤول لعضو آخر أو ادعُ شخصًا بصفة مسؤول.'
+};
+
+/** Ce que « Vos organisations » répond pour une organisation dont la personne n'est pas membre. */
+const PAS_MEMBRE = 'Vous n’êtes pas membre de cette organisation.';
+
+describe('quitter une organisation depuis « Vos organisations » (étape 19)', () => {
+	/** Celle que l'on quitte : une éditrice, deux responsables. */
+	const QUITTEE = { id: newId(), slug: 'mr-quittee', nom: 'Association que l’on quitte' };
+	/** Une seule responsable, et la même éditrice. */
+	const SEULE = { id: newId(), slug: 'mr-seule', nom: 'Association d’une seule responsable' };
+	const PARTANTE = 'mr-partante@example.test';
+	const AUSSI = 'mr-responsable-aussi@example.test';
+	const RESTE = 'mr-responsable-reste@example.test';
+	const UNIQUE = 'mr-seule-responsable@example.test';
+	const personnes: Record<string, string> = {};
+	/** Les adhésions, par adresse et par organisation : `adresse organisation`. */
+	const adhesions: Record<string, string> = {};
+	const cookies: Record<string, string> = {};
+	let appHandle: DatabaseHandle;
+
+	/** Remet une adhésion, avec son acceptation des conditions, si le départ l'a emportée. */
+	async function remettre(email: string, organisation: string, role: string): Promise<void> {
+		await maintenance(async (tx) => {
+			const rendue = lignes(
+				await tx.execute(sql`
+					insert into "membership" ("id", "organization_id", "user_id", "role")
+					values (${adhesions[`${email} ${organisation}`] ?? ''}, ${organisation},
+						${personnes[email] ?? ''}, ${role})
+					on conflict ("id") do nothing
+					returning "id"
+				`)
+			);
+			if (rendue.length > 0) {
+				await tx.execute(conditionsAcceptees(organisation, personnes[email] ?? ''));
+			}
+		});
+	}
+
+	/** Le rôle d'une personne dans une organisation, ou `undefined` si elle n'en est plus membre. */
+	async function roleDans(email: string, organisation: string): Promise<string | undefined> {
+		return roleDe(adhesions[`${email} ${organisation}`] ?? '');
+	}
+
+	/** Les acceptations des conditions d'une personne dans une organisation. */
+	async function acceptations(email: string, organisation: string): Promise<number> {
+		const trouvees = await maintenance(async (tx) =>
+			lignes(
+				await tx.execute(sql`
+					select 1 from "terms_acceptance"
+					where "organization_id" = ${organisation} and "user_id" = ${personnes[email] ?? ''}
+				`)
+			)
+		);
+		return trouvees.length;
+	}
+
+	beforeAll(async () => {
+		appHandle = createDatabase({ role: 'app', overrides: { database: testDatabase } });
+		for (const email of [PARTANTE, AUSSI, RESTE, UNIQUE]) personnes[email] = newId();
+		const membres = [
+			[PARTANTE, QUITTEE.id, 'editor'],
+			[AUSSI, QUITTEE.id, 'org_admin'],
+			[RESTE, QUITTEE.id, 'org_admin'],
+			[PARTANTE, SEULE.id, 'editor'],
+			[UNIQUE, SEULE.id, 'org_admin']
+		] as const;
+		for (const [email, organisation] of membres) {
+			adhesions[`${email} ${organisation}`] = newId();
+		}
+		await maintenance(async (tx) => {
+			for (const organisation of [QUITTEE, SEULE]) {
+				await tx.execute(sql`
+					insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+						"enabled_language")
+					values (${organisation.id}, ${organisation.slug}, ${organisation.nom}, 'Europe/Zurich',
+						'fr', array['fr'])
+				`);
+			}
+			for (const [email, id] of Object.entries(personnes)) {
+				await tx.execute(sql`
+					insert into "user" ("id", "email", "email_verified") values (${id}, ${email}, true)
+				`);
+			}
+		});
+		for (const [email, organisation, role] of membres) await remettre(email, organisation, role);
+		for (const email of [PARTANTE, AUSSI, UNIQUE]) cookies[email] = await signIn(email);
+	});
+
+	afterAll(async () => {
+		for (const email of [PARTANTE, AUSSI, UNIQUE]) await poserLangueDuCompte(email, 'fr');
+		await appHandle?.close();
+	});
+
+	it.each(LANGUES)(
+		'offers in %s « Quitter l’organisation » for each organisation of the list',
+		async (langue) => {
+			await poserLangueDuCompte(PARTANTE, langue);
+			const html = await page200('/organisations', cookies[PARTANTE] ?? '');
+			for (const organisation of [QUITTEE, SEULE]) {
+				const bouton = formulaireDeLaPage(
+					html,
+					'?/quitter',
+					avec({ organizationId: organisation.id })
+				);
+				expect(bouton, organisation.nom).toEqual({ organizationId: organisation.id });
+			}
+			const boutons = [...html.matchAll(/<form\b[^>]*action="\?\/quitter"[\s\S]*?<\/form>/g)].map(
+				([formulaire]) => lu(formulaire)
+			);
+			expect(boutons).toEqual([QUITTER[langue].bouton, QUITTER[langue].bouton]);
+		}
+	);
+
+	it.each(LANGUES)(
+		'asks in %s before leaving, and leaves nothing until confirmed',
+		async (langue) => {
+			await remettre(PARTANTE, QUITTEE.id, 'editor');
+			await poserLangueDuCompte(PARTANTE, langue);
+			const demande = await postForm(
+				'/organisations?/quitter',
+				{ organizationId: QUITTEE.id },
+				cookies[PARTANTE] ?? ''
+			);
+			expect(demande.status).toBe(200);
+			const html = await demande.text();
+			const boite = element(html, 'confirmer-depart');
+			expect(boite).toMatch(/role="alert"/);
+			// En haut, avant la liste : après l'envoi, la page s'ouvre en haut.
+			expect(html.indexOf('id="confirmer-depart"')).toBeGreaterThan(html.indexOf('<h1'));
+			expect(html.indexOf('id="confirmer-depart"')).toBeLessThan(
+				html.indexOf('action="?/choisir"')
+			);
+			expect(lu(boite)).toContain(`${QUITTER[langue].demande} ${QUITTEE.nom}`);
+			expect(boite).toContain(`<bdi>${QUITTEE.nom}</bdi>`);
+			const confirmer = formulaireDeLaPage(boite, '?/quitter');
+			expect(confirmer).toEqual({ organizationId: QUITTEE.id, confirm: 'yes' });
+			expect(lu(boite.match(/<form\b[\s\S]*?<\/form>/)?.[0] ?? '')).toBe(QUITTER[langue].confirmer);
+			const rester = boite.match(/<a\b[^>]*\bhref="([^"]*)"[^>]*>([\s\S]*?)<\/a>/);
+			expect(new URL(rester?.[1] ?? '', `${origin}/organisations`).pathname).toBe('/organisations');
+			expect(lu(rester?.[2] ?? '')).toBe(QUITTER[langue].rester);
+			expect(await roleDans(PARTANTE, QUITTEE.id), 'rien ne part avant la confirmation').toBe(
+				'editor'
+			);
+		}
+	);
+
+	it.each(LANGUES)(
+		'leaves once confirmed, says so in %s where she arrives, and writes it in the journal',
+		async (langue) => {
+			await remettre(PARTANTE, QUITTEE.id, 'editor');
+			await poserLangueDuCompte(PARTANTE, langue);
+			const cookie = cookies[PARTANTE] ?? '';
+			// L'organisation qu'elle quitte est celle de sa session.
+			expect(
+				(await postForm('/organisations?/choisir', { organizationId: QUITTEE.id }, cookie)).status
+			).toBe(303);
+			expect(await organisationDeLaSession(cookie)).toBe(QUITTEE.id);
+			const adhesion = adhesions[`${PARTANTE} ${QUITTEE.id}`] ?? '';
+
+			const reponse = await postForm(
+				'/organisations?/quitter',
+				{ organizationId: QUITTEE.id, confirm: 'yes' },
+				cookie
+			);
+			expect(reponse.status).toBe(303);
+			const arrivee = new URL(reponse.headers.get('location') ?? '', origin);
+			expect(arrivee.pathname).toBe('/organisations');
+			// L'adhésion part, avec son acceptation des conditions ; la session ne nomme plus
+			// l'organisation ; l'autre organisation reste.
+			expect(await roleDans(PARTANTE, QUITTEE.id)).toBeUndefined();
+			expect(await acceptations(PARTANTE, QUITTEE.id)).toBe(0);
+			expect(await organisationDeLaSession(cookie)).toBeNull();
+			expect(await roleDans(PARTANTE, SEULE.id)).toBe('editor');
+			// Le journal de l'organisation le dit, signé de la personne qui part (migration 0063).
+			const journal = await withOrg(
+				appHandle.db,
+				{ organizationId: QUITTEE.id, userId: personnes[RESTE] ?? '' },
+				async (tx) =>
+					lignes<{ action: string; actor_id: string; target_table: string }>(
+						await tx.execute(sql`
+							select "action", "actor_id", "target_table" from "audit_log"
+							where "target_id" = ${adhesion} order by "created_at" desc, "id" desc
+						`)
+					)
+			);
+			expect(journal[0]).toEqual({
+				action: 'member.leave',
+				actor_id: personnes[PARTANTE],
+				target_table: 'membership'
+			});
+
+			const html = await page200(`${arrivee.pathname}${arrivee.search}`, cookie);
+			expect(lu(element(html, 'avis-depart'))).toBe(PARTIE[langue]);
+			expect(
+				formulaireDeLaPage(html, '?/quitter', avec({ organizationId: QUITTEE.id }))
+			).toBeNull();
+			expect(
+				formulaireDeLaPage(html, '?/quitter', avec({ organizationId: SEULE.id }))
+			).not.toBeNull();
+		}
+	);
+
+	it('lets a manager leave when another one stays', async () => {
+		await remettre(AUSSI, QUITTEE.id, 'org_admin');
+		await poserLangueDuCompte(AUSSI, 'fr');
+		const cookie = cookies[AUSSI] ?? '';
+		const demande = await postForm(
+			'/organisations?/quitter',
+			{ organizationId: QUITTEE.id },
+			cookie
+		);
+		expect(demande.status).toBe(200);
+		expect(element(await demande.text(), 'confirmer-depart')).not.toBe('');
+		const reponse = await postForm(
+			'/organisations?/quitter',
+			{ organizationId: QUITTEE.id, confirm: 'yes' },
+			cookie
+		);
+		expect(reponse.status).toBe(303);
+		expect(await roleDans(AUSSI, QUITTEE.id)).toBeUndefined();
+		expect(await roleDans(RESTE, QUITTEE.id)).toBe('org_admin');
+		await remettre(AUSSI, QUITTEE.id, 'org_admin');
+	});
+
+	it.each(LANGUES)(
+		'refuses in %s the only manager, before and after confirming, and says what to do',
+		async (langue) => {
+			await poserLangueDuCompte(UNIQUE, langue);
+			const cookie = cookies[UNIQUE] ?? '';
+			// Sans confirmation, l'écran ne demande pas de confirmer un départ que la base refuserait ;
+			// avec, c'est le refus de la base, traduit (déclencheur de la migration 0012).
+			for (const confirm of ['', 'yes']) {
+				const reponse = await postForm(
+					'/organisations?/quitter',
+					{ organizationId: SEULE.id, confirm },
+					cookie
+				);
+				expect(reponse.status, confirm).toBe(409);
+				const html = await reponse.text();
+				expect(element(html, 'confirmer-depart'), confirm).toBe('');
+				const refus = lu(element(html, 'refus-depart'));
+				expect(element(html, 'refus-depart'), confirm).toMatch(/role="alert"/);
+				expect(refus, confirm).toBe(
+					`${QUITTER[langue].seule} ${SEULE.nom} ${AVANT_DE_PARTIR[langue]}`
+				);
+			}
+			expect(await roleDans(UNIQUE, SEULE.id)).toBe('org_admin');
+		}
+	);
+
+	it('answers an organisation she is not a member of, or no identifier at all, with a sentence', async () => {
+		await poserLangueDuCompte(PARTANTE, 'fr');
+		await maintenance((tx) =>
+			tx.execute(
+				sql`delete from "membership" where "id" = ${adhesions[`${PARTANTE} ${QUITTEE.id}`] ?? ''}`
+			)
+		);
+		for (const organizationId of [QUITTEE.id, newId(), 'pas-un-identifiant', '']) {
+			for (const confirm of ['', 'yes']) {
+				const reponse = await postForm(
+					'/organisations?/quitter',
+					{ organizationId, confirm },
+					cookies[PARTANTE] ?? ''
+				);
+				const cas = `« ${organizationId} » ${confirm}`;
+				expect(reponse.status, cas).toBe(403);
+				expect(alerte(await reponse.text()), cas).toBe(PAS_MEMBRE);
+			}
+		}
+		// Et rien n'a bougé ailleurs.
+		expect(await roleDans(PARTANTE, SEULE.id)).toBe('editor');
+		expect(await roleDans(RESTE, QUITTEE.id)).toBe('org_admin');
 	});
 });
 

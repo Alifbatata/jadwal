@@ -17,6 +17,7 @@ export type AuditAction =
 	| 'invitation.cancel'
 	| 'invitation.accept'
 	| 'member.remove'
+	| 'member.leave'
 	| 'member.role'
 	| 'organization.create'
 	| 'organization.plan'

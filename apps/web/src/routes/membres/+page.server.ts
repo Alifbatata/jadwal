@@ -17,10 +17,11 @@ import type { IsoDate } from '@jadwal/core';
 import { newId, sql } from '@jadwal/db';
 import { isLangue, type Langue } from '$lib/i18n.js';
 import { record } from '$lib/server/audit.js';
-import { withSessionOrg } from '$lib/server/context.js';
+import { forgetOrganisation, withSessionOrg } from '$lib/server/context.js';
 import { mustAdminister, mustBeInOrganisation } from '$lib/server/guard.js';
 import { createMailer } from '$lib/server/mail/index.js';
 import { invitationEmail } from '$lib/server/mail/messages.js';
+import { departureArrival } from '../organisations/departure.js';
 import type { Actions, PageServerLoad } from './$types.js';
 import { SELF_EDITOR_ARRIVAL } from './self-editor.js';
 
@@ -298,6 +299,12 @@ export const actions: Actions = {
 		return { annulee: true };
 	},
 
+	/**
+	 * Retirer un membre. Le premier envoi rend la demande de confirmation, avec l'adresse du membre ;
+	 * le second, qui porte `confirm=yes`, le retire (étape 19). Une responsable qui se retire
+	 * elle-même n'a plus accès à l'écran : elle part sur « Vos organisations », où un encadré le lui
+	 * dit, et la session ne désigne plus l'organisation (`departure.ts`).
+	 */
 	retirer: async (event) => {
 		const { request } = event;
 		const context = await mustBeInOrganisation(event);
@@ -343,6 +350,10 @@ export const actions: Actions = {
 				role: null
 			};
 			return { aConfirmer };
+		}
+		if (issue.soiMeme) {
+			await forgetOrganisation(context, context.organizationId);
+			redirect(303, departureArrival(context.organizationId));
 		}
 		return { retire: true };
 	},
