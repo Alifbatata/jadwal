@@ -1292,6 +1292,51 @@ describe('copier une période pour l’année suivante (retour D2)', () => {
 			COPIE[langue]
 		);
 	});
+
+	/** Un nom de soixante caractères, tout ce que le champ du nom accepte. */
+	const NOM_LONG = 'Horaires d’hiver de la grande salle, rue du Marché 1, Bienne';
+
+	it.each([
+		['fr', ' (année suivante)'],
+		['ar', ' (السنة التالية)']
+	] as const)(
+		'shortens a long name rather than lose the end of the copy mark, in %s',
+		async (langue, marque) => {
+			// Le nom d'une copie était coupé à soixante caractères, la longueur du champ : « (année
+			// suivante) » perdait sa fin, et la copie ne se distinguait plus de l'originale. C'est le nom
+			// d'origine qui est raccourci (étape 19, lot 2).
+			expect(NOM_LONG).toHaveLength(60);
+			await poserLangueDuCompte(RESPONSABLE, langue);
+			const debut = addDays(aujourdhui(), langue === 'fr' ? 7000 : 7800);
+			const id = newId();
+			await maintenance((tx) =>
+				tx.execute(sql`
+					insert into "prayer_period" ("id", "organization_id", "name", "from_date", "to_date",
+						"maghrib_iqama_offset")
+					values (${id}, ${organizationId}, ${NOM_LONG}, ${debut}::date,
+						${addDays(debut, 10)}::date, 5)
+				`)
+			);
+			const reponse = await postForm('/prieres?source=manual&/dupliquerPeriode', {
+				periodeId: id
+			});
+			expect(reponse.status).toBe(200);
+			const [copie] = await maintenance(async (tx) =>
+				lignes<{ name: string }>(
+					await tx.execute(sql`
+						select "name" from "prayer_period"
+						where "organization_id" = ${organizationId}
+							and "from_date" between ${debut}::date + 300 and ${debut}::date + 400
+					`)
+				)
+			);
+			const nom = copie?.name ?? '';
+			expect(nom.endsWith(marque), nom).toBe(true);
+			expect(nom.length, nom).toBeLessThanOrEqual(60);
+			expect(NOM_LONG.startsWith(nom.slice(0, -marque.length)), nom).toBe(true);
+			expect(nom.slice(0, -marque.length).length, nom).toBeGreaterThan(30);
+		}
+	);
 });
 
 describe('l’aperçu d’une période préparée à l’avance (retour B1)', () => {

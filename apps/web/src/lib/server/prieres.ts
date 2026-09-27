@@ -547,6 +547,26 @@ export function datesAnneeSuivante(
 	return { fromDate: debut, toDate: fin };
 }
 
+/** La longueur que le formulaire d'une période laisse à son nom (`maxlength="60"`). */
+export const LONGUEUR_DU_NOM = 60;
+
+/**
+ * Le nom de la copie d'une période : `nommer(nom)`, dans la langue de l'écran (« Hiver (année
+ * suivante) »), en soixante caractères au plus. Un nom trop long est raccourci **avant** la marque
+ * de la copie, jamais après : coupé en bout, « (année suivante) » perdait sa fin, ou disparaissait
+ * tout entier derrière un nom de soixante caractères, et la copie portait alors le nom de
+ * l'originale (étape 19, lot 2). Le nom se raccourcit caractère par caractère, sans couper une
+ * lettre qui s'écrit en deux unités, et perd l'espace qui le finirait. Les marques des cinq langues
+ * tiennent en moins de vingt caractères : il reste toujours plus de quarante caractères au nom.
+ */
+export function nomDeLaCopie(nom: string, nommer: (nom: string) => string): string {
+	const caracteres = Array.from(nom);
+	while (caracteres.length > 0 && nommer(caracteres.join('').trimEnd()).length > LONGUEUR_DU_NOM) {
+		caracteres.pop();
+	}
+	return nommer(caracteres.join('').trimEnd());
+}
+
 /**
  * Duplique une période pour l'année suivante : mêmes mois et mêmes jours, un an plus tard.
  *
@@ -558,9 +578,9 @@ export function datesAnneeSuivante(
  *
  * Rend `null` si la période n'a pas d'équivalent l'année suivante (voir `datesAnneeSuivante`).
  *
- * `nom` est le nom de la copie, écrit par l'appelant dans la langue de l'écran qui la fait
- * (« Hiver (nächstes Jahr) ») : une personne qui lit l'allemand ne doit pas trouver de français
- * dans le nom de sa période (étape 18, retour D2).
+ * `nommer` donne le nom de la copie d'après celui de l'originale, dans la langue de l'écran qui la
+ * fait (« Hiver (nächstes Jahr) ») : une personne qui lit l'allemand ne doit pas trouver de français
+ * dans le nom de sa période (étape 18, retour D2). Voir `nomDeLaCopie` pour un nom trop long.
  *
  * Le chevauchement n'est pas vérifié ici : la contrainte d'exclusion le refuse, et l'appelant
  * traduit le code `23P01`. Une période sans date de fin ne peut pas être dupliquée sans chevaucher
@@ -570,13 +590,13 @@ export async function dupliquerPeriode(
 	tx: Transaction,
 	context: { organizationId: string; userId: string | null },
 	source: PeriodeHoraires,
-	nom: string
+	nommer: (nom: string) => string
 ): Promise<string | null> {
 	const dates = datesAnneeSuivante(source.fromDate as IsoDate, source.toDate as IsoDate | null);
 	if (!dates) return null;
 	return enregistrerPeriode(tx, context, {
 		id: null,
-		name: nom.slice(0, 60),
+		name: nomDeLaCopie(source.name, nommer),
 		fromDate: dates.fromDate,
 		toDate: dates.toDate,
 		needsReview: true,

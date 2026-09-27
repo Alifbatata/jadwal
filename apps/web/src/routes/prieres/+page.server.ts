@@ -615,7 +615,7 @@ export const actions: Actions = {
 					tx,
 					{ organizationId: context.organizationId, userId: context.userId },
 					source,
-					textes.periods.copyName(source.name)
+					textes.periods.copyName
 				);
 				return copie === null ? ('sans-equivalent' as const) : ('faite' as const);
 			});

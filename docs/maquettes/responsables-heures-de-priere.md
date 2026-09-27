@@ -115,7 +115,10 @@ l'année : un nom, des dates, et pour chaque prière l'heure affichée et l'heur
 - Chaque période : `Du 01.11.2026 au 28.02.2027` ou `À partir du 01.11.2026, jusqu'à nouvel ordre`,
   un tableau `Prière`, `Heure affichée`, `Iqama` (`10 min après`), les boutons
   `Copier pour l'année suivante` et `Supprimer`, et le repli `Modifier cette période`. Une copie
-  porte `dates à vérifier` jusqu'à ce qu'elle soit enregistrée.
+  porte `dates à vérifier` jusqu'à ce qu'elle soit enregistrée. Elle s'appelle comme l'originale,
+  suivie de `(année suivante)` dans la langue de l'écran ; un nom trop long pour les soixante
+  caractères du champ est raccourci avant cette marque, qui reste entière (étape 19). Jusque-là, il
+  était coupé en bout, et un nom de soixante caractères perdait toute la marque.
 - `Ajouter une période`, ouvert quand il n'y en a aucune : `Nom de la période` (`Exemple : Hiver
 2027, ou Ramadan 2027.`), `Premier jour`, `Dernier jour` (`Laissez vide pour « jusqu'à nouvel
 ordre ».`), `Heures affichées`, `Iqama` (`Heure fixe` ou `ou minutes après`, jamais les deux).

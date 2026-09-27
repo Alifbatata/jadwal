@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import { addDays, type IsoDate } from '@jadwal/core';
 import { analyserCalendrier } from '@jadwal/core/prayer';
-import { datesAnneeSuivante, lireRaison } from './prieres.js';
+import { datesAnneeSuivante, lireRaison, LONGUEUR_DU_NOM, nomDeLaCopie } from './prieres.js';
 
 /** Une année découpée en douze périodes mensuelles jointives, du 1er janvier au 31 décembre. */
 function moisDe(annee: number): { de: IsoDate; a: IsoDate }[] {
@@ -169,5 +169,55 @@ describe('lireRaison', () => {
 			code: 'other',
 			text: 'Une phrase nouvelle.'
 		});
+	});
+});
+
+describe('nomDeLaCopie', () => {
+	const francais = (nom: string) => `${nom} (année suivante)`;
+	const arabe = (nom: string) => `${nom} (السنة التالية)`;
+
+	it('ajoute la marque de la copie à un nom court, sans rien lui retirer', () => {
+		expect(nomDeLaCopie('Hiver', francais)).toBe('Hiver (année suivante)');
+		expect(nomDeLaCopie('Hiver', arabe)).toBe('Hiver (السنة التالية)');
+	});
+
+	it('raccourcit un nom long avant la marque, qui reste entière, en soixante caractères', () => {
+		// Coupé en bout, un nom de soixante caractères perdait toute sa marque, et la copie portait le
+		// nom de l'originale.
+		const nom = 'Horaires d’hiver de la grande salle, rue du Marché 1, Bienne';
+		expect(nom).toHaveLength(LONGUEUR_DU_NOM);
+		for (const [nommer, marque] of [
+			[francais, ' (année suivante)'],
+			[arabe, ' (السنة التالية)']
+		] as const) {
+			const copie = nomDeLaCopie(nom, nommer);
+			expect(copie.length, copie).toBeLessThanOrEqual(LONGUEUR_DU_NOM);
+			expect(copie.endsWith(marque), copie).toBe(true);
+			expect(nom.startsWith(copie.slice(0, -marque.length)), copie).toBe(true);
+		}
+		// Au caractère près : la copie remplit les soixante caractères, moins l'espace qui finirait le
+		// nom raccourci.
+		expect(nomDeLaCopie(nom, francais)).toBe(
+			'Horaires d’hiver de la grande salle, rue du (année suivante)'
+		);
+	});
+
+	it('garde entier un nom qui tient tout juste avec sa marque', () => {
+		const nom = 'x'.repeat(LONGUEUR_DU_NOM - ' (année suivante)'.length);
+		expect(nomDeLaCopie(nom, francais)).toBe(`${nom} (année suivante)`);
+		expect(nomDeLaCopie(`${nom}y`, francais)).toBe(`${nom} (année suivante)`);
+	});
+
+	it('ne coupe pas une lettre écrite en deux unités', () => {
+		// « 𝒜 » tient deux unités de JavaScript : coupé entre elles, il laisserait un demi-caractère.
+		// Quarante et un « a », un « 𝒜 » et la marque font soixante unités tout juste ; avec un « a » de
+		// plus, le « 𝒜 » ne tient plus, et part entier.
+		expect(nomDeLaCopie(`${'a'.repeat(41)}𝒜𝒜𝒜`, francais)).toBe(
+			`${'a'.repeat(41)}𝒜 (année suivante)`
+		);
+		const copie = nomDeLaCopie(`${'a'.repeat(42)}𝒜𝒜𝒜`, francais);
+		expect(copie.length).toBeLessThanOrEqual(LONGUEUR_DU_NOM);
+		expect(copie.isWellFormed()).toBe(true);
+		expect(copie).toBe(`${'a'.repeat(42)} (année suivante)`);
 	});
 });
