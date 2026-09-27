@@ -1411,7 +1411,9 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 			};
 			expect(montre.shownId).not.toBe(annulation);
 			expect([depart, arrivee]).toEqual([montre, montre]);
-			// Le déplacement change encore d'heure ailleurs : les deux cartes sont périmées à leur tour.
+			// Le même déplacement change encore sur place, ce que seul l'entretien fait : d'heure, puis
+			// de jour à la même heure. Son identifiant reste ; la carte qui montrait l'état d'avant est
+			// périmée à chaque fois.
 			await maintenance((tx) =>
 				tx.execute(sql`
 					update "session_exception" set "to_start" = '21:30'
@@ -1422,11 +1424,31 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 			expect(perimee.status).toBe(409);
 			expect(alerte(await perimee.text())).toBe(CHANGEE.fr(CERCLE, dateLue('fr', jour(2))));
 			expect(await exception(cercle, jour(2))).toEqual({ ...deplacement, to_start: '21:30' });
-			// La carte à jour, elle, rétablit la séance.
-			const aJour = formulaireDeRetablissement(
+			const a2130 = formulaireDeRetablissement(
 				carte(await (await get('/', cookie)).text(), jour(4), CERCLE, 'moved_here')
 			);
-			expect(aJour).toEqual({ ...montre, shownToStart: '21:30' });
+			expect(a2130).toEqual({ ...montre, shownToStart: '21:30' });
+			await maintenance((tx) =>
+				tx.execute(sql`
+					update "session_exception" set "to_date" = ${jour(5)}
+					where "course_id" = ${cercle} and "date" = ${jour(2)}
+				`)
+			);
+			const autreJour = await postForm('/?/retablir', a2130 ?? {}, cookie);
+			expect(autreJour.status).toBe(409);
+			expect(alerte(await autreJour.text())).toBe(CHANGEE.fr(CERCLE, dateLue('fr', jour(2))));
+			expect(await exception(cercle, jour(2))).toEqual({
+				kind: 'moved',
+				to_date: jour(5),
+				to_start: '21:30'
+			});
+			expect(await identifiantDe(cercle, jour(2))).toBe(montre.shownId);
+			expect(await lignesDuJournal()).toBe(journalAvant);
+			// La carte à jour, elle, rétablit la séance.
+			const aJour = formulaireDeRetablissement(
+				carte(await (await get('/', cookie)).text(), jour(5), CERCLE, 'moved_here')
+			);
+			expect(aJour).toEqual({ ...montre, shownToDate: jour(5), shownToStart: '21:30' });
 			expect((await postForm('/?/retablir', aJour ?? {}, cookie)).status).toBe(200);
 			expect(await exception(cercle, jour(2))).toBeUndefined();
 		} finally {

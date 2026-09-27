@@ -2161,8 +2161,9 @@ describe('« Ce vendredi » : un « Rétablir » resté ouvert ne défait pas un
 				shownToDate: jourDuDeplacement(),
 				shownToStart: '15:00'
 			});
-			// Le déplacement change encore d'heure ailleurs : la carte du déplacement est périmée à son
-			// tour, et refusée de même.
+			// Le même déplacement change encore sur place, ce que seul l'entretien fait : d'heure, puis
+			// de jour à la même heure. Son identifiant reste ; la ligne qui montrait l'état d'avant est
+			// périmée à chaque fois, et refusée de même.
 			await maintenance((tx) =>
 				tx.execute(sql`
 					update "session_exception" set "to_start" = '16:00'
@@ -2173,6 +2174,31 @@ describe('« Ce vendredi » : un « Rétablir » resté ouvert ne défait pas un
 			expect(perimee.status).toBe(409);
 			expect(enTete(await perimee.text())).toEqual([REFUS_DU_VENDREDI.changed.fr]);
 			expect(await exceptionDe(sessions[1], date)).toEqual({ ...deplacee, to_start: '16:00' });
+			const a1600 = formulaireDuVendredi(
+				await (await get('/vendredi', cookies)).text(),
+				'retablir',
+				sessions[1],
+				date
+			);
+			expect(a1600).toEqual({ ...aJour, shownToStart: '16:00' });
+			// Un autre jour d'arrivée, à côté du premier, et jamais avant aujourd'hui.
+			const autreJour = addDays(jourDuDeplacement(), jourDuDeplacement() > date ? 1 : -1);
+			await maintenance((tx) =>
+				tx.execute(sql`
+					update "session_exception" set "to_date" = ${autreJour}
+					where "course_id" = ${sessions[1]} and "date" = ${date}
+				`)
+			);
+			const deJour = await postForm('/vendredi?/retablir', a1600, cookies);
+			expect(deJour.status).toBe(409);
+			expect(enTete(await deJour.text())).toEqual([REFUS_DU_VENDREDI.changed.fr]);
+			expect(await exceptionDe(sessions[1], date)).toEqual({
+				kind: 'moved',
+				to_date: autreJour,
+				to_start: '16:00'
+			});
+			expect(await identifiantDe(sessions[1], date)).toBe(deplacement);
+			expect(await lignesDuJournalDeVendredi()).toBe(journalAvant);
 			// La carte à jour, elle, rétablit la session.
 			const derniere = formulaireDuVendredi(
 				await (await get('/vendredi', cookies)).text(),
@@ -2180,6 +2206,7 @@ describe('« Ce vendredi » : un « Rétablir » resté ouvert ne défait pas un
 				sessions[1],
 				date
 			);
+			expect(derniere).toEqual({ ...aJour, shownToDate: autreJour, shownToStart: '16:00' });
 			expect((await postForm('/vendredi?/retablir', derniere, cookies)).status).toBe(200);
 			expect(await exceptionDe(sessions[1], date)).toBeUndefined();
 		} finally {
