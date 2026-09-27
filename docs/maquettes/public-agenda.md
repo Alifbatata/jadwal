@@ -84,8 +84,8 @@ rien sur votre téléphone, ouvrez cette page sur un ordinateur :`, puis l'adres
   « collez l'adresse ci-dessous » ; ces étapes restent dans `Ajouter l'adresse à la main`.
 - `Ou copiez cette adresse dans votre application de calendrier :`, comme sur un iPhone, puis
   l'adresse `https:` du flux, et `Une autre application ou un autre appareil ?` suivi du lien
-  `Voir tous les choix`. L'étiquette
-  `L'adresse à coller :` a disparu avec la phrase qui disait de coller l'adresse.
+  `Voir tous les choix`. L'étiquette `L'adresse à coller :` a disparu avec la phrase qui disait de
+  coller l'adresse.
 
 **Ailleurs, ou avec `?appareil=tous`.** `Choisissez votre application de calendrier :`, puis
 cinq choix, chacun avec sa phrase. `Outlook (travail ou école)` s'est ajouté le 27.09.2026, sur
@@ -144,8 +144,8 @@ page : un menu français dans une page allemande ne servirait à personne.
 - Elle ne cache rien : quand elle choisit pour le visiteur, le choix complet est à un lien, et les
   étapes à la main restent sur la page. Une détection se trompe parfois, et elle ne doit jamais
   cacher la bonne réponse.
-- Elle ne charge aucun script, et ne lit aucun cookie. Les liens de Google et des deux Outlook sont les
-  seuls à mener vers un autre domaine.
+- Elle ne charge aucun script, et ne lit aucun cookie. Les liens de Google et des deux Outlook
+  sont les seuls à mener vers un autre domaine.
 - Elle ne propose pas de filtrer un flux par public. La question est fermée par l'ADR 0028 : le flux
   par cours répond au vrai besoin, qui est « je veux celui-là ».
 

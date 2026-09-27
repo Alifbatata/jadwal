@@ -224,16 +224,15 @@ du visiteur sait ouvrir :
 - sur un iPhone, un iPad ou un Mac, le bouton **Ajouter à mon calendrier**, qui ouvre l'application
   Calendrier ;
 - sur Android, le bouton **Ajouter à Google Agenda**, qui ouvre Google Agenda dans un nouvel onglet ;
-- ailleurs, le choix entre Google Agenda, Outlook (compte personnel), Outlook pour un compte de
-  travail ou d'école, une autre application, et l'adresse à copier.
+- ailleurs, le choix entre **Google Agenda**, **Outlook** pour un compte personnel,
+  **Outlook (travail ou école)**, une autre application, et l'adresse à copier.
 
 Sous la question **Une autre application ou un autre appareil ?**, le lien **Voir tous les choix**
-montre toujours tout, et les étapes à suivre à
-la main restent en bas de la page. La page d'un cours fait de même pour ce seul cours. Une
-application de calendrier ne relit pas l'abonnement à chaque minute : Outlook peut mettre plus de
-24 heures, selon Microsoft. La page le dit, et renvoie le visiteur à la page du programme pour un
-changement de dernière minute. De votre côté, envoyez aussi le message prêt à coller que propose
-l'écran **À venir**.
+montre toujours tout, et les étapes à suivre à la main restent en bas de la page. La page d'un
+cours fait de même pour ce seul cours. Une application de calendrier ne relit pas l'abonnement à
+chaque minute : Outlook peut mettre plus de 24 heures, selon Microsoft. La page le dit, et renvoie
+le visiteur à la page du programme pour un changement de dernière minute. De votre côté, envoyez
+aussi le message prêt à coller que propose l'écran **À venir**.
 
 **Ce que nous voyons, et ce que nous ne voyons pas.** Le programme ne dépose aucun cookie et
 n'apprend rien de vos visiteurs. Une seule chose est comptée : le nombre d'affichages par jour, pour
