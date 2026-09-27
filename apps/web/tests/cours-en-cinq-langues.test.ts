@@ -1911,6 +1911,99 @@ describe('un cours avant une prière (C3)', () => {
 	});
 });
 
+describe('une organisation sans le module des prières exige l’heure fixe (étape 19, lot 3)', () => {
+	// Sans le module, un cours n'a qu'une façon d'avoir une heure : il n'y a pas de choix à changer, et
+	// les heures de début et de fin sont toujours à l'écran. Le navigateur les exige donc, avec ou sans
+	// JavaScript : les retirer sans JavaScript, comme pour une organisation qui a le choix, laissait
+	// partir un envoi que le serveur ne pouvait que refuser (relecture du lot 3).
+	const organisation = newId();
+	const RESPONSABLE_SANS_MODULE = 'cours-sans-module@example.test';
+	const utilisateur = newId();
+	const TITRE = 'Cours sans le module';
+	let cookie = '';
+
+	/** Un cours complet à heure fixe, dans cette organisation, avec ces heures. */
+	const coursFixe = (debut: string, fin: string): (readonly [string, string])[] => [
+		['sourceLanguage', 'fr'],
+		['title.fr', TITRE],
+		['audience', 'adults'],
+		['teachingLanguages', 'fr'],
+		['recurrenceKind', 'weekly'],
+		['weekdays', '4'],
+		['interval', '1'],
+		['timingKind', 'fixed'],
+		['start', debut],
+		['end', fin],
+		['startsOn', '2026-10-01'],
+		['status', 'draft']
+	];
+
+	async function coursEnBase(): Promise<{ id: string; start: string }[]> {
+		return maintenance(async (tx) =>
+			lignes<{ id: string; start: string }>(
+				await tx.execute(sql`
+					select c."id", c."timing_start"::text as "start" from "course" c
+					join "course_translation" t on t."course_id" = c."id"
+					where t."title" = ${TITRE} and c."organization_id" = ${organisation}
+				`)
+			)
+		);
+	}
+
+	beforeAll(async () => {
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+					"enabled_language", "prayer_module")
+				values (${organisation}, 'cours-sans-module', 'Association sans le module',
+					'Europe/Zurich', 'fr', array['fr'], false)
+			`);
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified", "language")
+				values (${utilisateur}, ${RESPONSABLE_SANS_MODULE}, true, 'fr')
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${organisation}, ${utilisateur}, 'org_admin')
+			`);
+			await tx.execute(conditionsAcceptees(organisation, utilisateur));
+		});
+		cookie = await signIn(RESPONSABLE_SANS_MODULE);
+	});
+
+	it('requires the start and end times of a new course, without JavaScript too, and the server still names what is missing', async () => {
+		const html = await (await get('/cours/nouveau', cookie)).text();
+		expect(html).not.toMatch(/<select\b[^>]*\bid="timingKind"/);
+		expect(champsDuFormulaire(html)).toContainEqual(['timingKind', 'fixed']);
+		expect(champ(html, 'start')).toHaveProperty('required');
+		expect(champ(html, 'end')).toHaveProperty('required');
+
+		// Heures vides, le navigateur s'arrête avant d'envoyer. Envoyé quand même, par un formulaire
+		// écrit à la main, le cours est refusé avec sa phrase, et la page revient avec ses deux champs
+		// toujours exigés.
+		const sansHeure = coursFixe('', '');
+		expect(obligatoiresVides(html, sansHeure)).toEqual(['start', 'end']);
+		const refus = await postForm('/cours/nouveau', sansHeure, cookie);
+		expect(refus.status).toBe(400);
+		const page = await refus.text();
+		expect(erreurs(page)).toEqual([
+			'Indiquez l’heure de début et l’heure de fin. Exemple : 19:00 et 20:30'
+		]);
+		expect(obligatoiresVides(page, renvoi(page, {}))).toEqual(['start', 'end']);
+		expect(await coursEnBase()).toEqual([]);
+	});
+
+	it('requires them on the page of a saved course too', async () => {
+		const cree = await postForm('/cours/nouveau', coursFixe('19:00', '20:30'), cookie);
+		expect(cree.status, erreurs(await cree.clone().text()).join(' | ')).toBe(303);
+		const [cours] = await coursEnBase();
+		expect(cours?.start).toBe('19:00:00');
+		const fiche = await (await get(`/cours/${cours?.id}`, cookie)).text();
+		expect(champ(fiche, 'start')).toMatchObject({ value: '19:00', required: '' });
+		expect(champ(fiche, 'end')).toMatchObject({ value: '20:30', required: '' });
+	});
+});
+
 describe('aucune erreur 500 sur les écrans des cours (étape 19, lot 2)', () => {
 	// Les défauts corrigés au lot 1 sur « À venir » et le vendredi, cherchés ici : `isIsoDate` suit le
 	// calendrier de `@jadwal/core`, qui a un an 0000 (ADR 0012), et PostgreSQL non ; le flux agenda

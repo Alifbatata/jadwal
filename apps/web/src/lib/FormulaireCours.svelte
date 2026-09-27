@@ -413,7 +413,9 @@
 		     premier jour (étape 19, lot 3). Sans JavaScript, changer le choix du dessus ne change pas la
 		     page : elle part avec les champs de l'autre façon, et un `required` vide y bloquait l'envoi.
 		     Il fallait taper des heures pour voir les champs de la prière, ou des minutes pour revenir
-		     à une heure fixe. Le serveur refuse ce qui manque, avec sa phrase. -->
+		     à une heure fixe. Le serveur refuse ce qui manque, avec sa phrase. Sans le module, il n'y a
+		     pas de choix : l'heure fixe est la seule, et ses heures restent exigées sans JavaScript
+		     (relecture du lot 3). -->
 		{#if !prayerModule || entry.timingKind === 'fixed'}
 			<label for="start">{text.startLabel}</label>
 			<input
@@ -421,7 +423,7 @@
 				type="time"
 				name="start"
 				bind:value={entry.start}
-				required={hydrated}
+				required={hydrated || !prayerModule}
 				aria-describedby="time-hint"
 			/>
 			<label for="end">{text.endLabel}</label>
@@ -430,7 +432,7 @@
 				type="time"
 				name="end"
 				bind:value={entry.end}
-				required={hydrated}
+				required={hydrated || !prayerModule}
 				aria-describedby="time-hint"
 			/>
 			<p class="aide" id="time-hint">{text.timeHint}</p>

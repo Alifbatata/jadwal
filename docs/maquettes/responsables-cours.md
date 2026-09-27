@@ -230,6 +230,12 @@ lot 3 de l'étape 19, `Heure de début` et `Heure de fin` étaient toujours exig
 rendue pour une heure fixe, heures vides, il fallait taper des heures qui ne servent à rien pour
 voir les champs de la prière, et, dans l'autre sens, des minutes pour revenir à une heure fixe.
 
+Une organisation sans le module des prières n'a pas `Comment fixer l'heure ?` : l'heure fixe est la
+seule façon, et il n'y a rien à changer. `Heure de début` et `Heure de fin` y restent donc exigées
+par le navigateur, avec ou sans JavaScript, sur un nouveau cours comme sur sa fiche. La première
+version du lot 3 les laissait sans `required` sans JavaScript là aussi : des heures vides partaient,
+et revenaient avec la phrase du serveur (relecture du lot 3).
+
 **Lieu, intervenant et période.** `Salle (facultatif)`, avec `aucune salle` et `Les salles se créent
 dans les réglages, par une personne responsable.` ; `Intervenant (facultatif)`, avec `La personne
 qui donne le cours, par son nom ou sa fonction. Exemple : l'imam` ; `Premier jour du cours

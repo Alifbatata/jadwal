@@ -389,7 +389,9 @@ Deux défauts relevés par les chantiers du lot 2, chacun prouvé d'abord par so
   minutes. C'est le mécanisme du premier jour, corrigé au lot 2 : ces champs ne sont `required`
   qu'avec JavaScript, où ils suivent le choix. Le serveur refuse toujours une heure fixe sans heure
   (`timeMissing`) et une prière sans minutes ou sans durée, avec leur phrase, et rien ne change
-  avec JavaScript.
+  avec JavaScript. Une organisation sans le module des prières n'a pas ce choix : l'heure fixe y
+  est la seule, et ses deux heures restent `required`, avec ou sans JavaScript (relecture du
+  lot 3).
 - **Annuler et Déplacer un jour sans séance.** Aucune carte ne l'envoie, mais un formulaire écrit à
   la main, ou une page restée ouverte pendant que le rythme d'un cours changeait, annulait une
   session du vendredi un lundi, ou une séance d'« À venir » à toute date à partir d'aujourd'hui.
