@@ -26,9 +26,10 @@ met à jour tout seul. Rien à réinstaller quand un cours change.` Devant un no
 4. **Un seul cours**, titre de niveau 2, quand l'organisation a au moins un cours publié : une
    phrase, puis la liste des cours, un par ligne, chacun en lien vers **son** flux (ADR 0028). Le
    lien et la phrase suivent l'appareil :
-   - iPhone, iPad, Mac : le lien `webcal:` du cours, et `Vous pouvez aussi n'ajouter qu'un cours.
-Touchez son nom : il s'ajoute seul et se met à jour comme le reste. Son adresse en https figure sur
-la page du cours.` ;
+   - iPhone, iPad, Mac : le lien `webcal:` du cours, et juste sous son nom, comme sur Android, le
+     lien `Page du cours`, vers la page du cours à l'ancre `#agenda` (décision du chef de projet,
+     27.09.2026). La phrase : `Vous pouvez aussi n'ajouter qu'un cours. Touchez son nom : il s'ajoute
+seul et se met à jour comme le reste. Son adresse en https figure sur la page du cours.` ;
    - Android : le lien de Google Agenda pour ce cours, dans un nouvel onglet, et juste sous son nom,
      sur toute la largeur, le lien `Page du cours`, vers la page du cours à l'ancre `#agenda`. La
      phrase : `Vous pouvez aussi n'ajouter qu'un cours. Touchez son nom : Google Agenda s'ouvre pour

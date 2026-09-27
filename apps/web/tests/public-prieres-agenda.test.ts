@@ -1372,6 +1372,38 @@ describe('chaque page d’abonnement ne dit que ce qui est vrai pour elle', () =
 		}
 	);
 
+	// Décision du chef de projet, au 27.09.2026 : sur un iPhone aussi, chaque cours a, juste sous son
+	// nom, le lien « Page du cours », comme sur Android. Le nom garde son lien `webcal:`, dans l'onglet.
+	it.each(LANGUES)(
+		'gives each course on an iPhone the course page link it has on Android, in %s',
+		async (langue) => {
+			const chemin = `${base(langue)}/agenda`;
+			const { html } = await servir(chemin, IPHONE);
+			const section =
+				[...html.matchAll(/<section\b[^>]*>([\s\S]*?)<\/section>/g)]
+					.map((trouve) => trouve[1] ?? '')
+					.find((contenu) => /<ul\b[^>]*\bclass="cours\b/.test(contenu)) ?? '';
+			const ligne =
+				[...section.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)]
+					.map((trouve) => trouve[1] ?? '')
+					.find((contenu) => lu(contenu).startsWith(TITRES.quotidien)) ?? '';
+			const liens = [...ligne.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)].map((lien) => {
+				const attrs = attributs(`<a${lien[1]}>`);
+				return [
+					suivi((attrs['href'] ?? '').replaceAll('&amp;', '&'), chemin),
+					lu(lien[2] ?? ''),
+					attrs['target'],
+					// La classe qui donne au second lien sa place, sous le nom et sur toute la largeur.
+					(attrs['class'] ?? '').split(/\s+/).includes('page-du-cours')
+				];
+			});
+			expect(liens).toEqual([
+				[fluxCoursWebcal(langue, COURS.quotidien), TITRES.quotidien, undefined, false],
+				[`${base(langue)}/cours/${COURS.quotidien}#agenda`, PAGE_DU_COURS[langue], undefined, true]
+			]);
+		}
+	);
+
 	it.each(LANGUES)('speaks of a button only where there is one, in %s', async (langue) => {
 		const chemin = `${base(langue)}/agenda`;
 		// Le choix complet n'a que des liens, qu'on le demande depuis un iPhone ou qu'on le reçoive

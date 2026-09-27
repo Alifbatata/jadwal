@@ -110,15 +110,18 @@
 									>{cours.title}<span class="pour-lecteur">{annonceNouvelOnglet(data.langue)}</span
 									></a
 								>
-								<!-- L'issue si Google Agenda ne propose rien sur le téléphone : la page du cours, à
-								     son bloc d'abonnement, qui donne l'adresse du cours et le passage par un
-								     ordinateur (relecture du lot 4). Son nom se lit avec celui du cours, dans le
-								     même élément de liste. -->
+							{:else}
+								<a href={lienDuCours(cours)}>{cours.title}</a>
+							{/if}
+							<!-- Sur un téléphone, la page du cours, à son bloc d'abonnement, juste sous le nom :
+							     sur Android, l'issue si Google Agenda ne propose rien (relecture du lot 4) ; sur
+							     un iPhone, l'adresse du cours et les autres choix, le même lien (décision du chef
+							     de projet, 27.09.2026). Ailleurs, le nom mène déjà à cette page. Son nom se lit
+							     avec celui du cours, dans le même élément de liste. -->
+							{#if data.appareil === 'android' || data.appareil === 'apple'}
 								<a class="page-du-cours" href={`${lienCours(adresse, cours.id)}#agenda`}
 									>{mots.coursePage}</a
 								>
-							{:else}
-								<a href={lienDuCours(cours)}>{cours.title}</a>
 							{/if}
 						</li>
 					{/each}
@@ -199,7 +202,7 @@
 		min-height: 44px;
 		color: #0f5c55;
 	}
-	/* Sur Android, le second lien d'un cours, sous son nom : plus discret, et toujours à 44 px. */
+	/* Sur un téléphone, le second lien d'un cours, sous son nom : plus discret, et toujours à 44 px. */
 	ul.cours a.page-du-cours {
 		font-size: 0.9rem;
 	}
