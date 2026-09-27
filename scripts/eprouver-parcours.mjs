@@ -247,6 +247,15 @@ const ORGANISATION = {
 };
 /** L'adresse que l'écran du super-admin propose pour ce nom, avant qu'on la change (retour B2). */
 const ADRESSE_PROPOSEE = 'centre-du-parcours';
+/**
+ * L'exemple que l'écran du super-admin donne sous le nom et sous l'adresse (étape 19, B12) : un
+ * nom, le même en français, en allemand, en italien et en anglais, et son nom arabe.
+ */
+const EXEMPLE_DU_SUPER_ADMIN = {
+	nom: 'Association Horizon',
+	nomArabe: 'جمعية الأفق',
+	adresse: 'association-horizon'
+};
 /** La seconde organisation de la personne invitée, où elle est éditrice. */
 const VOISINE = {
 	nom: 'Association voisine',
@@ -1617,11 +1626,12 @@ async function languesDuSuperAdmin(page) {
 				}
 				if (!(await choixPresent(page, langue))) problemes.push(`${ecran} : choix de la langue`);
 				// Le nom d'une passkey, « Windows, 26.09.2026 », s'écrit de même dans toutes les langues :
-				// ce n'est pas une phrase, et il n'a pas à être écarté.
+				// ce n'est pas une phrase, et il n'a pas à être écarté. L'exemple d'un nom d'organisation,
+				// « Association Horizon », est un nom : il reste tel quel hors de l'arabe (étape 19, B12).
 				const restes = resteEnFrancais(
 					/** @type {string[]} */ (francais.get(ecran)),
 					await segmentsLus(page),
-					NOMS_SAISIS
+					[...NOMS_SAISIS, EXEMPLE_DU_SUPER_ADMIN.nom]
 				);
 				for (const reste of restes.slice(0, 3)) problemes.push(`${ecran} : « ${reste} »`);
 			}
