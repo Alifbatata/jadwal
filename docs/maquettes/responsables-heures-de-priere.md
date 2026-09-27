@@ -122,8 +122,10 @@ ordre ».`), `Heures affichées`, `Iqama` (`Heure fixe` ou `ou minutes après`, 
 - `Voir l'aperçu`, puis `Aperçu des sept prochains jours avec cette période` et `Rien n'est encore
 enregistré.` : la période est écrite, les jours relus, puis tout est annulé. Une période qui
   commence après les sept prochains jours montre ses sept premiers jours et le dit ; plus courte
-  que sept jours, elle est montrée en entier, avec sa durée. Puis `Enregistrer cette période`.
-  Le titre de l'aperçu est de niveau 4 sous le nom d'une période enregistrée, et de niveau 3 pour
+  que sept jours, elle est montrée en entier, avec sa durée. Une période déjà terminée montre les
+  sept prochains jours, qu'elle ne couvre pas, et le dit depuis l'étape 19 : `Cette période s'est
+terminée le 28.08.2026 : elle ne change aucun des sept prochains jours, que l'aperçu montre.` Puis
+  `Enregistrer cette période`. Le titre de l'aperçu est de niveau 4 sous le nom d'une période enregistrée, et de niveau 3 pour
   une nouvelle période, dont `Ajouter une période` n'est qu'un repli : sans aucune période, la page
   passait de h2 à h4 (axe, « heading-order », corrigé à l'étape 19, D5).
 

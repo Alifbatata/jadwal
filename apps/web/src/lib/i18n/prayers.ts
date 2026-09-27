@@ -267,6 +267,8 @@ interface PrayersTexts {
 		readonly previewTitleWhole: string;
 		readonly previewWhole: (firstDay: string, days: number) => string;
 		readonly previewWholeEmpty: string;
+		/** Une période déjà terminée : elle ne change aucun des sept prochains jours que l'aperçu montre. */
+		readonly previewPast: (lastDay: string) => string;
 		readonly previewHint: string;
 		readonly save: string;
 	};
@@ -589,6 +591,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			previewWhole: (firstDay, days) =>
 				`Cette période commence le ${firstDay} et dure ${francais(days, { one: `${days} jour`, other: `${days} jours` })} : l’aperçu la montre en entier, et non les sept prochains jours.`,
 			previewWholeEmpty: 'Aucune heure pour cette période.',
+			previewPast: (lastDay) =>
+				`Cette période s’est terminée le ${lastDay} : elle ne change aucun des sept prochains jours, que l’aperçu montre.`,
 			previewHint: 'Rien n’est encore enregistré.',
 			save: 'Enregistrer cette période'
 		},
@@ -912,6 +916,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			previewWhole: (firstDay, days) =>
 				`Dieser Zeitraum beginnt am ${firstDay} und dauert ${deutsch(days, { one: `${days} Tag`, other: `${days} Tage` })}: Die Vorschau zeigt ihn vollständig, nicht die nächsten sieben Tage.`,
 			previewWholeEmpty: 'Keine Zeiten für diesen Zeitraum.',
+			previewPast: (lastDay) =>
+				`Dieser Zeitraum endete am ${lastDay}: Er ändert keinen der nächsten sieben Tage, die die Vorschau zeigt.`,
 			previewHint: 'Noch ist nichts gespeichert.',
 			save: 'Diesen Zeitraum speichern'
 		},
@@ -1240,6 +1246,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			previewWhole: (firstDay, days) =>
 				`Questo periodo comincia il ${firstDay} e dura ${italiano(days, { one: `${days} giorno`, other: `${days} giorni` })}: l’anteprima lo mostra per intero, non i prossimi sette giorni.`,
 			previewWholeEmpty: 'Nessun orario per questo periodo.',
+			previewPast: (lastDay) =>
+				`Questo periodo è finito il ${lastDay}: non cambia nessuno dei prossimi sette giorni, che l’anteprima mostra.`,
 			previewHint: 'Non è ancora salvato niente.',
 			save: 'Salva questo periodo'
 		},
@@ -1559,6 +1567,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			previewWhole: (firstDay, days) =>
 				`This period starts on ${firstDay} and lasts ${english(days, { one: `${days} day`, other: `${days} days` })}: the preview shows all of it, not the next seven days.`,
 			previewWholeEmpty: 'No times for this period.',
+			previewPast: (lastDay) =>
+				`This period ended on ${lastDay}: it changes none of the next seven days, which the preview shows.`,
 			previewHint: 'Nothing has been saved yet.',
 			save: 'Save this period'
 		},
@@ -1886,6 +1896,8 @@ export const prayersTexts: Translations<PrayersTexts> = {
 					other: `${days} يوم`
 				})}: لذلك تعرض المعاينة الفترة كلها، لا الأيام السبعة القادمة.`,
 			previewWholeEmpty: 'لا مواقيت لهذه الفترة.',
+			previewPast: (lastDay) =>
+				`انتهت هذه الفترة في ${lastDay}: لذلك لا تغيّر أي يوم من الأيام السبعة القادمة التي تعرضها المعاينة.`,
 			previewHint: 'لم يُحفظ شيء بعد.',
 			save: 'حفظ هذه الفترة'
 		},

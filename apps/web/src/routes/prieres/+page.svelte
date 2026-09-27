@@ -1137,6 +1137,11 @@
 						: text.periods.previewLater(numericDate(depuis))}
 				</p>
 			{/if}
+			<!-- Une période déjà terminée ne change aucun des sept prochains jours : sans cette phrase,
+			     l'aperçu les montrait sans rien dire, et la période paraissait n'avoir aucun effet. -->
+			{#if form.apercuFinie}
+				<p class="aide">{text.periods.previewPast(numericDate(form.apercuFinie))}</p>
+			{/if}
 			<p class="aide">{text.periods.previewHint}</p>
 			{@render tableServie(
 				form.apercuPeriode,

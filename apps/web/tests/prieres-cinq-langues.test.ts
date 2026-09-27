@@ -1430,6 +1430,60 @@ describe('l’aperçu d’une période préparée à l’avance (retour B1)', ()
 			expect(tableau.match(/19:00/g)?.length ?? 0).toBe(7);
 		}
 	});
+
+	/** La phrase qui dit qu'une période déjà finie ne change aucun des jours montrés. */
+	const PHRASE_FINIE: Record<Langue, (jour: string) => string> = {
+		fr: (jour) =>
+			`Cette période s’est terminée le ${jour} : elle ne change aucun des sept prochains jours, que l’aperçu montre.`,
+		de: (jour) =>
+			`Dieser Zeitraum endete am ${jour}: Er ändert keinen der nächsten sieben Tage, die die Vorschau zeigt.`,
+		it: (jour) =>
+			`Questo periodo è finito il ${jour}: non cambia nessuno dei prossimi sette giorni, che l’anteprima mostra.`,
+		en: (jour) =>
+			`This period ended on ${jour}: it changes none of the next seven days, which the preview shows.`,
+		ar: (jour) =>
+			`انتهت هذه الفترة في ${jour}: لذلك لا تغيّر أي يوم من الأيام السبعة القادمة التي تعرضها المعاينة.`
+	};
+
+	it.each(LANGUES)(
+		'says that a period already over changes none of the seven days it previews, in %s',
+		async (langue) => {
+			// Une période de l'hiver passé, retrouvée pour la recopier : l'aperçu montrait les sept
+			// prochains jours, qu'elle ne couvre pas, sans un mot (étape 19, lot 2).
+			await poserLangueDuCompte(RESPONSABLE, langue);
+			const fin = addDays(aujourdhui(), -30);
+			const avant = await nombreDePeriodes();
+			const reponse = await postForm('/prieres?source=manual&/apercuPeriode', {
+				name: 'Hiver passé',
+				fromDate: addDays(aujourdhui(), -60),
+				toDate: fin,
+				maghrib: '19:00'
+			});
+			expect(reponse.status).toBe(200);
+			const html = await reponse.text();
+			expect(visibleText(html)).toContain(PHRASE_FINIE[langue](jjmmaaaa(fin)));
+			// Les sept prochains jours, et aucun ne porte le Maghrib de la période.
+			const tableau =
+				html
+					.slice(html.indexOf('id="apercu-periode-titre-nouvelle"'))
+					.match(/<tbody>[\s\S]*?<\/tbody>/)?.[0] ?? '';
+			expect(visibleText(`<body>${tableau}</body>`)).toContain(jjmmaaaa(aujourdhui()));
+			expect(tableau).not.toContain('19:00');
+			expect(await nombreDePeriodes()).toBe(avant);
+		}
+	);
+
+	it('says nothing of the kind for a period that ends today', async () => {
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		const reponse = await postForm('/prieres?source=manual&/apercuPeriode', {
+			name: 'Hiver qui finit',
+			fromDate: addDays(aujourdhui(), -60),
+			toDate: aujourdhui(),
+			maghrib: '19:00'
+		});
+		expect(reponse.status).toBe(200);
+		expect(visibleText(await reponse.text())).not.toContain('Cette période s’est terminée');
+	});
 });
 
 describe('les replis (retour B1)', () => {

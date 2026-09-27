@@ -354,13 +354,15 @@ function versEnregistrement(saisie: PeriodeSaisie) {
  * Levée pour annuler la transaction de l'aperçu d'une période, une fois les jours relus avec elle :
  * c'est ce qui garantit que l'aperçu n'écrit rien, audit compris. `depuis` est le premier jour de la
  * période quand l'aperçu montre ses premiers jours plutôt que les sept prochains, et `duree` le
- * nombre de jours qu'il montre alors : sept, ou moins pour une période plus courte.
+ * nombre de jours qu'il montre alors : sept, ou moins pour une période plus courte. `finie` est le
+ * dernier jour d'une période déjà terminée, qui ne change aucun des jours montrés.
  */
 class ApercuSeulement extends Error {
 	constructor(
 		readonly jours: ResolvedPrayerRow[],
 		readonly depuis: IsoDate | null,
-		readonly duree: number
+		readonly duree: number,
+		readonly finie: IsoDate | null
 	) {
 		super('aperçu d’une période, transaction annulée');
 	}
@@ -541,7 +543,8 @@ export const actions: Actions = {
 	 * Une période préparée à l'avance, qui commence après les sept prochains jours (un Ramadan dans
 	 * trois mois), n'y apparaîtrait pas : l'aperçu montre alors ses sept premiers jours, et la page
 	 * le dit (retour B1). Une telle période plus courte que sept jours (l'Aïd, un jour) est montrée
-	 * en entier, et seulement elle : les jours qui la suivent ne sont pas les siens.
+	 * en entier, et seulement elle : les jours qui la suivent ne sont pas les siens. Une période déjà
+	 * terminée montre les sept prochains jours, qu'elle ne change pas, et la page le dit aussi.
 	 */
 	apercuPeriode: async (event) => {
 		const context = await mustAdministerPrayerModule(event);
@@ -565,10 +568,14 @@ export const actions: Actions = {
 					plusTard && dernier !== null && compareIsoDates(dernier, septieme) < 0
 						? dernier
 						: septieme;
+				// Une période déjà terminée (l'hiver passé, qu'on retrouve pour le recopier) ne couvre
+				// aucun des sept prochains jours : l'aperçu les montre quand même, et la page le dit.
+				const finie = dernier !== null && compareIsoDates(dernier, today) < 0 ? dernier : null;
 				throw new ApercuSeulement(
 					await readPrayerDays(tx, context.organizationId, debut, fin),
 					plusTard ? premier : null,
-					isoDateToDays(fin) - isoDateToDays(debut) + 1
+					isoDateToDays(fin) - isoDateToDays(debut) + 1,
+					finie
 				);
 			});
 		} catch (cause) {
@@ -577,6 +584,7 @@ export const actions: Actions = {
 					apercuPeriode: cause.jours,
 					apercuDepuis: cause.depuis,
 					apercuDuree: cause.duree,
+					apercuFinie: cause.finie,
 					periode: saisie
 				};
 			}
