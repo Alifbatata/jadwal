@@ -80,6 +80,10 @@ longitude 2.3522 pour Paris.` Une localité envoyée avec deux autres nombres, n
   celle qui est enregistrée, s'efface devant eux : c'est la position tapée qui compte, avec les
   contrôles de « Hors de Suisse », et l'écran revient avec cette case cochée et le repli ouvert.
   Jusqu'à l'étape 19, le serveur gardait la localité et demandait de choisir « Hors de Suisse ».
+  Un nombre vidé compte aussi comme tapé : l'erreur
+  `Donnez la latitude et la longitude, ou aucune des deux.` revient avec le repli ouvert, quel que
+  soit le nombre qui reste. Jusqu'à la relecture du lot 2 de l'étape 19, une latitude vide gardait
+  le repli fermé et cachait la longitude.
 - Avec JavaScript, les replis restent ouverts pendant la frappe, et un repli que la personne ferme
   reste fermé. Jusqu'au lot 6 de l'étape 18, chaque touche dans Latitude ou Longitude refermait
   `Hors de Suisse`, et une lettre dans la recherche refermait `Méthode de calcul`.
