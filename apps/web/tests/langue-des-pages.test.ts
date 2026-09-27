@@ -713,6 +713,12 @@ describe('une langue que l’organisation ne publie pas', () => {
 		{
 			chemin: `/m/${SLUG_ARABE}/de/agenda?appareil=tous`,
 			vers: `/m/${SLUG_ARABE}/agenda?appareil=tous`
+		},
+		// Le cadre d'un widget `lang="en" view="prieres"`, à l'adresse exacte qu'il pose : il montre
+		// la langue par défaut, et reste intégré (`docs/INTEGRATION.md`, point 3).
+		{
+			chemin: `/m/${SLUG_ARABE}/en?vue=prieres&embed=1`,
+			vers: `/m/${SLUG_ARABE}?vue=prieres&embed=1`
 		}
 	])('sends $chemin to $vers', async ({ chemin, vers }) => {
 		const reponse = await fetch(`${origin}${chemin}`, { redirect: 'manual' });
