@@ -486,3 +486,106 @@ docs/CALENDRIER-PRIERES.md | DATE | 01.09.2026
 docs/INTEGRATION.md | FR_SPELLING_RULE | NPA
 docs/adr/0007-langues-et-traductions.md | DATE | 26.09.2026
 
+# Étape 19 : les textes des lots 1 et 2, relus un par un au lot 3.
+#
+# « DATE » : chaque addendum de l'étape porte sa date, 27.09.2026, écrite avec des points comme
+# toutes les dates du service (étape 18, retour A3) ; la règle propose des barres obliques. Même cas
+# que `docs/CONDITIONS.md` plus haut, accepté fichier par fichier. L'ADR 0021 cite aussi les bornes
+# des dates acceptées, 01.01.1970 et 31.12.2100, la première date refusée, 31.12.2101, et un
+# « 30 février » donné en exemple de date impossible (famille 3).
+docs/CADRAGE.md | DATE | 27.09.2026
+docs/INTEGRATION.md | DATE | 27.09.2026
+docs/adr/0001-licences.md | DATE | 27.09.2026
+docs/adr/0004-horaires-ancres-sur-une-priere.md | DATE | 27.09.2026
+docs/adr/0005-widget.md | DATE | 27.09.2026
+docs/adr/0013-isolation-par-rls-et-contexte-par-transaction.md | DATE | 27.09.2026
+docs/adr/0015-journal-d-audit-en-insertion-seule.md | DATE | 27.09.2026
+docs/adr/0017-invitation-sans-fuite-d-information.md | DATE | 27.09.2026
+docs/adr/0019-proprietaire-non-privilegie.md | DATE | 27.09.2026
+docs/adr/0021-espace-des-responsables.md | DATE | 27.09.2026
+docs/adr/0021-espace-des-responsables.md | DATE | 01.01.1970
+docs/adr/0021-espace-des-responsables.md | DATE | 31.12.2100
+docs/adr/0021-espace-des-responsables.md | DATE | 31.12.2101
+docs/adr/0021-espace-des-responsables.md | DATE | 30 février
+docs/adr/0025-super-admin-pouvoirs-complets.md | DATE | 27.09.2026
+docs/adr/0026-api-publique.md | DATE | 27.09.2026
+docs/adr/0027-pages-publiques.md | DATE | 27.09.2026
+docs/adr/0028-flux-agenda-par-cours.md | DATE | 27.09.2026
+docs/adr/0033-priere-du-vendredi.md | DATE | 27.09.2026
+docs/adr/0042-module-des-heures-de-priere.md | DATE | 27.09.2026
+docs/adr/0043-licence-mit.md | DATE | 27.09.2026
+docs/adr/0046-editeur-et-responsable-dans-la-base.md | DATE | 27.09.2026
+docs/adr/0047-langue-de-l-espace.md | DATE | 27.09.2026
+docs/adr/0048-agenda-selon-l-appareil.md | DATE | 27.09.2026
+
+# Les documents. « les cours, les séances et les pauses qu'ils ont écrits » : un antécédent de
+# genres mêlés prend le masculin. « et par elles les comptes de ses collègues » : « comptes » est le
+# nom. « expected 404 to be 200 » : le message d'un outil, cité en anglais, comme « calendar »,
+# « hours » et « subscribe » dans la phrase de Microsoft que l'ADR 0048 recopie mot pour mot, et
+# « Graph » dans le nom du protocole Open Graph. « le drapeau que 0049 laisse posé », « la base
+# interdit de créer » (le verbe), « Chaque autre langue que l'organisation publie a sa balise »,
+# « un cours a son écran » et « une seconde lecture […] a corrigé » (le verbe avoir) sont justes.
+# « quelle que soit » s'écrit ainsi. « ici ou sur À venir » : « sur » l'écran À venir, dont le nom
+# commence par « À ». « Vendredi » avec sa majuscule est le nom d'un écran, comme plus haut.
+# « du … » cite un message dont la date est remplacée par les points de suspension. « désormais »
+# et « différé » sont tenus d'une section à l'autre (même cas que « annoncé » plus haut) ; « pas X
+# mais Y » ne prend pas de virgule, comme plus haut. Tableau (famille 2) : la cellule finale sans
+# point. « et ceci et ceci » : quatre noms de refus (famille 1). « L'écran où ramène le lien » : le
+# pronom où, accepté ailleurs.
+docs/SECURITE.md | QUE_AVOIR | écrits
+docs/adr/0005-widget.md | FR_SPELLING_RULE | expected
+docs/adr/0013-isolation-par-rls-et-contexte-par-transaction.md | ACCORD_SUJET_VERBE | comptes
+docs/adr/0017-invitation-sans-fuite-d-information.md | FR_REPEATEDWORDS_DIFFÉRER | différé
+docs/adr/0019-proprietaire-non-privilegie.md | AGREEMENT_POSTPONED_ADJ | posé
+docs/adr/0021-espace-des-responsables.md | QUELLE_OU_QU_ELLE | quelle
+docs/adr/0021-espace-des-responsables.md | SUR_ACCENT | sur
+docs/adr/0021-espace-des-responsables.md | FR_REPEATEDWORDS_DÉSORMAIS | désormais
+docs/adr/0021-espace-des-responsables.md | PLACE_DE_LA_VIRGULE | mais
+docs/adr/0021-espace-des-responsables.md | A_A_ACCENT2 | a
+docs/adr/0021-espace-des-responsables.md | FRENCH_WORD_REPEAT_RULE | et ceci et ceci
+docs/adr/0021-espace-des-responsables.md | POINT | )
+docs/adr/0027-pages-publiques.md | FR_SPELLING_RULE | Graph
+docs/adr/0027-pages-publiques.md | A_A_ACCENT2 | a
+docs/adr/0033-priere-du-vendredi.md | JOURS | Vendredi
+docs/adr/0033-priere-du-vendredi.md | POINTS_SUSPENSIONS_SPACE | du …
+docs/adr/0042-module-des-heures-de-priere.md | AGREEMENT_POSTPONED_ADJ | interdit
+docs/adr/0046-editeur-et-responsable-dans-la-base.md | JOURS | Vendredi
+docs/adr/0046-editeur-et-responsable-dans-la-base.md | A_ACCENT | a
+docs/adr/0047-langue-de-l-espace.md | OU_LEQUEL | où
+docs/adr/0048-agenda-selon-l-appareil.md | FR_REPEATEDWORDS_DÉSORMAIS | désormais
+docs/adr/0048-agenda-selon-l-appareil.md | FR_SPELLING_RULE | calendar
+docs/adr/0048-agenda-selon-l-appareil.md | FR_SPELLING_RULE | hours
+docs/adr/0048-agenda-selon-l-appareil.md | FR_SPELLING_RULE | subscribe
+
+# Les écrans. Des chaînes voisines que le corpus recolle en une phrase, sans qu'aucun écran ne les
+# montre ainsi : deux messages d'erreur qui disent chacun « peut-être » ; un bouton, « Retirer cette
+# personne », et la phrase qui suit ; le titre « Vos organisations » et la phrase qui suit ; le nom
+# « Google Agenda », sans point ; les marques d'une séance, « annulée », « déplacée », …,
+# « brouillon » ; « Abgesagt » et « Cancelled », la marque d'un cours puis celle d'une session du
+# vendredi, deux clés voisines. « aujourd'hui ou un jour suivant » : « ou » est la conjonction.
+# « it is always up to date » : attribut, sans traits d'union en anglais britannique.
+apps/web/src/lib/i18n/courses.ts | FR_REPEATEDWORDS_PEUT_ÊTRE | peut-être
+apps/web/src/lib/i18n/friday.ts | OU | ou
+apps/web/src/lib/i18n/members.ts | PRONOMS_PERSONNELS_MINUSCULE | personne Vous
+apps/web/src/lib/i18n/organisations.ts | PRONOMS_PERSONNELS_MINUSCULE | organisations Vous
+apps/web/src/lib/i18n/upcoming.ts | AGREEMENT_POSTPONED_ADJ | brouillon
+apps/web/src/lib/i18n.ts | POINT | Agenda
+apps/web/src/lib/i18n.ts | GERMAN_WORD_REPEAT_RULE | Abgesagt Abgesagt
+apps/web/src/lib/i18n.ts | ENGLISH_WORD_REPEAT_RULE | Cancelled Cancelled
+apps/web/src/lib/i18n.ts | UP_TO_DATE_HYPHEN | up to date
+
+# L'arabe. Les mots que le chef de projet a donnés mot pour mot, gardés tels qu'il les a écrits :
+# « كمسودة » (« comme brouillon »), « Tab » dans « علامة الجدولة (Tab) », « مُعبّأة » et
+# « والصقها ». Puis les cas déjà acceptés pour `prayers.ts` et `error.ts` : « كل ما », « tout ce
+# qui », et non « كلّما » ; « على الأقل », que la règle veut « في الأقل » par purisme ; « تحقق من
+# العنوان », un impératif en titre, que la règle lit comme un nom indéfini en tête de phrase. Et
+# « بحسب طريقة الحساب », « selon la méthode de calcul » : la règle réclame « حسب » ou « وفقًا لـ »
+# par le même purisme, alors que sa propre note cite « بحَسَبِ ذلك » comme juste.
+apps/web/src/lib/i18n/friday.ts | syntax_0002_as_ka_1 | لكنه يبقى هنا كمسودة
+apps/web/src/lib/i18n/prayers.ts | HUNSPELL_RULE_AR | Tab
+apps/web/src/lib/i18n/prayers.ts | HUNSPELL_RULE_AR | مُعبّأة
+apps/web/src/lib/i18n/share.ts | HUNSPELL_RULE_AR | والصقها
+apps/web/src/lib/i18n/members.ts | AR_SIMPLE_REPLACE | كل ما
+apps/web/src/lib/i18n/super-admin.ts | AR_SIMPLE_REPLACE | على الأقل
+apps/web/src/lib/i18n/super-admin.ts | syntax_125_mobtadaa_nakira_2 | تحقق من العنوان
+apps/web/src/lib/i18n/prayers.ts | worduse_0067_bihasabi | بحسب
