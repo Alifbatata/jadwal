@@ -20,8 +20,9 @@ La faille de l'étape 17 a montré ce que cela coûte. L'application lisait le r
 adhésion venue : une personne responsable d'une organisation et éditrice d'une autre était traitée
 en responsable dans les deux. L'erreur était dans le code, et la base ne l'arrêtait pas.
 
-La consigne du chef de projet, après les tests de l'étape 18 : à l'intérieur d'une organisation, la
-base distingue l'éditeur du responsable pour tout ce qu'un éditeur ne doit pas pouvoir faire.
+Après les tests de l'étape 18, le chef de projet a demandé que la base sépare elle-même les deux
+rôles : chaque geste que l'application réserve au responsable doit aussi être refusé à un éditeur
+par la base.
 
 ## Décision
 
