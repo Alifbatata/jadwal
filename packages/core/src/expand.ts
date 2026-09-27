@@ -296,13 +296,20 @@ export interface NextOccurrencesInput {
 	limit: number;
 	/** Nombre de jours explorés à partir de `from` (400 par défaut). */
 	horizonDays?: number;
+	/**
+	 * Garder aussi les séances annulées (`cancelled`), à leur date, et les compter dans `limit` : la
+	 * page publique d'un cours les montre barrées dans ses prochaines dates. Faux par défaut, et
+	 * l'API publique ne le demande pas : son contrat ne change pas.
+	 */
+	includeCancelled?: boolean;
 }
 
 const CHUNK_DAYS = 56;
 
 /**
  * Les prochaines séances qui ont lieu (statuts `scheduled` et `moved_here`), triées, jusqu'à `limit`,
- * en explorant l'horizon par tranches de huit semaines.
+ * en explorant l'horizon par tranches de huit semaines. Avec `includeCancelled`, les séances annulées
+ * aussi ; jamais une séance partie ailleurs (`moved_away`), qui figure à sa nouvelle date.
  */
 export function nextOccurrences(input: NextOccurrencesInput): Occurrence[] {
 	const horizonDays = input.horizonDays ?? MAX_RANGE_DAYS;
@@ -342,7 +349,11 @@ export function nextOccurrences(input: NextOccurrencesInput): Occurrence[] {
 			range: { from: daysToIsoDate(chunkStart), to: daysToIsoDate(chunkEnd) }
 		});
 		for (const occurrence of occurrences) {
-			if (occurrence.status !== 'scheduled' && occurrence.status !== 'moved_here') continue;
+			const kept =
+				occurrence.status === 'scheduled' ||
+				occurrence.status === 'moved_here' ||
+				(input.includeCancelled === true && occurrence.status === 'cancelled');
+			if (!kept) continue;
 			if (
 				fromMinutes !== null &&
 				occurrence.date === input.from &&

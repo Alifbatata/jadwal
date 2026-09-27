@@ -1319,6 +1319,45 @@ describe('nextOccurrences', () => {
 		]);
 	});
 
+	it('keeps cancelled sessions when asked, at their date and in the limit, never moved_away ones', () => {
+		// La page publique d'un cours montre une séance annulée, barrée, dans ses prochaines dates ;
+		// l'API ne la rend pas (étape 19, lot 2). Sans l'option, rien ne change.
+		const input = {
+			schedules: [course('a')],
+			exceptions: [
+				{ kind: 'cancelled', courseId: 'a', date: '2026-09-07' },
+				{ kind: 'moved', courseId: 'a', date: '2026-09-14', toDate: '2026-09-16', toStart: '18:00' }
+			] as SessionException[],
+			from: '2026-09-01' as IsoDate,
+			limit: 3
+		};
+		expect(summary(nextOccurrences({ ...input, includeCancelled: true }))).toEqual([
+			'a 2026-09-07 19:00 cancelled',
+			'a 2026-09-16 18:00 moved_here',
+			'a 2026-09-21 19:00 scheduled'
+		]);
+		expect(summary(nextOccurrences({ ...input, includeCancelled: false }))).toEqual(
+			summary(nextOccurrences(input))
+		);
+		expect(summary(nextOccurrences(input))).toEqual([
+			'a 2026-09-16 18:00 moved_here',
+			'a 2026-09-21 19:00 scheduled',
+			'a 2026-09-28 19:00 scheduled'
+		]);
+	});
+
+	it('drops a cancelled session already started on the from day, like the others', () => {
+		const result = nextOccurrences({
+			schedules: [course('a')],
+			exceptions: [{ kind: 'cancelled', courseId: 'a', date: '2026-09-07' }],
+			from: '2026-09-07',
+			fromTime: '20:00',
+			limit: 1,
+			includeCancelled: true
+		});
+		expect(summary(result)).toEqual(['a 2026-09-14 19:00 scheduled']);
+	});
+
 	it('respects pauses', () => {
 		const result = nextOccurrences({
 			schedules: [course('a')],
