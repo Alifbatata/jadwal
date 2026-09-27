@@ -45,15 +45,15 @@ jadwal.voltia.ch {
 	# de tort à personne. L'empreinte `integrity` du widget ne change pas : elle porte sur le corps
 	# décodé.
 	#
-	# Trois écarts, relevés en 2.8.0 comme en 2.11.4, et revus en 2.11.4 avec gzip en premier. Il
-	# compresse aussi une réponse `206`, mais garde le `Content-Range` de la forme brute. sirv, qui
-	# sert les fichiers de `/_app/` pour adapter-node, répond aux plages. Un navigateur reçoit le
-	# fichier déjà compressé en brotli ou en gzip, qu'`encode` laisse passer. Mais un client qui
-	# n'accepte que zstd reçoit une plage compressée dont le `Content-Range` ne décrit pas le corps.
-	# Mettre gzip en premier ne change rien pour lui. Les routes de l'application, elles, ne servent
-	# pas de plages. En `HEAD`, il annonce dans `Content-Length` la taille d'un flux compressé vide :
-	# 20 octets en gzip, ce que reçoit désormais un navigateur. Un `304` rend l'ETag sans le suffixe
-	# de compression.
+	# Trois écarts, que `pnpm caddy:test` relève et affiche à chaque passage, gzip en premier, en
+	# 2.10.0, la version que le rôle exige, comme en 2.11.4. Il compresse aussi une réponse `206`,
+	# mais garde le `Content-Range` de la forme brute. sirv, qui sert les fichiers de `/_app/` pour
+	# adapter-node, répond aux plages. Un navigateur reçoit le fichier déjà compressé en brotli ou en
+	# gzip, qu'`encode` laisse passer. Mais un client qui n'accepte que zstd reçoit une plage
+	# compressée dont le `Content-Range` ne décrit pas le corps. Mettre gzip en premier ne change rien
+	# pour lui. Les routes de l'application, elles, ne servent pas de plages. En `HEAD`, il annonce
+	# dans `Content-Length` la taille d'un flux compressé vide : 20 octets en gzip, ce que reçoit
+	# désormais un navigateur. Un `304` rend l'ETag sans le suffixe de compression.
 	#
 	# BREACH ne trouve rien à lire ici : il lui faut, dans un même corps compressé, un secret stable
 	# et un texte choisi par l'attaquant. Le nonce de la politique de contenu change à chaque
@@ -163,9 +163,12 @@ jadwal.voltia.ch {
 	# extérieure entend, pas une ligne de journal qu'il faudrait aller chercher.
 	#
 	# `log_skip` demande Caddy 2.8.0 ou plus : la directive s'appelait `skip_log` avant, et un
-	# Caddyfile qui la nomme ainsi est **refusé** par une version plus ancienne. Le rôle Ansible
-	# vérifie donc la version avant de poser ce fichier — sans quoi le déploiement remplacerait une
-	# configuration valide par une configuration que Caddy refuse de charger.
+	# Caddyfile qui la nomme ainsi est **refusé** par une version plus ancienne. C'est l'une des deux
+	# raisons du minimum que le rôle Ansible vérifie avant de poser ce fichier, 2.10.0
+	# (`jadwal_caddy_minimum`, dans `group_vars/all/main.yml`) ; l'autre est `Via`, que
+	# `reverse_proxy` ajoute depuis 2.10.0 et que ce bloc retire (plus haut). Sans cette
+	# vérification, le déploiement remplacerait une configuration valide par une configuration que
+	# Caddy refuse de charger, ou qu'aucune épreuve n'a jouée.
 	log_skip /healthz
 
 	# Le journal du site, dans un fichier à lui : on lit ce que jadwal a servi, et rien d'autre.

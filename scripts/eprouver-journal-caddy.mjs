@@ -47,7 +47,9 @@
  * son poids, une réponse trop courte pour valoir la peine, un fichier que l'application sert déjà
  * compressé, et les en-têtes que le bloc pose ou retire : `Strict-Transport-Security` est là,
  * `Server` n'y est pas, et aucune des réponses de l'application ne porte `Via`. Les tailles envoyées
- * par Caddy sont affichées : c'est la mesure du gain.
+ * par Caddy sont affichées : c'est la mesure du gain. Les trois écarts d'`encode` que le commentaire
+ * du bloc décrit, une plage demandée en zstd, un `HEAD` en gzip et l'ETag d'un `304`, sont relevés
+ * et affichés à chaque passage, sur chaque version, sans être vérifiés : le bloc ne les corrige pas.
  *
  * La page HTML est représentative, pas rendue par le serveur : le texte de `/conditions`, mis en
  * mots par le module même de l'application (`apps/web/src/lib/conditions/rendu.js`), dans son
@@ -820,6 +822,35 @@ try {
 		);
 	}
 	process.stdout.write('\n');
+
+	// Les trois écarts d'`encode` que le commentaire du bloc décrit, relevés à chaque passage et sur
+	// chaque version, affichés et non vérifiés : aucune ligne du bloc ne les corrige, et son
+	// commentaire dit pourquoi ils sont acceptables. Une plage demandée par un client qui n'accepte
+	// que zstd, un `HEAD` en gzip, et le `304` de la revalidation plus haut (étape 19 : le commentaire
+	// les disait relevés en 2.8.0, une version que le rôle refuse désormais).
+	const plage = demander(DEJA_COMPRESSE, [ZSTD_SEUL, 'Range: bytes=0-4095']);
+	const tete = docker([
+		'exec',
+		CONTENEUR,
+		'curl',
+		'-sS',
+		'-I',
+		'-H',
+		GZIP_SEUL,
+		'http://127.0.0.1/widget/jadwal-widget.js'
+	]);
+	const enTete = (nom) =>
+		new RegExp(`^${nom}:[ \\t]*(\\S.*?)\\s*$`, 'im').exec(tete)?.[1] ?? 'absent';
+	process.stdout.write(
+		`  Les écarts d’encode, relevés :\n` +
+			`  une plage de 4 096 octets en zstd seul : ${plage.statut}, Content-Encoding : ` +
+			`${plage.entete('content-encoding') || 'aucun'}, Content-Range : ` +
+			`${plage.entete('content-range') || 'absent'}, corps de ${octets(plage.octets)} octets ;\n` +
+			`  un HEAD en gzip : Content-Encoding : ${enTete('content-encoding')}, Content-Length : ` +
+			`${enTete('content-length')} ;\n` +
+			`  le 304 de la revalidation : ETag ${revalidation.entete('etag') || 'absente'}, pour ` +
+			`${widget.enNavigateur.entete('etag')} envoyée.\n\n`
+	);
 
 	// ---------------------------------------------------------------------------------------------
 	// La seconde moitié : la coupe quotidienne, jouée par **le vrai script**, pendant que Caddy tient
