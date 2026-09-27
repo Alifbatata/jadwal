@@ -122,7 +122,8 @@
 		<p class="lien"><code dir="ltr">{https}</code></p>
 	{/if}
 	{#if tousLesChoix}
-		<p><a class="autre" href={tousLesChoix}>{mots.otherDevice}</a></p>
+		<!-- La question, puis le lien, qui ne porte que « Voir tous les choix » (27.09.2026). -->
+		<p>{mots.otherDevice} <a class="autre" href={tousLesChoix}>{mots.otherDeviceLink}</a></p>
 	{/if}
 </div>
 

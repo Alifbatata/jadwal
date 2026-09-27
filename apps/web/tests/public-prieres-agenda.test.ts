@@ -818,13 +818,56 @@ const DERNIERE_MINUTE: Record<Langue, string> = {
 	en: 'For a last-minute change, check the programme page: it is always up to date.',
 	ar: 'عند أي تغيير في آخر لحظة، راجع صفحة البرنامج: فهي محدَّثة دائمًا.'
 };
+/**
+ * Le lien vers le choix complet, et la question qui le précède, hors du lien (décision du chef de
+ * projet, 27.09.2026) : « Une autre application ou un autre appareil ? », puis « Voir tous les
+ * choix ». La question était « Un autre appareil ? », et faisait partie du lien.
+ */
 const AUTRE_APPAREIL: Record<Langue, string> = {
-	fr: 'Un autre appareil ? Voir tous les choix',
-	de: 'Ein anderes Gerät? Alle Möglichkeiten anzeigen',
-	it: 'Un altro dispositivo? Vedi tutte le possibilità',
-	en: 'Another device? See all the options',
-	ar: 'جهاز آخر؟ اعرض كل الخيارات'
+	fr: 'Voir tous les choix',
+	de: 'Alle Möglichkeiten anzeigen',
+	it: 'Vedi tutte le possibilità',
+	en: 'See all the options',
+	ar: 'اعرض كل الخيارات'
 };
+const AUTRE_APPLICATION: Record<Langue, string> = {
+	fr: 'Une autre application ou un autre appareil ?',
+	de: 'Eine andere App oder ein anderes Gerät?',
+	it: 'Un’altra app o un altro dispositivo?',
+	en: 'Another app or another device?',
+	ar: 'تطبيق آخر أو جهاز آخر؟'
+};
+
+describe('« Une autre application ou un autre appareil ? » (27.09.2026)', () => {
+	it.each(LANGUES)(
+		'asks the question in %s, then links to the full choice, on the page and on a course',
+		async (langue) => {
+			for (const [chemin, visiteur, vers] of [
+				[`${base(langue)}/agenda`, IPHONE, `${base(langue)}/agenda?appareil=tous`],
+				[`${base(langue)}/agenda`, ANDROID, `${base(langue)}/agenda?appareil=tous`],
+				[
+					`${base(langue)}/cours/${COURS.quotidien}`,
+					IPHONE,
+					`${base(langue)}/cours/${COURS.quotidien}?appareil=tous#agenda`
+				]
+			] as const) {
+				const { html } = await servir(chemin, visiteur);
+				const bloc =
+					html.match(/<div\b[^>]*\bclass="abonnement\b[^"]*"[^>]*>([\s\S]*?)<\/div>/)?.[1] ?? '';
+				const dernier = [...bloc.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/g)].at(-1)?.[1] ?? '';
+				// La question, puis le lien, dans le même paragraphe : la question n'est pas dans le lien.
+				expect(lu(dernier), `${langue} ${chemin}`).toBe(
+					`${AUTRE_APPLICATION[langue]} ${AUTRE_APPAREIL[langue]}`
+				);
+				const liens = [...dernier.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)];
+				expect(liens.map((lien) => lu(lien[2] ?? ''))).toEqual([AUTRE_APPAREIL[langue]]);
+				expect(
+					suivi((attributs(`<a${liens[0]?.[1]}>`)['href'] ?? '').replaceAll('&amp;', '&'), chemin)
+				).toBe(vers);
+			}
+		}
+	);
+});
 
 describe('l’abonnement selon l’appareil, sur la page d’abonnement (E1)', () => {
 	it.each([

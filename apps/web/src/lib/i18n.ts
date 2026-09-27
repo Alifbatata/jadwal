@@ -182,8 +182,13 @@ interface Dictionnaire {
 	/** « Copier l’adresse » : un texte à sélectionner, la page n'ayant aucun script pour le copier. */
 	readonly choiceCopy: string;
 	readonly choiceCopyHelp: string;
-	/** Le lien vers le choix complet, pour qui n'est pas reconnu comme il faut. */
+	/**
+	 * Le lien vers le choix complet, pour qui a une autre application ou n'est pas reconnu comme il
+	 * faut : la question, puis le lien, qui ne porte que `otherDeviceLink` (décision du chef de
+	 * projet, 27.09.2026). La question était « Un autre appareil ? », et faisait partie du lien.
+	 */
 	readonly otherDevice: string;
+	readonly otherDeviceLink: string;
 	/** Les étapes à suivre à la main, quand le bouton ne fait rien. */
 	readonly manualTitle: string;
 	/** L'introduction des étapes, là où la page propose un bouton : iPhone, iPad, Mac et Android. */
@@ -411,7 +416,8 @@ const fr: Dictionnaire = {
 	choiceCopy: 'Copier l’adresse',
 	choiceCopyHelp:
 		'Sélectionnez-la, copiez-la, puis collez-la dans votre application, là où elle propose d’ajouter un calendrier par son adresse.',
-	otherDevice: 'Un autre appareil ? Voir tous les choix',
+	otherDevice: 'Une autre application ou un autre appareil ?',
+	otherDeviceLink: 'Voir tous les choix',
 	manualTitle: 'Ajouter l’adresse à la main',
 	manualIntro:
 		'Si le bouton ne fait rien, copiez l’adresse et suivez les étapes de votre application.',
@@ -568,7 +574,8 @@ const de: Dictionnaire = {
 	choiceCopy: 'Die Adresse kopieren',
 	choiceCopyHelp:
 		'Markieren und kopieren Sie sie, dann fügen Sie sie in Ihrer App dort ein, wo sie anbietet, einen Kalender über seine Adresse hinzuzufügen.',
-	otherDevice: 'Ein anderes Gerät? Alle Möglichkeiten anzeigen',
+	otherDevice: 'Eine andere App oder ein anderes Gerät?',
+	otherDeviceLink: 'Alle Möglichkeiten anzeigen',
 	manualTitle: 'Die Adresse von Hand hinzufügen',
 	manualIntro:
 		'Wenn die Schaltfläche nichts bewirkt, kopieren Sie die Adresse und folgen Sie den Schritten Ihrer App.',
@@ -727,7 +734,8 @@ const it: Dictionnaire = {
 	choiceCopy: 'Copia l’indirizzo',
 	choiceCopyHelp:
 		'Selezionalo, copialo e incollalo nella tua app, là dove propone di aggiungere un calendario tramite indirizzo.',
-	otherDevice: 'Un altro dispositivo? Vedi tutte le possibilità',
+	otherDevice: 'Un’altra app o un altro dispositivo?',
+	otherDeviceLink: 'Vedi tutte le possibilità',
 	manualTitle: 'Aggiungere l’indirizzo a mano',
 	manualIntro: 'Se il pulsante non fa nulla, copia l’indirizzo e segui i passaggi della tua app.',
 	manualIntroChoice:
@@ -883,7 +891,8 @@ const en: Dictionnaire = {
 	choiceCopy: 'Copy the address',
 	choiceCopyHelp:
 		'Select it, copy it, then paste it into your app, where it offers to add a calendar by its address.',
-	otherDevice: 'Another device? See all the options',
+	otherDevice: 'Another app or another device?',
+	otherDeviceLink: 'See all the options',
 	manualTitle: 'Adding the address by hand',
 	manualIntro: 'If the button does nothing, copy the address and follow the steps for your app.',
 	manualIntroChoice:
@@ -1060,7 +1069,8 @@ const ar: Dictionnaire = {
 		'تقويم Apple أو Thunderbird أو أي تطبيق يمكنه الاشتراك في تقويم: يُفتح ويقترح الاشتراك.',
 	choiceCopy: 'نسخ العنوان',
 	choiceCopyHelp: 'حدّده وانسخه، ثم الصق العنوان في تطبيقك، في المكان الذي يقترح فيه إضافة تقويم.',
-	otherDevice: 'جهاز آخر؟ اعرض كل الخيارات',
+	otherDevice: 'تطبيق آخر أو جهاز آخر؟',
+	otherDeviceLink: 'اعرض كل الخيارات',
 	manualTitle: 'إضافة العنوان يدويًا',
 	manualIntro: 'إن لم يحدث شيء عند الضغط على الزر، انسخ العنوان واتبع خطوات تطبيقك.',
 	manualIntroChoice: 'إن لم ينجح معك أي من هذه الروابط، انسخ العنوان واتبع خطوات تطبيقك.',

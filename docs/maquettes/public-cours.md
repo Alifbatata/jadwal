@@ -35,7 +35,8 @@ indexe.
    Sur Android, la phrase de secours donne l'adresse courte de **cette** page, celle du cours
    (`Si Google Agenda ne propose rien sur votre téléphone, ouvrez cette page sur un ordinateur :`).
    Puis `Ou copiez cette adresse, qui ne porte que ce cours :` et l'adresse en `https:`, et
-   `Un autre appareil ? Voir tous les choix`, vers `?appareil=tous#agenda`. La réponse porte
+   `Une autre application ou un autre appareil ?` suivi du lien `Voir tous les choix`, vers
+   `?appareil=tous#agenda`. La réponse porte
    `Vary: Sec-CH-UA-Platform, User-Agent`, sauf pour le choix complet.
 8. **Deux liens** sur une ligne : `S'abonner à tout le programme`, vers la page d'abonnement, et
    `Retour au programme`, vers la vue Semaine.

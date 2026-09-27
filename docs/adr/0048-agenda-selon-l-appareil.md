@@ -145,6 +145,10 @@ Les décisions du chef de projet, après les tests de l'étape 18.
 - **Sur un iPhone aussi, « Page du cours ».** Sous « Un seul cours », chaque nom de cours garde son
   lien `webcal:`, et reçoit juste dessous le lien `Page du cours` qu'il a sur Android, vers la page
   du cours à son bloc d'abonnement. Ailleurs, le nom mène déjà à cette page.
+- **« Une autre application ou un autre appareil ? »** remplace « Un autre appareil ? », et sort du
+  lien : la question, puis le lien `Voir tous les choix`, vers le même choix complet. Le choix
+  complet sert aussi à qui a bien l'appareil reconnu, mais une autre application que celle que la
+  page propose.
 
 ## Statut
 

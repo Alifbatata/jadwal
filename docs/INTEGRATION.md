@@ -227,7 +227,8 @@ du visiteur sait ouvrir :
 - ailleurs, le choix entre Google Agenda, Outlook (compte personnel), Outlook pour un compte de
   travail ou d'école, une autre application, et l'adresse à copier.
 
-Le lien **Un autre appareil ? Voir tous les choix** montre toujours tout, et les étapes à suivre à
+Sous la question **Une autre application ou un autre appareil ?**, le lien **Voir tous les choix**
+montre toujours tout, et les étapes à suivre à
 la main restent en bas de la page. La page d'un cours fait de même pour ce seul cours. Une
 application de calendrier ne relit pas l'abonnement à chaque minute : Outlook peut mettre plus de
 24 heures, selon Microsoft. La page le dit, et renvoie le visiteur à la page du programme pour un

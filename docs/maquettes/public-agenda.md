@@ -58,7 +58,9 @@ cas. La réponse porte `Vary: Sec-CH-UA-Platform, User-Agent`.
 abonner. Acceptez, et le calendrier se met à jour tout seul, environ une fois par heure.`
 - `Ou copiez cette adresse dans votre application de calendrier :`, puis l'adresse `https:`, en
   texte sélectionnable, de gauche à droite même sur la page arabe.
-- `Un autre appareil ? Voir tous les choix`, vers `?appareil=tous`.
+- `Une autre application ou un autre appareil ?`, puis le lien `Voir tous les choix`, vers
+  `?appareil=tous`. La question n'est pas dans le lien ; elle disait `Un autre appareil ?` jusqu'au
+  27.09.2026 (décision du chef de projet).
 
 **Android.**
 
@@ -78,7 +80,8 @@ rien sur votre téléphone, ouvrez cette page sur un ordinateur :`, puis l'adres
   du chef de projet, 27.09.2026). La phrase disait jusque-là les étapes de l'aide de Google et
   « collez l'adresse ci-dessous » ; ces étapes restent dans `Ajouter l'adresse à la main`.
 - `Ou copiez cette adresse dans votre application de calendrier :`, comme sur un iPhone, puis
-  l'adresse `https:` du flux, et `Un autre appareil ? Voir tous les choix`. L'étiquette
+  l'adresse `https:` du flux, et `Une autre application ou un autre appareil ?` suivi du lien
+  `Voir tous les choix`. L'étiquette
   `L'adresse à coller :` a disparu avec la phrase qui disait de coller l'adresse.
 
 **Ailleurs, ou avec `?appareil=tous`.** `Choisissez votre application de calendrier :`, puis
