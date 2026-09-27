@@ -41,4 +41,6 @@ Le projet accepte des contributions externes. L'auteur veut pouvoir financer le 
 
 ## Statut
 
-Accepté, 2026-09-19, étape 0 de la feuille de route (dépôt, licences, docs, CI).
+Accepté, 2026-09-19, étape 0 de la feuille de route (dépôt, licences, docs, CI). Le CLA est
+abandonné le 27.09.2026 : les contributions arrivent sous la licence MIT du dépôt (ADR 0043,
+addendum du 27.09.2026).

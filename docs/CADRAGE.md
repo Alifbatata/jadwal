@@ -214,8 +214,8 @@ leur durée, est dans `docs/CONDITIONS.md`.
   n'exige pas une machine à lui : son isolation ne repose pas dessus (ADR 0034).
 - Licence : MIT pour tout le dépôt, widget compris (ADR 0043), sauf la liste des localités suisses
   (`apps/web/src/lib/server/localites/localities.csv`), qui reste sous les conditions d'utilisation
-  de swisstopo et se cite « Source : Office fédéral de topographie swisstopo ». Contributions
-  externes soumises à un CLA.
+  de swisstopo et se cite « Source : Office fédéral de topographie swisstopo ». Les contributions
+  arrivent sous la licence MIT du dépôt, sans CLA (ADR 0043, addendum du 27.09.2026).
 
 ## Feuille de route
 

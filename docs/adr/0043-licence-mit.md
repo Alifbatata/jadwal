@@ -146,8 +146,24 @@ toujours `MIT`.
 
 Le reste de la décision ne change pas : tout le code, widget compris, est sous MIT.
 
+## Addendum du 27.09.2026 : pas de CLA, les contributions arrivent sous MIT
+
+À l'étape 19, le chef de projet a décidé qu'il n'y aura pas d'accord de contribution. Une
+contribution arrive sous la licence du dépôt, MIT, comme le code qu'elle modifie. La liste des
+localités suisses reste l'exception : une contribution qui la touche reste sous les conditions de
+swisstopo, comme la liste elle-même.
+
+Ce que le CLA devait garder, la licence MIT le permet déjà à chacun, l'auteur compris : utiliser le
+code, le modifier et le distribuer sous d'autres conditions, à la seule charge de garder l'avis de
+droit d'auteur et le texte de la licence. Proposer le service sous d'autres conditions à des
+organisations payantes, pour financer un service qui reste gratuit, ne demande donc aucun accord de
+plus. Il n'y a ni texte à signer, ni outil de signature à choisir.
+
+Le contexte et les raisons plus haut, qui comptaient sur le CLA, sont gardés tels qu'ils ont été
+écrits. `CONTRIBUTING.md`, le `README` et le cadrage disent la règle d'aujourd'hui.
+
 ## Ce que cette décision ne dit pas
 
-Elle ne dit rien du CLA, qui ne change pas. Elle ne dit rien d'un changement de licence futur : une
-bascule de MIT vers une licence à réciprocité serait possible pour le code à venir, jamais pour ce
-qui a déjà été publié.
+Elle ne disait rien du CLA, qui ne changeait pas ; l'addendum du 27.09.2026 l'abandonne. Elle ne
+dit rien d'un changement de licence futur : une bascule de MIT vers une licence à réciprocité
+serait possible pour le code à venir, jamais pour ce qui a déjà été publié.

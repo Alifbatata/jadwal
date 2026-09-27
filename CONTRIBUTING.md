@@ -58,22 +58,17 @@ Piège de Vitest : l'option de mise à jour des instantanés accepte une valeur 
 `vitest run -u src/x.test.ts` avale le nom du fichier et rejoue toute la suite. Écrire le filtre
 avant l'option : `vitest run src/x.test.ts -u`.
 
-## Accord de contribution (CLA)
+## Licence des contributions
 
-Toute contribution externe demandera la signature d'un accord de contribution (CLA). La raison
-tient en deux points. Le dépôt est sous MIT, sauf la liste des localités suisses, et l'auteur doit
-pouvoir proposer le service sous d'autres conditions à des organisations payantes pour financer le
-projet, qui reste gratuit. Et il doit pouvoir répondre d'un code dont il connaît la provenance. Le
-CLA lui donne ce droit sans retirer aux contributeurs la propriété de leur travail ni le caractère
-libre du code publié.
+Il n'y a pas d'accord de contribution à signer. Une contribution arrive sous la licence du dépôt,
+la licence MIT (`LICENSE`), comme le code qu'elle modifie : en proposant une pull request, vous la
+publiez sous cette licence.
 
-La liste des localités suisses (`apps/web/src/lib/server/localites/localities.csv`) n'est pas sous
-MIT : elle reste soumise aux conditions d'utilisation des données gratuites de swisstopo, qui
-demandent d'en citer la source, même quand on transmet le fichier. La section « Licence et droits
-d'auteur » du [`README.md`](README.md) le dit en détail.
-
-Les modalités précises (texte du CLA, outil de signature) seront fixées avant la première
-contribution externe.
+La liste des localités suisses (`apps/web/src/lib/server/localites/localities.csv`) fait exception.
+Elle n'est pas sous MIT : elle reste soumise aux conditions d'utilisation des données gratuites de
+swisstopo, qui demandent d'en citer la source, même quand on transmet le fichier. Une contribution
+qui la modifie reste sous ces conditions. La section « Licence et droits d'auteur » du
+[`README.md`](README.md) le dit en détail, et l'ADR 0043 dit pourquoi il n'y a pas de CLA.
 
 ## Sécurité
 

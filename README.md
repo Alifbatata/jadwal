@@ -102,7 +102,8 @@ dans `docker-compose.dev.yml`.
   et où la source est citée.
 - Les licences des composants tiers embarqués dans l'image de production sont dans
   `LICENCES-TIERCES.md`, engendré à la construction à partir du contenu réel de l'image.
-- Les contributions externes sont soumises à un accord de contribution (CLA), voir
+- Les contributions arrivent sous la licence MIT du dépôt, sans accord de contribution à signer ;
+  une contribution à la liste des localités reste sous les conditions de swisstopo. Voir
   [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Documentation
@@ -138,4 +139,5 @@ use, published online. The same code runs as a hosted service or self-hosted wit
 Status: first version, online since 21 September 2026. Licence: MIT, except the list of Swiss
 localities (`apps/web/src/lib/server/localites/localities.csv`), which remains under the terms of
 use of the Federal Office of Topography swisstopo and must be credited as "Source: Federal Office of
-Topography swisstopo". External contributions require a CLA.
+Topography swisstopo". Contributions are accepted under the repository's MIT licence, with no
+agreement to sign; a change to the list of localities stays under swisstopo's terms.
