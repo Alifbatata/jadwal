@@ -119,7 +119,8 @@ Nouvelle à l'étape 18. Elle dit, selon le code, ce qui arrive et quoi faire, p
 `Se connecter à jadwal`, `Il est valable quinze minutes et ne peut servir qu'une fois.`, puis
 `Si vous n'avez rien demandé, ignorez ce message : personne n'a accès à votre compte.`
 
-**L'invitation**, dans la langue de la personne qui invite (ADR 0017, addendum) : objet
+**L'invitation**, dans la langue que la personne qui invite choisit dans le formulaire, celle de son
+écran d'abord (étape 19, ADR 0017, addendum du 27.09.2026) : objet
 `Invitation à rejoindre <organisation> sur jadwal`, puis, pas à pas, comment accepter :
 `Pour accepter, ouvrez cette page et connectez-vous avec l'adresse électronique qui a reçu ce
 message :`, le lien `Se connecter pour accepter`, `Vous recevrez un lien de connexion, puis

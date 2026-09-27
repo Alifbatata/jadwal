@@ -10,6 +10,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { IsoDate } from '@jadwal/core';
 import { newId, sql } from '@jadwal/db';
+import { isLangue, type Langue } from '$lib/i18n.js';
 import { record } from '$lib/server/audit.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { mustAdminister, mustBeInOrganisation } from '$lib/server/guard.js';
@@ -119,13 +120,18 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const email = String(form.get('email') ?? '').trim();
 		const role = String(form.get('role') ?? 'editor');
-		// L'adresse et le rôle saisis reviennent au formulaire : sans JavaScript, la page renvoyée
-		// les aurait perdus, et la personne devait tout retaper pour une faute de frappe.
+		// La langue du courriel, choisie dans le formulaire (étape 19) : celle de l'écran quand le
+		// formulaire n'en envoie pas, ou en envoie une que le service ne parle pas. Elle vient de la
+		// personne qui invite, jamais d'un compte lu par l'adresse invitée (ADR 0017).
+		const choisie = String(form.get('emailLanguage') ?? '');
+		const language: Langue = isLangue(choisie) ? choisie : (locals.langue ?? 'fr');
+		// L'adresse, le rôle et la langue saisis reviennent au formulaire : sans JavaScript, la page
+		// renvoyée les aurait perdus, et la personne devait tout retaper pour une faute de frappe.
 		if (!ADRESSE.test(email)) {
-			return fail(400, { error: 'invalidEmail' as const, email, role });
+			return fail(400, { error: 'invalidEmail' as const, email, role, language });
 		}
 		if (role !== 'org_admin' && role !== 'editor') {
-			return fail(400, { error: 'unknownRole' as const, email, role: 'editor' });
+			return fail(400, { error: 'unknownRole' as const, email, role: 'editor', language });
 		}
 
 		// Aucune consultation des comptes : on enregistre l'invitation et on envoie le message. Il
@@ -178,12 +184,11 @@ export const actions: Actions = {
 			});
 		});
 		const organisation = await withSessionOrg(context, organisationName);
-		// La langue de l'écran de la personne qui invite, donnée à la fonction du courriel : lire celle
-		// du compte invité demanderait de le chercher par son adresse, ce que ce chemin ne fait jamais
-		// (ADR 0017). Le hook la pose avant toute action de l'espace (étape 18, retour D3).
-		await createMailer().send(
-			invitationEmail(email, organisation, url.origin, locals.langue ?? 'fr')
-		);
+		// La langue que la personne qui invite a choisie, celle de son écran d'abord : lire celle du
+		// compte invité demanderait de le chercher par son adresse, ce que ce chemin ne fait jamais
+		// (ADR 0017). Le choix ne change ni la réponse, ni le chemin suivi : les mêmes requêtes, pour
+		// toute adresse, dans toute langue.
+		await createMailer().send(invitationEmail(email, organisation, url.origin, language));
 		return INVITEE;
 	},
 

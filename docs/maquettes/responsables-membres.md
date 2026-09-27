@@ -21,9 +21,15 @@ nouveau.`
 4. **Inviter une personne** : `La personne reçoit un courriel avec un lien pour se connecter.
 L'invitation vaut 14 jours. La personne apparaît parmi les membres quand elle a accepté ; avant, son
 nom ne s'affiche nulle part.` Le champ `Adresse électronique de la personne`, avec
-   `Exemple : prenom.nom@exemple.ch`, le choix `Rôle` (`Éditeur` ou `Responsable`), et le bouton
+   `Exemple : prenom.nom@exemple.ch`, le choix `Langue du courriel`, avec `La personne invitée reçoit
+le courriel dans cette langue.`, le choix `Rôle` (`Éditeur` ou `Responsable`), et le bouton
    `Envoyer l'invitation`. Après l'envoi : `L'invitation a été envoyée à cette adresse.`, la même
-   phrase pour toute adresse (ADR 0017). Après une erreur, l'adresse tapée reste dans le champ.
+   phrase pour toute adresse et toute langue (ADR 0017). Après une erreur, l'adresse, la langue et
+   le rôle choisis restent dans le formulaire.
+5. **La langue du courriel** (étape 19) propose les cinq langues, chacune écrite dans sa langue
+   (`Français`, `Deutsch`, `Italiano`, `English`, `العربية`), comme le choix de la langue en haut de
+   l'écran. Celle de l'écran est choisie d'abord. Sans JavaScript comme avec, c'est un champ du
+   formulaire : une valeur qu'il ne connaît pas, ou son absence, donne la langue de l'écran.
 
 ## Ce que chaque rôle permet (retour B3)
 

@@ -72,6 +72,13 @@ interface MembersTexts {
 	readonly inviteIntro: (days: number) => string;
 	readonly emailLabel: string;
 	readonly emailHelp: string;
+	/**
+	 * Le choix de la langue du courriel d'invitation (étape 19) : la personne qui invite la choisit,
+	 * celle de son écran d'abord. Les langues s'y écrivent dans leur langue, comme dans le choix de
+	 * la langue de l'écran.
+	 */
+	readonly emailLanguageLabel: string;
+	readonly emailLanguageHelp: string;
 	readonly roleLabel: string;
 	readonly roleOptions: { readonly editor: string; readonly org_admin: string };
 	readonly editorCan: string;
@@ -129,6 +136,8 @@ export const membersTexts: Translations<MembersTexts> = {
 			`La personne reçoit un courriel avec un lien pour se connecter. L’invitation vaut ${days} jours. La personne apparaît parmi les membres quand elle a accepté ; avant, son nom ne s’affiche nulle part.`,
 		emailLabel: 'Adresse électronique de la personne',
 		emailHelp: 'Exemple : prenom.nom@exemple.ch',
+		emailLanguageLabel: 'Langue du courriel',
+		emailLanguageHelp: 'La personne invitée reçoit le courriel dans cette langue.',
 		roleLabel: 'Rôle',
 		roleOptions: { editor: 'Éditeur', org_admin: 'Responsable' },
 		editorCan: 'Ce que peut faire un éditeur',
@@ -202,6 +211,8 @@ export const membersTexts: Translations<MembersTexts> = {
 			`Die Person erhält eine E-Mail mit einem Link zum Anmelden, und die Einladung gilt ${days} Tage. Sobald sie angenommen hat, erscheint sie unter den Mitgliedern; vorher wird ihr Name nirgends angezeigt.`,
 		emailLabel: 'E-Mail-Adresse der Person',
 		emailHelp: 'Beispiel: vorname.name@beispiel.ch',
+		emailLanguageLabel: 'Sprache der E-Mail',
+		emailLanguageHelp: 'Die eingeladene Person erhält die E-Mail in dieser Sprache.',
 		roleLabel: 'Rolle',
 		roleOptions: { editor: 'Redaktion', org_admin: 'Leitung' },
 		editorCan: 'Was die Redaktion tun kann',
@@ -273,6 +284,8 @@ export const membersTexts: Translations<MembersTexts> = {
 			`La persona riceve un’e-mail con un link per accedere. L’invito vale ${days} giorni. La persona compare tra i membri quando ha accettato; prima, il suo nome non appare da nessuna parte.`,
 		emailLabel: 'Indirizzo e-mail della persona',
 		emailHelp: 'Esempio: nome.cognome@esempio.ch',
+		emailLanguageLabel: 'Lingua dell’e-mail',
+		emailLanguageHelp: 'La persona invitata riceve l’e-mail in questa lingua.',
 		roleLabel: 'Ruolo',
 		roleOptions: { editor: 'Redattore', org_admin: 'Responsabile' },
 		editorCan: 'Cosa può fare un redattore',
@@ -346,6 +359,8 @@ export const membersTexts: Translations<MembersTexts> = {
 			`The person receives an email with a link to sign in. The invitation lasts ${days} days. They appear among the members once they have accepted; until then, their name is not shown anywhere.`,
 		emailLabel: 'Email address of the person',
 		emailHelp: 'Example: first.last@example.ch',
+		emailLanguageLabel: 'Language of the email',
+		emailLanguageHelp: 'The person you invite receives the email in this language.',
 		roleLabel: 'Role',
 		roleOptions: { editor: 'Editor', org_admin: 'Manager' },
 		editorCan: 'What an editor can do',
@@ -420,6 +435,8 @@ export const membersTexts: Translations<MembersTexts> = {
 			})}. يظهر الشخص بين الأعضاء بعد أن يقبل الدعوة، وقبل ذلك لا يظهر اسمه في أي مكان.`,
 		emailLabel: 'عنوان البريد الإلكتروني للشخص',
 		emailHelp: 'مثال: name@example.ch',
+		emailLanguageLabel: 'لغة البريد الإلكتروني',
+		emailLanguageHelp: 'تصل رسالة الدعوة إلى الشخص المدعو بهذه اللغة.',
 		roleLabel: 'الدور',
 		roleOptions: { editor: 'محرر', org_admin: 'مسؤول' },
 		editorCan: 'ما يمكن للمحرر فعله',

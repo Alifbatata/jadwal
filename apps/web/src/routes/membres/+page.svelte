@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { numericDate } from '$lib/i18n.js';
+	import { LANGUES, NOM_DE_LANGUE, numericDate } from '$lib/i18n.js';
 	import { commonTexts } from '$lib/i18n/common.js';
 	import { EDITOR_GESTURES, MANAGER_GESTURES, membersTexts } from '$lib/i18n/members.js';
 
@@ -18,9 +18,14 @@
 				? common.errors.invalidEmail
 				: text.errors[form.error]
 	);
-	/** Ce qui a été saisi, rendu au formulaire après une erreur. */
+	/**
+	 * Ce qui a été saisi, rendu au formulaire après une erreur. La langue du courriel est d'abord
+	 * celle de l'écran (étape 19).
+	 */
 	const saisie = $derived(
-		form && 'email' in form ? { email: form.email, role: form.role } : { email: '', role: 'editor' }
+		form && 'email' in form
+			? { email: form.email, role: form.role, language: form.language }
+			: { email: '', role: 'editor', language: data.language }
 	);
 </script>
 
@@ -118,6 +123,18 @@
 			aria-describedby="email-aide"
 		/>
 		<p id="email-aide" class="aide">{text.emailHelp}</p>
+
+		<!-- La langue du courriel (étape 19) : celle de l'écran d'abord. Chaque langue s'écrit dans sa
+		     langue, comme dans le choix de la langue de l'écran. -->
+		<label for="emailLanguage">{text.emailLanguageLabel}</label>
+		<select id="emailLanguage" name="emailLanguage" aria-describedby="emailLanguage-aide">
+			{#each LANGUES as langue (langue)}
+				<option value={langue} lang={langue} selected={langue === saisie.language}>
+					{NOM_DE_LANGUE[langue]}
+				</option>
+			{/each}
+		</select>
+		<p id="emailLanguage-aide" class="aide">{text.emailLanguageHelp}</p>
 
 		<label for="role">{text.roleLabel}</label>
 		<select id="role" name="role" aria-describedby="roles-aide">

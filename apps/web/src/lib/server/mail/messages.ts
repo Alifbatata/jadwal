@@ -4,8 +4,8 @@
 // Aucun message ne dit jamais si un compte existe : le lien de connexion est le même pour une
 // adresse connue et pour une adresse inconnue (ADR 0017). Pour la même raison, la langue d'un
 // courriel ne vient jamais du compte à qui l'on écrit, qu'il faudrait lire par son adresse : elle vient
-// de l'écran où le geste est fait (retour D3, voir `language.ts`). Sans langue donnée, c'est celle de
-// la requête en cours.
+// de l'écran où le geste est fait (retour D3, voir `language.ts`), ou, pour une invitation, du choix
+// de la personne qui invite (étape 19). Sans langue donnée, c'est celle de la requête en cours.
 
 import { direction, type Langue } from '$lib/i18n.js';
 import type { Translations } from '$lib/i18n/space.js';
@@ -225,9 +225,9 @@ const INVITATION: Translations<InvitationTexts> = {
 };
 
 /**
- * L'invitation, dans la langue de la personne qui invite, que l'adresse invitée ait un compte ou non :
- * lire la langue de ce compte demanderait de le chercher par son adresse, ce que le chemin
- * d'invitation ne fait jamais (ADR 0017).
+ * L'invitation, dans la langue que la personne qui invite a choisie, celle de son écran d'abord, que
+ * l'adresse invitée ait un compte ou non : lire la langue de ce compte demanderait de le chercher par
+ * son adresse, ce que le chemin d'invitation ne fait jamais (ADR 0017, addendum du 27.09.2026).
  */
 export function invitationEmail(
 	to: string,

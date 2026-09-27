@@ -1,8 +1,9 @@
 // Les deux courriels du service, dans les cinq langues (étape 18, retour D3).
 //
 // Le lien de connexion part dans la langue de l'écran d'où il est demandé, et l'invitation dans celle
-// de la personne qui invite. Aucun des deux ne dit si un compte existe (ADR 0017) : la langue vient
-// de la requête, jamais d'une lecture des comptes. Le parcours par HTTP, du formulaire au courriel
+// que la personne qui invite choisit, celle de son écran d'abord (étape 19). Aucun des deux ne dit si
+// un compte existe (ADR 0017) : la langue vient de la requête ou du formulaire, jamais d'une lecture
+// des comptes. Le parcours par HTTP, du formulaire au courriel
 // écrit, est éprouvé dans `tests/espace-en-cinq-langues.test.ts`.
 
 import { describe, expect, it } from 'vitest';

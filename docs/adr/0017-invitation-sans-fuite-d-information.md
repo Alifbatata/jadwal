@@ -215,6 +215,35 @@ personne qui invite ? La seule façon de lire la langue du compte destinataire s
 serait un envoi différé : une table de courriels à envoyer, relevée par une tâche après la réponse.
 C'est un changement d'architecture (table, tâche, reprise sur échec) qui demande sa propre décision.
 
+## Addendum du 27.09.2026 : la personne qui invite choisit la langue du courriel (étape 19)
+
+**Le point d'arrêt D3 de l'étape 18 est tranché**, sans envoi différé, par une voie qui n'était pas
+dans la question (étape 19, point C) : c'est la personne qui invite qui choisit la langue du
+courriel. Le formulaire d'invitation de l'écran Membres propose `Langue du courriel`, les cinq
+langues du service, chacune écrite dans sa langue ; celle de l'écran de la personne qui invite est
+choisie d'abord. L'invitation part dans la langue choisie.
+
+Rien ne change à la décision de cet ADR :
+
+- **Le chemin d'invitation ne consulte toujours pas les comptes.** La langue vient du formulaire,
+  jamais d'un compte lu par l'adresse invitée. Le choix ne change ni les requêtes faites, ni leur
+  ordre : la même insertion, le même journal, le même envoi, pour toute adresse et toute langue.
+- **La réponse est toujours la même**, mot pour mot, dans la langue de l'écran : `L'invitation a été
+envoyée à cette adresse.` Un test envoie la même invitation, dans chacune des cinq langues, à une
+  adresse inconnue et à un compte réglé en arabe : l'objet, le texte et le HTML du courriel sont les
+  mêmes, et la réponse de l'écran aussi (`tests/espace-en-cinq-langues.test.ts`).
+- Une valeur que le service ne parle pas, ou un formulaire qui n'en envoie aucune, donne la langue
+  de l'écran. Sans JavaScript comme avec : c'est un champ ordinaire du formulaire.
+
+**Le lien de connexion ne change pas** : il part dans la langue de l'écran d'où il est demandé
+(ADR 0047). La personne invitée qui le demande le reçoit dans la langue de son propre écran de
+connexion, qui n'est pas forcément celle de l'invitation.
+
+**Ce qui reste.** Une personne qui invite ne sait pas toujours quelle langue lit la personne
+invitée : elle choisit, et peut se tromper. Le service ne l'aide pas à deviner, et ne le fera pas :
+deviner, ce serait lire le compte. L'envoi différé reste possible un jour, par sa propre décision ;
+aucun besoin connu ne le demande plus.
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 3 de la feuille de route (connexion, organisations, rôles, invitations,
@@ -222,4 +251,5 @@ super-admin, journal). Complété le 2026-09-23 (ce que la base tient d'une invi
 l'échéance, le rôle, l'usage unique, les passages de statut et la date de réponse, voir
 l'addendum). Complété le 2026-09-26 : seule une personne responsable écrit une invitation, et la
 limite du rôle est levée (ADR 0046) ; une invitation part dans la langue de la personne qui invite
-(point d'arrêt, question ouverte sur un envoi différé).
+(point d'arrêt, question ouverte sur un envoi différé). Complété le 27.09.2026 (étape 19) : la
+personne qui invite choisit la langue du courriel, et le point d'arrêt est tranché.

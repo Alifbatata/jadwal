@@ -727,6 +727,50 @@ describe('les courriels (retour D3)', () => {
 		expect(versCompte?.text).toBe(versInconnue?.text);
 		expect(versCompte?.html).toBe(versInconnue?.html);
 	});
+
+	it.each([
+		['fr', `Invitation à rejoindre ${ORGANISATION} sur jadwal`],
+		['de', `Einladung zu ${ORGANISATION} auf jadwal`],
+		['it', `Invito a unirti a ${ORGANISATION} su jadwal`],
+		['en', `Invitation to join ${ORGANISATION} on jadwal`],
+		['ar', `دعوة للانضمام إلى ${ORGANISATION} على jadwal`]
+	] as const)(
+		'sends the language chosen in the form, %s, to a known account and to an unknown address alike',
+		async (choisie, sujet) => {
+			// Depuis l'étape 19, la personne qui invite choisit la langue du courriel. Le choix vient du
+			// formulaire, jamais du compte invité : rien ne le lit, et la réponse comme le courriel sont
+			// les mêmes, mot pour mot, pour une adresse connue et une adresse inconnue (ADR 0017).
+			await poserLangueDuCompte(INVITEUR, 'it');
+			const cookies = await signIn(INVITEUR);
+			const inconnue = `cinq-inconnue-${choisie}@example.test`;
+			const reponses: string[] = [];
+			for (const email of [inconnue, INVITE_EN_ARABE]) {
+				const reponse = await postForm(
+					'/membres?/inviter',
+					{ email, role: 'editor', emailLanguage: choisie },
+					{ cookie: cookies }
+				);
+				expect(reponse.status, email).toBe(200);
+				const html = await reponse.text();
+				// L'écran parle la langue de la personne qui invite, quelle que soit celle du courriel.
+				expect(baliseHtml(html), email).toBe('<html lang="it" dir="ltr">');
+				reponses.push(/<p role="status">([\s\S]*?)<\/p>/.exec(html)?.[1] ?? '');
+			}
+			expect(reponses).toEqual([
+				'L’invito è stato inviato a questo indirizzo.',
+				'L’invito è stato inviato a questo indirizzo.'
+			]);
+			const [versInconnue, versCompte] = await Promise.all([
+				dernierCourrielA(inconnue),
+				dernierCourrielA(INVITE_EN_ARABE)
+			]);
+			expect(versInconnue?.subject).toBe(sujet);
+			expect(versInconnue?.html).toContain(`<html lang="${choisie}" dir="${SENS[choisie]}">`);
+			expect(versCompte?.subject).toBe(versInconnue?.subject);
+			expect(versCompte?.text).toBe(versInconnue?.text);
+			expect(versCompte?.html).toBe(versInconnue?.html);
+		}
+	);
 });
 
 describe('les écrans du super-admin', () => {

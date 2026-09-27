@@ -163,7 +163,7 @@ adresse, ce que l'ADR 0017 interdit : c'est le point d'arrêt décrit dans son a
   `/organisations`, sans rien d'autre.
 - Un écran ajouté demande ses textes dans les cinq langues avant de compiler (ADR 0007).
 
-## Addendum du 27.09.2026 : l'écran d'arrivée du lien de connexion (étape 19)
+## Addendum du 27.09.2026 : l'écran d'arrivée du lien, et la langue d'une invitation (étape 19)
 
 **L'écran où ramène le lien de connexion ne porte plus la langue.** Jusqu'ici, après un lien qui
 emportait un choix, la personne arrivait à `/organisations?language=de` : le paramètre avait déjà
@@ -181,9 +181,15 @@ réécrite : Better Auth l'a déjà refusée. Sans choix en attente, l'adresse d
 vérification du lien, et une adresse qui le porte, posée sur un autre site, ne change ni la page ni
 le compte.
 
+**La langue d'une invitation** est désormais choisie par la personne qui invite, dans le
+formulaire, celle de son écran d'abord (ADR 0017, addendum du 27.09.2026). Le courriel lit toujours
+une langue qui vient de la requête ou du formulaire, jamais d'un compte lu par son adresse. Le lien
+de connexion part, lui, dans la langue de l'écran d'où il est demandé, comme avant.
+
 ## Statut
 
 Accepté, 2026-09-26. Étape 18, retours D2 (l'espace en cinq langues) et D3 (la langue des
 courriels). Révisé le même jour, à la fin de l'étape : le choix fait avant la connexion part avec le
 lien de connexion, et la règle exacte de son départ est écrite. Complété le 27.09.2026 (étape 19) :
-l'écran d'arrivée du lien ne porte plus la langue.
+l'écran d'arrivée du lien ne porte plus la langue, et la personne qui invite choisit la langue de
+l'invitation.

@@ -120,12 +120,14 @@ s'écrirait une invitation de responsable est refusé dès l'insertion (barrièr
 
 Depuis l'étape 18, les courriels parlent cinq langues, et le choix de la langue ne consulte pas
 davantage les comptes. Le lien de connexion part dans la langue de l'écran d'où il est demandé ;
-l'invitation, dans celle de la personne qui invite, pour toute adresse. Lire la langue du compte
-destinataire, ce serait chercher un compte par son adresse : un test vérifie qu'une invitation vers
-un compte réglé en arabe est la même, objet, texte et HTML, que vers une adresse inconnue
-(ADR 0017, ADR 0047). **Le lien porte une chose de plus, et une seule** : quand un choix de langue
-fait avant la connexion attend sur le navigateur de la demande, son adresse de retour le porte
-(`/organisations?language=de`), sinon elle reste `/organisations`. Ce choix vient du cookie de ce
+l'invitation, depuis l'étape 19, dans la langue que la personne qui invite choisit dans le
+formulaire, celle de son écran d'abord, pour toute adresse. Lire la langue du compte destinataire,
+ce serait chercher un compte par son adresse : un test vérifie, dans chacune des cinq langues,
+qu'une invitation vers un compte réglé en arabe est la même, objet, texte et HTML, que vers une
+adresse inconnue, et que l'écran répond la même phrase (ADR 0017, ADR 0047). **Le lien porte une
+chose de plus, et une seule** : quand un choix de langue fait avant la connexion attend sur le
+navigateur de la demande, son adresse de retour le porte (`/organisations?language=de`), sinon elle
+reste `/organisations`. Ce choix vient du cookie de ce
 navigateur, jamais du compte. La vérification du lien l'écrit sur le compte que le jeton désigne, et
 nulle part ailleurs : une adresse qui porte ce paramètre, posée sur un autre site, ne change ni la
 page ni le compte, et aucun écran ne le lit. Depuis l'étape 19, la vérification renvoie à l'écran

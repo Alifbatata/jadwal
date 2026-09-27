@@ -1,9 +1,10 @@
 // La langue des courriels d'une requête (étape 18, retour D3).
 //
 // Un courriel part dans la langue de l'écran où le geste est fait : le lien de connexion, dans celle
-// de l'écran de connexion d'où il est demandé ; l'invitation, dans celle de la personne qui invite.
-// Le hook connaît cette langue pour chaque requête de l'espace et la pose ici, autour de la requête
-// entière ; les courriels la lisent au moment où ils s'écrivent.
+// de l'écran de connexion d'où il est demandé. Le hook connaît cette langue pour chaque requête de
+// l'espace et la pose ici, autour de la requête entière ; les courriels la lisent au moment où ils
+// s'écrivent. L'invitation, elle, part depuis l'étape 19 dans la langue que la personne qui invite
+// choisit dans le formulaire, celle de son écran d'abord : l'écran des membres la passe en paramètre.
 //
 // Pourquoi ici plutôt qu'en paramètre : les deux courriels s'écrivent en deux endroits qui ne voient
 // pas la requête de la même façon. Le lien est écrit par Better Auth, dans son rappel d'envoi, qui ne

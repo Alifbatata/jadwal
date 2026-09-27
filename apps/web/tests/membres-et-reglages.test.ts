@@ -1111,6 +1111,108 @@ describe('l’invitation, dans la langue de l’écran de la personne qui invite
 	});
 });
 
+/** Le libellé du choix de la langue du courriel, dans chaque langue de l'écran. */
+const LANGUE_DU_COURRIEL: Record<Langue, string> = {
+	fr: 'Langue du courriel',
+	de: 'Sprache der E-Mail',
+	it: 'Lingua dell’e-mail',
+	en: 'Language of the email',
+	ar: 'لغة البريد الإلكتروني'
+};
+
+/** L'objet du courriel d'invitation, dans chaque langue. */
+const OBJET_DE_L_INVITATION: Record<Langue, string> = {
+	fr: `Invitation à rejoindre ${ORGANISATION} sur jadwal`,
+	de: `Einladung zu ${ORGANISATION} auf jadwal`,
+	it: `Invito a unirti a ${ORGANISATION} su jadwal`,
+	en: `Invitation to join ${ORGANISATION} on jadwal`,
+	ar: `دعوة للانضمام إلى ${ORGANISATION} على jadwal`
+};
+
+describe('la langue du courriel, choisie dans le formulaire d’invitation (étape 19)', () => {
+	let cookie = '';
+
+	beforeAll(async () => {
+		cookie = await signIn(RESPONSABLE);
+	});
+
+	afterAll(async () => {
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+	});
+
+	it.each(LANGUES)(
+		'offers in %s the five languages in the invitation form, the screen’s chosen',
+		async (langue) => {
+			await poserLangueDuCompte(RESPONSABLE, langue);
+			const html = await page200('/membres', cookie);
+			const formulaire = html.match(/<form\b[^>]*action="\?\/inviter"[\s\S]*?<\/form>/)?.[0] ?? '';
+			expect(champ(formulaire, 'emailLanguage')).toMatch(/\bname="emailLanguage"/);
+			expect(optionsDe(element(formulaire, 'emailLanguage'))).toEqual([...LANGUES]);
+			expect(optionsChoisies(formulaire, 'emailLanguage')).toEqual([langue]);
+			expect(
+				lu(formulaire.match(/<label\b[^>]*for="emailLanguage"[^>]*>[\s\S]*?<\/label>/)?.[0] ?? '')
+			).toBe(LANGUE_DU_COURRIEL[langue]);
+			// Chaque langue est écrite dans sa langue, comme dans le choix de la langue de l'écran.
+			for (const code of LANGUES) {
+				expect(formulaire).toMatch(
+					new RegExp(`<option\\b[^>]*\\bvalue="${code}"[^>]*\\blang="${code}"`)
+				);
+			}
+		}
+	);
+
+	it.each(LANGUES)(
+		'sends the invitation in %s when it is chosen, from a French screen',
+		async (choisie) => {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			const email = `mr-choisie-${choisie}@example.test`;
+			const reponse = await postForm(
+				'/membres?/inviter',
+				{ email, role: 'editor', emailLanguage: choisie },
+				cookie
+			);
+			expect(reponse.status).toBe(200);
+			const html = await reponse.text();
+			// L'écran reste en français, et dit la même phrase que pour toute adresse (ADR 0017).
+			expect(baliseHtml(html)).toBe('<html lang="fr" dir="ltr">');
+			expect(statut(html)).toBe('L’invitation a été envoyée à cette adresse.');
+			const courriel = await dernierCourrielA(email);
+			expect(courriel?.subject).toBe(OBJET_DE_L_INVITATION[choisie]);
+			expect(courriel?.html).toContain(`<html lang="${choisie}" dir="${SENS[choisie]}">`);
+		}
+	);
+
+	it('keeps the language chosen, and the role, when the address is refused', async () => {
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		const refus = await postForm(
+			'/membres?/inviter',
+			{ email: 'pas-une-adresse', role: 'org_admin', emailLanguage: 'ar' },
+			cookie
+		);
+		expect(refus.status).toBe(400);
+		const html = await refus.text();
+		expect(optionsChoisies(html, 'emailLanguage')).toEqual(['ar']);
+		expect(optionsChoisies(html, 'role')).toEqual(['org_admin']);
+		expect(await dernierCourrielA('pas-une-adresse')).toBeUndefined();
+	});
+
+	it('writes in the language of the screen when the form sends none, or one it does not speak', async () => {
+		await poserLangueDuCompte(RESPONSABLE, 'de');
+		for (const [email, choix] of [
+			['mr-sans-langue@example.test', {}],
+			['mr-langue-inconnue@example.test', { emailLanguage: 'es' }]
+		] as const) {
+			const reponse = await postForm(
+				'/membres?/inviter',
+				{ email, role: 'editor', ...choix },
+				cookie
+			);
+			expect(reponse.status, email).toBe(200);
+			expect((await dernierCourrielA(email))?.subject, email).toBe(OBJET_DE_L_INVITATION.de);
+		}
+	});
+});
+
 /** Ce que Membres dit après chacun des trois gestes, dans chaque langue. */
 const FAIT: Record<
 	Langue,
