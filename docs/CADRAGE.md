@@ -173,10 +173,13 @@ reste sans script, et le choix complet est toujours à un lien (ADR 0048).
 affiche la page publique, et lui donne la hauteur de son contenu.
 
 - Balise `<jadwal-widget org="...">`, Shadow DOM.
-- Zéro dépendance à l'exécution : TypeScript pur, un seul fichier, environ 2 Kio gzip (2 141 octets
-  mesurés à l'étape 18).
-- Attributs `org`, `lang`, `view`, `audience`, `min-height`. L'onglet **Prières** apparaît dans le
-  cadre sans que le fichier du widget change ; `view` ne le connaît pas.
+- Zéro dépendance à l'exécution : TypeScript pur, un seul fichier, environ 2 Kio gzip (2 145 octets
+  mesurés le 27.09.2026).
+- Attributs `org`, `lang`, `view`, `audience`, `min-height`. `view` accepte `semaine`, `cours`,
+  `mois` et, depuis le 27.09.2026, `prieres`, l'onglet des heures de prière (ADR 0005, addendum).
+  Le fichier a changé pour cette vue : une version épinglée par son empreinte avant cette date
+  reste servie ; avec `view="prieres"`, elle s'ouvre sur la semaine, et l'onglet reste dans le
+  cadre.
 - Le cadre **posé à la main** est le mode sans script, pour un site qui les refuse ; sa hauteur est
   alors fixe.
 - URL versionnée avec empreinte SRI pour les sites stricts, et `crossorigin` obligatoire avec elle.

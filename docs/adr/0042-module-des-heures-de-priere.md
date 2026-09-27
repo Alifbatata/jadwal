@@ -118,7 +118,8 @@ et le bloc du vendredi du haut disparaissent : ils ne s'y appliquent pas.
 **Le widget n'a pas changé.** Il encadre la page publique (ADR 0005), et l'onglet y apparaît donc
 de lui-même, dans les organisations qui ont allumé le module. L'attribut `view` du widget ne connaît
 pas `prieres` : l'accepter changerait le fichier du widget, donc son empreinte, et casserait les
-sites qui l'ont épinglée avec son empreinte d'intégrité.
+sites qui l'ont épinglée avec son empreinte d'intégrité. Ce paragraphe ne tient plus depuis le
+27.09.2026 : voir l'addendum de cette date, plus bas.
 
 **Une ligne datée dit ce qui a lieu ce jour-là**, comme la vue Semaine de la même page. Une session
 du vendredi annulée, ou déplacée à un autre jour, y reste écrite, barrée, avec le mot de la vue
@@ -127,6 +128,19 @@ heure ; si aucune n'a lieu, l'iqama du Dhuhr revient. Un autre jour qui reçoit 
 garde son iqama du Dhuhr, et la session s'y écrit nommée, avec son vendredi d'origine. Le bloc du
 vendredi, en bas de l'onglet, sans date, garde le rythme habituel. Jusqu'au lot 4 de l'étape 18,
 l'onglet plaçait les sessions d'après leur seul rythme, et une session annulée y figurait encore.
+
+## Addendum du 27.09.2026 : le widget accepte `view="prieres"`
+
+Le chef de projet a décidé que le widget accepte `view="prieres"` (ADR 0005, addendum du
+27.09.2026). Sa nouvelle version, `o6RZrATXsMVS`, transmet `?vue=prieres` à la page, pour le cadre
+comme pour le lien du pied.
+
+La crainte de l'addendum précédent ne tient pas : changer le fichier ne casse aucun site qui l'a
+épinglé. Chaque version publiée reste servie à son adresse (ADR 0005, étape 7), et
+`apps/web/tests/widget.test.ts` exige que chacune réponde encore. Un site qui a épinglé une version
+plus ancienne garde son programme ; avec `view="prieres"`, elle s'ouvre sur la semaine, et l'onglet
+reste dans le cadre. Le module éteint, `view="prieres"` montre la semaine, comme `?vue=prieres` :
+le point 5 tient toujours.
 
 ## Ce que cette décision ne dit pas
 

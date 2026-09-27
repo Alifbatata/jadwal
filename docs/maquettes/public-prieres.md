@@ -46,7 +46,8 @@ programme.
 
 - Le titre du navigateur est `<Nom de l'organisation> | Heures de prière`.
 - Aucun script, aucune ressource d'un autre domaine, comme partout côté public.
-- Dans le cadre du widget, l'onglet est là aussi, et s'ouvre en mode intégré.
+- Dans le cadre du widget, l'onglet est là aussi, et s'ouvre en mode intégré. Depuis le
+  27.09.2026, `view="prieres"` ouvre le cadre sur lui (`docs/maquettes/widget.md`).
 - **Une ligne datée dit ce qui a lieu ce jour-là**, comme la vue Semaine : une session du vendredi
   annulée, ou déplacée à un autre jour, reste écrite, barrée, avec `Annulée` (accordé à `Prière du
 vendredi` depuis le 27.09.2026 : `Annullata`, `ملغاة`) ou `Déplacé au …` ; une
