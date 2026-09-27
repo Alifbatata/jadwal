@@ -101,6 +101,26 @@ describe('parseFridayForm', () => {
 		expect(lu).toEqual({ ok: false, errors: [erreur] });
 	});
 
+	it('removes the null character, which the database refuses in a text (relecture de D2)', () => {
+		const lu = parseFridayForm(
+			formulaire({
+				title: 'Prière\u0000 du vendredi',
+				teacher: '\u0000Imam Youssef',
+				description: 'Sermon court.\u0000'
+			}),
+			['fr', 'ar'],
+			'fr'
+		);
+		expect(lu.ok && [lu.values.title, lu.values.teacher, lu.values.description]).toEqual([
+			'Prière du vendredi',
+			'Imam Youssef',
+			'Sermon court.'
+		]);
+		// Un titre fait de ce seul caractère est un titre vide : il prend le nom de la prière.
+		const vide = parseFridayForm(formulaire({ title: '\u0000' }), ['fr', 'de'], 'de');
+		expect(vide.ok && vide.values.title).toBe('Freitagsgebet');
+	});
+
 	it('names every mistake at once, in the order of the form', () => {
 		const lu = parseFridayForm(
 			formulaire({ jumuaOrder: '0', start: '13:00', end: '12:00', sermonLanguages: null }),

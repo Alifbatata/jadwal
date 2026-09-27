@@ -1726,6 +1726,47 @@ describe('D2 : l’écran du vendredi refuse ce qu’il ne peut pas faire, sans 
 			});
 		}
 	});
+
+	it('removes the null character a hand-written form may send, instead of an error 500', async () => {
+		// PostgreSQL refuse ce caractère dans un texte : un titre qui le portait donnait une erreur 500
+		// (étape 19, relecture de D2). Aucun clavier ne le tape : il est retiré, et le reste s'enregistre.
+		const reponse = await postForm(
+			'/vendredi?/enregistrer',
+			{
+				...SESSION_DE_PASSAGE,
+				title: 'Prière\u0000 sans caractère nul',
+				teacher: 'Imam\u0000 Youssef',
+				description: 'Sermon\u0000 court.'
+			},
+			cookies
+		);
+		const [lue] = await maintenance(async (tx) =>
+			lignes<{ id: string; title: string; teacher: string | null; description: string | null }>(
+				await tx.execute(sql`
+					select c."id", t."title", c."teacher", t."description"
+					from "course" c join "course_translation" t on t."course_id" = c."id"
+					where c."organization_id" = ${organizationId} and c."kind" = 'jumua'
+						and t."title" like 'Prière%sans caractère nul'
+				`)
+			)
+		);
+		try {
+			expect({
+				statut: reponse.status,
+				session: lue && { title: lue.title, teacher: lue.teacher, description: lue.description }
+			}).toEqual({
+				statut: 200,
+				session: {
+					title: 'Prière sans caractère nul',
+					teacher: 'Imam Youssef',
+					description: 'Sermon court.'
+				}
+			});
+		} finally {
+			if (lue)
+				await maintenance((tx) => tx.execute(sql`delete from "course" where "id" = ${lue.id}`));
+		}
+	});
 });
 
 describe('le message de la semaine, dans chaque langue publiée (retour D1)', () => {

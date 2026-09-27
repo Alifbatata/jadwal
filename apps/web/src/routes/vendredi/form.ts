@@ -25,8 +25,15 @@ const TITRE_MAXIMAL = 120;
 export type FridayFormResult =
 	{ ok: true; values: CourseValues } | { ok: false; errors: FridayError[] };
 
+/**
+ * Un champ, sans ses blancs autour. Le caractère nul (U+0000) est retiré : aucun clavier ne le tape,
+ * mais un formulaire écrit à la main peut l'envoyer, et PostgreSQL le refuse dans un texte, ce qui
+ * donnait une erreur 500 (relecture de D2).
+ */
 function text(form: FormData, name: string): string {
-	return String(form.get(name) ?? '').trim();
+	return String(form.get(name) ?? '')
+		.replaceAll('\u0000', '')
+		.trim();
 }
 
 function optional(form: FormData, name: string): string | null {
