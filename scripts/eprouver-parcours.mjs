@@ -306,16 +306,16 @@ const NOUVELLE_HEURE_DANS_LA_SEMAINE = {
  * Les phrases lues à la lettre dans les écrans corrigés depuis la relecture du lot 4 : ce que dit
  * l'écran du vendredi après une suppression, l'aide de « À partir du » dans la carte d'une session,
  * et son refus d'une carte restée ouverte (`friday.ts`) ; le refus d'une carte restée ouverte sur
- * « À venir » (`upcoming.ts`) ; ce que lit une responsable qui s'est donné le rôle d'éditeur
- * (`common.ts`).
+ * « À venir » (`upcoming.ts`), qui nomme la séance par son titre et sa date depuis l'étape 19 (D4) ;
+ * ce que lit une responsable qui s'est donné le rôle d'éditeur (`common.ts`).
  */
 const SESSION_SUPPRIMEE = 'La session est supprimée.';
 const AIDE_DE_LA_MODIFICATION =
 	'La session a lieu chaque vendredi à partir de cette date. Changez cette date seulement pour corriger une erreur.';
 const SESSION_CHANGEE =
 	'Cette session a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée ce jour-là. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.';
-const SEANCE_CHANGEE =
-	'Cette séance a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée. Rien n’a été enregistré. Le programme ci-dessous est à jour.';
+const SEANCE_CHANGEE = (titre, date) =>
+	`La séance « ${titre} » du ${date} a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée. Rien n’a été enregistré. Le programme ci-dessous est à jour.`;
 const DEVENUE_EDITRICE =
 	'Vous avez maintenant le rôle d’éditeur. Les écrans réservés aux responsables, comme Membres et Réglages, ne vous sont plus ouverts. Pour les retrouver, demandez à une autre personne responsable de vous redonner le rôle de responsable.';
 /**
@@ -4197,10 +4197,11 @@ async function periodeCopiee(page) {
  * m. « À venir », la session du vendredi en place : le programme de la semaine la nomme dans la
  * langue de chaque message (D1). Déplacée le même jour à une autre heure, sa carte d'arrivée dit
  * « nouvelle heure » et l'heure prévue (A2), et le message dit un changement d'heure, la date une
- * seule fois (B1), en nommant la prière dans chaque langue (D1) ; le programme de la semaine la
- * marque d'une nouvelle heure, dans chaque langue (B1). Deux onglets, ouverts avant ce
- * déplacement sur « À venir » et sur l'écran du vendredi, renvoient ensuite leur carte restée telle
- * quelle : chaque écran le refuse, et rien n'est écrit (A2).
+ * seule fois (B1), en nommant la prière dans chaque langue (D1), avec les mots d'une prière et non
+ * ceux d'un cours (étape 19) ; le programme de la semaine la marque d'une nouvelle heure, dans
+ * chaque langue (B1). Deux onglets, ouverts avant ce déplacement sur « À venir » et sur l'écran du
+ * vendredi, renvoient ensuite leur carte restée telle quelle : chaque écran le refuse, et rien n'est
+ * écrit (A2) ; « À venir » nomme la séance dans son refus (étape 19, D4).
  */
 async function vendrediSurLAccueil(page) {
 	etape(
@@ -4249,13 +4250,13 @@ async function vendrediSurLAccueil(page) {
 			await retour('B1', async () => {
 				const messages = await messagesDeLAccueil(page, 'message');
 				const francais = messages[0]?.lang === 'fr' ? messages[0].texte : '';
-				const phrase = `Le cours « ${nom} » du ${dateLongue(jour)} commence à ${HEURE_DU_VENDREDI_DEPLACE} au lieu de ${VENDREDI.debut}.`;
+				const phrase = `« ${nom} » : la prière du ${dateLongue(jour)} commence à ${HEURE_DU_VENDREDI_DEPLACE} au lieu de ${VENDREDI.debut}.`;
 				verifier(
 					`le message prêt à coller le dit comme un changement d’heure, la date une seule fois : « ${phrase} »`,
 					francais.includes(phrase) &&
 						!francais.includes('est déplacé au') &&
 						francais.split(dateSuisse(jour)).length === 2,
-					francais.split('\n').find((ligne) => ligne.startsWith('Le cours')) ??
+					francais.split('\n').find((ligne) => ligne.startsWith(`« ${nom} »`)) ??
 						'aucun message en français'
 				);
 			});
@@ -4323,9 +4324,9 @@ async function vendrediSurLAccueil(page) {
 			const messagesPrepares = await ouvertAvant.locator('#message-titre').count();
 			const arrivees = await carte(ouvertAvant, 'moved_here').count();
 			verifierChaque(
-				`une carte restée ouverte dans un autre onglet, envoyée après ce déplacement, est refusée par une phrase en haut, et rien n’est écrit : la session reste à ${HEURE_DU_VENDREDI_DEPLACE}`,
+				`une carte restée ouverte dans un autre onglet, envoyée après ce déplacement, est refusée par une phrase en haut qui nomme la séance, et rien n’est écrit : la session reste à ${HEURE_DU_VENDREDI_DEPLACE}`,
 				{
-					'la phrase du refus': phrase === SEANCE_CHANGEE,
+					'la phrase du refus': phrase === SEANCE_CHANGEE(nom, dateLongue(jour)),
 					'le refus en haut': enHaut,
 					'aucun message préparé': messagesPrepares === 0,
 					[`la session à ${HEURE_DU_VENDREDI_DEPLACE}`]: departLu.includes(
