@@ -32,7 +32,8 @@
 //   reçoit une phrase, sa propre adhésion dans une autre organisation comprise ;
 // - une responsable qui se retire elle-même, ou toute personne qui quitte une organisation depuis
 //   « Vos organisations », lit à l'arrivée un encadré qui le dit ; la seule personne responsable ne
-//   part pas, et le refus dit quoi faire.
+//   part pas, et le refus dit quoi faire ; qui quitte une autre organisation que celle de sa
+//   session, super-admin compris, y reste.
 
 import { readFileSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
@@ -321,6 +322,24 @@ async function signIn(email: string): Promise<string> {
 		?.split(';')[0];
 	expect(session, `aucune session posée pour ${email}`).toBeTruthy();
 	return session as string;
+}
+
+/**
+ * La preuve qu'une passkey donnerait à la session d'un super-admin, comme dans `acces.test.ts` : la
+ * cérémonie WebAuthn n'existe que dans un navigateur, la règle, elle, est celle du serveur.
+ */
+async function preuvePasskey(cookie: string, userId: string): Promise<void> {
+	const jeton = decodeURIComponent(cookie.split('=')[1] ?? '').split('.')[0] ?? '';
+	await maintenance(async (tx) => {
+		await tx.execute(sql`
+			insert into "passkey" ("id", "name", "public_key", "user_id", "credential_id", "counter",
+				"device_type", "backed_up")
+			values (${newId()}, 'test', 'cle-publique', ${userId}, ${newId()}, 0, 'singleDevice', false)
+		`);
+		await tx.execute(
+			sql`update "session" set "passkey_verified_at" = now() where "token" = ${jeton}`
+		);
+	});
 }
 
 /** Les salles de l'organisation, et le nombre de cours qui gardent chacune. */
@@ -2005,6 +2024,12 @@ describe('quitter une organisation depuis « Vos organisations » (étape 19)', 
 	const UNIQUE = 'mr-seule-responsable@example.test';
 	/** Une éditrice d'une seule organisation, sans invitation : le cas le plus courant. */
 	const SOLO = 'mr-une-seule-organisation@example.test';
+	/** Celle où l'on reste : la session la nomme pendant que l'on en quitte une autre. */
+	const GARDEE = { id: newId(), slug: 'mr-gardee', nom: 'Association que l’on garde' };
+	/** Une éditrice de trois organisations : elle travaille dans l'une et en quitte une autre. */
+	const TROIS = 'mr-trois-organisations@example.test';
+	/** Un super-admin membre de l'organisation qu'il quitte, entré par ses pouvoirs dans une autre. */
+	const EXPLOITANT = 'mr-exploitant-membre@example.test';
 	const personnes: Record<string, string> = {};
 	/** Les adhésions, par adresse et par organisation : `adresse organisation`. */
 	const adhesions: Record<string, string> = {};
@@ -2049,20 +2074,28 @@ describe('quitter une organisation depuis « Vos organisations » (étape 19)', 
 
 	beforeAll(async () => {
 		appHandle = createDatabase({ role: 'app', overrides: { database: testDatabase } });
-		for (const email of [PARTANTE, AUSSI, RESTE, UNIQUE, SOLO]) personnes[email] = newId();
+		for (const email of [PARTANTE, AUSSI, RESTE, UNIQUE, SOLO, TROIS, EXPLOITANT]) {
+			personnes[email] = newId();
+		}
 		const membres = [
 			[PARTANTE, QUITTEE.id, 'editor'],
 			[AUSSI, QUITTEE.id, 'org_admin'],
 			[RESTE, QUITTEE.id, 'org_admin'],
 			[PARTANTE, SEULE.id, 'editor'],
 			[UNIQUE, SEULE.id, 'org_admin'],
-			[SOLO, QUITTEE.id, 'editor']
+			[SOLO, QUITTEE.id, 'editor'],
+			[TROIS, QUITTEE.id, 'editor'],
+			[TROIS, SEULE.id, 'editor'],
+			[TROIS, GARDEE.id, 'editor'],
+			// Le super-admin n'est membre que de celle qu'il quitte : il entre dans l'autre par ses
+			// pouvoirs.
+			[EXPLOITANT, QUITTEE.id, 'editor']
 		] as const;
 		for (const [email, organisation] of membres) {
 			adhesions[`${email} ${organisation}`] = newId();
 		}
 		await maintenance(async (tx) => {
-			for (const organisation of [QUITTEE, SEULE]) {
+			for (const organisation of [QUITTEE, SEULE, GARDEE]) {
 				await tx.execute(sql`
 					insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
 						"enabled_language")
@@ -2072,16 +2105,22 @@ describe('quitter une organisation depuis « Vos organisations » (étape 19)', 
 			}
 			for (const [email, id] of Object.entries(personnes)) {
 				await tx.execute(sql`
-					insert into "user" ("id", "email", "email_verified") values (${id}, ${email}, true)
+					insert into "user" ("id", "email", "email_verified", "is_super_admin")
+					values (${id}, ${email}, true, ${email === EXPLOITANT})
 				`);
 			}
 		});
 		for (const [email, organisation, role] of membres) await remettre(email, organisation, role);
-		for (const email of [PARTANTE, AUSSI, UNIQUE, SOLO]) cookies[email] = await signIn(email);
+		for (const email of [PARTANTE, AUSSI, UNIQUE, SOLO, TROIS, EXPLOITANT]) {
+			cookies[email] = await signIn(email);
+		}
+		await preuvePasskey(cookies[EXPLOITANT] ?? '', personnes[EXPLOITANT] ?? '');
 	});
 
 	afterAll(async () => {
-		for (const email of [PARTANTE, AUSSI, UNIQUE, SOLO]) await poserLangueDuCompte(email, 'fr');
+		for (const email of [PARTANTE, AUSSI, UNIQUE, SOLO, TROIS]) {
+			await poserLangueDuCompte(email, 'fr');
+		}
 		await appHandle?.close();
 	});
 
@@ -2255,6 +2294,56 @@ describe('quitter une organisation depuis « Vos organisations » (étape 19)', 
 		expect(await roleDans(AUSSI, QUITTEE.id)).toBeUndefined();
 		expect(await roleDans(RESTE, QUITTEE.id)).toBe('org_admin');
 		await remettre(AUSSI, QUITTEE.id, 'org_admin');
+	});
+
+	it.each(LANGUES)(
+		'keeps, in %s, the organisation of her session when she leaves another one',
+		async (langue) => {
+			await remettre(TROIS, QUITTEE.id, 'editor');
+			await poserLangueDuCompte(TROIS, langue);
+			const cookie = cookies[TROIS] ?? '';
+			// Trois organisations : elle travaille dans l'une, et en quitte une autre.
+			expect(
+				(await postForm('/organisations?/choisir', { organizationId: GARDEE.id }, cookie)).status
+			).toBe(303);
+			const reponse = await postForm(
+				'/organisations?/quitter',
+				{ organizationId: QUITTEE.id, confirm: 'yes' },
+				cookie
+			);
+			expect(reponse.status).toBe(303);
+			expect(await roleDans(TROIS, QUITTEE.id)).toBeUndefined();
+			// La session nomme toujours celle qu'elle a choisie. Vidée, elle la renverrait au choix entre
+			// les deux organisations qui lui restent.
+			expect(await organisationDeLaSession(cookie), 'la session garde la sienne').toBe(GARDEE.id);
+			const arrivee = new URL(reponse.headers.get('location') ?? '', origin);
+			const html = await page200(`${arrivee.pathname}${arrivee.search}`, cookie);
+			expect(lu(element(html, 'avis-depart'))).toBe(PARTIE[langue]);
+			expect(titre(await page200('/cours', cookie))).toContain(GARDEE.nom);
+			expect(await roleDans(TROIS, SEULE.id)).toBe('editor');
+		}
+	);
+
+	it('keeps a super-admin in the organisation he entered by his powers when he leaves his own', async () => {
+		await remettre(EXPLOITANT, QUITTEE.id, 'editor');
+		await poserLangueDuCompte(EXPLOITANT, 'fr');
+		const cookie = cookies[EXPLOITANT] ?? '';
+		expect(
+			(await postForm('/super-admin?/entrer', { organizationId: GARDEE.id }, cookie)).status
+		).toBe(303);
+		const reponse = await postForm(
+			'/organisations?/quitter',
+			{ organizationId: QUITTEE.id, confirm: 'yes' },
+			cookie
+		);
+		expect(reponse.status).toBe(303);
+		expect(await roleDans(EXPLOITANT, QUITTEE.id)).toBeUndefined();
+		// Il n'est plus membre de rien, mais l'organisation où ses pouvoirs l'ont fait entrer reste la
+		// sienne : son départ d'une autre ne l'en fait pas sortir.
+		expect(await organisationDeLaSession(cookie), 'la session garde la visitée').toBe(GARDEE.id);
+		const html = await page200('/cours', cookie);
+		expect(titre(html)).toContain(GARDEE.nom);
+		expect(html).toContain('avec vos pouvoirs de super-admin.');
 	});
 
 	it.each(LANGUES)(
