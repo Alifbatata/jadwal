@@ -131,10 +131,12 @@ jour à une autre heure, elle est barrée avec `Déplacé à 20:30`, puis écrit
 
 Une organisation inconnue ou suspendue, un cours qui n'est pas publié, une adresse qu'aucune page ne
 connaît sous `/m/<identifiant>/` : tous rendent le même `404`, dans la langue de l'adresse, et sans
-aucun script, même dans le cadre du widget. La langue est celle du segment de l'adresse. Sans
-segment, c'est la langue par défaut de l'organisation pour un cours qu'elle ne publie pas, et le
-français partout ailleurs : une adresse inventée ne coûte aucune lecture de la base. La page porte
-un titre de niveau 1 et une phrase, rien d'autre :
+aucun script, même dans le cadre du widget. Sous une organisation connue, la langue est celle du
+segment de l'adresse si l'organisation la publie, et sa langue par défaut sinon, sans segment
+compris (27.09.2026 : ce `404` était en français, quelle que soit la langue de l'organisation).
+Sous une organisation inconnue ou suspendue, c'est la langue du segment, et le français sans
+segment : rien ne dit qu'une organisation a existé. La page porte un titre de niveau 1 et une
+phrase, rien d'autre :
 
 | Langue | Titre                  | Phrase                          |
 | ------ | ---------------------- | ------------------------------- |

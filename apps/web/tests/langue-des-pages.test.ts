@@ -220,11 +220,10 @@ afterAll(async () => {
 /**
  * Les pages et la balise qu'elles doivent porter. Une page publique prend la langue de son adresse,
  * ou celle de l'organisation sans segment ; tout le reste du service est en français. Un 404 d'une
- * adresse publique prend la langue du segment quand il y en a un. Sans segment, il prend celle de
- * l'organisation quand la page l'a déjà trouvée (un cours inconnu), et le français sinon : la route
- * `[...reste]`, qui répond à une adresse qu'aucune autre route ne connaît, ne lit pas la base, et
- * `/m/<organisation arabe>/nulle-part` rend donc un 404 en français. Jusqu'à l'étape 17, un 404
- * restait toujours en français.
+ * adresse publique d'une organisation connue parle la langue du segment si elle la publie, et sa
+ * langue par défaut sinon, `/m/<organisation arabe>/nulle-part` compris depuis le 27.09.2026 : la
+ * route `[...reste]` lit désormais l'organisation. Sous une organisation inconnue, la langue du
+ * segment, et le français sans segment. Jusqu'à l'étape 17, un 404 restait toujours en français.
  */
 const PAGES = [
 	{ chemin: `/m/${SLUG}/ar`, statut: 200, balise: '<html lang="ar" dir="rtl">' },
@@ -271,7 +270,8 @@ const PAGES = [
 		statut: 404,
 		balise: '<html lang="ar" dir="rtl">'
 	},
-	{ chemin: `/m/${SLUG}/it/nulle-part`, statut: 404, balise: '<html lang="it" dir="ltr">' }
+	{ chemin: `/m/${SLUG}/it/nulle-part`, statut: 404, balise: '<html lang="it" dir="ltr">' },
+	{ chemin: `/m/${SLUG_ARABE}/nulle-part`, statut: 404, balise: '<html lang="ar" dir="rtl">' }
 ];
 
 describe('la balise <html> de chaque page', () => {
@@ -549,9 +549,17 @@ describe('le 404 d’une adresse publique', () => {
 		// Une adresse qu'aucune route ne connaît, sous une organisation qui existe.
 		{ chemin: `/m/${SLUG}/de/nulle-part`, langue: 'de', dir: 'ltr' },
 		{ chemin: `/m/${SLUG}/pas/davantage`, langue: 'fr', dir: 'ltr' },
-		// Et sans segment sous une organisation arabe : la route `[...reste]` ne lit pas la base, et
-		// ne connaît donc pas sa langue par défaut.
-		{ chemin: `/m/${SLUG_ARABE}/nulle-part`, langue: 'fr', dir: 'ltr' }
+		// Et sans segment sous une organisation arabe : la langue par défaut de l'organisation
+		// (décision du chef de projet, 27.09.2026). La route `[...reste]` ne lisait pas la base, et
+		// ce 404 était en français, quelle que soit la langue de l'organisation.
+		{ chemin: `/m/${SLUG_ARABE}/nulle-part`, langue: 'ar', dir: 'rtl' },
+		{ chemin: `/m/${SLUG_ARABE}/pas/davantage?embed=1`, langue: 'ar', dir: 'rtl' },
+		// Une langue qu'elle publie garde la sienne ; une langue qu'elle ne publie pas prend la sienne.
+		{ chemin: `/m/${SLUG_ARABE}/fr/nulle-part`, langue: 'fr', dir: 'ltr' },
+		{ chemin: `/m/${SLUG_ARABE}/en/nulle-part`, langue: 'ar', dir: 'rtl' },
+		// Une organisation inconnue reste comme avant : la langue du segment, sinon le français.
+		{ chemin: '/m/inconnue/nulle-part', langue: 'fr', dir: 'ltr' },
+		{ chemin: '/m/inconnue/ar/nulle-part', langue: 'ar', dir: 'rtl' }
 	] as const)(
 		'answers $chemin with a 404 in $langue, and not a single script',
 		async ({ chemin, langue, dir }) => {

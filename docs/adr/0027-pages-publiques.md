@@ -126,6 +126,12 @@ Les décisions du chef de projet sur les langues des pages publiques.
   courte, dans sa langue par défaut. La page répondait jusque-là dans une langue que l'organisation
   n'avait pas choisie, et qu'aucun de ses liens ne proposait. Temporaire, et non `308` : elle peut
   l'activer demain. Le renvoi n'est pas compté comme une vue (ADR 0032) ; la page où il mène l'est.
+- **Le 404 d'une organisation connue parle sa langue.** Sous `/m/<identifiant>/…`, une adresse
+  qu'aucune page ne connaît rend le `404` dans la langue du segment si l'organisation la publie, et
+  dans sa langue par défaut sinon. Il était en français sans segment, quelle que soit la langue de
+  l'organisation, parce que la route `[...reste]` ne lisait pas la base : elle la lit maintenant,
+  la requête que fait déjà toute page de l'organisation. Le `404` d'une organisation inconnue ou
+  suspendue ne change pas.
 - **Trois liens vers des services d'agenda, et non plus deux.** Le choix complet propose aussi
   Outlook pour les comptes de travail ou d'école, `outlook.office.com` (ADR 0048, addendum du même
   jour) : le test admet ces trois domaines pour un lien `<a>` vers ailleurs, et aucune ressource.
