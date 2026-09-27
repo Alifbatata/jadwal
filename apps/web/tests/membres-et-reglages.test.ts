@@ -1837,6 +1837,13 @@ describe('une responsable qui se retire elle-même de l’organisation (étape 1
 		async (langue) => {
 			await remettre();
 			await poserLangueDuCompte(RESPONSABLE, langue);
+			// L'organisation qu'elle quitte est celle de sa session. Membre d'une seule, elle n'a rien
+			// à choisir, et sa session ne nomme alors aucune organisation : sans ce choix, la
+			// vérification d'après passait à vide.
+			expect((await postForm('/organisations?/choisir', { organizationId }, cookie)).status).toBe(
+				303
+			);
+			expect(await organisationDeLaSession(cookie)).toBe(organizationId);
 			// Le bouton de sa propre ligne, tel que l'écran le montre.
 			const bouton = formulaireDeLaPage(
 				await page200('/membres', cookie),
