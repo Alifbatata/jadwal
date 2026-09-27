@@ -105,9 +105,17 @@ async function poserCours(
 	return id;
 }
 
-async function effacerCours(id: string, organizationId = ici.id): Promise<void> {
-	await withOrg(app, organizationId, async (tx) => {
-		await tx.execute(sql`delete from "course" where "id" = ${id}`);
+/**
+ * Supprime un cours, sous le contexte de la responsable : supprimer un cours lui est réservé depuis la
+ * migration 0065 (ADR 0046). Une suppression écartée par la politique ne lèverait rien : le compte
+ * est vérifié.
+ */
+async function effacerCours(id: string, organisation: Organisation = ici): Promise<void> {
+	await withOrg(app, asAdmin(organisation), async (tx) => {
+		const supprimes = allRows(
+			await tx.execute(sql`delete from "course" where "id" = ${id} returning "id"`)
+		);
+		expect(supprimes).toHaveLength(1);
 	});
 }
 
@@ -182,7 +190,7 @@ describe('éteindre le module', () => {
 		await basculer(false);
 		expect(await moduleAllume()).toBe(false);
 
-		await effacerCours(chezEux, ailleurs.id);
+		await effacerCours(chezEux, ailleurs);
 	});
 });
 
