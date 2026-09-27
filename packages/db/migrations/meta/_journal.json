@@ -463,6 +463,13 @@
       "when": 1790507475871,
       "tag": "0065_course_delete_by_manager",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1790507763961,
+      "tag": "0066_membership_leave",
+      "breakpoints": true
     }
   ]
 }

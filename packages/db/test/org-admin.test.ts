@@ -859,6 +859,126 @@ describe('le parcours ordinaire', () => {
 	});
 });
 
+/**
+ * Quitter une organisation, seule (étape 19, migration 0066). La migration 0059 réservait toute
+ * suppression d'adhésion à la personne responsable : un éditeur ne pouvait plus retirer la sienne.
+ * Le chef de projet veut qu'une personne puisse partir d'elle-même ; l'écran viendra dans « Vos
+ * organisations ». La base lui laisse supprimer sa propre adhésion, dans l'organisation du contexte,
+ * et rien de plus. La dernière personne responsable ne part pas : le déclencheur de la migration
+ * 0012 la retient.
+ *
+ * Tout se joue dans D, pour que les départs ne changent rien au décor de A.
+ */
+describe('quitter l’organisation', () => {
+	let d: Organisation;
+	/** L'éditrice qui part d'elle-même. */
+	let leaver: { id: string; email: string };
+	/** L'éditrice que la personne responsable retire : le départ doit effacer la même chose. */
+	let removed: { id: string; email: string };
+	/** Une collègue qui reste. */
+	let stays: { id: string; email: string };
+	const inD = (userId: string): Context => ({ organizationId: d.id, userId });
+
+	/** Ce qui reste d'une personne dans D, relevé par le propriétaire sous son drapeau. */
+	async function footprint(userId: string) {
+		return firstRow<{
+			account: number;
+			membership: number;
+			terms: number;
+			invitations: string;
+		}>(
+			await withMaintenance(owner, (tx) =>
+				tx.execute(sql`
+					select
+						(select count(*)::int from "user" where "id" = ${userId}) as account,
+						(select count(*)::int from "membership"
+							where "organization_id" = ${d.id} and "user_id" = ${userId}) as membership,
+						(select count(*)::int from "terms_acceptance"
+							where "organization_id" = ${d.id} and "user_id" = ${userId}) as terms,
+						(select coalesce(string_agg("status", ',' order by "status"), '') from "invitation"
+							where "organization_id" = ${d.id} and "accepted_by" = ${userId}) as invitations
+				`)
+			)
+		);
+	}
+
+	beforeAll(async () => {
+		d = await seedOrganisation(owner, 'roles-d');
+		leaver = await account('partante-roles-d');
+		removed = await account('retiree-roles-d');
+		stays = await account('restante-roles-d');
+		for (const person of [leaver, removed, stays]) {
+			await joinOrganisation(owner, app, d.id, person.id, person.email, 'editor');
+			// Chacune accepte les conditions, comme l'écran le lui demande à l'arrivée.
+			await withOrg(app, inD(person.id), (tx) =>
+				tx.execute(sql`
+					insert into "terms_acceptance" ("id", "organization_id", "user_id", "version")
+					values (${newId()}, ${d.id}, ${person.id}, '2026-09-27')
+				`)
+			);
+		}
+	});
+
+	it('lets a person delete her own membership, and nothing more', async () => {
+		const own = sql`
+			delete from "membership" where "organization_id" = ${d.id} and "user_id" = ${leaver.id}
+			returning "id"
+		`;
+		expect(await attempt(app, inD(leaver.id), own)).toEqual({ rows: 1 });
+		// Sans WHERE, la suppression ne touche que sa propre adhésion.
+		expect(await attempt(app, inD(leaver.id), sql`delete from "membership"`)).toEqual({ rows: 1 });
+	});
+
+	it('refuses an editor who would remove someone else, or leave another organisation', async () => {
+		for (const other of [stays.id, d.userId]) {
+			const theirs = sql`
+				delete from "membership" where "organization_id" = ${d.id} and "user_id" = ${other}
+				returning "id"
+			`;
+			expect(await attempt(app, inD(leaver.id), theirs), other).toEqual({ rows: 0 });
+		}
+		// Responsable de B, éditrice de A : dans le contexte de A, elle ne quitte pas B.
+		const fromB = sql`
+			delete from "membership" where "organization_id" = ${b.id} and "user_id" = ${both.id}
+			returning "id"
+		`;
+		expect(await attempt(app, inA(both.id), fromB)).toEqual({ rows: 0 });
+		expect(await attempt(app, inA(both.id), sql`delete from "membership"`)).toEqual({ rows: 1 });
+	});
+
+	it('refuses the last manager who would leave', async () => {
+		const message = await messageOfFailure(() =>
+			withOrg(app, inD(d.userId), (tx) =>
+				tx.execute(sql`
+					delete from "membership" where "organization_id" = ${d.id} and "user_id" = ${d.userId}
+				`)
+			)
+		);
+		expect(message).toMatch(/last org_admin/);
+		expect(await footprint(d.userId)).toMatchObject({ membership: 1 });
+	});
+
+	it('erases with the membership what a removal by a manager erases', async () => {
+		await withOrg(app, inD(leaver.id), (tx) =>
+			tx.execute(sql`
+				delete from "membership" where "organization_id" = ${d.id} and "user_id" = ${leaver.id}
+			`)
+		);
+		await withOrg(app, inD(d.userId), (tx) =>
+			tx.execute(sql`
+				delete from "membership" where "organization_id" = ${d.id} and "user_id" = ${removed.id}
+			`)
+		);
+		// Le compte reste, l'invitation consommée aussi ; l'adhésion et l'acceptation des conditions
+		// partent, par la clé en cascade (ADR 0044). Les deux chemins laissent la même trace.
+		const gone = { account: 1, membership: 0, terms: 0, invitations: 'joined' };
+		expect(await footprint(leaver.id)).toEqual(gone);
+		expect(await footprint(removed.id)).toEqual(gone);
+		// La collègue qui reste n'a rien perdu.
+		expect(await footprint(stays.id)).toEqual({ ...gone, membership: 1, terms: 1 });
+	});
+});
+
 describe('la fonction qui lit le rôle', () => {
 	it('runs with the rights of its definer, a fixed search path, and only for the application', async () => {
 		const found = firstRow<{

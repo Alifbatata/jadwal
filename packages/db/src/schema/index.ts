@@ -593,11 +593,15 @@ export const membership = pgTable(
 			using: sql`${table.organizationId} = ${orgContext} and ${orgAdmin}`,
 			withCheck: sql`${table.organizationId} = ${orgContext} and ${orgAdmin}`
 		}),
+		// Retirer un membre est réservé aux responsables ; quitter l'organisation, chacun le peut pour
+		// soi, et pour soi seulement, dans l'organisation du contexte (migration 0066, ADR 0046). Le
+		// déclencheur de la dernière personne responsable retient celle qui voudrait partir.
 		pgPolicy('membership_delete', {
 			as: 'permissive',
 			for: 'delete',
 			to: appRole,
-			using: sql`${table.organizationId} = ${orgContext} and ${orgAdmin}`
+			using: sql`${table.organizationId} = ${orgContext}
+				and (${orgAdmin} or ${table.userId} = ${userContext})`
 		}),
 		// Le super-admin n'a pas de politique de lecture ici : « qui est responsable de quelle
 		// organisation » est ce que le modèle de menace classe comme sensible, et cela relève de la
