@@ -229,7 +229,12 @@ beforeAll(async () => {
 		}
 	});
 	serveur.stdout?.on('data', (morceau: Buffer) => journal.push(morceau.toString()));
-	serveur.stderr?.on('data', (morceau: Buffer) => journal.push(morceau.toString()));
+	serveur.stderr?.on('data', (morceau: Buffer) => {
+		journal.push(morceau.toString());
+		// Comme la préparation globale : une erreur du serveur doit se voir dans la sortie des tests,
+		// et non seulement sous la forme d'un 500 sans explication.
+		process.stderr.write(morceau.toString());
+	});
 	for (let essai = 1; essai <= 60; essai += 1) {
 		try {
 			if ((await fetch(`${origin}/healthz`)).ok) return;
