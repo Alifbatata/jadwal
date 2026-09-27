@@ -242,16 +242,18 @@ export const actions: Actions = {
 	 * Supprimer une salle. Si des cours ou des prières du vendredi l'occupent, le premier envoi ne
 	 * supprime rien : l'écran dit combien la perdront, et propose de confirmer (étape 18). La base ne
 	 * vide que la salle de ces cours, qui gardent tout le reste (migration 0061). Une salle libre part
-	 * dès le premier envoi. Un identifiant mal formé ne désigne aucune salle : il reçoit la réponse
-	 * d'une salle inconnue, sans passer par la base.
+	 * dès le premier envoi. Une salle que la base ne rend pas, supprimée depuis un autre onglet ou
+	 * d'une autre organisation, reçoit « Cette salle n'existe plus. », et un identifiant mal formé
+	 * aussi, sans passer par la base. Jusqu'à l'étape 19, l'écran disait « Salle supprimée. » pour
+	 * une salle que personne n'avait supprimée.
 	 */
 	supprimerSalle: async (event) => {
 		const context = await mustAdminister(event);
 		const form = await event.request.formData();
 		const roomId = String(form.get('roomId') ?? '');
 		const confirme = String(form.get('confirm') ?? '') === 'yes';
-		if (!UUID.test(roomId)) return { salleSupprimee: true };
-		const occupee = await withSessionOrg(context, async (tx) => {
+		if (!UUID.test(roomId)) return fail(404, { error: 'roomGone' as const });
+		const issue = await withSessionOrg(context, async (tx) => {
 			if (!confirme) {
 				const [salle] = await readRoomsInUse(tx, roomId);
 				if (salle && salle.courses + salle.fridays > 0) return salle;
@@ -259,16 +261,16 @@ export const actions: Actions = {
 			const supprimees = rows<{ id: string }>(
 				await tx.execute(sql`delete from "room" where "id" = ${roomId} returning "id"`)
 			);
-			if (supprimees.length > 0) {
-				await record(tx, context.organizationId, context.userId, {
-					action: 'room.delete',
-					targetTable: 'room',
-					targetId: roomId
-				});
-			}
-			return null;
+			if (supprimees.length === 0) return 'gone' as const;
+			await record(tx, context.organizationId, context.userId, {
+				action: 'room.delete',
+				targetTable: 'room',
+				targetId: roomId
+			});
+			return 'deleted' as const;
 		});
-		if (occupee) return fail(409, { roomInUse: occupee });
+		if (issue === 'gone') return fail(404, { error: 'roomGone' as const });
+		if (issue !== 'deleted') return fail(409, { roomInUse: issue });
 		return { salleSupprimee: true };
 	}
 };

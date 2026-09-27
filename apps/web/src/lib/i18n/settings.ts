@@ -108,6 +108,11 @@ interface SettingsTexts {
 		readonly timeZone: string;
 		readonly gone: string;
 		readonly roomNameRequired: string;
+		/**
+		 * Une salle que l'écran ne trouve pas, ou un identifiant mal formé : elle a pu être supprimée
+		 * depuis un autre onglet. Avant l'étape 19, l'écran disait « Salle supprimée. ».
+		 */
+		readonly roomGone: string;
 		readonly prayerStillUsed: string;
 	};
 }
@@ -184,6 +189,7 @@ export const settingsTexts: Translations<SettingsTexts> = {
 			timeZone: 'Choisissez le fuseau horaire dans la liste.',
 			gone: 'Cette organisation n’existe plus.',
 			roomNameRequired: 'Écrivez le nom de la salle.',
+			roomGone: 'Cette salle n’existe plus.',
 			prayerStillUsed:
 				'L’heure de certains cours se règle sur une prière, ou une prière du vendredi existe. Donnez à ces cours une heure fixe ou supprimez-les avant de désactiver les heures de prière.'
 		}
@@ -259,6 +265,7 @@ export const settingsTexts: Translations<SettingsTexts> = {
 			timeZone: 'Wählen Sie die Zeitzone aus der Liste.',
 			gone: 'Diese Organisation gibt es nicht mehr.',
 			roomNameRequired: 'Schreiben Sie den Namen des Raums.',
+			roomGone: 'Diesen Raum gibt es nicht mehr.',
 			prayerStillUsed:
 				'Die Uhrzeit mancher Kurse richtet sich nach einem Gebet, oder es gibt ein Freitagsgebet. Geben Sie diesen Kursen eine feste Uhrzeit oder löschen Sie sie, bevor Sie die Gebetszeiten deaktivieren.'
 		}
@@ -334,6 +341,7 @@ export const settingsTexts: Translations<SettingsTexts> = {
 			timeZone: 'Scegli il fuso orario dalla lista.',
 			gone: 'Questa organizzazione non esiste più.',
 			roomNameRequired: 'Scrivi il nome della sala.',
+			roomGone: 'Questa sala non esiste più.',
 			prayerStillUsed:
 				'L’ora di alcuni corsi dipende da una preghiera, oppure esiste una preghiera del venerdì. Dai a questi corsi un orario fisso o eliminali prima di disattivare gli orari di preghiera.'
 		}
@@ -409,6 +417,7 @@ export const settingsTexts: Translations<SettingsTexts> = {
 			timeZone: 'Pick the time zone from the list.',
 			gone: 'This organisation no longer exists.',
 			roomNameRequired: 'Write the name of the room.',
+			roomGone: 'This room no longer exists.',
 			prayerStillUsed:
 				'Some courses have their time set by a prayer, or a Friday prayer exists. Give these courses a fixed time or delete them before switching off prayer times.'
 		}
@@ -489,6 +498,7 @@ export const settingsTexts: Translations<SettingsTexts> = {
 			timeZone: 'اختر المنطقة الزمنية من القائمة.',
 			gone: 'هذه المؤسسة لم تعد موجودة.',
 			roomNameRequired: 'اكتب اسم القاعة.',
+			roomGone: 'هذه القاعة لم تعد موجودة.',
 			prayerStillUsed:
 				'بعض الدروس مضبوط وقتها على صلاة، أو توجد صلاة جمعة. امنح هذه الدروس وقتًا ثابتًا أو احذفها قبل إيقاف مواقيت الصلاة.'
 		}

@@ -1679,30 +1679,53 @@ describe('Réglages après un refus, et le fuseau dans une liste (retour B1)', (
 	});
 });
 
+/** Ce que Réglages répond pour une salle qu'il ne connaît pas, ou un identifiant mal formé. */
+const SALLE_DISPARUE: Record<Langue, string> = {
+	fr: 'Cette salle n’existe plus.',
+	de: 'Diesen Raum gibt es nicht mehr.',
+	it: 'Questa sala non esiste più.',
+	en: 'This room no longer exists.',
+	ar: 'هذه القاعة لم تعد موجودة.'
+};
+
 describe('un identifiant mal formé, envoyé par un formulaire trafiqué', () => {
 	it('answers a malformed room identifier in Settings as an unknown room, and deletes nothing', async () => {
 		const cookie = await signIn(RESPONSABLE);
 		await poserLangueDuCompte(RESPONSABLE, 'fr');
 		const avant = await sallesEnBase();
 		expect(avant).toHaveLength(2);
-		// Une salle inconnue, bien écrite : rien à supprimer, et la page le dit en une phrase.
+		// Une salle inconnue, bien écrite : rien à supprimer, et la page le dit en une phrase. Elle
+		// disait « Salle supprimée. », pour une salle que personne n'avait supprimée (étape 19).
 		const inconnue = await postForm(
 			'/reglages?/supprimerSalle',
 			{ roomId: newId(), confirm: 'yes' },
 			cookie
 		);
-		expect(inconnue.status).toBe(200);
-		const phrase = statut(await inconnue.text());
-		expect(phrase).toBe('Salle supprimée.');
+		expect(inconnue.status).toBe(404);
+		const html = await inconnue.text();
+		const phrase = alerte(html);
+		expect(phrase).toBe(SALLE_DISPARUE.fr);
+		expect(statut(html)).toBe('');
 		// Un identifiant mal écrit était envoyé tel quel à la base, qui le refusait : erreur 500.
-		for (const roomId of ['pas-un-identifiant', '']) {
+		for (const roomId of [newId(), 'pas-un-identifiant', '']) {
 			for (const confirm of ['', 'yes']) {
 				const reponse = await postForm('/reglages?/supprimerSalle', { roomId, confirm }, cookie);
 				expect(reponse.status, `« ${roomId} » ${confirm}`).toBe(inconnue.status);
-				expect(statut(await reponse.text()), `« ${roomId} » ${confirm}`).toBe(phrase);
+				expect(alerte(await reponse.text()), `« ${roomId} » ${confirm}`).toBe(phrase);
 			}
 		}
 		expect(await sallesEnBase()).toEqual(avant);
+	});
+
+	it.each(LANGUES)('says in %s that a room it does not know no longer exists', async (langue) => {
+		const cookie = await signIn(RESPONSABLE);
+		await poserLangueDuCompte(RESPONSABLE, langue);
+		for (const roomId of [newId(), 'pas-un-identifiant']) {
+			const reponse = await postForm('/reglages?/supprimerSalle', { roomId }, cookie);
+			expect(reponse.status, roomId).toBe(404);
+			expect(alerte(await reponse.text()), roomId).toBe(SALLE_DISPARUE[langue]);
+		}
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
 	});
 
 	it('answers a malformed invitation identifier as an unknown invitation, with a sentence', async () => {

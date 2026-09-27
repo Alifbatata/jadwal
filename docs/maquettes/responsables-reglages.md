@@ -40,7 +40,10 @@ partie des langues cochées.`
 obligatoire.` Chaque salle, avec, si des cours l'utilisent, `2 cours utilisent cette salle ; ils
 n'auront plus de salle si vous la supprimez.` (et la même phrase pour les prières du vendredi), et
    le bouton `Supprimer`. Puis `Nouvelle salle` (`Exemple : Grande salle`) et `Ajouter`. Après un
-   geste : `Salle ajoutée.` ou `Salle supprimée.`
+   geste : `Salle ajoutée.` ou `Salle supprimée.` Une salle que l'écran ne trouve plus, supprimée
+   depuis un autre onglet par exemple, ou un identifiant mal formé, reçoit `Cette salle n'existe
+plus.` (étape 19) ; avant, l'écran disait `Salle supprimée.` pour une salle que personne n'avait
+   supprimée.
 4. **Heures de prière** : `Les heures de prière sont activées.` ou `désactivées`, avec ce que cela
    change et ce qui reste si on les désactive, puis le bouton `Activer les heures de prière` ou
    `Désactiver les heures de prière` (avant : « Allumer le module »). Le mot « module » a disparu de
