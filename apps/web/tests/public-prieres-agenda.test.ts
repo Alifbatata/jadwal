@@ -90,6 +90,11 @@ const COURS = {
 };
 /** Les titres, d'un seul mot : un titre saisi par l'organisation n'est pas un texte à traduire. */
 const TITRES = { deplace: 'Tajwid', quotidien: 'Hifz' };
+/**
+ * Un cours ordinaire du vendredi changé, annulé demain : sa marque reste au masculin, « Annulé »,
+ * quand celle d'une session du vendredi s'accorde avec la prière.
+ */
+const COURS_ANNULE = { id: newId(), titre: 'Nahw' };
 
 /**
  * Les trois premiers cours des heures changées ont lieu chaque semaine le jour de demain, le
@@ -254,6 +259,23 @@ beforeAll(async () => {
 		}
 		const [premiere, deuxieme, troisieme] = ids as [string, string, string];
 		sessionMemeJour = deuxieme;
+		await tx.execute(sql`
+			insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",
+				"source_language", "recurrence_kind", "recurrence_weekday", "recurrence_interval",
+				"recurrence_anchor_date", "timing_kind", "timing_start", "timing_end", "starts_on")
+			values (${COURS_ANNULE.id}, ${change}, 'published', 'open', array['fr'], 'fr', 'weekly',
+				${sql.raw(`array[${jourDe(DEMAIN)}]::smallint[]`)}, 1, ${DEBUT}, 'fixed', '18:00',
+				'19:00', ${DEBUT})
+		`);
+		await tx.execute(sql`
+			insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
+			values (${newId()}, ${change}, ${COURS_ANNULE.id}, 'fr', ${COURS_ANNULE.titre})
+		`);
+		await tx.execute(sql`
+			insert into "session_exception" ("id", "organization_id", "course_id", "date", "kind",
+				"to_date", "to_start")
+			values (${newId()}, ${change}, ${COURS_ANNULE.id}, ${DEMAIN}, 'cancelled', null, null)
+		`);
 		// Le vendredi déplacé : une session, qui part à un autre jour ce vendredi-là.
 		const partie = await sessionDuVendredi(venue, SESSIONS[0] as (typeof SESSIONS)[number]);
 		// Comme les gestes « Annuler » et « Déplacer » de l'écran du vendredi, ce vendredi-là seulement.
@@ -423,8 +445,20 @@ const VENDREDI_SEULE: Record<Langue, (heure: string) => string> = {
 	en: (heure) => `Friday prayer: ${heure}`,
 	ar: (heure) => `صلاة الجمعة: ${heure}`
 };
-/** Les mots de la vue Semaine, repris par l'onglet pour une session qui n'a pas lieu. */
+/**
+ * Les mots de la vue Semaine, repris par l'onglet pour une session qui n'a pas lieu. Une session du
+ * vendredi est une prière : « Annulée », « Annullata », « ملغاة », accordés au féminin (décision du
+ * chef de projet, 27.09.2026). L'allemand et l'anglais n'ont qu'une forme.
+ */
 const ANNULE: Record<Langue, string> = {
+	fr: 'Annulée',
+	de: 'Abgesagt',
+	it: 'Annullata',
+	en: 'Cancelled',
+	ar: 'ملغاة'
+};
+/** Le mot d'un cours annulé, qui ne change pas. */
+const COURS_ANNULE_MARQUE: Record<Langue, string> = {
 	fr: 'Annulé',
 	de: 'Abgesagt',
 	it: 'Annullato',
@@ -617,10 +651,22 @@ describe('l’onglet des prières, quand le module est allumé (C4)', () => {
 					(trouve) => lu(trouve[1] ?? '').split(' ')[0]
 				)
 			).toEqual(['12:30', '13:45', '15:00']);
-			// Et la vue Semaine de la même page dit la même chose.
-			const vueSemaine = visibleText((await servir(base(langue, SLUG_CHANGE))).html);
-			expect(vueSemaine).toContain(ANNULE[langue]);
-			expect(vueSemaine).toContain(deplace);
+			// Et la vue Semaine de la même page dit la même chose, le mot exact, dans sa marque : « Annulé »
+			// passait pour « Annulée » tant qu'on cherchait le mot dans le texte. Le cours ordinaire
+			// annulé demain garde le sien.
+			const vueSemaine = (await servir(base(langue, SLUG_CHANGE))).html;
+			const marques = [...vueSemaine.matchAll(/<span class="marque[^"]*">([^<]*)<\/span>/g)].map(
+				(trouve) => trouve[1]
+			);
+			expect(marques, langue).toContain(ANNULE[langue]);
+			expect(marques, langue).toContain(COURS_ANNULE_MARQUE[langue]);
+			expect(
+				marques.filter(
+					(marque) => marque === ANNULE[langue] || marque === COURS_ANNULE_MARQUE[langue]
+				),
+				langue
+			).toHaveLength(2);
+			expect(visibleText(vueSemaine)).toContain(deplace);
 		}
 	);
 
@@ -1767,6 +1813,7 @@ const PERMIS = [
 	NOM_VENUE,
 	TITRES.deplace,
 	TITRES.quotidien,
+	COURS_ANNULE.titre,
 	'Jumu’a',
 	`${TITRES.quotidien} | ${NOM}`
 ];

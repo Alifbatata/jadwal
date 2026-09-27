@@ -48,7 +48,8 @@ programme.
 - Aucun script, aucune ressource d'un autre domaine, comme partout côté public.
 - Dans le cadre du widget, l'onglet est là aussi, et s'ouvre en mode intégré.
 - **Une ligne datée dit ce qui a lieu ce jour-là**, comme la vue Semaine : une session du vendredi
-  annulée, ou déplacée à un autre jour, reste écrite, barrée, avec `Annulé` ou `Déplacé au …` ; une
+  annulée, ou déplacée à un autre jour, reste écrite, barrée, avec `Annulée` (accordé à `Prière du
+vendredi` depuis le 27.09.2026 : `Annullata`, `ملغاة`) ou `Déplacé au …` ; une
   session déplacée à une autre heure du même vendredi n'est écrite qu'à sa nouvelle heure. Si
   aucune session n'a lieu un vendredi, l'iqama du Dhuhr revient. Un autre jour qui reçoit une
   session déplacée garde son iqama du Dhuhr, et la session s'y écrit nommée, avec son vendredi

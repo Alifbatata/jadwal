@@ -147,11 +147,14 @@
 		];
 	}
 
-	/** Le mot de la vue Semaine pour une session qui n'a pas lieu : annulée, ou déplacée à tel jour. */
+	/**
+	 * Le mot de la vue Semaine pour une session qui n'a pas lieu : annulée, accordé à « Prière du
+	 * vendredi » (27.09.2026), ou déplacée à tel jour.
+	 */
 	function statut(seance: SeanceDuVendredi): string {
 		return seance.status === 'moved_away' && seance.movedTo
 			? mots.movedTo(longDate(langue, seance.movedTo as IsoDate))
-			: mots.cancelled;
+			: mots.cancelledJumua;
 	}
 
 	const aujourdhui = $derived(jours.find((jour) => jour.date === today));

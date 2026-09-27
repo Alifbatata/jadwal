@@ -50,7 +50,10 @@
 	<p class="ligne">
 		<span class="heure">{heureDeSeance(langue, seance)}</span>
 		<a class="titre" href={lienCours(seance.courseId)}>{seance.title}</a>
-		{#if seance.status === 'cancelled'}<span class="marque">{mots.cancelled}</span>{/if}
+		<!-- Une session du vendredi est une prière : « Annulée », accordée (27.09.2026). -->
+		{#if seance.status === 'cancelled'}<span class="marque"
+				>{seance.kind === 'jumua' ? mots.cancelledJumua : mots.cancelled}</span
+			>{/if}
 		{#if seance.status === 'moved_here'}
 			<span class="marque">{memeJour ? mots.newTime : mots.exceptionalDate}</span>
 		{/if}

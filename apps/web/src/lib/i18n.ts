@@ -48,6 +48,12 @@ interface Dictionnaire {
 	readonly today: string;
 	readonly period: (from: string, to: string) => string;
 	readonly cancelled: string;
+	/**
+	 * « Annulée » : une session du vendredi annulée, accordée à « Prière du vendredi » là où la langue
+	 * accorde (décision du chef de projet, 27.09.2026). La vue Semaine, l'onglet Prières et la page
+	 * d'une session le disent ainsi ; un cours garde `cancelled`.
+	 */
+	readonly cancelledJumua: string;
 	readonly exceptionalDate: string;
 	readonly movedTo: (date: string) => string;
 	readonly originallyOn: (date: string) => string;
@@ -338,6 +344,7 @@ const fr: Dictionnaire = {
 	today: 'aujourd’hui',
 	period: (from, to) => `Du ${from} au ${to}`,
 	cancelled: 'Annulé',
+	cancelledJumua: 'Annulée',
 	exceptionalDate: 'Date exceptionnelle',
 	movedTo: (date) => `Déplacé au ${date}`,
 	originallyOn: (date) => `Initialement le ${date}`,
@@ -501,6 +508,7 @@ const de: Dictionnaire = {
 	today: 'heute',
 	period: (from, to) => `Vom ${from} bis ${to}`,
 	cancelled: 'Abgesagt',
+	cancelledJumua: 'Abgesagt',
 	exceptionalDate: 'Ausnahmetermin',
 	movedTo: (date) => `Verschoben auf ${date}`,
 	originallyOn: (date) => `Ursprünglich am ${date}`,
@@ -659,6 +667,7 @@ const it: Dictionnaire = {
 	today: 'oggi',
 	period: (from, to) => `Dal ${from} al ${to}`,
 	cancelled: 'Annullato',
+	cancelledJumua: 'Annullata',
 	exceptionalDate: 'Data eccezionale',
 	// Sans article devant le nom du jour, qui ouvre la date longue : « al domenica » et
 	// « il domenica » seraient faux. « Inizialmente domenica … » est la phrase du chef de projet.
@@ -820,6 +829,7 @@ const en: Dictionnaire = {
 	today: 'today',
 	period: (from, to) => `From ${from} to ${to}`,
 	cancelled: 'Cancelled',
+	cancelledJumua: 'Cancelled',
 	exceptionalDate: 'Rescheduled',
 	movedTo: (date) => `Moved to ${date}`,
 	originallyOn: (date) => `Originally on ${date}`,
@@ -976,6 +986,8 @@ const ar: Dictionnaire = {
 	today: 'اليوم',
 	period: (from, to) => `من ${from} إلى ${to}`,
 	cancelled: 'ملغى',
+	// « صلاة » est féminin : « ملغاة » (décision du chef de projet, 27.09.2026).
+	cancelledJumua: 'ملغاة',
 	exceptionalDate: 'موعد استثنائي',
 	movedTo: (date) => `نُقل إلى ${date}`,
 	originallyOn: (date) => `كان مقرّرًا في ${date}`,
