@@ -112,6 +112,11 @@ page. Rien n'a été enregistré. Si le message n'a pas encore été envoyé, il
   ouverte. Rien ne s'écrit, mais le titre `La séance est annulée.` et le message prêt à coller
   suivent, dans chaque langue publiée : la personne ne sait pas si la communauté a déjà été
   prévenue (étape 19).
+- `La séance « Cercle de lecture » du lundi 28.09.2026 a déjà été rétablie depuis l'ouverture de la
+page. Rien n'a été enregistré. Le programme ci-dessous est à jour.` : `Rétablir la séance` touché
+  sur une page restée ouverte, après qu'une autre personne ou un autre onglet l'a déjà rétablie.
+  Il n'y a plus rien à rétablir : rien ne s'écrit, pas même au journal, et la carte, de nouveau
+  prévue, ne se rouvre pas (étape 19, relecture de D2).
 - `Cette séance n'existe plus. La liste ci-dessous est à jour.` : la page renvoyée est déjà à jour,
   et, sans JavaScript, recharger renverrait le formulaire refusé (étape 19).
 - `La date de cette séance n'a pas pu être lue. Rechargez la page, puis recommencez.` : de même

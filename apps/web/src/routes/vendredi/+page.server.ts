@@ -21,7 +21,8 @@
 // Depuis l'étape 19 (D2), Annuler refuse un jour déjà passé, comme « À venir ». Chaque geste qui
 // vise une session répond « Cette session n'existe plus » à une session inconnue, ou à un cours, et
 // n'écrit alors rien, pas même le journal : Rétablir, Publier et Supprimer répondaient « fait » et
-// écrivaient au journal. Chaque identifiant, chaque date et chaque heure est vérifié avant la base,
+// écrivaient au journal. Rétablir refuse de même une session qui n'a plus rien à rétablir ce
+// jour-là (`alreadyRestored`, relecture de D2). Chaque identifiant, chaque date et chaque heure est vérifié avant la base,
 // qui refusait un identifiant mal formé, un 30 février, l'an 0000 ou 25:99 par une erreur 500 ; une
 // date s'accepte de 1970 à 2100 (`isSupportedDate`), et une salle qui n'existe pas, ou plus, a sa
 // phrase dans le formulaire.
@@ -402,7 +403,10 @@ export const actions: Actions = {
 
 	/**
 	 * Rétablir une session annulée ou déplacée ce jour-là. Une session inconnue, ou un cours, reçoit
-	 * la réponse d'une session qui n'existe plus, et rien ne s'écrit, pas même le journal.
+	 * la réponse d'une session qui n'existe plus, et rien ne s'écrit, pas même le journal. Une session
+	 * qui n'a plus rien à rétablir ce jour-là, parce qu'une page restée ouverte ou une autre personne
+	 * l'a déjà fait, est refusée de même : l'action répondait « fait » et l'écrivait au journal
+	 * (relecture de D2).
 	 */
 	retablir: async (event) => {
 		const context = await mustHavePrayerModule(event);
@@ -412,9 +416,13 @@ export const actions: Actions = {
 		if (!isSupportedDate(date)) return refus(400, 'dateUnreadable');
 		return withSessionOrg(context, async (tx) => {
 			if (!(await sessionExiste(tx, courseId))) return refus(404, 'sessionGone');
-			await tx.execute(
-				sql`delete from "session_exception" where "course_id" = ${courseId} and "date" = ${date}`
+			const retiree = lignes<{ id: string }>(
+				await tx.execute(sql`
+					delete from "session_exception" where "course_id" = ${courseId} and "date" = ${date}
+					returning "id"
+				`)
 			);
+			if (retiree.length === 0) return refus(409, 'alreadyRestored');
 			await record(tx, context.organizationId, context.userId, {
 				action: 'exception.restore',
 				targetTable: 'session_exception',

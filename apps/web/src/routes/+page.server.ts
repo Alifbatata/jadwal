@@ -36,6 +36,8 @@
 //   ouverte, n'écrit rien, mais rend le message prêt à coller : la personne ne sait pas si la
 //   communauté a déjà été prévenue ;
 // - une session du vendredi a ses propres mots dans les messages (`messages.ts`) ;
+// - rétablir une séance qui n'a plus rien à rétablir est refusé, et n'écrit rien au journal
+//   (relecture de D2) ;
 // - une date envoyée s'accepte de 1970 à 2100 (`isSupportedDate`) : l'an 0000, que PostgreSQL n'a
 //   pas, donnait une erreur 500 à Déplacer et à Rétablir (relecture de D2).
 
@@ -502,7 +504,9 @@ export const actions: Actions = {
 	/**
 	 * Rétablir une séance annulée ou déplacée : l'exception disparaît, le rythme reprend. Un cours
 	 * inconnu, ou d'une autre organisation, reçoit la réponse d'un cours inconnu, et rien ne s'écrit,
-	 * pas même le journal.
+	 * pas même le journal. Une séance qui n'a plus rien à rétablir, parce qu'une autre personne ou une
+	 * page restée ouverte l'a déjà fait, est refusée de même : l'action répondait « rétablie » et
+	 * l'écrivait au journal (étape 19, relecture de D2).
 	 */
 	retablir: async (event) => {
 		const context = await mustBeInOrganisation(event);
@@ -510,11 +514,19 @@ export const actions: Actions = {
 		const courseId = String(form.get('courseId') ?? '');
 		const date = String(form.get('date') ?? '');
 		if (!isSupportedDate(date)) return refuse('unreadableDate', { courseId, date });
+		const langue: Langue = event.locals.langue ?? 'fr';
 		return withSessionOrg(context, async (tx) => {
-			if (!(await readCourse(tx, courseId))) return refuse('sessionGone', { courseId, date }, 404);
-			await tx.execute(
-				sql`delete from "session_exception" where "course_id" = ${courseId} and "date" = ${date}`
+			const course = await readCourse(tx, courseId);
+			if (!course) return refuse('sessionGone', { courseId, date }, 404);
+			const removed = rows<{ id: string }>(
+				await tx.execute(sql`
+					delete from "session_exception" where "course_id" = ${courseId} and "date" = ${date}
+					returning "id"
+				`)
 			);
+			if (removed.length === 0) {
+				return refuseStale('alreadyRestored', course, langue, { courseId, date });
+			}
 			await record(tx, context.organizationId, context.userId, {
 				action: 'exception.restore',
 				targetTable: 'session_exception',

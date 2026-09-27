@@ -16,9 +16,10 @@ import type { Translations } from './space.js';
  * vendredi », comme sur « À venir » : `changed`, la session a été annulée ou déplacée ce jour-là
  * depuis l'ouverture de la page ; `timeChanged`, son heure a changé depuis ; `unchanged`, un
  * déplacement vers le jour et l'heure où elle est déjà prévue ; `pastSession`, l'annulation d'un
- * jour déjà passé, qu'aucune carte ne propose (étape 19, D2). Pour l'ajout : `orderTaken`, une
- * session sans date de fin a déjà ce rang. Pour l'ajout et la modification : `roomGone`, la salle
- * choisie n'existe pas, ou plus, dans l'organisation.
+ * jour déjà passé, qu'aucune carte ne propose (étape 19, D2) ; `alreadyRestored`, un second
+ * « Rétablir » depuis une page restée ouverte, qui n'a plus rien à rétablir (relecture de D2). Pour
+ * l'ajout : `orderTaken`, une session sans date de fin a déjà ce rang. Pour l'ajout et la
+ * modification : `roomGone`, la salle choisie n'existe pas, ou plus, dans l'organisation.
  */
 export type FridayError =
 	| 'titleTooLong'
@@ -35,6 +36,7 @@ export type FridayError =
 	| 'timeUnreadable'
 	| 'pastSession'
 	| 'changed'
+	| 'alreadyRestored'
 	| 'timeChanged'
 	| 'unchanged'
 	| 'orderTaken';
@@ -236,6 +238,8 @@ export const fridayTexts: Translations<FridayTexts> = {
 				'Cette session est déjà passée : vous ne pouvez annuler que les sessions d’aujourd’hui et des jours suivants.',
 			changed:
 				'Cette session a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée ce jour-là. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.',
+			alreadyRestored:
+				'Cette session a déjà été rétablie depuis l’ouverture de la page. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.',
 			timeChanged:
 				'L’heure de cette session a changé depuis l’ouverture de la page. Rien n’a été enregistré. Sa nouvelle heure est écrite plus bas, dans « Ce vendredi » : vérifiez le jour et l’heure choisis, puis recommencez.',
 			unchanged:
@@ -352,6 +356,8 @@ export const fridayTexts: Translations<FridayTexts> = {
 				'Dieser Durchgang ist schon vorbei: Sie können nur Durchgänge von heute oder von einem späteren Tag absagen.',
 			changed:
 				'Dieser Durchgang hat sich geändert, seit die Seite geöffnet wurde: Er wurde an diesem Tag schon abgesagt oder verschoben. Es wurde nichts gespeichert. Der Abschnitt «Diesen Freitag» weiter unten ist aktuell.',
+			alreadyRestored:
+				'Dieser Durchgang ist schon wiederhergestellt worden, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Der Abschnitt «Diesen Freitag» weiter unten ist aktuell.',
 			timeChanged:
 				'Die Uhrzeit dieses Durchgangs hat sich geändert, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Die neue Uhrzeit steht weiter unten unter «Diesen Freitag»: Prüfen Sie den gewählten Tag und die gewählte Uhrzeit und versuchen Sie es noch einmal.',
 			unchanged:
@@ -463,6 +469,8 @@ export const fridayTexts: Translations<FridayTexts> = {
 				'Questo turno è già passato: puoi annullare solo i turni di oggi o dei giorni successivi.',
 			changed:
 				'Questo turno è cambiato da quando hai aperto la pagina: quel giorno è già stato annullato o spostato. Non è stato salvato niente. La sezione «Questo venerdì», più in basso, è aggiornata.',
+			alreadyRestored:
+				'Questo turno è già stato ripristinato da quando hai aperto la pagina. Non è stato salvato niente. La sezione «Questo venerdì», più in basso, è aggiornata.',
 			timeChanged:
 				'L’orario di questo turno è cambiato da quando hai aperto la pagina. Non è stato salvato niente. Il nuovo orario è indicato più in basso, in «Questo venerdì»: controlla il giorno e l’orario scelti, poi riprova.',
 			unchanged:
@@ -573,6 +581,8 @@ export const fridayTexts: Translations<FridayTexts> = {
 				'This session has already passed: you can only cancel sessions from today onwards.',
 			changed:
 				'This session has changed since the page was opened: it has already been cancelled or moved for that day. Nothing has been saved. The ‘This Friday’ section further down shows the latest changes.',
+			alreadyRestored:
+				'This session has already been restored since the page was opened. Nothing has been saved. The ‘This Friday’ section further down shows the latest changes.',
 			timeChanged:
 				'The time of this session has changed since the page was opened. Nothing has been saved. Its new time is shown further down, under ‘This Friday’: check the day and time you chose, then try again.',
 			unchanged:
@@ -676,6 +686,8 @@ export const fridayTexts: Translations<FridayTexts> = {
 			pastSession: 'هذا الموعد قد مضى: يمكنك إلغاء مواعيد اليوم والأيام التالية فقط.',
 			changed:
 				'تغيّر هذا الموعد منذ أن فُتحت الصفحة: سبق أن أُلغي أو نُقل في ذلك اليوم. لم يُحفظ أي شيء. قسم «هذه الجمعة» في الأسفل محدَّث.',
+			alreadyRestored:
+				'عاد هذا الموعد إلى يومه ووقته المعتادين منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. قسم «هذه الجمعة» في الأسفل محدَّث.',
 			timeChanged:
 				'تغيّر وقت هذا الموعد منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. وقته الجديد مكتوب في قسم «هذه الجمعة» في الأسفل: راجع ما اخترته من يوم ووقت، ثم حاول مرة أخرى.',
 			unchanged:

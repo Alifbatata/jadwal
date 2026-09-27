@@ -4,7 +4,7 @@
 	import { audienceLabel, describeSessionTime, shortDate } from '$lib/format.js';
 	import { direction, NOM_DE_LANGUE, type Langue } from '$lib/i18n.js';
 	import { commonTexts } from '$lib/i18n/common.js';
-	import { upcomingErrorText, upcomingTexts } from '$lib/i18n/upcoming.js';
+	import { upcomingErrorText, upcomingTexts, type UpcomingError } from '$lib/i18n/upcoming.js';
 	import { languesEnClair } from '$lib/public/affichage.js';
 
 	let { data, form } = $props();
@@ -66,10 +66,28 @@
 	}
 
 	/**
+	 * Les refus d'un déplacement, qui se corrigent dans la carte : une nouvelle date ou une nouvelle
+	 * heure à revoir. Les autres ne demandent rien à la carte, même quand elle est encore là : une
+	 * séance rétablie depuis l'ouverture de la page est de nouveau prévue, et le refus d'un second
+	 * « Rétablir » ne rouvre pas ses options (étape 19, relecture de D2).
+	 */
+	const REFUS_D_UNE_CARTE: readonly UpcomingError[] = [
+		'unreadableNewDate',
+		'unreadableTime',
+		'pastDate',
+		'unchanged',
+		'timeChanged'
+	];
+
+	/**
 	 * La séance qu'une action vient de refuser : ses options, et elles seules, se rouvrent sur la
 	 * phrase qui dit quoi faire, avec ce qui avait été saisi (retour A1).
 	 */
-	const refusee = $derived(form?.error ? cle(form.courseId ?? '', form.date ?? '') : null);
+	const refusee = $derived(
+		form?.error && REFUS_D_UNE_CARTE.includes(form.error)
+			? cle(form.courseId ?? '', form.date ?? '')
+			: null
+	);
 	/**
 	 * La phrase du refus, dans la langue de l'écran. Le refus d'une carte périmée nomme la séance :
 	 * l'action rend son titre, et la page écrit sa date (étape 19, D4).
@@ -78,9 +96,10 @@
 		form?.error ? upcomingErrorText(text, form.error, form.title ?? '', date(form.date ?? '')) : ''
 	);
 	/**
-	 * Une erreur qui ne trouve pas sa carte s'affiche en haut : une séance disparue, ou une séance
-	 * annulée ou déplacée depuis l'ouverture de la page, qui n'a plus d'options. Une séance dont
-	 * l'heure a changé depuis est encore prévue : son refus se lit dans sa carte.
+	 * Une erreur qui ne trouve pas sa carte s'affiche en haut : une séance disparue, une séance
+	 * annulée ou déplacée depuis l'ouverture de la page, qui n'a plus d'options, ou un refus qui ne
+	 * se corrige pas dans la carte. Une séance dont l'heure a changé depuis est encore prévue : son
+	 * refus se lit dans sa carte.
 	 */
 	const erreurEnHaut = $derived(
 		Boolean(form?.error) &&
@@ -246,10 +265,9 @@
 								<input type="hidden" name="plannedStart" value={seance.start ?? ''} />
 								<fieldset>
 									<legend>{text.moveLegend}</legend>
-									<!-- Une erreur qui retrouve sa carte vient toujours d'un déplacement : la date de
-									     la séance illisible, la séance disparue, déjà annulée ou déjà déplacée ne
-									     désignent aucune carte, et s'affichent en haut. Elle se lit donc au-dessus des
-									     champs à corriger. -->
+									<!-- Une erreur qui retrouve sa carte vient toujours d'un déplacement
+									     (`REFUS_D_UNE_CARTE`) : les autres s'affichent en haut. Elle se lit donc
+									     au-dessus des champs à corriger. -->
 									{#if form?.error && refusee === k}
 										<p class="erreur" role="alert">{erreur}</p>
 									{/if}

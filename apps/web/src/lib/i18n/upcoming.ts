@@ -25,8 +25,10 @@ export type UpcomingDone = 'cancelled' | 'moved' | 'restored';
  * `timeChanged` : l'heure du cours a changé dans sa fiche depuis ; la séance garde sa carte, qui se
  * rouvre sur la phrase, sous sa nouvelle heure. `alreadyCancelled` : la séance a été annulée depuis,
  * et la carte l'annule encore ; rien ne s'écrit, mais le message prêt à coller est donné quand même
- * (étape 19, D4). `pastSession` : l'annulation d'une séance dont la date est passée, qu'aucune carte
- * ne propose.
+ * (étape 19, D4). `alreadyRestored` : la séance a été rétablie depuis, et la carte la rétablit
+ * encore ; il n'y a plus rien à rétablir, et rien ne s'écrit, pas même le journal (étape 19,
+ * relecture de D2). `pastSession` : l'annulation d'une séance dont la date est passée, qu'aucune
+ * carte ne propose.
  */
 export type UpcomingError =
 	| 'unreadableDate'
@@ -38,6 +40,7 @@ export type UpcomingError =
 	| 'changed'
 	| 'timeChanged'
 	| 'alreadyCancelled'
+	| 'alreadyRestored'
 	| 'sessionGone';
 
 /**
@@ -45,7 +48,7 @@ export type UpcomingError =
  * leur phrase reçoit le titre, dans la langue de l'écran quand le cours y est traduit, et la date
  * déjà écrite.
  */
-export type NamedUpcomingError = 'changed' | 'timeChanged' | 'alreadyCancelled';
+export type NamedUpcomingError = 'changed' | 'timeChanged' | 'alreadyCancelled' | 'alreadyRestored';
 
 /** Une phrase qui nomme une séance. */
 type Named = (title: string, date: string) => string;
@@ -240,6 +243,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				`L’heure de la séance « ${title} » du ${date} a changé depuis l’ouverture de la page. Rien n’a été enregistré. Sa nouvelle heure est écrite sous son titre : vérifiez la date et l’heure choisies, puis recommencez.`,
 			alreadyCancelled: (title, date) =>
 				`La séance « ${title} » du ${date} a déjà été annulée depuis l’ouverture de la page. Rien n’a été enregistré. Si le message n’a pas encore été envoyé, il est prêt ci-dessous.`,
+			alreadyRestored: (title, date) =>
+				`La séance « ${title} » du ${date} a déjà été rétablie depuis l’ouverture de la page. Rien n’a été enregistré. Le programme ci-dessous est à jour.`,
 			sessionGone: 'Cette séance n’existe plus. La liste ci-dessous est à jour.'
 		}
 	},
@@ -339,6 +344,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				`Die Uhrzeit des Termins «${title}» vom ${date}, hat sich geändert, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Die neue Uhrzeit steht unter seinem Titel: Prüfen Sie das gewählte Datum und die gewählte Uhrzeit und versuchen Sie es noch einmal.`,
 			alreadyCancelled: (title, date) =>
 				`Der Termin «${title}» vom ${date}, ist abgesagt worden, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Wenn die Nachricht noch nicht verschickt ist, steht sie unten bereit.`,
+			alreadyRestored: (title, date) =>
+				`Der Termin «${title}» vom ${date}, ist wiederhergestellt worden, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Das Programm unten ist aktuell.`,
 			sessionGone: 'Diesen Termin gibt es nicht mehr. Die Liste unten ist aktuell.'
 		}
 	},
@@ -437,6 +444,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				`L’orario della lezione «${title}» di ${date} è cambiato da quando hai aperto la pagina. Non è stato salvato niente. Il nuovo orario è indicato sotto il titolo: controlla la data e l’orario scelti, poi riprova.`,
 			alreadyCancelled: (title, date) =>
 				`La lezione «${title}» di ${date} è già stata annullata da quando hai aperto la pagina. Non è stato salvato niente. Se il messaggio non è ancora stato mandato, è pronto qui sotto.`,
+			alreadyRestored: (title, date) =>
+				`La lezione «${title}» di ${date} è già stata ripristinata da quando hai aperto la pagina. Non è stato salvato niente. Il programma qui sotto è aggiornato.`,
 			sessionGone: 'Questa lezione non esiste più. L’elenco qui sotto è aggiornato.'
 		}
 	},
@@ -533,6 +542,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				`The time of the ‘${title}’ session on ${date} has changed since the page was opened. Nothing has been saved. Its new time is shown under its title: check the date and time you chose, then try again.`,
 			alreadyCancelled: (title, date) =>
 				`Since the page was opened, the ‘${title}’ session on ${date} has already been cancelled. Nothing has been saved. If the message has not been sent yet, it is ready below.`,
+			alreadyRestored: (title, date) =>
+				`Since the page was opened, the ‘${title}’ session on ${date} has already been restored. Nothing has been saved. The programme below shows the latest changes.`,
 			sessionGone:
 				'This session no longer exists. The list below shows the sessions as they are now.'
 		}
@@ -632,6 +643,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				`تغيّر وقت حصة «${title}» يوم ${date} منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. وقتها الجديد مكتوب تحت عنوانها: راجع ما اخترته من تاريخ ووقت، ثم حاول مرة أخرى.`,
 			alreadyCancelled: (title, date) =>
 				`أُلغيت حصة «${title}» يوم ${date} منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. إن لم تُرسَل الرسالة بعد، فهي جاهزة أدناه.`,
+			alreadyRestored: (title, date) =>
+				`استُعيدت حصة «${title}» يوم ${date} منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. برنامجك المعروض أدناه محدَّث.`,
 			sessionGone: 'هذه الحصة لم تعد موجودة. القائمة أدناه محدَّثة.'
 		}
 	}

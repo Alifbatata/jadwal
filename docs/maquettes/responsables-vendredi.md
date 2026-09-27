@@ -139,7 +139,9 @@ Cette session seulement. Les autres vendredis ne changent pas.
 - `Rétablir comme d'habitude`, `Publier`, `Retirer de la page publique` et `Oui, supprimer`
   répondent `Cette session n'existe plus` à une session supprimée entre-temps, ou à un cours, et
   n'écrivent rien, pas même au journal. Avant l'étape 19, ils disaient l'avoir fait, et
-  l'écrivaient au journal.
+  l'écrivaient au journal. `Rétablir comme d'habitude` refuse de même une session qui n'a plus
+  rien à rétablir ce jour-là : une page restée ouverte, après qu'une autre l'a déjà rétablie
+  (relecture de D2).
 - Chaque identifiant, chaque date et chaque heure envoyés sont vérifiés avant la base : un
   identifiant mal formé, un 30 février, 25:99 ou une date hors des années 1970 à 2100 (l'an 0000,
   le 31.12.9999) reçoivent une phrase, et non une erreur 500. Le caractère nul, qu'aucun clavier ne
@@ -177,7 +179,10 @@ heure ou un autre jour dans « Ce vendredi », plus bas.` ;
 - `Cette session est déjà passée : vous ne pouvez annuler que les sessions d'aujourd'hui et des
 jours suivants.` (étape 19) ;
 - `Cette session n'existe plus : elle a été supprimée entre-temps. La liste ci-dessous est à jour.`,
-  aussi pour `Rétablir`, `Publier` et `Supprimer` depuis l'étape 19.
+  aussi pour `Rétablir`, `Publier` et `Supprimer` depuis l'étape 19 ;
+- `Cette session a déjà été rétablie depuis l'ouverture de la page. Rien n'a été enregistré. La
+partie « Ce vendredi », plus bas, est à jour.` : un second `Rétablir comme d'habitude`, qui n'a
+  plus rien à rétablir (étape 19, relecture de D2).
 
 La liste des refus de l'écran, avec leur statut, est dans l'addendum du 27.09.2026 de l'ADR 0021.
 

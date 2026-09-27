@@ -556,7 +556,7 @@ const ERREURS = /<div\b[^>]*role="alert"[^>]*>\s*<ul\b[^>]*>([\s\S]*?)<\/ul>/g;
  * langue (relecture du lot 5). Tous s'écrivent en tête de l'écran.
  */
 const REFUS_DU_VENDREDI: Record<
-	'changed' | 'timeChanged' | 'unchanged' | 'sessionGone',
+	'changed' | 'timeChanged' | 'unchanged' | 'sessionGone' | 'alreadyRestored',
 	Record<Langue, string>
 > = {
 	changed: {
@@ -586,6 +586,14 @@ const REFUS_DU_VENDREDI: Record<
 		it: 'Questo turno non esiste più: nel frattempo è stato eliminato. L’elenco qui sotto è aggiornato.',
 		en: 'This session no longer exists: it has been deleted in the meantime. The list below shows the sessions as they are now.',
 		ar: 'هذا الموعد لم يعد موجودًا: فقد حُذف في هذه الأثناء. القائمة أدناه محدَّثة.'
+	},
+	/** Un second « Rétablir », depuis une page restée ouverte : rien à rétablir (relecture de D2). */
+	alreadyRestored: {
+		fr: 'Cette session a déjà été rétablie depuis l’ouverture de la page. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.',
+		de: 'Dieser Durchgang ist schon wiederhergestellt worden, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Der Abschnitt «Diesen Freitag» weiter unten ist aktuell.',
+		it: 'Questo turno è già stato ripristinato da quando hai aperto la pagina. Non è stato salvato niente. La sezione «Questo venerdì», più in basso, è aggiornata.',
+		en: 'This session has already been restored since the page was opened. Nothing has been saved. The ‘This Friday’ section further down shows the latest changes.',
+		ar: 'عاد هذا الموعد إلى يومه ووقته المعتادين منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. قسم «هذه الجمعة» في الأسفل محدَّث.'
 	}
 };
 
@@ -1165,7 +1173,7 @@ async function changerHeureDe(courseId: string, debut: string, fin: string): Pro
  */
 function formulaireDuVendredi(
 	html: string,
-	action: 'annuler' | 'deplacer',
+	action: 'annuler' | 'deplacer' | 'retablir',
 	courseId: string,
 	date: string
 ): Record<string, string> {
@@ -1497,6 +1505,44 @@ describe('D2 : l’écran du vendredi refuse ce qu’il ne peut pas faire, sans 
 			await poserLangueDuCompte(RESPONSABLE, 'fr');
 		}
 		expect(await lignesDuJournal()).toBe(journalAvant);
+	});
+
+	it('answers « Rétablir » for a session with nothing left to restore with a sentence in each language, and writes nothing to the journal (relecture de D2)', async () => {
+		const date = vendredi();
+		// La session annulée ce vendredi, puis rétablie une fois. Une page restée ouverte, qui la
+		// montrait annulée, touche encore « Rétablir comme d’habitude » : il n'y a plus rien à rétablir.
+		expect(
+			(await postForm('/vendredi?/annuler', { courseId: sessions[1], date }, cookies)).status
+		).toBe(200);
+		const envoi = formulaireDuVendredi(
+			await (await get('/vendredi', cookies)).text(),
+			'retablir',
+			sessions[1],
+			date
+		);
+		expect(envoi).toEqual({ courseId: sessions[1], date });
+		try {
+			expect((await postForm('/vendredi?/retablir', envoi, cookies)).status).toBe(200);
+			const journalAvant = await lignesDuJournal();
+			const avant = await etatDesSessions();
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const reponse = await postForm('/vendredi?/retablir', envoi, cookies);
+				expect(reponse.status, langue).toBe(409);
+				expect(enTete(await reponse.text()), langue).toEqual([
+					REFUS_DU_VENDREDI.alreadyRestored[langue]
+				]);
+			}
+			expect(await etatDesSessions()).toEqual(avant);
+			expect(await lignesDuJournal()).toBe(journalAvant);
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await maintenance((tx) =>
+				tx.execute(sql`
+					delete from "session_exception" where "course_id" = ${sessions[1]} and "date" = ${date}
+				`)
+			);
+		}
 	});
 
 	it('answers a publication or a removal of a session that does not exist, and writes nothing to the journal', async () => {

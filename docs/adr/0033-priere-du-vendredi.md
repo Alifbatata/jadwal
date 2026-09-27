@@ -158,7 +158,8 @@ D4, addendum du même jour de l'ADR 0021).
 
 **L'écran du vendredi (D2).** Annuler un jour déjà passé est refusé, comme sur « À venir ».
 Rétablir, Publier et Supprimer répondent qu'une session inconnue, ou un cours, n'existe plus, au
-lieu de dire qu'ils l'ont fait et de l'écrire au journal. Chaque identifiant, chaque date et chaque
+lieu de dire qu'ils l'ont fait et de l'écrire au journal ; Rétablir refuse de même une session qui
+n'a plus rien à rétablir ce jour-là (`alreadyRestored`). Chaque identifiant, chaque date et chaque
 heure est vérifié avant la base ; une salle qui n'existe pas, ou plus, a sa phrase dans le
 formulaire. La liste des refus de l'écran est dans l'addendum du même jour de l'ADR 0021.
 

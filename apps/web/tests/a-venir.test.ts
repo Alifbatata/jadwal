@@ -33,6 +33,10 @@
 //   annule la même séance reçoit quand même le message prêt à coller ; le titre d'une carte suit la
 //   langue de l'écran quand le cours y est traduit ; la prière du vendredi a ses propres mots dans les
 //   messages d'une annulation ou d'un déplacement.
+// - Relectures de D2 et de D4 : un second « Rétablir la séance » n'a plus rien à rétablir, il est
+//   refusé en haut de l'écran et n'écrit rien, pas même au journal ; une session du vendredi en
+//   brouillon ne donne pas son heure à un cours prévu après le Dhuhr, ni sur sa carte, ni dans le
+//   message d'un déplacement.
 
 import { readFileSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
@@ -130,6 +134,23 @@ const DEJA_ANNULEE: Record<Langue, PhraseNommee> = {
 		`Since the page was opened, the ‘${titre}’ session on ${date} has already been cancelled. Nothing has been saved. If the message has not been sent yet, it is ready below.`,
 	ar: (titre, date) =>
 		`أُلغيت حصة «${titre}» يوم ${date} منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. إن لم تُرسَل الرسالة بعد، فهي جاهزة أدناه.`
+};
+
+/**
+ * Un second « Rétablir la séance », par une autre personne ou depuis une page restée ouverte : il
+ * n'y a plus rien à rétablir, rien ne s'écrit, pas même le journal (étape 19, relecture de D2).
+ */
+const DEJA_RETABLIE: Record<Langue, PhraseNommee> = {
+	fr: (titre, date) =>
+		`La séance « ${titre} » du ${date} a déjà été rétablie depuis l’ouverture de la page. Rien n’a été enregistré. Le programme ci-dessous est à jour.`,
+	de: (titre, date) =>
+		`Der Termin «${titre}» vom ${date}, ist wiederhergestellt worden, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Das Programm unten ist aktuell.`,
+	it: (titre, date) =>
+		`La lezione «${titre}» di ${date} è già stata ripristinata da quando hai aperto la pagina. Non è stato salvato niente. Il programma qui sotto è aggiornato.`,
+	en: (titre, date) =>
+		`Since the page was opened, the ‘${titre}’ session on ${date} has already been restored. Nothing has been saved. The programme below shows the latest changes.`,
+	ar: (titre, date) =>
+		`استُعيدت حصة «${titre}» يوم ${date} منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. برنامجك المعروض أدناه محدَّث.`
 };
 
 /**
@@ -1264,6 +1285,45 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 		}
 	});
 
+	it('refuses to restore a session restored since the page was opened, names it at the top, and writes nothing, not even the journal (relecture de D2)', async () => {
+		// Le cercle de J+2 est annulé ; deux pages le montrent annulé. La première le rétablit ; la
+		// seconde, restée ouverte, touche encore « Rétablir la séance ».
+		expect((await postForm('/?/annuler', { courseId: cercle, date: jour(2) }, cookie)).status).toBe(
+			200
+		);
+		const envoi = formulaireDeRetablissement(
+			carte(await (await get('/', cookie)).text(), jour(2), CERCLE, 'cancelled')
+		);
+		expect(envoi).toEqual({ courseId: cercle, date: jour(2) });
+		const journal = createDatabase({ role: 'app', overrides: { database: testDatabase } });
+		const lignesDuJournal = async () =>
+			withOrg(
+				journal.db,
+				{ organizationId: organisationA, userId: ids[RESPONSABLE] ?? '' },
+				async (tx) =>
+					lignes<{ n: number }>(await tx.execute(sql`select count(*)::int as n from "audit_log"`))
+			).then((trouve) => trouve[0]?.n ?? 0);
+		try {
+			expect((await postForm('/?/retablir', envoi ?? {}, cookie)).status).toBe(200);
+			const journalAvant = await lignesDuJournal();
+			const seconde = await postForm('/?/retablir', envoi ?? {}, cookie);
+			expect(seconde.status).toBe(409);
+			const html = await seconde.text();
+			// La séance est de nouveau prévue, et sa carte est là : la phrase se lit pourtant en haut,
+			// avant le programme, et aucune option ne se rouvre, puisque rien n'est à corriger.
+			expect(alerte(html)).toBe(DEJA_RETABLIE.fr(CERCLE, dateLue('fr', jour(2))));
+			expect(html.indexOf('role="alert"')).toBeLessThan(html.indexOf('id="jour-'));
+			expect(carte(html, jour(2), CERCLE, 'scheduled')).not.toBe('');
+			expect(optionsDesSeances(html).filter((options) => options.ouvert)).toEqual([]);
+			expect(section(html, 'message-titre')).toBe('');
+			expect(await exception(cercle, jour(2))).toBeUndefined();
+			expect(await lignesDuJournal()).toBe(journalAvant);
+		} finally {
+			await journal.close();
+			await retablir(cercle, jour(2), cookie);
+		}
+	});
+
 	it('refuses a card left open while the time of the course changed in its page, and writes nothing (relecture du lot 5)', async () => {
 		// La page telle qu'elle était avant : la carte du cours du soir de J+2 montre 19:00.
 		const avant = await (await get('/', cookie)).text();
@@ -2083,6 +2143,7 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 		'après une carte dont l’heure a changé',
 		'après une annulation pour une date passée',
 		'après un rétablissement',
+		'après un second rétablissement',
 		'après une séance disparue'
 	];
 	const ATTENDUS: Record<string, number> = {
@@ -2095,6 +2156,7 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 		'après une carte dont l’heure a changé': 409,
 		'après une annulation pour une date passée': 400,
 		'après un rétablissement': 200,
+		'après un second rétablissement': 409,
 		'après une séance disparue': 404
 	};
 
@@ -2162,6 +2224,12 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 				],
 				[
 					'après un rétablissement',
+					await postForm('/?/retablir', { courseId: cercle, date: jour(1) }, cookie)
+				],
+				[
+					// La même séance, rétablie une seconde fois depuis une page restée ouverte : il n'y a
+					// plus rien à rétablir (étape 19, relecture de D2).
+					'après un second rétablissement',
 					await postForm('/?/retablir', { courseId: cercle, date: jour(1) }, cookie)
 				],
 				[
@@ -2347,6 +2415,19 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 			expect(zonesDeTexte(section(html, 'message-titre')), langue).toEqual(
 				zonesDeTexte(section(premiere, 'message-titre'))
 			);
+		}
+	});
+
+	it('says in each language that the session was already restored, above the programme, and opens no card', () => {
+		for (const langue of LANGUES) {
+			const html = rendus['après un second rétablissement']?.[langue] ?? '';
+			expect(alerte(html), langue).toBe(DEJA_RETABLIE[langue](CERCLE, dateLue(langue, jour(1))));
+			expect(html.indexOf('role="alert"'), langue).toBeLessThan(html.indexOf('id="jour-'));
+			expect(
+				optionsDesSeances(html).filter((bloc) => bloc.ouvert),
+				langue
+			).toEqual([]);
+			expect(section(html, 'message-titre'), langue).toBe('');
 		}
 	});
 

@@ -164,15 +164,16 @@ envoyer un d'avant. « À venir », dont le champ de date est libre, le refuse (
 Chaque refus a son nom, que l'écran écrit dans la langue de la personne. Ceux des gestes de « Ce
 vendredi » et des boutons d'une session s'affichent en tête de l'écran :
 
-| Refus            | Statut | Quand                                                                         |
-| ---------------- | ------ | ----------------------------------------------------------------------------- |
-| `changed`        | 409    | la session a déjà été annulée ou déplacée ce jour-là, ici ou sur À venir      |
-| `timeChanged`    | 409    | l'heure de la session a changé depuis l'ouverture de la page                  |
-| `unchanged`      | 400    | le déplacement vise le jour et l'heure où la session est déjà prévue          |
-| `pastSession`    | 400    | l'annulation d'un jour déjà passé (étape 19, D2)                              |
-| `sessionGone`    | 404    | la session n'existe pas, ou plus, ou l'identifiant est celui d'un cours       |
-| `dateUnreadable` | 400    | une date illisible, impossible (un 30 février) ou hors des années 1970 à 2100 |
-| `timeUnreadable` | 400    | une heure illisible ou impossible, 25:99 par exemple                          |
+| Refus             | Statut | Quand                                                                                 |
+| ----------------- | ------ | ------------------------------------------------------------------------------------- |
+| `changed`         | 409    | la session a déjà été annulée ou déplacée ce jour-là, ici ou sur À venir              |
+| `timeChanged`     | 409    | l'heure de la session a changé depuis l'ouverture de la page                          |
+| `alreadyRestored` | 409    | un second Rétablir : la session n'a plus rien à rétablir ce jour-là (relecture de D2) |
+| `unchanged`       | 400    | le déplacement vise le jour et l'heure où la session est déjà prévue                  |
+| `pastSession`     | 400    | l'annulation d'un jour déjà passé (étape 19, D2)                                      |
+| `sessionGone`     | 404    | la session n'existe pas, ou plus, ou l'identifiant est celui d'un cours               |
+| `dateUnreadable`  | 400    | une date illisible, impossible (un 30 février) ou hors des années 1970 à 2100         |
+| `timeUnreadable`  | 400    | une heure illisible ou impossible, 25:99 par exemple                                  |
 
 Ceux du formulaire d'une session, à l'ajout comme à la modification, restent dans ce formulaire,
 avec la saisie :
@@ -212,6 +213,13 @@ d'une date illisible. Le caractère nul (U+0000), qu'aucun clavier ne tape mais 
 à la main peut envoyer, et que PostgreSQL refuse dans un texte, est retiré des champs de texte d'une
 session au lieu de donner une erreur 500.
 
+Sa seconde relecture a trouvé un « Rétablir » qui répondait encore « fait » : pour une session qui
+existe mais n'a plus rien à rétablir ce jour-là, parce qu'une page restée ouverte ou une autre
+personne l'a déjà rétablie, il disait l'avoir rétablie et l'écrivait au journal. Il est refusé
+désormais (`alreadyRestored`, 409), sur cet écran comme sur « À venir », et rien ne s'écrit, pas
+même au journal : la suppression de l'exception rend ce qu'elle a supprimé, et le journal ne suit
+que si elle a supprimé une ligne, comme pour Publier et Supprimer.
+
 ### À venir, après la relecture de l'étape 18 (D4)
 
 - **Le programme de la semaine est celui de Partager** : les cours publiés seulement. Retirer les
@@ -232,7 +240,11 @@ session au lieu de donner une erreur 500.
   de loin. Une séance qui n'a changé que d'heure garde un seul « Rétablir », sur la carte de son
   heure prévue, le même jour.
 - **Le refus d'une carte périmée nomme la séance**, par son titre et sa date : `changed` et
-  `timeChanged`, et `alreadyCancelled`, ci-dessous.
+  `timeChanged`, et `alreadyCancelled` et `alreadyRestored`, ci-dessous.
+- **Un second « Rétablir »**, par une autre personne ou depuis une page restée ouverte, n'a plus
+  rien à rétablir : il est refusé (409, `alreadyRestored`) et n'écrit rien, pas même au journal
+  (relecture de D2). Sa phrase s'écrit en haut de l'écran, et non dans la carte de la séance, de
+  nouveau prévue : seuls les refus d'un déplacement se corrigent dans la carte.
 - **Une seconde annulation de la même séance**, par une autre personne ou depuis une page restée
   ouverte, n'écrit rien (409, `alreadyCancelled`) mais donne le message prêt à coller : la séance
   est annulée, et la personne ne sait pas si la communauté a déjà été prévenue. Une carte qui annule
