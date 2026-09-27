@@ -114,14 +114,6 @@ const ENREGISTREE: Record<Langue, string> = {
 	en: 'saved town or village',
 	ar: 'البلدة المحفوظة'
 };
-/** Ce que dit l'écran d'une localité choisie avec une autre position tapée « Hors de Suisse ». */
-const LOCALITE_ET_POSITION: Record<Langue, string> = {
-	fr: 'Une localité est choisie dans la liste, et une autre position est tapée sous « Hors de Suisse ». Pour garder cette position, choisissez « Hors de Suisse » dans la liste. Pour garder la localité, effacez la latitude et la longitude.',
-	de: 'In der Liste ist ein Ort gewählt, und unter «Ausserhalb der Schweiz» ist eine andere Lage eingegeben. Um diese Lage zu behalten, wählen Sie in der Liste «Ausserhalb der Schweiz». Um den Ort zu behalten, löschen Sie Breitengrad und Längengrad.',
-	it: 'Nell’elenco è scelta una località, e sotto «Fuori dalla Svizzera» è scritta un’altra posizione. Per tenere questa posizione, scegli «Fuori dalla Svizzera» nell’elenco. Per tenere la località, cancella la latitudine e la longitudine.',
-	en: 'A town or village is chosen in the list, and another position is typed under ‘Outside Switzerland’. To keep this position, choose ‘Outside Switzerland’ in the list. To keep the town or village, clear the latitude and the longitude.',
-	ar: 'في القائمة بلدة مختارة، وتحت «خارج سويسرا» موقع آخر مكتوب. لإبقاء هذا الموقع، اختر «خارج سويسرا» في القائمة. ولإبقاء البلدة، امسح خط العرض وخط الطول.'
-};
 /** Une position hors de Suisse, telle qu'on la tape. */
 const PARIS = { latitude: 48.8566, longitude: 2.3522 };
 /** La mention de la source, sous l'une des formes que swisstopo accepte, dans chaque langue. */
@@ -625,10 +617,12 @@ describe('la localité, par son nom ou son NPA (retour C2)', () => {
 		expect(await positionEnregistree()).toEqual(BIENNE);
 	});
 
-	it('says so, and saves nothing, when a locality stays chosen and another position is typed', async () => {
+	it('chooses « Outside Switzerland » by itself when a locality stays chosen and another position is typed', async () => {
 		// Sans JavaScript, la case de Bienne reste cochée : la personne a ouvert « Hors de Suisse » et
-		// tapé Paris, sans choisir « Hors de Suisse » dans la liste. Avant, le serveur gardait Bienne
-		// et disait « Réglages enregistrés. » : la position tapée se perdait sans un mot.
+		// tapé Paris, sans choisir « Hors de Suisse » dans la liste. À l'étape 18, le serveur gardait
+		// Bienne et demandait de choisir « Hors de Suisse » ; il le choisit maintenant lui-même, comme
+		// l'écran le fait pendant la frappe avec JavaScript : la position tapée est ce que la personne
+		// veut, sinon elle ne l'aurait pas tapée.
 		await poserLangueDuCompte(RESPONSABLE, 'fr');
 		expect(await positionEnregistree()).toEqual(BIENNE);
 		const html = await (await get('/prieres?source=computed')).text();
@@ -638,40 +632,49 @@ describe('la localité, par son nom ou son NPA (retour C2)', () => {
 			longitude: String(PARIS.longitude)
 		};
 		expect(champs['localite']).toBe(BIENNE_CHOISIE);
-		for (const action of ['apercu', 'enregistrer']) {
-			const reponse = await postForm(`/prieres?source=computed&/${action}`, champs);
-			expect(reponse.status, action).toBe(400);
-			const rendu = await reponse.text();
-			const lu = visibleText(rendu);
-			expect(lu, action).toContain(LOCALITE_ET_POSITION.fr);
-			expect(lu, action).not.toContain('Réglages enregistrés.');
-			// Rien ne change sans la personne : la localité reste cochée, et la position tapée revient,
-			// repli ouvert, à côté de la case « Hors de Suisse » à choisir.
-			expect(radios(rendu, 'localite'), action).toContainEqual({
-				valeur: BIENNE_CHOISIE,
-				cochee: true
-			});
-			expect(caseHorsDeSuisse(rendu)?.cochee, action).toBe(false);
-			expect(replie(rendu, HORS_DE_SUISSE.fr), action).toMatch(/<details\b[^>]*\sopen/);
-			expect(valeurDuChamp(rendu, 'latitude'), action).toBe(String(PARIS.latitude));
-			expect(valeurDuChamp(rendu, 'longitude'), action).toBe(String(PARIS.longitude));
-		}
+
+		const apercu = await postForm('/prieres?source=computed&/apercu', champs);
+		expect(apercu.status).toBe(200);
+		const rendu = await apercu.text();
+		// « Hors de Suisse » cochée à la place de Bienne, le repli ouvert, la position tapée gardée,
+		// et l'aperçu calculé pour elle. Rien n'est encore enregistré.
+		expect(caseHorsDeSuisse(rendu)?.cochee).toBe(true);
+		expect(radios(rendu, 'localite')).toContainEqual({ valeur: BIENNE_CHOISIE, cochee: false });
+		expect(replie(rendu, HORS_DE_SUISSE.fr)).toMatch(/<details\b[^>]*\sopen/);
+		expect(valeurDuChamp(rendu, 'latitude')).toBe(String(PARIS.latitude));
+		expect(valeurDuChamp(rendu, 'longitude')).toBe(String(PARIS.longitude));
+		expect(visibleText(rendu)).toContain(
+			'Calculé avec ce que vous venez de choisir, sans rien enregistrer.'
+		);
+		expect(visibleText(rendu)).not.toContain(`Localité choisie : ${BIENNE_AFFICHEE}`);
 		expect(await positionEnregistree()).toEqual(BIENNE);
 
-		// Pour garder la localité, la personne efface les deux nombres : Bienne est enregistrée.
-		const efface = await postForm('/prieres?source=computed&/enregistrer', {
+		// Enregistrer, depuis la page d'avant, avec la case de Bienne toujours cochée : c'est la
+		// position tapée qui est enregistrée, et l'écran le dit.
+		const enregistre = await postForm('/prieres?source=computed&/enregistrer', champs);
+		expect(enregistre.status).toBe(200);
+		const apres = await enregistre.text();
+		expect(visibleText(apres)).toContain('Réglages enregistrés.');
+		expect(visibleText(apres)).toContain(
+			'Vos heures sont calculées pour la position que vous avez donnée.'
+		);
+		expect(replie(apres, HORS_DE_SUISSE.fr)).toMatch(/<details\b[^>]*\sopen/);
+		expect(await positionEnregistree()).toEqual(PARIS);
+
+		// Bienne de nouveau, pour la suite : cochée, les deux nombres laissés vides.
+		const retour = await postForm('/prieres?source=computed&/enregistrer', {
 			...champs,
 			latitude: '',
 			longitude: ''
 		});
-		expect(efface.status).toBe(200);
+		expect(retour.status).toBe(200);
 		expect(await positionEnregistree()).toEqual(BIENNE);
 	});
 
-	it('says so, and saves nothing, when the typed position differs from the chosen locality by one number', async () => {
+	it('takes the typed position when it differs from the chosen locality by one number', async () => {
 		// Bienne est enregistrée et cochée, et la page a rempli ses deux nombres sous « Hors de
-		// Suisse ». La personne n'en change qu'un, pour la position exacte de sa mosquée, sans choisir
-		// « Hors de Suisse » dans la liste : ce n'est plus la position de Bienne, et le serveur le dit.
+		// Suisse ». La personne n'en change qu'un, pour la position exacte de son local, sans choisir
+		// « Hors de Suisse » dans la liste : ce n'est plus la position de Bienne, c'est la sienne.
 		await poserLangueDuCompte(RESPONSABLE, 'fr');
 		expect(await positionEnregistree()).toEqual(BIENNE);
 		const html = await (await get('/prieres?source=computed')).text();
@@ -685,13 +688,13 @@ describe('la localité, par son nom ou son NPA (retour C2)', () => {
 			['latitude', '47.15'],
 			['longitude', '7.25']
 		] as const) {
-			const reponse = await postForm('/prieres?source=computed&/enregistrer', {
+			const reponse = await postForm('/prieres?source=computed&/apercu', {
 				...envoyes,
 				[champ]: tape
 			});
-			expect(reponse.status, champ).toBe(400);
+			expect(reponse.status, champ).toBe(200);
 			const rendu = await reponse.text();
-			expect(visibleText(rendu), champ).toContain(LOCALITE_ET_POSITION.fr);
+			expect(caseHorsDeSuisse(rendu)?.cochee, champ).toBe(true);
 			expect(valeurDuChamp(rendu, champ), champ).toBe(tape);
 		}
 		expect(await positionEnregistree()).toEqual(BIENNE);
@@ -700,7 +703,7 @@ describe('la localité, par son nom ou son NPA (retour C2)', () => {
 	it('saves a locality chosen while another position is saved, with the two numbers the page fills in from it', async () => {
 		// Paris est enregistré. Avec JavaScript, cocher Bienne écrit sa position dans les deux champs
 		// de « Hors de Suisse » : le formulaire envoie Bienne et ses deux nombres, qui ne sont pas ceux
-		// de Paris. C'est bien Bienne que la personne a choisie.
+		// de Paris. C'est bien Bienne que la personne a choisie, et non une position tapée.
 		await poserLangueDuCompte(RESPONSABLE, 'fr');
 		const versParis = await postForm('/prieres?source=computed&/enregistrer', {
 			...CALCUL,
@@ -726,7 +729,12 @@ describe('la localité, par son nom ou son NPA (retour C2)', () => {
 		for (const action of ['apercu', 'enregistrer']) {
 			const reponse = await postForm(`/prieres?source=computed&/${action}`, champs);
 			expect(reponse.status, action).toBe(200);
-			expect(visibleText(await reponse.text()), action).not.toContain(LOCALITE_ET_POSITION.fr);
+			const rendu = await reponse.text();
+			expect(caseHorsDeSuisse(rendu)?.cochee, action).toBe(false);
+			expect(radios(rendu, 'localite'), action).toContainEqual({
+				valeur: BIENNE_CHOISIE,
+				cochee: true
+			});
 		}
 		expect(await positionEnregistree()).toEqual(BIENNE);
 	});
@@ -865,7 +873,7 @@ describe('chaque vue de l’écran, dans les cinq langues (retours D2 et A3)', (
 		},
 		{
 			nom: 'une localité choisie et une autre position tapée',
-			statut: 400,
+			statut: 200,
 			rendre: () =>
 				postForm('/prieres?source=computed&/apercu', {
 					localite: BIENNE_CHOISIE,
@@ -1200,16 +1208,19 @@ describe('chaque vue de l’écran, dans les cinq langues (retours D2 et A3)', (
 		}
 	});
 
-	/** La dernière phrase de l'aide sous « Hors de Suisse » : ce qu'il faut choisir dans la liste. */
+	/**
+	 * La dernière phrase de l'aide sous « Hors de Suisse » : une position tapée remplace la localité,
+	 * et l'écran choisit « Hors de Suisse » (étape 19, lot 2).
+	 */
 	const CHOISIR_HORS_DE_SUISSE: Record<Langue, string> = {
-		fr: 'Si une localité est choisie dans la liste plus haut, choisissez à sa place « Hors de Suisse » : sinon, c’est la localité qui compte, et non ces deux nombres.',
-		de: 'Ist in der Liste weiter oben ein Ort gewählt, wählen Sie stattdessen «Ausserhalb der Schweiz»: Sonst zählt der Ort, nicht diese zwei Zahlen.',
-		it: 'Se nell’elenco qui sopra è scelta una località, scegli al suo posto «Fuori dalla Svizzera»: altrimenti conta la località, non questi due numeri.',
-		en: 'If a town or village is chosen in the list above, choose ‘Outside Switzerland’ instead: otherwise the town or village counts, not these two numbers.',
-		ar: 'إذا كانت في القائمة أعلاه بلدة مختارة، فاختر مكانها «خارج سويسرا»: وإلا فالعبرة بالبلدة، لا بهذين الرقمين.'
+		fr: 'Une position tapée ici remplace la localité choisie dans la liste plus haut : l’écran choisit alors « Hors de Suisse ».',
+		de: 'Eine hier eingegebene Lage ersetzt den Ort, der in der Liste weiter oben gewählt ist: Die Seite wählt dann «Ausserhalb der Schweiz».',
+		it: 'Una posizione scritta qui sostituisce la località scelta nell’elenco qui sopra: la pagina sceglie allora «Fuori dalla Svizzera».',
+		en: 'A position typed here replaces the town or village chosen in the list above: the page then chooses ‘Outside Switzerland’.',
+		ar: 'الموقع المكتوب هنا يحل محل البلدة المختارة في القائمة أعلاه: فتختار الصفحة عندئذ «خارج سويسرا».'
 	};
 
-	it('names « Outside Switzerland » in the list, and says what to choose there, in each language', () => {
+	it('names « Outside Switzerland » in the list, says that a typed position chooses it, and chooses it, in each language', () => {
 		for (const langue of LANGUES) {
 			const recherche =
 				rendus['une recherche qui ne rend pas la localité enregistrée']?.[langue] ?? '';
@@ -1225,10 +1236,8 @@ describe('chaque vue de l’écran, dans les cinq langues (retours D2 et A3)', (
 				visibleText(`<body>${replie(recherche, HORS_DE_SUISSE[langue])}</body>`),
 				langue
 			).toContain(CHOISIR_HORS_DE_SUISSE[langue]);
-			const lu = visibleText(
-				rendus['une localité choisie et une autre position tapée']?.[langue] ?? ''
-			);
-			expect(lu, langue).toContain(LOCALITE_ET_POSITION[langue]);
+			const tapee = rendus['une localité choisie et une autre position tapée']?.[langue] ?? '';
+			expect(caseHorsDeSuisse(tapee, langue)?.cochee, langue).toBe(true);
 		}
 	});
 

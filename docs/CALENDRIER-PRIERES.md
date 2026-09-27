@@ -62,10 +62,10 @@ l'écran en arabe, tapez le NPA ou le nom en lettres latines.
 
 **Hors de Suisse**, ouvrez le repli **Hors de Suisse** et donnez la latitude et la longitude de
 votre organisation en degrés décimaux, par exemple latitude 48.8566 et longitude 2.3522 pour Paris.
-Sur une carte en ligne, un clic droit sur l'emplacement affiche ces deux nombres. Si une localité
-est déjà choisie, cochez à sa place, dans la liste, la dernière case, **Hors de Suisse : utiliser
-la position donnée plus bas** : sinon, c'est la localité qui compte, et non ces deux nombres. Avec
-JavaScript, taper une position coche cette case toute seule.
+Sur une carte en ligne, un clic droit sur l'emplacement affiche ces deux nombres. Une position
+tapée là remplace la localité choisie : l'écran coche alors, dans la liste, la dernière case,
+**Hors de Suisse : utiliser la position donnée plus bas**, pendant la frappe avec JavaScript, et à
+l'envoi sans lui.
 
 ### Vérifier avant d'enregistrer
 

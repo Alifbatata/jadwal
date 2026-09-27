@@ -63,17 +63,19 @@ position : latitude 47.1421, longitude 7.2481.`, ou `Localité enregistrée :` u
   de Bienne, puis de Büetigen.
 - La dernière case de la liste : `Hors de Suisse : utiliser la position donnée plus bas`. Elle est
   cochée quand aucune localité n'est choisie. Sans JavaScript, on ne décoche pas une case : pour
-  passer d'une localité enregistrée à une position hors de Suisse, on coche celle-ci à sa place.
-  Avec JavaScript, taper une position la coche, et la cocher ouvre le repli du même nom. Un clic
+  passer d'une localité enregistrée à une position hors de Suisse, on coche celle-ci à sa place, ou
+  l'on tape simplement la position, et le serveur la coche lui-même (étape 19). Avec JavaScript,
+  taper une position la coche pendant la frappe, et la cocher ouvre le repli du même nom. Un clic
   sur la localité la reprend.
 - Près du choix : `Liste officielle des localités : Office fédéral de topographie swisstopo,
 version du 01.09.2026.` (ADR 0043, addendum).
 - Le repli `Hors de Suisse` : `Votre organisation n'est pas en Suisse ? Donnez sa position en degrés
-décimaux. […] Si une localité est choisie dans la liste plus haut, choisissez à sa place « Hors de
-Suisse » : sinon, c'est la localité qui compte, et non ces deux nombres.`, `Latitude`, `Longitude`,
-  et `Exemple : latitude 48.8566 et longitude 2.3522 pour Paris.` Une localité envoyée avec deux
-  autres nombres, ni sa position ni celle qui est enregistrée, est refusée sans rien perdre : la
-  position tapée revient, le repli est ouvert, et le message dit quoi choisir.
+décimaux. […] Une position tapée ici remplace la localité choisie dans la liste plus haut : l'écran
+choisit alors « Hors de Suisse ».`, `Latitude`, `Longitude`, et `Exemple : latitude 48.8566 et
+longitude 2.3522 pour Paris.` Une localité envoyée avec deux autres nombres, ni sa position ni
+  celle qui est enregistrée, s'efface devant eux : c'est la position tapée qui compte, avec les
+  contrôles de « Hors de Suisse », et l'écran revient avec cette case cochée et le repli ouvert.
+  Jusqu'à l'étape 19, le serveur gardait la localité et demandait de choisir « Hors de Suisse ».
 - Avec JavaScript, les replis restent ouverts pendant la frappe, et un repli que la personne ferme
   reste fermé. Jusqu'au lot 6 de l'étape 18, chaque touche dans Latitude ou Longitude refermait
   `Hors de Suisse`, et une lettre dans la recherche refermait `Méthode de calcul`.
@@ -130,9 +132,7 @@ enregistré.` : la période est écrite, les jours relus, puis tout est annulé.
 Les réussites et les erreurs sont dans la langue de l'écran, par exemple
 `Cette localité n'est pas dans la liste. Cherchez-la de nouveau.`,
 `Cette position n'est pas sur Terre : la latitude va de -90 à 90, la longitude de -180 à 180.`,
-`Une localité est choisie dans la liste, et une autre position est tapée sous « Hors de Suisse ».
-Pour garder cette position, choisissez « Hors de Suisse » dans la liste. Pour garder la localité,
-effacez la latitude et la longitude.`, `Donnez le premier jour de la période.` Avant l'étape 18 :
+`Donnez le premier jour de la période.` Avant l'étape 18 :
 `Donnez une date de début, au format AAAA-MM-JJ`.
 
 ## Ce qui reste à reprendre

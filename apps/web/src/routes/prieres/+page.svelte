@@ -169,14 +169,14 @@
 		}
 	});
 	/**
-	 * « Hors de Suisse » s'ouvre quand la position ne vient pas de la liste, ou quand une position y a
-	 * été tapée alors qu'une localité restait choisie : l'écran la redonne, avec l'erreur.
+	 * « Hors de Suisse » s'ouvre quand la position ne vient pas de la liste. Une position tapée alors
+	 * qu'une localité restait cochée en est une : le serveur l'a prise à la place de la localité, et
+	 * l'écran revient avec « Hors de Suisse » cochée et ce repli ouvert (étape 19, lot 2).
 	 */
 	const horsDeSuisse = $derived(
-		form?.error === 'positionAndLocality' ||
-			(saisie
-				? saisie.locality === null && saisie.latitude !== ''
-				: data.reglages.latitude !== null && data.savedLocality === null)
+		saisie
+			? saisie.locality === null && saisie.latitude !== ''
+			: data.reglages.latitude !== null && data.savedLocality === null
 	);
 	/** Les réglages avancés s'ouvrent quand l'un d'eux n'a plus sa valeur proposée. */
 	const avances = $derived(
@@ -414,7 +414,9 @@
 							</label>
 						{/each}
 						<!-- La position tapée sous « Hors de Suisse », comme une case de plus. Sans
-						     JavaScript, on ne décoche pas une localité : on coche celle-ci à sa place. -->
+						     JavaScript, on ne décoche pas une localité : on coche celle-ci à sa place, ou
+						     l'on tape une position, que le serveur prend alors à la place de la localité.
+						     Avec JavaScript, taper une position la coche pendant la frappe. -->
 						<label class="resultat">
 							<input
 								type="radio"

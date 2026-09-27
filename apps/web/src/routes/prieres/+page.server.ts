@@ -146,11 +146,7 @@ interface CalculSaisi {
 }
 
 type ErreurDePosition =
-	| 'positionUnreadable'
-	| 'positionHalf'
-	| 'positionOffEarth'
-	| 'positionAndLocality'
-	| 'localityUnknown';
+	'positionUnreadable' | 'positionHalf' | 'positionOffEarth' | 'localityUnknown';
 
 /** Vrai quand les deux nombres saisis sont exactement cette position. */
 function memePosition(
@@ -168,8 +164,10 @@ function memePosition(
  *
  * Le navigateur envoie aussi ces deux nombres avec la localité. S'ils ne sont ni vides, ni la
  * position de cette localité, ni celle qui est `enregistree`, ils ont été tapés : sans JavaScript,
- * la case d'une localité reste cochée, puisqu'on ne la décoche pas. Ils ne sont pas ignorés sans
- * rien dire : le formulaire revient tel quel, avec l'erreur qui dit quoi choisir.
+ * la case d'une localité reste cochée, puisqu'on ne la décoche pas. C'est alors la position tapée
+ * qui compte, comme si « Hors de Suisse » avait été choisie, et l'écran revient avec cette case
+ * cochée : avec JavaScript, taper une position la coche déjà pendant la frappe (étape 19, lot 2).
+ * Jusque-là, le serveur gardait la localité et demandait de choisir « Hors de Suisse ».
  */
 function lireCalcul(
 	form: FormData,
@@ -200,21 +198,24 @@ function lireCalcul(
 				? findLocality(choisie.slice(0, separateur), choisie.slice(separateur + 1))
 				: null;
 		if (!localite) return { saisie, position: null, erreur: 'localityUnknown' };
-		saisie.locality = toChoice(localite);
 		const latitude = position(saisie.latitude);
 		const longitude = position(saisie.longitude);
 		const tapee =
 			(latitude !== null || longitude !== null) &&
 			!memePosition(latitude, longitude, localite) &&
 			!memePosition(latitude, longitude, enregistree);
-		if (tapee) return { saisie, position: null, erreur: 'positionAndLocality' };
-		saisie.latitude = String(localite.latitude);
-		saisie.longitude = String(localite.longitude);
-		return {
-			saisie,
-			position: { latitude: localite.latitude, longitude: localite.longitude },
-			erreur: null
-		};
+		if (!tapee) {
+			saisie.locality = toChoice(localite);
+			saisie.latitude = String(localite.latitude);
+			saisie.longitude = String(localite.longitude);
+			return {
+				saisie,
+				position: { latitude: localite.latitude, longitude: localite.longitude },
+				erreur: null
+			};
+		}
+		// Une autre position est tapée : la localité s'efface devant elle, et la suite la lit comme
+		// une position « Hors de Suisse », avec les mêmes contrôles.
 	}
 
 	const latitude = position(saisie.latitude);

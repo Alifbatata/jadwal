@@ -285,8 +285,6 @@ interface PrayersTexts {
 		readonly positionUnreadable: string;
 		readonly positionHalf: string;
 		readonly positionOffEarth: string;
-		/** Une localité choisie dans la liste, et une autre position tapée sous « Hors de Suisse ». */
-		readonly positionAndLocality: string;
 		readonly localityUnknown: string;
 		readonly fileTooLarge: (size: string) => string;
 		readonly fileMissing: string;
@@ -389,7 +387,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			creditAfter: (version) => `, version du ${version}.`,
 			abroadSummary: 'Hors de Suisse',
 			abroadHint:
-				'Votre organisation n’est pas en Suisse ? Donnez sa position en degrés décimaux. Sur une carte en ligne, un clic droit sur son emplacement affiche ces deux nombres : le premier est la latitude. Si une localité est choisie dans la liste plus haut, choisissez à sa place « Hors de Suisse » : sinon, c’est la localité qui compte, et non ces deux nombres.',
+				'Votre organisation n’est pas en Suisse ? Donnez sa position en degrés décimaux. Sur une carte en ligne, un clic droit sur son emplacement affiche ces deux nombres : le premier est la latitude. Une position tapée ici remplace la localité choisie dans la liste plus haut : l’écran choisit alors « Hors de Suisse ».',
 			latitude: 'Latitude',
 			longitude: 'Longitude',
 			abroadExample: 'Exemple : latitude 48.8566 et longitude 2.3522 pour Paris.',
@@ -608,8 +606,6 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			positionHalf: 'Donnez la latitude et la longitude, ou aucune des deux.',
 			positionOffEarth:
 				'Cette position n’est pas sur Terre : la latitude va de -90 à 90, la longitude de -180 à 180.',
-			positionAndLocality:
-				'Une localité est choisie dans la liste, et une autre position est tapée sous « Hors de Suisse ». Pour garder cette position, choisissez « Hors de Suisse » dans la liste. Pour garder la localité, effacez la latitude et la longitude.',
 			localityUnknown: 'Cette localité n’est pas dans la liste. Cherchez-la de nouveau.',
 			fileTooLarge: (size) =>
 				`Ce fichier dépasse la taille acceptée (${size}). Un calendrier d’un an en fait environ vingt fois moins : vérifiez que c’est bien un fichier CSV.`,
@@ -713,7 +709,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			creditAfter: (version) => `, Stand ${version}.`,
 			abroadSummary: 'Ausserhalb der Schweiz',
 			abroadHint:
-				'Ist Ihre Organisation nicht in der Schweiz? Geben Sie ihre Lage in Dezimalgrad an. Auf einer Online-Karte zeigt ein Rechtsklick auf den Standort diese zwei Zahlen: Die erste ist der Breitengrad. Ist in der Liste weiter oben ein Ort gewählt, wählen Sie stattdessen «Ausserhalb der Schweiz»: Sonst zählt der Ort, nicht diese zwei Zahlen.',
+				'Ist Ihre Organisation nicht in der Schweiz? Geben Sie ihre Lage in Dezimalgrad an. Auf einer Online-Karte zeigt ein Rechtsklick auf den Standort diese zwei Zahlen: Die erste ist der Breitengrad. Eine hier eingegebene Lage ersetzt den Ort, der in der Liste weiter oben gewählt ist: Die Seite wählt dann «Ausserhalb der Schweiz».',
 			latitude: 'Breitengrad',
 			longitude: 'Längengrad',
 			abroadExample: 'Beispiel: Breitengrad 48.8566 und Längengrad 2.3522 für Paris.',
@@ -933,8 +929,6 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			positionHalf: 'Geben Sie Breiten- und Längengrad an, oder keinen von beiden.',
 			positionOffEarth:
 				'Diese Lage ist nicht auf der Erde: Der Breitengrad reicht von -90 bis 90, der Längengrad von -180 bis 180.',
-			positionAndLocality:
-				'In der Liste ist ein Ort gewählt, und unter «Ausserhalb der Schweiz» ist eine andere Lage eingegeben. Um diese Lage zu behalten, wählen Sie in der Liste «Ausserhalb der Schweiz». Um den Ort zu behalten, löschen Sie Breitengrad und Längengrad.',
 			localityUnknown: 'Dieser Ort ist nicht in der Liste. Suchen Sie ihn erneut.',
 			fileTooLarge: (size) =>
 				`Diese Datei ist grösser als erlaubt (${size}). Ein Kalender für ein Jahr ist etwa zwanzigmal kleiner: Prüfen Sie, ob es wirklich eine CSV-Datei ist.`,
@@ -1040,7 +1034,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			creditAfter: (version) => `, versione del ${version}.`,
 			abroadSummary: 'Fuori dalla Svizzera',
 			abroadHint:
-				'La tua organizzazione non è in Svizzera? Indica la sua posizione in gradi decimali. Su una mappa online, un clic destro sul luogo mostra questi due numeri: il primo è la latitudine. Se nell’elenco qui sopra è scelta una località, scegli al suo posto «Fuori dalla Svizzera»: altrimenti conta la località, non questi due numeri.',
+				'La tua organizzazione non è in Svizzera? Indica la sua posizione in gradi decimali. Su una mappa online, un clic destro sul luogo mostra questi due numeri: il primo è la latitudine. Una posizione scritta qui sostituisce la località scelta nell’elenco qui sopra: la pagina sceglie allora «Fuori dalla Svizzera».',
 			latitude: 'Latitudine',
 			longitude: 'Longitudine',
 			abroadExample: 'Esempio: latitudine 48.8566 e longitudine 2.3522 per Parigi.',
@@ -1263,8 +1257,6 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			positionHalf: 'Indica la latitudine e la longitudine, o nessuna delle due.',
 			positionOffEarth:
 				'Questa posizione non è sulla Terra: la latitudine va da -90 a 90, la longitudine da -180 a 180.',
-			positionAndLocality:
-				'Nell’elenco è scelta una località, e sotto «Fuori dalla Svizzera» è scritta un’altra posizione. Per tenere questa posizione, scegli «Fuori dalla Svizzera» nell’elenco. Per tenere la località, cancella la latitudine e la longitudine.',
 			localityUnknown: 'Questa località non è nell’elenco. Cercala di nuovo.',
 			fileTooLarge: (size) =>
 				`Questo file supera la dimensione accettata (${size}). Un calendario di un anno è circa venti volte più piccolo: controlla che sia proprio un file CSV.`,
@@ -1366,7 +1358,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			creditAfter: (version) => `, version of ${version}.`,
 			abroadSummary: 'Outside Switzerland',
 			abroadHint:
-				'Is your organisation outside Switzerland? Give its position in decimal degrees. On an online map, a right-click on the place shows these two numbers: the first is the latitude. If a town or village is chosen in the list above, choose ‘Outside Switzerland’ instead: otherwise the town or village counts, not these two numbers.',
+				'Is your organisation outside Switzerland? Give its position in decimal degrees. On an online map, a right-click on the place shows these two numbers: the first is the latitude. A position typed here replaces the town or village chosen in the list above: the page then chooses ‘Outside Switzerland’.',
 			latitude: 'Latitude',
 			longitude: 'Longitude',
 			abroadExample: 'Example: latitude 48.8566 and longitude 2.3522 for Paris.',
@@ -1584,8 +1576,6 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			positionHalf: 'Give the latitude and the longitude, or neither.',
 			positionOffEarth:
 				'This position is not on Earth: latitude goes from -90 to 90, longitude from -180 to 180.',
-			positionAndLocality:
-				'A town or village is chosen in the list, and another position is typed under ‘Outside Switzerland’. To keep this position, choose ‘Outside Switzerland’ in the list. To keep the town or village, clear the latitude and the longitude.',
 			localityUnknown: 'This town or village is not in the list. Search for it again.',
 			fileTooLarge: (size) =>
 				`This file is larger than the accepted size (${size}). A calendar for one year is about twenty times smaller: check that it really is a CSV file.`,
@@ -1679,7 +1669,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			creditAfter: (version) => `، إصدار ${version}.`,
 			abroadSummary: 'خارج سويسرا',
 			abroadHint:
-				'مؤسستك ليست في سويسرا؟ أدخل موقعها بالدرجات العشرية. على خريطة في الإنترنت، يُظهر النقر بالزر الأيمن على المكان هذين الرقمين: الأول هو خط العرض. إذا كانت في القائمة أعلاه بلدة مختارة، فاختر مكانها «خارج سويسرا»: وإلا فالعبرة بالبلدة، لا بهذين الرقمين.',
+				'مؤسستك ليست في سويسرا؟ أدخل موقعها بالدرجات العشرية. على خريطة في الإنترنت، يُظهر النقر بالزر الأيمن على المكان هذين الرقمين: الأول هو خط العرض. الموقع المكتوب هنا يحل محل البلدة المختارة في القائمة أعلاه: فتختار الصفحة عندئذ «خارج سويسرا».',
 			latitude: 'خط العرض',
 			longitude: 'خط الطول',
 			abroadExample: 'مثال: خط العرض 48.8566 وخط الطول 2.3522 لباريس.',
@@ -1911,8 +1901,6 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			positionHalf: 'أدخل خط العرض وخط الطول، أو لا تدخل أيًّا منهما.',
 			positionOffEarth:
 				'هذا الموقع ليس على الأرض: خط العرض من -90 إلى 90، وخط الطول من -180 إلى 180.',
-			positionAndLocality:
-				'في القائمة بلدة مختارة، وتحت «خارج سويسرا» موقع آخر مكتوب. لإبقاء هذا الموقع، اختر «خارج سويسرا» في القائمة. ولإبقاء البلدة، امسح خط العرض وخط الطول.',
 			localityUnknown: 'هذه البلدة ليست في القائمة. ابحث عنها من جديد.',
 			fileTooLarge: (size) =>
 				`هذا الملف أكبر من الحجم المقبول (${size}). تقويم سنة كاملة أصغر بنحو عشرين مرة: تحقّق من أنه فعلًا ملف CSV.`,
