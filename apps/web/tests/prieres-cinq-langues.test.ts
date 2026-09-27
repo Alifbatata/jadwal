@@ -501,8 +501,10 @@ describe('la localité, par son nom ou son NPA (retour C2)', () => {
 
 	it('saves the chosen locality, sent with the two numbers of « Outside Switzerland » left empty', async () => {
 		// Aucune position n'est encore enregistrée : la page laisse vides les deux nombres de « Hors de
-		// Suisse », et le navigateur les envoie vides avec la localité. Des nombres tapés, et ceux que
-		// la page remplit en cochant une localité, ont leurs propres tests plus bas.
+		// Suisse », et un navigateur **sans JavaScript** les envoie vides avec la localité, ce que ce
+		// test rejoue. Avec JavaScript, cocher une localité remplit ces deux nombres de sa position
+		// avant l'envoi. Des nombres tapés, et ceux que la page remplit ainsi, ont leurs propres tests
+		// plus bas.
 		const reponse = await postForm('/prieres?source=computed&/enregistrer', {
 			localite: BIENNE_CHOISIE,
 			latitude: '',
