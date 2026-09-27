@@ -81,6 +81,8 @@ pnpm format                     # prettier --write
 pnpm check                      # tsc / svelte-check dans chaque paquet
 pnpm test                       # vitest dans chaque paquet, puis un tableau par paquet
                                 # (fichiers, tests, réussis, sautés, échoués) ; un test sauté = rouge
+pnpm test:temps                 # les tests liés au temps (*.temps.test.ts), à part : voir CONTRIBUTING
+pnpm tests:test                 # l'épreuve des deux commandes de test elles-mêmes
 pnpm build                      # build de chaque paquet
 ```
 
