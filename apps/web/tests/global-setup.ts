@@ -35,7 +35,8 @@ const PORTS = portsDeTest();
  * Trois ports qui se suivent, à partir de `JADWAL_TEST_PORT_BASE` (4173 par défaut). Deux arbres de
  * travail peuvent ainsi lancer ces tests en même temps, chacun avec sa base (`JADWAL_TEST_DB`) et
  * ses ports, sans se prendre un serveur. `roles-de-base.test.ts` prend le quatrième, et
- * `public-prieres-agenda.test.ts` le cinquième, pour son serveur à l'horloge figée.
+ * `public-prieres-agenda.test.ts` le cinquième et le sixième, pour ses deux serveurs à l'horloge
+ * posée, un vendredi et la veille.
  */
 function portsDeTest(): readonly [number, number, number] {
 	const base = Number(process.env['JADWAL_TEST_PORT_BASE'] ?? 4173);

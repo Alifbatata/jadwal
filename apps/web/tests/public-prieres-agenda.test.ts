@@ -16,16 +16,19 @@ import { productionEnvironment } from './environnement-de-production.js';
 import { frenchLeft, ISO_DATE, textSegments, visibleText } from './textes-lus.js';
 
 /**
- * Le serveur de ce fichier, à lui seul : le même serveur construit que celui de la préparation
- * globale, lancé de la même façon, avec en plus l'horloge figée (`HORLOGE_FIGEE`, plus bas). Les
- * trois serveurs de la préparation globale gardent la vraie heure : les autres fichiers calculent
- * leurs dates sur elle. Un port à part, le cinquième (`global-setup.ts`).
+ * Les deux serveurs de ce fichier, à lui seul : le même serveur construit que celui de la
+ * préparation globale, lancé de la même façon, avec en plus l'horloge posée à un instant
+ * (`HORLOGE_FIGEE` et `HORLOGE_DU_JEUDI`, plus bas). Les trois serveurs de la préparation globale
+ * gardent la vraie heure : les autres fichiers calculent leurs dates sur elle. Deux ports à part, le
+ * cinquième et le sixième (`global-setup.ts`).
  */
 const PORT = Number(process.env['JADWAL_TEST_PORT_BASE'] ?? 4173) + 4;
 const origin = `http://127.0.0.1:${PORT}`;
+const PORT_DU_JEUDI = PORT + 1;
+const origineDuJeudi = `http://127.0.0.1:${PORT_DU_JEUDI}`;
 const testDatabase = inject('testDatabase');
 const appDir = dirname(dirname(fileURLToPath(import.meta.url)));
-/** Le module qui fige l'horloge de Node, chargé par le seul serveur de ce fichier. */
+/** Le module qui pose l'horloge de Node, chargé par les seuls serveurs de ce fichier. */
 const HORLOGE = pathToFileURL(join(appDir, '..', '..', 'scripts', 'horloge-figee.mjs')).href;
 
 const LANGUES = ['fr', 'de', 'it', 'en', 'ar'] as const;
@@ -59,6 +62,12 @@ const NOM_CHANGE = 'Association du vendredi changé';
 const SLUG_VENUE = 'vendredi-deplace';
 const NOM_VENUE = 'Association du vendredi déplacé';
 /**
+ * La même chose, mais la session part à la veille du vendredi, un jeudi : c'est aujourd'hui pour le
+ * second serveur (relecture de l'étape 19).
+ */
+const SLUG_VEILLE = 'vendredi-avance';
+const NOM_VEILLE = 'Association du vendredi avancé';
+/**
  * Une organisation dont trois cours partent demain (relecture du lot 5) : le premier, à 12:30, pour
  * un autre jour ; le deuxième, de 15:00 à 16:00 le même jour ; le troisième, qui suit le Maghrib,
  * à 21:00 le même jour. L'heure d'avant de chacun est la sienne, et non celle d'un autre cours parti
@@ -71,22 +80,30 @@ const NOM_HEURES = 'Association des heures changées';
 const DEBUT = '2026-09-07';
 
 /**
- * L'instant où l'horloge du serveur de ce fichier est figée, et que ce fichier lit aussi : un
+ * L'instant d'où part l'horloge du premier serveur de ce fichier, et que ce fichier lit aussi : un
  * vendredi, 10:00 à Zurich.
  *
  * Jusqu'à l'étape 19, « aujourd'hui » était calculé au chargement de ce fichier, et le serveur le
  * recalculait à chaque requête : un passage qui franchissait minuit faisait attendre la veille à ce
- * fichier quand le serveur servait le lendemain, et treize vérifications tombaient. Le serveur de ce
- * fichier tourne désormais à l'horloge figée (`scripts/horloge-figee.mjs`), et les deux parlent du
- * même jour, quelle que soit l'heure du passage.
+ * fichier quand le serveur servait le lendemain, et treize vérifications tombaient. Les serveurs de
+ * ce fichier tournent désormais à l'horloge posée (`scripts/horloge-figee.mjs`) : elle part de
+ * l'instant donné et avance au rythme réel, et un passage n'atteint pas son minuit. Le serveur et
+ * ce fichier parlent du même jour, quelle que soit l'heure du passage.
  *
  * Un vendredi, pour que les branches du vendredi jouent à chaque passage : l'iqama du Dhuhr qui
- * cède la place aux sessions, le tableau du jour du vendredi changé. Celle du jour qui reçoit une
- * session déplacée (`AUTRE_JOUR`) ne joue plus ; un jeudi la ferait jouer. Après `DEBUT`, loin d'un
+ * cède la place aux sessions, le tableau du jour du vendredi changé. Après `DEBUT`, loin d'un
  * changement d'heure, et l'année des données de ce fichier.
  */
 const HORLOGE_FIGEE = '2026-10-09T08:00:00Z';
 const today = todayInZone(FUSEAU, new Date(HORLOGE_FIGEE));
+/**
+ * La veille, un jeudi à la même heure : l'horloge du second serveur. Un vendredi seul ne jouait plus
+ * ce qu'un passage un autre jour jouait avant l'étape 19 : un jour qui n'est pas un vendredi, le
+ * vendredi à venir, et une session du vendredi partie à la veille, quand la veille est aujourd'hui
+ * (relecture de l'étape 19). Les tests qui dépendent du jour tournent sur les deux serveurs.
+ */
+const HORLOGE_DU_JEUDI = '2026-10-08T08:00:00Z';
+const JEUDI = todayInZone(FUSEAU, new Date(HORLOGE_DU_JEUDI));
 /** Le lendemain, et son jour de semaine : le cours déplacé a lieu ce jour-là chaque semaine. */
 const DEMAIN = addDays(today, 1);
 const APRES_DEMAIN = addDays(today, 2);
@@ -107,8 +124,16 @@ const SESSIONS = [
 ];
 /** La troisième session du vendredi changé, déplacée au vendredi suivant. */
 const TROISIEME = { ordre: 3, debut: '15:00', fin: '15:40', langues: ['en'] };
-/** Le jour qui reçoit la session du vendredi déplacé : la veille, ou le lendemain si le vendredi est aujourd'hui. */
-const AUTRE_JOUR = VENDREDI > today ? addDays(VENDREDI, -1) : addDays(VENDREDI, 1);
+/** Le jour qui reçoit la session du vendredi déplacé : le lendemain du vendredi, un samedi. */
+const AUTRE_JOUR = addDays(VENDREDI, 1);
+/** Celui qui reçoit la session du vendredi avancé : la veille du vendredi, le jour du second serveur. */
+const VEILLE = addDays(VENDREDI, -1);
+
+/** Les deux horloges, le jour que chacune sert, et l'adresse de son serveur. */
+const HORLOGES = [
+	{ nom: 'on the Friday', jour: today, depuis: origin },
+	{ nom: 'on the Thursday before', jour: JEUDI, depuis: origineDuJeudi }
+] as const;
 /** La deuxième session du vendredi changé, déplacée le même jour de 13:45 à 14:15 : sa page de cours. */
 let sessionMemeJour = '';
 
@@ -165,11 +190,13 @@ async function maintenance<T>(
 	});
 }
 
+/** Une page, demandée au premier serveur, celui du vendredi, ou à celui que `depuis` nomme. */
 async function servir(
 	chemin: string,
-	entetes: Visiteur = {}
+	entetes: Visiteur = {},
+	depuis: string = origin
 ): Promise<{ statut: number; html: string; headers: Headers }> {
-	const reponse = await fetch(`${origin}${chemin}`, { redirect: 'manual', headers: entetes });
+	const reponse = await fetch(`${depuis}${chemin}`, { redirect: 'manual', headers: entetes });
 	return { statut: reponse.status, html: await reponse.text(), headers: reponse.headers };
 }
 
@@ -207,27 +234,34 @@ function jourEtDate(langue: Langue, date: IsoDate): string {
 	return `${JOURS[langue][jourDe(date) - 1]}${langue === 'de' ? ',' : ''} ${j}.${m}.${a}`;
 }
 
-let serveur: ChildProcess | undefined;
+const serveurs: ChildProcess[] = [];
 
-beforeAll(async () => {
+/** Un serveur de ce fichier, à l'horloge posée à `instant`, sur `port` : il répond, ou le test lève. */
+async function demarrer(port: number, instant: string): Promise<void> {
+	const depuis = `http://127.0.0.1:${port}`;
 	const journal: string[] = [];
-	serveur = spawn(process.execPath, ['--import', HORLOGE, join(appDir, 'build', 'index.js')], {
-		cwd: appDir,
-		stdio: ['ignore', 'pipe', 'pipe'],
-		env: {
-			...productionEnvironment(),
-			NODE_ENV: 'production',
-			PORT: String(PORT),
-			HOST: '127.0.0.1',
-			ORIGIN: origin,
-			POSTGRES_DB: testDatabase,
-			MAIL_TRANSPORT: 'file',
-			MAIL_OUTBOX_DIR: inject('outbox'),
-			MAIL_FROM: 'jadwal@example.test',
-			BETTER_AUTH_SECRET: inject('authSecret'),
-			JADWAL_HORLOGE_FIGEE: HORLOGE_FIGEE
+	const serveur = spawn(
+		process.execPath,
+		['--import', HORLOGE, join(appDir, 'build', 'index.js')],
+		{
+			cwd: appDir,
+			stdio: ['ignore', 'pipe', 'pipe'],
+			env: {
+				...productionEnvironment(),
+				NODE_ENV: 'production',
+				PORT: String(port),
+				HOST: '127.0.0.1',
+				ORIGIN: depuis,
+				POSTGRES_DB: testDatabase,
+				MAIL_TRANSPORT: 'file',
+				MAIL_OUTBOX_DIR: inject('outbox'),
+				MAIL_FROM: 'jadwal@example.test',
+				BETTER_AUTH_SECRET: inject('authSecret'),
+				JADWAL_HORLOGE_FIGEE: instant
+			}
 		}
-	});
+	);
+	serveurs.push(serveur);
 	serveur.stdout?.on('data', (morceau: Buffer) => journal.push(morceau.toString()));
 	serveur.stderr?.on('data', (morceau: Buffer) => {
 		journal.push(morceau.toString());
@@ -237,17 +271,23 @@ beforeAll(async () => {
 	});
 	for (let essai = 1; essai <= 60; essai += 1) {
 		try {
-			if ((await fetch(`${origin}/healthz`)).ok) return;
+			if ((await fetch(`${depuis}/healthz`)).ok) return;
 		} catch {
 			// Le serveur n'écoute pas encore.
 		}
 		await new Promise((resolve) => setTimeout(resolve, 500));
 	}
-	throw new Error(`Le serveur à l'horloge figée n'a pas démarré.\n${journal.join('')}`);
+	throw new Error(
+		`Le serveur à l'horloge posée au ${instant} n'a pas démarré.\n${journal.join('')}`
+	);
+}
+
+beforeAll(async () => {
+	await Promise.all([demarrer(PORT, HORLOGE_FIGEE), demarrer(PORT_DU_JEUDI, HORLOGE_DU_JEUDI)]);
 }, 120_000);
 
 afterAll(() => {
-	serveur?.kill();
+	for (const serveur of serveurs) serveur.kill();
 });
 
 beforeAll(async () => {
@@ -256,6 +296,7 @@ beforeAll(async () => {
 	const sans = newId();
 	const change = newId();
 	const venue = newId();
+	const veille = newId();
 	const heures = newId();
 	await maintenance(async (tx) => {
 		await tx.execute(sql`
@@ -283,10 +324,16 @@ beforeAll(async () => {
 		await tx.execute(sql`
 			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
 				"enabled_language", "prayer_module")
+			values (${veille}, ${SLUG_VEILLE}, ${NOM_VEILLE}, ${FUSEAU}, 'fr',
+				array['fr','de','it','en','ar'], true)
+		`);
+		await tx.execute(sql`
+			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+				"enabled_language", "prayer_module")
 			values (${heures}, ${SLUG_HEURES}, ${NOM_HEURES}, ${FUSEAU}, 'fr',
 				array['fr','de','it','en','ar'], true)
 		`);
-		for (const avecPrieres of [organisation, change, venue, heures]) {
+		for (const avecPrieres of [organisation, change, venue, veille, heures]) {
 			for (let pas = -2; pas <= 10; pas += 1) {
 				await tx.execute(sql`
 					insert into "prayer_day" ("organization_id", "date", "fajr", "dhuhr", "asr", "maghrib",
@@ -349,8 +396,10 @@ beforeAll(async () => {
 				"to_date", "to_start")
 			values (${newId()}, ${change}, ${COURS_ANNULE.id}, ${DEMAIN}, 'cancelled', null, null)
 		`);
-		// Le vendredi déplacé : une session, qui part à un autre jour ce vendredi-là.
+		// Le vendredi déplacé : une session, qui part à un autre jour ce vendredi-là, le lendemain. Le
+		// vendredi avancé : la même, qui part à la veille.
 		const partie = await sessionDuVendredi(venue, SESSIONS[0] as (typeof SESSIONS)[number]);
+		const avancee = await sessionDuVendredi(veille, SESSIONS[0] as (typeof SESSIONS)[number]);
 		// Comme les gestes « Annuler » et « Déplacer » de l'écran du vendredi, ce vendredi-là seulement.
 		await tx.execute(sql`
 			insert into "session_exception" ("id", "organization_id", "course_id", "date", "kind",
@@ -359,7 +408,8 @@ beforeAll(async () => {
 				(${newId()}, ${change}, ${premiere}, ${VENDREDI}, 'cancelled', null, null),
 				(${newId()}, ${change}, ${deuxieme}, ${VENDREDI}, 'moved', ${VENDREDI}, '14:15'),
 				(${newId()}, ${change}, ${troisieme}, ${VENDREDI}, 'moved', ${VENDREDI_SUIVANT}, '15:00'),
-				(${newId()}, ${venue}, ${partie}, ${VENDREDI}, 'moved', ${AUTRE_JOUR}, '13:00')
+				(${newId()}, ${venue}, ${partie}, ${VENDREDI}, 'moved', ${AUTRE_JOUR}, '13:00'),
+				(${newId()}, ${veille}, ${avancee}, ${VENDREDI}, 'moved', ${VEILLE}, '13:00')
 		`);
 		const cours: [string, string, number[]][] = [
 			[COURS.deplace, TITRES.deplace, [jourDe(DEMAIN)]],
@@ -583,23 +633,32 @@ const SERMONS: Record<Langue, string[]> = {
 	ar: ['12:30 لغة الخطبة: العربية والفرنسية', '13:45 لغة الخطبة: الألمانية']
 };
 
-describe('l’horloge figée du serveur de ce fichier (étape 19)', () => {
-	// Le jour est écrit ici en toutes lettres, sans le calcul de `today` : si le serveur servait le
+describe('les horloges posées des deux serveurs de ce fichier (étape 19)', () => {
+	// Le jour est écrit ici en toutes lettres, sans le calcul de `today` : si un serveur servait le
 	// jour du passage, et non celui de son horloge, ce test le dirait quel que soit ce jour.
+	const [DU_VENDREDI, DU_JEUDI] = HORLOGES;
 	it.each([
-		['fr', 'Aujourd’hui, vendredi 09.10.2026'],
-		['de', 'Heute, Freitag, 09.10.2026'],
-		['ar', 'اليوم، الجمعة 09.10.2026']
+		{ langue: 'fr', horloge: DU_VENDREDI, jour: 'Aujourd’hui, vendredi 09.10.2026' },
+		{ langue: 'de', horloge: DU_VENDREDI, jour: 'Heute, Freitag, 09.10.2026' },
+		{ langue: 'ar', horloge: DU_VENDREDI, jour: 'اليوم، الجمعة 09.10.2026' },
+		{ langue: 'fr', horloge: DU_JEUDI, jour: 'Aujourd’hui, jeudi 08.10.2026' },
+		{ langue: 'de', horloge: DU_JEUDI, jour: 'Heute, Donnerstag, 08.10.2026' },
+		{ langue: 'ar', horloge: DU_JEUDI, jour: 'اليوم، الخميس 08.10.2026' }
 	] as const)(
-		'serves the day of its frozen clock, not the day it runs, in %s',
-		async (langue, jour) => {
-			const { html } = await servir(`${base(langue)}?vue=prieres`);
+		'serves the day of its clock, not the day it runs, $horloge.nom, in $langue',
+		async ({ langue, horloge, jour }) => {
+			const { html } = await servir(`${base(langue)}?vue=prieres`, {}, horloge.depuis);
 			const titres = [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/g)].map((trouve) =>
 				lu(trouve[1] ?? '')
 			);
 			expect(titres).toContain(jour);
 		}
 	);
+
+	it('puts the second clock on the day before the Friday of the seven days', () => {
+		expect([jourDe(today), jourDe(JEUDI)]).toEqual([5, 4]);
+		expect(JEUDI).toBe(VEILLE);
+	});
 });
 
 describe('l’onglet des prières, quand le module est allumé (C4)', () => {
@@ -623,24 +682,31 @@ describe('l’onglet des prières, quand le module est allumé (C4)', () => {
 		expect(html).not.toMatch(/<nav\b[^>]*\bclass="filtres\b/);
 	});
 
-	it.each(LANGUES)('gives the adhan and the iqama of today, in %s', async (langue) => {
-		const { statut, html } = await servir(`${base(langue)}?vue=prieres`);
-		expect(statut).toBe(200);
-		const vendredi = jourDe(today) === 5;
-		const pasDIqama = '–';
-		expect(lignes(html, 'aujourdhui')).toEqual([
-			[PRIERES[langue][0], HEURES.fajr, IQAMAS.fajr],
-			[PRIERES[langue][1], HEURES.dhuhr, vendredi ? VENDREDI_A[langue] : IQAMAS.dhuhr],
-			[PRIERES[langue][2], HEURES.asr, pasDIqama],
-			[PRIERES[langue][3], HEURES.maghrib, IQAMAS.maghrib],
-			[PRIERES[langue][4], HEURES.isha, IQAMAS.isha]
-		]);
-		// Le titre porte la date du jour, en JJ.MM.AAAA et précédée du nom du jour.
-		const titres = [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/g)].map((trouve) =>
-			lu(trouve[1] ?? '')
+	// Sur les deux serveurs : le vendredi, la prière du vendredi tient lieu d'iqama du Dhuhr ; la
+	// veille, l'iqama reste.
+	for (const horloge of HORLOGES) {
+		it.each(LANGUES)(
+			`gives the adhan and the iqama of today, ${horloge.nom}, in %s`,
+			async (langue) => {
+				const { statut, html } = await servir(`${base(langue)}?vue=prieres`, {}, horloge.depuis);
+				expect(statut).toBe(200);
+				const vendredi = jourDe(horloge.jour) === 5;
+				const pasDIqama = '–';
+				expect(lignes(html, 'aujourdhui')).toEqual([
+					[PRIERES[langue][0], HEURES.fajr, IQAMAS.fajr],
+					[PRIERES[langue][1], HEURES.dhuhr, vendredi ? VENDREDI_A[langue] : IQAMAS.dhuhr],
+					[PRIERES[langue][2], HEURES.asr, pasDIqama],
+					[PRIERES[langue][3], HEURES.maghrib, IQAMAS.maghrib],
+					[PRIERES[langue][4], HEURES.isha, IQAMAS.isha]
+				]);
+				// Le titre porte la date du jour, en JJ.MM.AAAA et précédée du nom du jour.
+				const titres = [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/g)].map((trouve) =>
+					lu(trouve[1] ?? '')
+				);
+				expect(titres).toContain(AUJOURDHUI[langue](jourEtDate(langue, horloge.jour)));
+			}
 		);
-		expect(titres).toContain(AUJOURDHUI[langue](jourEtDate(langue, today)));
-	});
+	}
 
 	it.each(LANGUES)(
 		'lists the next seven days, in %s, with the Friday prayer in place of Dhuhr',
@@ -711,94 +777,134 @@ describe('l’onglet des prières, quand le module est allumé (C4)', () => {
 	);
 
 	// Relecture du lot 3 : l'onglet mettait chaque session sur chaque vendredi daté, même annulée ou
-	// déplacée ce jour-là depuis l'écran du vendredi, quand la vue Semaine disait « Annulé ».
-	it.each(LANGUES)(
-		'follows that Friday in %s: a session cancelled, one moved that day, one moved a week later',
-		async (langue) => {
-			const { statut, html } = await servir(`${base(langue, SLUG_CHANGE)}?vue=prieres`);
-			expect(statut).toBe(200);
-			const semaine = lignes(html, 'semaine');
-			const dates = Array.from({ length: 7 }, (_, pas) => addDays(today, pas));
-			const deplace = DEPLACE_AU[langue](jourEtDate(langue, VENDREDI_SUIVANT));
-			for (const [index, date] of dates.entries()) {
-				expect(semaine[index]?.[2], date).toBe(
-					date === VENDREDI
-						? `${HEURES.dhuhr} 14:15 12:30 ${ANNULE[langue]} 15:00 ${deplace}`
-						: `${HEURES.dhuhr} ${IQAMAS.dhuhr}`
+	// déplacée ce jour-là depuis l'écran du vendredi, quand la vue Semaine disait « Annulé ». Sur les
+	// deux serveurs : le vendredi, ce vendredi est aujourd'hui ; la veille, il est demain.
+	for (const horloge of HORLOGES) {
+		it.each(LANGUES)(
+			`follows that Friday in %s, ${horloge.nom}: a session cancelled, one moved that day, one moved a week later`,
+			async (langue) => {
+				const { statut, html } = await servir(
+					`${base(langue, SLUG_CHANGE)}?vue=prieres`,
+					{},
+					horloge.depuis
 				);
-			}
-			// Le tableau du jour, quand c'est ce vendredi : c'est le cas à l'horloge figée de ce
-			// fichier (`HORLOGE_FIGEE`). `src/lib/public/Prieres.temps.test.ts` l'éprouve aussi, un
-			// vendredi choisi.
-			if (today === VENDREDI) {
+				expect(statut).toBe(200);
+				const semaine = lignes(html, 'semaine');
+				const dates = Array.from({ length: 7 }, (_, pas) => addDays(horloge.jour, pas));
+				const deplace = DEPLACE_AU[langue](jourEtDate(langue, VENDREDI_SUIVANT));
+				for (const [index, date] of dates.entries()) {
+					expect(semaine[index]?.[2], date).toBe(
+						date === VENDREDI
+							? `${HEURES.dhuhr} 14:15 12:30 ${ANNULE[langue]} 15:00 ${deplace}`
+							: `${HEURES.dhuhr} ${IQAMAS.dhuhr}`
+					);
+				}
+				// Le tableau du jour : ce vendredi, quand c'est aujourd'hui ; l'iqama du Dhuhr, la veille.
+				// `src/lib/public/Prieres.temps.test.ts` éprouve aussi le vendredi, un vendredi choisi.
 				const seule = VENDREDI_SEULE[langue];
 				expect(lignes(html, 'aujourdhui')[1]?.[2]).toBe(
-					`${seule('14:15')} ${seule('12:30')} ${ANNULE[langue]} ${seule('15:00')} ${deplace}`
+					horloge.jour === VENDREDI
+						? `${seule('14:15')} ${seule('12:30')} ${ANNULE[langue]} ${seule('15:00')} ${deplace}`
+						: IQAMAS.dhuhr
 				);
+				// Le bloc du bas, sans date, garde le rythme habituel.
+				const section =
+					html.match(/<section\b[^>]*\bid="prieres-vendredi"[\s\S]*?<\/section>/)?.[0] ?? '';
+				expect(
+					[...section.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)].map(
+						(trouve) => lu(trouve[1] ?? '').split(' ')[0]
+					)
+				).toEqual(['12:30', '13:45', '15:00']);
+				// Et la vue Semaine de la même page dit la même chose, le mot exact, dans sa marque :
+				// « Annulé » passait pour « Annulée » tant qu'on cherchait le mot dans le texte. Le cours
+				// ordinaire annulé le lendemain du vendredi garde le sien.
+				const marquesDe = (page: string) =>
+					[...page.matchAll(/<span class="marque[^"]*">([^<]*)<\/span>/g)].map(
+						(trouve) => trouve[1]
+					);
+				const vueSemaine = (await servir(base(langue, SLUG_CHANGE), {}, horloge.depuis)).html;
+				const marques = marquesDe(vueSemaine);
+				expect(marques, langue).toContain(ANNULE[langue]);
+				expect(marques, langue).toContain(COURS_ANNULE_MARQUE[langue]);
+				expect(
+					marques.filter(
+						(marque) => marque === ANNULE[langue] || marque === COURS_ANNULE_MARQUE[langue]
+					),
+					langue
+				).toHaveLength(2);
+				expect(visibleText(vueSemaine)).toContain(deplace);
+				// La vue Mois, au jour choisi, montre ses séances par le même composant : le même mot
+				// (reprise 1). La grille ne porte que des nombres ; les marques sont celles de ce jour.
+				const vueMois = await servir(
+					`${base(langue, SLUG_CHANGE)}?vue=mois&mois=${VENDREDI.slice(0, 7)}&jour=${VENDREDI}`,
+					{},
+					horloge.depuis
+				);
+				expect(vueMois.statut).toBe(200);
+				expect(marquesDe(vueMois.html), langue).toContain(ANNULE[langue]);
 			}
-			// Le bloc du bas, sans date, garde le rythme habituel.
-			const section =
-				html.match(/<section\b[^>]*\bid="prieres-vendredi"[\s\S]*?<\/section>/)?.[0] ?? '';
-			expect(
-				[...section.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)].map(
-					(trouve) => lu(trouve[1] ?? '').split(' ')[0]
-				)
-			).toEqual(['12:30', '13:45', '15:00']);
-			// Et la vue Semaine de la même page dit la même chose, le mot exact, dans sa marque : « Annulé »
-			// passait pour « Annulée » tant qu'on cherchait le mot dans le texte. Le cours ordinaire
-			// annulé demain garde le sien.
-			const marquesDe = (page: string) =>
-				[...page.matchAll(/<span class="marque[^"]*">([^<]*)<\/span>/g)].map((trouve) => trouve[1]);
-			const vueSemaine = (await servir(base(langue, SLUG_CHANGE))).html;
-			const marques = marquesDe(vueSemaine);
-			expect(marques, langue).toContain(ANNULE[langue]);
-			expect(marques, langue).toContain(COURS_ANNULE_MARQUE[langue]);
-			expect(
-				marques.filter(
-					(marque) => marque === ANNULE[langue] || marque === COURS_ANNULE_MARQUE[langue]
-				),
-				langue
-			).toHaveLength(2);
-			expect(visibleText(vueSemaine)).toContain(deplace);
-			// La vue Mois, au jour choisi, montre ses séances par le même composant : le même mot
-			// (reprise 1). La grille ne porte que des nombres ; les marques sont celles de ce jour.
-			const vueMois = await servir(
-				`${base(langue, SLUG_CHANGE)}?vue=mois&mois=${VENDREDI.slice(0, 7)}&jour=${VENDREDI}`
-			);
-			expect(vueMois.statut).toBe(200);
-			expect(marquesDe(vueMois.html), langue).toContain(ANNULE[langue]);
-		}
-	);
+		);
+	}
 
 	// Relecture du lot 4 : le jour qui recevait une session du vendredi la montrait comme une troisième
-	// heure en gras, sans nom visible, et après l'iqama alors qu'elle venait avant l'adhan.
-	it.each(LANGUES)(
-		'names a Friday session moved to another day, says its Friday, and puts it at its place in time, in %s',
-		async (langue) => {
-			const { html } = await servir(`${base(langue, SLUG_VENUE)}?vue=prieres`);
-			const dates = Array.from({ length: 7 }, (_, pas) => addDays(today, pas));
-			const venue = `${VENDREDI_SEULE[langue]('13:00')} ${ORIGINE[langue](jourEtDate(langue, VENDREDI))}`;
-			const partie = DEPLACE_AU[langue](jourEtDate(langue, AUTRE_JOUR));
-			const semaine = lignes(html, 'semaine');
-			for (const [index, date] of dates.entries()) {
-				expect(semaine[index]?.[2], date).toBe(
-					date === AUTRE_JOUR
-						? // 13:00 vient avant l'adhan de 13:05, et l'iqama reste : ce n'est pas un vendredi.
-							`${venue} ${HEURES.dhuhr} ${IQAMAS.dhuhr}`
-						: date === VENDREDI
-							? `${HEURES.dhuhr} ${IQAMAS.dhuhr} 12:30 ${partie}`
-							: `${HEURES.dhuhr} ${IQAMAS.dhuhr}`
-				);
-			}
-			if (today === AUTRE_JOUR) {
-				expect(lignes(html, 'aujourdhui')[1]?.[2]).toBe(`${venue} ${IQAMAS.dhuhr}`);
-			}
-			// L'aide au-dessus du tableau dit ce cas, et seulement là où il se présente.
-			expect(aides(html)).toContain(AIDE_VENUE[langue]);
-			const sansVenue = await servir(`${base(langue)}?vue=prieres`);
-			expect(aides(sansVenue.html)).not.toContain(AIDE_VENUE[langue]);
+	// heure en gras, sans nom visible, et après l'iqama alors qu'elle venait avant l'adhan. Trois cas :
+	// la session part au lendemain, vue le vendredi puis la veille ; et elle part à la veille, vue ce
+	// jour-là, où le tableau du jour la donne aussi (relecture de l'étape 19).
+	const DEPLACEMENTS = [
+		{
+			nom: 'to the day after, seen on the Friday',
+			horloge: HORLOGES[0],
+			slug: SLUG_VENUE,
+			vers: AUTRE_JOUR
+		},
+		{
+			nom: 'to the day after, seen the day before',
+			horloge: HORLOGES[1],
+			slug: SLUG_VENUE,
+			vers: AUTRE_JOUR
+		},
+		{
+			nom: 'to the day before, seen that day',
+			horloge: HORLOGES[1],
+			slug: SLUG_VEILLE,
+			vers: VEILLE
 		}
-	);
+	];
+	for (const cas of DEPLACEMENTS) {
+		it.each(LANGUES)(
+			`names a Friday session moved ${cas.nom}, says its Friday, and puts it at its place in time, in %s`,
+			async (langue) => {
+				const { html } = await servir(
+					`${base(langue, cas.slug)}?vue=prieres`,
+					{},
+					cas.horloge.depuis
+				);
+				const dates = Array.from({ length: 7 }, (_, pas) => addDays(cas.horloge.jour, pas));
+				const venue = `${VENDREDI_SEULE[langue]('13:00')} ${ORIGINE[langue](jourEtDate(langue, VENDREDI))}`;
+				const partie = DEPLACE_AU[langue](jourEtDate(langue, cas.vers));
+				const semaine = lignes(html, 'semaine');
+				expect(dates).toContain(cas.vers);
+				for (const [index, date] of dates.entries()) {
+					expect(semaine[index]?.[2], date).toBe(
+						date === cas.vers
+							? // 13:00 vient avant l'adhan de 13:05, et l'iqama reste : ce n'est pas un vendredi.
+								`${venue} ${HEURES.dhuhr} ${IQAMAS.dhuhr}`
+							: date === VENDREDI
+								? `${HEURES.dhuhr} ${IQAMAS.dhuhr} 12:30 ${partie}`
+								: `${HEURES.dhuhr} ${IQAMAS.dhuhr}`
+					);
+				}
+				// Le jour qui reçoit la session est aujourd'hui dans le troisième cas seulement.
+				if (cas.vers === cas.horloge.jour) {
+					expect(lignes(html, 'aujourdhui')[1]?.[2]).toBe(`${venue} ${IQAMAS.dhuhr}`);
+				}
+				// L'aide au-dessus du tableau dit ce cas, et seulement là où il se présente.
+				expect(aides(html)).toContain(AIDE_VENUE[langue]);
+				const sansVenue = await servir(`${base(langue)}?vue=prieres`, {}, cas.horloge.depuis);
+				expect(aides(sansVenue.html)).not.toContain(AIDE_VENUE[langue]);
+			}
+		);
+	}
 
 	// L'onglet ignore le filtre par public, et c'est voulu : il ne montre aucun filtre, donc un filtre
 	// venu avec le lien ne se verrait pas et ne s'enlèverait pas, et une heure de prière vaut pour tous.
