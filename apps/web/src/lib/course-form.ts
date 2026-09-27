@@ -238,9 +238,11 @@ export interface SummaryRow {
 	/**
 	 * Un champ facultatif : le titre d'une autre langue, une description, la salle, l'intervenant, le
 	 * dernier jour. Sa ligne porte « (facultatif) », en discret (étape 19, lot 2). Laissé vide, il
-	 * n'est pas un manque : sa ligne dit ce qui sera publié à la place, sans la marque de `missing`,
-	 * qui reste pour une valeur à corriger. Le titre d'une autre langue dont la description est
-	 * écrite est l'exception : le serveur refuse le cours sans lui, et sa ligne est un manque.
+	 * n'est pas un manque : le titre d'une autre langue, la salle et l'intervenant gardent leur
+	 * ligne, qui dit ce qui sera publié à la place, sans la marque de `missing`, qui reste pour une
+	 * valeur à corriger ; une description et un dernier jour vides n'ont pas de ligne. Le titre d'une
+	 * autre langue dont la description est écrite est l'exception : le serveur refuse le cours sans
+	 * lui, et sa ligne est un manque.
 	 */
 	optional?: true;
 }
@@ -270,7 +272,8 @@ export interface SummaryContext {
  * premier jour, le dernier s'il y en a un, et l'état. Ce qui manque a sa ligne, marquée, avec une
  * phrase qui le dit : rien ne disparaît en silence. Ce que le serveur refuserait est marqué de même,
  * « à corriger », au lieu d'être montré comme publié. Ce qui est facultatif est dit tel
- * (`optional`) ; laissé vide, il a sa ligne aussi, sans marque de manque.
+ * (`optional`) ; laissés vides, le titre d'une autre langue, la salle et l'intervenant ont leur ligne
+ * aussi, sans marque de manque.
  */
 export function summarise(
 	values: CourseFormValues,

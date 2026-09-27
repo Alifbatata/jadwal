@@ -316,10 +316,13 @@ Et quatre gestes de plus, décidés par le chef de projet :
 - **Le message « nouveau cours »**, prêt à coller, sur la liste des cours après la publication d'un
   nouveau cours, qu'il soit créé publié ou qu'un brouillon soit publié depuis sa fiche : la liste
   s'ouvre alors avec `?publie=<identifiant>`. Il s'écrit dans chaque langue publiée, la langue du
-  cours d'abord, comme les autres messages. Un brouillon ou une adresse écrite à la main n'en ont
-  pas. Les dates d'un cours à dates précises s'y écrivent comme dans la liste : les trois premières
-  du calendrier. Elles s'enregistrent désormais dans cet ordre, quel que soit celui de la saisie,
-  et la liste range celles d'un cours enregistré avant.
+  cours d'abord, comme les autres messages. Le bloc suit l'adresse : il s'affiche pour tout cours
+  publié de l'organisation dont elle porte l'identifiant, après un rechargement, depuis un favori
+  ou à la main aussi ; un brouillon ou un identifiant inconnu n'en ont pas. Le message ne dit que ce
+  que la page publique dit déjà, et l'adresse permet de le retrouver. Les dates d'un cours à dates
+  précises s'y écrivent comme dans la liste : les trois premières du calendrier. Elles
+  s'enregistrent désormais dans cet ordre, quel que soit celui de la saisie, et la liste range
+  celles d'un cours enregistré avant.
 - **Ce que le formulaire remplit de lui-même** : sur un nouveau cours, la langue de saisie cochée
   comme langue d'enseignement, et, avec JavaScript, la case qui la suit tant qu'on n'a pas touché
   aux cases ; pour un cours à dates précises, le premier jour pris à la première date, pendant la

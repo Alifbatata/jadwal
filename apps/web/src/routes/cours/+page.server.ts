@@ -147,8 +147,9 @@ export const load: PageServerLoad = async (event) => {
 		const courses = await readCourses(tx, ['draft', 'published'], ['course']);
 		const pauses = await readPauses(tx);
 		const titres = new Map(courses.map((course) => [course.id, course.title]));
-		// Le cours qui vient d'être publié, s'il l'est : un brouillon, un cours inconnu ou une adresse
-		// écrite à la main n'ont pas de message.
+		// Le cours que l'adresse nomme, s'il est publié : le formulaire y renvoie après une
+		// publication, et l'adresse redonne le message ensuite, rechargée ou écrite à la main. Un
+		// brouillon ou un cours inconnu n'ont pas de message.
 		const publie = event.url.searchParams.get('publie');
 		const annonce = courses.find((course) => course.id === publie && course.status === 'published');
 		return {

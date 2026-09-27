@@ -62,8 +62,14 @@ de saisie. Le rythme est celui de la page publique ; pour un cours à dates pré
 la liste les écrit (`à des dates précises : lundi 12.10.2026 et lundi 26.10.2026`) : les trois
 premières du calendrier, puis `et 1 autre`, quel que soit l'ordre dans lequel on les a écrites. La
 liste et le message montraient d'abord les trois premières écrites, et pouvaient taire la première
-séance. L'horaire est celui de la liste, avec sa durée. Un brouillon, un cours déjà publié qu'on enregistre de nouveau, ou
-une adresse écrite à la main, n'ont pas de bloc.
+séance. L'horaire est celui de la liste, avec sa durée.
+
+Le bloc suit l'adresse, et non le geste : `/cours?publie=<identifiant>` le montre pour tout cours
+publié de l'organisation, juste après sa publication, mais aussi après un rechargement, depuis un
+favori ou si l'on écrit l'adresse à la main. Seuls les cours de l'organisation y sont cherchés. Un
+brouillon, un identifiant inconnu ou mal formé, ou celui d'une session du vendredi, n'ont pas de
+bloc. Un cours déjà publié qu'on enregistre de nouveau ramène à `/cours`, sans cette adresse, et
+donc sans bloc.
 
 ### Les pauses, sur le même écran
 
@@ -114,17 +120,18 @@ dans le calendrier`, une date précise parmi `Dates à corriger :`.
 
 La ligne d'un champ facultatif, rempli ou non, finit par `(facultatif)`, en gris et sans gras, en
 discret (étape 19, lot 2) : chaque description, le titre de chaque autre langue que l'organisation
-publie, la salle, l'intervenant et le dernier jour. `Salle : Grande salle (facultatif)`. Laissé vide,
-un champ facultatif garde sa ligne, sans marque de manque : `Salle : pas choisie (facultatif)`,
-`Intervenant : aucun pour l'instant (facultatif)`, `Titre en allemand : pas encore écrit, le titre
-en français s'affichera à sa place (facultatif)`. Une description à corriger reste marquée comme
-telle, et facultative : l'effacer est l'une des deux corrections. Le titre qui lui manque est marqué
-de même, `Titre en allemand : pas encore écrit (facultatif)`, sans la phrase du titre qui
-s'afficherait à sa place : le serveur refuse le cours tant qu'il manque, et l'écrire est l'autre
-correction. La première version du lot lui donnait cette phrase, et le résumé se contredisait d'une
-ligne à l'autre. Jusque-là, la salle et
-l'intervenant laissés vides étaient marqués comme le titre manquant, et le titre d'une autre langue
-n'avait pas de ligne tant qu'il n'était pas écrit.
+publie, la salle, l'intervenant et le dernier jour. `Salle : Grande salle (facultatif)`. Laissés
+vides, la salle, l'intervenant et le titre d'une autre langue gardent leur ligne, sans marque de
+manque : `Salle : pas choisie (facultatif)`, `Intervenant : aucun pour l'instant (facultatif)`,
+`Titre en allemand : pas encore écrit, le titre en français s'affichera à sa place (facultatif)`.
+Une description vide et un dernier jour vide n'ont pas de ligne, puisque rien n'est publié pour eux :
+un cours sans dernier jour continue. Une description à corriger reste marquée comme telle, et
+facultative : l'effacer est l'une des deux corrections. Le titre qui lui manque est marqué de même,
+`Titre en allemand : pas encore écrit (facultatif)`, sans la phrase du titre qui s'afficherait à sa
+place : le serveur refuse le cours tant qu'il manque, et l'écrire est l'autre correction. La première
+version du lot lui donnait cette phrase, et le résumé se contredisait d'une ligne à l'autre.
+Jusque-là, la salle et l'intervenant laissés vides étaient marqués comme le titre manquant, et le
+titre d'une autre langue n'avait pas de ligne tant qu'il n'était pas écrit.
 
 Le résumé est juste sans JavaScript, au rendu du serveur et après un envoi refusé ; avec JavaScript,
 il suit la saisie.
