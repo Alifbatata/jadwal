@@ -222,6 +222,13 @@ export interface SummaryRow {
 	typed: boolean;
 	/** La langue d'un titre ou d'une description, qui n'est pas forcément celle de l'écran. */
 	lang?: string;
+	/**
+	 * Un champ facultatif : le titre d'une autre langue, une description, la salle, l'intervenant, le
+	 * dernier jour. Sa ligne porte « (facultatif) », en discret (étape 19, lot 2). Laissé vide, il
+	 * n'est pas un manque : sa ligne dit ce qui sera publié à la place, sans la marque de `missing`,
+	 * qui reste pour une valeur à corriger.
+	 */
+	optional?: true;
 }
 
 /**
@@ -243,12 +250,13 @@ export interface SummaryContext {
 }
 
 /**
- * Le résumé de ce qui sera publié, une ligne par information (retour B4) : le titre et la
- * description dans chaque langue remplie, celle de saisie d'abord, le public, les jours, la
- * fréquence, l'horaire, la salle, l'intervenant, la langue d'enseignement, le premier jour, le
- * dernier s'il y en a un, et l'état. Ce qui manque a sa ligne, marquée, avec une phrase qui le dit :
- * rien ne disparaît en silence. Ce que le serveur refuserait est marqué de même, « à corriger », au
- * lieu d'être montré comme publié.
+ * Le résumé de ce qui sera publié, une ligne par information (retour B4) : le titre dans chaque
+ * langue de l'organisation et la description dans chaque langue remplie, celle de saisie d'abord, le
+ * public, les jours, la fréquence, l'horaire, la salle, l'intervenant, la langue d'enseignement, le
+ * premier jour, le dernier s'il y en a un, et l'état. Ce qui manque a sa ligne, marquée, avec une
+ * phrase qui le dit : rien ne disparaît en silence. Ce que le serveur refuserait est marqué de même,
+ * « à corriger », au lieu d'être montré comme publié. Ce qui est facultatif est dit tel
+ * (`optional`) ; laissé vide, il a sa ligne aussi, sans marque de manque.
  */
 export function summarise(
 	values: CourseFormValues,
@@ -272,18 +280,48 @@ export function summarise(
 				? { key, label, value, missing: false, typed, ...(lang ? { lang } : {}) }
 				: { key, label, value: missing, missing: true, typed: false }
 		);
+	/** Une ligne facultative : sa valeur, ou, laissée vide, la phrase qui dit ce qui en tient lieu. */
+	const optionalRow = (
+		key: string,
+		label: string,
+		value: string | null,
+		empty: string,
+		lang?: string
+	) =>
+		rows.push(
+			value
+				? {
+						key,
+						label,
+						value,
+						missing: false,
+						typed: true,
+						optional: true,
+						...(lang ? { lang } : {})
+					}
+				: { key, label, value: empty, missing: false, typed: false, optional: true }
+		);
+	/** La dernière ligne est celle d'un champ facultatif, même à corriger. */
+	const markOptional = () => {
+		const last = rows.at(-1);
+		if (last) last.optional = true;
+	};
 
-	// Le titre et la description de chaque langue, ensemble, comme dans l'onglet de la langue.
+	// Le titre et la description de chaque langue, ensemble, comme dans l'onglet de la langue. Le
+	// titre de chaque langue que l'organisation publie a sa ligne : sans lui, sa page publique montre
+	// celui de la langue de saisie (étape 19, lot 2).
 	const others = context.languages.filter((code) => code !== values.sourceLanguage);
 	const untitled = descriptionsWithoutTitle(values, context.languages);
+	const sourceName = languageLabel(values.sourceLanguage, language);
 	for (const code of [values.sourceLanguage, ...others]) {
 		const name = languageLabel(code, language);
 		const title = values.titles[code]?.trim() ?? '';
 		const description = values.descriptions[code]?.trim() ?? '';
-		const isSource = code === values.sourceLanguage;
-		if (title || isSource) {
-			const label = text.summary.titleIn(name);
+		const label = text.summary.titleIn(name);
+		if (code === values.sourceLanguage) {
 			row(`title-${code}`, label, title || null, text.missing.title, true, code);
+		} else {
+			optionalRow(`title-${code}`, label, title || null, text.missing.otherTitle(sourceName), code);
 		}
 		// Une description seule, sans le titre de sa langue, est refusée par le serveur : sa ligne est
 		// « à corriger ». Dans la langue de saisie, le titre manquant est déjà signalé.
@@ -296,6 +334,7 @@ export function summarise(
 				true,
 				code
 			);
+			markOptional();
 		}
 	}
 
@@ -368,8 +407,13 @@ export function summarise(
 	row('time', text.summary.time, time.value, time.missing);
 
 	const room = context.rooms.find((candidate) => candidate.id === values.roomId)?.name ?? null;
-	row('room', text.summary.room, room, text.missing.room, true);
-	row('teacher', text.summary.teacher, values.teacher?.trim() || null, text.missing.teacher, true);
+	optionalRow('room', text.summary.room, room, text.missing.room);
+	optionalRow(
+		'teacher',
+		text.summary.teacher,
+		values.teacher?.trim() || null,
+		text.missing.teacher
+	);
 
 	const taught = values.teachingLanguages.filter((code) => context.languages.includes(code));
 	const taughtIn = taught.map((code) => languageLabel(code, language));
@@ -395,6 +439,7 @@ export function summarise(
 			endsOn !== null && !beforeStart ? shortDate(endsOn, language) : null,
 			endsOn !== null ? text.missing.endsBeforeStarts : text.missing.endsOnUnreadable
 		);
+		markOptional();
 	}
 
 	const statuses: Record<string, string> = text.statuses;

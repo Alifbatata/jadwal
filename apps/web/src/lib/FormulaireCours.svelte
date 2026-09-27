@@ -167,13 +167,15 @@
 		<h2 id="course-summary-title">{text.summary.title}</h2>
 		<dl>
 			{#each summary as row (row.key)}
-				<div class:manque={row.missing}>
+				<div class:manque={row.missing} class:facultatif={row.optional && !row.missing}>
 					<dt>{row.label}</dt>
 					<dd>
 						<!-- Un titre ou une description garde la langue et le sens de son texte. -->
 						{#if row.typed}<bdi lang={row.lang} dir={row.lang ? textDirection(row.lang) : 'auto'}
 								>{row.value}</bdi
 							>{:else}{row.value}{/if}
+						<!-- Un champ facultatif le dit, en discret, rempli ou non (étape 19, lot 2). -->
+						{#if row.optional}<span class="marque">{text.optional}</span>{/if}
 					</dd>
 				</div>
 			{/each}

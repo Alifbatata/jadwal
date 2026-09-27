@@ -108,6 +108,7 @@ describe('le résumé de ce qui sera publié (B4)', () => {
 		expect(lignes(COMPLET)).toEqual([
 			'Titre en français : Tafsir du soir',
 			'Description en français : Lecture commentée, pour adultes.',
+			'Titre en allemand : pas encore écrit, le titre en français s’affichera à sa place',
 			'Titre en arabe : تفسير المساء',
 			'Public : adultes',
 			'Jours : lundi et mercredi',
@@ -140,13 +141,67 @@ describe('le résumé de ce qui sera publié (B4)', () => {
 		expect(rows.filter((row) => row.missing).map((row) => `${row.label} ${row.value}`)).toEqual([
 			'Titre en français : pas encore écrit',
 			'Jours : pas choisis',
-			'Salle : pas choisie',
-			'Intervenant : aucun pour l’instant',
 			'Langue d’enseignement : pas choisie',
 			'Premier jour : pas choisi'
 		]);
+		// Ce qui est facultatif et laissé vide n'est pas un manque : sa ligne le dit, marquée
+		// « facultatif » (étape 19, lot 2). Les titres des autres langues de l'organisation en sont.
+		expect(
+			rows.filter((row) => row.optional && !row.missing).map((row) => `${row.label} ${row.value}`)
+		).toEqual([
+			'Description en français : Lecture commentée, pour adultes.',
+			'Titre en allemand : pas encore écrit, le titre en français s’affichera à sa place',
+			'Titre en arabe : pas encore écrit, le titre en français s’affichera à sa place',
+			'Salle : pas choisie',
+			'Intervenant : aucun pour l’instant'
+		]);
 		// Pas de dernier jour : la ligne n'existe pas, puisqu'il n'y en a pas.
 		expect(rows.map((row) => row.key)).not.toContain('endsOn');
+	});
+
+	it('marks every optional field as such, filled or not, and only those', () => {
+		// Le titre de la langue de saisie, le public, les jours, l'horaire, la langue d'enseignement, le
+		// premier jour et l'état sont obligatoires : la marque ne les touche pas.
+		expect(
+			summarise(COMPLET, CONTEXTE, 'fr')
+				.filter((row) => row.optional)
+				.map((row) => row.key)
+		).toEqual(['description-fr', 'title-de', 'title-ar', 'room', 'teacher', 'endsOn']);
+		// Une description à corriger reste facultative : l'effacer est l'une des deux corrections.
+		const aCorriger = summarise(
+			{ ...COMPLET, descriptions: { fr: '', de: 'Für Erwachsene.', ar: '' } },
+			CONTEXTE,
+			'fr'
+		).find((row) => row.key === 'description-de');
+		expect(aCorriger).toMatchObject({ missing: true, optional: true });
+	});
+
+	it('says a title missing in a published language, and what shows instead, in each language', () => {
+		// Une organisation qui publie plusieurs langues : la page publique en allemand montre le titre
+		// de la langue de saisie tant que celui de l'allemand manque (étape 19, lot 2).
+		const allemand = (langue: Parameters<typeof summarise>[2]) =>
+			summarise(COMPLET, CONTEXTE, langue).find((row) => row.key === 'title-de');
+		expect(
+			(['fr', 'de', 'it', 'en', 'ar'] as const).map((langue) => {
+				const ligne = allemand(langue);
+				return `${ligne?.label} ${ligne?.value}`;
+			})
+		).toEqual([
+			'Titre en allemand : pas encore écrit, le titre en français s’affichera à sa place',
+			'Titel auf Deutsch: noch nicht geschrieben, an seiner Stelle erscheint der Titel auf Französisch',
+			'Titolo in tedesco: non ancora scritto, al suo posto comparirà il titolo in francese',
+			'Title in German: not written yet, the title in French will be shown instead',
+			'العنوان بالألمانية: لم يُكتب بعد، وسيظهر مكانه العنوان بالفرنسية'
+		]);
+		// Une organisation d'une seule langue n'a que le titre de la langue de saisie.
+		const seule = summarise(
+			{ ...COMPLET, titles: { fr: 'Tafsir du soir' }, descriptions: { fr: '' } },
+			{ ...CONTEXTE, languages: ['fr'] },
+			'fr'
+		);
+		expect(seule.filter((row) => row.key.startsWith('title-')).map((row) => row.key)).toEqual([
+			'title-fr'
+		]);
 	});
 
 	it('marks as to correct a description without a title in its language', () => {
@@ -157,8 +212,9 @@ describe('le résumé de ce qui sera publié (B4)', () => {
 			CONTEXTE,
 			'fr'
 		);
-		expect(rows.slice(0, 4).map((row) => `${row.label} ${row.value}`)).toEqual([
+		expect(rows.slice(0, 5).map((row) => `${row.label} ${row.value}`)).toEqual([
 			'Titre en français : Tafsir du soir',
+			'Titre en allemand : pas encore écrit, le titre en français s’affichera à sa place',
 			'Description en allemand : à corriger, il manque le titre en allemand',
 			'Titre en arabe : تفسير المساء',
 			'Description en arabe : قراءة مع شرح.'

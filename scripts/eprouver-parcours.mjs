@@ -2096,8 +2096,9 @@ async function clarteDuFormulaire(page, cours) {
 				(await texteDe(ligne('Premier jour'))).endsWith(dateSuisse(T)),
 			`${await texteDe(ligne('Titre en français'))} | ${await texteDe(ligne('Premier jour'))}`
 		);
-		// La description a sa ligne, juste sous le titre de sa langue. Elle est retirée ensuite : le
-		// cours du parcours n'en a pas, et les écrans lus dans les autres langues n'ont rien à écarter.
+		// La description a sa ligne, juste sous le titre de sa langue, marquée facultative (étape 19,
+		// lot 2). Elle est retirée ensuite : le cours du parcours n'en a pas, et les écrans lus dans les
+		// autres langues n'ont rien à écarter.
 		await page.locator('#description-fr').fill(DESCRIPTION);
 		const lignes = (await resume.locator('dl > div').allTextContents()).map((texte) =>
 			texte.replace(/\s+/g, ' ').trim()
@@ -2105,8 +2106,8 @@ async function clarteDuFormulaire(page, cours) {
 		const titreLu = lignes.indexOf(`Titre en français : ${cours.titre}`);
 		const apresLeTitre = titreLu >= 0 ? (lignes[titreLu + 1] ?? '') : '';
 		verifier(
-			'le résumé a une ligne pour la description, sous le titre de sa langue',
-			apresLeTitre === `Description en français : ${DESCRIPTION}`,
+			'le résumé a une ligne pour la description, sous le titre de sa langue, marquée « (facultatif) »',
+			apresLeTitre === `Description en français : ${DESCRIPTION} (facultatif)`,
 			apresLeTitre || lignes.slice(0, 3).join(' | ')
 		);
 		await page.locator('#description-fr').fill('');

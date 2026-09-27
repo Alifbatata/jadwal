@@ -174,6 +174,13 @@ function manques(html: string): string[] {
 	].map((trouve) => lu(trouve[0]));
 }
 
+/** Les lignes du résumé d'un champ facultatif laissé vide, marquées en discret (étape 19, lot 2). */
+function facultatives(html: string): string[] {
+	return [
+		...resume(html).matchAll(/<div\b[^>]*class="[^"]*\bfacultatif\b[^"]*"[^>]*>[\s\S]*?<\/div>/g)
+	].map((trouve) => lu(trouve[0]));
+}
+
 /** Les phrases de l'encadré des erreurs, une par ligne de la liste. */
 function erreurs(html: string): string[] {
 	const alerte = html.match(/<div\b[^>]*role="alert"[^>]*>[\s\S]*?<\/div>/)?.[0] ?? '';
@@ -545,44 +552,92 @@ describe('le résumé en haut du formulaire (B4)', () => {
 			'Résumé : ce qui sera publié'
 		);
 		// La description est publiée sur la fiche publique du cours : le résumé la reprend (B4).
+		// L'organisation publie aussi l'allemand : le titre qui y manque a sa ligne. Ce qui est
+		// facultatif le dit, rempli ou non (étape 19, lot 2).
 		expect(lignesDuResume(html)).toEqual([
 			`Titre en français : ${TAFSIR}`,
-			`Description en français : ${DESCRIPTION}`,
-			`Titre en arabe : ${TAFSIR_AR}`,
+			`Description en français : ${DESCRIPTION} (facultatif)`,
+			'Titre en allemand : pas encore écrit, le titre en français s’affichera à sa place (facultatif)',
+			`Titre en arabe : ${TAFSIR_AR} (facultatif)`,
 			'Public : adultes',
 			'Jours : lundi et mercredi',
 			'Fréquence : une semaine sur deux',
 			'Horaire : 10 min avant Maghrib, pendant 1 h',
-			`Salle : ${SALLE}`,
-			`Intervenant : ${INTERVENANT}`,
+			`Salle : ${SALLE} (facultatif)`,
+			`Intervenant : ${INTERVENANT} (facultatif)`,
 			'Langue d’enseignement : français et arabe',
 			'Premier jour : lundi 07.09.2026',
-			'Dernier jour : dimanche 20.12.2026',
+			'Dernier jour : dimanche 20.12.2026 (facultatif)',
 			'État : publié, visible sur la page publique'
 		]);
 		expect(manques(html)).toEqual([]);
 	});
 
-	it('signals what is missing on a new course', async () => {
+	it('signals what is missing on a new course, and marks what is optional as such', async () => {
 		const html = await (await get('/cours/nouveau', cookie)).text();
 		expect(lignesDuResume(html)).toEqual([
 			'Titre en français : pas encore écrit',
+			'Titre en allemand : pas encore écrit, le titre en français s’affichera à sa place (facultatif)',
+			'Titre en arabe : pas encore écrit, le titre en français s’affichera à sa place (facultatif)',
 			'Public : ouvert à tous',
 			'Jours : lundi',
 			'Fréquence : chaque semaine',
 			'Horaire : de 19:00 à 20:30',
-			'Salle : pas choisie',
-			'Intervenant : aucun pour l’instant',
+			'Salle : pas choisie (facultatif)',
+			'Intervenant : aucun pour l’instant (facultatif)',
 			'Langue d’enseignement : français',
 			'Premier jour : pas choisi',
 			'État : brouillon, pas encore sur la page publique'
 		]);
+		// Ce qui est facultatif et laissé vide n'est pas un manque : la salle et l'intervenant ne sont
+		// plus marqués comme le titre ou le premier jour (étape 19, lot 2).
 		expect(manques(html)).toEqual([
 			'Titre en français : pas encore écrit',
-			'Salle : pas choisie',
-			'Intervenant : aucun pour l’instant',
 			'Premier jour : pas choisi'
 		]);
+	});
+
+	it('marks what is optional as « facultatif », quietly, in each language', async () => {
+		const attendu: Record<Langue, string[]> = {
+			fr: [
+				'Titre en allemand : pas encore écrit, le titre en français s’affichera à sa place (facultatif)',
+				'Titre en arabe : pas encore écrit, le titre en français s’affichera à sa place (facultatif)',
+				'Salle : pas choisie (facultatif)',
+				'Intervenant : aucun pour l’instant (facultatif)'
+			],
+			de: [
+				'Titel auf Deutsch: noch nicht geschrieben, an seiner Stelle erscheint der Titel auf Französisch (freiwillig)',
+				'Titel auf Arabisch: noch nicht geschrieben, an seiner Stelle erscheint der Titel auf Französisch (freiwillig)',
+				'Raum: kein Raum gewählt (freiwillig)',
+				'Lehrperson: nicht angegeben (freiwillig)'
+			],
+			it: [
+				'Titolo in tedesco: non ancora scritto, al suo posto comparirà il titolo in francese (facoltativo)',
+				'Titolo in arabo: non ancora scritto, al suo posto comparirà il titolo in francese (facoltativo)',
+				'Sala: non scelta (facoltativo)',
+				'Insegnante: non indicato (facoltativo)'
+			],
+			en: [
+				'Title in German: not written yet, the title in French will be shown instead (optional)',
+				'Title in Arabic: not written yet, the title in French will be shown instead (optional)',
+				'Room: none chosen (optional)',
+				'Teacher: not given (optional)'
+			],
+			ar: [
+				'العنوان بالألمانية: لم يُكتب بعد، وسيظهر مكانه العنوان بالفرنسية (اختياري)',
+				'العنوان بالعربية: لم يُكتب بعد، وسيظهر مكانه العنوان بالفرنسية (اختياري)',
+				'القاعة: لم تُختر (اختياري)',
+				'المدرّس: لم يُذكر (اختياري)'
+			]
+		};
+		for (const langue of LANGUES) {
+			await poserLangueDuCompte(langue);
+			const html = await (await get('/cours/nouveau', cookie)).text();
+			expect(facultatives(html), langue).toEqual(attendu[langue]);
+			// La marque est discrète : dans la ligne, jamais dans ce que le résumé dit manquer.
+			for (const ligne of facultatives(html)) expect(manques(html), langue).not.toContain(ligne);
+		}
+		await poserLangueDuCompte('fr');
 	});
 
 	it('shows the title and description of every language without JavaScript', async () => {
@@ -702,21 +757,19 @@ describe('le résumé en haut du formulaire (B4)', () => {
 		const html = await reponse.text();
 		expect(lignesDuResume(html)).toEqual([
 			'Titre en français : Cours du mardi',
+			'Titre en allemand : pas encore écrit, le titre en français s’affichera à sa place (facultatif)',
+			'Titre en arabe : pas encore écrit, le titre en français s’affichera à sa place (facultatif)',
 			'Public : femmes',
 			'Jours : pas choisis',
 			'Fréquence : chaque semaine',
 			'Horaire : 10 min avant Isha, pendant 1 h 30',
-			'Salle : pas choisie',
-			'Intervenant : Fatima Keller',
+			'Salle : pas choisie (facultatif)',
+			'Intervenant : Fatima Keller (facultatif)',
 			'Langue d’enseignement : pas choisie',
 			'Premier jour : mardi 06.10.2026',
 			'État : brouillon, pas encore sur la page publique'
 		]);
-		expect(manques(html)).toEqual([
-			'Jours : pas choisis',
-			'Salle : pas choisie',
-			'Langue d’enseignement : pas choisie'
-		]);
+		expect(manques(html)).toEqual(['Jours : pas choisis', 'Langue d’enseignement : pas choisie']);
 		expect(champ(html, 'title-fr')['value']).toBe('Cours du mardi');
 		expect(champ(html, 'offsetMinutes')['value']).toBe('10');
 		expect(options(html, 'timingKind').find((option) => option.choisie)?.valeur).toBe(
@@ -751,23 +804,23 @@ describe('le résumé en haut du formulaire (B4)', () => {
 		const attendu: Record<Langue, string[]> = {
 			fr: [
 				'Horaire : à corriger, de 1 à 120 minutes avant la prière',
-				'Dernier jour : à corriger, il tombe avant le premier jour'
+				'Dernier jour : à corriger, il tombe avant le premier jour (facultatif)'
 			],
 			de: [
 				'Zeit: zu korrigieren, 1 bis 120 Minuten vor dem Gebet',
-				'Letzter Tag: zu korrigieren, er liegt vor dem ersten Tag'
+				'Letzter Tag: zu korrigieren, er liegt vor dem ersten Tag (freiwillig)'
 			],
 			it: [
 				'Orario: da correggere, da 1 a 120 minuti prima della preghiera',
-				'Ultimo giorno: da correggere, viene prima del primo giorno'
+				'Ultimo giorno: da correggere, viene prima del primo giorno (facoltativo)'
 			],
 			en: [
 				'Time: to correct, from 1 to 120 minutes before the prayer',
-				'Last day: to correct, it comes before the first day'
+				'Last day: to correct, it comes before the first day (optional)'
 			],
 			ar: [
 				'الوقت: يجب تصحيحه، من 1 إلى 120 دقيقة قبل الصلاة',
-				'اليوم الأخير: يجب تصحيحه، فهو يأتي قبل اليوم الأول'
+				'اليوم الأخير: يجب تصحيحه، فهو يأتي قبل اليوم الأول (اختياري)'
 			]
 		};
 		const champs = champsDuFormulaire(await (await get(`/cours/${tafsirId}`, cookie)).text()).map(
@@ -888,7 +941,7 @@ describe('les dates hors de la période du cours (B4)', () => {
 		);
 		expect(reponse.status).toBe(400);
 		const html = await reponse.text();
-		// La salle et l'intervenant, facultatifs, manquent aussi : seules les dates sont lues ici.
+		// Seules les lignes des dates sont lues ici.
 		expect(manques(html).filter((ligne) => ligne.startsWith('Dates'))).toEqual([
 			'Dates : aucune ne sera publiée',
 			'Dates avant le premier jour, pas publiées : lundi 12.10.2026 et lundi 26.10.2026'
@@ -997,7 +1050,9 @@ describe('une description sans titre dans sa langue (B4)', () => {
 	});
 
 	const DESCRIPTION_DE = 'Kommentierte Lesung für Erwachsene.';
-	const MANQUE = 'Description en allemand : à corriger, il manque le titre en allemand';
+	// La description est facultative, même à corriger : l'effacer est l'une des deux corrections.
+	const MANQUE =
+		'Description en allemand : à corriger, il manque le titre en allemand (facultatif)';
 	const MESSAGE: Record<Langue, string> = {
 		fr: 'La description en allemand ne peut pas être publiée sans titre dans la même langue. Écrivez aussi le titre en allemand, ou effacez cette description.',
 		de: 'Die Beschreibung auf Deutsch kann ohne Titel in derselben Sprache nicht veröffentlicht werden. Schreiben Sie auch den Titel auf Deutsch oder löschen Sie diese Beschreibung.',

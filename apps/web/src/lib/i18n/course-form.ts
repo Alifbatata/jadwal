@@ -87,6 +87,11 @@ interface CourseFormTexts {
 	/** Ce que le résumé dit à la place d'une valeur qui manque. */
 	readonly missing: {
 		readonly title: string;
+		/**
+		 * Le titre d'une autre langue publiée, facultatif, pas encore écrit : la page publique dans
+		 * cette langue montre celui de la langue de saisie, dont le nom suit (étape 19, lot 2).
+		 */
+		readonly otherTitle: (source: string) => string;
 		/** Une description sans titre dans sa langue : le serveur la refuse, la ligne dit « à corriger ». */
 		readonly descriptionWithoutTitle: (language: string) => string;
 		readonly days: string;
@@ -256,6 +261,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		missing: {
 			title: 'pas encore écrit',
+			otherTitle: (source) => `pas encore écrit, le titre en ${source} s’affichera à sa place`,
 			descriptionWithoutTitle: (language) => `à corriger, il manque le titre en ${language}`,
 			days: 'pas choisis',
 			dates: 'pas encore écrites',
@@ -418,6 +424,8 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		missing: {
 			title: 'noch nicht geschrieben',
+			otherTitle: (source) =>
+				`noch nicht geschrieben, an seiner Stelle erscheint der Titel auf ${source}`,
 			descriptionWithoutTitle: (language) => `zu korrigieren, der Titel auf ${language} fehlt`,
 			days: 'nicht gewählt',
 			dates: 'noch nicht eingetragen',
@@ -579,6 +587,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		missing: {
 			title: 'non ancora scritto',
+			otherTitle: (source) => `non ancora scritto, al suo posto comparirà il titolo in ${source}`,
 			descriptionWithoutTitle: (language) => `da correggere, manca il titolo in ${language}`,
 			days: 'non scelti',
 			dates: 'non ancora scritte',
@@ -738,6 +747,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		missing: {
 			title: 'not written yet',
+			otherTitle: (source) => `not written yet, the title in ${source} will be shown instead`,
 			descriptionWithoutTitle: (language) => `to correct, the title in ${language} is missing`,
 			days: 'none chosen',
 			dates: 'not written yet',
@@ -904,6 +914,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		missing: {
 			title: 'لم يُكتب بعد',
+			otherTitle: (source) => `لم يُكتب بعد، وسيظهر مكانه العنوان ب${source}`,
 			descriptionWithoutTitle: (language) => `يجب تصحيحه، ينقصه العنوان ب${language}`,
 			days: 'لم تُختر بعد',
 			dates: 'لم تُكتب بعد',
