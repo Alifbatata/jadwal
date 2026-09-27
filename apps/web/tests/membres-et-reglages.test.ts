@@ -29,7 +29,7 @@
 // - le formulaire d'invitation propose la langue du courriel, celle de l'écran d'abord, et
 //   l'invitation part dans la langue choisie ;
 // - retirer un membre et changer un rôle demandent une confirmation, et une adhésion introuvable
-//   reçoit une phrase ;
+//   reçoit une phrase, sa propre adhésion dans une autre organisation comprise ;
 // - une responsable qui se retire elle-même, ou toute personne qui quitte une organisation depuis
 //   « Vos organisations », lit à l'arrivée un encadré qui le dit ; la seule personne responsable ne
 //   part pas, et le refus dit quoi faire.
@@ -1431,6 +1431,8 @@ describe('retirer un membre, changer un rôle : Membres demande de confirmer (é
 	const personne = newId();
 	const adhesion = newId();
 	let cookie = '';
+	/** Le rôle applicatif : le journal se lit dans l'organisation ; le propriétaire ne le lit pas. */
+	let appHandle: DatabaseHandle;
 
 	async function remettre(): Promise<void> {
 		await maintenance((tx) =>
@@ -1450,11 +1452,13 @@ describe('retirer un membre, changer un rôle : Membres demande de confirmer (é
 		);
 		await remettre();
 		cookie = await signIn(RESPONSABLE);
+		appHandle = createDatabase({ role: 'app', overrides: { database: testDatabase } });
 	});
 
 	afterAll(async () => {
 		await poserLangueDuCompte(RESPONSABLE, 'fr');
 		await maintenance((tx) => tx.execute(sql`delete from "membership" where "id" = ${adhesion}`));
+		await appHandle?.close();
 	});
 
 	/** La demande, telle qu'elle revient du premier envoi : en haut, annoncée, avec sa réponse. */
@@ -1568,6 +1572,64 @@ describe('retirer un membre, changer un rôle : Membres demande de confirmer (é
 			expect(await roleDe(adhesion)).toBe('editor');
 		}
 	);
+
+	it('answers her own membership in another organisation as one it cannot find, and changes nothing', async () => {
+		await remettre();
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		// Sa propre adhésion dans une autre organisation, que la politique lui montre quelle que soit
+		// l'organisation du contexte (migrations 0022 et 0064). Seul le filtre de `readMember`
+		// l'écarte : sans lui, l'écran lui demandait de confirmer qu'elle se retirait elle-même, et le
+		// second envoi signait au journal un retrait qui n'avait pas eu lieu, vidait sa session et
+		// l'envoyait vers l'encadré du départ. L'adhésion de l'éditrice, que la base ne lui montre pas,
+		// ne le prouvait pas.
+		const ailleurs = newId();
+		const sienneAilleurs = newId();
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+					"enabled_language")
+				values (${ailleurs}, 'mr-sienne-ailleurs', 'Association où elle est aussi', 'Europe/Zurich',
+					'fr', array['fr'])
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${sienneAilleurs}, ${ailleurs}, ${ids[RESPONSABLE] ?? ''}, 'editor')
+			`);
+		});
+		const journal = () =>
+			withOrg(appHandle.db, { organizationId, userId: ids[RESPONSABLE] ?? '' }, async (tx) =>
+				lignes<{ action: string }>(
+					await tx.execute(
+						sql`select "action" from "audit_log" where "target_id" = ${sienneAilleurs}`
+					)
+				)
+			);
+		try {
+			// Deux organisations : la session choisit celle du fichier, comme elle le ferait.
+			expect((await postForm('/organisations?/choisir', { organizationId }, cookie)).status).toBe(
+				303
+			);
+			expect(await organisationDeLaSession(cookie)).toBe(organizationId);
+			for (const confirm of ['', 'yes']) {
+				for (const [chemin, champs] of [
+					['/membres?/retirer', { membershipId: sienneAilleurs, confirm }],
+					['/membres?/role', { membershipId: sienneAilleurs, role: 'org_admin', confirm }]
+				] as const) {
+					const reponse = await postForm(chemin, champs, cookie);
+					const cas = `${chemin} ${confirm}`;
+					expect(reponse.status, cas).toBe(404);
+					expect(alerte(await reponse.text()), cas).toBe(MEMBRE_DISPARU.fr);
+				}
+			}
+			expect(await roleDe(sienneAilleurs)).toBe('editor');
+			expect(await organisationDeLaSession(cookie)).toBe(organizationId);
+			expect(await journal()).toEqual([]);
+		} finally {
+			await maintenance((tx) =>
+				tx.execute(sql`delete from "membership" where "id" = ${sienneAilleurs}`)
+			);
+		}
+	});
 });
 
 /** Ce que la coquille dit, là où elle arrive, à une responsable qui s'est donné le rôle d'éditeur. */
