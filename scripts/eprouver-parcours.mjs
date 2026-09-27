@@ -3128,6 +3128,16 @@ const radioDeLaLocalite = (page) =>
 	page.getByRole('radio', { name: LOCALITE.libelle, exact: true });
 
 /**
+ * Les valeurs des cases cochées de la liste des localités : `2502|Biel/Bienne` pour une localité,
+ * une valeur vide pour « Hors de Suisse ». Par la valeur et non par le nom accessible, qui s'allonge
+ * de « localité enregistrée » quand la localité est épinglée en tête.
+ */
+const casesCochees = (page) =>
+	page
+		.locator('input[name="localite"]:checked')
+		.evaluateAll((cases) => cases.map((une) => une.value));
+
+/**
  * Les réglages du calcul que l'écran des prières vient d'enregistrer, lus dans ses champs par leur
  * `id`, avec la position donnée, par défaut celle que la liste donne à la localité, et le fuseau de
  * l'organisation.
@@ -3580,7 +3590,9 @@ async function taperSansFermer(page, champ, texte, repli) {
  * Avec JavaScript, au clavier (C2) : « Hors de Suisse » reste ouvert pendant qu'on tape la latitude
  * puis la longitude, et « Méthode de calcul, école et ajustements » pendant qu'on tape dans la
  * recherche, puis quand la liste arrive. Un repli fermé avant un champ est d'abord ouvert, pour que
- * chaque champ soit tapé. Rien n'est enregistré : la page est rouverte à la fin.
+ * chaque champ soit tapé. La position tapée coche « Hors de Suisse » à la place de la localité
+ * enregistrée, cochée au départ (étape 19, lot 2). Rien n'est enregistré : la page est rouverte à
+ * la fin.
  */
 async function replisPendantLaFrappe(page) {
 	const ouvrirLEcran = async () => {
@@ -3604,6 +3616,9 @@ async function replisPendantLaFrappe(page) {
 
 	await retour('C2', async () => {
 		await ouvrirLEcran();
+		// L'état de départ, avant toute frappe : la case de la localité enregistrée est cochée, seule.
+		// Sans lui, la vérification de « Hors de Suisse » après la frappe ne prouverait rien.
+		const cocheesAvant = await casesCochees(page);
 		const hors = repliNomme(page, REPLIS_DES_PRIERES.horsDeSuisse);
 		const lus = [];
 		for (const id of ['latitude', 'longitude']) {
@@ -3630,10 +3645,19 @@ async function replisPendantLaFrappe(page) {
 		// fait de même à l'envoi.
 		const caseHors = page.getByRole('radio', { name: CHOIX_HORS_DE_SUISSE, exact: true });
 		const horsCochee = (await caseHors.count()) === 1 && (await caseHors.isChecked());
-		verifier(
-			`avec JavaScript, taper une position coche « ${CHOIX_HORS_DE_SUISSE} » à la place de la localité enregistrée`,
-			horsCochee,
-			(await caseHors.count()) === 1 ? 'la case reste décochée' : 'aucune case « Hors de Suisse »'
+		const cocheesApres = await casesCochees(page);
+		const dites = (valeurs) =>
+			valeurs.map((valeur) => (valeur === '' ? '« Hors de Suisse »' : valeur)).join(', ') ||
+			'aucune';
+		verifierChaque(
+			`avec JavaScript, ${LOCALITE.nom} enregistrée et cochée, taper une position coche « ${CHOIX_HORS_DE_SUISSE} » à sa place`,
+			{
+				[`${LOCALITE.nom} seule cochée avant la frappe`]:
+					cocheesAvant.length === 1 && cocheesAvant[0].startsWith(`${LOCALITE.npa}|`),
+				'« Hors de Suisse » seule cochée après la frappe':
+					horsCochee && cocheesApres.length === 1 && cocheesApres[0] === ''
+			},
+			`cochée avant : ${dites(cocheesAvant)} ; après : ${dites(cocheesApres)}`
 		);
 
 		await ouvrirLEcran();
@@ -4183,7 +4207,9 @@ async function horsDeSuisseSansScript(sans) {
 		// localité reste cochée, et la position tapée doit l'emporter quand même.
 		const caseHors = sans.getByRole('radio', { name: CHOIX_HORS_DE_SUISSE, exact: true });
 		const caseOfferte = (await caseHors.count()) === 1;
-		const localiteCochee = (await sans.locator('input[name="localite"]:checked').count()) === 1;
+		const cocheesAvant = await casesCochees(sans);
+		const localiteCochee =
+			cocheesAvant.length === 1 && cocheesAvant[0].startsWith(`${LOCALITE.npa}|`);
 		await repliNomme(sans, REPLIS_DES_PRIERES.horsDeSuisse).locator(':scope > summary').click();
 		await sans.locator('#latitude').fill(POSITION_HORS_DE_SUISSE.latitude);
 		await sans.locator('#longitude').fill(POSITION_HORS_DE_SUISSE.longitude);
@@ -4198,7 +4224,7 @@ async function horsDeSuisseSansScript(sans) {
 			`sans JavaScript, ${LOCALITE.nom} enregistrée et cochée, la position ${POSITION_HORS_DE_SUISSE.latitude}, ${POSITION_HORS_DE_SUISSE.longitude} tapée sous « Hors de Suisse », sans toucher à la liste, s’enregistre à sa place : l’écran le dit, et les heures servies sont celles de cette position`,
 			{
 				'la case « Hors de Suisse » dans la liste': caseOfferte,
-				'une case de la liste cochée avant la frappe': localiteCochee,
+				[`${LOCALITE.nom} seule cochée avant la frappe`]: localiteCochee,
 				'« Réglages enregistrés. »': dite.startsWith('Réglages enregistrés.'),
 				'l’écran dit la position donnée': ailleurs.includes(POSITION_DONNEE),
 				'les heures de cette position': lues.length === 7 && ecarts.length === 0
