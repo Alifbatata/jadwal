@@ -23,8 +23,10 @@ export type UpcomingDone = 'cancelled' | 'moved' | 'restored';
  * `changed` : la séance a été annulée ou déplacée depuis que la page a été ouverte, par Retour, dans
  * un autre onglet ou par une autre personne ; la carte encore affichée ne défait pas ce changement.
  * `timeChanged` : l'heure du cours a changé dans sa fiche depuis ; la séance garde sa carte, qui se
- * rouvre sur la phrase, sous sa nouvelle heure. `pastSession` : l'annulation d'une séance dont la
- * date est passée, qu'aucune carte ne propose.
+ * rouvre sur la phrase, sous sa nouvelle heure. `alreadyCancelled` : la séance a été annulée depuis,
+ * et la carte l'annule encore ; rien ne s'écrit, mais le message prêt à coller est donné quand même
+ * (étape 19, D4). `pastSession` : l'annulation d'une séance dont la date est passée, qu'aucune carte
+ * ne propose.
  */
 export type UpcomingError =
 	| 'unreadableDate'
@@ -35,7 +37,18 @@ export type UpcomingError =
 	| 'unchanged'
 	| 'changed'
 	| 'timeChanged'
+	| 'alreadyCancelled'
 	| 'sessionGone';
+
+/**
+ * Les refus d'une carte périmée, qui nomment la séance par son titre et sa date (étape 19, D4) :
+ * leur phrase reçoit le titre, dans la langue de l'écran quand le cours y est traduit, et la date
+ * déjà écrite.
+ */
+export type NamedUpcomingError = 'changed' | 'timeChanged' | 'alreadyCancelled';
+
+/** Une phrase qui nomme une séance. */
+type Named = (title: string, date: string) => string;
 
 interface UpcomingTexts {
 	/** Ce que montre l'écran, et où se trouvent les options d'une séance. */
@@ -65,13 +78,15 @@ interface UpcomingTexts {
 	readonly emptyLink: string;
 	/**
 	 * Les marques d'une séance, à côté de son titre. `newTime` : une séance déplacée le même jour, à
-	 * une autre heure ; sa date n'a rien d'exceptionnel.
+	 * une autre heure ; sa date n'a rien d'exceptionnel. `draft` : un cours en brouillon, que la page
+	 * publique et le programme de la semaine ne montrent pas (étape 19, D4).
 	 */
 	readonly marks: {
 		readonly cancelled: string;
 		readonly movedAway: string;
 		readonly movedHere: string;
 		readonly newTime: string;
+		readonly draft: string;
 	};
 	/** Sous une séance déplacée : sa nouvelle date et sa nouvelle heure. */
 	readonly movedTo: (date: string, time: string) => string;
@@ -123,7 +138,9 @@ interface UpcomingTexts {
 		readonly feed: string;
 		readonly note: string;
 	};
-	readonly errors: { readonly [E in UpcomingError]: string };
+	readonly errors: { readonly [E in Exclude<UpcomingError, NamedUpcomingError>]: string } & {
+		readonly [E in NamedUpcomingError]: Named;
+	};
 }
 
 export const upcomingTexts: Translations<UpcomingTexts> = {
@@ -163,7 +180,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			cancelled: 'annulée',
 			movedAway: 'déplacée',
 			movedHere: 'date exceptionnelle',
-			newTime: 'nouvelle heure'
+			newTime: 'nouvelle heure',
+			draft: 'brouillon'
 		},
 		movedTo: (date, time) => `Déplacée au ${date} à ${time}`,
 		originallyOn: (date) => `Prévue à l’origine le ${date}`,
@@ -216,11 +234,13 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				'Cette séance est déjà passée : vous ne pouvez annuler que les séances d’aujourd’hui et des jours suivants.',
 			unchanged:
 				'La séance est déjà prévue à cette date et à cette heure. Choisissez une autre date ou une autre heure.',
-			changed:
-				'Cette séance a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée. Rien n’a été enregistré. Le programme ci-dessous est à jour.',
-			timeChanged:
-				'L’heure de cette séance a changé depuis l’ouverture de la page. Rien n’a été enregistré. Sa nouvelle heure est écrite sous son titre : vérifiez la date et l’heure choisies, puis recommencez.',
-			sessionGone: 'Cette séance n’existe plus. Rechargez la page pour voir le programme à jour.'
+			changed: (title, date) =>
+				`La séance « ${title} » du ${date} a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée. Rien n’a été enregistré. Le programme ci-dessous est à jour.`,
+			timeChanged: (title, date) =>
+				`L’heure de la séance « ${title} » du ${date} a changé depuis l’ouverture de la page. Rien n’a été enregistré. Sa nouvelle heure est écrite sous son titre : vérifiez la date et l’heure choisies, puis recommencez.`,
+			alreadyCancelled: (title, date) =>
+				`La séance « ${title} » du ${date} a déjà été annulée depuis l’ouverture de la page. Rien n’a été enregistré. Si le message n’a pas encore été envoyé, il est prêt ci-dessous.`,
+			sessionGone: 'Cette séance n’existe plus. La liste ci-dessous est à jour.'
 		}
 	},
 	de: {
@@ -259,7 +279,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			cancelled: 'abgesagt',
 			movedAway: 'verschoben',
 			movedHere: 'Ausnahmetermin',
-			newTime: 'neue Uhrzeit'
+			newTime: 'neue Uhrzeit',
+			draft: 'Entwurf'
 		},
 		movedTo: (date, time) => `Verschoben auf ${date}, um ${time}`,
 		originallyOn: (date) => `Ursprünglich geplant am ${date}`,
@@ -312,12 +333,13 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				'Dieser Termin ist schon vorbei: Sie können nur Termine von heute oder von einem späteren Tag absagen.',
 			unchanged:
 				'Der Termin ist schon an diesem Datum und zu dieser Uhrzeit geplant. Wählen Sie ein anderes Datum oder eine andere Uhrzeit.',
-			changed:
-				'Dieser Termin hat sich geändert, seit die Seite geöffnet wurde: Er wurde schon abgesagt oder verschoben. Es wurde nichts gespeichert. Das Programm unten ist aktuell.',
-			timeChanged:
-				'Die Uhrzeit dieses Termins hat sich geändert, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Die neue Uhrzeit steht unter seinem Titel: Prüfen Sie das gewählte Datum und die gewählte Uhrzeit und versuchen Sie es noch einmal.',
-			sessionGone:
-				'Diesen Termin gibt es nicht mehr. Laden Sie die Seite neu, um das aktuelle Programm zu sehen.'
+			changed: (title, date) =>
+				`Der Termin «${title}» vom ${date}, hat sich geändert, seit die Seite geöffnet wurde: Er wurde schon abgesagt oder verschoben. Es wurde nichts gespeichert. Das Programm unten ist aktuell.`,
+			timeChanged: (title, date) =>
+				`Die Uhrzeit des Termins «${title}» vom ${date}, hat sich geändert, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Die neue Uhrzeit steht unter seinem Titel: Prüfen Sie das gewählte Datum und die gewählte Uhrzeit und versuchen Sie es noch einmal.`,
+			alreadyCancelled: (title, date) =>
+				`Der Termin «${title}» vom ${date}, ist abgesagt worden, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Wenn die Nachricht noch nicht verschickt ist, steht sie unten bereit.`,
+			sessionGone: 'Diesen Termin gibt es nicht mehr. Die Liste unten ist aktuell.'
 		}
 	},
 	it: {
@@ -355,7 +377,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			cancelled: 'annullata',
 			movedAway: 'spostata',
 			movedHere: 'data eccezionale',
-			newTime: 'nuovo orario'
+			newTime: 'nuovo orario',
+			draft: 'bozza'
 		},
 		movedTo: (date, time) => `Spostata a ${date} alle ${time}`,
 		originallyOn: (date) => `Prevista inizialmente per ${date}`,
@@ -408,12 +431,13 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				'Questa lezione è già passata: puoi annullare solo le lezioni di oggi o dei giorni successivi.',
 			unchanged:
 				'La lezione è già prevista per questa data e questo orario. Scegli un’altra data o un altro orario.',
-			changed:
-				'Questa lezione è cambiata da quando hai aperto la pagina: è già stata annullata o spostata. Non è stato salvato niente. Il programma qui sotto è aggiornato.',
-			timeChanged:
-				'L’orario di questa lezione è cambiato da quando hai aperto la pagina. Non è stato salvato niente. Il nuovo orario è indicato sotto il titolo: controlla la data e l’orario scelti, poi riprova.',
-			sessionGone:
-				'Questa lezione non esiste più. Ricarica la pagina per vedere il programma aggiornato.'
+			changed: (title, date) =>
+				`La lezione «${title}» di ${date} è cambiata da quando hai aperto la pagina: è già stata annullata o spostata. Non è stato salvato niente. Il programma qui sotto è aggiornato.`,
+			timeChanged: (title, date) =>
+				`L’orario della lezione «${title}» di ${date} è cambiato da quando hai aperto la pagina. Non è stato salvato niente. Il nuovo orario è indicato sotto il titolo: controlla la data e l’orario scelti, poi riprova.`,
+			alreadyCancelled: (title, date) =>
+				`La lezione «${title}» di ${date} è già stata annullata da quando hai aperto la pagina. Non è stato salvato niente. Se il messaggio non è ancora stato mandato, è pronto qui sotto.`,
+			sessionGone: 'Questa lezione non esiste più. L’elenco qui sotto è aggiornato.'
 		}
 	},
 	en: {
@@ -451,7 +475,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			cancelled: 'cancelled',
 			movedAway: 'moved',
 			movedHere: 'rescheduled',
-			newTime: 'new time'
+			newTime: 'new time',
+			draft: 'draft'
 		},
 		movedTo: (date, time) => `Moved to ${date} at ${time}`,
 		originallyOn: (date) => `Originally planned for ${date}`,
@@ -502,11 +527,14 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				'This session has already passed: you can only cancel sessions from today onwards.',
 			unchanged:
 				'The session is already planned for this date and time. Choose a different date or time.',
-			changed:
-				'This session has changed since the page was opened: it has already been cancelled or moved. Nothing has been saved. The programme below shows the latest changes.',
-			timeChanged:
-				'The time of this session has changed since the page was opened. Nothing has been saved. Its new time is shown under its title: check the date and time you chose, then try again.',
-			sessionGone: 'This session no longer exists. Reload the page to see the current programme.'
+			changed: (title, date) =>
+				`The ‘${title}’ session on ${date} has changed since the page was opened: it has already been cancelled or moved. Nothing has been saved. The programme below shows the latest changes.`,
+			timeChanged: (title, date) =>
+				`The time of the ‘${title}’ session on ${date} has changed since the page was opened. Nothing has been saved. Its new time is shown under its title: check the date and time you chose, then try again.`,
+			alreadyCancelled: (title, date) =>
+				`Since the page was opened, the ‘${title}’ session on ${date} has already been cancelled. Nothing has been saved. If the message has not been sent yet, it is ready below.`,
+			sessionGone:
+				'This session no longer exists. The list below shows the sessions as they are now.'
 		}
 	},
 	ar: {
@@ -551,7 +579,8 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			cancelled: 'ملغاة',
 			movedAway: 'منقولة',
 			movedHere: 'موعد استثنائي',
-			newTime: 'وقت جديد'
+			newTime: 'وقت جديد',
+			draft: 'مسودة'
 		},
 		movedTo: (date, time) => `نُقلت إلى يوم ${date} في الساعة ${time}`,
 		originallyOn: (date) => `كانت مقرّرة يوم ${date}`,
@@ -597,11 +626,27 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			pastDate: 'هذا التاريخ قد مضى. اختر اليوم أو يومًا بعده.',
 			pastSession: 'موعد هذه الحصة قد مضى: يمكنك إلغاء حصص اليوم والأيام التالية فقط.',
 			unchanged: 'الحصة مقرّرة أصلًا في هذا التاريخ وفي هذا الوقت. اختر تاريخًا آخر أو وقتًا آخر.',
-			changed:
-				'تغيّرت هذه الحصة منذ أن فُتحت الصفحة: سبق أن أُلغيت أو نُقلت. لم يُحفظ أي شيء. برنامجك المعروض أدناه محدَّث.',
-			timeChanged:
-				'تغيّر وقت هذه الحصة منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. وقتها الجديد مكتوب تحت عنوانها: راجع ما اخترته من تاريخ ووقت، ثم حاول مرة أخرى.',
-			sessionGone: 'هذه الحصة لم تعد موجودة. أعد تحميل الصفحة لترى برنامجك المحدَّث.'
+			changed: (title, date) =>
+				`تغيّرت حصة «${title}» يوم ${date} منذ أن فُتحت الصفحة: سبق أن أُلغيت أو نُقلت. لم يُحفظ أي شيء. برنامجك المعروض أدناه محدَّث.`,
+			timeChanged: (title, date) =>
+				`تغيّر وقت حصة «${title}» يوم ${date} منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. وقتها الجديد مكتوب تحت عنوانها: راجع ما اخترته من تاريخ ووقت، ثم حاول مرة أخرى.`,
+			alreadyCancelled: (title, date) =>
+				`أُلغيت حصة «${title}» يوم ${date} منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. إن لم تُرسَل الرسالة بعد، فهي جاهزة أدناه.`,
+			sessionGone: 'هذه الحصة لم تعد موجودة. القائمة أدناه محدَّثة.'
 		}
 	}
 };
+
+/**
+ * La phrase d'un refus, dans la langue de l'écran. Un refus qui nomme la séance reçoit son titre et
+ * sa date déjà écrite ; les autres n'en ont pas besoin.
+ */
+export function upcomingErrorText(
+	texts: UpcomingTexts,
+	error: UpcomingError,
+	title: string,
+	date: string
+): string {
+	const phrase = texts.errors[error];
+	return typeof phrase === 'function' ? phrase(title, date) : phrase;
+}

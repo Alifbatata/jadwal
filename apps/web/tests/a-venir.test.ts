@@ -26,12 +26,19 @@
 //   comme sur l'écran Partager ; un titre choisi par l'organisation reste tel quel.
 // - D2, A3, B1 : l'écran dans les cinq langues, sans phrase française restée, sans date AAAA-MM-JJ
 //   dans le texte lu, et un champ de date qui dit ce qu'il accepte.
+// - Étape 19 (D4 et les décisions du chef de projet) : les cours en brouillon sortent du programme
+//   de la semaine, qui est celui de Partager, et leur carte dit « brouillon » ; une carte « date
+//   exceptionnelle » a « Rétablir » ; une séance disparue dit que la liste ci-dessous est à jour ; le
+//   refus d'une carte périmée nomme la séance, par son titre et sa date ; la seconde personne qui
+//   annule la même séance reçoit quand même le message prêt à coller ; le titre d'une carte suit la
+//   langue de l'écran quand le cours y est traduit ; la prière du vendredi a ses propres mots dans les
+//   messages d'une annulation ou d'un déplacement.
 
 import { readFileSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
-import { addDays, todayInZone, type IsoDate } from '@jadwal/core';
+import { addDays, isoDateToDays, todayInZone, weekdayFromDays, type IsoDate } from '@jadwal/core';
 import { createDatabase, newId, sql, withOrg, type DatabaseHandle } from '@jadwal/db';
 import { conditionsAcceptees } from './conditions-acceptees.js';
 import { frenchLeft, ISO_DATE, textSegments, visibleText } from './textes-lus.js';
@@ -69,29 +76,102 @@ const TAJWID = { ar: 'حلقة التجويد', fr: 'Cercle de tajwid' } as cons
 const SALLE = 'Salle Ibn Khaldoun';
 const ENSEIGNANT = 'Karim Haddad';
 
+/** Une phrase qui nomme une séance, par son titre et sa date écrite dans la langue de l'écran. */
+type PhraseNommee = (titre: string, date: string) => string;
+
 /**
- * Le refus d'une page restée ouverte, quand la séance a été annulée ou déplacée depuis : ce qui
- * s'est passé, que rien n'est écrit, et que l'écran rendu est à jour.
+ * Le refus d'une page restée ouverte, quand la séance a été annulée ou déplacée depuis : laquelle,
+ * par son titre et sa date (étape 19, D4), ce qui s'est passé, que rien n'est écrit, et que l'écran
+ * rendu est à jour.
  */
-const CHANGEE: Record<Langue, string> = {
-	fr: 'Cette séance a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée. Rien n’a été enregistré. Le programme ci-dessous est à jour.',
-	de: 'Dieser Termin hat sich geändert, seit die Seite geöffnet wurde: Er wurde schon abgesagt oder verschoben. Es wurde nichts gespeichert. Das Programm unten ist aktuell.',
-	it: 'Questa lezione è cambiata da quando hai aperto la pagina: è già stata annullata o spostata. Non è stato salvato niente. Il programma qui sotto è aggiornato.',
-	en: 'This session has changed since the page was opened: it has already been cancelled or moved. Nothing has been saved. The programme below shows the latest changes.',
-	ar: 'تغيّرت هذه الحصة منذ أن فُتحت الصفحة: سبق أن أُلغيت أو نُقلت. لم يُحفظ أي شيء. برنامجك المعروض أدناه محدَّث.'
+const CHANGEE: Record<Langue, PhraseNommee> = {
+	fr: (titre, date) =>
+		`La séance « ${titre} » du ${date} a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée. Rien n’a été enregistré. Le programme ci-dessous est à jour.`,
+	de: (titre, date) =>
+		`Der Termin «${titre}» vom ${date}, hat sich geändert, seit die Seite geöffnet wurde: Er wurde schon abgesagt oder verschoben. Es wurde nichts gespeichert. Das Programm unten ist aktuell.`,
+	it: (titre, date) =>
+		`La lezione «${titre}» di ${date} è cambiata da quando hai aperto la pagina: è già stata annullata o spostata. Non è stato salvato niente. Il programma qui sotto è aggiornato.`,
+	en: (titre, date) =>
+		`The ‘${titre}’ session on ${date} has changed since the page was opened: it has already been cancelled or moved. Nothing has been saved. The programme below shows the latest changes.`,
+	ar: (titre, date) =>
+		`تغيّرت حصة «${titre}» يوم ${date} منذ أن فُتحت الصفحة: سبق أن أُلغيت أو نُقلت. لم يُحفظ أي شيء. برنامجك المعروض أدناه محدَّث.`
 };
 
 /**
  * Le refus d'une carte restée ouverte pendant que l'heure du cours changeait dans sa fiche : la
  * séance est encore prévue, sa carte se rouvre sur cette phrase, sous sa nouvelle heure (relecture
- * du lot 5).
+ * du lot 5). Elle nomme aussi la séance (étape 19, D4).
  */
-const HEURE_CHANGEE: Record<Langue, string> = {
-	fr: 'L’heure de cette séance a changé depuis l’ouverture de la page. Rien n’a été enregistré. Sa nouvelle heure est écrite sous son titre : vérifiez la date et l’heure choisies, puis recommencez.',
-	de: 'Die Uhrzeit dieses Termins hat sich geändert, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Die neue Uhrzeit steht unter seinem Titel: Prüfen Sie das gewählte Datum und die gewählte Uhrzeit und versuchen Sie es noch einmal.',
-	it: 'L’orario di questa lezione è cambiato da quando hai aperto la pagina. Non è stato salvato niente. Il nuovo orario è indicato sotto il titolo: controlla la data e l’orario scelti, poi riprova.',
-	en: 'The time of this session has changed since the page was opened. Nothing has been saved. Its new time is shown under its title: check the date and time you chose, then try again.',
-	ar: 'تغيّر وقت هذه الحصة منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. وقتها الجديد مكتوب تحت عنوانها: راجع ما اخترته من تاريخ ووقت، ثم حاول مرة أخرى.'
+const HEURE_CHANGEE: Record<Langue, PhraseNommee> = {
+	fr: (titre, date) =>
+		`L’heure de la séance « ${titre} » du ${date} a changé depuis l’ouverture de la page. Rien n’a été enregistré. Sa nouvelle heure est écrite sous son titre : vérifiez la date et l’heure choisies, puis recommencez.`,
+	de: (titre, date) =>
+		`Die Uhrzeit des Termins «${titre}» vom ${date}, hat sich geändert, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Die neue Uhrzeit steht unter seinem Titel: Prüfen Sie das gewählte Datum und die gewählte Uhrzeit und versuchen Sie es noch einmal.`,
+	it: (titre, date) =>
+		`L’orario della lezione «${titre}» di ${date} è cambiato da quando hai aperto la pagina. Non è stato salvato niente. Il nuovo orario è indicato sotto il titolo: controlla la data e l’orario scelti, poi riprova.`,
+	en: (titre, date) =>
+		`The time of the ‘${titre}’ session on ${date} has changed since the page was opened. Nothing has been saved. Its new time is shown under its title: check the date and time you chose, then try again.`,
+	ar: (titre, date) =>
+		`تغيّر وقت حصة «${titre}» يوم ${date} منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. وقتها الجديد مكتوب تحت عنوانها: راجع ما اخترته من تاريخ ووقت، ثم حاول مرة أخرى.`
+};
+
+/**
+ * La seconde annulation d'une même séance, par une autre personne ou depuis une page restée
+ * ouverte : rien n'est écrit, mais le message prêt à coller est donné quand même (étape 19, D4).
+ */
+const DEJA_ANNULEE: Record<Langue, PhraseNommee> = {
+	fr: (titre, date) =>
+		`La séance « ${titre} » du ${date} a déjà été annulée depuis l’ouverture de la page. Rien n’a été enregistré. Si le message n’a pas encore été envoyé, il est prêt ci-dessous.`,
+	de: (titre, date) =>
+		`Der Termin «${titre}» vom ${date}, ist abgesagt worden, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Wenn die Nachricht noch nicht verschickt ist, steht sie unten bereit.`,
+	it: (titre, date) =>
+		`La lezione «${titre}» di ${date} è già stata annullata da quando hai aperto la pagina. Non è stato salvato niente. Se il messaggio non è ancora stato mandato, è pronto qui sotto.`,
+	en: (titre, date) =>
+		`Since the page was opened, the ‘${titre}’ session on ${date} has already been cancelled. Nothing has been saved. If the message has not been sent yet, it is ready below.`,
+	ar: (titre, date) =>
+		`أُلغيت حصة «${titre}» يوم ${date} منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. إن لم تُرسَل الرسالة بعد، فهي جاهزة أدناه.`
+};
+
+/**
+ * Une séance qui n'existe pas, ou plus : la page renvoyée est déjà à jour, et, sans JavaScript,
+ * recharger renverrait le formulaire refusé (étape 19, D4).
+ */
+const SEANCE_DISPARUE: Record<Langue, string> = {
+	fr: 'Cette séance n’existe plus. La liste ci-dessous est à jour.',
+	de: 'Diesen Termin gibt es nicht mehr. Die Liste unten ist aktuell.',
+	it: 'Questa lezione non esiste più. L’elenco qui sotto è aggiornato.',
+	en: 'This session no longer exists. The list below shows the sessions as they are now.',
+	ar: 'هذه الحصة لم تعد موجودة. القائمة أدناه محدَّثة.'
+};
+
+/** La marque de la carte d'un cours en brouillon (étape 19, D4). */
+const BROUILLON: Record<Langue, string> = {
+	fr: 'brouillon',
+	de: 'Entwurf',
+	it: 'bozza',
+	en: 'draft',
+	ar: 'مسودة'
+};
+
+/** Les jours de la semaine, du lundi au dimanche, tels que chaque langue les écrit devant une date. */
+const JOURS: Record<Langue, readonly string[]> = {
+	fr: ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'],
+	de: ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'],
+	it: ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'],
+	en: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+	ar: ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد']
+};
+
+/**
+ * Le titre du cours du soir sur une carte, dans la langue de l'écran quand il y est traduit, sinon
+ * dans sa langue source (décision du chef de projet, étape 19).
+ */
+const SOIR_LU: Record<Langue, string> = {
+	fr: SOIR.fr,
+	de: SOIR.de,
+	it: SOIR.fr,
+	en: SOIR.fr,
+	ar: SOIR.ar
 };
 
 /**
@@ -134,6 +214,12 @@ const jour = (pas: number): IsoDate => addDays(today, pas);
 function numerique(date: string): string {
 	const [annee, mois, quantieme] = date.split('-');
 	return `${quantieme}.${mois}.${annee}`;
+}
+
+/** « samedi 26.09.2026 », « Samstag, 26.09.2026 » : une date telle que l'écran l'écrit. */
+function dateLue(langue: Langue, date: IsoDate): string {
+	const nom = JOURS[langue][weekdayFromDays(isoDateToDays(date)) - 1];
+	return `${nom}${langue === 'de' ? ',' : ''} ${numerique(date)}`;
 }
 
 /** Le propriétaire, sous son drapeau d'entretien, le temps d'une transaction. */
@@ -390,6 +476,31 @@ function carte(html: string, date: string, titre: string, statut: string): strin
 					.split(/\s+/)
 					.includes(statut)
 		) ?? ''
+	);
+}
+
+/**
+ * Le titre de chaque carte d'un morceau de page, tel qu'il s'affiche. Svelte ajoute à `<bdi>` la
+ * classe qui borne la feuille de style de l'écran.
+ */
+function titresDesCartes(fragment: string): string[] {
+	return [
+		...fragment.matchAll(/<p\b[^>]*class="titre[^"]*"[^>]*>\s*<bdi\b[^>]*>([\s\S]*?)<\/bdi>/g)
+	].map((trouve) => decode(trouve[1] ?? ''));
+}
+
+/**
+ * Le formulaire « Rétablir la séance » d'une carte : chaque champ nommé et sa valeur, ou `null`
+ * quand la carte n'en a pas.
+ */
+function formulaireDeRetablissement(fragment: string): Record<string, string> | null {
+	const formulaire = fragment.match(/<form\b[^>]*action="\?\/retablir"[^>]*>[\s\S]*?<\/form>/)?.[0];
+	if (!formulaire) return null;
+	return Object.fromEntries(
+		[...formulaire.matchAll(/<input\b[^>]*>/g)].map((champ) => {
+			const lu = attributs(champ[0]);
+			return [lu['name'] ?? '', lu['value'] ?? ''];
+		})
 	);
 }
 
@@ -807,10 +918,9 @@ describe('A2 : déplacer une séance', () => {
 			const reponse = await postForm(`/?/${action}`, envoi, cookie);
 			expect(reponse.status, action).toBe(404);
 			const html = await reponse.text();
-			// La séance visée ne désigne aucune carte : la phrase s'affiche en haut de l'écran.
-			expect(alerte(html), action).toBe(
-				'Cette séance n’existe plus. Rechargez la page pour voir le programme à jour.'
-			);
+			// La séance visée ne désigne aucune carte : la phrase s'affiche en haut de l'écran. Elle ne
+			// demande plus de recharger la page, qui est déjà à jour (étape 19, D4).
+			expect(alerte(html), action).toBe(SEANCE_DISPARUE.fr);
 			expect(
 				optionsDesSeances(html).filter((options) => options.ouvert),
 				action
@@ -838,9 +948,7 @@ describe('A2 : déplacer une séance', () => {
 			] as const) {
 				const reponse = await postForm(`/?/${action}`, envoi, cookie);
 				expect(reponse.status, `${action} ${courseId}`).toBe(404);
-				expect(alerte(await reponse.text()), `${action} ${courseId}`).toBe(
-					'Cette séance n’existe plus. Rechargez la page pour voir le programme à jour.'
-				);
+				expect(alerte(await reponse.text()), `${action} ${courseId}`).toBe(SEANCE_DISPARUE.fr);
 			}
 		}
 		// Rien n'est écrit dans l'autre organisation, ni au journal.
@@ -920,11 +1028,11 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 
 	/**
 	 * Le refus d'une carte périmée : aucun message préparé, la phrase en haut de l'écran, puisque la
-	 * carte n'a plus d'options, et aucune option rouverte.
+	 * carte n'a plus d'options, et aucune option rouverte. La phrase nomme la séance (étape 19, D4).
 	 */
-	function refusee(html: string): void {
+	function refusee(html: string, titre: string, date: IsoDate): void {
 		expect(section(html, 'message-titre')).toBe('');
-		expect(alerte(html)).toBe(CHANGEE.fr);
+		expect(alerte(html)).toBe(CHANGEE.fr(titre, dateLue('fr', date)));
 		expect(optionsDesSeances(html).filter((options) => options.ouvert)).toEqual([]);
 	}
 
@@ -955,7 +1063,7 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 			expect(renvoi.status).toBe(409);
 			const html = await renvoi.text();
 			expect(await exception(soir, jour(1))).toEqual(deplacement);
-			refusee(html);
+			refusee(html, SOIR.fr, jour(1));
 			// L'écran rendu est à jour : la séance y est déplacée, avec de quoi la rétablir.
 			const depart = texte(carte(html, jour(1), SOIR.fr, 'moved_away'));
 			expect(depart).toContain(`${numerique(jour(2))} à 20:30`);
@@ -1003,7 +1111,7 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 			] as const) {
 				const reponse = await postForm(`/?/${action}`, envoi, cookie);
 				expect(reponse.status, `${action} ${envoi['toDate'] ?? ''}`).toBe(409);
-				refusee(await reponse.text());
+				refusee(await reponse.text(), CERCLE, jour(3));
 				// Le déplacement de l'autre personne reste, et une annulation ne le remplace pas.
 				expect(await exception(cercle, jour(3)), action).toEqual(deplacement);
 			}
@@ -1032,15 +1140,70 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 			// déplacement vers la séance elle-même.
 			const renvoi = await postForm('/?/deplacer', proposee, cookie);
 			expect(renvoi.status).toBe(409);
-			refusee(await renvoi.text());
+			refusee(await renvoi.text(), SOIR.fr, today);
 			expect(await exception(soir, today)).toEqual(annulee);
-			// Annuler une seconde fois depuis la même page ne réécrit rien non plus.
+			// Annuler une seconde fois depuis la même page ne réécrit rien non plus ; le message prêt à
+			// coller est donné quand même (étape 19, D4).
 			const encore = await postForm('/?/annuler', annulation, cookie);
 			expect(encore.status).toBe(409);
-			refusee(await encore.text());
+			const html = await encore.text();
+			expect(alerte(html)).toBe(DEJA_ANNULEE.fr(SOIR.fr, dateLue('fr', today)));
+			expect(zonesDeTexte(section(html, 'message-titre'))).toEqual(
+				zonesDeTexte(section(await annule.text(), 'message-titre'))
+			);
 			expect(await exception(soir, today)).toEqual(annulee);
 		} finally {
 			await retablir(soir, today, cookie);
+		}
+	});
+
+	it('gives the cancellation message to a second person who cancels the same session, and writes nothing', async () => {
+		// Deux personnes ouvrent l'écran ; la première annule le cercle de J+2, puis la seconde, sur
+		// sa page restée ouverte, annule la même séance. Elle ne sait pas si la première a déjà prévenu
+		// la communauté : elle reçoit le même message, et rien ne s'écrit une seconde fois.
+		const editeur = await signIn(EDITEUR);
+		await poserLangueDuCompte(EDITEUR, 'fr');
+		const carteDeLEditeur = formulaireDeLaCarte(
+			await (await get('/', editeur)).text(),
+			'annuler',
+			cercle,
+			jour(2)
+		);
+		const journal = createDatabase({ role: 'app', overrides: { database: testDatabase } });
+		const lignesDuJournal = async () =>
+			withOrg(
+				journal.db,
+				{ organizationId: organisationA, userId: ids[RESPONSABLE] ?? '' },
+				async (tx) =>
+					lignes<{ n: number }>(await tx.execute(sql`select count(*)::int as n from "audit_log"`))
+			).then((trouve) => trouve[0]?.n ?? 0);
+		const premiere = await postForm('/?/annuler', { courseId: cercle, date: jour(2) }, cookie);
+		try {
+			expect(premiere.status).toBe(200);
+			const messagesDeLaPremiere = messages(section(await premiere.text(), 'message-titre'));
+			expect(messagesDeLaPremiere).toHaveLength(5);
+			const journalAvant = await lignesDuJournal();
+			const seconde = await postForm('/?/annuler', carteDeLEditeur, editeur);
+			expect(seconde.status).toBe(409);
+			const html = await seconde.text();
+			// En haut, ce qui s'est passé ; dessous, le message, dans chaque langue publiée.
+			expect(alerte(html)).toBe(DEJA_ANNULEE.fr(CERCLE, dateLue('fr', jour(2))));
+			expect(html.indexOf('role="alert"')).toBeLessThan(html.indexOf('id="message-titre"'));
+			expect(texte(section(html, 'message-titre').match(/^[\s\S]*?<\/h2>/)?.[0] ?? '')).toBe(
+				'La séance est annulée.'
+			);
+			expect(
+				messages(section(html, 'message-titre')).map((message) => [message.langue, message.texte])
+			).toEqual(messagesDeLaPremiere.map((message) => [message.langue, message.texte]));
+			expect(await exception(cercle, jour(2))).toEqual({
+				kind: 'cancelled',
+				to_date: null,
+				to_start: null
+			});
+			expect(await lignesDuJournal()).toBe(journalAvant);
+		} finally {
+			await journal.close();
+			await retablir(cercle, jour(2), cookie);
 		}
 	});
 
@@ -1069,7 +1232,9 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 					]),
 					envoi['toDate']
 				).toEqual([[soir, jour(2)]]);
-				expect(alerte(ouvertes[0]?.contenu ?? ''), envoi['toDate']).toBe(HEURE_CHANGEE.fr);
+				expect(alerte(ouvertes[0]?.contenu ?? ''), envoi['toDate']).toBe(
+					HEURE_CHANGEE.fr(SOIR.fr, dateLue('fr', jour(2)))
+				);
 				// Sa nouvelle heure est sous son titre, et la carte rendue de nouveau l'envoie.
 				expect(texte(carte(html, jour(2), SOIR.fr, 'scheduled')), envoi['toDate']).toContain(
 					'20:00 – 21:30'
@@ -1097,7 +1262,7 @@ describe('une page restée ouverte ne défait pas un changement (relecture du lo
 				const reponse = await postForm('/?/deplacer', envoi, cookie);
 				expect(reponse.status, heure).toBe(409);
 				const html = await reponse.text();
-				expect(alerte(html), heure).toBe(HEURE_CHANGEE.fr);
+				expect(alerte(html), heure).toBe(HEURE_CHANGEE.fr(SOIR.fr, dateLue('fr', jour(2))));
 				expect(formulaireDeLaCarte(html, 'deplacer', soir, jour(2)), heure).toEqual({
 					courseId: soir,
 					date: jour(2),
@@ -1221,10 +1386,219 @@ describe('deux envois au même instant n’écrasent rien (relecture du lot 5)',
 			});
 			// Le second apprend que la séance a changé, et aucun message n'annonce son déplacement.
 			const refus = pages[1 - gagnant] ?? '';
-			expect(alerte(refus)).toBe(CHANGEE.fr);
+			expect(alerte(refus)).toBe(CHANGEE.fr(CERCLE, dateLue('fr', jour(6))));
 			expect(section(refus, 'message-titre')).toBe('');
 		} finally {
 			await retablir(cercle, jour(6), cookie);
+		}
+	});
+});
+
+describe('D4 : une séance déplacée ici se rétablit depuis sa carte (étape 19)', () => {
+	let cookie: string;
+
+	beforeAll(async () => {
+		cookie = await signIn(RESPONSABLE);
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+	});
+
+	it('gives a « date exceptionnelle » card the restore button, even when the planned date is past the seven days', async () => {
+		// Le cours du soir de J+10, avancé à J+1 : sa date prévue n'est pas à l'écran, et seule la carte
+		// d'arrivée peut défaire le changement. J+1 n'a pas d'autre séance arrivée d'ailleurs : les
+		// tests d'A2 en laissent à J+2 et aujourd'hui.
+		await maintenance((tx) =>
+			tx.execute(sql`
+				insert into "session_exception" ("id", "organization_id", "course_id", "date", "kind",
+					"to_date", "to_start", "created_by")
+				values (${newId()}, ${organisationA}, ${soir}, ${jour(10)}, 'moved', ${jour(1)}, '17:00',
+					${ids[RESPONSABLE] ?? ''})
+			`)
+		);
+		try {
+			const html = await (await get('/', cookie)).text();
+			const arrivee = carte(html, jour(1), SOIR.fr, 'moved_here');
+			expect(texte(arrivee)).toContain('date exceptionnelle');
+			expect(texte(arrivee)).toContain(`Prévue à l’origine le ${dateLue('fr', jour(10))}`);
+			expect(texte(arrivee)).toContain('Rétablir la séance');
+			// La carte vise la date où la séance était prévue : c'est celle que garde l'exception.
+			const envoi = formulaireDeRetablissement(arrivee);
+			expect(envoi).toEqual({ courseId: soir, date: jour(10) });
+			const reponse = await postForm('/?/retablir', envoi ?? {}, cookie);
+			expect(reponse.status).toBe(200);
+			expect(await exception(soir, jour(10))).toBeUndefined();
+			const apres = await reponse.text();
+			expect(texte(section(apres, 'message-titre').match(/^[\s\S]*?<\/h2>/)?.[0] ?? '')).toBe(
+				'La séance est rétablie.'
+			);
+			expect(carte(apres, jour(1), SOIR.fr, 'moved_here')).toBe('');
+		} finally {
+			await retablir(soir, jour(10), cookie);
+		}
+	});
+
+	it('keeps one restore button for a move within the same day, on the card of the planned time', async () => {
+		const deplace = await postForm(
+			'/?/deplacer',
+			{ courseId: soir, date: jour(3), toDate: jour(3), toStart: '21:00' },
+			cookie
+		);
+		try {
+			expect(deplace.status).toBe(200);
+			const html = await (await get('/', cookie)).text();
+			const arrivee = carte(html, jour(3), SOIR.fr, 'moved_here');
+			expect(texte(arrivee)).toContain('nouvelle heure');
+			expect(formulaireDeRetablissement(arrivee)).toBeNull();
+			expect(formulaireDeRetablissement(carte(html, jour(3), SOIR.fr, 'moved_away'))).toEqual({
+				courseId: soir,
+				date: jour(3)
+			});
+		} finally {
+			await retablir(soir, jour(3), cookie);
+		}
+	});
+});
+
+describe('D4 : un cours en brouillon reste hors du programme de la semaine (étape 19)', () => {
+	let cookie: string;
+	const brouillon = newId();
+	const jumuaPubliee = newId();
+	const jumuaBrouillon = newId();
+	const apresDhuhr = newId();
+	const TITRE_BROUILLON = 'Cours en préparation';
+	const JUMUA_PUBLIEE = 'Jumu’a de midi';
+	const JUMUA_BROUILLON = 'Jumu’a à l’essai';
+	const APRES_DHUHR = 'Leçon après la prière';
+	/** Le vendredi des sept jours affichés : il y en a toujours un, et un seul. */
+	const vendredi =
+		[0, 1, 2, 3, 4, 5, 6]
+			.map((pas) => jour(pas))
+			.find((date) => weekdayFromDays(isoDateToDays(date)) === 5) ?? today;
+	/**
+	 * Le calendrier importé s'arrête à J+4 : ce bloc le complète le temps de ses tests, pour que le
+	 * vendredi ait toujours son Dhuhr.
+	 */
+	const joursAjoutes = [jour(5), jour(6)];
+
+	/** Les marques d'une carte, telles qu'elles s'affichent. */
+	function marques(fragment: string): string[] {
+		return [...fragment.matchAll(/<span\b[^>]*class="marque[^"]*"[^>]*>([\s\S]*?)<\/span>/g)].map(
+			(trouve) => texte(trouve[1] ?? '')
+		);
+	}
+
+	beforeAll(async () => {
+		cookie = await signIn(RESPONSABLE);
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		await maintenance(async (tx) => {
+			for (const date of joursAjoutes) {
+				await tx.execute(sql`
+					insert into "prayer_day" ("organization_id", "date", "fajr", "dhuhr", "asr", "maghrib",
+						"isha", "source")
+					values (${organisationA}, ${date}, '05:30', '13:15', '16:45', '19:20', '20:50', 'import')
+				`);
+			}
+			// Un cours en brouillon, chaque jour à 17:00, et un cours publié le vendredi, une demi-heure
+			// après le Dhuhr, c'est-à-dire après la dernière session du vendredi.
+			for (const [id, statut, titre, jours, horaire] of [
+				[
+					brouillon,
+					'draft',
+					TITRE_BROUILLON,
+					'1,2,3,4,5,6,7',
+					sql`'fixed', '17:00', '18:00', null, null, null`
+				],
+				[apresDhuhr, 'published', APRES_DHUHR, '5', sql`'prayer', null, null, 'dhuhr', 30, 60`]
+			] as const) {
+				await tx.execute(sql`
+					insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",
+						"source_language", "recurrence_kind", "recurrence_weekday", "recurrence_interval",
+						"recurrence_anchor_date", "timing_kind", "timing_start", "timing_end", "timing_prayer",
+						"timing_offset_minutes", "timing_duration_minutes", "starts_on")
+					values (${id}, ${organisationA}, ${statut}, 'open', array['fr'], 'fr', 'weekly',
+						${sql.raw(`array[${jours}]::smallint[]`)}, 1, ${jour(-30)}, ${horaire}, ${jour(-30)})
+				`);
+				await tx.execute(sql`
+					insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
+					values (${newId()}, ${organisationA}, ${id}, 'fr', ${titre})
+				`);
+			}
+			// Deux sessions du vendredi : la première publiée à 13:30, la seconde en brouillon à 14:30.
+			// Sur cet écran, la seconde compte, et le cours d'après le Dhuhr commence à 15:00 ; sur la page
+			// publique et dans Partager, seule la première compte, et il commence à 14:00.
+			for (const [id, statut, rang, debut, fin, titre] of [
+				[jumuaPubliee, 'published', 1, '13:30', '14:10', JUMUA_PUBLIEE],
+				[jumuaBrouillon, 'draft', 2, '14:30', '15:10', JUMUA_BROUILLON]
+			] as const) {
+				await tx.execute(sql`
+					insert into "course" ("id", "organization_id", "kind", "jumua_order", "status",
+						"audience", "teaching_language", "source_language", "recurrence_kind",
+						"recurrence_weekday", "recurrence_interval", "recurrence_anchor_date", "timing_kind",
+						"timing_start", "timing_end", "starts_on")
+					values (${id}, ${organisationA}, 'jumua', ${rang}, ${statut}, 'open', array['ar'], 'fr',
+						'weekly', array[5]::smallint[], 1, ${jour(-30)}, 'fixed', ${debut}, ${fin}, ${jour(-30)})
+				`);
+				await tx.execute(sql`
+					insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
+					values (${newId()}, ${organisationA}, ${id}, 'fr', ${titre})
+				`);
+			}
+		});
+	});
+
+	afterAll(async () => {
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		await maintenance(async (tx) => {
+			for (const id of [brouillon, jumuaPubliee, jumuaBrouillon, apresDhuhr]) {
+				await tx.execute(sql`delete from "course" where "id" = ${id}`);
+			}
+			for (const date of joursAjoutes) {
+				await tx.execute(sql`
+					delete from "prayer_day" where "organization_id" = ${organisationA} and "date" = ${date}
+				`);
+			}
+		});
+	});
+
+	it('leaves a draft course and a draft Friday session out of the week message, in each language', async () => {
+		const semaine = messages(section(await (await get('/', cookie)).text(), 'semaine-titre'));
+		expect(semaine.map((message) => message.langue)).toEqual([...LANGUES]);
+		for (const message of semaine) {
+			expect(message.texte, message.langue).not.toContain(TITRE_BROUILLON);
+			expect(message.texte, message.langue).not.toContain(JUMUA_BROUILLON);
+			expect(message.texte, message.langue).toContain(JUMUA_PUBLIEE);
+		}
+	});
+
+	it('writes the week message of Partager in each language, even when a draft Friday session moves a course after Dhuhr', async () => {
+		const avenir = messages(section(await (await get('/', cookie)).text(), 'semaine-titre'));
+		const partager = messages(
+			section(await (await get('/partager', cookie)).text(), 'semaine-titre')
+		);
+		expect(partager).toHaveLength(5);
+		const parLangue = (liste: Message[]) =>
+			Object.fromEntries(liste.map((message) => [message.langue ?? '', message.texte]));
+		expect(parLangue(avenir)).toEqual(parLangue(partager));
+		// Le cours d'après le Dhuhr suit la session publiée, à 13:30, et non celle en brouillon.
+		const [francais] = avenir.map((message) => message.texte);
+		expect(francais?.split('\n')).toContain(`- ${APRES_DHUHR}, 14:00 – 15:00`);
+	});
+
+	it('marks the card of a draft course « brouillon », in each language, and no other card', async () => {
+		try {
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const html = await (await get('/', cookie)).text();
+				expect(marques(carte(html, jour(1), TITRE_BROUILLON, 'scheduled')), langue).toEqual([
+					BROUILLON[langue]
+				]);
+				expect(marques(carte(html, vendredi, JUMUA_BROUILLON, 'scheduled')), langue).toEqual([
+					BROUILLON[langue]
+				]);
+				expect(marques(carte(html, vendredi, JUMUA_PUBLIEE, 'scheduled')), langue).toEqual([]);
+				expect(marques(carte(html, jour(1), CERCLE, 'scheduled')), langue).toEqual([]);
+			}
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
 		}
 	});
 });
@@ -1338,7 +1712,8 @@ describe('B1 : un déplacement le même jour dit un changement d’heure (relect
 			for (const langue of LANGUES) {
 				await poserLangueDuCompte(RESPONSABLE, langue);
 				const html = await (await get('/', cookie)).text();
-				const arrivee = carte(html, jour(3), SOIR.fr, 'moved_here');
+				// Le titre de la carte suit la langue de l'écran (étape 19).
+				const arrivee = carte(html, jour(3), SOIR_LU[langue], 'moved_here');
 				expect(arrivee, langue).not.toBe('');
 				const lu = texte(arrivee);
 				expect(lu, langue).toContain(attendus[langue].marque);
@@ -1610,22 +1985,26 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 	const ETATS = [
 		'affiché',
 		'après une annulation',
+		'après une seconde annulation',
 		'après un refus',
 		'après un déplacement qui ne change rien',
 		'après une page restée ouverte',
 		'après une carte dont l’heure a changé',
 		'après une annulation pour une date passée',
-		'après un rétablissement'
+		'après un rétablissement',
+		'après une séance disparue'
 	];
 	const ATTENDUS: Record<string, number> = {
 		affiché: 200,
 		'après une annulation': 200,
+		'après une seconde annulation': 409,
 		'après un refus': 400,
 		'après un déplacement qui ne change rien': 400,
 		'après une page restée ouverte': 409,
 		'après une carte dont l’heure a changé': 409,
 		'après une annulation pour une date passée': 400,
-		'après un rétablissement': 200
+		'après un rétablissement': 200,
+		'après une séance disparue': 404
 	};
 
 	beforeAll(async () => {
@@ -1636,6 +2015,12 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 				['affiché', await get('/', cookie)],
 				[
 					'après une annulation',
+					await postForm('/?/annuler', { courseId: cercle, date: jour(1) }, cookie)
+				],
+				[
+					// La même séance, annulée une seconde fois : par une autre personne, ou depuis une page
+					// restée ouverte (étape 19, D4).
+					'après une seconde annulation',
 					await postForm('/?/annuler', { courseId: cercle, date: jour(1) }, cookie)
 				],
 				[
@@ -1687,6 +2072,11 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 				[
 					'après un rétablissement',
 					await postForm('/?/retablir', { courseId: cercle, date: jour(1) }, cookie)
+				],
+				[
+					// Un cours supprimé depuis l'ouverture de la page (étape 19, D4).
+					'après une séance disparue',
+					await postForm('/?/retablir', { courseId: newId(), date: jour(1) }, cookie)
 				]
 			];
 			for (const [etat, reponse] of pages) {
@@ -1825,8 +2215,9 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 	it('says in each language that the session changed since the page was opened, above the programme', () => {
 		for (const langue of LANGUES) {
 			const html = rendus['après une page restée ouverte']?.[langue] ?? '';
-			// La carte n'a plus d'options : la phrase se lit en haut de l'écran, avant le programme.
-			expect(alerte(html), langue).toBe(CHANGEE[langue]);
+			// La carte n'a plus d'options : la phrase se lit en haut de l'écran, avant le programme. Elle
+			// nomme la séance, dans la langue de l'écran (étape 19, D4).
+			expect(alerte(html), langue).toBe(CHANGEE[langue](CERCLE, dateLue(langue, jour(1))));
 			expect(html.indexOf('role="alert"'), langue).toBeLessThan(html.indexOf('id="jour-'));
 			expect(
 				optionsDesSeances(html).filter((bloc) => bloc.ouvert),
@@ -1842,8 +2233,50 @@ describe('D2, A3 : l’écran dans les cinq langues', () => {
 			// La séance est encore prévue, à sa nouvelle heure : la phrase se lit dans sa carte, rouverte.
 			const ouvertes = optionsDesSeances(html).filter((bloc) => bloc.ouvert);
 			expect(ouvertes, langue).toHaveLength(1);
-			expect(alerte(ouvertes[0]?.contenu ?? ''), langue).toBe(HEURE_CHANGEE[langue]);
+			// Le titre du cours est celui de la carte, dans la langue de l'écran quand il y est traduit.
+			expect(alerte(ouvertes[0]?.contenu ?? ''), langue).toBe(
+				HEURE_CHANGEE[langue](SOIR_LU[langue], dateLue(langue, jour(2)))
+			);
 			expect(section(html, 'message-titre'), langue).toBe('');
+		}
+	});
+
+	it('says in each language that the session was already cancelled, above the programme, and gives its message anyway', () => {
+		for (const langue of LANGUES) {
+			const html = rendus['après une seconde annulation']?.[langue] ?? '';
+			expect(alerte(html), langue).toBe(DEJA_ANNULEE[langue](CERCLE, dateLue(langue, jour(1))));
+			expect(html.indexOf('role="alert"'), langue).toBeLessThan(html.indexOf('id="jour-'));
+			expect(
+				optionsDesSeances(html).filter((bloc) => bloc.ouvert),
+				langue
+			).toEqual([]);
+			// Le message est celui de la première annulation, dans chaque langue publiée.
+			const premiere = rendus['après une annulation']?.[langue] ?? '';
+			expect(zonesDeTexte(section(html, 'message-titre')), langue).toHaveLength(5);
+			expect(zonesDeTexte(section(html, 'message-titre')), langue).toEqual(
+				zonesDeTexte(section(premiere, 'message-titre'))
+			);
+		}
+	});
+
+	it('says in each language that a session is gone, and that the list below is up to date', () => {
+		for (const langue of LANGUES) {
+			const html = rendus['après une séance disparue']?.[langue] ?? '';
+			expect(alerte(html), langue).toBe(SEANCE_DISPARUE[langue]);
+			expect(html.indexOf('role="alert"'), langue).toBeLessThan(html.indexOf('id="jour-'));
+			expect(section(html, 'message-titre'), langue).toBe('');
+		}
+	});
+
+	it('writes the title of a card in the language of the screen when the course is translated into it', () => {
+		for (const langue of LANGUES) {
+			const html = rendus['affiché']?.[langue] ?? '';
+			const titres = titresDesCartes(section(html, `jour-${jour(1)}`));
+			// Traduit en allemand et en arabe, le cours du soir garde son titre français ailleurs ; le
+			// cercle de lecture n'a que son titre français.
+			expect(titres, langue).toContain(SOIR_LU[langue]);
+			expect(titres, langue).toContain(CERCLE);
+			if (SOIR_LU[langue] !== SOIR.fr) expect(titres, langue).not.toContain(SOIR.fr);
 		}
 	});
 
@@ -1877,6 +2310,33 @@ describe('D1 : la prière du vendredi dans la langue de chaque message (relectur
 		ar: (titre) => `«${titre}»`
 	};
 	const VIRGULE: Record<Langue, string> = { fr: ', ', de: ', ', it: ', ', en: ', ', ar: '، ' };
+	/**
+	 * Les mots propres à la prière du vendredi dans un message prêt à coller, à la place de « Le cours »
+	 * (décision du chef de projet, étape 19) : l'annulation, le déplacement, et la dernière ligne.
+	 */
+	const ANNULATION: Record<Langue, (titre: string, date: string) => string> = {
+		fr: (titre, date) => `« ${titre} » : la prière du ${date} est annulée.`,
+		de: (titre, date) => `«${titre}»: Das Gebet vom ${date}, fällt aus.`,
+		it: (titre, date) => `«${titre}»: la preghiera di ${date} è annullata.`,
+		en: (titre, date) => `‘${titre}’: the prayer on ${date} is cancelled.`,
+		ar: (titre, date) => `«${titre}»: أُلغيت الصلاة يوم ${date}.`
+	};
+	const DEPLACEMENT: Record<Langue, (titre: string, de: string, vers: string) => string> = {
+		fr: (titre, de, vers) => `« ${titre} » : la prière du ${de} est déplacée au ${vers} à 15:00.`,
+		de: (titre, de, vers) =>
+			`«${titre}»: Das Gebet vom ${de}, wird auf ${vers}, um 15:00 verschoben.`,
+		it: (titre, de, vers) => `«${titre}»: la preghiera di ${de} è spostata a ${vers} alle 15:00.`,
+		en: (titre, de, vers) => `‘${titre}’: the prayer on ${de} has been moved to ${vers} at 15:00.`,
+		ar: (titre, de, vers) =>
+			`«${titre}»: نُقلت الصلاة من يوم ${de} إلى يوم ${vers} في الساعة 15:00.`
+	};
+	const LES_AUTRES: Record<Langue, string> = {
+		fr: 'Les autres prières du vendredi ont lieu comme d’habitude.',
+		de: 'Die anderen Freitagsgebete finden wie gewohnt statt.',
+		it: 'Le altre preghiere del venerdì si svolgono regolarmente.',
+		en: 'The other Friday prayers go ahead as usual.',
+		ar: 'تُقام مواعيد صلاة الجمعة الأخرى كالمعتاد.'
+	};
 
 	/** Une organisation de langue française qui publie les cinq langues. */
 	const francophone = newId();
@@ -1984,6 +2444,51 @@ describe('D1 : la prière du vendredi dans la langue de chaque message (relectur
 			} finally {
 				await retablir(propose, vendredi, cookieFr);
 			}
+		}
+	});
+
+	it('gives the Friday prayer its own words in each cancellation and move message, not those of a course', async () => {
+		const lendemain = addDays(vendredi, 1);
+		for (const [action, envoi] of [
+			['annuler', { courseId: propose, date: vendredi }],
+			['deplacer', { courseId: choisi, date: vendredi, toDate: lendemain, toStart: '15:00' }]
+		] as const) {
+			const reponse = await postForm(`/?/${action}`, envoi, cookieFr);
+			try {
+				expect(reponse.status, action).toBe(200);
+				const annonce = messages(section(await reponse.text(), 'message-titre'));
+				expect(annonce, action).toHaveLength(5);
+				for (const message of annonce) {
+					const langue = message.langue as Langue;
+					const phrase =
+						action === 'annuler'
+							? ANNULATION[langue](PRIERE[langue], dateLue(langue, vendredi))
+							: DEPLACEMENT[langue](CHOISI, dateLue(langue, vendredi), dateLue(langue, lendemain));
+					expect(message.texte.split('\n'), `${action} ${langue}`).toEqual([
+						`${ACCUEIL}${langue === 'ar' ? '،' : ','}`,
+						'',
+						phrase,
+						LES_AUTRES[langue]
+					]);
+				}
+			} finally {
+				await retablir(envoi.courseId, vendredi, cookieFr);
+			}
+		}
+	});
+
+	it('names the prayer on its card in the language of the screen, and keeps a title the organisation chose', async () => {
+		try {
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE_FR, langue);
+				const html = await (await get('/', cookieFr)).text();
+				const titres = titresDesCartes(section(html, `jour-${vendredi}`));
+				expect(titres, langue).toContain(PRIERE[langue]);
+				expect(titres, langue).toContain(CHOISI);
+				if (langue !== 'fr') expect(titres, langue).not.toContain(PRIERE.fr);
+			}
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE_FR, 'fr');
 		}
 	});
 

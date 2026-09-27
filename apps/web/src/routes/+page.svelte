@@ -4,7 +4,7 @@
 	import { audienceLabel, describeSessionTime, shortDate } from '$lib/format.js';
 	import { direction, NOM_DE_LANGUE, type Langue } from '$lib/i18n.js';
 	import { commonTexts } from '$lib/i18n/common.js';
-	import { upcomingTexts } from '$lib/i18n/upcoming.js';
+	import { upcomingErrorText, upcomingTexts } from '$lib/i18n/upcoming.js';
 	import { languesEnClair } from '$lib/public/affichage.js';
 
 	let { data, form } = $props();
@@ -51,10 +51,32 @@
 	}
 
 	/**
+	 * La date que « Rétablir la séance » envoie pour une carte, ou rien quand la carte ne le propose
+	 * pas. C'est la date que garde le changement : celle de la séance annulée ou partie ailleurs, et,
+	 * pour une séance arrivée d'une autre date, sa date prévue, qui n'est pas toujours à l'écran
+	 * (étape 19, D4). Une séance qui n'a changé que d'heure se rétablit depuis la carte de son heure
+	 * prévue, le même jour.
+	 */
+	function dateARetablir(seance: (typeof data.seances)[number]): string | null {
+		if (seance.status === 'cancelled' || seance.status === 'moved_away') return seance.date;
+		if (seance.status === 'moved_here' && seance.originalDate !== seance.date) {
+			return seance.originalDate ?? null;
+		}
+		return null;
+	}
+
+	/**
 	 * La séance qu'une action vient de refuser : ses options, et elles seules, se rouvrent sur la
 	 * phrase qui dit quoi faire, avec ce qui avait été saisi (retour A1).
 	 */
 	const refusee = $derived(form?.error ? cle(form.courseId ?? '', form.date ?? '') : null);
+	/**
+	 * La phrase du refus, dans la langue de l'écran. Le refus d'une carte périmée nomme la séance :
+	 * l'action rend son titre, et la page écrit sa date (étape 19, D4).
+	 */
+	const erreur = $derived(
+		form?.error ? upcomingErrorText(text, form.error, form.title ?? '', date(form.date ?? '')) : ''
+	);
 	/**
 	 * Une erreur qui ne trouve pas sa carte s'affiche en haut : une séance disparue, ou une séance
 	 * annulée ou déplacée depuis l'ouverture de la page, qui n'a plus d'options. Une séance dont
@@ -108,14 +130,16 @@
 <p class="intro">{text.intro}</p>
 
 {#if form?.error && erreurEnHaut}
-	<p class="erreur" role="alert">{text.errors[form.error]}</p>
+	<p class="erreur" role="alert">{erreur}</p>
 {/if}
 
 <!-- Ce que la dernière action a fait, et le message qu'elle prépare : c'est ce que la personne
-     vient de demander, avant tout le reste. -->
-{#if form?.done}
+     vient de demander, avant tout le reste. Une seconde annulation de la même séance n'écrit rien,
+     mais porte le message quand même : la séance est annulée, et la personne ne sait pas si la
+     communauté a déjà été prévenue (étape 19, D4). -->
+{#if form?.done || form?.messages}
 	<section class="message" aria-labelledby="message-titre">
-		<h2 id="message-titre">{text.done[form.done]}</h2>
+		<h2 id="message-titre">{text.done[form.done ?? 'cancelled']}</h2>
 		{#if form.messages}
 			<p class="aide">{text.messageHelp}</p>
 			{@render messagesInLanguages(form.messages, text.messageLabel, 'message', 5)}
@@ -176,6 +200,7 @@
 				<li class="seance {seance.status}">
 					<p class="titre">
 						<bdi>{seance.title}</bdi>
+						{#if seance.draft}<span class="marque">{text.marks.draft}</span>{/if}
 						{#if seance.status === 'cancelled'}<span class="marque">{text.marks.cancelled}</span
 							>{/if}
 						{#if seance.status === 'moved_here'}<span class="marque"
@@ -226,7 +251,7 @@
 									     désignent aucune carte, et s'affichent en haut. Elle se lit donc au-dessus des
 									     champs à corriger. -->
 									{#if form?.error && refusee === k}
-										<p class="erreur" role="alert">{text.errors[form.error]}</p>
+										<p class="erreur" role="alert">{erreur}</p>
 									{/if}
 									<!-- Toute date à partir d'aujourd'hui, plus tôt comme plus tard que la date
 									     prévue (retour A2) : aucun plafond, et l'action refuse elle-même une date
@@ -265,10 +290,10 @@
 								</fieldset>
 							</form>
 						</details>
-					{:else if seance.status !== 'moved_here'}
+					{:else if dateARetablir(seance)}
 						<form method="post" action="?/retablir" class="retablir">
 							<input type="hidden" name="courseId" value={seance.courseId} />
-							<input type="hidden" name="date" value={seance.date} />
+							<input type="hidden" name="date" value={dateARetablir(seance)} />
 							<button type="submit">{text.restoreButton}</button>
 							<span class="aide">{text.restoreHelp}</span>
 						</form>
