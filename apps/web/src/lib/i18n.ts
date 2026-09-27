@@ -142,10 +142,12 @@ interface Dictionnaire {
 	 */
 	readonly googleHelp: string;
 	/**
-	 * Le délai de Google (retour E2). Une phrase à elle, reprise partout où Google est proposé :
-	 * sous le bouton d'Android, sous le choix de Google, et dans les étapes à suivre à la main.
+	 * Ce qu'il faut regarder pour un changement de dernière minute : la page du programme, toujours à
+	 * jour (décision du chef de projet, 27.09.2026). Elle remplace le délai de Google, « jusqu'à
+	 * 24 heures », que l'aide de Google ne donne nulle part : sous le bouton d'Android, et une fois
+	 * sous le choix complet. Le délai d'Outlook, lui, reste : Microsoft l'écrit (`outlookDelay`).
 	 */
-	readonly googleDelay: string;
+	readonly lastMinute: string;
 	/**
 	 * Sous le bouton d'Android, ce qu'il faut faire si Google Agenda ne propose rien sur le
 	 * téléphone : ouvrir cette page sur un ordinateur, dont l'adresse courte suit la phrase (décision
@@ -170,8 +172,9 @@ interface Dictionnaire {
 	readonly choiceOutlookWork: string;
 	readonly choiceOutlookWorkHelp: string;
 	/**
-	 * Le délai d'Outlook, comme celui de Google : Microsoft écrit qu'une mise à jour « can take more
-	 * than 24 hours » (Import or subscribe to a calendar in Outlook.com or Outlook on the web).
+	 * Le délai d'Outlook : Microsoft écrit qu'une mise à jour « can take more than 24 hours » (« Import
+	 * or subscribe to a calendar in Outlook.com or Outlook on the web », support.microsoft.com, relue
+	 * le 27.09.2026). C'est pourquoi il reste, quand celui de Google est parti.
 	 */
 	readonly outlookDelay: string;
 	readonly choiceOther: string;
@@ -386,7 +389,8 @@ const fr: Dictionnaire = {
 		'Touchez le bouton, ou cliquez dessus sur un Mac : l’application Calendrier propose de vous abonner. Acceptez, et le calendrier se met à jour tout seul, environ une fois par heure.',
 	googleHelp:
 		'Touchez le bouton : il ouvre Google Agenda et lui demande d’ajouter cet agenda. Si Google Agenda propose de l’ajouter, confirmez.',
-	googleDelay: 'Google peut mettre jusqu’à 24 heures à rafraîchir un abonnement.',
+	lastMinute:
+		'Pour un changement de dernière minute, regardez la page du programme : elle est toujours à jour.',
 	googleComputer:
 		'Si Google Agenda ne propose rien sur votre téléphone, ouvrez cette page sur un ordinateur :',
 	chooseApp: 'Choisissez votre application de calendrier :',
@@ -544,7 +548,8 @@ const de: Dictionnaire = {
 		'Tippen Sie auf die Schaltfläche, auf dem Mac klicken Sie darauf: Die App Kalender bietet an, den Kalender zu abonnieren. Bestätigen Sie, und der Kalender aktualisiert sich von selbst, etwa einmal pro Stunde.',
 	googleHelp:
 		'Tippen Sie auf die Schaltfläche: Sie öffnet Google Kalender und bittet darum, diesen Kalender hinzuzufügen. Wenn Google Kalender es Ihnen anbietet, bestätigen Sie.',
-	googleDelay: 'Google kann bis zu 24 Stunden brauchen, um ein Abo zu aktualisieren.',
+	lastMinute:
+		'Bei einer Änderung in letzter Minute sehen Sie auf der Seite des Programms nach: Sie ist immer aktuell.',
 	googleComputer:
 		'Wenn Google Kalender auf Ihrem Telefon nichts anbietet, öffnen Sie diese Seite an einem Computer:',
 	chooseApp: 'Wählen Sie Ihre Kalender-App:',
@@ -702,7 +707,8 @@ const it: Dictionnaire = {
 		'Tocca il pulsante (sul computer, fai clic): l’app Calendario propone di iscriverti. Accetta, e il calendario si aggiorna da solo, circa una volta all’ora.',
 	googleHelp:
 		'Tocca il pulsante: apre Google Calendar e gli chiede di aggiungere questo calendario. Se Google Calendar te lo propone, conferma.',
-	googleDelay: 'Google può impiegare fino a 24 ore per aggiornare un’iscrizione.',
+	lastMinute:
+		'Per un cambiamento dell’ultimo minuto, guarda la pagina del programma: è sempre aggiornata.',
 	googleComputer:
 		'Se Google Calendar non propone nulla sul telefono, apri questa pagina su un computer:',
 	chooseApp: 'Scegli la tua app di calendario:',
@@ -859,7 +865,7 @@ const en: Dictionnaire = {
 		'Tap the button, or click it on a Mac: the Calendar app offers to subscribe. Accept, and the calendar updates itself, about once an hour.',
 	googleHelp:
 		'Tap the button: it opens Google Calendar and asks it to add this calendar. If Google Calendar offers to do so, confirm.',
-	googleDelay: 'Google can take up to 24 hours to refresh a subscription.',
+	lastMinute: 'For a last-minute change, check the programme page: it is always up to date.',
 	googleComputer: 'If Google Calendar offers nothing on your phone, open this page on a computer:',
 	chooseApp: 'Choose your calendar app:',
 	choiceGoogle: 'Google Calendar',
@@ -1036,7 +1042,8 @@ const ar: Dictionnaire = {
 		'اضغط على الزر، أو انقر عليه على الحاسوب: يقترح تطبيق التقويم الاشتراك. وافق، وسيُحدَّث التقويم تلقائيًا، مرة كل ساعة تقريبًا.',
 	googleHelp:
 		'اضغط على الزر: يُفتح تقويم Google مع طلب إضافة هذا التقويم. إن اقترح عليك ذلك، فأكّد.',
-	googleDelay: 'قد يستغرق Google حتى 24 ساعة لتحديث الاشتراك.',
+	// La phrase du chef de projet, mot pour mot (27.09.2026).
+	lastMinute: 'عند أي تغيير في آخر لحظة، راجع صفحة البرنامج: فهي محدَّثة دائمًا.',
 	googleComputer: 'إن لم يقترح تقويم Google شيئًا على هاتفك، فافتح هذه الصفحة على حاسوب:',
 	chooseApp: 'اختر تطبيق التقويم الذي تستخدمه:',
 	choiceGoogle: 'تقويم Google',

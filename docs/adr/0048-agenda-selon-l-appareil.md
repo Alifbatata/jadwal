@@ -106,7 +106,8 @@ d'un autre domaine, et n'admet un lien `<a>` vers ailleurs que pour `calendar.go
   (`ETAT-PROJET.md`). En attendant, la page ne promet pas que le bouton suffit : elle dit ce qu'il
   demande, puis le passage par un ordinateur.
 - La relecture de l'étape 18 a relu l'aide de Google en six langues : elle ne donne aucun délai de
-  rafraîchissement. La phrase qui annonce jusqu'à 24 heures n'a donc plus d'appui écrit.
+  rafraîchissement. La phrase qui annonce jusqu'à 24 heures n'avait donc plus d'appui écrit ; elle
+  a disparu le 27.09.2026 (addendum).
 - `outlook.live.com` est l'Outlook des comptes personnels. Un compte de travail ou d'école copiait
   l'adresse ; depuis le 27.09.2026, il a son propre lien, vers `outlook.office.com` (addendum).
 - La maquette `docs/maquettes/public-agenda.md` décrit désormais ce comportement.
@@ -130,6 +131,17 @@ Les décisions du chef de projet, après les tests de l'étape 18.
   qui restent dans la section à la main. L'adresse du flux suit, sous l'étiquette de l'iPhone,
   « Ou copiez cette adresse… » : l'étiquette « L'adresse à coller » n'avait de sens qu'après la
   phrase qui disait de la coller.
+- **Plus de délai de Google.** L'aide de Google ne donne aucun délai de rafraîchissement ; la
+  phrase « Google peut mettre jusqu'à 24 heures » disparaît, sous le bouton d'Android, sous le
+  choix de Google et dans les étapes à la main. À sa place, sous le bouton d'Android et une fois
+  sous le choix complet : « Pour un changement de dernière minute, regardez la page du programme :
+  elle est toujours à jour. », en arabe « عند أي تغيير في آخر لحظة، راجع صفحة البرنامج: فهي
+  محدَّثة دائمًا. », la phrase du chef de projet. **Le délai d'Outlook reste**, parce que Microsoft
+  l'écrit : « When you subscribe to a calendar, your calendar will automatically refresh if the
+  other calendar is updated. This can sometimes take more than 24 hours. » (« Import or subscribe
+  to a calendar in Outlook.com or Outlook on the web », `support.microsoft.com`, relue le
+  27.09.2026), et, pour un compte de travail ou d'école, « it can take more than 24 hours for
+  Outlook on the web to update your calendar ».
 
 ## Statut
 

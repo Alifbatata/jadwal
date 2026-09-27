@@ -21,7 +21,7 @@ que soit l'appareil : `?appareil=tous`.
 2. **Un paragraphe** : `Le programme de <Nom de l'organisation> s'ajoute à votre calendrier et se
 met à jour tout seul. Rien à réinstaller quand un cours change.` Devant un nom qui commence par une
    voyelle, « de » s'élide : `Le programme d'Organisation d'essai` (relevé D8, `deDevant`). Il ne
-   promet plus de délai : Google peut mettre jusqu'à un jour.
+   promet aucun délai : chaque application a le sien.
 3. **Tout le programme**, titre de niveau 2, puis le bloc qui dépend de l'appareil (voir plus bas).
 4. **Un seul cours**, titre de niveau 2, quand l'organisation a au moins un cours publié : une
    phrase, puis la liste des cours, un par ligne, chacun en lien vers **son** flux (ADR 0028). Le
@@ -41,8 +41,8 @@ Touchez son nom : sa page propose les mêmes choix, pour ce cours seul.`
 ne fait rien, copiez l'adresse et suivez les étapes de votre application.` Sur le choix complet, qui
    n'a que des liens : `Si aucun de ces liens ne fonctionne pour vous, copiez l'adresse et suivez
 les étapes de votre application.` Puis trois titres de niveau 3 dans cet ordre, en texte et sans
-   capture d'écran : `Sur iPhone et iPad`, `Sur Android`, `Sur Outlook`. La section Android se
-   termine par le délai de Google, celle d'Outlook par le délai d'Outlook.
+   capture d'écran : `Sur iPhone et iPad`, `Sur Android`, `Sur Outlook`. La section d'Outlook se
+   termine par le délai d'Outlook ; celle d'Android ne dit plus de délai (27.09.2026).
 6. **Le pied commun**.
 
 ## Le bloc selon l'appareil
@@ -65,7 +65,9 @@ abonner. Acceptez, et le calendrier se met à jour tout seul, environ une fois p
   un nouvel onglet annoncé aux lecteurs d'écran.
 - `Touchez le bouton : il ouvre Google Agenda et lui demande d'ajouter cet agenda. Si Google Agenda
 propose de l'ajouter, confirmez.`
-- `Google peut mettre jusqu'à 24 heures à rafraîchir un abonnement.`, dans un paragraphe à lui.
+- `Pour un changement de dernière minute, regardez la page du programme : elle est toujours à
+jour.`, dans un paragraphe à lui. Elle a pris la place du délai de Google, `jusqu'à 24 heures`, que
+  l'aide de Google ne donne nulle part (décision du chef de projet, 27.09.2026).
 - Ce qu'il faut faire si rien ne se passe, puisque l'aide de Google dit qu'on ne s'abonne à un
   agenda par son adresse que depuis le navigateur d'un ordinateur : `Si Google Agenda ne propose
 rien sur votre téléphone, ouvrez cette page sur un ordinateur :`, puis l'adresse courte de cette
@@ -85,11 +87,14 @@ de travail ou d'école à la copie de l'adresse.
 
 | Choix                        | Ce qu'il fait                                                                                                                                                                                                  |
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Google Agenda`              | nouvel onglet ; `Il propose d'ajouter l'agenda à votre compte Google.`, puis le délai de Google                                                                                                                |
+| `Google Agenda`              | nouvel onglet ; `Il propose d'ajouter l'agenda à votre compte Google.`                                                                                                                                         |
 | `Outlook`                    | nouvel onglet, `outlook.live.com` ; `Outlook sur le web s'ouvre avec l'adresse déjà remplie : choisissez Importer. Ce lien sert aux comptes personnels.`, puis le délai d'Outlook                              |
 | `Outlook (travail ou école)` | nouvel onglet, `outlook.office.com`, au même chemin ; `Outlook sur le web s'ouvre avec l'adresse déjà remplie : choisissez Importer. Ce lien sert aux comptes de travail ou d'école.`, puis le délai d'Outlook |
 | `Une autre application`      | lien `webcal:` ; `Calendrier d'Apple, Thunderbird ou toute application qui sait s'abonner à un calendrier : elle s'ouvre et propose l'abonnement.`                                                             |
 | `Copier l'adresse`           | `Sélectionnez-la, copiez-la, puis collez-la dans votre application, là où elle propose d'ajouter un calendrier par son adresse.`, puis l'adresse `https:`                                                      |
+
+Sous la liste, une fois pour tous les choix : `Pour un changement de dernière minute, regardez la
+page du programme : elle est toujours à jour.`
 
 Le choix complet ne dépend d'aucun en-tête, et sa réponse ne porte pas ce `Vary`.
 
@@ -101,8 +106,7 @@ compte, Autre, Ajouter un abonnement à un calendrier, et collez l'adresse.
 **Sur Android.** Selon Google, on ne peut ajouter un agenda par son adresse que depuis le navigateur
 d'un ordinateur. Sur l'ordinateur, ouvrez Google Agenda. À gauche, à côté d'Autres agendas, cliquez
 sur le signe + (Ajouter d'autres agendas), puis choisissez À partir de l'URL. Collez l'adresse et
-cliquez sur Ajouter l'agenda. Il apparaîtra ensuite aussi sur votre téléphone. Puis, dans un
-paragraphe à lui : Google peut mettre jusqu'à 24 heures à rafraîchir un abonnement.
+cliquez sur Ajouter l'agenda. Il apparaîtra ensuite aussi sur votre téléphone.
 
 **Sur Outlook.** Ouvrez Outlook sur le web, allez dans Calendrier, Ajouter un calendrier,
 S'abonner à partir du Web, collez l'adresse, donnez-lui un nom, puis importez. Puis, dans un
@@ -121,7 +125,10 @@ page : un menu français dans une page allemande ne servirait à personne.
   les deux dans l'ordre : le bouton demande l'ajout, et si rien ne se passe, le passage par un
   ordinateur.
 - L'aide de Google, relue à l'étape 18, ne donne aucun délai de rafraîchissement : la phrase des
-  24 heures n'a plus d'appui écrit.
+  24 heures n'avait plus d'appui écrit, et elle a disparu le 27.09.2026. Celle d'Outlook reste :
+  Microsoft écrit qu'une mise à jour « can take more than 24 hours », sur
+  `support.microsoft.com/en-us/outlook/import-or-subscribe-to-a-calendar-in-outlook-com-or-outlook-on-the-web`,
+  relue le 27.09.2026.
 
 ## Ce que la page ne fait pas
 

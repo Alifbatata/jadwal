@@ -63,14 +63,14 @@
 				>{mots.addToGoogle}<span class="pour-lecteur">{nouvelOnglet}</span></a
 			>
 		</p>
-		<!-- Le délai de Google dans un paragraphe à lui (retour E2) : il se voit, et un texte resté en
-		     français s'y lirait seul au lieu de se fondre dans la phrase qui le précède. Puis ce qu'il
+		<!-- Pour un changement de dernière minute, la page du programme, dans un paragraphe à elle : elle
+		     a pris la place du délai de Google, que son aide ne donne pas (27.09.2026). Puis ce qu'il
 		     faut faire si Google Agenda ne propose rien sur le téléphone : son aide dit qu'il faut le
 		     navigateur d'un ordinateur (relecture du lot 3). La page le dit en une phrase, ouvrir cette
 		     page sur un ordinateur, avec son adresse courte (décision du chef de projet, 27.09.2026) :
 		     sur l'ordinateur, elle propose le choix complet. Les étapes de Google restent à la main. -->
 		<p class="aide">{mots.googleHelp}</p>
-		<p class="aide">{mots.googleDelay}</p>
+		<p class="aide">{mots.lastMinute}</p>
 		<p class="aide">{mots.googleComputer}</p>
 		<p class="lien"><code dir="ltr">{adresse}</code></p>
 	{:else}
@@ -81,7 +81,6 @@
 					>{mots.choiceGoogle}<span class="pour-lecteur">{nouvelOnglet}</span></a
 				>
 				<p class="aide">{mots.choiceGoogleHelp}</p>
-				<p class="aide">{mots.googleDelay}</p>
 			</li>
 			<li>
 				<a href={outlook} target="_blank" rel="noopener"
@@ -109,6 +108,9 @@
 				<p class="lien"><code dir="ltr">{https}</code></p>
 			</li>
 		</ul>
+		<!-- Une fois, sous tous les choix, et non sous chacun : un changement de dernière minute se lit
+		     sur la page du programme, quelle que soit l'application (27.09.2026). -->
+		<p class="aide">{mots.lastMinute}</p>
 	{/if}
 	{#if appareil !== 'autre'}
 		<!-- L'adresse du flux, un autre choix après le bouton, sur un iPhone comme sur Android. Sur

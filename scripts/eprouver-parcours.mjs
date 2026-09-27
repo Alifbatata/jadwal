@@ -3065,10 +3065,17 @@ async function appareils(navigateur) {
 		);
 	});
 	await retour('E2', async () => {
+		// Depuis le 27.09.2026, plus de délai de Google, que son aide ne donne pas : la page renvoie
+		// à la page du programme pour un changement de dernière minute.
+		const derniereMinute =
+			'Pour un changement de dernière minute, regardez la page du programme : elle est toujours à jour.';
 		verifier(
-			'la page dit que Google peut mettre jusqu’à 24 heures, sur Android comme sur un ordinateur',
-			/jusqu’à 24 heures/.test(android.texte) && /jusqu’à 24 heures/.test(windows.texte),
-			`Android : ${android.texte.slice(0, 80)}`
+			'la page renvoie à la page du programme pour un changement de dernière minute, sur Android comme sur un ordinateur, et ne dit plus que Google peut mettre 24 heures',
+			android.texte.includes(derniereMinute) &&
+				windows.texte.includes(derniereMinute) &&
+				!/24 heures/.test(android.texte.replace(/Outlook peut mettre plus de 24 heures/g, '')) &&
+				!/Google peut mettre/.test(`${android.page} ${windows.page}`),
+			`Android : ${android.texte.slice(0, 120)}`
 		);
 	});
 }

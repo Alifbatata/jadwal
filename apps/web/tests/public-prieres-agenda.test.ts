@@ -798,12 +798,25 @@ const outlook = (webcal: string, nom: string) =>
 const outlookTravail = (webcal: string, nom: string) =>
 	`https://outlook.office.com/calendar/0/addfromweb?url=${encodeURIComponent(webcal)}&name=${encodeURIComponent(nom)}`;
 
+/** Le délai de Google, que la page disait jusqu'au 27.09.2026, et qui ne doit plus se lire. */
 const DELAI_GOOGLE: Record<Langue, string> = {
 	fr: 'Google peut mettre jusqu’à 24 heures à rafraîchir un abonnement.',
 	de: 'Google kann bis zu 24 Stunden brauchen, um ein Abo zu aktualisieren.',
 	it: 'Google può impiegare fino a 24 ore per aggiornare un’iscrizione.',
 	en: 'Google can take up to 24 hours to refresh a subscription.',
 	ar: 'قد يستغرق Google حتى 24 ساعة لتحديث الاشتراك.'
+};
+/**
+ * Ce que la page dit à la place du délai de Google (décision du chef de projet, 27.09.2026) : l'aide
+ * de Google ne donne aucun délai de rafraîchissement, et la phrase des 24 heures n'avait plus
+ * d'appui écrit. L'arabe est celui du chef de projet, mot pour mot.
+ */
+const DERNIERE_MINUTE: Record<Langue, string> = {
+	fr: 'Pour un changement de dernière minute, regardez la page du programme : elle est toujours à jour.',
+	de: 'Bei einer Änderung in letzter Minute sehen Sie auf der Seite des Programms nach: Sie ist immer aktuell.',
+	it: 'Per un cambiamento dell’ultimo minuto, guarda la pagina del programma: è sempre aggiornata.',
+	en: 'For a last-minute change, check the programme page: it is always up to date.',
+	ar: 'عند أي تغيير في آخر لحظة، راجع صفحة البرنامج: فهي محدَّثة دائمًا.'
 };
 const AUTRE_APPAREIL: Record<Langue, string> = {
 	fr: 'Un autre appareil ? Voir tous les choix',
@@ -842,7 +855,8 @@ describe('l’abonnement selon l’appareil, sur la page d’abonnement (E1)', (
 				[`/m/${SLUG}/agenda?appareil=tous`, AUTRE_APPAREIL.fr, undefined]
 			]);
 			expect(google(fluxWebcal('fr'))).toContain(`cid=webcal%3A%2F%2F${encodeURIComponent(hote)}`);
-			expect(bloc.lu).toContain(DELAI_GOOGLE.fr);
+			expect(bloc.lu).toContain(DERNIERE_MINUTE.fr);
+			expect(bloc.lu).not.toContain(DELAI_GOOGLE.fr);
 		}
 	});
 
@@ -928,7 +942,8 @@ describe('« Ajouter ce cours à mon agenda » selon l’appareil (E1)', () => {
 			texte: 'Aggiungi a Google Calendar',
 			cible: '_blank'
 		});
-		expect(android.lu).toContain(DELAI_GOOGLE.it);
+		expect(android.lu).toContain(DERNIERE_MINUTE.it);
+		expect(android.lu).not.toContain(DELAI_GOOGLE.it);
 
 		const windows = abonnement((await servir(chemin('it'), WINDOWS)).html, chemin('it'));
 		expect(windows.appareil).toBe('autre');
@@ -971,21 +986,33 @@ describe('« de » devant le nom de l’organisation, en français (D8)', () => 
 	});
 });
 
-describe('le délai de Google, dans les textes d’aide (E2)', () => {
-	it.each(LANGUES)('says in %s that Google can take up to 24 hours', async (langue) => {
-		// Sur Android, sous le bouton ; ailleurs, sous le choix de Google ; et dans les étapes à la main.
-		const android = await servir(`${base(langue)}/agenda`, ANDROID);
-		expect(abonnement(android.html, `${base(langue)}/agenda`).lu).toContain(DELAI_GOOGLE[langue]);
-		const ailleurs = await servir(`${base(langue)}/agenda`, WINDOWS);
-		expect(abonnement(ailleurs.html, `${base(langue)}/agenda`).lu).toContain(DELAI_GOOGLE[langue]);
-		const main =
-			ailleurs.html.match(/<section\b[^>]*\bid="a-la-main"[\s\S]*?<\/section>/)?.[0] ?? '';
-		expect(lu(main)).toContain(DELAI_GOOGLE[langue]);
-		const cours = await servir(`${base(langue)}/cours/${COURS.quotidien}`, ANDROID);
-		expect(abonnement(cours.html, `${base(langue)}/cours/${COURS.quotidien}`).lu).toContain(
-			DELAI_GOOGLE[langue]
-		);
-	});
+describe('ni délai de Google, ni 24 heures : la page du programme (E2, 27.09.2026)', () => {
+	it.each(LANGUES)(
+		'says in %s to look at the programme page, and no longer that Google takes 24 hours',
+		async (langue) => {
+			// Sur Android, sous l'aide du bouton, à la place du délai ; sur le choix complet, une fois,
+			// sous la liste des choix ; sur la page d'un cours, dans son bloc.
+			const chemin = `${base(langue)}/agenda`;
+			const android = await servir(chemin, ANDROID);
+			expect(abonnement(android.html, chemin).lu).toContain(
+				`${AIDE_DU_BOUTON_GOOGLE[langue]} ${DERNIERE_MINUTE[langue]} ${SUR_UN_ORDINATEUR[langue]}`
+			);
+			const ailleurs = await servir(chemin, WINDOWS);
+			const choix = abonnement(ailleurs.html, chemin).lu;
+			expect(choix.split(DERNIERE_MINUTE[langue])).toHaveLength(2);
+			expect(choix.endsWith(DERNIERE_MINUTE[langue]), langue).toBe(true);
+			const cours = `${base(langue)}/cours/${COURS.quotidien}`;
+			expect(abonnement((await servir(cours, ANDROID)).html, cours).lu).toContain(
+				DERNIERE_MINUTE[langue]
+			);
+			// Et nulle part le délai de Google, ni sous un bouton, ni dans les étapes à la main.
+			for (const html of [android.html, ailleurs.html]) {
+				const page = lu(html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/)?.[1] ?? '');
+				expect(page, langue).not.toContain(DELAI_GOOGLE[langue]);
+				expect(aLaMain(html).etapes[SUR_ANDROID[langue]]).toEqual([ETAPES_ANDROID[langue]]);
+			}
+		}
+	);
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -1251,21 +1278,19 @@ describe('chaque page d’abonnement ne dit que ce qui est vrai pour elle', () =
 			}
 			const bloc = abonnement(html, chemin);
 			expect(bloc.appareil).toBe('android');
-			// Le bouton, ce qu'il fait, le délai, puis l'ordinateur et l'adresse courte de cette page,
-			// d'une seule suite (décision du chef de projet, 27.09.2026). L'adresse du flux suit, comme
-			// un autre choix : la phrase ne dit plus de la coller.
+			// Le bouton, ce qu'il fait, la page du programme pour un changement de dernière minute, puis
+			// l'ordinateur et l'adresse courte de cette page, d'une seule suite (décisions du chef de
+			// projet, 27.09.2026). L'adresse du flux suit, comme un autre choix : la phrase ne dit plus
+			// de la coller.
 			const cettePage = `${origin}${base(langue)}/agenda`;
 			expect(bloc.lu).toContain(
-				`${AIDE_DU_BOUTON_GOOGLE[langue]} ${DELAI_GOOGLE[langue]} ${SUR_UN_ORDINATEUR[langue]} ` +
+				`${AIDE_DU_BOUTON_GOOGLE[langue]} ${DERNIERE_MINUTE[langue]} ${SUR_UN_ORDINATEUR[langue]} ` +
 					`${cettePage} ${OU_COPIEZ[langue]} ${fluxHttps(langue)}`
 			);
 			expect(bloc.lu).not.toContain(PAR_UN_ORDINATEUR[langue]);
 			expect(bloc.lu).not.toContain(ADRESSE_A_COLLER[langue]);
 			expect(bloc.code).toEqual([cettePage, fluxHttps(langue)]);
-			expect(aLaMain(html).etapes[SUR_ANDROID[langue]]).toEqual([
-				ETAPES_ANDROID[langue],
-				DELAI_GOOGLE[langue]
-			]);
+			expect(aLaMain(html).etapes[SUR_ANDROID[langue]]).toEqual([ETAPES_ANDROID[langue]]);
 			// La page d'un cours, qui n'a pas d'étapes à la main, donne sa propre adresse.
 			const cours = `${base(langue)}/cours/${COURS.quotidien}`;
 			const blocDuCours = abonnement((await servir(cours, ANDROID)).html, cours);

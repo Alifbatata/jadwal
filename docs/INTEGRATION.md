@@ -228,9 +228,11 @@ du visiteur sait ouvrir :
   travail ou d'école, une autre application, et l'adresse à copier.
 
 Le lien **Un autre appareil ? Voir tous les choix** montre toujours tout, et les étapes à suivre à
-la main restent en bas de la page. La page d'un cours fait de même pour ce seul cours. Google peut
-mettre jusqu'à 24 heures à rafraîchir un abonnement : pour un changement de dernière minute,
-envoyez aussi le message prêt à coller que propose l'écran **À venir**.
+la main restent en bas de la page. La page d'un cours fait de même pour ce seul cours. Une
+application de calendrier ne relit pas l'abonnement à chaque minute : Outlook peut mettre plus de
+24 heures, selon Microsoft. La page le dit, et renvoie le visiteur à la page du programme pour un
+changement de dernière minute. De votre côté, envoyez aussi le message prêt à coller que propose
+l'écran **À venir**.
 
 **Ce que nous voyons, et ce que nous ne voyons pas.** Le programme ne dépose aucun cookie et
 n'apprend rien de vos visiteurs. Une seule chose est comptée : le nombre d'affichages par jour, pour
