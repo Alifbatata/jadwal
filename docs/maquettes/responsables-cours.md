@@ -230,3 +230,9 @@ dans cet espace. Publiez le cours quand tout est prêt.` Le calendrier des deux 
   langue d'enseignement qui suit la langue de saisie et le premier jour qui suit les dates, ne sont
   pas pilotés par les tests du dépôt non plus. Ils ont été éprouvés dans un vrai Chrome sans
   interface pendant le lot, et restent à ajouter au parcours automatique.
+- Le parcours automatique ne passe pas non plus, pour l'instant, par les autres gestes du lot 2 dans
+  un vrai navigateur : le premier jour laissé vide d'un cours à dates précises, envoyé sans
+  JavaScript en deux fois ; `Supprimer ce cours` puis `Oui, supprimer`, avec et sans JavaScript ; le
+  bloc `Le cours est publié.` et son message ; la séance annulée, barrée, sur la page publique d'un
+  cours. Les tests HTTP lisent ce que le serveur rend pour chacun, et un vrai Chrome les a joués
+  pendant la relecture du lot, avec et sans JavaScript.
