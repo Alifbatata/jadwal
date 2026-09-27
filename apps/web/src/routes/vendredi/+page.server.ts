@@ -133,7 +133,7 @@ export const load: PageServerLoad = async (event) => {
 		// **Les sessions du vendredi, et elles seules.** C'est la lecture qui trie, jamais l'écran :
 		// un filtre oublié dans un composant ferait apparaître un cours ici, ou une session dans la
 		// liste des cours (ADR 0033).
-		const sessions = await readCourses(tx, ['draft', 'published', 'archived'], ['jumua']);
+		const sessions = await readCourses(tx, ['draft', 'published'], ['jumua']);
 		const programme = await readProgramme(tx, maintenant, JOURS_AFFICHES);
 		const today = todayInZone(settings.time_zone, maintenant);
 		// Une session s'écrit dans la langue de l'organisation (`parseFridayForm`) : le titre proposé
@@ -189,7 +189,7 @@ export const actions: Actions = {
 				// (`proposedOrder`) : une page ouverte avant, ou un formulaire écrit à la main, ne
 				// glisse pas une quatrième session à un rang déjà pris.
 				if (lu.values.endsOn === null) {
-					const ouvertes = await readCourses(tx, ['draft', 'published', 'archived'], ['jumua']);
+					const ouvertes = await readCourses(tx, ['draft', 'published'], ['jumua']);
 					const pris = ouvertes.some(
 						(session) =>
 							session.ends_on === null && (session.jumua_order ?? 1) === lu.values.jumuaOrder
@@ -205,7 +205,7 @@ export const actions: Actions = {
 				await insertCourse(tx, context, lu.values);
 				return fait('added');
 			}
-			const avant = (await readCourses(tx, ['draft', 'published', 'archived'], ['jumua'])).find(
+			const avant = (await readCourses(tx, ['draft', 'published'], ['jumua'])).find(
 				(session) => session.id === courseId
 			);
 			if (!avant) return refus(404, 'sessionGone');

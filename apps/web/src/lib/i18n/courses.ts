@@ -19,7 +19,6 @@ interface CoursesTexts {
 	readonly statuses: {
 		readonly draft: string;
 		readonly published: string;
-		readonly archived: string;
 	};
 	/** Le rythme et l'horaire d'un cours, sur une ligne. */
 	readonly schedule: (rhythm: string, time: string) => string;
@@ -57,7 +56,7 @@ export const coursesTexts: Translations<CoursesTexts> = {
 		pauseAdded: 'La pause est ajoutée.',
 		untitled: 'Cours sans titre',
 		pauseRemoved: 'La pause est supprimée.',
-		statuses: { draft: 'brouillon', published: 'publié', archived: 'archivé' },
+		statuses: { draft: 'brouillon', published: 'publié' },
 		schedule: (rhythm, time) => `${rhythm}, ${time}`,
 		audience: 'Public :',
 		room: 'Salle :',
@@ -92,7 +91,7 @@ export const coursesTexts: Translations<CoursesTexts> = {
 		pauseAdded: 'Die Pause ist hinzugefügt.',
 		untitled: 'Kurs ohne Titel',
 		pauseRemoved: 'Die Pause ist gelöscht.',
-		statuses: { draft: 'Entwurf', published: 'veröffentlicht', archived: 'archiviert' },
+		statuses: { draft: 'Entwurf', published: 'veröffentlicht' },
 		schedule: (rhythm, time) => `${rhythm}, ${time}`,
 		audience: 'Zielgruppe:',
 		room: 'Raum:',
@@ -127,7 +126,7 @@ export const coursesTexts: Translations<CoursesTexts> = {
 		pauseAdded: 'La pausa è stata aggiunta.',
 		untitled: 'Corso senza titolo',
 		pauseRemoved: 'La pausa è stata eliminata.',
-		statuses: { draft: 'bozza', published: 'pubblicato', archived: 'archiviato' },
+		statuses: { draft: 'bozza', published: 'pubblicato' },
 		schedule: (rhythm, time) => `${rhythm}, ${time}`,
 		audience: 'Pubblico:',
 		room: 'Sala:',
@@ -163,7 +162,7 @@ export const coursesTexts: Translations<CoursesTexts> = {
 		pauseAdded: 'The break has been added.',
 		untitled: 'Untitled course',
 		pauseRemoved: 'The break has been deleted.',
-		statuses: { draft: 'draft', published: 'published', archived: 'archived' },
+		statuses: { draft: 'draft', published: 'published' },
 		schedule: (rhythm, time) => `${rhythm}, ${time}`,
 		audience: 'Audience:',
 		room: 'Room:',
@@ -198,7 +197,7 @@ export const coursesTexts: Translations<CoursesTexts> = {
 		pauseAdded: 'أُضيفت العطلة.',
 		untitled: 'درس بلا عنوان',
 		pauseRemoved: 'حُذفت العطلة.',
-		statuses: { draft: 'مسودة', published: 'منشور', archived: 'في المحفوظات' },
+		statuses: { draft: 'مسودة', published: 'منشور' },
 		// La virgule arabe entre le rythme et l'horaire.
 		schedule: (rhythm, time) => `${rhythm}، ${time}`,
 		audience: 'الفئة:',

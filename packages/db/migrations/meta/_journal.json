@@ -470,6 +470,13 @@
       "when": 1790507763961,
       "tag": "0066_membership_leave",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1790507966532,
+      "tag": "0067_course_without_archived",
+      "breakpoints": true
     }
   ]
 }

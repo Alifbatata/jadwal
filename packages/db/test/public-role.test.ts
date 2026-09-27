@@ -27,7 +27,6 @@ let ouverte: Organisation;
 let suspendue: Organisation;
 let coursPublie: string;
 let coursBrouillon: string;
-let coursArchive: string;
 
 /** Un cours de plus dans l'organisation, avec l'état voulu. */
 async function ajouterCours(organisation: Organisation, status: string): Promise<string> {
@@ -60,7 +59,6 @@ beforeAll(async () => {
 	);
 	coursPublie = await ajouterCours(ouverte, 'published');
 	coursBrouillon = await ajouterCours(ouverte, 'draft');
-	coursArchive = await ajouterCours(ouverte, 'archived');
 });
 
 afterAll(async () => {
@@ -85,9 +83,9 @@ describe('ce que le visiteur voit', () => {
 });
 
 describe('ce que le visiteur ne voit pas', () => {
-	it('never sees a draft or an archived course', async () => {
+	// Un cours n'a que deux états depuis la migration 0067 : l'état « archivé » n'existe plus.
+	it('never sees a draft', async () => {
 		expect(await vuDuPublic('course', coursBrouillon)).toBe(0);
-		expect(await vuDuPublic('course', coursArchive)).toBe(0);
 	});
 
 	it('never sees a suspended organisation, nor anything that belongs to it', async () => {

@@ -110,7 +110,6 @@ interface CourseFormTexts {
 	readonly statuses: {
 		readonly draft: string;
 		readonly published: string;
-		readonly archived: string;
 	};
 	readonly textLegend: string;
 	/** Le nom des onglets de langue, pour les lecteurs d'écran (`aria-label`). */
@@ -270,8 +269,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		statuses: {
 			draft: 'brouillon, pas encore sur la page publique',
-			published: 'publié, visible sur la page publique',
-			archived: 'archivé, retiré de la page publique'
+			published: 'publié, visible sur la page publique'
 		},
 		textLegend: 'Titre et description',
 		languageTabs: 'Langue du texte',
@@ -428,8 +426,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		statuses: {
 			draft: 'Entwurf, noch nicht auf der öffentlichen Seite',
-			published: 'veröffentlicht, auf der öffentlichen Seite sichtbar',
-			archived: 'archiviert, von der öffentlichen Seite entfernt'
+			published: 'veröffentlicht, auf der öffentlichen Seite sichtbar'
 		},
 		textLegend: 'Titel und Beschreibung',
 		languageTabs: 'Sprache des Textes',
@@ -585,8 +582,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		statuses: {
 			draft: 'bozza, non ancora sulla pagina pubblica',
-			published: 'pubblicato, visibile sulla pagina pubblica',
-			archived: 'archiviato, tolto dalla pagina pubblica'
+			published: 'pubblicato, visibile sulla pagina pubblica'
 		},
 		textLegend: 'Titolo e descrizione',
 		languageTabs: 'Lingua del testo',
@@ -741,8 +737,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		statuses: {
 			draft: 'draft, not yet on the public page',
-			published: 'published, visible on the public page',
-			archived: 'archived, removed from the public page'
+			published: 'published, visible on the public page'
 		},
 		textLegend: 'Title and description',
 		languageTabs: 'Language of the text',
@@ -904,8 +899,7 @@ export const courseFormTexts: Translations<CourseFormTexts> = {
 		},
 		statuses: {
 			draft: 'مسودة، ليست على الصفحة العامة بعد',
-			published: 'منشور، ظاهر على الصفحة العامة',
-			archived: 'في المحفوظات، أُزيل من الصفحة العامة'
+			published: 'منشور، ظاهر على الصفحة العامة'
 		},
 		textLegend: 'العنوان والوصف',
 		languageTabs: 'لغة النص',

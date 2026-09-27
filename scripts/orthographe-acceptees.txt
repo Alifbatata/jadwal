@@ -104,10 +104,9 @@ apps/web/src/lib/i18n/sign-in.ts | syntax_0002_as_ka_1 | توجد كلمة
 # « 12.10.2026 » : l'exemple d'une date, écrite comme en Suisse et comme l'étape 18 l'impose partout
 # (retour A3) ; la règle réclame des barres obliques (famille 3).
 apps/web/src/lib/i18n/course-form.ts | DATE | 12.10.2026
-# Les trois états d'un cours, « brouillon, … page publique », « publié, … », « archivé, … », que le
-# corpus recolle en une phrase : « publique publié » n'est pas un accord, ce sont deux options.
+# Les deux états d'un cours, « brouillon, … page publique » et « publié, … », que le corpus recolle
+# en une phrase : « publique publié » n'est pas un accord, ce sont deux options.
 apps/web/src/lib/i18n/course-form.ts | AGREEMENT_POSTPONED_ADJ | publié
-apps/web/src/lib/i18n/course-form.ts | AGREEMENT_POSTPONED_ADJ | archivé
 # Ce que le résumé dit à la place d'une valeur qui manque, « pas choisis », « pas choisie », « pas
 # choisi », recollé par le corpus : chacune s'accorde avec son libellé, « Salle : pas choisie »,
 # « Langue d'enseignement : pas choisie » (les mots mêmes du retour B4).

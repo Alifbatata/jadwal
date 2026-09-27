@@ -10,8 +10,8 @@ serveur et pour le navigateur.
 1. Titre de niveau 1 : `Cours`, puis `Les cours de votre organisation. Un cours publié apparaît sur
 la page publique du programme. Un brouillon reste dans cet espace.`
 2. Le bouton `Ajouter un cours` (avant : `Nouveau cours`).
-3. Un bloc par cours : le titre (`Cours sans titre` s'il n'en a pas), l'état (`brouillon`,
-   `publié`, `archivé`), le rythme et l'horaire (`un lundi et mercredi sur deux, 10 min avant
+3. Un bloc par cours : le titre (`Cours sans titre` s'il n'en a pas), l'état (`brouillon`
+   ou `publié`), le rythme et l'horaire (`un lundi et mercredi sur deux, 10 min avant
 Maghrib, pendant 1 h`), puis les valeurs avec leur libellé : `Public : adultes · Salle : Grande
 salle · Intervenant : …`, et le lien `Modifier ce cours`, dont les lecteurs d'écran entendent aussi
    le titre.
@@ -125,8 +125,6 @@ Relevé par la relecture de l'étape 18, non corrigé à la fin de l'étape :
   responsable (migration 0065) : appelée par un éditeur, l'action ne supprime rien, mais écrit
   encore au journal et répond comme si le cours était supprimé. Le bouton et la garde de l'action
   viennent au lot suivant ;
-- l'état `archivé` n'est pas proposé, et enregistrer un cours archivé le repasse en brouillon ;
-  aucun écran n'archive un cours aujourd'hui ;
 - un cours enregistré avant l'étape 18 peut avoir des dates hors de sa période : sa fiche le
   signale et demande de corriger, mais la liste des cours le montre encore `publié` ;
 - aucun test du dépôt ne pilote les onglets : le retour sur l'onglet de la langue en cause, après

@@ -19,7 +19,7 @@ export const load: PageServerLoad = async (event) => {
 		const settings = await readSettings(tx);
 		// Les cours, et **eux seuls** : les sessions du vendredi ont leur propre écran, où une
 		// organisation les trouve sans les chercher parmi vingt cours (ADR 0033).
-		const courses = await readCourses(tx, ['draft', 'published', 'archived'], ['course']);
+		const courses = await readCourses(tx, ['draft', 'published'], ['course']);
 		const pauses = await readPauses(tx);
 		const titres = new Map(courses.map((course) => [course.id, course.title]));
 		return {

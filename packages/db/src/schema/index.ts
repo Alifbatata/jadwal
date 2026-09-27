@@ -112,7 +112,11 @@ export const ACCOUNT_LANGUAGES = ['fr', 'de', 'it', 'en', 'ar'] as const;
  * serait proposée au public sans une ligne pour l'écrire (migration 0062).
  */
 export const PUBLIC_LANGUAGES = ['fr', 'de', 'it', 'en', 'ar'] as const;
-export const COURSE_STATUSES = ['draft', 'published', 'archived'] as const;
+/**
+ * Un cours est un brouillon ou il est publié. Un troisième état, « archivé », a existé jusqu'à
+ * l'étape 19 sans qu'aucun écran le pose ; la migration 0067 l'a retiré.
+ */
+export const COURSE_STATUSES = ['draft', 'published'] as const;
 export const AUDIENCES = ['kids', 'youth', 'women', 'adults', 'open'] as const;
 export const RECURRENCE_KINDS = ['weekly', 'monthly', 'dates'] as const;
 export const TIMING_KINDS = ['fixed', 'prayer'] as const;
@@ -828,8 +832,8 @@ export const course = pgTable(
 		...orgPolicies('course', table.organizationId, [table.updatedBy], {
 			deletable: sql`${table.kind} = 'jumua' or ${orgAdmin}`
 		}),
-		// Seuls les cours publiés, et seulement d'une organisation active. Un brouillon ou un cours
-		// archivé est invisible du public par la base, pas par une clause qu'on pourrait oublier.
+		// Seuls les cours publiés, et seulement d'une organisation active. Un brouillon est invisible
+		// du public par la base, pas par une clause qu'on pourrait oublier.
 		publicSelect('course', table.organizationId, sql`${table.status} = 'published'`)
 	]
 );

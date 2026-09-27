@@ -25,7 +25,6 @@ let organizationId: string;
 let suspendueId: string;
 let publieId: string;
 let brouillonId: string;
-let archiveId: string;
 let dangereuxId: string;
 const SLUG = 'publique';
 const SLUG_SUSPENDUE = 'suspendue';
@@ -205,16 +204,6 @@ beforeAll(async () => {
 		start: '18:00',
 		end: '19:00'
 	});
-	archiveId = await poserCours({
-		status: 'archived',
-		titre: 'Archivé secret',
-		recurrenceKind: 'weekly',
-		weekdays: [5],
-		interval: 1,
-		timingKind: 'fixed',
-		start: '18:00',
-		end: '19:00'
-	});
 	dangereuxId = await poserCours({
 		status: 'published',
 		titre: CHARGE,
@@ -320,12 +309,10 @@ describe('l’API dit exactement ce que le cœur calcule', () => {
 });
 
 describe('ce que le public ne voit pas', () => {
-	it('hides a draft, an archived course and a suspended organisation, with no tell-tale code', async () => {
+	it('hides a draft and a suspended organisation, with no tell-tale code', async () => {
 		const programme = await (await fetch(`${origin}/api/v1/organisations/${SLUG}/schedule`)).text();
 		expect(programme).not.toContain('Brouillon secret');
-		expect(programme).not.toContain('Archivé secret');
 		expect(programme).not.toContain(brouillonId);
-		expect(programme).not.toContain(archiveId);
 
 		// Une organisation suspendue et un identifiant inventé rendent le même code : rien ne dit
 		// qu'une organisation a existé.

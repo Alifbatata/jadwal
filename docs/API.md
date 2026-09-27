@@ -23,14 +23,14 @@ Jamais servi, et ce n'est pas une question de discrétion mais de droits — le 
 vous n'a aucun accès à ces tables :
 
 - les adresses des personnes responsables, ni aucune donnée personnelle ;
-- les brouillons et les cours archivés ;
+- les brouillons ;
 - les organisations suspendues ;
 - le journal des modifications, les réglages internes, le plan de l'organisation ;
 - les identifiants internes, à une exception près : **l'identifiant d'un cours publié**, dont vous
   avez besoin pour faire un lien.
 
-Un brouillon, un cours archivé, une organisation suspendue et un identifiant inventé rendent tous la
-**même réponse** : `404` avec le même corps. Rien ne permet de deviner qu'une organisation a existé.
+Un brouillon, une organisation suspendue et un identifiant inventé rendent tous la **même
+réponse** : `404` avec le même corps. Rien ne permet de deviner qu'une organisation a existé.
 
 ## Points d'entrée
 
@@ -291,8 +291,8 @@ fichier suit le titre du cours.
 Les identifiants d'événement sont les mêmes que dans le flux de l'organisation. Qui s'abonne aux
 deux verra les mêmes séances dans deux calendriers — c'est ce que font deux calendriers distincts.
 
-Un cours non publié, archivé, d'une autre organisation ou inventé rend le même `404` qu'une
-organisation inconnue.
+Un cours non publié, d'une autre organisation ou inventé rend le même `404` qu'une organisation
+inconnue.
 
 **Il n'y a pas de filtre par public sur un flux.** Un abonnement se pose une fois et s'oublie ; un
 découpage par public ne correspondrait à rien de durable. Le flux par cours répond au vrai besoin,

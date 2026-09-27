@@ -176,7 +176,7 @@ describe('données de démonstration', () => {
 		// sans les nommer dans sa liste d'insertion, puis on exige qu'elles reviennent.
 		await ownerRead(sql`update "organization" set "status" = 'suspended', "accent_color" = '#ff0000'
 			where "slug" = 'belvedere'`);
-		await ownerRead(sql`update "course" set "status" = 'archived', "sequence" = 7
+		await ownerRead(sql`update "course" set "status" = 'draft', "sequence" = 7
 			where "organization_id" = ${await demoOrganizationId()}`);
 		await ownerRead(sql`update "prayer_settings"
 			set "method" = 'Karachi', "madhab" = 'hanafi', "latitude" = 1, "longitude" = 1,

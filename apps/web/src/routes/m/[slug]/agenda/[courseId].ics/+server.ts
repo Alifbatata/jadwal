@@ -41,7 +41,7 @@ export const GET: RequestHandler = async (event) => {
 		uidHost: event.url.hostname,
 		courseId
 	});
-	// Un cours non publié, archivé ou inventé rend la même chose qu'une organisation inconnue :
+	// Un cours non publié ou inventé rend la même chose qu'une organisation inconnue :
 	// le code de réponse ne dit pas qu'un cours a existé.
 	if (!agenda) return publicError(404, 'not_found');
 

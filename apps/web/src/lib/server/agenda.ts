@@ -68,7 +68,7 @@ export async function buildAgenda(options: AgendaOptions): Promise<Agenda | unde
 	const { organisation, langue, now, uidHost, courseId } = options;
 	const tous = await readPublicCourses(organisation.id, langue);
 	const courses = courseId ? tous.filter((course) => course.id === courseId) : tous;
-	// Un cours non publié, archivé, ou d'une autre organisation n'est simplement pas là : le rôle
+	// Un cours non publié ou d'une autre organisation n'est simplement pas là : le rôle
 	// public ne le voit pas. La route répond alors comme pour un cours qui n'existe pas.
 	if (courseId && courses.length === 0) return undefined;
 
