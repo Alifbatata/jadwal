@@ -1132,8 +1132,9 @@ export const prayerSettings = pgTable(
 		asrAdjustment: smallint('asr_adjustment').notNull().default(0),
 		maghribAdjustment: smallint('maghrib_adjustment').notNull().default(0),
 		ishaAdjustment: smallint('isha_adjustment').notNull().default(0),
-		/** Source courante des heures : import CSV ou calcul. */
-		source: text().notNull().default('import'),
+		// La « source déclarée » des heures, import ou calcul, a quitté l'écran à l'étape 18, et plus
+		// aucun code n'en tenait compte : la colonne est retirée (migration 0068). La source d'un
+		// jour, elle, reste sur `prayer_day`.
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
 	},
@@ -1143,7 +1144,6 @@ export const prayerSettings = pgTable(
 			foreignColumns: [organization.id],
 			name: 'prayer_settings_organization_fk'
 		}).onDelete('cascade'),
-		ck('prayer_settings_source_ck', oneOf(table.source, PRAYER_SOURCES)),
 		ck('prayer_settings_madhab_ck', oneOf(table.madhab, MADHABS)),
 		ck('prayer_settings_high_latitude_ck', oneOf(table.highLatitudeRule, HIGH_LATITUDE_RULES)),
 		ck(

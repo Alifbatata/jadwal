@@ -40,7 +40,6 @@ export interface ReglagesPrieres {
 	method: string | null;
 	madhab: string;
 	high_latitude_rule: string;
-	source: string;
 	fajr_adjustment: number;
 	dhuhr_adjustment: number;
 	asr_adjustment: number;
@@ -55,7 +54,7 @@ function nombre(valeur: unknown): number {
 /** Les réglages de l'organisation courante. La ligne existe toujours : le seed la crée. */
 export async function readReglages(tx: Transaction): Promise<ReglagesPrieres> {
 	const result = await tx.execute(sql`
-		select "latitude", "longitude", "method", "madhab", "high_latitude_rule", "source",
+		select "latitude", "longitude", "method", "madhab", "high_latitude_rule",
 			"fajr_adjustment", "dhuhr_adjustment", "asr_adjustment", "maghrib_adjustment",
 			"isha_adjustment"
 		from "prayer_settings"
@@ -74,7 +73,6 @@ export async function readReglages(tx: Transaction): Promise<ReglagesPrieres> {
 		method: (ligne?.['method'] as string | null) ?? null,
 		madhab: (ligne?.['madhab'] as string) ?? 'shafi',
 		high_latitude_rule: (ligne?.['high_latitude_rule'] as string) ?? 'middleofthenight',
-		source: (ligne?.['source'] as string) ?? 'import',
 		fajr_adjustment: nombre(ligne?.['fajr_adjustment']),
 		dhuhr_adjustment: nombre(ligne?.['dhuhr_adjustment']),
 		asr_adjustment: nombre(ligne?.['asr_adjustment']),
@@ -173,23 +171,22 @@ export async function enregistrerReglages(
 		method: CalculationMethodName;
 		madhab: MadhabName;
 		highLatitudeRule: HighLatitudeRuleName;
-		source: string;
 		adjustments: Record<'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha', number>;
 	},
 	now: Date
 ): Promise<number> {
 	await tx.execute(sql`
 		insert into "prayer_settings" ("organization_id", "latitude", "longitude", "method", "madhab",
-			"high_latitude_rule", "source", "fajr_adjustment", "dhuhr_adjustment", "asr_adjustment",
+			"high_latitude_rule", "fajr_adjustment", "dhuhr_adjustment", "asr_adjustment",
 			"maghrib_adjustment", "isha_adjustment")
 		values (${context.organizationId}, ${apres.latitude}, ${apres.longitude}, ${apres.method},
-			${apres.madhab}, ${apres.highLatitudeRule}, ${apres.source}, ${apres.adjustments.fajr},
+			${apres.madhab}, ${apres.highLatitudeRule}, ${apres.adjustments.fajr},
 			${apres.adjustments.dhuhr}, ${apres.adjustments.asr}, ${apres.adjustments.maghrib},
 			${apres.adjustments.isha})
 		on conflict ("organization_id") do update set
 			"latitude" = excluded."latitude", "longitude" = excluded."longitude",
 			"method" = excluded."method", "madhab" = excluded."madhab",
-			"high_latitude_rule" = excluded."high_latitude_rule", "source" = excluded."source",
+			"high_latitude_rule" = excluded."high_latitude_rule",
 			"fajr_adjustment" = excluded."fajr_adjustment",
 			"dhuhr_adjustment" = excluded."dhuhr_adjustment",
 			"asr_adjustment" = excluded."asr_adjustment",

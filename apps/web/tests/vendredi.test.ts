@@ -522,7 +522,6 @@ describe('le modèle CSV', () => {
 			method: 'MuslimWorldLeague',
 			madhab: 'shafi',
 			highLatitudeRule: 'middleofthenight',
-			source: 'import',
 			fajrAdjustment: '0',
 			dhuhrAdjustment: '0',
 			asrAdjustment: '0',

@@ -399,7 +399,6 @@ export const actions: Actions = {
 		const enregistree = await withSessionOrg(context, (tx) => readReglages(tx));
 		const { saisie, position: lue, erreur } = lireCalcul(form, enregistree);
 		if (erreur) return fail(400, { ...CALCUL, error: erreur, saisie });
-		const declaree = String(form.get('source') ?? '');
 
 		const ecrites = await withSessionOrg(context, async (tx) => {
 			const settings = await readSettings(tx);
@@ -417,9 +416,6 @@ export const actions: Actions = {
 					highLatitudeRule: isHighLatitudeRule(saisie.highLatitudeRule)
 						? saisie.highLatitudeRule
 						: recommendedHighLatitudeRule(lue?.latitude ?? 0),
-					// L'écran ne demande plus de « source déclarée » (retour C1) : la colonne garde sa
-					// valeur, sauf pour qui l'envoie encore.
-					source: declaree === 'import' || declaree === 'computed' ? declaree : avant.source,
 					adjustments: saisie.adjustments
 				},
 				new Date()

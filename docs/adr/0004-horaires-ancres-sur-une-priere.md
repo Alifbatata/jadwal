@@ -231,6 +231,7 @@ priorité entre les trois sources ne change pas, et l'écran la dit en une phras
 vous déclarez » a disparu de l'écran ; sa colonne `prayer_settings.source` reste en base, et plus
 aucun code n'en tient compte. L'enregistrement du calcul la relit pour la réécrire telle qu'elle
 était, sauf quand un formulaire envoie encore ce champ, et aucune décision ne dépend de sa valeur.
+L'étape 19 a retiré la colonne (voir l'addendum du 27.09.2026).
 
 ## Conséquences
 
@@ -246,6 +247,15 @@ aucun code n'en tient compte. L'enregistrement du calcul la relit pour la rééc
 - L'import CSV et le calcul avec Adhan sont reportés à l'étape 7. Adhan (MIT) n'est ajouté qu'à
   cette étape, comme dépendance listée et justifiée en une ligne dans le rapport.
 
+## Addendum du 27.09.2026 : la source déclarée quitte la base
+
+La colonne `prayer_settings.source` est retirée, avec sa contrainte (migration 0068). Aucun écran ne
+la demandait plus depuis l'étape 18, et aucune décision n'en dépendait : l'enregistrement du calcul
+ne la relit plus, les données de démonstration ne la nomment plus, et le journal ne la reprend plus
+dans l'état avant et après d'un réglage. La priorité entre les trois sources ne change pas : elle se
+lit jour par jour, et `prayer_day.source` reste la colonne qui fait passer un jour importé avant un
+jour calculé.
+
 ## Statut
 
 Accepté, 2026-09-19 ; complété avec les règles exactes le 2026-09-20 ; complété avec les deux
@@ -253,4 +263,5 @@ sources, la fenêtre glissante et la règle des latitudes hautes le 2026-09-21 ;
 saisie à la main, l'iqama et la priorité des trois sources le 2026-09-21 (étape 8). Étapes 1, 7 et 8
 de la feuille de route. La tâche quotidienne de remplissage est écrite ; son ordonnancement
 appartient à l'étape 9. Complété le 2026-09-26 (étape 18) : un cours avant une prière, la
-localité choisie dans la liste de swisstopo, et l'écran en une question.
+localité choisie dans la liste de swisstopo, et l'écran en une question. Complété le 27.09.2026
+(étape 19) : la colonne de la source déclarée est retirée.

@@ -465,3 +465,44 @@ describe('suppression d’une organisation', () => {
 		expect(untouched).toBeGreaterThan(0);
 	});
 });
+
+describe('les réglages des prières', () => {
+	it('carry no declared source any more: neither the column nor its constraint', async () => {
+		// La « source que vous déclarez » a quitté l'écran à l'étape 18, et plus aucun code n'en
+		// tenait compte : la colonne part avec sa contrainte (migration 0068). La source d'un jour,
+		// `prayer_day.source`, reste : c'est elle qui fait passer l'import avant le calcul.
+		const columns = allRows<{ table_name: string; column_name: string }>(
+			await owner.execute(sql`
+				select table_name, column_name from information_schema.columns
+				where table_schema = 'public' and column_name = 'source'
+				order by table_name
+			`)
+		);
+		expect(columns).toEqual([{ table_name: 'prayer_day', column_name: 'source' }]);
+		const constraints = allRows<{ conname: string }>(
+			await owner.execute(sql`
+				select conname from pg_constraint
+				where conrelid = 'public.prayer_settings'::regclass and conname like '%source%'
+			`)
+		);
+		expect(constraints).toEqual([]);
+	});
+
+	it('are saved by the prayer screen, column by column, without it', async () => {
+		// L'écriture de l'écran des prières (`enregistrerReglages`), sans la colonne partie.
+		const saved = await withOrg(app, asAdmin(org), (tx) =>
+			tx.execute(sql`
+				insert into "prayer_settings" ("organization_id", "latitude", "longitude", "method",
+					"madhab", "high_latitude_rule", "fajr_adjustment", "dhuhr_adjustment",
+					"asr_adjustment", "maghrib_adjustment", "isha_adjustment")
+				values (${org.id}, 46.2, 6.1, 'MuslimWorldLeague', 'shafi', 'middleofthenight',
+					0, 0, 0, 0, 0)
+				on conflict ("organization_id") do update set
+					"latitude" = excluded."latitude", "longitude" = excluded."longitude",
+					"updated_at" = now()
+				returning "organization_id"
+			`)
+		);
+		expect(allRows(saved)).toHaveLength(1);
+	});
+});

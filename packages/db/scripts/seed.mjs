@@ -423,7 +423,6 @@ export async function seed(overrides = {}, env = process.env) {
 					"latitude" = excluded."latitude", "longitude" = excluded."longitude",
 					"method" = excluded."method", "madhab" = excluded."madhab",
 					"high_latitude_rule" = excluded."high_latitude_rule",
-					"source" = excluded."source",
 					"fajr_adjustment" = excluded."fajr_adjustment",
 					"dhuhr_adjustment" = excluded."dhuhr_adjustment",
 					"asr_adjustment" = excluded."asr_adjustment",
