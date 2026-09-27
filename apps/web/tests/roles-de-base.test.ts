@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { inject } from 'vitest';
 import { connectionSettings } from '@jadwal/db';
+import { nomsDeTest, productionEnvironment } from './environnement-de-production.js';
 
 const appDir = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -44,6 +45,8 @@ function fichiersSources(racine: string): string[] {
 }
 
 let serveur: ChildProcess;
+/** L'environnement exact que le serveur a reçu, relu par le test qui suit son démarrage. */
+let environnementDuServeur: NodeJS.ProcessEnv = {};
 const journal: string[] = [];
 
 async function attendre(attempts = 60): Promise<void> {
@@ -61,25 +64,27 @@ async function attendre(attempts = 60): Promise<void> {
 }
 
 beforeAll(async () => {
-	// L'environnement de production tel qu'il sera : `app.env` moins les deux lignes.
-	const env: NodeJS.ProcessEnv = { ...process.env };
+	// L'environnement de production tel qu'il sera : `app.env` moins les deux lignes, et sans ce que
+	// Vitest pose pour dire « en test », comme pour les serveurs de la préparation globale.
+	const env = productionEnvironment();
 	for (const variable of INTERDITES) delete env[variable];
 
+	environnementDuServeur = {
+		...env,
+		NODE_ENV: 'production',
+		PORT: String(PORT),
+		HOST: '127.0.0.1',
+		ORIGIN: ORIGINE,
+		POSTGRES_DB: inject('testDatabase'),
+		MAIL_TRANSPORT: 'file',
+		MAIL_OUTBOX_DIR: inject('outbox'),
+		MAIL_FROM: 'jadwal@example.test',
+		BETTER_AUTH_SECRET: inject('authSecret')
+	};
 	serveur = spawn(process.execPath, [join(appDir, 'build', 'index.js')], {
 		cwd: appDir,
 		stdio: ['ignore', 'pipe', 'pipe'],
-		env: {
-			...env,
-			NODE_ENV: 'production',
-			PORT: String(PORT),
-			HOST: '127.0.0.1',
-			ORIGIN: ORIGINE,
-			POSTGRES_DB: inject('testDatabase'),
-			MAIL_TRANSPORT: 'file',
-			MAIL_OUTBOX_DIR: inject('outbox'),
-			MAIL_FROM: 'jadwal@example.test',
-			BETTER_AUTH_SECRET: inject('authSecret')
-		}
+		env: environnementDuServeur
 	});
 	serveur.stdout?.on('data', (chunk: Buffer) => journal.push(chunk.toString()));
 	serveur.stderr?.on('data', (chunk: Buffer) => journal.push(chunk.toString()));
@@ -156,5 +161,11 @@ describe('un vrai serveur, sans les deux mots de passe', () => {
 
 	it('n’a rien écrit sur sa sortie d’erreur au sujet d’une variable manquante', () => {
 		expect(journal.join('')).not.toMatch(/Missing environment variable/);
+	});
+
+	it('ne reçoit rien de ce qui dit « en test », comme les serveurs de la préparation globale', () => {
+		// Better Auth lit `TEST` et coupe alors son contrôle d'origine : un serveur qui le reçoit
+		// n'éprouve pas la production (`environnement-de-production.ts`).
+		expect(nomsDeTest(environnementDuServeur)).toEqual([]);
 	});
 });
