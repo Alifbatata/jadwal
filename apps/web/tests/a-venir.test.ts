@@ -38,9 +38,10 @@
 //   brouillon ne donne pas son heure à un cours prévu après le Dhuhr, ni sur sa carte, ni dans le
 //   message d'un déplacement.
 // - Étape 19, lot 3 : annuler ou déplacer une séance un jour où le cours n'en a pas, un autre jour
-//   de la semaine ou après son dernier jour, est refusé dans chaque langue, et n'écrit rien, pas même
-//   au journal. Une séance arrivée d'un autre jour ne s'annule pas sous ce
-//   jour-là, et « Rétablir » un jour sans changement n'écrit rien non plus.
+//   de la semaine, après son dernier jour ou pendant une pause, du cours ou de toute
+//   l'organisation, est refusé dans chaque langue, et n'écrit rien, pas même au journal. Une séance
+//   arrivée d'un autre jour ne s'annule pas sous ce jour-là, et « Rétablir » un jour sans
+//   changement n'écrit rien non plus.
 
 import { readFileSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
