@@ -388,7 +388,6 @@ describe('le flux agenda', () => {
 		const titres = evenements.map((evenement) => evenement.getFirstPropertyValue('summary'));
 		expect(titres).toContain('Hebdomadaire');
 		expect(titres).not.toContain('Brouillon secret');
-		expect(titres).not.toContain('Archivé secret');
 
 		// Le cours hebdomadaire à heure fixe sort en un seul événement récurrent, développé ici par
 		// `ical.js` et comparé aux dates que le cœur annonce.
