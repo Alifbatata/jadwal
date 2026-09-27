@@ -589,6 +589,77 @@ describe('la liste des membres : la personne responsable la lit, l’éditrice n
 });
 
 /**
+ * Le journal (étape 19, migration 0070). L'écran Membres y écrit l'adresse et le rôle de chaque
+ * personne invitée, et l'acceptation d'une invitation y est signée de la personne qui entre : une
+ * éditrice qui le lisait par un appel direct reconstituait la liste des membres que la migration
+ * 0064 lui retire, et les invitations que la migration 0059 lui retire. Aucun écran ne montre le
+ * journal. La personne responsable et le super-admin le lisent comme avant.
+ */
+describe('le journal : la personne responsable le lit, l’éditrice n’en lit rien', () => {
+	/** L'invitation que les deux entrées décrivent. */
+	const invitationId = newId();
+	const journal = () => sql`
+		select "actor_id", "action", "after" from "audit_log" where "organization_id" = ${a.id}
+	`;
+	/** Ce que le journal rend de l'invitation, par le rôle et le contexte donnés. */
+	async function traces(db: Database, context: Context | string) {
+		const found = await withOrg(db, context, async (tx) =>
+			allRows<{ actor_id: string; action: string; after: { email?: string } | null }>(
+				await tx.execute(sql`
+					select "actor_id", "action", "after" from "audit_log"
+					where "target_id" = ${invitationId} order by "action"
+				`)
+			)
+		);
+		return found.map((row) => [row.action, row.actor_id, row.after?.email ?? null]);
+	}
+
+	beforeAll(async () => {
+		// Les deux entrées, telles que `record` les écrit : l'invitation par la personne responsable,
+		// avec l'adresse et le rôle, puis l'acceptation par la collègue, qui la signe.
+		await withOrg(app, inA(a.userId), (tx) =>
+			tx.execute(sql`
+				insert into "audit_log" ("id", "organization_id", "actor_id", "action", "target_table",
+					"target_id", "after")
+				values (${newId()}, ${a.id}, ${a.userId}, 'invitation.create', 'invitation',
+					${invitationId}, ${JSON.stringify({ email: colleague.email, role: 'editor' })}::jsonb)
+			`)
+		);
+		await withOrg(app, inA(colleague.id), (tx) =>
+			tx.execute(sql`
+				insert into "audit_log" ("id", "organization_id", "actor_id", "action", "target_table",
+					"target_id", "after")
+				values (${newId()}, ${a.id}, ${colleague.id}, 'invitation.accept', 'invitation',
+					${invitationId}, ${JSON.stringify({ role: 'editor' })}::jsonb)
+			`)
+		);
+	});
+
+	it('shows an editor nothing of the journal, neither the addresses nor the authors', async () => {
+		// L'éditrice, et la collègue qui a pourtant signé l'une des deux entrées.
+		for (const person of [editor.id, colleague.id]) {
+			expect(await traces(app, inA(person)), person).toEqual([]);
+			expect(await attempt(app, inA(person), journal()), person).toEqual({ rows: 0 });
+		}
+	});
+
+	it('lets the manager, and the super-admin who entered the organisation, read it as before', async () => {
+		const expected = [
+			['invitation.accept', colleague.id, null],
+			['invitation.create', a.userId, colleague.email]
+		];
+		for (const manager of [a.userId, second.id]) {
+			expect(await traces(app, inA(manager)), manager).toEqual(expected);
+		}
+		expect(await traces(superAdmin, a.id)).toEqual(expected);
+	});
+
+	it('reads no entry at all without a person in the context', async () => {
+		expect(await countVisible(app, a.id, 'audit_log')).toBe(0);
+	});
+});
+
+/**
  * Une modification ou une suppression qui nomme une colonne, dans son WHERE ou son `returning`,
  * passe aussi par la politique de lecture. L'éditrice ne lit pas les invitations de son
  * organisation : elle ne touchait donc rien dans les gestes ci-dessus, même si la politique
@@ -1123,6 +1194,7 @@ describe('la fonction qui lit le rôle', () => {
 			`)
 		);
 		expect(found.map((row) => row.policy)).toEqual([
+			'audit_log.audit_log_select',
 			'course.course_delete',
 			'invitation.invitation_delete',
 			'invitation.invitation_insert',

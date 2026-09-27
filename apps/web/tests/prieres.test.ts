@@ -19,6 +19,8 @@ let ownerHandle: DatabaseHandle;
 let appHandle: DatabaseHandle;
 let cookie: string;
 let organizationId: string;
+/** La personne responsable : elle seule lit le journal de son organisation (migration 0070). */
+let userId: string;
 
 const SLUG = 'bienne';
 const FUSEAU = 'Europe/Zurich';
@@ -170,7 +172,7 @@ beforeAll(async () => {
 	ownerHandle = createDatabase({ role: 'owner', overrides: { database: testDatabase } });
 	appHandle = createDatabase({ role: 'app', overrides: { database: testDatabase } });
 	organizationId = newId();
-	const userId = newId();
+	userId = newId();
 	const courseId = newId();
 	await maintenance(async (tx) => {
 		await tx.execute(sql`
@@ -391,9 +393,9 @@ describe('l’import', () => {
 	});
 
 	it('laisse une trace de chaque geste dans le journal', async () => {
-		// Le journal se lit par le rôle applicatif, dans le contexte de son organisation : le
-		// propriétaire, lui, n'a aucune politique de lecture dessus (ADR 0020).
-		const journal = await withOrg(appHandle.db, organizationId, async (tx) =>
+		// Le journal se lit par le rôle applicatif, sous la personne responsable de l'organisation
+		// (migration 0070) : le propriétaire, lui, n'a aucune politique de lecture dessus (ADR 0020).
+		const journal = await withOrg(appHandle.db, { organizationId, userId }, async (tx) =>
 			rows<{ action: string; n: string }>(
 				await tx.execute(sql`
 					select "action", count(*)::text as n from "audit_log"

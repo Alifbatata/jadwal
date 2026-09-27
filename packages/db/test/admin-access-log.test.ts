@@ -11,6 +11,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { newId, withOrg, type Database, type DatabaseHandle } from '../src/index.js';
 import {
 	allRows,
+	asAdmin,
 	countIn,
 	openDatabase,
 	seedOrganisation,
@@ -128,9 +129,12 @@ describe('ce que l’organisation ne peut pas en savoir', () => {
 	});
 
 	it('leaves nothing in the organisation’s own journal when a read is recorded', async () => {
-		const avant = await withOrg(app, org.id, (tx) => countIn(tx, 'audit_log'));
+		// Le journal, lu par la personne responsable, la seule qui le lise (migration 0070) : sous
+		// l'organisation seule, les deux comptes vaudraient zéro, et le test ne prouverait rien.
+		const avant = await withOrg(app, asAdmin(org), (tx) => countIn(tx, 'audit_log'));
+		expect(avant).toBeGreaterThan(0);
 		await poserUneEntree('read', '/membres');
-		const apres = await withOrg(app, org.id, (tx) => countIn(tx, 'audit_log'));
+		const apres = await withOrg(app, asAdmin(org), (tx) => countIn(tx, 'audit_log'));
 		// C'est la décision de l'ADR 0025, et son prix : la consultation ne se voit pas.
 		expect(apres).toBe(avant);
 	});

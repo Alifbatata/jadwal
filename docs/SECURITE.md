@@ -57,8 +57,9 @@ formulaire, une URL ou un en-tête ne donne rien.
 l'étape 18 (ADR 0046, migration 0059), la base tient la même séparation que les écrans. Pour le
 rôle applicatif, les gestes réservés aux responsables exigent que la personne du contexte soit
 responsable de l'organisation du contexte : lire et écrire les invitations, lire la liste des
-membres et leurs comptes, changer un rôle, retirer un membre, modifier les réglages et les salles,
-régler les heures de prière, et depuis l'étape 19 supprimer un cours (migrations 0064 et 0065). La
+membres et leurs comptes, lire le journal, changer un rôle, retirer un membre, modifier les réglages
+et les salles, régler les heures de prière, et depuis l'étape 19 supprimer un cours (migrations
+0064, 0065 et 0070). La
 suppression d'une session du vendredi reste à l'éditeur, et un cours ne devient pas une session le
 temps d'être supprimé : le type d'une ligne ne change pas, pour personne (migration 0069). Une
 fonction à droits du définisseur le dit, `jadwal.is_org_admin()`, que seul le rôle applicatif peut
@@ -88,7 +89,10 @@ lui échappe (ADR 0015, 0020). Un compte compromis ne peut pas effacer ses trace
 pour le super-admin, qui a pourtant tous les autres droits : il y écrit, il n'y récrit rien. Le
 propriétaire, lui, purge sans lire. Depuis l'étape 19, l'auteur d'une entrée écrite par le rôle
 applicatif est la personne du contexte, et aucune autre : un membre ne signe plus au nom d'un
-collègue (migration 0063). L'acceptation des conditions suit la même règle : le rôle
+collègue (migration 0063). Sa lecture est réservée à la personne responsable (migration 0070) : le
+journal nomme les membres et les personnes invitées, et un éditeur y relisait la liste que la
+barrière 4 bis lui retire. Le super-admin le lit comme avant. L'acceptation des conditions suit la
+même règle : le rôle
 applicatif lit et ajoute ses propres acceptations, sans rien modifier ni supprimer, et le moment est
 posé par la base, jamais par l'application. Le super-admin les lit, sans en écrire aucune. Elles
 partent avec l'adhésion, par la clé en cascade, et par aucun autre chemin (ADR 0044), hors le
@@ -245,6 +249,9 @@ ou pointe ses adresses vers un faux service. C'est une garde contre l'oubli et l
 - **Le déni de service.** La limitation de débit protège les boîtes aux lettres, pas le service.
 - **Une personne responsable malveillante dans sa propre organisation** peut effacer le programme de
   son organisation. Le journal dit qui et quand, et l'état avant permet de revenir en arrière.
+- **Un éditeur lit l'identifiant de ses collègues** dans les cours, les séances et les pauses qu'ils
+  ont écrits (`updated_by`, `created_by`) : un identifiant opaque, sans nom, sans adresse ni rôle,
+  qu'aucune table ne lui permet de relier à un compte depuis l'étape 19 (ADR 0046).
 - **Une invitation ouvre la fiche de l'organisation à son destinataire**, entière, avant même qu'il
   accepte : une politique porte sur des lignes, pas sur des colonnes. Rien de cette ligne n'est une
   donnée personnelle, et le nom sera public dès l'étape 5 (ADR 0017).

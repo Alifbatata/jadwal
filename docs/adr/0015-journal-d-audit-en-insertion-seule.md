@@ -53,7 +53,23 @@ l'application pose comme pour tout le monde (ADR 0025), et sa politique ne chang
 propriétaire écrit sous son drapeau d'entretien et purge comme avant ; aucun déclencheur n'écrit au
 journal.
 
+## Addendum du 27.09.2026 : seule la personne responsable lit le journal
+
+La section Conséquences dit que l'état avant et après ne contient que des données de cours. Ce n'est
+plus vrai depuis l'écran Membres : une invitation y laisse l'adresse et le rôle de la personne
+invitée (`invitation.create`), l'acceptation est signée de la personne qui entre
+(`invitation.accept`), et un changement de rôle ou un retrait désigne l'adhésion touchée. Le
+journal nomme donc les membres, et des personnes invitées qui ne le sont pas encore.
+
+« La lecture reste limitée à l'organisation » ne suffisait plus. Depuis la migration 0064, un
+éditeur ne lit plus la liste des membres, et il la retrouvait dans le journal par un appel direct,
+avec les invitations que la migration 0059 lui retire. Depuis la migration 0070, le rôle applicatif
+ne lit le journal que sous une personne responsable de l'organisation du contexte
+(`jadwal.is_org_admin()`, ADR 0046). Aucun écran ne le montre. Tout membre continue d'y écrire, sans
+relire ce qu'il écrit ; le super-admin le lit comme avant (ADR 0025).
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 2 de la feuille de route (base, RLS, données de démo). Complété le
-27.09.2026 : l'auteur d'une entrée est la personne connectée.
+27.09.2026 : l'auteur d'une entrée est la personne connectée, et seule la personne responsable lit
+le journal.

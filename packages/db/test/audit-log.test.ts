@@ -1,10 +1,12 @@
-// Journal d'audit : insertion et lecture, jamais de modification ni de suppression (ADR 0015).
+// Journal d'audit : insertion et lecture, jamais de modification ni de suppression (ADR 0015). Tout
+// membre y écrit ; seule la personne responsable le lit (migration 0070, ADR 0046).
 
 import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { newId, withOrg, type Database, type DatabaseHandle } from '../src/index.js';
 import {
 	allRows,
+	asAdmin,
 	countVisible,
 	messageOfFailure,
 	openDatabase,
@@ -52,7 +54,7 @@ describe('journal d’audit', () => {
 					${JSON.stringify({ teacher: null })}::jsonb, ${JSON.stringify({ teacher: 'Imam' })}::jsonb)
 			`);
 		});
-		const rows = await withOrg(app, a.id, async (tx) =>
+		const rows = await withOrg(app, asAdmin(a), async (tx) =>
 			allRows<{ action: string; after: { teacher: string } }>(
 				await tx.execute(sql`select action, after from "audit_log" where id = ${id}`)
 			)
@@ -89,11 +91,11 @@ describe('journal d’audit', () => {
 			expect(state).toBe(SQLSTATE.insufficientPrivilege);
 		}
 		// Rien n'a bougé.
-		expect(await countVisible(app, a.id, 'audit_log')).toBe(2);
+		expect(await countVisible(app, asAdmin(a), 'audit_log')).toBe(2);
 	});
 
 	it('does not show the entries of another organisation', async () => {
-		expect(await countVisible(app, b.id, 'audit_log')).toBe(1);
+		expect(await countVisible(app, asAdmin(b), 'audit_log')).toBe(1);
 	});
 
 	it('keeps the entry when its author is deleted', async () => {
@@ -112,7 +114,7 @@ describe('journal d’audit', () => {
 			`)
 		);
 		await withMaintenance(owner, (tx) => tx.execute(sql`delete from "user" where id = ${author}`));
-		const rows = await withOrg(app, b.id, async (tx) =>
+		const rows = await withOrg(app, asAdmin(b), async (tx) =>
 			allRows<{ actor_id: string | null }>(
 				await tx.execute(sql`select actor_id from "audit_log" where "action" = 'course.update'`)
 			)

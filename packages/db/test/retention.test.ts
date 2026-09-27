@@ -11,6 +11,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { newId, withOrg, type Database, type DatabaseHandle } from '../src/index.js';
 import {
 	allRows,
+	asAdmin,
 	firstRow,
 	openDatabase,
 	seedOrganisation,
@@ -62,8 +63,9 @@ afterAll(async () => {
 	await ownerHandle?.close();
 });
 
+/** Ce que le journal garde, lu par la personne responsable : elle seule le lit (migration 0070). */
 async function remaining(): Promise<string[]> {
-	const rows = await withOrg(app, org.id, (tx) =>
+	const rows = await withOrg(app, asAdmin(org), (tx) =>
 		tx.execute<{ action: string }>(
 			sql`select "action" from "audit_log" where "organization_id" = ${org.id} order by "created_at"`
 		)
@@ -182,14 +184,14 @@ describe('le verrou de conservation', () => {
 
 	/**
 	 * Ce qui reste, compté par les rôles qui ont le droit de lire : le journal par l'application,
-	 * dans le contexte de son organisation, et le registre interne par le super-admin. Le
+	 * sous la personne responsable de son organisation, et le registre interne par le super-admin. Le
 	 * propriétaire, lui, purge sans lire — il n'a pas de politique de lecture sur ces deux tables.
 	 */
 	async function restantes(): Promise<{ journal: number; registre: number }> {
 		// On ne compte que ce qui est **hors** de la fenêtre de rétention : le reste survivrait de
 		// toute façon, et l'y mêler ferait passer le test pour vert sans rien prouver.
 		const vieux = sql`"created_at" < now() - interval '24 months'`;
-		const journal = await withOrg(app, sousVerrou.id, async (tx) =>
+		const journal = await withOrg(app, asAdmin(sousVerrou), async (tx) =>
 			firstRow<{ n: string }>(
 				await tx.execute(sql`select count(*)::text as n from "audit_log"
 					where "organization_id" = ${sousVerrou.id} and ${vieux}`)

@@ -13,6 +13,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { newId, withOrg, type Database, type DatabaseHandle } from '../src/index.js';
 import {
 	allRows,
+	asAdmin,
 	countIn,
 	firstRow,
 	messageOfFailure,
@@ -112,8 +113,9 @@ describe('ce que le super-admin écrit', () => {
 				values (${newId()}, ${a.id}, ${a.userId}, 'course.update', 'course', ${target})
 			`)
 		);
-		// C'est le contrat de l'ADR 0025 : le contenu est tracé, la consultation ne l'est pas.
-		const vu = await withOrg(app, a.id, (tx) =>
+		// C'est le contrat de l'ADR 0025 : le contenu est tracé, la consultation ne l'est pas. Le
+		// journal se lit par la personne responsable de l'organisation (migration 0070).
+		const vu = await withOrg(app, asAdmin(a), (tx) =>
 			countIn(tx, 'audit_log', sql.raw(`where "target_id" = '${target}'`))
 		);
 		expect(vu).toBe(1);

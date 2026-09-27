@@ -1206,11 +1206,18 @@ export const auditLog = pgTable(
 		ck('audit_log_id_uuid_v7_ck', isUuidV7(table.id)),
 		ck('audit_log_action_ck', sql`length(btrim(${table.action})) > 0`),
 		// Ni UPDATE ni DELETE : aucune politique, et aucun droit accordé (ADR 0015).
+		//
+		// La lecture est réservée aux responsables de l'organisation (migration 0070, ADR 0046).
+		// Jusqu'à l'étape 19, tout membre lisait le journal : l'écran Membres y écrit l'adresse et le
+		// rôle de chaque personne invitée, et l'acceptation y est signée de la personne qui entre. Un
+		// éditeur y relisait donc, par un appel direct, la liste des membres et les invitations que
+		// les politiques de leurs tables lui retirent. Aucun écran ne lit le journal ; l'écriture, elle,
+		// reste à tout membre.
 		pgPolicy('audit_log_select', {
 			as: 'permissive',
 			for: 'select',
 			to: appRole,
-			using: sql`${table.organizationId} = ${orgContext}`
+			using: sql`${table.organizationId} = ${orgContext} and ${orgAdmin}`
 		}),
 		// L'auteur d'une entrée est la personne du contexte, que l'application pose à partir de la
 		// session : ni un collègue, ni personne (migration 0063, ADR 0046). Jusqu'à l'étape 19, la

@@ -5,7 +5,8 @@
 // - sous le choix du rôle, l'écran Membres dit ce que fait un éditeur et ce qui est réservé au
 //   responsable (B3), et cette liste est liée à ce que la base et les routes permettent vraiment :
 //   chaque table que la base réserve au responsable est couverte par un geste dit « réservé » (sauf
-//   la suppression d'un cours, qu'aucun écran ne propose encore : `RESERVEES_SANS_ECRAN`), chaque
+//   la suppression d'un cours, qu'aucun écran ne propose encore, et la lecture du journal, qu'aucun
+//   écran ne montre : `RESERVEES_SANS_ECRAN`), chaque
 //   geste réservé est refusé à une éditrice, et chaque geste de l'éditeur, elle le fait elle-même, par
 //   le formulaire de son écran. Les gestes viennent de la liste même que l'écran affiche
 //   (`EDITOR_GESTURES` et `MANAGER_GESTURES`) : un geste ajouté à l'écran sans sa preuve ici, ou
@@ -832,11 +833,12 @@ const COURS_DE_L_EDITEUR: Record<Langue, string> = {
 };
 
 /**
- * Ce que la base réserve déjà au responsable sans qu'aucun écran le propose : supprimer un cours
- * (migration 0065, étape 19). L'écran Cours et son action le proposeront au lot suivant ; ce jour-là,
- * le geste entre dans la liste que l'écran Membres affiche, et sa table quitte celle-ci.
+ * Ce que la base réserve déjà au responsable sans qu'aucun écran le propose. Supprimer un cours
+ * (migration 0065, étape 19) : l'écran Cours et son action le proposeront au lot suivant ; ce jour-là,
+ * le geste entre dans la liste que l'écran Membres affiche, et sa table quitte celle-ci. Lire le
+ * journal (migration 0070) : aucun écran ne le montre, à personne.
  */
-const RESERVEES_SANS_ECRAN = ['course'] as const;
+const RESERVEES_SANS_ECRAN = ['audit_log', 'course'] as const;
 
 /** Le titre de la liste réservée, dans chaque langue : les mots que la consigne demande. */
 const RESERVE: Record<Langue, string> = {

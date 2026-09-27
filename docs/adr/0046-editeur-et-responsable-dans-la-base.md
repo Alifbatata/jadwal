@@ -56,7 +56,8 @@ bas : une ligne ne met pas en regard deux gestes liés.
 
 Trois écritures ne viennent d'aucun écran et sont réservées quand même, parce qu'elles touchent
 aux mêmes tables : supprimer une invitation, renommer une salle, supprimer les réglages des
-prières. Le super-admin fait tout ce que fait une personne responsable, dans l'organisation où il
+prières. Une lecture non plus : le journal (`audit_log`), qu'aucun écran ne montre, et qui nomme
+les membres et les personnes invitées (migration 0070). Le super-admin fait tout ce que fait une personne responsable, dans l'organisation où il
 est entré (ADR 0025).
 
 Deux gestes n'ont pas encore d'écran, et la base les tient déjà depuis l'étape 19 :
@@ -89,19 +90,21 @@ Deux gestes n'ont pas encore d'écran, et la base les tient déjà depuis l'éta
   clauses : `invitation` (lecture, insertion, modification, suppression, pour la branche de
   l'organisation), `membership` (lecture et suppression pour la branche de l'organisation,
   modification), `organization` (modification), `room`, `prayer_settings`, `prayer_day`,
-  `prayer_period` (insertion, modification, suppression), et `course` (suppression, sauf une
-  session du vendredi). Un déclencheur tient le type de chaque cours : sans lui, la modification,
-  ouverte à tout membre, ferait d'un cours une session, que l'éditeur supprimerait. La lecture de ces tables reste ouverte à tous les membres, invitations et
-  adhésions exceptées : l'écran des cours lit les salles et les heures, et le programme en dépend.
+  `prayer_period` (insertion, modification, suppression), `course` (suppression, sauf une
+  session du vendredi) et `audit_log` (lecture). Un déclencheur tient le type de chaque cours : sans lui, la modification,
+  ouverte à tout membre, ferait d'un cours une session, que l'éditeur supprimerait. La lecture de ces tables reste ouverte à tous les membres, invitations,
+  adhésions et journal exceptés : l'écran des cours lit les salles et les heures, et le programme en
+  dépend.
 - **Chacun garde ce qui est à lui.** La lecture des adhésions a une seconde branche, ses propres
   adhésions, dans toutes ses organisations : c'est d'elles que l'application part pour savoir de
   quelles organisations une personne est membre, et avec quel rôle. La suppression en a une aussi,
   sa propre adhésion dans l'organisation du contexte : c'est quitter l'organisation. Les comptes
   suivent la lecture des adhésions, puisque la politique de `user` passe par elle : un éditeur ne
   lit plus que le sien, la personne responsable lit ceux de ses membres.
-- **Le journal est signé de la personne du contexte.** Ce n'est pas un geste réservé : tout membre
-  écrit au journal. Mais l'auteur d'une entrée est la personne que l'application pose, et aucune
-  autre (migration 0063, ADR 0015).
+- **Le journal est signé de la personne du contexte.** L'écrire n'est pas un geste réservé : tout
+  membre écrit au journal. Mais l'auteur d'une entrée est la personne que l'application pose, et
+  aucune autre (migration 0063, ADR 0015). Le lire l'est : l'écran Membres y écrit l'adresse et le
+  rôle de chaque personne invitée, et un éditeur y relisait la liste des membres (migration 0070).
 - **La branche de la personne invitée ne change pas.** Reconnue par son adresse, sans contexte
   d'organisation, elle voit, accepte ou décline l'invitation reçue. L'adhésion qu'elle crée porte le
   rôle de son invitation (migration 0058) : c'est l'écriture de l'invitation qui est réservée, et
@@ -119,7 +122,7 @@ Deux gestes n'ont pas encore d'écran, et la base les tient déjà depuis l'éta
   Une personne responsable qui se passe elle-même éditrice le peut donc, tant qu'une autre reste
   responsable.
 
-La migration 0059 porte tout cela, et les migrations 0063 à 0066 et 0069 le complètent. La 0059
+La migration 0059 porte tout cela, et les migrations 0063 à 0066, 0069 et 0070 le complètent. La 0059
 vérifiait dans la même transaction la liste exacte des politiques qui exigent la fonction ; depuis
 que d'autres la complètent, elle n'en vérifie que le minimum, pour rester rejouable après elles.
 `packages/db/test/org-admin.test.ts` tient la liste exacte, et rejoue chaque geste de la liste : une
@@ -170,8 +173,8 @@ La liste ci-dessus est celle du code à la fin de l'étape 18 :
 - Un script ou un test qui écrit des réglages, des salles, des heures de prière, des invitations ou
   des adhésions, ou qui supprime un cours, sous le seul contexte d'une organisation n'écrit plus
   rien : il doit poser la personne responsable, comme le font les écrans (`asAdmin` dans les tests
-  de `packages/db`). Il ne lit pas non plus les adhésions ni les comptes, et n'écrit rien au
-  journal. Une modification ou une suppression écartée ne lève pas d'erreur, elle touche zéro ligne.
+  de `packages/db`). Il ne lit pas non plus les adhésions, les comptes ni le journal, et n'écrit
+  rien au journal. Une modification ou une suppression écartée ne lève pas d'erreur, elle touche zéro ligne.
 - Ajouter un écran réservé aux responsables, c'est ajouter sa table à cette liste, à la migration
   qui exige la fonction et au test des gestes, dans le même changement.
 
@@ -182,7 +185,9 @@ et leurs comptes par un appel direct, et écrire au journal une entrée qui nomm
 auteur. Le chef de projet a demandé de les fermer, avec deux gestes de plus.
 
 - **Le journal** (migration 0063) : l'auteur d'une entrée est la personne du contexte. Le
-  super-admin signe de sa propre identité, comme avant ; sa politique ne change pas.
+  super-admin signe de sa propre identité, comme avant ; sa politique ne change pas. La lecture est
+  réservée à la personne responsable (migration 0070) : le journal nomme les membres et les
+  personnes invitées, et un éditeur y retrouvait la liste que la migration 0064 lui retire.
 - **La liste des membres** (migration 0064) : la personne responsable et le super-admin la lisent
   comme avant ; un éditeur ne lit plus que sa propre adhésion et son propre compte. La garde des
   personnes désignées ne passe pas par une fonction de plus : elle suit ce que la personne voit, et
@@ -192,6 +197,10 @@ auteur. Le chef de projet a demandé de les fermer, avec deux gestes de plus.
   session le temps d'être supprimé.
 - **Quitter l'organisation** (migration 0066) : chacun peut supprimer sa propre adhésion, et rien
   de plus ; la dernière personne responsable reste retenue.
+
+Ce qui reste à l'éditeur, et que la base ne ferme pas : dans les cours, les séances et les pauses,
+l'identifiant de la personne qui les a écrits (`updated_by`, `created_by`). Un identifiant opaque,
+qu'aucune table ne lui permet plus de relier à un nom, une adresse ou un rôle (`docs/SECURITE.md`).
 
 Les écrans de ces deux derniers gestes viennent au lot suivant de l'étape 19 : le bouton de l'écran
 Cours, et « Quitter l'organisation » dans « Vos organisations ». Jusque-là, l'écran Membres ne
