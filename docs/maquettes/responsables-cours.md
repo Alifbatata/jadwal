@@ -38,9 +38,9 @@ Le même formulaire. Titre `Nouveau cours`, ou `Modifier le cours : <titre>` sur
 signale ce qui manque.`
 
 La fiche n'ouvre qu'un cours. L'adresse d'une session du vendredi y répond 404, comme un cours
-inconnu, et un formulaire envoyé à cette adresse reçoit `Ce cours n'existe plus : il a peut-être été
-supprimé.` : il en faisait un cours jusqu'à l'étape 19. La base refuse qu'une ligne change de type
-(migration 0069, ADR 0033).
+inconnu : la page `Page introuvable`, qu'on l'ouvre ou qu'on y envoie le formulaire. Jusqu'à l'étape
+19, le formulaire envoyé à cette adresse faisait un cours de la session. La base refuse maintenant
+qu'une ligne change de type (migration 0069, ADR 0033).
 
 ### Le résumé, en haut (retour B4)
 
