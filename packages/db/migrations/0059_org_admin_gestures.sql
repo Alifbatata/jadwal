@@ -220,8 +220,9 @@ BEGIN
 
 	-- Les politiques du rôle applicatif qui exigent une personne responsable : au moins celles-ci.
 	-- Jusqu'à l'étape 18, c'était « exactement celles-ci ». Les migrations suivantes en ajoutent
-	-- (0064 : lire les membres ; 0065 : supprimer un cours), et ce fichier doit rester rejouable après
-	-- elles : la liste exacte est tenue par `test/org-admin.test.ts`, qui la relit à chaque passage.
+	-- (0064 : lire les membres ; 0065 : supprimer un cours ; 0070 : lire le journal), et ce fichier
+	-- doit rester rejouable après elles : la liste exacte est tenue par `test/org-admin.test.ts`, qui
+	-- la relit à chaque passage.
 	SELECT array_agg(tablename || '.' || policyname ORDER BY tablename || '.' || policyname)
 	INTO trouvees
 	FROM pg_policies
