@@ -29,6 +29,10 @@
  * Les pairs ne sont pas suivis, et c'est tout l'objet : un pair est ce que l'hôte fournit, et
  * l'hôte, ici, c'est un serveur déjà construit qui n'en fournit aucun.
  *
+ * Il retire ensuite toutes les cartes de sources (`.map`) de l'arbre, celles du serveur construit
+ * comme celles des dépendances : aucune n'est lue à l'exécution, et celle du serveur recopiait la
+ * liste des localités suisses une seconde fois (`retirerLesCartes`, plus bas).
+ *
  * **Ce n'est pas une analyse statique des imports.** Un module chargé par un nom calculé, hors de
  * toute déclaration, lui échapperait. C'est pourquoi l'élagage n'est pas cru sur parole :
  * `scripts/eprouver-image.mjs` construit l'image, la lance, et l'interroge.
@@ -182,3 +186,38 @@ if (retires.length > 0) {
 	process.stdout.write(`  ${retires.slice(0, 12).join('\n  ')}\n`);
 	if (retires.length > 12) process.stdout.write(`  … et ${retires.length - 12} autres\n`);
 }
+
+/**
+ * Les cartes de sources, partout dans l'arbre : celles qu'adapter-node écrit à côté de chaque
+ * fichier du serveur construit, sans réglage pour s'en passer, et celles que des dépendances
+ * livrent. Aucune n'est lue à l'exécution : Node ne les charge qu'avec `--enable-source-maps`, que
+ * l'image ne pose pas. Et chacune recopie le source entier qu'elle décrit : celle du serveur portait
+ * une seconde fois la liste des localités suisses (étape 18). `scripts/eprouver-image.mjs` vérifie
+ * qu'il n'en reste aucune, et que la liste n'est plus là qu'une fois.
+ */
+function retirerLesCartes(dossier) {
+	let nombre = 0;
+	let octets = 0;
+	const file = [dossier];
+	while (file.length > 0) {
+		const courant = file.pop();
+		for (const entree of readdirSync(courant, { withFileTypes: true })) {
+			// Les liens du magasin mènent à des dossiers que la marche parcourt par leur vrai chemin.
+			if (entree.isSymbolicLink()) continue;
+			const chemin = join(courant, entree.name);
+			if (entree.isDirectory()) file.push(chemin);
+			else if (entree.name.endsWith('.map')) {
+				octets += statSync(chemin).size;
+				rmSync(chemin, { force: true });
+				nombre += 1;
+			}
+		}
+	}
+	return { nombre, octets };
+}
+
+const cartes = retirerLesCartes(racine);
+process.stdout.write(
+	`  cartes de sources retirées : ${cartes.nombre}, ` +
+		`${(cartes.octets / 1024 / 1024).toFixed(1)} Mio\n`
+);

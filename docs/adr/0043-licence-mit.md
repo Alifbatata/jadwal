@@ -146,6 +146,16 @@ toujours `MIT`.
 
 Le reste de la décision ne change pas : tout le code, widget compris, est sous MIT.
 
+## Addendum du 27.09.2026 : la liste une seule fois, sans carte de sources
+
+La section « Données tierces » cite la source de la liste des localités, mais l'image la portait
+trois fois : dans le serveur construit, dans la carte de sources de ce fichier, qui recopie le
+source entier, et dans `.svelte-kit`, la sortie intermédiaire que `pnpm deploy` recopiait avec le
+paquet. Le `Dockerfile` retire `.svelte-kit`, et l'élagage retire toutes les cartes de sources de
+l'arbre déployé, 1 384 fichiers et 18,2 Mio au passage de l'étape 19 : aucune n'est lue à
+l'exécution. `scripts/eprouver-image.mjs` vérifie qu'il n'en reste aucune, et que la liste n'est
+plus dans l'image qu'une fois.
+
 ## Addendum du 27.09.2026 : pas de CLA, les contributions arrivent sous MIT
 
 À l'étape 19, le chef de projet a décidé qu'il n'y aura pas d'accord de contribution. Une

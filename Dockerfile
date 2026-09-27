@@ -10,7 +10,8 @@
 # les sources échoue. Le remède habituel, `--ignore-scripts`, casse `esbuild`, qui a besoin du sien.
 # Le cache de BuildKit sur le magasin pnpm rend le compromis indolore.
 #
-# Ce qui n'est pas dans l'image finale : ni pnpm, ni `.git`, ni les tests, ni les sources d'`apps/web`.
+# Ce qui n'est pas dans l'image finale : ni pnpm, ni `.git`, ni les tests, ni les sources d'`apps/web`,
+# ni les cartes de sources.
 #
 # **L'arbre déployé est élagué.** `pnpm deploy --prod` retire les dépendances de développement,
 # mais il ne peut pas retirer ceci : `better-auth` déclare `@sveltejs/kit`, `svelte`, `vitest` et
@@ -42,11 +43,15 @@ RUN --mount=type=cache,target=/pnpm/store,sharing=locked \
 	# reconstruit le widget — y échouerait. Tout est déjà construit à ce stade.
 	pnpm deploy --filter=@jadwal/web --prod --ignore-scripts /app/out && \
 	# Ce que `deploy` recopie du paquet et qui n'a rien à faire en production : les sources, les
-	# tests d'accès, et les fichiers de configuration des outils de développement.
+	# tests d'accès, les fichiers de configuration des outils de développement, et `.svelte-kit`,
+	# la sortie intermédiaire de la construction. adapter-node en a fait `build/`, qui ne l'importe
+	# pas ; elle portait une copie de plus du serveur, liste des localités comprise (étape 19).
 	rm -rf /app/out/src /app/out/tests /app/out/vite.config.ts /app/out/vitest.config.ts \
-		/app/out/tsconfig.json /app/out/pnpm-lock.yaml /app/out/pnpm-workspace.yaml && \
-	# Ce qui n'est atteignable par aucun `import` part. L'ordre compte : l'avis des licences se
-	# lit **après**, sur ce qui reste, pour qu'il décrive l'image et non l'arbre du poste.
+		/app/out/tsconfig.json /app/out/pnpm-lock.yaml /app/out/pnpm-workspace.yaml \
+		/app/out/.svelte-kit && \
+	# Ce qui n'est atteignable par aucun `import` part, et les cartes de sources avec. L'ordre
+	# compte : l'avis des licences se lit **après**, sur ce qui reste, pour qu'il décrive l'image et
+	# non l'arbre du poste.
 	node scripts/elaguer-arbre-de-production.mjs /app/out && \
 	node scripts/licences-tierces.mjs /app/out > /app/out/LICENCES-TIERCES.md && \
 	cp LICENSE /app/out/LICENSE

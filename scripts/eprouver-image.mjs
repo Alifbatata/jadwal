@@ -19,7 +19,9 @@
  *
  * Il vérifie aussi ce que l'image **ne doit plus** contenir : aucun outil de construction. C'est la
  * condition qui a permis de passer sous licence MIT (ADR 0043) — une image qui les reprendrait
- * rendrait le fichier des licences tierces faux sans que rien ne se plaigne.
+ * rendrait le fichier des licences tierces faux sans que rien ne se plaigne. Aucune carte de
+ * sources non plus, et la liste des localités suisses une seule fois : jusqu'à l'étape 19, la carte
+ * du serveur construit la recopiait en entier.
  *
  * ## Ce qu'il lui faut
  *
@@ -32,6 +34,8 @@
  */
 import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { construireImage, docker, MiseEnMarche, racine } from './image-en-marche.mjs';
 
 /** Ce que l'image ne doit plus porter, et la raison de chacun. */
@@ -79,7 +83,7 @@ if (construction.status !== 0) {
 }
 // L'élagage dit ce qu'il a fait ; c'est la ligne la plus utile de toute la construction.
 for (const ligne of (construction.stderr ?? '').split('\n')) {
-	if (/gardés|retirés|disque rendu|paquets dans le magasin/.test(ligne)) {
+	if (/gardés|retirés|disque rendu|paquets dans le magasin|cartes de sources/.test(ligne)) {
 		process.stdout.write(`  ${ligne.replace(/^#\d+\s+\d+\.\d+\s*/, '').trim()}\n`);
 	}
 }
@@ -104,6 +108,50 @@ for (const [nom, raison] of INTERDITS) {
 	const trouve = magasin.filter((entree) => entree.startsWith(`${clef}@`));
 	verifier(`aucun ${nom} (${raison})`, trouve.length === 0, trouve.join(', '));
 }
+
+// Les cartes de sources. adapter-node en écrit une à côté de chaque fichier du serveur construit, et
+// il n'y a pas de réglage pour s'en passer ; des dépendances en livrent aussi. Aucune ne sert à
+// l'exécution, et chacune recopie le source entier : la liste des localités y était une seconde fois
+// (étape 18). L'image n'en porte aucune (étape 19).
+const cartes = docker([
+	'run',
+	'--rm',
+	'--entrypoint',
+	'find',
+	IMAGE,
+	'/app',
+	'-type',
+	'f',
+	'-name',
+	'*.map'
+])
+	.split('\n')
+	.map((ligne) => ligne.trim())
+	.filter(Boolean);
+verifier(
+	'aucune carte de sources dans l’image',
+	cartes.length === 0,
+	cartes.length > 0 ? `${cartes.length} fichier(s) .map, dont ${cartes.slice(0, 2).join(', ')}` : ''
+);
+
+// La liste des localités, une seule fois : une ligne de ses données, lue dans le dépôt, cherchée
+// dans toute l'image, octet pour octet. Elle doit y être, et une seule fois, dans le serveur construit.
+const ligneDeLaListe =
+	readFileSync(join(racine, 'apps/web/src/lib/server/localites/localities.csv'), 'utf8')
+		.split('\n')
+		.find((ligne) => /^\d{4};/.test(ligne)) ?? '';
+const copies = spawnSync(
+	'docker',
+	['run', '--rm', '--entrypoint', 'grep', IMAGE, '-rFoa', '--', ligneDeLaListe, '/app'],
+	{ encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 }
+)
+	.stdout.split('\n')
+	.filter(Boolean);
+verifier(
+	'la liste des localités est dans l’image une seule fois',
+	ligneDeLaListe !== '' && copies.length === 1,
+	`${copies.length} copie(s) : ${[...new Set(copies.map((copie) => copie.slice(0, copie.indexOf(':'))))].join(', ')}`
+);
 
 const licences = '/app/LICENCES-TIERCES.md';
 const presence = docker([
