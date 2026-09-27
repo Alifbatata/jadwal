@@ -81,7 +81,12 @@ describe('l’adresse proposée à partir du nom', () => {
 		// décomposition canonique (NFD) les laissait telles quelles, et elles tombaient.
 		['Oﬃce culturel', 'office-culturel'],
 		['Café ﬂoral', 'cafe-floral'],
-		['Ｃｌｕｂ ７', 'club-7']
+		['Ｃｌｕｂ ７', 'club-7'],
+		// Cette décomposition donne parfois une majuscule (« № » donne « No », « ℌ » donne « H ») :
+		// elle vient donc avant la mise en minuscules, sinon cette lettre tombait.
+		['Club № 5', 'club-no-5'],
+		['ℌorizon', 'horizon'],
+		['ℂlub Ⅻ', 'club-xii']
 	])('turns « %s » into « %s »', (nom, adresse) => {
 		expect(proposePublicAddress(nom)).toBe(adresse);
 	});

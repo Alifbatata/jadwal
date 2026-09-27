@@ -118,5 +118,6 @@ Un échec dit ce qui arrive dans la langue de l'écran, puis `Détail donné par
 Relevé par la relecture de l'étape 18 (D6), corrigé à l'étape 19 : sans JavaScript, l'adresse
 proposée à partir du nom était créée sans avoir été vue, et elle ne se change plus ; elle passe
 désormais par l'étape qui la montre. La proposition décompose les ligatures et les lettres pleine
-chasse (`NFKD` au lieu de `NFD`) ; un nom sans aucune lettre latine, même suivi d'un chiffre, ne
-propose plus d'adresse (il donnait `/m/2`) ; une adresse sans aucune lettre est refusée.
+chasse (`NFKD` au lieu de `NFD`), avant de tout mettre en minuscules, parce qu'elle donne parfois
+une majuscule : « Club № 5 » propose `club-no-5`. Un nom sans aucune lettre latine, même suivi d'un
+chiffre, ne propose plus d'adresse (il donnait `/m/2`) ; une adresse sans aucune lettre est refusée.

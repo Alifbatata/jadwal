@@ -58,14 +58,15 @@ export function hasNoLetter(value: string): boolean {
  * tombent, tout ce qui n'est ni lettre latine ni chiffre sépare deux mots, et une adresse trop longue
  * est coupée entre deux mots. La décomposition de compatibilité (NFKD) ramène aussi les ligatures
  * (« ﬁ ») et les lettres pleine chasse (« Ｃ ») à des lettres latines : la décomposition canonique
- * (NFD) les laissait telles quelles, et elles tombaient. Un nom sans une seule lettre latine ne
- * donne rien, même s'il porte des chiffres (« جمعية الأفق 2 » donnait `2`) : c'est alors à la
+ * (NFD) les laissait telles quelles, et elles tombaient. Elle donne parfois une majuscule (« № »
+ * donne « No ») : la mise en minuscules vient donc après elle. Un nom sans une seule lettre latine
+ * ne donne rien, même s'il porte des chiffres (« جمعية الأفق 2 » donnait `2`) : c'est alors à la
  * personne d'écrire l'adresse.
  */
 export function proposePublicAddress(name: string): string {
 	const mots = name
-		.toLowerCase()
 		.normalize('NFKD')
+		.toLowerCase()
 		.replace(/\p{M}/gu, '')
 		.replace(/[ßæœøłđðþı]/g, (lettre) => LETTRES[lettre] ?? '')
 		.split(/[^a-z0-9]+/)
