@@ -2340,8 +2340,11 @@ describe('le module des heures de prière', () => {
 		});
 	}
 
-	/** Les trois adresses du module : ses deux écrans et son modèle de fichier. */
-	const ADRESSES = ['/prieres', '/vendredi', '/prieres/modele.csv'];
+	/**
+	 * Les quatre adresses du module : ses deux écrans, son modèle de fichier, et la recherche des
+	 * localités que l'écran des heures interroge pendant la frappe (étape 18, C2).
+	 */
+	const ADRESSES = ['/prieres', '/vendredi', '/prieres/modele.csv', '/prieres/localites'];
 
 	it('répond 404 sur chacune de ses adresses quand il est éteint', async () => {
 		await poserModule(false);
