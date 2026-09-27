@@ -40,7 +40,9 @@ Chaque ligne, dans cet ordre :
 1. **L'heure de début**, en `HH:MM`. Toujours une heure fixe : une session du vendredi ne s'ancre
    jamais sur une prière, c'est elle qui remplace le Dhuhr.
 2. **Les langues du sermon**, en toutes lettres et dans la langue de la page : `arabe et français`,
-   `arabe`, `français, allemand et arabe`. Jamais de codes, jamais de drapeaux.
+   `arabe`, `français, allemand et arabe`. Jamais de codes, jamais de drapeaux. Depuis l'étape 19
+   (lot 2), une langue que la page ne parle pas peut y figurer : `albanais, turc et bosnien` sur une
+   page en français, `Albanisch, Türkisch und Bosnisch` sur la même page en allemand.
 3. **La salle**, si elle est renseignée.
 
 Trois lignes au plus, donc. Pas de description, pas de nom d'intervenant, pas de bouton. Qui veut

@@ -160,7 +160,11 @@ GET /api/v1/organisations/belvedere/schedule?from=2026-09-01&to=2027-06-30&maxDa
 Une session du vendredi passe par le même modèle qu'un cours et sort partout où sort un cours : dans
 le programme, dans la liste des cours, dans le flux agenda de l'organisation et dans le sien
 (ADR 0033). Ce qui la distingue : son rang, ses langues de **sermon**, et le fait que, lorsqu'il en
-existe, l'heure du Dhuhr du vendredi ne s'affiche plus seule.
+existe, l'heure du Dhuhr du vendredi ne s'affiche plus seule. Les langues du sermon sont des codes
+parmi les huit langues d'enseignement du service, `fr`, `de`, `it`, `ar`, `en`, `sq`, `tr` et `bs`,
+et non parmi les seules langues que l'organisation publie : depuis l'étape 19, une organisation qui
+publie en allemand peut annoncer un sermon en albanais (`sq`). Un lecteur tiers les écrit dans ses
+propres mots.
 
 Champ ajouté à l'étape 8. Un lecteur plus ancien l'ignore sans rien perdre : c'est une addition, pas
 une rupture, et `/api/v1/` reste `/api/v1/`.

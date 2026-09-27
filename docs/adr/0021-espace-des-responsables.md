@@ -158,23 +158,24 @@ ce champ, ou une séance hors des sept jours de l'écran, n'est pas comparé.
 
 L'écran du vendredi (ADR 0033) suit la règle d'« À venir » pour une page restée ouverte : annuler
 et déplacer n'écrivent que pour une session encore prévue telle quelle ce jour-là. Comme « À
-venir », il refuse l'annulation d'un jour déjà passé. Il ne refuse pas, lui, un déplacement vers un
-jour passé : sa liste de jours commence aujourd'hui, et seul un formulaire écrit à la main peut en
-envoyer un d'avant. « À venir », dont le champ de date est libre, le refuse (`pastDate`).
+venir », il refuse l'annulation d'un jour déjà passé, et depuis l'étape 19 (lot 2) un déplacement
+vers un jour passé (`pastDate`) : sa liste de jours commence aujourd'hui, mais un formulaire écrit à
+la main peut en envoyer un d'avant, et l'écran l'écrivait.
 
 Chaque refus a son nom, que l'écran écrit dans la langue de la personne. Ceux des gestes de « Ce
 vendredi » et des boutons d'une session s'affichent en tête de l'écran :
 
-| Refus             | Statut | Quand                                                                                 |
-| ----------------- | ------ | ------------------------------------------------------------------------------------- |
-| `changed`         | 409    | la session a déjà été annulée ou déplacée ce jour-là, ici ou sur À venir              |
-| `timeChanged`     | 409    | l'heure de la session a changé depuis l'ouverture de la page                          |
-| `alreadyRestored` | 409    | un second Rétablir : la session n'a plus rien à rétablir ce jour-là (relecture de D2) |
-| `unchanged`       | 400    | le déplacement vise le jour et l'heure où la session est déjà prévue                  |
-| `pastSession`     | 400    | l'annulation d'un jour déjà passé (étape 19, D2)                                      |
-| `sessionGone`     | 404    | la session n'existe pas, ou plus, ou l'identifiant est celui d'un cours               |
-| `dateUnreadable`  | 400    | une date illisible, impossible (un 30 février) ou hors des années 1970 à 2100         |
-| `timeUnreadable`  | 400    | une heure illisible ou impossible, 25:99 par exemple                                  |
+| Refus             | Statut | Quand                                                                                                                                                  |
+| ----------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `changed`         | 409    | la session a déjà été annulée ou déplacée ce jour-là, ici ou sur À venir ; pour Rétablir, elle a changé autrement que ce que la ligne montrait (lot 2) |
+| `timeChanged`     | 409    | l'heure de la session a changé depuis l'ouverture de la page                                                                                           |
+| `alreadyRestored` | 409    | un second Rétablir : la session n'a plus rien à rétablir ce jour-là (relecture de D2)                                                                  |
+| `unchanged`       | 400    | le déplacement vise le jour et l'heure où la session est déjà prévue                                                                                   |
+| `pastSession`     | 400    | l'annulation d'un jour déjà passé (étape 19, D2)                                                                                                       |
+| `pastDate`        | 400    | un déplacement vers un jour déjà passé (étape 19, lot 2)                                                                                               |
+| `sessionGone`     | 404    | la session n'existe pas, ou plus, ou l'identifiant est celui d'un cours                                                                                |
+| `dateUnreadable`  | 400    | une date illisible, impossible (un 30 février) ou hors des années 1970 à 2100                                                                          |
+| `timeUnreadable`  | 400    | une heure illisible ou impossible, 25:99 par exemple                                                                                                   |
 
 Ceux du formulaire d'une session, à l'ajout comme à la modification, restent dans ce formulaire,
 avec la saisie :
@@ -185,7 +186,7 @@ avec la saisie :
 | `orderInvalid`          | 400    | un rang autre que la première, la deuxième ou la troisième session             |
 | `timesMissing`          | 400    | une heure de début ou de fin absente, illisible ou impossible                  |
 | `endBeforeStart`        | 400    | une heure de fin qui ne vient pas après l'heure de début                       |
-| `sermonLanguageMissing` | 400    | aucune langue du sermon cochée parmi celles que l'écran propose                |
+| `sermonLanguageMissing` | 400    | aucune langue du sermon cochée parmi les huit langues d'enseignement (lot 2)   |
 | `startDateMissing`      | 400    | une date « À partir du » absente, illisible, impossible ou hors de 1970 à 2100 |
 | `endDateUnreadable`     | 400    | une date « Jusqu'au » illisible, impossible ou hors de 1970 à 2100             |
 | `endDateBeforeStart`    | 400    | une date « Jusqu'au » qui vient avant la date « À partir du »                  |
@@ -340,6 +341,31 @@ Et quatre gestes de plus, décidés par le chef de projet :
   puisque le serveur refuse le cours sans lui. La liste signale un cours dont des dates précises
   tombent hors de sa période.
 
+### Addendum du 27.09.2026 : Rétablir, sur les deux écrans (étape 19, lot 2)
+
+Le lot 1 a laissé trois défauts, relevés par sa relecture et corrigés ici.
+
+- **Rétablir envoie ce que sa carte montrait.** Annuler et Déplacer ne défont plus un changement
+  fait ailleurs depuis l'étape 18 ; Rétablir, si. Une page restée ouverte sur une séance annulée,
+  après qu'une autre personne l'avait rétablie puis déplacée, effaçait ce déplacement, qu'elle
+  n'avait jamais vu. La carte envoie maintenant, sans le montrer, ce qu'elle montrait :
+  `shownKind` (`cancelled` ou `moved`), et pour un déplacement `shownToDate` et `shownToStart`.
+  L'exception n'est retirée que si elle est celle-là, dans la suppression même
+  (`apps/web/src/lib/server/exceptions.ts`) : un changement écrit entre-temps n'est jamais effacé.
+  Sinon, la carte reçoit le refus d'une carte périmée, `changed` (409), qui nomme la séance sur
+  « À venir », et rien ne s'écrit, pas même au journal. Plus rien à rétablir reste
+  `alreadyRestored`. Un formulaire qui n'envoie pas ces champs, écrit à la main ou venu d'une page
+  ouverte avant ce lot, n'est pas comparé, comme l'heure `plannedStart` d'un déplacement. Une
+  séance annulée, rétablie puis annulée de nouveau montre la même chose qu'avant : sa carte la
+  rétablit.
+- **L'écran du vendredi refuse un déplacement vers un jour passé** (`pastDate`, 400), comme
+  « À venir ». Une session déjà annulée ou déplacée ce jour-là reçoit d'abord `changed` : elle n'a
+  rien à corriger, quel que soit le jour choisi.
+- **La ligne « Nouvelle date, à la place du … » de l'écran du vendredi a « Rétablir comme
+  d'habitude »**, comme la carte « date exceptionnelle » d'« À venir » : elle vise le vendredi d'où
+  vient la session. Un changement d'heure le même jour garde un seul bouton, sur la ligne de l'heure
+  habituelle.
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 4 de la feuille de route (espace des responsables). Les numéros 0022 et
@@ -348,4 +374,5 @@ d'aujourd'hui, un déplacement qui ne change rien est refusé, les options d'une
 par défaut, une page restée ouverte ne défait pas un changement, et un déplacement le même jour se
 dit comme un changement d'heure. Complété le 27.09.2026 (étape 19) : l'heure que la carte montrait,
 les refus de l'écran du vendredi, les dates que les deux écrans acceptent, et la relecture
-d'« À venir » ; au lot 2, les écrans des cours.
+d'« À venir » ; au lot 2, les écrans des cours, puis Rétablir qui envoie ce que sa carte montrait, et
+l'écran du vendredi qui refuse un jour passé et rétablit une nouvelle date.

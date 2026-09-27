@@ -291,7 +291,8 @@ prière du vendredi.
 ## La prière du vendredi
 
 Un écran à part, **Prière du vendredi**, où vous saisissez une, deux ou trois sessions : l'heure, la
-langue du sermon, la salle. Elles apparaissent **en haut** de votre page publique et de votre
+langue du sermon, la salle. La langue du sermon se choisit parmi huit langues, même une que votre
+page publique ne parle pas : français, allemand, italien, arabe, anglais, albanais, turc ou bosnien. Elles apparaissent **en haut** de votre page publique et de votre
 programme sur votre site, avant tout le reste : c'est l'information la plus cherchée. L'onglet
 **Prières** les donne aussi.
 

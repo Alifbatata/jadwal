@@ -69,17 +69,28 @@ vendredi », plus bas.`, puis `Oui, supprimer`. Un éditeur le peut comme une pe
 
 Le même formulaire, dans les deux cas, dans cet ordre. Chaque aide est reliée à son champ.
 
-| Champ                              | Forme                                       | Aide                                                                                                              |
-| ---------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `Titre`                            | texte, proposé dans la langue de la session | `Ce que les visiteurs lisent sur votre page publique. Exemple : Prière du vendredi`                               |
-| `Rang dans la journée`             | liste : première, deuxième, troisième       | `Les sessions s'affichent dans cet ordre. Une seule prière le vendredi ? Gardez « Première session ».`            |
-| `Heure de début`, `Heure de fin`   | heures                                      | `Du début du sermon à la fin de la prière. Exemple : de 12:10 à 12:50.`                                           |
-| `Salle`                            | liste, avec `Pas de salle précise`          | `Une personne responsable crée les salles dans Réglages.`                                                         |
-| `Langue du sermon`                 | cases, les langues de la page publique      | `Cochez chaque langue dans laquelle le sermon est dit. Seules les langues de votre page publique sont proposées.` |
-| `Imam ou intervenant (facultatif)` | texte                                       | `Son nom s'affiche sur votre page publique. Exemple : Imam Youssef`                                               |
-| `À partir du`                      | date                                        | voir sous le tableau                                                                                              |
-| `Jusqu'au (facultatif)`            | date                                        | `Laissez vide si la session continue sans date de fin.`                                                           |
-| `Description (facultatif)`         | texte long                                  | `Quelques mots pour les visiteurs, sur la page de la session. Exemple : La salle ouvre à 12:00.`                  |
+| Champ                              | Forme                                       | Aide                                                                                                                    |
+| ---------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `Titre`                            | texte, proposé dans la langue de la session | `Ce que les visiteurs lisent sur votre page publique. Exemple : Prière du vendredi`                                     |
+| `Rang dans la journée`             | liste : première, deuxième, troisième       | `Les sessions s'affichent dans cet ordre. Une seule prière le vendredi ? Gardez « Première session ».`                  |
+| `Heure de début`, `Heure de fin`   | heures                                      | `Du début du sermon à la fin de la prière. Exemple : de 12:10 à 12:50.`                                                 |
+| `Salle`                            | liste, avec `Pas de salle précise`          | `Une personne responsable crée les salles dans Réglages.`                                                               |
+| `Langue du sermon`                 | cases, les huit langues d'enseignement      | `Cochez chaque langue dans laquelle le sermon est dit, même si votre page publique n'est pas écrite dans cette langue.` |
+| `Imam ou intervenant (facultatif)` | texte                                       | `Son nom s'affiche sur votre page publique. Exemple : Imam Youssef`                                                     |
+| `À partir du`                      | date                                        | voir sous le tableau                                                                                                    |
+| `Jusqu'au (facultatif)`            | date                                        | `Laissez vide si la session continue sans date de fin.`                                                                 |
+| `Description (facultatif)`         | texte long                                  | `Quelques mots pour les visiteurs, sur la page de la session. Exemple : La salle ouvre à 12:00.`                        |
+
+Les cases de `Langue du sermon` sont les huit langues d'enseignement du service, dans cet ordre :
+français, allemand, italien, arabe, anglais, albanais, turc, bosnien, chacune nommée dans la langue
+de l'écran. Jusqu'à l'étape 19 (lot 2), l'écran ne proposait que les langues de la page publique :
+une communauté qui entend le sermon en albanais, en turc ou en bosnien, sans publier sa page dans
+cette langue, ne pouvait pas le dire. Le serveur accepte les mêmes huit langues, et écarte tout
+autre code envoyé à la main ; sans aucune langue, la session reste refusée. Ailleurs, la langue du
+sermon se lit en toutes lettres dans la langue du lecteur : `Sermon en albanais, turc et bosnien`
+sur cet écran, `albanais, turc et bosnien` en haut de la page publique et du programme sur un site,
+`sermon en …` dans l'onglet Prières. L'API donne les codes (`sq`, `tr`, `bs`). Les messages prêts à
+coller ne nomment pas la langue du sermon. La liste du formulaire d'un cours, elle, ne change pas.
 
 L'aide de `À partir du` dépend du formulaire. Pour une nouvelle session : `La session a lieu chaque
 vendredi à partir de cette date. Gardez la date du jour pour qu'elle commence tout de suite.` Dans
@@ -120,8 +131,17 @@ Cette session seulement. Les autres vendredis ne changent pas.
 
 - Une session annulée porte `Annulée ce jour-là`, une session déplacée
   `Déplacée au samedi 03.10.2026 à 15:00`, et sa nouvelle date
-  `Nouvelle date, à la place du vendredi 02.10.2026`. Les deux premières ont le bouton
-  `Rétablir comme d'habitude`.
+  `Nouvelle date, à la place du vendredi 02.10.2026`. Les trois ont le bouton
+  `Rétablir comme d'habitude` ; celui de la nouvelle date défait le déplacement du vendredi d'où
+  elle vient, même quand ce vendredi n'est plus à l'écran. Une session déplacée le même jour à une
+  autre heure garde un seul bouton, sur la ligne de son heure habituelle, comme sur `À venir`.
+  Jusqu'à l'étape 19 (lot 2), la ligne de la nouvelle date n'avait pas de bouton.
+- Chaque `Rétablir comme d'habitude` envoie ce que sa ligne montrait : l'annulation, ou le
+  déplacement avec son jour et son heure. Une page restée ouverte, après qu'une autre personne a
+  rétabli la session puis l'a de nouveau annulée ou déplacée, n'efface plus ce nouveau changement :
+  elle est refusée par la phrase des lignes périmées, `Cette session a changé depuis l'ouverture de
+la page […]`, et rien n'est écrit, pas même au journal (étape 19, lot 2). Un formulaire qui
+  n'envoie pas ce qu'il montrait, écrit à la main, n'est pas comparé.
 - Une session annulée ou déplacée apparaît ensuite barrée dans la vue Semaine publique, comme une
   séance de cours.
 - `Annuler` et `Déplacer` suivent la règle d'`À venir` : ils n'écrivent que pour une session encore
@@ -133,9 +153,11 @@ Cette session seulement. Les autres vendredis ne changent pas.
   5 de l'étape 18, une page restée ouverte défaisait un changement fait ailleurs, et une session
   supprimée entre-temps donnait une erreur 500.
 - `Annuler` refuse un jour déjà passé, comme sur `À venir` : aucune ligne ne le propose, mais la
-  page d'une semaine d'avant restée ouverte peut l'envoyer (étape 19, D2). `Déplacer`, lui, ne
-  refuse pas un jour d'arrivée passé : sa liste de jours commence aujourd'hui, et seul un formulaire
-  écrit à la main peut en envoyer un d'avant. `À venir`, dont le champ de date est libre, le refuse.
+  page d'une semaine d'avant restée ouverte peut l'envoyer (étape 19, D2). `Déplacer` refuse de même
+  un jour d'arrivée passé : sa liste de jours commence aujourd'hui, mais un formulaire écrit à la
+  main, ou la page d'une semaine d'avant, peut en envoyer un. Jusqu'à l'étape 19 (lot 2), il
+  l'écrivait ; `À venir` le refusait déjà. Une session déjà annulée ou déplacée ce jour-là reçoit le
+  refus d'une page restée ouverte avant celui d'un jour passé : elle n'a rien à corriger.
 - `Rétablir comme d'habitude`, `Publier`, `Retirer de la page publique` et `Oui, supprimer`
   répondent `Cette session n'existe plus` à une session supprimée entre-temps, ou à un cours, et
   n'écrivent rien, pas même au journal. Avant l'étape 19, ils disaient l'avoir fait, et
@@ -171,7 +193,8 @@ précise ».` (étape 19, D2 ; avant, une erreur 500).
 Les refus de « Ce vendredi », en tête de l'écran :
 
 - `Cette session a changé depuis l'ouverture de la page : elle a déjà été annulée ou déplacée ce
-jour-là. Rien n'a été enregistré. La partie « Ce vendredi », plus bas, est à jour.` ;
+jour-là. Rien n'a été enregistré. La partie « Ce vendredi », plus bas, est à jour.`, aussi pour un
+  `Rétablir comme d'habitude` dont la ligne montrait un autre changement (étape 19, lot 2) ;
 - `L'heure de cette session a changé depuis l'ouverture de la page. Rien n'a été enregistré. Sa
 nouvelle heure est écrite plus bas, dans « Ce vendredi » : vérifiez le jour et l'heure choisis,
 puis recommencez.` ;
@@ -179,6 +202,8 @@ puis recommencez.` ;
 heure ou un autre jour dans « Ce vendredi », plus bas.` ;
 - `Cette session est déjà passée : vous ne pouvez annuler que les sessions d'aujourd'hui et des
 jours suivants.` (étape 19) ;
+- `Ce jour est déjà passé : rien n'a été déplacé. Choisissez aujourd'hui ou un jour suivant dans
+« Ce vendredi », plus bas.` : un déplacement vers un jour passé (étape 19, lot 2) ;
 - `Cette session n'existe plus : elle a été supprimée entre-temps. La liste ci-dessous est à jour.`,
   aussi pour `Rétablir`, `Publier` et `Supprimer` depuis l'étape 19 ;
 - `Cette session a déjà été rétablie depuis l'ouverture de la page. Rien n'a été enregistré. La

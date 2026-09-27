@@ -163,9 +163,37 @@ n'a plus rien à rétablir ce jour-là (`alreadyRestored`). Chaque identifiant, 
 heure est vérifié avant la base ; une salle qui n'existe pas, ou plus, a sa phrase dans le
 formulaire. La liste des refus de l'écran est dans l'addendum du même jour de l'ADR 0021.
 
+## Addendum du 27.09.2026 : la langue du sermon, parmi toutes les langues d'enseignement (étape 19, lot 2)
+
+**La langue du sermon se choisit parmi les huit langues d'enseignement du service** : français,
+allemand, italien, arabe, anglais, albanais, turc et bosnien (`LANGUES_D_ENSEIGNEMENT`, la liste des
+noms de `apps/web/src/lib/public/affichage.ts`). Jusqu'ici, l'écran ne proposait que les langues que
+l'organisation publie, et le serveur retirait les autres de l'envoi. Or la langue du sermon ne dit
+pas dans quelle langue la page se lit : elle dit ce que les fidèles entendront. Le chef de projet
+citait l'albanais, le turc et le bosnien : une communauté entend souvent le sermon dans une langue
+que sa page publique ne parle pas. Un code hors de la liste est toujours écarté, et une session sans
+langue du sermon toujours refusée.
+
+La base n'avait rien à changer : `course.teaching_language` ne demande qu'une liste non vide, sans
+valeur nulle (migration 0003), et ne connaît pas la liste des langues. L'affichage non plus : les
+huit langues ont leur nom dans les cinq langues de l'interface depuis l'étape 18, et la page
+publique, l'onglet Prières, le programme sur un site et l'écran du vendredi les écrivent en toutes
+lettres dans la langue du lecteur. L'API rend les codes, comme avant ; un lecteur tiers peut donc
+recevoir `sq`, `tr` ou `bs` pour une organisation qui ne publie pas ces langues (`docs/API.md`). Les
+messages prêts à coller ne nomment pas la langue du sermon.
+
+La liste du formulaire d'un cours, elle, ne change pas : les langues d'enseignement d'un cours
+restent celles que l'organisation publie.
+
+**L'écran du vendredi, à la suite du lot 1.** Déplacer refuse un jour passé, comme « À venir » ; la
+ligne d'une session arrivée d'un autre jour a son « Rétablir » ; et chaque « Rétablir » envoie ce que
+sa ligne montrait, pour qu'une page restée ouverte n'efface pas un changement fait depuis (addendum
+du même jour de l'ADR 0021).
+
 ## Statut
 
 Accepté, 2026-09-21. Étape 8 de la feuille de route. Complète l'ADR 0003 (récurrence) et l'ADR 0004
 (ancrage sur une prière). Complété le 27.09.2026 (étape 19) : le type d'une ligne ne change pas ; les
 mots d'une session dans les messages prêts à coller, les refus de son écran, et une session en
-brouillon qui ne remplace pas le Dhuhr.
+brouillon qui ne remplace pas le Dhuhr ; puis au lot 2, la langue du sermon parmi toutes les
+langues d'enseignement.
