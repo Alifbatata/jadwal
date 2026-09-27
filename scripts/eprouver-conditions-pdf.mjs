@@ -42,8 +42,10 @@
  * est lu avec toute sa phrase, et chaque phrase qui nomme l'exploitant doit nommer Voltia. Quand
  * le poste porte la liste privée des termes interdits, celle du garde-fou, aucun de ses termes ne
  * doit paraître dans le PDF, ni dans ses pages, ni dans ses métadonnées. Un terme trouvé n'est
- * jamais recopié : seul son numéro dans la liste est donné. Le onzième point, enfin, dit comme un
- * fait que Voltia est une entreprise individuelle, ce que l'exploitant a confirmé.
+ * jamais recopié : seul son numéro dans la liste est donné. Le contrôle du nom ne recopie pas le nom
+ * qu'il lit, et tout ce que l'épreuve écrit passe par le même masque (`masquer`) : un terme de la
+ * liste n'en sort que par son rang. Le onzième point, enfin, dit comme un fait que Voltia est une
+ * entreprise individuelle, ce que l'exploitant a confirmé.
  *
  * ## Ce qu'il joue
  *
@@ -109,10 +111,41 @@ const APOSTROPHE = '’';
 const echecs = [];
 let verifications = 0;
 
+/**
+ * La liste privée des termes interdits, quand le poste en a une (`listeDesTermes`, plus bas). Ses
+ * termes sont cherchés dans le PDF, et masqués dans tout ce que l'épreuve écrit.
+ */
+const listePrivee = listeDesTermes();
+
+/**
+ * Le texte, où chaque terme de la liste devient « [terme n°N] », quelles que soient sa casse, ses
+ * espaces et son apostrophe. Un détail recopie parfois du texte : un bout de phrase mal composée,
+ * le titre du PDF, la sortie du générateur. Si l'un d'eux portait un terme de la liste, il ne
+ * sortirait pas du poste par la sortie de l'épreuve, pas plus que par le PDF (relecture de
+ * l'étape 19).
+ */
+function masquer(texte, termes = listePrivee.etat === 'lue' ? listePrivee.termes : []) {
+	let masque = texte;
+	for (const terme of termes) {
+		const motif = terme.texte
+			.trim()
+			.split(/\s+/)
+			.map((mot) => mot.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/['’]/g, "['’]"))
+			.join('[\\s\\u00a0\\u202f\\u2009]+');
+		masque = masque.replace(new RegExp(motif, 'giu'), `[terme n°${terme.rang}]`);
+	}
+	return masque;
+}
+
+/** Tout ce que l'épreuve écrit passe par ici, termes de la liste privée masqués. */
+function ecrire(texte, flux = process.stdout) {
+	flux.write(masquer(texte));
+}
+
 function verifier(quoi, condition, detail = '') {
 	verifications += 1;
 	if (!condition) echecs.push(detail ? `${quoi} : ${detail}` : quoi);
-	process.stdout.write(`  ${condition ? 'ok  ' : 'NON '} ${quoi}${detail ? ` (${detail})` : ''}\n`);
+	ecrire(`  ${condition ? 'ok  ' : 'NON '} ${quoi}${detail ? ` (${detail})` : ''}\n`);
 }
 
 /** Le texte du corps, sans les balises, sans la feuille de style et sans les bouts de code. */
@@ -209,6 +242,9 @@ function annonceDesPoints(html) {
  * juriste si ce nom suffit (art. 945 CO). Depuis l'étape 18, c'est Voltia, et aucun nom de personne
  * ne l'accompagne. Si l'un des trois change sans les autres, le juriste répondrait sur un nom que
  * le texte ne porte plus.
+ *
+ * Le détail ne dit jamais le nom lu, seulement « Voltia » ou « un autre nom » : le vrai nom de
+ * l'exploitant, écrit là par erreur, est justement ce que la sortie de l'épreuve ne doit pas porter.
  */
 function exploitantNomme(source, html, questions) {
 	const motif = /exploité par ([^,.]+), en Suisse/;
@@ -220,11 +256,13 @@ function exploitantNomme(source, html, questions) {
 		points.length === 1 &&
 		conditions !== undefined &&
 		points[0].corps.includes(`« ${conditions} »`);
+	const dit = (nom) =>
+		nom === undefined ? '(phrase introuvable)' : nom === 'Voltia' ? 'Voltia' : 'un autre nom';
 	return {
 		accord: conditions === 'Voltia' && pied === conditions && cite,
 		detail:
-			`conditions : ${conditions ?? '(phrase introuvable)'} ; pied de la page de garde : ` +
-			`${pied ?? '(phrase introuvable)'} ; ${points.length} point(s) sur l'art. 945 CO` +
+			`conditions : ${dit(conditions)} ; pied de la page de garde : ${dit(pied)} ; ` +
+			`${points.length} point(s) sur l'art. 945 CO` +
 			(points.length === 1 ? (cite ? ', qui cite ce nom' : ', qui ne cite pas ce nom') : '')
 	};
 }
@@ -469,9 +507,7 @@ const version = dateDeLaVersion(markdown);
 const html = construire(markdown);
 const texte = texteSeul(html);
 
-process.stdout.write(
-	`\nLe document rendu, à partir de docs/CONDITIONS.md (version du ${version})\n`
-);
+ecrire(`\nLe document rendu, à partir de docs/CONDITIONS.md (version du ${version})\n`);
 
 verifier(
 	'aucun tiret cadratin dans le rendu',
@@ -561,7 +597,7 @@ verifier(
 	duree.detail
 );
 
-process.stdout.write(`\nLes témoins : chaque contrôle sait tomber\n`);
+ecrire(`\nLes témoins : chaque contrôle sait tomber\n`);
 
 const abime = markdown.replace('Dernière mise à jour', `Dernière ${CADRATIN} mise à jour`);
 verifier('un cadratin glissé dans la source est vu', construire(abime).includes(CADRATIN));
@@ -618,15 +654,19 @@ verifier(
 );
 
 // Un nom de personne revenu devant Voltia, dans les conditions puis au seul pied de la page de
-// garde ; et une page de garde qui a perdu le point sur le nom.
+// garde ; et une page de garde qui a perdu le point sur le nom. Le nom est vu, et le détail du
+// contrôle ne le recopie pas : un nom réel, terme de la liste privée, partirait avec la sortie de
+// l'épreuve dans un journal ou un rapport (relecture de l'étape 19).
 const avecUnNom = markdown.replace(
 	/exploité par [^,.]+, en Suisse/,
 	'exploité par Une Personne (Voltia), en Suisse'
 );
 const nomDansLeTexte = exploitantNomme(avecUnNom, html, QUESTIONS);
 verifier(
-	'un nom de personne revenu dans les conditions est vu',
-	avecUnNom !== markdown && !nomDansLeTexte.accord,
+	'un nom de personne revenu dans les conditions est vu, sans être recopié',
+	avecUnNom !== markdown &&
+		!nomDansLeTexte.accord &&
+		!nomDansLeTexte.detail.includes('Une Personne'),
 	nomDansLeTexte.detail
 );
 const piedAvecUnNom = html.replace(
@@ -635,8 +675,8 @@ const piedAvecUnNom = html.replace(
 );
 const nomAuPied = exploitantNomme(markdown, piedAvecUnNom, QUESTIONS);
 verifier(
-	'un nom de personne revenu au pied de la page de garde est vu',
-	piedAvecUnNom !== html && !nomAuPied.accord,
+	'un nom de personne revenu au pied de la page de garde est vu, sans être recopié',
+	piedAvecUnNom !== html && !nomAuPied.accord && !nomAuPied.detail.includes('Une Personne'),
 	nomAuPied.detail
 );
 const sansLePointDuNom = exploitantNomme(
@@ -693,7 +733,28 @@ verifier(
 	rendu.join(' ; ')
 );
 
-process.stdout.write(`\nLes lignes seules, sur des pages construites\n`);
+// Un terme de la liste posé après « exploité par », à la place de Voltia : le contrôle du nom le
+// voit sans le recopier, et un détail qui le recopierait quand même ne le ferait sortir que par son
+// rang, en capitales, avec une espace insécable ou une apostrophe courbe comme en toutes lettres.
+const listeDuTemoin = [{ rang: 7, texte: "Jean l'Exemple", autorises: [] }];
+const nomDeLaListe = exploitantNomme(
+	markdown.replace(/exploité par [^,.]+, en Suisse/, "exploité par Jean l'Exemple, en Suisse"),
+	html,
+	QUESTIONS
+);
+const sortieDuTemoin = masquer(
+	`${nomDeLaListe.detail} ; exploité par Jean l'Exemple ; JEAN L’EXEMPLE ; Jean\u00a0l'exemple`,
+	listeDuTemoin
+);
+verifier(
+	'un terme de la liste mis à la place de Voltia est vu, et ne sort de l’épreuve que par son rang',
+	!nomDeLaListe.accord &&
+		!/exemple/i.test(sortieDuTemoin) &&
+		sortieDuTemoin.split('[terme n°7]').length - 1 === 3,
+	sortieDuTemoin
+);
+
+ecrire(`\nLes lignes seules, sur des pages construites\n`);
 
 // Une page pleine, qui fixe l'interligne à 15 points, et une dernière page assez garnie : seul le
 // défaut que chaque témoin pose peut alors tomber.
@@ -734,7 +795,7 @@ verifier(
 	defautsDeMiseEnPages(puceEntiere).join(' ; ')
 );
 
-process.stdout.write(`\nLe pied de page\n`);
+ecrire(`\nLe pied de page\n`);
 
 const pied = piedDePage(version);
 verifier('le gabarit demande le numéro de page', pied.includes('class="pageNumber"'));
@@ -754,14 +815,14 @@ if (sauvegarde) copyFileSync(PDF, sauvegarde);
 let sansPied;
 try {
 	sansPied = await produire({ avecPied: false });
-	process.stdout.write(`  sans pied : ${sansPied.pages} pages, ${sansPied.octets} octets\n`);
+	ecrire(`  sans pied : ${sansPied.pages} pages, ${sansPied.octets} octets\n`);
 
-	process.stdout.write(`\nLe script lancé comme en production\n`);
+	ecrire(`\nLe script lancé comme en production\n`);
 	const sortie = execFileSync(process.execPath, [join(racine, 'scripts', 'conditions-pdf.mjs')], {
 		cwd: racine,
 		encoding: 'utf8'
 	});
-	process.stdout.write(
+	ecrire(
 		sortie
 			.trimEnd()
 			.split('\n')
@@ -781,7 +842,7 @@ try {
 	);
 	verifier('le même nombre de pages avec et sans pied', pages === sansPied.pages);
 
-	process.stdout.write(`\nLe texte relu dans le PDF\n`);
+	ecrire(`\nLe texte relu dans le PDF\n`);
 	const pagesLues = texteDuPdf(octets);
 	const toutLeTexte = aplatir(pagesLues.join('\n')).replace(/\s+/g, ' ');
 	verifier(
@@ -816,7 +877,6 @@ try {
 		debutDuDocument > 0,
 		`page ${debutDuDocument + 1}`
 	);
-	const listePrivee = listeDesTermes();
 	if (listePrivee.etat === 'lue') {
 		const trouves = termesDansLePdf(
 			pagesLues,
@@ -837,7 +897,7 @@ try {
 			'le chemin configuré ne mène à aucun fichier'
 		);
 	} else {
-		process.stdout.write(
+		ecrire(
 			`  (liste privée des termes interdits ${listePrivee.etat === 'aucune' ? 'déclarée « aucune »' : 'non configurée'} sur ce poste : rien à y chercher)\n`
 		);
 	}
@@ -845,7 +905,7 @@ try {
 	// Le témoin rendu : le même document, avec un nom écrit à côté de Voltia dans le chapeau, que la
 	// feuille de style met en capitales, et un autre à sa place dans les conditions. Rendu par Chrome
 	// dans un dossier temporaire, relu dans le PDF, comme le document livré.
-	process.stdout.write(`\nLe témoin : un nom écrit à côté de Voltia, dans un PDF rendu\n`);
+	ecrire(`\nLe témoin : un nom écrit à côté de Voltia, dans un PDF rendu\n`);
 	const auChapeau = html.replace('un service de Voltia.', 'un service de Voltia, Jean Exemple.');
 	const avecDesNoms = auChapeau.replace(
 		/(<section class="document">[\s\S]*?exploité par )Voltia/,
@@ -915,7 +975,7 @@ try {
 		rmSync(dossierDuTemoin, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
 	}
 
-	process.stdout.write(`\nLa mise en pages, lue dans le PDF\n`);
+	ecrire(`\nLa mise en pages, lue dans le PDF\n`);
 	const parPage = lignesParPage(octets);
 	const derniere = parPage[parPage.length - 1]?.length ?? 0;
 	verifier(
@@ -947,11 +1007,11 @@ try {
 	// au bout de toute la chaîne, Chrome, PDF, lecture et contrôle. Jusqu'à l'étape 15, ce témoin
 	// comptait sur la mise en pages « telle quelle » pour échouer ; elle passe depuis que plus aucun
 	// bloc ne se coupe, et un témoin qui dépend du texte finit toujours par ne plus rien prouver.
-	process.stdout.write(`\nLe témoin : une dernière page presque vide, forcée\n`);
+	ecrire(`\nLe témoin : une dernière page presque vide, forcée\n`);
 	const forcee = await produire({
 		variantes: [['dernier paragraphe seul', '.document > :last-child { break-before: page; }']]
 	});
-	process.stdout.write(
+	ecrire(
 		`      lignes par page : ${forcee.lignes.join(', ')}\n` +
 			`      ${forcee.defauts.join(' ; ') || 'aucun défaut'}\n`
 	);
@@ -986,11 +1046,11 @@ function titreDuPdf(octets) {
 }
 
 if (echecs.length > 0) {
-	process.stderr.write(`\nCe qui a échoué :\n`);
-	for (const echec of echecs) process.stderr.write(`  - ${echec}\n`);
+	ecrire(`\nCe qui a échoué :\n`, process.stderr);
+	for (const echec of echecs) ecrire(`  - ${echec}\n`, process.stderr);
 	process.exitCode = 1;
 } else {
-	process.stdout.write(
+	ecrire(
 		`\nLes ${verifications} vérifications passent : le document part composé, numéroté et sans cadratin.\n`
 	);
 }
