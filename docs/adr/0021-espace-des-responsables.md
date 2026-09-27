@@ -140,10 +140,75 @@ pré-traduction validée par le responsable est dans la feuille de route, pas da
   les étapes 5 et 6 ne sont pas faites. Dire qu'une chose n'existe pas encore vaut mieux que de
   laisser croire qu'elle marche.
 
+## Addendum du 27.09.2026 : ce que l'ADR ne disait pas, et la relecture d'« À venir » (étape 19)
+
+### La carte envoie l'heure qu'elle montrait
+
+Depuis la relecture du lot 5 de l'étape 18, le formulaire « Déplacer » d'une carte envoie, sans le
+montrer, `plannedStart` : l'heure de la séance telle que la carte l'affichait, vide pour une séance
+sans heure. Quand l'heure du cours a changé depuis dans sa fiche, la séance n'est plus prévue à
+cette heure-là : l'action refuse la carte (`timeChanged`, 409), quelle que soit la date choisie, et
+rien ne s'écrit. Sans ce refus, une carte renvoyée telle quelle déplaçait la séance à l'ancienne
+heure, avec le message « commence à 19:00 au lieu de 20:00 ». La carte se rouvre sous la nouvelle
+heure et propose l'heure actuelle, sauf une heure que la personne avait tapée. Un formulaire sans
+ce champ, ou une séance hors des sept jours de l'écran, n'est pas comparé.
+
+### Les refus de l'écran du vendredi
+
+L'écran du vendredi (ADR 0033) suit la règle d'« À venir » pour annuler et déplacer une session un
+jour donné. Chaque refus a son nom, que l'écran écrit dans la langue de la personne, en tête de
+l'écran, sauf ceux d'un formulaire de session, qui restent dans ce formulaire avec la saisie :
+
+| Refus            | Statut | Quand                                                                      |
+| ---------------- | ------ | -------------------------------------------------------------------------- |
+| `changed`        | 409    | la session a déjà été annulée ou déplacée ce jour-là, ici ou sur À venir   |
+| `timeChanged`    | 409    | l'heure de la session a changé depuis l'ouverture de la page               |
+| `unchanged`      | 400    | le déplacement vise le jour et l'heure où la session est déjà prévue       |
+| `pastSession`    | 400    | l'annulation d'un jour déjà passé (étape 19, D2)                           |
+| `sessionGone`    | 404    | la session n'existe pas, ou plus, ou l'identifiant est celui d'un cours    |
+| `dateUnreadable` | 400    | une date illisible ou impossible, un 30 février par exemple                |
+| `timeUnreadable` | 400    | une heure illisible ou impossible, 25:99 par exemple                       |
+| `orderTaken`     | 409    | une session sans date de fin occupe déjà ce rang                           |
+| `roomGone`       | 400    | la salle choisie n'existe pas, ou plus, dans l'organisation (étape 19, D2) |
+
+Relevé à l'étape 18 et corrigé à l'étape 19 (D2) : annuler ne comparait pas la date au jour de
+l'organisation, et acceptait un vendredi passé ; Rétablir, Publier et Supprimer répondaient « fait »
+pour une session inconnue et l'écrivaient au journal ; un identifiant mal formé, une salle
+supprimée entre-temps, un 30 février ou 25:99 atteignaient la base, qui répondait alors par une
+erreur 500. Chaque geste vérifie désormais chaque identifiant, chaque date et chaque heure avant la
+base, et un refus n'écrit rien, pas même au journal.
+
+### À venir, après la relecture de l'étape 18 (D4)
+
+- **Le programme de la semaine est celui de Partager** : les cours publiés seulement, lus comme
+  Partager les lit. Retirer les brouillons des séances de l'écran ne suffisait pas : la dernière
+  session du vendredi, même en brouillon, donnait son heure à un cours prévu après le Dhuhr. L'écran
+  lit donc le programme une seconde fois, pour ses seuls cours publiés. Il tient toujours en un
+  nombre fixe de requêtes, quel que soit le nombre de cours, mais ce nombre n'est plus cinq.
+- **L'écran montre les brouillons**, et leur carte porte la marque `brouillon`.
+- **Une carte « date exceptionnelle » a « Rétablir »**. Elle envoie la date prévue de la séance,
+  celle que garde le changement, qui n'est pas toujours à l'écran : une séance peut être avancée
+  de loin. Une séance qui n'a changé que d'heure garde un seul « Rétablir », sur la carte de son
+  heure prévue, le même jour.
+- **Le refus d'une carte périmée nomme la séance**, par son titre et sa date : `changed` et
+  `timeChanged`, et `alreadyCancelled`, ci-dessous.
+- **Une seconde annulation de la même séance**, par une autre personne ou depuis une page restée
+  ouverte, n'écrit rien (409, `alreadyCancelled`) mais donne le message prêt à coller : la séance
+  est annulée, et la personne ne sait pas si la communauté a déjà été prévenue. Une carte qui annule
+  une séance déplacée depuis reste refusée sans message.
+- **Une séance disparue** dit que la liste ci-dessous est à jour, au lieu de demander de recharger
+  une page qui l'est déjà : sans JavaScript, recharger renverrait le formulaire refusé.
+- **Le titre d'une carte suit la langue de l'écran** quand le cours y est traduit, sinon celui de sa
+  langue source, comme avant ; une session du vendredi au nom proposé prend le nom de la prière
+  dans cette langue. Les messages restent écrits dans chaque langue publiée, la langue source
+  d'abord : la langue par défaut pour la semaine, celle du cours pour une annulation ou un
+  déplacement.
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 4 de la feuille de route (espace des responsables). Les numéros 0022 et
 0023 restent libres. Révisé le 2026-09-26 (étape 18) : une séance se déplace à toute date à partir
 d'aujourd'hui, un déplacement qui ne change rien est refusé, les options d'une séance sont fermées
 par défaut, une page restée ouverte ne défait pas un changement, et un déplacement le même jour se
-dit comme un changement d'heure.
+dit comme un changement d'heure. Complété le 27.09.2026 (étape 19) : l'heure que la carte montrait,
+les refus de l'écran du vendredi, et la relecture d'« À venir ».

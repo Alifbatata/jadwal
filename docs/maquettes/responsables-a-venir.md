@@ -1,6 +1,7 @@
 # L'écran À venir
 
-Décrit après le code, à l'étape 18 (retours A1, A2, D1, et B1, D2, A3 pour cet écran). Textes :
+Décrit après le code, à l'étape 18 (retours A1, A2, D1, et B1, D2, A3 pour cet écran), et repris à
+l'étape 19 (relecture D4 et décisions du chef de projet). Textes :
 `apps/web/src/lib/i18n/upcoming.ts`, dans les cinq langues.
 
 **Lien** : `/`, l'accueil de l'espace, ouvert à l'éditeur comme à la personne responsable.
@@ -35,7 +36,12 @@ Sans séance : `Aucune séance dans les sept prochains jours.` et le lien `Crée
 ## Une séance
 
 Le titre, sa marque (`annulée`, `déplacée`, `date exceptionnelle`, `nouvelle heure`), l'heure, la
-salle, l'intervenant et le public, dans la langue de l'écran. Une séance déplacée dit
+salle, l'intervenant et le public, dans la langue de l'écran. Le titre est celui de la langue de
+l'écran quand le cours y est traduit, sinon celui de sa langue source (étape 19) : `Abendkurs` sur
+un écran allemand, `Cours du soir` sur un écran italien sans traduction italienne. Une session du
+vendredi qui porte le nom proposé par le service prend le nom de la prière dans la langue de
+l'écran. Un cours en brouillon s'affiche aussi, avec la marque `brouillon` : il n'est ni sur la
+page publique ni dans le programme de la semaine. Une séance déplacée dit
 `Déplacée au mardi 29.09.2026 à 18:00` ; sa nouvelle date dit
 `Prévue à l'origine le lundi 28.09.2026`. Déplacée le même jour à une autre heure, la carte
 d'arrivée porte `nouvelle heure` et `Prévue à l'origine : 19:00 – 20:30`.
@@ -54,7 +60,10 @@ ensuite.` et le bouton `Annuler cette séance` ;
     carte affichait.
 
 Une séance annulée ou déplacée a le bouton `Rétablir la séance`, suivi de `Cela défait le
-changement : la séance retrouve sa date et son heure habituelles.`
+changement : la séance retrouve sa date et son heure habituelles.` La carte `date exceptionnelle`
+l'a aussi (étape 19) : elle envoie la date prévue de la séance, que la carte de départ ne montre pas
+toujours, puisqu'une séance peut être avancée de loin. Une séance qui n'a changé que d'heure, le
+même jour, garde un seul bouton, sur la carte de son heure prévue.
 
 ## Après un geste
 
@@ -65,7 +74,9 @@ langue du cours d'abord : ouvrez une langue, puis copiez son texte.`, puis un re
 l'organisation publie, le premier ouvert, chacun avec sa zone `Message à copier`. Le titre du cours y
 est traduit quand il l'est. Un déplacement le même jour se dit comme un changement d'heure, la date
 une seule fois : `Le cours « Cours du soir » du mardi 29.09.2026 commence à 20:30 au lieu de
-19:00.`
+19:00.` Une session du vendredi a ses propres mots (étape 19) : `« Prière du vendredi » : la prière
+du vendredi 02.10.2026 est annulée.`, puis `Les autres prières du vendredi ont lieu comme
+d'habitude.`, et de même pour un déplacement ou un changement d'heure.
 
 Les erreurs d'un déplacement s'affichent dans la carte concernée, rouverte, au-dessus des champs, et
 la saisie est gardée :
@@ -75,20 +86,29 @@ la saisie est gardée :
 - `Cette heure n'a pas pu être lue. Écrivez les heures et les minutes, par exemple 19:30.`
 - `La séance est déjà prévue à cette date et à cette heure. Choisissez une autre date ou une autre
 heure.` : un déplacement qui ne change rien est refusé.
-- `L'heure de cette séance a changé depuis l'ouverture de la page. Rien n'a été enregistré. Sa
-nouvelle heure est écrite sous son titre : vérifiez la date et l'heure choisies, puis
-recommencez.` : l'heure du cours a changé dans sa fiche pendant que la page restait ouverte, et la
-  carte envoie l'ancienne.
+- `L'heure de la séance « Cours du soir » du mardi 29.09.2026 a changé depuis l'ouverture de la
+page. Rien n'a été enregistré. Sa nouvelle heure est écrite sous son titre : vérifiez la date et
+l'heure choisies, puis recommencez.` : l'heure du cours a changé dans sa fiche pendant que la page
+  restait ouverte, et la carte envoie l'ancienne.
 
-Les refus qui ne désignent plus aucune carte s'affichent en haut de l'écran :
+Les refus qui ne désignent plus aucune carte s'affichent en haut de l'écran. Ceux d'une carte
+périmée (409) nomment la séance, par son titre, dans la langue de l'écran quand le cours y est
+traduit, et par sa date (étape 19) :
 
-- `Cette séance a changé depuis l'ouverture de la page : elle a déjà été annulée ou déplacée. Rien
-n'a été enregistré. Le programme ci-dessous est à jour.` : une carte restée ouverte (touche Retour,
-  second onglet, autre personne) sur une séance annulée ou déplacée depuis n'écrit plus rien,
-  qu'on touche `Annuler cette séance` ou `Déplacer la séance`. Juste en dessous, la carte montre
-  l'état réel. Deux déplacements envoyés au même instant n'en écrivent qu'un, et l'autre reçoit
-  ce refus.
-- `Cette séance n'existe plus. Rechargez la page pour voir le programme à jour.`
+- `La séance « Cercle de lecture » du lundi 28.09.2026 a changé depuis l'ouverture de la page :
+elle a déjà été annulée ou déplacée. Rien n'a été enregistré. Le programme ci-dessous est à jour.` :
+  une carte restée ouverte (touche Retour, second onglet, autre personne) sur une séance annulée ou
+  déplacée depuis n'écrit plus rien, qu'on touche `Annuler cette séance` ou `Déplacer la séance`.
+  Juste en dessous, la carte montre l'état réel. Deux déplacements envoyés au même instant n'en
+  écrivent qu'un, et l'autre reçoit ce refus.
+- `La séance « Cercle de lecture » du lundi 28.09.2026 a déjà été annulée depuis l'ouverture de la
+page. Rien n'a été enregistré. Si le message n'a pas encore été envoyé, il est prêt ci-dessous.` :
+  la même séance annulée une seconde fois, par une autre personne ou depuis une page restée
+  ouverte. Rien ne s'écrit, mais le titre `La séance est annulée.` et le message prêt à coller
+  suivent, dans chaque langue publiée : la personne ne sait pas si la communauté a déjà été
+  prévenue (étape 19).
+- `Cette séance n'existe plus. La liste ci-dessous est à jour.` : la page renvoyée est déjà à jour,
+  et, sans JavaScript, recharger renverrait le formulaire refusé (étape 19).
 - `La date de cette séance n'a pas pu être lue. Rechargez la page, puis recommencez.`
 
 ## Le programme de la semaine
@@ -100,6 +120,10 @@ zone `Programme de la semaine`. Une séance déplacée y porte `(date exceptionn
 `(nouvelle heure)` quand elle n'a changé que d'heure, le même jour. Une session du vendredi qui
 porte le nom proposé par le service y prend le nom de la prière dans chaque langue.
 
+C'est le message de l'écran Partager, mot pour mot (étape 19) : les cours publiés seulement, lus
+comme Partager les lit. Un cours en brouillon n'y est pas, et une session du vendredi en brouillon
+ne donne pas son heure à un cours prévu après le Dhuhr.
+
 ## Combien votre programme a été vu
 
 Un tableau : `Où`, `7 derniers jours`, `30 derniers jours`, et trois lignes, `Page publique`,
@@ -107,15 +131,11 @@ Un tableau : `Où`, `7 derniers jours`, `30 derniers jours`, et trois lignes, `P
 est gardé : aucune adresse, aucune provenance, aucun visiteur. Les robots connus ne sont pas
 comptés. Ces nombres sont un minimum […]`
 
-## Ce qui reste à reprendre
+## Ce qui a été repris
 
-Relevé par la relecture de l'étape 18, non corrigé à la fin de l'étape :
-
-- le programme de la semaine d'À venir compte aussi les cours en brouillon, celui de Partager non ;
-- une carte `date exceptionnelle` n'a pas de `Rétablir`, alors qu'une séance peut maintenant être
-  déplacée loin de sa date ;
-- `Cette séance n'existe plus` demande de recharger la page, alors que la page renvoyée est déjà à
-  jour, et que, sans JavaScript, recharger renvoie le formulaire refusé.
+Relevé par la relecture de l'étape 18, corrigé à l'étape 19 (D4) : le programme de la semaine
+comptait aussi les cours en brouillon, une carte `date exceptionnelle` n'avait pas de `Rétablir`, et
+`Cette séance n'existe plus` demandait de recharger une page déjà à jour.
 
 Deux cartes peuvent être ouvertes en même temps : c'est la lecture retenue du retour A1, où une
 carte n'ouvre que la sienne sans rien changer aux autres.

@@ -125,7 +125,36 @@ les rôles. Aucun écran ne le faisait volontairement : l'écran Vendredi ne mod
 Le formulaire d'un cours, lui, écrivait `kind = 'course'` sur la ligne qu'on lui donnait, et faisait
 un cours d'une session envoyée à son adresse ; il répond maintenant qu'il ne la connaît pas.
 
+## Addendum du 27.09.2026 : les mots d'une session dans un message, et son écran (étape 19)
+
+**Les messages prêts à coller.** Une session du vendredi annulée ou déplacée sur « À venir » était
+annoncée comme un cours : « Le cours « Freitagsgebet » du … est annulé. Les autres séances ont lieu
+normalement. » Le mot changeait déjà pour les langues du sermon ; il change aussi ici, dans les cinq
+langues. Le titre vient d'abord, puis la phrase parle de la prière, et la dernière ligne des autres
+prières du vendredi :
+
+```
+« Prière du vendredi » : la prière du vendredi 02.10.2026 est annulée.
+Les autres prières du vendredi ont lieu comme d’habitude.
+```
+
+Il en va de même pour un déplacement à un autre jour, un changement d'heure le même jour, et une
+heure donnée à une séance qui n'en avait pas. Le titre reste celui de la session : le nom proposé
+par le service se lit dans la langue du message, un titre choisi par l'organisation reste tel quel.
+Un cours garde ses mots.
+
+**Les cartes d'« À venir ».** Le titre d'une carte suit la langue de l'écran quand le cours y est
+traduit ; une session qui porte le nom proposé prend donc le nom de la prière dans la langue de
+l'écran, par la même règle des cinq noms (`friday-title.ts`).
+
+**L'écran du vendredi (D2).** Annuler un jour déjà passé est refusé, comme sur « À venir ».
+Rétablir, Publier et Supprimer répondent qu'une session inconnue, ou un cours, n'existe plus, au
+lieu de dire qu'ils l'ont fait et de l'écrire au journal. Chaque identifiant, chaque date et chaque
+heure est vérifié avant la base ; une salle qui n'existe pas, ou plus, a sa phrase dans le
+formulaire. La liste des refus de l'écran est dans l'addendum du même jour de l'ADR 0021.
+
 ## Statut
 
 Accepté, 2026-09-21. Étape 8 de la feuille de route. Complète l'ADR 0003 (récurrence) et l'ADR 0004
-(ancrage sur une prière). Complété le 27.09.2026 : le type d'une ligne ne change pas.
+(ancrage sur une prière). Complété le 27.09.2026 (étape 19) : le type d'une ligne ne change pas ; les
+mots d'une session dans les messages prêts à coller, et les refus de son écran.

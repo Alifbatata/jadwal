@@ -131,6 +131,14 @@ Cette session seulement. Les autres vendredis ne changent pas.
   un autre jour. Un déplacement vers le jour et l'heure déjà prévus est refusé aussi. Jusqu'au lot
   5 de l'étape 18, une page restée ouverte défaisait un changement fait ailleurs, et une session
   supprimée entre-temps donnait une erreur 500.
+- `Annuler` refuse un jour déjà passé, comme sur `À venir` : aucune ligne ne le propose, mais la
+  page d'une semaine d'avant restée ouverte peut l'envoyer (étape 19, D2).
+- `Rétablir comme d'habitude`, `Publier`, `Retirer de la page publique` et `Oui, supprimer`
+  répondent `Cette session n'existe plus` à une session supprimée entre-temps, ou à un cours, et
+  n'écrivent rien, pas même au journal. Avant l'étape 19, ils disaient l'avoir fait, et
+  l'écrivaient au journal.
+- Chaque identifiant, chaque date et chaque heure envoyés sont vérifiés avant la base : un
+  formulaire écrit à la main, un 30 février ou 25:99 reçoivent une phrase, jamais une erreur 500.
 
 ## Ce que dit l'écran après un geste
 
@@ -146,7 +154,10 @@ Une phrase par geste, au lieu d'un « Enregistré. » unique :
 Les erreurs disent quoi faire : `L'heure de fin doit venir après l'heure de début.`,
 `Donnez une heure de début et une heure de fin. Exemple : 12:10 et 12:50.`,
 `Cochez au moins une langue du sermon.`,
-`Choisissez la date à partir de laquelle la session a lieu.`
+`Choisissez la date à partir de laquelle la session a lieu.` Une salle supprimée dans Réglages
+pendant que le formulaire restait ouvert donne, dans le formulaire, avec la saisie : `Cette salle
+n'existe plus : elle a été supprimée entre-temps. Choisissez une autre salle, ou « Pas de salle
+précise ».` (étape 19, D2 ; avant, une erreur 500).
 
 Les refus de « Ce vendredi », en tête de l'écran :
 
@@ -157,7 +168,19 @@ nouvelle heure est écrite plus bas, dans « Ce vendredi » : vérifiez le jour 
 puis recommencez.` ;
 - `La session est déjà prévue ce jour-là à cette heure : rien n'a été déplacé. Choisissez une autre
 heure ou un autre jour dans « Ce vendredi », plus bas.` ;
-- `Cette session n'existe plus : elle a été supprimée entre-temps. La liste ci-dessous est à jour.`
+- `Cette session est déjà passée : vous ne pouvez annuler que les sessions d'aujourd'hui et des
+jours suivants.` (étape 19) ;
+- `Cette session n'existe plus : elle a été supprimée entre-temps. La liste ci-dessous est à jour.`,
+  aussi pour `Rétablir`, `Publier` et `Supprimer` depuis l'étape 19.
+
+La liste des refus de l'écran, avec leur statut, est dans l'addendum du 27.09.2026 de l'ADR 0021.
+
+## Dans les messages d'« À venir »
+
+Une session annulée ou déplacée sur `À venir` y a ses propres mots, et non ceux d'un cours
+(étape 19) : `« Prière du vendredi » : la prière du vendredi 02.10.2026 est annulée.`, puis
+`Les autres prières du vendredi ont lieu comme d'habitude.` Sur une carte d'`À venir`, le nom
+proposé se lit dans la langue de l'écran.
 
 ## Ce que l'écran dit quand il n'y a rien
 
