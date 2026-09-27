@@ -767,7 +767,9 @@ describe('A2 : déplacer une séance', () => {
 			const champ = attributs(balise);
 			expect(champ['type'], date).toBe('date');
 			expect(champ['min'], date).toBe(today);
-			expect(champ, date).not.toHaveProperty('max');
+			// Jusqu'au 31.12.2100, la dernière date que l'action accepte : le calendrier du navigateur
+			// ne propose plus une date qu'elle refuserait (étape 19, relecture de D2).
+			expect(champ['max'], date).toBe('2100-12-31');
 			expect(champ, date).toHaveProperty('required');
 			// La date prévue d'abord : changer seulement l'heure reste un geste simple.
 			expect(champ['value'], date).toBe(date);

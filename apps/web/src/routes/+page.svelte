@@ -272,8 +272,9 @@
 										<p class="erreur" role="alert">{erreur}</p>
 									{/if}
 									<!-- Toute date à partir d'aujourd'hui, plus tôt comme plus tard que la date
-									     prévue (retour A2) : aucun plafond, et l'action refuse elle-même une date
-									     passée. Le champ garde sa valeur technique ; l'aide écrit la date. -->
+									     prévue (retour A2), jusqu'au 31.12.2100, la dernière que l'action accepte
+									     (étape 19). L'action refuse elle-même une date passée. Le champ garde sa
+									     valeur technique ; l'aide écrit la date. -->
 									<div class="champ">
 										<label for={`vers-${k}`}>{text.newDate}</label>
 										<input
@@ -281,6 +282,7 @@
 											type="date"
 											name="toDate"
 											min={data.today}
+											max={data.lastDate}
 											value={refusee === k ? form?.toDate : seance.date}
 											required
 											aria-describedby={`vers-${k}-aide`}

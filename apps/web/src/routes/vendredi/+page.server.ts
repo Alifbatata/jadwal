@@ -35,7 +35,7 @@ import type { FridayDone, FridayError } from '$lib/i18n/friday.js';
 import { record } from '$lib/server/audit.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { insertCourse, updateCourse } from '$lib/server/courses.js';
-import { isSupportedDate } from '$lib/server/dates.js';
+import { FIRST_SUPPORTED_DATE, isSupportedDate, LAST_SUPPORTED_DATE } from '$lib/server/dates.js';
 import { fridayTitle } from '$lib/server/friday-title.js';
 import { mustHavePrayerModule } from '$lib/server/guard.js';
 import { readCourses, readProgramme, readRooms, readSettings } from '$lib/server/programme.js';
@@ -174,6 +174,12 @@ export const load: PageServerLoad = async (event) => {
 			salles: (await readRooms(tx)).map((salle) => ({ id: salle.id, name: salle.name })),
 			sessions: lues,
 			today,
+			/**
+			 * Les dates qu'un formulaire de session peut envoyer : les bornes de « À partir du » et de
+			 * « Jusqu'au ». Le calendrier ne propose plus une date que l'action refuserait.
+			 */
+			firstDate: FIRST_SUPPORTED_DATE,
+			lastDate: LAST_SUPPORTED_DATE,
 			// Les séances des sessions dans les sept prochains jours : c'est le prochain vendredi,
 			// avec ses annulations et ses déplacements déjà appliqués.
 			prochaines: programme.seances

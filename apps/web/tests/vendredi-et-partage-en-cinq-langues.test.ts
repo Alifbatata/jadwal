@@ -1773,6 +1773,23 @@ describe('D2 : l’écran du vendredi refuse ce qu’il ne peut pas faire, sans 
 		}
 	});
 
+	it('offers in the calendar of each date of a session only the dates the service accepts, 1970 to 2100 (relecture de D2)', async () => {
+		// Le calendrier du navigateur proposait le 31.12.2101, que l'action refuse comme une date
+		// illisible : la phrase disait de la choisir dans le calendrier, où elle venait d'être choisie.
+		const formulaires = formulairesDEnregistrement(await (await get('/vendredi', cookies)).text());
+		expect(formulaires.length).toBeGreaterThan(1);
+		for (const [index, formulaire] of formulaires.entries()) {
+			for (const nom of ['startsOn', 'endsOn']) {
+				const balise =
+					formulaire.match(new RegExp(`<input\\b[^>]*\\sname="${nom}"[^>]*>`))?.[0] ?? '';
+				expect(
+					[attribut(balise, 'type'), attribut(balise, 'min'), attribut(balise, 'max')],
+					`${index} ${nom}`
+				).toEqual(['date', '1970-01-01', '2100-12-31']);
+			}
+		}
+	});
+
 	it('removes the null character a hand-written form may send, instead of an error 500', async () => {
 		// PostgreSQL refuse ce caractère dans un texte : un titre qui le portait donnait une erreur 500
 		// (étape 19, relecture de D2). Aucun clavier ne le tape : il est retiré, et le reste s'enregistre.

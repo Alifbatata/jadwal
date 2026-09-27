@@ -66,7 +66,8 @@ remontent donc jamais jusqu'à lui.
 > semaines, et un changement de rythme n'est pas fait pour un seul jour. Le champ « Nouvelle date »
 > accepte désormais toute date à partir d'aujourd'hui, dans le fuseau de l'organisation, sans limite
 > vers l'avant. C'est l'action qui refuse une date passée, et non le seul champ du navigateur, qu'un
-> formulaire envoyé à la main contourne.
+> formulaire envoyé à la main contourne. (Depuis l'étape 19, la limite vers l'avant est le
+> 31.12.2100, et le champ la porte : voir l'addendum du 27.09.2026.)
 >
 > Le champ s'ouvre sur la date et l'heure prévues, pour que changer seulement l'heure reste un geste
 > simple. En contrepartie, l'action refuse un déplacement qui ne change ni la date ni l'heure, avec
@@ -209,7 +210,12 @@ Déplacer et Enregistrer répondaient encore à « 0000-01-01 » par une erreur 
 fin, en l'an 10000, que le calcul refuse : une session publiée qui finissait ce jour-là faisait
 tomber le flux de toute l'organisation. Une date envoyée aux deux écrans s'accepte désormais de 1970
 à 2100, les années que couvrent les tests du calcul (`isSupportedDate`), et reçoit sinon la phrase
-d'une date illisible. Le caractère nul (U+0000), qu'aucun clavier ne tape mais qu'un formulaire écrit
+d'une date illisible. Les champs de date portent les mêmes bornes (`min` et `max`) : « Nouvelle
+date » sur « À venir », du jour même au 31.12.2100, et « À partir du » et « Jusqu'au » dans le
+formulaire d'une session, du 01.01.1970 au 31.12.2100. Sans elles, le calendrier du navigateur
+proposait le 31.12.2101, et la phrase d'une date illisible demandait de choisir dans ce calendrier
+la date qui venait d'y être choisie. La limite vers l'avant, que la révision du 2026-09-26 disait
+absente, est donc le 31.12.2100. Le caractère nul (U+0000), qu'aucun clavier ne tape mais qu'un formulaire écrit
 à la main peut envoyer, et que PostgreSQL refuse dans un texte, est retiré des champs de texte d'une
 session au lieu de donner une erreur 500.
 

@@ -321,6 +321,8 @@
 					id={`du-${cle}`}
 					name="startsOn"
 					type="date"
+					min={data.firstDate}
+					max={data.lastDate}
 					value={saisie?.startsOn ?? session?.startsOn ?? data.today}
 					required
 					aria-describedby={`aide-du-${cle}`}
@@ -332,6 +334,8 @@
 					id={`au-${cle}`}
 					name="endsOn"
 					type="date"
+					min={data.firstDate}
+					max={data.lastDate}
 					value={saisie?.endsOn ?? session?.endsOn ?? ''}
 					aria-describedby={`aide-au-${cle} aide-saison-${cle}`}
 				/>

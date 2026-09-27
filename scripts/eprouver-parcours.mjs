@@ -2251,8 +2251,9 @@ async function optionsDesSeances(page, premiere, seconde) {
 }
 
 /**
- * Déplacer une séance (A2) : le champ accepte toute date à partir d'aujourd'hui, refuse une date
- * passée, et la séance du J3 part la veille, plus tôt que prévu. L'aide de la date le dit (B1).
+ * Déplacer une séance (A2) : le champ accepte toute date à partir d'aujourd'hui, jusqu'au
+ * 31.12.2100, la dernière que l'action accepte (étape 19), refuse une date passée, et la séance du
+ * J3 part la veille, plus tôt que prévu. L'aide de la date le dit (B1).
  */
 async function deplacerPlusTot(page) {
 	const depart = seanceDuJour(page, J3, COURS_2);
@@ -2260,10 +2261,10 @@ async function deplacerPlusTot(page) {
 		await depart.getByText('Annuler ou déplacer', { exact: true }).click();
 		const date = depart.getByLabel('Nouvelle date', { exact: true });
 		verifier(
-			`le champ « Nouvelle date » accepte toute date à partir d’aujourd’hui (${dateSuisse(T)}), sans limite`,
+			`le champ « Nouvelle date » accepte toute date à partir d’aujourd’hui (${dateSuisse(T)}), jusqu’au 31.12.2100`,
 			(await date.getAttribute('type')) === 'date' &&
 				(await date.getAttribute('min')) === T &&
-				(await date.getAttribute('max')) === null,
+				(await date.getAttribute('max')) === '2100-12-31',
 			`min="${await date.getAttribute('min')}" max="${await date.getAttribute('max')}"`
 		);
 		await retour('B1', async () => {

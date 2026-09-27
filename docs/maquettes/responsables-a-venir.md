@@ -56,7 +56,8 @@ derrière lui : on n'annule plus une séance sans avoir ouvert ses options. Deda
 - `Seule cette séance est annulée : le cours continue les autres semaines. Vous pourrez la rétablir
 ensuite.` et le bouton `Annuler cette séance` ;
 - le cadre `Déplacer cette séance` (retour A2) :
-  - `Nouvelle date`, le calendrier du navigateur, à partir d'aujourd'hui et sans limite, avec
+  - `Nouvelle date`, le calendrier du navigateur, à partir d'aujourd'hui et jusqu'au 31.12.2100, la
+    dernière date que l'action accepte (étape 19 ; il n'avait pas de limite avant), avec
     l'aide `À partir d'aujourd'hui, samedi 26.09.2026, plus tôt ou plus tard que la date prévue.` ;
   - `Heure de début`, avec l'aide `Exemple : 19:30` ;
   - le bouton `Déplacer la séance`. Le formulaire envoie aussi, sans le montrer, l'heure que la
@@ -87,7 +88,9 @@ la saisie est gardée :
 - `Cette date est déjà passée. Choisissez une date à partir d'aujourd'hui.`
 - `Cette date n'a pas pu être lue. Choisissez-la dans le calendrier du champ « Nouvelle date ».` :
   une date illisible, impossible, ou hors des années 1970 à 2100, que seul un formulaire écrit à la
-  main ou une faute de frappe envoie (l'an 0000 donnait une erreur 500, étape 19).
+  main envoie (l'an 0000 donnait une erreur 500, étape 19). Le calendrier du champ s'arrête au
+  31.12.2100 : il proposait le 31.12.2101, et cette phrase disait alors de choisir dans le
+  calendrier une date qui venait d'y être choisie.
 - `Cette heure n'a pas pu être lue. Écrivez les heures et les minutes, par exemple 19:30.`
 - `La séance est déjà prévue à cette date et à cette heure. Choisissez une autre date ou une autre
 heure.` : un déplacement qui ne change rien est refusé.

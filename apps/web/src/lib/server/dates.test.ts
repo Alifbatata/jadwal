@@ -1,7 +1,20 @@
 // Une date que le service accepte d'un formulaire (étape 19, relecture de D2).
 
 import { describe, expect, it } from 'vitest';
-import { isSupportedDate } from './dates.js';
+import { addDays } from '@jadwal/core';
+import { FIRST_SUPPORTED_DATE, isSupportedDate, LAST_SUPPORTED_DATE } from './dates.js';
+
+describe('the bounds of a date field', () => {
+	// Les champs de date des écrans portent ces bornes (`min`, `max`) : le calendrier du navigateur
+	// ne propose aucune date que l'action refuserait, ni n'en retire une qu'elle accepte.
+	it('are the first and the last date accepted', () => {
+		expect([FIRST_SUPPORTED_DATE, LAST_SUPPORTED_DATE]).toEqual(['1970-01-01', '2100-12-31']);
+		expect(isSupportedDate(FIRST_SUPPORTED_DATE)).toBe(true);
+		expect(isSupportedDate(LAST_SUPPORTED_DATE)).toBe(true);
+		expect(isSupportedDate(addDays(FIRST_SUPPORTED_DATE, -1))).toBe(false);
+		expect(isSupportedDate(addDays(LAST_SUPPORTED_DATE, 1))).toBe(false);
+	});
+});
 
 describe('isSupportedDate', () => {
 	it.each(['1970-01-01', '2026-09-27', '2028-02-29', '2100-12-31'])('accepts %s', (date) => {

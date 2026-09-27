@@ -144,9 +144,10 @@ Cette session seulement. Les autres vendredis ne changent pas.
   (relecture de D2).
 - Chaque identifiant, chaque date et chaque heure envoyés sont vérifiés avant la base : un
   identifiant mal formé, un 30 février, 25:99 ou une date hors des années 1970 à 2100 (l'an 0000,
-  le 31.12.9999) reçoivent une phrase, et non une erreur 500. Le caractère nul, qu'aucun clavier ne
-  tape et que la base refuse dans un texte, est retiré du titre, du champ `Imam ou intervenant` et
-  de la description.
+  le 31.12.9999) reçoivent une phrase, et non une erreur 500. Le calendrier de `À partir du` et de
+  `Jusqu'au` ne propose que ces années-là, du 01.01.1970 au 31.12.2100. Le caractère nul, qu'aucun
+  clavier ne tape et que la base refuse dans un texte, est retiré du titre, de la description et
+  du champ `Imam ou intervenant`.
 
 ## Ce que dit l'écran après un geste
 

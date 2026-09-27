@@ -48,7 +48,7 @@ import { LANGUES, type Langue } from '$lib/i18n.js';
 import type { NamedUpcomingError, UpcomingError } from '$lib/i18n/upcoming.js';
 import { record } from '$lib/server/audit.js';
 import { withSessionOrg } from '$lib/server/context.js';
-import { isSupportedDate } from '$lib/server/dates.js';
+import { isSupportedDate, LAST_SUPPORTED_DATE } from '$lib/server/dates.js';
 import { fridayTitle } from '$lib/server/friday-title.js';
 import { mustBeInOrganisation } from '$lib/server/guard.js';
 import { etatDesSources, readReglages } from '$lib/server/prieres.js';
@@ -334,6 +334,8 @@ export const load: PageServerLoad = async (event) => {
 		/** L'écran des prières est réservé aux responsables, et n'existe qu'avec son module. */
 		canSetPrayers: context.role !== 'editor' && settings.prayer_module,
 		today: programme.today,
+		/** La dernière date que Déplacer accepte : la borne du champ « Nouvelle date ». */
+		lastDate: LAST_SUPPORTED_DATE,
 		from: programme.from,
 		to: programme.to,
 		seances,
