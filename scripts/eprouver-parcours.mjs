@@ -93,6 +93,26 @@
  * lu dans `.github/workflows/parcours.yml` par `scripts/eprouver-garde-deploiement.mjs`. G et I sont
  * des gestes sur le serveur, relevés dans le rapport de l'étape.
  *
+ * ## La date figée (étape 19, D9)
+ *
+ * Le parcours ne lit plus la date de son lancement pour savoir ce qu'il attend. Il pose l'horloge
+ * du serveur à un instant, par `scripts/horloge-figee.mjs`, monté en lecture seule dans le seul
+ * conteneur de l'application et chargé par `NODE_OPTIONS=--import=…`, avec
+ * `JADWAL_HORLOGE_FIGEE` ; le conteneur des rôles et des migrations n'en reçoit rien. Toutes les
+ * dates attendues partent de ce même instant : les heures de prière (C2), le jour de l'onglet
+ * « Prières » (C4), les séances, la date d'une passkey. L'horloge part de l'instant et avance au
+ * rythme réel ; le serveur dit dans son journal d'où elle part, et le parcours le vérifie.
+ *
+ * La règle : **l'instant du lancement, ramené à 20:00, heure de Zurich, s'il tombe plus tard**. La
+ * base mesure l'âge d'une session du super-admin avec son horloge à elle, `now()`, contre la date
+ * de création que Better Auth écrit depuis Node, à l'horloge posée
+ * (`apps/web/src/lib/server/context.ts`) ; au-delà de douze heures, la session est supprimée. Un
+ * instant loin du vrai la couperait : un instant fixe, « 10:00 le jour du lancement », la coupe dès
+ * qu'un passage part après 22:00. Avec cette règle, l'horloge posée ne retarde jamais de plus de
+ * quatre heures sur la base, et elle a au moins quatre heures avant son minuit : un passage ne
+ * change pas de jour en route. L'instant est celui du jour du lancement à Zurich : la date de la
+ * base et celle du serveur restent la même.
+ *
  * ## Le mode relevé
  *
  * Sans variable, le parcours est strict : il s'arrête au premier rouge. Avec
@@ -163,9 +183,10 @@
  * - `JADWAL_PARCOURS_IMAGE` : une image déjà construite. Elle est reprise telle quelle, et laissée
  *   en place à la fin.
  * - `JADWAL_PARCOURS_CONTEXTE` : le dossier d'où construire l'image quand aucune n'est donnée ; par
- *   défaut, la racine du dépôt. Un instantané (`git worktree add <dossier> HEAD`) construit ce qui
- *   est commité, même si l'arbre de travail change pendant ce temps. L'image construite est retirée
- *   à la fin.
+ *   défaut, la racine du dépôt. Un instantané (`git worktree add --detach <dossier> HEAD`,
+ *   retiré ensuite par `git worktree remove <dossier>`) construit ce qui est commité, même si
+ *   l'arbre de travail change pendant ce temps. L'image construite est retirée à la fin. Le module
+ *   de l'horloge posée, lui, vient toujours du dépôt qui lance le parcours.
  * - `JADWAL_PARCOURS_RELEVE` : `1` pour le mode relevé, décrit plus haut.
  * - `JADWAL_PARCOURS_NOM_RETIRE` : facultatif, le nom de personne retiré au retour F1, pour le
  *   chercher tel quel sur chaque écran. Il vient de `PRIVE/` et n'entre jamais dans le dépôt.
@@ -717,14 +738,32 @@ function portLibre() {
 	});
 }
 
-/** La date du jour dans le fuseau de l'organisation, sans dépendre de celui du poste. */
-function aujourdhui() {
-	return new Intl.DateTimeFormat('en-CA', {
-		timeZone: FUSEAU,
-		year: 'numeric',
-		month: '2-digit',
-		day: '2-digit'
-	}).format(new Date());
+/**
+ * L'instant où le parcours pose l'horloge du serveur (étape 19, D9) : celui du lancement, ramené à
+ * 20:00, heure de Zurich, s'il tombe plus tard. Il s'écrit à l'heure de Zurich, avec son décalage,
+ * « 2026-09-28T20:00:00+02:00 », comme `scripts/horloge-figee.mjs` le lit. Un changement d'heure
+ * tombe à 2 ou 3 heures du matin : le décalage du lancement est celui de 20:00 le même jour.
+ */
+function instantDuParcours(lancement = new Date()) {
+	const parties = Object.fromEntries(
+		new Intl.DateTimeFormat('en-CA', {
+			timeZone: FUSEAU,
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit',
+			hourCycle: 'h23',
+			timeZoneName: 'longOffset'
+		})
+			.formatToParts(lancement)
+			.map((partie) => [partie.type, partie.value])
+	);
+	const jour = `${parties['year']}-${parties['month']}-${parties['day']}`;
+	const heure = `${parties['hour']}:${parties['minute']}:${parties['second']}`;
+	const decalage = String(parties['timeZoneName']).replace('GMT', '') || '+00:00';
+	return `${jour}T${heure > LIMITE_DE_L_HORLOGE ? LIMITE_DE_L_HORLOGE : heure}${decalage}`;
 }
 
 /** Midi UTC : aucun changement d'heure ne fait changer de jour. */
@@ -1228,7 +1267,11 @@ async function boiteDeLAnnonce(lien, langue) {
 // Les étapes
 // ---------------------------------------------------------------------------------------------
 
-const T = aujourdhui();
+/** L'heure de Zurich au-delà de laquelle l'instant du lancement est ramené (voir l'en-tête). */
+const LIMITE_DE_L_HORLOGE = '20:00:00';
+/** L'instant de l'horloge du serveur, et le jour qu'il donne : toutes les dates attendues en partent. */
+const INSTANT = instantDuParcours();
+const T = INSTANT.slice(0, 10);
 /**
  * Le premier cours demain ; le second le surlendemain de demain, ramené la veille de sa date, plus
  * tôt que prévu (A2) ; les deux cours ancrés dans quatre et cinq jours, et celui d'avant une prière
@@ -1288,7 +1331,7 @@ async function leverLeServeur() {
 
 	PORT = await portLibre();
 	ORIGINE = `http://localhost:${PORT}`;
-	marche.lancerLeServeur(`127.0.0.1:${PORT}:3000`, { ORIGIN: ORIGINE });
+	marche.lancerLeServeur(`127.0.0.1:${PORT}:3000`, { ORIGIN: ORIGINE }, { horloge: INSTANT });
 	serveurLance = true;
 	let code = 0;
 	for (let essai = 0; essai < 60 && code !== 200; essai += 1) {
@@ -1299,6 +1342,18 @@ async function leverLeServeur() {
 		}
 	}
 	verifier('le serveur répond', code === 200, `ORIGIN ${ORIGINE}`);
+	// Le module de l'horloge dit sur la sortie d'erreur du serveur d'où elle part : c'est la preuve
+	// qu'il a été chargé, et que le serveur compte bien à partir de l'instant du parcours.
+	const depart = /horloge-figee : l’horloge de ce processus part du (\S+),/.exec(marche.journal());
+	verifierChaque(
+		`l’horloge du serveur part de l’instant du parcours, ${INSTANT}`,
+		{
+			'la ligne de l’horloge dans le journal': depart !== null,
+			'l’instant du parcours':
+				depart !== null && Date.parse(depart[1] ?? '') === Date.parse(INSTANT)
+		},
+		depart ? `le serveur dit ${depart[1]}` : 'aucune ligne de l’horloge dans le journal du serveur'
+	);
 }
 
 /**

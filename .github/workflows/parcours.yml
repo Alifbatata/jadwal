@@ -13,6 +13,11 @@
 # sur le registre est construite par `ci.yml`, depuis le même commit, et c'est par l'étiquette
 # `org.opencontainers.image.revision` de celle-là que la garde remonte jusqu'ici.
 #
+# Le parcours pose l'horloge du serveur à un instant (étape 19, D9) : il monte en lecture seule
+# `scripts/horloge-figee.mjs`, pris dans le commit extrait, dans le seul conteneur de l'application,
+# et le fait charger par `NODE_OPTIONS`. Rien à installer pour cela : le montage part du dossier
+# extrait, que Docker lit sur le runner comme sur un poste.
+#
 # Ce que le runner doit fournir, relevé dans la description de l'image `ubuntu-24.04`
 # (`ubuntu-latest`, image 20260907) du dépôt `actions/runner-images` : Docker 28 avec Buildx, dont
 # BuildKit est le constructeur par défaut (le `Dockerfile` en a besoin pour `RUN --mount`), et
