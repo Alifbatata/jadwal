@@ -163,6 +163,8 @@
  *   est commité, même si l'arbre de travail change pendant ce temps. L'image construite est retirée
  *   à la fin.
  * - `JADWAL_PARCOURS_RELEVE` : `1` pour le mode relevé, décrit plus haut.
+ * - `JADWAL_PARCOURS_NOM_RETIRE` : facultatif, le nom de personne retiré au retour F1, pour le
+ *   chercher tel quel sur chaque écran. Il vient de `PRIVE/` et n'entre jamais dans le dépôt.
  * - `JADWAL_CHROME` : le chemin de Chrome, quand il n'est pas à un emplacement usuel.
  *
  * La date des conditions attendue à l'écran est lue dans le `docs/CONDITIONS.md` du dossier de
@@ -180,7 +182,7 @@
  * bloquée, et c'est exactement ce que la politique doit faire.
  */
 import { spawnSync } from 'node:child_process';
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
@@ -214,11 +216,13 @@ const DONNEES_PERSONNELLES = 10;
 /** L'exploitant, tel que les conditions le nomment depuis l'étape 18 (retour F1). */
 const EXPLOITANT = 'Voltia';
 /**
- * L'empreinte SHA-256 du nom de personne que le retour F1 a retiré du dépôt, écrit en minuscules,
- * ses trois mots séparés par une espace. Le nom lui-même n'est écrit nulle part, pas même ici : on
- * compare l'empreinte de chaque suite de trois mots lus à l'écran.
+ * Le nom de personne que le retour F1 a retiré n'est écrit nulle part dans le dépôt, ni en clair ni
+ * sous une empreinte : une empreinte sans secret d'un nom se retrouve en essayant des noms. Le
+ * parcours voit sa trace à la forme qu'il avait à l'écran, le nom suivi de l'exploitant entre
+ * parenthèses, « … (Voltia) ». Sur le poste, `JADWAL_PARCOURS_NOM_RETIRE` peut donner le nom
+ * lui-même (tiré de `PRIVE/`, jamais du dépôt), et il est alors cherché tel quel.
  */
-const EMPREINTE_DU_NOM_RETIRE = 'empreinte-retiree-de-l-historique';
+const NOM_RETIRE = process.env['JADWAL_PARCOURS_NOM_RETIRE']?.trim().toLowerCase() ?? '';
 
 /** La langue que le navigateur annonce : celle d'une personne de Suisse romande. */
 const LANGUE_DU_NAVIGATEUR = 'fr-CH';
@@ -861,17 +865,10 @@ function heuresCalculees(dates, reglage) {
 /** Chaque écran lu pendant le parcours : `adresse → { dates, nomRetire }`. */
 const ecransLus = new Map();
 
-/** Vrai si le texte contient le nom de personne retiré du dépôt (voir `EMPREINTE_DU_NOM_RETIRE`). */
+/** Vrai si le texte porte la trace du nom de personne retiré du dépôt (voir `NOM_RETIRE`). */
 function nommeLaPersonneRetiree(texte) {
-	const mots = texte
-		.toLowerCase()
-		.split(/[^\p{L}]+/u)
-		.filter(Boolean);
-	for (let index = 0; index + 2 < mots.length; index += 1) {
-		const suite = mots.slice(index, index + 3).join(' ');
-		if (createHash('sha256').update(suite).digest('hex') === EMPREINTE_DU_NOM_RETIRE) return true;
-	}
-	return false;
+	if (texte.includes(`(${EXPLOITANT})`)) return true;
+	return NOM_RETIRE !== '' && texte.toLowerCase().includes(NOM_RETIRE);
 }
 
 /**
