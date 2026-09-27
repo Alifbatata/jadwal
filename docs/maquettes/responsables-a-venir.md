@@ -1,7 +1,7 @@
 # L'écran À venir
 
 Décrit après le code, à l'étape 18 (retours A1, A2, D1, et B1, D2, A3 pour cet écran), et repris à
-l'étape 19 (relecture D4 et décisions du chef de projet). Textes :
+l'étape 19 (relecture D4, décisions du chef de projet, lots 2 et 3). Textes :
 `apps/web/src/lib/i18n/upcoming.ts`, dans les cinq langues.
 
 **Lien** : `/`, l'accueil de l'espace, ouvert à l'éditeur comme à la personne responsable.
@@ -130,6 +130,17 @@ page. Rien n'a été enregistré. Le programme ci-dessous est à jour.` : `Réta
   sur une page restée ouverte, après qu'une autre personne ou un autre onglet l'a déjà rétablie.
   Il n'y a plus rien à rétablir : rien ne s'écrit, pas même au journal, et la carte, de nouveau
   prévue, ne se rouvre pas (étape 19, relecture de D2).
+- `Aucune séance « Atelier du soir » n'est prévue le mercredi 30.09.2026. Rien n'a été enregistré.
+Le programme ci-dessous est à jour.` (400) : annuler ou déplacer une séance un jour où le cours n'en
+  a pas, un autre jour de la semaine, après son dernier jour ou pendant une pause (étape 19,
+  lot 3). Aucune carte ne l'envoie : un formulaire écrit à la main, ou une page restée ouverte
+  pendant que le rythme du cours changeait. Rien ne s'écrit, pas même au journal. Les séances
+  comptent comme l'écran les montre, par le même calcul, que le jour soit dans les sept jours de
+  l'écran ou plus loin : une séance de la semaine suivante s'annule toujours. Avant, l'action
+  acceptait toute date à partir d'aujourd'hui, répondait `La séance est annulée.` et gardait une
+  exception qui ne tombe sur aucune séance. Une séance arrivée d'un autre jour, la carte
+  `date exceptionnelle`, se rétablit, et ne s'annule ni ne se déplace sous ce jour-là, où le calcul
+  ignorerait l'exception : l'envoi reçoit le refus d'une carte périmée, plus haut.
 - `Cette séance n'existe plus. La liste ci-dessous est à jour.` : la page renvoyée est déjà à jour,
   et, sans JavaScript, recharger renverrait le formulaire refusé (étape 19).
 - `La date de cette séance n'a pas pu être lue. Rechargez la page, puis recommencez.` : de même
@@ -166,6 +177,10 @@ l'étape 19, corrigé au lot 2 : `Rétablir la séance` n'envoyait pas ce que sa
 effaçait un changement fait ailleurs depuis l'ouverture de la page. Relevé par la relecture du
 lot 2 : la carte n'envoyait que l'état montré, et une annulation refaite ailleurs, qui montre la
 même chose que la première, s'effaçait encore ; elle envoie maintenant l'identifiant du changement.
+Relevé par les chantiers du lot 2, corrigé au lot 3 : un formulaire écrit à la main annulait ou
+déplaçait une séance un jour où le cours n'en a pas, et la base gardait une exception qui ne tombe
+sur aucune séance. `Rétablir la séance` un tel jour, sans rien à rétablir, n'écrivait déjà rien
+depuis le lot 1 : un test le prouve maintenant.
 
 Deux cartes peuvent être ouvertes en même temps : c'est la lecture retenue du retour A1, où une
 carte n'ouvre que la sienne sans rien changer aux autres.

@@ -159,6 +159,14 @@ Cette session seulement. Les autres vendredis ne changent pas.
   main, ou la page d'une semaine d'avant, peut en envoyer un. Jusqu'à l'étape 19 (lot 2), il
   l'écrivait ; `À venir` le refusait déjà. Une session déjà annulée ou déplacée ce jour-là reçoit le
   refus d'une page restée ouverte avant celui d'un jour passé : elle n'a rien à corriger.
+- `Annuler` et `Déplacer` refusent un jour où la session n'a pas lieu : un lundi, ou un vendredi
+  avant son début ou après sa date de fin (étape 19, lot 3). Aucune ligne ne l'envoie, mais un
+  formulaire écrit à la main le pouvait : l'action répondait `La session est annulée pour ce
+vendredi.` et la base gardait une exception qui ne tombe sur aucune séance. Rien ne s'écrit
+  désormais, pas même au journal. Les séances comptent comme l'écran et `À venir` les montrent, par
+  le même calcul, que le jour soit dans les sept jours de l'écran ou plus loin. Une session arrivée
+  d'un autre jour, la ligne `Nouvelle date, à la place du …`, se rétablit, et ne s'annule ni ne se
+  déplace sous ce jour-là : l'envoi reçoit le refus d'une ligne périmée.
 - `Rétablir comme d'habitude`, `Publier`, `Retirer de la page publique` et `Oui, supprimer`
   répondent `Cette session n'existe plus` à une session supprimée entre-temps, ou à un cours, et
   n'écrivent rien, pas même au journal. Avant l'étape 19, ils disaient l'avoir fait, et
@@ -195,7 +203,8 @@ Les refus de « Ce vendredi », en tête de l'écran :
 
 - `Cette session a changé depuis l'ouverture de la page : elle a déjà été annulée ou déplacée ce
 jour-là. Rien n'a été enregistré. La partie « Ce vendredi », plus bas, est à jour.`, aussi pour un
-  `Rétablir comme d'habitude` dont la ligne montrait un autre changement (étape 19, lot 2) ;
+  `Rétablir comme d'habitude` dont la ligne montrait un autre changement (étape 19, lot 2), et pour
+  une session arrivée d'un autre jour qu'on annulerait ou déplacerait sous ce jour-là (lot 3) ;
 - `L'heure de cette session a changé depuis l'ouverture de la page. Rien n'a été enregistré. Sa
 nouvelle heure est écrite plus bas, dans « Ce vendredi » : vérifiez le jour et l'heure choisis,
 puis recommencez.` ;
@@ -205,6 +214,8 @@ heure ou un autre jour dans « Ce vendredi », plus bas.` ;
 jours suivants.` (étape 19) ;
 - `Ce jour est déjà passé : rien n'a été déplacé. Choisissez aujourd'hui ou un jour suivant dans
 « Ce vendredi », plus bas.` : un déplacement vers un jour passé (étape 19, lot 2) ;
+- `Cette session n'a pas lieu ce jour-là. Rien n'a été enregistré. La partie « Ce vendredi », plus
+bas, est à jour.` : annuler ou déplacer la session un jour où elle n'a pas lieu (étape 19, lot 3) ;
 - `Cette session n'existe plus : elle a été supprimée entre-temps. La liste ci-dessous est à jour.`,
   aussi pour `Rétablir`, `Publier` et `Supprimer` depuis l'étape 19 ;
 - `Cette session a déjà été rétablie depuis l'ouverture de la page. Rien n'a été enregistré. La

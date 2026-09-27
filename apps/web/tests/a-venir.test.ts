@@ -37,11 +37,15 @@
 //   refusé en haut de l'écran et n'écrit rien, pas même au journal ; une session du vendredi en
 //   brouillon ne donne pas son heure à un cours prévu après le Dhuhr, ni sur sa carte, ni dans le
 //   message d'un déplacement.
+// - Étape 19, lot 3 : annuler ou déplacer une séance un jour où le cours n'en a pas, un autre jour
+//   de la semaine ou après son dernier jour, est refusé dans chaque langue, et n'écrit rien, pas même
+//   au journal. Une séance arrivée d'un autre jour ne s'annule pas sous ce
+//   jour-là, et « Rétablir » un jour sans changement n'écrit rien non plus.
 
 import { readFileSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, inject, it } from 'vitest';
 import { addDays, isoDateToDays, todayInZone, weekdayFromDays, type IsoDate } from '@jadwal/core';
 import { createDatabase, newId, sql, withOrg, type DatabaseHandle } from '@jadwal/db';
 import { conditionsAcceptees } from './conditions-acceptees.js';
@@ -2963,5 +2967,249 @@ describe('D1 : la prière du vendredi dans la langue de chaque message (relectur
 				await retablir(freitag, vendredi, cookieDe);
 			}
 		}
+	});
+});
+
+describe('un jour où le cours n’a pas de séance (étape 19, lot 3)', () => {
+	// Aucune carte ne l'envoie, mais un formulaire écrit à la main, ou une page restée ouverte pendant
+	// que le rythme du cours changeait, pouvait annuler ou déplacer une séance un jour où le cours n'en
+	// a pas : l'action répondait « annulée » et gardait une exception qui ne tombe sur aucune séance,
+	// que le calcul ignore. Les séances comptent comme l'écran les montre, du calcul de `@jadwal/core`,
+	// quel que soit le jour, dans les sept jours de l'écran ou après.
+
+	/** Le refus d'un jour sans séance : il nomme le cours, par son titre, et le jour. */
+	const PAS_DE_SEANCE: Record<Langue, PhraseNommee> = {
+		fr: (titre, date) =>
+			`Aucune séance « ${titre} » n’est prévue le ${date}. Rien n’a été enregistré. Le programme ci-dessous est à jour.`,
+		de: (titre, date) =>
+			`Am ${date}, ist kein Termin «${titre}» geplant. Es wurde nichts gespeichert. Das Programm unten ist aktuell.`,
+		it: (titre, date) =>
+			`Non è prevista nessuna lezione «${titre}» per ${date}. Non è stato salvato niente. Il programma qui sotto è aggiornato.`,
+		en: (titre, date) =>
+			`There is no ‘${titre}’ session on ${date}. Nothing has been saved. The programme below shows the latest changes.`,
+		ar: (titre, date) =>
+			`لا توجد حصة «${titre}» مقرّرة يوم ${date}. لم يُحفظ أي شيء. برنامجك المعروض أدناه محدَّث.`
+	};
+
+	const organisation = newId();
+	const RESPONSABLE_ATELIER = 'avenir-atelier@example.test';
+	const utilisateur = newId();
+	/** Un cours chaque semaine, le jour de la semaine de demain seulement, jusqu'à J+10. */
+	const atelier = newId();
+	const ATELIER = 'Atelier du soir';
+	/** Le jour de la séance de la semaine, et celui de la semaine suivante, hors des sept jours. */
+	const seance = jour(1);
+	const semaineSuivante = jour(8);
+	/** Le lendemain de la séance : le cours n'a pas de séance ce jour-là. */
+	const sansSeance = jour(2);
+	/** Le même jour de la semaine, deux semaines plus tard : après le dernier jour du cours. */
+	const apresLaFin = jour(15);
+	let cookie: string;
+	let journal: DatabaseHandle;
+
+	/** Les lignes du journal de l'organisation, lues par le rôle applicatif, comme l'écran les lit. */
+	async function lignesDuJournal(): Promise<number> {
+		return withOrg(journal.db, { organizationId: organisation, userId: utilisateur }, async (tx) =>
+			lignes<{ n: number }>(await tx.execute(sql`select count(*)::int as n from "audit_log"`))
+		).then((trouve) => trouve[0]?.n ?? 0);
+	}
+
+	/** Toutes les exceptions du cours : un refus n'en écrit aucune, à aucune date. */
+	async function exceptionsDuCours(): Promise<unknown[]> {
+		return maintenance(async (tx) =>
+			lignes(
+				await tx.execute(sql`
+					select "date"::text, "kind", "to_date"::text from "session_exception"
+					where "course_id" = ${atelier} order by "date"
+				`)
+			)
+		);
+	}
+
+	beforeAll(async () => {
+		journal = createDatabase({ role: 'app', overrides: { database: testDatabase } });
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+					"enabled_language", "prayer_module", "greeting")
+				values (${organisation}, 'a-venir-atelier', 'Association de l’atelier', ${FUSEAU}, 'fr',
+					array['fr','de','it','en','ar'], false, ${ACCUEIL})
+			`);
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified", "language")
+				values (${utilisateur}, ${RESPONSABLE_ATELIER}, true, 'fr')
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${organisation}, ${utilisateur}, 'org_admin')
+			`);
+			await tx.execute(conditionsAcceptees(organisation, utilisateur));
+			await tx.execute(sql`
+				insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",
+					"source_language", "recurrence_kind", "recurrence_weekday", "recurrence_interval",
+					"recurrence_anchor_date", "timing_kind", "timing_start", "timing_end", "starts_on",
+					"ends_on")
+				values (${atelier}, ${organisation}, 'published', 'adults', array['fr'], 'fr', 'weekly',
+					array[${weekdayFromDays(isoDateToDays(seance))}]::smallint[], 1, ${jour(-30)}, 'fixed',
+					'18:00', '19:30', ${jour(-30)}, ${jour(10)})
+			`);
+			await tx.execute(sql`
+				insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
+				values (${newId()}, ${organisation}, ${atelier}, 'fr', ${ATELIER})
+			`);
+		});
+		cookie = await signIn(RESPONSABLE_ATELIER);
+	});
+
+	// Ce qu'un envoi aurait écrit ne reste pas pour le test suivant : chacun part d'un cours sans
+	// exception.
+	afterEach(async () => {
+		await maintenance((tx) =>
+			tx.execute(sql`delete from "session_exception" where "course_id" = ${atelier}`)
+		);
+	});
+
+	afterAll(async () => {
+		await journal?.close();
+	});
+
+	it('refuses to cancel on such a day, says so above the programme in each language, and writes nothing, not even the journal', async () => {
+		const journalAvant = await lignesDuJournal();
+		try {
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE_ATELIER, langue);
+				const reponse = await postForm(
+					'/?/annuler',
+					{ courseId: atelier, date: sansSeance },
+					cookie
+				);
+				expect(reponse.status, langue).toBe(400);
+				const html = await reponse.text();
+				expect(alerte(html), langue).toBe(
+					PAS_DE_SEANCE[langue](ATELIER, dateLue(langue, sansSeance))
+				);
+				expect(html.indexOf('role="alert"'), langue).toBeLessThan(html.indexOf('id="jour-'));
+				expect(section(html, 'message-titre'), langue).toBe('');
+				expect(
+					optionsDesSeances(html).filter((options) => options.ouvert),
+					langue
+				).toEqual([]);
+				// Le titre, saisi par une personne, est isolé dans la phrase (ADR 0007).
+				const phrase = html.match(/<p\b[^>]*role="alert"[^>]*>([\s\S]*?)<\/p>/)?.[1] ?? '';
+				expect(
+					[...phrase.matchAll(/<bdi\b[^>]*>([\s\S]*?)<\/bdi>/g)].map((isole) =>
+						decode(isole[1] ?? '')
+					),
+					langue
+				).toEqual([ATELIER]);
+			}
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE_ATELIER, 'fr');
+		}
+		expect(await exceptionsDuCours()).toEqual([]);
+		expect(await lignesDuJournal()).toBe(journalAvant);
+	});
+
+	it('refuses to move a session from such a day, says so above the programme, and writes nothing', async () => {
+		const journalAvant = await lignesDuJournal();
+		const reponse = await postForm(
+			'/?/deplacer',
+			{ courseId: atelier, date: sansSeance, toDate: jour(3), toStart: '18:00' },
+			cookie
+		);
+		expect(reponse.status).toBe(400);
+		const html = await reponse.text();
+		expect(alerte(html)).toBe(PAS_DE_SEANCE.fr(ATELIER, dateLue('fr', sansSeance)));
+		expect(html.indexOf('role="alert"')).toBeLessThan(html.indexOf('id="jour-'));
+		expect(optionsDesSeances(html).filter((options) => options.ouvert)).toEqual([]);
+		expect(await exceptionsDuCours()).toEqual([]);
+		expect(await lignesDuJournal()).toBe(journalAvant);
+	});
+
+	it('refuses a day after the last day of the course, even on its day of the week', async () => {
+		for (const [action, envoi] of [
+			['annuler', { courseId: atelier, date: apresLaFin }],
+			['deplacer', { courseId: atelier, date: apresLaFin, toDate: jour(3), toStart: '18:00' }]
+		] as const) {
+			const reponse = await postForm(`/?/${action}`, envoi, cookie);
+			expect(reponse.status, action).toBe(400);
+			expect(alerte(await reponse.text()), action).toBe(
+				PAS_DE_SEANCE.fr(ATELIER, dateLue('fr', apresLaFin))
+			);
+		}
+		expect(await exceptionsDuCours()).toEqual([]);
+	});
+
+	it('still cancels and moves a session after the seven days of the screen, the next week', async () => {
+		const annule = await postForm(
+			'/?/annuler',
+			{ courseId: atelier, date: semaineSuivante },
+			cookie
+		);
+		try {
+			expect(annule.status).toBe(200);
+			expect(await exception(atelier, semaineSuivante)).toEqual({
+				kind: 'cancelled',
+				to_date: null,
+				to_start: null
+			});
+		} finally {
+			await retablir(atelier, semaineSuivante, cookie);
+		}
+		const deplace = await postForm(
+			'/?/deplacer',
+			{ courseId: atelier, date: semaineSuivante, toDate: jour(9), toStart: '18:00' },
+			cookie
+		);
+		try {
+			expect(deplace.status).toBe(200);
+			expect((await exception(atelier, semaineSuivante))?.to_date).toBe(jour(9));
+		} finally {
+			await retablir(atelier, semaineSuivante, cookie);
+		}
+	});
+
+	it('refuses to cancel or move a session moved to that day, as a card left open, and keeps the move', async () => {
+		// La séance de J+1 arrive au lendemain : l'écran la montre ce jour-là, « date exceptionnelle »,
+		// avec « Rétablir ». Une annulation écrite sous ce jour-là, où le rythme n'a pas de séance, serait
+		// ignorée par le calcul, et la séance aurait lieu quand même.
+		expect(
+			(
+				await postForm(
+					'/?/deplacer',
+					{ courseId: atelier, date: seance, toDate: sansSeance, toStart: '20:00' },
+					cookie
+				)
+			).status
+		).toBe(200);
+		try {
+			const deplacement = await exceptionsDuCours();
+			const journalAvant = await lignesDuJournal();
+			for (const [action, envoi] of [
+				['annuler', { courseId: atelier, date: sansSeance }],
+				['deplacer', { courseId: atelier, date: sansSeance, toDate: jour(3), toStart: '18:00' }]
+			] as const) {
+				const reponse = await postForm(`/?/${action}`, envoi, cookie);
+				expect(reponse.status, action).toBe(409);
+				const html = await reponse.text();
+				expect(alerte(html), action).toBe(CHANGEE.fr(ATELIER, dateLue('fr', sansSeance)));
+				expect(section(html, 'message-titre'), action).toBe('');
+			}
+			expect(await exceptionsDuCours()).toEqual(deplacement);
+			expect(await lignesDuJournal()).toBe(journalAvant);
+		} finally {
+			await retablir(atelier, seance, cookie);
+		}
+	});
+
+	it('answers « Rétablir » on a day without a session nor a change with a refusal, and writes nothing, not even the journal', async () => {
+		// Il n'y a rien à rétablir ce jour-là : rien ne s'écrit (étape 19, lot 1), ni dans la table des
+		// exceptions, ni au journal.
+		const journalAvant = await lignesDuJournal();
+		const reponse = await postForm('/?/retablir', { courseId: atelier, date: sansSeance }, cookie);
+		expect(reponse.status).toBe(409);
+		expect(alerte(await reponse.text())).toBe(DEJA_RETABLIE.fr(ATELIER, dateLue('fr', sansSeance)));
+		expect(await exceptionsDuCours()).toEqual([]);
+		expect(await lignesDuJournal()).toBe(journalAvant);
 	});
 });

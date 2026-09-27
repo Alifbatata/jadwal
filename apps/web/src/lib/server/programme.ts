@@ -335,21 +335,25 @@ export interface Programme {
 /**
  * Tout ce qu'il faut à l'écran d'accueil, en **cinq requêtes** : réglages, cours, exceptions,
  * pauses, heures de prière. Le calcul des séances est celui de `@jadwal/core`, jamais un autre.
+ *
+ * `days` jours à partir d'aujourd'hui, ou à partir de `from` : la même lecture, pour un autre jour
+ * que ceux de l'écran (`seanceOn`).
  */
 export async function readProgramme(
 	tx: Transaction,
 	now: Date,
 	days: number,
-	options: { statuses?: readonly string[] } = {}
+	options: { statuses?: readonly string[]; from?: IsoDate } = {}
 ): Promise<Programme> {
 	const settings = await readSettings(tx);
 	const today = todayInZone(settings.time_zone, now);
-	const to = addDays(today, days - 1);
+	const from = options.from ?? today;
+	const to = addDays(from, days - 1);
 	const [courses, exceptions, pauses, prayerDays] = [
 		await readCourses(tx, options.statuses),
-		await readExceptions(tx, today, to),
+		await readExceptions(tx, from, to),
 		await readPauses(tx),
-		await readPrayerDays(tx, settings.id, today, to)
+		await readPrayerDays(tx, settings.id, from, to)
 	];
 	// Même règle que côté public : le vendredi, l'iqama du Dhuhr est l'heure de la dernière session
 	// publiée (ADR 0033). Une session en brouillon s'affiche ici, à sa propre heure, mais ne donne pas
@@ -368,7 +372,7 @@ export async function readProgramme(
 		schedules: courses.map(toSchedule),
 		exceptions: exceptions.map(toException),
 		pauses: pauses.map(toPause),
-		range: { from: today, to },
+		range: { from, to },
 		prayerTimes: (date) => prayerTable.get(date)
 	});
 	const seances: Seance[] = occurrences.map((occurrence) => {
@@ -387,5 +391,26 @@ export async function readProgramme(
 						) ?? null)
 		};
 	});
-	return { from: today, to, today, courses, pauses, seances, settings };
+	return { from, to, today, courses, pauses, seances, settings };
+}
+
+/**
+ * La séance d'un cours un jour donné, telle que les écrans la montrent, pour l'annuler ou la déplacer
+ * (étape 19, lot 3) : la lecture de `readProgramme`, sur ce seul jour, qu'il soit dans les sept jours
+ * de l'écran ou non. `none` quand l'écran n'y montrerait aucune séance du cours : un autre jour de la
+ * semaine, avant son premier jour, après son dernier, pendant une pause. `elsewhere` quand il n'y
+ * montrerait qu'une séance arrivée d'un autre jour : une exception écrite sous ce jour-là, où le
+ * rythme n'a pas de séance, serait ignorée par le calcul (`expandOccurrences`). Sinon, la séance du
+ * rythme ce jour-là, prévue, annulée ou partie ailleurs.
+ */
+export async function seanceOn(
+	tx: Transaction,
+	now: Date,
+	courseId: string,
+	date: IsoDate
+): Promise<Seance | 'none' | 'elsewhere'> {
+	const { seances } = await readProgramme(tx, now, 1, { from: date });
+	const shown = seances.filter((seance) => seance.courseId === courseId);
+	if (shown.length === 0) return 'none';
+	return shown.find((seance) => seance.status !== 'moved_here') ?? 'elsewhere';
 }

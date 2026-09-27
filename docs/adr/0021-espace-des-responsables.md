@@ -173,6 +173,7 @@ vendredi » et des boutons d'une session s'affichent en tête de l'écran :
 | `unchanged`       | 400    | le déplacement vise le jour et l'heure où la session est déjà prévue                                                                                    |
 | `pastSession`     | 400    | l'annulation d'un jour déjà passé (étape 19, D2)                                                                                                        |
 | `pastDate`        | 400    | un déplacement vers un jour déjà passé (étape 19, lot 2)                                                                                                |
+| `notPlanned`      | 400    | annuler ou déplacer la session un jour où elle n'a pas lieu, un lundi ou après sa fin (lot 3)                                                           |
 | `sessionGone`     | 404    | la session n'existe pas, ou plus, ou l'identifiant est celui d'un cours                                                                                 |
 | `dateUnreadable`  | 400    | une date illisible, impossible (un 30 février) ou hors des années 1970 à 2100                                                                           |
 | `timeUnreadable`  | 400    | une heure illisible ou impossible, 25:99 par exemple                                                                                                    |
@@ -389,6 +390,29 @@ Deux défauts relevés par les chantiers du lot 2, chacun prouvé d'abord par so
   qu'avec JavaScript, où ils suivent le choix. Le serveur refuse toujours une heure fixe sans heure
   (`timeMissing`) et une prière sans minutes ou sans durée, avec leur phrase, et rien ne change
   avec JavaScript.
+- **Annuler et Déplacer un jour sans séance.** Aucune carte ne l'envoie, mais un formulaire écrit à
+  la main, ou une page restée ouverte pendant que le rythme d'un cours changeait, annulait une
+  session du vendredi un lundi, ou une séance d'« À venir » à toute date à partir d'aujourd'hui.
+  L'action répondait « annulée », et la base gardait une exception qui ne tombe sur aucune séance,
+  que le calcul ignore (`expandOccurrences`). Les deux écrans refusent désormais un jour où le cours
+  ou la session n'a pas de séance (`notPlanned`, 400) : rien ne s'écrit, pas même au journal. Sur
+  « À venir », la phrase nomme le cours, par son titre isolé (`<bdi>`, ADR 0007), et le jour.
+
+  Les séances comptent comme l'écran les montre, par la même lecture (`seanceOn`, qui passe par
+  `readProgramme` sur ce seul jour) : le rythme, le premier et le dernier jour, les pauses, et les
+  séances arrivées d'un autre jour. Le jour peut être hors des sept jours de l'écran : une séance
+  de la semaine suivante s'annule et se déplace toujours. Une séance arrivée d'un autre jour compte
+  comme une séance, et ne reçoit donc pas cette phrase, mais elle ne s'annule ni ne se déplace sous
+  ce jour-là : son exception y serait écrite là où le rythme n'a pas de séance, et le calcul
+  l'ignorerait. Sa carte n'a que « Rétablir », et l'envoi reçoit le refus d'une carte périmée
+  (`changed`, 409), comme une séance qui n'est plus prévue telle quelle. L'heure prévue qui sert à
+  refuser un déplacement sans changement, ou une carte dont l'heure a changé, reste celle des sept
+  jours de l'écran, comme l'a décidé l'étape 18.
+
+  Rétablir ne change pas : un jour sans exception n'a rien à rétablir, et rien ne s'écrit depuis le
+  lot 1 (`alreadyRestored`, 409). Un test le prouve maintenant sur les deux écrans, pour un jour où
+  le cours n'a pas de séance. Un « Rétablir » sur une nouvelle date dont la date d'origine est
+  passée reste tel quel : il attend une décision.
 
 ## Statut
 
@@ -400,4 +424,5 @@ dit comme un changement d'heure. Complété le 27.09.2026 (étape 19) : l'heure 
 les refus de l'écran du vendredi, les dates que les deux écrans acceptent, et la relecture
 d'« À venir » ; au lot 2, les écrans des cours, puis Rétablir qui envoie l'exception que sa carte
 montrait, et l'écran du vendredi qui refuse un jour passé et rétablit une nouvelle date ; au lot 3,
-les champs de l'horaire d'un cours, exigés seulement avec JavaScript.
+les champs de l'horaire d'un cours, exigés seulement avec JavaScript, et les deux écrans qui
+refusent d'annuler ou de déplacer une séance un jour où le cours n'en a pas.

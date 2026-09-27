@@ -5,11 +5,11 @@
 // page publique, le mode intégré, le flux agenda. Rien n'est simulé — vrai serveur, vraie base,
 // vrais formulaires sans JavaScript.
 
-import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, inject, it } from 'vitest';
 import ICAL from 'ical.js';
 import { addDays, isoDateToDays, todayInZone, weekdayFromDays, type IsoDate } from '@jadwal/core';
 import { analyserCalendrier } from '@jadwal/core/prayer';
-import { createDatabase, newId, sql, type DatabaseHandle } from '@jadwal/db';
+import { createDatabase, newId, sql, withOrg, type DatabaseHandle } from '@jadwal/db';
 import { conditionsAcceptees } from './conditions-acceptees.js';
 
 const origin = inject('origin');
@@ -19,6 +19,7 @@ const testDatabase = inject('testDatabase');
 let ownerHandle: DatabaseHandle;
 let cookie: string;
 let organizationId: string;
+let userId: string;
 let salleId: string;
 
 const SLUG = 'vendredi';
@@ -103,7 +104,7 @@ function blocDuVendredi(html: string): string[] {
 beforeAll(async () => {
 	ownerHandle = createDatabase({ role: 'owner', overrides: { database: testDatabase } });
 	organizationId = newId();
-	const userId = newId();
+	userId = newId();
 	salleId = newId();
 	const soirId = newId();
 	const midiId = newId();
@@ -547,6 +548,182 @@ describe('les sessions du vendredi', () => {
 		const heures = heuresAffichees(await page(`/m/${SLUG}`));
 		expect(heures).not.toContain('12:10 – 12:50');
 		expect(heures).toContain('13:30 – 14:10');
+	});
+});
+
+describe('un jour où la session n’a pas lieu (étape 19, lot 3)', () => {
+	// Aucune ligne de « Ce vendredi » ne l'envoie, mais un formulaire écrit à la main annulait une
+	// session un lundi : l'action répondait 200 et gardait une exception qui ne tombe sur aucune séance.
+	// Les séances comptent comme l'écran les montre, du calcul de `@jadwal/core`, quel que soit le jour.
+	const LANGUES = ['fr', 'de', 'it', 'en', 'ar'] as const;
+	const PAS_CE_JOUR: Record<(typeof LANGUES)[number], string> = {
+		fr: 'Cette session n’a pas lieu ce jour-là. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.',
+		de: 'Dieser Durchgang findet an diesem Tag nicht statt. Es wurde nichts gespeichert. Der Abschnitt «Diesen Freitag» weiter unten ist aktuell.',
+		it: 'Questo turno non si tiene quel giorno. Non è stato salvato niente. La sezione «Questo venerdì», più in basso, è aggiornata.',
+		en: 'This session does not take place on that day. Nothing has been saved. The ‘This Friday’ section further down shows the latest changes.',
+		ar: 'هذا الموعد لا يُقام في ذلك اليوم. لم يُحفظ أي شيء. قسم «هذه الجمعة» في الأسفل محدَّث.'
+	};
+	const CHANGEE =
+		'Cette session a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée ce jour-là. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.';
+	const DEJA_RETABLIE =
+		'Cette session a déjà été rétablie depuis l’ouverture de la page. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.';
+
+	const vendredi = () => prochainVendredi(todayInZone(FUSEAU, new Date()));
+	/** Le lundi qui suit le prochain vendredi : aucune session n'a lieu ce jour-là. */
+	const lundi = () => addDays(vendredi(), 3);
+	let journal: DatabaseHandle;
+	/** La première session, close hier (« change de saison »), et la deuxième, qui continue. */
+	let close = '';
+	let continue_ = '';
+
+	/** Les phrases du bloc des erreurs en tête de l'écran. */
+	function enTete(html: string): string[] {
+		const bloc = html.match(/<div\b[^>]*role="alert"[^>]*>([\s\S]*?)<\/div>/)?.[1] ?? '';
+		return [...bloc.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)].map((trouve) =>
+			(trouve[1] ?? '').replace(/<!--[\s\S]*?-->/g, '').trim()
+		);
+	}
+
+	/** Les lignes du journal de l'organisation, lues par le rôle applicatif. */
+	async function lignesDuJournal(): Promise<number> {
+		return withOrg(journal.db, { organizationId, userId }, async (tx) =>
+			rows<{ n: number }>(await tx.execute(sql`select count(*)::int as n from "audit_log"`))
+		).then((trouve) => trouve[0]?.n ?? 0);
+	}
+
+	/** Toutes les exceptions des sessions : un refus n'en écrit aucune. */
+	async function exceptions(): Promise<unknown[]> {
+		return maintenance(async (tx) =>
+			rows(
+				await tx.execute(sql`
+					select "course_id", "date"::text, "kind", "to_date"::text from "session_exception"
+					where "organization_id" = ${organizationId} order by "course_id", "date"
+				`)
+			)
+		);
+	}
+
+	async function poserLangue(langue: string): Promise<void> {
+		await maintenance((tx) =>
+			tx.execute(sql`update "user" set "language" = ${langue} where "id" = ${userId}`)
+		);
+	}
+
+	beforeAll(async () => {
+		journal = createDatabase({ role: 'app', overrides: { database: testDatabase } });
+		const sessions = await maintenance(async (tx) =>
+			rows<{ id: string; jumua_order: number }>(
+				await tx.execute(sql`
+					select "id", "jumua_order" from "course"
+					where "organization_id" = ${organizationId} and "kind" = 'jumua'
+				`)
+			)
+		);
+		close = sessions.find((session) => session.jumua_order === 1)?.id ?? '';
+		continue_ = sessions.find((session) => session.jumua_order === 2)?.id ?? '';
+		expect([close, continue_].every(Boolean), 'les deux sessions des tests d’avant').toBe(true);
+	});
+
+	// Ce qu'un envoi aurait écrit ne reste pas pour le test suivant.
+	afterEach(async () => {
+		await maintenance((tx) =>
+			tx.execute(sql`
+				delete from "session_exception" where "organization_id" = ${organizationId}
+			`)
+		);
+	});
+
+	afterAll(async () => {
+		await journal?.close();
+	});
+
+	it('refuses to cancel or move a session on a Monday, says so at the top in each language, and writes nothing, not even the journal', async () => {
+		const journalAvant = await lignesDuJournal();
+		try {
+			for (const langue of LANGUES) {
+				await poserLangue(langue);
+				for (const [action, envoi] of [
+					['annuler', { courseId: continue_, date: lundi() }],
+					[
+						'deplacer',
+						{ courseId: continue_, date: lundi(), toDate: addDays(lundi(), 1), toStart: '13:30' }
+					]
+				] as const) {
+					const reponse = await postForm(`/vendredi?/${action}`, envoi);
+					expect(reponse.status, `${action} ${langue}`).toBe(400);
+					expect(enTete(await reponse.text()), `${action} ${langue}`).toEqual([
+						PAS_CE_JOUR[langue]
+					]);
+				}
+			}
+		} finally {
+			await poserLangue('fr');
+		}
+		expect(await exceptions()).toEqual([]);
+		expect(await lignesDuJournal()).toBe(journalAvant);
+	});
+
+	it('refuses a Friday after the last day of a session', async () => {
+		// La première session s'est arrêtée hier : ce vendredi, elle n'a plus lieu.
+		for (const [action, envoi] of [
+			['annuler', { courseId: close, date: vendredi() }],
+			['deplacer', { courseId: close, date: vendredi(), toDate: vendredi(), toStart: '12:30' }]
+		] as const) {
+			const reponse = await postForm(`/vendredi?/${action}`, envoi);
+			expect(reponse.status, action).toBe(400);
+			expect(enTete(await reponse.text()), action).toEqual([PAS_CE_JOUR.fr]);
+		}
+		expect(await exceptions()).toEqual([]);
+	});
+
+	it('still cancels a session on a Friday after the seven days of the screen', async () => {
+		const plusTard = addDays(vendredi(), 7);
+		const reponse = await postForm('/vendredi?/annuler', { courseId: continue_, date: plusTard });
+		expect(reponse.status).toBe(200);
+		expect(await exceptions()).toEqual([
+			{ course_id: continue_, date: plusTard, kind: 'cancelled', to_date: null }
+		]);
+	});
+
+	it('refuses to cancel or move a session moved to another day on that day, and keeps the move', async () => {
+		// La deuxième session passe du vendredi au jeudi ou au samedi : « Ce vendredi » la montre ce
+		// jour-là avec « Rétablir comme d'habitude ». Une annulation écrite sous ce jour-là serait
+		// ignorée par le calcul, et la session aurait lieu quand même.
+		const today = todayInZone(FUSEAU, new Date());
+		const date = vendredi();
+		const versLe = addDays(date, 1) > addDays(today, 6) ? addDays(date, -1) : addDays(date, 1);
+		expect(
+			(
+				await postForm('/vendredi?/deplacer', {
+					courseId: continue_,
+					date,
+					toDate: versLe,
+					toStart: '15:00'
+				})
+			).status
+		).toBe(200);
+		const deplacement = await exceptions();
+		const journalAvant = await lignesDuJournal();
+		for (const [action, envoi] of [
+			['annuler', { courseId: continue_, date: versLe }],
+			['deplacer', { courseId: continue_, date: versLe, toDate: versLe, toStart: '16:00' }]
+		] as const) {
+			const reponse = await postForm(`/vendredi?/${action}`, envoi);
+			expect(reponse.status, action).toBe(409);
+			expect(enTete(await reponse.text()), action).toEqual([CHANGEE]);
+		}
+		expect(await exceptions()).toEqual(deplacement);
+		expect(await lignesDuJournal()).toBe(journalAvant);
+	});
+
+	it('answers « Rétablir » on a Monday with a refusal, and writes nothing, not even the journal', async () => {
+		// Il n'y a rien à rétablir ce jour-là : rien ne s'écrit (étape 19, lot 1).
+		const journalAvant = await lignesDuJournal();
+		const reponse = await postForm('/vendredi?/retablir', { courseId: continue_, date: lundi() });
+		expect(reponse.status).toBe(409);
+		expect(enTete(await reponse.text())).toEqual([DEJA_RETABLIE]);
+		expect(await exceptions()).toEqual([]);
+		expect(await lignesDuJournal()).toBe(journalAvant);
 	});
 });
 

@@ -32,6 +32,12 @@
 // ligne d'une session arrivée d'un autre jour a son « Rétablir » ; et chaque « Rétablir » envoie ce
 // que sa ligne montrait, pour qu'une page restée ouverte n'efface pas un changement fait depuis
 // (`$lib/server/exceptions.ts`).
+//
+// Étape 19, lot 3 : annuler ou déplacer une session un jour où elle n'a pas lieu, un lundi, ou un
+// vendredi hors de sa période, est refusé (`notPlanned`) et n'écrit rien. Un formulaire écrit à la
+// main écrivait une exception qui ne tombe sur aucune séance. Les séances comptent comme « Ce
+// vendredi » et « À venir » les montrent (`seanceOn`). Une session arrivée d'un autre jour se
+// rétablit, et ne s'annule ni ne se déplace sous ce jour-là, où le calcul ignorerait l'exception.
 
 import { fail } from '@sveltejs/kit';
 import { addDays, isLocalTime, todayInZone, type IsoDate } from '@jadwal/core';
@@ -46,7 +52,13 @@ import { FIRST_SUPPORTED_DATE, isSupportedDate, LAST_SUPPORTED_DATE } from '$lib
 import { currentChange, restore, shownChange } from '$lib/server/exceptions.js';
 import { fridayTitle } from '$lib/server/friday-title.js';
 import { mustHavePrayerModule } from '$lib/server/guard.js';
-import { readCourses, readProgramme, readRooms, readSettings } from '$lib/server/programme.js';
+import {
+	readCourses,
+	readProgramme,
+	readRooms,
+	readSettings,
+	seanceOn
+} from '$lib/server/programme.js';
 import { parseFridayForm, proposedOrder, readFridayEntry } from './form.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
@@ -346,6 +358,11 @@ export const actions: Actions = {
 			// dates civiles au même format se comparent comme des chaînes.
 			const settings = await readSettings(tx);
 			if (date < todayInZone(settings.time_zone, maintenant)) return refus(400, 'pastSession');
+			// Un jour où la session n'a pas lieu, ou n'a qu'une séance arrivée d'un autre jour : aucune
+			// ligne ne l'envoie, et l'exception écrite ne tomberait sur aucune séance (lot 3).
+			const seance = await seanceOn(tx, maintenant, courseId, date);
+			if (seance === 'none') return refus(400, 'notPlanned');
+			if (seance === 'elsewhere') return refus(409, 'changed');
 			// Une session déjà annulée ou déplacée ce jour-là garde ce qui lui est arrivé :
 			// l'annulation ne s'écrit que si la place est libre, et rien ne s'écrit sinon, pas même
 			// le journal.
@@ -382,10 +399,16 @@ export const actions: Actions = {
 		const maintenant = new Date();
 		return withSessionOrg(context, async (tx) => {
 			if (!(await sessionExiste(tx, courseId))) return refus(404, 'sessionGone');
+			// Un jour où la session n'a pas lieu : il n'y a rien à déplacer (lot 3).
+			const montreeCeJour = await seanceOn(tx, maintenant, courseId, date);
+			if (montreeCeJour === 'none') return refus(400, 'notPlanned');
 			// Une session déjà annulée ou déplacée ce jour-là n'a rien à corriger, quel que soit le jour
 			// choisi : ce refus passe avant les autres, comme sur « À venir » (étape 19, lot 2). Un envoi
-			// arrivé au même instant est encore refusé par l'écriture, plus bas.
-			if ((await currentChange(tx, courseId, date)) !== null) return refus(409, 'changed');
+			// arrivé au même instant est encore refusé par l'écriture, plus bas. Une session arrivée d'un
+			// autre jour se rétablit, et ne se déplace pas sous ce jour-là (lot 3).
+			if (montreeCeJour === 'elsewhere' || (await currentChange(tx, courseId, date)) !== null) {
+				return refus(409, 'changed');
+			}
 			const seance = await seancePrevue(tx, maintenant, courseId, date);
 			// La carte envoie l'heure qu'elle montrait (`plannedStart`) ; une session du vendredi a
 			// toujours une heure fixe. Quand elle n'est plus prévue à cette heure-là, son heure a

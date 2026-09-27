@@ -42,7 +42,13 @@
 //   pas, donnait une erreur 500 à Déplacer et à Rétablir (relecture de D2) ;
 // - la carte « Rétablir » envoie ce qu'elle montrait, comme celle d'un déplacement envoie son heure :
 //   une séance rétablie puis changée de nouveau par une autre personne garde ce changement, et la
-//   carte périmée est refusée (lot 2, `$lib/server/exceptions.ts`).
+//   carte périmée est refusée (lot 2, `$lib/server/exceptions.ts`) ;
+// - annuler ou déplacer une séance un jour où le cours n'en a pas est refusé (`notPlanned`), et
+//   n'écrit rien : l'action acceptait toute date à partir d'aujourd'hui, et gardait une exception qui
+//   ne tombe sur aucune séance. Les séances comptent comme l'écran les montre (`seanceOn`), ce jour-là
+//   qu'il soit dans les sept jours ou non. Une séance arrivée d'un autre jour ne s'annule ni ne se
+//   déplace sous ce jour-là, où le calcul ignorerait l'exception : sa carte n'a que « Rétablir », et
+//   l'envoi reçoit le refus d'une carte périmée (lot 3).
 
 import { fail } from '@sveltejs/kit';
 import { todayInZone, type IsoDate } from '@jadwal/core';
@@ -56,7 +62,7 @@ import { currentChange, restore, shownChange } from '$lib/server/exceptions.js';
 import { fridayTitle } from '$lib/server/friday-title.js';
 import { mustBeInOrganisation } from '$lib/server/guard.js';
 import { etatDesSources, readReglages } from '$lib/server/prieres.js';
-import { readProgramme, readSettings } from '$lib/server/programme.js';
+import { readProgramme, readSettings, seanceOn } from '$lib/server/programme.js';
 import { lireAudience } from '$lib/server/vues.js';
 import { cancellationMessage, moveMessage, weekMessage } from '$lib/messages.js';
 import type { Actions, PageServerLoad } from './$types.js';
@@ -225,7 +231,7 @@ function refuse(
  * sa date (étape 19, D4). Le statut est 409 : la séance a changé depuis l'ouverture de la page.
  */
 function refuseStale(
-	error: NamedUpcomingError,
+	error: Exclude<NamedUpcomingError, 'notPlanned'>,
 	course: { title: (language: Langue) => string },
 	language: Langue,
 	fields: Parameters<typeof refuse>[1]
@@ -360,6 +366,13 @@ export const actions: Actions = {
 			if (date < todayInZone(settings.time_zone, now)) {
 				return refuse('pastSession', { courseId, date });
 			}
+			// Un jour où le cours n'a pas de séance, ou n'a qu'une séance arrivée d'un autre jour :
+			// aucune carte ne l'envoie, et l'exception écrite ne tomberait sur aucune séance (lot 3).
+			const seance = await seanceOn(tx, now, courseId, date);
+			if (seance === 'none') {
+				return refuse('notPlanned', { courseId, date, title: course.title(langue) });
+			}
+			if (seance === 'elsewhere') return refuseStale('changed', course, langue, { courseId, date });
 			// Une séance déjà annulée ou déplacée garde ce qui lui est arrivé : l'annulation ne
 			// s'écrit que si la place est libre, et rien ne s'écrit sinon, pas même le journal.
 			const written = rows<{ id: string }>(
@@ -418,9 +431,16 @@ export const actions: Actions = {
 		return withSessionOrg(context, async (tx) => {
 			const course = await readCourse(tx, courseId);
 			if (!course) return refuse('sessionGone', fields, 404);
+			// Un jour où le cours n'a pas de séance : il n'y a rien à déplacer (lot 3).
+			const onTheDay = await seanceOn(tx, now, courseId, date);
+			if (onTheDay === 'none') {
+				return refuse('notPlanned', { ...fields, title: course.title(langue) });
+			}
 			// Avant les autres refus : une carte restée ouverte sur une séance déjà annulée ou
-			// déplacée n'a rien à corriger, quelle que soit la date choisie.
-			if ((await currentChange(tx, courseId, date)) !== null) {
+			// déplacée n'a rien à corriger, quelle que soit la date choisie. Une séance arrivée d'un
+			// autre jour se rétablit, et ne se déplace pas sous ce jour-là, où le calcul ignorerait
+			// l'exception (lot 3).
+			if (onTheDay === 'elsewhere' || (await currentChange(tx, courseId, date)) !== null) {
 				return refuseStale('changed', course, langue, fields);
 			}
 			const seance = await plannedSeance(tx, now, courseId, date);
