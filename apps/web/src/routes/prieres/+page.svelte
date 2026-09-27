@@ -171,11 +171,13 @@
 	/**
 	 * « Hors de Suisse » s'ouvre quand la position ne vient pas de la liste. Une position tapée alors
 	 * qu'une localité restait cochée en est une : le serveur l'a prise à la place de la localité, et
-	 * l'écran revient avec « Hors de Suisse » cochée et ce repli ouvert (étape 19, lot 2).
+	 * l'écran revient avec « Hors de Suisse » cochée et ce repli ouvert (étape 19, lot 2). L'un des
+	 * deux nombres suffit : latitude vide et longitude remplie, le repli restait fermé sur l'erreur
+	 * « Donnez la latitude et la longitude », et cachait le champ dont elle parle.
 	 */
 	const horsDeSuisse = $derived(
 		saisie
-			? saisie.locality === null && saisie.latitude !== ''
+			? saisie.locality === null && (saisie.latitude !== '' || saisie.longitude !== '')
 			: data.reglages.latitude !== null && data.savedLocality === null
 	);
 	/** Les réglages avancés s'ouvrent quand l'un d'eux n'a plus sa valeur proposée. */

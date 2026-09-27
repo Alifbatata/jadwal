@@ -700,6 +700,42 @@ describe('la localité, par son nom ou son NPA (retour C2)', () => {
 		expect(await positionEnregistree()).toEqual(BIENNE);
 	});
 
+	it('opens « Outside Switzerland » on an error in the typed position, whichever number is left', async () => {
+		// Bienne est enregistrée et cochée, et la page a rempli ses deux nombres. Vider l'un d'eux en
+		// fait une position tapée, que le serveur refuse. Le repli ne s'ouvrait que sur une latitude
+		// remplie : latitude vidée, l'écran revenait avec l'erreur et le repli fermé, qui cachait la
+		// longitude dont elle parle (relecture du lot 2 de l'étape 19).
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		expect(await positionEnregistree()).toEqual(BIENNE);
+		const html = await (await get('/prieres?source=computed')).text();
+		const envoyes = champsEnvoyes(html, '?source=computed&/enregistrer');
+		expect(envoyes['localite']).toBe(BIENNE_CHOISIE);
+		const moitie = 'Donnez la latitude et la longitude, ou aucune des deux.';
+		const illisible = 'La position s’écrit en degrés décimaux, par exemple 47.1368.';
+		const hors = caseHorsDeSuisse(html)?.valeur ?? '';
+		for (const [cas, change, erreur] of [
+			['latitude vidée', { latitude: '' }, moitie],
+			['longitude vidée', { longitude: '' }, moitie],
+			['latitude vidée, longitude illisible', { latitude: '', longitude: 'est' }, illisible],
+			['« Hors de Suisse » cochée, longitude seule', { localite: hors, latitude: '' }, moitie]
+		] as const) {
+			const champs: Record<string, string> = { ...envoyes, ...change };
+			for (const action of ['apercu', 'enregistrer']) {
+				const reponse = await postForm(`/prieres?source=computed&/${action}`, champs);
+				expect(reponse.status, `${cas}, ${action}`).toBe(400);
+				const rendu = await reponse.text();
+				expect(visibleText(rendu), `${cas}, ${action}`).toContain(erreur);
+				expect(caseHorsDeSuisse(rendu)?.cochee, `${cas}, ${action}`).toBe(true);
+				expect(replie(rendu, HORS_DE_SUISSE.fr), `${cas}, ${action}`).toMatch(
+					/<details\b[^>]*\sopen/
+				);
+				expect(valeurDuChamp(rendu, 'latitude'), `${cas}, ${action}`).toBe(champs['latitude']);
+				expect(valeurDuChamp(rendu, 'longitude'), `${cas}, ${action}`).toBe(champs['longitude']);
+			}
+		}
+		expect(await positionEnregistree()).toEqual(BIENNE);
+	});
+
 	it('saves a locality chosen while another position is saved, with the two numbers the page fills in from it', async () => {
 		// Paris est enregistré. Avec JavaScript, cocher Bienne écrit sa position dans les deux champs
 		// de « Hors de Suisse » : le formulaire envoie Bienne et ses deux nombres, qui ne sont pas ceux
