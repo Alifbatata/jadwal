@@ -392,6 +392,15 @@ Deux défauts relevés par les chantiers du lot 2, chacun prouvé d'abord par so
   avec JavaScript. Une organisation sans le module des prières n'a pas ce choix : l'heure fixe y
   est la seule, et ses deux heures restent `required`, avec ou sans JavaScript (relecture du
   lot 3).
+
+  Les bornes des minutes suivent la même règle (relecture du lot 3). Sur une page rendue pour
+  « avant une prière », passer à « après une prière » ne change pas la page sans JavaScript, et le
+  champ gardait les bornes d'avant la prière, de 1 à 120 : le navigateur refusait d'envoyer
+  0 minute, juste après la prière, ou plus de 120 minutes, justes pourtant après une prière. Sans
+  JavaScript, le champ porte donc les bornes des deux choix réunies, de 0 à 240 ; avec JavaScript,
+  il prend celles du choix. Le serveur garde les bornes de chaque choix, et refuse ce qui en sort
+  avec la phrase des minutes.
+
 - **Annuler et Déplacer un jour sans séance.** Aucune carte ne l'envoie, mais un formulaire écrit à
   la main, ou une page restée ouverte pendant que le rythme d'un cours changeait, annulait une
   session du vendredi un lundi, ou une séance d'« À venir » à toute date à partir d'aujourd'hui.
@@ -426,5 +435,5 @@ dit comme un changement d'heure. Complété le 27.09.2026 (étape 19) : l'heure 
 les refus de l'écran du vendredi, les dates que les deux écrans acceptent, et la relecture
 d'« À venir » ; au lot 2, les écrans des cours, puis Rétablir qui envoie l'exception que sa carte
 montrait, et l'écran du vendredi qui refuse un jour passé et rétablit une nouvelle date ; au lot 3,
-les champs de l'horaire d'un cours, exigés seulement avec JavaScript, et les deux écrans qui
-refusent d'annuler ou de déplacer une séance un jour où le cours n'en a pas.
+les champs de l'horaire d'un cours, exigés et bornés selon le choix seulement avec JavaScript, et
+les deux écrans qui refusent d'annuler ou de déplacer une séance un jour où le cours n'en a pas.

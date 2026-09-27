@@ -271,6 +271,28 @@ function obligatoiresVides(html: string, envoye: readonly (readonly [string, str
 		.filter((nom) => !envoye.some(([envoi, valeur]) => envoi === nom && valeur !== ''));
 }
 
+/**
+ * Les champs numériques d'une page dont la valeur envoyée sort de leurs bornes (`min`, `max`). Un
+ * navigateur n'envoie pas non plus un nombre hors de ses bornes : il s'arrête avant le serveur.
+ */
+function horsDesBornes(html: string, envoye: readonly (readonly [string, string])[]): string[] {
+	return [...html.matchAll(/<input\b([^>]*)>/g)]
+		.map((trouve) => trouve[1] ?? '')
+		.filter((attributs) => /\btype="number"/.test(attributs))
+		.filter((attributs) => {
+			const nom = attributs.match(/\bname="([^"]*)"/)?.[1];
+			const valeur = envoye.find(([envoi]) => envoi === nom)?.[1] ?? '';
+			if (valeur.trim() === '' || !Number.isFinite(Number(valeur))) return false;
+			const min = attributs.match(/\bmin="([^"]*)"/)?.[1];
+			const max = attributs.match(/\bmax="([^"]*)"/)?.[1];
+			return (
+				(min !== undefined && Number(valeur) < Number(min)) ||
+				(max !== undefined && Number(valeur) > Number(max))
+			);
+		})
+		.map((attributs) => attributs.match(/\bname="([^"]*)"/)?.[1] ?? '');
+}
+
 /** Ce que le navigateur renvoie : la page telle qu'elle est revenue, avec ces champs changés. */
 function renvoi(html: string, changes: Record<string, string>): [string, string][] {
 	return champsDuFormulaire(html).map(([nom, valeur]) => [nom, changes[nom] ?? valeur]);
@@ -1788,12 +1810,64 @@ describe('un cours avant une prière (C3)', () => {
 		}
 	);
 
+	it.each([
+		['0', 0],
+		['180', 180]
+	] as const)(
+		'lets a browser without JavaScript choose « après une prière » with %s minutes on a page shown before a prayer (étape 19, lot 3)',
+		async (minutes, decalage) => {
+			// Sans JavaScript, passer d'« avant une prière » à « après une prière » ne change pas la page :
+			// le champ des minutes garde les bornes d'avant la prière, de 1 à 120. Le navigateur refusait
+			// d'envoyer 0 minute, juste après la prière, ou plus de 120, justes pourtant après une prière,
+			// et il fallait d'abord envoyer des minutes qu'on ne voulait pas (relecture du lot 3). Sans
+			// JavaScript, le champ porte les bornes des deux choix réunies, et le serveur garde celles
+			// du choix envoyé.
+			const versApres = { timingKind: 'prayer', offsetMinutes: minutes };
+			// La fiche d'un cours enregistré à −10, rendue « avant une prière ».
+			const fiche = await (await get(`/cours/${tafsirId}`, cookie)).text();
+			expect(libelle(fiche, 'offsetMinutes')).toBe('Combien de minutes avant la prière ?');
+			expect(horsDesBornes(fiche, renvoi(fiche, versApres))).toEqual([]);
+
+			// Un nouveau cours « avant une prière » envoyé sans minutes revient rendu pour ce choix.
+			const titreDuCours = `Après la prière, ${minutes} minutes`;
+			const sansMinutes = await postForm(
+				'/cours/nouveau',
+				coursAncre(titreDuCours, 'beforePrayer', ''),
+				cookie
+			);
+			expect(sansMinutes.status).toBe(400);
+			const pageAvant = await sansMinutes.text();
+			expect(libelle(pageAvant, 'offsetMinutes')).toBe('Combien de minutes avant la prière ?');
+
+			// Avant une prière, le navigateur laisse aussi partir ces minutes : c'est le serveur qui les
+			// refuse, avec sa phrase, et rien ne s'écrit.
+			const resteAvant = renvoi(pageAvant, { offsetMinutes: minutes });
+			expect(horsDesBornes(pageAvant, resteAvant)).toEqual([]);
+			const refus = await postForm('/cours/nouveau', resteAvant, cookie);
+			expect(refus.status).toBe(400);
+			expect(erreurs(await refus.text())).toEqual([
+				'Avant une prière : de 1 à 120 minutes, en chiffres. Exemple : 10'
+			]);
+			expect(await decalageEnBase(titreDuCours)).toEqual([]);
+
+			// Après une prière, le navigateur les envoie, et le cours s'enregistre.
+			const envoi = renvoi(pageAvant, versApres);
+			expect(horsDesBornes(pageAvant, envoi)).toEqual([]);
+			expect(obligatoiresVides(pageAvant, envoi)).toEqual([]);
+			const reponse = await postForm('/cours/nouveau', envoi, cookie);
+			expect(reponse.status, erreurs(await reponse.clone().text()).join(' | ')).toBe(303);
+			expect(await decalageEnBase(titreDuCours)).toEqual([{ kind: 'prayer', offset: decalage }]);
+		}
+	);
+
 	it('opens a course stored at −10 on « avant une prière » and 10 minutes', async () => {
 		const html = await (await get(`/cours/${tafsirId}`, cookie)).text();
 		expect(options(html, 'timingKind').find((option) => option.choisie)?.valeur).toBe(
 			'beforePrayer'
 		);
-		expect(champ(html, 'offsetMinutes')).toMatchObject({ value: '10', min: '1', max: '120' });
+		// Rendu par le serveur, le champ porte les bornes des deux choix réunies : celles d'avant une
+		// prière, de 1 à 120, ne viennent qu'avec JavaScript (relecture du lot 3).
+		expect(champ(html, 'offsetMinutes')).toMatchObject({ value: '10', min: '0', max: '240' });
 		expect(libelle(html, 'offsetMinutes')).toBe('Combien de minutes avant la prière ?');
 		expect(options(html, 'prayer').find((option) => option.choisie)).toEqual({
 			valeur: 'maghrib',

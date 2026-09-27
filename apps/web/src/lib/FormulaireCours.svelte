@@ -443,7 +443,12 @@
 					<option value={prayer}>{prayerLabel(prayer, language)}</option>
 				{/each}
 			</select>
-			<!-- Des minutes toujours positives : le sens est dans le choix du dessus (retour C3). -->
+			<!-- Des minutes toujours positives : le sens est dans le choix du dessus (retour C3). Avec
+			     JavaScript, les bornes suivent ce choix : de 1 à 120 avant une prière, de 0 à 240 après.
+			     Sans JavaScript, passer d'avant à après ne change pas la page, et les bornes d'avant
+			     arrêtaient 0 minute ou plus de 120. Le champ y porte donc les bornes des deux choix
+			     réunies, de 0 à 240, et le serveur refuse ce qui sort de celles du choix envoyé, avec sa
+			     phrase (relecture du lot 3). -->
 			<label for="offsetMinutes">
 				{before ? text.minutesBeforeLabel : text.minutesAfterLabel}
 			</label>
@@ -451,8 +456,8 @@
 				id="offsetMinutes"
 				type="number"
 				name="offsetMinutes"
-				min={before ? 1 : 0}
-				max={before ? -MIN_OFFSET_MINUTES : MAX_OFFSET_MINUTES}
+				min={hydrated && before ? 1 : 0}
+				max={hydrated && before ? -MIN_OFFSET_MINUTES : MAX_OFFSET_MINUTES}
 				step="1"
 				required={hydrated}
 				bind:value={entry.offsetMinutes}

@@ -230,6 +230,16 @@ lot 3 de l'étape 19, `Heure de début` et `Heure de fin` étaient toujours exig
 rendue pour une heure fixe, heures vides, il fallait taper des heures qui ne servent à rien pour
 voir les champs de la prière, et, dans l'autre sens, des minutes pour revenir à une heure fixe.
 
+Les bornes des minutes suivent la même règle. Sans JavaScript, le champ porte celles des deux choix
+réunies, de 0 à 240 (`min` et `max`) : il n'arrête que ce qu'aucun des deux choix n'accepte. Sur
+une page rendue pour `avant une prière`, passer à `après une prière` ne change pas la page, et le
+champ gardait les bornes d'avant la prière, de 1 à 120 : le navigateur refusait d'envoyer 0 minute,
+juste après la prière, ou plus de 120 minutes, justes pourtant après une prière, et il fallait
+d'abord envoyer des minutes qu'on ne voulait pas. Le serveur garde les bornes de chaque choix, et
+refuse ce qui en sort avec la phrase des minutes : `Avant une prière : de 1 à 120 minutes, en
+chiffres. Exemple : 10` pour 0 minute avant une prière. Avec JavaScript, les bornes suivent le
+choix, de 1 à 120 avant une prière et de 0 à 240 après, comme avant (relecture du lot 3).
+
 Une organisation sans le module des prières n'a pas `Comment fixer l'heure ?` : l'heure fixe est la
 seule façon, et il n'y a rien à changer. `Heure de début` et `Heure de fin` y restent donc exigées
 par le navigateur, avec ou sans JavaScript, sur un nouveau cours comme sur sa fiche. La première
