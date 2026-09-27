@@ -38,14 +38,15 @@
  *
  * Depuis l'étape 19, le nom est aussi cherché **partout dans le PDF**, et non plus dans une seule
  * phrase : un nom écrit juste à côté de « Voltia », au chapeau ou au milieu d'un paragraphe, passait.
- * Le texte que Chrome a dessiné est relu, page par page, pied de page compris ; chaque « Voltia » y
- * est lu avec toute sa phrase, et chaque phrase qui nomme l'exploitant ou le titulaire des droits
- * d'auteur doit nommer Voltia. Quand le poste porte la liste privée des termes interdits, celle du
- * garde-fou, aucun de ses termes ne doit paraître dans le PDF, ni dans ses pages, ni dans ses
- * métadonnées. Un terme trouvé n'est jamais recopié : seul son numéro dans la liste est donné. Le
- * contrôle du nom ne recopie pas le nom qu'il lit, et tout ce que l'épreuve écrit passe par le même
- * masque (`masquer`) : un terme de la liste n'en sort que par son rang. Le onzième point, enfin, dit
- * comme un fait que Voltia est une entreprise individuelle, ce que l'exploitant a confirmé.
+ * Le texte que Chrome a dessiné est relu, page par page, pied de page compris, avec les métadonnées
+ * du PDF, dont son titre ; chaque « Voltia » y est lu avec toute sa phrase, et chaque phrase qui
+ * nomme l'exploitant ou le titulaire des droits d'auteur doit nommer Voltia. Quand le poste porte la
+ * liste privée des termes interdits, celle du garde-fou, aucun de ses termes ne doit paraître dans
+ * le PDF, ni dans ses pages, ni dans ses métadonnées. Un terme trouvé n'est jamais recopié : seul son
+ * numéro dans la liste est donné. Le contrôle du nom ne recopie pas le nom qu'il lit, celui du
+ * cadratin ne recopie pas le titre, et tout ce que l'épreuve écrit passe par le même masque
+ * (`masquer`) : un terme de la liste n'en sort que par son rang. Le onzième point, enfin, dit comme
+ * un fait que Voltia est une entreprise individuelle, ce que l'exploitant a confirmé.
  *
  * ## Ce qu'il joue
  *
@@ -341,16 +342,17 @@ function suspect(mot) {
  * « de » passait. Une adresse en `voltia.ch` n'a le droit d'être que `contact@voltia.ch`.
  *
  * Ce qui est signalé ne dit jamais le mot trouvé, seulement où : un nom de personne recopié dans la
- * sortie d'une épreuve serait publié par elle, dans un journal ou un rapport.
+ * sortie d'une épreuve serait publié par elle, dans un journal ou un rapport. `nommer` dit où, pour
+ * chaque texte lu : une page, par défaut, ou les métadonnées.
  */
-function voltiaSeul(pages) {
+function voltiaSeul(pages, nommer = (index) => `page ${index + 1}`) {
 	const ecarts = [];
 	let mentions = 0;
 	pages.forEach((texte, index) => {
 		const plat = aplatir(texte);
 		for (const trouve of plat.matchAll(/voltia/gi)) {
 			mentions += 1;
-			const ou = `page ${index + 1}, mention ${mentions}`;
+			const ou = `${nommer(index)}, mention ${mentions}`;
 			const avant = plat.slice(0, trouve.index);
 			const apres = plat.slice(trouve.index + trouve[0].length);
 			if (/^\.ch\b/i.test(apres)) {
@@ -378,6 +380,20 @@ function voltiaSeul(pages) {
 		}
 	});
 	return { mentions, ecarts };
+}
+
+/**
+ * « Voltia » seul, dans tout ce que le PDF porte : le texte dessiné de chaque page, et les chaînes
+ * de ses métadonnées, dont le titre que le lecteur affiche dans sa barre. Ce titre n'est dessiné sur
+ * aucune page : jusqu'à la relecture de l'étape 19, un nom écrit à côté de Voltia n'y était pas lu.
+ */
+function voltiaSeulDansLePdf(octets) {
+	const pages = voltiaSeul(texteDuPdf(octets));
+	const metadonnees = voltiaSeul(chainesHorsDesPages(octets).information, () => 'métadonnées');
+	return {
+		mentions: pages.mentions + metadonnees.mentions,
+		ecarts: [...pages.ecarts, ...metadonnees.ecarts]
+	};
 }
 
 /**
@@ -881,11 +897,8 @@ try {
 	const pages = nombreDePages(octets);
 	verifier('il fait plus d’une page', pages >= 5, `${pages} pages`);
 	verifier('il pèse quelque chose', octets.length > 20_000, `${octets.length} octets`);
-	verifier(
-		'son titre ne porte pas de cadratin',
-		!titreDuPdf(octets).includes(CADRATIN),
-		titreDuPdf(octets)
-	);
+	const titre = titreSansCadratin(octets);
+	verifier('son titre ne porte pas de cadratin', titre.accord, titre.detail);
 	verifier('le même nombre de pages avec et sans pied', pages === sansPied.pages);
 
 	ecrire(`\nLe texte relu dans le PDF\n`);
@@ -902,9 +915,9 @@ try {
 			toutLeTexte.includes("Conditions d'utilisation") &&
 			toutLeTexte.includes(`page 1 sur ${pages}`)
 	);
-	const seul = voltiaSeul(pagesLues);
+	const seul = voltiaSeulDansLePdf(octets);
 	verifier(
-		'partout où le PDF dessine Voltia, aucun nom n’est écrit à côté',
+		'partout où le PDF porte Voltia, pages et métadonnées, aucun nom n’est écrit à côté',
 		seul.mentions >= 6 && seul.ecarts.length === 0,
 		`${seul.mentions} mention(s)${seul.ecarts.length > 0 ? ` ; ${seul.ecarts.join(' ; ')}` : ''}`
 	);
@@ -1067,6 +1080,37 @@ try {
 				nommeTitulaire.some((ecart) => ecart.startsWith('« … titulaire des droits »')),
 			nommeTitulaire.join(' ; ') || 'rien vu'
 		);
+
+		// Le cinquième témoin rendu : un nom écrit à côté de Voltia dans le titre du document, que le
+		// lecteur de PDF affiche dans sa barre. Le titre n'est dessiné sur aucune page : seules les
+		// métadonnées le portent. Le contrôle doit l'y voir, et celui du cadratin, qui lit le même
+		// titre, ne doit pas le recopier (relecture de l'étape 19).
+		const titreAvecUnNom = html.replace(
+			/<title>[^<]*<\/title>/,
+			'<title>Conditions d’utilisation de jadwal (Voltia, Jean Exemple), pour relecture juridique</title>'
+		);
+		const cheminTitre = join(dossierDuTemoin, 'titre.html');
+		writeFileSync(cheminTitre, titreAvecUnNom, 'utf8');
+		await imprimer(cheminTitre, join(dossierDuTemoin, 'titre.pdf'), piedDePage(version));
+		const octetsDuTitre = readFileSync(join(dossierDuTemoin, 'titre.pdf'));
+		const seulTitre = voltiaSeulDansLePdf(octetsDuTitre);
+		verifier(
+			'un nom écrit juste à côté de Voltia, dans le titre que portent les métadonnées, est vu',
+			titreAvecUnNom !== html &&
+				seulTitre.ecarts.some((ecart) =>
+					/^métadonnées, mention \d+ : un mot en majuscule juste après Voltia/.test(ecart)
+				),
+			seulTitre.ecarts.join(' ; ') || 'rien vu'
+		);
+		const titreDuTemoin = titreSansCadratin(octetsDuTitre);
+		verifier(
+			'le contrôle du cadratin du titre ne recopie pas le titre',
+			titreDuPdf(octetsDuTitre).includes('Jean Exemple') &&
+				!/Jean|Exemple/.test(titreDuTemoin.detail),
+			titreDuTemoin.detail.includes('Jean Exemple')
+				? 'le détail recopie le titre, et le nom qu’il porte'
+				: titreDuTemoin.detail
+		);
 	} finally {
 		rmSync(dossierDuTemoin, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
 	}
@@ -1132,6 +1176,23 @@ try {
 } finally {
 	if (sauvegarde && echecs.length > 0 && !existsSync(PDF)) copyFileSync(sauvegarde, PDF);
 	if (sauvegarde) rmSync(sauvegarde, { force: true });
+}
+
+/**
+ * Le titre que le PDF déclare, sans cadratin. Le détail ne recopie pas le titre, seulement sa
+ * longueur et le nombre de cadratins : un nom écrit dans le titre sortirait sinon avec la sortie de
+ * l'épreuve, dans un journal ou un rapport (relecture de l'étape 19).
+ */
+function titreSansCadratin(octets) {
+	const titre = titreDuPdf(octets);
+	const cadratins = titre.split(CADRATIN).length - 1;
+	return {
+		accord: cadratins === 0,
+		detail:
+			titre === ''
+				? 'aucun titre lu'
+				: `titre de ${titre.length} caractères, ${cadratins} cadratin(s)`
+	};
 }
 
 /** Le titre que le PDF déclare. Chrome l'y écrit en UTF-16 gros-boutien, marque d'ordre comprise. */
