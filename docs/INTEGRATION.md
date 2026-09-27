@@ -81,7 +81,8 @@ Pour la langue, ajoutez `lang` :
 
 Les langues possibles sont `fr` (français), `de` (allemand), `it` (italien), `en` (anglais) et `ar`
 (arabe). Le programme ne propose aux visiteurs que les langues que vous avez cochées dans
-**Réglages**.
+**Réglages**. Une langue que vous n'avez pas cochée, `lang="en"` par exemple, ne s'affiche pas : le
+programme prend votre **Langue par défaut**. Cochez-la d'abord dans **Réglages**.
 
 Pour la vue, ajoutez `view` :
 

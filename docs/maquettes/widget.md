@@ -34,7 +34,8 @@ correspond plus. L'élément n'ayant aucun `<slot>`, ce contenu disparaît dès 
 **Un attribut absent ou absurde est ignoré, jamais une erreur.** `lang="klingon"` donne la langue de
 l'organisation ; `view="tableau"` donne la vue Semaine ; `min-height="-42"` donne 320. Une langue du
 service que l'organisation ne publie pas, `lang="en"` par exemple, donne aussi la sienne : la page
-renvoie le cadre vers son adresse courte (27.09.2026).
+renvoie le cadre vers son adresse courte (27.09.2026). Le pied reste dans la langue de l'attribut :
+le widget ne lit aucune donnée, et ne sait pas quelles langues l'organisation publie.
 
 Sans `org`, aucun cadre n'est posé et le contenu de repli reste seul visible : c'est la bonne
 réponse, et non un message d'erreur sur le site de quelqu'un d'autre.

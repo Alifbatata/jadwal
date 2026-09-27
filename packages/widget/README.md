@@ -50,6 +50,12 @@ peut pas demander à une organisation sans qu'elle la recopie de travers une foi
 Un attribut absent ou absurde est ignoré, jamais une erreur. Sans `org`, aucun cadre n'est posé et
 le contenu de repli reste seul visible.
 
+Une langue du service que l'organisation ne publie pas, `lang="en"` sans l'anglais coché dans ses
+**Réglages**, donne sa langue par défaut : la page renvoie le cadre vers son adresse courte (307,
+`embed=1` et la vue gardés), et le lien du pied de même (27.09.2026). Le pied, lui, reste dans la
+langue de l'attribut : le widget ne lit aucune donnée et ne sait pas quelles langues l'organisation
+publie.
+
 ## Le message de hauteur
 
 La page intégrée — et elle seule, par le paramètre `?embed=1` — envoie
