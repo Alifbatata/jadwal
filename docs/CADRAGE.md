@@ -19,10 +19,10 @@ Une seule saisie par les responsables, quatre sorties :
 1. un **widget** intégrable au site de l'organisation ;
 2. une **page publique** par organisation, avec un lien unique à mettre partout ;
 3. un **flux agenda ICS** auquel on s'abonne ;
-4. des **messages WhatsApp** générés : programme de la semaine, annulation, déplacement. Depuis
-   l'étape 18, l'espace les propose dans chacune des langues que l'organisation publie. Le message
-   « nouveau cours » est écrit dans le code (`newCourseMessage`, dans
-   `apps/web/src/lib/messages.ts`), mais aucun écran ne le propose.
+4. des **messages WhatsApp** générés : programme de la semaine, annulation, déplacement, nouveau
+   cours. Depuis l'étape 18, l'espace les propose dans chacune des langues que l'organisation
+   publie. Le message « nouveau cours » s'affiche sur la liste des cours après la publication d'un
+   nouveau cours, depuis le lot 2 de l'étape 19.
 
 ### Cible
 

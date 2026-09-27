@@ -266,6 +266,68 @@ que si elle a supprimé une ligne, comme pour Publier et Supprimer.
   d'abord : la langue par défaut pour la semaine, celle du cours pour une annulation ou un
   déplacement.
 
+### Les écrans des cours, au lot 2 de l'étape 19
+
+Ce que le lot 1 a corrigé sur « À venir » et le vendredi, le formulaire d'un cours et la liste des
+cours l'avaient aussi. Chaque défaut a d'abord eu son test, puis sa correction, et aucune de ces
+valeurs ne donne plus d'erreur 500 :
+
+- une date s'accepte de 1970 à 2100 (`isSupportedDate`) : le premier jour, le dernier, chaque date
+  d'un cours à dates précises et les deux dates d'une pause. L'an 0000 atteignait la base ; un cours
+  publié qui finissait le 31.12.9999 faisait tomber le flux agenda de toute l'organisation. Les
+  champs de date portent les mêmes bornes, et le résumé du formulaire les applique : le serveur les
+  donne à la page, le résumé ne pouvant pas lire un module du serveur ;
+- le caractère nul est retiré de chaque champ du formulaire d'un cours et de la raison d'une pause ;
+- une salle qui n'est pas, ou plus, une salle de l'organisation est refusée avec sa phrase
+  (`roomGone`), à sa place dans l'ordre du formulaire ; un identifiant de cours mal formé dans
+  l'adresse de la fiche répond comme un cours inconnu ; une pause pour un cours qui n'existe plus
+  reçoit `courseGone`, et retirer une pause déjà retirée reçoit `pauseGone` au lieu de « supprimée »,
+  sans rien écrire au journal.
+
+Les refus du formulaire d'un cours, à l'ajout comme sur la fiche, dans l'ordre de ses cadres :
+
+| Refus                     | Quand                                                                     |
+| ------------------------- | ------------------------------------------------------------------------- |
+| `titleMissing`            | pas de titre dans la langue de saisie                                     |
+| `descriptionWithoutTitle` | une description sans le titre de sa langue                                |
+| `teachingMissing`         | aucune langue d'enseignement cochée                                       |
+| `weekdaysMissing`         | chaque semaine, aucun jour coché                                          |
+| `datesMissing`            | à dates précises, aucune date écrite                                      |
+| `badDates`                | une date illisible, impossible ou hors de 1970 à 2100                     |
+| `datesTwice`              | une date écrite deux fois                                                 |
+| `datesBeforeStart`        | une date avant le premier jour                                            |
+| `datesAfterEnd`           | une date après le dernier jour                                            |
+| `timeMissing`             | heure fixe, une heure absente ou illisible                                |
+| `minutesAfter`            | après une prière, hors de 0 à 240 minutes                                 |
+| `minutesBefore`           | avant une prière, hors de 1 à 120 minutes                                 |
+| `duration`                | par rapport à une prière, une durée hors de 5 à 1440 minutes              |
+| `roomGone`                | la salle n'est pas, ou plus, une salle de l'organisation (lot 2)          |
+| `startsOnMissing`         | pas de premier jour, ou un premier jour illisible ou hors de 1970 à 2100  |
+| `endsOnUnreadable`        | un dernier jour illisible, impossible ou hors de 1970 à 2100 (lot 2)      |
+| `endsBeforeStarts`        | un dernier jour avant le premier                                          |
+| `refused`                 | une valeur que le formulaire ne peut pas envoyer (langue, public, prière) |
+| `gone`                    | sur la fiche, le cours n'existe plus (404)                                |
+
+Et quatre gestes de plus, décidés par le chef de projet :
+
+- **Supprimer un cours**, réservé à la personne responsable, derrière une confirmation qui marche
+  sans JavaScript (ADR 0046, addendum du lot 2). L'action juge au nombre de lignes supprimées : un
+  cours qui n'existe plus reçoit une phrase, jamais « supprimé ».
+- **Le message « nouveau cours »**, prêt à coller, sur la liste des cours après la publication d'un
+  nouveau cours, qu'il soit créé publié ou qu'un brouillon soit publié depuis sa fiche : la liste
+  s'ouvre alors avec `?publie=<identifiant>`. Il s'écrit dans chaque langue publiée, la langue du
+  cours d'abord, comme les autres messages. Un brouillon ou une adresse écrite à la main n'en ont
+  pas.
+- **Ce que le formulaire remplit de lui-même** : sur un nouveau cours, la langue de saisie cochée
+  comme langue d'enseignement, et, avec JavaScript, la case qui la suit tant qu'on n'a pas touché
+  aux cases ; pour un cours à dates précises, le premier jour pris à la première date, pendant la
+  saisie avec JavaScript, et par le serveur quand il arrive vide. Un premier jour choisi n'est
+  jamais remplacé.
+- **Le résumé** marque en discret, avec « (facultatif) », chaque champ facultatif, rempli ou non,
+  ne marque plus comme un manque un champ facultatif laissé vide, et donne une ligne au titre de
+  chaque langue publiée. La liste signale un cours dont des dates précises tombent hors de sa
+  période.
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 4 de la feuille de route (espace des responsables). Les numéros 0022 et
@@ -274,4 +336,4 @@ d'aujourd'hui, un déplacement qui ne change rien est refusé, les options d'une
 par défaut, une page restée ouverte ne défait pas un changement, et un déplacement le même jour se
 dit comme un changement d'heure. Complété le 27.09.2026 (étape 19) : l'heure que la carte montrait,
 les refus de l'écran du vendredi, les dates que les deux écrans acceptent, et la relecture
-d'« À venir ».
+d'« À venir » ; au lot 2, les écrans des cours.

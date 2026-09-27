@@ -54,6 +54,7 @@ bas : une ligne ne met pas en regard deux gestes liés.
 | Changer d'organisation, pour qui est membre de plusieurs : `/organisations?/choisir` · `session` (modification, rôle de connexion) | Écrire, prévisualiser, dupliquer, supprimer une période : `/prieres?/periode`, `?/apercuPeriode` (écrite puis annulée), `?/dupliquerPeriode`, `?/supprimerPeriode` · `prayer_period` |
 |                                                                                                                                    | Télécharger le modèle d'horaires : `/prieres/modele.csv` · lecture                                                                                                                   |
 |                                                                                                                                    | Chercher une localité suisse : `/prieres/localites` · lecture de la liste embarquée, aucune table                                                                                    |
+|                                                                                                                                    | Supprimer un cours, après confirmation : `/cours?/supprimer` · `course` (suppression, sauf une session du vendredi)                                                                  |
 
 Trois écritures ne viennent d'aucun écran et sont réservées quand même, parce qu'elles touchent aux
 mêmes tables : supprimer une invitation, renommer une salle, supprimer les réglages des prières. Une
@@ -61,15 +62,14 @@ lecture non plus : le journal (`audit_log`), qu'aucun écran ne montre, et qui n
 les personnes invitées (migration 0070). Le super-admin fait tout ce que fait une personne
 responsable, dans l'organisation où il est entré (ADR 0025).
 
-Deux gestes n'ont pas encore d'écran, et la base les tient déjà depuis l'étape 19 :
+Deux gestes n'avaient pas d'écran au lot 1 de l'étape 19, et la base les tenait déjà :
 
 - **Supprimer un cours** (`/cours?/supprimer` · `course`, suppression) est réservé à la personne
-  responsable (migration 0065). L'action existe, mais aucun écran ne l'appelle, et sa route n'a pas
-  d'autre garde que l'appartenance : appelée par un éditeur, elle ne supprime plus rien. L'écran
-  Cours la proposera au lot suivant, et elle rejoindra alors la colonne de droite. Une session du
-  vendredi n'est pas concernée : l'écran Vendredi en propose la suppression à l'éditeur, et la base
-  la lui laisse. Un cours ne devient pas une session le temps d'être supprimé : le type d'une ligne
-  ne change pas, pour personne (migration 0069, ADR 0033).
+  responsable (migration 0065). Depuis le lot 2, l'écran Cours le propose à elle seule, et la route
+  refuse l'éditeur par `mustAdminister` : le geste a rejoint la colonne de droite (addendum
+  ci-dessous). Une session du vendredi n'est pas concernée : l'écran Vendredi en propose la
+  suppression à l'éditeur, et la base la lui laisse. Un cours ne devient pas une session le temps
+  d'être supprimé : le type d'une ligne ne change pas, pour personne (migration 0069, ADR 0033).
 - **Quitter l'organisation** (`membership`, suppression de sa propre adhésion) est ouvert à chacun,
   pour soi seulement (migration 0066). L'écran viendra dans « Vos organisations ». La dernière
   personne responsable ne part pas : le déclencheur de la migration 0012 la retient.
@@ -209,10 +209,30 @@ Cours, et « Quitter l'organisation » dans « Vos organisations ». Jusque-là,
 promet ni l'un ni l'autre, et le test qui lie sa liste à la base nomme la table des cours comme
 réservée sans écran.
 
+## Addendum du 27.09.2026, lot 2 de l'étape 19 : supprimer un cours a son écran
+
+La liste des cours propose `Supprimer ce cours` à la personne responsable, et à elle seule, derrière
+une confirmation qui marche sans JavaScript : un élément `details` natif qui dit ce que la
+suppression emporte, puis `Oui, supprimer` (`docs/maquettes/responsables-cours.md`). L'éditeur ne
+voit pas le bouton, et l'action le renvoie à l'accueil par `mustAdminister`, la garde des écrans
+réservés, avant de lire le formulaire.
+
+L'action juge au nombre de lignes supprimées. Une suppression que la sécurité au niveau des lignes
+refuse ne lève pas d'erreur : elle ne supprime rien. Avant ce lot, l'action répondait « supprimé »
+et écrivait au journal quoi qu'il en soit. Un cours qui n'existe plus, un identifiant mal formé ou
+une session du vendredi (la clause porte `kind = 'course'`) reçoivent désormais `Ce cours n'existe
+plus : il a peut-être déjà été supprimé.`, et rien ne s'écrit au journal.
+
+Le geste entre dans la liste que l'écran Membres affiche, sous « Réservé au responsable », en
+premier, comme l'écran Cours dans la navigation : `Supprimer un cours`, dans les cinq langues
+(`MANAGER_GESTURES`). La table des cours quitte la liste des tables réservées sans écran du test qui
+lie l'écran à la base : ce test ne connaît plus que la lecture du journal comme geste réservé sans
+écran, et il refuse le geste à une éditrice par sa route.
+
 ## Statut
 
 Accepté, 2026-09-26. Étape 18, consigne du chef de projet (les rôles dans la base), et la langue du
 compte. Révisé le même jour, à la fin de l'étape : la langue se choisit en haut de chaque écran,
 l'écran Membres montre la liste, et l'écran des prières prévisualise une période. Complété le
 27.09.2026 (étape 19) : le journal, la liste des membres, la suppression d'un cours et le départ
-d'une organisation.
+d'une organisation ; au lot 2, l'écran de la suppression d'un cours.

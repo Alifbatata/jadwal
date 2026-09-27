@@ -44,6 +44,7 @@ Sous le choix du rôle, deux listes, qu'une personne lit au moment de choisir.
 
 **Réservé au responsable, en plus de tout ce que fait un éditeur**
 
+- Supprimer un cours
 - Voir les membres, leur rôle et les invitations en attente
 - Inviter une personne, comme éditeur ou comme responsable, et annuler une invitation
 - Changer le rôle d'un membre
@@ -59,12 +60,13 @@ Puis : `Une organisation garde toujours au moins une personne responsable.`
 
 Cette liste est celle de l'ADR 0046. Un test la lie à la base : les tables que les politiques
 réservent aux responsables doivent être exactement celles des gestes que l'écran dit réservés, à
-deux exceptions près. Depuis l'étape 19, la base réserve la suppression d'un cours à la personne
-responsable (migration 0065), et aucun écran ne la propose encore : la ligne viendra dans cette
-liste avec le bouton de l'écran Cours. Elle réserve aussi la lecture du journal (migration 0070),
-qu'aucun écran ne montre : il nomme les membres et les personnes invitées. Jusqu'au lot 4 de l'étape
-18, la ligne des cours disait aussi « et le supprimer » : aucun écran ne propose de supprimer un
-cours, et ces mots sont retirés. La liste des membres elle-même, que la ligne « Voir les membres »
+une exception près. La base réserve la lecture du journal (migration 0070), qu'aucun écran ne
+montre : il nomme les membres et les personnes invitées. Depuis le lot 1 de l'étape 19, elle réserve
+aussi la suppression d'un cours à la personne responsable (migration 0065) ; depuis le lot 2, l'écran
+Cours la lui propose, et la ligne `Supprimer un cours` ouvre la liste, comme l'écran Cours ouvre la
+navigation. Jusqu'au lot 4 de l'étape 18, la ligne des cours de l'éditeur disait aussi « et le
+supprimer » : l'éditeur ne peut pas supprimer un cours, et ces mots sont retirés de sa liste. La
+liste des membres elle-même, que la ligne « Voir les membres »
 réserve, l'est aussi dans la base depuis l'étape 19 (migration 0064) : un éditeur ne lit plus que sa
 propre adhésion.
 
