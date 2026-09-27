@@ -59,14 +59,13 @@ rôle applicatif, les gestes réservés aux responsables exigent que la personne
 responsable de l'organisation du contexte : lire et écrire les invitations, lire la liste des
 membres et leurs comptes, lire le journal, changer un rôle, retirer un membre, modifier les réglages
 et les salles, régler les heures de prière, et depuis l'étape 19 supprimer un cours (migrations
-0064, 0065 et 0070). La
-suppression d'une session du vendredi reste à l'éditeur, et un cours ne devient pas une session le
-temps d'être supprimé : le type d'une ligne ne change pas, pour personne (migration 0069). Une
-fonction à droits du définisseur le dit, `jadwal.is_org_admin()`, que seul le rôle applicatif peut
-appeler. L'éditeur garde tout ce qu'il fait à l'écran : les cours, les séances, les pauses, le
-vendredi. Il ne lit plus que sa propre adhésion et son propre compte, ne nomme que lui-même dans ce
-qu'il écrit, et peut quitter l'organisation, lui seul et pour lui seul (migration 0066) ; la
-dernière personne responsable ne part pas.
+0064, 0065 et 0070). La suppression d'une session du vendredi reste à l'éditeur, et un cours ne
+devient pas une session le temps d'être supprimé : le type d'une ligne ne change pas, pour personne
+(migration 0069). Une fonction à droits du définisseur le dit, `jadwal.is_org_admin()`, que seul le
+rôle applicatif peut appeler. L'éditeur garde tout ce qu'il fait à l'écran : les cours, les séances,
+les pauses, le vendredi. Il ne lit plus que sa propre adhésion et son propre compte, ne nomme que
+lui-même dans ce qu'il écrit, et peut quitter l'organisation, lui seul et pour lui seul
+(migration 0066) ; la dernière personne responsable ne part pas.
 Cette barrière arrête les erreurs de l'application : un écran qui oublierait sa garde, un rôle lu
 dans la mauvaise adhésion, comme à l'étape 17. Elle n'arrête pas qui tient le mot de passe du rôle
 applicatif, qui pose lui-même la personne du contexte (barrière 1). Le super-admin n'est pas
@@ -92,11 +91,10 @@ applicatif est la personne du contexte, et aucune autre : un membre ne signe plu
 collègue (migration 0063). Sa lecture est réservée à la personne responsable (migration 0070) : le
 journal nomme les membres et les personnes invitées, et un éditeur y relisait la liste que la
 barrière 4 bis lui retire. Le super-admin le lit comme avant. L'acceptation des conditions suit la
-même règle : le rôle
-applicatif lit et ajoute ses propres acceptations, sans rien modifier ni supprimer, et le moment est
-posé par la base, jamais par l'application. Le super-admin les lit, sans en écrire aucune. Elles
-partent avec l'adhésion, par la clé en cascade, et par aucun autre chemin (ADR 0044), hors le
-`TRUNCATE` du propriétaire (barrière 2).
+même règle : le rôle applicatif lit et ajoute ses propres acceptations, sans rien modifier ni
+supprimer, et le moment est posé par la base, jamais par l'application. Le super-admin les lit, sans
+en écrire aucune. Elles partent avec l'adhésion, par la clé en cascade, et par aucun autre chemin
+(ADR 0044), hors le `TRUNCATE` du propriétaire (barrière 2).
 
 **7. Les purges sont bornées, et elles appartiennent au propriétaire.** Journal à vingt-quatre mois,
 invitations résolues à quatre-vingt-dix jours, comptes sans adhésion à douze mois. Aucune n'est

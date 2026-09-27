@@ -55,11 +55,11 @@ bas : une ligne ne met pas en regard deux gestes liés.
 |                                                                                                                                    | Télécharger le modèle d'horaires : `/prieres/modele.csv` · lecture                                                                                                                   |
 |                                                                                                                                    | Chercher une localité suisse : `/prieres/localites` · lecture de la liste embarquée, aucune table                                                                                    |
 
-Trois écritures ne viennent d'aucun écran et sont réservées quand même, parce qu'elles touchent
-aux mêmes tables : supprimer une invitation, renommer une salle, supprimer les réglages des
-prières. Une lecture non plus : le journal (`audit_log`), qu'aucun écran ne montre, et qui nomme
-les membres et les personnes invitées (migration 0070). Le super-admin fait tout ce que fait une personne responsable, dans l'organisation où il
-est entré (ADR 0025).
+Trois écritures ne viennent d'aucun écran et sont réservées quand même, parce qu'elles touchent aux
+mêmes tables : supprimer une invitation, renommer une salle, supprimer les réglages des prières. Une
+lecture non plus : le journal (`audit_log`), qu'aucun écran ne montre, et qui nomme les membres et
+les personnes invitées (migration 0070). Le super-admin fait tout ce que fait une personne
+responsable, dans l'organisation où il est entré (ADR 0025).
 
 Deux gestes n'ont pas encore d'écran, et la base les tient déjà depuis l'étape 19 :
 
@@ -91,11 +91,11 @@ Deux gestes n'ont pas encore d'écran, et la base les tient déjà depuis l'éta
   clauses : `invitation` (lecture, insertion, modification, suppression, pour la branche de
   l'organisation), `membership` (lecture et suppression pour la branche de l'organisation,
   modification), `organization` (modification), `room`, `prayer_settings`, `prayer_day`,
-  `prayer_period` (insertion, modification, suppression), `course` (suppression, sauf une
-  session du vendredi) et `audit_log` (lecture). Un déclencheur tient le type de chaque cours : sans lui, la modification,
-  ouverte à tout membre, ferait d'un cours une session, que l'éditeur supprimerait. La lecture de ces tables reste ouverte à tous les membres, invitations,
-  adhésions et journal exceptés : l'écran des cours lit les salles et les heures, et le programme en
-  dépend.
+  `prayer_period` (insertion, modification, suppression), `course` (suppression, sauf une session du
+  vendredi) et `audit_log` (lecture). Un déclencheur tient le type de chaque cours : sans lui, la
+  modification, ouverte à tout membre, ferait d'un cours une session, que l'éditeur supprimerait. La
+  lecture de l'organisation, des salles, des heures de prière et des cours reste ouverte à tous les
+  membres : l'écran des cours lit les salles et les heures, et le programme en dépend.
 - **Chacun garde ce qui est à lui.** La lecture des adhésions a une seconde branche, ses propres
   adhésions, dans toutes ses organisations : c'est d'elles que l'application part pour savoir de
   quelles organisations une personne est membre, et avec quel rôle. La suppression en a une aussi,
@@ -123,12 +123,12 @@ Deux gestes n'ont pas encore d'écran, et la base les tient déjà depuis l'éta
   Une personne responsable qui se passe elle-même éditrice le peut donc, tant qu'une autre reste
   responsable.
 
-La migration 0059 porte tout cela, et les migrations 0063 à 0066, 0069 et 0070 le complètent. La 0059
-vérifiait dans la même transaction la liste exacte des politiques qui exigent la fonction ; depuis
-que d'autres la complètent, elle n'en vérifie que le minimum, pour rester rejouable après elles.
-`packages/db/test/org-admin.test.ts` tient la liste exacte, et rejoue chaque geste de la liste : une
-éditrice est refusée, une personne responsable et le super-admin passent, le parcours d'une
-personne invitée reste le même.
+La migration 0059 porte tout cela, et les migrations 0063 à 0066, 0069 et 0070 le complètent. La
+0059 vérifiait dans la même transaction la liste exacte des politiques qui exigent la fonction ;
+depuis que d'autres la complètent, elle n'en vérifie que le minimum, pour rester rejouable après
+elles. `packages/db/test/org-admin.test.ts` tient la liste exacte, et rejoue chaque geste de la
+liste : une éditrice est refusée, une personne responsable et le super-admin passent, le parcours
+d'une personne invitée reste le même.
 
 ### La langue du compte
 
@@ -175,7 +175,8 @@ La liste ci-dessus est celle du code à la fin de l'étape 18 :
   des adhésions, ou qui supprime un cours, sous le seul contexte d'une organisation n'écrit plus
   rien : il doit poser la personne responsable, comme le font les écrans (`asAdmin` dans les tests
   de `packages/db`). Il ne lit pas non plus les adhésions, les comptes ni le journal, et n'écrit
-  rien au journal. Une modification ou une suppression écartée ne lève pas d'erreur, elle touche zéro ligne.
+  rien au journal. Une modification ou une suppression écartée ne lève pas d'erreur, elle touche
+  zéro ligne.
 - Ajouter un écran réservé aux responsables, c'est ajouter sa table à cette liste, à la migration
   qui exige la fonction et au test des gestes, dans le même changement.
 
