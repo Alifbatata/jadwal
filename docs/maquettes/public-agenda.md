@@ -42,8 +42,11 @@ Touchez son nom : sa page propose les mêmes choix, pour ce cours seul.`
 ne fait rien, copiez l'adresse et suivez les étapes de votre application.` Sur le choix complet, qui
    n'a que des liens : `Si aucun de ces liens ne fonctionne pour vous, copiez l'adresse et suivez
 les étapes de votre application.` Puis trois titres de niveau 3 dans cet ordre, en texte et sans
-   capture d'écran : `Sur iPhone et iPad`, `Sur Android`, `Sur Outlook`. La section d'Outlook se
-   termine par le délai d'Outlook ; celle d'Android ne dit plus de délai (27.09.2026).
+   capture d'écran : `Sur iPhone et iPad`, `Sur Android`, `Sur Outlook`. Celle d'Android ne dit
+   plus de délai (27.09.2026). Celle d'Outlook dit le délai d'Outlook, puis, une fois pour toute la
+   section, à la place du délai de Google : `Pour un changement de dernière minute, regardez la page
+du programme : elle est toujours à jour.` Tout appareil lit cette section : c'est là qu'un iPhone,
+   dont le bloc ne la dit pas, la trouve.
 6. **Le pied commun**.
 
 ## Le bloc selon l'appareil
@@ -114,7 +117,9 @@ cliquez sur Ajouter l'agenda. Il apparaîtra ensuite aussi sur votre téléphone
 
 **Sur Outlook.** Ouvrez Outlook sur le web, allez dans Calendrier, Ajouter un calendrier,
 S'abonner à partir du Web, collez l'adresse, donnez-lui un nom, puis importez. Puis, dans un
-paragraphe à lui : Outlook peut mettre plus de 24 heures à rafraîchir un abonnement.
+paragraphe à lui : Outlook peut mettre plus de 24 heures à rafraîchir un abonnement. Enfin, dans un
+dernier paragraphe : Pour un changement de dernière minute, regardez la page du programme : elle est
+toujours à jour.
 
 Ces textes sont traduits dans les quatre autres langues, avec les noms de menus dans la langue de la
 page : un menu français dans une page allemande ne servirait à personne.

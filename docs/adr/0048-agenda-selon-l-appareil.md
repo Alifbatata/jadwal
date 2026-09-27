@@ -133,15 +133,17 @@ Les décisions du chef de projet, après les tests de l'étape 18.
   phrase qui disait de la coller.
 - **Plus de délai de Google.** L'aide de Google ne donne aucun délai de rafraîchissement ; la
   phrase « Google peut mettre jusqu'à 24 heures » disparaît, sous le bouton d'Android, sous le
-  choix de Google et dans les étapes à la main. À sa place, sous le bouton d'Android et une fois
-  sous le choix complet : « Pour un changement de dernière minute, regardez la page du programme :
-  elle est toujours à jour. », en arabe « عند أي تغيير في آخر لحظة، راجع صفحة البرنامج: فهي
-  محدَّثة دائمًا. », la phrase du chef de projet. **Le délai d'Outlook reste**, parce que Microsoft
-  l'écrit : « When you subscribe to a calendar, your calendar will automatically refresh if the
-  other calendar is updated. This can sometimes take more than 24 hours. » (« Import or subscribe
-  to a calendar in Outlook.com or Outlook on the web », `support.microsoft.com`, relue le
-  27.09.2026), et, pour un compte de travail ou d'école, « it can take more than 24 hours for
-  Outlook on the web to update your calendar ».
+  choix de Google et dans les étapes à la main. À sa place, sous le bouton d'Android, une fois
+  sous le choix complet, et une fois dans les étapes à la main, après le délai d'Outlook : « Pour
+  un changement de dernière minute, regardez la page du programme : elle est toujours à jour. », en
+  arabe « عند أي تغيير في آخر لحظة، راجع صفحة البرنامج: فهي محدَّثة دائمًا. », la phrase du chef
+  de projet. Le bloc d'un iPhone, d'un iPad ou d'un Mac ne la dit pas : ces appareils la lisent
+  dans les étapes à la main, où elle manquait à la première livraison (relevé de la relecture).
+  **Le délai d'Outlook reste**, parce que Microsoft l'écrit : « When you subscribe to a calendar,
+  your calendar will automatically refresh if the other calendar is updated. This can sometimes
+  take more than 24 hours. » (« Import or subscribe to a calendar in Outlook.com or Outlook on the
+  web », `support.microsoft.com`, relue le 27.09.2026), et, pour un compte de travail ou d'école,
+  « it can take more than 24 hours for Outlook on the web to update your calendar ».
 - **Sur un iPhone aussi, « Page du cours ».** Sous « Un seul cours », chaque nom de cours garde son
   lien `webcal:`, et reçoit juste dessous le lien `Page du cours` qu'il a sur Android, vers la page
   du cours à son bloc d'abonnement. Ailleurs, le nom mène déjà à cette page.

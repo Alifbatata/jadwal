@@ -143,8 +143,10 @@
 		<!-- Les étapes à suivre à la main, pour quand le bouton ne fait rien : une application qui ne
 		     connaît pas `webcal:`, un appareil mal reconnu, un compte de travail. Le délai d'Outlook y
 		     est dit aussi (retour E2) ; celui de Google n'y est plus, son aide n'en donnant aucun
-		     (27.09.2026). L'introduction parle d'un bouton là où il y en a un, et des liens sur le
-		     choix complet, qui n'a qu'eux (relecture du lot 3). -->
+		     (27.09.2026). À sa place, une fois, après le délai d'Outlook : la page du programme pour un
+		     changement de dernière minute, que tout appareil lit ici, un iPhone compris (reprise 1).
+		     L'introduction parle d'un bouton là où il y en a un, et des liens sur le choix complet, qui
+		     n'a qu'eux (relecture du lot 3). -->
 		<section id="a-la-main">
 			<h2>{mots.manualTitle}</h2>
 			<p>{data.appareil === 'autre' ? mots.manualIntroChoice : mots.manualIntro}</p>
@@ -155,6 +157,7 @@
 			<h3>{mots.onOutlook}</h3>
 			<p>{mots.outlookText}</p>
 			<p>{mots.outlookDelay}</p>
+			<p>{mots.lastMinute}</p>
 		</section>
 	</main>
 

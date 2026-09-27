@@ -164,8 +164,9 @@ interface Dictionnaire {
 	/**
 	 * Ce qu'il faut regarder pour un changement de dernière minute : la page du programme, toujours à
 	 * jour (décision du chef de projet, 27.09.2026). Elle remplace le délai de Google, « jusqu'à
-	 * 24 heures », que l'aide de Google ne donne nulle part : sous le bouton d'Android, et une fois
-	 * sous le choix complet. Le délai d'Outlook, lui, reste : Microsoft l'écrit (`outlookDelay`).
+	 * 24 heures », que l'aide de Google ne donne nulle part : sous le bouton d'Android, une fois sous
+	 * le choix complet, et une fois dans les étapes à la main, après le délai d'Outlook. Le délai
+	 * d'Outlook, lui, reste : Microsoft l'écrit (`outlookDelay`).
 	 */
 	readonly lastMinute: string;
 	/**

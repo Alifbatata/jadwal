@@ -3077,6 +3077,17 @@ async function appareils(navigateur) {
 				!/Google peut mettre/.test(`${android.page} ${windows.page}`),
 			`Android : ${android.texte.slice(0, 120)}`
 		);
+		// Un iPhone ne la lit pas dans son bloc : les étapes à la main la disent, une fois, après le
+		// délai d'Outlook (reprise 1).
+		const delaiOutlook = iphone.page.indexOf('Outlook peut mettre plus de 24 heures');
+		verifier(
+			'sur un iPhone, les étapes à la main renvoient à la page du programme, après le délai d’Outlook',
+			delaiOutlook >= 0 &&
+				iphone.page.indexOf(derniereMinute) > delaiOutlook &&
+				iphone.page.split(derniereMinute).length === 2 &&
+				!/Google peut mettre/.test(iphone.page),
+			`iPhone : ${iphone.page.slice(Math.max(0, delaiOutlook), delaiOutlook + 200)}`
+		);
 	});
 }
 

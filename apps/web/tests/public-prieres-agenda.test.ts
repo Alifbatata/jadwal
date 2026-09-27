@@ -1111,7 +1111,9 @@ describe('ni délai de Google, ni 24 heures : la page du programme (E2, 27.09.20
 		'says in %s to look at the programme page, and no longer that Google takes 24 hours',
 		async (langue) => {
 			// Sur Android, sous l'aide du bouton, à la place du délai ; sur le choix complet, une fois,
-			// sous la liste des choix ; sur la page d'un cours, dans son bloc.
+			// sous la liste des choix ; sur la page d'un cours, dans son bloc ; et dans les étapes à la
+			// main, qui disaient le délai de Google à tout appareil, une fois, après le délai d'Outlook
+			// (relecture de la reprise 1).
 			const chemin = `${base(langue)}/agenda`;
 			const android = await servir(chemin, ANDROID);
 			expect(abonnement(android.html, chemin).lu).toContain(
@@ -1125,11 +1127,19 @@ describe('ni délai de Google, ni 24 heures : la page du programme (E2, 27.09.20
 			expect(abonnement((await servir(cours, ANDROID)).html, cours).lu).toContain(
 				DERNIERE_MINUTE[langue]
 			);
-			// Et nulle part le délai de Google, ni sous un bouton, ni dans les étapes à la main.
-			for (const html of [android.html, ailleurs.html]) {
+			// Et nulle part le délai de Google, ni sous un bouton, ni dans les étapes à la main, sur
+			// aucun appareil : un iPhone, lui, n'a la phrase que là.
+			const iphone = await servir(chemin, IPHONE);
+			for (const html of [android.html, ailleurs.html, iphone.html]) {
 				const page = lu(html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/)?.[1] ?? '');
 				expect(page, langue).not.toContain(DELAI_GOOGLE[langue]);
-				expect(aLaMain(html).etapes[SUR_ANDROID[langue]]).toEqual([ETAPES_ANDROID[langue]]);
+				const main = aLaMain(html);
+				expect(main.etapes[SUR_ANDROID[langue]]).toEqual([ETAPES_ANDROID[langue]]);
+				expect(main.etapes[SUR_OUTLOOK[langue]]?.slice(-2), langue).toEqual([
+					DELAI_OUTLOOK[langue],
+					DERNIERE_MINUTE[langue]
+				]);
+				expect(main.lu.split(DERNIERE_MINUTE[langue]), langue).toHaveLength(2);
 			}
 		}
 	);
@@ -1565,7 +1575,12 @@ describe('chaque page d’abonnement ne dit que ce qui est vrai pour elle', () =
 			// Et le délai de Google reste sous Google, pas sous Outlook.
 			expect(texte).not.toContain(DELAI_GOOGLE[langue]);
 		}
-		expect(aLaMain(html).etapes[SUR_OUTLOOK[langue]]?.at(-1)).toBe(DELAI_OUTLOOK[langue]);
+		// Dans les étapes à la main, le délai d'Outlook, puis la page du programme pour un changement
+		// de dernière minute.
+		expect(aLaMain(html).etapes[SUR_OUTLOOK[langue]]?.slice(-2)).toEqual([
+			DELAI_OUTLOOK[langue],
+			DERNIERE_MINUTE[langue]
+		]);
 	});
 
 	// Décision du chef de projet, au 27.09.2026 : le choix complet propose aussi l'Outlook des comptes
