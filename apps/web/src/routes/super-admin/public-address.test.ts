@@ -86,7 +86,11 @@ describe('l’adresse proposée à partir du nom', () => {
 		// elle vient donc avant la mise en minuscules, sinon cette lettre tombait.
 		['Club № 5', 'club-no-5'],
 		['ℌorizon', 'horizon'],
-		['ℂlub Ⅻ', 'club-xii']
+		['ℂlub Ⅻ', 'club-xii'],
+		// « ™ » et « ℠ » se décomposent en « TM » et « SM », collés au mot : ce ne sont pas des
+		// lettres du nom, et ils tombent comme la ponctuation.
+		['Horizon™', 'horizon'],
+		['Club℠ Aarau', 'club-aarau']
 	])('turns « %s » into « %s »', (nom, adresse) => {
 		expect(proposePublicAddress(nom)).toBe(adresse);
 	});
