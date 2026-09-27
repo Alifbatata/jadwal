@@ -138,8 +138,10 @@ Et, quand le module des heures de prière est allumé, un quatrième onglet, **P
 du jour et des sept prochains jours (adhan et iqama), puis les sessions du vendredi avec la langue
 de leur sermon (ADR 0042, addendum de l'étape 18).
 
-Filtres par public. Le détail d'un cours se déplie sur place, sans modale : description, horaire,
-intervenant, lieu, rythme, prochaines dates, « ajouter à mon agenda », « partager ».
+Filtres par public. Chaque cours a sa propre page, sans modale, depuis l'étape 5 : son lien est ce
+qu'on partage dans un message, et ce qu'un moteur de recherche indexe. Elle donne le rythme,
+l'horaire, le public, la description, le lieu, l'intervenant, les langues d'enseignement, les
+prochaines séances et « Ajouter ce cours à mon agenda » (`docs/maquettes/public-cours.md`).
 
 ### Langues
 
