@@ -720,6 +720,44 @@ describe('un jour où la session n’a pas lieu (étape 19, lot 3)', () => {
 		expect(await exceptions()).toEqual([]);
 	});
 
+	it.each([
+		['of the session', true],
+		['of the whole organisation', false]
+	] as const)(
+		'refuses a Friday in a pause %s, and writes nothing, not even the journal',
+		async (_pause, deLaSession) => {
+			// Une pause retire la session de ces vendredis, sur l'écran comme sur « À venir » : le
+			// prochain vendredi et le suivant, qui s'annulent hors de la pause, n'en ont plus
+			// (relecture du lot 3).
+			const pause = newId();
+			await maintenance((tx) =>
+				tx.execute(sql`
+					insert into "pause" ("id", "organization_id", "course_id", "from_date", "to_date",
+						"reason")
+					values (${pause}, ${organisation}, ${deLaSession ? continue_ : null}, ${vendredi()},
+						${addDays(vendredi(), 7)}, 'Vacances d’été')
+				`)
+			);
+			try {
+				const journalAvant = await lignesDuJournal();
+				for (const date of [vendredi(), addDays(vendredi(), 7)]) {
+					for (const [action, envoi] of [
+						['annuler', { courseId: continue_, date }],
+						['deplacer', { courseId: continue_, date, toDate: date, toStart: '15:00' }]
+					] as const) {
+						const reponse = await poster(`/vendredi?/${action}`, envoi);
+						expect(reponse.status, `${action} ${date}`).toBe(400);
+						expect(enTete(await reponse.text()), `${action} ${date}`).toEqual([PAS_CE_JOUR.fr]);
+					}
+				}
+				expect(await exceptions()).toEqual([]);
+				expect(await lignesDuJournal()).toBe(journalAvant);
+			} finally {
+				await maintenance((tx) => tx.execute(sql`delete from "pause" where "id" = ${pause}`));
+			}
+		}
+	);
+
 	it('still cancels a session on a Friday after the seven days of the screen', async () => {
 		const plusTard = addDays(vendredi(), 7);
 		const reponse = await poster('/vendredi?/annuler', { courseId: continue_, date: plusTard });

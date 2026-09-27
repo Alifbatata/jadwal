@@ -173,7 +173,7 @@ vendredi » et des boutons d'une session s'affichent en tête de l'écran :
 | `unchanged`       | 400    | le déplacement vise le jour et l'heure où la session est déjà prévue                                                                                    |
 | `pastSession`     | 400    | l'annulation d'un jour déjà passé (étape 19, D2)                                                                                                        |
 | `pastDate`        | 400    | un déplacement vers un jour déjà passé (étape 19, lot 2)                                                                                                |
-| `notPlanned`      | 400    | annuler ou déplacer la session un jour où elle n'a pas lieu, un lundi ou après sa fin (lot 3)                                                           |
+| `notPlanned`      | 400    | annuler ou déplacer la session un jour où elle n'a pas lieu : un lundi, après sa fin, pendant une pause (lot 3)                                         |
 | `sessionGone`     | 404    | la session n'existe pas, ou plus, ou l'identifiant est celui d'un cours                                                                                 |
 | `dateUnreadable`  | 400    | une date illisible, impossible (un 30 février) ou hors des années 1970 à 2100                                                                           |
 | `timeUnreadable`  | 400    | une heure illisible ou impossible, 25:99 par exemple                                                                                                    |

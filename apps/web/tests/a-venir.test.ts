@@ -3140,6 +3140,46 @@ describe('un jour où le cours n’a pas de séance (étape 19, lot 3)', () => {
 		expect(await exceptionsDuCours()).toEqual([]);
 	});
 
+	it.each([
+		['of the course', true],
+		['of the whole organisation', false]
+	] as const)(
+		'refuses a day in a pause %s, in the seven days of the screen or after, and writes nothing, not even the journal',
+		async (_pause, duCours) => {
+			// Une pause retire ses séances de l'écran : le jour de la séance de cette semaine et celui de
+			// la semaine suivante, qui s'annulent l'un et l'autre hors de la pause, n'en ont plus
+			// (relecture du lot 3).
+			const pause = newId();
+			await maintenance((tx) =>
+				tx.execute(sql`
+					insert into "pause" ("id", "organization_id", "course_id", "from_date", "to_date",
+						"reason")
+					values (${pause}, ${organisation}, ${duCours ? atelier : null}, ${jour(0)}, ${jour(9)},
+						'Vacances de l’atelier')
+				`)
+			);
+			try {
+				const journalAvant = await lignesDuJournal();
+				for (const date of [seance, semaineSuivante]) {
+					for (const [action, envoi] of [
+						['annuler', { courseId: atelier, date }],
+						['deplacer', { courseId: atelier, date, toDate: jour(3), toStart: '18:00' }]
+					] as const) {
+						const reponse = await postForm(`/?/${action}`, envoi, cookie);
+						expect(reponse.status, `${action} ${date}`).toBe(400);
+						expect(alerte(await reponse.text()), `${action} ${date}`).toBe(
+							PAS_DE_SEANCE.fr(ATELIER, dateLue('fr', date))
+						);
+					}
+				}
+				expect(await exceptionsDuCours()).toEqual([]);
+				expect(await lignesDuJournal()).toBe(journalAvant);
+			} finally {
+				await maintenance((tx) => tx.execute(sql`delete from "pause" where "id" = ${pause}`));
+			}
+		}
+	);
+
 	it('still cancels and moves a session after the seven days of the screen, the next week', async () => {
 		const annule = await postForm(
 			'/?/annuler',

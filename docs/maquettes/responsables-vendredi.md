@@ -159,11 +159,11 @@ Cette session seulement. Les autres vendredis ne changent pas.
   main, ou la page d'une semaine d'avant, peut en envoyer un. Jusqu'à l'étape 19 (lot 2), il
   l'écrivait ; `À venir` le refusait déjà. Une session déjà annulée ou déplacée ce jour-là reçoit le
   refus d'une page restée ouverte avant celui d'un jour passé : elle n'a rien à corriger.
-- `Annuler` et `Déplacer` refusent un jour où la session n'a pas lieu : un lundi, ou un vendredi
-  avant son début ou après sa date de fin (étape 19, lot 3). Aucune ligne ne l'envoie, mais un
-  formulaire écrit à la main le pouvait : l'action répondait `La session est annulée pour ce
-vendredi.` et la base gardait une exception qui ne tombe sur aucune séance. Rien ne s'écrit
-  désormais, pas même au journal. Les séances comptent comme l'écran et `À venir` les montrent, par
+- `Annuler` et `Déplacer` refusent un jour où la session n'a pas lieu : un lundi, un vendredi
+  avant son début ou après sa date de fin, ou un vendredi dans une pause, de la session ou de toute
+  l'organisation (étape 19, lot 3). Aucune ligne ne l'envoie, mais un formulaire écrit à la main
+  le pouvait : l'action répondait `La session est annulée pour ce vendredi.` et la base gardait
+  une exception qui ne tombe sur aucune séance. Rien ne s'écrit désormais, pas même au journal. Les séances comptent comme l'écran et `À venir` les montrent, par
   le même calcul, que le jour soit dans les sept jours de l'écran ou plus loin. Une session arrivée
   d'un autre jour, la ligne `Nouvelle date, à la place du …`, se rétablit, et ne s'annule ni ne se
   déplace sous ce jour-là : l'envoi reçoit le refus d'une ligne périmée.
