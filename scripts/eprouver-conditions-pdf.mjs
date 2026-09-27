@@ -306,10 +306,12 @@ const MOTS_DE_PHRASE = new Set([
 ]);
 
 /**
- * Ce qui finit une phrase : un point, un point d'exclamation ou d'interrogation, un point-virgule ou
- * un deux-points, suivi d'une espace ou de la fin de la page. Le point de `voltia.ch` n'en est pas un.
+ * Ce qui finit une phrase : un point, un point d'exclamation ou d'interrogation, ou des points de
+ * suspension, suivis d'une espace ou de la fin de la page. Le point de `voltia.ch` n'en est pas un.
+ * Le deux-points et le point-virgule non plus : ils ne ferment pas une phrase française, et
+ * « Voltia : Une Personne » est un nom écrit à côté de Voltia (relecture de l'étape 19).
  */
-const FIN_DE_PHRASE = /[.!?;:…](?=\s|$)/gu;
+const FIN_DE_PHRASE = /[.!?…](?=\s|$)/gu;
 
 /**
  * « Voltia », seul, partout où le PDF le dessine : dans le texte, la page de garde, les titres, le
@@ -970,6 +972,36 @@ try {
 				mentionsVues.filter((mention) => mention.startsWith('page 1,')).length === 1 &&
 				mentionsVues.filter((mention) => !mention.startsWith('page 1,')).length === 2,
 			seulDerriere.ecarts.join(' ; ') || 'rien vu'
+		);
+
+		// Le troisième témoin rendu : un nom écrit derrière un deux-points ou un point-virgule,
+		// « VOLTIA : JEAN EXEMPLE » au chapeau, « à Voltia : Jean Exemple » puis « exploité par
+		// Voltia ; Jean Exemple » dans le texte. Ni l'un ni l'autre ne ferme la phrase : un contrôle
+		// qui s'y arrête laisse passer le nom (relecture de l'étape 19).
+		const deuxPoints = construire(
+			markdown
+				.replace(
+					'Pour toute question ou demande : **contact@voltia.ch**.',
+					'Pour toute question ou demande à Voltia : Jean Exemple, **contact@voltia.ch**.'
+				)
+				.replace('exploité par Voltia, en Suisse', 'exploité par Voltia ; Jean Exemple, en Suisse')
+		).replace('un service de Voltia.', 'un service de Voltia : Jean Exemple.');
+		const cheminDeuxPoints = join(dossierDuTemoin, 'deux-points.html');
+		writeFileSync(cheminDeuxPoints, deuxPoints, 'utf8');
+		await imprimer(cheminDeuxPoints, join(dossierDuTemoin, 'deux-points.pdf'), piedDePage(version));
+		const seulDeuxPoints = voltiaSeul(
+			texteDuPdf(readFileSync(join(dossierDuTemoin, 'deux-points.pdf')))
+		);
+		const vuesDeuxPoints = [
+			...new Set(seulDeuxPoints.ecarts.map((ecart) => ecart.split(' : ')[0]))
+		];
+		verifier(
+			'un nom écrit derrière un deux-points ou un point-virgule, en capitales au chapeau puis ' +
+				'deux fois dans le texte, est vu',
+			deuxPoints.split('Jean Exemple').length - 1 === 3 &&
+				vuesDeuxPoints.filter((mention) => mention.startsWith('page 1,')).length === 1 &&
+				vuesDeuxPoints.filter((mention) => !mention.startsWith('page 1,')).length === 2,
+			seulDeuxPoints.ecarts.join(' ; ') || 'rien vu'
 		);
 	} finally {
 		rmSync(dossierDuTemoin, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
