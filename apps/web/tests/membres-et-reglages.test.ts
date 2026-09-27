@@ -4,7 +4,8 @@
 //
 // - sous le choix du rôle, l'écran Membres dit ce que fait un éditeur et ce qui est réservé au
 //   responsable (B3), et cette liste est liée à ce que la base et les routes permettent vraiment :
-//   chaque table que la base réserve au responsable est couverte par un geste dit « réservé », chaque
+//   chaque table que la base réserve au responsable est couverte par un geste dit « réservé » (sauf
+//   la suppression d'un cours, qu'aucun écran ne propose encore : `RESERVEES_SANS_ECRAN`), chaque
 //   geste réservé est refusé à une éditrice, et chaque geste de l'éditeur, elle le fait elle-même, par
 //   le formulaire de son écran. Les gestes viennent de la liste même que l'écran affiche
 //   (`EDITOR_GESTURES` et `MANAGER_GESTURES`) : un geste ajouté à l'écran sans sa preuve ici, ou
@@ -830,6 +831,13 @@ const COURS_DE_L_EDITEUR: Record<Langue, string> = {
 	ar: 'إنشاء درس وتعديله ونشره'
 };
 
+/**
+ * Ce que la base réserve déjà au responsable sans qu'aucun écran le propose : supprimer un cours
+ * (migration 0065, étape 19). L'écran Cours et son action le proposeront au lot suivant ; ce jour-là,
+ * le geste entre dans la liste que l'écran Membres affiche, et sa table quitte celle-ci.
+ */
+const RESERVEES_SANS_ECRAN = ['course'] as const;
+
 /** Le titre de la liste réservée, dans chaque langue : les mots que la consigne demande. */
 const RESERVE: Record<Langue, string> = {
 	fr: 'Réservé au responsable',
@@ -939,7 +947,9 @@ describe('ce que peut faire chaque rôle, sous le choix du rôle (retour B3)', (
 		const dites = [
 			...new Set(Object.values(RESERVES).flatMap((reserve) => [...reserve.tables]))
 		].sort();
-		expect(dites).toEqual(reservees);
+		// Une table réservée sans écran n'est dite par aucun geste, et n'en couvre aucun.
+		for (const table of RESERVEES_SANS_ECRAN) expect(dites).not.toContain(table);
+		expect([...dites, ...RESERVEES_SANS_ECRAN].sort()).toEqual(reservees);
 	});
 
 	it.each(MANAGER_GESTURES)('refuses an editor the gesture %s, said reserved', async (geste) => {

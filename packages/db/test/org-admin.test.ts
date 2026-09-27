@@ -73,6 +73,8 @@ let pendingInvitation: string;
 let spareRoom: string;
 /** La période d'horaires de A. */
 let period: string;
+/** Le cours de A, publié, que `seedOrganisation` pose. */
+let courseOfA: string;
 /**
  * Une organisation dont toutes les invitations sont en attente, et qui n'a pas encore de réglages
  * des prières : le décor des gestes qui éprouvent une politique d'écriture seule.
@@ -155,6 +157,7 @@ beforeAll(async () => {
 		select "id" from "invitation" where "organization_id" = ${a.id} and "status" = 'pending'
 	`);
 	period = await lookup(sql`select "id" from "prayer_period" where "organization_id" = ${a.id}`);
+	courseOfA = await lookup(sql`select "id" from "course" where "organization_id" = ${a.id}`);
 	// C garde la seule invitation que `seedOrganisation` pose, en attente. Son éditrice entre par le
 	// propriétaire et non par une invitation : une invitation consommée ne change plus de statut
 	// (migration 0058), et une instruction sans WHERE qui la toucherait lèverait pour cette raison,
@@ -371,6 +374,13 @@ const GESTURES: Gesture[] = [
 	{
 		name: '/prieres ?/supprimerPeriode : supprimer une période (prayer_period, delete)',
 		statement: () => sql`delete from "prayer_period" where "id" = ${period} returning "id"`,
+		admin: 1
+	},
+	{
+		// Aucun écran ne le propose encore : l'écran Cours et son action viennent au lot suivant de
+		// l'étape 19. La base le réserve dès maintenant (migration 0065).
+		name: '/cours ?/supprimer : supprimer un cours (course, delete)',
+		statement: () => sql`delete from "course" where "id" = ${courseOfA} returning "id"`,
 		admin: 1
 	}
 ];
@@ -609,6 +619,11 @@ const WRITE_ONLY_GESTURES: Gesture[] = [
 			on conflict ("organization_id") do update set "latitude" = 46.2, "longitude" = 6.1
 		`,
 		admin: 1
+	},
+	{
+		name: 'aucun écran, sans WHERE : supprimer tous les cours de l’organisation (course, delete)',
+		statement: () => sql`delete from "course"`,
+		admin: 1
 	}
 ];
 
@@ -631,10 +646,10 @@ describe('les politiques d’écriture elles-mêmes, sans que la lecture répond
 		}
 	);
 
-	it('starts from what the three gestures need: one pending invitation, no prayer settings', async () => {
-		// Sans ce décor, les trois gestes ci-dessus ne toucheraient rien, pour personne, et
+	it('starts from what the four gestures need: one pending invitation, no prayer settings, one course', async () => {
+		// Sans ce décor, les quatre gestes ci-dessus ne toucheraient rien, pour personne, et
 		// l'éditrice passerait pour refusée alors qu'il n'y avait rien à toucher.
-		const state = firstRow<{ pending: number; others: number; settings: number }>(
+		const state = firstRow<{ pending: number; others: number; settings: number; courses: number }>(
 			await withMaintenance(owner, (tx) =>
 				tx.execute(sql`
 					select
@@ -643,11 +658,13 @@ describe('les politiques d’écriture elles-mêmes, sans que la lecture répond
 						(select count(*)::int from "invitation"
 							where "organization_id" = ${c.id} and "status" <> 'pending') as others,
 						(select count(*)::int from "prayer_settings"
-							where "organization_id" = ${c.id}) as settings
+							where "organization_id" = ${c.id}) as settings,
+						(select count(*)::int from "course"
+							where "organization_id" = ${c.id} and "kind" = 'course') as courses
 				`)
 			)
 		);
-		expect(state).toEqual({ pending: 1, others: 0, settings: 0 });
+		expect(state).toEqual({ pending: 1, others: 0, settings: 0, courses: 1 });
 		expect(await isOrgAdmin(inC(quiet.id))).toBe(false);
 	});
 });
@@ -750,8 +767,41 @@ describe('ce que l’éditeur fait toujours', () => {
 					insert into "terms_acceptance" ("id", "organization_id", "user_id", "version")
 					values (${newId()}, ${a.id}, ${editor.id}, '2026-08-01')
 				`);
+				// Supprimer un cours, même le sien, est réservé depuis la migration 0065 : la
+				// suppression est écartée sans erreur, et le cours reste.
 				const deleted = allRows(
 					await tx.execute(sql`delete from "course" where "id" = ${courseId} returning "id"`)
+				);
+				expect(deleted).toHaveLength(0);
+				throw new Error(ROLLED_BACK);
+			})
+		);
+		expect(outcome).toBe(ROLLED_BACK);
+	});
+
+	it('lets an editor delete a Friday session, as the Vendredi screen offers her', async () => {
+		// La suppression d'un cours est réservée depuis la migration 0065 ; celle d'une session du
+		// vendredi ne l'est pas : l'écran Vendredi la propose à l'éditeur (ADR 0033, ADR 0046).
+		const outcome = await messageOfFailure(() =>
+			withOrg(app, inA(editor.id), async (tx) => {
+				const sessionId = newId();
+				await tx.execute(sql`
+					insert into "course" (
+						"id", "organization_id", "kind", "jumua_order", "status", "audience",
+						"teaching_language", "source_language", "recurrence_kind", "recurrence_weekday",
+						"recurrence_interval", "recurrence_anchor_date", "timing_kind", "timing_start",
+						"timing_end", "starts_on", "updated_by"
+					) values (
+						${sessionId}, ${a.id}, 'jumua', 2, 'published', 'open', array['fr'], 'fr',
+						'weekly', array[5]::smallint[], 1, '2026-09-11', 'fixed', '13:30', '14:10',
+						'2026-09-11', ${editor.id}
+					)
+				`);
+				// L'instruction de l'écran Vendredi, `kind = 'jumua'` compris.
+				const deleted = allRows(
+					await tx.execute(sql`
+						delete from "course" where "id" = ${sessionId} and "kind" = 'jumua' returning "id"
+					`)
 				);
 				expect(deleted).toHaveLength(1);
 				throw new Error(ROLLED_BACK);
@@ -860,6 +910,7 @@ describe('la fonction qui lit le rôle', () => {
 			`)
 		);
 		expect(found.map((row) => row.policy)).toEqual([
+			'course.course_delete',
 			'invitation.invitation_delete',
 			'invitation.invitation_insert',
 			'invitation.invitation_select',

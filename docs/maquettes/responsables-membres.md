@@ -58,9 +58,13 @@ Sous le choix du rôle, deux listes, qu'une personne lit au moment de choisir.
 Puis : `Une organisation garde toujours au moins une personne responsable.`
 
 Cette liste est celle de l'ADR 0046. Un test la lie à la base : les tables que les politiques
-réservent aux responsables doivent être exactement celles des gestes que l'écran dit réservés.
-Jusqu'au lot 4 de l'étape 18, la ligne des cours disait aussi « et le supprimer » : aucun écran ne
-propose de supprimer un cours, et ces mots sont retirés.
+réservent aux responsables doivent être exactement celles des gestes que l'écran dit réservés, à une
+exception près. Depuis l'étape 19, la base réserve la suppression d'un cours à la personne
+responsable (migration 0065), et aucun écran ne la propose encore : la ligne viendra dans cette
+liste avec le bouton de l'écran Cours. Jusqu'au lot 4 de l'étape 18, la ligne des cours disait
+aussi « et le supprimer » : aucun écran ne propose de supprimer un cours, et ces mots sont retirés.
+La liste des membres elle-même, que la ligne « Voir les membres » réserve, l'est aussi dans la base
+depuis l'étape 19 (migration 0064) : un éditeur ne lit plus que sa propre adhésion.
 
 ## Les messages
 

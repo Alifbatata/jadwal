@@ -211,13 +211,14 @@ function publicSelect(name: string, column: SQLWrapper, extra?: SQL) {
  * Les quatre opérations, pour une table dont l'organisation est portée par `organization_id`.
  * `userColumns` nomme les colonnes qui désignent une personne : elles sont gardées à l'écriture.
  * `reserved` réserve les écritures aux responsables de l'organisation, pour le rôle applicatif : la
- * lecture reste ouverte à tous ses membres (ADR 0046).
+ * lecture reste ouverte à tous ses membres (ADR 0046). `deletable` ajoute une condition à la seule
+ * suppression, pour le rôle applicatif.
  */
 function orgPolicies(
 	name: string,
 	column: SQLWrapper,
 	userColumns: SQLWrapper[] = [],
-	{ reserved = false }: { reserved?: boolean } = {}
+	{ reserved = false, deletable }: { reserved?: boolean; deletable?: SQL } = {}
 ) {
 	const scope = sql`${column} = ${orgContext}`;
 	const guarded = (base: SQL) =>
@@ -227,6 +228,7 @@ function orgPolicies(
 		);
 	const writable = reserved ? sql`${scope} and ${orgAdmin}` : scope;
 	const written = guarded(writable);
+	const removable = deletable ? sql`${writable} and (${deletable})` : writable;
 	return [
 		pgPolicy(`${name}_select`, { as: 'permissive', for: 'select', to: appRole, using: scope }),
 		pgPolicy(`${name}_insert`, {
@@ -242,7 +244,7 @@ function orgPolicies(
 			using: writable,
 			withCheck: written
 		}),
-		pgPolicy(`${name}_delete`, { as: 'permissive', for: 'delete', to: appRole, using: writable }),
+		pgPolicy(`${name}_delete`, { as: 'permissive', for: 'delete', to: appRole, using: removable }),
 		// Le super-admin fait tout, dans l'organisation où il est entré et nulle part ailleurs
 		// (ADR 0025). Le contexte reste obligatoire, non pour le retenir — il choisit l'organisation
 		// qu'il veut — mais pour qu'il ne modifie pas la mauvaise par inadvertance. Il n'est membre
@@ -816,7 +818,12 @@ export const course = pgTable(
 					and ${table.timingStart} is null and ${table.timingEnd} is null
 				else false end`
 		),
-		...orgPolicies('course', table.organizationId, [table.updatedBy]),
+		// Supprimer un cours est réservé aux responsables (migration 0065, ADR 0046) ; le créer, le
+		// modifier et le publier restent à tout membre. Une session du vendredi garde sa suppression
+		// ouverte : l'écran Vendredi la propose à l'éditeur (ADR 0033).
+		...orgPolicies('course', table.organizationId, [table.updatedBy], {
+			deletable: sql`${table.kind} = 'jumua' or ${orgAdmin}`
+		}),
 		// Seuls les cours publiés, et seulement d'une organisation active. Un brouillon ou un cours
 		// archivé est invisible du public par la base, pas par une clause qu'on pourrait oublier.
 		publicSelect('course', table.organizationId, sql`${table.status} = 'published'`)

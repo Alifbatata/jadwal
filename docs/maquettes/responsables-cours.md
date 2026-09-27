@@ -120,8 +120,11 @@ dans cet espace. Publiez le cours quand tout est prêt.`
 
 Relevé par la relecture de l'étape 18, non corrigé à la fin de l'étape :
 
-- la liste n'a aucun bouton pour supprimer un cours ; l'action existe côté serveur, et un éditeur
-  peut l'appeler ;
+- la liste n'a aucun bouton pour supprimer un cours ; l'action existe côté serveur, sans autre garde
+  que l'appartenance. Depuis l'étape 19, la base réserve la suppression d'un cours à la personne
+  responsable (migration 0065) : appelée par un éditeur, l'action ne supprime rien, mais écrit
+  encore au journal et répond comme si le cours était supprimé. Le bouton et la garde de l'action
+  viennent au lot suivant ;
 - l'état `archivé` n'est pas proposé, et enregistrer un cours archivé le repasse en brouillon ;
   aucun écran n'archive un cours aujourd'hui ;
 - un cours enregistré avant l'étape 18 peut avoir des dates hors de sa période : sa fiche le

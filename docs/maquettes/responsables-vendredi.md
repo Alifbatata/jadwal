@@ -60,7 +60,9 @@ Jusqu'au mercredi 25.11.2026
 - **Modifier cette session** ouvre le formulaire rempli.
 - **Supprimer cette session** ouvre un avertissement : `Elle disparaîtra de cet écran et de votre
 page publique, pour tous les vendredis. Pour un seul vendredi, annulez-la plutôt dans « Ce
-vendredi », plus bas.`, puis `Oui, supprimer`.
+vendredi », plus bas.`, puis `Oui, supprimer`. Un éditeur le peut comme une personne responsable :
+  depuis l'étape 19, la base réserve la suppression d'un cours à la personne responsable, mais pas
+  celle d'une session du vendredi (migration 0065).
 
 ## Ajouter ou modifier une session
 
