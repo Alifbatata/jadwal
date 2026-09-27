@@ -112,8 +112,21 @@ Un cours ancré sur une prière dont l'heure n'est pas connue affiche « Après 
 - La vue Mois n'affiche pas les titres dans les cases, seulement un compte. Sept colonnes sur un
   téléphone ne laissent pas la place d'un mot lisible, et un titre tronqué ne se lit pas.
 
+## Addendum du 27.09.2026
+
+Les décisions du chef de projet sur les langues des pages publiques.
+
+- **Les aperçus de partage disent une langue et un pays.** `og:locale` vaut `fr_CH`, `de_CH`,
+  `it_CH`, `en_GB` ou `ar_AR`, et non plus `fr` ou `ar`, que le protocole Open Graph ne connaît pas.
+  Chaque autre langue que l'organisation publie a sa balise `og:locale:alternate`. La table est
+  `LOCALE_DE_PARTAGE`, dans `apps/web/src/lib/i18n.ts`.
+- **Trois liens vers des services d'agenda, et non plus deux.** Le choix complet propose aussi
+  Outlook pour les comptes de travail ou d'école, `outlook.office.com` (ADR 0048, addendum du même
+  jour) : le test admet ces trois domaines pour un lien `<a>` vers ailleurs, et aucune ressource.
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 5 de la feuille de route. Met en œuvre les ADR 0007 (langues) et 0009
 (vie privée) du côté public. Amendé le 2026-09-21 (le script du mode intégré) et le 2026-09-26
-(cinq langues, l'agenda selon l'appareil, deux liens vers des services d'agenda).
+(cinq langues, l'agenda selon l'appareil, deux liens vers des services d'agenda). Complété le
+27.09.2026 (addendum ci-dessus).

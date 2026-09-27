@@ -24,6 +24,20 @@ export function isLangue(value: string): value is Langue {
 	return (LANGUES as readonly string[]).includes(value);
 }
 
+/**
+ * La langue d'une page pour les aperçus de partage (Open Graph, `og:locale`) : une langue et un
+ * pays, comme le protocole le demande (décision du chef de projet, 27.09.2026). La Suisse pour les
+ * trois langues nationales, le Royaume-Uni pour l'anglais britannique, et `ar_AR`, la forme que
+ * Facebook donne à l'arabe.
+ */
+export const LOCALE_DE_PARTAGE: Record<Langue, string> = {
+	fr: 'fr_CH',
+	de: 'de_CH',
+	it: 'it_CH',
+	en: 'en_GB',
+	ar: 'ar_AR'
+};
+
 /** Le sens d'écriture. L'arabe est en RTL complet. */
 export function direction(langue: Langue): 'ltr' | 'rtl' {
 	return langue === 'ar' ? 'rtl' : 'ltr';

@@ -685,6 +685,54 @@ describe('les langues qu’une organisation propose', () => {
 });
 
 /**
+ * La langue de la page pour les aperçus de partage (Open Graph), décision du chef de projet au
+ * 27.09.2026 : une langue et un pays, `fr_CH`, `de_CH`, `it_CH`, `en_GB` et `ar_AR`, et une balise
+ * `og:locale:alternate` par autre langue que l'organisation publie. La page disait `fr`, `ar`.
+ */
+describe('la langue des aperçus de partage (og:locale)', () => {
+	/** `og:locale`, puis chaque `og:locale:alternate`, dans l'ordre de la page. */
+	function locales(html: string): { locale: string[]; alternates: string[] } {
+		const valeurs = (propriete: string) =>
+			[...html.matchAll(/<meta\b[^>]*>/g)]
+				.map((trouve) => attributs(trouve[0]))
+				.filter((meta) => meta['property'] === propriete)
+				.map((meta) => meta['content'] ?? '');
+		return { locale: valeurs('og:locale'), alternates: valeurs('og:locale:alternate') };
+	}
+
+	it.each([
+		{ chemin: `/m/${SLUG}`, locale: 'fr_CH', alternates: ['de_CH', 'it_CH', 'en_GB', 'ar_AR'] },
+		{ chemin: `/m/${SLUG}/de`, locale: 'de_CH', alternates: ['fr_CH', 'it_CH', 'en_GB', 'ar_AR'] },
+		{
+			chemin: `/m/${SLUG}/it/agenda`,
+			locale: 'it_CH',
+			alternates: ['fr_CH', 'de_CH', 'en_GB', 'ar_AR']
+		},
+		{
+			chemin: `/m/${SLUG}/en/cours/${COURS.isha}`,
+			locale: 'en_GB',
+			alternates: ['fr_CH', 'de_CH', 'it_CH', 'ar_AR']
+		},
+		{
+			chemin: `/m/${SLUG}/ar?vue=mois`,
+			locale: 'ar_AR',
+			alternates: ['fr_CH', 'de_CH', 'it_CH', 'en_GB']
+		},
+		// Une organisation qui ne publie que l'arabe et le français : une seule autre langue.
+		{ chemin: `/m/${SLUG_ARABE}`, locale: 'ar_AR', alternates: ['fr_CH'] },
+		{ chemin: `/m/${SLUG_ARABE}/fr/agenda`, locale: 'fr_CH', alternates: ['ar_AR'] },
+		{ chemin: `/m/${SLUG_ARABE}/cours/${COURS.arabe}`, locale: 'ar_AR', alternates: ['fr_CH'] }
+	])(
+		'says $locale on $chemin, and the other languages it publishes',
+		async ({ chemin, locale, alternates }) => {
+			const { statut, html } = await servir(chemin);
+			expect(statut).toBe(200);
+			expect(locales(html)).toEqual({ locale: [locale], alternates });
+		}
+	);
+});
+
+/**
  * Les dates du public, depuis l'étape 18 : `JJ.MM.AAAA`, précédées ou non du nom du jour, dans les
  * cinq langues. Et jamais la forme de la base, `AAAA-MM-JJ`, dans ce qu'une personne lit.
  */

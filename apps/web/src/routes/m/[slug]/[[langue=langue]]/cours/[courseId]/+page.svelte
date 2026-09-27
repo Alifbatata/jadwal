@@ -1,6 +1,14 @@
 <script lang="ts">
 	import type { IsoDate } from '@jadwal/core';
-	import { direction, longDate, NOM_DE_LANGUE, numericDate, t, type Langue } from '$lib/i18n.js';
+	import {
+		direction,
+		LOCALE_DE_PARTAGE,
+		longDate,
+		NOM_DE_LANGUE,
+		numericDate,
+		t,
+		type Langue
+	} from '$lib/i18n.js';
 	import { lienAgenda, lienCours, lienVue } from '$lib/public/liens.js';
 	import { PARAMETRE_APPAREIL, TOUS_LES_CHOIX } from '$lib/public/abonnement.js';
 	import Abonnement from '$lib/public/Abonnement.svelte';
@@ -50,7 +58,11 @@
 	<meta property="og:description" content={partage} />
 	<meta property="og:type" content="article" />
 	<meta property="og:site_name" content={data.organisation.name} />
-	<meta property="og:locale" content={data.langue} />
+	<!-- Une langue et un pays, et chaque autre langue publiée (27.09.2026). -->
+	<meta property="og:locale" content={LOCALE_DE_PARTAGE[data.langue]} />
+	{#each data.langues.filter((autre) => autre !== data.langue) as autre (autre)}
+		<meta property="og:locale:alternate" content={LOCALE_DE_PARTAGE[autre]} />
+	{/each}
 	<meta property="og:url" content={data.canonical} />
 	<link rel="canonical" href={data.canonical} />
 	{#each data.alternates as autre (autre.hreflang)}

@@ -1,6 +1,14 @@
 <script lang="ts">
 	import { addDays, isoDateToDays, weekdayFromDays, type IsoDate } from '@jadwal/core';
-	import { direction, longDate, monthName, numericDate, t, type Langue } from '$lib/i18n.js';
+	import {
+		direction,
+		LOCALE_DE_PARTAGE,
+		longDate,
+		monthName,
+		numericDate,
+		t,
+		type Langue
+	} from '$lib/i18n.js';
 	import { lienAgenda, lienCours, lienVue } from '$lib/public/liens.js';
 	import Entete from '$lib/public/Entete.svelte';
 	import Pied from '$lib/public/Pied.svelte';
@@ -159,7 +167,11 @@
 	<meta property="og:description" content={`${mots.weekTitle} | ${data.organisation.name}`} />
 	<meta property="og:type" content="website" />
 	<meta property="og:site_name" content={data.organisation.name} />
-	<meta property="og:locale" content={data.langue} />
+	<!-- Une langue et un pays, et chaque autre langue publiée (27.09.2026). -->
+	<meta property="og:locale" content={LOCALE_DE_PARTAGE[data.langue]} />
+	{#each data.langues.filter((autre) => autre !== data.langue) as autre (autre)}
+		<meta property="og:locale:alternate" content={LOCALE_DE_PARTAGE[autre]} />
+	{/each}
 	<meta property="og:url" content={data.canonical} />
 	<!-- L'adresse canonique et les versions linguistiques, en absolu (ADR 0029). Les liens du
 	     sélecteur de langue ne les remplacent pas : un `hreflang` sur un `<a>` n'est pas une

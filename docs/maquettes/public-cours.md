@@ -51,7 +51,9 @@ Produites côté serveur, dans la langue de la page :
 - `og:description` : la description, coupée à 200 caractères sur un espace, ou à défaut la ligne de
   repères (rythme, horaire, public)
 - `og:url` : le lien canonique de la page dans sa langue
-- `og:locale` : la langue de la page
+- `og:locale` : la langue de la page et son pays, `fr_CH`, `de_CH`, `it_CH`, `en_GB` ou `ar_AR`
+  (27.09.2026), et une balise `og:locale:alternate` pour chaque autre langue que l'organisation
+  publie, dans l'ordre de l'interface. La page du programme et celle de l'abonnement font de même.
 - `og:type` : `article`
 - `og:site_name` : le nom de l'organisation
 
