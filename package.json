@@ -12,6 +12,7 @@
 		"format": "prettier --write .",
 		"check": "pnpm -r --if-present run check",
 		"test": "node scripts/tests.mjs",
+		"test:temps": "node scripts/tests.mjs --temps",
 		"build": "pnpm -r --if-present run build",
 		"dev": "pnpm --filter @jadwal/web run dev",
 		"test:tz": "pnpm --filter @jadwal/core run test:tz",

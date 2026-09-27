@@ -4,10 +4,10 @@
 // `JJ.MM.AAAA` dans le texte que chaque page donne à lire, jamais en `AAAA-MM-JJ`.
 //
 // Ces promesses sont déjà tenues par des fonctions éprouvées une à une (`i18n.test.ts`,
-// `affichage.test.ts`, `agenda.test.ts`, `Pied.test.ts`). Ce fichier éprouve ce qu'aucun test
-// unitaire ne voit : le hook qui écrit la langue sur `<html>` une fois la page rendue, chaque route
-// qui la pose ou ne la pose pas, la page d'erreur que SvelteKit choisit, et le flux réellement
-// servi. Vrai serveur construit, vraie base.
+// `affichage.test.ts`, `agenda.test.ts`, `Pied.temps.test.ts`). Ce fichier éprouve ce qu'aucun
+// test unitaire ne voit : le hook qui écrit la langue sur `<html>` une fois la page rendue, chaque
+// route qui la pose ou ne la pose pas, la page d'erreur que SvelteKit choisit, et le flux
+// réellement servi. Vrai serveur construit, vraie base.
 
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { addDays, isoDateToDays, todayInZone, weekdayFromDays, type IsoDate } from '@jadwal/core';

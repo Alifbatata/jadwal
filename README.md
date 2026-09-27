@@ -66,6 +66,7 @@ pnpm lint                       # prettier --check + eslint + contrôle de style
 pnpm format                     # prettier --write
 pnpm check                      # tsc / svelte-check dans chaque paquet
 pnpm test                       # vitest dans chaque paquet (couverture de core imposée à 90 %)
+pnpm test:temps                 # les tests liés au temps, à part (CONTRIBUTING.md)
 pnpm test:tz                    # suite de core rejouée sous quatre fuseaux de machine
 pnpm build                      # build de chaque paquet
 pnpm style                      # tiret cadratin et chevilles dans les textes lus par les gens

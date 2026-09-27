@@ -722,8 +722,9 @@ describe('l’onglet des prières, quand le module est allumé (C4)', () => {
 						: `${HEURES.dhuhr} ${IQAMAS.dhuhr}`
 				);
 			}
-			// Le tableau du jour, quand c'est ce vendredi ; `src/lib/public/Prieres.test.ts` l'éprouve
-			// un vendredi choisi, quel que soit le jour où ce test tourne.
+			// Le tableau du jour, quand c'est ce vendredi : c'est le cas à l'horloge figée de ce
+			// fichier (`HORLOGE_FIGEE`). `src/lib/public/Prieres.temps.test.ts` l'éprouve aussi, un
+			// vendredi choisi.
 			if (today === VENDREDI) {
 				const seule = VENDREDI_SEULE[langue];
 				expect(lignes(html, 'aujourdhui')[1]?.[2]).toBe(

@@ -18,13 +18,31 @@
  *
  * En Node, et non en script shell, parce que la même commande doit marcher sous Windows et sous
  * Linux (voir CLAUDE.md).
+ *
+ * ## Les tests liés au temps
+ *
+ *     pnpm test:temps
+ *
+ * Les tests dont un délai ou un seuil de temps peut tomber sous la charge de la machine, et non
+ * parce que le code a changé, vivent dans des fichiers `*.temps.test.ts` : `pnpm test` les laisse de
+ * côté, et `pnpm test:temps` ne lance qu'eux, par le script `test:temps` de chaque paquet (étape 19).
+ * La CI lance les deux. Aucun test ne disparaît pour autant : le tableau de `pnpm test` dit, paquet
+ * par paquet, combien de fichiers tournent à part, et `pnpm test:temps` rend le même tableau pour
+ * eux, avec la même règle sur les tests sautés. `CONTRIBUTING.md` dit comment leurs marges sont
+ * tirées d'une mesure.
  */
 import { execFileSync, execSync, spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
+/** `pnpm test:temps` : les seuls tests liés au temps. */
+const TEMPS = process.argv.includes('--temps');
+/** Le script lancé dans chaque paquet. */
+const SCRIPT = TEMPS ? 'test:temps' : 'test';
 /** Le nom du fichier que chaque paquet écrit, et que celui-ci relit. Voir les scripts `test`. */
-const RESULTATS = '.vitest-resultats.json';
+const RESULTATS = TEMPS ? '.vitest-temps-resultats.json' : '.vitest-resultats.json';
+/** Le nom que portent les fichiers des tests liés au temps. */
+const SUFFIXE_TEMPS = '.temps.test.ts';
 
 const racine = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
 
@@ -52,9 +70,29 @@ function paquets() {
 		}))
 		.filter((projet) => {
 			const manifeste = JSON.parse(readFileSync(join(projet.chemin, 'package.json'), 'utf8'));
-			return Boolean(manifeste.scripts?.test);
+			return Boolean(manifeste.scripts?.[SCRIPT]);
 		})
 		.sort((a, b) => a.nom.localeCompare(b.nom));
+}
+
+/**
+ * Les fichiers de tests liés au temps d'un paquet, comptés sur le disque sans les lancer : ce sont
+ * ceux que `pnpm test` laisse à `pnpm test:temps`.
+ */
+function fichiersLiesAuTemps(dossier) {
+	let nombre = 0;
+	const file = [dossier];
+	while (file.length > 0) {
+		const courant = file.pop();
+		for (const entree of readdirSync(courant, { withFileTypes: true })) {
+			if (entree.isDirectory()) {
+				if (!['node_modules', 'build', 'dist', '.svelte-kit'].includes(entree.name)) {
+					file.push(join(courant, entree.name));
+				}
+			} else if (entree.name.endsWith(SUFFIXE_TEMPS)) nombre += 1;
+		}
+	}
+	return nombre;
 }
 
 /** Ce qu'un paquet a vraiment joué, ou `null` s'il n'a pas été lancé du tout. */
@@ -84,14 +122,14 @@ function ligne(colonnes, largeurs) {
 
 const projets = paquets();
 if (projets.length === 0) {
-	process.stderr.write('Aucun paquet avec un script « test » : rien à lancer.\n');
+	process.stderr.write(`Aucun paquet avec un script « ${SCRIPT} » : rien à lancer.\n`);
 	process.exit(1);
 }
 
 // Repartir de zéro : un fichier de résultats d'hier ferait croire qu'un paquet a tourné.
 for (const projet of projets) rmSync(projet.fichier, { force: true });
 
-const execution = spawnSync('pnpm --recursive --if-present run test', {
+const execution = spawnSync(`pnpm --recursive --if-present run ${SCRIPT}`, {
 	cwd: racine,
 	stdio: 'inherit',
 	shell: true
@@ -112,7 +150,23 @@ const totaux = joues.reduce(
 	{ fichiers: 0, total: 0, reussis: 0, sautes: 0, echoues: 0 }
 );
 
-const entetes = ['paquet', 'fichiers', 'tests', 'réussis', 'sautés', 'échoués'];
+// Dans `pnpm test`, une colonne de plus : les fichiers liés au temps que chaque paquet laisse à
+// `pnpm test:temps`. Un test déplacé là ne disparaît pas du tableau sans le dire.
+const aPart = new Map(
+	TEMPS ? [] : releves.map((projet) => [projet.nom, fichiersLiesAuTemps(projet.chemin)])
+);
+const totalAPart = [...aPart.values()].reduce((somme, nombre) => somme + nombre, 0);
+const colonneAPart = (nom) => (TEMPS ? [] : [aPart.get(nom) ?? 0]);
+
+const entetes = [
+	'paquet',
+	'fichiers',
+	'tests',
+	'réussis',
+	'sautés',
+	'échoués',
+	...(TEMPS ? [] : ['à part, liés au temps'])
+];
 const lignes = [
 	...joues.map((projet) => [
 		projet.nom,
@@ -120,25 +174,49 @@ const lignes = [
 		projet.resultat.total,
 		projet.resultat.reussis,
 		projet.resultat.sautes,
-		projet.resultat.echoues
+		projet.resultat.echoues,
+		...colonneAPart(projet.nom)
 	]),
-	...absents.map((projet) => [projet.nom, '—', 'non lancé', '—', '—', '—'])
+	...absents.map((projet) => [
+		projet.nom,
+		'—',
+		'non lancé',
+		'—',
+		'—',
+		'—',
+		...colonneAPart(projet.nom)
+	])
 ];
 const largeurs = entetes.map((entete, index) =>
 	Math.max(entete.length, ...lignes.map((valeurs) => String(valeurs[index]).length))
 );
 
 process.stdout.write('\n');
+if (TEMPS) process.stdout.write('Les tests liés au temps, lancés à part (pnpm test:temps)\n\n');
 process.stdout.write(`${ligne(entetes, largeurs)}\n`);
 process.stdout.write(`${largeurs.map((largeur) => '─'.repeat(largeur)).join('  ')}\n`);
 for (const valeurs of lignes) process.stdout.write(`${ligne(valeurs, largeurs)}\n`);
 process.stdout.write(`${largeurs.map((largeur) => '─'.repeat(largeur)).join('  ')}\n`);
 process.stdout.write(
 	`${ligne(
-		['total', totaux.fichiers, totaux.total, totaux.reussis, totaux.sautes, totaux.echoues],
+		[
+			'total',
+			totaux.fichiers,
+			totaux.total,
+			totaux.reussis,
+			totaux.sautes,
+			totaux.echoues,
+			...(TEMPS ? [] : [totalAPart])
+		],
 		largeurs
 	)}\n\n`
 );
+if (totalAPart > 0) {
+	process.stdout.write(
+		`${totalAPart} fichier(s) de tests liés au temps ne sont pas dans ce décompte : ils tournent ` +
+			`à part, par « pnpm test:temps », que la CI lance aussi.\n\n`
+	);
+}
 
 const tolere = process.env['JADWAL_TESTS_SAUTES_TOLERES'] === '1';
 const problemes = [];
@@ -166,4 +244,6 @@ if (problemes.length > 0) {
 	process.stderr.write('\n');
 	process.exit(1);
 }
-process.stdout.write(`${totaux.total} tests, tous réussis, aucun sauté.\n`);
+process.stdout.write(
+	`${totaux.total} tests${TEMPS ? ' liés au temps' : ''}, tous réussis, aucun sauté.\n`
+);

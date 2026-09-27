@@ -242,12 +242,6 @@ beforeAll(async () => {
 		// Les conditions déjà acceptées : ce fichier éprouve l'espace, pas son écran d'acceptation,
 		// que `conditions.test.ts` éprouve à part (ADR 0044).
 		await tx.execute(conditionsAcceptees(organizationId, adminUserId));
-		// Un compte connu, rattaché à rien : il sert au test qui compare une adresse connue à une
-		// adresse inconnue, sans déranger la personne responsable.
-		await tx.execute(sql`
-			insert into "user" ("id", "email", "email_verified")
-			values (${newId()}, 'connue@example.test', true)
-		`);
 		// Le super-admin. Le drapeau est une colonne du compte : aucune interface ne le pose, et
 		// c'est voulu (voir les actions en attente du rapport).
 		await tx.execute(sql`
@@ -396,61 +390,8 @@ describe('le lien magique', () => {
 		expect(used.cookie).toBeUndefined();
 	});
 
-	it('answers the same thing, and in the same time, for a known and an unknown address', async () => {
-		// Le chemin de demande ne consulte jamais les comptes : il n'y a donc aucune branche qui
-		// puisse dépendre de l'existence d'un compte (ADR 0017). On le vérifie sur la réponse, sur
-		// le corps, et sur le temps.
-		const connue = 'connue@example.test';
-		const inconnue = 'jamais-vue@example.test';
-		const corps: Record<string, string> = {};
-
-		const mesurer = async (nom: string, email: string) => {
-			const debut = performance.now();
-			const response = await postForm('/connexion', { email });
-			const duree = performance.now() - debut;
-			corps[nom] = sansNonce(await response.text());
-			expect(response.status, nom).toBe(200);
-			return duree;
-		};
-
-		// Rodage : la première réponse d'un serveur qui vient de démarrer coûte plusieurs fois les
-		// suivantes, et une mesure qui l'inclurait noierait l'écart qu'on cherche.
-		for (const email of [connue, inconnue]) await postForm('/connexion', { email });
-
-		// **Des écarts appariés, et non une différence de médianes.** Les deux mesures d'un tour sont
-		// prises l'une après l'autre, à quelques millisecondes d'intervalle : un ralentissement de la
-		// machine — et une machine d'intégration continue est partagée — les touche toutes les deux
-		// et s'annule dans leur différence. Une différence de médianes, elle, compare deux ensembles
-		// que le bruit a pu décaler séparément, et c'est ainsi qu'on obtient un test qui échoue une
-		// fois sur dix sans que rien n'ait changé. Un test qu'on relance jusqu'à ce qu'il passe ne
-		// prouve plus rien.
-		//
-		// L'ordre du couple alterne, pour qu'un éventuel avantage à « passer en premier » — un cache
-		// tiède, une connexion déjà ouverte — se compense lui aussi.
-		const ecarts: number[] = [];
-		for (let tour = 0; tour < 40; tour += 1) {
-			if (tour % 2 === 0) {
-				const a = await mesurer('connue', connue);
-				const b = await mesurer('inconnue', inconnue);
-				ecarts.push(a - b);
-			} else {
-				const b = await mesurer('inconnue', inconnue);
-				const a = await mesurer('connue', connue);
-				ecarts.push(a - b);
-			}
-		}
-		// Le corps rendu est le même, mot pour mot.
-		expect(corps['connue']).toBe(corps['inconnue']);
-
-		const mediane = (valeurs: number[]) =>
-			[...valeurs].sort((a, b) => a - b)[Math.floor(valeurs.length / 2)] ?? 0;
-		const ecart = Math.abs(mediane(ecarts));
-		// Un seuil absolu, et non une fraction du temps de réponse : une fraction de la moitié
-		// tolérerait huit millisecondes sur des réponses de seize, c'est-à-dire deux allers-retours
-		// vers la base. Une consultation des comptes en coûte un ou deux : le seuil doit être plus
-		// serré qu'elle, pas plus large.
-		expect(ecart, `écart apparié médian : ${ecart.toFixed(2)} ms`).toBeLessThan(3);
-	});
+	// Qu'une adresse connue et une adresse inconnue reçoivent la même réponse **dans le même temps** :
+	// dans `acces.temps.test.ts`, qui tourne à part, dans `pnpm test:temps` (étape 19).
 });
 
 describe('la limitation de débit', () => {

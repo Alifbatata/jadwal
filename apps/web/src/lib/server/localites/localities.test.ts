@@ -4,32 +4,20 @@
 // serveur construit incorpore : ce qu'ils trouvent est ce qu'une personne trouvera. Ils ne fixent
 // pas le nombre exact de localités, qui change d'une version à l'autre, mais ce qu'une recherche
 // doit rendre en premier.
+//
+// Les tests qui parcourent la liste entière, une recherche par localité ou par début de nom, sont
+// dans `localities.temps.test.ts` : ils tournent à part, dans `pnpm test:temps` (étape 19).
 
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { findLocality, findLocalityAt, LOCALITIES_SOURCE, searchLocalities } from './localities.js';
-
-/** Le premier résultat d'une recherche, sous la forme « NPA Nom (canton) ». */
-function premier(requete: string): string {
-	const [trouve] = searchLocalities(requete);
-	return trouve ? `${trouve.postcode} ${trouve.name} (${trouve.canton})` : 'rien';
-}
-
-/**
- * Chaque ligne de la liste, lue ici dans le fichier, sans passer par le module qu'on éprouve : NPA,
- * nom et canton.
- */
-const LIGNES = readFileSync(new URL('./localities.csv', import.meta.url), 'utf8')
-	.split(/\r?\n/)
-	.filter((ligne) => /^\d{4};/.test(ligne))
-	.map((ligne) => {
-		const [postcode, name, , canton] = ligne.split(';');
-		return { postcode: postcode as string, name: name as string, canton: canton as string };
-	});
-
-/** « Zürich » écrit comme sur un clavier sans trémas, sans passer par le module qu'on éprouve. */
-const TREMAS: Record<string, string> = { ä: 'ae', ö: 'oe', ü: 'ue', Ä: 'Ae', Ö: 'Oe', Ü: 'Ue' };
-const sansTremas = (nom: string) => nom.replace(/[äöüÄÖÜ]/g, (lettre) => TREMAS[lettre] ?? lettre);
+import {
+	debutsEnUe,
+	horsChefsLieux,
+	lEcritAinsi,
+	LIGNES,
+	premier,
+	sansTremas
+} from './localities.test-support.js';
 
 describe('LOCALITIES_SOURCE', () => {
 	it('nomme la liste officielle, sa version et la source à citer', () => {
@@ -164,22 +152,6 @@ describe('searchLocalities, avec le canton', () => {
 		expect(premier('7032 Laax GR 2 (GR)')).toBe('7032 Laax GR 2 (GR)');
 		expect(premier('1227 Carouge GE (GE)')).toBe('1227 Carouge GE (GE)');
 	});
-
-	it('retrouve en premier chaque localité de la liste sous sa forme d’affichage', () => {
-		// Un écran qui remet dans le champ la localité choisie, sous cette forme, doit la retrouver.
-		const perdues = LIGNES.map(({ postcode, name, canton }) => `${postcode} ${name} (${canton})`)
-			.filter((affichee) => premier(affichee) !== affichee)
-			.map((affichee) => `${affichee} -> ${premier(affichee)}`);
-		expect(perdues).toEqual([]);
-	});
-
-	it('retrouve en premier chaque localité sous « Nom (CANTON) », sans le NPA', () => {
-		const perdues = LIGNES.filter(({ name, canton }) => {
-			const [trouve] = searchLocalities(`${name} (${canton})`);
-			return trouve?.name !== name || trouve.canton !== canton;
-		}).map(({ name, canton }) => `${name} (${canton}) -> ${premier(`${name} (${canton})`)}`);
-		expect([...new Set(perdues)]).toEqual([]);
-	});
 });
 
 describe('searchLocalities, d’autres façons d’écrire', () => {
@@ -308,68 +280,6 @@ describe('searchLocalities, un nom qui s’écrit vraiment avec « üe » ou « 
 	/** Les noms trouvés, dans l'ordre. */
 	const noms = (requete: string) => searchLocalities(requete).map((localite) => localite.name);
 
-	/** Un texte réduit à ses lettres, sans accents ni trémas, sans passer par le module éprouvé. */
-	const plat = (texte: string) =>
-		texte
-			.normalize('NFD')
-			.replace(/\p{M}/gu, '')
-			.toLowerCase()
-			.replace(/[^a-z0-9]+/g, ' ')
-			.trim();
-
-	/** Vrai quand le nom ou la commune porte ce début tel qu'il s'écrit, trémas effacés des deux côtés. */
-	const lEcritAinsi = (localite: { name: string; municipality: string }, debut: string) =>
-		` ${plat(localite.name)} ${plat(localite.municipality)}`.includes(plat(debut));
-
-	/**
-	 * Les chefs-lieux se cherchent aussi sous leur nom dans les autres langues (« Neuenburg »), que ces
-	 * tests ne relisent pas : ils sont laissés de côté.
-	 */
-	const CHEFS_LIEUX = new Set([
-		'Zürich',
-		'Bern',
-		'Luzern',
-		'Schwyz',
-		'Glarus',
-		'Zug',
-		'Fribourg',
-		'Solothurn',
-		'Basel',
-		'Schaffhausen',
-		'St. Gallen',
-		'Chur',
-		'Bellinzona',
-		'Lausanne',
-		'Sion',
-		'Neuchâtel',
-		'Genève',
-		'Delémont'
-	]);
-	const horsChefsLieux = (requete: string) =>
-		searchLocalities(requete).filter((localite) => !CHEFS_LIEUX.has(localite.name));
-
-	/**
-	 * Les débuts d'un seul mot, de 3 à 6 et de 8 lettres, des noms de la liste qui portent « ue »,
-	 * « oe » ou « ae », avec ou sans tréma.
-	 */
-	const debutsEnUe = (avecTrema: boolean) =>
-		new Set(
-			LIGNES.flatMap(({ name }) =>
-				[3, 4, 5, 6, 8].map((longueur) => name.slice(0, longueur))
-			).filter(
-				(debut) =>
-					/[äöüÄÖÜ]/.test(debut) === avecTrema &&
-					/ue|oe|ae/.test(plat(debut)) &&
-					!plat(debut).includes(' ')
-			)
-		);
-
-	/** Vrai quand ce début est le nom entier, ou l'une de ses langues, écrit sans ses trémas (« Lue »). */
-	const nomEntierSansTremas = (localite: { name: string }, debut: string) =>
-		[localite.name, ...localite.name.split('/')].some(
-			(nom) => plat(sansTremas(nom)) === plat(debut)
-		);
-
 	it('met en tête les noms en « üe » dont on tape le début avec son tréma', () => {
 		expect(premier('Büe')).toBe('3263 Büetigen (BE)');
 		expect(premier('Büet')).toBe('3263 Büetigen (BE)');
@@ -402,32 +312,6 @@ describe('searchLocalities, un nom qui s’écrit vraiment avec « üe » ou « 
 		}
 	});
 
-	it('ne met jamais, pour un début tapé avec son tréma, un nom qui ne le porte pas avant un nom qui le porte', () => {
-		// Chaque début de 3 à 6 ou de 8 lettres d'un nom de la liste qui porte « ä », « ö » ou « ü »,
-		// tapé tel quel : les localités dont le nom le contient, ou dont un mot de la commune le
-		// commence, tréma compris, forment le haut de la liste ; celles qui ne le portent qu'une fois
-		// les trémas effacés viennent après.
-		const bas = (texte: string) =>
-			texte
-				.toLowerCase()
-				.replace(/[^a-z0-9äöü]+/g, ' ')
-				.trim();
-		const debuts = new Set(
-			LIGNES.flatMap(({ name }) =>
-				[3, 4, 5, 6, 8].map((longueur) => name.slice(0, longueur))
-			).filter((debut) => /[äöüÄÖÜ]/.test(debut) && !bas(debut).includes(' '))
-		);
-		expect(debuts.size).toBeGreaterThan(100);
-		const porte = (localite: { name: string; municipality: string }, debut: string) =>
-			bas(localite.name).includes(bas(debut)) ||
-			` ${bas(localite.municipality)}`.includes(` ${bas(debut)}`);
-		const melangees = [...debuts].filter((debut) => {
-			const portent = horsChefsLieux(debut).map((localite) => porte(localite, debut));
-			const premiereSans = portent.indexOf(false);
-			return premiereSans !== -1 && portent.slice(premiereSans).includes(true);
-		});
-		expect(melangees).toEqual([]);
-	});
 	it('garde en tête les noms qui s’écrivent vraiment avec « ue » ou « oe », tapés sans tréma', () => {
 		expect(noms('Rue')).toEqual(expect.arrayContaining(['Rue', 'Rueras', 'Rueyres-Treyfayes']));
 		expect(premier('Boé')).toBe('2856 Boécourt (JU)');
@@ -451,23 +335,6 @@ describe('searchLocalities, un nom qui s’écrit vraiment avec « üe » ou « 
 				.map((localite) => `« ${debut} » -> ${localite.name}`)
 		);
 		expect(fautives).toEqual([]);
-	});
-
-	it('met, sans tréma tapé, les noms écrits ainsi avant ceux qui ne l’écrivent que sans leurs trémas', () => {
-		// Chaque début de 3 à 6 ou de 8 lettres d'un nom de la liste qui porte « ue », « oe » ou « ae »,
-		// tapé sans tréma : les localités qui l'écrivent ainsi forment le haut de la liste, et celles
-		// qui ne l'écrivent qu'une fois leurs trémas lus « ue », « oe » ou « ae » viennent après.
-		// Seule exception : un nom entier écrit sans ses trémas, que la personne a tapé en entier.
-		const debuts = debutsEnUe(false);
-		expect(debuts.size).toBeGreaterThan(100);
-		const melangees = [...debuts].filter((debut) => {
-			const ecrites = horsChefsLieux(debut).map(
-				(localite) => lEcritAinsi(localite, debut) || nomEntierSansTremas(localite, debut)
-			);
-			const premiereAutre = ecrites.indexOf(false);
-			return premiereAutre !== -1 && ecrites.slice(premiereAutre).includes(true);
-		});
-		expect(melangees).toEqual([]);
 	});
 });
 

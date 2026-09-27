@@ -33,6 +33,7 @@ pnpm hooks                       # une fois : le contrôle de secrets, avant cha
 pnpm lint
 pnpm check
 pnpm test
+pnpm test:temps                  # les tests liés au temps, à part
 pnpm build
 ```
 
@@ -43,6 +44,23 @@ tests de `packages/db` en ont besoin (voir `packages/db/README.md`).
 total. Un test sauté rend la main en rouge : un test qui a besoin de PostgreSQL ou de Docker doit
 échouer quand ils manquent, jamais disparaître du décompte. `pnpm secrets:test` fait voir le contrôle
 de secrets refuser un commit, à volonté.
+
+### Les tests liés au temps
+
+Un test dont un délai ou un seuil de temps peut tomber parce que la machine est chargée, et non parce
+que le code a changé, vit dans un fichier `*.temps.test.ts`. `pnpm test` le laisse de côté, et son
+tableau dit combien de fichiers tournent ainsi à part ; `pnpm test:temps` ne lance qu'eux, avec le
+même tableau et la même règle sur les tests sautés. La CI lance les deux, l'un après l'autre.
+Aujourd'hui : la recherche sur toute la liste des localités, les écritures croisées du transport de
+courriel, les deux composants rendus par un Vite à eux (l'onglet des prières et le pied de page), et
+l'écart de temps du lien de connexion.
+
+Leurs marges sont tirées d'une mesure, écrite en commentaire à côté de chacune : le fichier lancé
+cinq fois sur un poste chargé, et le maximum relevé. Un délai vaut **quinze fois** ce maximum,
+arrondi à la seconde : sous la charge de la suite complète, le démarrage de Vite a pris plus de
+treize fois la durée mesurée seule. Un seuil, comme l'écart de 3 ms du lien de connexion, vaut
+**trois fois** le maximum : un seuil qui s'élargit avec le bruit cesse de voir ce qu'il cherche. Une
+marge se remesure quand le test change, jamais pour faire passer un test rouge.
 
 `pnpm hooks` installe aussi un crochet **`pre-push`** : celui qui exploite une instance de jadwal
 peut lui donner la liste des mots qui ne doivent jamais sortir de chez lui — l'adresse de son

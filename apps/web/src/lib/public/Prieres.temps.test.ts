@@ -1,5 +1,10 @@
 // L'onglet des prières de la page publique, rendu pour de vrai : le composant compilé par Svelte,
-// côté serveur, comme SvelteKit le rend (même montage que `Pied.test.ts`).
+// côté serveur, comme SvelteKit le rend (même montage que `Pied.temps.test.ts`).
+//
+// Ce montage demande un serveur Vite, et sous la charge de la suite complète, son démarrage a
+// dépassé le délai de 10 s de Vitest (étape 18). Ce fichier tourne donc à part, dans
+// `pnpm test:temps` (étape 19), avec un délai tiré d'une mesure : `CONTRIBUTING.md`, « Les tests
+// liés au temps », dit comment.
 //
 // Ce que ce fichier éprouve et que le test d'accès ne peut pas éprouver chaque jour : le tableau du
 // jour **un vendredi**. Le serveur prend la date du jour à l'horloge ; ici, le jour est choisi.
@@ -38,13 +43,19 @@ interface Proprietes {
 let vite: ViteDevServer;
 let rendre: (props: Proprietes) => string;
 
+/**
+ * Le délai du démarrage de Vite, en millisecondes : quinze fois le maximum mesuré à l'étape 19, sur
+ * cinq passages du fichier sur le poste chargé (618 à 758 ms), arrondi à la seconde.
+ */
+const DEMARRAGE_DE_VITE = 12_000;
+
 beforeAll(async () => {
 	vite = await createServer({
 		configFile: false,
 		root: RACINE,
-		// Un cache à lui : celui de `Pied.test.ts`, qui tourne en même temps dans un autre processus,
-		// se réécrivait sous ses pieds, et la suite complète tombait sur « There is a new version of the
-		// pre-bundle for …/deps_ssr/svelte_internal_server.js ».
+		// Un cache à lui : celui de `Pied.temps.test.ts`, qui tourne en même temps dans un autre
+		// processus, se réécrivait sous ses pieds, et la suite tombait sur « There is a new version of
+		// the pre-bundle for …/deps_ssr/svelte_internal_server.js ».
 		cacheDir: 'node_modules/.vite-prieres-test',
 		logLevel: 'silent',
 		appType: 'custom',
@@ -56,7 +67,7 @@ beforeAll(async () => {
 	const { default: Prieres } = await vite.ssrLoadModule('/src/lib/public/Prieres.svelte');
 	const { render } = await vite.ssrLoadModule('svelte/server');
 	rendre = (props) => render(Prieres, { props }).body;
-});
+}, DEMARRAGE_DE_VITE);
 
 afterAll(async () => {
 	await vite?.close();

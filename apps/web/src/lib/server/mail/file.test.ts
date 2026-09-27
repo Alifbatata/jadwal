@@ -53,26 +53,8 @@ describe('corbeille de sortie', () => {
 		expect((await lastEmail(directory))?.subject).toBe('troisième');
 	});
 
-	it('survives writes that cross each other, and leaves no temporary file behind', async () => {
-		const mailer = new FileMailer(directory);
-		await Promise.all(
-			Array.from({ length: 40 }, (_, index) =>
-				mailer.send({
-					to: `personne${index}@example.test`,
-					subject: `sujet ${index}`,
-					// Une charge assez grosse pour qu'une écriture en append se déchire : c'est le cas
-					// qui a fait écarter le fichier unique en lignes JSON.
-					text: 'x'.repeat(600_000),
-					html: '<p>x</p>'
-				})
-			)
-		);
-		const all = await readOutbox(directory);
-		expect(all).toHaveLength(40);
-		expect(new Set(all.map((mail) => mail.to)).size).toBe(40);
-		const names = await readdir(directory);
-		expect(names.filter((name) => name.endsWith('.tmp'))).toEqual([]);
-	});
+	// Des écritures qui se croisent, quarante courriels d'un demi-mégaoctet : dans
+	// `file.temps.test.ts`, qui tourne à part, dans `pnpm test:temps` (étape 19).
 
 	it('names its files so that Windows accepts them', async () => {
 		await new FileMailer(directory).send({

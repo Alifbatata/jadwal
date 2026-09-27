@@ -5,6 +5,10 @@
 // temps de ses tests, avec le seul greffon de Svelte, l'alias `$lib`, et un `$app/paths` réduit à
 // ce que le pied en attend : `resolve` rend le chemin tel quel, puisque la page publique n'a pas de
 // chemin de base. Rien n'est écrit sur le disque, et le serveur n'écoute sur aucun port.
+//
+// Sous la charge de la suite complète, ce démarrage de Vite a dépassé son délai (étape 18). Ce
+// fichier tourne donc à part, dans `pnpm test:temps` (étape 19), avec un délai tiré d'une mesure :
+// `CONTRIBUTING.md`, « Les tests liés au temps », dit comment.
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +22,12 @@ const CHEMINS = '\0app-paths';
 
 let vite: ViteDevServer;
 let rendre: (props: { langue: Langue; lienAgenda: string; integre?: boolean }) => string;
+
+/**
+ * Le délai du démarrage de Vite, en millisecondes : quinze fois le maximum mesuré à l'étape 19, sur
+ * cinq passages du fichier sur le poste chargé (495 à 645 ms), arrondi à la seconde.
+ */
+const DEMARRAGE_DE_VITE = 10_000;
 
 beforeAll(async () => {
 	vite = await createServer({
@@ -41,7 +51,7 @@ beforeAll(async () => {
 	// `render` vient du même Vite que le composant : un seul exemplaire de Svelte des deux côtés.
 	const { render } = await vite.ssrLoadModule('svelte/server');
 	rendre = (props) => render(Pied, { props }).body;
-});
+}, DEMARRAGE_DE_VITE);
 
 afterAll(async () => {
 	await vite?.close();

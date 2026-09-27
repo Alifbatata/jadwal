@@ -10,6 +10,7 @@ node_modules
 **/coverage
 **/.vitest
 **/.vitest-resultats.json
+**/.vitest-temps-resultats.json
 .env
 .env.*
 !.env.example

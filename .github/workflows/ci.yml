@@ -140,6 +140,11 @@ jobs:
       - name: Test
         run: pnpm test
 
+      # Les tests liés au temps (`*.temps.test.ts`), que `pnpm test` laisse de côté : ils tournent
+      # seuls, après la suite, avec des marges tirées d'une mesure (CONTRIBUTING.md, étape 19).
+      - name: Time-bound tests
+        run: pnpm test:temps
+
       # La suite de @jadwal/core doit donner le même résultat quel que soit le fuseau de la machine.
       - name: Test core under four time zones
         run: pnpm test:tz

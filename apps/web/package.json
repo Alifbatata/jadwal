@@ -12,7 +12,8 @@
 		"start": "node build",
 		"prepare": "svelte-kit sync",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"test": "vitest run --reporter=default --reporter=json --outputFile=.vitest-resultats.json"
+		"test": "vitest run --exclude \"**/*.temps.test.ts\" --reporter=default --reporter=json --outputFile=.vitest-resultats.json",
+		"test:temps": "vitest run .temps.test. --reporter=default --reporter=json --outputFile=.vitest-temps-resultats.json"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-node": "5.5.7",
