@@ -65,6 +65,13 @@ function leaves(value: unknown, path = ''): Map<string, string | null> {
  */
 const PHRASE = /\p{L}{2,}[^\p{L}-]+\p{L}{2,}/u;
 
+/**
+ * Les noms propres de plusieurs mots, qui s'écrivent de même dans les langues latines. Il n'y en a
+ * qu'un : l'exemple de nom d'organisation du super-admin, choisi par le chef de projet à l'étape 19
+ * (l'arabe a le sien). Un nom s'ajoute ici un par un, jamais une règle.
+ */
+const NOMS_PROPRES = new Set(['Association Horizon']);
+
 describe('les dictionnaires de l’espace', () => {
 	it('are found in this folder', () => {
 		const names = DICTIONARIES.map((dictionary) => dictionary.name);
@@ -93,7 +100,8 @@ describe('les dictionnaires de l’espace', () => {
 		const french = leaves(value.fr);
 		for (const language of LANGUES.filter((l) => l !== 'fr')) {
 			const copied = [...leaves(value[language])].filter(
-				([leaf, text]) => text !== null && PHRASE.test(text) && text === french.get(leaf)
+				([leaf, text]) =>
+					text !== null && PHRASE.test(text) && !NOMS_PROPRES.has(text) && text === french.get(leaf)
 			);
 			expect(copied, language).toEqual([]);
 		}
