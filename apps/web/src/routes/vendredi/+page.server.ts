@@ -37,7 +37,7 @@ import { record } from '$lib/server/audit.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { insertCourse, updateCourse } from '$lib/server/courses.js';
 import { FIRST_SUPPORTED_DATE, isSupportedDate, LAST_SUPPORTED_DATE } from '$lib/server/dates.js';
-import { restore, shownChange } from '$lib/server/exceptions.js';
+import { currentChange, restore, shownChange } from '$lib/server/exceptions.js';
 import { fridayTitle } from '$lib/server/friday-title.js';
 import { mustHavePrayerModule } from '$lib/server/guard.js';
 import { readCourses, readProgramme, readRooms, readSettings } from '$lib/server/programme.js';
@@ -374,8 +374,10 @@ export const actions: Actions = {
 		const maintenant = new Date();
 		return withSessionOrg(context, async (tx) => {
 			if (!(await sessionExiste(tx, courseId))) return refus(404, 'sessionGone');
-			// Une session déjà annulée ou déplacée ce jour-là n'est plus prévue telle quelle : rien
-			// ne se compare ci-dessous, et c'est l'écriture qui la refuse.
+			// Une session déjà annulée ou déplacée ce jour-là n'a rien à corriger, quel que soit le jour
+			// choisi : ce refus passe avant les autres, comme sur « À venir » (étape 19, lot 2). Un envoi
+			// arrivé au même instant est encore refusé par l'écriture, plus bas.
+			if ((await currentChange(tx, courseId, date)) !== null) return refus(409, 'changed');
 			const seance = await seancePrevue(tx, maintenant, courseId, date);
 			// La carte envoie l'heure qu'elle montrait (`plannedStart`) ; une session du vendredi a
 			// toujours une heure fixe. Quand elle n'est plus prévue à cette heure-là, son heure a
@@ -386,6 +388,12 @@ export const actions: Actions = {
 			if (montree !== null && seance && seance.start !== String(montree)) {
 				return refus(409, 'timeChanged');
 			}
+			// Un jour déjà passé. La liste des jours commence aujourd'hui, mais un formulaire écrit à la
+			// main, ou la page d'une semaine d'avant restée ouverte, peut en envoyer un : « À venir » le
+			// refusait, et cet écran l'écrivait (étape 19, lot 2). Deux dates civiles au même format se
+			// comparent comme des chaînes.
+			const settings = await readSettings(tx);
+			if (toDate < todayInZone(settings.time_zone, maintenant)) return refus(400, 'pastDate');
 			// Le jour et l'heure où la session est déjà prévue : il n'y a rien à déplacer.
 			if (toDate === date && seance?.start === toStart) return refus(400, 'unchanged');
 			// Une session déjà annulée ou déplacée ce jour-là, par une page restée ouverte ou par un

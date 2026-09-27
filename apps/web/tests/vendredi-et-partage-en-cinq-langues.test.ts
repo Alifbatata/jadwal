@@ -2167,6 +2167,59 @@ describe('« Ce vendredi » : un « Rétablir » resté ouvert ne défait pas un
 	});
 });
 
+/**
+ * Le refus d'un déplacement vers un jour passé, qu'aucune liste ne propose mais qu'un formulaire
+ * écrit à la main peut envoyer : la règle d'« À venir » (étape 19, lot 2).
+ */
+const JOUR_PASSE: Record<Langue, string> = {
+	fr: 'Ce jour est déjà passé : rien n’a été déplacé. Choisissez aujourd’hui ou un jour suivant dans « Ce vendredi », plus bas.',
+	de: 'Dieser Tag ist schon vorbei: Es wurde nichts verschoben. Wählen Sie weiter unten unter «Diesen Freitag» heute oder einen späteren Tag.',
+	it: 'Questo giorno è già passato: non è stato spostato niente. Scegli oggi o un giorno successivo più in basso, in «Questo venerdì».',
+	en: 'This day has already passed: nothing has been moved. Choose today or a later day under ‘This Friday’, further down.',
+	ar: 'هذا اليوم قد مضى: لم يُنقل أي شيء. اختر اليوم أو يومًا بعده في قسم «هذه الجمعة» في الأسفل.'
+};
+
+describe('« Ce vendredi » refuse un déplacement vers un jour passé (étape 19, lot 2)', () => {
+	const vendredi = () => prochainVendredi(today());
+
+	it('refuses to move a session to a day already past, sent by a hand-written form, says so at the top in each language, and writes nothing', async () => {
+		const date = vendredi();
+		const journalAvant = await lignesDuJournalDeVendredi();
+		try {
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				// Hier, puis le premier jour que le service connaît : aucune liste ne les propose.
+				for (const toDate of [addDays(today(), -1), '1970-01-01']) {
+					const reponse = await postForm(
+						'/vendredi?/deplacer',
+						{ courseId: sessions[1], date, plannedStart: '12:10', toDate, toStart: '12:10' },
+						cookies
+					);
+					expect(reponse.status, `${langue} ${toDate}`).toBe(400);
+					expect(enTete(await reponse.text()), `${langue} ${toDate}`).toEqual([JOUR_PASSE[langue]]);
+					expect(await exceptionDe(sessions[1], date), `${langue} ${toDate}`).toBeUndefined();
+				}
+			}
+			expect(await lignesDuJournalDeVendredi()).toBe(journalAvant);
+			// Aujourd'hui, le premier jour de la liste, reste permis.
+			const reponse = await postForm(
+				'/vendredi?/deplacer',
+				{ courseId: sessions[1], date, plannedStart: '12:10', toDate: today(), toStart: '15:00' },
+				cookies
+			);
+			expect(reponse.status).toBe(200);
+			expect(await exceptionDe(sessions[1], date)).toEqual({
+				kind: 'moved',
+				to_date: today(),
+				to_start: '15:00'
+			});
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await effacerLesExceptionsDeLaPremiere();
+		}
+	});
+});
+
 describe('le message de la semaine, dans chaque langue publiée (retour D1)', () => {
 	/** Les messages de la section, dans l'ordre de la page, avec leur langue et leur sens. */
 	function messages(html: string) {
