@@ -101,8 +101,8 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   en Suisse ; chaque écran de l'espace dit ce qu'il fait ; les heures de prière se règlent par une
   seule question, pour une localité choisie dans la liste officielle de swisstopo ; la page publique
   a un onglet Prières, et l'abonnement au calendrier propose le bouton de l'appareil ; la base
-  sépare enfin l'éditeur du responsable. Les six lots sont intégrés : 3 252 tests, tous réussis,
-  mesurés le 26.09.2026.
+  sépare enfin l'éditeur du responsable. Les sept lots sont intégrés : 3 293 tests, tous réussis,
+  mesurés le 27.09.2026 sur le commit livré.
 
 ## Fait
 
@@ -601,7 +601,7 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   sur 29 pages, rien de sérieux. ADR 0045 ; addenda aux ADR 0017, 0019 et 0025 ; ADR 0035, 0037 et
   0044 révisées.
 
-Étape 18 (livrée à la fin de la séance du 2026-09-26, en six lots) :
+Étape 18 (livrée dans la nuit du 26 au 27.09.2026, en sept lots) :
 
 Les retours des tests du chef de projet, lettre par lettre. Une règle les réunit : une personne qui
 ne connaît rien au service doit tout comprendre seule, sans aide.
@@ -720,10 +720,10 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   74 vérifications, en Caddy 2.11.4 comme en 2.8.0.
 - **Le parcours dans la CI (H5).** `queue: max` reste sur le flux `parcours` : chaque commit garde
   son verdict.
-- **Le parcours automatique.** Chaque retour a au moins une vérification : 262 vérifications, dont
-  143 pour les retours, et axe sur 37 pages, sans rien de sérieux, au dernier passage relevé, sur
-  la branche du lot 6. Rejoué contre l'image de l'étape 17, il fait tomber 86 des 87 vérifications
-  de retours qui peuvent y jouer ; les 56 autres visent des gestes que l'ancienne image n'offre pas.
+- **Le parcours automatique.** Chaque retour a au moins une vérification : 269 vérifications, dont
+  150 pour les retours, et axe sur 37 pages, sans rien de sérieux, sur le commit livré. Rejoué
+  contre l'image de l'étape 17, il fait tomber 87 des 88 vérifications de retours qui peuvent y
+  jouer ; les 62 autres visent des gestes que l'ancienne image n'offre pas.
   Ce qui ne tourne que dans un navigateur y est éprouvé : la liste des localités pendant la frappe,
   la seconde passkey, les passages sans JavaScript. La garde du déploiement exige de toute façon un
   parcours vert pour le commit déployé (ADR 0045).
@@ -744,9 +744,9 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   conditions de swisstopo et se cite « Source : Office fédéral de topographie swisstopo ». Le
   `package.json` d'`apps/web` et l'étiquette de l'image disent `MIT AND LicenseRef-swisstopo-OGD`,
   et l'épreuve de l'image le vérifie.
-- 3 252 tests dans le dépôt, mesurés le 26.09.2026 sur le commit qui intègre les six lots, tous
-  réussis, aucun sauté : 676 dans `core`, 442 dans la base, 82 pour les sauvegardes, 2 021 dans
-  l'application, 31 pour le widget (2 141 octets en gzip).
+- 3 293 tests dans le dépôt, mesurés le 27.09.2026 sur le commit livré, tous réussis, aucun sauté :
+  676 dans `core`, 442 dans la base, 82 pour les sauvegardes, 2 062 dans l'application, 31 pour le
+  widget (2 141 octets en gzip).
 - ADR 0046 (rôles dans la base), 0047 (langue de l'espace), 0048 (agenda selon l'appareil) ;
   addenda aux ADR 0004, 0007, 0013, 0017, 0025, 0027, 0042 et 0043 ; ADR 0005, 0021 et 0044
   révisés. Descriptions écran par écran de l'espace et du super-admin dans `docs/maquettes/` ;
