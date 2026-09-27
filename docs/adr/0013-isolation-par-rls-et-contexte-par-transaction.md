@@ -174,8 +174,32 @@ autre organisation. C'est la seule clé composite du schéma qui vide une réfé
 suppriment les lignes qui en dépendent. Un test relit toutes les clés du schéma, et échoue si l'une
 d'elles devait vider une colonne qui ne peut pas être vide.
 
+## Addendum du 27.09.2026 : la liste des membres, et ce que la garde laisse nommer
+
+Jusqu'à l'étape 19, tout membre lisait les adhésions de son organisation, et par elles les comptes
+de ses collègues, nom et adresse compris. Depuis la migration 0064 (ADR 0046), la politique de
+lecture des adhésions exige une personne responsable pour les adhésions de l'organisation du
+contexte ; chacun garde la lecture des siennes. La politique de `user` n'a pas changé : sa
+sous-requête passe par celle des adhésions, donc un éditeur ne voit plus que son propre compte.
+
+Deux conséquences pour ce document :
+
+- **La garde des personnes désignées suit ce que la personne voit.** Un éditeur ne nomme plus que
+  lui-même dans une ligne qu'il écrit ; la personne responsable nomme tout membre, comme avant.
+  L'application écrit toujours la personne de la session (`created_by`, `updated_by`), et chaque
+  modification d'un cours réécrit `updated_by` : aucune écriture ordinaire ne dépendait de la
+  lecture des collègues. Une modification future qui laisserait le nom d'un collègue dans une ligne
+  qu'un éditeur réécrit serait refusée, ce qui va dans le bon sens.
+- **L'organisation seule ne lit plus les adhésions**, ni les comptes : `withOrg` sans personne n'a
+  personne dont la base puisse dire qu'elle est responsable. L'addendum précédent disait qu'il les
+  lisait encore.
+
+Le journal d'audit ne passe plus par cette garde : son auteur est la personne du contexte, et rien
+d'autre (migration 0063, ADR 0015).
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 2 de la feuille de route (base, RLS, données de démo) ; complété le
 2026-09-22 (modification d'une adhésion bornée au rôle, voir l'addendum) et le 2026-09-26 (le rôle
-de la personne du contexte, ADR 0046 ; la salle d'un cours, seule vidée quand elle disparaît).
+de la personne du contexte, ADR 0046 ; la salle d'un cours, seule vidée quand elle disparaît), puis
+le 27.09.2026 (la liste des membres réservée à la personne responsable).

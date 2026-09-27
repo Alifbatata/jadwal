@@ -420,18 +420,18 @@ describe('les gestes réservés : l’éditrice est refusée, la personne respon
 			where "id" = ${a.id} returning "id"`;
 		expect(await attempt(app, a.id, settings)).toEqual({ rows: 0 });
 		// Il lit encore ce que tout membre lit, mais plus les invitations, que seule une personne
-		// responsable lit (addendum de l'ADR 0013).
+		// responsable lit (addendum de l'ADR 0013), ni les adhésions depuis la migration 0064.
 		for (const table of [
 			'organization',
 			'room',
 			'prayer_settings',
 			'prayer_day',
-			'prayer_period',
-			'membership'
+			'prayer_period'
 		]) {
 			expect(await countVisible(app, a.id, table), table).toBeGreaterThan(0);
 		}
 		expect(await countVisible(app, a.id, 'invitation')).toBe(0);
+		expect(await countVisible(app, a.id, 'membership')).toBe(0);
 		expect(await countVisible(app, inA(a.userId), 'invitation')).toBeGreaterThan(0);
 		// La personne seule, sans organisation.
 		const alone = firstRow<{ admin: boolean }>(
@@ -471,6 +471,110 @@ describe('les gestes réservés : l’éditrice est refusée, la personne respon
 			)
 		);
 		expect(role?.role).toBe('editor');
+	});
+});
+
+/**
+ * La liste des membres et leurs comptes (étape 19, migration 0064). Jusqu'ici, tout membre les
+ * lisait par un appel direct, nom et adresse compris : aucun écran ne les montrait à un éditeur, mais
+ * une erreur de l'application qui l'aurait fait n'aurait pas été arrêtée. La personne responsable et
+ * le super-admin lisent la liste comme avant ; l'éditrice ne lit plus que sa propre adhésion et son
+ * propre compte.
+ */
+describe('la liste des membres : la personne responsable la lit, l’éditrice ne lit que la sienne', () => {
+	/** Ce que la base rend, par le rôle et le contexte donnés, d'une lecture qui rend des personnes. */
+	async function people(db: Database, context: Context | string, query: SQL): Promise<string[]> {
+		const found = await withOrg(db, context, async (tx) =>
+			allRows<{ person: string }>(await tx.execute(query))
+		);
+		return found.map((row) => row.person).sort();
+	}
+
+	/** Les membres de A, relevés par le propriétaire sous son drapeau d'entretien. */
+	async function membersOfA(): Promise<string[]> {
+		const found = await withMaintenance(owner, async (tx) =>
+			allRows<{ person: string }>(
+				await tx.execute(sql`
+					select "user_id" as person from "membership" where "organization_id" = ${a.id}
+				`)
+			)
+		);
+		return found.map((row) => row.person).sort();
+	}
+
+	it('shows an editor her own membership and her own account, and nobody else’s', async () => {
+		const asEditor = inA(editor.id);
+		// La table des adhésions, entière, puis filtrée sur l'organisation comme le ferait un écran.
+		expect(await people(app, asEditor, sql`select "user_id" as person from "membership"`)).toEqual([
+			editor.id
+		]);
+		expect(
+			await people(
+				app,
+				asEditor,
+				sql`select "user_id" as person from "membership" where "organization_id" = ${a.id}`
+			)
+		).toEqual([editor.id]);
+		// Les comptes, et la jointure de l'écran Membres, avec l'adresse de chacun.
+		expect(await people(app, asEditor, sql`select "id" as person from "user"`)).toEqual([
+			editor.id
+		]);
+		expect(
+			await people(
+				app,
+				asEditor,
+				sql`select u."email" as person from "membership" m join "user" u on u."id" = m."user_id"
+					where m."organization_id" = ${a.id}`
+			)
+		).toEqual([editor.email]);
+		// Un collègue et la personne responsable, cherchés par leur identifiant.
+		for (const other of [colleague.id, a.userId]) {
+			expect(
+				await people(app, asEditor, sql`select "email" as person from "user" where "id" = ${other}`)
+			).toEqual([]);
+			expect(
+				await people(
+					app,
+					asEditor,
+					sql`select "role" as person from "membership" where "user_id" = ${other}`
+				)
+			).toEqual([]);
+		}
+	});
+
+	it('lets the manager, and the super-admin who entered the organisation, read the list as before', async () => {
+		const expected = await membersOfA();
+		expect(expected.length).toBeGreaterThanOrEqual(5);
+		const query = sql`select m."user_id" as person from "membership" m
+			join "user" u on u."id" = m."user_id" where m."organization_id" = ${a.id}`;
+		for (const manager of [a.userId, second.id]) {
+			expect(await people(app, inA(manager), query), manager).toEqual(expected);
+		}
+		// Le super-admin n'est membre de rien : c'est sa propre politique qui lui montre la liste.
+		expect(await people(superAdmin, a.id, query)).toEqual(expected);
+	});
+
+	it('reads no membership at all without a person in the context', async () => {
+		// Un script qui ne poserait que l'organisation ne lit plus les membres : il n'y a personne
+		// dont la base puisse dire qu'elle est responsable.
+		expect(await countVisible(app, a.id, 'membership')).toBe(0);
+		expect(await countVisible(app, a.id, 'user')).toBe(0);
+	});
+
+	it('lets an editor name herself in what she writes, and a manager any member', async () => {
+		// La garde des personnes désignées (ADR 0013) passe par ce que la personne voit : l'éditrice
+		// ne voit plus ses collègues, elle ne les nomme plus. L'application ne lui fait jamais écrire
+		// que son propre nom (`created_by`, `updated_by`, l'auteur du journal).
+		const pause = (author: string) => sql`
+			insert into "pause" ("id", "organization_id", "from_date", "to_date", "reason", "created_by")
+			values (${newId()}, ${a.id}, '2026-11-02', '2026-11-08', 'Travaux', ${author})
+			returning "id"
+		`;
+		expect(await attempt(app, inA(editor.id), pause(colleague.id))).toEqual({
+			refused: expect.stringMatching(NO_POLICY)
+		});
+		expect(await attempt(app, inA(editor.id), pause(editor.id))).toEqual({ rows: 1 });
+		expect(await attempt(app, inA(a.userId), pause(colleague.id))).toEqual({ rows: 1 });
 	});
 });
 
@@ -739,5 +843,58 @@ describe('la fonction qui lit le rôle', () => {
 			{ role: 'jadwal_public', can: false },
 			{ role: 'jadwal_superadmin', can: false }
 		]);
+	});
+
+	it('is required by exactly the policies of the gestures reserved to a manager', async () => {
+		// La migration 0059 vérifiait cette liste elle-même ; depuis que d'autres migrations la
+		// complètent, elle n'en vérifie que le minimum, pour rester rejouable, et c'est ici que la
+		// liste exacte est tenue. Chaque politique l'exige dans chacune de ses clauses.
+		const found = allRows<{ policy: string; qual: string; check: string; cmd: string }>(
+			await owner.execute(sql`
+				select tablename || '.' || policyname as policy, cmd, coalesce(qual, '') as qual,
+					coalesce(with_check, '') as check
+				from pg_policies
+				where schemaname = 'public'
+					and (coalesce(qual, '') || ' ' || coalesce(with_check, '')) like '%is_org_admin%'
+				order by 1
+			`)
+		);
+		expect(found.map((row) => row.policy)).toEqual([
+			'invitation.invitation_delete',
+			'invitation.invitation_insert',
+			'invitation.invitation_select',
+			'invitation.invitation_update',
+			'membership.membership_delete',
+			'membership.membership_select',
+			'membership.membership_update',
+			'organization.organization_update',
+			'prayer_day.prayer_day_delete',
+			'prayer_day.prayer_day_insert',
+			'prayer_day.prayer_day_update',
+			'prayer_period.prayer_period_delete',
+			'prayer_period.prayer_period_insert',
+			'prayer_period.prayer_period_update',
+			'prayer_settings.prayer_settings_delete',
+			'prayer_settings.prayer_settings_insert',
+			'prayer_settings.prayer_settings_update',
+			'room.room_delete',
+			'room.room_insert',
+			'room.room_update'
+		]);
+		for (const row of found) {
+			if (row.cmd !== 'INSERT') expect(row.qual, row.policy).toContain('is_org_admin()');
+			if (row.cmd === 'INSERT' || row.cmd === 'UPDATE') {
+				expect(row.check, row.policy).toContain('is_org_admin()');
+			}
+		}
+		// Aucune politique d'un autre rôle ne l'appelle.
+		const others = allRows<{ policy: string }>(
+			await owner.execute(sql`
+				select tablename || '.' || policyname as policy from pg_policies
+				where schemaname = 'public' and not ('jadwal_app' = any (roles))
+					and (coalesce(qual, '') || ' ' || coalesce(with_check, '')) like '%is_org_admin%'
+			`)
+		);
+		expect(others).toEqual([]);
 	});
 });

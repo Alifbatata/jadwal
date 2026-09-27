@@ -449,6 +449,13 @@
       "when": 1790506654263,
       "tag": "0063_audit_log_author_is_context",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1790506935254,
+      "tag": "0064_membership_read_by_manager",
+      "breakpoints": true
     }
   ]
 }

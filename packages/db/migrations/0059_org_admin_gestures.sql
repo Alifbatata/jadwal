@@ -218,14 +218,18 @@ BEGIN
 		RAISE EXCEPTION 'membership_owner_read : manque, ou lit plus que l''adhésion du contexte';
 	END IF;
 
-	-- Les politiques du rôle applicatif qui exigent une personne responsable : exactement celles-ci.
+	-- Les politiques du rôle applicatif qui exigent une personne responsable : au moins celles-ci.
+	-- Jusqu'à l'étape 18, c'était « exactement celles-ci ». Les migrations suivantes en ajoutent
+	-- (0064 : lire les membres), et ce fichier doit rester rejouable après elles : la liste exacte est
+	-- tenue par `test/org-admin.test.ts`, qui la relit à chaque passage de la suite.
 	SELECT array_agg(tablename || '.' || policyname ORDER BY tablename || '.' || policyname)
 	INTO trouvees
 	FROM pg_policies
 	WHERE schemaname = 'public' AND 'jadwal_app' = ANY (roles)
 		AND (coalesce(qual, '') || ' ' || coalesce(with_check, '')) LIKE '%is_org_admin()%';
-	IF trouvees IS DISTINCT FROM reservees THEN
-		RAISE EXCEPTION 'politiques réservées aux responsables : % au lieu de %', trouvees, reservees;
+	IF trouvees IS NULL OR NOT (trouvees @> reservees) THEN
+		RAISE EXCEPTION 'politiques réservées aux responsables : % au lieu d''au moins %',
+			trouvees, reservees;
 	END IF;
 	-- Et chacune dans chacune de ses clauses : une modification qui ne l'exigerait qu'à l'arrivée
 	-- laisserait encore voir la ligne, une qui ne l'exigerait qu'au départ laisserait la déplacer.

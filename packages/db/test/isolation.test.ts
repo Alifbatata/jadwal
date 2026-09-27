@@ -299,23 +299,22 @@ describe('le contexte ne fuit pas', () => {
 
 describe('le contexte utilisateur', () => {
 	it('shows a person their own account, even in an organisation they do not belong to', async () => {
-		// `user_select` a deux branches : « c'est moi » et « nous sommes de la même organisation ».
-		// Celle-ci n'existe que par la première : a n'est pas membre de b. Neutraliser
+		// `user_select` a deux branches : « c'est moi » et « je vois son adhésion à l'organisation
+		// du contexte », ce que seule la personne responsable voit depuis la migration 0064. Ce
+		// compte n'existe que par la première : a n'est pas membre de b. Neutraliser
 		// `jadwal.user_id`, ou cesser de le poser dans `withOrg`, fait tomber ce test.
-		const withUser = await withOrg(app, { organizationId: b.id, userId: a.userId }, (tx) =>
-			tx.execute<{ email: string }>(sql`select "email" from "user" order by "email"`)
-		);
-		expect(allRows<{ email: string }>(withUser).map((row) => row.email)).toEqual([
-			`${a.slug}@example.test`,
-			`${b.slug}@example.test`
+		const emails = async (context: Parameters<typeof withOrg>[1]) =>
+			allRows<{ email: string }>(
+				await withOrg(app, context, (tx) =>
+					tx.execute<{ email: string }>(sql`select "email" from "user" order by "email"`)
+				)
+			).map((row) => row.email);
+		expect(await emails({ organizationId: b.id, userId: a.userId })).toEqual([
+			`${a.slug}@example.test`
 		]);
-
-		const withoutUser = await withOrg(app, b.id, (tx) =>
-			tx.execute<{ email: string }>(sql`select "email" from "user" order by "email"`)
-		);
-		expect(allRows<{ email: string }>(withoutUser).map((row) => row.email)).toEqual([
-			`${b.slug}@example.test`
-		]);
+		// La personne responsable de b voit les membres de b ; sans personne, on ne voit personne.
+		expect(await emails(asAdmin(b))).toEqual([`${b.slug}@example.test`]);
+		expect(await emails(b.id)).toEqual([]);
 	});
 
 	it('refuses a user identifier that is not a UUID, before opening anything', async () => {
@@ -406,7 +405,9 @@ describe('les personnes ne se laissent pas atteindre par une écriture', () => {
 	});
 
 	it('still lets an organisation name one of its own people, or nobody', async () => {
-		await withOrg(app, a.id, async (tx) => {
+		// Sa personne responsable, qui voit ses membres (migration 0064) : c'est ce qu'elle voit que
+		// la garde lui laisse nommer.
+		await withOrg(app, asAdmin(a), async (tx) => {
 			await tx.execute(
 				sql`update "course" set "updated_by" = ${a.userId} where "organization_id" = ${a.id}`
 			);
@@ -460,7 +461,8 @@ describe('la dernière personne responsable', () => {
 		await withOrg(app, asAdmin(a), (tx) =>
 			tx.execute(sql`delete from "membership" where "user_id" = ${a.userId}`)
 		);
-		const left = await withOrg(app, asAdmin(a), (tx) =>
+		// Relu par la responsable qui reste : celle qui vient de partir ne voit plus la liste.
+		const left = await withOrg(app, { organizationId: a.id, userId: second }, (tx) =>
 			tx.execute<{ count: string }>(
 				sql`select count(*)::text as count from "membership" where "role" = 'org_admin'`
 			)

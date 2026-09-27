@@ -439,8 +439,11 @@ export const user = pgTable(
 			'user_language_ck',
 			sql`${table.language} is null or ${oneOf(table.language, ACCOUNT_LANGUAGES)}`
 		),
-		// Pas d'annuaire global : un utilisateur est visible de lui-même et des membres de son
-		// organisation courante. La sous-requête passe elle-même par la politique de `membership`.
+		// Pas d'annuaire global : un utilisateur est visible de lui-même, et de qui voit son adhésion à
+		// l'organisation courante. La sous-requête passe elle-même par la politique de `membership` :
+		// depuis la migration 0064, seule la personne responsable y voit les autres membres. Un
+		// éditeur ne voit donc que son propre compte, et la garde des personnes désignées ne lui
+		// laisse nommer que lui-même (ADR 0013, addendum du 27.09.2026).
 		pgPolicy('user_select', {
 			as: 'permissive',
 			for: 'select',
@@ -537,11 +540,17 @@ export const membership = pgTable(
 			as: 'permissive',
 			for: 'select',
 			to: appRole,
-			// Les adhésions de l'organisation courante, et les siennes propres. La seconde branche
-			// existe pour la toute première requête d'une session, quand on cherche justement de
-			// quelles organisations quelqu'un est membre : il n'y a pas encore d'organisation à
-			// poser. Elle ne révèle rien de personne d'autre.
-			using: sql`${table.organizationId} = ${orgContext}
+			// Les adhésions de l'organisation courante, pour sa personne responsable, et les siennes
+			// propres, pour tout le monde. La seconde branche existe pour la toute première requête
+			// d'une session, quand on cherche justement de quelles organisations quelqu'un est membre :
+			// il n'y a pas encore d'organisation à poser. Elle ne révèle rien de personne d'autre.
+			//
+			// Jusqu'à l'étape 19, la première branche valait pour tout membre : un éditeur lisait la
+			// liste des membres par un appel direct, et leurs comptes avec, puisque `user_select` passe
+			// par cette politique. La liste est l'affaire de l'écran Membres, réservé aux responsables
+			// (migration 0064, ADR 0046). `jadwal.is_org_admin` lit l'adhésion du contexte sous une
+			// politique du propriétaire qui ne lit rien d'autre : aucune récursion.
+			using: sql`(${table.organizationId} = ${orgContext} and ${orgAdmin})
 				or ${table.userId} = ${userContext}`
 		}),
 		// L'étape 2 avait retiré ces deux opérations au rôle applicatif pour fermer une évasion :
