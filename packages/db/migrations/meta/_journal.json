@@ -505,6 +505,13 @@
       "when": 1790523169352,
       "tag": "0071_audit_log_superadmin_author",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1790523249173,
+      "tag": "0072_prayer_module_repair",
+      "breakpoints": true
     }
   ]
 }
