@@ -175,7 +175,13 @@ Les dates se lisent et s'écrivent `JJ.MM.AAAA`. Pour un cours à dates précise
 remplit tout seul avec la première date, la plus ancienne (étape 19, lot 2) : avec JavaScript,
 pendant la saisie, tant qu'il est vide, et il suit les dates jusqu'à ce qu'on le choisisse soi-même ;
 sans JavaScript, le serveur le remplit à l'envoi quand il arrive vide. Un premier jour choisi n'est
-jamais remplacé, et des dates avant lui restent refusées.
+jamais remplacé, et des dates avant lui restent refusées. Sans JavaScript, choisir `à des dates
+précises` ne change pas la page : on l'envoie une première fois, et elle revient avec le champ des
+dates. Pour que ces deux envois partent le premier jour vide, le navigateur ne l'exige pas sans
+JavaScript (pas de `required`). C'est le serveur qui refuse un premier jour vide qu'aucune date ne
+remplit, avec `Choisissez le premier jour du cours.` Avec JavaScript, le navigateur l'exige, sauf pour
+un cours à dates précises. Dans la première version du lot, il l'exigeait toujours, et le
+formulaire sans script ne partait pas sans premier jour.
 
 **Horaire** (retour C3). `Comment fixer l'heure ?` : `heure fixe`, `après une prière`,
 `avant une prière`, avec `Placé par rapport à une prière, le cours suit son heure, qui change au fil

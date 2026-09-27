@@ -1476,6 +1476,60 @@ describe('ce que le nouveau cours remplit de lui-même (étape 19, lot 2)', () =
 		expect(champ(html, 'startsOn')['value']).toBe('2026-10-12');
 		expect(lignesDuResume(html)).toContain('Premier jour : lundi 12.10.2026');
 	});
+
+	it('lets a browser without JavaScript send a course at specific dates with its first day empty', async () => {
+		// Un navigateur n'envoie pas un formulaire dont un champ `required` est vide : le premier jour
+		// l'était, et le serveur ne voyait donc jamais arriver un premier jour vide depuis le vrai
+		// formulaire (relecture du lot 2, dans un vrai Chrome sans JavaScript). On lit ici les
+		// champs obligatoires que chaque page rend, et on n'envoie que ce que le navigateur enverrait.
+		/** Les champs obligatoires de la page que l'envoi laisse vides : le navigateur s'arrêterait. */
+		function obligatoiresVides(html: string, envoye: readonly [string, string][]): string[] {
+			return [...html.matchAll(/<(?:input|select|textarea)\b([^>]*)>/g)]
+				.map((trouve) => trouve[1] ?? '')
+				.filter((attributs) => /\srequired(?=[\s=/>]|$)/.test(attributs))
+				.map((attributs) => attributs.match(/\bname="([^"]*)"/)?.[1] ?? '')
+				.filter((nom) => !envoye.some(([envoi, valeur]) => envoi === nom && valeur !== ''));
+		}
+
+		// Sans JavaScript, « à des dates précises » se choisit sur la page d'un nouveau cours, qui
+		// n'a pas encore le champ des dates, puis s'envoie, le premier jour laissé vide.
+		const nouveau = await (await get('/cours/nouveau', cookie)).text();
+		const choix = champsDuFormulaire(nouveau).map(([nom, valeur]): [string, string] => {
+			if (nom === 'recurrenceKind') return [nom, 'dates'];
+			if (nom === 'title.fr') return [nom, 'Dates sans premier jour'];
+			if (nom === 'start') return [nom, '10:00'];
+			if (nom === 'end') return [nom, '11:30'];
+			return [nom, valeur];
+		});
+		expect(choix).toContainEqual(['startsOn', '']);
+		expect(obligatoiresVides(nouveau, choix)).toEqual([]);
+		const premier = await postForm('/cours/nouveau', choix, cookie);
+		expect(premier.status).toBe(400);
+		// La page revient avec le champ des dates. On les écrit, et le premier jour reste vide.
+		const aDates = await premier.text();
+		expect(aDates).toMatch(/<textarea\b[^>]*\bid="dates"/);
+		const envoye = champsDuFormulaire(aDates).map(([nom, valeur]): [string, string] => [
+			nom,
+			nom === 'dates' ? '26.10.2026\n12.10.2026' : valeur
+		]);
+		expect(envoye).toContainEqual(['startsOn', '']);
+		expect(obligatoiresVides(aDates, envoye)).toEqual([]);
+		// La fiche d'un cours à dates précises n'exige pas non plus son premier jour.
+		const fiche = await (await get(`/cours/${enfantsId}`, cookie)).text();
+		expect(champ(fiche, 'startsOn')).not.toHaveProperty('required');
+		expect((await postForm('/cours/nouveau', envoye, cookie)).status).toBe(303);
+		expect(
+			await maintenance(async (tx) =>
+				lignes<{ startsOn: string }>(
+					await tx.execute(sql`
+						select c."starts_on"::text as "startsOn" from "course" c
+						join "course_translation" t on t."course_id" = c."id"
+						where t."title" = 'Dates sans premier jour'
+					`)
+				)
+			)
+		).toEqual([{ startsOn: '2026-10-12' }]);
+	});
 });
 
 describe('un cours avant une prière (C3)', () => {

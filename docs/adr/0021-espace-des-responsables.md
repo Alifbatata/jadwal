@@ -322,7 +322,9 @@ Et quatre gestes de plus, décidés par le chef de projet :
   comme langue d'enseignement, et, avec JavaScript, la case qui la suit tant qu'on n'a pas touché
   aux cases ; pour un cours à dates précises, le premier jour pris à la première date, pendant la
   saisie avec JavaScript, et par le serveur quand il arrive vide. Un premier jour choisi n'est
-  jamais remplacé.
+  jamais remplacé. Le champ n'est `required` qu'avec JavaScript, et jamais pour un cours à dates
+  précises : sans script, le navigateur refusait d'envoyer un premier jour vide, et le serveur ne
+  le remplissait donc jamais.
 - **Le résumé** marque en discret, avec « (facultatif) », chaque champ facultatif, rempli ou non,
   ne marque plus comme un manque un champ facultatif laissé vide, et donne une ligne au titre de
   chaque langue publiée. La liste signale un cours dont des dates précises tombent hors de sa

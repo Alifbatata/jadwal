@@ -487,7 +487,13 @@
 		/>
 		<p class="aide" id="teacher-hint">{text.teacherHint}</p>
 		<label for="startsOn">{text.startsOnLabel} <span class="marque">{text.required}</span></label>
-		<!-- Les bornes du serveur : le calendrier ne propose pas une date que l'envoi refuserait. -->
+		<!-- Les bornes du serveur : le calendrier ne propose pas une date que l'envoi refuserait.
+		     `required` seulement avec JavaScript, et jamais pour un cours à dates précises, dont le
+		     premier jour vide prend la première date (étape 19, lot 2). Sans JavaScript, choisir « à
+		     des dates précises » ne change pas la page : le premier envoi part d'une page rendue pour
+		     un cours chaque semaine, et un `required` y bloquait l'envoi, si bien que le serveur ne
+		     voyait jamais arriver le premier jour vide. Le serveur refuse un premier jour vide qu'il ne
+		     peut pas remplir, avec sa phrase. -->
 		<input
 			id="startsOn"
 			type="date"
@@ -496,7 +502,7 @@
 			max={dateRange.last}
 			bind:value={entry.startsOn}
 			oninput={(event) => (startsOnFollowsDates = event.currentTarget.value === '')}
-			required
+			required={hydrated && entry.recurrenceKind !== 'dates'}
 			aria-describedby="startsOn-hint"
 		/>
 		<p class="aide" id="startsOn-hint">{text.startsOnHint}</p>
