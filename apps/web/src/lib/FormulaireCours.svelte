@@ -409,6 +409,11 @@
 			<input type="hidden" name="timingKind" value="fixed" />
 		{/if}
 
+		<!-- Les champs d'une façon de fixer l'heure ne sont `required` qu'avec JavaScript, comme le
+		     premier jour (étape 19, lot 3). Sans JavaScript, changer le choix du dessus ne change pas la
+		     page : elle part avec les champs de l'autre façon, et un `required` vide y bloquait l'envoi.
+		     Il fallait taper des heures pour voir les champs de la prière, ou des minutes pour revenir
+		     à une heure fixe. Le serveur refuse ce qui manque, avec sa phrase. -->
 		{#if !prayerModule || entry.timingKind === 'fixed'}
 			<label for="start">{text.startLabel}</label>
 			<input
@@ -416,7 +421,7 @@
 				type="time"
 				name="start"
 				bind:value={entry.start}
-				required
+				required={hydrated}
 				aria-describedby="time-hint"
 			/>
 			<label for="end">{text.endLabel}</label>
@@ -425,7 +430,7 @@
 				type="time"
 				name="end"
 				bind:value={entry.end}
-				required
+				required={hydrated}
 				aria-describedby="time-hint"
 			/>
 			<p class="aide" id="time-hint">{text.timeHint}</p>
@@ -447,7 +452,7 @@
 				min={before ? 1 : 0}
 				max={before ? -MIN_OFFSET_MINUTES : MAX_OFFSET_MINUTES}
 				step="1"
-				required
+				required={hydrated}
 				bind:value={entry.offsetMinutes}
 				aria-describedby="offsetMinutes-hint"
 			/>
@@ -462,7 +467,7 @@
 				min={MIN_DURATION_MINUTES}
 				max={MAX_DURATION_MINUTES}
 				step="1"
-				required
+				required={hydrated}
 				bind:value={entry.durationMinutes}
 				aria-describedby="durationMinutes-hint"
 			/>

@@ -376,6 +376,20 @@ Le lot 1 a laissé trois défauts, relevés par sa relecture et corrigés ici.
   vient la session. Un changement d'heure le même jour garde un seul bouton, sur la ligne de l'heure
   habituelle.
 
+### Addendum du 27.09.2026 : les reprises du lot 3 (étape 19)
+
+Deux défauts relevés par les chantiers du lot 2, chacun prouvé d'abord par son test.
+
+- **L'horaire d'un cours, sans JavaScript.** Les heures de début et de fin portaient `required`,
+  comme les minutes et la durée d'un cours placé par rapport à une prière. Sans JavaScript, changer
+  `Comment fixer l'heure ?` ne change pas la page : sur une page rendue pour une heure fixe, heures
+  vides, le navigateur refusait d'envoyer le choix d'une prière, et il fallait taper des heures qui
+  ne servent à rien pour voir les champs de la prière ; de même, dans l'autre sens, avec des
+  minutes. C'est le mécanisme du premier jour, corrigé au lot 2 : ces champs ne sont `required`
+  qu'avec JavaScript, où ils suivent le choix. Le serveur refuse toujours une heure fixe sans heure
+  (`timeMissing`) et une prière sans minutes ou sans durée, avec leur phrase, et rien ne change
+  avec JavaScript.
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 4 de la feuille de route (espace des responsables). Les numéros 0022 et
@@ -385,4 +399,5 @@ par défaut, une page restée ouverte ne défait pas un changement, et un dépla
 dit comme un changement d'heure. Complété le 27.09.2026 (étape 19) : l'heure que la carte montrait,
 les refus de l'écran du vendredi, les dates que les deux écrans acceptent, et la relecture
 d'« À venir » ; au lot 2, les écrans des cours, puis Rétablir qui envoie l'exception que sa carte
-montrait, et l'écran du vendredi qui refuse un jour passé et rétablit une nouvelle date.
+montrait, et l'écran du vendredi qui refuse un jour passé et rétablit une nouvelle date ; au lot 3,
+les champs de l'horaire d'un cours, exigés seulement avec JavaScript.

@@ -1,7 +1,7 @@
 # Les cours, les pauses et le formulaire d'un cours
 
-Décrit après le code, à l'étape 18 (retours B4, C3, et B1, D2, A3 pour ces écrans), et complété au
-lot 2 de l'étape 19 (27.09.2026). Textes : `apps/web/src/lib/i18n/courses.ts` et `course-form.ts`,
+Décrit après le code, à l'étape 18 (retours B4, C3, et B1, D2, A3 pour ces écrans), et complété aux
+lots 2 et 3 de l'étape 19 (27.09.2026). Textes : `apps/web/src/lib/i18n/courses.ts` et `course-form.ts`,
 dans les cinq langues. Le résumé et le passage entre la base et l'écran sont dans
 `apps/web/src/lib/course-form.ts`, le même code pour le serveur et pour le navigateur.
 
@@ -220,6 +220,16 @@ après la prière.`) ou `Combien de minutes avant la prière ?` (`De 1 à 120. E
 La base garde un décalage signé : « avant une prière » avec 10 minutes s'écrit −10, et un cours à
 −10 se rouvre sur « avant une prière » et 10 (ADR 0004, addendum).
 
+Sans JavaScript, changer `Comment fixer l'heure ?` ne change pas la page, comme pour les dates
+précises : on l'envoie une première fois, et elle revient avec les champs de l'autre façon. Aucun de
+ces champs n'est donc exigé par le navigateur sans JavaScript (pas de `required`), et le serveur dit
+ce qui manque : `Indiquez l'heure de début et l'heure de fin. Exemple : 19:00 et 20:30` pour une
+heure fixe sans heure, la phrase des minutes et celle de la durée pour une prière. Avec JavaScript,
+les champs suivent le choix, et le navigateur exige ceux qui sont à l'écran, comme avant. Jusqu'au
+lot 3 de l'étape 19, `Heure de début` et `Heure de fin` étaient toujours exigées : sur une page
+rendue pour une heure fixe, heures vides, il fallait taper des heures qui ne servent à rien pour
+voir les champs de la prière, et, dans l'autre sens, des minutes pour revenir à une heure fixe.
+
 **Lieu, intervenant et période.** `Salle (facultatif)`, avec `aucune salle` et `Les salles se créent
 dans les réglages, par une personne responsable.` ; `Intervenant (facultatif)`, avec `La personne
 qui donne le cours, par son nom ou sa fonction. Exemple : l'imam` ; `Premier jour du cours
@@ -240,6 +250,9 @@ dans cet espace. Publiez le cours quand tout est prêt.` Le calendrier des deux 
   pas pilotés par les tests du dépôt non plus. Ils ont été éprouvés dans un vrai Chrome sans
   interface pendant le lot, et restent à ajouter au parcours automatique, avec le premier jour qui
   suit encore les dates après un envoi refusé, tant qu'on ne l'a pas changé à la main.
+- Les tests HTTP lisent les champs de l'horaire que le serveur rend sans `required` (étape 19,
+  lot 3). Qu'ils le redeviennent une fois la page hydratée, avec JavaScript, n'est vu que dans un
+  navigateur : c'est au parcours automatique de le vérifier.
 - Le parcours automatique ne passe pas non plus, pour l'instant, par les autres gestes du lot 2 dans
   un vrai navigateur : le premier jour laissé vide d'un cours à dates précises, envoyé sans
   JavaScript en deux fois ; `Supprimer ce cours` puis `Oui, supprimer`, avec et sans JavaScript ; le

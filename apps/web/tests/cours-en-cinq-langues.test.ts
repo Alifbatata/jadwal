@@ -259,6 +259,23 @@ function champsDuFormulaire(html: string): [string, string][] {
 	return champs;
 }
 
+/**
+ * Les champs obligatoires d'une page que l'envoi laisse vides. Un navigateur n'envoie pas un
+ * formulaire dont un champ `required` est vide : il s'arrête, et le serveur ne voit rien arriver.
+ */
+function obligatoiresVides(html: string, envoye: readonly (readonly [string, string])[]): string[] {
+	return [...html.matchAll(/<(?:input|select|textarea)\b([^>]*)>/g)]
+		.map((trouve) => trouve[1] ?? '')
+		.filter((attributs) => /\srequired(?=[\s=/>]|$)/.test(attributs))
+		.map((attributs) => attributs.match(/\bname="([^"]*)"/)?.[1] ?? '')
+		.filter((nom) => !envoye.some(([envoi, valeur]) => envoi === nom && valeur !== ''));
+}
+
+/** Ce que le navigateur renvoie : la page telle qu'elle est revenue, avec ces champs changés. */
+function renvoi(html: string, changes: Record<string, string>): [string, string][] {
+	return champsDuFormulaire(html).map(([nom, valeur]) => [nom, changes[nom] ?? valeur]);
+}
+
 async function decalageEnBase(titreDuCours: string): Promise<{ kind: string; offset: number }[]> {
 	return maintenance(async (tx) =>
 		lignes<{ kind: string; offset: number }>(
@@ -1569,9 +1586,6 @@ describe('ce que le nouveau cours remplit de lui-même (étape 19, lot 2)', () =
 			['startsOn', ''],
 			['status', 'draft']
 		];
-		/** Ce que le navigateur renvoie : la page telle qu'elle est revenue, avec ces champs changés. */
-		const renvoi = (html: string, changes: Record<string, string>): [string, string][] =>
-			champsDuFormulaire(html).map(([nom, valeur]) => [nom, changes[nom] ?? valeur]);
 		async function premierJourEnBase(titreDuCours: string): Promise<string[]> {
 			return maintenance(async (tx) =>
 				lignes<{ startsOn: string }>(
@@ -1639,14 +1653,6 @@ describe('ce que le nouveau cours remplit de lui-même (étape 19, lot 2)', () =
 		// l'était, et le serveur ne voyait donc jamais arriver un premier jour vide depuis le vrai
 		// formulaire (relecture du lot 2, dans un vrai Chrome sans JavaScript). On lit ici les
 		// champs obligatoires que chaque page rend, et on n'envoie que ce que le navigateur enverrait.
-		/** Les champs obligatoires de la page que l'envoi laisse vides : le navigateur s'arrêterait. */
-		function obligatoiresVides(html: string, envoye: readonly [string, string][]): string[] {
-			return [...html.matchAll(/<(?:input|select|textarea)\b([^>]*)>/g)]
-				.map((trouve) => trouve[1] ?? '')
-				.filter((attributs) => /\srequired(?=[\s=/>]|$)/.test(attributs))
-				.map((attributs) => attributs.match(/\bname="([^"]*)"/)?.[1] ?? '')
-				.filter((nom) => !envoye.some(([envoi, valeur]) => envoi === nom && valeur !== ''));
-		}
 
 		// Sans JavaScript, « à des dates précises » se choisit sur la page d'un nouveau cours, qui
 		// n'a pas encore le champ des dates, puis s'envoie, le premier jour laissé vide.
@@ -1707,6 +1713,80 @@ describe('un cours avant une prière (C3)', () => {
 			['beforePrayer', 'avant une prière']
 		]);
 	});
+
+	it.each([
+		['prayer', 'Après une prière : de 0 à 240 minutes, en chiffres. Exemple : 15', 15],
+		['beforePrayer', 'Avant une prière : de 1 à 120 minutes, en chiffres. Exemple : 10', -15]
+	] as const)(
+		'lets a browser without JavaScript choose %s on a page shown for a fixed time, and come back, without typing what the page hides (étape 19, lot 3)',
+		async (choix, minutesAIndiquer, decalage) => {
+			// Sans JavaScript, choisir une prière ne change pas la page : elle part avec les champs de
+			// l'heure fixe, et revient avec ceux de la prière. Les heures de début et de fin étaient
+			// `required` : laissées vides, elles arrêtaient le navigateur, et il fallait taper des heures
+			// qui ne servent à rien pour voir les champs de la prière. De même pour revenir à une heure
+			// fixe depuis une page qui montre des minutes vides. Le serveur dit ce qui manque.
+			const titreDuCours = `Heure à choisir ${choix}`;
+			const heureFixeVide: (readonly [string, string])[] = [
+				['sourceLanguage', 'fr'],
+				['title.fr', titreDuCours],
+				['audience', 'adults'],
+				['teachingLanguages', 'fr'],
+				['recurrenceKind', 'weekly'],
+				['weekdays', '4'],
+				['interval', '1'],
+				['timingKind', 'fixed'],
+				['start', ''],
+				['end', ''],
+				['startsOn', '2026-10-01'],
+				['status', 'draft']
+			];
+			// Une heure fixe sans heure reste refusée, avec sa phrase, et la page revient sur l'heure
+			// fixe, les deux heures vides.
+			const sansHeure = await postForm('/cours/nouveau', heureFixeVide, cookie);
+			expect(sansHeure.status).toBe(400);
+			const pageFixe = await sansHeure.text();
+			expect(erreurs(pageFixe)).toEqual([
+				'Indiquez l’heure de début et l’heure de fin. Exemple : 19:00 et 20:30'
+			]);
+			expect([champ(pageFixe, 'start')['value'], champ(pageFixe, 'end')['value']]).toEqual([
+				'',
+				''
+			]);
+
+			// La personne choisit la prière, et envoie la page telle qu'elle est : rien ne l'arrête.
+			const versLaPriere = renvoi(pageFixe, { timingKind: choix });
+			expect(obligatoiresVides(pageFixe, versLaPriere)).toEqual([]);
+			const premier = await postForm('/cours/nouveau', versLaPriere, cookie);
+			expect(premier.status).toBe(400);
+			// La page revient avec les champs de la prière, vides, et dit ce qui manque.
+			const pagePriere = await premier.text();
+			expect(erreurs(pagePriere)).toEqual([
+				minutesAIndiquer,
+				'La durée va de 5 à 1440 minutes, en chiffres. Exemple : 90 pour 1 h 30'
+			]);
+			expect(pagePriere).toMatch(/<input\b[^>]*\bid="offsetMinutes"/);
+			expect(pagePriere).not.toMatch(/<input\b[^>]*\bid="start"/);
+
+			// Revenir à une heure fixe depuis cette page ne demande pas de minutes non plus.
+			const versLHeureFixe = renvoi(pagePriere, { timingKind: 'fixed' });
+			expect(obligatoiresVides(pagePriere, versLHeureFixe)).toEqual([]);
+			const retour = await postForm('/cours/nouveau', versLHeureFixe, cookie);
+			expect(retour.status).toBe(400);
+			expect(erreurs(await retour.text())).toEqual([
+				'Indiquez l’heure de début et l’heure de fin. Exemple : 19:00 et 20:30'
+			]);
+
+			// Les minutes écrites, le cours s'enregistre, et rien ne s'est écrit avant.
+			expect(await decalageEnBase(titreDuCours)).toEqual([]);
+			const complet = await postForm(
+				'/cours/nouveau',
+				renvoi(pagePriere, { offsetMinutes: '15', durationMinutes: '60' }),
+				cookie
+			);
+			expect(complet.status, erreurs(await complet.clone().text()).join(' | ')).toBe(303);
+			expect(await decalageEnBase(titreDuCours)).toEqual([{ kind: 'prayer', offset: decalage }]);
+		}
+	);
 
 	it('opens a course stored at −10 on « avant une prière » and 10 minutes', async () => {
 		const html = await (await get(`/cours/${tafsirId}`, cookie)).text();
