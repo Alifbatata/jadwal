@@ -379,6 +379,45 @@ describe('searchLocalities, un nom qui s’écrit vraiment avec « üe » ou « 
 		expect(noms('Rüe')).toEqual(expect.arrayContaining(['Rüegsau', 'Rüegsbach']));
 	});
 
+	it('met d’abord, pour « Rüe » tapé avec son tréma, les noms qui portent vraiment « ü »', () => {
+		// « Rüe » se lisait « rue » : Rue, dans le canton de Fribourg, nom entier, passait avant
+		// Rüegsau et Rüeggisberg, qui portent le « ü » tapé (étape 19, lot 2).
+		// Entre eux, l'ordre habituel : Rüeterswil vient d'abord, sa commune comptant plus de localités.
+		const trouves = noms('Rüe');
+		expect(
+			trouves.slice(0, 6).every((nom) => nom.startsWith('Rüe')),
+			trouves.join(', ')
+		).toBe(true);
+		expect(trouves.slice(0, 3)).toEqual(expect.arrayContaining(['Rüeggisberg', 'Rüegsau']));
+		expect(trouves.indexOf('Rue')).toBeGreaterThan(trouves.indexOf('Rüegsbach'));
+	});
+
+	it('ne met jamais, pour un début tapé avec son tréma, un nom qui ne le porte pas avant un nom qui le porte', () => {
+		// Chaque début de 3 à 6 ou de 8 lettres d'un nom de la liste qui porte « ä », « ö » ou « ü »,
+		// tapé tel quel : les localités dont le nom le contient, ou dont un mot de la commune le
+		// commence, tréma compris, forment le haut de la liste ; celles qui ne le portent qu'une fois
+		// les trémas effacés viennent après.
+		const bas = (texte: string) =>
+			texte
+				.toLowerCase()
+				.replace(/[^a-z0-9äöü]+/g, ' ')
+				.trim();
+		const debuts = new Set(
+			LIGNES.flatMap(({ name }) =>
+				[3, 4, 5, 6, 8].map((longueur) => name.slice(0, longueur))
+			).filter((debut) => /[äöüÄÖÜ]/.test(debut) && !bas(debut).includes(' '))
+		);
+		expect(debuts.size).toBeGreaterThan(100);
+		const porte = (localite: { name: string; municipality: string }, debut: string) =>
+			bas(localite.name).includes(bas(debut)) ||
+			` ${bas(localite.municipality)}`.includes(` ${bas(debut)}`);
+		const melangees = [...debuts].filter((debut) => {
+			const portent = horsChefsLieux(debut).map((localite) => porte(localite, debut));
+			const premiereSans = portent.indexOf(false);
+			return premiereSans !== -1 && portent.slice(premiereSans).includes(true);
+		});
+		expect(melangees).toEqual([]);
+	});
 	it('garde en tête les noms qui s’écrivent vraiment avec « ue » ou « oe », tapés sans tréma', () => {
 		expect(noms('Rue')).toEqual(expect.arrayContaining(['Rue', 'Rueras', 'Rueyres-Treyfayes']));
 		expect(premier('Boé')).toBe('2856 Boécourt (JU)');

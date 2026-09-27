@@ -113,13 +113,20 @@ const MIN_LENGTH = 2;
  * Un texte réduit à ce qui compte pour comparer : sans accents, en minuscules, la ponctuation
  * remplacée par des espaces, les abréviations officielles appliquées. « Saint-Imier » et
  * « St-Imier » donnent tous deux `st imier`, « Zürich » donne `zurich`.
+ *
+ * Avec `keepUmlauts`, les trémas de « ä », « ö » et « ü » restent, et seulement eux : « Zürich »
+ * donne `zürich`, « Rue » reste `rue`. Cette graphie ne sert que quand le texte tapé porte des
+ * trémas (voir `rank`).
  */
-function normalise(text: string): string {
+function normalise(text: string, keepUmlauts = false): string {
 	return text
 		.normalize('NFD')
-		.replace(/\p{M}/gu, '')
+		.replace(/\p{M}/gu, (mark: string, offset: number, whole: string) =>
+			keepUmlauts && mark === '\u0308' && /[aou]/i.test(whole[offset - 1] ?? '') ? mark : ''
+		)
+		.normalize('NFC')
 		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, ' ')
+		.replace(keepUmlauts ? /[^a-z0-9äöü]+/g : /[^a-z0-9]+/g, ' ')
 		.trim()
 		.split(' ')
 		.map((word) => ABBREVIATIONS.get(word) ?? word)
@@ -176,6 +183,8 @@ interface Entry {
 	written: Forms;
 	/** Les mêmes, sans trémas (« zuerich »), pour une localité qui en porte ; sinon `null`. */
 	withoutUmlauts: Forms | null;
+	/** Les mêmes, trémas gardés (« zürich »), pour une localité qui en porte ; sinon `null`. */
+	keepingUmlauts: Forms | null;
 	/** Combien de NPA portent ce nom : une grande ville en a beaucoup. */
 	weight: number;
 	/** Combien de localités la commune compte : départage à poids égal. */
@@ -257,16 +266,18 @@ function parse(text: string): { title: string; version: string; entries: Entry[]
 		byMunicipality.set(municipalityKey, (byMunicipality.get(municipalityKey) ?? 0) + 1);
 	}
 
-	const entries = localities.map((locality) => ({
-		locality,
-		name: normalise(locality.name),
-		written: formsOf(locality, normalise),
-		withoutUmlauts: UMLAUT.test(`${locality.name} ${locality.municipality}`)
-			? formsOf(locality, withoutUmlauts)
-			: null,
-		weight: byName.get(`${locality.name}|${locality.canton}`) ?? 1,
-		municipalityWeight: byMunicipality.get(`${locality.municipality}|${locality.canton}`) ?? 1
-	}));
+	const entries = localities.map((locality) => {
+		const umlauts = UMLAUT.test(`${locality.name} ${locality.municipality}`);
+		return {
+			locality,
+			name: normalise(locality.name),
+			written: formsOf(locality, normalise),
+			withoutUmlauts: umlauts ? formsOf(locality, withoutUmlauts) : null,
+			keepingUmlauts: umlauts ? formsOf(locality, (text) => normalise(text, true)) : null,
+			weight: byName.get(`${locality.name}|${locality.canton}`) ?? 1,
+			municipalityWeight: byMunicipality.get(`${locality.municipality}|${locality.canton}`) ?? 1
+		};
+	});
 	return { title: title as string, version: `${year}-${month}-${day}`, entries };
 }
 
@@ -304,22 +315,33 @@ export const LOCALITIES_SOURCE: LocalitiesSource = Object.freeze({
  * ses trémas (« Zuerich », ou « Lue » pour Lü) passe juste après un nom qui répond au même rang tel
  * qu'il s'écrit. Un début de nom ou un morceau (« Rue ») passe après toutes les localités qui
  * répondent telles qu'elles s'écrivent (son rang plus 7) : un nom qui s'écrit vraiment avec « ue »,
- * comme Rueras, ne se perd pas pendant la frappe parmi tous les noms en « ü ». Et un texte tapé avec
- * des trémas (`umlauts`) ne se compare qu'aux noms tels qu'ils s'écrivent : la personne écrit les
- * trémas, et le « ue » qu'elle tape est un vrai « ue » (« Büe » cherche Büetigen, et non tous les
- * noms en « Bü »).
+ * comme Rueras, ne se perd pas pendant la frappe parmi tous les noms en « ü ».
+ *
+ * Un texte tapé avec des trémas (`kept`, le même texte, trémas gardés) dit que la personne écrit les
+ * trémas : le « ue » qu'elle tape est un vrai « ue » (« Büe » cherche Büetigen, et non tous les noms
+ * en « Bü »), et le « ü » un vrai « ü ». Il se compare d'abord aux noms qui portent ses trémas là où
+ * il les porte, rangés de 0 à 6 comme ailleurs : « Rüe » donne Rüeggisberg et Rüegsau. Les noms qui
+ * ne le rejoignent qu'une fois les trémas effacés, tels qu'ils s'écrivent, viennent après eux (leur
+ * rang plus 7) : Rue, dans le canton de Fribourg, nom entier, passait avant Rüegsau (étape 19,
+ * lot 2).
  */
-function rank(entry: Entry, text: string, umlauts: boolean): number | null {
+function rank(entry: Entry, text: string, kept: string | null): number | null {
+	if (kept !== null) {
+		const withTyped = entry.keepingUmlauts === null ? null : rankIn(entry.keepingUmlauts, kept);
+		if (withTyped !== null) return withTyped;
+		const written = rankIn(entry.written, text);
+		return written === null ? null : WITHOUT_UMLAUTS + written;
+	}
 	const written = rankIn(entry.written, text);
-	if (written !== null || umlauts || entry.withoutUmlauts === null) return written;
+	if (written !== null || entry.withoutUmlauts === null) return written;
 	const without = rankIn(entry.withoutUmlauts, text);
 	if (without === null) return null;
 	return without <= 1 ? without + 0.5 : WITHOUT_UMLAUTS + without;
 }
 
 /**
- * Ajouté au rang d'un début de nom ou d'un morceau trouvé seulement sans les trémas : il passe ainsi
- * après tous les rangs de 0 à 6.
+ * Ajouté au rang d'un début de nom ou d'un morceau trouvé seulement sans les trémas, et au rang
+ * d'un nom qui ne porte pas les trémas tapés : il passe ainsi après tous les rangs de 0 à 6.
  */
 const WITHOUT_UMLAUTS = 7;
 
@@ -376,8 +398,8 @@ interface Query {
 	cantonWord: string;
 	/** Vrai quand le canton est entre deux parenthèses : il ne peut alors être que le canton. */
 	strict: boolean;
-	/** Vrai quand le texte tapé porte des trémas (voir `rank`). */
-	umlauts: boolean;
+	/** Le nom, trémas gardés, quand le texte tapé en porte ; sinon `null` (voir `rank`). */
+	kept: string | null;
 }
 
 /**
@@ -426,7 +448,7 @@ function readQuery(query: string): Query {
 		canton,
 		cantonWord,
 		strict,
-		umlauts: UMLAUT.test(query)
+		kept: UMLAUT.test(query) ? normalise(words.join(' '), true) : null
 	};
 }
 
@@ -442,8 +464,9 @@ function readQuery(query: string): Query {
  * lointaine. Avec un nom, le rang du nom passe avant tout le reste.
  */
 function nearby(
-	{ digits, umlauts }: Pick<Query, 'digits' | 'umlauts'>,
+	{ digits }: Pick<Query, 'digits'>,
 	text: string,
+	kept: string | null,
 	canton: string | null,
 	bound: number
 ): Locality[] {
@@ -455,7 +478,7 @@ function nearby(
 		const { postcode, name, canton: itsCanton } = entry.locality;
 		if (!postcode.startsWith(district)) continue;
 		if (canton !== null && itsCanton !== canton) continue;
-		const value = text === '' ? 0 : rank(entry, text, umlauts);
+		const value = text === '' ? 0 : rank(entry, text, kept);
 		if (value === null) continue;
 		const distance = Math.abs(Number(postcode) - typed);
 		const key = `${name}|${itsCanton}`;
@@ -482,12 +505,13 @@ function nearby(
 
 /** Les localités d'un NPA, d'un nom, ou des deux, dans ce canton s'il est donné. */
 function find(
-	{ digits, unknown, umlauts }: Pick<Query, 'digits' | 'unknown' | 'umlauts'>,
+	{ digits, unknown }: Pick<Query, 'digits' | 'unknown'>,
 	text: string,
+	kept: string | null,
 	canton: string | null,
 	bound: number
 ): Locality[] {
-	if (unknown) return nearby({ digits, umlauts }, text, canton, bound);
+	if (unknown) return nearby({ digits }, text, kept, canton, bound);
 	const inCanton = (entry: Entry) => canton === null || entry.locality.canton === canton;
 
 	if (digits !== '' && text === '') {
@@ -517,7 +541,7 @@ function find(
 		const { postcode, name, canton: itsCanton } = entry.locality;
 		if (digits !== '' && !postcode.startsWith(digits)) continue;
 		if (!inCanton(entry)) continue;
-		const value = rank(entry, text, umlauts);
+		const value = rank(entry, text, kept);
 		if (value === null) continue;
 		const key = digits === '' ? `${name}|${itsCanton}` : `${postcode}|${name}`;
 		const known = best.get(key);
@@ -572,15 +596,22 @@ export function searchLocalities(query: string, limit = DEFAULT_LIMIT): Locality
 		? DEFAULT_LIMIT
 		: Math.min(MAX_LIMIT, Math.max(1, Math.floor(limit)));
 	const read = readQuery(query);
-	const { text, canton, cantonWord } = read;
-	if (canton === null) return find(read, text, null, bound);
-	const found = find(read, text, canton, bound);
+	// `withUmlauts` : le nom, trémas gardés, quand la recherche en porte (voir `rank`).
+	const { text, kept: withUmlauts, canton, cantonWord } = read;
+	if (canton === null) return find(read, text, withUmlauts, null, bound);
+	const found = find(read, text, withUmlauts, canton, bound);
 	if (read.strict) return found;
 	// Sans ses deux parenthèses, les deux lettres peuvent aussi commencer le dernier mot d'un nom :
 	// les localités de ce canton d'abord, puis les autres, sans doublon. Les autres gardent jusqu'à
 	// la moitié des places : sans quoi un canton qui compte beaucoup de localités les chassait toutes
 	// de la liste, et « la ne » ne proposait plus La Neuveville.
-	const literal = find(read, normalise(`${text} ${cantonWord}`), null, bound);
+	const literal = find(
+		read,
+		normalise(`${text} ${cantonWord}`),
+		withUmlauts === null ? null : normalise(`${withUmlauts} ${cantonWord}`, true),
+		null,
+		bound
+	);
 	const others = literal.filter((locality) => !found.includes(locality));
 	const kept = Math.min(others.length, Math.floor(bound / 2));
 	return [...found.slice(0, bound - kept), ...others].slice(0, bound);

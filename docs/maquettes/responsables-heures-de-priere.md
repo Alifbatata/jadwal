@@ -60,7 +60,9 @@ position : latitude 47.1421, longitude 7.2481.`, ou `Localité enregistrée :` u
   Le serveur relit la position dans la liste. La localité enregistrée reste dans la liste, en tête ;
   quand une recherche ne la rend pas, son nom est suivi de `localité enregistrée` (ou
   `localité choisie`), et le message ne la compte pas : `Büe` donne `1 localité trouvée.` au-dessus
-  de Bienne, puis de Büetigen.
+  de Bienne, puis de Büetigen. Une recherche tapée avec un tréma met d'abord les localités qui le
+  portent là où elle le porte : `Rüe` donne Rüeterswil, Rüeggisberg, Rüegsau… puis seulement Rue,
+  dans le canton de Fribourg, qui passait en tête jusqu'à l'étape 19.
 - La dernière case de la liste : `Hors de Suisse : utiliser la position donnée plus bas`. Elle est
   cochée quand aucune localité n'est choisie. Sans JavaScript, on ne décoche pas une case : pour
   passer d'une localité enregistrée à une position hors de Suisse, on coche celle-ci à sa place, ou
