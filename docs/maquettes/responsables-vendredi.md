@@ -132,13 +132,18 @@ Cette session seulement. Les autres vendredis ne changent pas.
   5 de l'étape 18, une page restée ouverte défaisait un changement fait ailleurs, et une session
   supprimée entre-temps donnait une erreur 500.
 - `Annuler` refuse un jour déjà passé, comme sur `À venir` : aucune ligne ne le propose, mais la
-  page d'une semaine d'avant restée ouverte peut l'envoyer (étape 19, D2).
+  page d'une semaine d'avant restée ouverte peut l'envoyer (étape 19, D2). `Déplacer`, lui, ne
+  refuse pas un jour d'arrivée passé : sa liste de jours commence aujourd'hui, et seul un formulaire
+  écrit à la main peut en envoyer un d'avant. `À venir`, dont le champ de date est libre, le refuse.
 - `Rétablir comme d'habitude`, `Publier`, `Retirer de la page publique` et `Oui, supprimer`
   répondent `Cette session n'existe plus` à une session supprimée entre-temps, ou à un cours, et
   n'écrivent rien, pas même au journal. Avant l'étape 19, ils disaient l'avoir fait, et
   l'écrivaient au journal.
 - Chaque identifiant, chaque date et chaque heure envoyés sont vérifiés avant la base : un
-  formulaire écrit à la main, un 30 février ou 25:99 reçoivent une phrase, jamais une erreur 500.
+  identifiant mal formé, un 30 février, 25:99 ou une date hors des années 1970 à 2100 (l'an 0000,
+  le 31.12.9999) reçoivent une phrase, et non une erreur 500. Le caractère nul, qu'aucun clavier ne
+  tape et que la base refuse dans un texte, est retiré du titre, du champ `Imam ou intervenant` et
+  de la description.
 
 ## Ce que dit l'écran après un geste
 

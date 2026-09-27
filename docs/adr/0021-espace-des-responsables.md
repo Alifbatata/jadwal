@@ -155,21 +155,44 @@ ce champ, ou une séance hors des sept jours de l'écran, n'est pas comparé.
 
 ### Les refus de l'écran du vendredi
 
-L'écran du vendredi (ADR 0033) suit la règle d'« À venir » pour annuler et déplacer une session un
-jour donné. Chaque refus a son nom, que l'écran écrit dans la langue de la personne, en tête de
-l'écran, sauf ceux d'un formulaire de session, qui restent dans ce formulaire avec la saisie :
+L'écran du vendredi (ADR 0033) suit la règle d'« À venir » pour une page restée ouverte : annuler
+et déplacer n'écrivent que pour une session encore prévue telle quelle ce jour-là. Comme « À
+venir », il refuse l'annulation d'un jour déjà passé. Il ne refuse pas, lui, un déplacement vers un
+jour passé : sa liste de jours commence aujourd'hui, et seul un formulaire écrit à la main peut en
+envoyer un d'avant. « À venir », dont le champ de date est libre, le refuse (`pastDate`).
 
-| Refus            | Statut | Quand                                                                      |
-| ---------------- | ------ | -------------------------------------------------------------------------- |
-| `changed`        | 409    | la session a déjà été annulée ou déplacée ce jour-là, ici ou sur À venir   |
-| `timeChanged`    | 409    | l'heure de la session a changé depuis l'ouverture de la page               |
-| `unchanged`      | 400    | le déplacement vise le jour et l'heure où la session est déjà prévue       |
-| `pastSession`    | 400    | l'annulation d'un jour déjà passé (étape 19, D2)                           |
-| `sessionGone`    | 404    | la session n'existe pas, ou plus, ou l'identifiant est celui d'un cours    |
-| `dateUnreadable` | 400    | une date illisible ou impossible, un 30 février par exemple                |
-| `timeUnreadable` | 400    | une heure illisible ou impossible, 25:99 par exemple                       |
-| `orderTaken`     | 409    | une session sans date de fin occupe déjà ce rang                           |
-| `roomGone`       | 400    | la salle choisie n'existe pas, ou plus, dans l'organisation (étape 19, D2) |
+Chaque refus a son nom, que l'écran écrit dans la langue de la personne. Ceux des gestes de « Ce
+vendredi » et des boutons d'une session s'affichent en tête de l'écran :
+
+| Refus            | Statut | Quand                                                                         |
+| ---------------- | ------ | ----------------------------------------------------------------------------- |
+| `changed`        | 409    | la session a déjà été annulée ou déplacée ce jour-là, ici ou sur À venir      |
+| `timeChanged`    | 409    | l'heure de la session a changé depuis l'ouverture de la page                  |
+| `unchanged`      | 400    | le déplacement vise le jour et l'heure où la session est déjà prévue          |
+| `pastSession`    | 400    | l'annulation d'un jour déjà passé (étape 19, D2)                              |
+| `sessionGone`    | 404    | la session n'existe pas, ou plus, ou l'identifiant est celui d'un cours       |
+| `dateUnreadable` | 400    | une date illisible, impossible (un 30 février) ou hors des années 1970 à 2100 |
+| `timeUnreadable` | 400    | une heure illisible ou impossible, 25:99 par exemple                          |
+
+Ceux du formulaire d'une session, à l'ajout comme à la modification, restent dans ce formulaire,
+avec la saisie :
+
+| Refus                   | Statut | Quand                                                                          |
+| ----------------------- | ------ | ------------------------------------------------------------------------------ |
+| `titleTooLong`          | 400    | un titre de plus de 120 signes                                                 |
+| `orderInvalid`          | 400    | un rang autre que la première, la deuxième ou la troisième session             |
+| `timesMissing`          | 400    | une heure de début ou de fin absente, illisible ou impossible                  |
+| `endBeforeStart`        | 400    | une heure de fin qui ne vient pas après l'heure de début                       |
+| `sermonLanguageMissing` | 400    | aucune langue du sermon cochée parmi celles que l'écran propose                |
+| `startDateMissing`      | 400    | une date « À partir du » absente, illisible, impossible ou hors de 1970 à 2100 |
+| `endDateUnreadable`     | 400    | une date « Jusqu'au » illisible, impossible ou hors de 1970 à 2100             |
+| `endDateBeforeStart`    | 400    | une date « Jusqu'au » qui vient avant la date « À partir du »                  |
+| `roomGone`              | 400    | la salle choisie n'existe pas, ou plus, dans l'organisation (étape 19, D2)     |
+| `orderTaken`            | 409    | à l'ajout, une session sans date de fin occupe déjà ce rang                    |
+
+La modification d'une session supprimée entre-temps n'a plus de carte : sa réponse s'écrit en tête
+de l'écran, `sessionGone` (404), ou, quand la saisie a aussi des erreurs, la phrase de
+`sessionGone` suivie de ces erreurs (400).
 
 Relevé à l'étape 18 et corrigé à l'étape 19 (D2) : annuler ne comparait pas la date au jour de
 l'organisation, et acceptait un vendredi passé ; Rétablir, Publier et Supprimer répondaient « fait »
@@ -177,6 +200,17 @@ pour une session inconnue et l'écrivaient au journal ; un identifiant mal form�
 supprimée entre-temps, un 30 février ou 25:99 atteignaient la base, qui répondait alors par une
 erreur 500. Chaque geste vérifie désormais chaque identifiant, chaque date et chaque heure avant la
 base, et un refus n'écrit rien, pas même au journal.
+
+La relecture de D2 a trouvé ce que ces vérifications laissaient passer. `isIsoDate` suit le
+calendrier de `@jadwal/core`, qui a un an 0000 (ADR 0012), et PostgreSQL n'en a pas : Rétablir,
+Déplacer et Enregistrer répondaient encore à « 0000-01-01 » par une erreur 500, ici comme sur
+« À venir ». La base range le 31.12.9999, mais le flux agenda calcule le lendemain d'une date de
+fin, en l'an 10000, que le calcul refuse : une session publiée qui finissait ce jour-là faisait
+tomber le flux de toute l'organisation. Une date envoyée aux deux écrans s'accepte désormais de 1970
+à 2100, les années que couvrent les tests du calcul (`isSupportedDate`), et reçoit sinon la phrase
+d'une date illisible. Le caractère nul (U+0000), qu'aucun clavier ne tape mais qu'un formulaire écrit
+à la main peut envoyer, et que PostgreSQL refuse dans un texte, est retiré des champs de texte d'une
+session au lieu de donner une erreur 500.
 
 ### À venir, après la relecture de l'étape 18 (D4)
 
@@ -211,4 +245,5 @@ Accepté, 2026-09-20. Étape 4 de la feuille de route (espace des responsables).
 d'aujourd'hui, un déplacement qui ne change rien est refusé, les options d'une séance sont fermées
 par défaut, une page restée ouverte ne défait pas un changement, et un déplacement le même jour se
 dit comme un changement d'heure. Complété le 27.09.2026 (étape 19) : l'heure que la carte montrait,
-les refus de l'écran du vendredi, et la relecture d'« À venir ».
+les refus de l'écran du vendredi, les dates que les deux écrans acceptent, et la relecture
+d'« À venir ».

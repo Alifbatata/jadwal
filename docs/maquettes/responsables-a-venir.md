@@ -82,7 +82,9 @@ Les erreurs d'un déplacement s'affichent dans la carte concernée, rouverte, au
 la saisie est gardée :
 
 - `Cette date est déjà passée. Choisissez une date à partir d'aujourd'hui.`
-- `Cette date n'a pas pu être lue. Choisissez-la dans le calendrier du champ « Nouvelle date ».`
+- `Cette date n'a pas pu être lue. Choisissez-la dans le calendrier du champ « Nouvelle date ».` :
+  une date illisible, impossible, ou hors des années 1970 à 2100, que seul un formulaire écrit à la
+  main ou une faute de frappe envoie (l'an 0000 donnait une erreur 500, étape 19).
 - `Cette heure n'a pas pu être lue. Écrivez les heures et les minutes, par exemple 19:30.`
 - `La séance est déjà prévue à cette date et à cette heure. Choisissez une autre date ou une autre
 heure.` : un déplacement qui ne change rien est refusé.
@@ -109,7 +111,8 @@ page. Rien n'a été enregistré. Si le message n'a pas encore été envoyé, il
   prévenue (étape 19).
 - `Cette séance n'existe plus. La liste ci-dessous est à jour.` : la page renvoyée est déjà à jour,
   et, sans JavaScript, recharger renverrait le formulaire refusé (étape 19).
-- `La date de cette séance n'a pas pu être lue. Rechargez la page, puis recommencez.`
+- `La date de cette séance n'a pas pu être lue. Rechargez la page, puis recommencez.` : de même
+  pour la date de la séance visée, à l'annulation, au déplacement et au rétablissement.
 
 ## Le programme de la semaine
 
