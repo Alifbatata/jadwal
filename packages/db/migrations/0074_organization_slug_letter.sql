@@ -1,5 +1,7 @@
 -- @rejouable : ce fichier est écrit à la main et doit pouvoir être rejoué tel quel.
--- Une adresse publique a au moins une lettre, et la base le tient (étape 20, ADR 0046).
+-- Une adresse publique a au moins une lettre, et la base le tient (étape 20). La règle est décrite
+-- dans `packages/db/README.md` et `docs/maquettes/super-admin.md`, le comptage qui la précède dans
+-- l'addendum du 28.09.2026 de l'ADR 0019.
 --
 -- `organization_slug_ck` (migration 0003) ne demande que des minuscules, des chiffres et des traits
 -- d'union : la base acceptait `2026` ou `12-34`. L'écran du super-admin les refuse depuis l'étape 19

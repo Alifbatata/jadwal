@@ -4,9 +4,9 @@
 // Avant l'étape 19, l'écran du super-admin acceptait « 2026 », et proposait « 2 » pour un nom arabe
 // suivi d'un chiffre. Une base en service peut donc porter une adresse sans lettre. La migration
 // refuse alors de s'appliquer, en disant combien, et ne réécrit jamais une adresse : une adresse
-// publique ne change pas (ADR 0046). Le comptage lit la table sous le drapeau d'entretien : hors de
-// lui, le propriétaire ne voit aucune organisation, et le compte rendrait zéro sans rien dire, le
-// défaut de la migration 0050 (`prayer-module-repair.test.ts`).
+// publique ne change pas (`packages/db/README.md`). Le comptage lit la table sous le drapeau
+// d'entretien : hors de lui, le propriétaire ne voit aucune organisation, et le compte rendrait zéro
+// sans rien dire, le défaut de la migration 0050 (`prayer-module-repair.test.ts`).
 //
 // Chaque essai rejoue le fichier tel qu'il est, sous le propriétaire, dans une transaction que l'on
 // annule à la fin : la base de test n'en garde rien, et le rejeu de `migrations.test.ts` n'y trouve
