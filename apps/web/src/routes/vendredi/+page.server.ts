@@ -22,8 +22,9 @@
 // vise une session répond « Cette session n'existe plus » à une session inconnue, ou à un cours, et
 // n'écrit alors rien, pas même le journal : Rétablir, Publier et Supprimer répondaient « fait » et
 // écrivaient au journal. Rétablir refuse de même une session qui n'a plus rien à rétablir ce
-// jour-là (`alreadyRestored`, relecture de D2). Chaque identifiant, chaque date et chaque heure est vérifié avant la base,
-// qui refusait un identifiant mal formé, un 30 février, l'an 0000 ou 25:99 par une erreur 500 ; une
+// jour-là (`alreadyRestored`, relecture de D2). Chaque identifiant, chaque date et chaque heure sont
+// vérifiés avant la base, qui refusait un identifiant mal formé, un 30 février, l'an 0000 ou 25:99
+// par une erreur 500 ; une
 // date s'accepte de 1970 à 2100 (`isSupportedDate`), et une salle qui n'existe pas, ou plus, a sa
 // phrase dans le formulaire.
 //

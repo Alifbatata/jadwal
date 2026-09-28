@@ -271,8 +271,9 @@
  * jouées. Le parcours les compte lui-même, depuis l'étape 19 : il connaît la liste entière des
  * vérifications de ses retours, le **catalogue** (section du même nom, plus bas), et imprime à la
  * fin celles qui n'ont pas été jouées, une par ligne, puis leur nombre. Un libellé s'y écrit sous
- * une forme neutre : les dates, l'hôte et son port, et le nombre d'écrans lus de A3 et F1, qui
- * change d'une image à l'autre, y sont remplacés par un mot. Un passage strict échoue si une
+ * une forme neutre : les dates, l'hôte et son port, et tout « <nombre> écrans » (les écrans lus de
+ * A3 et F1, ceux de l'espace parcourus par D2), qui change d'une image à l'autre, y sont remplacés
+ * par un mot. Un passage strict échoue si une
  * vérification du catalogue n'a pas été jouée, ou si une vérification jouée n'y est pas. Le bilan
  * donne ces nombres pour l'étape 18 et pour l'étape 19, à part.
  *
@@ -924,9 +925,9 @@ let retourCourant = null;
 
 /**
  * Le libellé d'une vérification, sans ce qui change d'un passage à l'autre : l'hôte et son port,
- * les dates (celles du jour de l'horloge posée), le jour de la semaine qui les précède, et le nombre
- * d'écrans lus, qui change d'une image à l'autre (A3 et F1). C'est sous cette forme que le catalogue
- * les connaît.
+ * les dates (celles du jour de l'horloge posée), le jour de la semaine qui les précède, et tout
+ * « <nombre> écrans » (A3, F1 et D2), qui change d'une image à l'autre. C'est sous cette forme que
+ * le catalogue les connaît.
  */
 function neutre(quoi) {
 	return quoi
@@ -3300,7 +3301,7 @@ async function programme(page) {
 			`sur « À venir », la carte de « ${COURS_2} », en brouillon, porte « brouillon », et le programme de la semaine ne l’annonce dans aucune langue`,
 			{
 				'la marque « brouillon »': marques.includes('brouillon'),
-				[`un programme de la semaine par langue publiée`]: semaine.length === LANGUES.length,
+				'un programme de la semaine par langue publiée': semaine.length === LANGUES.length,
 				'le brouillon absent du programme': annonce.length === 0
 			},
 			`marques : ${marques.join(', ') || 'aucune'} ; ${annonce.map((message) => message.lang).join(', ') || 'aucun'} programme(s) qui l’annoncent`
@@ -4325,8 +4326,9 @@ async function agenda() {
 }
 
 /**
- * Ce que la page d'abonnement propose à un appareil donné (E1, E2) : le bloc de « Tout le
- * programme », ses liens, et ce qu'il dit du délai de Google.
+ * Ce que la page d'abonnement, ou la page `adresse` (celle d'un cours), propose à un appareil
+ * donné (E1, E2) : le bloc d'abonnement, ses liens et ses paragraphes, les liens « Page du cours »
+ * et les noms accessibles des liens selon Chrome.
  */
 async function abonnementSelon(navigateur, agent, adresse = `/m/${ORGANISATION.slug}/agenda`) {
 	const contexte = await nouveauContexte(navigateur, { userAgent: agent });

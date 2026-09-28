@@ -396,7 +396,7 @@ Deux défauts relevés par les chantiers du lot 2, chacun prouvé d'abord par so
   Les bornes des minutes suivent la même règle (relecture du lot 3). Sur une page rendue pour
   « avant une prière », passer à « après une prière » ne change pas la page sans JavaScript, et le
   champ gardait les bornes d'avant la prière, de 1 à 120 : le navigateur refusait d'envoyer
-  0 minute, juste après la prière, ou plus de 120 minutes, justes pourtant après une prière. Sans
+  0 minute, juste après la prière, ou plus de 120 minutes, pourtant valables après une prière. Sans
   JavaScript, le champ porte donc les bornes des deux choix réunies, de 0 à 240 ; avec JavaScript,
   il prend celles du choix. Le serveur garde les bornes de chaque choix, et refuse ce qui en sort
   avec la phrase des minutes.

@@ -75,9 +75,8 @@ aussi la suppression d'un cours à la personne responsable (migration 0065) ; de
 Cours la lui propose, et la ligne `Supprimer un cours` ouvre la liste, comme l'écran Cours ouvre la
 navigation. Jusqu'au lot 4 de l'étape 18, la ligne des cours de l'éditeur disait aussi « et le
 supprimer » : l'éditeur ne peut pas supprimer un cours, et ces mots sont retirés de sa liste. La
-liste des membres elle-même, que la ligne « Voir les membres »
-réserve, l'est aussi dans la base depuis l'étape 19 (migration 0064) : un éditeur ne lit plus que sa
-propre adhésion.
+liste des membres elle-même, que la ligne « Voir les membres » réserve, l'est aussi dans la base
+depuis l'étape 19 (migration 0064) : un éditeur ne lit plus que sa propre adhésion.
 
 La dernière ligne des gestes de l'éditeur, `Quitter une organisation dont on est membre`, vient à
 l'étape 19 avec le bouton `Quitter l'organisation` de « Vos organisations »

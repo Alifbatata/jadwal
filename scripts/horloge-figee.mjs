@@ -51,7 +51,7 @@
  * charger par le serveur de l'image, sans rien changer à l'image elle-même.
  *
  *     docker run … \
- *       --volume <racine du dépôt>/scripts/horloge-figee.mjs:/opt/jadwal-horloge-figee.mjs:ro \
+ *       --mount type=bind,source=<racine du dépôt>/scripts/horloge-figee.mjs,target=/opt/jadwal-horloge-figee.mjs,readonly \
  *       --env NODE_OPTIONS=--import=/opt/jadwal-horloge-figee.mjs \
  *       --env JADWAL_HORLOGE_FIGEE=<instant> \
  *       <image>

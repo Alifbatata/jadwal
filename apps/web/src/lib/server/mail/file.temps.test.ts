@@ -1,5 +1,5 @@
-// Le transport de développement, sous des écritures qui se croisent : quarante courriels d'un
-// demi-mégaoctet, écrits en même temps. Le test écrit vingt-quatre mégaoctets sur le disque, et sous
+// Le transport de développement, sous des écritures qui se croisent : quarante courriels de
+// 600 000 caractères, écrits en même temps. Le test écrit vingt-quatre mégaoctets sur le disque, et sous
 // la charge de la suite complète, il dépassait le délai de 5 s de Vitest (étape 18). Il tourne donc à
 // part, dans `pnpm test:temps` (étape 19), avec un délai tiré d'une mesure : `CONTRIBUTING.md`, « Les
 // tests liés au temps », dit comment. Le reste du transport est dans `file.test.ts`.

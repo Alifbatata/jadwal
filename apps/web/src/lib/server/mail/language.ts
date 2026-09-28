@@ -6,11 +6,10 @@
 // s'écrivent. L'invitation, elle, part depuis l'étape 19 dans la langue que la personne qui invite
 // choisit dans le formulaire, celle de son écran d'abord : l'écran des membres la passe en paramètre.
 //
-// Pourquoi ici plutôt qu'en paramètre : les deux courriels s'écrivent en deux endroits qui ne voient
-// pas la requête de la même façon. Le lien est écrit par Better Auth, dans son rappel d'envoi, qui ne
-// reçoit que l'adresse et l'URL ; l'invitation, par l'écran des membres. Un stockage par contexte
-// asynchrone suit la requête à travers les deux, sans variable globale qui mêlerait deux requêtes
-// simultanées, comme la capture du lien de secours (`auth.ts`).
+// Pourquoi ici plutôt qu'en paramètre, pour le lien de connexion : il est écrit par Better Auth,
+// dans son rappel d'envoi, qui ne reçoit que l'adresse et l'URL. Un stockage par contexte asynchrone
+// suit la requête jusque-là, sans variable globale qui mêlerait deux requêtes simultanées, comme la
+// capture du lien de secours (`auth.ts`). L'invitation reçoit sa langue en paramètre.
 //
 // Rien ici ne lit un compte : la langue vient de la requête, jamais de l'adresse à qui l'on écrit
 // (ADR 0017).

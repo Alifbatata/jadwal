@@ -1818,7 +1818,7 @@ describe('un cours avant une prière (C3)', () => {
 		async (minutes, decalage) => {
 			// Sans JavaScript, passer d'« avant une prière » à « après une prière » ne change pas la page :
 			// le champ des minutes garde les bornes d'avant la prière, de 1 à 120. Le navigateur refusait
-			// d'envoyer 0 minute, juste après la prière, ou plus de 120, justes pourtant après une prière,
+			// d'envoyer 0 minute, juste après la prière, ou plus de 120, pourtant valables après une prière,
 			// et il fallait d'abord envoyer des minutes qu'on ne voulait pas (relecture du lot 3). Sans
 			// JavaScript, le champ porte les bornes des deux choix réunies, et le serveur garde celles
 			// du choix envoyé.

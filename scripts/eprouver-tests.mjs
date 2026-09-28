@@ -57,7 +57,7 @@ function verifier(quoi, condition, detail = '') {
 
 /**
  * Un espace de travail jetable, avec ses paquets (`{ nom, scripts, fichiers }`), puis `tests.mjs`
- * lancé dedans avec `arguments`. Rend le code de sortie, tout ce qui a été écrit, et les paquets
+ * lancé dedans avec `argumentsDeTests`. Rend le code de sortie, tout ce qui a été écrit, et les paquets
  * dont le faux vitest a écrit un relevé : ceux que `tests.mjs` a vraiment lancés.
  */
 function jouer(paquets, argumentsDeTests = []) {

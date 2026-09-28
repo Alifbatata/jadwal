@@ -59,9 +59,9 @@ describe('parseFridayForm', () => {
 		]);
 	});
 
-	it('writes a session in the language of the organisation, even when it is not its first published one', () => {
-		// Réglages enregistre les langues dans l'ordre fr, de, it, en, ar : une organisation de langue
-		// allemande qui publie aussi le français a donc le français en tête de sa liste.
+	it('writes a session in the language of the organisation', () => {
+		// La langue d'une session est la langue par défaut de l'organisation, quelles que soient les
+		// langues qu'elle publie.
 		const allemand = parseFridayForm(formulaire({ title: '' }), 'de');
 		const francais = parseFridayForm(formulaire({ title: '  ' }), 'fr');
 		expect(allemand.ok && allemand.values.title).toBe('Freitagsgebet');
@@ -101,7 +101,8 @@ describe('parseFridayForm', () => {
 		expect(lu).toEqual({ ok: false, errors: [erreur] });
 	});
 
-	it('removes the null character, which the database refuses in a text (relecture de D2)', () => {
+	it('removes the null character, which the database refuses in a text', () => {
+		// Relecture de D2.
 		const lu = parseFridayForm(
 			formulaire({
 				title: 'Prière\u0000 du vendredi',

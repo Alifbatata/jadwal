@@ -377,8 +377,8 @@ const GESTURES: Gesture[] = [
 		admin: 1
 	},
 	{
-		// Aucun écran ne le propose encore : l'écran Cours et son action viennent au lot suivant de
-		// l'étape 19. La base le réserve dès maintenant (migration 0065).
+		// L'écran Cours le propose à la personne responsable seule (`?/supprimer`) ; la base le réserve
+		// aussi (migration 0065).
 		name: '/cours ?/supprimer : supprimer un cours (course, delete)',
 		statement: () => sql`delete from "course" where "id" = ${courseOfA} returning "id"`,
 		admin: 1
@@ -1026,8 +1026,8 @@ describe('le parcours ordinaire', () => {
 /**
  * Quitter une organisation, seule (étape 19, migration 0066). La migration 0059 réservait toute
  * suppression d'adhésion à la personne responsable : un éditeur ne pouvait plus retirer la sienne.
- * Le chef de projet veut qu'une personne puisse partir d'elle-même ; l'écran viendra dans « Vos
- * organisations ». La base lui laisse supprimer sa propre adhésion, dans l'organisation du contexte,
+ * Le chef de projet veut qu'une personne puisse partir d'elle-même ; l'écran « Vos organisations »
+ * le propose. La base lui laisse supprimer sa propre adhésion, dans l'organisation du contexte,
  * et rien de plus. La dernière personne responsable ne part pas : le déclencheur de la migration
  * 0012 la retient.
  *
