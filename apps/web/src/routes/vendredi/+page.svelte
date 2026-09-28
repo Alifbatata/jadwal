@@ -4,7 +4,8 @@
 	//
 	// Les textes sont dans `$lib/i18n/friday.ts`, dans les cinq langues de l'espace (étape 18). Tout
 	// l'écran fonctionne sans script : modifier et supprimer une session s'ouvrent dans un `details`,
-	// que le navigateur déplie seul, et la suppression demande sa confirmation sur place.
+	// que le navigateur déplie seul, et la suppression demande sa confirmation sur place. Depuis
+	// l'étape 20, seul le responsable supprime une session (`data.canDelete`).
 	import { resolve } from '$app/paths';
 	import { shortDate } from '$lib/format.js';
 	import { fridayTexts, type FridayDone, type FridayError } from '$lib/i18n/friday.js';
@@ -137,14 +138,18 @@
 			{@render formulaire(session)}
 		</details>
 
-		<details class="repli">
-			<summary class="danger-plat">{text.remove}</summary>
-			<form method="post" action="?/supprimer" class="confirmation">
-				<input type="hidden" name="courseId" value={session.id} />
-				<p>{text.removeWarning}</p>
-				<button type="submit" class="danger">{text.removeConfirm}</button>
-			</form>
-		</details>
+		<!-- Supprimer une session est réservé au responsable (étape 20, C3) : l'éditeur n'en voit pas
+		     le bouton, et l'action le renvoie à l'accueil. -->
+		{#if data.canDelete}
+			<details class="repli">
+				<summary class="danger-plat">{text.remove}</summary>
+				<form method="post" action="?/supprimer" class="confirmation">
+					<input type="hidden" name="courseId" value={session.id} />
+					<p>{text.removeWarning}</p>
+					<button type="submit" class="danger">{text.removeConfirm}</button>
+				</form>
+			</details>
+		{/if}
 	</section>
 {/each}
 

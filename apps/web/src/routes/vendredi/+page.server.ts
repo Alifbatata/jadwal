@@ -39,6 +39,9 @@
 // main écrivait une exception qui ne tombe sur aucune séance. Les séances comptent comme « Ce
 // vendredi » et « À venir » les montrent (`seanceOn`). Une session arrivée d'un autre jour se
 // rétablit, et ne s'annule ni ne se déplace sous ce jour-là, où le calcul ignorerait l'exception.
+//
+// Étape 20 (C3) : supprimer une session est réservé au responsable, comme supprimer un cours
+// (migration 0073). Les autres gestes restent ouverts à l'éditeur.
 
 import { fail } from '@sveltejs/kit';
 import { addDays, isLocalTime, todayInZone, type IsoDate } from '@jadwal/core';
@@ -52,7 +55,7 @@ import { insertCourse, updateCourse } from '$lib/server/courses.js';
 import { FIRST_SUPPORTED_DATE, isSupportedDate, LAST_SUPPORTED_DATE } from '$lib/server/dates.js';
 import { currentChange, restore, shownChange } from '$lib/server/exceptions.js';
 import { fridayTitle } from '$lib/server/friday-title.js';
-import { mustHavePrayerModule } from '$lib/server/guard.js';
+import { mustAdministerPrayerModule, mustHavePrayerModule } from '$lib/server/guard.js';
 import {
 	readCourses,
 	readProgramme,
@@ -189,6 +192,12 @@ export const load: PageServerLoad = async (event) => {
 		const lues = sessions.map((session) => versSession(session, source));
 		return {
 			organisation: { name: settings.name },
+			/**
+			 * Supprimer une session est réservé au responsable (étape 20, C3) : le bouton n'est rendu
+			 * que pour lui. `organisation` ci-dessus remplace celle de la coquille, qui porte le rôle :
+			 * la page le reçoit ici, comme l'écran Cours.
+			 */
+			canDelete: context.role !== 'editor',
 			titrePropose: t(source).jumua,
 			rangPropose: proposedOrder(lues),
 			/**
@@ -317,8 +326,14 @@ export const actions: Actions = {
 		});
 	},
 
+	/**
+	 * Supprimer une session, pour tous les vendredis. Réservé au responsable depuis l'étape 20 (C3,
+	 * migration 0073), comme la suppression d'un cours : l'éditeur est renvoyé à l'accueil avant tout
+	 * le reste, et rien ne s'écrit. Sans cette garde, la base écartait déjà sa suppression, et il
+	 * lisait « Cette session n'existe plus », une réponse fausse.
+	 */
 	supprimer: async (event) => {
-		const context = await mustHavePrayerModule(event);
+		const context = await mustAdministerPrayerModule(event);
 		const form = await event.request.formData();
 		const courseId = String(form.get('courseId') ?? '');
 		if (!UUID.test(courseId)) return refus(404, 'sessionGone');

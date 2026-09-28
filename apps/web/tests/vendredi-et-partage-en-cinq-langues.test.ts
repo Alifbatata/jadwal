@@ -13,7 +13,8 @@
 // et dit pourquoi et quoi faire. Depuis l'étape 19 (D2), il refuse d'annuler un vendredi passé,
 // comme « À venir », répond à une session inconnue par une phrase dans chaque geste, sans rien
 // écrire au journal, et vérifie chaque identifiant, chaque date et chaque heure avant la base : plus
-// aucune erreur 500.
+// aucune erreur 500. Depuis l'étape 20 (C3), supprimer une session est réservé au responsable :
+// l'éditeur n'en voit pas le bouton, et l'action le renvoie à l'accueil sans rien supprimer.
 //
 // Vrai serveur construit, vraie base, formulaires envoyés comme sans JavaScript, sur le modèle de
 // `espace-en-cinq-langues.test.ts`.
@@ -2759,5 +2760,166 @@ describe('le code à coller, expliqué sans jargon (retour B1)', () => {
 		const [ordinaire, cadre] = zones.map(contenu);
 		expect(ordinaire).toContain('>Das Kursprogramm ansehen</a>');
 		expect(cadre).toContain(`title="Kursprogramm – ${ORGANISATION_DE}"`);
+	});
+});
+
+describe('supprimer une session du vendredi, réservé au responsable (étape 20, C3)', () => {
+	// La base réserve la suppression d'une session du vendredi à la personne responsable depuis la
+	// migration 0073, comme celle d'un cours : l'écran ne propose le bouton qu'à elle, et l'action le
+	// refuse à l'éditeur, qui revient à l'accueil sans que rien soit supprimé ni écrit au journal. Sur
+	// le modèle de « supprimer un cours, réservé au responsable » (`cours-en-cinq-langues.test.ts`).
+	const EDITRICE = 'vp-editrice@example.test';
+	let editrice = '';
+
+	const SUPPRIMER: Record<Langue, string> = {
+		fr: 'Supprimer cette session',
+		de: 'Diesen Durchgang löschen',
+		it: 'Elimina questo turno',
+		en: 'Delete this session',
+		ar: 'حذف هذا الموعد'
+	};
+	const CONFIRMER: Record<Langue, string> = {
+		fr: 'Oui, supprimer',
+		de: 'Ja, löschen',
+		it: 'Sì, elimina',
+		en: 'Yes, delete',
+		ar: 'نعم، احذف'
+	};
+	const SUPPRIMEE: Record<Langue, string> = {
+		fr: 'La session est supprimée.',
+		de: 'Der Durchgang wurde gelöscht.',
+		it: 'Il turno è stato eliminato.',
+		en: 'The session has been deleted.',
+		ar: 'حُذف الموعد.'
+	};
+
+	const lu = (fragment: string) => visibleText(`<body>${fragment}</body>`);
+
+	async function existe(id: string): Promise<boolean> {
+		return maintenance(
+			async (tx) =>
+				lignes(await tx.execute(sql`select "id" from "course" where "id" = ${id}`)).length > 0
+		);
+	}
+
+	/** Les suppressions de cette session au journal, lues par le rôle applicatif. */
+	async function suppressionsAuJournal(id: string): Promise<number> {
+		const journal = createDatabase({ role: 'app', overrides: { database: testDatabase } });
+		try {
+			const trouve = await withOrg(
+				journal.db,
+				{ organizationId, userId: ids[RESPONSABLE] ?? '' },
+				async (tx) =>
+					lignes<{ n: number }>(
+						await tx.execute(sql`
+							select count(*)::int as n from "audit_log"
+							where "action" = 'course.delete' and "target_id" = ${id}::uuid
+						`)
+					)
+			);
+			return trouve[0]?.n ?? 0;
+		} finally {
+			await journal.close();
+		}
+	}
+
+	/** Le repli qui supprime une session, dans sa carte : sa balise, son résumé et son formulaire. */
+	function repliDeSuppression(html: string, id: string): string {
+		return (
+			[...section(html, `session-${id}`).matchAll(/<details\b[^>]*>[\s\S]*?<\/details>/g)]
+				.map((trouve) => trouve[0])
+				.find((repli) => repli.includes('action="?/supprimer"')) ?? ''
+		);
+	}
+
+	beforeAll(async () => {
+		const editriceId = newId();
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified", "language")
+				values (${editriceId}, ${EDITRICE}, true, 'fr')
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${organizationId}, ${editriceId}, 'editor')
+			`);
+			await tx.execute(conditionsAcceptees(organizationId, editriceId));
+		});
+		editrice = await signIn(EDITRICE);
+	});
+
+	it('offers the manager « Supprimer cette session », behind a confirmation that works without JavaScript', async () => {
+		const { id } = await ajouterUneSessionDePassage('Session à confirmer');
+		try {
+			const repli = repliDeSuppression(await (await get('/vendredi', cookies)).text(), id);
+			expect(repli).not.toMatch(/<details\b[^>]*\sopen\b/);
+			expect(lu(repli.match(/<summary\b[^>]*>[\s\S]*?<\/summary>/)?.[0] ?? '')).toBe(SUPPRIMER.fr);
+			const formulaire = repli.match(/<form\b[^>]*>[\s\S]*?<\/form>/)?.[0] ?? '';
+			expect(formulaire).toMatch(/\bmethod="post"/);
+			expect(formulaire).toContain(`name="courseId" value="${id}"`);
+			expect(lu(formulaire.match(/<button\b[^>]*>[\s\S]*?<\/button>/)?.[0] ?? '')).toBe(
+				CONFIRMER.fr
+			);
+			expect(await existe(id)).toBe(true);
+		} finally {
+			await postForm('/vendredi?/supprimer', { courseId: id }, cookies);
+		}
+	});
+
+	it('shows no such button to an editor', async () => {
+		const { id } = await ajouterUneSessionDePassage('Session vue par l’éditrice');
+		try {
+			const reponse = await get('/vendredi', editrice);
+			expect(reponse.status).toBe(200);
+			const html = await reponse.text();
+			// Elle modifie, publie, annule et déplace, comme l'écran Membres le lui promet ; elle ne
+			// supprime pas.
+			expect(lu(section(html, `session-${id}`))).toContain('Modifier cette session');
+			expect(html).not.toContain(SUPPRIMER.fr);
+			expect(html).not.toContain(CONFIRMER.fr);
+			expect(html).not.toContain('action="?/supprimer"');
+		} finally {
+			await postForm('/vendredi?/supprimer', { courseId: id }, cookies);
+		}
+	});
+
+	it('refuses it to an editor on the server, deletes nothing and writes nothing', async () => {
+		const { id } = await ajouterUneSessionDePassage('Session gardée malgré l’éditrice');
+		try {
+			const reponse = await postForm('/vendredi?/supprimer', { courseId: id }, editrice);
+			expect(reponse.status).toBe(303);
+			expect(reponse.headers.get('location')).toBe('/');
+			expect(await existe(id)).toBe(true);
+			expect(await suppressionsAuJournal(id)).toBe(0);
+		} finally {
+			await postForm('/vendredi?/supprimer', { courseId: id }, cookies);
+		}
+	});
+
+	it('deletes it for the manager, says so, in each language, and writes the journal once', async () => {
+		try {
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const { id } = await ajouterUneSessionDePassage(`Session supprimée en ${langue}`);
+				const repli = repliDeSuppression(await (await get('/vendredi', cookies)).text(), id);
+				expect(lu(repli.match(/<summary\b[^>]*>[\s\S]*?<\/summary>/)?.[0] ?? ''), langue).toBe(
+					SUPPRIMER[langue]
+				);
+				expect(lu(repli.match(/<button\b[^>]*>[\s\S]*?<\/button>/)?.[0] ?? ''), langue).toBe(
+					CONFIRMER[langue]
+				);
+				const reponse = await postForm('/vendredi?/supprimer', { courseId: id }, cookies);
+				expect(reponse.status, langue).toBe(200);
+				const html = await reponse.text();
+				expect(lu(html.match(/<p\b[^>]*role="status"[^>]*>[\s\S]*?<\/p>/)?.[0] ?? ''), langue).toBe(
+					SUPPRIMEE[langue]
+				);
+				expect(section(html, `session-${id}`), langue).toBe('');
+				expect(await existe(id), langue).toBe(false);
+				expect(await suppressionsAuJournal(id), langue).toBe(1);
+			}
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+		}
 	});
 });

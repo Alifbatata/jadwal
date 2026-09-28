@@ -29,10 +29,13 @@ export const EDITOR_GESTURES = [
 /**
  * Ce qui est réservé au responsable, en plus, dans l'ordre de l'écran. Supprimer un cours vient
  * d'abord, comme l'écran Cours dans la navigation : la base le réserve depuis la migration 0065, et
- * l'écran le propose depuis le lot 2 de l'étape 19.
+ * l'écran le propose depuis le lot 2 de l'étape 19. Supprimer une prière du vendredi suit, comme
+ * l'écran du vendredi : la base le réserve depuis la migration 0073, et l'écran ne le propose qu'au
+ * responsable depuis l'étape 20 (C3). L'éditeur garde les autres gestes de cet écran (`friday`).
  */
 export const MANAGER_GESTURES = [
 	'deleteCourse',
+	'deleteFriday',
 	'members',
 	'invitations',
 	'roles',
@@ -173,7 +176,7 @@ export const membersTexts: Translations<MembersTexts> = {
 				courses: 'Créer un cours, le modifier et le publier',
 				pauses: 'Poser une pause, par exemple pendant les vacances, puis la retirer',
 				friday:
-					'Quand les heures de prière sont activées : ajouter une prière du vendredi, la modifier, la publier, l’annuler, la déplacer ou la supprimer',
+					'Quand les heures de prière sont activées : ajouter une prière du vendredi, la modifier, la publier, l’annuler ou la déplacer',
 				share: 'Partager le programme : le lien, le code QR et le code à coller sur un site',
 				language: 'Choisir la langue de son espace',
 				// Pas « Changer d’organisation » : c'est le libellé du lien de la coquille, qui doit
@@ -184,6 +187,7 @@ export const membersTexts: Translations<MembersTexts> = {
 			},
 			manager: {
 				deleteCourse: 'Supprimer un cours',
+				deleteFriday: 'Supprimer une prière du vendredi',
 				members: 'Voir les membres, leur rôle et les invitations en attente',
 				invitations:
 					'Inviter une personne, comme éditeur ou comme responsable, et annuler une invitation',
@@ -274,7 +278,7 @@ export const membersTexts: Translations<MembersTexts> = {
 				courses: 'Einen Kurs erstellen, ändern und veröffentlichen',
 				pauses: 'Eine Pause eintragen, zum Beispiel während der Ferien, und wieder entfernen',
 				friday:
-					'Wenn die Gebetszeiten aktiviert sind: ein Freitagsgebet hinzufügen, ändern, veröffentlichen, absagen, verschieben oder löschen',
+					'Wenn die Gebetszeiten aktiviert sind: ein Freitagsgebet hinzufügen, ändern, veröffentlichen, absagen oder verschieben',
 				share: 'Das Programm teilen: den Link, den QR-Code und den Code für eine Website',
 				language: 'Die Sprache des eigenen Bereichs wählen',
 				switchOrganisation: 'Zwischen Organisationen wechseln, wenn man Mitglied mehrerer ist',
@@ -283,6 +287,7 @@ export const membersTexts: Translations<MembersTexts> = {
 			},
 			manager: {
 				deleteCourse: 'Einen Kurs löschen',
+				deleteFriday: 'Ein Freitagsgebet löschen',
 				members: 'Die Mitglieder, ihre Rolle und die offenen Einladungen sehen',
 				invitations:
 					'Eine Person für die Redaktion oder die Leitung einladen und eine Einladung zurückziehen',
@@ -373,7 +378,7 @@ export const membersTexts: Translations<MembersTexts> = {
 				courses: 'Creare un corso, modificarlo e pubblicarlo',
 				pauses: 'Inserire una pausa, per esempio durante le vacanze, poi toglierla',
 				friday:
-					'Quando gli orari di preghiera sono attivi: aggiungere una preghiera del venerdì, modificarla, pubblicarla, annullarla, spostarla o eliminarla',
+					'Quando gli orari di preghiera sono attivi: aggiungere una preghiera del venerdì, modificarla, pubblicarla, annullarla o spostarla',
 				share:
 					'Condividere il programma: il link, il codice QR e il codice da incollare su un sito',
 				language: 'Scegliere la lingua della propria area',
@@ -384,6 +389,7 @@ export const membersTexts: Translations<MembersTexts> = {
 			},
 			manager: {
 				deleteCourse: 'Eliminare un corso',
+				deleteFriday: 'Eliminare una preghiera del venerdì',
 				members: 'Vedere i membri, il loro ruolo e gli inviti in attesa',
 				invitations:
 					'Invitare una persona, come redattore o come responsabile, e annullare un invito',
@@ -473,7 +479,7 @@ export const membersTexts: Translations<MembersTexts> = {
 				courses: 'Create a course, edit it and publish it',
 				pauses: 'Add a break, for example during the holidays, then remove it',
 				friday:
-					'When prayer times are switched on: add a Friday prayer, edit it, publish it, cancel it, move it or delete it',
+					'When prayer times are switched on: add a Friday prayer, edit it, publish it, cancel it or move it',
 				share: 'Share the programme: the link, the QR code and the code to paste into a website',
 				language: 'Choose the language of their own area',
 				switchOrganisation: 'Switch between organisations, for someone who is a member of several',
@@ -482,6 +488,7 @@ export const membersTexts: Translations<MembersTexts> = {
 			},
 			manager: {
 				deleteCourse: 'Delete a course',
+				deleteFriday: 'Delete a Friday prayer',
 				members: 'See the members, their role and the pending invitations',
 				invitations: 'Invite someone, as an editor or as a manager, and cancel an invitation',
 				roles: 'Change the role of a member',
@@ -574,7 +581,7 @@ export const membersTexts: Translations<MembersTexts> = {
 				sessions: 'إلغاء حصة أو نقلها إلى تاريخ آخر أو ساعة أخرى، ثم إعادتها',
 				courses: 'إنشاء درس وتعديله ونشره',
 				pauses: 'إضافة عطلة، في الإجازات مثلًا، ثم إزالتها',
-				friday: 'عند تفعيل مواقيت الصلاة: إضافة صلاة جمعة وتعديلها ونشرها وإلغاؤها ونقلها أو حذفها',
+				friday: 'عند تفعيل مواقيت الصلاة: إضافة صلاة جمعة وتعديلها ونشرها وإلغاؤها أو نقلها',
 				share: 'مشاركة البرنامج: الرابط ورمز QR والشيفرة التي تُلصق في موقع',
 				language: 'اختيار لغة مساحته',
 				switchOrganisation: 'الانتقال من مؤسسة إلى أخرى لمن هو عضو في أكثر من مؤسسة',
@@ -583,6 +590,7 @@ export const membersTexts: Translations<MembersTexts> = {
 			},
 			manager: {
 				deleteCourse: 'حذف درس',
+				deleteFriday: 'حذف صلاة جمعة',
 				members: 'عرض الأعضاء وأدوارهم والدعوات المعلقة',
 				invitations: 'دعوة شخص بصفة محرر أو مسؤول، وإلغاء دعوة',
 				roles: 'تغيير دور عضو',

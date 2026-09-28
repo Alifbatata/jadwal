@@ -643,7 +643,7 @@ const PREUVES: {
 	},
 	friday: {
 		texte:
-			'Quand les heures de prière sont activées : ajouter une prière du vendredi, la modifier, la publier, l’annuler, la déplacer ou la supprimer',
+			'Quand les heures de prière sont activées : ajouter une prière du vendredi, la modifier, la publier, l’annuler ou la déplacer',
 		preuve: async (cookie) => {
 			const nom = 'Prière ajoutée par l’éditrice';
 			const modifie = 'Prière modifiée par l’éditrice';
@@ -714,13 +714,20 @@ const PREUVES: {
 				expect(await exceptionDe(id, date), action).toBe(attendu);
 			}
 
-			const supprimer = formulaireDeLaPage(
-				await page200('/vendredi', cookie),
-				'?/supprimer',
-				deLaSession
-			);
-			expect(supprimer, 'le bouton qui la supprime').not.toBeNull();
-			expect((await postForm('/vendredi?/supprimer', supprimer ?? {}, cookie)).status).toBe(200);
+			// Pas de suppression : depuis l'étape 20 (C3), seule la personne responsable supprime une
+			// session du vendredi (migration 0073). Son écran ne lui propose pas le bouton, l'action la
+			// renvoie à l'accueil, et la session reste ; `RESERVES` range le geste parmi ceux du
+			// responsable.
+			expect(
+				formulaireDeLaPage(await page200('/vendredi', cookie), '?/supprimer', deLaSession),
+				'aucun bouton qui la supprime'
+			).toBeNull();
+			const refusee = await postForm('/vendredi?/supprimer', { courseId: id }, cookie);
+			expect(refusee.status).toBe(303);
+			expect(refusee.headers.get('location')).toBe('/');
+			expect(await coursNommes(modifie)).toEqual([{ id, status: 'published', kind: 'jumua' }]);
+			// Le ménage, par le propriétaire : la preuve n'a que le cookie de l'éditrice.
+			await maintenance((tx) => tx.execute(sql`delete from "course" where "id" = ${id}`));
 			expect(await coursNommes(modifie)).toEqual([]);
 		}
 	},
@@ -864,6 +871,13 @@ const RESERVES: {
 		texte: 'Supprimer un cours',
 		tables: ['course'],
 		refus: [{ chemin: '/cours?/supprimer', champs: { courseId: '' } }]
+	},
+	// Une session du vendredi aussi, depuis l'étape 20 (C3) : la base le réserve au responsable
+	// (migration 0073), et l'écran du vendredi ne propose le bouton qu'à lui.
+	deleteFriday: {
+		texte: 'Supprimer une prière du vendredi',
+		tables: ['course'],
+		refus: [{ chemin: '/vendredi?/supprimer', champs: { courseId: '' } }]
 	},
 	members: {
 		texte: 'Voir les membres, leur rôle et les invitations en attente',
