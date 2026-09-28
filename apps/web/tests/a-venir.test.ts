@@ -4560,7 +4560,10 @@ describe('C4 : le programme de la semaine dit l’annulation avec son propre nom
 			expect(jours.get(dateLue(langue, autreJour)), langue).toContain(
 				ligne(JUMUA, '16:00 – 16:40', SESSION[langue])
 			);
-			// Aucune autre ligne annulée : rien à la date prévue des deux séances déplacées, passée.
+			// Aucune autre ligne annulée dans les sept jours, ni en double. La date prévue des deux
+			// séances déplacées est passée : le programme part d'aujourd'hui et ne peut pas la montrer,
+			// ce test ne la regarde donc pas. La vue Mois de la page publique la regarde
+			// (`public-prieres-agenda.test.ts`).
 			const annulees = [...jours.values()]
 				.flat()
 				.filter((texte) => texte.endsWith(SEANCE[langue]) || texte.endsWith(SESSION[langue]));
