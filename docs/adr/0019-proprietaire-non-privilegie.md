@@ -129,10 +129,22 @@ politiques et les fonctions, que la sécurité au niveau des lignes ne filtre pa
 données à venir pose le drapeau pour elle seule, le coupe, et prouve son effet sous lui, comme 0067
 et 0072.
 
+## Addendum du 28.09.2026 : une lecture de données dans une migration (étape 20)
+
+Les migrations 0073 à 0075 n'écrivent aucune donnée : elles changent une politique et deux
+contraintes. La migration 0074 lit, en revanche. Avant de poser la règle d'une lettre dans
+l'adresse publique, elle compte les adresses qui n'en ont pas, et refuse de s'appliquer s'il y en a.
+Ce comptage suit la même règle qu'une écriture : hors du drapeau d'entretien, le propriétaire ne
+voit aucune organisation, et le compte rendrait zéro sans rien dire. La migration vérifie d'abord la
+politique d'entretien, pose le drapeau pour le seul comptage, puis le coupe, et sa preuve vérifie
+qu'il est coupé. La contrainte, ajoutée ensuite, lit de toute façon chaque ligne hors des
+politiques : le comptage ne fait que donner un message clair (`packages/db/README.md`).
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 3 de la feuille de route (connexion, organisations, rôles, invitations,
 super-admin, journal). Remplace, sur ce point, la décision de l'ADR 0013 qui annonçait un
 propriétaire non superutilisateur sans le créer. Complété le 2026-09-23 (le droit `TRUNCATE` du
 propriétaire, écrit comme limite, voir l'addendum). Complété le 27.09.2026 (les écritures de données
-des migrations, relevées une à une, voir l'addendum).
+des migrations, relevées une à une, voir l'addendum). Complété le 28.09.2026 (le comptage de la
+migration 0074, sous le drapeau, voir l'addendum).
