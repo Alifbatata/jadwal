@@ -171,6 +171,18 @@ et rien ne dit le contraire. Le rejeu ne trouve plus rien à rallumer.
 Les autres écritures de données des migrations ont été relevées une à une (ADR 0019, addendum du
 même jour) : aucune autre n'a pu rester sans effet.
 
+## Addendum du 28.09.2026 : l'onglet « Prières », une session déplacée puis annulée (étape 20)
+
+Depuis l'étape 20, une session du vendredi déplacée dont le vendredi prévu est passé ne se rétablit
+plus ; annulée, elle reste barrée à sa nouvelle date (ADR 0021 et ADR 0033, addenda du même jour).
+Déplacée à un autre jour, puis annulée là, elle s'écrivait dans l'onglet après l'iqama du Dhuhr,
+sans nom visible, comme une heure de plus. Elle s'y écrit maintenant comme une session venue d'un
+vendredi : nommée, à sa place dans l'ordre des heures, mais barrée, avec la marque de son état,
+`Session annulée`, là où une session qui a lieu montre son vendredi d'origine. Elle n'a pas lieu :
+la phrase d'aide sur les sessions venues d'un autre jour ne la compte pas. Les marques d'une
+session disent son état avec son propre nom depuis la même étape : `Session annulée`,
+`Session déplacée au …` (`docs/maquettes/public-prieres.md`).
+
 ## Ce que cette décision ne dit pas
 
 Elle ne dit rien d'un catalogue de modules. Il y en a un, il est prévu pour un besoin connu, et
