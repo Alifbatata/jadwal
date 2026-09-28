@@ -93,8 +93,8 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   l'autre. La faille est fermée, avec six autres défauts trouvés en chemin. La base tient désormais
   l'échéance, le rôle et les passages de statut d'une invitation (migrations 0056 à 0058), et le
   super-admin entré dans une organisation ne lit plus les autres (0055).
-- **Étape 18** (les retours des tests du chef de projet) : **livrée à la fin de la séance du
-  2026-09-26** ; le déploiement se fait en fin de séance. Une règle réunit les retours : une
+- **Étape 18** (les retours des tests du chef de projet) : **terminée, et déployée le
+  27.09.2026**. Une règle réunit les retours : une
   personne qui ne connaît rien au service doit tout comprendre seule, sans aide. Le service parle
   maintenant cinq langues partout, l'anglais britannique en plus, dans l'espace des responsables, le
   super-admin et les courriels comme sur la page publique ; les dates s'écrivent `JJ.MM.AAAA`, comme
@@ -103,6 +103,16 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   a un onglet Prières, et l'abonnement au calendrier propose le bouton de l'appareil ; la base
   sépare enfin l'éditeur du responsable. Les sept lots sont intégrés : 3 293 tests, tous réussis,
   mesurés le 27.09.2026 sur le commit livré.
+- **Étape 19** (zéro défaut connu, l'arabe relu, le nom hors de l'historique) : **livrée le
+  28.09.2026**. L'historique public est réécrit : aucun commit ne porte plus le nom du chef de
+  projet, et le paquet d'images ne garde que des versions construites depuis le nouvel historique.
+  Les douze corrections de l'arabe sont faites, et plus aucun défaut relevé à l'étape 18 ne reste :
+  la base refuse au journal un auteur qui n'est pas la personne connectée et ne montre plus la liste
+  des membres à un éditeur, un cours se supprime par le responsable seul, l'état « archivé » a
+  disparu. Chaque question de l'étape 18 est appliquée comme le chef de projet l'a tranchée, et
+  l'invitation part dans la langue que choisit qui invite. 3 748 tests, tous réussis, aucun sauté,
+  et 22 tests liés au temps, à part ; parcours complet : 381 vérifications, dont 92 pour l'étape 19,
+  et axe sans rien de sérieux sur 38 pages. Mesurés par la CI le 28.09.2026 sur le commit livré.
 
 ## Fait
 
@@ -753,6 +763,76 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   `docs/CADRAGE.md`, `docs/SECURITE.md`, `docs/INTEGRATION.md`, `docs/CALENDRIER-PRIERES.md`,
   `docs/API.md`, `docs/EXPLOITATION.md` et le `README` mis à jour.
 
+Étape 19 (zéro défaut connu, l'arabe relu, le nom hors de l'historique) :
+
+- **L'historique public est réécrit.** Un nom de personne restait dans les commits publiés avant
+  l'étape 18 ; il est retiré de tout l'historique, fichiers et messages, avec son empreinte et le nom
+  d'une ville, par `git filter-repo`, puis poussé en force sur `main`. Chaque commit réécrit ne
+  diffère de l'ancien que par les lignes visées, vérifié paire par paire, et le dernier état n'a pas
+  changé. Le garde-fou cherche désormais ces termes dans tout l'historique, sans exception. Le
+  paquet d'images ne garde que des versions construites depuis le nouvel historique.
+- **L'arabe relu par le chef de projet** : onze formulations corrigées, chacune tenue par un test
+  montré en échec d'abord ; l'exemple de nom du super-admin est neutre dans les cinq langues
+  (« Association Horizon », « جمعية الأفق »), comme tous les exemples hors du module de prière.
+- **La base** : le journal refuse une entrée dont l'auteur n'est pas la personne connectée,
+  super-admin compris (migrations 0063 et 0071) ; un éditeur ne lit plus ni la liste des membres ni
+  le journal, même par un appel direct (0064, 0070) ; la suppression d'un cours est réservée au
+  responsable (0065), et le type d'une ligne ne change plus, pour qu'un cours ne se supprime pas
+  déguisé en session du vendredi (0069) ; chacun peut quitter une organisation, sauf le dernier
+  responsable (0066) ; l'état « archivé » et `prayer_settings.source` disparaissent (0067, 0068).
+  Un défaut ancien est réparé : la mise à jour de données de la migration 0050 n'avait pu rien
+  faire sur une base déjà peuplée, faute du drapeau d'entretien (0072). Tests d'attaque sur base
+  jetable pour chacune.
+- **À venir et le vendredi** : un brouillon ne sort plus dans le programme de la semaine, et sa
+  carte le dit ; une date exceptionnelle a « Rétablir », qui envoie le changement qu'il montrait ;
+  le refus d'une carte périmée nomme la séance ; le second responsable qui annule la même séance
+  reçoit le message à coller ; la prière du vendredi a ses propres mots dans les messages ; la
+  langue du sermon se choisit parmi les huit langues d'enseignement ; un jour passé, une session
+  inconnue, une date sans séance et un identifiant illisible reçoivent chacun une phrase, jamais
+  une erreur 500.
+- **Les cours** : « Supprimer ce cours », derrière une confirmation, pour le responsable seul ; la
+  langue de saisie cochée d'office ; « facultatif » en discret ; le premier jour pris à la première
+  date ; les dates hors période marquées dans la liste ; le message « nouveau cours » prêt à coller
+  après la publication ; une séance annulée barrée sur la page publique d'un cours ; sans
+  JavaScript, le formulaire ne bloque plus un cours placé par rapport à une prière.
+- **Les prières et le super-admin** : les titres de l'aperçu dans l'ordre ; « Hors de Suisse »
+  coché tout seul ; une phrase pour une période passée ; le suffixe d'une copie gardé ; sans
+  JavaScript, l'adresse proposée se montre et se confirme avant la création, une adresse sans
+  lettre est refusée, et un nom sans lettres latines demande de la taper.
+- **Membres et invitations** : l'invitation part dans la langue que choisit qui invite, sans
+  aucune recherche de compte (ADR 0017) ; retirer un membre et changer un rôle demandent une
+  confirmation ; « Quitter l'organisation » dans « Vos organisations » ; une salle inconnue « n'existe
+  plus » ; l'adresse d'arrivée d'un lien de connexion ne porte plus `?language=`.
+- **La page publique et l'agenda** : l'élision française devant un nom qui commence par une
+  voyelle ; l'italien sans article devant un jour ; « Outlook (travail ou école) » ; sur Android,
+  « ouvrez cette page sur un ordinateur », avec son adresse ; la phrase des 24 heures de Google
+  remplacée par celle de la dernière minute (celle d'Outlook reste, Microsoft donnant ce délai) ;
+  « Annulée » pour la prière du vendredi ; `og:locale` avec le pays ; une langue non publiée
+  redirige, et le 404 parle la langue de l'organisation ; le widget accepte `view="prieres"`.
+- **Les outils** : l'épreuve du PDF lit le nom de l'exploitant partout ; le générateur des
+  localités refuse une date impossible ; l'image ne porte plus aucune carte de sources ni la liste
+  des localités deux fois ; les tests liés au temps tournent à part (`pnpm test:temps`), leurs
+  marges tirées d'une mesure ; une horloge figée pour les tests qui lisent le jour
+  (`scripts/horloge-figee.mjs`) ; le bloc de site sans ses deux `header_up`, Caddy 2.10.0 au
+  minimum ; plus de CLA : les contributions arrivent sous la licence MIT.
+- **Le parcours automatique** : chaque correction de l'étape 19 qui se voit à l'écran a sa
+  vérification, rangée sous un identifiant de l'étape (55 identifiants, 92 vérifications). Rejoué
+  contre l'image de l'étape 18, il fait tomber les 83 qui peuvent y jouer, sans une seule verte ;
+  10 gestes y sont impossibles, parce que leur écran n'existe pas encore. Il compte lui-même les
+  vérifications jamais jouées, contre un catalogue de 241 libellés ; chaque vérification à
+  plusieurs conditions nomme celle qui tombe ; et l'horloge du serveur part de l'instant du
+  passage, dont toutes les dates attendues sont tirées (D9).
+- 3 748 tests dans le dépôt, mesurés par la CI le 28.09.2026 sur le commit livré, tous réussis,
+  aucun sauté : 678 dans `core`, 474 dans la base, 82 pour les sauvegardes, 2 482 dans
+  l'application, 32 pour le widget (2 145 octets en gzip) ; et 22 tests liés au temps, à part
+  (`pnpm test:temps`). Parcours complet : 381 vérifications, dont 152 pour les retours de
+  l'étape 18 et 92 pour les corrections de l'étape 19, axe sans rien de sérieux sur 38 pages.
+- Migrations 0063 à 0072 ; addenda aux ADR 0001, 0004, 0005, 0013, 0015, 0017, 0019, 0021, 0025,
+  0026, 0027, 0028, 0033, 0042, 0043, 0046, 0047 et 0048 ; `docs/CADRAGE.md`, `docs/SECURITE.md`,
+  `docs/INTEGRATION.md`, `docs/CALENDRIER-PRIERES.md`, `docs/API.md`, `docs/EXPLOITATION.md`, le
+  `README`, `CONTRIBUTING.md` et les descriptions des écrans touchés dans `docs/maquettes/` mis à
+  jour.
+
 **Un script ou une commande qu'aucun test ne _lance_ n'est pas éprouvé.** C'est la règle du dépôt
 depuis l'étape 12, et elle répond à la question laissée ouverte à l'étape 11.
 
@@ -801,7 +881,8 @@ tests.
 | 15    | Conditions exactes au mot près, relevé de l'arabe                   | terminée |
 | 16    | Conditions en ligne et acceptées, arabe corrigé, parcours complet   | terminée |
 | 17    | 182 jours vérifiés, garde du déploiement, invitations tenues        | terminée |
-| 18    | Retours des tests : cinq langues, écrans clairs, rôles dans la base | livrée   |
+| 18    | Retours des tests : cinq langues, écrans clairs, rôles dans la base | terminée |
+| 19    | Zéro défaut connu, arabe relu, historique réécrit                   | livrée   |
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
 passkeys, paiement.
@@ -896,25 +977,37 @@ passkeys, paiement.
   l'application Android ; le bouton de la page d'abonnement ouvre la version web de Google Agenda
   dans le navigateur, par un lien que Google ne documente pas (ADR 0048). La page ne se contredit
   plus : elle dit ce que le bouton demande, puis, si rien ne se passe, le passage par un
-  ordinateur. Mais aucun essai n'a été fait sur un vrai téléphone, seulement des appareils simulés
-  par leurs en-têtes : ses résultats décideront des phrases d'Android. Le lien d'Outlook n'est pas
-  documenté non plus, et l'aide de Google ne donne plus aucun délai de rafraîchissement, alors que
-  la page dit « jusqu'à 24 heures ».
+  ordinateur, en disant d'ouvrir cette page sur un ordinateur, avec son adresse (étape 19). Aucun
+  essai n'a encore été fait sur un vrai téléphone, seulement des appareils simulés par leurs
+  en-têtes : le chef de projet le fait, et ses résultats décideront des phrases d'Android. Les deux
+  liens d'Outlook (compte personnel, et compte de travail ou d'école depuis l'étape 19) ne sont pas
+  documentés non plus ; le second reste à essayer avec un vrai compte de travail. La phrase des
+  24 heures de Google a disparu à l'étape 19, faute d'appui ; celle d'Outlook reste, parce que la page
+  d'aide de Microsoft donne ce délai.
 - **Le choix de la langue fait avant la connexion part avec le lien de connexion** (ADR 0047) : il
   n'est plus perdu quand le lien s'ouvre dans un autre navigateur. Ce qui reste vrai : tant qu'aucun
   lien n'est demandé sur le navigateur du choix, le cookie d'attente, qui vit un an, peut remettre
   ce choix sur le compte à la première connexion sur ce navigateur, par-dessus une langue changée
   depuis sur un autre appareil. Une demande de lien freinée par la limite de débit consomme aussi
-  le choix. Et l'adresse d'arrivée montre `?language=de`, qu'aucun écran ne lit.
+  le choix. Le chef de projet a accepté cette règle à l'étape 19 ; l'adresse d'arrivée ne montre
+  plus `?language=de` depuis la même étape.
 - Les pages de l'espace, la page d'abonnement et la page d'un cours changent selon la langue, le
   cookie ou l'appareil, et le disent par `Vary`. Un cache partagé qui l'ignorerait servirait la
   mauvaise version ; le modèle de `infra/` n'en place aucun.
-- **Le nom de la personne reste dans l'historique de git** (étape 18, F1). Il a quitté les fichiers
-  du dépôt, mais les commits passés le portent, et les réécrire demanderait une poussée forcée, que
-  rien n'autorise.
+- **GitHub sert encore les anciens commits par leur empreinte** (étape 19, A3). L'historique est
+  réécrit et ne porte plus le nom, mais l'adresse d'un commit d'avant la réécriture répond encore,
+  page, API et `.patch` compris, et le `.patch` montre ce que le commit portait. Les faire
+  disparaître demande de supprimer et de recréer le dépôt, comme le 21.09.2026, ou une demande au
+  support de GitHub ; aucune des deux n'est autorisée à ce jour.
+- Trois limites de la base, écrites et laissées : une adresse publique sans aucune lettre n'est
+  refusée que par l'application (la base accepte encore `2026`, migration 0003) ; la base ne
+  vérifie pas que le compte qui écrit comme super-admin porte `is_super_admin` (ADR 0025) ; un
+  éditeur lit l'identifiant de la personne qui a écrit une ligne (`course.updated_by`,
+  `created_by` des changements et des pauses), sans plus pouvoir le relier à un nom ni à une
+  adresse (ADR 0046).
 - La liste des localités suisses est celle du 01.09.2026. swisstopo en publie une chaque mois ; une
   mise à jour par an suffit, ou plus tôt après une fusion de communes (`docs/EXPLOITATION.md`). Le
-  générateur vérifie la forme de la date de version, pas qu'elle existe.
+  générateur refuse une date de version qui n'existe pas (étape 19).
 
 ## Décisions en attente
 
@@ -930,63 +1023,55 @@ passkeys, paiement.
   posée dans la configuration d'un service en fonctionnement. Elle revient à qui exploite le
   serveur visé.
 - **La destination des sauvegardes** et sa clé publique `age` : à fournir par l'exploitant.
-- Texte du CLA et outil de signature (avant la première contribution externe).
+- ~~Texte du CLA et outil de signature~~ : tranché à l'étape 19, il n'y a pas de CLA. Les
+  contributions arrivent sous la licence MIT du dépôt, et `CONTRIBUTING.md` le dit.
 - **L'avis du juriste** sur les onze points de la page de garde, dont le point 10 : l'acceptation
   par personne, rattachée à son adhésion, suffit-elle ? Et le point 11, ajouté à l'étape 18 :
-  « Voltia » seul suffit-il comme exploitant et comme titulaire du droit d'auteur ? La question
-  suppose que Voltia est une entreprise individuelle, ce que l'exploitant doit confirmer.
-- **La langue d'une invitation** (étape 18, D3, point d'arrêt). Le chef de projet accepte-t-il que
-  toute invitation parte dans la langue de la personne qui invite ? La seule façon de lire la langue
-  du compte destinataire sans toucher à l'ADR 0017 serait un envoi différé : une table de courriels
-  à envoyer, relevée par une tâche après la réponse. C'est un changement d'architecture (table,
-  tâche, reprise sur échec) qui demande sa propre décision (ADR 0017, addendum).
+  « Voltia » seul suffit-il comme exploitant et comme titulaire du droit d'auteur ? Voltia est une
+  entreprise individuelle : l'exploitant l'a confirmé à l'étape 19, et la page de garde le dit.
+- ~~La langue d'une invitation~~ : tranchée à l'étape 19. Le formulaire d'invitation propose
+  « Langue du courriel », les cinq langues, celle de l'écran par défaut ; aucune recherche de compte
+  (ADR 0017 inchangée). Le lien de connexion reste dans la langue de l'écran où il est demandé.
 - ~~Le choix de la langue doit-il suivre le lien de connexion~~ : fait à l'étape 18, il part avec
-  le lien (ADR 0047). **Reste à accepter** ce que la règle laisse, « quel que soit le délai » : un
+  le lien (ADR 0047). Accepté à l'étape 19, tel que livré, ce que la règle laisse : un
   choix fait sans demander de lien peut, jusqu'à un an plus tard, remettre sa langue sur le compte
-  par-dessus une langue changée ailleurs, et une demande freinée consomme le choix. L'autre voie
-  est un repère côté serveur, la date du dernier changement de langue du compte : une colonne et
-  une migration de plus.
+  par-dessus une langue changée ailleurs, et une demande freinée consomme le choix.
 - **Les deux cookies de langue** sont fonctionnels, posés sur demande, sans donnée personnelle.
   Faut-il les nommer dans `docs/CONDITIONS.md`, qui ne parle que des cookies de mesure
   d'audience ? La question revient au juriste.
-- **Ce que la base laisse encore à un éditeur** (ADR 0046) : lire les membres de son organisation
-  par un appel direct, et écrire au journal une entrée qui nomme un collègue comme auteur. Et un
-  éditeur ne peut plus quitter seul une organisation, ce qu'aucun écran ne propose : faut-il un
-  écran « quitter l'organisation » ?
-- **L'attribut `view="prieres"` du widget** : l'ajouter changerait le fichier du widget, donc son
-  empreinte, pour les sites qui l'ont épinglée.
-- **La relecture par des locuteurs** des textes écrits à l'étape 18 en arabe, en allemand et en
-  italien, dont le vocabulaire du vendredi (`Durchgang`, `turno`, `موعد`) et les noms du bloc
-  WordPress donnés en exemple.
-- **La relecture, par le chef de projet, des textes arabes écrits sans lui** : le lien
-  « شروط الاستخدام » et les formes en « قبل » d'un décalage négatif (étape 16) ; la page 404
-  publique, « الصفحة غير موجودة » et « تحقّق من العنوان. », et la place des parenthèses autour de
-  l'annonce qu'il a donnée, « شروط الاستخدام (يُفتح في علامة تبويب جديدة) » (étape 17).
+- ~~Ce que la base laisse encore à un éditeur~~ : fermé à l'étape 19 (migrations 0063, 0064 et
+  0070, ADR 0046). Chacun peut quitter une organisation depuis « Vos organisations », sauf le
+  dernier responsable (migration 0066).
+- ~~L'attribut `view="prieres"` du widget~~ : fait à l'étape 19, dans une nouvelle version du
+  widget ; une version épinglée avant garde ses trois vues (ADR 0005).
+- ~~La relecture par des locuteurs des textes de l'étape 18~~ : faite. Le chef de projet a relu
+  l'arabe (ses corrections sont faites à l'étape 19), et accepte `Durchgang`, `turno` et les
+  noms du bloc WordPress. **Reste** la relecture des textes arabes, allemands et italiens écrits à
+  l'étape 19.
+- **La relecture, par le chef de projet, d'un texte arabe écrit sans lui** : la place des
+  parenthèses autour de l'annonce qu'il a donnée, « شروط الاستخدام (يُفتح في علامة تبويب جديدة) »
+  (étape 17). Les autres textes de cette ligne (le lien des conditions, les formes en « قبل », la
+  page 404) étaient dans la relecture de l'étape 18.
 - ~~La séparation des rôles dans la base~~ : tranchée à l'étape 18, ADR 0046. Une fonction de la
   base, `jadwal.is_org_admin()`, dit si la personne du contexte est responsable de l'organisation
   du contexte, et les politiques des gestes réservés au responsable l'exigent (migration 0059).
 
-## Défauts relevés à l'étape 18, non corrigés
+## Défauts connus
 
-Relevés par les relectures des sept lots, et vérifiés dans le code livré. Aucune relecture ne les a
-jugés bloquants. Chaque écran redit les siens dans sa description (`docs/maquettes/`).
+Aucun. Les défauts relevés à l'étape 18 sont tous corrigés à l'étape 19, avec ceux que ses propres
+relectures ont trouvés. Restent des **questions**, où le code attend une décision du chef de projet
+et n'a rien changé en l'attendant :
 
-- **La base** : une éditrice peut écrire au journal une entrée qui nomme un collègue comme auteur
-  (politique `audit_log_insert`, migration 0004), et lire la liste des membres par un appel
-  direct. Les deux sont écrits comme limites dans l'ADR 0046.
-- **À venir** : le programme de la semaine compte les cours en brouillon, celui de Partager non ;
-  une carte « date exceptionnelle » n'a pas de « Rétablir » ; la phrase d'une séance disparue
-  demande de recharger la page, alors que la page renvoyée est déjà à jour.
-- **Cours** : la liste n'a pas de bouton pour supprimer un cours, alors que l'action existe et reste
-  ouverte à l'éditeur ; enregistrer un cours archivé le repasse en brouillon, parce que le
-  formulaire ne connaît pas « archivé » (aucun écran n'archive un cours aujourd'hui).
-- **Heures de prière** : sans aucune période, l'aperçu d'une nouvelle période saute un niveau de
-  titre (axe, « heading-order », gravité modérée).
-- **Super-admin** : sans JavaScript, l'adresse proposée à partir du nom se crée sans avoir été vue,
-  et ne se change plus ; la proposition perd les ligatures, et « مسجد النور 2 » donne `/m/2`.
-- **Des outils** : l'épreuve du PDF ne cherche le nom de l'exploitant que dans une phrase ; le
-  générateur de la liste des localités accepte une date impossible ; les cartes de sources partent
-  dans l'image, qui porte la liste des localités deux fois.
+- un « Rétablir » sur une séance déplacée dont la date d'origine est déjà passée la remet à cette
+  date, donc la fait disparaître de l'écran et de la page publique, sans message à envoyer (À venir
+  et l'écran du vendredi) ;
+- la suppression d'une session du vendredi reste ouverte à l'éditeur, qui la fait depuis l'écran
+  du vendredi : D3 ne visait que l'écran des cours ;
+- « Déplacé » reste au masculin après « Prière du vendredi », la décision ne visant que
+  « Annulée » ; et « Annulée » s'écrit aussi après un titre que l'organisation a choisi, même
+  masculin ;
+- une personne d'une seule organisation qui n'a pas encore accepté les conditions ne peut pas
+  atteindre « Vos organisations » pour la quitter (ADR 0044).
 
 ## À poser avant la mise en production
 
