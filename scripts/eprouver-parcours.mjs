@@ -295,13 +295,19 @@
  *
  * Ne pas accepter les conditions, et quitter l'organisation :
  *
- * - 20-C5 : l'écran d'acceptation propose « Ne pas accepter et quitter l’organisation ». La seule
- *   personne responsable de l'organisation du parcours est refusée, en haut, avec la phrase propre à
- *   cet écran, et accepte ensuite ; dans l'organisation voisine, où elle est éditrice, le premier
- *   envoi demande de confirmer en haut de l'écran, sans rien supprimer, et « Rester dans
- *   l’organisation » ramène à l'écran ; la personne invitée en italien dans la voisine, qui ne s'était
- *   jamais connectée, confirme, quitte l'organisation et arrive sur « Vos organisations », avec
- *   l'encadré du départ.
+ * - 20-C5 : l'écran d'acceptation propose « Ne pas accepter et quitter l’organisation », un texte
+ *   souligné, sans fond ni bord, sous le bouton qui accepte, lu dans le style que calcule le
+ *   navigateur. La seule personne responsable de l'organisation du parcours est refusée, en haut,
+ *   avec la phrase propre à cet écran, et accepte ensuite ; dans l'organisation voisine, où elle est
+ *   éditrice, le premier envoi demande de confirmer en haut de l'écran, sans rien supprimer, et
+ *   « Rester dans l’organisation » ramène à l'écran ; un second onglet, resté sur l'écran de
+ *   l'organisation du parcours ouvert avant d'accepter, envoie son accord une fois la voisine
+ *   choisie : rien n'est accepté, et l'encadré en haut dit que la session a changé d'organisation.
+ *   Contre l'image de l'étape 19, cet envoi accepterait les conditions de la voisine, ce que la
+ *   suite ne permet pas : sans le champ qui nomme l'organisation de l'écran, il n'est pas joué, et
+ *   le geste est impossible. La personne invitée en italien dans la voisine, qui ne s'était jamais
+ *   connectée, confirme, quitte l'organisation et arrive sur « Vos organisations », avec l'encadré
+ *   du départ.
  *
  * Les adresses d'exemple :
  *
@@ -2893,11 +2899,47 @@ const QUITTER_SANS_ACCEPTER = {
 	rester: 'Rester dans l’organisation'
 };
 /**
+ * L'encadré de l'écran d'acceptation quand un envoi nomme une autre organisation que celle de la
+ * session, choisie depuis dans un autre onglet (`terms.ts`, étape 20, C5) : ce qui s'est passé, puis
+ * l'organisation dont l'écran parle maintenant, écrite après.
+ */
+const ORGANISATION_CHANGEE = {
+	quoi: 'Depuis l’ouverture de la page, vous avez choisi une autre organisation, peut-être dans un autre onglet. Rien n’a été enregistré.',
+	maintenant: 'La page concerne maintenant cette organisation :'
+};
+/**
  * L'encadré de « Vos organisations » à l'arrivée d'une personne qui vient de quitter une
  * organisation (`organisations.ts`, étape 19), depuis l'écran d'acceptation aussi (étape 20).
  */
 const AVIS_DE_DEPART =
 	'Vous avez quitté l’organisation. Son espace ne vous est plus ouvert. Pour y revenir, demandez à une personne responsable de vous inviter de nouveau.';
+
+/** Vrai pour une couleur calculée sans rien de visible : `transparent`, ou d'opacité nulle. */
+const transparente = (couleur) =>
+	couleur === 'transparent' || /^rgba\([^)]*,\s*0(?:\.0+)?\)$/.test(couleur);
+
+/**
+ * Le fond, le soulignement et les quatre bords d'un bouton, tels que le navigateur les calcule :
+ * ce qui le fait ressembler, ou non, à un bouton.
+ */
+const allureDe = (bouton) =>
+	bouton.evaluate((element) => {
+		const style = getComputedStyle(element);
+		return {
+			souligne: style.textDecorationLine,
+			fond: style.backgroundColor,
+			image: style.backgroundImage,
+			bords: ['top', 'right', 'bottom', 'left'].map((cote) => ({
+				couleur: style.getPropertyValue(`border-${cote}-color`),
+				largeur: style.getPropertyValue(`border-${cote}-width`),
+				trait: style.getPropertyValue(`border-${cote}-style`)
+			}))
+		};
+	});
+
+/** Vrai pour un bord qui ne se voit pas : sans trait, sans largeur, ou d'une couleur transparente. */
+const bordInvisible = (bord) =>
+	bord.trait === 'none' || Number.parseFloat(bord.largeur) === 0 || transparente(bord.couleur);
 
 /** Vrai si l'élément vient avant le premier paragraphe de la page qui porte cette classe. */
 const avantLe = (element, classe) =>
@@ -3041,6 +3083,40 @@ async function personneInvitee(navigateur) {
 		pourquoi: 'avec une organisation et une invitation qui attend'
 	});
 	await auditer(page, 'conditions à accepter');
+	// L'allure des deux boutons (étape 20, C5) : l'accord est le bouton de l'écran, avec son fond ;
+	// le départ, sous lui, est un texte souligné, sans fond ni bord, qui ne lui ressemble jamais plus,
+	// quel que soit l'accent de l'organisation.
+	await retour('20-C5', async () => {
+		const depart = await exiger(
+			page.getByRole('button', { name: QUITTER_SANS_ACCEPTER.bouton, exact: true }),
+			`le bouton « ${QUITTER_SANS_ACCEPTER.bouton} »`
+		);
+		const accord = await allureDe(bouton);
+		const lui = await allureDe(depart);
+		const boiteDeLAccord = await bouton.boundingBox();
+		const boiteDuDepart = await depart.boundingBox();
+		const bords = lui.bords
+			.map((bord) => `${bord.largeur} ${bord.trait} ${bord.couleur}`)
+			.join(' / ');
+		const ouEstLeDepart = boiteDuDepart ? `à ${Math.round(boiteDuDepart.y)} px` : 'sans boîte';
+		const ouEstLAccord = boiteDeLAccord
+			? `de ${Math.round(boiteDeLAccord.y)} à ${Math.round(boiteDeLAccord.y + boiteDeLAccord.height)} px`
+			: 'sans boîte';
+		verifierChaque(
+			`sur l’écran d’acceptation, « ${QUITTER_SANS_ACCEPTER.bouton} » est un texte souligné, sans fond ni bord, sous « J’accepte les conditions d’utilisation », qui garde son fond`,
+			{
+				souligné: lui.souligne.split(/\s+/).includes('underline'),
+				'sans fond': transparente(lui.fond) && lui.image === 'none',
+				'sans bord': lui.bords.every(bordInvisible),
+				'sous le bouton qui accepte':
+					boiteDeLAccord !== null &&
+					boiteDuDepart !== null &&
+					boiteDuDepart.y >= boiteDeLAccord.y + boiteDeLAccord.height,
+				'le bouton qui accepte, avec son fond': !transparente(accord.fond)
+			},
+			`le départ : « ${lui.souligne} », fond ${lui.fond}, bords ${bords}, ${ouEstLeDepart} ; l’accord : fond ${accord.fond}, ${ouEstLAccord}`
+		);
+	});
 	// Ne pas accepter, et partir (étape 20, C5) : la seule personne responsable de l'organisation est
 	// refusée, en haut de l'écran, avec la phrase propre à cet écran. Elle reste membre, et accepte
 	// ensuite.
@@ -3074,6 +3150,10 @@ async function personneInvitee(navigateur) {
 			texte || `aucun refus, ${chemin(page)}`
 		);
 	});
+	// Un second onglet, ouvert sur cet écran avant d'accepter, reste tel quel : il enverra son accord
+	// une fois la voisine choisie, dont les conditions attendront encore (étape 20, C5).
+	const ongletResteOuvert = await contexte.newPage();
+	await ouvrir(ongletResteOuvert, '/conditions/accepter');
 	await envoyer(page, bouton);
 	verifierChaque(
 		'après avoir accepté, elle arrive à l’accueil de son espace, et la navigation revient',
@@ -3175,6 +3255,57 @@ async function personneInvitee(navigateur) {
 			`${chemin(page)} ; « ${raison.slice(0, 80)} »`
 		);
 	});
+	// L'onglet resté sur l'écran de « Centre du Parcours », ouvert avant d'accepter, envoie
+	// maintenant son accord : la session, depuis, a choisi la voisine, dont les conditions attendent.
+	// L'accord ne vaut que pour l'organisation que l'écran nommait ; rien n'est accepté, et l'écran,
+	// rendu pour la voisine, le dit en haut (étape 20, C5). Recharger l'écran le prouve : les
+	// conditions de la voisine attendent encore. Sur une image d'avant l'étape 20, cet envoi
+	// accepterait les conditions de la voisine, ce que la suite du parcours ne permet pas : sans le
+	// champ qui nomme l'organisation de l'écran, le geste n'est pas joué.
+	try {
+		await retour('20-C5', async () => {
+			const onglet = ongletResteOuvert;
+			await exiger(
+				onglet.locator('form[action="?/accepter"] input[name="organizationId"]'),
+				'le champ qui nomme l’organisation de l’écran, dans le formulaire de l’accord'
+			);
+			const avant = await texteDe(onglet.locator('main p.raison'));
+			await envoyer(
+				onglet,
+				onglet.getByRole('button', { name: 'J’accepte les conditions d’utilisation', exact: true })
+			);
+			const encadre = onglet.locator('#organisation-changee');
+			const present = (await encadre.count()) === 1;
+			const texte = (await encadre.locator('p').allTextContents())
+				.map((paragraphe) => paragraphe.replace(/\s+/g, ' ').trim())
+				.join(' ');
+			const role = present ? await encadre.getAttribute('role') : null;
+			const enHaut = present && (await avantLe(encadre, 'raison'));
+			const raison = await texteDe(onglet.locator('main p.raison'));
+			const apresLEnvoi = chemin(onglet);
+			// L'encadré n'existe que comme réponse du formulaire : la recharger le perdrait.
+			await auditer(onglet, 'conditions à accepter, organisation changée', { recharger: false });
+			await ouvrir(onglet, '/conditions/accepter');
+			const rechargee = await texteDe(onglet.locator('main p.raison'));
+			verifierChaque(
+				`un onglet resté sur l’écran d’acceptation de « ${ORGANISATION.nom} », qui envoie « J’accepte les conditions d’utilisation » une fois « ${VOISINE.nom} » choisie dans un autre, est refusé : en haut, l’encadré dit que rien n’a été enregistré et nomme « ${VOISINE.nom} », dont les conditions attendent encore`,
+				{
+					[`l’onglet nommait « ${ORGANISATION.nom} »`]: avant.includes(ORGANISATION.nom),
+					'l’encadré, en haut, annoncé (role=alert)': present && role === 'alert' && enHaut,
+					'ce qui s’est passé, et l’organisation de la session':
+						texte ===
+						`${ORGANISATION_CHANGEE.quoi} ${ORGANISATION_CHANGEE.maintenant} ${VOISINE.nom}`,
+					[`l’écran, rendu pour « ${VOISINE.nom} »`]:
+						apresLEnvoi === '/conditions/accepter' && raison.includes(VOISINE.nom),
+					[`rien d’accepté : rechargé, l’écran demande encore les conditions de « ${VOISINE.nom} »`]:
+						chemin(onglet) === '/conditions/accepter' && rechargee.includes(VOISINE.nom)
+				},
+				`« ${texte || 'aucun encadré'} » ; ${apresLEnvoi} ; rechargé : ${chemin(onglet)}, « ${rechargee.slice(0, 80)} »`
+			);
+		});
+	} finally {
+		await ongletResteOuvert.close();
+	}
 	await suivre(page, autre, '/organisations');
 	await envoyer(page, page.getByRole('button', { name: ORGANISATION.nom, exact: true }));
 	verifierChaque(
@@ -9107,10 +9238,12 @@ D3 | une invitation envoyée depuis l’écran en allemand part en allemand, <ht
 B2 | sans JavaScript, « École du Lac », créée à la confirmation, reçoit l’adresse que le serveur a proposée, « ecole-du-lac », et l’écran dit l’adresse entière
 A3 | la version et la date du texte s’écrivent en JJ.MM.AAAA, « Version du JJ.MM.AAAA »
 H2 | avec une organisation et une invitation qui attend, le lien « Choisir une autre organisation » est là, vers le choix
+20-C5 | sur l’écran d’acceptation, « Ne pas accepter et quitter l’organisation » est un texte souligné, sans fond ni bord, sous « J’accepte les conditions d’utilisation », qui garde son fond
 20-C5 | sur l’écran d’acceptation, la seule personne responsable de « Centre du Parcours » qui choisit « Ne pas accepter et quitter l’organisation » est refusée en haut, avec la phrase propre à cet écran, sans demande de confirmation, et l’écran reste celui des conditions
 19-D8 | l’écran d’acceptation écrit « l’espace d’Association voisine », en haut et sous le bouton
 20-C5 | sur l’écran d’acceptation de « Association voisine », « Ne pas accepter et quitter l’organisation » ne supprime rien au premier envoi : en haut, « Vous allez quitter cette organisation : Association voisine », « Confirmer le départ » et « Rester dans l’organisation »
 20-C5 | « Rester dans l’organisation » ramène à l’écran d’acceptation de « Association voisine », sans demande, et elle en est toujours membre
+20-C5 | un onglet resté sur l’écran d’acceptation de « Centre du Parcours », qui envoie « J’accepte les conditions d’utilisation » une fois « Association voisine » choisie dans un autre, est refusé : en haut, l’encadré dit que rien n’a été enregistré et nomme « Association voisine », dont les conditions attendent encore
 20-C5 | sur l’écran d’acceptation, une personne qui confirme « Ne pas accepter et quitter l’organisation » quitte « Association voisine » : elle arrive sur « Vos organisations », où l’encadré dit le départ, et l’organisation n’y est plus
 D1 | les réglages proposent l’anglais parmi les langues de la page publique
 B1 | la navigation nomme ces écrans par leur titre, « Heures de prière » et « Prière du vendredi »
