@@ -30,7 +30,8 @@
  * du parcours automatique, qui tombe sur l'ancien comportement. Chaque vérification d'un retour
  * porte sa lettre, et le parcours imprime à la fin un tableau « retour | vérification | verdict ».
  * Un retour sans aucune ligne fait échouer le parcours : on ne perd pas une vérification sans le
- * voir. L'étape 19 suit la même règle pour chacune de ses corrections qui se voient à l'écran.
+ * voir. L'étape 19 suit la même règle pour chacune de ses corrections qui se voient à l'écran, et
+ * l'étape 20 aussi.
  *
  * ### Les retours de l'étape 18
  *
@@ -234,6 +235,25 @@
  * de la base, l'écran ne montre qu'une chose : une session du vendredi ne s'ouvre plus comme un
  * cours, et 19-cours-session-vendredi le vérifie.
  *
+ * ### Les corrections de l'étape 20
+ *
+ * Quand l'étape 20 change ce qu'une vérification de l'étape 18 ou 19 attend, la vérification est
+ * scindée : ce qui ne change pas reste sous son identifiant, et reste vert contre l'image de
+ * l'étape 19 comme contre le code de l'étape 20 ; ce qui change passe sous un identifiant de
+ * l'étape 20, qui tombe contre l'image de l'étape 19.
+ *
+ * L'arabe relu par le chef de projet :
+ *
+ * - 20-B1 : sur un ordinateur, la page d'abonnement en arabe nomme l'Outlook des comptes de travail
+ *   ou d'école « Outlook (حساب عمل أو مدرسة) ». 19-agenda-outlook en garde ce qui ne change pas :
+ *   un lien vers outlook.office.com, dont le nom arabe dit « عمل أو مدرسة ».
+ * - 20-B2 : Membres en arabe, le geste de l'éditeur qui quitte une organisation, « مغادرة مؤسسة
+ *   يكون عضوًا فيها ».
+ *
+ * Les langues vérifiées :
+ *
+ * - en arabe seul : 20-B1 et 20-B2, les phrases relues.
+ *
  * ## La date figée (étape 19, D9)
  *
  * Le parcours ne lit plus la date de son lancement pour savoir ce qu'il attend. Il pose l'horloge
@@ -275,7 +295,7 @@
  * A3 et F1, ceux de l'espace parcourus par D2), qui change d'une image à l'autre, y sont remplacés
  * par un mot. Un passage strict échoue si une
  * vérification du catalogue n'a pas été jouée, ou si une vérification jouée n'y est pas. Le bilan
- * donne ces nombres pour l'étape 18 et pour l'étape 19, à part.
+ * donne ces nombres pour l'étape 18, pour l'étape 19 et pour l'étape 20, à part.
  *
  * Une vérification faite de plusieurs conditions les nomme (`verifierChaque`), qu'elle soit celle
  * d'un retour ou non : sa ligne rouge commence par « tombé : » et le nom de celles qui manquent,
@@ -698,7 +718,8 @@ const ANNULEE_DU_VENDREDI = {
 };
 /**
  * Sur un ordinateur, l'Outlook des comptes de travail ou d'école, et ce que l'aide de chaque Outlook
- * dit des comptes qu'il sert, dans chaque langue (`apps/web/src/lib/i18n.ts`, étape 19).
+ * dit des comptes qu'il sert, dans chaque langue (`apps/web/src/lib/i18n.ts`, étape 19). Le nom
+ * arabe est celui que le chef de projet a relu à l'étape 20 (B1).
  */
 const OUTLOOK_TRAVAIL = {
 	fr: {
@@ -727,6 +748,17 @@ const OUTLOOK_TRAVAIL = {
 		travail: 'هذا الرابط لحسابات العمل أو المدرسة.'
 	}
 };
+/**
+ * Ce que le nom arabe de cet Outlook garde de l'étape 19 à l'étape 20 : « عمل أو مدرسة », travail ou
+ * école. Le chef de projet y a ajouté « حساب », compte (étape 20, B1) : 19-agenda-outlook vérifie ce
+ * qui ne change pas, 20-B1 le nom entier.
+ */
+const TRAVAIL_OU_ECOLE_EN_ARABE = 'عمل أو مدرسة)';
+/**
+ * Le geste de l'éditeur qui quitte une organisation, dans la liste de Membres en arabe, tel que le
+ * chef de projet l'a relu (`apps/web/src/lib/i18n/members.ts`, étape 20, B2).
+ */
+const QUITTER_EN_ARABE = 'مغادرة مؤسسة يكون عضوًا فيها';
 /**
  * La fin de l'aide de la règle des nuits courtes, dans chaque langue (`ruleHint`,
  * `apps/web/src/lib/i18n/prayers.ts`) : les heures « proportionnelles à l'angle » changent avec la
@@ -913,8 +945,14 @@ const RETOURS_DE_L_ETAPE_19 = [
 	'19-retablir-nouvelle-date',
 	'19-jour-sans-seance'
 ];
+/**
+ * Les corrections de l'étape 20 qui se voient à l'écran, dans l'ordre du plan de l'étape : l'arabe
+ * relu (B1, B2), puis les questions de l'étape 19 (C2 à C7). L'en-tête du script dit ce que chacune
+ * vérifie.
+ */
+const RETOURS_DE_L_ETAPE_20 = ['20-B1', '20-B2'];
 /** Tous les retours, dans l'ordre du tableau final. */
-const RETOURS = [...RETOURS_DE_L_ETAPE_18, ...RETOURS_DE_L_ETAPE_19];
+const RETOURS = [...RETOURS_DE_L_ETAPE_18, ...RETOURS_DE_L_ETAPE_19, ...RETOURS_DE_L_ETAPE_20];
 /**
  * Chaque vérification d'un retour : `{ retour, quoi, ok, detail }`, et `impossible` pour un geste
  * que l'écran n'offre pas, qui a arrêté son bloc.
@@ -3713,6 +3751,19 @@ async function arabeDeLEspace(page) {
 				refus.map((phrase) => `« ${phrase} »`).join(', ') || 'aucun refus'
 			);
 		});
+		// Le geste de l'éditeur qui quitte une organisation, relu par le chef de projet (étape 20, B2).
+		await retour('20-B2', async () => {
+			await ouvrir(page, '/membres');
+			const gestes = (await page.locator('#roles-aide li').allTextContents()).map((texte) =>
+				texte.replace(/\s+/g, ' ').trim()
+			);
+			verifier(
+				`Membres en arabe : ce que peut faire un éditeur dit « ${QUITTER_EN_ARABE} »`,
+				gestes.includes(QUITTER_EN_ARABE),
+				gestes.find((geste) => geste.startsWith('مغادرة')) ??
+					`${gestes.length} gestes, aucun qui commence par « مغادرة »`
+			);
+		});
 	} finally {
 		await ouvrir(page, '/');
 		if ((await racineDit(page, 'lang')) !== 'fr') await choisirLaLangue(page, 'fr');
@@ -4526,30 +4577,41 @@ async function appareils(navigateur) {
 	});
 	// Dans les cinq langues : la page française est celle du choix complet, déjà lue plus haut, et
 	// les quatre autres sont demandées par le même ordinateur. Le flux d'une autre langue porte
-	// `?lang=` : l'adresse d'Outlook commence de même.
-	await retour('19-agenda-outlook', async () => {
-		const pages = { fr: windows };
-		for (const langue of LANGUES.filter((code) => code !== 'fr')) {
-			pages[langue] = await abonnementSelon(
-				navigateur,
-				APPAREILS.windows,
-				`/m/${ORGANISATION.slug}/${langue}/agenda`
-			);
-		}
-		const travail = Object.fromEntries(
-			LANGUES.map((langue) => [
-				langue,
-				pages[langue].liens.find((lien) => lien.texte.startsWith(OUTLOOK_TRAVAIL[langue].lien))
-			])
+	// `?lang=` : l'adresse d'Outlook commence de même. L'Outlook des comptes de travail ou d'école
+	// est trouvé par son adresse, puis jugé sur son nom : en arabe, ce nom a changé à l'étape 20, et
+	// 19-agenda-outlook n'en vérifie que ce qui reste, 20-B1 le nom entier.
+	const pages = { fr: windows };
+	for (const langue of LANGUES.filter((code) => code !== 'fr')) {
+		pages[langue] = await abonnementSelon(
+			navigateur,
+			APPAREILS.windows,
+			`/m/${ORGANISATION.slug}/${langue}/agenda`
 		);
+	}
+	const travail = Object.fromEntries(
+		LANGUES.map((langue) => [
+			langue,
+			pages[langue].liens.find((lien) => commencePar(lien.href, outlookTravail))
+		])
+	);
+	await retour('19-agenda-outlook', async () => {
+		/** Le nom du lien : celui de sa langue ; en arabe, ce que l'étape 20 n'y a pas changé. */
+		const nomTenu = (langue) => {
+			const lu = travail[langue]?.texte ?? '';
+			return langue === 'ar'
+				? lu.startsWith('Outlook (') && lu.includes(TRAVAIL_OU_ECOLE_EN_ARABE)
+				: lu.startsWith(OUTLOOK_TRAVAIL[langue].lien);
+		};
 		verifierChaque(
 			'sur un ordinateur, dans les cinq langues, « Outlook (travail ou école) » ouvre outlook.office.com dans un nouvel onglet, et chaque Outlook dit à quels comptes il sert',
 			Object.fromEntries(
 				LANGUES.flatMap((langue) => [
-					[`« ${OUTLOOK_TRAVAIL[langue].lien} »`, Boolean(travail[langue])],
+					[`vers outlook.office.com, ${langue}`, Boolean(travail[langue])],
 					[
-						`vers outlook.office.com, ${langue}`,
-						commencePar(travail[langue]?.href ?? '', outlookTravail)
+						langue === 'ar'
+							? `« Outlook (… ${TRAVAIL_OU_ECOLE_EN_ARABE} », ar`
+							: `« ${OUTLOOK_TRAVAIL[langue].lien} »`,
+						nomTenu(langue)
 					],
 					[`dans un nouvel onglet, ${langue}`, travail[langue]?.target === '_blank'],
 					[
@@ -4571,6 +4633,15 @@ async function appareils(navigateur) {
 							.join(' | ') || 'aucun lien Outlook'
 					}`
 			).join(' ; ')
+		);
+	});
+	// Le nom arabe entier, tel que le chef de projet l'a relu (étape 20, B1).
+	await retour('20-B1', async () => {
+		const lu = travail['ar']?.texte ?? '';
+		verifier(
+			`la page d’abonnement en arabe, sur un ordinateur : l’Outlook des comptes de travail ou d’école s’appelle « ${OUTLOOK_TRAVAIL.ar.lien} »`,
+			lu.startsWith(OUTLOOK_TRAVAIL.ar.lien),
+			lu || 'aucun lien vers outlook.office.com'
 		);
 	});
 	await retour('19-agenda-page-du-cours', async () => {
@@ -8073,6 +8144,7 @@ B1 | l’écran Partager dit où coller le code, avec un exemple, et nomme le ca
 19-B9 | en arabe, le programme de la semaine se copie puis se colle : « لتنسخه وتلصقه في WhatsApp » sur « À venir », « انسخ هذه الرسالة والصقها في مجموعة WhatsApp الخاصة بك » dans Partager
 19-B1 | Partager en arabe : le code pour un site très strict « وهي لا تُحدَّث تلقائيًا »
 19-B8 | Membres en arabe, un rôle inconnu envoyé par un formulaire écrit à la main : « هذا الدور غير موجود. اختر دور المحرر أو دور المسؤول. »
+20-B2 | Membres en arabe : ce que peut faire un éditeur dit « مغادرة مؤسسة يكون عضوًا فيها »
 19-cours-facultatif | le résumé d’un nouveau cours marque « (facultatif) » chaque ligne facultative, sans la signaler comme un manque
 19-cours-titre-manquant | une description allemande sans titre allemand : le résumé signale le titre qui manque, et la description à corriger ; écrire le titre retire la marque
 19-cours-langue-de-saisie | sur un nouveau cours, choisir l’arabe comme langue de saisie coche l’arabe comme langue d’enseignement, à la place du français
@@ -8130,6 +8202,7 @@ E2 | sur un ordinateur, sous Outlook, le délai qu’il met à rafraîchir un ab
 19-agenda-derniere-minute | la page renvoie à la page du programme pour un changement de dernière minute, sous l’aide du bouton d’Android et une fois sous le choix complet, et ne dit plus que Google peut mettre 24 heures
 19-agenda-derniere-minute | sur un iPhone, les étapes à la main renvoient à la page du programme, une fois, après le délai d’Outlook
 19-agenda-outlook | sur un ordinateur, dans les cinq langues, « Outlook (travail ou école) » ouvre outlook.office.com dans un nouvel onglet, et chaque Outlook dit à quels comptes il sert
+20-B1 | la page d’abonnement en arabe, sur un ordinateur : l’Outlook des comptes de travail ou d’école s’appelle « Outlook (حساب عمل أو مدرسة) »
 19-agenda-page-du-cours | sur un iPhone, sous le nom de chaque cours, un lien « Page du cours » vers le bloc d’abonnement de sa page, d’au moins 44 px de haut
 19-agenda-autre-appareil | sur un iPhone, le bloc finit par « Une autre application ou un autre appareil ? » en texte, puis le lien « Voir tous les choix », seul, vers ?appareil=tous
 19-agenda-autre-appareil | sur un Android, le bloc finit par « Une autre application ou un autre appareil ? » en texte, puis le lien « Voir tous les choix », seul, vers ?appareil=tous
@@ -8400,6 +8473,7 @@ function bilanDe(nom, lettres) {
 process.stdout.write('\n');
 bilanDe('étape 18', RETOURS_DE_L_ETAPE_18);
 bilanDe('étape 19', RETOURS_DE_L_ETAPE_19);
+bilanDe('étape 20', RETOURS_DE_L_ETAPE_20);
 process.stdout.write(
 	`\n  ${jouees.length} vérifications des retours jouées, ${jouees.length - rouges.length} vertes, ${rouges.length} rouges ; ` +
 		`${impossibles.length} geste(s) impossible(s), dont le bloc s’est arrêté là ; ` +
