@@ -179,7 +179,10 @@
  * - 19-prieres-periode-passee : l'aperçu d'une période terminée le dit.
  * - 19-prieres-hors-de-suisse : sans JavaScript, une position tapée l'emporte sur la localité
  *   cochée, sans toucher à la liste : le serveur coche lui-même « Hors de Suisse ». Avec
- *   JavaScript, la case se cochait déjà pendant la frappe à l'étape 18 : C2 le vérifie.
+ *   JavaScript, la case se cochait déjà pendant la frappe à l'étape 18 : C2 le vérifie. Sans
+ *   JavaScript encore, la latitude seule vidée : l'erreur, et le repli « Hors de Suisse » ouvert
+ *   sur le champ dont elle parle. Il revenait fermé, une régression faite puis corrigée pendant
+ *   l'étape 19.
  * - 19-prieres-angle : l'aide de la règle des nuits courtes dit que « Proportionnelle à l’angle »
  *   donne des heures qui changent avec la méthode de calcul.
  * - 19-prieres-jumua-brouillon : le vendredi, le tableau des heures servies ne dit que l'heure des
@@ -6274,7 +6277,8 @@ async function datesPrecisesSansScript(sans) {
  * redeviennent celles que le calcul donne pour sa position dans la liste. Depuis l'étape 19, la
  * position tapée l'emporte aussi sans toucher à la liste : le serveur coche lui-même « Hors de
  * Suisse ». La localité est enregistrée une dernière fois pour la suite. Les heures attendues sont
- * calculées pour les jours que le tableau montre.
+ * calculées pour les jours que le tableau montre. Enfin, la latitude seule vidée, l'aperçu demandé
+ * revient avec l'erreur et le repli « Hors de Suisse » ouvert, sans rien enregistrer.
  */
 async function horsDeSuisseSansScript(sans) {
 	const enregistrer = () =>
@@ -6378,6 +6382,40 @@ async function horsDeSuisseSansScript(sans) {
 		revenue.includes(localiteNommee),
 		revenue.slice(0, 120)
 	);
+	// La localité enregistrée et cochée, la latitude seule vidée sous « Hors de Suisse » : la position
+	// tapée n'a qu'un nombre, et le serveur la refuse. L'écran revient avec « Hors de Suisse » cochée
+	// et ce repli ouvert, sur le champ dont parle l'erreur. Il revenait le repli fermé : une régression
+	// de la correction elle-même, faite puis corrigée pendant l'étape 19. « Voir l’aperçu »
+	// n'enregistre rien : la localité reste celle de la suite.
+	await retour('19-prieres-hors-de-suisse', async () => {
+		await ouvrir(sans, '/prieres?source=computed');
+		const repli = repliNomme(sans, REPLIS_DES_PRIERES.horsDeSuisse);
+		await repli.locator(':scope > summary').click();
+		const longitude = await sans.locator('#longitude').inputValue();
+		await sans.locator('#latitude').fill('');
+		await envoyer(sans, sans.getByRole('button', { name: 'Voir l’aperçu', exact: true }));
+		const erreurs = (await sans.locator('main [role="alert"]').allTextContents()).map((texte) =>
+			texte.replace(/\s+/g, ' ').trim()
+		);
+		const lues = {
+			latitude: await sans.locator('#latitude').inputValue(),
+			longitude: await sans.locator('#longitude').inputValue()
+		};
+		const cochees = await casesCochees(sans);
+		verifierChaque(
+			`sans JavaScript, ${LOCALITE.nom} enregistrée et cochée, la latitude seule vidée sous « Hors de Suisse » : l’écran revient avec l’erreur « Donnez la latitude et la longitude, ou aucune des deux. », « Hors de Suisse » cochée, et ce repli ouvert sur la longitude gardée`,
+			{
+				[`la longitude de ${LOCALITE.nom} dans le champ, avant l’envoi`]: longitude !== '',
+				'l’erreur': erreurs.includes('Donnez la latitude et la longitude, ou aucune des deux.'),
+				'« Hors de Suisse » cochée': cochees.includes(''),
+				'une seule case cochée': cochees.length === 1,
+				'le repli « Hors de Suisse » ouvert': await estOuvert(repli),
+				'la latitude vide': lues.latitude === '',
+				'la longitude gardée': lues.longitude === longitude
+			},
+			`${erreurs.map((texte) => `« ${texte} »`).join(', ') || 'aucune erreur'} ; cochées : ${cochees.map((valeur) => valeur || 'Hors de Suisse').join(', ') || 'aucune'} ; latitude « ${lues.latitude} », longitude « ${lues.longitude} »`
+		);
+	});
 }
 
 /** Une période au nom de soixante signes, le plus long que le champ accepte (étape 19). */
@@ -8115,6 +8153,7 @@ B1 | sans JavaScript, une session du vendredi se supprime : ouvrir « Supprimer 
 C2 | sans JavaScript, Bienne enregistrée, la position 48.8566, 2.3522 tapée sous « Hors de Suisse », cette case cochée, s’enregistre à sa place : l’écran le dit, et les heures servies sont celles de cette position
 C2 | sans JavaScript, de cette position, Bienne se cherche, se coche et s’enregistre de nouveau : l’écran nomme la localité, et les heures redeviennent les siennes
 19-prieres-hors-de-suisse | sans JavaScript, Bienne enregistrée et cochée, la position tapée sous « Hors de Suisse », sans toucher à la liste, s’enregistre à sa place : l’écran le dit, et les heures servies sont celles de cette position
+19-prieres-hors-de-suisse | sans JavaScript, Bienne enregistrée et cochée, la latitude seule vidée sous « Hors de Suisse » : l’écran revient avec l’erreur « Donnez la latitude et la longitude, ou aucune des deux. », « Hors de Suisse » cochée, et ce repli ouvert sur la longitude gardée
 19-D5 | sans autre période, l’aperçu d’une nouvelle période vient sous un titre de niveau 3, et axe n’y relève plus « heading-order »
 19-prieres-periode-passee | l’aperçu d’une période terminée le JJ.MM.AAAA le dit : « Cette période s’est terminée le JJ.MM.AAAA : elle ne change aucun des sept prochains jours, que l’aperçu montre. »
 19-B7 | en arabe, après une période, l’aide de « Ajouter une période » dit que ses valeurs sont « مُعبّأة مسبقًا »
