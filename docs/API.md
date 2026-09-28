@@ -189,8 +189,10 @@ plus y revenir, elle est annulée là où on l'attendait, et elle y reste, barr�
 sans avoir été déplacée n'a pas `originalDate`. Depuis l'étape 20 ; un lecteur plus ancien montre
 la séance annulée à sa nouvelle date, sans rien perdre.
 
-Une date couverte par une pause ne produit **aucune** séance — ni annulée, ni autre. Une pause n'est
-pas une annulation : la séance n'existe pas.
+Une date couverte par une pause ne produit **aucune** séance du rythme, ni annulée, ni autre. Une
+pause n'est pas une annulation : la séance n'existe pas. Seule une séance déplacée d'un autre jour
+peut y figurer, parce qu'un déplacement est une décision explicite (ADR 0011) : `moved_here` si elle
+y a lieu, `cancelled` avec `originalDate` si elle y a été annulée ensuite (depuis l'étape 20).
 
 ## Les cours
 

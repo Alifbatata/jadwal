@@ -795,6 +795,66 @@ describe('expandOccurrences: a moved session cancelled at its new date', () => {
 		expect(dates(result)).toEqual(['2026-09-07', '2026-09-21', '2026-09-28']);
 	});
 
+	it('a new date inside a pause: the session shows there, cancelled, like a move (ADR 0011)', () => {
+		// Une pause retire les séances du rythme, pas une séance déplacée vers elle : le déplacement
+		// est une décision explicite. Annulée là ensuite, elle y reste, barrée.
+		const result = expandOccurrences({
+			schedules: [course('a')],
+			exceptions: [cancelledThere('2026-09-07', '2026-09-16', '18:00')],
+			pauses: [{ from: '2026-09-14', to: '2026-09-20' }],
+			range: SEPTEMBER
+		});
+		expect(summary(result)).toEqual([
+			'a 2026-09-07 19:00 moved_away',
+			'a 2026-09-16 18:00 cancelled',
+			'a 2026-09-21 19:00 scheduled',
+			'a 2026-09-28 19:00 scheduled'
+		]);
+		expect(result[1]?.originalDate).toBe('2026-09-07');
+	});
+
+	it('two cancelled sessions of one course on one day: the one of the rhythm, and one moved there', () => {
+		// Les deux sont barrées le même jour : seule la date d'origine les distingue, et les écrans
+		// s'en servent pour les ranger (`apps/web/src/lib/session-key.ts`).
+		const result = expandOccurrences({
+			schedules: [course('a')],
+			exceptions: [
+				cancelledThere('2026-09-07', '2026-09-14', '17:00'),
+				{ kind: 'cancelled', courseId: 'a', date: '2026-09-14' }
+			],
+			range: { from: '2026-09-07', to: '2026-09-14' }
+		});
+		expect(result).toEqual([
+			occurrence('a', '2026-09-07', {
+				status: 'moved_away',
+				movedTo: { date: '2026-09-14', start: '17:00' }
+			}),
+			occurrence('a', '2026-09-14', {
+				start: '17:00',
+				end: '19:00',
+				status: 'cancelled',
+				originalDate: '2026-09-07'
+			}),
+			occurrence('a', '2026-09-14', { status: 'cancelled' })
+		]);
+	});
+
+	it('two sessions moved to one day and cancelled there: each keeps its planned date', () => {
+		const result = expandOccurrences({
+			schedules: [course('a')],
+			exceptions: [
+				cancelledThere('2026-09-07', '2026-09-16', '18:00'),
+				cancelledThere('2026-09-14', '2026-09-16', '18:00')
+			],
+			range: { from: '2026-09-16', to: '2026-09-16' }
+		});
+		expect(summary(result)).toEqual([
+			'a 2026-09-16 18:00 cancelled',
+			'a 2026-09-16 18:00 cancelled'
+		]);
+		expect(result.map((item) => item.originalDate).sort()).toEqual(['2026-09-07', '2026-09-14']);
+	});
+
 	it('an anchored course: the cancelled session keeps the arrival time and has no anchor', () => {
 		const result = expandOccurrences({
 			schedules: [
