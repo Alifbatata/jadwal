@@ -81,6 +81,8 @@ c'est lui qui propose ce texte.
 ### Structure, de haut en bas
 
 1. Titre de niveau 1 : `Conditions d'utilisation`.
+   - Après un envoi de `Ne pas accepter et quitter l'organisation` (étape 20), et là seulement : la
+     demande de confirmation ou le refus, décrits plus bas.
 2. Pourquoi l'écran s'affiche :
    `Avant d'entrer dans l'espace de <organisation>, lisez les conditions d'utilisation et
 acceptez-les. Elles disent ce que le service conserve, combien de temps, et ce que l'exploitant peut
@@ -99,6 +101,9 @@ d'essai` (relevé D8 du 27.09.2026, règle de `deDevant` dans `apps/web/src/lib/
 7. Sous le bouton :
    `Tant que vous ne les avez pas acceptées, l'espace de <organisation> reste fermé.`, avec la même
    élision.
+8. Depuis l'étape 20, un second formulaire, au bouton secondaire, blanc et bordé de gris :
+   `Ne pas accepter et quitter l'organisation`. Il porte l'organisation que l'écran nomme, dans un
+   champ caché.
 
 ### L'en-tête, pendant ce temps
 
@@ -119,16 +124,45 @@ seul lien de sa bannière, invitation ou non. Ce lien part avec la navigation su
 déjà le sien. L'écran `Membres` ne le porte plus : il se montrait aussi à qui n'avait qu'une
 organisation et rien à choisir.
 
-### Ce que fait le bouton
+### Ce que fait le bouton qui accepte
 
 Il enregistre une ligne : l'organisation, la personne, la version (`2026-09-26` pour le texte du
 26.09.2026). Le moment est posé par la base de données, pas par l'application. Puis il
-renvoie vers `/`, l'accueil de l'espace.
+renvoie vers `/`, l'accueil de l'espace. Son action est nommée, `?/accepter`, depuis que l'écran en
+a une seconde.
 
 Un second envoi du même formulaire n'ajoute rien et ne lève rien.
 
 Quand le texte change de version, c'est-à-dire quand sa date de mise à jour change, chacun repasse
 par cet écran à sa prochaine entrée.
+
+### Ne pas accepter, et quitter l'organisation (étape 20)
+
+Le bouton `Ne pas accepter et quitter l'organisation` fait le départ de « Vos organisations », par le
+même chemin (`apps/web/src/routes/organisations/leave.server.ts`, ADR 0044) :
+
+- **Le premier envoi ne fait rien partir.** L'écran revient avec, en haut, après le titre et avant
+  le texte des conditions, une demande annoncée (`role="alert"`), encadrée de rouge :
+  `Vous allez quitter cette organisation :` et son nom, puis `Son espace ne vous sera plus ouvert.
+Pour y revenir, il faudra qu'une personne responsable vous invite de nouveau.`, le bouton rouge
+  `Confirmer le départ` et le lien `Rester dans l'organisation`, qui ramène à cet écran sans rien
+  envoyer. Rien n'est accepté non plus.
+- **Confirmé, le départ** supprime l'adhésion, et avec elle ses acceptations des conditions dans
+  cette organisation. Le journal le consigne, signé de la personne (`member.leave`) ; le refus des
+  conditions, lui, n'est écrit nulle part. La session ne désigne plus l'organisation, et la personne
+  arrive sur « Vos organisations », avec l'encadré du départ (`responsables-coquille.md`). Qui a une
+  autre organisation la garde.
+- **La seule personne responsable ne part pas.** Dès le premier envoi, et de même si l'autre
+  responsable part entre les deux envois, l'écran dit au même endroit (`role="alert"`) :
+  `Vous êtes la seule personne responsable de cette organisation :` et son nom, puis
+  `Une organisation garde toujours au moins une personne responsable. Pour la quitter, acceptez
+d'abord les conditions, puis, dans l'écran Membres, donnez le rôle de responsable à un autre membre
+ou invitez une personne comme responsable.` La phrase de « Vos organisations » dit « ouvrez-la »,
+  ce qui la ramènerait ici.
+- **Un formulaire trafiqué**, qui nomme une organisation dont la personne n'est pas membre ou aucun
+  identifiant lisible : `Vous n'êtes pas membre de cette organisation.`, au même endroit, et rien ne
+  change.
+- **Une personne qui a déjà accepté** est renvoyée vers `/`, sans que rien ne soit supprimé.
 
 ## Les titres manquants, relevés par axe
 

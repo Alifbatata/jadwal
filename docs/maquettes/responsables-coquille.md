@@ -119,8 +119,9 @@ Avant de la quitter, ouvrez-la, puis, dans l'écran Membres, donnez le rôle de 
 membre ou invitez une personne comme responsable.` La base tient la même règle (migration 0012), et
 son refus est traduit par la même phrase si l'autre responsable part entre les deux envois.
 
-**L'encadré du départ.** Après un départ, d'ici ou depuis l'écran Membres pour une responsable qui
-s'est retirée elle-même, la personne arrive à l'adresse
+**L'encadré du départ.** Après un départ, d'ici, depuis l'écran Membres pour une responsable qui
+s'est retirée elle-même, ou, depuis l'étape 20, depuis l'écran d'acceptation des conditions pour qui
+ne veut pas les accepter (`responsables-conditions.md`), la personne arrive à l'adresse
 `/organisations?avis=depart&organisation=<identifiant>`. En tête du contenu, avant le titre, un
 encadré annoncé (`role="status"`) : `Vous avez quitté l'organisation. Son espace ne vous est plus
 ouvert. Pour y revenir, demandez à une personne responsable de vous inviter de nouveau.` Il ne nomme

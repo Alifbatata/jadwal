@@ -40,7 +40,8 @@ et **le service demande à nouveau l'accord de chacun** à sa prochaine entrée 
 
 **Une seule porte.** Le contrôle vit dans `mustBeInOrganisation`, par où passent toutes les pages et
 toutes les actions de l'espace des responsables. Tant que la personne n'a pas accepté la version en
-cours, elle est renvoyée vers `/conditions/accepter`, qui montre le texte entier et un bouton.
+cours, elle est renvoyée vers `/conditions/accepter`, qui montre le texte entier et le bouton qui
+l'accepte ; depuis l'étape 20, un second bouton y fait partir sans accepter (addendum ci-dessous).
 **Tous les rôles y passent**, éditeurs compris : ce sont eux aussi qui publient.
 
 **Le super-admin en est exempté**, avec ses pouvoirs comme sans eux, et même si son compte est
@@ -93,3 +94,44 @@ construit pas.
   acceptation qui y serait écrite survivrait à l'adhésion, et la phrase « effacée avec l'adhésion »
   de `docs/CONDITIONS.md` deviendrait fausse.
 - **Pas d'acceptation au nom de l'organisation.** Chaque personne n'accepte que pour elle-même.
+- **Le refus des conditions n'est consigné nulle part.** Seul le départ l'est, au journal, signé de
+  la personne (`member.leave`), comme un départ depuis « Vos organisations » (addendum ci-dessous).
+
+## Addendum du 28.09.2026 : ne pas accepter, et quitter l'organisation (étape 20)
+
+Décision C5 du chef de projet. Une personne qui ne voulait pas accepter les conditions n'avait, sur
+cet écran, aucun moyen de partir : la navigation y est masquée, et le lien `Choisir une autre
+organisation` ne paraît qu'à qui a plusieurs organisations ou une invitation qui court encore. Une
+personne d'une seule organisation n'atteignait « Vos organisations » que par l'arrivée d'un lien de
+connexion, ou par l'adresse tapée à la main.
+
+L'écran porte donc, sous le bouton qui accepte et la phrase qui le suit, un second formulaire, au
+bouton secondaire : `Ne pas accepter et quitter l'organisation`, dans les cinq langues. Il vise
+l'organisation que l'écran nomme, par un champ caché que le serveur revérifie : une session changée
+dans un autre onglet ne fait pas quitter une autre organisation.
+
+- **Le chemin de « Vos organisations ».** L'action passe d'abord par la porte de l'écran
+  (`mustHaveTermsToAccept`) : une personne qui a déjà accepté retourne à l'accueil, et rien n'est
+  supprimé. Puis par le module que « Vos organisations » emploie depuis la même étape
+  (`apps/web/src/routes/organisations/leave.server.ts`) : l'appartenance est revérifiée, le premier
+  envoi ne supprime rien et demande une confirmation, la dernière personne responsable est refusée
+  avant la confirmation et, par le refus de la base traduit, après elle. Le second envoi supprime
+  l'adhésion, qui emporte ses acceptations par la clé en cascade, écrit `member.leave` au journal,
+  signé de la personne, retire l'organisation de la session, et mène à « Vos organisations », avec
+  l'encadré du départ.
+- **La demande de confirmation vient en haut**, après le titre et avant le texte des conditions : la
+  page est longue, et elle s'ouvre en haut après l'envoi. Ses phrases sont celles de « Vos
+  organisations ». Le lien `Rester dans l'organisation` ramène à cet écran, pas à « Vos
+  organisations ».
+- **La seule personne responsable** lit, au même endroit, le refus de « Vos organisations », avec le
+  nom de l'organisation, puis une phrase propre à cet écran. Celle de « Vos organisations » lui dit
+  d'ouvrir l'organisation, ce qui la ramènerait ici : `Une organisation garde toujours au moins une
+personne responsable. Pour la quitter, acceptez d'abord les conditions, puis, dans l'écran
+Membres, donnez le rôle de responsable à un autre membre ou invitez une personne comme
+responsable.`
+- **Deux actions nommées.** SvelteKit refuse une action par défaut à côté d'une action nommée :
+  l'acceptation devient `?/accepter`, le départ est `?/quitter`.
+
+Aucune migration : la base laisse déjà chacun supprimer sa propre adhésion, et rien de plus
+(migration 0066), et retient la dernière personne responsable (migration 0012). Le détail de
+l'écran est dans `docs/maquettes/responsables-conditions.md`.

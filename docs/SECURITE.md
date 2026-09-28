@@ -64,11 +64,11 @@ devient pas une session le temps d'être supprimé : le type d'une ligne ne chan
 (migration 0069). Une fonction à droits du définisseur le dit, `jadwal.is_org_admin()`, que seul le
 rôle applicatif peut appeler. L'éditeur garde tout ce qu'il fait à l'écran : les cours, les séances,
 les pauses, le vendredi, sauf supprimer une session. Il ne lit plus que sa propre adhésion et son
-propre compte, ne nomme que
-lui-même dans ce qu'il écrit, et peut quitter l'organisation, lui seul et pour lui seul
-(migration 0066), depuis « Vos organisations » ; la dernière personne responsable ne part pas.
-L'écran pose le contexte de l'organisation quittée avec la personne, et le journal consigne le
-départ, signé d'elle.
+propre compte, ne nomme que lui-même dans ce qu'il écrit, et peut quitter l'organisation, lui seul
+et pour lui seul (migration 0066), depuis « Vos organisations », ou, depuis l'étape 20, depuis
+l'écran d'acceptation des conditions, sans les accepter ; la dernière personne responsable ne part
+pas. Les deux écrans passent par le même chemin : il pose le contexte de l'organisation quittée
+avec la personne, et le journal consigne le départ, signé d'elle.
 Cette barrière arrête les erreurs de l'application : un écran qui oublierait sa garde, un rôle lu
 dans la mauvaise adhésion, comme à l'étape 17. Elle n'arrête pas qui tient le mot de passe du rôle
 applicatif, qui pose lui-même la personne du contexte (barrière 1). Le super-admin n'est pas
