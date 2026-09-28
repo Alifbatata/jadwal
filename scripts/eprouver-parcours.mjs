@@ -116,7 +116,8 @@
  *
  * - 19-D2, le vendredi : un vendredi passé à annuler, la veille comme jour d'arrivée d'un
  *   déplacement, une salle ou une session supprimées entre-temps depuis un autre onglet, refusés
- *   par une phrase, sans erreur 500 ni rien d'écrit.
+ *   par une phrase, sans erreur 500. Là où l'écran peut le montrer, rien n'est écrit : aucune
+ *   session ajoutée, aucune session déplacée ; ailleurs, l'écran ne confirme rien.
  * - 19-D3, les cours : la responsable supprime un cours depuis /cours, avec et sans JavaScript.
  * - 19-D4, « À venir » : un cours en brouillon marqué, et hors du programme de la semaine ; une
  *   carte « date exceptionnelle » qui se rétablit ; le refus d'une carte restée ouverte qui nomme la
@@ -6879,14 +6880,15 @@ async function vendrediAnnule(page) {
  *
  * - D2 : annuler un vendredi passé, par un formulaire modifié dans la page ; ajouter une session
  *   dans une salle supprimée entre-temps depuis un autre onglet ; publier une session supprimée
- *   entre-temps. Chaque fois une phrase en tête, et rien d'écrit.
+ *   entre-temps ; déplacer la session à la veille, par un formulaire modifié. Chaque fois une
+ *   phrase, sans confirmation, et, là où l'écran peut le montrer, rien d'écrit.
  * - La salle supprimée deux fois, depuis deux onglets de Réglages : « Cette salle n’existe plus. ».
  * - Une session au sermon en albanais et en turc, deux langues que la page publique ne publie pas,
  *   puis retirée de la page publique, l'écran en arabe (B3).
  * - « Rétablir comme d’habitude » sur la ligne « Nouvelle date » d'une session déplacée à un autre
  *   jour.
  * - Un jour sans séance, sur l'écran du vendredi et sur « À venir », par un formulaire modifié dans
- *   la page : une phrase qui le dit, et rien d'écrit.
+ *   la page : une phrase qui le dit, sans confirmation ni message préparé.
  * - Sur « À venir », le titre d'une séance dans la langue de l'écran.
  */
 async function vendrediEtape19(page) {
@@ -6919,6 +6921,9 @@ async function vendrediEtape19(page) {
 			/** @type {HTMLInputElement} */ (element).value = nouvelle;
 		}, valeur);
 
+	// Le vendredi passé précède le premier jour de la session, ajoutée à l'étape g : une annulation
+	// écrite pour lui ne se lirait sur aucun écran. Ce que l'écran dit de son geste est tout ce qui se
+	// vérifie ici : un refus, et aucune confirmation.
 	await retour('19-D2', async () => {
 		await ouvrir(page, '/vendredi');
 		const annuler = await exiger(
@@ -6929,7 +6934,7 @@ async function vendrediEtape19(page) {
 		await envoyer(page, annuler.locator('button[type="submit"]'));
 		const { phrase, enTete, confirmations } = await refusEnTete(page);
 		verifierChaque(
-			'sur l’écran du vendredi, « Annuler cette session » envoyé pour le vendredi passé (formulaire modifié dans la page) est refusé en tête : « Cette session est déjà passée : … », et rien n’est annulé',
+			'sur l’écran du vendredi, « Annuler cette session » envoyé pour le vendredi passé (formulaire modifié dans la page) est refusé en tête : « Cette session est déjà passée : … », sans confirmation',
 			{
 				'la phrase':
 					phrase ===
@@ -7244,6 +7249,10 @@ async function vendrediEtape19(page) {
 			.count()) === 1
 	);
 
+	// Un jour sans séance n'en montre aucune, sur aucun écran, qu'une annulation soit écrite pour lui
+	// ou non. Ce qui se vérifie, c'est ce que l'écran dit de son geste : un refus en tête, aucune
+	// confirmation sur l'écran du vendredi, et aucun message préparé sur « À venir », qui en prépare
+	// un après chaque séance annulée.
 	await retour('19-jour-sans-seance', async () => {
 		await ouvrir(page, '/vendredi');
 		const annuler = ceVendredi(page)
@@ -7263,16 +7272,17 @@ async function vendrediEtape19(page) {
 		const aVenir =
 			(await alertes.count()) === 1 ? await texteDe(alertes) : `${await alertes.count()} alerte(s)`;
 		verifierChaque(
-			'« Annuler » envoyé pour un jour où il n’y a pas de séance (formulaire modifié dans la page) : une phrase qui le dit, en tête, et rien d’écrit, sur l’écran du vendredi comme sur « À venir »',
+			'« Annuler » envoyé pour un jour où il n’y a pas de séance (formulaire modifié dans la page) : une phrase qui le dit, en tête, sans confirmation sur l’écran du vendredi ni message préparé sur « À venir »',
 			{
 				'le vendredi : « Cette session n’a pas lieu ce jour-là. … »':
 					vendredi.phrase ===
 					'Cette session n’a pas lieu ce jour-là. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.',
-				'le vendredi : en tête, sans confirmation': vendredi.enTete && vendredi.confirmations === 0,
+				'le vendredi : en tête': vendredi.enTete,
+				'le vendredi : aucune confirmation': vendredi.confirmations === 0,
 				[`« À venir » : « Aucune séance « ${COURS_ANCRE} » n’est prévue le … »`]:
 					aVenir ===
 					`Aucune séance « ${COURS_ANCRE} » n’est prévue le ${dateLongue(J5)}. Rien n’a été enregistré. Le programme ci-dessous est à jour.`,
-				'« À venir » : rien d’annulé': (await page.locator('#message-titre').count()) === 0
+				'« À venir » : aucun message préparé': (await page.locator('#message-titre').count()) === 0
 			},
 			`« ${vendredi.phrase} » ; « ${aVenir} »`
 		);
@@ -7919,7 +7929,7 @@ C2 | sans JavaScript, de cette position, Bienne se cherche, se coche et s’enre
 19-B7 | en arabe, après une période, l’aide de « Ajouter une période » dit que ses valeurs sont « مُعبّأة مسبقًا »
 19-prieres-copie | une période au nom de soixante signes se copie pour l’année suivante : la marque « (année suivante) » entière, le nom raccourci, soixante signes au plus
 D2 | depuis l’écran en allemand, la copie de « Winter » pour l’année suivante s’appelle « Winter (nächstes Jahr) »
-19-D2 | sur l’écran du vendredi, « Annuler cette session » envoyé pour le vendredi passé (formulaire modifié dans la page) est refusé en tête : « Cette session est déjà passée : … », et rien n’est annulé
+19-D2 | sur l’écran du vendredi, « Annuler cette session » envoyé pour le vendredi passé (formulaire modifié dans la page) est refusé en tête : « Cette session est déjà passée : … », sans confirmation
 19-membres-salle | dans Réglages, « Supprimer » sur une salle déjà supprimée depuis un autre onglet dit « Cette salle n’existe plus. », et non « Salle supprimée. »
 19-D2 | sur l’écran du vendredi, une session ajoutée dans une salle supprimée entre-temps est refusée, dans la section d’ajout, saisie gardée : « Cette salle n’existe plus : … »
 19-sermon | une session au sermon en albanais et en turc, deux langues que la page publique ne publie pas : sa carte dit « Sermon en albanais et turc », et la page publique « albanais et turc »
@@ -7928,7 +7938,7 @@ D2 | depuis l’écran en allemand, la copie de « Winter » pour l’année sui
 19-D2 | dans un second onglet, « Publier » sur une session supprimée entre-temps est refusé en tête : « Cette session n’existe plus : elle a été supprimée entre-temps. La liste ci-dessous est à jour. »
 19-D2 | sur l’écran du vendredi, « Déplacer » envoyé pour la veille (formulaire modifié dans la page) est refusé en tête : « Ce jour est déjà passé : rien n’a été déplacé. … », et rien n’est déplacé
 19-retablir-nouvelle-date | une session déplacée à un autre jour : sur la ligne « Nouvelle date, à la place du JOUR JJ.MM.AAAA », « Rétablir comme d’habitude » la ramène à son vendredi
-19-jour-sans-seance | « Annuler » envoyé pour un jour où il n’y a pas de séance (formulaire modifié dans la page) : une phrase qui le dit, en tête, et rien d’écrit, sur l’écran du vendredi comme sur « À venir »
+19-jour-sans-seance | « Annuler » envoyé pour un jour où il n’y a pas de séance (formulaire modifié dans la page) : une phrase qui le dit, en tête, sans confirmation sur l’écran du vendredi ni message préparé sur « À venir »
 19-titre-langue-ecran | sur « À venir », une séance porte son titre dans la langue de l’écran : « Freitagsgebet » en allemand, « قراءة القرآن » en arabe
 D1 | sur « À venir », le programme de la semaine nomme la session du vendredi dans la langue de chaque message : « Freitagsgebet », « Preghiera del venerdì », « Friday prayer », « صلاة الجمعة »
 A2 | déplacée le même jour de 12:30 à 13:00, la session du vendredi porte sur sa carte « nouvelle heure » et « Prévue à l’origine : 12:30 – 13:15 »
