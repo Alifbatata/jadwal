@@ -2958,21 +2958,21 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 	};
 	const PREVU_PASSE: Record<Langue, string> = {
 		fr: 'Le jour prévu de cette session est déjà passé : elle ne peut plus être rétablie. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.',
-		de: 'Der geplante Tag dieses Durchgangs ist schon vorbei: Er kann nicht mehr wiederhergestellt werden. Es wurde nichts gespeichert. Der Abschnitt «Diesen Freitag» weiter unten ist aktuell.',
-		it: 'Il giorno previsto di questo turno è già passato: non può più essere ripristinato. Non è stato salvato niente. La sezione «Questo venerdì», più in basso, è aggiornata.',
-		en: 'The planned day of this session has already passed: it can no longer be restored. Nothing has been saved. The ‘This Friday’ section further down shows the latest changes.',
-		ar: 'اليوم المقرّر لهذا الموعد قد مضى: لم يعد من الممكن إعادته. لم يُحفظ أي شيء. قسم «هذه الجمعة» في الأسفل محدَّث.'
+		de: 'Der geplante Tag dieses Durchgangs ist schon vorbei: Der Durchgang kann nicht mehr wiederhergestellt werden. Es wurde nichts gespeichert. Der Abschnitt «Diesen Freitag» weiter unten ist aktuell.',
+		it: 'Il giorno previsto di questo turno è già passato: il turno non può più essere ripristinato. Non è stato salvato niente. La sezione «Questo venerdì», più in basso, è aggiornata.',
+		en: 'The planned day of this session has already passed: the session can no longer be restored. Nothing has been saved. The ‘This Friday’ section further down shows the latest changes.',
+		ar: 'اليوم المقرّر لهذا الموعد قد مضى: لم يعد من الممكن إعادة هذا الموعد. لم يُحفظ أي شيء. قسم «هذه الجمعة» في الأسفل محدَّث.'
 	};
 	const PAS_ENCORE_PASSE: Record<Langue, string> = {
 		fr: 'Le jour prévu de cette session n’est pas encore passé : « Rétablir comme d’habitude » la remet à ce jour. Rien n’a été enregistré.',
-		de: 'Der geplante Tag dieses Durchgangs ist noch nicht vorbei: Mit «Wie gewohnt wiederherstellen» findet er wieder an diesem Tag statt. Es wurde nichts gespeichert.',
-		it: 'Il giorno previsto di questo turno non è ancora passato: «Ripristina come al solito» lo riporta a quel giorno. Non è stato salvato niente.',
-		en: 'The planned day of this session has not passed yet: ‘Restore as usual’ puts it back on that day. Nothing has been saved.',
-		ar: 'لم يمضِ اليوم المقرّر لهذا الموعد بعد: زر «إعادته كالمعتاد» يعيده إليه. لم يُحفظ أي شيء.'
+		de: 'Der geplante Tag dieses Durchgangs ist noch nicht vorbei: Mit «Wie gewohnt wiederherstellen» findet der Durchgang wieder an diesem Tag statt. Es wurde nichts gespeichert.',
+		it: 'Il giorno previsto di questo turno non è ancora passato: «Ripristina come al solito» riporta il turno a quel giorno. Non è stato salvato niente.',
+		en: 'The planned day of this session has not passed yet: ‘Restore as usual’ puts the session back on that day. Nothing has been saved.',
+		ar: 'لم يمضِ اليوم المقرّر لهذا الموعد بعد: زر «إعادته كالمعتاد» يعيد الموعد إلى ذلك اليوم. لم يُحفظ أي شيء.'
 	};
 	const DEJA_ANNULEE: Record<Langue, string> = {
 		fr: 'Cette session a déjà été annulée depuis l’ouverture de la page. Rien n’a été enregistré. Si le message n’a pas encore été envoyé, il est prêt ci-dessous.',
-		de: 'Dieser Durchgang ist abgesagt worden, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Wenn die Nachricht noch nicht verschickt ist, steht sie unten bereit.',
+		de: 'Dieser Durchgang ist schon abgesagt worden, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Wenn die Nachricht noch nicht verschickt ist, steht sie unten bereit.',
 		it: 'Questo turno è già stato annullato da quando hai aperto la pagina. Non è stato salvato niente. Se il messaggio non è ancora stato mandato, è pronto qui sotto.',
 		en: 'Since the page was opened, this session has already been cancelled. Nothing has been saved. If the message has not been sent yet, it is ready below.',
 		ar: 'أُلغي هذا الموعد منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. إن لم تُرسَل الرسالة بعد، فهي جاهزة أدناه.'

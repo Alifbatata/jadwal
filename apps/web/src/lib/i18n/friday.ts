@@ -418,9 +418,9 @@ export const fridayTexts: Translations<FridayTexts> = {
 			pastSession:
 				'Dieser Durchgang ist schon vorbei: Sie können nur Durchgänge von heute oder von einem späteren Tag absagen oder verschieben.',
 			pastOrigin:
-				'Der geplante Tag dieses Durchgangs ist schon vorbei: Er kann nicht mehr wiederhergestellt werden. Es wurde nichts gespeichert. Der Abschnitt «Diesen Freitag» weiter unten ist aktuell.',
+				'Der geplante Tag dieses Durchgangs ist schon vorbei: Der Durchgang kann nicht mehr wiederhergestellt werden. Es wurde nichts gespeichert. Der Abschnitt «Diesen Freitag» weiter unten ist aktuell.',
 			originNotPast:
-				'Der geplante Tag dieses Durchgangs ist noch nicht vorbei: Mit «Wie gewohnt wiederherstellen» findet er wieder an diesem Tag statt. Es wurde nichts gespeichert.',
+				'Der geplante Tag dieses Durchgangs ist noch nicht vorbei: Mit «Wie gewohnt wiederherstellen» findet der Durchgang wieder an diesem Tag statt. Es wurde nichts gespeichert.',
 			pastDate:
 				'Dieser Tag ist schon vorbei: Es wurde nichts verschoben. Wählen Sie weiter unten unter «Diesen Freitag» heute oder einen späteren Tag.',
 			notPlanned:
@@ -428,7 +428,7 @@ export const fridayTexts: Translations<FridayTexts> = {
 			changed:
 				'Dieser Durchgang hat sich geändert, seit die Seite geöffnet wurde: Er wurde an diesem Tag schon abgesagt oder verschoben. Es wurde nichts gespeichert. Der Abschnitt «Diesen Freitag» weiter unten ist aktuell.',
 			alreadyCancelled:
-				'Dieser Durchgang ist abgesagt worden, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Wenn die Nachricht noch nicht verschickt ist, steht sie unten bereit.',
+				'Dieser Durchgang ist schon abgesagt worden, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Wenn die Nachricht noch nicht verschickt ist, steht sie unten bereit.',
 			alreadyRestored:
 				'Dieser Durchgang ist schon wiederhergestellt worden, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Der Abschnitt «Diesen Freitag» weiter unten ist aktuell.',
 			timeChanged:
@@ -549,9 +549,9 @@ export const fridayTexts: Translations<FridayTexts> = {
 			pastSession:
 				'Questo turno è già passato: puoi annullare o spostare solo i turni di oggi o dei giorni successivi.',
 			pastOrigin:
-				'Il giorno previsto di questo turno è già passato: non può più essere ripristinato. Non è stato salvato niente. La sezione «Questo venerdì», più in basso, è aggiornata.',
+				'Il giorno previsto di questo turno è già passato: il turno non può più essere ripristinato. Non è stato salvato niente. La sezione «Questo venerdì», più in basso, è aggiornata.',
 			originNotPast:
-				'Il giorno previsto di questo turno non è ancora passato: «Ripristina come al solito» lo riporta a quel giorno. Non è stato salvato niente.',
+				'Il giorno previsto di questo turno non è ancora passato: «Ripristina come al solito» riporta il turno a quel giorno. Non è stato salvato niente.',
 			pastDate:
 				'Questo giorno è già passato: non è stato spostato niente. Scegli oggi o un giorno successivo più in basso, in «Questo venerdì».',
 			notPlanned:
@@ -679,9 +679,9 @@ export const fridayTexts: Translations<FridayTexts> = {
 			pastSession:
 				'This session has already passed: you can only cancel or move sessions from today onwards.',
 			pastOrigin:
-				'The planned day of this session has already passed: it can no longer be restored. Nothing has been saved. The ‘This Friday’ section further down shows the latest changes.',
+				'The planned day of this session has already passed: the session can no longer be restored. Nothing has been saved. The ‘This Friday’ section further down shows the latest changes.',
 			originNotPast:
-				'The planned day of this session has not passed yet: ‘Restore as usual’ puts it back on that day. Nothing has been saved.',
+				'The planned day of this session has not passed yet: ‘Restore as usual’ puts the session back on that day. Nothing has been saved.',
 			pastDate:
 				'This day has already passed: nothing has been moved. Choose today or a later day under ‘This Friday’, further down.',
 			notPlanned:
@@ -802,9 +802,9 @@ export const fridayTexts: Translations<FridayTexts> = {
 			timeUnreadable: 'تعذّرت قراءة هذا الوقت. مثال: 13:30.',
 			pastSession: 'هذا الموعد قد مضى: يمكنك إلغاء مواعيد اليوم والأيام التالية أو نقلها فقط.',
 			pastOrigin:
-				'اليوم المقرّر لهذا الموعد قد مضى: لم يعد من الممكن إعادته. لم يُحفظ أي شيء. قسم «هذه الجمعة» في الأسفل محدَّث.',
+				'اليوم المقرّر لهذا الموعد قد مضى: لم يعد من الممكن إعادة هذا الموعد. لم يُحفظ أي شيء. قسم «هذه الجمعة» في الأسفل محدَّث.',
 			originNotPast:
-				'لم يمضِ اليوم المقرّر لهذا الموعد بعد: زر «إعادته كالمعتاد» يعيده إليه. لم يُحفظ أي شيء.',
+				'لم يمضِ اليوم المقرّر لهذا الموعد بعد: زر «إعادته كالمعتاد» يعيد الموعد إلى ذلك اليوم. لم يُحفظ أي شيء.',
 			pastDate:
 				'هذا اليوم قد مضى: لم يُنقل أي شيء. اختر اليوم أو يومًا بعده في قسم «هذه الجمعة» في الأسفل.',
 			notPlanned:
