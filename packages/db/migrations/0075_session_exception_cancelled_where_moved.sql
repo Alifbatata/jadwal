@@ -39,25 +39,27 @@ DO $verifie$
 DECLARE
 	definition text;
 BEGIN
-	SELECT pg_get_constraintdef(oid) INTO definition
+	SELECT regexp_replace(pg_get_constraintdef(oid), '\s+', ' ', 'g') INTO definition
 	FROM pg_constraint
 	WHERE conrelid = 'public.session_exception'::regclass AND conname = 'session_exception_shape_ck'
 		AND contype = 'c' AND convalidated;
 	IF definition IS NULL THEN
 		RAISE EXCEPTION 'session_exception : la contrainte de forme manque, ou n''est pas validée';
 	END IF;
-	IF definition !~* 'IS\s+TRUE\s*\)*\s*$' THEN
-		RAISE EXCEPTION 'session_exception_shape_ck : doit être close par is true (%)', definition;
-	END IF;
-	-- Une annulation : rien, ou le jour et l'heure ensemble, l'heure bornée. Un déplacement : les
-	-- deux, l'heure bornée. Rien d'autre.
-	IF definition !~ (
-		'WHEN ''cancelled''::text THEN .*to_date IS NULL.*AND.*to_start IS NULL.* OR .*'
-		|| 'to_date IS NOT NULL.*AND.*to_start IS NOT NULL.*AND.*to_start < ''24:00:00''.*'
-		|| 'EXTRACT\(second FROM to_start\).*'
-		|| 'WHEN ''moved''::text THEN .*to_date IS NOT NULL.*AND.*to_start IS NOT NULL.*AND.*'
-		|| 'to_start < ''24:00:00''.*EXTRACT\(second FROM to_start\).*ELSE\s+false\s+END'
-	) THEN
+	-- La définition entière, telle que PostgreSQL la rend, les blancs réduits à un espace. Une
+	-- annulation : rien, ou le jour et l'heure ensemble, l'heure bornée et sans seconde. Un
+	-- déplacement : les deux, l'heure bornée et sans seconde. Rien d'autre, et close par is true.
+	-- Une lecture par fragments laissait passer `or true` dans une branche, ou des secondes non
+	-- bornées (`test/migration-proofs.test.ts`).
+	IF definition <> 'CHECK (( CASE kind'
+		|| ' WHEN ''cancelled''::text THEN (((to_date IS NULL) AND (to_start IS NULL))'
+		|| ' OR ((to_date IS NOT NULL) AND (to_start IS NOT NULL)'
+		|| ' AND (to_start < ''24:00:00''::time without time zone)'
+		|| ' AND (EXTRACT(second FROM to_start) = (0)::numeric)))'
+		|| ' WHEN ''moved''::text THEN ((to_date IS NOT NULL) AND (to_start IS NOT NULL)'
+		|| ' AND (to_start < ''24:00:00''::time without time zone)'
+		|| ' AND (EXTRACT(second FROM to_start) = (0)::numeric))'
+		|| ' ELSE false END IS TRUE))' THEN
 		RAISE EXCEPTION 'session_exception_shape_ck : n''a pas la forme annoncée (%)', definition;
 	END IF;
 END

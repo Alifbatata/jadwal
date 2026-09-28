@@ -37,14 +37,22 @@ BEGIN
 	IF suppression IS NULL THEN
 		RAISE EXCEPTION 'course_delete : manque, ou n''est plus au seul rôle applicatif';
 	END IF;
-	IF suppression NOT LIKE '%organization_id = ( SELECT %current_org_id()%'
-		OR suppression NOT LIKE '%( SELECT jadwal.is_org_admin()%' THEN
-		RAISE EXCEPTION 'course_delete : ne réserve pas la suppression à la personne responsable (%)',
+	-- L'expression entière, telle que PostgreSQL la rend : l'organisation du contexte, et la personne
+	-- responsable. Plus aucune branche : ni le type du cours, ni une autre condition qui s'ajouterait.
+	IF suppression <> '((organization_id = ( SELECT jadwal.current_org_id() AS current_org_id))'
+		|| ' AND ( SELECT jadwal.is_org_admin() AS is_org_admin))' THEN
+		RAISE EXCEPTION 'course_delete : ne réserve pas la suppression à la personne responsable, ou la laisse encore à l''éditeur (%)',
 			suppression;
 	END IF;
-	-- Plus aucune branche : ni le type du cours, ni une autre condition qui s'ajouterait.
-	IF suppression LIKE '%jumua%' OR suppression LIKE '%kind%' OR suppression LIKE '% OR %' THEN
-		RAISE EXCEPTION 'course_delete : laisse encore une suppression à l''éditeur (%)', suppression;
+	-- Les politiques permissives s'additionnent : une seconde, pour le rôle applicatif, pour tous les
+	-- rôles (`public`) ou pour toutes les commandes (`ALL`), rouvrirait ce que course_delete ferme.
+	-- Il n'y en a qu'une (`test/migration-proofs.test.ts`).
+	IF (
+		SELECT count(*) FROM pg_policies
+		WHERE schemaname = 'public' AND tablename = 'course' AND permissive = 'PERMISSIVE'
+			AND cmd IN ('DELETE', 'ALL') AND roles && ARRAY['jadwal_app', 'public']::name[]
+	) <> 1 THEN
+		RAISE EXCEPTION 'course : une autre politique ouvre la suppression au rôle applicatif, à côté de course_delete';
 	END IF;
 	-- Le reste des cours reste à tout membre : ni la lecture, ni l'ajout, ni la modification ne
 	-- passent par la fonction.

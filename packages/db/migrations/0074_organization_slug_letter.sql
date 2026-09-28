@@ -72,11 +72,12 @@ BEGIN
 	IF definition IS NULL THEN
 		RAISE EXCEPTION 'organization : la règle de la lettre manque, ou n''est pas validée';
 	END IF;
-	IF definition !~* 'IS\s+TRUE\s*\)*\s*$' THEN
-		RAISE EXCEPTION 'organization_slug_letter_ck : doit être close par is true (%)', definition;
-	END IF;
-	IF definition NOT LIKE '%slug ~ ''[a-z]''::text%' THEN
-		RAISE EXCEPTION 'organization_slug_letter_ck : doit demander une lettre de a à z (%)', definition;
+	-- La définition entière, telle que PostgreSQL la rend : une lettre de a à z, close par is true.
+	-- Une lecture par fragments laissait passer `(slug ~ '[a-z]' or true) is true`, qui ne demande
+	-- rien (`test/migration-proofs.test.ts`).
+	IF definition <> 'CHECK (((slug ~ ''[a-z]''::text) IS TRUE))' THEN
+		RAISE EXCEPTION 'organization_slug_letter_ck : n''est pas la règle annoncée, une lettre de a à z close par is true (%)',
+			definition;
 	END IF;
 	-- La forme de la migration 0003 reste, telle quelle.
 	IF NOT EXISTS (
