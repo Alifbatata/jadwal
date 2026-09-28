@@ -120,12 +120,16 @@ Toujours dans cet ordre, sur une ligne ou deux :
 4. **La salle**, si elle est renseignée.
 5. **L'intervenant**, s'il est renseigné.
 
-Une séance **annulée** reste visible, son texte est barré, et elle porte la mention `Annulé`, ou
-`Annulée` pour une session de la prière du vendredi (27.09.2026).
+Une séance **annulée** reste visible, son texte est barré, et elle porte la mention
+`Séance annulée`, ou `Session annulée` pour une session de la prière du vendredi. L'état s'écrit
+avec son propre nom, jamais accordé au titre qui le précède (étape 20).
 Une séance **déplacée** apparaît deux fois : barrée à sa date d'origine avec
-`Déplacé au samedi 03.10.2026`, et à sa nouvelle date avec `Date exceptionnelle`. Déplacée le même
-jour à une autre heure, elle est barrée avec `Déplacé à 20:30`, puis écrite à sa nouvelle heure avec
-`Nouvelle heure` et `Initialement à 19:00` (étape 18).
+`Séance déplacée au samedi 03.10.2026`, et à sa nouvelle date avec `Date exceptionnelle`. Déplacée
+le même jour à une autre heure, elle est barrée avec `Séance déplacée à 20:30`, puis écrite à sa
+nouvelle heure avec `Nouvelle heure` et `Initialement à 19:00` (étape 18). Une session du vendredi
+dit `Session déplacée au …` et `Session déplacée à …`. Déplacée puis annulée, une séance est barrée
+à sa date d'origine avec `Séance déplacée au …`, et à sa nouvelle date et à sa nouvelle heure avec
+`Séance annulée` (étape 20).
 
 ### Une adresse qui ne mène nulle part
 

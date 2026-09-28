@@ -49,11 +49,12 @@ programme.
 - Dans le cadre du widget, l'onglet est là aussi, et s'ouvre en mode intégré. Depuis le
   27.09.2026, `view="prieres"` ouvre le cadre sur lui (`docs/maquettes/widget.md`).
 - **Une ligne datée dit ce qui a lieu ce jour-là**, comme la vue Semaine : une session du vendredi
-  annulée, ou déplacée à un autre jour, reste écrite, barrée, avec `Annulée` (accordé à `Prière du
-vendredi` depuis le 27.09.2026 : `Annullata`, `ملغاة`) ou `Déplacé au …` ; une
-  session déplacée à une autre heure du même vendredi n'est écrite qu'à sa nouvelle heure. Si
-  aucune session n'a lieu un vendredi, l'iqama du Dhuhr revient. Un autre jour qui reçoit une
-  session déplacée garde son iqama du Dhuhr, et la session s'y écrit nommée, avec son vendredi
-  d'origine, et une phrase d'aide le dit. Le bloc `Prière du vendredi` du bas, sans date, garde le
-  rythme habituel. Jusqu'au lot 4 de l'étape 18, l'onglet montrait une session annulée comme si
-  elle avait lieu.
+  annulée, ou déplacée à un autre jour, reste écrite, barrée, avec `Session annulée` ou
+  `Session déplacée au …`, le nom de son état, jamais accordé au titre (étape 20) ; une session
+  déplacée à une autre heure du même vendredi n'est écrite qu'à sa nouvelle heure. Si aucune
+  session n'a lieu un vendredi, l'iqama du Dhuhr revient. Un autre jour qui reçoit une session
+  déplacée garde son iqama du Dhuhr, et la session s'y écrit nommée, avec son vendredi d'origine,
+  et une phrase d'aide le dit. Annulée ensuite ce jour-là (étape 20), elle s'y écrit nommée, à sa
+  place dans l'ordre des heures, barrée, avec `Session annulée`, et la phrase d'aide ne la compte
+  pas. Le bloc `Prière du vendredi` du bas, sans date, garde le rythme habituel. Jusqu'au lot 4 de
+  l'étape 18, l'onglet montrait une session annulée comme si elle avait lieu.

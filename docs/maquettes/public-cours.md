@@ -23,11 +23,12 @@ indexe.
    - `Dates` : `Du 01.09.2026 au 20.12.2026`, si le cours a une date de fin.
 6. **Les prochaines séances**, titre de niveau 2 : au plus dix dates à venir, chacune avec son
    jour et sa date (`samedi 26.09.2026`) et son heure. Une séance annulée figure à sa date, barrée,
-   avec la mention de la vue Semaine : `Annulé` pour un cours, `Annulée` pour une session du
-   vendredi, accordée à la prière ; elle compte parmi les dix. La page ne la montrait pas jusqu'au
-   lot 2 de l'étape 19 (27.09.2026) : ses prochaines dates ne gardaient que les séances qui ont
-   lieu. Les prochaines séances de l'API n'en ont toujours pas (`docs/API.md`). Une séance déplacée
-   figure à sa nouvelle date avec `Date exceptionnelle`.
+   avec la mention de la vue Semaine : `Séance annulée` pour un cours, `Session annulée` pour une
+   session du vendredi (étape 20) ; elle compte parmi les dix. Déplacée puis annulée, elle figure à
+   sa nouvelle date et à sa nouvelle heure. La page ne la montrait pas jusqu'au lot 2 de l'étape 19
+   (27.09.2026) : ses prochaines dates ne gardaient que les séances qui ont lieu. Les prochaines
+   séances de l'API n'en ont toujours pas (`docs/API.md`). Une séance déplacée figure à sa nouvelle
+   date avec `Date exceptionnelle`.
    Déplacée le même jour à une autre heure, elle porte `Nouvelle heure`, puis l'heure d'avant,
    `Initialement à 19:30`, la même que la vue Semaine, y compris pour un cours placé après une
    prière (étape 18). Si aucune heure de prière ne couvre ce jour, l'heure d'avant n'est pas dite.
