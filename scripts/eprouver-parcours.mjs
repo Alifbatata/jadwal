@@ -2466,7 +2466,7 @@ async function inviterDansLaLangueChoisie(page) {
 
 /**
  * L'écran du super-admin, ce que l'étape 19 y a changé, avant de créer quoi que ce soit. L'exemple
- * sous le nom et sous l'adresse (B12), en français et en arabe. L'adresse proposée pendant la
+ * sous le nom et sous l'adresse (B12), dans les cinq langues. L'adresse proposée pendant la
  * frappe (D6) : un signe hors de l'alphabet latin, « № », devient les lettres qu'il porte, une
  * marque disparaît, et un nom sans lettre latine ne propose rien, avec une phrase qui dit d'écrire
  * l'adresse. Rien n'est envoyé ; l'écran revient au français.
@@ -6756,8 +6756,8 @@ async function vendrediSurLAccueil(page) {
  * La session du vendredi, rétablie à son heure, puis annulée pour ce vendredi sur « À venir »
  * (étape 19) : le message prêt à coller parle d'une prière, et dit que les autres ont lieu comme
  * d'habitude, sans les mots d'un cours. La page publique la marque « Annulée », accordé à la
- * prière, dans la vue Semaine, dans l'onglet « Prières » et dans la vue Mois, en français comme en
- * arabe. La session est rétablie à la fin.
+ * prière, dans la vue Semaine, dans l'onglet « Prières » et dans la vue Mois, dans les cinq
+ * langues. La session est rétablie à la fin.
  */
 async function vendrediAnnule(page) {
 	const nom = PRIERE_DU_VENDREDI.fr;
