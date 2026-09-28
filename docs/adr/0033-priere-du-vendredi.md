@@ -205,7 +205,7 @@ déclencheur `course_kind_fixed` reste : il tient toujours le type d'une ligne.
 
 **Une session déplacée depuis un vendredi passé** (décision C2) ne se rétablit plus sur ce vendredi,
 ni ne se déplace de nouveau : sa ligne propose « Annuler cette session », qui l'annule à sa nouvelle
-date et donne le message à copier, le seul que rend cet écran. Le détail, et les refus de ces
+date et donne le message à copier, le seul que rende cet écran. Le détail, et les refus de ces
 gestes, sont dans l'addendum du même jour de l'ADR 0021.
 
 ## Statut

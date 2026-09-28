@@ -178,7 +178,7 @@ vendredi » et des boutons d'une session s'affichent en tête de l'écran :
 | `unchanged`        | 400    | le déplacement vise le jour et l'heure où la session est déjà prévue                                                                                         |
 | `pastSession`      | 400    | l'annulation d'un jour déjà passé (étape 19, D2), le déplacement d'une session dont le jour prévu est passé, ou son annulation vers un jour passé (étape 20) |
 | `pastOrigin`       | 400    | Rétablir vers un jour prévu déjà passé (étape 20)                                                                                                            |
-| `originNotPast`    | 400    | l'annulation d'une session déplacée dont le jour prévu n'est pas passé : sa ligne a Rétablir (étape 20)                                                      |
+| `originNotPast`    | 400    | l'annulation d'une session déplacée dont le jour prévu n'est pas passé : sa ligne a « Rétablir » (étape 20)                                                  |
 | `pastDate`         | 400    | un déplacement vers un jour déjà passé (étape 19, lot 2)                                                                                                     |
 | `notPlanned`       | 400    | annuler ou déplacer la session un jour où elle n'a pas lieu : un lundi, après sa fin, pendant une pause (lot 3)                                              |
 | `sessionGone`      | 404    | la session n'existe pas, ou plus, ou l'identifiant est celui d'un cours                                                                                      |
@@ -480,7 +480,7 @@ journal.
 | -------------------- | ------------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------- |
 | Rétablir             | `pastOrigin`                                                              | 400    | la date prévue est passée                                                                 |
 | Déplacer             | `pastSession`                                                             | 400    | la date prévue est passée                                                                 |
-| Annuler cette séance | `originNotPast`                                                           | 400    | la date prévue n'est pas passée : aucune carte ne l'envoie, elle a Rétablir               |
+| Annuler cette séance | `originNotPast`                                                           | 400    | la date prévue n'est pas passée : aucune carte ne l'envoie, elle a « Rétablir »           |
 | Annuler cette séance | `pastSession`                                                             | 400    | la nouvelle date est passée                                                               |
 | Annuler cette séance | `alreadyCancelled`                                                        | 409    | déjà annulée à la même date et à la même heure ; le message est rendu                     |
 | Annuler cette séance | `changed`                                                                 | 409    | la séance a changé autrement depuis l'ouverture de la page                                |

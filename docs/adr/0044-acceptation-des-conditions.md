@@ -119,9 +119,9 @@ clair : les réglages acceptent le blanc, et il se perdait alors dans la page.
   qu'un autre onglet en a choisi une autre depuis l'affichage ou parce que le formulaire est
   trafiqué, rien n'est accepté ni supprimé, et l'écran, rendu pour l'organisation de la session, le
   dit en haut. L'accord et le départ ne visent donc que l'organisation de la session, et seulement
-  si l'écran la nommait. Une limite, voulue : quand l'autre onglet a choisi une organisation où la
-  personne a déjà accepté, la porte la renvoie à l'accueil de celle-ci sans rien dire, puisque rien
-  n'a été fait.
+  si l'écran la nommait. Une limite, voulue : quand l'autre onglet a choisi une organisation dont
+  la personne a déjà accepté les conditions, la porte la renvoie à l'accueil de celle-ci sans rien
+  dire, puisque rien n'a été fait.
 - **Le chemin de « Vos organisations ».** Le départ passe ensuite par le module que « Vos
   organisations » emploie depuis la même étape
   (`apps/web/src/routes/organisations/leave.server.ts`) : l'appartenance est revérifiée, le premier
