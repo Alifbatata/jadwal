@@ -24,6 +24,12 @@ import type { Translations } from './space.js';
  * montrait un autre changement que celui qui est en place reçoit `changed`. Pour l'ajout :
  * `orderTaken`, une session sans date de fin a déjà ce rang. Pour l'ajout et la modification :
  * `roomGone`, la salle choisie n'existe pas, ou plus, dans l'organisation.
+ *
+ * Étape 20 (C2) : `pastSession` refuse aussi le déplacement d'une session dont le jour prévu est
+ * passé ; `pastOrigin`, un « Rétablir » vers un jour prévu déjà passé, où la session disparaîtrait
+ * sans message ; `originNotPast`, l'annulation d'une session déplacée dont le jour prévu n'est pas
+ * passé, qu'aucune ligne ne propose : sa ligne a « Rétablir » ; `alreadyCancelled`, la seconde
+ * annulation d'une session déplacée, qui rend quand même le message à copier, comme sur « À venir ».
  */
 export type FridayError =
 	| 'titleTooLong'
@@ -40,14 +46,21 @@ export type FridayError =
 	| 'timeUnreadable'
 	| 'pastSession'
 	| 'pastDate'
+	| 'pastOrigin'
+	| 'originNotPast'
 	| 'notPlanned'
 	| 'changed'
+	| 'alreadyCancelled'
 	| 'alreadyRestored'
 	| 'timeChanged'
 	| 'unchanged'
 	| 'orderTaken';
 
-/** Ce qu'une action de l'écran a fait, pour la phrase qui le confirme. */
+/**
+ * Ce qu'une action de l'écran a fait, pour la phrase qui le confirme. `cancelledMoved` : une session
+ * déplacée dont le jour prévu est passé, annulée à sa nouvelle date (étape 20, C2) ; `cancelled` dit
+ * « pour ce vendredi », ce qui ne vaut pas pour elle.
+ */
 export type FridayDone =
 	| 'added'
 	| 'updated'
@@ -55,6 +68,7 @@ export type FridayDone =
 	| 'unpublished'
 	| 'deleted'
 	| 'cancelled'
+	| 'cancelledMoved'
 	| 'moved'
 	| 'restored';
 
@@ -130,6 +144,13 @@ interface FridayTexts {
 		readonly movedFrom: (date: string) => string;
 		readonly onlyThis: string;
 		readonly cancel: string;
+		/**
+		 * Sur la ligne d'une session déplacée dont le jour prévu est passé (étape 20, C2) : le bouton
+		 * qui ouvre ses options, qui ne proposent que l'annulation, et l'aide avant le bouton qui
+		 * annule. La session ne se rétablit plus : l'aide le dit.
+		 */
+		readonly cancelOnly: string;
+		readonly cancelMovedHelp: string;
 		readonly newDay: string;
 		readonly newTime: string;
 		readonly move: string;
@@ -138,6 +159,14 @@ interface FridayTexts {
 	readonly coursesElsewhere: string;
 	readonly coursesLink: string;
 	readonly done: Readonly<Record<FridayDone, string>>;
+	/**
+	 * Le message à copier d'une session déplacée puis annulée (étape 20, C2), le seul geste de cet
+	 * écran qui en rend un : ce qu'il est et dans quelles langues il est écrit, le nom de chaque zone
+	 * de texte pour les lecteurs d'écran, puis sa langue (« Message à copier en allemand »).
+	 */
+	readonly messageHelp: string;
+	readonly messageLabel: string;
+	readonly inLanguage: (language: string) => string;
 	readonly errors: Readonly<Record<FridayError, string>>;
 }
 
@@ -207,6 +236,9 @@ export const fridayTexts: Translations<FridayTexts> = {
 			movedFrom: (date) => `Nouvelle date, à la place du ${date}`,
 			onlyThis: 'Cette session seulement. Les autres vendredis ne changent pas.',
 			cancel: 'Annuler cette session',
+			cancelOnly: 'Annuler',
+			cancelMovedHelp:
+				'Son jour prévu est déjà passé : la session ne peut plus avoir lieu ce jour-là. Une fois annulée, elle ne pourra pas être rétablie.',
 			newDay: 'Nouveau jour',
 			newTime: 'Nouvelle heure',
 			move: 'Déplacer',
@@ -222,9 +254,15 @@ export const fridayTexts: Translations<FridayTexts> = {
 			unpublished: 'La session est retirée de votre page publique. Elle reste ici, en brouillon.',
 			deleted: 'La session est supprimée.',
 			cancelled: 'La session est annulée pour ce vendredi. Les autres vendredis ne changent pas.',
+			cancelledMoved:
+				'La session est annulée à sa nouvelle date. Les autres vendredis ne changent pas.',
 			moved: 'La session est déplacée pour ce vendredi. Les autres vendredis ne changent pas.',
 			restored: 'La session retrouve son jour et son heure habituels.'
 		},
+		messageHelp:
+			'Un message à envoyer à votre communauté, par exemple dans WhatsApp. Il est écrit dans chaque langue de votre page publique : ouvrez une langue, puis copiez son texte.',
+		messageLabel: 'Message à copier',
+		inLanguage: (language) => `en ${language}`,
 		errors: {
 			titleTooLong: 'Le titre est trop long : 120 signes au plus.',
 			orderInvalid: 'Choisissez la première, la deuxième ou la troisième session.',
@@ -241,13 +279,19 @@ export const fridayTexts: Translations<FridayTexts> = {
 			dateUnreadable: 'Cette date est illisible. Rechargez la page et recommencez.',
 			timeUnreadable: 'Cette heure est illisible. Exemple : 13:30.',
 			pastSession:
-				'Cette session est déjà passée : vous ne pouvez annuler que les sessions d’aujourd’hui et des jours suivants.',
+				'Cette session est déjà passée : vous ne pouvez annuler ou déplacer que les sessions d’aujourd’hui et des jours suivants.',
+			pastOrigin:
+				'Le jour prévu de cette session est déjà passé : elle ne peut plus être rétablie. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.',
+			originNotPast:
+				'Le jour prévu de cette session n’est pas encore passé : « Rétablir comme d’habitude » la remet à ce jour. Rien n’a été enregistré.',
 			pastDate:
 				'Ce jour est déjà passé : rien n’a été déplacé. Choisissez aujourd’hui ou un jour suivant dans « Ce vendredi », plus bas.',
 			notPlanned:
 				'Cette session n’a pas lieu ce jour-là. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.',
 			changed:
 				'Cette session a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée ce jour-là. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.',
+			alreadyCancelled:
+				'Cette session a déjà été annulée depuis l’ouverture de la page. Rien n’a été enregistré. Si le message n’a pas encore été envoyé, il est prêt ci-dessous.',
 			alreadyRestored:
 				'Cette session a déjà été rétablie depuis l’ouverture de la page. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.',
 			timeChanged:
@@ -323,6 +367,9 @@ export const fridayTexts: Translations<FridayTexts> = {
 			movedFrom: (date) => `Neues Datum, anstelle von ${date}`,
 			onlyThis: 'Nur dieser Durchgang. Die anderen Freitage bleiben unverändert.',
 			cancel: 'Diesen Durchgang absagen',
+			cancelOnly: 'Absagen',
+			cancelMovedHelp:
+				'Der geplante Tag ist schon vorbei: Der Durchgang kann nicht mehr an diesem Tag stattfinden. Wenn Sie ihn absagen, können Sie ihn danach nicht wiederherstellen.',
 			newDay: 'Neuer Tag',
 			newTime: 'Neue Uhrzeit',
 			move: 'Verschieben',
@@ -340,11 +387,17 @@ export const fridayTexts: Translations<FridayTexts> = {
 			deleted: 'Der Durchgang wurde gelöscht.',
 			cancelled:
 				'Der Durchgang ist für diesen Freitag abgesagt. Die anderen Freitage bleiben unverändert.',
+			cancelledMoved:
+				'Der Durchgang ist an seinem neuen Datum abgesagt. Die anderen Freitage bleiben unverändert.',
 			moved:
 				'Der Durchgang ist für diesen Freitag verschoben. Die anderen Freitage bleiben unverändert.',
 			restored:
 				'Der Durchgang findet wieder an seinem gewohnten Tag und zu seiner gewohnten Zeit statt.'
 		},
+		messageHelp:
+			'Eine Nachricht für Ihre Gemeinschaft, zum Beispiel für WhatsApp. Sie steht in jeder Sprache Ihrer öffentlichen Seite bereit: Öffnen Sie eine Sprache und kopieren Sie deren Text.',
+		messageLabel: 'Nachricht zum Kopieren',
+		inLanguage: (language) => `auf ${language}`,
 		errors: {
 			titleTooLong: 'Der Titel ist zu lang: höchstens 120 Zeichen.',
 			orderInvalid: 'Wählen Sie den ersten, zweiten oder dritten Durchgang.',
@@ -363,13 +416,19 @@ export const fridayTexts: Translations<FridayTexts> = {
 				'Dieses Datum ist nicht lesbar. Laden Sie die Seite neu und versuchen Sie es noch einmal.',
 			timeUnreadable: 'Diese Uhrzeit ist nicht lesbar. Beispiel: 13:30.',
 			pastSession:
-				'Dieser Durchgang ist schon vorbei: Sie können nur Durchgänge von heute oder von einem späteren Tag absagen.',
+				'Dieser Durchgang ist schon vorbei: Sie können nur Durchgänge von heute oder von einem späteren Tag absagen oder verschieben.',
+			pastOrigin:
+				'Der geplante Tag dieses Durchgangs ist schon vorbei: Er kann nicht mehr wiederhergestellt werden. Es wurde nichts gespeichert. Der Abschnitt «Diesen Freitag» weiter unten ist aktuell.',
+			originNotPast:
+				'Der geplante Tag dieses Durchgangs ist noch nicht vorbei: Mit «Wie gewohnt wiederherstellen» findet er wieder an diesem Tag statt. Es wurde nichts gespeichert.',
 			pastDate:
 				'Dieser Tag ist schon vorbei: Es wurde nichts verschoben. Wählen Sie weiter unten unter «Diesen Freitag» heute oder einen späteren Tag.',
 			notPlanned:
 				'Dieser Durchgang findet an diesem Tag nicht statt. Es wurde nichts gespeichert. Der Abschnitt «Diesen Freitag» weiter unten ist aktuell.',
 			changed:
 				'Dieser Durchgang hat sich geändert, seit die Seite geöffnet wurde: Er wurde an diesem Tag schon abgesagt oder verschoben. Es wurde nichts gespeichert. Der Abschnitt «Diesen Freitag» weiter unten ist aktuell.',
+			alreadyCancelled:
+				'Dieser Durchgang ist abgesagt worden, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Wenn die Nachricht noch nicht verschickt ist, steht sie unten bereit.',
 			alreadyRestored:
 				'Dieser Durchgang ist schon wiederhergestellt worden, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Der Abschnitt «Diesen Freitag» weiter unten ist aktuell.',
 			timeChanged:
@@ -446,6 +505,9 @@ export const fridayTexts: Translations<FridayTexts> = {
 			movedFrom: (date) => `Nuova data, al posto di ${date}`,
 			onlyThis: 'Solo questo turno. Gli altri venerdì non cambiano.',
 			cancel: 'Annulla questo turno',
+			cancelOnly: 'Annulla',
+			cancelMovedHelp:
+				'Il giorno previsto è già passato: il turno non può più tenersi quel giorno. Una volta annullato, non potrai ripristinarlo.',
 			newDay: 'Nuovo giorno',
 			newTime: 'Nuovo orario',
 			move: 'Sposta',
@@ -461,9 +523,14 @@ export const fridayTexts: Translations<FridayTexts> = {
 			unpublished: 'Il turno è stato tolto dalla tua pagina pubblica. Resta qui, come bozza.',
 			deleted: 'Il turno è stato eliminato.',
 			cancelled: 'Il turno è annullato per questo venerdì. Gli altri venerdì non cambiano.',
+			cancelledMoved: 'Il turno è annullato nella sua nuova data. Gli altri venerdì non cambiano.',
 			moved: 'Il turno è spostato per questo venerdì. Gli altri venerdì non cambiano.',
 			restored: 'Il turno ritrova il suo giorno e il suo orario abituali.'
 		},
+		messageHelp:
+			'Un messaggio da mandare alla tua comunità, per esempio su WhatsApp. È scritto in ogni lingua della tua pagina pubblica: apri una lingua, poi copia il suo testo.',
+		messageLabel: 'Messaggio da copiare',
+		inLanguage: (language) => `in ${language}`,
 		errors: {
 			titleTooLong: 'Il titolo è troppo lungo: al massimo 120 caratteri.',
 			orderInvalid: 'Scegli il primo, il secondo o il terzo turno.',
@@ -480,13 +547,19 @@ export const fridayTexts: Translations<FridayTexts> = {
 			dateUnreadable: 'Questa data non è leggibile. Ricarica la pagina e riprova.',
 			timeUnreadable: 'Questo orario non è leggibile. Esempio: 13:30.',
 			pastSession:
-				'Questo turno è già passato: puoi annullare solo i turni di oggi o dei giorni successivi.',
+				'Questo turno è già passato: puoi annullare o spostare solo i turni di oggi o dei giorni successivi.',
+			pastOrigin:
+				'Il giorno previsto di questo turno è già passato: non può più essere ripristinato. Non è stato salvato niente. La sezione «Questo venerdì», più in basso, è aggiornata.',
+			originNotPast:
+				'Il giorno previsto di questo turno non è ancora passato: «Ripristina come al solito» lo riporta a quel giorno. Non è stato salvato niente.',
 			pastDate:
 				'Questo giorno è già passato: non è stato spostato niente. Scegli oggi o un giorno successivo più in basso, in «Questo venerdì».',
 			notPlanned:
 				'Questo turno non si tiene quel giorno. Non è stato salvato niente. La sezione «Questo venerdì», più in basso, è aggiornata.',
 			changed:
 				'Questo turno è cambiato da quando hai aperto la pagina: quel giorno è già stato annullato o spostato. Non è stato salvato niente. La sezione «Questo venerdì», più in basso, è aggiornata.',
+			alreadyCancelled:
+				'Questo turno è già stato annullato da quando hai aperto la pagina. Non è stato salvato niente. Se il messaggio non è ancora stato mandato, è pronto qui sotto.',
 			alreadyRestored:
 				'Questo turno è già stato ripristinato da quando hai aperto la pagina. Non è stato salvato niente. La sezione «Questo venerdì», più in basso, è aggiornata.',
 			timeChanged:
@@ -562,6 +635,9 @@ export const fridayTexts: Translations<FridayTexts> = {
 			movedFrom: (date) => `New date, instead of ${date}`,
 			onlyThis: 'This session only. Other Fridays do not change.',
 			cancel: 'Cancel this session',
+			cancelOnly: 'Cancel',
+			cancelMovedHelp:
+				'Its planned day has already passed: the session can no longer take place on that day. Once cancelled, it cannot be restored.',
 			newDay: 'New day',
 			newTime: 'New time',
 			move: 'Move',
@@ -577,9 +653,14 @@ export const fridayTexts: Translations<FridayTexts> = {
 			unpublished: 'The session has been removed from your public page. It stays here as a draft.',
 			deleted: 'The session has been deleted.',
 			cancelled: 'The session is cancelled for this Friday. Other Fridays do not change.',
+			cancelledMoved: 'The session is cancelled on its new date. Other Fridays do not change.',
 			moved: 'The session is moved for this Friday. Other Fridays do not change.',
 			restored: 'The session is back to its usual day and time.'
 		},
+		messageHelp:
+			'A message to send to your community, for example on WhatsApp. It is written in each language of your public page: open a language, then copy its text.',
+		messageLabel: 'Message to copy',
+		inLanguage: (language) => `in ${language}`,
 		errors: {
 			titleTooLong: 'The title is too long: 120 characters at most.',
 			orderInvalid: 'Choose the first, second or third session.',
@@ -596,13 +677,19 @@ export const fridayTexts: Translations<FridayTexts> = {
 			dateUnreadable: 'This date cannot be read. Reload the page and try again.',
 			timeUnreadable: 'This time cannot be read. Example: 13:30.',
 			pastSession:
-				'This session has already passed: you can only cancel sessions from today onwards.',
+				'This session has already passed: you can only cancel or move sessions from today onwards.',
+			pastOrigin:
+				'The planned day of this session has already passed: it can no longer be restored. Nothing has been saved. The ‘This Friday’ section further down shows the latest changes.',
+			originNotPast:
+				'The planned day of this session has not passed yet: ‘Restore as usual’ puts it back on that day. Nothing has been saved.',
 			pastDate:
 				'This day has already passed: nothing has been moved. Choose today or a later day under ‘This Friday’, further down.',
 			notPlanned:
 				'This session does not take place on that day. Nothing has been saved. The ‘This Friday’ section further down shows the latest changes.',
 			changed:
 				'This session has changed since the page was opened: it has already been cancelled or moved for that day. Nothing has been saved. The ‘This Friday’ section further down shows the latest changes.',
+			alreadyCancelled:
+				'Since the page was opened, this session has already been cancelled. Nothing has been saved. If the message has not been sent yet, it is ready below.',
 			alreadyRestored:
 				'This session has already been restored since the page was opened. Nothing has been saved. The ‘This Friday’ section further down shows the latest changes.',
 			timeChanged:
@@ -674,6 +761,9 @@ export const fridayTexts: Translations<FridayTexts> = {
 			movedFrom: (date) => `موعد جديد، بدلًا من يوم ${date}`,
 			onlyThis: 'هذا الموعد فقط. لا تتغيّر أيام الجمعة الأخرى.',
 			cancel: 'إلغاء هذا الموعد',
+			cancelOnly: 'إلغاء',
+			cancelMovedHelp:
+				'اليوم المقرّر لهذا الموعد قد مضى: لم يعد من الممكن أن يُقام فيه. وإذا ألغيته، فلن يمكنك إعادته بعد ذلك.',
 			newDay: 'اليوم الجديد',
 			newTime: 'الوقت الجديد',
 			move: 'نقل',
@@ -688,9 +778,14 @@ export const fridayTexts: Translations<FridayTexts> = {
 			unpublished: 'سُحب الموعد من صفحتك العامة، لكنه يبقى هنا كمسودة.',
 			deleted: 'حُذف الموعد.',
 			cancelled: 'أُلغي الموعد في هذه الجمعة. لا تتغيّر أيام الجمعة الأخرى.',
+			cancelledMoved: 'أُلغي الموعد في تاريخه الجديد. لا تتغيّر أيام الجمعة الأخرى.',
 			moved: 'نُقل الموعد في هذه الجمعة. لا تتغيّر أيام الجمعة الأخرى.',
 			restored: 'عاد الموعد إلى يومه ووقته المعتادين.'
 		},
+		messageHelp:
+			'رسالة ترسلها إلى جماعتك، في WhatsApp مثلًا. هي مكتوبة بكل لغة من لغات صفحتك العامة: افتح لغة، ثم انسخ نصها.',
+		messageLabel: 'الرسالة المراد نسخها',
+		inLanguage: (language) => `ب${language}`,
 		errors: {
 			titleTooLong: 'العنوان طويل جدًا: 120 حرفًا على الأكثر.',
 			orderInvalid: 'اختر الموعد الأول أو الثاني أو الثالث.',
@@ -705,13 +800,19 @@ export const fridayTexts: Translations<FridayTexts> = {
 			sessionGone: 'هذا الموعد لم يعد موجودًا: فقد حُذف في هذه الأثناء. القائمة أدناه محدَّثة.',
 			dateUnreadable: 'تعذّرت قراءة هذا التاريخ. أعد تحميل الصفحة وحاول مرة أخرى.',
 			timeUnreadable: 'تعذّرت قراءة هذا الوقت. مثال: 13:30.',
-			pastSession: 'هذا الموعد قد مضى: يمكنك إلغاء مواعيد اليوم والأيام التالية فقط.',
+			pastSession: 'هذا الموعد قد مضى: يمكنك إلغاء مواعيد اليوم والأيام التالية أو نقلها فقط.',
+			pastOrigin:
+				'اليوم المقرّر لهذا الموعد قد مضى: لم يعد من الممكن إعادته. لم يُحفظ أي شيء. قسم «هذه الجمعة» في الأسفل محدَّث.',
+			originNotPast:
+				'لم يمضِ اليوم المقرّر لهذا الموعد بعد: زر «إعادته كالمعتاد» يعيده إليه. لم يُحفظ أي شيء.',
 			pastDate:
 				'هذا اليوم قد مضى: لم يُنقل أي شيء. اختر اليوم أو يومًا بعده في قسم «هذه الجمعة» في الأسفل.',
 			notPlanned:
 				'هذا الموعد لا يُقام في ذلك اليوم. لم يُحفظ أي شيء. قسم «هذه الجمعة» في الأسفل محدَّث.',
 			changed:
 				'تغيّر هذا الموعد منذ أن فُتحت الصفحة: سبق أن أُلغي أو نُقل في ذلك اليوم. لم يُحفظ أي شيء. قسم «هذه الجمعة» في الأسفل محدَّث.',
+			alreadyCancelled:
+				'أُلغي هذا الموعد منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. إن لم تُرسَل الرسالة بعد، فهي جاهزة أدناه.',
 			alreadyRestored:
 				'عاد هذا الموعد إلى يومه ووقته المعتادين منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. قسم «هذه الجمعة» في الأسفل محدَّث.',
 			timeChanged:

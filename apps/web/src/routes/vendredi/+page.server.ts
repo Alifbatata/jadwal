@@ -42,6 +42,11 @@
 //
 // Étape 20 (C3) : supprimer une session est réservé au responsable, comme supprimer un cours
 // (migration 0073). Les autres gestes restent ouverts à l'éditeur.
+//
+// Étape 20 (C2, décision du chef de projet), comme « À venir » : « Rétablir » vers un jour prévu
+// déjà passé est refusé (`pastOrigin`) ; la ligne d'une session déplacée dont le jour prévu est
+// passé propose de l'annuler à sa nouvelle date (`annulerDeplacee`), et ce geste rend le message à
+// copier ; déplacer une session dont le jour prévu est passé est refusé, comme l'annuler.
 
 import { fail } from '@sveltejs/kit';
 import { addDays, isLocalTime, todayInZone, type IsoDate } from '@jadwal/core';
@@ -50,10 +55,11 @@ import { isLangue, t, type Langue } from '$lib/i18n.js';
 import type { FridayDone, FridayError } from '$lib/i18n/friday.js';
 import { LANGUES_D_ENSEIGNEMENT } from '$lib/public/affichage.js';
 import { record } from '$lib/server/audit.js';
+import { cancellationMessages, readCourse } from '$lib/server/change-messages.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { insertCourse, updateCourse } from '$lib/server/courses.js';
 import { FIRST_SUPPORTED_DATE, isSupportedDate, LAST_SUPPORTED_DATE } from '$lib/server/dates.js';
-import { currentChange, restore, shownChange } from '$lib/server/exceptions.js';
+import { cancelMoved, currentChange, restore, shownChange } from '$lib/server/exceptions.js';
 import { fridayTitle } from '$lib/server/friday-title.js';
 import { mustAdministerPrayerModule, mustHavePrayerModule } from '$lib/server/guard.js';
 import {
@@ -415,6 +421,12 @@ export const actions: Actions = {
 		const maintenant = new Date();
 		return withSessionOrg(context, async (tx) => {
 			if (!(await sessionExiste(tx, courseId))) return refus(404, 'sessionGone');
+			const settings = await readSettings(tx);
+			const today = todayInZone(settings.time_zone, maintenant);
+			// Une session dont le jour prévu est passé ne se déplace pas, comme elle ne s'annule pas
+			// (étape 20, C2) : aucune ligne ne le propose, et le déplacement en ferait une session
+			// déplacée dont le jour prévu est passé, que « Rétablir » ne ramène plus.
+			if (date < today) return refus(400, 'pastSession');
 			// Un jour où la session n'a pas lieu : il n'y a rien à déplacer (lot 3).
 			const montreeCeJour = await seanceOn(tx, maintenant, courseId, date);
 			if (montreeCeJour === 'none') return refus(400, 'notPlanned');
@@ -439,8 +451,7 @@ export const actions: Actions = {
 			// main, ou la page d'une semaine d'avant restée ouverte, peut en envoyer un : « À venir » le
 			// refusait, et cet écran l'écrivait (étape 19, lot 2). Deux dates civiles au même format se
 			// comparent comme des chaînes.
-			const settings = await readSettings(tx);
-			if (toDate < todayInZone(settings.time_zone, maintenant)) return refus(400, 'pastDate');
+			if (toDate < today) return refus(400, 'pastDate');
 			// Le jour et l'heure où la session est déjà prévue : il n'y a rien à déplacer.
 			if (toDate === date && seance?.start === toStart) return refus(400, 'unchanged');
 			// Une session déjà annulée ou déplacée ce jour-là, par une page restée ouverte ou par un
@@ -476,6 +487,11 @@ export const actions: Actions = {
 	 * (relecture de D2). La ligne envoie ce qu'elle montrait : une session rétablie puis changée de
 	 * nouveau ailleurs depuis l'ouverture de la page garde ce nouveau changement, et la ligne est
 	 * refusée comme une carte périmée (étape 19, lot 2).
+	 *
+	 * Un jour prévu déjà passé est refusé, et rien ne s'écrit, pas même le journal (étape 20, C2) :
+	 * la session y serait revenue, et aurait disparu de l'écran sans message à envoyer. La ligne
+	 * d'une session déplacée dont le jour prévu est passé propose de l'annuler à la place
+	 * (`annulerDeplacee`).
 	 */
 	retablir: async (event) => {
 		const context = await mustHavePrayerModule(event);
@@ -483,8 +499,11 @@ export const actions: Actions = {
 		const courseId = String(form.get('courseId') ?? '');
 		const date = String(form.get('date') ?? '');
 		if (!isSupportedDate(date)) return refus(400, 'dateUnreadable');
+		const maintenant = new Date();
 		return withSessionOrg(context, async (tx) => {
 			if (!(await sessionExiste(tx, courseId))) return refus(404, 'sessionGone');
+			const settings = await readSettings(tx);
+			if (date < todayInZone(settings.time_zone, maintenant)) return refus(400, 'pastOrigin');
 			const retablie = await restore(tx, courseId, date, shownChange(form));
 			if (retablie !== 'restored') return refus(409, retablie);
 			await record(tx, context.organizationId, context.userId, {
@@ -494,6 +513,62 @@ export const actions: Actions = {
 				before: { date }
 			});
 			return fait('restored');
+		});
+	},
+
+	/**
+	 * Annuler une session déplacée dont le jour prévu est passé, à sa nouvelle date (étape 20, C2),
+	 * comme sur « À venir » : le déplacement que la ligne montrait devient une annulation qui garde le
+	 * jour et l'heure d'arrivée (`cancelMoved`). C'est le seul geste de cet écran qui rend le message à
+	 * copier, dans chaque langue publiée : la communauté attendait la session ce jour-là, à cette
+	 * heure. Refusé, sans rien écrire : un jour prévu qui n'est pas passé (la ligne a « Rétablir »), une
+	 * nouvelle date passée, et une ligne périmée. La seconde demande reçoit le message quand même.
+	 */
+	annulerDeplacee: async (event) => {
+		const context = await mustHavePrayerModule(event);
+		const form = await event.request.formData();
+		const courseId = String(form.get('courseId') ?? '');
+		const date = String(form.get('date') ?? '');
+		const shown = shownChange(form);
+		if (!isSupportedDate(date) || shown === null || !isSupportedDate(shown.toDate)) {
+			return refus(400, 'dateUnreadable');
+		}
+		if (!isLocalTime(shown.toStart)) return refus(400, 'timeUnreadable');
+		const toDate = shown.toDate;
+		const maintenant = new Date();
+		return withSessionOrg(context, async (tx) => {
+			// `kind = 'jumua'` : cet écran n'annule pas un cours, même si on lui en envoie un.
+			const course = await readCourse(tx, courseId);
+			if (!course || course.kind !== 'jumua') return refus(404, 'sessionGone');
+			const settings = await readSettings(tx);
+			const today = todayInZone(settings.time_zone, maintenant);
+			if (date >= today) return refus(400, 'originNotPast');
+			if (toDate < today) return refus(400, 'pastSession');
+			const messages = cancellationMessages(settings, course, toDate, shown.toStart);
+			const annulee = await cancelMoved(
+				tx,
+				{ organizationId: context.organizationId, userId: context.userId, courseId, date },
+				shown
+			);
+			if (annulee === 'alreadyCancelled') {
+				// Déjà annulée, par une autre personne ou depuis une page restée ouverte : rien ne
+				// s'écrit, mais le message est rendu, comme sur « À venir » (étape 19, D4).
+				return fail(409, {
+					errors: ['alreadyCancelled'] satisfies FridayError[],
+					entry: null,
+					messages
+				});
+			}
+			if (annulee === 'changed') return refus(409, 'changed');
+			const deplacee = { toDate, toStart: shown.toStart };
+			await record(tx, context.organizationId, context.userId, {
+				action: 'exception.cancel',
+				targetTable: 'session_exception',
+				targetId: courseId,
+				before: { date, kind: 'moved', ...deplacee },
+				after: { date, kind: 'cancelled', ...deplacee }
+			});
+			return { done: 'cancelledMoved' as const, messages };
 		});
 	}
 };

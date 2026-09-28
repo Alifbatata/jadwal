@@ -42,6 +42,10 @@
 //   l'organisation, est refusé dans chaque langue, et n'écrit rien, pas même au journal. Une séance
 //   arrivée d'un autre jour ne s'annule pas sous ce jour-là, et « Rétablir » un jour sans
 //   changement n'écrit rien non plus.
+// - Étape 20 (C2) : la carte d'une séance déplacée dont la date prévue est passée n'a plus
+//   « Rétablir », que l'action refuse ; elle propose « Annuler cette séance », derrière ses options
+//   fermées, et le message à copier nomme la nouvelle date et la nouvelle heure. Déplacer une séance
+//   dont la date prévue est passée est refusé, comme l'annuler.
 
 import { readFileSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
@@ -202,14 +206,15 @@ const SOIR_LU: Record<Langue, string> = {
 
 /**
  * Le refus d'une annulation pour une date passée, que la page d'hier encore ouverte peut envoyer.
- * Aucune carte ne porte cette séance : la phrase s'écrit en haut de l'écran.
+ * Aucune carte ne porte cette séance : la phrase s'écrit en haut de l'écran. Depuis l'étape 20 (C2),
+ * c'est aussi le refus d'un déplacement depuis une date passée : la phrase dit les deux gestes.
  */
 const SEANCE_PASSEE: Record<Langue, string> = {
-	fr: 'Cette séance est déjà passée : vous ne pouvez annuler que les séances d’aujourd’hui et des jours suivants.',
-	de: 'Dieser Termin ist schon vorbei: Sie können nur Termine von heute oder von einem späteren Tag absagen.',
-	it: 'Questa lezione è già passata: puoi annullare solo le lezioni di oggi o dei giorni successivi.',
-	en: 'This session has already passed: you can only cancel sessions from today onwards.',
-	ar: 'موعد هذه الحصة قد مضى: يمكنك إلغاء حصص اليوم والأيام التالية فقط.'
+	fr: 'Cette séance est déjà passée : vous ne pouvez annuler ou déplacer que les séances d’aujourd’hui et des jours suivants.',
+	de: 'Dieser Termin ist schon vorbei: Sie können nur Termine von heute oder von einem späteren Tag absagen oder verschieben.',
+	it: 'Questa lezione è già passata: puoi annullare o spostare solo le lezioni di oggi o dei giorni successivi.',
+	en: 'This session has already passed: you can only cancel or move sessions from today onwards.',
+	ar: 'موعد هذه الحصة قد مضى: يمكنك إلغاء حصص اليوم والأيام التالية أو نقلها فقط.'
 };
 
 /** Ce qui est pareil dans toutes les langues par nature : noms, titres, adresses. */
@@ -3282,6 +3287,427 @@ describe('un jour où le cours n’a pas de séance (étape 19, lot 3)', () => {
 		expect(reponse.status).toBe(409);
 		expect(alerte(await reponse.text())).toBe(DEJA_RETABLIE.fr(ATELIER, dateLue('fr', sansSeance)));
 		expect(await exceptionsDuCours()).toEqual([]);
+		expect(await lignesDuJournal()).toBe(journalAvant);
+	});
+});
+
+describe('C2 : une séance déplacée dont la date prévue est passée (étape 20)', () => {
+	// Décision du chef de projet : « Rétablir » ramenait la séance à sa date prévue, déjà passée, et la
+	// faisait disparaître de l'écran et de la page publique sans message à envoyer. Sur la carte d'une
+	// séance déplacée dont la date prévue est passée, strictement avant aujourd'hui, « Rétablir »
+	// disparaît et l'action le refuse ; la carte propose « Annuler cette séance », derrière ses options
+	// fermées, avec son aide et le message à copier, qui nomme la nouvelle date et la nouvelle heure.
+	// La séance annulée reste sur sa nouvelle date, annulée, sans « Rétablir ». Une carte déplacée dont
+	// la date prévue est aujourd'hui ou plus tard garde « Rétablir » seul. Déplacer une séance dont la
+	// date prévue est passée est refusé, comme l'annuler.
+
+	/** Le résumé des options de cette carte, qui ne proposent que l'annulation. */
+	const REPLI: Record<Langue, string> = {
+		fr: 'Annuler',
+		de: 'Absagen',
+		it: 'Annulla',
+		en: 'Cancel',
+		ar: 'إلغاء'
+	};
+	/** L'aide sous ce résumé : la date prévue est passée, et une séance annulée ne se rétablit pas. */
+	const AIDE: Record<Langue, string> = {
+		fr: 'Sa date prévue est déjà passée : la séance ne peut plus avoir lieu à cette date. Une fois annulée, elle ne pourra pas être rétablie.',
+		de: 'Das geplante Datum ist schon vorbei: Der Termin kann nicht mehr an diesem Datum stattfinden. Wenn Sie ihn absagen, können Sie ihn danach nicht wiederherstellen.',
+		it: 'La data prevista è già passata: la lezione non può più tenersi in quella data. Una volta annullata, non potrai ripristinarla.',
+		en: 'Its planned date has already passed: the session can no longer take place on that date. Once cancelled, it cannot be restored.',
+		ar: 'التاريخ المقرّر لهذه الحصة قد مضى: لم يعد من الممكن أن تُقام فيه. وإذا ألغيتها، فلن يمكنك استعادتها بعد ذلك.'
+	};
+	/** Le bouton, celui de l'annulation de toute séance (`cancelButton`). */
+	const ANNULER: Record<Langue, string> = {
+		fr: 'Annuler cette séance',
+		de: 'Diesen Termin absagen',
+		it: 'Annulla questa lezione',
+		en: 'Cancel this session',
+		ar: 'إلغاء هذه الحصة'
+	};
+	/** Le refus de « Rétablir » vers une date prévue passée : il nomme la séance, et cette date. */
+	const DATE_PREVUE_PASSEE: Record<Langue, PhraseNommee> = {
+		fr: (titre, date) =>
+			`La séance « ${titre} » du ${date} ne peut plus être rétablie : cette date est passée. Rien n’a été enregistré. Le programme ci-dessous est à jour.`,
+		de: (titre, date) =>
+			`Der Termin «${titre}» vom ${date}, kann nicht mehr wiederhergestellt werden: Dieses Datum ist schon vorbei. Es wurde nichts gespeichert. Das Programm unten ist aktuell.`,
+		it: (titre, date) =>
+			`La lezione «${titre}» di ${date} non può più essere ripristinata: questa data è già passata. Non è stato salvato niente. Il programma qui sotto è aggiornato.`,
+		en: (titre, date) =>
+			`The ‘${titre}’ session on ${date} can no longer be restored: that date has already passed. Nothing has been saved. The programme below shows the latest changes.`,
+		ar: (titre, date) =>
+			`لم يعد من الممكن استعادة حصة «${titre}» يوم ${date}: هذا التاريخ قد مضى. لم يُحفظ أي شيء. برنامجك المعروض أدناه محدَّث.`
+	};
+	/** Le refus d'une annulation de ce genre quand la date prévue n'est pas passée : aucune carte ne l'envoie. */
+	const PAS_ENCORE_PASSEE: Record<Langue, string> = {
+		fr: 'La date prévue de cette séance n’est pas encore passée : « Rétablir la séance » la remet à cette date. Rien n’a été enregistré.',
+		de: 'Das geplante Datum dieses Termins ist noch nicht vorbei: Mit «Termin wiederherstellen» findet er wieder an diesem Datum statt. Es wurde nichts gespeichert.',
+		it: 'La data prevista di questa lezione non è ancora passata: «Ripristina la lezione» la riporta a quella data. Non è stato salvato niente.',
+		en: 'The planned date of this session has not passed yet: ‘Restore the session’ puts it back on that date. Nothing has been saved.',
+		ar: 'لم يمضِ التاريخ المقرّر لهذه الحصة بعد: زر «استعادة الحصة» يعيدها إليه. لم يُحفظ أي شيء.'
+	};
+
+	const organisation = newId();
+	const RESPONSABLE_C2 = 'avenir-c2@example.test';
+	const utilisateur = newId();
+	/** Un cours chaque jour à 18:00, écrit en français. */
+	const lecture = newId();
+	const LECTURE = 'Lecture du soir';
+	/** La séance d'il y a trois jours, déplacée à après-demain, 20:30 : sa date prévue est passée. */
+	const passee = jour(-3);
+	const arrivee = jour(2);
+	let deplacement = '';
+	/** Les messages de l'annulation, que la seconde demande rend de nouveau (D4). */
+	let messagesDeLAnnulation: string[] = [];
+	let cookie: string;
+	let journal: DatabaseHandle;
+
+	async function lignesDuJournal(): Promise<number> {
+		return withOrg(journal.db, { organizationId: organisation, userId: utilisateur }, async (tx) =>
+			lignes<{ n: number }>(await tx.execute(sql`select count(*)::int as n from "audit_log"`))
+		).then((trouve) => trouve[0]?.n ?? 0);
+	}
+
+	/** La dernière entrée du journal : son action, et ce qu'elle garde d'avant et d'après. */
+	async function derniereEntree(): Promise<{ action: string; before: unknown; after: unknown }> {
+		return withOrg(journal.db, { organizationId: organisation, userId: utilisateur }, async (tx) =>
+			lignes<{ action: string; before: unknown; after: unknown }>(
+				await tx.execute(sql`
+					select "action", "before", "after" from "audit_log" order by "created_at" desc, "id" desc
+					limit 1
+				`)
+			)
+		).then((trouve) => trouve[0] ?? { action: '', before: null, after: null });
+	}
+
+	/** Toutes les exceptions du cours, avec leur identifiant : un refus n'en écrit aucune. */
+	async function exceptionsDuCours(): Promise<unknown[]> {
+		return maintenance(async (tx) =>
+			lignes(
+				await tx.execute(sql`
+					select "id", "date"::text, "kind", "to_date"::text, left("to_start"::text, 5) as to_start
+					from "session_exception" where "course_id" = ${lecture} order by "date"
+				`)
+			)
+		);
+	}
+
+	/** Pose un déplacement, comme l'écran l'aurait écrit, et rend son identifiant. */
+	async function poserDeplacement(date: IsoDate, vers: IsoDate): Promise<string> {
+		const id = newId();
+		await maintenance((tx) =>
+			tx.execute(sql`
+				insert into "session_exception" ("id", "organization_id", "course_id", "date", "kind",
+					"to_date", "to_start", "created_by")
+				values (${id}, ${organisation}, ${lecture}, ${date}, 'moved', ${vers}, '20:30', ${utilisateur})
+			`)
+		);
+		return id;
+	}
+
+	/** Le formulaire d'annulation d'une carte, chaque champ et sa valeur, ou `null` sans lui. */
+	function formulaireDAnnulationDeplacee(fragment: string): Record<string, string> | null {
+		const formulaire = fragment.match(
+			/<form\b[^>]*action="\?\/annulerDeplacee"[^>]*>[\s\S]*?<\/form>/
+		)?.[0];
+		if (!formulaire) return null;
+		return Object.fromEntries(
+			[...formulaire.matchAll(/<input\b[^>]*>/g)].map((champ) => {
+				const lu = attributs(champ[0]);
+				return [lu['name'] ?? '', lu['value'] ?? ''];
+			})
+		);
+	}
+
+	async function pageEn(langue: Langue): Promise<string> {
+		await maintenance((tx) =>
+			tx.execute(sql`update "user" set "language" = ${langue} where "id" = ${utilisateur}`)
+		);
+		return (await get('/', cookie)).text();
+	}
+
+	beforeAll(async () => {
+		journal = createDatabase({ role: 'app', overrides: { database: testDatabase } });
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+					"enabled_language", "prayer_module", "greeting")
+				values (${organisation}, 'a-venir-c2', 'Association de la lecture', ${FUSEAU}, 'fr',
+					array['fr','de','it','en','ar'], false, ${ACCUEIL})
+			`);
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified", "language")
+				values (${utilisateur}, ${RESPONSABLE_C2}, true, 'fr')
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${organisation}, ${utilisateur}, 'org_admin')
+			`);
+			await tx.execute(conditionsAcceptees(organisation, utilisateur));
+			await tx.execute(sql`
+				insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",
+					"source_language", "recurrence_kind", "recurrence_weekday", "recurrence_interval",
+					"recurrence_anchor_date", "timing_kind", "timing_start", "timing_end", "starts_on")
+				values (${lecture}, ${organisation}, 'published', 'adults', array['fr'], 'fr', 'weekly',
+					array[1,2,3,4,5,6,7]::smallint[], 1, ${jour(-30)}, 'fixed', '18:00', '19:30',
+					${jour(-30)})
+			`);
+			await tx.execute(sql`
+				insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
+				values (${newId()}, ${organisation}, ${lecture}, 'fr', ${LECTURE})
+			`);
+		});
+		cookie = await signIn(RESPONSABLE_C2);
+		deplacement = await poserDeplacement(passee, arrivee);
+	});
+
+	afterAll(async () => {
+		await journal?.close();
+	});
+
+	it('gives the card of a session moved from a past date « Annuler cette séance », behind closed options, and no « Rétablir », in each language', async () => {
+		for (const langue of LANGUES) {
+			const html = await pageEn(langue);
+			const carteDArrivee = carte(html, arrivee, LECTURE, 'moved_here');
+			expect(carteDArrivee, langue).not.toBe('');
+			expect(formulaireDeRetablissement(carteDArrivee), langue).toBeNull();
+			const options = blocsDetails(carteDArrivee);
+			expect(options, langue).toHaveLength(1);
+			expect(options[0]?.ouvert, langue).toBe(false);
+			expect(options[0]?.balise, langue).toMatch(/\bclass="options\b/);
+			expect(options[0]?.resume, langue).toBe(REPLI[langue]);
+			const contenu = options[0]?.contenu ?? '';
+			expect(
+				texte(contenu.match(/<p\b[^>]*class="aide[^"]*"[^>]*>[\s\S]*?<\/p>/)?.[0] ?? ''),
+				langue
+			).toBe(AIDE[langue]);
+			const bouton = contenu.match(/<button\b[^>]*>[\s\S]*?<\/button>/)?.[0] ?? '';
+			expect(texte(bouton), langue).toBe(ANNULER[langue]);
+			expect(bouton, langue).toMatch(/\bclass="danger\b/);
+			// Le formulaire envoie ce que la carte montrait, comme « Rétablir » : ce déplacement-là.
+			expect(formulaireDAnnulationDeplacee(contenu), langue).toEqual({
+				courseId: lecture,
+				date: passee,
+				shownId: deplacement,
+				shownToDate: arrivee,
+				shownToStart: '20:30'
+			});
+		}
+	});
+
+	it('keeps « Rétablir » alone on the card of a session moved from today or a later date', async () => {
+		const aujourdhui = await poserDeplacement(today, jour(4));
+		const demain = await poserDeplacement(jour(1), jour(5));
+		try {
+			const html = await pageEn('fr');
+			for (const [depuis, vers, id] of [
+				[today, jour(4), aujourdhui],
+				[jour(1), jour(5), demain]
+			] as const) {
+				const carteDArrivee = carte(html, vers, LECTURE, 'moved_here');
+				expect(formulaireDeRetablissement(carteDArrivee), depuis).toEqual({
+					courseId: lecture,
+					date: depuis,
+					shownId: id,
+					shownToDate: vers,
+					shownToStart: '20:30'
+				});
+				expect(formulaireDAnnulationDeplacee(carteDArrivee), depuis).toBeNull();
+				expect(blocsDetails(carteDArrivee), depuis).toEqual([]);
+			}
+		} finally {
+			await maintenance((tx) =>
+				tx.execute(sql`
+					delete from "session_exception"
+					where "course_id" = ${lecture} and "date" in (${today}, ${jour(1)})
+				`)
+			);
+		}
+	});
+
+	it('refuses « Rétablir » on a past planned date, says so above the programme in each language, and writes nothing, not even the journal', async () => {
+		const avant = await exceptionsDuCours();
+		const journalAvant = await lignesDuJournal();
+		// La carte telle qu'une page ouverte avant-hier la montrait, et le même formulaire écrit à la
+		// main sans ce qu'il montrait : « Rétablir » les ramenait à une date passée.
+		const envois: Record<string, string>[] = [
+			{
+				courseId: lecture,
+				date: passee,
+				shownId: deplacement,
+				shownToDate: arrivee,
+				shownToStart: '20:30'
+			},
+			{ courseId: lecture, date: passee }
+		];
+		for (const langue of LANGUES) {
+			await pageEn(langue);
+			for (const envoi of envois) {
+				const reponse = await postForm('/?/retablir', envoi, cookie);
+				expect(reponse.status, langue).toBe(400);
+				const html = await reponse.text();
+				expect(alerte(html), langue).toBe(
+					DATE_PREVUE_PASSEE[langue](LECTURE, dateLue(langue, passee))
+				);
+				expect(html.indexOf('role="alert"'), langue).toBeLessThan(html.indexOf('id="jour-'));
+				expect(section(html, 'message-titre'), langue).toBe('');
+			}
+		}
+		expect(await exceptionsDuCours()).toEqual(avant);
+		expect(await lignesDuJournal()).toBe(journalAvant);
+	});
+
+	it('refuses a hand-written cancellation of this kind when the planned date is not past, or when the new date is past, in each language, and writes nothing', async () => {
+		const aujourdhui = await poserDeplacement(today, jour(4));
+		const hier = await poserDeplacement(jour(-5), jour(-1));
+		try {
+			const avant = await exceptionsDuCours();
+			const journalAvant = await lignesDuJournal();
+			for (const langue of LANGUES) {
+				await pageEn(langue);
+				for (const [envoi, phrase] of [
+					[
+						{
+							courseId: lecture,
+							date: today,
+							shownId: aujourdhui,
+							shownToDate: jour(4),
+							shownToStart: '20:30'
+						},
+						PAS_ENCORE_PASSEE[langue]
+					],
+					[
+						{
+							courseId: lecture,
+							date: jour(-5),
+							shownId: hier,
+							shownToDate: jour(-1),
+							shownToStart: '20:30'
+						},
+						SEANCE_PASSEE[langue]
+					]
+				] as const) {
+					const reponse = await postForm('/?/annulerDeplacee', envoi, cookie);
+					expect(reponse.status, `${langue} ${envoi.date}`).toBe(400);
+					const html = await reponse.text();
+					expect(alerte(html), `${langue} ${envoi.date}`).toBe(phrase);
+					expect(section(html, 'message-titre'), `${langue} ${envoi.date}`).toBe('');
+				}
+			}
+			expect(await exceptionsDuCours()).toEqual(avant);
+			expect(await lignesDuJournal()).toBe(journalAvant);
+		} finally {
+			await maintenance((tx) =>
+				tx.execute(sql`
+					delete from "session_exception"
+					where "course_id" = ${lecture} and "date" in (${today}, ${jour(-5)})
+				`)
+			);
+		}
+	});
+
+	it('refuses to move a session from a past planned date, as it refuses to cancel it, in each language, and writes nothing', async () => {
+		const avant = await exceptionsDuCours();
+		const journalAvant = await lignesDuJournal();
+		for (const langue of LANGUES) {
+			await pageEn(langue);
+			const reponse = await postForm(
+				'/?/deplacer',
+				{ courseId: lecture, date: jour(-2), toDate: jour(4), toStart: '18:00' },
+				cookie
+			);
+			expect(reponse.status, langue).toBe(400);
+			const html = await reponse.text();
+			expect(alerte(html), langue).toBe(SEANCE_PASSEE[langue]);
+			expect(section(html, 'message-titre'), langue).toBe('');
+		}
+		expect(await exceptionsDuCours()).toEqual(avant);
+		expect(await lignesDuJournal()).toBe(journalAvant);
+	});
+
+	it('cancels it at its new date, keeps where it had moved, gives the message with the new date and time in each published language, and writes the journal once', async () => {
+		const html = await pageEn('fr');
+		const envoi = formulaireDAnnulationDeplacee(carte(html, arrivee, LECTURE, 'moved_here')) ?? {};
+		const journalAvant = await lignesDuJournal();
+		const reponse = await postForm('/?/annulerDeplacee', envoi, cookie);
+		expect(reponse.status).toBe(200);
+		const apres = await reponse.text();
+		// Une nouvelle exception, qui garde le jour et l'heure où la séance avait été déplacée.
+		const [annulation] = (await exceptionsDuCours()) as {
+			id: string;
+			date: string;
+			kind: string;
+			to_date: string;
+			to_start: string;
+		}[];
+		expect(annulation).toMatchObject({
+			date: passee,
+			kind: 'cancelled',
+			to_date: arrivee,
+			to_start: '20:30'
+		});
+		expect(annulation?.id).not.toBe(deplacement);
+		expect(await lignesDuJournal()).toBe(journalAvant + 1);
+		expect(await derniereEntree()).toEqual({
+			action: 'exception.cancel',
+			before: { date: passee, kind: 'moved', toDate: arrivee, toStart: '20:30' },
+			after: { date: passee, kind: 'cancelled', toDate: arrivee, toStart: '20:30' }
+		});
+		// La page dit que c'est fait, et donne le message dans chaque langue publiée, le français
+		// d'abord : il nomme la nouvelle date et la nouvelle heure, celles que la communauté attend.
+		expect(texte(section(apres, 'message-titre').match(/^[\s\S]*?<\/h2>/)?.[0] ?? '')).toBe(
+			'La séance est annulée.'
+		);
+		const ecrits = messages(section(apres, 'message-titre'));
+		expect(ecrits.map((message) => message.langue)).toEqual(['fr', 'de', 'it', 'en', 'ar']);
+		expect(ecrits[0]?.texte).toBe(
+			[
+				`${ACCUEIL},`,
+				'',
+				`Le cours « ${LECTURE} » du ${dateLue('fr', arrivee)} à 20:30 est annulé.`,
+				'Les autres séances ont lieu normalement.'
+			].join('\n')
+		);
+		expect(ecrits[4]?.texte).toContain(`يوم ${dateLue('ar', arrivee)} في الساعة 20:30.`);
+		messagesDeLAnnulation = ecrits.map((message) => message.texte);
+		// La séance reste sur sa nouvelle date, annulée, sans rien à rétablir ni à annuler.
+		expect(carte(apres, arrivee, LECTURE, 'moved_here')).toBe('');
+		const annulee = carte(apres, arrivee, LECTURE, 'cancelled');
+		expect(annulee).not.toBe('');
+		expect(formulaireDeRetablissement(annulee)).toBeNull();
+		expect(formulaireDAnnulationDeplacee(annulee)).toBeNull();
+		expect(blocsDetails(annulee)).toEqual([]);
+	});
+
+	it('answers a second cancellation with the same message, above the programme, and writes nothing (D4)', async () => {
+		// Depuis une page restée ouverte, ou par une autre personne : la séance est déjà annulée, et la
+		// personne ne sait pas si la communauté a été prévenue.
+		expect(messagesDeLAnnulation).toHaveLength(5);
+		const annulation = await exceptionsDuCours();
+		const journalAvant = await lignesDuJournal();
+		for (const langue of LANGUES) {
+			await pageEn(langue);
+			const reponse = await postForm(
+				'/?/annulerDeplacee',
+				{
+					courseId: lecture,
+					date: passee,
+					shownId: deplacement,
+					shownToDate: arrivee,
+					shownToStart: '20:30'
+				},
+				cookie
+			);
+			expect(reponse.status, langue).toBe(409);
+			const html = await reponse.text();
+			expect(alerte(html), langue).toBe(DEJA_ANNULEE[langue](LECTURE, dateLue(langue, arrivee)));
+			expect(html.indexOf('role="alert"'), langue).toBeLessThan(html.indexOf('id="jour-'));
+			expect(
+				messages(section(html, 'message-titre')).map((message) => message.texte),
+				langue
+			).toEqual(messagesDeLAnnulation);
+		}
+		expect(await exceptionsDuCours()).toEqual(annulation);
 		expect(await lignesDuJournal()).toBe(journalAvant);
 	});
 });

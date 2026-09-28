@@ -12,8 +12,13 @@
 // place, ce que seul l'entretien fait aujourd'hui. Un formulaire qui n'envoie rien de ce qu'il
 // montrait, écrit à la main ou venu d'une page ouverte avant ce lot, n'est pas comparé, comme
 // l'heure `plannedStart` d'un déplacement.
+//
+// Étape 20 (C2) : une séance déplacée dont la date prévue est passée ne revient plus à cette date.
+// Sa carte ne propose plus « Rétablir », que les deux écrans refusent, mais « Annuler cette
+// séance » : `cancelMoved` remplace le déplacement par une annulation qui garde le jour et l'heure
+// d'arrivée, avec le même contrôle de ce que la carte montrait.
 
-import { sql, type Transaction } from '@jadwal/db';
+import { newId, sql, type Transaction } from '@jadwal/db';
 
 function rows<T>(result: unknown): T[] {
 	if (Array.isArray(result)) return result as T[];
@@ -64,14 +69,26 @@ export async function currentChange(
 }
 
 /**
- * Rétablit la séance : retire l'exception de ce cours ce jour-là, et seulement si c'est celle que la
- * carte montrait, la même exception, au même jour et à la même heure d'arrivée. Rend `restored`, ou
- * le refus d'une carte périmée, et rien ne s'écrit alors : `changed`, la séance a changé autrement,
- * ou de nouveau, depuis ; `alreadyRestored`, il n'y a plus rien à rétablir.
+ * La condition d'une suppression qui ne vise que l'exception que la carte montrait : la même, au même
+ * jour et à la même heure d'arrivée. Rien quand la carte n'envoie pas ce qu'elle montrait.
  *
  * La comparaison porte sur le texte des colonnes : une valeur envoyée à la main, même illisible, ne
  * fait pas d'erreur de la base, elle ne correspond à rien. Elle se fait dans la suppression même :
  * un changement écrit entre la lecture de la page et cet envoi n'est jamais effacé.
+ */
+function asShown(shown: ShownChange | null) {
+	return shown === null
+		? sql``
+		: sql`and "id"::text = ${shown.id}
+			and coalesce("to_date"::text, '') = ${shown.toDate}
+			and coalesce(left("to_start"::text, 5), '') = ${shown.toStart}`;
+}
+
+/**
+ * Rétablit la séance : retire l'exception de ce cours ce jour-là, et seulement si c'est celle que la
+ * carte montrait, la même exception, au même jour et à la même heure d'arrivée. Rend `restored`, ou
+ * le refus d'une carte périmée, et rien ne s'écrit alors : `changed`, la séance a changé autrement,
+ * ou de nouveau, depuis ; `alreadyRestored`, il n'y a plus rien à rétablir.
  */
 export async function restore(
 	tx: Transaction,
@@ -79,19 +96,58 @@ export async function restore(
 	date: string,
 	shown: ShownChange | null
 ): Promise<'restored' | 'changed' | 'alreadyRestored'> {
-	const asShown =
-		shown === null
-			? sql``
-			: sql`and "id"::text = ${shown.id}
-				and coalesce("to_date"::text, '') = ${shown.toDate}
-				and coalesce(left("to_start"::text, 5), '') = ${shown.toStart}`;
 	const removed = rows<{ id: string }>(
 		await tx.execute(sql`
 			delete from "session_exception"
-			where "course_id" = ${courseId} and "date" = ${date} ${asShown}
+			where "course_id" = ${courseId} and "date" = ${date} ${asShown(shown)}
 			returning "id"
 		`)
 	);
 	if (removed.length > 0) return 'restored';
 	return (await currentChange(tx, courseId, date)) === null ? 'alreadyRestored' : 'changed';
+}
+
+/**
+ * Annule une séance déplacée à sa nouvelle date (étape 20, C2) : le déplacement que la carte montrait
+ * est remplacé, dans la même transaction, par une annulation qui garde le jour et l'heure d'arrivée
+ * (migration 0075). La séance reste ainsi sur sa nouvelle date, annulée, et sa date prévue la dit
+ * partie ailleurs. Le service ne modifie jamais une exception : l'annulation est une nouvelle ligne,
+ * avec un nouvel identifiant, écrite par la personne qui annule.
+ *
+ * `shown` est ce que la carte montrait, jour et heure d'arrivée compris : l'annulation les reprend.
+ * Rend `cancelled`, ou le refus d'une carte périmée, et rien ne s'écrit alors : `alreadyCancelled`,
+ * ce déplacement a déjà été annulé à la même date et à la même heure, par une autre personne ou
+ * depuis une page restée ouverte ; `changed`, la séance a changé autrement depuis.
+ */
+export async function cancelMoved(
+	tx: Transaction,
+	change: { organizationId: string; userId: string; courseId: string; date: string },
+	shown: ShownChange
+): Promise<'cancelled' | 'alreadyCancelled' | 'changed'> {
+	const { organizationId, userId, courseId, date } = change;
+	const removed = rows<{ id: string }>(
+		await tx.execute(sql`
+			delete from "session_exception"
+			where "course_id" = ${courseId} and "date" = ${date} and "kind" = 'moved' ${asShown(shown)}
+			returning "id"
+		`)
+	);
+	if (removed.length > 0) {
+		await tx.execute(sql`
+			insert into "session_exception"
+				("id", "organization_id", "course_id", "date", "kind", "to_date", "to_start", "created_by")
+			values (${newId()}, ${organizationId}, ${courseId}, ${date}, 'cancelled', ${shown.toDate},
+				${shown.toStart}, ${userId})
+		`);
+		return 'cancelled';
+	}
+	const same = rows<{ id: string }>(
+		await tx.execute(sql`
+			select "id" from "session_exception"
+			where "course_id" = ${courseId} and "date" = ${date} and "kind" = 'cancelled'
+				and coalesce("to_date"::text, '') = ${shown.toDate}
+				and coalesce(left("to_start"::text, 5), '') = ${shown.toStart}
+		`)
+	);
+	return same.length > 0 ? 'alreadyCancelled' : 'changed';
 }

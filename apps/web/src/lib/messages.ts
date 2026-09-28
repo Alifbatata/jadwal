@@ -49,6 +49,11 @@ function virgule(langue: Langue): string {
 /** Ce qu'un message dit d'une séance qui change : son annulation, son déplacement, et la suite. */
 interface Changement {
 	readonly annulation: (titre: string, date: string) => string;
+	/**
+	 * L'annulation d'une séance déplacée, à sa nouvelle date : la date et l'heure où la communauté
+	 * l'attend, qui n'est pas celle du rythme (étape 20, C2).
+	 */
+	readonly annulationA: (titre: string, date: string, heure: string) => string;
 	readonly deplacement: (titre: string, de: string, vers: string, heure: string) => string;
 	/** Le même jour à une autre heure : la date une fois, la nouvelle heure, puis celle d'avant. */
 	readonly changementHeure: (titre: string, date: string, heure: string, avant: string) => string;
@@ -82,6 +87,7 @@ const PHRASES: Record<Langue, Phrases> = {
 		nouvelleHeure: '(nouvelle heure)',
 		heureInconnue: 'heure à préciser',
 		annulation: (titre, date) => `Le cours « ${titre} » du ${date} est annulé.`,
+		annulationA: (titre, date, heure) => `Le cours « ${titre} » du ${date} à ${heure} est annulé.`,
 		deplacement: (titre, de, vers, heure) =>
 			`Le cours « ${titre} » du ${de} est déplacé au ${vers} à ${heure}.`,
 		changementHeure: (titre, date, heure, avant) =>
@@ -91,6 +97,8 @@ const PHRASES: Record<Langue, Phrases> = {
 		nouveau: (titre, suite) => `Nouveau cours : « ${titre} », ${suite}.`,
 		vendredi: {
 			annulation: (titre, date) => `« ${titre} » : la prière du ${date} est annulée.`,
+			annulationA: (titre, date, heure) =>
+				`« ${titre} » : la prière du ${date} à ${heure} est annulée.`,
 			deplacement: (titre, de, vers, heure) =>
 				`« ${titre} » : la prière du ${de} est déplacée au ${vers} à ${heure}.`,
 			changementHeure: (titre, date, heure, avant) =>
@@ -107,6 +115,7 @@ const PHRASES: Record<Langue, Phrases> = {
 		nouvelleHeure: '(neue Uhrzeit)',
 		heureInconnue: 'Zeit noch offen',
 		annulation: (titre, date) => `Der Kurs «${titre}» vom ${date}, fällt aus.`,
+		annulationA: (titre, date, heure) => `Der Kurs «${titre}» vom ${date}, um ${heure} fällt aus.`,
 		deplacement: (titre, de, vers, heure) =>
 			`Der Kurs «${titre}» vom ${de}, wird auf ${vers}, um ${heure} verschoben.`,
 		changementHeure: (titre, date, heure, avant) =>
@@ -116,6 +125,8 @@ const PHRASES: Record<Langue, Phrases> = {
 		nouveau: (titre, suite) => `Neuer Kurs: «${titre}», ${suite}.`,
 		vendredi: {
 			annulation: (titre, date) => `«${titre}»: Das Gebet vom ${date}, fällt aus.`,
+			annulationA: (titre, date, heure) =>
+				`«${titre}»: Das Gebet vom ${date}, um ${heure} fällt aus.`,
 			deplacement: (titre, de, vers, heure) =>
 				`«${titre}»: Das Gebet vom ${de}, wird auf ${vers}, um ${heure} verschoben.`,
 			changementHeure: (titre, date, heure, avant) =>
@@ -131,6 +142,8 @@ const PHRASES: Record<Langue, Phrases> = {
 		nouvelleHeure: '(nuovo orario)',
 		heureInconnue: 'orario da definire',
 		annulation: (titre, date) => `La lezione «${titre}» di ${date} è annullata.`,
+		annulationA: (titre, date, heure) =>
+			`La lezione «${titre}» di ${date} alle ${heure} è annullata.`,
 		deplacement: (titre, de, vers, heure) =>
 			`La lezione «${titre}» di ${de} è spostata a ${vers} alle ${heure}.`,
 		changementHeure: (titre, date, heure, avant) =>
@@ -140,6 +153,8 @@ const PHRASES: Record<Langue, Phrases> = {
 		nouveau: (titre, suite) => `Nuovo corso: «${titre}», ${suite}.`,
 		vendredi: {
 			annulation: (titre, date) => `«${titre}»: la preghiera di ${date} è annullata.`,
+			annulationA: (titre, date, heure) =>
+				`«${titre}»: la preghiera di ${date} alle ${heure} è annullata.`,
 			deplacement: (titre, de, vers, heure) =>
 				`«${titre}»: la preghiera di ${de} è spostata a ${vers} alle ${heure}.`,
 			changementHeure: (titre, date, heure, avant) =>
@@ -156,6 +171,8 @@ const PHRASES: Record<Langue, Phrases> = {
 		nouvelleHeure: '(new time)',
 		heureInconnue: 'time to be confirmed',
 		annulation: (titre, date) => `The ‘${titre}’ session on ${date} is cancelled.`,
+		annulationA: (titre, date, heure) =>
+			`The ‘${titre}’ session on ${date} at ${heure} is cancelled.`,
 		deplacement: (titre, de, vers, heure) =>
 			`The ‘${titre}’ session on ${de} has been moved to ${vers} at ${heure}.`,
 		changementHeure: (titre, date, heure, avant) =>
@@ -165,6 +182,8 @@ const PHRASES: Record<Langue, Phrases> = {
 		nouveau: (titre, suite) => `New course: ‘${titre}’, ${suite}.`,
 		vendredi: {
 			annulation: (titre, date) => `‘${titre}’: the prayer on ${date} is cancelled.`,
+			annulationA: (titre, date, heure) =>
+				`‘${titre}’: the prayer on ${date} at ${heure} is cancelled.`,
 			deplacement: (titre, de, vers, heure) =>
 				`‘${titre}’: the prayer on ${de} has been moved to ${vers} at ${heure}.`,
 			changementHeure: (titre, date, heure, avant) =>
@@ -180,6 +199,7 @@ const PHRASES: Record<Langue, Phrases> = {
 		nouvelleHeure: '(وقت جديد)',
 		heureInconnue: 'الوقت لم يُحدَّد بعد',
 		annulation: (titre, date) => `أُلغي درس «${titre}» يوم ${date}.`,
+		annulationA: (titre, date, heure) => `أُلغي درس «${titre}» يوم ${date} في الساعة ${heure}.`,
 		deplacement: (titre, de, vers, heure) =>
 			`نُقل درس «${titre}» من يوم ${de} إلى يوم ${vers} في الساعة ${heure}.`,
 		changementHeure: (titre, date, heure, avant) =>
@@ -189,6 +209,8 @@ const PHRASES: Record<Langue, Phrases> = {
 		nouveau: (titre, suite) => `درس جديد: «${titre}»، ${suite}.`,
 		vendredi: {
 			annulation: (titre, date) => `«${titre}»: أُلغيت الصلاة يوم ${date}.`,
+			annulationA: (titre, date, heure) =>
+				`«${titre}»: أُلغيت الصلاة يوم ${date} في الساعة ${heure}.`,
 			deplacement: (titre, de, vers, heure) =>
 				`«${titre}»: نُقلت الصلاة من يوم ${de} إلى يوم ${vers} في الساعة ${heure}.`,
 			changementHeure: (titre, date, heure, avant) =>
@@ -275,19 +297,26 @@ export function weekMessage(
 /**
  * Le message d'une annulation ponctuelle. Il dit toujours que le cours continue après, ou, pour une
  * session du vendredi (`kind` vaut `jumua`), que les autres prières du vendredi ont lieu.
+ *
+ * `start` : l'heure à laquelle la séance avait lieu ce jour-là, quand ce n'est pas celle du rythme.
+ * Une séance déplacée dont la date prévue est passée s'annule à sa nouvelle date (étape 20, C2) : le
+ * message nomme cette date et cette heure, celles que la communauté attend. Sans elle, le message
+ * d'une annulation ordinaire ne dit que la date, comme avant.
  */
 export function cancellationMessage(
 	greeting: string,
 	title: string,
 	date: IsoDate,
 	langue: Langue = 'fr',
-	kind = 'course'
+	kind = 'course',
+	start: string | null = null
 ): string {
 	const phrases = changement(langue, kind);
+	const jour = longDate(langue, date);
 	return [
 		salutation(greeting, langue),
 		'',
-		phrases.annulation(title, longDate(langue, date)),
+		start ? phrases.annulationA(title, jour, start) : phrases.annulation(title, jour),
 		phrases.lesAutres
 	].join('\n');
 }

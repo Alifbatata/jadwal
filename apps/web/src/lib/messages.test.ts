@@ -487,6 +487,101 @@ describe('les annonces d’une session du vendredi, dans les cinq langues (étap
 	});
 });
 
+describe('l’annonce d’une séance déplacée puis annulée, dans les cinq langues (étape 20)', () => {
+	// Une séance déplacée dont la date prévue est passée ne peut plus y revenir : elle s'annule à sa
+	// nouvelle date (C2). La communauté l'attend ce jour-là, à une heure qui n'est pas celle du rythme :
+	// le message nomme la nouvelle date et la nouvelle heure.
+	const mardi = '2026-10-06' as IsoDate;
+	const samedi = '2026-10-03' as IsoDate;
+
+	/** La phrase du milieu et la dernière ligne d'un message. */
+	const fin = (message: string) => message.split('\n').slice(2);
+
+	it('names the new date and the new time of a course', () => {
+		expect(
+			LANGUES.map((langue) =>
+				fin(cancellationMessage(SALUT, 'Tafsir', mardi, langue, 'course', '20:30'))
+			)
+		).toEqual([
+			[
+				'Le cours « Tafsir » du mardi 06.10.2026 à 20:30 est annulé.',
+				'Les autres séances ont lieu normalement.'
+			],
+			[
+				'Der Kurs «Tafsir» vom Dienstag, 06.10.2026, um 20:30 fällt aus.',
+				'Die anderen Termine finden wie gewohnt statt.'
+			],
+			[
+				'La lezione «Tafsir» di martedì 06.10.2026 alle 20:30 è annullata.',
+				'Le altre lezioni si svolgono regolarmente.'
+			],
+			[
+				'The ‘Tafsir’ session on Tuesday 06.10.2026 at 20:30 is cancelled.',
+				'The other sessions go ahead as usual.'
+			],
+			[
+				'أُلغي درس «Tafsir» يوم الثلاثاء 06.10.2026 في الساعة 20:30.',
+				'تُقام الحصص الأخرى كالمعتاد.'
+			]
+		]);
+	});
+
+	it('names the new date and the new time of a Friday prayer, with its own words', () => {
+		expect(
+			LANGUES.map((langue) =>
+				fin(cancellationMessage(SALUT, 'Jumu’a', samedi, langue, 'jumua', '15:00'))
+			)
+		).toEqual([
+			[
+				'« Jumu’a » : la prière du samedi 03.10.2026 à 15:00 est annulée.',
+				'Les autres prières du vendredi ont lieu comme d’habitude.'
+			],
+			[
+				'«Jumu’a»: Das Gebet vom Samstag, 03.10.2026, um 15:00 fällt aus.',
+				'Die anderen Freitagsgebete finden wie gewohnt statt.'
+			],
+			[
+				'«Jumu’a»: la preghiera di sabato 03.10.2026 alle 15:00 è annullata.',
+				'Le altre preghiere del venerdì si svolgono regolarmente.'
+			],
+			[
+				'‘Jumu’a’: the prayer on Saturday 03.10.2026 at 15:00 is cancelled.',
+				'The other Friday prayers go ahead as usual.'
+			],
+			[
+				'«Jumu’a»: أُلغيت الصلاة يوم السبت 03.10.2026 في الساعة 15:00.',
+				'تُقام مواعيد صلاة الجمعة الأخرى كالمعتاد.'
+			]
+		]);
+	});
+
+	it('keeps the message of an ordinary cancellation, without a time, when none is given', () => {
+		expect(
+			LANGUES.map((langue) =>
+				fin(cancellationMessage(SALUT, 'Tafsir', mardi, langue, 'course', null))
+			)
+		).toEqual([
+			[
+				'Le cours « Tafsir » du mardi 06.10.2026 est annulé.',
+				'Les autres séances ont lieu normalement.'
+			],
+			[
+				'Der Kurs «Tafsir» vom Dienstag, 06.10.2026, fällt aus.',
+				'Die anderen Termine finden wie gewohnt statt.'
+			],
+			[
+				'La lezione «Tafsir» di martedì 06.10.2026 è annullata.',
+				'Le altre lezioni si svolgono regolarmente.'
+			],
+			[
+				'The ‘Tafsir’ session on Tuesday 06.10.2026 is cancelled.',
+				'The other sessions go ahead as usual.'
+			],
+			['أُلغي درس «Tafsir» يوم الثلاثاء 06.10.2026.', 'تُقام الحصص الأخرى كالمعتاد.']
+		]);
+	});
+});
+
 describe('l’annonce d’un cours nouveau, dans les cinq langues', () => {
 	it('names the course, its rhythm, its time and its room', () => {
 		const rythmes = {

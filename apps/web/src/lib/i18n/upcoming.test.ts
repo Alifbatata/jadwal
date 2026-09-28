@@ -1,6 +1,7 @@
 // Le refus d'une carte périmée nomme la séance par son titre, saisi par une personne : la page
 // l'isole (`<bdi>`, ADR 0007), et la phrase se découpe autour de lui (relecture de D4). De même pour
-// le refus d'un jour où le cours n'a pas de séance (étape 19, lot 3).
+// le refus d'un jour où le cours n'a pas de séance (étape 19, lot 3), et pour celui d'un
+// « Rétablir » vers une date prévue déjà passée (étape 20, C2).
 
 import { describe, expect, it } from 'vitest';
 import { LANGUES } from '../i18n.js';
@@ -11,7 +12,8 @@ const NOMMES: readonly NamedUpcomingError[] = [
 	'changed',
 	'timeChanged',
 	'alreadyCancelled',
-	'alreadyRestored'
+	'alreadyRestored',
+	'pastOrigin'
 ];
 /** Un titre latin qui finit par une ponctuation : celui qui se retournait sur un écran arabe. */
 const TITRE = 'Tafsir (2)';

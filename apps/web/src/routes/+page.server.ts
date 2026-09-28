@@ -22,7 +22,7 @@
 // depuis dans sa fiche, l'action la refuse, au lieu de déplacer la séance à l'ancienne heure
 // (relecture du lot 5), et la carte rouverte propose l'heure actuelle, sauf une heure tapée.
 // Annuler refuse une séance dont la date est passée ; rétablir répond à un cours inconnu comme les
-// deux autres actions.
+// autres actions.
 //
 // Étape 19 (D4, et les décisions du chef de projet) :
 // - le programme de la semaine est celui de Partager : les cours publiés seulement. L'écran, lui,
@@ -47,24 +47,37 @@
 //   n'écrit rien : l'action acceptait toute date à partir d'aujourd'hui, et gardait une exception qui
 //   ne tombe sur aucune séance. Les séances comptent comme l'écran les montre (`seanceOn`), ce jour-là
 //   qu'il soit dans les sept jours ou non. Une séance arrivée d'un autre jour ne s'annule ni ne se
-//   déplace sous ce jour-là, où le calcul ignorerait l'exception : sa carte n'a que « Rétablir », et
-//   l'envoi reçoit le refus d'une carte périmée (lot 3).
+//   déplace sous ce jour-là, où le calcul ignorerait l'exception : l'envoi reçoit le refus d'une
+//   carte périmée (lot 3).
+//
+// Étape 20 (C2, décision du chef de projet) : « Rétablir » vers une date prévue déjà passée est
+// refusé (`pastOrigin`), et n'écrit rien. La carte d'une séance déplacée dont la date prévue est
+// passée n'a donc plus « Rétablir », mais « Annuler cette séance » (`annulerDeplacee`), qui l'annule
+// à sa nouvelle date et rend le message à copier, avec cette date et cette heure ; une carte déplacée
+// dont la date prévue est aujourd'hui ou plus tard garde « Rétablir » seul. Déplacer une séance dont
+// la date prévue est passée est refusé, comme l'annuler (`pastSession`).
 
 import { fail } from '@sveltejs/kit';
-import { todayInZone, type IsoDate } from '@jadwal/core';
+import { todayInZone } from '@jadwal/core';
 import { newId, sql, type Transaction } from '@jadwal/db';
-import { LANGUES, type Langue } from '$lib/i18n.js';
+import { type Langue } from '$lib/i18n.js';
 import type { NamedUpcomingError, UpcomingError } from '$lib/i18n/upcoming.js';
 import { record } from '$lib/server/audit.js';
+import {
+	cancellationMessages,
+	messageLanguages,
+	readCourse,
+	type Message
+} from '$lib/server/change-messages.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { isSupportedDate, LAST_SUPPORTED_DATE } from '$lib/server/dates.js';
-import { currentChange, restore, shownChange } from '$lib/server/exceptions.js';
+import { cancelMoved, currentChange, restore, shownChange } from '$lib/server/exceptions.js';
 import { fridayTitle } from '$lib/server/friday-title.js';
 import { mustBeInOrganisation } from '$lib/server/guard.js';
 import { etatDesSources, readReglages } from '$lib/server/prieres.js';
 import { readProgramme, readSettings, seanceOn } from '$lib/server/programme.js';
 import { lireAudience } from '$lib/server/vues.js';
-import { cancellationMessage, moveMessage, weekMessage } from '$lib/messages.js';
+import { moveMessage, weekMessage } from '$lib/messages.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
 /** Sept jours : la semaine qui vient, celle dont on parle dans un message. */
@@ -73,30 +86,11 @@ const JOURS_AFFICHES = 7;
 const HEURE = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 /** L'heure que le champ « Heure de début » propose pour une séance sans heure (`+page.svelte`). */
 const HEURE_PROPOSEE = '19:00';
-/** Un identifiant de cours. Autre chose n'atteint pas la base, qui le refuserait en erreur. */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/** Un message prêt à coller, dans une langue. */
-interface Message {
-	language: Langue;
-	text: string;
-}
 
 function rows<T>(result: unknown): T[] {
 	if (Array.isArray(result)) return result as T[];
 	const inner = (result as { rows?: unknown[] }).rows;
 	return Array.isArray(inner) ? (inner as T[]) : [];
-}
-
-/**
- * Les langues des messages : celles que l'organisation publie, dans l'ordre du service, et `first`
- * devant elles quand elle en fait partie (retour D1). La base exige au moins une langue publiée ; le
- * français ne sert que si aucune n'est une langue du service.
- */
-function messageLanguages(published: readonly string[], first: string): Langue[] {
-	const languages = LANGUES.filter((language) => published.includes(language));
-	const head = languages.find((language) => language === first) ?? languages[0] ?? 'fr';
-	return [head, ...languages.filter((language) => language !== head)];
 }
 
 /**
@@ -116,63 +110,6 @@ async function readTitles(tx: Transaction): Promise<Map<string, Map<string, stri
 		titles.set(row.course_id, course);
 	}
 	return titles;
-}
-
-/**
- * Le cours d'une séance visée par une action : sa langue source, son type, et son titre dans une
- * langue, ou dans sa langue source quand il n'y est pas traduit ; pour une session du vendredi qui
- * porte le nom proposé, le nom de la prière dans cette langue. Rien si le cours n'existe pas, ou
- * plus.
- */
-async function readCourse(
-	tx: Transaction,
-	courseId: string
-): Promise<{ source: string; kind: string; title: (language: Langue) => string } | null> {
-	if (!UUID.test(courseId)) return null;
-	const found = rows<{
-		source_language: string;
-		kind: string;
-		language: string | null;
-		title: string | null;
-	}>(
-		await tx.execute(sql`
-			select c."source_language", c."kind", t."language", t."title"
-			from "course" c
-			left join "course_translation" t on t."course_id" = c."id"
-			where c."id" = ${courseId} and c."organization_id" = (select jadwal.current_org_id())
-		`)
-	);
-	const source = found[0]?.source_language;
-	const kind = found[0]?.kind ?? 'course';
-	if (source === undefined) return null;
-	const titles = new Map(found.map((row) => [row.language, row.title ?? '']));
-	const fallback = titles.get(source) ?? found.find((row) => row.title)?.title ?? '';
-	return {
-		source,
-		kind,
-		title: (language) => fridayTitle(titles.get(language) ?? fallback, kind, language)
-	};
-}
-
-/**
- * Le message d'une annulation, dans chaque langue publiée, la langue du cours d'abord. La première
- * annulation le rend, et la seconde aussi (étape 19, D4).
- */
-function cancellationMessages(
-	settings: { enabled_language: string[]; greeting: string },
-	course: { source: string; kind: string; title: (language: Langue) => string },
-	date: IsoDate
-): Message[] {
-	return messageLanguages(settings.enabled_language, course.source).map((language) => ({
-		language,
-		text: cancellationMessage(
-			settings.greeting,
-			course.title(language),
-			date,
-			language,
-			course.kind
-		)
-	}));
 }
 
 /**
@@ -231,7 +168,7 @@ function refuse(
  * sa date (étape 19, D4). Le statut est 409 : la séance a changé depuis l'ouverture de la page.
  */
 function refuseStale(
-	error: Exclude<NamedUpcomingError, 'notPlanned'>,
+	error: Exclude<NamedUpcomingError, 'notPlanned' | 'pastOrigin'>,
 	course: { title: (language: Langue) => string },
 	language: Langue,
 	fields: Parameters<typeof refuse>[1]
@@ -431,6 +368,12 @@ export const actions: Actions = {
 		return withSessionOrg(context, async (tx) => {
 			const course = await readCourse(tx, courseId);
 			if (!course) return refuse('sessionGone', fields, 404);
+			const settings = await readSettings(tx);
+			const today = todayInZone(settings.time_zone, now);
+			// Une séance dont la date prévue est passée ne se déplace pas, comme elle ne s'annule pas
+			// (étape 20, C2) : aucune carte ne le propose, et le déplacement en ferait une séance
+			// déplacée dont la date prévue est passée, que « Rétablir » ne ramène plus.
+			if (date < today) return refuse('pastSession', fields);
 			// Un jour où le cours n'a pas de séance : il n'y a rien à déplacer (lot 3).
 			const onTheDay = await seanceOn(tx, now, courseId, date);
 			if (onTheDay === 'none') {
@@ -460,11 +403,8 @@ export const actions: Actions = {
 					toStart: typed ? toStart : null
 				});
 			}
-			const settings = await readSettings(tx);
 			// Deux dates civiles au même format se comparent comme des chaînes.
-			if (toDate < todayInZone(settings.time_zone, now)) {
-				return refuse('pastDate', fields);
-			}
+			if (toDate < today) return refuse('pastDate', fields);
 			// Le champ s'ouvre sur la date prévue et l'heure habituelle. Les renvoyer tels quels ne
 			// déplace rien : l'accepter écrivait une exception vers la séance elle-même, affichée deux
 			// fois le même jour, et un message « déplacé du mercredi au mercredi » pour la communauté.
@@ -518,6 +458,11 @@ export const actions: Actions = {
 	 * l'écrivait au journal (étape 19, relecture de D2). La carte envoie ce qu'elle montrait : une
 	 * séance rétablie puis changée de nouveau ailleurs depuis l'ouverture de la page garde ce nouveau
 	 * changement, et la carte reçoit le refus nommé des cartes périmées (étape 19, lot 2).
+	 *
+	 * Une date prévue déjà passée est refusée, et rien ne s'écrit, pas même le journal (étape 20,
+	 * C2) : la séance y serait revenue, et aurait disparu de l'écran et de la page publique sans
+	 * message à envoyer. La carte d'une séance déplacée dont la date prévue est passée propose
+	 * « Annuler cette séance » à la place (`annulerDeplacee`).
 	 */
 	retablir: async (event) => {
 		const context = await mustBeInOrganisation(event);
@@ -525,10 +470,15 @@ export const actions: Actions = {
 		const courseId = String(form.get('courseId') ?? '');
 		const date = String(form.get('date') ?? '');
 		if (!isSupportedDate(date)) return refuse('unreadableDate', { courseId, date });
+		const now = new Date();
 		const langue: Langue = event.locals.langue ?? 'fr';
 		return withSessionOrg(context, async (tx) => {
 			const course = await readCourse(tx, courseId);
 			if (!course) return refuse('sessionGone', { courseId, date }, 404);
+			const settings = await readSettings(tx);
+			if (date < todayInZone(settings.time_zone, now)) {
+				return refuse('pastOrigin', { courseId, date, title: course.title(langue) });
+			}
 			const restored = await restore(tx, courseId, date, shownChange(form));
 			if (restored !== 'restored') {
 				return refuseStale(restored, course, langue, { courseId, date });
@@ -540,6 +490,71 @@ export const actions: Actions = {
 				before: { date }
 			});
 			return { done: 'restored' as const };
+		});
+	},
+
+	/**
+	 * Annuler une séance déplacée dont la date prévue est passée, à sa nouvelle date (étape 20, C2,
+	 * décision du chef de projet). Un nom distinct d'`annuler` : celle-ci vise une séance du rythme,
+	 * encore prévue, sous sa date ; celle-là, une séance arrivée d'un autre jour, sous sa date prévue.
+	 *
+	 * La carte envoie ce qu'elle montrait, comme « Rétablir » : l'exception, le jour et l'heure
+	 * d'arrivée. Le déplacement est remplacé par une annulation qui les garde (`cancelMoved`) : la
+	 * séance reste sur sa nouvelle date, annulée, sur cet écran, sur la page publique et dans le
+	 * programme de la semaine, et le flux agenda la retire. Refusé, sans rien écrire : une date prévue
+	 * qui n'est pas passée (sa carte a « Rétablir »), une nouvelle date passée, comme toute
+	 * annulation, et une carte périmée. La seconde demande reçoit, comme toute seconde annulation, le
+	 * message quand même (étape 19, D4). Le message nomme la nouvelle date et la nouvelle heure.
+	 */
+	annulerDeplacee: async (event) => {
+		const context = await mustBeInOrganisation(event);
+		const form = await event.request.formData();
+		const courseId = String(form.get('courseId') ?? '');
+		const date = String(form.get('date') ?? '');
+		const shown = shownChange(form);
+		if (
+			!isSupportedDate(date) ||
+			shown === null ||
+			!isSupportedDate(shown.toDate) ||
+			!HEURE.test(shown.toStart)
+		) {
+			return refuse('unreadableDate', { courseId, date });
+		}
+		const toDate = shown.toDate;
+		const now = new Date();
+		const langue: Langue = event.locals.langue ?? 'fr';
+		return withSessionOrg(context, async (tx) => {
+			const course = await readCourse(tx, courseId);
+			if (!course) return refuse('sessionGone', { courseId, date: toDate }, 404);
+			const settings = await readSettings(tx);
+			const today = todayInZone(settings.time_zone, now);
+			if (date >= today) return refuse('originNotPast', { courseId, date: toDate });
+			if (toDate < today) return refuse('pastSession', { courseId, date: toDate });
+			const messages = cancellationMessages(settings, course, toDate, shown.toStart);
+			const cancelled = await cancelMoved(
+				tx,
+				{ organizationId: context.organizationId, userId: context.userId, courseId, date },
+				shown
+			);
+			if (cancelled === 'alreadyCancelled') {
+				return refuseStale('alreadyCancelled', course, langue, {
+					courseId,
+					date: toDate,
+					messages
+				});
+			}
+			if (cancelled === 'changed') {
+				return refuseStale('changed', course, langue, { courseId, date: toDate });
+			}
+			const moved = { toDate, toStart: shown.toStart };
+			await record(tx, context.organizationId, context.userId, {
+				action: 'exception.cancel',
+				targetTable: 'session_exception',
+				targetId: courseId,
+				before: { date, kind: 'moved', ...moved },
+				after: { date, kind: 'cancelled', ...moved }
+			});
+			return { done: 'cancelled' as const, messages };
 		});
 	}
 };

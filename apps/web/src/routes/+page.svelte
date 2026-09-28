@@ -65,8 +65,12 @@
 	 * ouverte pendant que la séance changeait ailleurs est refusée, au lieu d'effacer ce changement
 	 * (étape 19, lot 2). `id` est l'exception que la carte montre : une annulation refaite ailleurs
 	 * ressemble à la première, mais c'en est une autre (reprise du lot 2).
+	 *
+	 * Une séance déplacée puis annulée à sa nouvelle date (étape 20, C2) ne se rétablit pas : sa date
+	 * prévue était passée, et « Rétablir » l'y ramenait. Sa carte, annulée, n'a rien à défaire.
 	 */
 	function aRetablir(seance: (typeof data.seances)[number]) {
+		if (seance.status === 'cancelled' && seance.originalDate) return null;
 		if (seance.status === 'cancelled') {
 			return { date: seance.date, id: seance.exceptionId, toDate: '', toStart: '' };
 		}
@@ -351,19 +355,39 @@
 						</details>
 					{:else if aRetablir(seance)}
 						{@const change = aRetablir(seance)}
-						<form method="post" action="?/retablir" class="retablir">
-							<input type="hidden" name="courseId" value={seance.courseId} />
-							<input type="hidden" name="date" value={change?.date} />
-							{#if change?.id}
-								<input type="hidden" name="shownId" value={change.id} />
-								{#if change.toDate}
+						{#if seance.status === 'moved_here' && change && change.date < data.today}
+							<!-- Une séance déplacée dont la date prévue est passée ne revient plus à cette date :
+							     « Rétablir » l'y ramenait, et elle disparaissait sans message (étape 20, C2). Sa
+							     carte propose de l'annuler à sa nouvelle date, derrière des options fermées,
+							     comme toute annulation (retour A1). Le formulaire envoie ce que la carte
+							     montrait, comme « Rétablir ». -->
+							<details class="options">
+								<summary>{text.cancelOnly}</summary>
+								<form method="post" action="?/annulerDeplacee">
+									<input type="hidden" name="courseId" value={seance.courseId} />
+									<input type="hidden" name="date" value={change.date} />
+									<input type="hidden" name="shownId" value={change.id} />
 									<input type="hidden" name="shownToDate" value={change.toDate} />
 									<input type="hidden" name="shownToStart" value={change.toStart} />
+									<p class="aide">{text.cancelMovedHelp}</p>
+									<button type="submit" class="danger">{text.cancelButton}</button>
+								</form>
+							</details>
+						{:else}
+							<form method="post" action="?/retablir" class="retablir">
+								<input type="hidden" name="courseId" value={seance.courseId} />
+								<input type="hidden" name="date" value={change?.date} />
+								{#if change?.id}
+									<input type="hidden" name="shownId" value={change.id} />
+									{#if change.toDate}
+										<input type="hidden" name="shownToDate" value={change.toDate} />
+										<input type="hidden" name="shownToStart" value={change.toStart} />
+									{/if}
 								{/if}
-							{/if}
-							<button type="submit">{text.restoreButton}</button>
-							<span class="aide">{text.restoreHelp}</span>
-						</form>
+								<button type="submit">{text.restoreButton}</button>
+								<span class="aide">{text.restoreHelp}</span>
+							</form>
+						{/if}
 					{/if}
 				</li>
 			{/each}

@@ -5,9 +5,12 @@
 	// Les textes sont dans `$lib/i18n/friday.ts`, dans les cinq langues de l'espace (étape 18). Tout
 	// l'écran fonctionne sans script : modifier et supprimer une session s'ouvrent dans un `details`,
 	// que le navigateur déplie seul, et la suppression demande sa confirmation sur place. Depuis
-	// l'étape 20, seul le responsable supprime une session (`data.canDelete`).
+	// l'étape 20, seul le responsable supprime une session (`data.canDelete`), et la ligne d'une
+	// session déplacée dont le vendredi prévu est passé propose de l'annuler, avec le message à
+	// copier, au lieu de « Rétablir » (C2).
 	import { resolve } from '$app/paths';
 	import { shortDate } from '$lib/format.js';
+	import { direction, NOM_DE_LANGUE } from '$lib/i18n.js';
 	import { fridayTexts, type FridayDone, type FridayError } from '$lib/i18n/friday.js';
 	import { languesEnClair } from '$lib/public/affichage.js';
 	import { sessionKey } from '$lib/session-key.js';
@@ -65,8 +68,12 @@
 	 * ailleurs est refusée, au lieu d'effacer ce changement. `id` est l'exception que la ligne montre :
 	 * une annulation refaite ailleurs ressemble à la première, mais c'en est une autre (reprise du
 	 * lot 2).
+	 *
+	 * Une session déplacée puis annulée à sa nouvelle date (étape 20, C2) ne se rétablit pas : son
+	 * vendredi prévu était passé, et « Rétablir » l'y ramenait. Sa ligne, annulée, n'a rien à défaire.
 	 */
 	function aRetablir(seance: (typeof data.prochaines)[number]) {
+		if (seance.status === 'cancelled' && seance.originalDate) return null;
 		if (seance.status === 'cancelled') {
 			return { date: seance.date, id: seance.exceptionId, toDate: '', toStart: '' };
 		}
@@ -102,6 +109,35 @@
 
 {#if erreursEnTete.length > 0}{@render erreurs(erreursEnTete)}{/if}
 {#if form?.done && enregistre === null}{@render confirmation(form.done)}{/if}
+
+<!-- Le message à copier d'une session déplacée puis annulée (étape 20, C2), le seul geste de cet
+     écran qui en rend un, et sa seconde demande aussi : la personne ne sait pas si la communauté a
+     déjà été prévenue. Une langue par bloc, la première ouverte, comme sur « À venir » : chaque bloc
+     porte la langue et le sens de son texte, et le nom de chaque zone dit sa langue, dans celle de
+     l'écran. -->
+{#if form?.messages}
+	<section class="messages" aria-labelledby="message-aide">
+		<p id="message-aide" class="aide">{text.messageHelp}</p>
+		{#each form.messages as message, index (message.language)}
+			{@const id = `message-${message.language}`}
+			<details class="langue-du-message" open={index === 0}>
+				<summary lang={message.language}>{NOM_DE_LANGUE[message.language]}</summary>
+				<textarea
+					{id}
+					readonly
+					rows="5"
+					aria-label={text.messageLabel}
+					aria-labelledby={`${id} ${id}-langue`}
+					lang={message.language}
+					dir={direction(message.language)}>{message.text}</textarea
+				>
+				<span id={`${id}-langue`} hidden
+					>{text.inLanguage(languesEnClair(data.language, [message.language]))}</span
+				>
+			</details>
+		{/each}
+	</section>
+{/if}
 
 {#if data.sessions.length === 0}
 	<p class="vide">{text.empty}</p>
@@ -227,18 +263,38 @@
 						</div>
 					{:else if aRetablir(seance)}
 						{@const change = aRetablir(seance)}
-						<form method="post" action="?/retablir">
-							<input type="hidden" name="courseId" value={session.id} />
-							<input type="hidden" name="date" value={change?.date} />
-							{#if change?.id}
-								<input type="hidden" name="shownId" value={change.id} />
-								{#if change.toDate}
+						{#if seance.status === 'moved_here' && change && change.date < data.today}
+							<!-- Une session déplacée dont le vendredi prévu est passé n'y revient plus :
+							     « Rétablir » l'y ramenait, et elle disparaissait sans message (étape 20, C2).
+							     La ligne propose de l'annuler à sa nouvelle date, derrière des options
+							     fermées, comme sur « À venir ». Le formulaire envoie ce que la ligne
+							     montrait. -->
+							<details class="options">
+								<summary>{text.thisFriday.cancelOnly}</summary>
+								<form method="post" action="?/annulerDeplacee">
+									<input type="hidden" name="courseId" value={session.id} />
+									<input type="hidden" name="date" value={change.date} />
+									<input type="hidden" name="shownId" value={change.id} />
 									<input type="hidden" name="shownToDate" value={change.toDate} />
 									<input type="hidden" name="shownToStart" value={change.toStart} />
+									<p class="avertissement">{text.thisFriday.cancelMovedHelp}</p>
+									<button type="submit" class="danger">{text.thisFriday.cancel}</button>
+								</form>
+							</details>
+						{:else}
+							<form method="post" action="?/retablir">
+								<input type="hidden" name="courseId" value={session.id} />
+								<input type="hidden" name="date" value={change?.date} />
+								{#if change?.id}
+									<input type="hidden" name="shownId" value={change.id} />
+									{#if change.toDate}
+										<input type="hidden" name="shownToDate" value={change.toDate} />
+										<input type="hidden" name="shownToStart" value={change.toStart} />
+									{/if}
 								{/if}
-							{/if}
-							<button type="submit">{text.thisFriday.restore}</button>
-						</form>
+								<button type="submit">{text.thisFriday.restore}</button>
+							</form>
+						{/if}
 					{/if}
 				</div>
 			{/each}
@@ -461,8 +517,20 @@
 		align-items: center;
 		gap: 0.5rem;
 	}
-	.repli {
+	.repli,
+	.options,
+	.langue-du-message {
 		margin-top: 0.5rem;
+	}
+	.options form {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem;
+	}
+	.messages textarea {
+		width: 100%;
+		box-sizing: border-box;
 	}
 	/* Le triangle du navigateur reste : c'est lui qui dit qu'on peut ouvrir. */
 	summary {

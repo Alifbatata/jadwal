@@ -29,7 +29,11 @@ export type UpcomingDone = 'cancelled' | 'moved' | 'restored';
  * encore ; il n'y a plus rien à rétablir, et rien ne s'écrit, pas même le journal (étape 19,
  * relecture de D2). `pastSession` : l'annulation d'une séance dont la date est passée, qu'aucune
  * carte ne propose. `notPlanned` : annuler ou déplacer une séance un jour où le cours n'en a pas,
- * qu'aucune carte ne propose non plus (étape 19, lot 3).
+ * qu'aucune carte ne propose non plus (étape 19, lot 3). `pastSession` refuse aussi le
+ * déplacement d'une séance dont la date prévue est passée (étape 20, C2). `pastOrigin` : « Rétablir »
+ * vers une date prévue déjà passée, où la séance disparaîtrait sans message (étape 20, C2).
+ * `originNotPast` : l'annulation d'une séance déplacée dont la date prévue n'est pas passée,
+ * qu'aucune carte ne propose : sa carte a « Rétablir ».
  */
 export type UpcomingError =
 	| 'unreadableDate'
@@ -37,6 +41,8 @@ export type UpcomingError =
 	| 'unreadableTime'
 	| 'pastDate'
 	| 'pastSession'
+	| 'pastOrigin'
+	| 'originNotPast'
 	| 'notPlanned'
 	| 'unchanged'
 	| 'changed'
@@ -47,11 +53,12 @@ export type UpcomingError =
 
 /**
  * Les refus qui nomment la séance par son titre et sa date : ceux d'une carte périmée (étape 19,
- * D4), et celui d'un jour sans séance (lot 3). Leur phrase reçoit le titre, dans la langue de
- * l'écran quand le cours y est traduit, et la date déjà écrite.
+ * D4), celui d'un jour sans séance (lot 3), et celui d'un « Rétablir » vers une date prévue passée
+ * (étape 20, C2). Leur phrase reçoit le titre, dans la langue de l'écran quand le cours y est
+ * traduit, et la date déjà écrite.
  */
 export type NamedUpcomingError =
-	'notPlanned' | 'changed' | 'timeChanged' | 'alreadyCancelled' | 'alreadyRestored';
+	'notPlanned' | 'changed' | 'timeChanged' | 'alreadyCancelled' | 'alreadyRestored' | 'pastOrigin';
 
 /** Une phrase qui nomme une séance. */
 type Named = (title: string, date: string) => string;
@@ -107,6 +114,13 @@ interface UpcomingTexts {
 	readonly options: string;
 	readonly cancelHelp: string;
 	readonly cancelButton: string;
+	/**
+	 * Sur la carte d'une séance déplacée dont la date prévue est passée (étape 20, C2) : le bouton qui
+	 * ouvre ses options, qui ne proposent que l'annulation, et l'aide avant le bouton qui annule. Elle
+	 * ne promet pas de rétablir la séance, comme `cancelHelp` : elle ne se rétablit plus.
+	 */
+	readonly cancelOnly: string;
+	readonly cancelMovedHelp: string;
 	readonly moveLegend: string;
 	readonly newDate: string;
 	/** Les dates acceptées, avec celle d'aujourd'hui : plus tôt comme plus tard (retour A2). */
@@ -196,6 +210,9 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		cancelHelp:
 			'Seule cette séance est annulée : le cours continue les autres semaines. Vous pourrez la rétablir ensuite.',
 		cancelButton: 'Annuler cette séance',
+		cancelOnly: 'Annuler',
+		cancelMovedHelp:
+			'Sa date prévue est déjà passée : la séance ne peut plus avoir lieu à cette date. Une fois annulée, elle ne pourra pas être rétablie.',
 		moveLegend: 'Déplacer cette séance',
 		newDate: 'Nouvelle date',
 		newDateHelp: (today) =>
@@ -237,7 +254,11 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				'Cette heure n’a pas pu être lue. Écrivez les heures et les minutes, par exemple 19:30.',
 			pastDate: 'Cette date est déjà passée. Choisissez une date à partir d’aujourd’hui.',
 			pastSession:
-				'Cette séance est déjà passée : vous ne pouvez annuler que les séances d’aujourd’hui et des jours suivants.',
+				'Cette séance est déjà passée : vous ne pouvez annuler ou déplacer que les séances d’aujourd’hui et des jours suivants.',
+			pastOrigin: (title, date) =>
+				`La séance « ${title} » du ${date} ne peut plus être rétablie : cette date est passée. Rien n’a été enregistré. Le programme ci-dessous est à jour.`,
+			originNotPast:
+				'La date prévue de cette séance n’est pas encore passée : « Rétablir la séance » la remet à cette date. Rien n’a été enregistré.',
 			notPlanned: (title, date) =>
 				`Aucune séance « ${title} » n’est prévue le ${date}. Rien n’a été enregistré. Le programme ci-dessous est à jour.`,
 			unchanged:
@@ -299,6 +320,9 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		cancelHelp:
 			'Nur dieser Termin wird abgesagt: Der Kurs geht in den anderen Wochen weiter. Sie können den Termin danach wiederherstellen.',
 		cancelButton: 'Diesen Termin absagen',
+		cancelOnly: 'Absagen',
+		cancelMovedHelp:
+			'Das geplante Datum ist schon vorbei: Der Termin kann nicht mehr an diesem Datum stattfinden. Wenn Sie ihn absagen, können Sie ihn danach nicht wiederherstellen.',
 		moveLegend: 'Diesen Termin verschieben',
 		newDate: 'Neues Datum',
 		newDateHelp: (today) => `Ab heute, ${today}, früher oder später als das geplante Datum.`,
@@ -340,7 +364,11 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				'Diese Uhrzeit konnte nicht gelesen werden. Geben Sie Stunden und Minuten ein, zum Beispiel 19:30.',
 			pastDate: 'Dieses Datum ist schon vorbei. Wählen Sie heute oder einen späteren Tag.',
 			pastSession:
-				'Dieser Termin ist schon vorbei: Sie können nur Termine von heute oder von einem späteren Tag absagen.',
+				'Dieser Termin ist schon vorbei: Sie können nur Termine von heute oder von einem späteren Tag absagen oder verschieben.',
+			pastOrigin: (title, date) =>
+				`Der Termin «${title}» vom ${date}, kann nicht mehr wiederhergestellt werden: Dieses Datum ist schon vorbei. Es wurde nichts gespeichert. Das Programm unten ist aktuell.`,
+			originNotPast:
+				'Das geplante Datum dieses Termins ist noch nicht vorbei: Mit «Termin wiederherstellen» findet er wieder an diesem Datum statt. Es wurde nichts gespeichert.',
 			notPlanned: (title, date) =>
 				`Am ${date}, ist kein Termin «${title}» geplant. Es wurde nichts gespeichert. Das Programm unten ist aktuell.`,
 			unchanged:
@@ -401,6 +429,9 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		cancelHelp:
 			'Viene annullata solo questa lezione: il corso continua nelle altre settimane. Potrai ripristinarla dopo.',
 		cancelButton: 'Annulla questa lezione',
+		cancelOnly: 'Annulla',
+		cancelMovedHelp:
+			'La data prevista è già passata: la lezione non può più tenersi in quella data. Una volta annullata, non potrai ripristinarla.',
 		moveLegend: 'Sposta questa lezione',
 		newDate: 'Nuova data',
 		newDateHelp: (today) => `Da oggi, ${today}, prima o dopo la data prevista.`,
@@ -442,7 +473,11 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				'Non è stato possibile leggere questo orario. Scrivi le ore e i minuti, per esempio 19:30.',
 			pastDate: 'Questa data è già passata. Scegli oggi o un giorno successivo.',
 			pastSession:
-				'Questa lezione è già passata: puoi annullare solo le lezioni di oggi o dei giorni successivi.',
+				'Questa lezione è già passata: puoi annullare o spostare solo le lezioni di oggi o dei giorni successivi.',
+			pastOrigin: (title, date) =>
+				`La lezione «${title}» di ${date} non può più essere ripristinata: questa data è già passata. Non è stato salvato niente. Il programma qui sotto è aggiornato.`,
+			originNotPast:
+				'La data prevista di questa lezione non è ancora passata: «Ripristina la lezione» la riporta a quella data. Non è stato salvato niente.',
 			notPlanned: (title, date) =>
 				`Non è prevista nessuna lezione «${title}» per ${date}. Non è stato salvato niente. Il programma qui sotto è aggiornato.`,
 			unchanged:
@@ -503,6 +538,9 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		cancelHelp:
 			'Only this session is cancelled: the course continues in the other weeks. You can restore it afterwards.',
 		cancelButton: 'Cancel this session',
+		cancelOnly: 'Cancel',
+		cancelMovedHelp:
+			'Its planned date has already passed: the session can no longer take place on that date. Once cancelled, it cannot be restored.',
 		moveLegend: 'Move this session',
 		newDate: 'New date',
 		newDateHelp: (today) => `From today, ${today}, earlier or later than the planned date.`,
@@ -542,7 +580,11 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				'This time could not be read. Enter the hours and minutes, for example 19:30.',
 			pastDate: 'This date has already passed. Choose today or a later day.',
 			pastSession:
-				'This session has already passed: you can only cancel sessions from today onwards.',
+				'This session has already passed: you can only cancel or move sessions from today onwards.',
+			pastOrigin: (title, date) =>
+				`The ‘${title}’ session on ${date} can no longer be restored: that date has already passed. Nothing has been saved. The programme below shows the latest changes.`,
+			originNotPast:
+				'The planned date of this session has not passed yet: ‘Restore the session’ puts it back on that date. Nothing has been saved.',
 			notPlanned: (title, date) =>
 				`There is no ‘${title}’ session on ${date}. Nothing has been saved. The programme below shows the latest changes.`,
 			unchanged:
@@ -610,6 +652,9 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		options: 'إلغاء أو نقل',
 		cancelHelp: 'تُلغى هذه الحصة وحدها: يستمر الدرس في الأسابيع الأخرى. يمكنك استعادتها بعد ذلك.',
 		cancelButton: 'إلغاء هذه الحصة',
+		cancelOnly: 'إلغاء',
+		cancelMovedHelp:
+			'التاريخ المقرّر لهذه الحصة قد مضى: لم يعد من الممكن أن تُقام فيه. وإذا ألغيتها، فلن يمكنك استعادتها بعد ذلك.',
 		moveLegend: 'نقل هذه الحصة',
 		newDate: 'التاريخ الجديد',
 		newDateHelp: (today) => `ابتداءً من اليوم، ${today}، قبل التاريخ المقرّر أو بعده.`,
@@ -646,7 +691,11 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			unreadableNewDate: 'تعذّرت قراءة هذا التاريخ. اختره من تقويم خانة «التاريخ الجديد».',
 			unreadableTime: 'تعذّرت قراءة هذا الوقت. اكتب الساعات والدقائق، مثلًا 19:30.',
 			pastDate: 'هذا التاريخ قد مضى. اختر اليوم أو يومًا بعده.',
-			pastSession: 'موعد هذه الحصة قد مضى: يمكنك إلغاء حصص اليوم والأيام التالية فقط.',
+			pastSession: 'موعد هذه الحصة قد مضى: يمكنك إلغاء حصص اليوم والأيام التالية أو نقلها فقط.',
+			pastOrigin: (title, date) =>
+				`لم يعد من الممكن استعادة حصة «${title}» يوم ${date}: هذا التاريخ قد مضى. لم يُحفظ أي شيء. برنامجك المعروض أدناه محدَّث.`,
+			originNotPast:
+				'لم يمضِ التاريخ المقرّر لهذه الحصة بعد: زر «استعادة الحصة» يعيدها إليه. لم يُحفظ أي شيء.',
 			notPlanned: (title, date) =>
 				`لا توجد حصة «${title}» مقرّرة يوم ${date}. لم يُحفظ أي شيء. برنامجك المعروض أدناه محدَّث.`,
 			unchanged: 'الحصة مقرّرة أصلًا في هذا التاريخ وفي هذا الوقت. اختر تاريخًا آخر أو وقتًا آخر.',

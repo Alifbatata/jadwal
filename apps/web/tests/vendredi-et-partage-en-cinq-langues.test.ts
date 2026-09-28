@@ -1405,14 +1405,15 @@ describe('une page /vendredi restée ouverte ne défait pas un changement (relec
 /**
  * Le refus d'annuler un vendredi passé, que la page d'une semaine d'avant encore ouverte, ou un
  * formulaire écrit à la main, peut envoyer : la règle d'« À venir », en tête de l'écran (étape 19,
- * D2).
+ * D2). Depuis l'étape 20 (C2), c'est aussi le refus d'un déplacement depuis un jour passé : la phrase
+ * dit les deux gestes.
  */
 const VENDREDI_PASSE: Record<Langue, string> = {
-	fr: 'Cette session est déjà passée : vous ne pouvez annuler que les sessions d’aujourd’hui et des jours suivants.',
-	de: 'Dieser Durchgang ist schon vorbei: Sie können nur Durchgänge von heute oder von einem späteren Tag absagen.',
-	it: 'Questo turno è già passato: puoi annullare solo i turni di oggi o dei giorni successivi.',
-	en: 'This session has already passed: you can only cancel sessions from today onwards.',
-	ar: 'هذا الموعد قد مضى: يمكنك إلغاء مواعيد اليوم والأيام التالية فقط.'
+	fr: 'Cette session est déjà passée : vous ne pouvez annuler ou déplacer que les sessions d’aujourd’hui et des jours suivants.',
+	de: 'Dieser Durchgang ist schon vorbei: Sie können nur Durchgänge von heute oder von einem späteren Tag absagen oder verschieben.',
+	it: 'Questo turno è già passato: puoi annullare o spostare solo i turni di oggi o dei giorni successivi.',
+	en: 'This session has already passed: you can only cancel or move sessions from today onwards.',
+	ar: 'هذا الموعد قد مضى: يمكنك إلغاء مواعيد اليوم والأيام التالية أو نقلها فقط.'
 };
 
 /** Le refus d'une salle qui n'existe pas, ou plus, dans le formulaire d'une session (étape 19, D2). */
@@ -2921,5 +2922,342 @@ describe('supprimer une session du vendredi, réservé au responsable (étape 20
 		} finally {
 			await poserLangueDuCompte(RESPONSABLE, 'fr');
 		}
+	});
+});
+
+describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (étape 20, C2)', () => {
+	// La règle d'« À venir » : sur la ligne d'une session déplacée dont le vendredi prévu est passé,
+	// « Rétablir comme d’habitude » disparaît et l'action le refuse ; la ligne propose « Annuler cette
+	// session », derrière des options fermées, avec son aide. L'annulation garde le jour et l'heure où
+	// la session avait été déplacée, et l'écran gagne pour ce geste le message à copier, qui nomme la
+	// nouvelle date et la nouvelle heure. Déplacer une session depuis un jour passé est refusé, comme
+	// l'annuler.
+	const vendrediPasse = () => addDays(prochainVendredi(today()), -7);
+
+	const REPLI: Record<Langue, string> = {
+		fr: 'Annuler',
+		de: 'Absagen',
+		it: 'Annulla',
+		en: 'Cancel',
+		ar: 'إلغاء'
+	};
+	const AIDE: Record<Langue, string> = {
+		fr: 'Son jour prévu est déjà passé : la session ne peut plus avoir lieu ce jour-là. Une fois annulée, elle ne pourra pas être rétablie.',
+		de: 'Der geplante Tag ist schon vorbei: Der Durchgang kann nicht mehr an diesem Tag stattfinden. Wenn Sie ihn absagen, können Sie ihn danach nicht wiederherstellen.',
+		it: 'Il giorno previsto è già passato: il turno non può più tenersi quel giorno. Una volta annullato, non potrai ripristinarlo.',
+		en: 'Its planned day has already passed: the session can no longer take place on that day. Once cancelled, it cannot be restored.',
+		ar: 'اليوم المقرّر لهذا الموعد قد مضى: لم يعد من الممكن أن يُقام فيه. وإذا ألغيته، فلن يمكنك إعادته بعد ذلك.'
+	};
+	/** Le bouton, celui de l'annulation de toute session (`thisFriday.cancel`). */
+	const ANNULER: Record<Langue, string> = {
+		fr: 'Annuler cette session',
+		de: 'Diesen Durchgang absagen',
+		it: 'Annulla questo turno',
+		en: 'Cancel this session',
+		ar: 'إلغاء هذا الموعد'
+	};
+	const PREVU_PASSE: Record<Langue, string> = {
+		fr: 'Le jour prévu de cette session est déjà passé : elle ne peut plus être rétablie. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.',
+		de: 'Der geplante Tag dieses Durchgangs ist schon vorbei: Er kann nicht mehr wiederhergestellt werden. Es wurde nichts gespeichert. Der Abschnitt «Diesen Freitag» weiter unten ist aktuell.',
+		it: 'Il giorno previsto di questo turno è già passato: non può più essere ripristinato. Non è stato salvato niente. La sezione «Questo venerdì», più in basso, è aggiornata.',
+		en: 'The planned day of this session has already passed: it can no longer be restored. Nothing has been saved. The ‘This Friday’ section further down shows the latest changes.',
+		ar: 'اليوم المقرّر لهذا الموعد قد مضى: لم يعد من الممكن إعادته. لم يُحفظ أي شيء. قسم «هذه الجمعة» في الأسفل محدَّث.'
+	};
+	const PAS_ENCORE_PASSE: Record<Langue, string> = {
+		fr: 'Le jour prévu de cette session n’est pas encore passé : « Rétablir comme d’habitude » la remet à ce jour. Rien n’a été enregistré.',
+		de: 'Der geplante Tag dieses Durchgangs ist noch nicht vorbei: Mit «Wie gewohnt wiederherstellen» findet er wieder an diesem Tag statt. Es wurde nichts gespeichert.',
+		it: 'Il giorno previsto di questo turno non è ancora passato: «Ripristina come al solito» lo riporta a quel giorno. Non è stato salvato niente.',
+		en: 'The planned day of this session has not passed yet: ‘Restore as usual’ puts it back on that day. Nothing has been saved.',
+		ar: 'لم يمضِ اليوم المقرّر لهذا الموعد بعد: زر «إعادته كالمعتاد» يعيده إليه. لم يُحفظ أي شيء.'
+	};
+	const DEJA_ANNULEE: Record<Langue, string> = {
+		fr: 'Cette session a déjà été annulée depuis l’ouverture de la page. Rien n’a été enregistré. Si le message n’a pas encore été envoyé, il est prêt ci-dessous.',
+		de: 'Dieser Durchgang ist abgesagt worden, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Wenn die Nachricht noch nicht verschickt ist, steht sie unten bereit.',
+		it: 'Questo turno è già stato annullato da quando hai aperto la pagina. Non è stato salvato niente. Se il messaggio non è ancora stato mandato, è pronto qui sotto.',
+		en: 'Since the page was opened, this session has already been cancelled. Nothing has been saved. If the message has not been sent yet, it is ready below.',
+		ar: 'أُلغي هذا الموعد منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. إن لم تُرسَل الرسالة بعد، فهي جاهزة أدناه.'
+	};
+	const ANNULEE: Record<Langue, string> = {
+		fr: 'La session est annulée à sa nouvelle date. Les autres vendredis ne changent pas.',
+		de: 'Der Durchgang ist an seinem neuen Datum abgesagt. Die anderen Freitage bleiben unverändert.',
+		it: 'Il turno è annullato nella sua nuova data. Gli altri venerdì non cambiano.',
+		en: 'The session is cancelled on its new date. Other Fridays do not change.',
+		ar: 'أُلغي الموعد في تاريخه الجديد. لا تتغيّر أيام الجمعة الأخرى.'
+	};
+	/** La phrase d'annulation du message, dans chaque langue, avec la nouvelle date et la nouvelle heure. */
+	const PHRASE_DU_MESSAGE: Record<Langue, (date: string) => string> = {
+		fr: (date) => `« ${NOM_DE_LA_PRIERE.fr} » : la prière du ${date} à 16:00 est annulée.`,
+		de: (date) => `«${NOM_DE_LA_PRIERE.de}»: Das Gebet vom ${date}, um 16:00 fällt aus.`,
+		it: (date) => `«${NOM_DE_LA_PRIERE.it}»: la preghiera di ${date} alle 16:00 è annullata.`,
+		en: (date) => `‘${NOM_DE_LA_PRIERE.en}’: the prayer on ${date} at 16:00 is cancelled.`,
+		ar: (date) => `«${NOM_DE_LA_PRIERE.ar}»: أُلغيت الصلاة يوم ${date} في الساعة 16:00.`
+	};
+
+	let deplacement = '';
+	/** Les messages de l'annulation, que la seconde demande rend de nouveau (D4). */
+	let messagesDeLAnnulation: string[] = [];
+	const lu = (fragment: string) => visibleText(`<body>${fragment}</body>`);
+
+	/** Les exceptions de la première session, avec leur identifiant : un refus n'en écrit aucune. */
+	async function exceptionsDeLaPremiere(): Promise<unknown[]> {
+		return maintenance(async (tx) =>
+			lignes(
+				await tx.execute(sql`
+					select "id", "date"::text, "kind", "to_date"::text, left("to_start"::text, 5) as to_start
+					from "session_exception" where "course_id" = ${sessions[1]} order by "date"
+				`)
+			)
+		);
+	}
+
+	/** Pose un déplacement de la première session, comme l'écran l'aurait écrit, et rend son identifiant. */
+	async function poserDeplacement(date: IsoDate, vers: IsoDate): Promise<string> {
+		const id = newId();
+		await maintenance((tx) =>
+			tx.execute(sql`
+				insert into "session_exception" ("id", "organization_id", "course_id", "date", "kind",
+					"to_date", "to_start", "created_by")
+				values (${id}, ${organizationId}, ${sessions[1]}, ${date}, 'moved', ${vers}, '16:00',
+					${ids[RESPONSABLE] ?? ''})
+			`)
+		);
+		return id;
+	}
+
+	/** La ligne de la première session arrivée du vendredi passé, dans la langue de la page. */
+	function ligneDArrivee(html: string, langue: Langue): string[] {
+		return lignesDeCeVendredi(html).filter(
+			(ligne) =>
+				lu(ligne).includes(PREMIERE_SESSION[langue]) &&
+				lu(ligne).includes(NOUVELLE_DATE[langue](dateEcrite(langue, vendrediPasse())))
+		);
+	}
+
+	/** Le formulaire d'annulation d'une ligne, chaque champ et sa valeur, ou `null` sans lui. */
+	function annulationDeLaLigne(ligne: string): Record<string, string> | null {
+		const formulaire = ligne.match(
+			/<form\b[^>]*action="\?\/annulerDeplacee"[^>]*>[\s\S]*?<\/form>/
+		)?.[0];
+		if (!formulaire) return null;
+		return Object.fromEntries(
+			[...formulaire.matchAll(/<input\b[^>]*>/g)].map((champ) => [
+				attribut(champ[0], 'name') ?? '',
+				attribut(champ[0], 'value') ?? ''
+			])
+		);
+	}
+
+	/** Les messages à copier, en tête de l'écran, dans l'ordre de la page, avec leur langue. */
+	function messagesEnTete(html: string): { langue: string | undefined; texte: string }[] {
+		return zonesDeTexte(section(html, 'message-aide')).map((zone) => ({
+			langue: attribut(zone.match(/<textarea\b[^>]*>/)?.[0] ?? '', 'lang'),
+			texte: contenu(zone)
+		}));
+	}
+
+	beforeAll(async () => {
+		deplacement = await poserDeplacement(vendrediPasse(), jourDuDeplacement());
+	});
+
+	afterAll(async () => {
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		await maintenance((tx) =>
+			tx.execute(sql`delete from "session_exception" where "course_id" = ${sessions[1]}`)
+		);
+	});
+
+	it('gives the line of a session moved from a past Friday « Annuler cette session », behind closed options, and no « Rétablir », in each language', async () => {
+		for (const langue of LANGUES) {
+			await poserLangueDuCompte(RESPONSABLE, langue);
+			const lignesTrouvees = ligneDArrivee(await (await get('/vendredi', cookies)).text(), langue);
+			expect(lignesTrouvees, langue).toHaveLength(1);
+			const ligne = lignesTrouvees[0] ?? '';
+			expect(retablissementDeLaLigne(ligne), langue).toBeNull();
+			const options = [...ligne.matchAll(/(<details\b[^>]*>)([\s\S]*?)<\/details>/g)];
+			expect(options, langue).toHaveLength(1);
+			const [, balise = '', interieur = ''] = options[0] ?? [];
+			expect(balise, langue).toMatch(/\bclass="options\b/);
+			expect(ouvert(balise), langue).toBe(false);
+			expect(lu(interieur.match(/<summary\b[^>]*>[\s\S]*?<\/summary>/)?.[0] ?? ''), langue).toBe(
+				REPLI[langue]
+			);
+			expect(lu(interieur.match(/<p\b[^>]*>[\s\S]*?<\/p>/)?.[0] ?? ''), langue).toBe(AIDE[langue]);
+			const bouton = interieur.match(/<button\b[^>]*>[\s\S]*?<\/button>/)?.[0] ?? '';
+			expect(lu(bouton), langue).toBe(ANNULER[langue]);
+			expect(bouton, langue).toMatch(/\bclass="danger\b/);
+			expect(annulationDeLaLigne(interieur), langue).toEqual({
+				courseId: sessions[1],
+				date: vendrediPasse(),
+				shownId: deplacement,
+				shownToDate: jourDuDeplacement(),
+				shownToStart: '16:00'
+			});
+		}
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+	});
+
+	it('refuses « Rétablir » to a past Friday, says so at the top in each language, and writes nothing to the journal', async () => {
+		const avant = await exceptionsDeLaPremiere();
+		const journalAvant = await lignesDuJournalDeVendredi();
+		for (const langue of LANGUES) {
+			await poserLangueDuCompte(RESPONSABLE, langue);
+			const envois: Record<string, string>[] = [
+				{
+					courseId: sessions[1],
+					date: vendrediPasse(),
+					shownId: deplacement,
+					shownToDate: jourDuDeplacement(),
+					shownToStart: '16:00'
+				},
+				{ courseId: sessions[1], date: vendrediPasse() }
+			];
+			for (const envoi of envois) {
+				const reponse = await postForm('/vendredi?/retablir', envoi, cookies);
+				expect(reponse.status, langue).toBe(400);
+				expect(enTete(await reponse.text()), langue).toEqual([PREVU_PASSE[langue]]);
+			}
+		}
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		expect(await exceptionsDeLaPremiere()).toEqual(avant);
+		expect(await lignesDuJournalDeVendredi()).toBe(journalAvant);
+	});
+
+	it('refuses a hand-written cancellation of this kind when the Friday is not past, or the new day is past, and a move from a past Friday, in each language, and writes nothing', async () => {
+		const vendredi = prochainVendredi(today());
+		const avance = await poserDeplacement(vendredi, jourDuDeplacement());
+		const ilYADeuxSemaines = addDays(vendrediPasse(), -7);
+		const toutPasse = await poserDeplacement(ilYADeuxSemaines, addDays(vendrediPasse(), 1));
+		try {
+			const avant = await exceptionsDeLaPremiere();
+			const journalAvant = await lignesDuJournalDeVendredi();
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				for (const [action, envoi, phrase] of [
+					[
+						'annulerDeplacee',
+						{
+							courseId: sessions[1],
+							date: vendredi,
+							shownId: avance,
+							shownToDate: jourDuDeplacement(),
+							shownToStart: '16:00'
+						},
+						PAS_ENCORE_PASSE[langue]
+					],
+					[
+						'annulerDeplacee',
+						{
+							courseId: sessions[1],
+							date: ilYADeuxSemaines,
+							shownId: toutPasse,
+							shownToDate: addDays(vendrediPasse(), 1),
+							shownToStart: '16:00'
+						},
+						VENDREDI_PASSE[langue]
+					],
+					[
+						'deplacer',
+						{
+							courseId: sessions[1],
+							date: addDays(vendrediPasse(), -14),
+							toDate: jourDuDeplacement(),
+							toStart: '12:10'
+						},
+						VENDREDI_PASSE[langue]
+					]
+				] as const) {
+					const reponse = await postForm(`/vendredi?/${action}`, envoi, cookies);
+					expect(reponse.status, `${langue} ${action} ${envoi.date}`).toBe(400);
+					const html = await reponse.text();
+					expect(enTete(html), `${langue} ${action} ${envoi.date}`).toEqual([phrase]);
+					expect(section(html, 'message-aide'), `${langue} ${action}`).toBe('');
+				}
+			}
+			expect(await exceptionsDeLaPremiere()).toEqual(avant);
+			expect(await lignesDuJournalDeVendredi()).toBe(journalAvant);
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await maintenance((tx) =>
+				tx.execute(sql`
+					delete from "session_exception"
+					where "course_id" = ${sessions[1]} and "date" in (${vendredi}, ${ilYADeuxSemaines})
+				`)
+			);
+		}
+	});
+
+	it('cancels it at its new day, keeps where it had moved, says so, gives the message in each published language, and writes the journal once', async () => {
+		const envoi =
+			annulationDeLaLigne(
+				ligneDArrivee(await (await get('/vendredi', cookies)).text(), 'fr')[0] ?? ''
+			) ?? {};
+		const journalAvant = await lignesDuJournalDeVendredi();
+		const reponse = await postForm('/vendredi?/annulerDeplacee', envoi, cookies);
+		expect(reponse.status).toBe(200);
+		const html = await reponse.text();
+		const [annulation] = (await exceptionsDeLaPremiere()) as { id: string }[];
+		expect(annulation).toMatchObject({
+			date: vendrediPasse(),
+			kind: 'cancelled',
+			to_date: jourDuDeplacement(),
+			to_start: '16:00'
+		});
+		expect(annulation?.id).not.toBe(deplacement);
+		expect(await lignesDuJournalDeVendredi()).toBe(journalAvant + 1);
+		expect(lu(html.match(/<p\b[^>]*role="status"[^>]*>[\s\S]*?<\/p>/)?.[0] ?? '')).toBe(ANNULEE.fr);
+		// Le message, dans chaque langue publiée, la langue de l'organisation d'abord : la prière s'y
+		// nomme dans la langue du message, avec sa nouvelle date et sa nouvelle heure.
+		const ecrits = messagesEnTete(html);
+		expect(ecrits.map((message) => message.langue)).toEqual([...LANGUES]);
+		for (const [index, langue] of LANGUES.entries()) {
+			expect(ecrits[index]?.texte, langue).toContain(
+				PHRASE_DU_MESSAGE[langue](dateEcrite(langue, jourDuDeplacement()))
+			);
+		}
+		messagesDeLAnnulation = ecrits.map((message) => message.texte);
+		// La ligne de sa nouvelle date la dit annulée, sans rien à rétablir ni à annuler. Le début de
+		// chaque ligne seulement : la liste des jours d'un déplacement écrit aussi cette date.
+		const debut = (ligne: string) =>
+			lu(ligne.match(/<p\b[^>]*class="ligne[^"]*"[^>]*>[\s\S]*?<\/p>/)?.[0] ?? '');
+		const arrivee = lignesDeCeVendredi(html).filter(
+			(ligne) =>
+				debut(ligne).includes(PREMIERE_SESSION.fr) &&
+				debut(ligne).includes(dateEcrite('fr', jourDuDeplacement()))
+		);
+		expect(arrivee).toHaveLength(1);
+		expect(lu(arrivee[0] ?? '')).toContain('Annulée ce jour-là');
+		expect(retablissementDeLaLigne(arrivee[0] ?? '')).toBeNull();
+		expect(annulationDeLaLigne(arrivee[0] ?? '')).toBeNull();
+		expect(arrivee[0]).not.toMatch(/<details\b/);
+	});
+
+	it('answers a second cancellation with the same message, at the top, and writes nothing (D4)', async () => {
+		expect(messagesDeLAnnulation).toHaveLength(5);
+		const avant = await exceptionsDeLaPremiere();
+		const journalAvant = await lignesDuJournalDeVendredi();
+		for (const langue of LANGUES) {
+			await poserLangueDuCompte(RESPONSABLE, langue);
+			const reponse = await postForm(
+				'/vendredi?/annulerDeplacee',
+				{
+					courseId: sessions[1],
+					date: vendrediPasse(),
+					shownId: deplacement,
+					shownToDate: jourDuDeplacement(),
+					shownToStart: '16:00'
+				},
+				cookies
+			);
+			expect(reponse.status, langue).toBe(409);
+			const html = await reponse.text();
+			expect(enTete(html), langue).toEqual([DEJA_ANNULEE[langue]]);
+			expect(
+				messagesEnTete(html).map((message) => message.texte),
+				langue
+			).toEqual(messagesDeLAnnulation);
+		}
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		expect(await exceptionsDeLaPremiere()).toEqual(avant);
+		expect(await lignesDuJournalDeVendredi()).toBe(journalAvant);
 	});
 });
