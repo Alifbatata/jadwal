@@ -526,6 +526,13 @@
       "when": 1790582349583,
       "tag": "0074_organization_slug_letter",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1790582579788,
+      "tag": "0075_session_exception_cancelled_where_moved",
+      "breakpoints": true
     }
   ]
 }

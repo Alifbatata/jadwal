@@ -883,10 +883,14 @@ export const sessionException = pgTable(
 		id: uuid().primaryKey(),
 		organizationId: uuid('organization_id').notNull(),
 		courseId: uuid('course_id').notNull(),
-		/** Date de la séance visée. */
+		/** Date de la séance visée : sa date prévue, jamais celle où elle a été déplacée. */
 		date: date().notNull(),
 		kind: text().notNull(),
-		/** `moved` : nouvelle date et nouvelle heure. */
+		/**
+		 * `moved` : nouvelle date et nouvelle heure. `cancelled` : les mêmes, ou rien. Une séance
+		 * déplacée puis annulée les garde : elle reste annulée à sa nouvelle date, où la communauté
+		 * l'attend (étape 20, migration 0075).
+		 */
 		toDate: date('to_date'),
 		toStart: time('to_start'),
 		createdBy: uuid('created_by'),
@@ -912,7 +916,9 @@ export const sessionException = pgTable(
 		ck(
 			'session_exception_shape_ck',
 			sql`case ${table.kind}
-				when 'cancelled' then ${table.toDate} is null and ${table.toStart} is null
+				when 'cancelled' then (${table.toDate} is null and ${table.toStart} is null)
+					or (${table.toDate} is not null and ${table.toStart} is not null
+						and ${isLocalTime(table.toStart)})
 				when 'moved' then ${table.toDate} is not null and ${table.toStart} is not null
 					and ${isLocalTime(table.toStart)}
 				else false end`

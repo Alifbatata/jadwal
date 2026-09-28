@@ -289,6 +289,49 @@ describe('autres contraintes du schéma', () => {
 		}
 	});
 
+	it('lets a cancellation keep the day and time where the session had been moved, both or neither', async () => {
+		// Une séance déplacée puis annulée reste annulée à sa nouvelle date (étape 20, C2, migration
+		// 0075) : l'annulation garde le jour et l'heure d'arrivée du déplacement, les deux ensemble,
+		// et l'heure a la même forme que celle d'un déplacement.
+		const exception = (date: string, kind: string, toDate: string | null, toStart: string | null) =>
+			sql`insert into "session_exception"
+					("id", "organization_id", "course_id", "date", "kind", "to_date", "to_start")
+				values (${newId()}, ${org.id}, ${courseId}, ${date}, ${kind}, ${toDate}, ${toStart})
+				returning "id"`;
+		const refusees = [
+			exception('2026-11-02', 'cancelled', '2026-11-04', null),
+			exception('2026-11-02', 'cancelled', null, '18:30'),
+			exception('2026-11-02', 'cancelled', '2026-11-04', '24:00:00'),
+			exception('2026-11-02', 'cancelled', '2026-11-04', '18:30:15'),
+			// Un déplacement ne change pas : les deux, toujours.
+			exception('2026-11-02', 'moved', null, '18:30'),
+			exception('2026-11-02', 'moved', null, null)
+		];
+		for (const statement of refusees) {
+			const state = await sqlStateOfFailure(() =>
+				withOrg(app, asAdmin(org), (tx) => tx.execute(statement))
+			);
+			expect(state).toBe(SQLSTATE.checkViolation);
+		}
+
+		// Acceptées, puis annulées avec la transaction : rien ne reste.
+		const ACCEPTEES = 'exceptions acceptées, annulées par le test';
+		const acceptees = [
+			exception('2026-11-09', 'cancelled', '2026-11-11', '18:30'),
+			exception('2026-11-16', 'cancelled', null, null),
+			exception('2026-11-23', 'moved', '2026-11-25', '18:30')
+		];
+		const issue = await messageOfFailure(() =>
+			withOrg(app, asAdmin(org), async (tx) => {
+				for (const statement of acceptees) {
+					expect(allRows(await tx.execute(statement))).toHaveLength(1);
+				}
+				throw new Error(ACCEPTEES);
+			})
+		);
+		expect(issue).toBe(ACCEPTEES);
+	});
+
 	it('refuses a blank title, a blank action and an adjustment beyond two hours', async () => {
 		const statements = [
 			sql`insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
