@@ -345,3 +345,64 @@ describe('l’onglet des prières, un jour qui reçoit une session du vendredi',
 		);
 	});
 });
+
+/**
+ * Étape 20 (C2 et C4) : une session du vendredi déplacée à un autre jour, puis annulée là, reste à sa
+ * nouvelle date, annulée, à sa nouvelle heure. Ce jour-là n'est pas un vendredi : elle s'écrivait
+ * après l'iqama, sans nom visible, comme une heure de plus. Elle s'écrit comme une session venue d'un
+ * vendredi, nommée, à sa place dans l'ordre des heures, barrée, avec « Session annulée ». Son
+ * vendredi d'origine, le 25.09.2026, est passé : l'onglet ne le montre pas.
+ */
+describe('l’onglet des prières, une session du vendredi déplacée puis annulée (étape 20)', () => {
+	const annuleeLeJeudi = (langue: Langue): Proprietes => ({
+		langue,
+		today: JEUDI,
+		jours: [
+			{
+				date: JEUDI,
+				heures: HEURES,
+				vendredi: [
+					{
+						id: 's1',
+						start: '13:00',
+						status: 'cancelled',
+						movedTo: null,
+						originalDate: '2026-09-25'
+					}
+				]
+			},
+			{ date: VENDREDI, heures: HEURES, vendredi: prevues }
+		],
+		sessions: SESSIONS
+	});
+
+	it('names it on its new day, struck through, at its place in time, with « Session annulée »', () => {
+		const html = rendre(annuleeLeJeudi('fr'));
+		expect(caseDuDhuhr(html, 0)).toBe('Prière du vendredi : 13:00 Session annulée 13:05 13:15');
+		expect(iqamaDuDhuhr(html)).toBe('Prière du vendredi : 13:00 Session annulée 13:15');
+		expect(html.match(/<s>[^<]*<\/s>/g)).toEqual([
+			'<s>Prière du vendredi : 13:00</s>',
+			'<s>Prière du vendredi : 13:00</s>'
+		]);
+		// Le vendredi suivant garde ses trois sessions, et rien ne dit qu'une session y a lieu le jeudi.
+		expect(caseDuDhuhr(html, 1)).toBe('13:05 12:30 13:45 15:00');
+		const aides = [...html.matchAll(/<p class="aide[^"]*">([^<]*)<\/p>/g)].map(
+			(trouve) => trouve[1]
+		);
+		expect(aides).not.toContain(
+			'Quand une prière du vendredi est déplacée à un autre jour, la case du Dhuhr de ce jour-là la donne aussi, avec son nom et sa date d’origine.'
+		);
+	});
+
+	it('says it in the language of the page', () => {
+		expect(caseDuDhuhr(rendre(annuleeLeJeudi('en')), 0)).toBe(
+			'Friday prayer: 13:00 Session cancelled 13:05 13:15'
+		);
+		expect(caseDuDhuhr(rendre(annuleeLeJeudi('it')), 0)).toBe(
+			'Preghiera del venerdì: 13:00 Turno annullato 13:05 13:15'
+		);
+		expect(caseDuDhuhr(rendre(annuleeLeJeudi('ar')), 0)).toBe(
+			'صلاة الجمعة: 13:00 موعد ملغى 13:05 13:15'
+		);
+	});
+});

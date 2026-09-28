@@ -2252,6 +2252,27 @@ describe('une séance et une session déplacées puis annulées, sur la page pub
 			]);
 		}
 	);
+
+	it.each(LANGUES)(
+		'names the Friday session in the Dhuhr box of its new day, struck through, before the adhan, in %s',
+		async (langue) => {
+			const { html } = await servir(`${base(langue, SLUG_ANNULEE)}?vue=prieres`);
+			const semaine = lignes(html, 'semaine');
+			const dates = Array.from({ length: 7 }, (_, pas) => addDays(today, pas));
+			for (const [index, date] of dates.entries()) {
+				expect(semaine[index]?.[2], date).toBe(
+					date === arrivee
+						? `${VENDREDI_SEULE[langue]('13:00')} ${SESSION_ANNULEE[langue]} ${HEURES.dhuhr} ${IQAMAS.dhuhr}`
+						: date === VENDREDI
+							? `${HEURES.dhuhr} 12:30`
+							: `${HEURES.dhuhr} ${IQAMAS.dhuhr}`
+				);
+			}
+			// Elle n'a pas lieu : l'aide qui dit qu'une session venue d'un vendredi s'écrit là n'est pas
+			// montrée.
+			expect(aides(html)).not.toContain(AIDE_VENUE[langue]);
+		}
+	);
 });
 
 // ---------------------------------------------------------------------------------------------

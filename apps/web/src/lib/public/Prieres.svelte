@@ -19,6 +19,11 @@
 	// lot 4) : elle se lisait comme une troisième heure en gras, sans nom, après l'iqama même quand elle
 	// venait avant l'adhan. Une aide le dit, quand le cas se présente.
 	//
+	// L'état d'une session s'écrit avec son propre nom, « Session annulée », « Session déplacée au … »
+	// (étape 20, C4). Une session déplacée à un autre jour puis annulée là reste à sa nouvelle date :
+	// ce jour-là, elle s'écrit comme une session venue d'un vendredi, nommée et à sa place dans l'ordre
+	// des heures, mais barrée, avec « Session annulée ». Elle n'a pas lieu : l'aide ne la compte pas.
+	//
 	// Un tableau de sept lignes et six colonnes tient sur un téléphone ; s'il ne tient pas, il défile
 	// dans son cadre, et la page ne défile jamais de côté. Chaque case dit aux lecteurs d'écran ce
 	// qu'est chacune de ses deux heures : l'œil a la phrase d'aide, l'oreille n'a que la case.
@@ -86,8 +91,8 @@
 	/**
 	 * La prière du vendredi d'un jour, dans la case du Dhuhr : les sessions qui ont lieu, celles qui
 	 * n'ont pas lieu, et si les premières remplacent l'iqama (un vendredi seulement). Un autre jour,
-	 * celles qui ont lieu sont venues d'un vendredi : elles s'ajoutent, nommées, sans prendre la place
-	 * du Dhuhr de ce jour.
+	 * les sessions sont venues d'un vendredi : elles s'ajoutent, nommées, sans prendre la place du
+	 * Dhuhr de ce jour, qu'elles y aient lieu ou qu'elles y aient été annulées ensuite (étape 20).
 	 */
 	function vendrediDu(jour: Jour) {
 		const ontLieu = jour.vendredi.filter(
@@ -101,10 +106,13 @@
 		const vendredi = weekdayFromDays(isoDateToDays(jour.date as IsoDate)) === 5;
 		return {
 			ontLieu,
-			nOntPasLieu,
+			nOntPasLieu: vendredi ? nOntPasLieu : [],
 			remplaceIqama: vendredi && ontLieu.length > 0,
 			heures: vendredi ? ontLieu.map((seance) => seance.start ?? '–') : [],
-			venues: vendredi ? [] : ontLieu
+			// Dans l'ordre de l'expansion, qui est celui des heures.
+			venues: vendredi
+				? []
+				: jour.vendredi.filter((seance) => ontLieu.includes(seance) || nOntPasLieu.includes(seance))
 		};
 	}
 
@@ -162,10 +170,13 @@
 	const unVendredi = $derived(
 		jours.some((jour) => {
 			const vendredi = vendrediDu(jour);
-			return vendredi.ontLieu.length + vendredi.nOntPasLieu.length > 0;
+			return vendredi.ontLieu.length + vendredi.nOntPasLieu.length + vendredi.venues.length > 0;
 		})
 	);
-	const uneVenue = $derived(jours.some((jour) => vendrediDu(jour).venues.length > 0));
+	/** Une session venue d'un vendredi qui a lieu : l'aide du tableau le dit. */
+	const uneVenue = $derived(
+		jours.some((jour) => vendrediDu(jour).venues.some((seance) => seance.status !== 'cancelled'))
+	);
 	/** Le vendredi où était prévue une session venue d'un autre jour, dans les mots de la vue Semaine. */
 	const origine = (seance: SeanceDuVendredi) =>
 		seance.originalDate
@@ -175,10 +186,15 @@
 
 <!-- Une session venue d'un vendredi : son nom et son heure, puis le vendredi où elle était prévue.
      L'espace entre les deux est hors du bloc `if` : Svelte retire celle qu'on écrit au début d'un
-     bloc. -->
+     bloc. Annulée ce jour-là, son nom et son heure barrés, puis « Session annulée » (étape 20). -->
 {#snippet venue(seance: SeanceDuVendredi)}
-	{mots.jumuaAt(seance.start ?? '–')}
-	{#if origine(seance)}<span class="marque">{origine(seance)}</span>{/if}
+	{#if seance.status === 'cancelled'}
+		<s>{mots.jumuaAt(seance.start ?? '–')}</s>
+		<span class="marque">{statut(seance)}</span>
+	{:else}
+		{mots.jumuaAt(seance.start ?? '–')}
+		{#if origine(seance)}<span class="marque">{origine(seance)}</span>{/if}
+	{/if}
 {/snippet}
 
 <p class="aide">{mots.prayersHelp}</p>
@@ -284,7 +300,9 @@
 										{:else if ligne.genre === 'venue'}
 											<!-- Son nom et son vendredi se lisent : une heure seule ne dirait pas ce
 											     qu'elle est. -->
-											<span class="jumua">{@render venue(ligne.seance)}</span>
+											<span class="jumua" class:retiree={ligne.seance.status === 'cancelled'}
+												>{@render venue(ligne.seance)}</span
+											>
 										{:else}
 											<span class="jumua retiree"
 												><span class="pour-lecteur">{`${mots.jumua} `}</span><s
