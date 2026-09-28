@@ -166,6 +166,8 @@
  * - 19-cours-seance-barree : sur la page publique d'un cours, la séance annulée reste, barrée.
  * - 19-cours-sans-js : le formulaire d'un cours sans JavaScript, le choix d'une prière envoyé heures
  *   vides, et « après une prière » qui laisse partir 0 minute comme 180.
+ * - 19-cours-session-vendredi : l'adresse d'une session du vendredi sous /cours mène au 404 de
+ *   l'espace, et non au formulaire d'un cours, dont l'envoi faisait de la session un cours.
  *
  * Sur les prières :
  *
@@ -206,8 +208,8 @@
  *
  * - dans les cinq langues : 19-B12, 19-agenda-outlook, 19-annulee, 19-og-locale (la page du
  *   programme ; la page d'un cours et celle de l'abonnement en français, en anglais et en arabe),
- *   19-prieres-angle, le refus fait à la seule personne responsable (19-membres-quitter), et le
- *   programme de la semaine de 19-D4 ;
+ *   19-prieres-angle, le refus fait à la seule personne responsable (19-membres-quitter), le 404
+ *   d'une session sous /cours (19-cours-session-vendredi), et le programme de la semaine de 19-D4 ;
  * - en arabe seul : 19-B1 à 19-B11, les phrases relues ;
  * - dans deux langues ou plus, sans les cinq : 19-cours-seance-barree (français, anglais, arabe),
  *   19-titre-langue-ecran (allemand, arabe), 19-C (l'écran en français, le courriel en italien) ;
@@ -217,9 +219,11 @@
  * - en français seul : tous les autres.
  *
  * Ce que l'étape 19 a changé sans que cela se voie à l'écran n'est pas ici : la base (le journal
- * signé, les droits de lecture, la suppression réservée, le type figé, le départ permis) est
- * éprouvée par les tests de `packages/db`, et les outils (l'épreuve du PDF, l'image, le bloc de
- * site, les tests liés au temps) par leurs propres épreuves.
+ * signé, les droits de lecture, la suppression réservée, le départ permis, et le type d'une ligne
+ * de cours, figé par un déclencheur) est éprouvée par les tests de `packages/db`, et les outils
+ * (l'épreuve du PDF, l'image, le bloc de site, les tests liés au temps) par leurs propres épreuves.
+ * Du type figé, l'écran ne montre qu'une chose : une session du vendredi ne s'ouvre plus comme un
+ * cours, et 19-cours-session-vendredi le vérifie.
  *
  * ## La date figée (étape 19, D9)
  *
@@ -634,6 +638,17 @@ const TEXTES_PUBLICS = {
 	}
 };
 /**
+ * Le titre de la page d'erreur de l'espace des responsables pour une adresse qui ne mène à rien,
+ * dans chaque langue (`apps/web/src/lib/i18n/error.ts`).
+ */
+const ESPACE_INTROUVABLE = {
+	fr: 'Page introuvable',
+	de: 'Seite nicht gefunden',
+	it: 'Pagina non trovata',
+	en: 'Page not found',
+	ar: 'الصفحة غير موجودة'
+};
+/**
  * La phrase en tête des conditions, dans une autre langue que le français (retour D4,
  * `apps/web/src/lib/i18n/terms.ts`).
  */
@@ -866,6 +881,7 @@ const RETOURS_DE_L_ETAPE_19 = [
 	'19-cours-message',
 	'19-cours-seance-barree',
 	'19-cours-sans-js',
+	'19-cours-session-vendredi',
 	'19-prieres-rue',
 	'19-prieres-copie',
 	'19-prieres-periode-passee',
@@ -6874,10 +6890,64 @@ async function vendrediAnnule(page) {
 }
 
 /**
+ * Une session du vendredi n'est pas un cours (étape 19) : son adresse sous /cours, celle de la fiche
+ * d'un cours, mène à la page « Page introuvable » de l'espace, dans la langue de l'écran. Elle
+ * ouvrait le formulaire d'un cours, dont l'envoi faisait de la session un cours. L'identifiant est
+ * celui que l'écran du vendredi envoie avec chaque geste. Rien n'est envoyé : sur une ancienne
+ * image, le formulaire envoyé changerait la session en cours pour la suite du parcours. L'écran
+ * revient au français.
+ */
+async function sessionHorsDesCours(page) {
+	await ouvrir(page, '/vendredi');
+	const id =
+		(await page
+			.locator('section.session')
+			.filter({ hasText: `${VENDREDI.debut} – ${VENDREDI.fin}` })
+			.locator('input[name="courseId"]')
+			.first()
+			.getAttribute('value')) ?? '';
+	verifier(
+		`l’écran du vendredi donne l’identifiant de la session de ${VENDREDI.debut}`,
+		UUID.test(id),
+		id || 'aucun identifiant'
+	);
+	await retour('19-cours-session-vendredi', async () => {
+		const lus = {};
+		for (const langue of LANGUES) {
+			if ((await racineDit(page, 'lang')) !== langue) await choisirLaLangue(page, langue);
+			const reponse = await ouvrir(page, `/cours/${id}`);
+			lus[langue] = {
+				statut: reponse?.status() ?? 0,
+				titre: await titre(page),
+				formulaire: await page.locator('#title-fr').count()
+			};
+		}
+		verifierChaque(
+			`l’adresse /cours/<id> d’une session du vendredi mène, dans les cinq langues, au 404 de l’espace, ${LANGUES.map((langue) => `« ${ESPACE_INTROUVABLE[langue]} »`).join(', ')}, et non au formulaire d’un cours`,
+			Object.fromEntries(
+				Object.entries(lus).flatMap(([langue, lu]) => [
+					[`404 en ${langue}`, lu.statut === 404],
+					[
+						`« ${ESPACE_INTROUVABLE[langue]} » en ${langue}`,
+						lu.titre === ESPACE_INTROUVABLE[langue]
+					],
+					[`aucun formulaire de cours en ${langue}`, lu.formulaire === 0]
+				])
+			),
+			Object.entries(lus)
+				.map(([langue, lu]) => `${langue} : ${lu.statut}, « ${lu.titre} »`)
+				.join(' ; ')
+		);
+	});
+	if ((await racineDit(page, 'lang')) !== 'fr') await choisirLaLangue(page, 'fr');
+}
+
+/**
  * p. L'écran du vendredi et « À venir », ce que l'étape 19 y a corrigé, la session du vendredi
  * encore prévue à son heure. Chaque geste est défait à la fin de son bloc : l'étape m part de la
  * même session, seule, prévue à 12:30.
  *
+ * - L'adresse d'une session sous /cours : un 404, dans les cinq langues (`sessionHorsDesCours`).
  * - D2 : annuler un vendredi passé, par un formulaire modifié dans la page ; ajouter une session
  *   dans une salle supprimée entre-temps depuis un autre onglet ; publier une session supprimée
  *   entre-temps ; déplacer la session à la veille, par un formulaire modifié. Chaque fois une
@@ -6893,6 +6963,7 @@ async function vendrediAnnule(page) {
  */
 async function vendrediEtape19(page) {
 	etape('p. Le vendredi et « À venir » : ce que l’étape 19 a corrigé');
+	await sessionHorsDesCours(page);
 	const jour = VENDREDI_QUI_VIENT;
 	const contexte = page.context();
 	/** La première ligne de « Ce vendredi », celle de la session du parcours, ce jour-là. */
@@ -7929,6 +8000,7 @@ C2 | sans JavaScript, de cette position, Bienne se cherche, se coche et s’enre
 19-B7 | en arabe, après une période, l’aide de « Ajouter une période » dit que ses valeurs sont « مُعبّأة مسبقًا »
 19-prieres-copie | une période au nom de soixante signes se copie pour l’année suivante : la marque « (année suivante) » entière, le nom raccourci, soixante signes au plus
 D2 | depuis l’écran en allemand, la copie de « Winter » pour l’année suivante s’appelle « Winter (nächstes Jahr) »
+19-cours-session-vendredi | l’adresse /cours/<id> d’une session du vendredi mène, dans les cinq langues, au 404 de l’espace, « Page introuvable », « Seite nicht gefunden », « Pagina non trovata », « Page not found », « الصفحة غير موجودة », et non au formulaire d’un cours
 19-D2 | sur l’écran du vendredi, « Annuler cette session » envoyé pour le vendredi passé (formulaire modifié dans la page) est refusé en tête : « Cette session est déjà passée : … », sans confirmation
 19-membres-salle | dans Réglages, « Supprimer » sur une salle déjà supprimée depuis un autre onglet dit « Cette salle n’existe plus. », et non « Salle supprimée. »
 19-D2 | sur l’écran du vendredi, une session ajoutée dans une salle supprimée entre-temps est refusée, dans la section d’ajout, saisie gardée : « Cette salle n’existe plus : … »
