@@ -794,8 +794,12 @@ const PREUVES: {
 			const porte = await get('/', cookie);
 			expect(porte.status).toBe(303);
 			expect(porte.headers.get('location')).toBe('/conditions/accepter');
-			expect(await page200('/conditions/accepter', cookie)).toMatch(/<form\b[^>]*method="post"/);
-			const signees = await postForm('/conditions/accepter', {}, cookie);
+			const accord = formulaireDeLaPage(
+				await page200('/conditions/accepter', cookie),
+				'?/accepter'
+			);
+			expect(accord, 'le bouton qui accepte les conditions').toEqual({});
+			const signees = await postForm('/conditions/accepter?/accepter', accord ?? {}, cookie);
 			expect(signees.status).toBe(303);
 			expect(signees.headers.get('location')).toBe('/');
 			expect(titre(await page200('/', cookie))).toContain(INVITANTE.nom);

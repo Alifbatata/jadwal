@@ -1,9 +1,10 @@
 // Le départ d'une organisation, et ce que « Vos organisations » en dit à l'arrivée (étape 19).
 //
-// Une personne quitte une organisation depuis « Vos organisations », ou une responsable se retire
-// elle-même depuis l'écran Membres. Dans les deux cas, l'organisation ne lui est plus ouverte : elle
-// arrive sur « Vos organisations », avec ce paramètre, et la page affiche l'encadré qui le dit, sur
-// l'écran même où elle arrive. Le même mécanisme que pour la responsable devenue éditrice
+// Une personne quitte une organisation depuis « Vos organisations », ou, depuis l'étape 20, depuis
+// l'écran d'acceptation des conditions, sans les accepter ; une responsable se retire elle-même
+// depuis l'écran Membres. Dans tous les cas, l'organisation ne lui est plus ouverte : elle arrive sur
+// « Vos organisations », avec ce paramètre, et la page affiche l'encadré qui le dit, sur l'écran même
+// où elle arrive. Le même mécanisme que pour la responsable devenue éditrice
 // (`membres/self-editor.ts`) : un paramètre d'adresse plutôt qu'un cookie, rien à retenir, rien de
 // personnel.
 //

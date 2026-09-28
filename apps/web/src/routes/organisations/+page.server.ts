@@ -7,7 +7,8 @@
 // Depuis l'étape 19, la personne y quitte aussi une organisation, chacune de la liste, après une
 // confirmation. La base le permet depuis la migration 0066 : chacun supprime sa propre adhésion, et
 // rien de plus ; la dernière personne responsable reste retenue par son déclencheur (migration 0012).
-// Le chemin du départ est dans `leave.server.ts`.
+// Le chemin du départ est dans `leave.server.ts`, et l'écran d'acceptation des conditions le prend
+// aussi depuis l'étape 20, pour qui ne veut pas les accepter.
 //
 // Les actions rendent le nom d'une erreur, jamais sa phrase : la page l'écrit dans la langue de
 // l'espace (`i18n/organisations.ts`).

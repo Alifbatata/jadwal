@@ -4,6 +4,10 @@
 // Le texte des conditions lui-même reste en français, dans toutes les langues : c'est celui que relit
 // le juriste, et celui que chacun accepte (retour D4, ADR 0044). Dans les quatre autres langues, une
 // phrase le dit en tête de la page.
+//
+// Depuis l'étape 20, l'écran propose aussi de ne pas accepter et de quitter l'organisation. La
+// demande de confirmation et les refus reprennent les phrases de « Vos organisations »
+// (`organisations.ts`), sauf ce que doit faire la seule personne responsable, propre à cet écran.
 
 import { deDevant } from '../i18n.js';
 import type { Translations } from './space.js';
@@ -27,6 +31,13 @@ interface TermsTexts {
 	readonly otherOrganisation: string;
 	readonly accept: string;
 	readonly closedUntil: (organisation: string) => string;
+	/** Sous le bouton d'accord, le bouton secondaire de qui ne veut pas accepter (étape 20). */
+	readonly leave: string;
+	/**
+	 * Après le refus fait à la seule personne responsable qui voulait partir, ce qu'elle doit faire. La
+	 * phrase de « Vos organisations » lui dit d'ouvrir l'organisation, ce qui la ramènerait ici.
+	 */
+	readonly lastManagerWhat: string;
 }
 
 export const termsTexts: Translations<TermsTexts> = {
@@ -43,7 +54,10 @@ export const termsTexts: Translations<TermsTexts> = {
 		otherOrganisation: 'Choisir une autre organisation',
 		accept: 'J’accepte les conditions d’utilisation',
 		closedUntil: (organisation) =>
-			`Tant que vous ne les avez pas acceptées, l’espace ${deDevant(organisation)}${organisation} reste fermé.`
+			`Tant que vous ne les avez pas acceptées, l’espace ${deDevant(organisation)}${organisation} reste fermé.`,
+		leave: 'Ne pas accepter et quitter l’organisation',
+		lastManagerWhat:
+			'Une organisation garde toujours au moins une personne responsable. Pour la quitter, acceptez d’abord les conditions, puis, dans l’écran Membres, donnez le rôle de responsable à un autre membre ou invitez une personne comme responsable.'
 	},
 	de: {
 		title: 'Nutzungsbedingungen',
@@ -58,7 +72,10 @@ export const termsTexts: Translations<TermsTexts> = {
 		otherOrganisation: 'Andere Organisation wählen',
 		accept: 'Ich akzeptiere die Nutzungsbedingungen',
 		closedUntil: (organisation) =>
-			`Solange Sie sie nicht akzeptiert haben, bleibt der Bereich von ${organisation} geschlossen.`
+			`Solange Sie sie nicht akzeptiert haben, bleibt der Bereich von ${organisation} geschlossen.`,
+		leave: 'Nicht akzeptieren und Organisation verlassen',
+		lastManagerWhat:
+			'Eine Organisation behält immer mindestens eine Person in der Leitung. Um sie zu verlassen, akzeptieren Sie zuerst die Nutzungsbedingungen. Geben Sie dann auf der Seite «Mitglieder» einem anderen Mitglied die Rolle «Leitung», oder laden Sie eine Person für die Leitung ein.'
 	},
 	it: {
 		title: 'Condizioni d’uso',
@@ -73,7 +90,10 @@ export const termsTexts: Translations<TermsTexts> = {
 		otherOrganisation: 'Scegli un’altra organizzazione',
 		accept: 'Accetto le condizioni d’uso',
 		closedUntil: (organisation) =>
-			`Finché non le hai accettate, l’area di ${organisation} resta chiusa.`
+			`Finché non le hai accettate, l’area di ${organisation} resta chiusa.`,
+		leave: 'Non accettare e lascia l’organizzazione',
+		lastManagerWhat:
+			'Un’organizzazione ha sempre almeno un responsabile. Per lasciarla, accetta prima le condizioni d’uso, poi, nella pagina Membri, dai il ruolo di responsabile a un altro membro o invita una persona come responsabile.'
 	},
 	en: {
 		title: 'Terms of use',
@@ -88,7 +108,10 @@ export const termsTexts: Translations<TermsTexts> = {
 		otherOrganisation: 'Choose another organisation',
 		accept: 'I accept the terms of use',
 		closedUntil: (organisation) =>
-			`Until you have accepted them, the area of ${organisation} stays closed.`
+			`Until you have accepted them, the area of ${organisation} stays closed.`,
+		leave: 'Decline the terms and leave the organisation',
+		lastManagerWhat:
+			'An organisation always keeps at least one manager. To leave it, first accept the terms of use, then, on the Members screen, give the manager role to another member or invite someone as a manager.'
 	},
 	ar: {
 		title: 'شروط الاستخدام',
@@ -102,6 +125,9 @@ export const termsTexts: Translations<TermsTexts> = {
 		version: (date) => `الإصدار بتاريخ ${date}`,
 		otherOrganisation: 'اختيار مؤسسة أخرى',
 		accept: 'أوافق على شروط الاستخدام',
-		closedUntil: (organisation) => `ما دمت لم توافق عليها، تبقى مساحة ${organisation} مغلقة.`
+		closedUntil: (organisation) => `ما دمت لم توافق عليها، تبقى مساحة ${organisation} مغلقة.`,
+		leave: 'عدم الموافقة ومغادرة المؤسسة',
+		lastManagerWhat:
+			'تحتفظ المؤسسة دائمًا بمسؤول واحد أو أكثر. لمغادرتها، وافق أولًا على شروط الاستخدام، ثم امنح في صفحة «الأعضاء» دور المسؤول لعضو آخر أو ادعُ شخصًا بصفة مسؤول.'
 	}
 };

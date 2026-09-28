@@ -1,5 +1,6 @@
-// Quitter une organisation, depuis « Vos organisations » (étape 19). À part, pour qu'un autre écran
-// puisse proposer le même départ par le même chemin, avec les mêmes réponses.
+// Quitter une organisation : le chemin commun à « Vos organisations » (étape 19) et à l'écran
+// d'acceptation des conditions, où la personne qui ne veut pas les accepter peut partir (étape 20,
+// ADR 0044). Les deux écrans rendent donc les mêmes réponses.
 //
 // Le premier envoi ne fait rien : il rend la demande de confirmation, avec le nom de l'organisation.
 // La seule personne responsable l'apprend dès ce premier envoi : l'écran ne lui demande pas de
@@ -13,7 +14,8 @@
 // n'a plus cette organisation dans sa session, et elle arrive sur « Vos organisations » avec
 // l'encadré qui le lui dit (`departure.ts`).
 //
-// Les réponses nomment une erreur, jamais sa phrase : l'écran l'écrit dans la langue de l'espace.
+// Les réponses nomment une erreur, jamais sa phrase : chaque écran l'écrit dans la langue de
+// l'espace.
 
 import { fail, redirect } from '@sveltejs/kit';
 import { sql, withOrg, type Transaction } from '@jadwal/db';
@@ -58,11 +60,11 @@ function isLastManagerRefusal(error: unknown): boolean {
 }
 
 /**
- * L'action « quitter », sur le formulaire envoyé : `organizationId`, l'organisation que l'écran
- * nomme, et `confirm=yes` au second envoi. L'appartenance est revérifiée ici : un identifiant venu
- * du formulaire ne donne rien, et un identifiant mal formé ne désigne aucune organisation. Un départ
- * fait renvoie vers « Vos organisations » ; les autres issues rendent la réponse que l'écran affiche
- * en haut de la page.
+ * L'action « quitter » des deux écrans, sur le formulaire envoyé : `organizationId`,
+ * l'organisation que l'écran nomme, et `confirm=yes` au second envoi. L'appartenance est revérifiée
+ * ici : un identifiant venu du formulaire ne donne rien, et un identifiant mal formé ne désigne
+ * aucune organisation. Un départ fait renvoie vers « Vos organisations » ; les autres issues rendent
+ * la réponse que l'écran affiche en haut de la page.
  */
 export async function leaveOrganisation(person: SignedIn, form: FormData) {
 	const organizationId = String(form.get('organizationId') ?? '');

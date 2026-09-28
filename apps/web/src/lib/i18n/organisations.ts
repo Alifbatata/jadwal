@@ -1,6 +1,7 @@
 // Les textes de l'écran « Vos organisations » (`/organisations`) : le choix de l'organisation après la
 // connexion, les invitations reçues, et, depuis l'étape 19, le départ d'une organisation. Les noms des
-// rôles sont dans `common.ts`.
+// rôles sont dans `common.ts`. Depuis l'étape 20, l'écran d'acceptation des conditions reprend les
+// phrases du départ (`confirmLeave`, `errors`), sauf `lastManagerWhat`, qu'il a en propre (`terms.ts`).
 
 import type { Translations } from './space.js';
 
@@ -8,8 +9,9 @@ interface OrganisationsTexts {
 	readonly title: string;
 	/**
 	 * L'encadré de l'arrivée, après un départ : depuis cet écran, ou depuis Membres pour une
-	 * responsable qui s'est retirée elle-même (étape 19). Il ne nomme pas l'organisation : la base ne
-	 * la montre plus à qui l'a quittée.
+	 * responsable qui s'est retirée elle-même (étape 19), ou depuis l'écran d'acceptation des
+	 * conditions (étape 20). Il ne nomme pas l'organisation : la base ne la montre plus à qui l'a
+	 * quittée.
 	 */
 	readonly left: string;
 	readonly chooseIntro: string;
@@ -28,7 +30,10 @@ interface OrganisationsTexts {
 		readonly button: string;
 		readonly stay: string;
 	};
-	/** Après le refus fait à la seule personne responsable, ce qu'elle doit faire pour partir. */
+	/**
+	 * Après le refus fait à la seule personne responsable, ce qu'elle doit faire pour partir. L'écran
+	 * d'acceptation des conditions a sa propre phrase : « ouvrez-la » l'y ramènerait (`terms.ts`).
+	 */
 	readonly lastManagerWhat: string;
 	readonly none: string;
 	/** Devant l'adresse du compte, pour que la personne sache laquelle donner. */

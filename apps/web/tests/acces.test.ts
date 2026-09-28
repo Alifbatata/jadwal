@@ -1104,7 +1104,7 @@ describe('les rôles', () => {
 		expect(accepted.status).toBe(303);
 		// Sa première entrée dans l'espace passe par les conditions d'utilisation, comme pour toute
 		// personne invitée (ADR 0044) : elle les accepte par le formulaire de l'écran.
-		const conditions = await postForm('/conditions/accepter', {}, cookie);
+		const conditions = await postForm('/conditions/accepter?/accepter', {}, cookie);
 		expect(conditions.status).toBe(303);
 		expect(conditions.headers.get('location')).toBe('/');
 

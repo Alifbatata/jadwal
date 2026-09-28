@@ -17,8 +17,8 @@
 <svelte:head><title>{text.title} | jadwal</title></svelte:head>
 
 <!-- Ce qui vient de lui arriver, sur l'écran où elle arrive, avant tout le reste : elle a quitté une
-     organisation, ici ou depuis Membres (étape 19). Comme l'encadré de la responsable devenue
-     éditrice, dans la coquille. -->
+     organisation, ici ou depuis Membres (étape 19), ou depuis l'écran d'acceptation des conditions
+     (étape 20). Comme l'encadré de la responsable devenue éditrice, dans la coquille. -->
 {#if data.departed}
 	<p id="avis-depart" class="avis" role="status">{text.left}</p>
 {/if}
