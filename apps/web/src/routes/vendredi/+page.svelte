@@ -114,10 +114,12 @@
      écran qui en rend un, et sa seconde demande aussi : la personne ne sait pas si la communauté a
      déjà été prévenue. Une langue par bloc, la première ouverte, comme sur « À venir » : chaque bloc
      porte la langue et le sens de son texte, et le nom de chaque zone dit sa langue, dans celle de
-     l'écran. -->
+     l'écran. Le bloc a son titre, comme sur « À venir » : la navigation par titres le rencontre, et
+     il se nomme par ce titre, et non par tout le paragraphe d'aide. -->
 {#if form?.messages}
-	<section class="messages" aria-labelledby="message-aide">
-		<p id="message-aide" class="aide">{text.messageHelp}</p>
+	<section class="messages" aria-labelledby="message-titre">
+		<h2 id="message-titre">{text.messageLabel}</h2>
+		<p class="aide">{text.messageHelp}</p>
 		{#each form.messages as message, index (message.language)}
 			{@const id = `message-${message.language}`}
 			<details class="langue-du-message" open={index === 0}>

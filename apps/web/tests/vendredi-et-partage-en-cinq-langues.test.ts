@@ -3141,11 +3141,31 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 
 	/** Les messages à copier, en tête de l'écran, dans l'ordre de la page, avec leur langue. */
 	function messagesEnTete(html: string): { langue: string | undefined; texte: string }[] {
-		return zonesDeTexte(section(html, 'message-aide')).map((zone) => ({
+		return zonesDeTexte(section(html, 'message-titre')).map((zone) => ({
 			langue: attribut(zone.match(/<textarea\b[^>]*>/)?.[0] ?? '', 'lang'),
 			texte: contenu(zone)
 		}));
 	}
+
+	/**
+	 * Ce qui nomme le bloc des messages : l'élément que désigne son `aria-labelledby`, sa balise et
+	 * son texte. Un titre, comme sur « À venir », que la navigation par titres rencontre.
+	 */
+	function nomDuBlocDesMessages(html: string): { balise: string; texte: string } {
+		const bloc = html.match(/<section\b[^>]*class="messages[\s"][^>]*>/)?.[0] ?? '';
+		const id = attribut(bloc, 'aria-labelledby') ?? '';
+		const nom = html.match(new RegExp(`<([a-z0-9]+)\\b[^>]*\\sid="${id}"[^>]*>([\\s\\S]*?)</\\1>`));
+		return { balise: nom?.[1] ?? '', texte: lu(nom?.[2] ?? '') };
+	}
+
+	/** Le titre du bloc des messages, le nom des zones à copier (`messageLabel`). */
+	const TITRE_DES_MESSAGES: Record<Langue, string> = {
+		fr: 'Message à copier',
+		de: 'Nachricht zum Kopieren',
+		it: 'Messaggio da copiare',
+		en: 'Message to copy',
+		ar: 'الرسالة المراد نسخها'
+	};
 
 	beforeAll(async () => {
 		deplacement = await poserDeplacement(vendrediPasse(), jourDuDeplacement());
@@ -3273,7 +3293,7 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 					expect(reponse.status, `${langue} ${action} ${envoi.date}`).toBe(400);
 					const html = await reponse.text();
 					expect(enTete(html), `${langue} ${action} ${envoi.date}`).toEqual([phrase]);
-					expect(section(html, 'message-aide'), `${langue} ${action}`).toBe('');
+					expect(section(html, 'message-titre'), `${langue} ${action}`).toBe('');
 				}
 			}
 			expect(await exceptionsDeLaPremiere()).toEqual(avant);
@@ -3341,7 +3361,7 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 					expect(reponse.status, `${langue} ${quoi}`).toBe(409);
 					const html = await reponse.text();
 					expect(enTete(html), `${langue} ${quoi}`).toEqual([REFUS_DU_VENDREDI.changed[langue]]);
-					expect(section(html, 'message-aide'), `${langue} ${quoi}`).toBe('');
+					expect(section(html, 'message-titre'), `${langue} ${quoi}`).toBe('');
 				}
 			}
 			expect(await exceptionsDeLaPremiere()).toEqual(avant);
@@ -3421,7 +3441,7 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 					expect(enTete(html), `${langue} ${quoi}`).toEqual([
 						REFUS_DU_VENDREDI.sessionGone[langue]
 					]);
-					expect(section(html, 'message-aide'), `${langue} ${quoi}`).toBe('');
+					expect(section(html, 'message-titre'), `${langue} ${quoi}`).toBe('');
 				}
 			}
 			expect([
@@ -3468,7 +3488,7 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 					expect(reponse.status, `${langue} ${quoi}`).toBe(400);
 					const html = await reponse.text();
 					expect(enTete(html), `${langue} ${quoi}`).toEqual([phrase]);
-					expect(section(html, 'message-aide'), `${langue} ${quoi}`).toBe('');
+					expect(section(html, 'message-titre'), `${langue} ${quoi}`).toBe('');
 				}
 			}
 			expect(await exceptionsDeLaPremiere()).toEqual(avant);
@@ -3594,6 +3614,30 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 			}
 			expect(await exceptionsDeLaPremiere()).toEqual(avant);
 			expect(await lignesDuJournalDeVendredi()).toBe(journalAvant);
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await effacer(depuis);
+		}
+	});
+
+	it('names the block of messages by a heading, « Message à copier », as the upcoming screen does, in each language', async () => {
+		// La navigation par titres passait du titre de l'écran à « Première session » sans rencontrer
+		// ce bloc, et son nom était tout le paragraphe d'aide.
+		const depuis = addDays(vendrediPasse(), -14);
+		const vers = addDays(today(), 2);
+		const envoi = envoiDe(depuis, await poserDeplacement(depuis, vers), vers);
+		try {
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				// La première demande annule, les suivantes rendent le message quand même : le bloc a son
+				// titre dans les deux cas.
+				const html = await (await postForm('/vendredi?/annulerDeplacee', envoi, cookies)).text();
+				expect(nomDuBlocDesMessages(html), langue).toEqual({
+					balise: 'h2',
+					texte: TITRE_DES_MESSAGES[langue]
+				});
+				expect(messagesEnTete(html), langue).toHaveLength(5);
+			}
 		} finally {
 			await poserLangueDuCompte(RESPONSABLE, 'fr');
 			await effacer(depuis);

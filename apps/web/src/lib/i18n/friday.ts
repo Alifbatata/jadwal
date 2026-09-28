@@ -162,7 +162,8 @@ interface FridayTexts {
 	/**
 	 * Le message à copier d'une session déplacée puis annulée (étape 20, C2), le seul geste de cet
 	 * écran qui en rend un : ce qu'il est et dans quelles langues il est écrit, le nom de chaque zone
-	 * de texte pour les lecteurs d'écran, puis sa langue (« Message à copier en allemand »).
+	 * de texte pour les lecteurs d'écran, puis sa langue (« Message à copier en allemand »). Ce nom est
+	 * aussi le titre du bloc.
 	 */
 	readonly messageHelp: string;
 	readonly messageLabel: string;

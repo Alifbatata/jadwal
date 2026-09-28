@@ -211,9 +211,10 @@ Une phrase par geste, au lieu d'un « Enregistré. » unique :
 - `La session retrouve son jour et son heure habituels.`
 
 Après l'annulation d'une session déplacée dont le vendredi prévu est passé, et seulement après ce
-geste, l'écran donne le message à copier (étape 20) : `Un message à envoyer à votre communauté, par
-exemple dans WhatsApp. Il est écrit dans chaque langue de votre page publique : ouvrez une langue,
-puis copiez son texte.`, puis un repli par langue publiée, le premier ouvert, chacun avec sa zone
+geste, l'écran donne le message à copier (étape 20). Le bloc a son titre, `Message à copier`, comme
+celui d'`À venir` a le sien, puis l'aide `Un message à envoyer à votre communauté, par exemple dans
+WhatsApp. Il est écrit dans chaque langue de votre page publique : ouvrez une langue, puis copiez
+son texte.`, puis un repli par langue publiée, le premier ouvert, chacun avec sa zone
 `Message à copier`, comme sur `À venir`. Le message nomme la nouvelle date et la nouvelle heure :
 `« Prière du vendredi » : la prière du samedi 03.10.2026 à 15:00 est annulée.`, puis `Les autres
 prières du vendredi ont lieu comme d'habitude.` L'annulation ordinaire d'une session, pour ce
