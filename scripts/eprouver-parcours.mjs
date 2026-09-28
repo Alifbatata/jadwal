@@ -252,6 +252,13 @@
  * - 20-B2 : Membres en arabe, le geste de l'éditeur qui quitte une organisation, « مغادرة مؤسسة
  *   يكون عضوًا فيها ».
  *
+ * Supprimer une session du vendredi, réservé au responsable :
+ *
+ * - 20-C3 : dans Membres, « Quand les heures de prière sont activées : supprimer une prière du
+ *   vendredi » parmi les gestes réservés au responsable, et le geste de l'éditeur sans « ou la
+ *   supprimer » ; sur l'écran du vendredi, la responsable du parcours, devenue éditrice le temps de
+ *   l'étape o, ne voit aucun « Supprimer cette session », et la seconde responsable le voit.
+ *
  * L'état d'une séance, avec son propre nom :
  *
  * - 20-C4 : « Séance annulée », « Séance déplacée au … » pour un cours, « Session annulée »,
@@ -278,7 +285,7 @@
  * - en arabe seul : 20-B1 et 20-B2, les phrases relues ;
  * - en français, en allemand et en arabe : 20-C7 (la connexion en français et en allemand, Membres
  *   en français et en arabe) ;
- * - en français seul : les marques des cartes d'« À venir » (20-C4).
+ * - en français seul : 20-C3, et les marques des cartes d'« À venir » (20-C4).
  *
  * ## La date figée (étape 19, D9)
  *
@@ -513,6 +520,16 @@ const EXEMPLE_D_ADRESSE = {
 	fr: 'Exemple : prenom.nom@example.org',
 	de: 'Beispiel: vorname.name@example.org',
 	ar: 'مثال: name@example.org'
+};
+/**
+ * Dans Membres, en français (`members.ts`, étape 20, C3) : ce que l'éditeur fait d'une prière du
+ * vendredi, qui ne comprend plus de la supprimer, et le geste réservé au responsable qui la
+ * supprime, avec la condition du module des prières.
+ */
+const VENDREDI_DANS_MEMBRES = {
+	editeur:
+		'Quand les heures de prière sont activées : ajouter une prière du vendredi, la modifier, la publier, l’annuler ou la déplacer',
+	reserve: 'Quand les heures de prière sont activées : supprimer une prière du vendredi'
 };
 /** La seconde organisation de la personne invitée, où elle est éditrice. */
 const VOISINE = {
@@ -1042,7 +1059,7 @@ const RETOURS_DE_L_ETAPE_19 = [
  * relu (B1, B2), puis les questions de l'étape 19 (C2 à C7). L'en-tête du script dit ce que chacune
  * vérifie.
  */
-const RETOURS_DE_L_ETAPE_20 = ['20-B1', '20-B2', '20-C4', '20-C7'];
+const RETOURS_DE_L_ETAPE_20 = ['20-B1', '20-B2', '20-C3', '20-C4', '20-C7'];
 /** Tous les retours, dans l'ordre du tableau final. */
 const RETOURS = [...RETOURS_DE_L_ETAPE_18, ...RETOURS_DE_L_ETAPE_19, ...RETOURS_DE_L_ETAPE_20];
 /**
@@ -2551,6 +2568,33 @@ async function ceQueFaitChaqueRole(page) {
 				'les listes à l’écran': (await page.locator('#roles-aide').count()) === 1
 			},
 			`aria-describedby="${decrit}"`
+		);
+	});
+	// Supprimer une prière du vendredi est réservé au responsable depuis l'étape 20 (C3) : la liste
+	// de l'éditeur ne le promet plus, la liste réservée le dit, avec la condition du module.
+	await retour('20-C3', async () => {
+		const liste = (titre) =>
+			page
+				.locator('section', { has: page.getByRole('heading', { name: titre, exact: true }) })
+				.locator('li')
+				.evaluateAll((gestes) =>
+					gestes.map((geste) => (geste.textContent ?? '').replace(/\s+/g, ' ').trim())
+				);
+		const editeur = await liste('Ce que peut faire un éditeur');
+		const reserve = await liste('Réservé au responsable, en plus de tout ce que fait un éditeur');
+		const surLeVendredi = [...editeur, ...reserve].filter((geste) =>
+			geste.includes('prière du vendredi')
+		);
+		verifierChaque(
+			`la liste réservée au responsable dit « ${VENDREDI_DANS_MEMBRES.reserve} », et ce que peut faire un éditeur, « ${VENDREDI_DANS_MEMBRES.editeur} », sans « ou la supprimer »`,
+			{
+				'réservé au responsable': reserve.includes(VENDREDI_DANS_MEMBRES.reserve),
+				'le geste de l’éditeur, sans « ou la supprimer »': editeur.includes(
+					VENDREDI_DANS_MEMBRES.editeur
+				)
+			},
+			surLeVendredi.map((geste) => `« ${geste} »`).join(', ') ||
+				'aucun geste sur la prière du vendredi'
 		);
 	});
 	await retour('B1', async () => {
@@ -8024,6 +8068,29 @@ async function devenirEditrice(navigateur, page) {
 						: 'aucune boîte'
 				}`
 			);
+			// Éditrice, elle ne supprime plus une session du vendredi, et l'écran ne le lui propose
+			// plus ; la seconde, responsable, le voit sur chaque session (étape 20, C3).
+			await retour('20-C3', async () => {
+				await ouvrir(page, '/vendredi');
+				await ouvrir(seconde, '/vendredi');
+				const sessions = await page.locator('section.session').count();
+				const pourLEditrice = await page.locator('form[action="?/supprimer"]').count();
+				const repliDeLEditrice = await page
+					.getByText('Supprimer cette session', { exact: true })
+					.count();
+				const pourLaResponsable = await seconde.locator('form[action="?/supprimer"]').count();
+				const sessionsDeLaResponsable = await seconde.locator('section.session').count();
+				verifierChaque(
+					'sur l’écran du vendredi, une éditrice ne voit aucun « Supprimer cette session », et la responsable le voit sur chaque session',
+					{
+						'l’écran du vendredi, avec sa session': chemin(page) === '/vendredi' && sessions > 0,
+						'rien à supprimer pour l’éditrice': pourLEditrice === 0 && repliDeLEditrice === 0,
+						'« Supprimer cette session » pour la responsable':
+							sessionsDeLaResponsable > 0 && pourLaResponsable === sessionsDeLaResponsable
+					},
+					`${sessions} session(s) ; ${pourLEditrice} suppression(s) offerte(s) à l’éditrice, ${pourLaResponsable} à la responsable`
+				);
+			});
 			// La seconde responsable lui rend son rôle.
 			await ouvrir(seconde, '/membres');
 			await envoyer(
@@ -8359,6 +8426,7 @@ B3 | sous le choix du rôle, ce que peut faire un éditeur, et ce qui est réser
 B3 | ce que peut faire un éditeur ne promet pas de supprimer un cours : « Créer un cours, le modifier et le publier »
 19-D3 | la liste réservée au responsable dit « Supprimer un cours »
 B3 | le choix du rôle renvoie à ces deux listes pour les lecteurs d’écran
+20-C3 | la liste réservée au responsable dit « Quand les heures de prière sont activées : supprimer une prière du vendredi », et ce que peut faire un éditeur, « Quand les heures de prière sont activées : ajouter une prière du vendredi, la modifier, la publier, l’annuler ou la déplacer », sans « ou la supprimer »
 B1 | l’invitation dit, sous l’adresse, un exemple de la bonne forme
 20-C7 | l’invitation donne sous l’adresse l’exemple « prenom.nom@example.org », sur un domaine réservé aux exemples
 D3 | une invitation envoyée depuis l’écran en allemand part en allemand, <html lang="de"> compris
@@ -8581,6 +8649,7 @@ A2 | sur l’écran du vendredi, une carte restée ouverte dans un autre onglet,
 B1 | avec JavaScript, le nom et la formule d’accueil tapés au clavier, puis une autre couleur : c’est ce qui a été tapé qui s’enregistre
 19-membres-confirmations | sur sa propre ligne, « Donner le rôle d’éditeur » ne change rien au premier envoi : en haut, « Vous allez vous donner le rôle d’éditeur. », « Prendre le rôle d’éditeur » et « Ne rien changer »
 B3 | une responsable qui se donne le rôle d’éditeur arrive sur « À venir », où une phrase, visible sans défiler, lui dit ce qui s’est passé et comment retrouver ses écrans
+20-C3 | sur l’écran du vendredi, une éditrice ne voit aucun « Supprimer cette session », et la responsable le voit sur chaque session
 19-membres-confirmations | sur la ligne d’un autre membre, « Donner le rôle de responsable » demande d’abord de confirmer : « Vous allez donner le rôle de responsable à cette personne : <adresse> », ce qu’elle pourra faire, et « Donner ce rôle »
 19-membres-confirmations | sur la ligne d’un autre membre, « Retirer de l’organisation » demande d’abord de confirmer : « Vous allez retirer cette personne de l’organisation : <adresse> », « Retirer cette personne », et « Ne rien changer », qui la laisse membre
 19-membres-depart | une responsable qui se retire elle-même, depuis Membres, confirme d’abord, puis arrive sur « Vos organisations », où un encadré, avant le titre et visible sans défiler, dit qu’elle a quitté l’organisation
