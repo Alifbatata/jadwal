@@ -5,7 +5,7 @@
  *
  *     pnpm style
  *
- * Deux règles, et elles ne visent que la prose du service :
+ * Trois règles, et elles ne visent que la prose du service :
  *
  * 1. **Aucun tiret cadratin** (U+2014, « — »). Il ne se tape pas sur un clavier suisse romand, il se
  *    coupe mal en petite largeur, et un responsable qui recopie une phrase dans WhatsApp le voit
@@ -14,6 +14,15 @@
  *    l'air sérieuse : elles allongent la phrase sans rien lui ajouter. « Notamment » ne dit pas quoi,
  *    « essentiel » ne dit pas pourquoi, et « ainsi » relie deux idées que l'auteur n'a pas reliées.
  *    Les retirer oblige à écrire ce qu'on voulait dire.
+ * 3. **Aucune adresse d'exemple hors d'un domaine réservé aux exemples** (RFC 2606), dans toutes les
+ *    langues : `example.org`, `example.com`, `example.net`, ou un nom sous `.test`, `.example`,
+ *    `.invalid` ou `.localhost`. Ces domaines n'appartiennent à personne. `exemple.ch` ou
+ *    `beispiel.ch`, eux, peuvent être achetés, et le courriel d'une personne qui recopie l'exemple y
+ *    arriverait (étape 20). Cette règle lit aussi les maquettes (`docs/maquettes.md`,
+ *    `docs/maquettes/`), d'où les écrans recopient leurs exemples. Les seules adresses réelles
+ *    admises sont celles que publient les conditions d'utilisation : le contact de l'exploitant. Le
+ *    même garde, dans `apps/web/src/lib/i18n/dictionaries.test.ts`, lit aussi ce que rendent les
+ *    fonctions des dictionnaires de l'espace.
  *
  * ## Ce qu'il regarde, et ce qu'il ne regarde pas
  *
@@ -78,7 +87,38 @@ const SURFACES = [
 	{ motif: 'apps/web/src/lib/i18n/*.ts', genre: 'chaines', sauf: /\.test\.ts$/ }
 ];
 
+/**
+ * Relues pour la troisième règle seulement. Les maquettes s'adressent aux développeurs, et le tiret
+ * cadratin n'y gêne personne ; mais c'est d'elles que les écrans recopient leurs exemples.
+ */
+const SURFACES_DES_ADRESSES = [
+	{ motif: 'docs/maquettes.md', genre: 'document' },
+	{ motif: 'docs/maquettes/*.md', genre: 'document' }
+];
+
 const racine = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
+
+/** Une adresse électronique écrite dans un texte ; le groupe est son domaine. */
+const ADRESSE = /[\p{L}\p{N}._%+-]+@((?:[\p{L}\p{N}-]+\.)+[\p{L}\p{N}-]+)/gu;
+
+/** Les domaines réservés aux exemples, la même règle que `dictionaries.test.ts`. */
+function domaineReserve(domaine) {
+	const nom = domaine.toLowerCase();
+	return (
+		/(?:^|\.)example\.(?:org|com|net)$/.test(nom) ||
+		/\.(?:test|example|invalid|localhost)$/.test(nom)
+	);
+}
+
+/**
+ * Les adresses réelles : celles que publient les conditions d'utilisation, où l'exploitant donne son
+ * contact. Elles sont lues dans le texte même, pour ne pas les recopier ici.
+ */
+const ADRESSES_REELLES = new Set(
+	[...readFileSync(`${racine}/docs/CONDITIONS.md`, 'utf8').matchAll(ADRESSE)].map((trouve) =>
+		trouve[0].toLowerCase()
+	)
+);
 
 function fichiersDe(motif) {
 	const sortie = execFileSync('git', ['ls-files', '--', motif], { cwd: racine, encoding: 'utf8' });
@@ -164,24 +204,41 @@ function position(texte, index) {
 const trouvailles = [];
 let relus = 0;
 
-for (const surface of SURFACES) {
-	for (const chemin of fichiersDe(surface.motif)) {
-		if (surface.sauf?.test(chemin)) continue;
-		const brut = readFileSync(`${racine}/${chemin}`, 'utf8');
-		const texte = EXTRACTEURS[surface.genre](brut);
-		relus += 1;
+for (const [surfaces, style] of [
+	[SURFACES, true],
+	[SURFACES_DES_ADRESSES, false]
+]) {
+	for (const surface of surfaces) {
+		for (const chemin of fichiersDe(surface.motif)) {
+			if (surface.sauf?.test(chemin)) continue;
+			const brut = readFileSync(`${racine}/${chemin}`, 'utf8');
+			const texte = EXTRACTEURS[surface.genre](brut);
+			relus += 1;
 
-		let index = texte.indexOf(CADRATIN);
-		while (index !== -1) {
-			trouvailles.push({ chemin, ...position(texte, index), quoi: 'tiret cadratin (U+2014)' });
-			index = texte.indexOf(CADRATIN, index + 1);
-		}
-		for (const trouve of texte.matchAll(MOTIF_MOTS)) {
-			trouvailles.push({
-				chemin,
-				...position(texte, trouve.index ?? 0),
-				quoi: `« ${trouve[0]} »`
-			});
+			if (style) {
+				let index = texte.indexOf(CADRATIN);
+				while (index !== -1) {
+					trouvailles.push({ chemin, ...position(texte, index), quoi: 'tiret cadratin (U+2014)' });
+					index = texte.indexOf(CADRATIN, index + 1);
+				}
+				for (const trouve of texte.matchAll(MOTIF_MOTS)) {
+					trouvailles.push({
+						chemin,
+						...position(texte, trouve.index ?? 0),
+						quoi: `« ${trouve[0]} »`
+					});
+				}
+			}
+			for (const trouve of texte.matchAll(ADRESSE)) {
+				if (domaineReserve(trouve[1] ?? '') || ADRESSES_REELLES.has(trouve[0].toLowerCase())) {
+					continue;
+				}
+				trouvailles.push({
+					chemin,
+					...position(texte, trouve.index ?? 0),
+					quoi: `adresse d'exemple hors d'un domaine réservé : ${trouve[0]}`
+				});
+			}
 		}
 	}
 }
@@ -203,6 +260,7 @@ for (const t of trouvailles) {
 process.stderr.write(
 	`\n  Le tiret cadratin ne se tape pas sur un clavier suisse romand et devient un carré quand on\n` +
 		`  recopie la phrase ailleurs. Les mots de la liste allongent sans rien ajouter : les retirer\n` +
-		`  oblige à écrire ce qu'on voulait dire.\n\n`
+		`  oblige à écrire ce qu'on voulait dire. Une adresse d'exemple s'écrit sur example.org (ou un\n` +
+		`  autre domaine réservé aux exemples) : exemple.ch peut appartenir à quelqu'un.\n\n`
 );
 process.exit(1);

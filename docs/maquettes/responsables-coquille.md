@@ -65,7 +65,10 @@ adresse électronique : vous recevrez un lien pour vous connecter. Il n'y a pas 
    de gauche à droite, même en arabe. Depuis l'étape 20, les adresses d'exemple de tous les écrans
    s'écrivent sur `example.org`, un domaine réservé aux exemples (RFC 2606), qui n'appartient à
    personne : `vorname.name@example.org`, `nome.cognome@example.org`, `first.last@example.org` et
-   `name@example.org` dans les autres langues. Un test des dictionnaires refuse tout autre domaine.
+   `name@example.org` dans les autres langues. Deux gardes refusent tout autre domaine : le test des
+   dictionnaires de l'espace, qui lit aussi ce que rendent leurs fonctions, et le contrôle de style
+   (`pnpm style`, lancé par `pnpm lint`), qui lit les écrans, les courriels, les documents écrits
+   pour les responsables et les maquettes.
 4. Le bouton `Recevoir un lien de connexion`.
 5. `Pas encore invité ? Demandez à la personne responsable de votre organisation de vous inviter.`
 6. Le lien `Lire les conditions d'utilisation`.

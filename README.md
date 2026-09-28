@@ -70,7 +70,7 @@ pnpm test:temps                 # les tests liés au temps, à part (CONTRIBUTIN
 pnpm tests:test                 # éprouve le tableau de ces deux commandes, dans un espace jetable
 pnpm test:tz                    # suite de core rejouée sous quatre fuseaux de machine
 pnpm build                      # build de chaque paquet
-pnpm style                      # tiret cadratin et chevilles dans les textes lus par les gens
+pnpm style                      # tiret cadratin, chevilles et adresses d'exemple dans les textes lus
 pnpm orthographe                # LanguageTool hors réseau, en conteneur, en cinq langues
 pnpm image:test                 # l'image de production, construite, lancée et interrogée (Docker)
 pnpm parcours:test              # le parcours d'une organisation dans Chrome, et axe (Docker, Chrome)

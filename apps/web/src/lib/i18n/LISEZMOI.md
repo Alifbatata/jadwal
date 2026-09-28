@@ -73,7 +73,9 @@ droite à gauche. Les pages publiques ont les leurs dans `../i18n.ts`.
 - Allemand de Suisse : `ss`, jamais la lettre eszett, et le vouvoiement. Italien : le tutoiement,
   comme la page publique. Anglais britannique : `programme`, `organisation`, `cancelled`. Arabe :
   chiffres latins (ADR 0007).
-- Pas de tiret cadratin, et aucun des mots que refuse `scripts/controle-style.mjs`.
+- Pas de tiret cadratin, et aucun des mots que refuse `scripts/controle-style.mjs`. Une adresse
+  d'exemple s'écrit sur `example.org`, jamais sur un domaine qui peut appartenir à quelqu'un
+  (`exemple.ch`) : le même contrôle le refuse, comme `dictionaries.test.ts`.
 - Chaque texte se range sous la clé de sa langue : le correcteur relit ce qui est sous `de:` en
   allemand. Pas de ternaire sur la langue, et aucun code de langue écrit dans un texte : le correcteur
   le lirait comme un mot.
