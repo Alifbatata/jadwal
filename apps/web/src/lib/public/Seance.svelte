@@ -4,8 +4,15 @@
 	// où elle va ou d'où elle vient.
 	//
 	// Déplacée le même jour, à une autre heure, elle dit un changement d'heure (relecture du lot 4) :
-	// « Déplacé à 20:30 » au départ, « Nouvelle heure » et l'heure d'avant à l'arrivée. Elle disait
-	// « Déplacé au » suivi du jour même, et « Date exceptionnelle » pour une date qui n'avait pas changé.
+	// « Séance déplacée à 20:30 » au départ, « Nouvelle heure » et l'heure d'avant à l'arrivée. Elle
+	// disait « Déplacé au » suivi du jour même, et « Date exceptionnelle » pour une date qui n'avait
+	// pas changé.
+	//
+	// L'état s'écrit avec son propre nom, jamais accordé au titre libre qui le précède (étape 20, C4) :
+	// « Séance annulée », « Séance déplacée au … » pour un cours, « Session annulée », « Session
+	// déplacée au … » pour une session du vendredi. Une séance déplacée puis annulée est annulée à sa
+	// nouvelle date, à sa nouvelle heure, et partie ailleurs à sa date d'origine : c'est ce que rend
+	// l'expansion, et ce composant n'a rien de plus à en savoir.
 	import { longDate, t, type Langue } from '$lib/i18n.js';
 	import { heureDeSeance, languesEnClair } from './affichage.js';
 	import type { IsoDate } from '@jadwal/core';
@@ -38,6 +45,11 @@
 	}: { seance: SeanceVue; langue: Langue; lienCours: (courseId: string) => string } = $props();
 
 	const mots = $derived(t(langue));
+	/** Les mots de l'état : ceux d'une session pour la prière du vendredi, ceux d'une séance sinon. */
+	const session = $derived(seance.kind === 'jumua');
+	const annulee = $derived(session ? mots.cancelledJumua : mots.cancelled);
+	const deplaceeAu = $derived(session ? mots.movedToJumua : mots.movedTo);
+	const deplaceeA = $derived(session ? mots.movedToTimeJumua : mots.movedToTime);
 	const barree = $derived(seance.status === 'cancelled' || seance.status === 'moved_away');
 	/** Déplacée sans changer de jour : seule l'heure a changé. */
 	const memeJour = $derived(
@@ -50,18 +62,15 @@
 	<p class="ligne">
 		<span class="heure">{heureDeSeance(langue, seance)}</span>
 		<a class="titre" href={lienCours(seance.courseId)}>{seance.title}</a>
-		<!-- Une session du vendredi est une prière : « Annulée », accordée (27.09.2026). -->
-		{#if seance.status === 'cancelled'}<span class="marque"
-				>{seance.kind === 'jumua' ? mots.cancelledJumua : mots.cancelled}</span
-			>{/if}
+		{#if seance.status === 'cancelled'}<span class="marque">{annulee}</span>{/if}
 		{#if seance.status === 'moved_here'}
 			<span class="marque">{memeJour ? mots.newTime : mots.exceptionalDate}</span>
 		{/if}
 		{#if seance.status === 'moved_away' && seance.movedTo}
 			<span class="marque"
 				>{memeJour
-					? mots.movedToTime(seance.movedTo.start)
-					: mots.movedTo(longDate(langue, seance.movedTo.date as IsoDate))}</span
+					? deplaceeA(seance.movedTo.start)
+					: deplaceeAu(longDate(langue, seance.movedTo.date as IsoDate))}</span
 			>
 		{/if}
 	</p>

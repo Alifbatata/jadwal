@@ -561,8 +561,7 @@ docs/adr/0048-agenda-selon-l-appareil.md | FR_SPELLING_RULE | subscribe
 # montre ainsi : deux messages d'erreur qui disent chacun « peut-être » ; un bouton, « Retirer cette
 # personne », et la phrase qui suit ; le titre « Vos organisations » et la phrase qui suit ; le nom
 # « Google Agenda », sans point ; les marques d'une séance, « annulée », « déplacée », …,
-# « brouillon » ; « Abgesagt » et « Cancelled », la marque d'un cours puis celle d'une session du
-# vendredi, deux clés voisines. « aujourd'hui ou un jour suivant » : « ou » est la conjonction.
+# « brouillon ». « aujourd'hui ou un jour suivant » : « ou » est la conjonction.
 # « it is always up to date » : attribut, sans traits d'union en anglais britannique.
 apps/web/src/lib/i18n/courses.ts | FR_REPEATEDWORDS_PEUT_ÊTRE | peut-être
 apps/web/src/lib/i18n/friday.ts | OU | ou
@@ -570,8 +569,6 @@ apps/web/src/lib/i18n/members.ts | PRONOMS_PERSONNELS_MINUSCULE | personne Vous
 apps/web/src/lib/i18n/organisations.ts | PRONOMS_PERSONNELS_MINUSCULE | organisations Vous
 apps/web/src/lib/i18n/upcoming.ts | AGREEMENT_POSTPONED_ADJ | brouillon
 apps/web/src/lib/i18n.ts | POINT | Agenda
-apps/web/src/lib/i18n.ts | GERMAN_WORD_REPEAT_RULE | Abgesagt Abgesagt
-apps/web/src/lib/i18n.ts | ENGLISH_WORD_REPEAT_RULE | Cancelled Cancelled
 apps/web/src/lib/i18n.ts | UP_TO_DATE_HYPHEN | up to date
 
 # L'arabe. Les mots que le chef de projet a donnés mot pour mot, gardés tels qu'il les a écrits :

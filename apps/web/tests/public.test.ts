@@ -462,11 +462,11 @@ describe('la page d’un cours montre une séance annulée, barrée (étape 19, 
 	}
 
 	const MARQUE: Record<string, { cours: string; vendredi: string }> = {
-		fr: { cours: 'Annulé', vendredi: 'Annulée' },
-		de: { cours: 'Abgesagt', vendredi: 'Abgesagt' },
-		it: { cours: 'Annullato', vendredi: 'Annullata' },
-		en: { cours: 'Cancelled', vendredi: 'Cancelled' },
-		ar: { cours: 'ملغى', vendredi: 'ملغاة' }
+		fr: { cours: 'Séance annulée', vendredi: 'Session annulée' },
+		de: { cours: 'Termin abgesagt', vendredi: 'Durchgang abgesagt' },
+		it: { cours: 'Lezione annullata', vendredi: 'Turno annullato' },
+		en: { cours: 'Session cancelled', vendredi: 'Session cancelled' },
+		ar: { cours: 'حصة ملغاة', vendredi: 'موعد ملغى' }
 	};
 
 	beforeAll(async () => {
@@ -528,7 +528,7 @@ describe('la page d’un cours montre une séance annulée, barrée (étape 19, 
 	);
 
 	it.each(['fr', 'de', 'it', 'en', 'ar'])(
-		'says « Annulée » for a cancelled Friday session, as the week view does, in %s',
+		'says « Session annulée » for a cancelled Friday session, as the week view does, in %s',
 		async (langue) => {
 			const base = langue === 'fr' ? `/m/${SLUG_ANNULEE}` : `/m/${SLUG_ANNULEE}/${langue}`;
 			const html = await (await fetch(`${origin}${base}/cours/${vendrediId}`)).text();

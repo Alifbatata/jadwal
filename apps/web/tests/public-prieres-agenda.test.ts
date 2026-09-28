@@ -77,6 +77,13 @@ const NOM_VEILLE = 'Association du vendredi avancé';
  */
 const SLUG_HEURES = 'heures-changees';
 const NOM_HEURES = 'Association des heures changées';
+/**
+ * Une organisation dont une séance de cours et une session du vendredi ont été déplacées, puis
+ * annulées à leur nouvelle date (étape 20, C2 et C4) : l'annulation garde le jour et l'heure
+ * d'arrivée. Leurs dates prévues sont passées pour les deux serveurs de ce fichier.
+ */
+const SLUG_ANNULEE = 'deplacee-puis-annulee';
+const NOM_ANNULEE = 'Association des séances annulées ailleurs';
 const DEBUT = '2026-09-07';
 
 /**
@@ -146,8 +153,8 @@ const COURS = {
 /** Les titres, d'un seul mot : un titre saisi par l'organisation n'est pas un texte à traduire. */
 const TITRES = { deplace: 'Tajwid', quotidien: 'Hifz' };
 /**
- * Un cours ordinaire du vendredi changé, annulé demain : sa marque reste au masculin, « Annulé »,
- * quand celle d'une session du vendredi s'accorde avec la prière.
+ * Un cours ordinaire du vendredi changé, annulé demain : sa marque est celle d'une séance,
+ * « Séance annulée », quand celle d'une session du vendredi est « Session annulée » (étape 20, C4).
  */
 const COURS_ANNULE = { id: newId(), titre: 'Nahw' };
 
@@ -161,6 +168,20 @@ const TITRES_HEURES = { parti: 'Fiqh', memeJour: 'Sira', priere: 'Tafsir', vendr
 const DEMAIN_EN_HUIT = addDays(DEMAIN, 7);
 /** La session du vendredi des heures changées : le vendredi, elle tient lieu d'iqama du Dhuhr. */
 const SESSION_HEURES = { ordre: 1, debut: '13:30', fin: '14:10', langues: ['fr'] };
+
+/**
+ * Déplacées puis annulées : le cours du mardi 06.10.2026, parti au samedi 10.10.2026 à 20:30, et la
+ * session du vendredi 02.10.2026, partie au même samedi à 13:00, avant l'adhan du Dhuhr.
+ */
+const ANNULEE_AILLEURS = {
+	cours: newId(),
+	titre: 'Adab',
+	origineDuCours: addDays(today, -3),
+	origineDeLaSession: addDays(VENDREDI, -7),
+	arrivee: DEMAIN
+};
+/** La session du vendredi de cette organisation, posée avec les autres : sa page de cours. */
+let sessionAnnuleeAilleurs = '';
 
 /** Les agents de vrais navigateurs, les mêmes que ceux du test unitaire de la détection. */
 const AGENTS = {
@@ -298,6 +319,7 @@ beforeAll(async () => {
 	const venue = newId();
 	const veille = newId();
 	const heures = newId();
+	const annulee = newId();
 	await maintenance(async (tx) => {
 		await tx.execute(sql`
 			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
@@ -333,7 +355,13 @@ beforeAll(async () => {
 			values (${heures}, ${SLUG_HEURES}, ${NOM_HEURES}, ${FUSEAU}, 'fr',
 				array['fr','de','it','en','ar'], true)
 		`);
-		for (const avecPrieres of [organisation, change, venue, veille, heures]) {
+		await tx.execute(sql`
+			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+				"enabled_language", "prayer_module")
+			values (${annulee}, ${SLUG_ANNULEE}, ${NOM_ANNULEE}, ${FUSEAU}, 'fr',
+				array['fr','de','it','en','ar'], true)
+		`);
+		for (const avecPrieres of [organisation, change, venue, veille, heures, annulee]) {
 			for (let pas = -2; pas <= 10; pas += 1) {
 				await tx.execute(sql`
 					insert into "prayer_day" ("organization_id", "date", "fajr", "dhuhr", "asr", "maghrib",
@@ -495,6 +523,34 @@ beforeAll(async () => {
 				(${newId()}, ${heures}, ${COURS_HEURES.vendredi}, ${VENDREDI}, 'moved', ${VENDREDI},
 					'16:00')
 		`);
+		// Déplacées puis annulées : chaque annulation garde le jour et l'heure où la séance était
+		// partie, comme « Annuler cette séance » l'écrit sur la carte d'une séance déplacée dont la
+		// date prévue est passée (migration 0075).
+		await tx.execute(sql`
+			insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",
+				"source_language", "recurrence_kind", "recurrence_weekday", "recurrence_interval",
+				"recurrence_anchor_date", "timing_kind", "timing_start", "timing_end", "starts_on")
+			values (${ANNULEE_AILLEURS.cours}, ${annulee}, 'published', 'open', array['fr'], 'fr',
+				'weekly', ${sql.raw(`array[${jourDe(ANNULEE_AILLEURS.origineDuCours)}]::smallint[]`)}, 1,
+				${DEBUT}, 'fixed', '18:00', '19:00', ${DEBUT})
+		`);
+		await tx.execute(sql`
+			insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
+			values (${newId()}, ${annulee}, ${ANNULEE_AILLEURS.cours}, 'fr', ${ANNULEE_AILLEURS.titre})
+		`);
+		sessionAnnuleeAilleurs = await sessionDuVendredi(
+			annulee,
+			SESSIONS[0] as (typeof SESSIONS)[number]
+		);
+		await tx.execute(sql`
+			insert into "session_exception" ("id", "organization_id", "course_id", "date", "kind",
+				"to_date", "to_start")
+			values
+				(${newId()}, ${annulee}, ${ANNULEE_AILLEURS.cours}, ${ANNULEE_AILLEURS.origineDuCours},
+					'cancelled', ${ANNULEE_AILLEURS.arrivee}, '20:30'),
+				(${newId()}, ${annulee}, ${sessionAnnuleeAilleurs},
+					${ANNULEE_AILLEURS.origineDeLaSession}, 'cancelled', ${ANNULEE_AILLEURS.arrivee}, '13:00')
+		`);
 		await tx.execute(sql`delete from "rate_limit"`);
 	});
 });
@@ -569,31 +625,41 @@ const VENDREDI_SEULE: Record<Langue, (heure: string) => string> = {
 	ar: (heure) => `صلاة الجمعة: ${heure}`
 };
 /**
- * Les mots de la vue Semaine, repris par l'onglet pour une session qui n'a pas lieu. Une session du
- * vendredi est une prière : « Annulée », « Annullata », « ملغاة », accordés au féminin (décision du
- * chef de projet, 27.09.2026). L'allemand et l'anglais n'ont qu'une forme.
+ * Les mots de la vue Semaine, repris par l'onglet pour une session qui n'a pas lieu. L'état s'écrit
+ * avec son propre nom, jamais accordé au titre (décision du chef de projet, étape 20, C4) : une
+ * session est une fois où la prière du vendredi a lieu, une séance une fois où un cours a lieu. Ils
+ * remplacent « Annulée », accordé à la prière depuis le 27.09.2026, et « Annulé » pour un cours.
  */
-const ANNULE: Record<Langue, string> = {
-	fr: 'Annulée',
-	de: 'Abgesagt',
-	it: 'Annullata',
-	en: 'Cancelled',
-	ar: 'ملغاة'
+const SESSION_ANNULEE: Record<Langue, string> = {
+	fr: 'Session annulée',
+	de: 'Durchgang abgesagt',
+	it: 'Turno annullato',
+	en: 'Session cancelled',
+	ar: 'موعد ملغى'
 };
-/** Le mot d'un cours annulé, qui ne change pas. */
-const COURS_ANNULE_MARQUE: Record<Langue, string> = {
-	fr: 'Annulé',
-	de: 'Abgesagt',
-	it: 'Annullato',
-	en: 'Cancelled',
-	ar: 'ملغى'
+/** Le mot d'une séance de cours annulée. */
+const SEANCE_ANNULEE: Record<Langue, string> = {
+	fr: 'Séance annulée',
+	de: 'Termin abgesagt',
+	it: 'Lezione annullata',
+	en: 'Session cancelled',
+	ar: 'حصة ملغاة'
 };
-const DEPLACE_AU: Record<Langue, (date: string) => string> = {
-	fr: (date) => `Déplacé au ${date}`,
-	de: (date) => `Verschoben auf ${date}`,
-	it: (date) => `Spostato a ${date}`,
-	en: (date) => `Moved to ${date}`,
-	ar: (date) => `نُقل إلى ${date}`
+/** Au départ, la mention d'une session du vendredi partie à un autre jour. */
+const SESSION_DEPLACEE_AU: Record<Langue, (date: string) => string> = {
+	fr: (date) => `Session déplacée au ${date}`,
+	de: (date) => `Durchgang verschoben auf ${date}`,
+	it: (date) => `Turno spostato a ${date}`,
+	en: (date) => `Session moved to ${date}`,
+	ar: (date) => `موعد منقول إلى ${date}`
+};
+/** Au départ, la mention d'une séance de cours partie à un autre jour. */
+const SEANCE_DEPLACEE_AU: Record<Langue, (date: string) => string> = {
+	fr: (date) => `Séance déplacée au ${date}`,
+	de: (date) => `Termin verschoben auf ${date}`,
+	it: (date) => `Lezione spostata a ${date}`,
+	en: (date) => `Session moved to ${date}`,
+	ar: (date) => `حصة منقولة إلى ${date}`
 };
 /** « Initialement le vendredi 02.10.2026 » : le mot de la vue Semaine pour une séance venue d'ailleurs. */
 const ORIGINE: Record<Langue, (date: string) => string> = {
@@ -791,11 +857,11 @@ describe('l’onglet des prières, quand le module est allumé (C4)', () => {
 				expect(statut).toBe(200);
 				const semaine = lignes(html, 'semaine');
 				const dates = Array.from({ length: 7 }, (_, pas) => addDays(horloge.jour, pas));
-				const deplace = DEPLACE_AU[langue](jourEtDate(langue, VENDREDI_SUIVANT));
+				const deplace = SESSION_DEPLACEE_AU[langue](jourEtDate(langue, VENDREDI_SUIVANT));
 				for (const [index, date] of dates.entries()) {
 					expect(semaine[index]?.[2], date).toBe(
 						date === VENDREDI
-							? `${HEURES.dhuhr} 14:15 12:30 ${ANNULE[langue]} 15:00 ${deplace}`
+							? `${HEURES.dhuhr} 14:15 12:30 ${SESSION_ANNULEE[langue]} 15:00 ${deplace}`
 							: `${HEURES.dhuhr} ${IQAMAS.dhuhr}`
 					);
 				}
@@ -804,7 +870,7 @@ describe('l’onglet des prières, quand le module est allumé (C4)', () => {
 				const seule = VENDREDI_SEULE[langue];
 				expect(lignes(html, 'aujourdhui')[1]?.[2]).toBe(
 					horloge.jour === VENDREDI
-						? `${seule('14:15')} ${seule('12:30')} ${ANNULE[langue]} ${seule('15:00')} ${deplace}`
+						? `${seule('14:15')} ${seule('12:30')} ${SESSION_ANNULEE[langue]} ${seule('15:00')} ${deplace}`
 						: IQAMAS.dhuhr
 				);
 				// Le bloc du bas, sans date, garde le rythme habituel.
@@ -815,23 +881,24 @@ describe('l’onglet des prières, quand le module est allumé (C4)', () => {
 						(trouve) => lu(trouve[1] ?? '').split(' ')[0]
 					)
 				).toEqual(['12:30', '13:45', '15:00']);
-				// Et la vue Semaine de la même page dit la même chose, le mot exact, dans sa marque :
-				// « Annulé » passait pour « Annulée » tant qu'on cherchait le mot dans le texte. Le cours
-				// ordinaire annulé le lendemain du vendredi garde le sien.
+				// Et la vue Semaine de la même page dit la même chose, le mot exact, dans la marque de
+				// chaque ligne : « Annulé » passait pour « Annulée » tant qu'on cherchait le mot dans le
+				// texte. Le cours ordinaire annulé le lendemain du vendredi a le sien, celui d'une séance
+				// (étape 20, C4).
 				const marquesDe = (page: string) =>
 					[...page.matchAll(/<span class="marque[^"]*">([^<]*)<\/span>/g)].map(
 						(trouve) => trouve[1]
 					);
 				const vueSemaine = (await servir(base(langue, SLUG_CHANGE), {}, horloge.depuis)).html;
-				const marques = marquesDe(vueSemaine);
-				expect(marques, langue).toContain(ANNULE[langue]);
-				expect(marques, langue).toContain(COURS_ANNULE_MARQUE[langue]);
-				expect(
-					marques.filter(
-						(marque) => marque === ANNULE[langue] || marque === COURS_ANNULE_MARQUE[langue]
-					),
-					langue
-				).toHaveLength(2);
+				const session = seancesDuJour(vueSemaine, langue, VENDREDI).find(
+					(seance) => seance.barree && seance.ligne.startsWith('12:30')
+				);
+				expect(session?.marques, langue).toEqual([SESSION_ANNULEE[langue]]);
+				const cours = seancesDuJour(vueSemaine, langue, DEMAIN).find((seance) =>
+					seance.ligne.includes(COURS_ANNULE.titre)
+				);
+				expect(cours?.barree, langue).toBe(true);
+				expect(cours?.marques, langue).toEqual([SEANCE_ANNULEE[langue]]);
 				expect(visibleText(vueSemaine)).toContain(deplace);
 				// La vue Mois, au jour choisi, montre ses séances par le même composant : le même mot
 				// (reprise 1). La grille ne porte que des nombres ; les marques sont celles de ce jour.
@@ -841,7 +908,7 @@ describe('l’onglet des prières, quand le module est allumé (C4)', () => {
 					horloge.depuis
 				);
 				expect(vueMois.statut).toBe(200);
-				expect(marquesDe(vueMois.html), langue).toContain(ANNULE[langue]);
+				expect(marquesDe(vueMois.html), langue).toContain(SESSION_ANNULEE[langue]);
 			}
 		);
 	}
@@ -881,7 +948,7 @@ describe('l’onglet des prières, quand le module est allumé (C4)', () => {
 				);
 				const dates = Array.from({ length: 7 }, (_, pas) => addDays(cas.horloge.jour, pas));
 				const venue = `${VENDREDI_SEULE[langue]('13:00')} ${ORIGINE[langue](jourEtDate(langue, VENDREDI))}`;
-				const partie = DEPLACE_AU[langue](jourEtDate(langue, cas.vers));
+				const partie = SESSION_DEPLACEE_AU[langue](jourEtDate(langue, cas.vers));
 				const semaine = lignes(html, 'semaine');
 				expect(dates).toContain(cas.vers);
 				for (const [index, date] of dates.entries()) {
@@ -929,7 +996,7 @@ describe('l’onglet des prières, quand le module est allumé (C4)', () => {
 		expect(aides(avec.html)).toEqual(aides(sans.html));
 		// Et ces lignes portent les sessions : deux tableaux vides seraient égaux aussi.
 		const dhuhr = lignes(avec.html, 'semaine').map((ligne) => ligne[2]);
-		expect(dhuhr.join(' | ')).toContain(`14:15 12:30 ${ANNULE.fr}`);
+		expect(dhuhr.join(' | ')).toContain(`14:15 12:30 ${SESSION_ANNULEE.fr}`);
 	});
 
 	// En arabe, « اليوم » était à la fois le titre « Aujourd'hui » et l'en-tête de la colonne des sept
@@ -1838,7 +1905,7 @@ describe('la vue « Tous les cours » et une séance déplacée ailleurs', () =>
 
 	it('still shows it in the week view, struck through, with where it went', async () => {
 		const { html } = await servir(base('en'));
-		expect(visibleText(html)).toContain(`Moved to ${jourEtDate('en', APRES_DEMAIN)}`);
+		expect(visibleText(html)).toContain(`Session moved to ${jourEtDate('en', APRES_DEMAIN)}`);
 	});
 });
 
@@ -1847,12 +1914,20 @@ describe('la vue « Tous les cours » et une séance déplacée ailleurs', () =>
 // ---------------------------------------------------------------------------------------------
 
 /** Au départ, la mention d'une séance déplacée le même jour : sa nouvelle heure. */
-const DEPLACE_A: Record<Langue, (heure: string) => string> = {
-	fr: (heure) => `Déplacé à ${heure}`,
-	de: (heure) => `Verschoben auf ${heure}`,
-	it: (heure) => `Spostato alle ${heure}`,
-	en: (heure) => `Moved to ${heure}`,
-	ar: (heure) => `نُقل إلى الساعة ${heure}`
+const SESSION_DEPLACEE_A: Record<Langue, (heure: string) => string> = {
+	fr: (heure) => `Session déplacée à ${heure}`,
+	de: (heure) => `Durchgang verschoben auf ${heure}`,
+	it: (heure) => `Turno spostato alle ${heure}`,
+	en: (heure) => `Session moved to ${heure}`,
+	ar: (heure) => `موعد منقول إلى الساعة ${heure}`
+};
+/** La même mention pour une séance de cours (étape 20, C4). */
+const SEANCE_DEPLACEE_A: Record<Langue, (heure: string) => string> = {
+	fr: (heure) => `Séance déplacée à ${heure}`,
+	de: (heure) => `Termin verschoben auf ${heure}`,
+	it: (heure) => `Lezione spostata alle ${heure}`,
+	en: (heure) => `Session moved to ${heure}`,
+	ar: (heure) => `حصة منقولة إلى الساعة ${heure}`
 };
 /** À l'arrivée, la marque, à la place de « Date exceptionnelle », puisque la date n'a pas changé. */
 const NOUVELLE_HEURE: Record<Langue, string> = {
@@ -1919,16 +1994,18 @@ describe('une séance déplacée le même jour, à une autre heure', () => {
 			);
 			const depart = jumua.find((seance) => seance.barree && seance.ligne.startsWith('13:45'));
 			const arrivee = jumua.find((seance) => !seance.barree && seance.ligne.startsWith('14:15'));
-			expect(depart?.marques, langue).toEqual([DEPLACE_A[langue]('14:15')]);
+			expect(depart?.marques, langue).toEqual([SESSION_DEPLACEE_A[langue]('14:15')]);
 			expect(arrivee?.marques, langue).toEqual([NOUVELLE_HEURE[langue]]);
 			expect(arrivee?.details, langue).toContain(INITIALEMENT_A[langue]('13:45'));
-			// Plus de « Déplacé au » vers le jour même, ni de « Initialement le » ce jour-là.
+			// Plus de « Session déplacée au » vers le jour même, ni de « Initialement le » ce jour-là.
 			const texte = visibleText(html);
-			expect(texte).not.toContain(DEPLACE_AU[langue](jourEtDate(langue, VENDREDI)));
+			expect(texte).not.toContain(SESSION_DEPLACEE_AU[langue](jourEtDate(langue, VENDREDI)));
 			expect(texte).not.toContain(ORIGINE[langue](jourEtDate(langue, VENDREDI)));
 			// Un vrai changement de date garde ses mots : la session partie au vendredi suivant.
 			const partie = jumua.find((seance) => seance.barree && seance.ligne.startsWith('15:00'));
-			expect(partie?.marques).toEqual([DEPLACE_AU[langue](jourEtDate(langue, VENDREDI_SUIVANT))]);
+			expect(partie?.marques).toEqual([
+				SESSION_DEPLACEE_AU[langue](jourEtDate(langue, VENDREDI_SUIVANT))
+			]);
 			// Et un cours de l'autre organisation, déplacé de demain à après-demain, au départ et à
 			// l'arrivée.
 			const autre = (await servir(base(langue))).html;
@@ -1938,7 +2015,9 @@ describe('une séance déplacée le même jour, à une autre heure', () => {
 			const arrive = seancesDuJour(autre, langue, APRES_DEMAIN).find(
 				(seance) => !seance.barree && seance.ligne.includes(TITRES.deplace)
 			);
-			expect(parti?.marques).toEqual([DEPLACE_AU[langue](jourEtDate(langue, APRES_DEMAIN))]);
+			expect(parti?.marques).toEqual([
+				SEANCE_DEPLACEE_AU[langue](jourEtDate(langue, APRES_DEMAIN))
+			]);
 			expect(arrive?.marques).toEqual([DATE_EXCEPTIONNELLE[langue]]);
 			expect(arrive?.details).toContain(ORIGINE[langue](jourEtDate(langue, DEMAIN)));
 		}
@@ -1975,6 +2054,15 @@ describe('une séance déplacée le même jour, à une autre heure', () => {
 				);
 			const sira = arrivee(TITRES_HEURES.memeJour, '16:00');
 			expect(sira?.marques, langue).toEqual([NOUVELLE_HEURE[langue]]);
+			// Au départ, la séance de cours déplacée le même jour dit sa nouvelle heure avec son nom de
+			// séance (étape 20, C4).
+			const siraPartie = demain.find(
+				(seance) =>
+					seance.barree &&
+					seance.ligne.startsWith('15:00') &&
+					seance.ligne.includes(TITRES_HEURES.memeJour)
+			);
+			expect(siraPartie?.marques, langue).toEqual([SEANCE_DEPLACEE_A[langue]('16:00')]);
 			expect(sira?.details, langue).toContain(INITIALEMENT_A[langue]('15:00'));
 			expect(sira?.details, langue).not.toContain(INITIALEMENT_A[langue]('12:30'));
 			// Le cours qui suit le Maghrib : l'heure que la prière lui donnait ce jour-là.
@@ -1985,7 +2073,9 @@ describe('une séance déplacée le même jour, à une autre heure', () => {
 			const parti = demain.find(
 				(seance) => seance.barree && seance.ligne.includes(TITRES_HEURES.parti)
 			);
-			expect(parti?.marques).toEqual([DEPLACE_AU[langue](jourEtDate(langue, APRES_DEMAIN))]);
+			expect(parti?.marques).toEqual([
+				SEANCE_DEPLACEE_AU[langue](jourEtDate(langue, APRES_DEMAIN))
+			]);
 		}
 	);
 
@@ -2052,6 +2142,119 @@ describe('une séance déplacée le même jour, à une autre heure', () => {
 });
 
 // ---------------------------------------------------------------------------------------------
+// Étape 20 (C2 et C4) : une séance déplacée, puis annulée à sa nouvelle date
+// ---------------------------------------------------------------------------------------------
+
+describe('une séance et une session déplacées puis annulées, sur la page publique (étape 20)', () => {
+	// Leur date prévue est passée : elles ne peuvent plus y revenir, et chacune reste à sa nouvelle
+	// date, barrée, à sa nouvelle heure, avec le nom de son état : « Séance annulée » pour un cours,
+	// « Session annulée » pour la prière du vendredi. À sa date d'origine, rien ne la dit annulée ni
+	// ne la montre comme si elle avait lieu : elle y est partie ailleurs, barrée.
+	const { cours, titre, origineDuCours, origineDeLaSession, arrivee } = ANNULEE_AILLEURS;
+
+	/** Les lignes barrées d'une page de cours, telles que l'œil les lit. */
+	const barrees = (html: string) =>
+		[...html.matchAll(/<li\b[^>]*\bclass="[^"]*\bbarree\b[^"]*"[^>]*>([\s\S]*?)<\/li>/g)].map(
+			(trouve) => lu(trouve[1] ?? '')
+		);
+
+	it.each(LANGUES)(
+		'shows each at its new date and time in the week view, struck through, with the word of its kind, in %s',
+		async (langue) => {
+			const { statut, html } = await servir(base(langue, SLUG_ANNULEE));
+			expect(statut).toBe(200);
+			const samedi = seancesDuJour(html, langue, arrivee);
+			expect(
+				samedi.map((seance) => ({
+					barree: seance.barree,
+					ligne: seance.ligne,
+					marques: seance.marques
+				}))
+			).toEqual([
+				{
+					barree: true,
+					ligne: `13:00 – 13:40 Jumu’a ${SESSION_ANNULEE[langue]}`,
+					marques: [SESSION_ANNULEE[langue]]
+				},
+				{
+					barree: true,
+					ligne: `20:30 – 21:30 ${titre} ${SEANCE_ANNULEE[langue]}`,
+					marques: [SEANCE_ANNULEE[langue]]
+				}
+			]);
+			// Ce sont les seules lignes barrées des sept jours : la session de ce vendredi et la séance
+			// du mardi suivant ont lieu, à leur heure.
+			const semaine = Array.from({ length: 7 }, (_, pas) =>
+				seancesDuJour(html, langue, addDays(today, pas))
+			).flat();
+			expect(semaine.filter((seance) => seance.barree)).toHaveLength(2);
+			expect(semaine.filter((seance) => !seance.barree).map((seance) => seance.ligne)).toEqual([
+				'12:30 – 13:10 Jumu’a',
+				`18:00 – 19:00 ${titre}`
+			]);
+		}
+	);
+
+	it.each(LANGUES)(
+		'says at its planned date only where it went, struck through, in the month view, in %s',
+		async (langue) => {
+			const jourDuMois = async (date: IsoDate) =>
+				seancesDuJour(
+					(
+						await servir(
+							`${base(langue, SLUG_ANNULEE)}?vue=mois&mois=${date.slice(0, 7)}&jour=${date}`
+						)
+					).html,
+					langue,
+					date
+				);
+			const ailleurs = jourEtDate(langue, arrivee);
+			expect(await jourDuMois(origineDuCours)).toEqual([
+				expect.objectContaining({
+					barree: true,
+					ligne: `18:00 – 19:00 ${titre} ${SEANCE_DEPLACEE_AU[langue](ailleurs)}`,
+					marques: [SEANCE_DEPLACEE_AU[langue](ailleurs)]
+				})
+			]);
+			expect(await jourDuMois(origineDeLaSession)).toEqual([
+				expect.objectContaining({
+					barree: true,
+					ligne: `12:30 – 13:10 Jumu’a ${SESSION_DEPLACEE_AU[langue](ailleurs)}`,
+					marques: [SESSION_DEPLACEE_AU[langue](ailleurs)]
+				})
+			]);
+			// Et à sa nouvelle date, la même chose que la vue Semaine.
+			expect((await jourDuMois(arrivee)).map((seance) => seance.marques)).toEqual([
+				[SESSION_ANNULEE[langue]],
+				[SEANCE_ANNULEE[langue]]
+			]);
+		}
+	);
+
+	it.each(LANGUES)(
+		'lists each among the next sessions of its course page, struck through, at its new date and time, in %s',
+		async (langue) => {
+			const jour = jourEtDate(langue, arrivee);
+			const pageDuCours = await servir(`${base(langue, SLUG_ANNULEE)}/cours/${cours}`);
+			expect(pageDuCours.statut).toBe(200);
+			expect(barrees(pageDuCours.html)).toEqual([
+				`${jour} 20:30 – 21:30 ${SEANCE_ANNULEE[langue]}`
+			]);
+			expect(prochainesDuCours(pageDuCours.html)[0]).toBe(
+				`${jour} 20:30 – 21:30 ${SEANCE_ANNULEE[langue]}`
+			);
+			const pageDeLaSession = await servir(
+				`${base(langue, SLUG_ANNULEE)}/cours/${sessionAnnuleeAilleurs}`
+			);
+			expect(pageDeLaSession.statut).toBe(200);
+			expect(barrees(pageDeLaSession.html)).toEqual([
+				`${jour} 13:00 – 13:40 ${SESSION_ANNULEE[langue]}`
+			]);
+		}
+	);
+});
+
+// ---------------------------------------------------------------------------------------------
 // D2 et A3 : chaque écran touché, dans les cinq langues
 // ---------------------------------------------------------------------------------------------
 
@@ -2072,7 +2275,8 @@ const PERMIS = [
 
 const ECRANS: { nom: string; suite: string; visiteur: Visiteur; slug?: string }[] = [
 	{ nom: 'prayer tab', suite: '?vue=prieres', visiteur: {} },
-	// Un vendredi changé : les mots « Annulé » et « Déplacé au », repris de la vue Semaine.
+	// Un vendredi changé : les mots « Session annulée » et « Session déplacée au », repris de la vue
+	// Semaine.
 	{ nom: 'prayer tab of a changed Friday', suite: '?vue=prieres', visiteur: {}, slug: SLUG_CHANGE },
 	// Et sa vue Semaine : une session déplacée le même jour dit un changement d'heure.
 	{ nom: 'week of a changed Friday', suite: '', visiteur: {}, slug: SLUG_CHANGE },

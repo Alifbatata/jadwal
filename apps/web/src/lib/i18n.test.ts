@@ -29,11 +29,16 @@ describe('l’italien devant un jour de la semaine', () => {
 	// « Inizialmente il » mettaient un article masculin devant « domenica », qui est féminin
 	// (relecture du lot 7). Sans article, la phrase vaut pour les sept jours. Le chef de projet a
 	// tranché au 27.09.2026 : « Spostato a domenica … » et « Inizialmente domenica … », et non
-	// « In origine: », qui ne se lisait pas comme une phrase.
+	// « In origine: », qui ne se lisait pas comme une phrase. Depuis l'étape 20 (C4), l'état porte
+	// son nom : « Lezione spostata a domenica … », « Turno spostato a domenica … », toujours sans
+	// article.
 	it('says a session was moved, and where it originally was, with no article before the day', () => {
 		const it_ = t('it');
 		expect(it_.movedTo(longDate('it', '2026-10-04' as IsoDate))).toBe(
-			'Spostato a domenica 04.10.2026'
+			'Lezione spostata a domenica 04.10.2026'
+		);
+		expect(it_.movedToJumua(longDate('it', '2026-10-04' as IsoDate))).toBe(
+			'Turno spostato a domenica 04.10.2026'
 		);
 		expect(it_.originallyOn(longDate('it', '2026-10-04' as IsoDate))).toBe(
 			'Inizialmente domenica 04.10.2026'
@@ -43,7 +48,8 @@ describe('l’italien devant un jour de la semaine', () => {
 		for (const [index, jour] of jours.entries()) {
 			const date = `2026-10-${String(5 + index).padStart(2, '0')}` as IsoDate;
 			const ecrite = `${jour} ${String(5 + index).padStart(2, '0')}.10.2026`;
-			expect(it_.movedTo(longDate('it', date))).toBe(`Spostato a ${ecrite}`);
+			expect(it_.movedTo(longDate('it', date))).toBe(`Lezione spostata a ${ecrite}`);
+			expect(it_.movedToJumua(longDate('it', date))).toBe(`Turno spostato a ${ecrite}`);
 			expect(it_.originallyOn(longDate('it', date))).toBe(`Inizialmente ${ecrite}`);
 		}
 	});
@@ -146,7 +152,10 @@ describe('les phrases arabes relues', () => {
 	});
 
 	it('says a session was moved, and where it originally was', () => {
-		expect(ar.movedTo('الخميس 1 أكتوبر')).toBe('نُقل إلى الخميس 1 أكتوبر');
+		// Depuis l'étape 20 (C4), l'état porte son nom : « حصة » pour une séance, « موعد » pour une
+		// session du vendredi.
+		expect(ar.movedTo('الخميس 1 أكتوبر')).toBe('حصة منقولة إلى الخميس 1 أكتوبر');
+		expect(ar.movedToJumua('الخميس 1 أكتوبر')).toBe('موعد منقول إلى الخميس 1 أكتوبر');
 		expect(ar.originallyOn('الخميس 1 أكتوبر')).toBe('كان مقرّرًا في الخميس 1 أكتوبر');
 	});
 
@@ -255,7 +264,7 @@ describe('les autres langues ne bougent pas', () => {
 	});
 
 	it('keeps the other sentences that the Arabic review touched', () => {
-		expect(t('fr').movedTo('x')).toBe('Déplacé au x');
+		expect(t('fr').movedTo('x')).toBe('Séance déplacée au x');
 		expect(t('de').originallyOn('x')).toBe('Ursprünglich am x');
 		expect(t('it').sermonIn('x')).toBe('sermone in x');
 		expect(t('fr').shortWeekdays).toEqual(['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim']);
@@ -325,7 +334,7 @@ describe('l’anglais britannique', () => {
 	});
 
 	it('spells the British way', () => {
-		expect(en.cancelled).toBe('Cancelled');
+		expect(en.cancelled).toBe('Session cancelled');
 		expect(en.backToProgramme).toBe('Back to the programme');
 		expect(en.rhythms['fortnightly']).toBe('Every fortnight');
 		expect(en.views).toEqual({
@@ -361,6 +370,82 @@ describe('l’anglais britannique', () => {
 		expect(en.shortWeekdays).toEqual(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
 		expect(en.months[8]).toBe('September');
 	});
+});
+
+describe('l’état d’une séance ou d’une session, avec son propre nom (étape 20, C4)', () => {
+	// Décision du chef de projet : l'état s'écrit avec son propre nom, jamais accordé à un titre
+	// libre. Une séance est une fois où un cours a lieu, une session une fois où la prière du
+	// vendredi a lieu. Les mots sont ceux des marques d'« À venir » (`i18n/upcoming.ts`). Ils
+	// remplacent « Annulé », et « Annulée » accordé à « Prière du vendredi » (étape 19), qui se
+	// lisait aussi après un titre choisi par l'organisation, même masculin.
+	const ATTENDUS: Record<
+		Langue,
+		{
+			cancelled: string;
+			cancelledJumua: string;
+			movedTo: string;
+			movedToJumua: string;
+			movedToTime: string;
+			movedToTimeJumua: string;
+		}
+	> = {
+		fr: {
+			cancelled: 'Séance annulée',
+			cancelledJumua: 'Session annulée',
+			movedTo: 'Séance déplacée au samedi 10.10.2026',
+			movedToJumua: 'Session déplacée au samedi 10.10.2026',
+			movedToTime: 'Séance déplacée à 20:30',
+			movedToTimeJumua: 'Session déplacée à 20:30'
+		},
+		de: {
+			cancelled: 'Termin abgesagt',
+			cancelledJumua: 'Durchgang abgesagt',
+			movedTo: 'Termin verschoben auf Samstag, 10.10.2026',
+			movedToJumua: 'Durchgang verschoben auf Samstag, 10.10.2026',
+			movedToTime: 'Termin verschoben auf 20:30',
+			movedToTimeJumua: 'Durchgang verschoben auf 20:30'
+		},
+		it: {
+			cancelled: 'Lezione annullata',
+			cancelledJumua: 'Turno annullato',
+			movedTo: 'Lezione spostata a sabato 10.10.2026',
+			movedToJumua: 'Turno spostato a sabato 10.10.2026',
+			movedToTime: 'Lezione spostata alle 20:30',
+			movedToTimeJumua: 'Turno spostato alle 20:30'
+		},
+		en: {
+			cancelled: 'Session cancelled',
+			cancelledJumua: 'Session cancelled',
+			movedTo: 'Session moved to Saturday 10.10.2026',
+			movedToJumua: 'Session moved to Saturday 10.10.2026',
+			movedToTime: 'Session moved to 20:30',
+			movedToTimeJumua: 'Session moved to 20:30'
+		},
+		ar: {
+			cancelled: 'حصة ملغاة',
+			cancelledJumua: 'موعد ملغى',
+			movedTo: 'حصة منقولة إلى السبت 10.10.2026',
+			movedToJumua: 'موعد منقول إلى السبت 10.10.2026',
+			movedToTime: 'حصة منقولة إلى الساعة 20:30',
+			movedToTimeJumua: 'موعد منقول إلى الساعة 20:30'
+		}
+	};
+
+	it.each(LANGUES)(
+		'names the state of a session of a course, and of a Friday session, in %s',
+		(langue) => {
+			const mots = t(langue);
+			const samedi = longDate(langue, '2026-10-10' as IsoDate);
+			expect({
+				cancelled: mots.cancelled,
+				cancelledJumua: mots.cancelledJumua,
+				movedTo: mots.movedTo(samedi),
+				movedToJumua: mots.movedToJumua(samedi),
+				movedToTime: mots.movedToTime('20:30'),
+				movedToTimeJumua: mots.movedToTimeJumua('20:30')
+			}).toEqual(ATTENDUS[langue]);
+		}
+	);
 });
 
 /**

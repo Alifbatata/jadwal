@@ -463,12 +463,12 @@ describe('les sessions du vendredi', () => {
 		expect((await postForm('/vendredi?/annuler', { courseId, date })).status).toBe(200);
 
 		const html = await page(`/m/${SLUG}`);
-		expect(html).toContain('Annulé');
+		expect(html).toContain('Session annulée');
 		// Le bloc du haut décrit le rythme habituel : il ne porte pas l'exception.
 		expect(blocDuVendredi(html)).toHaveLength(2);
 
 		expect((await postForm('/vendredi?/retablir', { courseId, date })).status).toBe(200);
-		expect(await page(`/m/${SLUG}`)).not.toContain('Annulé');
+		expect(await page(`/m/${SLUG}`)).not.toContain('Session annulée');
 	});
 
 	it('se déplace, et apparaît alors aux deux dates', async () => {
@@ -493,7 +493,7 @@ describe('les sessions du vendredi', () => {
 		).toBe(200);
 
 		const html = await page(`/m/${SLUG}`);
-		expect(html).toContain('Déplacé au');
+		expect(html).toContain('Session déplacée au');
 		expect(html).toContain('Date exceptionnelle');
 		expect(heuresAffichees(html)).toContain('15:00 – 15:40');
 

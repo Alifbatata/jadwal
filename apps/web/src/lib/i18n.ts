@@ -61,15 +61,22 @@ interface Dictionnaire {
 	readonly rhythms: Record<string, string>;
 	readonly today: string;
 	readonly period: (from: string, to: string) => string;
+	/**
+	 * « Séance annulée » : l'état s'écrit avec son propre nom, jamais accordé au titre qui le précède
+	 * (décision du chef de projet, étape 20, C4). Une séance est une fois où un cours a lieu : `Termin`,
+	 * `lezione`, `session`, `حصة`, les mots des marques d'« À venir ».
+	 */
 	readonly cancelled: string;
 	/**
-	 * « Annulée » : une session du vendredi annulée, accordée à « Prière du vendredi » là où la langue
-	 * accorde (décision du chef de projet, 27.09.2026). La vue Semaine, la vue Mois (toutes deux par
-	 * `Seance.svelte`) et l'onglet Prières le disent de cette façon ; un cours garde `cancelled`. La page d'une
-	 * session aussi, dans ses prochaines dates, où une séance annulée figure barrée (étape 19, lot 2).
+	 * « Session annulée » : une session est une fois où la prière du vendredi a lieu, `Durchgang`,
+	 * `turno`, `session`, `موعد`. La vue Semaine, la vue Mois (toutes deux par `Seance.svelte`),
+	 * l'onglet Prières et la page d'une session, dans ses prochaines dates, le disent de cette façon.
+	 * Cette décision remplace celle de l'étape 19, « Annulée » accordé à « Prière du vendredi », qui se
+	 * lisait aussi après un titre choisi par l'organisation, même masculin.
 	 */
 	readonly cancelledJumua: string;
 	readonly exceptionalDate: string;
+	/** « Séance déplacée au samedi 03.10.2026 », au départ d'une séance partie à un autre jour. */
 	readonly movedTo: (date: string) => string;
 	readonly originallyOn: (date: string) => string;
 	/**
@@ -80,6 +87,10 @@ interface Dictionnaire {
 	readonly movedToTime: (time: string) => string;
 	readonly newTime: string;
 	readonly originallyAt: (time: string) => string;
+	/** `movedTo` pour une session du vendredi : « Session déplacée au … » (étape 20, C4). */
+	readonly movedToJumua: (date: string) => string;
+	/** `movedToTime` pour une session du vendredi : « Session déplacée à 13:30 » (étape 20, C4). */
+	readonly movedToTimeJumua: (time: string) => string;
 	readonly after: (prayer: string) => string;
 	/** « 15 min après Maghrib ». Le nombre est positif : le signe est déjà dans le choix du mot. */
 	readonly afterOffset: (offset: number, prayer: string) => string;
@@ -359,14 +370,16 @@ const fr: Dictionnaire = {
 	},
 	today: 'aujourd’hui',
 	period: (from, to) => `Du ${from} au ${to}`,
-	cancelled: 'Annulé',
-	cancelledJumua: 'Annulée',
+	cancelled: 'Séance annulée',
+	cancelledJumua: 'Session annulée',
 	exceptionalDate: 'Date exceptionnelle',
-	movedTo: (date) => `Déplacé au ${date}`,
+	movedTo: (date) => `Séance déplacée au ${date}`,
 	originallyOn: (date) => `Initialement le ${date}`,
-	movedToTime: (time) => `Déplacé à ${time}`,
+	movedToTime: (time) => `Séance déplacée à ${time}`,
 	newTime: 'Nouvelle heure',
 	originallyAt: (time) => `Initialement à ${time}`,
+	movedToJumua: (date) => `Session déplacée au ${date}`,
+	movedToTimeJumua: (time) => `Session déplacée à ${time}`,
 	after: (prayer) => `Après ${prayer}`,
 	afterOffset: (offset, prayer) => `${offset} min après ${prayer}`,
 	beforeOffset: (offset, prayer) => `${offset} min avant ${prayer}`,
@@ -523,14 +536,16 @@ const de: Dictionnaire = {
 	},
 	today: 'heute',
 	period: (from, to) => `Vom ${from} bis ${to}`,
-	cancelled: 'Abgesagt',
-	cancelledJumua: 'Abgesagt',
+	cancelled: 'Termin abgesagt',
+	cancelledJumua: 'Durchgang abgesagt',
 	exceptionalDate: 'Ausnahmetermin',
-	movedTo: (date) => `Verschoben auf ${date}`,
+	movedTo: (date) => `Termin verschoben auf ${date}`,
 	originallyOn: (date) => `Ursprünglich am ${date}`,
-	movedToTime: (time) => `Verschoben auf ${time}`,
+	movedToTime: (time) => `Termin verschoben auf ${time}`,
 	newTime: 'Neue Uhrzeit',
 	originallyAt: (time) => `Ursprünglich um ${time}`,
+	movedToJumua: (date) => `Durchgang verschoben auf ${date}`,
+	movedToTimeJumua: (time) => `Durchgang verschoben auf ${time}`,
 	after: (prayer) => `Nach ${prayer}`,
 	afterOffset: (offset, prayer) => `${offset} Min. nach ${prayer}`,
 	beforeOffset: (offset, prayer) => `${offset} Min. vor ${prayer}`,
@@ -682,16 +697,18 @@ const it: Dictionnaire = {
 	},
 	today: 'oggi',
 	period: (from, to) => `Dal ${from} al ${to}`,
-	cancelled: 'Annullato',
-	cancelledJumua: 'Annullata',
+	cancelled: 'Lezione annullata',
+	cancelledJumua: 'Turno annullato',
 	exceptionalDate: 'Data eccezionale',
 	// Sans article devant le nom du jour, qui ouvre la date longue : « al domenica » et
 	// « il domenica » seraient faux. « Inizialmente domenica … » est la phrase du chef de projet.
-	movedTo: (date) => `Spostato a ${date}`,
+	movedTo: (date) => `Lezione spostata a ${date}`,
 	originallyOn: (date) => `Inizialmente ${date}`,
-	movedToTime: (time) => `Spostato alle ${time}`,
+	movedToTime: (time) => `Lezione spostata alle ${time}`,
 	newTime: 'Nuovo orario',
 	originallyAt: (time) => `Inizialmente alle ${time}`,
+	movedToJumua: (date) => `Turno spostato a ${date}`,
+	movedToTimeJumua: (time) => `Turno spostato alle ${time}`,
 	after: (prayer) => `Dopo ${prayer}`,
 	afterOffset: (offset, prayer) => `${offset} min dopo ${prayer}`,
 	beforeOffset: (offset, prayer) => `${offset} min prima di ${prayer}`,
@@ -844,14 +861,16 @@ const en: Dictionnaire = {
 	},
 	today: 'today',
 	period: (from, to) => `From ${from} to ${to}`,
-	cancelled: 'Cancelled',
-	cancelledJumua: 'Cancelled',
+	cancelled: 'Session cancelled',
+	cancelledJumua: 'Session cancelled',
 	exceptionalDate: 'Rescheduled',
-	movedTo: (date) => `Moved to ${date}`,
+	movedTo: (date) => `Session moved to ${date}`,
 	originallyOn: (date) => `Originally on ${date}`,
-	movedToTime: (time) => `Moved to ${time}`,
+	movedToTime: (time) => `Session moved to ${time}`,
 	newTime: 'New time',
 	originallyAt: (time) => `Originally at ${time}`,
+	movedToJumua: (date) => `Session moved to ${date}`,
+	movedToTimeJumua: (time) => `Session moved to ${time}`,
 	after: (prayer) => `After ${prayer}`,
 	afterOffset: (offset, prayer) => `${offset} min after ${prayer}`,
 	beforeOffset: (offset, prayer) => `${offset} min before ${prayer}`,
@@ -1001,15 +1020,19 @@ const ar: Dictionnaire = {
 	},
 	today: 'اليوم',
 	period: (from, to) => `من ${from} إلى ${to}`,
-	cancelled: 'ملغى',
-	// « صلاة » est féminin : « ملغاة » (décision du chef de projet, 27.09.2026).
-	cancelledJumua: 'ملغاة',
+	// L'état porte son propre nom (étape 20, C4) : « حصة » pour une séance, féminin, « موعد » pour
+	// une session du vendredi, masculin, comme les marques d'« À venir ». Ces mots remplacent
+	// « ملغاة » accordé à « صلاة » (décision du chef de projet, 27.09.2026).
+	cancelled: 'حصة ملغاة',
+	cancelledJumua: 'موعد ملغى',
 	exceptionalDate: 'موعد استثنائي',
-	movedTo: (date) => `نُقل إلى ${date}`,
+	movedTo: (date) => `حصة منقولة إلى ${date}`,
 	originallyOn: (date) => `كان مقرّرًا في ${date}`,
-	movedToTime: (time) => `نُقل إلى الساعة ${time}`,
+	movedToTime: (time) => `حصة منقولة إلى الساعة ${time}`,
 	newTime: 'وقت جديد',
 	originallyAt: (time) => `كان مقرّرًا في الساعة ${time}`,
+	movedToJumua: (date) => `موعد منقول إلى ${date}`,
+	movedToTimeJumua: (time) => `موعد منقول إلى الساعة ${time}`,
 	after: (prayer) => `بعد ${prayer}`,
 	// Zéro n'est pas une phrase de minutes : c'est « après » tout court, la phrase de `after`.
 	afterOffset: (offset, prayer) =>

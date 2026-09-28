@@ -82,7 +82,9 @@ export const load: PageServerLoad = async (event) => {
 	// laisse l'heure d'avant inconnue, comme dans la vue Semaine.
 	const schedule = toSchedule(cours);
 	// Une séance annulée figure dans les prochaines dates, barrée, avec la marque de la vue Semaine
-	// (docs/maquettes/public-cours.md) : elle compte parmi les dix, à sa date (étape 19, lot 2).
+	// (docs/maquettes/public-cours.md) : elle compte parmi les dix, à sa date (étape 19, lot 2). Une
+	// séance déplacée puis annulée y figure à sa nouvelle date et à sa nouvelle heure : l'exception
+	// est lue quelle que soit sa date, et l'expansion la rend là (étape 20, C2).
 	const prochaines = nextDates(schedule, exceptions, pauses, today, PROCHAINES, {
 		includeCancelled: true
 	});
@@ -131,7 +133,7 @@ export const load: PageServerLoad = async (event) => {
 		langues: languesProposees(organisation),
 		cours: {
 			id: cours.id,
-			/** `jumua` : une séance annulée dit « Annulée », accordée à la prière, comme la vue Semaine. */
+			/** `jumua` : une séance annulée dit « Session annulée », comme la vue Semaine (étape 20, C4). */
 			kind: cours.kind,
 			title: cours.title ?? '',
 			description: cours.description,

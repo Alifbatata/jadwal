@@ -121,8 +121,10 @@
 		{:else}
 			<ul>
 				{#each data.prochaines as seance (seance.date + seance.status)}
-					<!-- Annulée, elle reste là, barrée, avec la marque de la vue Semaine : « Annulée » pour une
-					     session du vendredi, accordée à la prière (étape 19, lot 2). -->
+					<!-- Annulée, elle reste là, barrée, avec la marque de la vue Semaine (étape 19, lot 2) :
+					     « Séance annulée » pour un cours, « Session annulée » pour une session du vendredi
+					     (étape 20, C4). Déplacée puis annulée, elle l'est à sa nouvelle date et à sa nouvelle
+					     heure, où l'expansion la rend. -->
 					<li class:barree={seance.status === 'cancelled'}>
 						{longDate(data.langue, seance.date as IsoDate)}
 						<span class="heure">{heureDeSeance(data.langue, seance)}</span>

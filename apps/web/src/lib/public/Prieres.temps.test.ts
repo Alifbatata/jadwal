@@ -166,11 +166,11 @@ describe('l’onglet des prières, un vendredi', () => {
 		const html = rendre(proprietes('fr', changees));
 		expect(iqamaDuDhuhr(html)).toBe(
 			'Prière du vendredi : 14:15 ' +
-				'Prière du vendredi : 12:30 Annulée ' +
-				'Prière du vendredi : 15:00 Déplacé au vendredi 09.10.2026'
+				'Prière du vendredi : 12:30 Session annulée ' +
+				'Prière du vendredi : 15:00 Session déplacée au vendredi 09.10.2026'
 		);
 		expect(caseDuDhuhr(html, 1)).toBe(
-			'13:05 14:15 12:30 Annulée 15:00 Déplacé au vendredi 09.10.2026'
+			'13:05 14:15 12:30 Session annulée 15:00 Session déplacée au vendredi 09.10.2026'
 		);
 		// Ce qui n'a pas lieu est barré. L'heure de départ d'une session déplacée le même jour n'est
 		// pas écrite (les deux cases ci-dessus n'ont pas de 13:45) : c'est la nouvelle heure qui compte.
@@ -197,41 +197,56 @@ describe('l’onglet des prières, un vendredi', () => {
 		const html = rendre(proprietes('fr', annulees));
 		expect(iqamaDuDhuhr(html)).toBe(
 			'13:15 ' +
-				'Prière du vendredi : 12:30 Annulée ' +
-				'Prière du vendredi : 13:45 Annulée ' +
-				'Prière du vendredi : 15:00 Annulée'
+				'Prière du vendredi : 12:30 Session annulée ' +
+				'Prière du vendredi : 13:45 Session annulée ' +
+				'Prière du vendredi : 15:00 Session annulée'
 		);
-		expect(caseDuDhuhr(html, 1)).toBe('13:05 13:15 12:30 Annulée 13:45 Annulée 15:00 Annulée');
+		expect(caseDuDhuhr(html, 1)).toBe(
+			'13:05 13:15 12:30 Session annulée 13:45 Session annulée 15:00 Session annulée'
+		);
 	});
 
 	it('says it in the language of the page', () => {
 		const anglais = rendre(proprietes('en', changees));
 		expect(iqamaDuDhuhr(anglais)).toBe(
-			'Friday prayer: 14:15 Friday prayer: 12:30 Cancelled Friday prayer: 15:00 Moved to Friday 09.10.2026'
+			'Friday prayer: 14:15 Friday prayer: 12:30 Session cancelled Friday prayer: 15:00 Session moved to Friday 09.10.2026'
 		);
 		const arabe = rendre(proprietes('ar', changees));
-		expect(caseDuDhuhr(arabe, 1)).toBe('13:05 14:15 12:30 ملغاة 15:00 نُقل إلى الجمعة 09.10.2026');
+		expect(caseDuDhuhr(arabe, 1)).toBe(
+			'13:05 14:15 12:30 موعد ملغى 15:00 موعد منقول إلى الجمعة 09.10.2026'
+		);
 	});
 
-	// Décision du chef de projet, au 27.09.2026 : « Annulée » s'accorde avec « Prière du vendredi »,
-	// là où la langue accorde. L'allemand et l'anglais n'ont qu'une forme.
-	it('agrees « cancelled » with the Friday prayer, in each language', () => {
+	// Décision du chef de projet, étape 20 (C4) : l'état s'écrit avec son propre nom, celui d'une
+	// session du vendredi, jamais accordé à « Prière du vendredi » ni à un titre choisi. Il remplace
+	// « Annulée », accordé à la prière depuis le 27.09.2026.
+	it('names the state of a Friday session with its own word, in each language', () => {
 		const ANNULEE: Record<Langue, string> = {
-			fr: 'Annulée',
-			de: 'Abgesagt',
-			it: 'Annullata',
-			en: 'Cancelled',
-			ar: 'ملغاة'
+			fr: 'Session annulée',
+			de: 'Durchgang abgesagt',
+			it: 'Turno annullato',
+			en: 'Session cancelled',
+			ar: 'موعد ملغى'
+		};
+		const DEPLACEE: Record<Langue, string> = {
+			fr: 'Session déplacée au vendredi 09.10.2026',
+			de: 'Durchgang verschoben auf Freitag, 09.10.2026',
+			it: 'Turno spostato a venerdì 09.10.2026',
+			en: 'Session moved to Friday 09.10.2026',
+			ar: 'موعد منقول إلى الجمعة 09.10.2026'
 		};
 		for (const langue of ['fr', 'de', 'it', 'en', 'ar'] as const) {
 			const html = rendre(proprietes(langue, changees));
 			const marques = [...html.matchAll(/<span class="marque[^"]*">([^<]*)<\/span>/g)].map(
 				(trouve) => trouve[1]
 			);
-			expect(
-				marques.filter((marque) => marque === ANNULEE[langue]),
-				langue
-			).toHaveLength(2);
+			// Chacune deux fois : dans le tableau du jour, puis dans celui de la semaine.
+			expect(marques, langue).toEqual([
+				ANNULEE[langue],
+				DEPLACEE[langue],
+				ANNULEE[langue],
+				DEPLACEE[langue]
+			]);
 		}
 	});
 
@@ -301,8 +316,8 @@ describe('l’onglet des prières, un jour qui reçoit une session du vendredi',
 		);
 		// Le vendredi garde son iqama, et chaque session y dit où elle est partie.
 		expect(caseDuDhuhr(html, 1)).toBe(
-			'13:05 13:15 12:30 Déplacé au jeudi 01.10.2026 13:45 Déplacé au jeudi 01.10.2026 ' +
-				'15:00 Déplacé au jeudi 01.10.2026'
+			'13:05 13:15 12:30 Session déplacée au jeudi 01.10.2026 ' +
+				'13:45 Session déplacée au jeudi 01.10.2026 15:00 Session déplacée au jeudi 01.10.2026'
 		);
 	});
 
