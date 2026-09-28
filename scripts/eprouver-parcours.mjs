@@ -1149,6 +1149,13 @@ function debutAncre(priere, minutes) {
 // Le serveur : ses courriels, son journal
 // ---------------------------------------------------------------------------------------------
 
+/**
+ * La forme d'un identifiant de la base, celle que le serveur vérifie avant de lire un cours
+ * (`apps/web/src/routes/cours/+page.server.ts`). Une valeur lue à l'écran doit l'avoir pour entrer
+ * dans une requête.
+ */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /** Le séparateur des courriels dans la lecture groupée : un caractère qu'aucun JSON ne contient. */
 const SEPARATEUR = '\u001e';
 
@@ -1213,7 +1220,9 @@ const langueDuCourriel = (courriel) =>
  * vue du widget datée d'avant la semaine (B10), un cours enregistré avant la règle de l'étape 18
  * (dates hors de sa période), l'arabe pour langue par défaut de l'organisation voisine, où la
  * personne du parcours n'est qu'éditrice, le temps d'un 404 (19-404-organisation). Le texte de la
- * requête ne vient que de ce script.
+ * requête vient de ce script. Une seule valeur y entre depuis le serveur : l'identifiant du cours
+ * à dates précises, lu à l'adresse où l'écran revient ; il n'y entre qu'avec la forme d'un
+ * identifiant (`UUID`), sinon le geste est impossible.
  */
 function ecrireDansLaBase(requete) {
 	const passage = spawnSync(
@@ -3518,6 +3527,11 @@ async function formulaireDUnCours(page) {
 	});
 	await retour('19-cours-hors-periode', async () => {
 		if (!id) throw new Error('le cours à dates précises n’a pas été créé');
+		// L'identifiant vient de l'adresse que le serveur rend : il n'entre dans la requête qu'avec la
+		// forme d'un identifiant.
+		if (!UUID.test(id)) {
+			throw new Error(`l’adresse du cours publié ne porte pas un identifiant : « ${id} »`);
+		}
 		// Un dernier jour avant sa dernière date : le formulaire le refuse depuis l'étape 18, seul un
 		// cours enregistré avant peut l'avoir.
 		const periode = ecrireDansLaBase(
