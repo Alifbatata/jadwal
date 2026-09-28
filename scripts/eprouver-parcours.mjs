@@ -264,12 +264,16 @@
  *   base. Le refus d'un vendredi passé dit qu'une session passée ne s'annule ni ne se déplace ;
  *   19-D2 en garde le début et la fin. Une carte déplacée dont la date prévue est à venir garde
  *   « Rétablir » seul : 19-D4 et 19-retablir-nouvelle-date le vérifient toujours.
- * - 20-cles : « À venir », avec deux séances annulées d'un même cours le même jour, celle du rythme
- *   et une séance déplacée là puis annulée, se charge et s'hydrate sans erreur dans la console : le
- *   routeur de SvelteKit, qui ne démarre qu'une fois la page hydratée, suit un lien de la
- *   navigation sans recharger la page. Chaque séance y a sa propre clé, sa date prévue comprise.
- *   Contre l'image de l'étape 19, où une séance déplacée ne s'annule pas à sa nouvelle date, le
- *   geste est impossible.
+ * - 20-cles : un écran qui montre deux séances d'un même cours le même jour, avec le même statut,
+ *   se charge et s'hydrate sans erreur dans la console : le routeur de SvelteKit, qui ne démarre
+ *   qu'une fois la page hydratée, suit un lien de la navigation sans recharger la page. Chaque
+ *   séance y a sa propre clé, sa date prévue comprise. Trois cas : sur « À venir », deux séances
+ *   annulées, celle du rythme et une séance déplacée là puis annulée ; sur « À venir » encore, deux
+ *   séances déplacées le même jour depuis deux dates prévues à venir ; sur l'écran du vendredi, deux
+ *   sessions déplacées au vendredi qui vient depuis deux vendredis à venir. Contre l'image de
+ *   l'étape 19, le premier cas ne se construit pas, une séance déplacée ne s'y annulant pas à sa
+ *   nouvelle date : le geste est impossible. Les deux autres s'y construisent, par la base, et y
+ *   tombent : l'étape 19 donnait déjà la même clé à deux séances déplacées vers le même jour.
  *
  * Supprimer une session du vendredi, réservé au responsable :
  *
@@ -392,9 +396,10 @@
  * tapés dans Réglages, puis remis. Une seconde personne responsable rejoint l'organisation, la
  * première se donne le rôle d'éditeur, la seconde lui rend le sien, puis s'en va. La personne du
  * parcours quitte ensuite l'organisation voisine (étape q). Enfin, une séance déplacée dont la date
- * prévue est passée s'annule à sa nouvelle date, sur « À venir » puis sur l'écran du vendredi
- * (étape r, étape 20) : le cours créé pour cela est supprimé, et la session du vendredi retrouve son
- * premier jour.
+ * prévue est passée s'annule à sa nouvelle date, sur « À venir » puis sur l'écran du vendredi, et
+ * deux séances déplacées vers un même jour s'y affichent sans erreur (étape r, étape 20) : le cours
+ * créé pour cela est supprimé, et la session du vendredi retrouve son premier jour, sans aucun de
+ * ces déplacements.
  *
  * ## Les heures de prière attendues
  *
@@ -708,6 +713,13 @@ const DEPLACEE_D_UN_JOUR_PASSE = {
  * après la session de 12:30, qui a lieu le même jour (étape 20, C2).
  */
 const HEURE_DE_LA_SESSION_VENUE = '16:30';
+/**
+ * r, 20-cles : les heures de deux séances d'un même cours, prévues dans une et dans deux semaines,
+ * que la base déplace toutes deux vers un même jour, le lendemain du J4 pour le cours d'« À venir »,
+ * le vendredi qui vient pour la session du vendredi. Ce cas ne doit rien à l'étape 20 : l'étape 19
+ * le permettait, et donnait déjà aux deux séances la même clé.
+ */
+const HEURES_DES_SEANCES_VENUES = ['07:00', '08:00'];
 const AIDE_DE_LA_MODIFICATION =
 	'La session a lieu chaque vendredi à partir de cette date. Changez cette date seulement pour corriger une erreur.';
 const SESSION_CHANGEE =
@@ -8673,8 +8685,10 @@ async function quitterLaVoisine(page) {
  * vendredi proposent à la place de l'annuler à sa nouvelle date, avec le message à copier. Aucun
  * écran ne déplace une séance depuis une date passée : le déplacement est écrit dans la base, pour
  * un cours créé ici dont le premier jour est reculé, puis pour la session du vendredi, déplacée d'un
- * vendredi passé au vendredi qui vient. Le cours est supprimé à la fin, et la session retrouve son
- * premier jour, sans ce déplacement.
+ * vendredi passé au vendredi qui vient. Sur les deux écrans, deux séances du même cours déplacées
+ * vers un même jour, depuis deux dates prévues à venir, sont ensuite écrites dans la base, le temps
+ * de 20-cles. Le cours est supprimé à la fin, et la session retrouve son premier jour, sans aucun de
+ * ces déplacements.
  */
 async function deplaceeDUnJourPasse(page) {
 	etape('r. Une séance déplacée dont la date prévue est passée (étape 20)');
@@ -8682,7 +8696,10 @@ async function deplaceeDUnJourPasse(page) {
 	await deplaceeSurLEcranDuVendredi(page);
 }
 
-/** r, sur « À venir » : un cours de la semaine, sa séance d'un jour passé arrivée au J4. */
+/**
+ * r, sur « À venir » : un cours de la semaine, sa séance d'un jour passé arrivée au J4, puis deux
+ * autres, prévues dans une et dans deux semaines, arrivées toutes deux le lendemain.
+ */
 async function deplaceeSurLAccueil(page) {
 	const { titre: nom, debut, fin, arrivee } = DEPLACEE_D_UN_JOUR_PASSE;
 	const texte = ANNULER_LA_DEPLACEE.aVenir;
@@ -8782,53 +8799,104 @@ async function deplaceeSurLAccueil(page) {
 		`${await carteDuJour('cancelled').count()} carte(s) annulée(s) de « ${nom} » ce jour-là`
 	);
 	// Deux séances annulées d'un même cours, le même jour : l'écran range chacune sous sa propre
-	// clé, sans quoi Svelte refuse la liste à l'hydratation et l'écran ne répond plus (étape 20). Le
-	// routeur de SvelteKit ne démarre qu'une fois la page hydratée : un lien de la navigation suivi
-	// sans recharger la page le prouve. Une ressource que le navigateur ne trouve pas, comme l'icône
-	// qu'il demande de lui-même, n'est pas une erreur de la page.
-	await retour('20-cles', async () => {
-		const erreurs = [];
-		const surErreur = (erreur) => erreurs.push(`exception : ${erreur.message.split('\n')[0]}`);
-		const surConsole = (message) => {
-			if (message.type() === 'error' && !message.text().startsWith('Failed to load resource')) {
-				erreurs.push(`console : ${message.text().split('\n')[0]}`);
-			}
-		};
-		page.on('pageerror', surErreur);
-		page.on('console', surConsole);
-		try {
-			await ouvrir(page, '/');
-			const annulees = await carteDuJour('cancelled').count();
-			if (annulees !== 2) {
-				throw new Error(
-					`deux séances annulées de « ${nom} » le ${dateSuisse(jour)} attendues : ${annulees} à l’écran`
-				);
-			}
-			await page.evaluate(() => {
-				window.parcoursSansRechargement = true;
-			});
-			await naviguer(page, '/partager');
-			const sansRechargement = await page.evaluate(() => window.parcoursSansRechargement === true);
-			verifierChaque(
-				`« À venir », avec deux séances annulées de « ${nom} » le même jour, celle du rythme et une séance déplacée là puis annulée, se charge et s’hydrate sans erreur : rien dans la console, et un lien de la navigation change d’écran sans recharger la page`,
-				{
-					'aucune erreur': erreurs.length === 0,
-					'hydratée : le lien suivi sans recharger la page': sansRechargement
-				},
-				erreurs.join(' | ') || `${annulees} séances annulées, aucune erreur`
-			);
-		} finally {
-			page.off('pageerror', surErreur);
-			page.off('console', surConsole);
-		}
-	});
+	// clé, sans quoi Svelte refuse la liste à l'hydratation et l'écran ne répond plus (étape 20).
+	// Contre l'image de l'étape 19, où une séance déplacée ne s'annule pas à sa nouvelle date, ce
+	// cas ne se construit pas : le geste est impossible.
+	await retour('20-cles', () =>
+		hydrateeSansErreur(page, {
+			adresse: '/',
+			lignes: carteDuJour('cancelled'),
+			attendues: `deux séances annulées de « ${nom} » le ${dateSuisse(jour)}`,
+			quoi: `« À venir », avec deux séances annulées de « ${nom} » le même jour, celle du rythme et une séance déplacée là puis annulée, se charge et s’hydrate sans erreur : rien dans la console, et un lien de la navigation change d’écran sans recharger la page`,
+			vues: 'séances annulées'
+		})
+	);
+	// Deux séances du cours, prévues dans une et dans deux semaines, déplacées toutes deux au
+	// lendemain du J4, où le cours n'a pas de séance : deux séances arrivées d'ailleurs le même jour,
+	// avec le même statut. L'étape 19 le permettait déjà, et leur donnait la même clé : contre son
+	// image, l'écran ne s'hydrate pas, et c'est là que la vérification tombe.
+	const lendemain = plusJours(jour, 1);
+	const venues = HEURES_DES_SEANCES_VENUES.map((heure, rang) => ({
+		prevue: plusJours(jour, 7 * (rang + 1)),
+		heure
+	}));
+	const deplacees = ecrireDansLaBase(
+		venues
+			.map(
+				({ prevue, heure }) =>
+					'insert into session_exception (id, organization_id, course_id, date, kind, to_date, to_start) ' +
+					`select uuidv7(), organization_id, id, '${prevue}', 'moved', '${lendemain}', '${heure}' from course where id = '${id}'`
+			)
+			.join('; ')
+	);
+	verifier(
+		`la base déplace les séances de « ${nom} » prévues le ${venues.map(({ prevue }) => dateSuisse(prevue)).join(' et le ')} au ${dateSuisse(lendemain)}, à ${HEURES_DES_SEANCES_VENUES.join(' et à ')}`,
+		deplacees.ok,
+		deplacees.sortie
+	);
+	await retour('20-cles', () =>
+		hydrateeSansErreur(page, {
+			adresse: '/',
+			lignes: page
+				.locator('section', { has: page.locator(`[id="jour-${lendemain}"]`) })
+				.locator('li.moved_here')
+				.filter({ hasText: nom }),
+			attendues: `deux séances de « ${nom} » arrivées le ${dateSuisse(lendemain)}`,
+			quoi: `« À venir », avec deux séances de « ${nom} » déplacées le même jour depuis deux dates prévues à venir, se charge et s’hydrate sans erreur : rien dans la console, et un lien de la navigation change d’écran sans recharger la page`,
+			vues: 'séances arrivées'
+		})
+	);
+	// Le cours part avec ses exceptions.
 	await supprimerLeCours(page, nom, id);
+}
+
+/**
+ * 20-cles : un écran dont une liste montre deux séances d'un même cours le même jour, avec le même
+ * statut, se charge et s'hydrate sans erreur. Chaque séance doit y avoir sa propre clé : Svelte
+ * refuse deux fois la même dans une liste, à l'hydratation, en production comme en développement,
+ * et l'écran ne répond plus. Le routeur de SvelteKit ne démarre qu'une fois la page hydratée : un
+ * lien de la navigation suivi sans recharger la page le prouve. Une ressource que le navigateur ne
+ * trouve pas, comme l'icône qu'il demande de lui-même, n'est pas une erreur de la page. Si l'écran
+ * ne montre pas les deux séances (`lignes`), le cas n'est pas construit : le geste est impossible.
+ */
+async function hydrateeSansErreur(page, { adresse, lignes, attendues, quoi, vues }) {
+	const erreurs = [];
+	const surErreur = (erreur) => erreurs.push(`exception : ${erreur.message.split('\n')[0]}`);
+	const surConsole = (message) => {
+		if (message.type() === 'error' && !message.text().startsWith('Failed to load resource')) {
+			erreurs.push(`console : ${message.text().split('\n')[0]}`);
+		}
+	};
+	page.on('pageerror', surErreur);
+	page.on('console', surConsole);
+	try {
+		await ouvrir(page, adresse);
+		const lues = await lignes.count();
+		if (lues !== 2) throw new Error(`${attendues} attendues : ${lues} à l’écran`);
+		await page.evaluate(() => {
+			window.parcoursSansRechargement = true;
+		});
+		await naviguer(page, '/partager');
+		const sansRechargement = await page.evaluate(() => window.parcoursSansRechargement === true);
+		verifierChaque(
+			quoi,
+			{
+				'aucune erreur': erreurs.length === 0,
+				'hydratée : le lien suivi sans recharger la page': sansRechargement
+			},
+			erreurs.join(' | ') || `${lues} ${vues}, aucune erreur`
+		);
+	} finally {
+		page.off('pageerror', surErreur);
+		page.off('console', surConsole);
+	}
 }
 
 /**
  * r, sur l'écran du vendredi : la session du parcours, déplacée d'un vendredi passé au vendredi qui
  * vient, à 16:30. Si le vendredi qui vient est aujourd'hui, le vendredi passé est celui d'il y a
- * sept jours.
+ * sept jours. Puis deux sessions, prévues dans une et dans deux semaines, arrivées toutes deux le
+ * vendredi qui vient (20-cles).
  */
 async function deplaceeSurLEcranDuVendredi(page) {
 	const texte = ANNULER_LA_DEPLACEE.vendredi;
@@ -8940,6 +9008,50 @@ async function deplaceeSurLEcranDuVendredi(page) {
 			'la session du vendredi retrouve son premier jour, sans son déplacement d’un vendredi passé',
 			remise.ok,
 			remise.sortie
+		);
+	}
+	// Deux séances de la session, prévues dans une et dans deux semaines, déplacées toutes deux au
+	// vendredi qui vient : la partie « Ce vendredi » les montre sous la session, le même jour, avec
+	// le même statut. L'étape 19 le permettait déjà, et leur donnait la même clé (20-cles). Les deux
+	// déplacements sont retirés ensuite.
+	const venues = HEURES_DES_SEANCES_VENUES.map((heure, rang) => ({
+		prevu: plusJours(jour, 7 * (rang + 1)),
+		heure
+	}));
+	const deplacees = ecrireDansLaBase(
+		venues
+			.map(
+				(venue) =>
+					'insert into session_exception (id, organization_id, course_id, date, kind, to_date, to_start) ' +
+					`select uuidv7(), organization_id, id, '${venue.prevu}', 'moved', '${jour}', '${venue.heure}' from course where id = '${id}'`
+			)
+			.join('; ')
+	);
+	try {
+		verifier(
+			`la base déplace les sessions du vendredi ${venues.map((venue) => dateSuisse(venue.prevu)).join(' et du ')} au ${dateSuisse(jour)}, à ${HEURES_DES_SEANCES_VENUES.join(' et à ')}`,
+			deplacees.ok,
+			deplacees.sortie
+		);
+		await retour('20-cles', () =>
+			hydrateeSansErreur(page, {
+				adresse: '/vendredi',
+				lignes: page.locator('section[aria-labelledby="ce-vendredi"] div.seance').filter({
+					hasText: new RegExp(HEURES_DES_SEANCES_VENUES.map((arrivee) => `${arrivee} – `).join('|'))
+				}),
+				attendues: `deux sessions arrivées le ${dateSuisse(jour)} dans « Ce vendredi »`,
+				quoi: `l’écran du vendredi, avec deux sessions de ${VENDREDI.debut} déplacées au vendredi qui vient depuis deux vendredis à venir, se charge et s’hydrate sans erreur : rien dans la console, et un lien de la navigation change d’écran sans recharger la page`,
+				vues: 'sessions arrivées'
+			})
+		);
+	} finally {
+		const retires = ecrireDansLaBase(
+			`delete from session_exception where course_id = '${id}' and date in (${venues.map((venue) => `'${venue.prevu}'`).join(', ')})`
+		);
+		verifier(
+			'la session du vendredi perd ses deux déplacements vers le vendredi qui vient',
+			retires.ok,
+			retires.sortie
 		);
 	}
 }
@@ -9224,8 +9336,10 @@ B3 | une responsable qui se donne le rôle d’éditeur arrive sur « À venir �
 20-C2 | sur « À venir », une séance déplacée dont la date prévue est passée n’a plus « Rétablir la séance » : ses options, fermées sous « Annuler », proposent « Annuler cette séance », avec l’aide qui dit qu’elle ne pourra pas être rétablie
 20-C2 | annulée, elle le dit, « La séance est annulée. », le message à copier nomme sa nouvelle date et sa nouvelle heure, « Le cours « Révision de la semaine » du JOUR JJ.MM.AAAA à 07:00 est annulé. », et sa carte porte « Séance annulée », sans « Rétablir la séance »
 20-cles | « À venir », avec deux séances annulées de « Révision de la semaine » le même jour, celle du rythme et une séance déplacée là puis annulée, se charge et s’hydrate sans erreur : rien dans la console, et un lien de la navigation change d’écran sans recharger la page
+20-cles | « À venir », avec deux séances de « Révision de la semaine » déplacées le même jour depuis deux dates prévues à venir, se charge et s’hydrate sans erreur : rien dans la console, et un lien de la navigation change d’écran sans recharger la page
 20-C2 | sur l’écran du vendredi, une session déplacée d’un vendredi passé n’a plus « Rétablir comme d’habitude » : ses options, fermées sous « Annuler », proposent « Annuler cette session », avec l’aide qui dit qu’elle ne pourra pas être rétablie
 20-C2 | annulée, elle le dit, « La session est annulée à sa nouvelle date. Les autres vendredis ne changent pas. », le bloc « Message à copier » nomme sa nouvelle date et sa nouvelle heure, « « Prière du vendredi » : la prière du JOUR JJ.MM.AAAA à 16:30 est annulée. », et sa ligne porte « Annulée ce jour-là », sans « Rétablir comme d’habitude »
+20-cles | l’écran du vendredi, avec deux sessions de 12:30 déplacées au vendredi qui vient depuis deux vendredis à venir, se charge et s’hydrate sans erreur : rien dans la console, et un lien de la navigation change d’écran sans recharger la page
 A3 | aucune date écrite AAAA-MM-JJ sur les N écrans traversés (espace, super-admin, page publique, widget)
 F1 | aucun des N écrans traversés ne nomme la personne retirée du dépôt
 `
