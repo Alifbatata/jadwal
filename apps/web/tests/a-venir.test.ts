@@ -4414,3 +4414,157 @@ describe('C4 : l’état d’une carte s’écrit avec son propre nom (étape 20
 		}
 	);
 });
+
+describe('C4 : le programme de la semaine dit l’annulation avec son propre nom (étape 20)', () => {
+	// « (ANNULÉ) » suivait aussi « Prière du vendredi » ou un titre choisi, comme « Jumu’a du
+	// centre ». L'état porte son nom, jamais accordé au titre : « (SÉANCE ANNULÉE) » pour un cours,
+	// « (SESSION ANNULÉE) » pour la prière du vendredi. Une séance ou une session déplacée puis
+	// annulée (C2) y est annulée à sa nouvelle date, à sa nouvelle heure : sa date prévue est passée.
+
+	const SEANCE: Record<Langue, string> = {
+		fr: '(SÉANCE ANNULÉE)',
+		de: '(TERMIN ABGESAGT)',
+		it: '(LEZIONE ANNULLATA)',
+		en: '(SESSION CANCELLED)',
+		ar: '(حصة ملغاة)'
+	};
+	const SESSION: Record<Langue, string> = {
+		fr: '(SESSION ANNULÉE)',
+		de: '(DURCHGANG ABGESAGT)',
+		it: '(TURNO ANNULLATO)',
+		en: '(SESSION CANCELLED)',
+		ar: '(موعد ملغى)'
+	};
+
+	const organisation = newId();
+	const RESPONSABLE_C4P = 'avenir-c4-programme@example.test';
+	const utilisateur = newId();
+	const sira = newId();
+	const SIRA = 'Cours de sira';
+	const jumua = newId();
+	const JUMUA = 'Jumu’a du centre';
+	/** Le prochain vendredi de l'écran, aujourd'hui compris. */
+	const vendredi = [0, 1, 2, 3, 4, 5, 6]
+		.map((pas) => jour(pas))
+		.find((date) => weekdayFromDays(isoDateToDays(date)) === 5) as IsoDate;
+	/** Le jour qui reçoit la session du vendredi précédent : aujourd'hui, ou demain un vendredi. */
+	const autreJour = vendredi === jour(0) ? jour(1) : jour(0);
+	let cookie: string;
+
+	/** Les lignes de chaque jour d'un programme de la semaine, par la date que le message écrit. */
+	function parJour(message: string): Map<string, string[]> {
+		return new Map(
+			message
+				.split('\n\n')
+				.slice(2)
+				.map((bloc) => {
+					const [date, ...lignesDuJour] = bloc.split('\n');
+					return [date ?? '', lignesDuJour];
+				})
+		);
+	}
+
+	beforeAll(async () => {
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+					"enabled_language", "prayer_module", "greeting")
+				values (${organisation}, 'a-venir-c4-programme', 'Association du programme', ${FUSEAU},
+					'fr', array['fr','de','it','en','ar'], true, ${ACCUEIL})
+			`);
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified", "language")
+				values (${utilisateur}, ${RESPONSABLE_C4P}, true, 'fr')
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${organisation}, ${utilisateur}, 'org_admin')
+			`);
+			await tx.execute(conditionsAcceptees(organisation, utilisateur));
+			await tx.execute(sql`
+				insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",
+					"source_language", "recurrence_kind", "recurrence_weekday", "recurrence_interval",
+					"recurrence_anchor_date", "timing_kind", "timing_start", "timing_end", "starts_on")
+				values (${sira}, ${organisation}, 'published', 'adults', array['fr'], 'fr', 'weekly',
+					array[1,2,3,4,5,6,7]::smallint[], 1, ${jour(-30)}, 'fixed', '18:00', '19:30',
+					${jour(-30)})
+			`);
+			await tx.execute(sql`
+				insert into "course" ("id", "organization_id", "kind", "jumua_order", "status", "audience",
+					"teaching_language", "source_language", "recurrence_kind", "recurrence_weekday",
+					"recurrence_interval", "recurrence_anchor_date", "timing_kind", "timing_start",
+					"timing_end", "starts_on")
+				values (${jumua}, ${organisation}, 'jumua', 1, 'published', 'open', array['ar'], 'fr',
+					'weekly', array[5]::smallint[], 1, ${jour(-30)}, 'fixed', '12:10', '12:50', ${jour(-30)})
+			`);
+			for (const [id, titre] of [
+				[sira, SIRA],
+				[jumua, JUMUA]
+			] as const) {
+				await tx.execute(sql`
+					insert into "course_translation" ("id", "organization_id", "course_id", "language",
+						"title")
+					values (${newId()}, ${organisation}, ${id}, 'fr', ${titre})
+				`);
+			}
+			// Le cours annulé demain, et la séance d'avant-hier déplacée au jour J+3 à 20:30 puis
+			// annulée là ; la session de ce vendredi annulée, et celle du vendredi précédent déplacée à
+			// un autre jour de l'écran, à 16:00, puis annulée là. Chaque annulation d'une séance
+			// déplacée garde le jour et l'heure d'arrivée, comme « Annuler cette séance » l'écrit.
+			for (const [id, date, versLe, heure] of [
+				[sira, jour(1), null, null],
+				[sira, jour(-2), jour(3), '20:30'],
+				[jumua, vendredi, null, null],
+				[jumua, addDays(vendredi, -7), autreJour, '16:00']
+			] as const) {
+				await tx.execute(sql`
+					insert into "session_exception" ("id", "organization_id", "course_id", "date", "kind",
+						"to_date", "to_start", "created_by")
+					values (${newId()}, ${organisation}, ${id}, ${date}, 'cancelled', ${versLe}, ${heure},
+						${utilisateur})
+				`);
+			}
+		});
+		cookie = await signIn(RESPONSABLE_C4P);
+	});
+
+	it('marks each cancelled line with the word of its kind, at its date and time, in each published language, on the upcoming screen and on Partager', async () => {
+		const avenir = messages(section(await (await get('/', cookie)).text(), 'semaine-titre'));
+		const partager = messages(
+			section(await (await get('/partager', cookie)).text(), 'semaine-titre')
+		);
+		expect(avenir.map((message) => message.langue)).toEqual([...LANGUES]);
+		expect(partager.map((message) => message.texte)).toEqual(
+			avenir.map((message) => message.texte)
+		);
+		for (const [rang, langue] of LANGUES.entries()) {
+			const jours = parJour(avenir[rang]?.texte ?? '');
+			const virgule = langue === 'ar' ? '، ' : ', ';
+			const ligne = (titre: string, heure: string, marque = '') =>
+				`- ${titre}${virgule}${heure}${marque ? ` ${marque}` : ''}`;
+			/** Les lignes du cours un jour donné : une session du vendredi peut tomber le même jour. */
+			const siraLe = (date: IsoDate) =>
+				(jours.get(dateLue(langue, date)) ?? []).filter((texte) => texte.startsWith(`- ${SIRA}`));
+			// La séance annulée à sa date, à son heure.
+			expect(siraLe(jour(1)), langue).toEqual([ligne(SIRA, '18:00 – 19:30', SEANCE[langue])]);
+			// Déplacée puis annulée : à sa nouvelle date, à sa nouvelle heure, à côté de la séance du
+			// jour, qui a lieu.
+			expect(siraLe(jour(3)), langue).toEqual([
+				ligne(SIRA, '18:00 – 19:30'),
+				ligne(SIRA, '20:30 – 22:00', SEANCE[langue])
+			]);
+			// La session de ce vendredi, et celle venue du vendredi précédent, annulée à 16:00.
+			expect(jours.get(dateLue(langue, vendredi)), langue).toContain(
+				ligne(JUMUA, '12:10 – 12:50', SESSION[langue])
+			);
+			expect(jours.get(dateLue(langue, autreJour)), langue).toContain(
+				ligne(JUMUA, '16:00 – 16:40', SESSION[langue])
+			);
+			// Aucune autre ligne annulée : rien à la date prévue des deux séances déplacées, passée.
+			const annulees = [...jours.values()]
+				.flat()
+				.filter((texte) => texte.endsWith(SEANCE[langue]) || texte.endsWith(SESSION[langue]));
+			expect(annulees, langue).toHaveLength(4);
+		}
+	});
+});

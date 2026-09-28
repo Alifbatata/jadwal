@@ -78,7 +78,7 @@ describe('le programme de la semaine, dans les cinq langues', () => {
 				'',
 				'lundi 21.09.2026',
 				'- Tafsir, 19:00 – 20:30, Salle 1',
-				'- Arabe, 17:00 – 18:00 (ANNULÉ)',
+				'- Arabe, 17:00 – 18:00 (SÉANCE ANNULÉE)',
 				'',
 				'mercredi 23.09.2026',
 				'- Fiqh, 30 min après Maghrib',
@@ -101,7 +101,7 @@ describe('le programme de la semaine, dans les cinq langues', () => {
 				'',
 				'Montag, 21.09.2026',
 				'- Tafsir, 19:00 – 20:30, Salle 1',
-				'- Arabe, 17:00 – 18:00 (ABGESAGT)',
+				'- Arabe, 17:00 – 18:00 (TERMIN ABGESAGT)',
 				'',
 				'Mittwoch, 23.09.2026',
 				'- Fiqh, 30 Min. nach Maghrib',
@@ -124,7 +124,7 @@ describe('le programme de la semaine, dans les cinq langues', () => {
 				'',
 				'lunedì 21.09.2026',
 				'- Tafsir, 19:00 – 20:30, Salle 1',
-				'- Arabe, 17:00 – 18:00 (ANNULLATO)',
+				'- Arabe, 17:00 – 18:00 (LEZIONE ANNULLATA)',
 				'',
 				'mercoledì 23.09.2026',
 				'- Fiqh, 30 min dopo Maghrib',
@@ -147,7 +147,7 @@ describe('le programme de la semaine, dans les cinq langues', () => {
 				'',
 				'Monday 21.09.2026',
 				'- Tafsir, 19:00 – 20:30, Salle 1',
-				'- Arabe, 17:00 – 18:00 (CANCELLED)',
+				'- Arabe, 17:00 – 18:00 (SESSION CANCELLED)',
 				'',
 				'Wednesday 23.09.2026',
 				'- Fiqh, 30 min after Maghrib',
@@ -170,7 +170,7 @@ describe('le programme de la semaine, dans les cinq langues', () => {
 				'',
 				'الاثنين 21.09.2026',
 				'- Tafsir، 19:00 – 20:30، Salle 1',
-				'- Arabe، 17:00 – 18:00 (ملغى)',
+				'- Arabe، 17:00 – 18:00 (حصة ملغاة)',
 				'',
 				'الأربعاء 23.09.2026',
 				'- Fiqh، بعد المغرب بـ30 دقيقة',
@@ -200,6 +200,57 @@ describe('le programme de la semaine, dans les cinq langues', () => {
 		expect(weekMessage(SALUT, ORGANISATION, SEMAINE)).toBe(
 			weekMessage(SALUT, ORGANISATION, SEMAINE, 'fr')
 		);
+	});
+});
+
+describe('le programme de la semaine, l’annulation avec son propre nom (étape 20, C4)', () => {
+	// Décision du chef de projet : l'état s'écrit avec son propre nom, jamais accordé à un titre
+	// libre. « (ANNULÉ) » suivait aussi « Prière du vendredi » ou « Jumu’a » ; une session du
+	// vendredi dit désormais « (SESSION ANNULÉE) », une séance de cours « (SÉANCE ANNULÉE) ».
+	const ANNULEES = [
+		{
+			date: '2026-10-09' as IsoDate,
+			title: 'Jumu’a',
+			start: '12:30',
+			end: '13:10',
+			room: null,
+			status: 'cancelled',
+			kind: 'jumua'
+		},
+		{
+			date: '2026-10-09' as IsoDate,
+			title: 'Tafsir',
+			start: '19:00',
+			end: '20:30',
+			room: null,
+			status: 'cancelled',
+			kind: 'course'
+		}
+	];
+
+	it('marks a cancelled Friday session and a cancelled session of a course each with its own word', () => {
+		expect(
+			LANGUES.map((langue) =>
+				weekMessage(SALUT, ORGANISATION, ANNULEES, langue).split('\n').slice(-2)
+			)
+		).toEqual([
+			['- Jumu’a, 12:30 – 13:10 (SESSION ANNULÉE)', '- Tafsir, 19:00 – 20:30 (SÉANCE ANNULÉE)'],
+			['- Jumu’a, 12:30 – 13:10 (DURCHGANG ABGESAGT)', '- Tafsir, 19:00 – 20:30 (TERMIN ABGESAGT)'],
+			['- Jumu’a, 12:30 – 13:10 (TURNO ANNULLATO)', '- Tafsir, 19:00 – 20:30 (LEZIONE ANNULLATA)'],
+			[
+				'- Jumu’a, 12:30 – 13:10 (SESSION CANCELLED)',
+				'- Tafsir, 19:00 – 20:30 (SESSION CANCELLED)'
+			],
+			['- Jumu’a، 12:30 – 13:10 (موعد ملغى)', '- Tafsir، 19:00 – 20:30 (حصة ملغاة)']
+		]);
+	});
+
+	it('marks a line without a kind as a session of a course', () => {
+		const sansSorte = ANNULEES.map((seance) => ({ ...seance, kind: undefined }));
+		expect(weekMessage(SALUT, ORGANISATION, sansSorte, 'fr').split('\n').slice(-2)).toEqual([
+			'- Jumu’a, 12:30 – 13:10 (SÉANCE ANNULÉE)',
+			'- Tafsir, 19:00 – 20:30 (SÉANCE ANNULÉE)'
+		]);
 	});
 });
 

@@ -119,7 +119,9 @@ export const load: PageServerLoad = async (event) => {
 					room: seance.room,
 					anchor: seance.anchor,
 					status: seance.status,
-					originalDate: seance.originalDate
+					originalDate: seance.originalDate,
+					// Annulée, la ligne dit « (SÉANCE ANNULÉE) » ou « (SESSION ANNULÉE) » (étape 20, C4).
+					kind: sortes.get(seance.courseId) ?? 'course'
 				})),
 				langue
 			)

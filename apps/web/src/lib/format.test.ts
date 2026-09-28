@@ -256,7 +256,7 @@ describe('les messages prêts à coller', () => {
 		expect(message).toContain('lundi 21.09.2026');
 		expect(message).toContain('- Tafsir, 19:00 – 20:30, Salle 1');
 		// Taire une annulation ferait déplacer quelqu'un pour rien : c'est le contraire du but.
-		expect(message).toContain('- Arabe, 17:00 – 18:00 (ANNULÉ)');
+		expect(message).toContain('- Arabe, 17:00 – 18:00 (SÉANCE ANNULÉE)');
 		expect(message).toContain('- Fiqh, 30 min après Maghrib');
 	});
 
