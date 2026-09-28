@@ -586,3 +586,39 @@ apps/web/src/lib/i18n/members.ts | AR_SIMPLE_REPLACE | كل ما
 apps/web/src/lib/i18n/super-admin.ts | AR_SIMPLE_REPLACE | على الأقل
 apps/web/src/lib/i18n/super-admin.ts | syntax_125_mobtadaa_nakira_2 | تحقق من العنوان
 apps/web/src/lib/i18n/prayers.ts | worduse_0067_bihasabi | بحسب
+
+# Étape 20, relus un par un.
+#
+# « DATE » : chaque addendum de l'étape porte sa date, 28.09.2026, écrite avec des points comme
+# toutes les dates du service ; même cas que les addenda de l'étape 19 plus haut.
+docs/adr/0003-modele-de-recurrence.md | DATE | 28.09.2026
+docs/adr/0011-pauses-et-cours-sur-plusieurs-jours.md | DATE | 28.09.2026
+docs/adr/0019-proprietaire-non-privilegie.md | DATE | 28.09.2026
+docs/adr/0021-espace-des-responsables.md | DATE | 28.09.2026
+docs/adr/0033-priere-du-vendredi.md | DATE | 28.09.2026
+docs/adr/0042-module-des-heures-de-priere.md | DATE | 28.09.2026
+docs/adr/0044-acceptation-des-conditions.md | DATE | 28.09.2026
+docs/adr/0046-editeur-et-responsable-dans-la-base.md | DATE | 28.09.2026
+# Des phrases justes. « elle y reste, barrée » : la virgule détache l'attribut, voulue. « Un cours
+# récurrent à heure fixe a un `EXDATE` » : « a » est le verbe ; « un cours à dates précises ou ancré
+# sur une prière » : « ancré » s'accorde avec « cours » ; « ceci à » est le substitut de
+# `cancelled`, suivi de « à sa nouvelle date » (famille 1). « un lecteur d'écran la lit » : « la »
+# est le pronom de « cette aide » ; « la date prévue est passée, et une séance annulée… » : « est »
+# est le verbe.
+# « Sa carte a « Rétablir », ou, sa date prévue passée, « Annuler cette séance » » : « ou » est la
+# conjonction.
+docs/API.md | PAS_DE_VIRGULE_STYLE | reste, barrée
+docs/adr/0003-modele-de-recurrence.md | A_A_ACCENT2 | a
+docs/adr/0003-modele-de-recurrence.md | ADJ_ADJ_SENT_END | précises ou ancré
+docs/adr/0003-modele-de-recurrence.md | A_ACCENT_A | ceci à
+docs/adr/0021-espace-des-responsables.md | D_N_E_OU_E | la lit
+docs/adr/0021-espace-des-responsables.md | CONFUSION_EST_ET | est
+docs/adr/0021-espace-des-responsables.md | OU | ou
+# Deux clés voisines relues d'un seul tenant : « Diesen Termin absagen » puis le repli « Absagen »,
+# et en anglais la marque d'une séance puis celle d'une session, qui s'écrivent de même (« Session
+# cancelled », « Session moved »), comme l'étape 19 l'acceptait pour « Cancelled Cancelled ».
+apps/web/src/lib/i18n/friday.ts | GERMAN_WORD_REPEAT_RULE | absagen Absagen
+apps/web/src/lib/i18n/upcoming.ts | GERMAN_WORD_REPEAT_RULE | absagen Absagen
+apps/web/src/lib/i18n/upcoming.ts | PHRASE_REPETITION | Session cancelled Session cancelled
+apps/web/src/lib/i18n/upcoming.ts | PHRASE_REPETITION | Session moved Session moved
+apps/web/src/lib/i18n.ts | PHRASE_REPETITION | Session cancelled Session cancelled
