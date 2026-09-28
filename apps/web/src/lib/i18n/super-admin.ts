@@ -190,7 +190,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			what: 'Le lien s’affiche ici au lieu de partir par courriel : envoyez-le à la personne par un message, et, en l’ouvrant, elle entre dans son compte comme avec le lien habituel.',
 			duration: 'Il est valable quinze minutes et ne sert qu’une fois.',
 			emailLabel: 'Adresse électronique de la personne',
-			emailHint: 'L’adresse de son compte. Exemple : prenom.nom@exemple.ch',
+			emailHint: 'L’adresse de son compte. Exemple : prenom.nom@example.org',
 			submit: 'Créer le lien de connexion',
 			resultTitle: 'Lien de connexion pour',
 			resultCopy:
@@ -279,7 +279,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			what: 'Der Link erscheint hier, statt per E-Mail verschickt zu werden: Senden Sie ihn der Person mit einer Nachricht, und wenn sie ihn öffnet, gelangt sie in ihr Konto, wie mit dem gewohnten Link.',
 			duration: 'Er ist fünfzehn Minuten gültig und funktioniert nur einmal.',
 			emailLabel: 'E-Mail-Adresse der Person',
-			emailHint: 'Die Adresse ihres Kontos. Beispiel: vorname.name@beispiel.ch',
+			emailHint: 'Die Adresse ihres Kontos. Beispiel: vorname.name@example.org',
 			submit: 'Anmeldelink erstellen',
 			resultTitle: 'Anmeldelink für',
 			resultCopy:
@@ -368,7 +368,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			what: 'Il link appare qui invece di partire per e-mail: mandalo alla persona con un messaggio, e aprendolo entra nel suo account, come con il link solito.',
 			duration: 'È valido quindici minuti e funziona una sola volta.',
 			emailLabel: 'Indirizzo e-mail della persona',
-			emailHint: 'L’indirizzo del suo account. Esempio: nome.cognome@esempio.ch',
+			emailHint: 'L’indirizzo del suo account. Esempio: nome.cognome@example.org',
 			submit: 'Crea il link di accesso',
 			resultTitle: 'Link di accesso per',
 			resultCopy:
@@ -457,7 +457,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			what: 'The link appears here instead of being sent by email: send it to the person in a message, and when they open it they get into their account, as with the usual link.',
 			duration: 'It is valid for fifteen minutes and works only once.',
 			emailLabel: 'Email address of the person',
-			emailHint: 'The address of their account. Example: first.last@example.ch',
+			emailHint: 'The address of their account. Example: first.last@example.org',
 			submit: 'Create the sign-in link',
 			resultTitle: 'Sign-in link for',
 			resultCopy:
@@ -542,7 +542,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			what: 'يظهر الرابط هنا بدل أن يرسل بالبريد: أرسله إلى الشخص في رسالة، وعندما يفتحه يدخل إلى حسابه، كما مع الرابط المعتاد.',
 			duration: 'يبقى صالحًا 15 دقيقة، ويعمل مرة واحدة فقط.',
 			emailLabel: 'البريد الإلكتروني للشخص',
-			emailHint: 'عنوان حسابه. مثال: name@example.ch',
+			emailHint: 'عنوان حسابه. مثال: name@example.org',
 			submit: 'إنشاء رابط الدخول',
 			resultTitle: 'رابط دخول للعنوان',
 			resultCopy:

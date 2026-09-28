@@ -76,7 +76,7 @@ export const commonTexts: Translations<CommonTexts> = {
 		roles: { org_admin: 'responsable', editor: 'éditeur' },
 		errors: {
 			invalidEmail:
-				'Cette adresse n’a pas la forme d’une adresse électronique. Exemple : prenom.nom@exemple.ch'
+				'Cette adresse n’a pas la forme d’une adresse électronique. Exemple : prenom.nom@example.org'
 		}
 	},
 	de: {
@@ -105,7 +105,7 @@ export const commonTexts: Translations<CommonTexts> = {
 		roles: { org_admin: 'Leitung', editor: 'Redaktion' },
 		errors: {
 			invalidEmail:
-				'Diese Adresse hat nicht die Form einer E-Mail-Adresse. Beispiel: vorname.name@beispiel.ch'
+				'Diese Adresse hat nicht die Form einer E-Mail-Adresse. Beispiel: vorname.name@example.org'
 		}
 	},
 	it: {
@@ -134,7 +134,7 @@ export const commonTexts: Translations<CommonTexts> = {
 		roles: { org_admin: 'responsabile', editor: 'redattore' },
 		errors: {
 			invalidEmail:
-				'Questo indirizzo non ha la forma di un indirizzo e-mail. Esempio: nome.cognome@esempio.ch'
+				'Questo indirizzo non ha la forma di un indirizzo e-mail. Esempio: nome.cognome@example.org'
 		}
 	},
 	en: {
@@ -163,7 +163,7 @@ export const commonTexts: Translations<CommonTexts> = {
 		roles: { org_admin: 'manager', editor: 'editor' },
 		errors: {
 			invalidEmail:
-				'This address does not look like an email address. Example: first.last@example.ch'
+				'This address does not look like an email address. Example: first.last@example.org'
 		}
 	},
 	ar: {
@@ -191,7 +191,7 @@ export const commonTexts: Translations<CommonTexts> = {
 			'لديك الآن دور المحرر. لم تعد الصفحات الخاصة بالمسؤولين، مثل «الأعضاء» و«الإعدادات»، مفتوحة لك. لاستعادتها، اطلب من مسؤول آخر أن يمنحك دور المسؤول من جديد.',
 		roles: { org_admin: 'مسؤول', editor: 'محرر' },
 		errors: {
-			invalidEmail: 'هذا العنوان ليس على شكل بريد إلكتروني. مثال: name@example.ch'
+			invalidEmail: 'هذا العنوان ليس على شكل بريد إلكتروني. مثال: name@example.org'
 		}
 	}
 };

@@ -161,7 +161,7 @@ export const membersTexts: Translations<MembersTexts> = {
 		inviteIntro: (days) =>
 			`La personne reçoit un courriel avec un lien pour se connecter. L’invitation vaut ${days} jours. La personne apparaît parmi les membres quand elle a accepté ; avant, son nom ne s’affiche nulle part.`,
 		emailLabel: 'Adresse électronique de la personne',
-		emailHelp: 'Exemple : prenom.nom@exemple.ch',
+		emailHelp: 'Exemple : prenom.nom@example.org',
 		emailLanguageLabel: 'Langue du courriel',
 		emailLanguageHelp: 'La personne invitée reçoit le courriel dans cette langue.',
 		roleLabel: 'Rôle',
@@ -263,7 +263,7 @@ export const membersTexts: Translations<MembersTexts> = {
 		inviteIntro: (days) =>
 			`Die Person erhält eine E-Mail mit einem Link zum Anmelden, und die Einladung gilt ${days} Tage. Sobald sie angenommen hat, erscheint sie unter den Mitgliedern; vorher wird ihr Name nirgends angezeigt.`,
 		emailLabel: 'E-Mail-Adresse der Person',
-		emailHelp: 'Beispiel: vorname.name@beispiel.ch',
+		emailHelp: 'Beispiel: vorname.name@example.org',
 		emailLanguageLabel: 'Sprache der E-Mail',
 		emailLanguageHelp: 'Die eingeladene Person erhält die E-Mail in dieser Sprache.',
 		roleLabel: 'Rolle',
@@ -363,7 +363,7 @@ export const membersTexts: Translations<MembersTexts> = {
 		inviteIntro: (days) =>
 			`La persona riceve un’e-mail con un link per accedere. L’invito vale ${days} giorni. La persona compare tra i membri quando ha accettato; prima, il suo nome non appare da nessuna parte.`,
 		emailLabel: 'Indirizzo e-mail della persona',
-		emailHelp: 'Esempio: nome.cognome@esempio.ch',
+		emailHelp: 'Esempio: nome.cognome@example.org',
 		emailLanguageLabel: 'Lingua dell’e-mail',
 		emailLanguageHelp: 'La persona invitata riceve l’e-mail in questa lingua.',
 		roleLabel: 'Ruolo',
@@ -465,7 +465,7 @@ export const membersTexts: Translations<MembersTexts> = {
 		inviteIntro: (days) =>
 			`The person receives an email with a link to sign in. The invitation lasts ${days} days. They appear among the members once they have accepted; until then, their name is not shown anywhere.`,
 		emailLabel: 'Email address of the person',
-		emailHelp: 'Example: first.last@example.ch',
+		emailHelp: 'Example: first.last@example.org',
 		emailLanguageLabel: 'Language of the email',
 		emailLanguageHelp: 'The person you invite receives the email in this language.',
 		roleLabel: 'Role',
@@ -568,7 +568,7 @@ export const membersTexts: Translations<MembersTexts> = {
 				other: `${days} يوم`
 			})}. يظهر الشخص بين الأعضاء بعد أن يقبل الدعوة، وقبل ذلك لا يظهر اسمه في أي مكان.`,
 		emailLabel: 'عنوان البريد الإلكتروني للشخص',
-		emailHelp: 'مثال: name@example.ch',
+		emailHelp: 'مثال: name@example.org',
 		emailLanguageLabel: 'لغة البريد الإلكتروني',
 		emailLanguageHelp: 'تصل رسالة الدعوة إلى الشخص المدعو بهذه اللغة.',
 		roleLabel: 'الدور',

@@ -61,8 +61,11 @@ disparaît à l'écran suivant, et revient si elle recharge cette adresse. Avant
 2. `Cet espace sert aux personnes qui gèrent le programme d'une organisation. Saisissez votre
 adresse électronique : vous recevrez un lien pour vous connecter. Il n'y a pas de mot de passe.`
 3. Le champ `Votre adresse électronique`, avec l'aide
-   `L'adresse à laquelle votre invitation est arrivée. Exemple : prenom.nom@exemple.ch`. Il se lit
-   de gauche à droite, même en arabe.
+   `L'adresse à laquelle votre invitation est arrivée. Exemple : prenom.nom@example.org`. Il se lit
+   de gauche à droite, même en arabe. Depuis l'étape 20, les adresses d'exemple de tous les écrans
+   s'écrivent sur `example.org`, un domaine réservé aux exemples (RFC 2606), qui n'appartient à
+   personne : `vorname.name@example.org`, `nome.cognome@example.org`, `first.last@example.org` et
+   `name@example.org` dans les autres langues. Un test des dictionnaires refuse tout autre domaine.
 4. Le bouton `Recevoir un lien de connexion`.
 5. `Pas encore invité ? Demandez à la personne responsable de votre organisation de vous inviter.`
 6. Le lien `Lire les conditions d'utilisation`.
@@ -80,7 +83,7 @@ adresse : la vérification du lien donne la langue au compte, puis y renvoie san
 que le lien portait, et qu'aucun écran ne lit.
 
 **Une adresse mal formée** : `Cette adresse n'a pas la forme d'une adresse électronique. Exemple :
-prenom.nom@exemple.ch`, reliée au champ, et l'adresse tapée reste dans le champ.
+prenom.nom@example.org`, reliée au champ, et l'adresse tapée reste dans le champ.
 
 ## Vos organisations, `/organisations`
 

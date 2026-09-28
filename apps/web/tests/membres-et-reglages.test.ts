@@ -1162,9 +1162,9 @@ describe('l’écran Membres dans les cinq langues (retours B1, D2 et A3)', () =
 		expect(lu(html.match(/<label\b[^>]*for="email"[^>]*>[\s\S]*?<\/label>/)?.[0] ?? '')).toBe(
 			'Adresse électronique de la personne'
 		);
-		expect(visibleText(html)).toContain('Exemple : prenom.nom@exemple.ch');
+		expect(visibleText(html)).toContain('Exemple : prenom.nom@example.org');
 		expect(alerte(erreurs.fr ?? '')).toBe(
-			'Cette adresse n’a pas la forme d’une adresse électronique. Exemple : prenom.nom@exemple.ch'
+			'Cette adresse n’a pas la forme d’une adresse électronique. Exemple : prenom.nom@example.org'
 		);
 		expect(erreurs.fr).toMatch(/<input\b[^>]*\bname="email"[^>]*\bvalue="pas-une-adresse"/);
 	});

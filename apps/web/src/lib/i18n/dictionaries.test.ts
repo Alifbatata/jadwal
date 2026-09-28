@@ -72,6 +72,23 @@ const PHRASE = /\p{L}{2,}[^\p{L}-]+\p{L}{2,}/u;
  */
 const NOMS_PROPRES = new Set(['Association Horizon']);
 
+/** Une adresse électronique écrite dans un texte ; le groupe est son domaine. */
+const ADRESSE = /[\p{L}\p{N}._%+-]+@((?:[\p{L}\p{N}-]+\.)+[\p{L}\p{N}-]+)/gu;
+
+/**
+ * Les domaines que la RFC 2606 réserve aux exemples : `example.org`, `example.com`, `example.net`,
+ * et tout nom sous `.test`, `.example`, `.invalid` ou `.localhost`. Ils n'appartiennent à personne, et
+ * une adresse d'exemple qui s'y écrit ne mène chez personne. `exemple.ch` ou `beispiel.ch`, eux,
+ * peuvent être achetés, et le courriel d'une personne qui recopie l'exemple y arriverait (étape 20).
+ */
+function isReservedDomain(domain: string): boolean {
+	const name = domain.toLowerCase();
+	return (
+		/(?:^|\.)example\.(?:org|com|net)$/.test(name) ||
+		/\.(?:test|example|invalid|localhost)$/.test(name)
+	);
+}
+
 describe('les dictionnaires de l’espace', () => {
 	it('are found in this folder', () => {
 		const names = DICTIONARIES.map((dictionary) => dictionary.name);
@@ -116,6 +133,43 @@ describe('les dictionnaires de l’espace', () => {
 					expect(text ?? '', `${language} ${leaf}`).not.toMatch(/[٠-٩۰-۹]/);
 				}
 			}
+		}
+	);
+
+	it('finds the example addresses, and knows the reserved domains', () => {
+		const found = [
+			...'Exemple : prenom.nom@example.org. Ou nome.cognome@esempio.ch'.matchAll(ADRESSE)
+		].map((match) => match[1]);
+		expect(found).toEqual(['example.org', 'esempio.ch']);
+		// Les écrans en écrivent dans chaque langue : sans elles, le test suivant passerait à vide.
+		for (const language of LANGUES) {
+			const addresses = DICTIONARIES.flatMap(({ value }) =>
+				[...leaves(value[language]).values()].flatMap((text) => [...(text ?? '').matchAll(ADRESSE)])
+			);
+			expect(addresses.length, language).toBeGreaterThan(0);
+		}
+		for (const domain of ['example.org', 'example.com', 'example.net', 'a.example.org']) {
+			expect(isReservedDomain(domain), domain).toBe(true);
+		}
+		for (const domain of ['belvedere.example.test', 'jadwal.example', 'x.invalid', 'x.localhost']) {
+			expect(isReservedDomain(domain), domain).toBe(true);
+		}
+		for (const domain of ['exemple.ch', 'example.ch', 'beispiel.ch', 'myexample.org', 'test.ch']) {
+			expect(isReservedDomain(domain), domain).toBe(false);
+		}
+	});
+
+	it.each(DICTIONARIES)(
+		'$name writes an example address only on a domain reserved for examples',
+		({ value }) => {
+			const outside = LANGUES.flatMap((language) =>
+				[...leaves(value[language])].flatMap(([leaf, text]) =>
+					[...(text ?? '').matchAll(ADRESSE)]
+						.filter(([, domain]) => !isReservedDomain(domain ?? ''))
+						.map(([address]) => `${language} ${leaf} : ${address}`)
+				)
+			);
+			expect(outside).toEqual([]);
 		}
 	);
 });

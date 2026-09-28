@@ -70,7 +70,7 @@ l'envoi des courriels est en panne.`
 message, et, en l'ouvrant, elle entre dans son compte comme avec le lien habituel.`
    - `Il est valable quinze minutes et ne sert qu'une fois.`
    - `Adresse électronique de la personne`, avec `L'adresse de son compte. Exemple :
-prenom.nom@exemple.ch`, et le bouton `Créer le lien de connexion`.
+prenom.nom@example.org`, et le bouton `Créer le lien de connexion`.
    - Le résultat : `Lien de connexion pour <adresse>`, le lien à copier, puis `Il ouvre son compte et
 ses organisations, sans aucun pouvoir de super-admin, même pour votre propre adresse. Si l'adresse
 n'a pas encore de compte, il en crée un, rattaché à aucune organisation.` et `Ce lien est noté dans

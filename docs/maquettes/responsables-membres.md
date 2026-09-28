@@ -22,8 +22,8 @@ nouveau.`
 4. **Inviter une personne** : `La personne reçoit un courriel avec un lien pour se connecter.
 L'invitation vaut 14 jours. La personne apparaît parmi les membres quand elle a accepté ; avant, son
 nom ne s'affiche nulle part.` Le champ `Adresse électronique de la personne`, avec
-   `Exemple : prenom.nom@exemple.ch`, le choix `Langue du courriel`, avec `La personne invitée reçoit
-le courriel dans cette langue.`, le choix `Rôle` (`Éditeur` ou `Responsable`), et le bouton
+   `Exemple : prenom.nom@example.org`, le choix `Langue du courriel`, avec `La personne invitée
+reçoit le courriel dans cette langue.`, le choix `Rôle` (`Éditeur` ou `Responsable`), et le bouton
    `Envoyer l'invitation`. Après l'envoi : `L'invitation a été envoyée à cette adresse.`, la même
    phrase pour toute adresse et toute langue (ADR 0017). Après une erreur, l'adresse, la langue et
    le rôle choisis restent dans le formulaire.
