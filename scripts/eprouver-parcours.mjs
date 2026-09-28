@@ -8993,7 +8993,8 @@ async function deplaceeSurLAccueil(page) {
  * et l'écran ne répond plus. Le routeur de SvelteKit ne démarre qu'une fois la page hydratée : un
  * lien de la navigation suivi sans recharger la page le prouve. Une ressource que le navigateur ne
  * trouve pas, comme l'icône qu'il demande de lui-même, n'est pas une erreur de la page. Si l'écran
- * ne montre pas les deux séances (`lignes`), le cas n'est pas construit : le geste est impossible.
+ * ne montre pas les deux séances (`lignes`) et que rien n'a échoué, le cas n'est pas construit : le
+ * geste est impossible. S'il ne les montre pas après une erreur, c'est l'écran qui a cassé.
  */
 async function hydrateeSansErreur(page, { adresse, lignes, attendues, quoi, vues }) {
 	const erreurs = [];
@@ -9008,15 +9009,26 @@ async function hydrateeSansErreur(page, { adresse, lignes, attendues, quoi, vues
 	try {
 		await ouvrir(page, adresse);
 		const lues = await lignes.count();
-		if (lues !== 2) throw new Error(`${attendues} attendues : ${lues} à l’écran`);
+		// Sans aucune erreur, un compte faux veut dire que le cas n'est pas construit. Avec une erreur,
+		// c'est l'écran qui a cassé : Svelte, qui ne peut pas hydrater une liste aux clés en double,
+		// la refait côté navigateur et la laisse vide. C'est alors la vérification qui tombe.
+		if (lues !== 2 && erreurs.length === 0) {
+			throw new Error(`${attendues} attendues : ${lues} à l’écran`);
+		}
 		await page.evaluate(() => {
 			window.parcoursSansRechargement = true;
 		});
-		await naviguer(page, '/partager');
-		const sansRechargement = await page.evaluate(() => window.parcoursSansRechargement === true);
+		let sansRechargement = false;
+		try {
+			await naviguer(page, '/partager');
+			sansRechargement = await page.evaluate(() => window.parcoursSansRechargement === true);
+		} catch {
+			// Un écran cassé peut ne plus offrir le lien : la page n'est pas hydratée.
+		}
 		verifierChaque(
 			quoi,
 			{
+				'les deux à l’écran': lues === 2,
 				'aucune erreur': erreurs.length === 0,
 				'hydratée : le lien suivi sans recharger la page': sansRechargement
 			},
