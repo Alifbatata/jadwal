@@ -54,7 +54,7 @@ Sous le choix du rôle, deux listes, qu'une personne lit au moment de choisir.
 **Réservé au responsable, en plus de tout ce que fait un éditeur**
 
 - Supprimer un cours
-- Supprimer une prière du vendredi
+- Quand les heures de prière sont activées : supprimer une prière du vendredi
 - Voir les membres, leur rôle et les invitations en attente
 - Inviter une personne, comme éditeur ou comme responsable, et annuler une invitation
 - Changer le rôle d'un membre
@@ -78,8 +78,10 @@ navigation. Jusqu'au lot 4 de l'étape 18, la ligne des cours de l'éditeur disa
 supprimer » : l'éditeur ne peut pas supprimer un cours, et ces mots sont retirés de sa liste. De
 même à l'étape 20 pour la prière du vendredi : la base réserve sa suppression à la personne
 responsable (migration 0073), l'écran du vendredi ne propose le bouton qu'à elle, la ligne de
-l'éditeur ne dit plus « ou la supprimer », et `Supprimer une prière du vendredi` suit
-`Supprimer un cours`, comme l'écran du vendredi suit l'écran Cours dans la navigation. La
+l'éditeur ne dit plus « ou la supprimer », et
+`Quand les heures de prière sont activées : supprimer une prière du vendredi` suit
+`Supprimer un cours`, comme l'écran du vendredi suit l'écran Cours dans la navigation. Elle commence
+comme la ligne du vendredi de l'éditeur : cet écran n'existe qu'avec les heures de prière. La
 liste des membres elle-même, que la ligne « Voir les membres » réserve, l'est aussi dans la base
 depuis l'étape 19 (migration 0064) : un éditeur ne lit plus que sa propre adhésion.
 

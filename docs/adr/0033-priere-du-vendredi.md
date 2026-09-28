@@ -200,8 +200,8 @@ comme supprimer un cours. La politique `course_delete` perd sa branche `kind = '
 l'accueil, et rien ne s'écrit), et le bouton « Supprimer cette session » n'est rendu que pour lui.
 L'éditeur garde les autres gestes de l'écran : ajouter une session, la modifier, la publier,
 l'annuler, la déplacer et la rétablir. L'écran Membres range ce geste parmi ceux du responsable,
-« Supprimer une prière du vendredi » (ADR 0046). Le déclencheur `course_kind_fixed` reste : il
-tient toujours le type d'une ligne.
+« Quand les heures de prière sont activées : supprimer une prière du vendredi » (ADR 0046). Le
+déclencheur `course_kind_fixed` reste : il tient toujours le type d'une ligne.
 
 **Une session déplacée depuis un vendredi passé** (décision C2) ne se rétablit plus sur ce vendredi,
 ni ne se déplace de nouveau : sa ligne propose « Annuler cette session », qui l'annule à sa nouvelle

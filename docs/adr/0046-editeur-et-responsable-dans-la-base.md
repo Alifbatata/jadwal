@@ -270,10 +270,11 @@ vendredi, comme un cours. L'action `supprimer` de l'écran Vendredi passe par
 sans rien supprimer ni écrire au journal. Le bouton `Supprimer cette session` n'est rendu que pour
 la personne responsable. Le geste entre dans la liste que l'écran Membres affiche, sous « Réservé
 au responsable », juste après la suppression d'un cours, comme l'écran Vendredi suit l'écran Cours
-dans la navigation : `Supprimer une prière du vendredi`, dans les cinq langues (`deleteFriday`). Le
-geste `friday` de l'éditeur ne promet plus de la supprimer. La table des cours était déjà dite
-réservée : le test qui lie l'écran à la base ne change que par ce geste, qu'il refuse à une
-éditrice par sa route.
+dans la navigation : `Quand les heures de prière sont activées : supprimer une prière du vendredi`,
+dans les cinq langues (`deleteFriday`). Il commence comme le geste `friday` de l'éditeur, qui ne
+promet plus de la supprimer : cet écran n'existe qu'avec les heures de prière. La table des cours
+était déjà dite réservée : le test qui lie l'écran à la base ne change que par ce geste, qu'il
+refuse à une éditrice par sa route.
 
 La même étape ajoute un geste à la colonne de l'éditeur, sans changer de table : `?/annulerDeplacee`,
 sur « À venir » comme sur l'écran Vendredi, annule à sa nouvelle date une séance déplacée dont la

@@ -873,9 +873,10 @@ const RESERVES: {
 		refus: [{ chemin: '/cours?/supprimer', champs: { courseId: '' } }]
 	},
 	// Une session du vendredi aussi, depuis l'étape 20 (C3) : la base le réserve au responsable
-	// (migration 0073), et l'écran du vendredi ne propose le bouton qu'à lui.
+	// (migration 0073), et l'écran du vendredi ne propose le bouton qu'à lui. Cet écran n'existe
+	// qu'avec les heures de prière : le geste le dit, comme celui de l'éditeur (`friday`).
 	deleteFriday: {
-		texte: 'Supprimer une prière du vendredi',
+		texte: 'Quand les heures de prière sont activées : supprimer une prière du vendredi',
 		tables: ['course'],
 		refus: [{ chemin: '/vendredi?/supprimer', champs: { courseId: '' } }]
 	},

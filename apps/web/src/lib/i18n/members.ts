@@ -32,6 +32,7 @@ export const EDITOR_GESTURES = [
  * l'écran le propose depuis le lot 2 de l'étape 19. Supprimer une prière du vendredi suit, comme
  * l'écran du vendredi : la base le réserve depuis la migration 0073, et l'écran ne le propose qu'au
  * responsable depuis l'étape 20 (C3). L'éditeur garde les autres gestes de cet écran (`friday`).
+ * L'écran n'existe qu'avec les heures de prière : les deux gestes le disent par le même début.
  */
 export const MANAGER_GESTURES = [
 	'deleteCourse',
@@ -187,7 +188,7 @@ export const membersTexts: Translations<MembersTexts> = {
 			},
 			manager: {
 				deleteCourse: 'Supprimer un cours',
-				deleteFriday: 'Supprimer une prière du vendredi',
+				deleteFriday: 'Quand les heures de prière sont activées : supprimer une prière du vendredi',
 				members: 'Voir les membres, leur rôle et les invitations en attente',
 				invitations:
 					'Inviter une personne, comme éditeur ou comme responsable, et annuler une invitation',
@@ -287,7 +288,7 @@ export const membersTexts: Translations<MembersTexts> = {
 			},
 			manager: {
 				deleteCourse: 'Einen Kurs löschen',
-				deleteFriday: 'Ein Freitagsgebet löschen',
+				deleteFriday: 'Wenn die Gebetszeiten aktiviert sind: ein Freitagsgebet löschen',
 				members: 'Die Mitglieder, ihre Rolle und die offenen Einladungen sehen',
 				invitations:
 					'Eine Person für die Redaktion oder die Leitung einladen und eine Einladung zurückziehen',
@@ -389,7 +390,8 @@ export const membersTexts: Translations<MembersTexts> = {
 			},
 			manager: {
 				deleteCourse: 'Eliminare un corso',
-				deleteFriday: 'Eliminare una preghiera del venerdì',
+				deleteFriday:
+					'Quando gli orari di preghiera sono attivi: eliminare una preghiera del venerdì',
 				members: 'Vedere i membri, il loro ruolo e gli inviti in attesa',
 				invitations:
 					'Invitare una persona, come redattore o come responsabile, e annullare un invito',
@@ -488,7 +490,7 @@ export const membersTexts: Translations<MembersTexts> = {
 			},
 			manager: {
 				deleteCourse: 'Delete a course',
-				deleteFriday: 'Delete a Friday prayer',
+				deleteFriday: 'When prayer times are switched on: delete a Friday prayer',
 				members: 'See the members, their role and the pending invitations',
 				invitations: 'Invite someone, as an editor or as a manager, and cancel an invitation',
 				roles: 'Change the role of a member',
@@ -590,7 +592,7 @@ export const membersTexts: Translations<MembersTexts> = {
 			},
 			manager: {
 				deleteCourse: 'حذف درس',
-				deleteFriday: 'حذف صلاة جمعة',
+				deleteFriday: 'عند تفعيل مواقيت الصلاة: حذف صلاة جمعة',
 				members: 'عرض الأعضاء وأدوارهم والدعوات المعلقة',
 				invitations: 'دعوة شخص بصفة محرر أو مسؤول، وإلغاء دعوة',
 				roles: 'تغيير دور عضو',
