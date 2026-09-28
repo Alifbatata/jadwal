@@ -60,12 +60,14 @@ le détail suit le lien de la session, qui existe comme celui d'un cours.
 ### Quand une session est annulée ou déplacée
 
 Le bloc décrit le rythme habituel et ne porte donc **aucune exception**. Une session annulée ce
-vendredi-là, ou déplacée, se lit dans la vue Semaine, là où sont toutes les exceptions : barrée,
-avec `Session annulée` ou `Date exceptionnelle`, comme une séance de cours. L'état s'écrit avec son
-propre nom, jamais accordé au titre (décision du chef de projet, étape 20) : `Session annulée`,
-`Durchgang abgesagt`, `Turno annullato`, `Session cancelled`, `موعد ملغى`. Un cours dit
-`Séance annulée`. Cette décision remplace `Annulée`, accordé à `Prière du vendredi` depuis le
-27.09.2026.
+vendredi-là, ou déplacée, se lit dans la vue Semaine, là où sont toutes les exceptions, comme une
+séance de cours. Annulée, elle est barrée, avec `Session annulée`. Déplacée, elle est barrée à sa
+date d'origine, avec `Session déplacée au …`, ou `Session déplacée à …` quand seule l'heure change,
+et elle figure à sa nouvelle date, sans être barrée, avec `Date exceptionnelle`, ou `Nouvelle heure`
+le même jour. L'état s'écrit avec son propre nom, jamais accordé au titre (décision du chef de
+projet, étape 20) : `Session annulée`, `Durchgang abgesagt`, `Turno annullato`, `Session cancelled`,
+`موعد ملغى`. Un cours dit `Séance annulée`. Cette décision remplace `Annulée`, accordé à
+`Prière du vendredi` depuis le 27.09.2026.
 
 C'est un choix : un bloc qui changerait chaque semaine ne serait plus une réponse, il serait une
 question de plus.
