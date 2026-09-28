@@ -138,9 +138,9 @@ describe('les dictionnaires de l’espace', () => {
 
 	it('finds the example addresses, and knows the reserved domains', () => {
 		const found = [
-			...'Exemple : prenom.nom@example.org. Ou nome.cognome@esempio.ch'.matchAll(ADRESSE)
+			...'Exemple : prenom.nom@example.org. Ou nome.cognome@esempio.invalid'.matchAll(ADRESSE)
 		].map((match) => match[1]);
-		expect(found).toEqual(['example.org', 'esempio.ch']);
+		expect(found).toEqual(['example.org', 'esempio.invalid']);
 		// Les écrans en écrivent dans chaque langue : sans elles, le test suivant passerait à vide.
 		for (const language of LANGUES) {
 			const addresses = DICTIONARIES.flatMap(({ value }) =>
