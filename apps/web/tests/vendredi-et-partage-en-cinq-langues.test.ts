@@ -2993,10 +2993,102 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 		ar: (date) => `«${NOM_DE_LA_PRIERE.ar}»: أُلغيت الصلاة يوم ${date} في الساعة 16:00.`
 	};
 
+	/**
+	 * Le refus d'un formulaire qui n'envoie pas ce que la ligne montrait, ou qui envoie une date
+	 * illisible (`dateUnreadable`), puis celui d'une heure illisible (`timeUnreadable`) : aucune ligne
+	 * ne les envoie.
+	 */
+	const DATE_ILLISIBLE: Record<Langue, string> = {
+		fr: 'Cette date est illisible. Rechargez la page et recommencez.',
+		de: 'Dieses Datum ist nicht lesbar. Laden Sie die Seite neu und versuchen Sie es noch einmal.',
+		it: 'Questa data non è leggibile. Ricarica la pagina e riprova.',
+		en: 'This date cannot be read. Reload the page and try again.',
+		ar: 'تعذّرت قراءة هذا التاريخ. أعد تحميل الصفحة وحاول مرة أخرى.'
+	};
+	const HEURE_ILLISIBLE: Record<Langue, string> = {
+		fr: 'Cette heure est illisible. Exemple : 13:30.',
+		de: 'Diese Uhrzeit ist nicht lesbar. Beispiel: 13:30.',
+		it: 'Questo orario non è leggibile. Esempio: 13:30.',
+		en: 'This time cannot be read. Example: 13:30.',
+		ar: 'تعذّرت قراءة هذا الوقت. مثال: 13:30.'
+	};
+	/** Une éditrice de l'organisation : l'ADR 0046 lui ouvre ce geste, comme au responsable. */
+	const EDITRICE_C2 = 'vp-editrice-c2@example.test';
+	const editrice = newId();
+
 	let deplacement = '';
-	/** Les messages de l'annulation, que la seconde demande rend de nouveau (D4). */
-	let messagesDeLAnnulation: string[] = [];
 	const lu = (fragment: string) => visibleText(`<body>${fragment}</body>`);
+
+	/** Les exceptions d'un cours, avec leur identifiant : un refus n'en écrit aucune. */
+	async function exceptionsDe(courseId: string): Promise<unknown[]> {
+		return maintenance(async (tx) =>
+			lignes(
+				await tx.execute(sql`
+					select "id", "date"::text, "kind", "to_date"::text, left("to_start"::text, 5) as to_start
+					from "session_exception" where "course_id" = ${courseId} order by "date"
+				`)
+			)
+		);
+	}
+
+	/**
+	 * Pose une annulation de la première session qui garde où elle avait été déplacée, comme
+	 * `cancelMoved` l'écrit, et rend son identifiant.
+	 */
+	async function poserAnnulationDeplacee(date: IsoDate, vers: IsoDate): Promise<string> {
+		const id = newId();
+		await maintenance((tx) =>
+			tx.execute(sql`
+				insert into "session_exception" ("id", "organization_id", "course_id", "date", "kind",
+					"to_date", "to_start", "created_by")
+				values (${id}, ${organizationId}, ${sessions[1]}, ${date}, 'cancelled', ${vers}, '16:00',
+					${ids[RESPONSABLE] ?? ''})
+			`)
+		);
+		return id;
+	}
+
+	/** Retire les exceptions de la première session à ces dates : chaque test la rend telle quelle. */
+	async function effacer(...dates: IsoDate[]): Promise<void> {
+		for (const date of dates) {
+			await maintenance((tx) =>
+				tx.execute(sql`
+					delete from "session_exception" where "course_id" = ${sessions[1]} and "date" = ${date}
+				`)
+			);
+		}
+	}
+
+	/** Le formulaire que la ligne d'un déplacement de la première session envoie. */
+	function envoiDe(date: IsoDate, id: string, vers: IsoDate): Record<string, string> {
+		return { courseId: sessions[1], date, shownId: id, shownToDate: vers, shownToStart: '16:00' };
+	}
+
+	/** La dernière entrée du journal de l'organisation : son auteur, son action, avant et après. */
+	async function derniereEntree(): Promise<{
+		actor_id: string;
+		action: string;
+		before: unknown;
+		after: unknown;
+	}> {
+		const journal = createDatabase({ role: 'app', overrides: { database: testDatabase } });
+		try {
+			const [trouvee] = await withOrg(
+				journal.db,
+				{ organizationId, userId: ids[RESPONSABLE] ?? '' },
+				async (tx) =>
+					lignes<{ actor_id: string; action: string; before: unknown; after: unknown }>(
+						await tx.execute(sql`
+							select "actor_id", "action", "before", "after" from "audit_log"
+							order by "created_at" desc, "id" desc limit 1
+						`)
+					)
+			);
+			return trouvee ?? { actor_id: '', action: '', before: null, after: null };
+		} finally {
+			await journal.close();
+		}
+	}
 
 	/** Les exceptions de la première session, avec leur identifiant : un refus n'en écrit aucune. */
 	async function exceptionsDeLaPremiere(): Promise<unknown[]> {
@@ -3057,6 +3149,17 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 
 	beforeAll(async () => {
 		deplacement = await poserDeplacement(vendrediPasse(), jourDuDeplacement());
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified", "language")
+				values (${editrice}, ${EDITRICE_C2}, true, 'fr')
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${organizationId}, ${editrice}, 'editor')
+			`);
+			await tx.execute(conditionsAcceptees(organizationId, editrice));
+		});
 	});
 
 	afterAll(async () => {
@@ -3186,6 +3289,233 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 		}
 	});
 
+	it('restores a session moved from today: the bound is strictly before today', async () => {
+		// Une ligne ne le montre qu'un vendredi : le formulaire est celui qu'elle enverrait, écrit ici,
+		// pour que le test éprouve la borne chaque jour de la semaine.
+		const vers = addDays(today(), 3);
+		const envoi = envoiDe(today(), await poserDeplacement(today(), vers), vers);
+		try {
+			const journalAvant = await lignesDuJournalDeVendredi();
+			const reponse = await postForm('/vendredi?/retablir', envoi, cookies);
+			expect(reponse.status).toBe(200);
+			expect(await exceptionDe(sessions[1], today())).toBeUndefined();
+			expect(await lignesDuJournalDeVendredi()).toBe(journalAvant + 1);
+		} finally {
+			await effacer(today());
+		}
+	});
+
+	it('cancels a session moved from a past Friday to today: today has not passed', async () => {
+		const depuis = addDays(vendrediPasse(), -14);
+		const envoi = envoiDe(depuis, await poserDeplacement(depuis, today()), today());
+		try {
+			const reponse = await postForm('/vendredi?/annulerDeplacee', envoi, cookies);
+			expect(reponse.status).toBe(200);
+			expect(await exceptionDe(sessions[1], depuis)).toEqual({
+				kind: 'cancelled',
+				to_date: today(),
+				to_start: '16:00'
+			});
+		} finally {
+			await effacer(depuis);
+		}
+	});
+
+	it('refuses the form of a line that showed another change, another exception, another new day or another new time, in each language, and writes nothing', async () => {
+		const depuis = addDays(vendrediPasse(), -14);
+		const vers = addDays(today(), 2);
+		const juste = envoiDe(depuis, await poserDeplacement(depuis, vers), vers);
+		const autreDate = addDays(vendrediPasse(), -21);
+		const autre = await poserDeplacement(autreDate, addDays(today(), 3));
+		try {
+			const avant = await exceptionsDeLaPremiere();
+			const journalAvant = await lignesDuJournalDeVendredi();
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				for (const [quoi, envoi] of [
+					['une autre exception', { ...juste, shownId: autre }],
+					['un autre jour', { ...juste, shownToDate: addDays(today(), 4) }],
+					['une autre heure', { ...juste, shownToStart: '17:00' }]
+				] as const) {
+					const reponse = await postForm('/vendredi?/annulerDeplacee', envoi, cookies);
+					expect(reponse.status, `${langue} ${quoi}`).toBe(409);
+					const html = await reponse.text();
+					expect(enTete(html), `${langue} ${quoi}`).toEqual([REFUS_DU_VENDREDI.changed[langue]]);
+					expect(section(html, 'message-aide'), `${langue} ${quoi}`).toBe('');
+				}
+			}
+			expect(await exceptionsDeLaPremiere()).toEqual(avant);
+			expect(await lignesDuJournalDeVendredi()).toBe(journalAvant);
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await effacer(depuis, autreDate);
+		}
+	});
+
+	it('answers a hand-written form that sends the cancellation itself as already cancelled, gives the message, and writes nothing', async () => {
+		const depuis = addDays(vendrediPasse(), -14);
+		const vers = addDays(today(), 2);
+		const envoi = envoiDe(depuis, await poserAnnulationDeplacee(depuis, vers), vers);
+		try {
+			const avant = await exceptionsDeLaPremiere();
+			const journalAvant = await lignesDuJournalDeVendredi();
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const reponse = await postForm('/vendredi?/annulerDeplacee', envoi, cookies);
+				expect(reponse.status, langue).toBe(409);
+				const html = await reponse.text();
+				expect(enTete(html), langue).toEqual([DEJA_ANNULEE[langue]]);
+				expect(messagesEnTete(html), langue).toHaveLength(5);
+			}
+			expect(await exceptionsDeLaPremiere()).toEqual(avant);
+			expect(await lignesDuJournalDeVendredi()).toBe(journalAvant);
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await effacer(depuis);
+		}
+	});
+
+	it('answers a session of another organisation, a course, or a session that does not exist, as a session that no longer exists, in each language, and writes nothing', async () => {
+		// La session de l'autre organisation et le cours ont bien un déplacement à cette date, que le
+		// formulaire montre tel qu'il est : seuls l'organisation et le type les écartent.
+		const vers = addDays(today(), 2);
+		const deLAutre = { courseId: sessionsDe[1], date: addDays(vendrediPasse(), -14) };
+		const duCours = { courseId: coursId, date: addDays(today(), -11) };
+		const poses: Record<string, string> = {};
+		for (const [cible, organisation, auteur] of [
+			[deLAutre, organizationDeId, ids[RESPONSABLE_DE] ?? ''],
+			[duCours, organizationId, ids[RESPONSABLE] ?? '']
+		] as const) {
+			const id = newId();
+			poses[cible.courseId] = id;
+			await maintenance((tx) =>
+				tx.execute(sql`
+					insert into "session_exception" ("id", "organization_id", "course_id", "date", "kind",
+						"to_date", "to_start", "created_by")
+					values (${id}, ${organisation}, ${cible.courseId}, ${cible.date}, 'moved', ${vers},
+						'16:00', ${auteur})
+				`)
+			);
+		}
+		try {
+			const avant = [
+				await exceptionsDe(sessionsDe[1]),
+				await exceptionsDe(coursId),
+				await exceptionsDeLaPremiere()
+			];
+			const journalAvant = await lignesDuJournalDeVendredi();
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				for (const [quoi, envoi] of [
+					['une autre organisation', { ...deLAutre, shownId: poses[sessionsDe[1]] ?? '' }],
+					['un cours', { ...duCours, shownId: poses[coursId] ?? '' }],
+					['une session inconnue', { courseId: newId(), date: deLAutre.date, shownId: newId() }]
+				] as const) {
+					const reponse = await postForm(
+						'/vendredi?/annulerDeplacee',
+						{ ...envoi, shownToDate: vers, shownToStart: '16:00' },
+						cookies
+					);
+					expect(reponse.status, `${langue} ${quoi}`).toBe(404);
+					const html = await reponse.text();
+					expect(enTete(html), `${langue} ${quoi}`).toEqual([
+						REFUS_DU_VENDREDI.sessionGone[langue]
+					]);
+					expect(section(html, 'message-aide'), `${langue} ${quoi}`).toBe('');
+				}
+			}
+			expect([
+				await exceptionsDe(sessionsDe[1]),
+				await exceptionsDe(coursId),
+				await exceptionsDeLaPremiere()
+			]).toEqual(avant);
+			expect(await lignesDuJournalDeVendredi()).toBe(journalAvant);
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			for (const id of Object.values(poses)) {
+				await maintenance((tx) =>
+					tx.execute(sql`delete from "session_exception" where "id" = ${id}`)
+				);
+			}
+		}
+	});
+
+	it('refuses a form that does not send what the line showed, or sends a date or a time that cannot be read, in each language, and writes nothing', async () => {
+		const depuis = addDays(vendrediPasse(), -14);
+		const vers = addDays(today(), 2);
+		const juste = envoiDe(depuis, await poserDeplacement(depuis, vers), vers);
+		try {
+			const avant = await exceptionsDeLaPremiere();
+			const journalAvant = await lignesDuJournalDeVendredi();
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				for (const [quoi, envoi, phrase] of [
+					[
+						'sans ce que la ligne montrait',
+						{ courseId: sessions[1], date: depuis },
+						DATE_ILLISIBLE[langue]
+					],
+					['un jour impossible', { ...juste, shownToDate: '2026-02-30' }, DATE_ILLISIBLE[langue]],
+					[
+						'un jour prévu hors de 1970 à 2100',
+						{ ...juste, date: '0000-01-01' },
+						DATE_ILLISIBLE[langue]
+					],
+					['une heure impossible', { ...juste, shownToStart: '25:99' }, HEURE_ILLISIBLE[langue]],
+					['sans heure', { ...juste, shownToStart: '' }, HEURE_ILLISIBLE[langue]]
+				] as const) {
+					const reponse = await postForm('/vendredi?/annulerDeplacee', envoi, cookies);
+					expect(reponse.status, `${langue} ${quoi}`).toBe(400);
+					const html = await reponse.text();
+					expect(enTete(html), `${langue} ${quoi}`).toEqual([phrase]);
+					expect(section(html, 'message-aide'), `${langue} ${quoi}`).toBe('');
+				}
+			}
+			expect(await exceptionsDeLaPremiere()).toEqual(avant);
+			expect(await lignesDuJournalDeVendredi()).toBe(journalAvant);
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await effacer(depuis);
+		}
+	});
+
+	it('lets an editor cancel it from her line, as ADR 0046 opens this gesture to her, and writes the journal in her name', async () => {
+		const depuis = addDays(vendrediPasse(), -14);
+		const vers = addDays(today(), 3);
+		const id = await poserDeplacement(depuis, vers);
+		try {
+			const cookieDeLEditrice = await signIn(EDITRICE_C2);
+			const lignesDeLEditrice = lignesDeCeVendredi(
+				await (await get('/vendredi', cookieDeLEditrice)).text()
+			).filter(
+				(ligne) =>
+					lu(ligne).includes(PREMIERE_SESSION.fr) &&
+					lu(ligne).includes(NOUVELLE_DATE.fr(dateEcrite('fr', depuis)))
+			);
+			expect(lignesDeLEditrice).toHaveLength(1);
+			const envoi = annulationDeLaLigne(lignesDeLEditrice[0] ?? '');
+			expect(envoi).toEqual(envoiDe(depuis, id, vers));
+			const journalAvant = await lignesDuJournalDeVendredi();
+			const reponse = await postForm('/vendredi?/annulerDeplacee', envoi ?? {}, cookieDeLEditrice);
+			expect(reponse.status).toBe(200);
+			expect(messagesEnTete(await reponse.text())).toHaveLength(5);
+			expect(await exceptionDe(sessions[1], depuis)).toEqual({
+				kind: 'cancelled',
+				to_date: vers,
+				to_start: '16:00'
+			});
+			expect(await lignesDuJournalDeVendredi()).toBe(journalAvant + 1);
+			expect(await derniereEntree()).toEqual({
+				actor_id: editrice,
+				action: 'exception.cancel',
+				before: { date: depuis, kind: 'moved', toDate: vers, toStart: '16:00' },
+				after: { date: depuis, kind: 'cancelled', toDate: vers, toStart: '16:00' }
+			});
+		} finally {
+			await effacer(depuis);
+		}
+	});
+
 	it('cancels it at its new day, keeps where it had moved, says so, gives the message in each published language, and writes the journal once', async () => {
 		const envoi =
 			annulationDeLaLigne(
@@ -3204,6 +3534,14 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 		});
 		expect(annulation?.id).not.toBe(deplacement);
 		expect(await lignesDuJournalDeVendredi()).toBe(journalAvant + 1);
+		// Le journal garde le déplacement avant, et l'annulation après, qui garde où il menait.
+		const deplacee = { toDate: jourDuDeplacement(), toStart: '16:00' };
+		expect(await derniereEntree()).toEqual({
+			actor_id: ids[RESPONSABLE],
+			action: 'exception.cancel',
+			before: { date: vendrediPasse(), kind: 'moved', ...deplacee },
+			after: { date: vendrediPasse(), kind: 'cancelled', ...deplacee }
+		});
 		expect(lu(html.match(/<p\b[^>]*role="status"[^>]*>[\s\S]*?<\/p>/)?.[0] ?? '')).toBe(ANNULEE.fr);
 		// Le message, dans chaque langue publiée, la langue de l'organisation d'abord : la prière s'y
 		// nomme dans la langue du message, avec sa nouvelle date et sa nouvelle heure.
@@ -3214,7 +3552,6 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 				PHRASE_DU_MESSAGE[langue](dateEcrite(langue, jourDuDeplacement()))
 			);
 		}
-		messagesDeLAnnulation = ecrits.map((message) => message.texte);
 		// La ligne de sa nouvelle date la dit annulée, sans rien à rétablir ni à annuler. Le début de
 		// chaque ligne seulement : la liste des jours d'un déplacement écrit aussi cette date.
 		const debut = (ligne: string) =>
@@ -3232,32 +3569,34 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 	});
 
 	it('answers a second cancellation with the same message, at the top, and writes nothing (D4)', async () => {
-		expect(messagesDeLAnnulation).toHaveLength(5);
-		const avant = await exceptionsDeLaPremiere();
-		const journalAvant = await lignesDuJournalDeVendredi();
-		for (const langue of LANGUES) {
-			await poserLangueDuCompte(RESPONSABLE, langue);
-			const reponse = await postForm(
-				'/vendredi?/annulerDeplacee',
-				{
-					courseId: sessions[1],
-					date: vendrediPasse(),
-					shownId: deplacement,
-					shownToDate: jourDuDeplacement(),
-					shownToStart: '16:00'
-				},
-				cookies
-			);
-			expect(reponse.status, langue).toBe(409);
-			const html = await reponse.text();
-			expect(enTete(html), langue).toEqual([DEJA_ANNULEE[langue]]);
-			expect(
-				messagesEnTete(html).map((message) => message.texte),
-				langue
-			).toEqual(messagesDeLAnnulation);
+		// Le test pose son propre déplacement et l'annule d'abord : il ne dépend d'aucun autre, ni de
+		// leur ordre.
+		const depuis = addDays(vendrediPasse(), -14);
+		const vers = addDays(today(), 2);
+		const envoi = envoiDe(depuis, await poserDeplacement(depuis, vers), vers);
+		try {
+			const premiere = await postForm('/vendredi?/annulerDeplacee', envoi, cookies);
+			expect(premiere.status).toBe(200);
+			const attendus = messagesEnTete(await premiere.text()).map((message) => message.texte);
+			expect(attendus).toHaveLength(5);
+			const avant = await exceptionsDeLaPremiere();
+			const journalAvant = await lignesDuJournalDeVendredi();
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const reponse = await postForm('/vendredi?/annulerDeplacee', envoi, cookies);
+				expect(reponse.status, langue).toBe(409);
+				const html = await reponse.text();
+				expect(enTete(html), langue).toEqual([DEJA_ANNULEE[langue]]);
+				expect(
+					messagesEnTete(html).map((message) => message.texte),
+					langue
+				).toEqual(attendus);
+			}
+			expect(await exceptionsDeLaPremiere()).toEqual(avant);
+			expect(await lignesDuJournalDeVendredi()).toBe(journalAvant);
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await effacer(depuis);
 		}
-		await poserLangueDuCompte(RESPONSABLE, 'fr');
-		expect(await exceptionsDeLaPremiere()).toEqual(avant);
-		expect(await lignesDuJournalDeVendredi()).toBe(journalAvant);
 	});
 });
