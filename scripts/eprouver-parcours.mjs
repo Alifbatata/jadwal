@@ -170,8 +170,6 @@
  *   vides, et « après une prière » qui laisse partir 0 minute comme 180.
  * - 19-cours-session-vendredi : l'adresse d'une session du vendredi sous /cours mène au 404 de
  *   l'espace, et non au formulaire d'un cours, dont l'envoi faisait de la session un cours.
- * - 19-cours-deux-etats : un cours est en brouillon ou publié ; « archivé » a quitté la liste
- *   « Publication » du formulaire.
  *
  * Sur les prières :
  *
@@ -217,9 +215,8 @@
  * - dans les cinq langues : 19-B12, 19-agenda-outlook, 19-annulee, 19-og-locale (la page du
  *   programme ; la page d'un cours et celle de l'abonnement en français, en anglais et en arabe),
  *   19-prieres-angle, le refus fait à la seule personne responsable et le lien « Vos organisations »
- *   (19-membres-quitter), le 404 d'une session sous /cours (19-cours-session-vendredi), la liste
- *   « Publication » d'un cours (19-cours-deux-etats), et les messages de 19-D4 (le programme de la
- *   semaine, le déplacement d'un cours placé après le Dhuhr) ;
+ *   (19-membres-quitter), le 404 d'une session sous /cours (19-cours-session-vendredi), et les
+ *   messages de 19-D4 (le programme de la semaine, le déplacement d'un cours placé après le Dhuhr) ;
  * - en arabe seul : 19-B1 à 19-B11, les phrases relues ;
  * - dans deux langues ou plus, sans les cinq : 19-cours-seance-barree (français, anglais, arabe),
  *   19-titre-langue-ecran (allemand, arabe), 19-C (l'écran en français, le courriel en italien) ;
@@ -230,12 +227,12 @@
  *
  * Ce que l'étape 19 a changé sans que cela se voie à l'écran n'est pas ici : la base (le journal
  * signé, les droits de lecture, la suppression réservée, le départ permis, la source déclarée des
- * heures de prière, retirée sans que l'écran change, le type d'une ligne de cours, figé par un
- * déclencheur, et la fin de l'état « archivé ») est éprouvée par les tests de `packages/db`, et les
- * outils (l'épreuve du PDF, l'image, le bloc de site, les tests liés au temps) par leurs propres
- * épreuves. De ces changements de la base, l'écran montre deux choses, vérifiées ici : une session
- * du vendredi ne s'ouvre plus comme un cours (19-cours-session-vendredi), et la liste
- * « Publication » d'un cours n'a plus que deux choix (19-cours-deux-etats).
+ * heures de prière, retirée sans que l'écran change, la fin de l'état « archivé », que le
+ * formulaire d'un cours ne proposait pas à l'étape 18, et le type d'une ligne de cours, figé par
+ * un déclencheur) est éprouvée par les tests de `packages/db`, et les outils (l'épreuve du PDF,
+ * l'image, le bloc de site, les tests liés au temps) par leurs propres épreuves. De ces changements
+ * de la base, l'écran ne montre qu'une chose : une session du vendredi ne s'ouvre plus comme un
+ * cours, et 19-cours-session-vendredi le vérifie.
  *
  * ## La date figée (étape 19, D9)
  *
@@ -899,7 +896,6 @@ const RETOURS_DE_L_ETAPE_19 = [
 	'19-cours-seance-barree',
 	'19-cours-sans-js',
 	'19-cours-session-vendredi',
-	'19-cours-deux-etats',
 	'19-prieres-rue',
 	'19-prieres-copie',
 	'19-prieres-periode-passee',
@@ -3402,73 +3398,16 @@ async function programme(page) {
 }
 
 /**
- * La liste « Publication » d'un cours, dans chaque langue (`apps/web/src/lib/i18n/course-form.ts`) :
- * depuis l'étape 19, un cours est en brouillon ou publié, et rien d'autre.
- */
-const ETATS_D_UN_COURS = {
-	fr: ['brouillon, pas encore sur la page publique', 'publié, visible sur la page publique'],
-	de: [
-		'Entwurf, noch nicht auf der öffentlichen Seite',
-		'veröffentlicht, auf der öffentlichen Seite sichtbar'
-	],
-	it: ['bozza, non ancora sulla pagina pubblica', 'pubblicato, visibile sulla pagina pubblica'],
-	en: ['draft, not yet on the public page', 'published, visible on the public page'],
-	ar: ['مسودة، ليست على الصفحة العامة بعد', 'منشور، ظاهر على الصفحة العامة']
-};
-
-/**
- * Un cours n'a plus que deux états (étape 19) : « archivé, retiré de la page publique » a quitté la
- * liste « Publication » du formulaire, dans chaque langue. L'écran revient au français.
- */
-async function deuxEtatsDUnCours(page) {
-	await retour('19-cours-deux-etats', async () => {
-		const lus = {};
-		for (const langue of LANGUES) {
-			await ouvrir(page, '/cours/nouveau');
-			if ((await racineDit(page, 'lang')) !== langue) await choisirLaLangue(page, langue);
-			lus[langue] = await page.locator('#status option').evaluateAll((options) =>
-				options.map((option) => ({
-					valeur: /** @type {HTMLOptionElement} */ (option).value,
-					texte: (option.textContent ?? '').replace(/\s+/g, ' ').trim()
-				}))
-			);
-		}
-		verifierChaque(
-			'la liste « Publication » d’un nouveau cours n’a plus que deux choix, brouillon et publié, sans « archivé », dans les cinq langues',
-			Object.fromEntries(
-				LANGUES.flatMap((langue) => [
-					[
-						`deux choix en ${langue}`,
-						lus[langue].map((option) => option.valeur).join('|') === 'draft|published'
-					],
-					[
-						`leurs libellés en ${langue}`,
-						lus[langue].map((option) => option.texte).join('|') ===
-							ETATS_D_UN_COURS[langue].join('|')
-					]
-				])
-			),
-			LANGUES.map(
-				(langue) => `${langue} : ${lus[langue].map((option) => option.texte).join(' / ')}`
-			).join(' ; ')
-		);
-	});
-	if ((await racineDit(page, 'lang')) !== 'fr') await choisirLaLangue(page, 'fr');
-}
-
-/**
- * Le formulaire d'un cours avec JavaScript, ce que l'étape 19 y a changé : la liste « Publication »
- * n'a plus que deux choix, dans les cinq langues ; chaque ligne facultative du résumé le dit ; une
- * description sans le titre de sa langue se signale ; la langue de saisie coche la langue
- * d'enseignement ; le premier jour d'un cours à dates précises suit la première date. Puis un
- * cours à dates précises, tapées dans le désordre, est publié : l'écran donne le message « nouveau
- * cours ». La base lui donne ensuite un dernier jour avant sa dernière date, comme un cours
- * enregistré avant la règle de l'étape 18 : la liste le signale. Enfin, la responsable le supprime,
- * ce que seule une personne responsable peut faire (D3). Il ne reste rien du cours.
+ * Le formulaire d'un cours avec JavaScript, ce que l'étape 19 y a changé : chaque ligne facultative
+ * du résumé le dit ; une description sans le titre de sa langue se signale ; la langue de saisie
+ * coche la langue d'enseignement ; le premier jour d'un cours à dates précises suit la première
+ * date. Puis un cours à dates précises, tapées dans le désordre, est publié : l'écran donne le
+ * message « nouveau cours ». La base lui donne ensuite un dernier jour avant sa dernière date, comme
+ * un cours enregistré avant la règle de l'étape 18 : la liste le signale. Enfin, la responsable le
+ * supprime, ce que seule une personne responsable peut faire (D3). Il ne reste rien du cours.
  */
 async function formulaireDUnCours(page) {
 	etape('c, le formulaire d’un cours (étape 19)');
-	await deuxEtatsDUnCours(page);
 	const nouveau = async () => {
 		await ouvrir(page, '/cours/nouveau');
 		// Les onglets des langues n'existent qu'une fois la page hydratée. Cinq secondes au plus.
@@ -8132,7 +8071,6 @@ B1 | l’écran Partager dit où coller le code, avec un exemple, et nomme le ca
 19-B9 | en arabe, le programme de la semaine se copie puis se colle : « لتنسخه وتلصقه في WhatsApp » sur « À venir », « انسخ هذه الرسالة والصقها في مجموعة WhatsApp الخاصة بك » dans Partager
 19-B1 | Partager en arabe : le code pour un site très strict « وهي لا تُحدَّث تلقائيًا »
 19-B8 | Membres en arabe, un rôle inconnu envoyé par un formulaire écrit à la main : « هذا الدور غير موجود. اختر دور المحرر أو دور المسؤول. »
-19-cours-deux-etats | la liste « Publication » d’un nouveau cours n’a plus que deux choix, brouillon et publié, sans « archivé », dans les cinq langues
 19-cours-facultatif | le résumé d’un nouveau cours marque « (facultatif) » chaque ligne facultative, sans la signaler comme un manque
 19-cours-titre-manquant | une description allemande sans titre allemand : le résumé signale le titre qui manque, et la description à corriger ; écrire le titre retire la marque
 19-cours-langue-de-saisie | sur un nouveau cours, choisir l’arabe comme langue de saisie coche l’arabe comme langue d’enseignement, à la place du français
