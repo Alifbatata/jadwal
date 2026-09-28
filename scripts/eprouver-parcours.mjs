@@ -144,7 +144,9 @@
  * - 19-og-locale : `og:locale` et un `og:locale:alternate` par autre langue publiée.
  * - 19-langue-non-activee : une langue que l'organisation ne publie pas renvoie à sa langue par
  *   défaut, choix de l'appareil gardé.
- * - 19-404-organisation : sous une organisation connue, le 404 dans sa langue.
+ * - 19-404-organisation : sous une organisation connue, le 404 dans sa langue par défaut. La base
+ *   donne l'arabe pour langue par défaut à l'organisation voisine le temps de ce 404 : en français,
+ *   il ne se distinguerait pas du français que le site prend faute de mieux, l'ancien défaut.
  *
  * Sur les cours :
  *
@@ -5438,28 +5440,65 @@ async function organisationInconnue(page) {
 
 /**
  * Sous une organisation connue, la langue que l'adresse demande, si l'organisation la publie, et
- * sa langue par défaut sinon (décisions du chef de projet, 27.09.2026). La voisine ne publie que le
- * français : une adresse inventée sous `/en/` rend son 404 en français, et sa page d'abonnement
- * demandée en anglais renvoie à la française, choix de l'appareil gardé.
+ * sa langue par défaut sinon (décisions du chef de projet, 27.09.2026).
+ *
+ * Le 404 d'abord. Une organisation dont la langue par défaut est le français ne distingue pas sa
+ * langue du français que le site prend faute de mieux, l'ancien défaut (relecture du lot 4). Le
+ * temps de ce 404, la base donne donc à la voisine l'arabe pour langue par défaut, à côté du
+ * français ; aucun écran de la personne du parcours ne le peut, elle n'y est qu'éditrice. Une
+ * adresse inventée sous `/en/` rend alors son 404 en arabe. Ses langues d'avant reviennent
+ * ensuite : sa page d'abonnement demandée en anglais renvoie à la française, choix de l'appareil
+ * gardé.
  */
 async function langueDeLOrganisation(page) {
-	await retour('19-404-organisation', async () => {
-		const adresse = `/m/${VOISINE.slug}/en/nulle-part`;
-		const reponse = await ouvrir(page, adresse);
-		const attendu = TEXTES_PUBLICS.fr.introuvable;
-		const phrase = await texteDe(page.locator('main p'));
-		const lang = await racineDit(page, 'lang');
+	const langues = ecrireDansLaBase(
+		`select default_language || '|' || array_to_string(enabled_language, ',') from organization where slug = '${VOISINE.slug}'`
+	);
+	const [parDefaut = '', activees = ''] = langues.sortie.split('|');
+	const enArabe = ecrireDansLaBase(
+		`update organization set enabled_language = array['fr', 'ar'], default_language = 'ar' where slug = '${VOISINE.slug}'`
+	);
+	try {
 		verifierChaque(
-			`${adresse}, une langue que l’organisation ne publie pas : le 404 est dans sa langue, le français, « ${attendu.titre} »`,
+			`la base donne à « ${VOISINE.nom} » l’arabe pour langue par défaut, à côté du français, le temps d’un 404`,
 			{
-				404: reponse?.status() === 404,
-				'<html lang="fr">': lang === 'fr',
-				[`« ${attendu.titre} »`]: (await titre(page)) === attendu.titre,
-				[`« ${attendu.phrase} »`]: phrase === attendu.phrase
+				'ses langues lues': langues.ok,
+				'le français par défaut, avant': parDefaut === 'fr',
+				'le français seul publié, avant': activees === 'fr',
+				'l’arabe posé': enArabe.ok
 			},
-			`rendu ${reponse?.status()}, <html lang="${lang}">, « ${await titre(page)} », « ${phrase} »`
+			`avant : ${langues.sortie} ; ${enArabe.sortie}`
 		);
-	});
+		await retour('19-404-organisation', async () => {
+			const adresse = `/m/${VOISINE.slug}/en/nulle-part`;
+			const reponse = await ouvrir(page, adresse);
+			const attendu = TEXTES_PUBLICS.ar.introuvable;
+			const phrase = await texteDe(page.locator('main p'));
+			const lang = await racineDit(page, 'lang');
+			const dir = await racineDit(page, 'dir');
+			const titreLu = await titre(page);
+			verifierChaque(
+				`${adresse}, l’anglais, que l’organisation ne publie pas : le 404 est dans sa langue par défaut, l’arabe, et non en français, « ${attendu.titre} »`,
+				{
+					404: reponse?.status() === 404,
+					'<html lang="ar">': lang === 'ar',
+					'dir="rtl"': dir === 'rtl',
+					[`« ${attendu.titre} »`]: titreLu === attendu.titre,
+					[`« ${attendu.phrase} »`]: phrase === attendu.phrase
+				},
+				`rendu ${reponse?.status()}, <html lang="${lang}" dir="${dir}">, « ${titreLu} », « ${phrase} »`
+			);
+		});
+	} finally {
+		const remises = ecrireDansLaBase(
+			`update organization set enabled_language = array['fr'], default_language = 'fr' where slug = '${VOISINE.slug}'`
+		);
+		verifier(
+			`« ${VOISINE.nom} » retrouve ses langues, le français seul`,
+			remises.ok,
+			remises.sortie
+		);
+	}
 	await retour('19-langue-non-activee', async () => {
 		const demandee = `/m/${VOISINE.slug}/en/agenda?appareil=tous`;
 		const attendue = `/m/${VOISINE.slug}/agenda?appareil=tous`;
@@ -7405,7 +7444,7 @@ E2 | sur un ordinateur, sous Outlook, le délai qu’il met à rafraîchir un ab
 19-B11 | la page d’abonnement en arabe, sur un Android : l’aide du bouton de Google est exactement celle relue
 D1 | /m/organisation-inconnue/en rend 404, avec <html lang="en" dir="ltr"> et aucune balise script
 D1 | /m/organisation-inconnue/en : la page d’erreur dit « Page not found » et « Please check the address. »
-19-404-organisation | /m/association-voisine/en/nulle-part, une langue que l’organisation ne publie pas : le 404 est dans sa langue, le français, « Page introuvable »
+19-404-organisation | /m/association-voisine/en/nulle-part, l’anglais, que l’organisation ne publie pas : le 404 est dans sa langue par défaut, l’arabe, et non en français, « الصفحة غير موجودة »
 19-langue-non-activee | /m/association-voisine/en/agenda?appareil=tous, une langue que l’organisation ne publie pas : 307 vers /m/association-voisine/agenda?appareil=tous, la page dans sa langue par défaut
 D2 | les N écrans de l’espace portent en haut le choix des cinq langues
 D2 | en Deutsch, les N écrans sont dans cette langue, rien en français
