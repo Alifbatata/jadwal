@@ -148,6 +148,13 @@ liste serait proposée sur la page publique sans une ligne pour l'écrire. La li
 et la langue par défaut en fait partie. `test/constraints.test.ts` le vérifie, par le super-admin et
 par l'écran des réglages.
 
+L'adresse publique d'une organisation (`slug`) a la forme de la migration 0003, des minuscules, des
+chiffres et des traits d'union, et au moins une lettre (migration 0074) : `/m/2026` ne dit rien de
+l'organisation qu'elle ouvre. Avant de poser cette règle, la migration compte les adresses déjà là,
+sous le drapeau d'entretien, et refuse de s'appliquer si l'une n'a pas de lettre, en disant
+combien ; elle n'en réécrit aucune, parce qu'une adresse publique ne change pas.
+`test/constraints.test.ts` éprouve la règle, `test/public-address-letter.test.ts` le comptage.
+
 Depuis l'étape 4, le rôle super-admin lit et écrit dans **toutes** les organisations, sans fenêtre à
 ouvrir (ADR 0025). Ses politiques restent bornées par `jadwal.current_org_id()` : ce n'est plus une
 barrière — il entre où il veut — c'est le garde-fou qui l'empêche de modifier la mauvaise

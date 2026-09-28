@@ -10,12 +10,19 @@
 
 import { sql, type SQL } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { newId, withOrg, type Database, type DatabaseHandle } from '../src/index.js';
+import {
+	newId,
+	withOrg,
+	type Database,
+	type DatabaseHandle,
+	type Transaction
+} from '../src/index.js';
 import {
 	allRows,
 	asAdmin,
 	countIn,
 	firstRow,
+	messageOfFailure,
 	openDatabase,
 	seedOrganisation,
 	SQLSTATE,
@@ -413,6 +420,65 @@ describe('autres contraintes du schéma', () => {
 			)
 		);
 		expect(email).toBe(SQLSTATE.checkViolation);
+	});
+
+	it('refuses a public address without a single letter, and takes one with a letter anywhere', async () => {
+		// La règle de l'écran du super-admin (étape 19, D6), tenue par la base depuis la migration
+		// 0074 : des chiffres et des traits d'union ne font pas une adresse. Chaque écriture se joue
+		// dans une transaction annulée à la fin, qu'elle passe ou non : aucune adresse ne reste.
+		const ACCEPTEE = 'écriture acceptée, annulée par le test';
+		const annulee =
+			(db: Database, write: (tx: Transaction) => Promise<unknown>, entretien = false) =>
+			() =>
+				db.transaction(async (tx) => {
+					if (entretien) await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+					await write(tx);
+					throw new Error(ACCEPTEE);
+				});
+		const ajout = (slug: string) => (tx: Transaction) =>
+			tx.execute(sql`
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language", "enabled_language")
+				values (${newId()}, ${slug}, 'Adresse', 'Europe/Zurich', 'fr', array['fr'])
+			`);
+		// Sans contexte d'organisation, le super-admin change toutes les organisations (migration
+		// 0055) : la modification touche bien une ligne, et c'est la contrainte qui répond.
+		const modification = (slug: string) => async (tx: Transaction) => {
+			const touchees = allRows(
+				await tx.execute(sql`
+					update "organization" set "slug" = ${slug} where "id" = ${org.id} returning "id"
+				`)
+			);
+			expect(touchees).toHaveLength(1);
+		};
+		const ecritures = (slug: string) =>
+			[
+				['le super-admin, à l’ajout', annulee(superAdmin, ajout(slug))],
+				['le super-admin, à la modification', annulee(superAdmin, modification(slug))],
+				['le propriétaire, à l’ajout', annulee(owner, ajout(slug), true)]
+			] as const;
+
+		for (const slug of ['2026', '2', '12-34']) {
+			for (const [qui, ecriture] of ecritures(slug)) {
+				expect(await sqlStateOfFailure(ecriture), `${slug}, ${qui}`).toBe(SQLSTATE.checkViolation);
+				expect(await messageOfFailure(ecriture), `${slug}, ${qui}`).toContain(
+					'organization_slug_letter_ck'
+				);
+			}
+		}
+		// Une lettre suffit, où qu'elle soit.
+		for (const slug of ['2026-club', 'a', 'club-7']) {
+			for (const [qui, ecriture] of ecritures(slug)) {
+				expect(await messageOfFailure(ecriture), `${slug}, ${qui}`).toBe(ACCEPTEE);
+			}
+		}
+		// Rien n'est resté.
+		const restees = await withMaintenance(owner, (tx) =>
+			tx.execute(sql`
+				select "slug" from "organization"
+				where "slug" in ('2026', '2', '12-34', '2026-club', 'a', 'club-7')
+			`)
+		);
+		expect(allRows(restees)).toEqual([]);
 	});
 });
 

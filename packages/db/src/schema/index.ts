@@ -296,7 +296,10 @@ export const organization = pgTable(
 	'organization',
 	{
 		id: uuid().primaryKey(),
-		/** Repris dans l'URL publique : minuscules, chiffres et tirets. */
+		/**
+		 * Repris dans l'URL publique : minuscules, chiffres et tirets, avec au moins une lettre
+		 * (migration 0074).
+		 */
 		slug: text().notNull(),
 		name: text().notNull(),
 		/** Nom IANA canonique, jamais un alias (étape 1, `canonicalTimeZone`). */
@@ -327,6 +330,10 @@ export const organization = pgTable(
 		uniqueIndex('organization_slug_uq').on(table.slug),
 		ck('organization_id_uuid_v7_ck', isUuidV7(table.id)),
 		ck('organization_slug_ck', sql`${table.slug} ~ '^[a-z0-9]+(-[a-z0-9]+)*$'`),
+		// Au moins une lettre : des chiffres et des traits d'union ne font pas une adresse (étape 19,
+		// D6). Une contrainte à part, que la migration 0074 pose après avoir compté les adresses
+		// déjà là, sans toucher à celle de la forme (migration 0003).
+		ck('organization_slug_letter_ck', sql`${table.slug} ~ '[a-z]'`),
 		ck('organization_accent_color_ck', sql`${table.accentColor} ~ '^#[0-9a-fA-F]{6}$'`),
 		ck('organization_plan_ck', oneOf(table.plan, PLANS)),
 		ck('organization_status_ck', oneOf(table.status, ORGANIZATION_STATUSES)),

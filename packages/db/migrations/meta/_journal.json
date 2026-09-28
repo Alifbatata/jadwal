@@ -519,6 +519,13 @@
       "when": 1790582094703,
       "tag": "0073_course_delete_friday_by_manager",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1790582349583,
+      "tag": "0074_organization_slug_letter",
+      "breakpoints": true
     }
   ]
 }
