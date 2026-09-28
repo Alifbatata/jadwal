@@ -121,7 +121,9 @@
  * - 19-D3, les cours : la responsable supprime un cours depuis /cours, avec et sans JavaScript.
  * - 19-D4, « À venir » : un cours en brouillon marqué, et hors du programme de la semaine ; une
  *   carte « date exceptionnelle » qui se rétablit ; le refus d'une carte restée ouverte qui nomme la
- *   séance ; le calendrier de « Nouvelle date » borné au 31.12.2100.
+ *   séance ; le calendrier de « Nouvelle date » borné au 31.12.2100 ; le vendredi, un cours placé
+ *   après le Dhuhr qui prend l'heure de la session publiée, et non celle d'une session en
+ *   brouillon, sur sa carte comme dans les messages.
  * - 19-D5, les prières : l'aperçu d'une nouvelle période sous un titre de niveau 3, et axe n'y
  *   relève plus « heading-order ».
  * - 19-D6, le super-admin : l'adresse proposée d'après « Club № 5 » ou « Horizon™ », rien pour un
@@ -209,7 +211,8 @@
  * - dans les cinq langues : 19-B12, 19-agenda-outlook, 19-annulee, 19-og-locale (la page du
  *   programme ; la page d'un cours et celle de l'abonnement en français, en anglais et en arabe),
  *   19-prieres-angle, le refus fait à la seule personne responsable (19-membres-quitter), le 404
- *   d'une session sous /cours (19-cours-session-vendredi), et le programme de la semaine de 19-D4 ;
+ *   d'une session sous /cours (19-cours-session-vendredi), et les messages de 19-D4 (le programme
+ *   de la semaine, le déplacement d'un cours placé après le Dhuhr) ;
  * - en arabe seul : 19-B1 à 19-B11, les phrases relues ;
  * - dans deux langues ou plus, sans les cinq : 19-cours-seance-barree (français, anglais, arabe),
  *   19-titre-langue-ecran (allemand, arabe), 19-C (l'écran en français, le courriel en italien) ;
@@ -517,6 +520,11 @@ const SECONDE_SESSION = { debut: '13:40', fin: '14:20' };
  */
 const SALLE_PROVISOIRE = 'Salle provisoire';
 const SESSION_DANS_LA_SALLE = { debut: '14:30', fin: '15:10' };
+/**
+ * Un cours publié le vendredi, placé après le Dhuhr, créé puis supprimé à l'étape p, pendant que la
+ * seconde session est en brouillon (étape 19, D4), et l'heure où il est déplacé le même jour.
+ */
+const COURS_APRES_DHUHR = { titre: 'Leçon après Dhuhr', minutes: 30, duree: 60, deplace: '16:00' };
 /** La nouvelle heure de la session du vendredi, déplacée le même jour sur « À venir » (A2, B1). */
 const HEURE_DU_VENDREDI_DEPLACE = '13:00';
 /**
@@ -6890,6 +6898,116 @@ async function vendrediAnnule(page) {
 }
 
 /**
+ * Le vendredi, le Dhuhr d'un cours placé après lui est l'heure de la dernière session publiée
+ * (ADR 0033). Une session en brouillon ne la donne pas : elle n'a pas encore lieu (étape 19,
+ * relecture de D4). Pendant que la seconde session de l'étape p, à 14:30, est en brouillon, un
+ * cours publié « 30 min après Dhuhr » commence donc à 13:00, après la session de 12:30 : sur sa
+ * carte d'« À venir », dans le programme de la semaine de chaque langue, et dans le message de son
+ * déplacement le même jour. Sa carte et ce message disaient 15:00, l'heure tirée du brouillon, que
+ * la page publique ne montre pas. Le cours est supprimé ensuite.
+ */
+async function coursApresDhuhr(page) {
+	const jour = VENDREDI_QUI_VIENT;
+	const { titre: nom, minutes, duree, deplace } = COURS_APRES_DHUHR;
+	const id = await creerCours(page, {
+		titre: nom,
+		public: 'open',
+		jour: jourDeSemaine(jour),
+		ancre: { sens: 'prayer', priere: 'dhuhr', minutes, duree },
+		etat: 'publié'
+	});
+	const debut = debutAncre(VENDREDI.debut, minutes);
+	const plage = `${debut} – ${debutAncre(VENDREDI.debut, minutes + duree)}`;
+	await retour('19-D4', async () => {
+		await ouvrir(page, '/');
+		const carte = seanceDuJour(page, jour, nom);
+		const carteLue =
+			(await carte.count()) === 1 ? await texteDe(carte) : `${await carte.count()} carte(s)`;
+		/** La ligne du cours dans chaque message d'une sorte, `semaine` ou `message`, par langue. */
+		const lignesDuCours = async (sorte) =>
+			Object.fromEntries(
+				(await messagesDeLAccueil(page, sorte)).map((lu) => [
+					lu.lang,
+					lu.texte
+						.split('\n')
+						.find((ligne) => ligne.includes(nom))
+						?.trim() ?? ''
+				])
+			);
+		const semaine = await lignesDuCours('semaine');
+		await carte.getByText('Annuler ou déplacer', { exact: true }).click();
+		await carte.getByLabel('Heure de début', { exact: true }).fill(deplace);
+		await envoyer(page, carte.getByRole('button', { name: 'Déplacer la séance', exact: true }));
+		const messages = await lignesDuCours('message');
+		verifierChaque(
+			`le vendredi, un cours publié « ${minutes} min après Dhuhr » prend l’heure de la session publiée, ${VENDREDI.debut}, et non celle de la session en brouillon, ${SESSION_DANS_LA_SALLE.debut} : ${plage} sur sa carte d’« À venir » et dans le programme de la semaine de chaque langue, ${debut} dans chaque message de son déplacement le même jour`,
+			{
+				[`la carte : ${plage}`]: carteLue.includes(plage),
+				...Object.fromEntries(
+					LANGUES.map((langue) => [
+						`le programme de la semaine en ${langue} : ${plage}`,
+						(semaine[langue] ?? '').includes(plage)
+					])
+				),
+				[`le message en français : « … commence à ${deplace} au lieu de ${debut}. »`]: (
+					messages['fr'] ?? ''
+				).endsWith(`commence à ${deplace} au lieu de ${debut}.`),
+				...Object.fromEntries(
+					LANGUES.map((langue) => [
+						`le message en ${langue} : ${debut}`,
+						(messages[langue] ?? '').includes(debut)
+					])
+				)
+			},
+			`carte : ${carteLue.slice(0, 60)} ; semaine : ${semaine['fr'] || 'aucune ligne'} ; message : ${messages['fr'] || 'aucune ligne'}`
+		);
+	});
+	await supprimerLeCours(page, nom, id);
+}
+
+/**
+ * Supprime, depuis la liste des cours, un cours que le parcours a créé le temps d'une vérification :
+ * par le repli « Supprimer ce cours » quand l'écran l'offre (étape 19, D3), sinon par l'action de
+ * la liste, que l'image de l'étape 18 avait déjà sans bouton pour elle, dans un formulaire écrit
+ * dans la page. Hors de tout retour : le cours doit partir, pour la suite du parcours.
+ */
+async function supprimerLeCours(page, nom, id) {
+	await ouvrir(page, '/cours');
+	const repli = page
+		.locator('li')
+		.filter({ hasText: nom })
+		.locator('details')
+		.filter({ has: page.locator('summary', { hasText: 'Supprimer ce cours' }) });
+	if ((await repli.count()) === 1) {
+		await repli.locator(':scope > summary').click();
+		await envoyer(page, repli.getByRole('button', { name: 'Oui, supprimer', exact: true }));
+	} else {
+		verifier(`l’identifiant de « ${nom} » est lisible`, UUID.test(id), id || 'aucun identifiant');
+		await page.evaluate((courseId) => {
+			const formulaire = document.createElement('form');
+			formulaire.method = 'post';
+			formulaire.action = '?/supprimer';
+			const champ = document.createElement('input');
+			champ.type = 'hidden';
+			champ.name = 'courseId';
+			champ.value = courseId;
+			const bouton = document.createElement('button');
+			bouton.type = 'submit';
+			bouton.id = 'parcours-supprimer';
+			bouton.textContent = 'Supprimer';
+			formulaire.append(champ, bouton);
+			document.body.append(formulaire);
+		}, id);
+		await envoyer(page, page.locator('#parcours-supprimer'));
+	}
+	await ouvrir(page, '/cours');
+	verifier(
+		`« ${nom} » est supprimé`,
+		(await page.locator('li').filter({ hasText: nom }).count()) === 0
+	);
+}
+
+/**
  * Une session du vendredi n'est pas un cours (étape 19) : son adresse sous /cours, celle de la fiche
  * d'un cours, mène à la page « Page introuvable » de l'espace, dans la langue de l'écran. Elle
  * ouvrait le formulaire d'un cours, dont l'envoi faisait de la session un cours. L'identifiant est
@@ -6954,7 +7072,8 @@ async function sessionHorsDesCours(page) {
  *   phrase, sans confirmation, et, là où l'écran peut le montrer, rien d'écrit.
  * - La salle supprimée deux fois, depuis deux onglets de Réglages : « Cette salle n’existe plus. ».
  * - Une session au sermon en albanais et en turc, deux langues que la page publique ne publie pas,
- *   puis retirée de la page publique, l'écran en arabe (B3).
+ *   puis retirée de la page publique, l'écran en arabe (B3). Pendant qu'elle est en brouillon, un
+ *   cours placé après le Dhuhr prend l'heure de la session publiée (D4) ; il est supprimé ensuite.
  * - « Rétablir comme d’habitude » sur la ligne « Nouvelle date » d'une session déplacée à un autre
  *   jour.
  * - Un jour sans séance, sur l'écran du vendredi et sur « À venir », par un formulaire modifié dans
@@ -7192,6 +7311,7 @@ async function vendrediEtape19(page) {
 			lu ? `« ${lu} »` : `aucune session dans la cellule de Dhuhr du ${dateLongue(jour)}`
 		);
 	});
+	await coursApresDhuhr(page);
 	await ouvrir(page, '/vendredi');
 	const autreOnglet = await contexte.newPage();
 	try {
@@ -8007,6 +8127,7 @@ D2 | depuis l’écran en allemand, la copie de « Winter » pour l’année sui
 19-sermon | une session au sermon en albanais et en turc, deux langues que la page publique ne publie pas : sa carte dit « Sermon en albanais et turc », et la page publique « albanais et turc »
 19-B3 | l’écran du vendredi en arabe, après « Retirer de la page publique » : « لكنه يبقى هنا كمسودة »
 19-prieres-jumua-brouillon | dans « Heures de prière », le vendredi, la cellule de Dhuhr dit « Jumu’a 12:30 », la session publiée, sans l’heure de celle en brouillon, 14:30
+19-D4 | le vendredi, un cours publié « 30 min après Dhuhr » prend l’heure de la session publiée, 12:30, et non celle de la session en brouillon, 14:30 : 13:00 – 14:00 sur sa carte d’« À venir » et dans le programme de la semaine de chaque langue, 13:00 dans chaque message de son déplacement le même jour
 19-D2 | dans un second onglet, « Publier » sur une session supprimée entre-temps est refusé en tête : « Cette session n’existe plus : elle a été supprimée entre-temps. La liste ci-dessous est à jour. »
 19-D2 | sur l’écran du vendredi, « Déplacer » envoyé pour la veille (formulaire modifié dans la page) est refusé en tête : « Ce jour est déjà passé : rien n’a été déplacé. … », et rien n’est déplacé
 19-retablir-nouvelle-date | une session déplacée à un autre jour : sur la ligne « Nouvelle date, à la place du JOUR JJ.MM.AAAA », « Rétablir comme d’habitude » la ramène à son vendredi
