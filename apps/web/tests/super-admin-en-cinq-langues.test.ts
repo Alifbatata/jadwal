@@ -375,8 +375,8 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 			const champ = html.match(/<input\b[^>]*\bid="slug"[^>]*>/)?.[0] ?? '';
 			// Le champ peut rester vide : c'est alors le serveur qui propose l'adresse.
 			expect(champ).not.toMatch(/\brequired\b/);
-			// La règle de la base, et au moins une lettre (étape 19, D6) : `public-address.test.ts` lit ce
-			// motif comme un navigateur le lit.
+			// Les deux règles de la base, la forme et au moins une lettre (étape 19, D6, migration
+			// 0074) : `public-address.test.ts` lit ce motif comme un navigateur le lit.
 			expect(champ).toContain('pattern="(?=.*[a-z])[a-z0-9]+(-[a-z0-9]+)*"');
 		});
 
@@ -657,7 +657,8 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 		it.each(['2026', '12-34'])(
 			'refuses the address « %s », which has no letter, and says why',
 			async (adresse) => {
-				// La base la prendrait : `/m/2026` ne dit pourtant rien de l'organisation qu'elle ouvre.
+				// `/m/2026` ne dit rien de l'organisation qu'elle ouvre. La base la refuse aussi
+				// (migration 0074) : l'écran le dit avant elle, en clair.
 				const avant = await nombreDOrganisations();
 				const reponse = await postForm(
 					'/super-admin?/ouvrir',

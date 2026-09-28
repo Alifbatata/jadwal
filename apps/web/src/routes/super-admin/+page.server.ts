@@ -105,7 +105,8 @@ export const actions: Actions = {
 		// fait pendant la frappe. Une adresse écrite, elle, est gardée telle quelle et vérifiée.
 		const slug = written || proposePublicAddress(name);
 		if (slug === '') return fail(400, { error: 'noAddressFromName' as const, values });
-		// Une adresse faite de chiffres seuls, la base la prendrait : l'écran la refuse, et dit pourquoi.
+		// Une adresse faite de chiffres seuls, la base la refuse aussi (migration 0074) : l'écran la
+		// refuse d'abord, et dit pourquoi.
 		if (hasNoLetter(slug)) return fail(400, { error: 'addressWithoutLetter' as const, values });
 		if (!isPublicAddress(slug)) return fail(400, { error: 'invalidAddress' as const, values });
 		if (!isOfferedTimeZone(timeZone)) {

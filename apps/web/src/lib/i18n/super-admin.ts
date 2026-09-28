@@ -112,7 +112,10 @@ interface SuperAdminTexts {
 		/** Les trois erreurs d'adresse finissent sur l'exemple d'adresse que la page leur donne. */
 		readonly invalidAddress: (example: string) => string;
 		readonly noAddressFromName: (example: string) => string;
-		/** Une adresse faite de chiffres et de traits d'union seuls, que la base prendrait (étape 19, D6). */
+		/**
+		 * Une adresse faite de chiffres et de traits d'union seuls (étape 19, D6), que la base refuse
+		 * aussi depuis la migration 0074.
+		 */
 		readonly addressWithoutLetter: (example: string) => string;
 		readonly addressTaken: string;
 		readonly unknownTimeZone: string;

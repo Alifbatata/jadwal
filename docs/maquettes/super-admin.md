@@ -78,8 +78,8 @@ le registre des accès du super-admin.`
 
 Les erreurs sont dites dans la langue de l'écran : nom manquant, adresse refusée avec la règle et un
 exemple, nom qui ne permet pas de proposer d'adresse, `Cette adresse n'a que des chiffres et des
-traits d'union. Ajoutez-y au moins une lettre, par exemple un mot du nom.` (la base prendrait
-`2026` : l'écran est plus strict qu'elle, depuis l'étape 19), `Cette adresse est déjà celle d'une
+traits d'union. Ajoutez-y au moins une lettre, par exemple un mot du nom.` (depuis l'étape 19 ; la
+base refuse aussi `2026` depuis l'étape 20, migration 0074), `Cette adresse est déjà celle d'une
 autre organisation. Choisissez-en une autre, par exemple en y ajoutant le nom de la ville.` (avant :
 une erreur 500), `Choisissez le fuseau horaire dans la liste.`, `Cette organisation n'existe pas, ou
 plus.`

@@ -8,7 +8,8 @@ import {
 	isPublicAddress,
 	proposePublicAddress,
 	PUBLIC_ADDRESS,
-	PUBLIC_ADDRESS_PATTERN
+	PUBLIC_ADDRESS_PATTERN,
+	UNE_LETTRE
 } from './public-address.js';
 
 describe('la règle de l’adresse', () => {
@@ -26,6 +27,24 @@ describe('la règle de l’adresse', () => {
 		expect(PUBLIC_ADDRESS.source).toBe(contrainte);
 	});
 
+	it('asks for the same letter as the database, word for word', () => {
+		// La contrainte `organization_slug_letter_ck`, telle que la migration 0074 la pose : depuis
+		// l'étape 20, la base refuse aussi une adresse sans lettre, et l'écran demande la même lettre
+		// qu'elle.
+		const migration = readFileSync(
+			new URL(
+				'../../../../../packages/db/migrations/0074_organization_slug_letter.sql',
+				import.meta.url
+			),
+			'utf8'
+		);
+		const contrainte = migration.match(
+			/ADD CONSTRAINT "organization_slug_letter_ck" CHECK \(\("organization"\."slug" ~ '([^']+)'\)/
+		)?.[1];
+		expect(contrainte).toBe('[a-z]');
+		expect(UNE_LETTRE.source).toBe(contrainte);
+	});
+
 	const ACCEPTEES = ['association-horizon', 'club-7', 'a', '2026-club', 'club-2000'];
 	const REFUSEES = [
 		'',
@@ -37,7 +56,10 @@ describe('la règle de l’adresse', () => {
 		'club foot',
 		'club_foot'
 	];
-	/** Des chiffres et des traits d'union, sans une lettre : la base les prend, l'écran non. */
+	/**
+	 * Des chiffres et des traits d'union, sans une lettre : la forme de la migration 0003, que la
+	 * règle de la lettre refuse, à l'écran comme dans la base (migration 0074).
+	 */
 	const SANS_LETTRE = ['2026', '2', '12-34'];
 
 	it.each(ACCEPTEES)('accepts « %s »', (adresse) => {
@@ -48,15 +70,14 @@ describe('la règle de l’adresse', () => {
 		expect(isPublicAddress(adresse)).toBe(false);
 	});
 
-	it.each(SANS_LETTRE)(
-		'refuses « %s », which has no letter, though the database takes it',
-		(adresse) => {
-			// `/m/2` ne dit rien de l'organisation qu'elle ouvre (étape 18, relecture de B2). La règle de
-			// la base reste celle de la migration 0003 : l'écran est plus strict qu'elle.
-			expect(PUBLIC_ADDRESS.test(adresse)).toBe(true);
-			expect(isPublicAddress(adresse)).toBe(false);
-		}
-	);
+	it.each(SANS_LETTRE)('refuses « %s », which has no letter, as the database does', (adresse) => {
+		// `/m/2` ne dit rien de l'organisation qu'elle ouvre (étape 18, relecture de B2). La forme
+		// de la migration 0003 la prendrait ; la lettre la refuse, ici comme dans la base depuis la
+		// migration 0074.
+		expect(PUBLIC_ADDRESS.test(adresse)).toBe(true);
+		expect(UNE_LETTRE.test(adresse)).toBe(false);
+		expect(isPublicAddress(adresse)).toBe(false);
+	});
 
 	it('gives the field a pattern that says the same as the rule, read as a browser reads it', () => {
 		// Un navigateur ancre l'attribut `pattern` et le lit avec le drapeau `v` : compilé ainsi, il

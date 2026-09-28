@@ -2,21 +2,22 @@
 //
 // Un seul module pour le navigateur et le serveur. L'écran propose l'adresse pendant que le nom
 // s'écrit ; le serveur la propose de la même façon quand le champ arrive vide, sans JavaScript, et la
-// montre avant de créer quoi que ce soit (étape 19, D6). Les deux appliquent la règle de la base,
-// plus une : une adresse porte au moins une lettre.
+// montre avant de créer quoi que ce soit (étape 19, D6). Les deux appliquent les deux règles de la
+// base : la forme, et au moins une lettre.
 
 /**
- * La règle de la base, mot pour mot : la contrainte `organization_slug_ck` (migration 0003). Des
- * lettres minuscules sans accent et des chiffres, en mots séparés par un seul trait d'union.
+ * La forme, mot pour mot la contrainte `organization_slug_ck` (migration 0003). Des lettres
+ * minuscules sans accent et des chiffres, en mots séparés par un seul trait d'union.
  */
 export const PUBLIC_ADDRESS = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 /**
- * Au moins une lettre. La base prend `2026` ou `12-34` ; l'écran les refuse, parce que `/m/2` ne
- * dit rien de l'organisation qu'elle ouvre (étape 19, D6). Cette règle n'est que celle de l'écran :
- * la base garde la sienne, celle de la migration 0003.
+ * Au moins une lettre, mot pour mot la contrainte `organization_slug_letter_ck` (migration 0074).
+ * La forme seule prend `2026` ou `12-34` ; l'écran et la base les refusent, parce que `/m/2` ne
+ * dit rien de l'organisation qu'elle ouvre (étape 19, D6). L'écran la tenait seul jusqu'à l'étape
+ * 20.
  */
-const UNE_LETTRE = /[a-z]/;
+export const UNE_LETTRE = /[a-z]/;
 
 /**
  * Les deux règles, sans ancres, pour l'attribut `pattern` d'un champ, qui ancre de lui-même. Le
@@ -43,12 +44,15 @@ const LETTRES: Readonly<Record<string, string>> = {
 	ı: 'i'
 };
 
-/** Vrai quand la base prendrait cette adresse et qu'elle porte au moins une lettre. */
+/** Vrai quand la base prendrait cette adresse : la forme, et au moins une lettre. */
 export function isPublicAddress(value: string): boolean {
 	return PUBLIC_ADDRESS.test(value) && UNE_LETTRE.test(value);
 }
 
-/** Vrai quand l'adresse suit la règle de la base mais n'a aucune lettre : `2026`, `12-34`. */
+/**
+ * Vrai quand l'adresse a la forme voulue mais aucune lettre : `2026`, `12-34`. L'écran le dit en
+ * clair, plutôt que « Cette adresse ne convient pas ».
+ */
 export function hasNoLetter(value: string): boolean {
 	return PUBLIC_ADDRESS.test(value) && !UNE_LETTRE.test(value);
 }
