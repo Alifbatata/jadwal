@@ -9,6 +9,7 @@
 	import { shortDate } from '$lib/format.js';
 	import { fridayTexts, type FridayDone, type FridayError } from '$lib/i18n/friday.js';
 	import { languesEnClair } from '$lib/public/affichage.js';
+	import { sessionKey } from '$lib/session-key.js';
 	import type { IsoDate } from '@jadwal/core';
 
 	let { data, form } = $props();
@@ -164,7 +165,7 @@
 		<h2 id="ce-vendredi">{text.thisFriday.title}</h2>
 		<p class="aide">{text.thisFriday.intro}</p>
 		{#each data.sessions as session (session.id)}
-			{#each seancesDe(session.id) as seance (seance.date + seance.status)}
+			{#each seancesDe(session.id) as seance (sessionKey(seance))}
 				<div class="seance" class:barree={seance.status !== 'scheduled'}>
 					<p class="ligne">
 						<strong>{seance.start ?? '–'} – {seance.end ?? '–'}</strong>

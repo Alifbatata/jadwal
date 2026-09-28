@@ -11,6 +11,7 @@
 		type UpcomingErrorPart
 	} from '$lib/i18n/upcoming.js';
 	import { languesEnClair } from '$lib/public/affichage.js';
+	import { sessionKey } from '$lib/session-key.js';
 
 	let { data, form } = $props();
 
@@ -251,7 +252,7 @@
 	<section aria-labelledby={`jour-${jour}`}>
 		<h2 id={`jour-${jour}`}>{date(jour)}</h2>
 		<ul>
-			{#each seances as seance (cle(seance.courseId, seance.date) + seance.status)}
+			{#each seances as seance (sessionKey(seance))}
 				{@const k = cle(seance.courseId, seance.date)}
 				{@const origine = origineLeMemeJour(seance)}
 				<li class="seance {seance.status}">
