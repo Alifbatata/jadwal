@@ -8,7 +8,10 @@
 // (`common.ts`), pour qu'un lien et la page qu'il ouvre portent le même nom. Une session, une fois
 // où la prière du vendredi a lieu, se dit « Durchgang », « turno », « session » et « موعد », comme
 // sur l'écran du vendredi (`friday.ts`) : l'état d'une carte annulée ou partie ailleurs s'écrit avec
-// l'un ou l'autre nom (étape 20, C4).
+// l'un ou l'autre nom (étape 20, C4). C4 ne vise que cet état, qui suit le titre de la carte : ses
+// options, ses aides, ses boutons et les refus de ses gestes gardent le mot de l'écran, « séance »,
+// pour toute carte, depuis l'étape 18. Une aide qui suivrait la sorte de la carte, à côté d'un bouton
+// qui ne la suit pas, mêlerait les deux mots dans le même formulaire.
 
 import { plural, type PluralForms, type Translations } from './space.js';
 

@@ -48,14 +48,17 @@ remontent donc jamais jusqu'à lui.
 ### Les gestes fréquents
 
 - **Annuler** demande une confirmation qui rappelle, en toutes lettres, que le cours continue les
-  autres semaines. C'est la confusion la plus probable, et elle se corrige par une phrase.
+  autres semaines. C'est la confusion la plus probable, et elle se corrige par une phrase. Sur la
+  carte d'une séance déplacée dont la date prévue est passée, l'aide dit à la place que la séance
+  annulée ne pourra pas être rétablie (addendum du 28.09.2026).
 - **Déplacer** propose toute date à partir d'aujourd'hui, plus tôt ou plus tard que la date prévue,
   et une heure. Un déplacement qui ne change ni la date ni l'heure d'une séance de l'écran est
   refusé. Le même jour à une autre heure, la carte et le message disent un changement d'heure, et
   non de date.
-- **Annuler** et **Déplacer** ne visent qu'une séance encore prévue telle quelle. Une page restée
-  ouverte qui envoie la carte d'une séance annulée ou déplacée depuis est refusée : rien n'est écrit,
-  et l'écran rendu est à jour.
+- **Annuler** et **Déplacer** ne visent qu'une séance encore prévue telle quelle, sauf « Annuler
+  cette séance » sur la carte d'une séance déplacée dont la date prévue est passée, qui vise ce
+  déplacement (addendum du 28.09.2026). Une page restée ouverte qui envoie la carte d'une séance
+  annulée ou déplacée depuis est refusée : rien n'est écrit, et l'écran rendu est à jour.
 - **Rétablir** défait l'un comme l'autre, tant que la date prévue de la séance n'est pas passée
   (addendum du 28.09.2026).
 - Après une annulation ou un déplacement, **le message prêt à coller s'affiche**. C'est ce que les
@@ -451,17 +454,18 @@ qui l'attendait à sa nouvelle date.
   est aujourd'hui ou plus tard garde « Rétablir » seul, comme avant.
 - **Le nouveau geste.** Cette carte propose « Annuler cette séance », « Annuler cette session » sur
   l'écran du vendredi, derrière des options fermées (« Annuler »), avec une aide : la date prévue
-  est passée, et une séance annulée ne pourra pas être rétablie. L'action `annulerDeplacee`,
-  distincte d'`annuler`, reçoit ce que la carte montrait, comme Rétablir : l'exception, le jour et
-  l'heure d'arrivée. Dans une transaction, elle remplace ce déplacement par une annulation qui les
-  garde, avec un nouvel identifiant, puisque le service ne modifie jamais une exception
-  (`cancelMoved`). Le journal garde `exception.cancel`, avec le déplacement avant et l'annulation
-  après. La page dit que c'est fait et donne le message à copier, dans chaque langue publiée, la
-  langue du cours d'abord : il nomme la nouvelle date et la nouvelle heure, qui n'est pas celle du
-  rythme. L'écran du vendredi gagne ce bloc de messages pour ce geste seul ; son annulation
-  ordinaire reste sans message. Une seconde demande n'écrit rien et rend le message quand même,
-  comme une seconde annulation (D4). La séance annulée reste sur la carte de sa nouvelle date,
-  marquée annulée, sans « Rétablir ».
+  est passée, et une séance annulée ne pourra pas être rétablie. Cette aide décrit le bouton, et un
+  lecteur d'écran la lit avec lui. L'action `annulerDeplacee`, distincte d'`annuler`, reçoit ce que
+  la carte montrait, comme Rétablir : l'exception, le jour et l'heure d'arrivée. Dans une
+  transaction, elle remplace ce déplacement par une annulation qui les garde, avec un nouvel
+  identifiant, puisque le service ne modifie jamais une exception (`cancelMoved`). Le journal garde
+  `exception.cancel`, avec le déplacement avant et l'annulation après. La page dit que c'est fait et
+  donne le message à copier, dans chaque langue publiée, la langue du cours d'abord : il nomme la
+  nouvelle date et la nouvelle heure, qui n'est pas celle du rythme. L'écran du vendredi gagne ce
+  bloc de messages pour ce geste seul, avec son titre, `Message à copier`, comme celui d'« À venir »
+  a le sien ; son annulation ordinaire reste sans message. Une seconde demande n'écrit rien et rend
+  le message quand même, comme une seconde annulation (D4). La séance annulée reste sur la carte de
+  sa nouvelle date, marquée annulée, sans « Rétablir ».
 - **Déplacer** une séance dont la date prévue est passée est refusé aussi, sur les deux écrans
   (`pastSession`), comme l'annuler l'était déjà : c'était l'autre chemin vers ce cas. La phrase de
   ce refus dit désormais les deux gestes.
