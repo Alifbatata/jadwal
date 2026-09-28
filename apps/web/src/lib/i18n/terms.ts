@@ -38,6 +38,15 @@ interface TermsTexts {
 	 * phrase de « Vos organisations » lui dit d'ouvrir l'organisation, ce qui la ramènerait ici.
 	 */
 	readonly lastManagerWhat: string;
+	/**
+	 * Un envoi qui nomme une autre organisation que celle de la session : elle en a choisi une autre
+	 * depuis l'affichage, dans un autre onglet. `what` dit ce qui s'est passé ; `now` précède le nom
+	 * de l'organisation que l'écran montre désormais (étape 20).
+	 */
+	readonly sessionChanged: {
+		readonly what: string;
+		readonly now: string;
+	};
 }
 
 export const termsTexts: Translations<TermsTexts> = {
@@ -57,7 +66,11 @@ export const termsTexts: Translations<TermsTexts> = {
 			`Tant que vous ne les avez pas acceptées, l’espace ${deDevant(organisation)}${organisation} reste fermé.`,
 		leave: 'Ne pas accepter et quitter l’organisation',
 		lastManagerWhat:
-			'Une organisation garde toujours au moins une personne responsable. Pour la quitter, acceptez d’abord les conditions, puis, dans l’écran Membres, donnez le rôle de responsable à un autre membre ou invitez une personne comme responsable.'
+			'Une organisation garde toujours au moins une personne responsable. Pour la quitter, acceptez d’abord les conditions, puis, dans l’écran Membres, donnez le rôle de responsable à un autre membre ou invitez une personne comme responsable.',
+		sessionChanged: {
+			what: 'Depuis l’ouverture de la page, vous avez choisi une autre organisation, peut-être dans un autre onglet. Rien n’a été enregistré.',
+			now: 'La page concerne maintenant cette organisation :'
+		}
 	},
 	de: {
 		title: 'Nutzungsbedingungen',
@@ -75,7 +88,11 @@ export const termsTexts: Translations<TermsTexts> = {
 			`Solange Sie sie nicht akzeptiert haben, bleibt der Bereich von ${organisation} geschlossen.`,
 		leave: 'Nicht akzeptieren und Organisation verlassen',
 		lastManagerWhat:
-			'Eine Organisation behält immer mindestens eine Person in der Leitung. Um sie zu verlassen, akzeptieren Sie zuerst die Nutzungsbedingungen. Geben Sie dann auf der Seite «Mitglieder» einem anderen Mitglied die Rolle «Leitung», oder laden Sie eine Person für die Leitung ein.'
+			'Eine Organisation behält immer mindestens eine Person in der Leitung. Um sie zu verlassen, akzeptieren Sie zuerst die Nutzungsbedingungen. Geben Sie dann auf der Seite «Mitglieder» einem anderen Mitglied die Rolle «Leitung», oder laden Sie eine Person für die Leitung ein.',
+		sessionChanged: {
+			what: 'Seit die Seite geöffnet wurde, haben Sie eine andere Organisation gewählt, vielleicht in einem anderen Tab. Es wurde nichts gespeichert.',
+			now: 'Die Seite gilt jetzt für diese Organisation:'
+		}
 	},
 	it: {
 		title: 'Condizioni d’uso',
@@ -93,7 +110,11 @@ export const termsTexts: Translations<TermsTexts> = {
 			`Finché non le hai accettate, l’area di ${organisation} resta chiusa.`,
 		leave: 'Non accettare e lascia l’organizzazione',
 		lastManagerWhat:
-			'Un’organizzazione ha sempre almeno un responsabile. Per lasciarla, accetta prima le condizioni d’uso, poi, nella pagina Membri, dai il ruolo di responsabile a un altro membro o invita una persona come responsabile.'
+			'Un’organizzazione ha sempre almeno un responsabile. Per lasciarla, accetta prima le condizioni d’uso, poi, nella pagina Membri, dai il ruolo di responsabile a un altro membro o invita una persona come responsabile.',
+		sessionChanged: {
+			what: 'Da quando hai aperto la pagina hai scelto un’altra organizzazione, forse in un’altra scheda. Non è stato salvato niente.',
+			now: 'Ora la pagina riguarda questa organizzazione:'
+		}
 	},
 	en: {
 		title: 'Terms of use',
@@ -111,7 +132,11 @@ export const termsTexts: Translations<TermsTexts> = {
 			`Until you have accepted them, the area of ${organisation} stays closed.`,
 		leave: 'Decline the terms and leave the organisation',
 		lastManagerWhat:
-			'An organisation always keeps at least one manager. To leave it, first accept the terms of use, then, on the Members screen, give the manager role to another member or invite someone as a manager.'
+			'An organisation always keeps at least one manager. To leave it, first accept the terms of use, then, on the Members screen, give the manager role to another member or invite someone as a manager.',
+		sessionChanged: {
+			what: 'Since the page was opened, you have chosen another organisation, perhaps in another tab. Nothing has been saved.',
+			now: 'The page is now about this organisation:'
+		}
 	},
 	ar: {
 		title: 'شروط الاستخدام',
@@ -128,6 +153,10 @@ export const termsTexts: Translations<TermsTexts> = {
 		closedUntil: (organisation) => `ما دمت لم توافق عليها، تبقى مساحة ${organisation} مغلقة.`,
 		leave: 'عدم الموافقة ومغادرة المؤسسة',
 		lastManagerWhat:
-			'تحتفظ المؤسسة دائمًا بمسؤول واحد أو أكثر. لمغادرتها، وافق أولًا على شروط الاستخدام، ثم امنح في صفحة «الأعضاء» دور المسؤول لعضو آخر أو ادعُ شخصًا بصفة مسؤول.'
+			'تحتفظ المؤسسة دائمًا بمسؤول واحد أو أكثر. لمغادرتها، وافق أولًا على شروط الاستخدام، ثم امنح في صفحة «الأعضاء» دور المسؤول لعضو آخر أو ادعُ شخصًا بصفة مسؤول.',
+		sessionChanged: {
+			what: 'اخترت مؤسسة أخرى منذ أن فُتحت الصفحة، ربما في علامة تبويب أخرى. لم يُحفظ أي شيء.',
+			now: 'تخص الصفحة الآن هذه المؤسسة:'
+		}
 	}
 };

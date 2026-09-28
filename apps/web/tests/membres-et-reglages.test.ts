@@ -798,7 +798,11 @@ const PREUVES: {
 				await page200('/conditions/accepter', cookie),
 				'?/accepter'
 			);
-			expect(accord, 'le bouton qui accepte les conditions').toEqual({});
+			// Le formulaire nomme l'organisation que l'écran affiche : le serveur la compare à celle de
+			// la session, et n'accepte que pour elle (étape 20).
+			expect(accord, 'le bouton qui accepte les conditions').toEqual({
+				organizationId: INVITANTE.id
+			});
 			const signees = await postForm('/conditions/accepter?/accepter', accord ?? {}, cookie);
 			expect(signees.status).toBe(303);
 			expect(signees.headers.get('location')).toBe('/');

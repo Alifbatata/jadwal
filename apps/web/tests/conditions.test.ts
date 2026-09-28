@@ -305,9 +305,12 @@ describe('la porte de l’espace des responsables', () => {
 		// JJ.MM.AAAA, comme toutes les dates de l'espace depuis l'étape 18 (retour A3).
 		const [annee, mois, jour] = VERSION_DES_CONDITIONS.split('-');
 		expect(html).toContain(`Version du ${jour}.${mois}.${annee}`);
-		// Une action nommée : l'écran en a une seconde depuis l'étape 20, « quitter ».
+		// Une action nommée : l'écran en a une seconde depuis l'étape 20, « quitter ». Le formulaire
+		// porte l'organisation que l'écran nomme, que le serveur compare à celle de la session.
 		expect(html).toMatch(
-			/<form method="post" action="\?\/accepter">\s*<button type="submit"[^>]*>J’accepte les conditions d’utilisation<\/button>/
+			new RegExp(
+				`<form method="post" action="\\?/accepter">\\s*<input type="hidden" name="organizationId" value="${organizationId}"\\s*/?>\\s*<button type="submit"[^>]*>J’accepte les conditions d’utilisation</button>`
+			)
 		);
 		// Sous le bouton, ce qui reste fermé, et rien de plus : le compte, l'adhésion et la session
 		// sont déjà enregistrés, « rien n'est enregistré » serait faux.
@@ -331,7 +334,7 @@ describe('la porte de l’espace des responsables', () => {
 	});
 
 	it('records the current version, stamped by the database, then opens the space', async () => {
-		const accepte = await postForm('/conditions/accepter?/accepter', {}, cookie);
+		const accepte = await postForm('/conditions/accepter?/accepter', { organizationId }, cookie);
 		expect(accepte.status).toBe(303);
 		expect(accepte.headers.get('location')).toBe('/');
 
@@ -342,7 +345,7 @@ describe('la porte de l’espace des responsables', () => {
 		expect((await get('/cours', cookie)).status).toBe(200);
 
 		// Une seconde fois : l'écran renvoie à l'accueil, et rien n'est ajouté.
-		const encore = await postForm('/conditions/accepter?/accepter', {}, cookie);
+		const encore = await postForm('/conditions/accepter?/accepter', { organizationId }, cookie);
 		expect(encore.status).toBe(303);
 		expect(encore.headers.get('location')).toBe('/');
 		const page = await get('/conditions/accepter', cookie);
@@ -360,7 +363,9 @@ describe('la porte de l’espace des responsables', () => {
 			'J’accepte les conditions d’utilisation'
 		);
 
-		expect((await postForm('/conditions/accepter?/accepter', {}, ancien)).status).toBe(303);
+		expect(
+			(await postForm('/conditions/accepter?/accepter', { organizationId }, ancien)).status
+		).toBe(303);
 		expect(await acceptationsDe(ANCIEN)).toEqual([
 			{ version: '2026-01-01', recent: true },
 			{ version: VERSION_DES_CONDITIONS, recent: true }
@@ -374,7 +379,9 @@ describe('la porte de l’espace des responsables', () => {
 		expect(reponse.status).toBe(303);
 		expect(reponse.headers.get('location')).toBe('/conditions/accepter');
 
-		expect((await postForm('/conditions/accepter?/accepter', {}, editeur)).status).toBe(303);
+		expect(
+			(await postForm('/conditions/accepter?/accepter', { organizationId }, editeur)).status
+		).toBe(303);
 		expect((await get('/cours', editeur)).status).toBe(200);
 		expect(await acceptationsDe(EDITEUR)).toHaveLength(1);
 	});
@@ -611,6 +618,34 @@ const PARTIE: Record<Langue, string> = {
 	ar: 'لقد غادرت المؤسسة، ولم تعد مساحتها مفتوحة لك. وللعودة إليها اطلب من أحد المسؤولين أن يدعوك من جديد.'
 };
 
+/**
+ * Le refus d'un envoi qui nomme une autre organisation que celle de la session : la session a changé
+ * d'organisation dans un autre onglet depuis l'affichage. Puis la phrase qui précède le nom de celle
+ * que l'écran montre désormais.
+ */
+const SESSION_CHANGEE: Record<Langue, { quoi: string; maintenant: string }> = {
+	fr: {
+		quoi: 'Depuis l’ouverture de la page, vous avez choisi une autre organisation, peut-être dans un autre onglet. Rien n’a été enregistré.',
+		maintenant: 'La page concerne maintenant cette organisation :'
+	},
+	de: {
+		quoi: 'Seit die Seite geöffnet wurde, haben Sie eine andere Organisation gewählt, vielleicht in einem anderen Tab. Es wurde nichts gespeichert.',
+		maintenant: 'Die Seite gilt jetzt für diese Organisation:'
+	},
+	it: {
+		quoi: 'Da quando hai aperto la pagina hai scelto un’altra organizzazione, forse in un’altra scheda. Non è stato salvato niente.',
+		maintenant: 'Ora la pagina riguarda questa organizzazione:'
+	},
+	en: {
+		quoi: 'Since the page was opened, you have chosen another organisation, perhaps in another tab. Nothing has been saved.',
+		maintenant: 'The page is now about this organisation:'
+	},
+	ar: {
+		quoi: 'اخترت مؤسسة أخرى منذ أن فُتحت الصفحة، ربما في علامة تبويب أخرى. لم يُحفظ أي شيء.',
+		maintenant: 'تخص الصفحة الآن هذه المؤسسة:'
+	}
+};
+
 describe('ne pas accepter les conditions, et quitter l’organisation (étape 20)', () => {
 	/** Celle que l'on quitte : une responsable qui a accepté, et des membres qui ne l'ont pas fait. */
 	const QUITTEE = { id: newId(), slug: 'conditions-quittee', nom: 'Association du départ' };
@@ -622,6 +657,8 @@ describe('ne pas accepter les conditions, et quitter l’organisation (étape 20
 	};
 	/** L'autre organisation d'une personne qui en a deux : elle y a accepté. */
 	const GARDEE = { id: newId(), slug: 'conditions-gardee', nom: 'Association que l’on garde' };
+	/** Celle que l'on choisit dans un autre onglet, pendant que l'écran nomme QUITTEE. */
+	const AUTRE = { id: newId(), slug: 'conditions-autre', nom: 'Association de l’autre onglet' };
 	/** Une éditrice d'une seule organisation, sans invitation : le cas le plus courant. */
 	const SOLO = 'conditions-solo@example.test';
 	/** La responsable qui reste, et qui lit le journal. */
@@ -631,17 +668,27 @@ describe('ne pas accepter les conditions, et quitter l’organisation (étape 20
 	const DEUX = 'conditions-deux-depart@example.test';
 	/** Une éditrice qui a déjà accepté : l'écran ne lui est plus ouvert. */
 	const DEJA = 'conditions-deja@example.test';
+	/** Membre de QUITTEE et d'AUTRE, sans avoir accepté dans aucune des deux. */
+	const CHANGE = 'conditions-change@example.test';
 	const MEMBRES = [
 		[RESTE, QUITTEE.id, 'org_admin'],
 		[RESTE, GARDEE.id, 'org_admin'],
+		[RESTE, AUTRE.id, 'org_admin'],
 		[SOLO, QUITTEE.id, 'editor'],
 		[DEUX, QUITTEE.id, 'editor'],
 		[DEUX, GARDEE.id, 'editor'],
 		[DEJA, QUITTEE.id, 'editor'],
-		[UNIQUE, SEULE.id, 'org_admin']
+		[UNIQUE, SEULE.id, 'org_admin'],
+		[CHANGE, QUITTEE.id, 'editor'],
+		[CHANGE, AUTRE.id, 'editor']
 	] as const;
 	/** Les adhésions dont la personne a accepté la version en cours. */
-	const ACCEPTEES = [`${RESTE} ${QUITTEE.id}`, `${DEUX} ${GARDEE.id}`, `${DEJA} ${QUITTEE.id}`];
+	const ACCEPTEES = [
+		`${RESTE} ${QUITTEE.id}`,
+		`${RESTE} ${AUTRE.id}`,
+		`${DEUX} ${GARDEE.id}`,
+		`${DEJA} ${QUITTEE.id}`
+	];
 	const personnes: Record<string, string> = {};
 	/** Les adhésions, par adresse et par organisation : `adresse organisation`. */
 	const adhesions: Record<string, string> = {};
@@ -694,12 +741,12 @@ describe('ne pas accepter les conditions, et quitter l’organisation (étape 20
 
 	beforeAll(async () => {
 		appHandle = createDatabase({ role: 'app', overrides: { database: testDatabase } });
-		for (const email of [SOLO, RESTE, UNIQUE, DEUX, DEJA]) personnes[email] = newId();
+		for (const email of [SOLO, RESTE, UNIQUE, DEUX, DEJA, CHANGE]) personnes[email] = newId();
 		for (const [email, organisation] of MEMBRES) {
 			adhesions[`${email} ${organisation}`] = newId();
 		}
 		await maintenance(async (tx) => {
-			for (const organisation of [QUITTEE, SEULE, GARDEE]) {
+			for (const organisation of [QUITTEE, SEULE, GARDEE, AUTRE]) {
 				await tx.execute(sql`
 					insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
 						"enabled_language")
@@ -714,7 +761,7 @@ describe('ne pas accepter les conditions, et quitter l’organisation (étape 20
 			}
 		});
 		for (const [email, organisation, role] of MEMBRES) await remettre(email, organisation, role);
-		for (const email of [SOLO, UNIQUE, DEUX, DEJA]) cookies[email] = await signIn(email);
+		for (const email of [SOLO, UNIQUE, DEUX, DEJA, CHANGE]) cookies[email] = await signIn(email);
 	});
 
 	afterAll(async () => {
@@ -731,6 +778,10 @@ describe('ne pas accepter les conditions, et quitter l’organisation (étape 20
 			const partir = formulaireDeLaPage(html, '?/quitter');
 			// L'organisation que l'écran nomme, sans confirmation : le premier envoi ne fait rien partir.
 			expect(partir?.caches).toEqual({ organizationId: QUITTEE.id });
+			// L'accord la porte aussi : le serveur n'accepte que pour l'organisation que l'écran nomme.
+			expect(formulaireDeLaPage(html, '?/accepter')?.caches).toEqual({
+				organizationId: QUITTEE.id
+			});
 			expect(partir?.bouton).toBe(NE_PAS_ACCEPTER[langue]);
 			// Un bouton secondaire, sous celui qui accepte : l'accord reste le geste que l'écran propose.
 			expect(partir?.balise).toMatch(/\bclass="secondaire\b/);
@@ -903,10 +954,15 @@ describe('ne pas accepter les conditions, et quitter l’organisation (étape 20
 					cookies[SOLO]
 				);
 				const cas = `« ${organizationId} » ${confirm}`;
-				expect(reponse.status, cas).toBe(403);
-				expect(lu(element(await reponse.text(), 'refus-depart')), cas).toBe(
-					'Vous n’êtes pas membre de cette organisation.'
+				// Le formulaire ne nomme pas l'organisation de la session : le serveur n'en cherche pas
+				// plus, et l'écran le dit comme pour une session changée dans un autre onglet.
+				expect(reponse.status, cas).toBe(409);
+				const html = await reponse.text();
+				expect(lu(element(html, 'organisation-changee')), cas).toBe(
+					`${SESSION_CHANGEE.fr.quoi} ${SESSION_CHANGEE.fr.maintenant} ${QUITTEE.nom}`
 				);
+				expect(element(html, 'refus-depart'), cas).toBe('');
+				expect(element(html, 'confirmer-depart'), cas).toBe('');
 			}
 		}
 		// Et rien n'a bougé.
@@ -925,4 +981,135 @@ describe('ne pas accepter les conditions, et quitter l’organisation (étape 20
 		expect(await roleDans(DEJA, QUITTEE.id)).toBe('editor');
 		expect(await acceptations(DEJA, QUITTEE.id)).toBe(1);
 	});
+
+	it('refuses a departure that names her other organisation, and keeps it with its acceptance', async () => {
+		await remettre(DEUX, QUITTEE.id, 'editor');
+		await remettre(DEUX, GARDEE.id, 'editor');
+		await poserLangueDuCompte(DEUX, 'fr');
+		const cookie = cookies[DEUX] ?? '';
+		expect(
+			(await postForm('/organisations?/choisir', { organizationId: QUITTEE.id }, cookie)).status
+		).toBe(303);
+		// L'écran nomme QUITTEE ; le formulaire, trafiqué, nomme GARDEE, où elle a accepté. Les
+		// issues sont relevées toutes, puis comparées d'un coup : un échec montre tout ce qui a eu lieu.
+		const issues = [];
+		for (const confirm of ['', 'yes']) {
+			const reponse = await postForm(
+				'/conditions/accepter?/quitter',
+				{ organizationId: GARDEE.id, confirm },
+				cookie
+			);
+			const html = await reponse.text();
+			issues.push({
+				confirm,
+				statut: reponse.status,
+				dit: lu(element(html, 'organisation-changee')),
+				demande: element(html, 'confirmer-depart') !== ''
+			});
+		}
+		expect({
+			issues,
+			gardee: {
+				role: await roleDans(DEUX, GARDEE.id),
+				acceptees: await acceptations(DEUX, GARDEE.id)
+			},
+			quittee: await roleDans(DEUX, QUITTEE.id)
+		}).toEqual({
+			issues: ['', 'yes'].map((confirm) => ({
+				confirm,
+				statut: 409,
+				dit: `${SESSION_CHANGEE.fr.quoi} ${SESSION_CHANGEE.fr.maintenant} ${QUITTEE.nom}`,
+				demande: false
+			})),
+			gardee: { role: 'editor', acceptees: 1 },
+			quittee: 'editor'
+		});
+
+		// Un autre onglet choisit GARDEE, où elle a accepté : la porte la renvoie à l'accueil de
+		// GARDEE, et QUITTEE, que l'écran affiché nommait, n'est pas quittée.
+		expect(
+			(await postForm('/organisations?/choisir', { organizationId: GARDEE.id }, cookie)).status
+		).toBe(303);
+		const ailleurs = await postForm(
+			'/conditions/accepter?/quitter',
+			{ organizationId: QUITTEE.id, confirm: 'yes' },
+			cookie
+		);
+		expect(ailleurs.status).toBe(303);
+		expect(ailleurs.headers.get('location')).toBe('/');
+		expect(await roleDans(DEUX, QUITTEE.id)).toBe('editor');
+		expect(await roleDans(DEUX, GARDEE.id)).toBe('editor');
+	});
+
+	it.each(LANGUES)(
+		'refuses in %s to accept or to leave once another tab has chosen another organisation, and says so at the top',
+		async (langue) => {
+			await remettre(CHANGE, QUITTEE.id, 'editor');
+			await remettre(CHANGE, AUTRE.id, 'editor');
+			await poserLangueDuCompte(CHANGE, langue);
+			const cookie = cookies[CHANGE] ?? '';
+			// L'écran s'affiche pour QUITTEE : ses deux formulaires la nomment.
+			expect(
+				(await postForm('/organisations?/choisir', { organizationId: QUITTEE.id }, cookie)).status
+			).toBe(303);
+			const ecran = await (await get('/conditions/accepter', cookie)).text();
+			expect.soft(formulaireDeLaPage(ecran, '?/accepter')?.caches).toEqual({
+				organizationId: QUITTEE.id
+			});
+			expect.soft(formulaireDeLaPage(ecran, '?/quitter')?.caches).toEqual({
+				organizationId: QUITTEE.id
+			});
+			// Un autre onglet choisit AUTRE, où les conditions attendent aussi.
+			expect(
+				(await postForm('/organisations?/choisir', { organizationId: AUTRE.id }, cookie)).status
+			).toBe(303);
+
+			// Ce que l'écran de QUITTEE envoie, bouton par bouton. Les issues sont relevées toutes, puis
+			// comparées d'un coup : un échec montre tout ce qui a eu lieu, et ce qui a été enregistré.
+			const envois: [string, Record<string, string>][] = [
+				['?/accepter', { organizationId: QUITTEE.id }],
+				['?/quitter', { organizationId: QUITTEE.id }],
+				['?/quitter', { organizationId: QUITTEE.id, confirm: 'yes' }]
+			];
+			const issues = [];
+			for (const [action, champs] of envois) {
+				const reponse = await postForm(`/conditions/accepter${action}`, champs, cookie);
+				const html = await reponse.text();
+				const boite = element(html, 'organisation-changee');
+				const position = html.indexOf('id="organisation-changee"');
+				issues.push({
+					envoi: `${action} ${JSON.stringify(champs)}`,
+					statut: reponse.status,
+					annonce: /role="alert"/.test(boite),
+					dit: lu(boite),
+					isole: boite.includes(`<bdi>${AUTRE.nom}</bdi>`),
+					// En haut, comme la demande de confirmation : la page s'ouvre là après l'envoi.
+					enHaut:
+						position > html.indexOf('<h1') && position < html.indexOf('<div lang="fr" dir="ltr">'),
+					// L'écran est désormais celui d'AUTRE, et son accord la nomme.
+					nommee: formulaireDeLaPage(html, '?/accepter')?.caches['organizationId'] ?? null,
+					demande: element(html, 'confirmer-depart') !== ''
+				});
+			}
+			expect({
+				issues,
+				// Rien n'est accepté, ni pour l'une ni pour l'autre, et elle reste dans les deux.
+				acceptees: [await acceptations(CHANGE, QUITTEE.id), await acceptations(CHANGE, AUTRE.id)],
+				roles: [await roleDans(CHANGE, QUITTEE.id), await roleDans(CHANGE, AUTRE.id)]
+			}).toEqual({
+				issues: envois.map(([action, champs]) => ({
+					envoi: `${action} ${JSON.stringify(champs)}`,
+					statut: 409,
+					annonce: true,
+					dit: `${SESSION_CHANGEE[langue].quoi} ${SESSION_CHANGEE[langue].maintenant} ${AUTRE.nom}`,
+					isole: true,
+					enHaut: true,
+					nommee: AUTRE.id,
+					demande: false
+				})),
+				acceptees: [0, 0],
+				roles: ['editor', 'editor']
+			});
+		}
+	);
 });

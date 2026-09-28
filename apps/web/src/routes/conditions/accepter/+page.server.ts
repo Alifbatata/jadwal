@@ -9,8 +9,14 @@
 // le chemin de « Vos organisations » (`organisations/leave.server.ts`) : les mêmes vérifications, la
 // même confirmation, les mêmes réponses. Deux actions nommées, donc : SvelteKit refuse une action par
 // défaut à côté d'une action nommée.
+//
+// Les deux formulaires portent l'organisation que l'écran nomme. Chaque action la compare à celle de
+// la session, après la porte : l'écran et la session doivent parler de la même. Sinon, la session a
+// choisi une autre organisation depuis l'affichage, dans un autre onglet, ou le formulaire est
+// trafiqué ; rien n'est accepté ni supprimé, et l'écran, rendu pour l'organisation de la session, le
+// dit en haut (étape 20).
 
-import { redirect } from '@sveltejs/kit';
+import { fail, redirect, type RequestEvent } from '@sveltejs/kit';
 import type { IsoDate } from '@jadwal/core';
 import { newId, sql, withOrg } from '@jadwal/db';
 import { numericDate } from '$lib/i18n.js';
@@ -27,9 +33,8 @@ export const load: PageServerLoad = async (event) => {
 	const context = await mustHaveTermsToAccept(event);
 	return {
 		organisation: context.organizationName,
-		// L'organisation que l'écran nomme, pour le bouton qui la quitte : le serveur revérifie que la
-		// personne en est membre, et une session changée dans un autre onglet ne lui en fait pas
-		// quitter une autre.
+		// L'organisation que l'écran nomme, portée par ses deux formulaires : l'accord et le départ ne
+		// valent que pour elle (`memeOrganisation`).
 		organizationId: context.organizationId,
 		// « 26.09.2026 », comme toutes les dates de l'espace depuis l'étape 18 (retour A3).
 		date: numericDate(versionIso as IsoDate),
@@ -44,9 +49,25 @@ export const load: PageServerLoad = async (event) => {
 	};
 };
 
+/**
+ * La porte de l'écran, puis l'organisation que le formulaire nomme, comparée à celle de la session.
+ * La porte d'abord : sans session, sans organisation, ou quand l'organisation de la session est déjà
+ * acceptée, elle renvoie ailleurs avant toute comparaison, et rien n'est fait.
+ */
+async function memeOrganisation(event: RequestEvent) {
+	const context = await mustHaveTermsToAccept(event);
+	const form = await event.request.formData();
+	return {
+		context,
+		form,
+		meme: String(form.get('organizationId') ?? '') === context.organizationId
+	};
+}
+
 export const actions: Actions = {
 	accepter: async (event) => {
-		const context = await mustHaveTermsToAccept(event);
+		const { context, meme } = await memeOrganisation(event);
+		if (!meme) return fail(409, { error: 'sessionChanged' as const });
 		// En SQL brut, et sans `accepted_at` : la base pose le moment elle-même et refuse une valeur
 		// venue de l'application. Le constructeur d'insertion de Drizzle nomme cette colonne, et la
 		// base le refuserait. Un envoi répété n'ajoute rien et ne lève rien.
@@ -66,12 +87,14 @@ export const actions: Actions = {
 
 	/**
 	 * Ne pas accepter, et quitter l'organisation (étape 20). La même porte que l'acceptation : une
-	 * personne qui a déjà accepté retourne à l'accueil, et rien n'est supprimé. Le refus des
-	 * conditions n'est écrit nulle part ; seul le départ l'est, au journal, comme depuis « Vos
-	 * organisations » (ADR 0044).
+	 * personne qui a déjà accepté dans l'organisation de sa session retourne à l'accueil, et rien
+	 * n'est supprimé. La même comparaison aussi : le départ ne vise que l'organisation de la session,
+	 * et seulement si l'écran la nommait. Le refus des conditions n'est écrit nulle part ; seul le
+	 * départ l'est, au journal, comme depuis « Vos organisations » (ADR 0044).
 	 */
 	quitter: async (event) => {
-		const context = await mustHaveTermsToAccept(event);
-		return leaveOrganisation(context, await event.request.formData());
+		const { context, form, meme } = await memeOrganisation(event);
+		if (!meme) return fail(409, { error: 'sessionChanged' as const });
+		return leaveOrganisation(context, form);
 	}
 };

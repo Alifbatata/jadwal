@@ -28,8 +28,14 @@
 <!-- Ne pas accepter, et partir (étape 20) : le refus et la demande de confirmation viennent en haut,
      après le titre et avant le texte, parce que la page, longue, s'ouvre en haut après l'envoi. La
      seule personne responsable lit ce qu'elle doit faire d'ici. « Rester dans l'organisation »
-     ramène à cet écran, sans rien envoyer. -->
-{#if seuleResponsable}
+     ramène à cet écran, sans rien envoyer. Au même endroit, un envoi qui nommait une autre
+     organisation que celle de la session : l'écran est maintenant celui de la session, et le dit. -->
+{#if form?.error === 'sessionChanged'}
+	<div id="organisation-changee" class="refus" role="alert">
+		<p>{text.sessionChanged.what}</p>
+		<p>{text.sessionChanged.now} <strong><bdi>{data.organisation}</bdi></strong></p>
+	</div>
+{:else if seuleResponsable}
 	<div id="refus-depart" class="refus" role="alert">
 		<p>{depart.errors.lastManager} <strong><bdi>{seuleResponsable}</bdi></strong></p>
 		<p>{text.lastManagerWhat}</p>
@@ -74,12 +80,15 @@
 </div>
 
 <div class="accord">
+	<!-- L'organisation que l'écran nomme : l'accord ne vaut que pour elle, et le serveur la compare
+	     à celle de la session. -->
 	<form method="post" action="?/accepter">
+		<input type="hidden" name="organizationId" value={data.organizationId} />
 		<button type="submit">{text.accept}</button>
 	</form>
 	<p>{text.closedUntil(data.organisation)}</p>
 	<!-- Un bouton secondaire, sous celui qui accepte : le premier envoi ne fait rien partir, il demande
-	     une confirmation en haut de la page. -->
+	     une confirmation en haut de la page. Il nomme la même organisation. -->
 	<form method="post" action="?/quitter">
 		<input type="hidden" name="organizationId" value={data.organizationId} />
 		<button type="submit" class="secondaire">{text.leave}</button>
