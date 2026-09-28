@@ -196,7 +196,8 @@
  *   de l'écran ; « Ne rien changer » ne change rien.
  * - 19-membres-depart : une responsable qui se retire elle-même lit un encadré à l'arrivée.
  * - 19-membres-quitter : « Quitter l’organisation » depuis « Vos organisations », et le refus fait à
- *   la seule personne responsable, qui dit pourquoi et quoi faire.
+ *   la seule personne responsable, qui dit pourquoi et quoi faire. Membre d'une seule organisation,
+ *   la navigation mène à cet écran sous son titre, « Vos organisations ».
  * - 19-membres-salle : une salle déjà supprimée dans un autre onglet, « Cette salle n’existe
  *   plus. ».
  *
@@ -215,10 +216,10 @@
  *
  * - dans les cinq langues : 19-B12, 19-agenda-outlook, 19-annulee, 19-og-locale (la page du
  *   programme ; la page d'un cours et celle de l'abonnement en français, en anglais et en arabe),
- *   19-prieres-angle, le refus fait à la seule personne responsable (19-membres-quitter), le 404
- *   d'une session sous /cours (19-cours-session-vendredi), la liste « Publication » d'un cours
- *   (19-cours-deux-etats), et les messages de 19-D4 (le programme de la semaine, le déplacement
- *   d'un cours placé après le Dhuhr) ;
+ *   19-prieres-angle, le refus fait à la seule personne responsable et le lien « Vos organisations »
+ *   (19-membres-quitter), le 404 d'une session sous /cours (19-cours-session-vendredi), la liste
+ *   « Publication » d'un cours (19-cours-deux-etats), et les messages de 19-D4 (le programme de la
+ *   semaine, le déplacement d'un cours placé après le Dhuhr) ;
  * - en arabe seul : 19-B1 à 19-B11, les phrases relues ;
  * - dans deux langues ou plus, sans les cinq : 19-cours-seance-barree (français, anglais, arabe),
  *   19-titre-langue-ecran (allemand, arabe), 19-C (l'écran en français, le courriel en italien) ;
@@ -2732,8 +2733,8 @@ async function personneInvitee(navigateur) {
 	// Membre d'une seule organisation, elle a encore la seconde invitation en attente : la
 	// navigation la mène au choix d'organisation, où elle l'accepte. Qu'une personne d'une seule
 	// organisation sans invitation n'ait pas ce lien, mais « Vos organisations » vers le même écran
-	// (étape 19), `apps/web/tests/acces.test.ts` le vérifie : personne, dans ce parcours, n'est dans
-	// ce cas.
+	// (étape 19), l'étape q le vérifie, une fois l'organisation voisine quittée, et
+	// `apps/web/tests/acces.test.ts` aussi.
 	verifierChaque(
 		`avec une seule organisation et une invitation qui attend, elle trouve « ${CHANGER} » dans la navigation, vers le choix`,
 		{
@@ -7903,10 +7904,23 @@ async function seRetirerDeMembres(seconde, ligne) {
 }
 
 /**
+ * Le lien de la navigation vers « Vos organisations », pour qui n'est membre que d'une
+ * organisation, sans invitation qui attende, dans chaque langue (`apps/web/src/lib/i18n/common.ts`).
+ */
+const VOS_ORGANISATIONS = {
+	fr: 'Vos organisations',
+	de: 'Ihre Organisationen',
+	it: 'Le tue organizzazioni',
+	en: 'Your organisations',
+	ar: 'مؤسساتك'
+};
+
+/**
  * q. « Vos organisations » (étape 19) : la personne du parcours quitte l'organisation voisine, où
  * elle est éditrice. Le bouton « Quitter l’organisation » a pour description le nom de
  * l'organisation ; l'écran demande de confirmer en la nommant ; puis l'encadré dit le départ, et
- * l'organisation a quitté la liste.
+ * l'organisation a quitté la liste. Membre d'une seule organisation, elle trouve alors dans la
+ * navigation « Vos organisations », et non plus « Changer d’organisation ».
  */
 async function quitterLaVoisine(page) {
 	etape('q. Vos organisations : quitter une organisation');
@@ -8000,6 +8014,44 @@ async function quitterLaVoisine(page) {
 				'l’organisation a quitté la liste': restantes === 0
 			},
 			`« ${description} » ; « ${texteDeLaDemande.slice(0, 80)} » ; « ${texte || 'aucun encadré'} »`
+		);
+	});
+	// Membre d'une seule organisation, sans invitation qui attende : la navigation la mène encore à
+	// l'écran où l'on quitte une organisation, sous son titre, « Vos organisations » (étape 19).
+	// Avant, elle n'avait aucun lien vers cet écran.
+	await retour('19-membres-quitter', async () => {
+		const lus = {};
+		try {
+			for (const langue of LANGUES) {
+				await ouvrir(page, '/');
+				if ((await racineDit(page, 'lang')) !== langue) await choisirLaLangue(page, langue);
+				lus[langue] = await page
+					.locator('header nav a')
+					.evaluateAll((liens) =>
+						liens
+							.filter(
+								(lien) =>
+									new URL(/** @type {HTMLAnchorElement} */ (lien).href).pathname ===
+									'/organisations'
+							)
+							.map((lien) => (lien.textContent ?? '').replace(/\s+/g, ' ').trim())
+					);
+			}
+		} finally {
+			if ((await racineDit(page, 'lang')) !== 'fr') await choisirLaLangue(page, 'fr');
+		}
+		verifierChaque(
+			'membre d’une seule organisation, sans invitation qui attende, elle trouve dans la navigation un seul lien vers /organisations, « Vos organisations », dans les cinq langues, à la place de « Changer d’organisation »',
+			Object.fromEntries(
+				LANGUES.map((langue) => [
+					`« ${VOS_ORGANISATIONS[langue]} », seul, en ${langue}`,
+					lus[langue].join('|') === VOS_ORGANISATIONS[langue]
+				])
+			),
+			LANGUES.map(
+				(langue) =>
+					`${langue} : ${lus[langue].map((texte) => `« ${texte} »`).join(', ') || 'aucun lien'}`
+			).join(' ; ')
 		);
 	});
 }
@@ -8255,6 +8307,7 @@ B3 | une responsable qui se donne le rôle d’éditeur arrive sur « À venir �
 19-membres-depart | une responsable qui se retire elle-même, depuis Membres, confirme d’abord, puis arrive sur « Vos organisations », où un encadré, avant le titre et visible sans défiler, dit qu’elle a quitté l’organisation
 19-membres-quitter | dans « Vos organisations », la seule personne responsable de « Centre du Parcours » qui veut la quitter lit, dans les cinq langues, un refus qui la nomme et dit quoi faire, sans demande de confirmation, et reste membre
 19-membres-quitter | dans « Vos organisations », « Quitter l’organisation » sur « Association voisine » : le bouton porte son nom pour les lecteurs d’écran, l’écran demande de confirmer en la nommant, puis l’encadré dit le départ, et l’organisation a quitté la liste
+19-membres-quitter | membre d’une seule organisation, sans invitation qui attende, elle trouve dans la navigation un seul lien vers /organisations, « Vos organisations », dans les cinq langues, à la place de « Changer d’organisation »
 A3 | aucune date écrite AAAA-MM-JJ sur les N écrans traversés (espace, super-admin, page publique, widget)
 F1 | aucun des N écrans traversés ne nomme la personne retirée du dépôt
 `
