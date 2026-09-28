@@ -38,23 +38,24 @@ Chaque geste dit sa route, puis la table et l'opération. Chaque écriture ajout
 journal (`audit_log`, ajout), qui n'est pas répétée. Les deux colonnes se lisent chacune de haut en
 bas : une ligne ne met pas en regard deux gestes liés.
 
-| Ce que fait un éditeur                                                                                                                         | Ce que fait en plus un responsable                                                                                                                                                   |
-| ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Voir la semaine à venir : `/` · lecture                                                                                                        | Voir les membres et leur rôle : `/membres` · `membership`, `user` (lecture)                                                                                                          |
-| Annuler, déplacer, rétablir une séance : `/?/annuler`, `?/deplacer`, `?/retablir` · `session_exception` (ajout, suppression)                   | Voir les invitations en attente : `/membres` · `invitation` (lecture)                                                                                                                |
-| Voir les cours : `/cours` · lecture                                                                                                            | Inviter une personne, avec son rôle : `/membres?/inviter` · `invitation` (ajout ; l'invitation en attente pour la même adresse est close)                                            |
-| Créer un cours : `/cours/nouveau` · `course`, `course_translation` (ajout)                                                                     | Annuler une invitation : `/membres?/annuler` · `invitation` (modification)                                                                                                           |
-| Modifier un cours : `/cours/[id]` · `course` (modification), `course_translation` (remplacement)                                               | Changer le rôle d'un membre : `/membres?/role` · `membership` (modification)                                                                                                         |
-| Poser, retirer une pause : `/cours?/pause`, `?/supprimerPause` · `pause` (ajout, suppression)                                                  | Retirer un membre : `/membres?/retirer` · `membership` (suppression)                                                                                                                 |
-| Gérer le vendredi, module allumé : `/vendredi` · `course`, `course_translation`, `session_exception`                                           | Modifier nom, fuseau, couleur, formule d'accueil, langues : `/reglages?/enregistrer` · `organization` (modification)                                                                 |
-| Partager le programme : `/partager` · lecture                                                                                                  | Allumer, éteindre le module des prières : `/reglages?/modulePrieres` · `organization` (modification)                                                                                 |
-| Accepter une invitation reçue : `/organisations?/accepter` · `invitation` (modification), `membership` (ajout)                                 | Ajouter, supprimer une salle : `/reglages?/ajouterSalle`, `?/supprimerSalle` · `room` (ajout, suppression)                                                                           |
-| Accepter les conditions : `/conditions/accepter` · `terms_acceptance` (ajout)                                                                  | Régler le calcul des heures de prière, après un aperçu : `/prieres?/apercu` (sans rien écrire), `?/enregistrer` · `prayer_settings`, `prayer_day` (ajout, modification)              |
-| Choisir sa langue, en haut de chaque écran : `/langue` · `user` (modification de `language`, son propre compte)                                | Importer, effacer des heures : `/prieres?/lireFichier` (sans rien écrire), `?/confirmer`, `?/effacer` · `prayer_day` (ajout, modification, suppression)                              |
-| Changer d'organisation, pour qui est membre de plusieurs : `/organisations?/choisir` · `session` (modification, rôle de connexion)             | Écrire, prévisualiser, dupliquer, supprimer une période : `/prieres?/periode`, `?/apercuPeriode` (écrite puis annulée), `?/dupliquerPeriode`, `?/supprimerPeriode` · `prayer_period` |
-| Quitter une organisation dont on est membre, après confirmation : `/organisations?/quitter` · `membership` (suppression de sa propre adhésion) | Télécharger le modèle d'horaires : `/prieres/modele.csv` · lecture                                                                                                                   |
-|                                                                                                                                                | Chercher une localité suisse : `/prieres/localites` · lecture de la liste embarquée, aucune table                                                                                    |
-|                                                                                                                                                | Supprimer un cours, après confirmation : `/cours?/supprimer` · `course` (suppression, sauf une session du vendredi)                                                                  |
+| Ce que fait un éditeur                                                                                                                                 | Ce que fait en plus un responsable                                                                                                                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Voir la semaine à venir : `/` · lecture                                                                                                                | Voir les membres et leur rôle : `/membres` · `membership`, `user` (lecture)                                                                                                          |
+| Annuler, déplacer, rétablir une séance : `/?/annuler`, `?/deplacer`, `?/retablir`, `?/annulerDeplacee` · `session_exception` (ajout, suppression)      | Voir les invitations en attente : `/membres` · `invitation` (lecture)                                                                                                                |
+| Voir les cours : `/cours` · lecture                                                                                                                    | Inviter une personne, avec son rôle : `/membres?/inviter` · `invitation` (ajout ; l'invitation en attente pour la même adresse est close)                                            |
+| Créer un cours : `/cours/nouveau` · `course`, `course_translation` (ajout)                                                                             | Annuler une invitation : `/membres?/annuler` · `invitation` (modification)                                                                                                           |
+| Modifier un cours : `/cours/[id]` · `course` (modification), `course_translation` (remplacement)                                                       | Changer le rôle d'un membre : `/membres?/role` · `membership` (modification)                                                                                                         |
+| Poser, retirer une pause : `/cours?/pause`, `?/supprimerPause` · `pause` (ajout, suppression)                                                          | Retirer un membre : `/membres?/retirer` · `membership` (suppression)                                                                                                                 |
+| Gérer le vendredi, module allumé, sauf supprimer une session : `/vendredi` · `course` (ajout, modification), `course_translation`, `session_exception` | Modifier nom, fuseau, couleur, formule d'accueil, langues : `/reglages?/enregistrer` · `organization` (modification)                                                                 |
+| Partager le programme : `/partager` · lecture                                                                                                          | Allumer, éteindre le module des prières : `/reglages?/modulePrieres` · `organization` (modification)                                                                                 |
+| Accepter une invitation reçue : `/organisations?/accepter` · `invitation` (modification), `membership` (ajout)                                         | Ajouter, supprimer une salle : `/reglages?/ajouterSalle`, `?/supprimerSalle` · `room` (ajout, suppression)                                                                           |
+| Accepter les conditions : `/conditions/accepter` · `terms_acceptance` (ajout)                                                                          | Régler le calcul des heures de prière, après un aperçu : `/prieres?/apercu` (sans rien écrire), `?/enregistrer` · `prayer_settings`, `prayer_day` (ajout, modification)              |
+| Choisir sa langue, en haut de chaque écran : `/langue` · `user` (modification de `language`, son propre compte)                                        | Importer, effacer des heures : `/prieres?/lireFichier` (sans rien écrire), `?/confirmer`, `?/effacer` · `prayer_day` (ajout, modification, suppression)                              |
+| Changer d'organisation, pour qui est membre de plusieurs : `/organisations?/choisir` · `session` (modification, rôle de connexion)                     | Écrire, prévisualiser, dupliquer, supprimer une période : `/prieres?/periode`, `?/apercuPeriode` (écrite puis annulée), `?/dupliquerPeriode`, `?/supprimerPeriode` · `prayer_period` |
+| Quitter une organisation dont on est membre, après confirmation : `/organisations?/quitter` · `membership` (suppression de sa propre adhésion)         | Télécharger le modèle d'horaires : `/prieres/modele.csv` · lecture                                                                                                                   |
+|                                                                                                                                                        | Chercher une localité suisse : `/prieres/localites` · lecture de la liste embarquée, aucune table                                                                                    |
+|                                                                                                                                                        | Supprimer un cours, après confirmation : `/cours?/supprimer` · `course` (suppression)                                                                                                |
+|                                                                                                                                                        | Supprimer une session du vendredi, après confirmation : `/vendredi?/supprimer` · `course` (suppression)                                                                              |
 
 Trois écritures ne viennent d'aucun écran et sont réservées quand même, parce qu'elles touchent aux
 mêmes tables : supprimer une invitation, renommer une salle, supprimer les réglages des prières. Une
@@ -67,9 +68,10 @@ Deux gestes n'avaient pas d'écran au lot 1 de l'étape 19, et la base les tenai
 - **Supprimer un cours** (`/cours?/supprimer` · `course`, suppression) est réservé à la personne
   responsable (migration 0065). Depuis le lot 2, l'écran Cours le propose à elle seule, et la route
   refuse l'éditeur par `mustAdminister` : le geste a rejoint la colonne de droite (addendum
-  ci-dessous). Une session du vendredi n'est pas concernée : l'écran Vendredi en propose la
-  suppression à l'éditeur, et la base la lui laisse. Un cours ne devient pas une session le temps
-  d'être supprimé : le type d'une ligne ne change pas, pour personne (migration 0069, ADR 0033).
+  ci-dessous). Une session du vendredi ne l'était pas : l'écran Vendredi en proposait la
+  suppression à l'éditeur, et la base la lui laissait, jusqu'à l'étape 20 (migration 0073, addendum
+  du 28.09.2026). Un cours ne devient pas une session le temps d'être supprimé : le type d'une
+  ligne ne change pas, pour personne (migration 0069, ADR 0033).
 - **Quitter l'organisation** (`membership`, suppression de sa propre adhésion) est ouvert à chacun,
   pour soi seulement (migration 0066). Depuis le lot 2, « Vos organisations » le propose à chacun,
   après confirmation (addendum ci-dessous). La dernière personne responsable ne part pas : le
@@ -92,9 +94,10 @@ Deux gestes n'avaient pas d'écran au lot 1 de l'étape 19, et la base les tenai
   clauses : `invitation` (lecture, insertion, modification, suppression, pour la branche de
   l'organisation), `membership` (lecture et suppression pour la branche de l'organisation,
   modification), `organization` (modification), `room`, `prayer_settings`, `prayer_day`,
-  `prayer_period` (insertion, modification, suppression), `course` (suppression, sauf une session du
-  vendredi) et `audit_log` (lecture). Un déclencheur tient le type de chaque cours : sans lui, la
-  modification, ouverte à tout membre, ferait d'un cours une session, que l'éditeur supprimerait. La
+  `prayer_period` (insertion, modification, suppression), `course` (suppression, une session du
+  vendredi comprise depuis la migration 0073) et `audit_log` (lecture). Un déclencheur tient le type
+  de chaque cours : sans lui, la modification, ouverte à tout membre, faisait d'un cours une session,
+  que l'éditeur supprimait tant que cette suppression lui restait ouverte. La
   lecture de l'organisation, des salles, des heures de prière et des cours reste ouverte à tous les
   membres : l'écran des cours lit les salles et les heures, et le programme en dépend.
 - **Chacun garde ce qui est à lui.** La lecture des adhésions a une seconde branche, ses propres
@@ -197,8 +200,8 @@ auteur. Le chef de projet a demandé de les fermer, avec deux gestes de plus.
   personnes désignées ne passe pas par une fonction de plus : elle suit ce que la personne voit, et
   l'application ne fait jamais nommer à un éditeur que lui-même.
 - **Supprimer un cours** (migration 0065) : réservé à la personne responsable, sauf une session du
-  vendredi. Le type d'une ligne ne change pas (migration 0069) : un cours ne devient pas une
-  session le temps d'être supprimé.
+  vendredi, jusqu'à la migration 0073 (addendum du 28.09.2026). Le type d'une ligne ne change pas
+  (migration 0069) : un cours ne devient pas une session le temps d'être supprimé.
 - **Quitter l'organisation** (migration 0066) : chacun peut supprimer sa propre adhésion, et rien
   de plus ; la dernière personne responsable reste retenue.
 
@@ -258,6 +261,25 @@ comme pour tout le monde (ADR 0015 et 0025, addenda du même jour). Ce n'est pas
 la politique ne passe pas par `jadwal.is_org_admin()`, et la liste des gestes réservés ne change
 pas.
 
+## Addendum du 28.09.2026 : supprimer une session du vendredi est réservé au responsable (étape 20)
+
+Décision C3 du chef de projet. La politique `course_delete` perd sa branche `kind = 'jumua'`
+(migration 0073) : seule la personne responsable, et le super-admin, suppriment une session du
+vendredi, comme un cours. L'action `supprimer` de l'écran Vendredi passe par
+`mustAdministerPrayerModule`, et l'éditeur est renvoyé à l'accueil avant la lecture du formulaire,
+sans rien supprimer ni écrire au journal. Le bouton `Supprimer cette session` n'est rendu que pour
+la personne responsable. Le geste entre dans la liste que l'écran Membres affiche, sous « Réservé
+au responsable », juste après la suppression d'un cours, comme l'écran Vendredi suit l'écran Cours
+dans la navigation : `Supprimer une prière du vendredi`, dans les cinq langues (`deleteFriday`). Le
+geste `friday` de l'éditeur ne promet plus de la supprimer. La table des cours était déjà dite
+réservée : le test qui lie l'écran à la base ne change que par ce geste, qu'il refuse à une
+éditrice par sa route.
+
+La même étape ajoute un geste à la colonne de l'éditeur, sans changer de table : `?/annulerDeplacee`,
+sur « À venir » comme sur l'écran Vendredi, annule à sa nouvelle date une séance déplacée dont la
+date prévue est passée (ADR 0021, addendum du même jour). Il remplace le déplacement par une
+annulation dans `session_exception` (suppression, ajout), ce que l'éditeur faisait déjà.
+
 ## Statut
 
 Accepté, 2026-09-26. Étape 18, consigne du chef de projet (les rôles dans la base), et la langue du
@@ -265,4 +287,6 @@ compte. Révisé le même jour, à la fin de l'étape : la langue se choisit en 
 l'écran Membres montre la liste, et l'écran des prières prévisualise une période. Complété le
 27.09.2026 (étape 19) : le journal, la liste des membres, la suppression d'un cours et le départ
 d'une organisation ; au lot 2, l'écran de la suppression d'un cours, celui du départ d'une
-organisation, et le journal signé par le super-admin lui-même.
+organisation, et le journal signé par le super-admin lui-même. Complété le 28.09.2026 (étape 20) :
+la suppression d'une session du vendredi, réservée au responsable, et l'annulation d'une séance
+déplacée dont la date prévue est passée.

@@ -1,7 +1,7 @@
 # L'écran À venir
 
 Décrit après le code, à l'étape 18 (retours A1, A2, D1, et B1, D2, A3 pour cet écran), et repris à
-l'étape 19 (relecture D4, décisions du chef de projet, lots 2 et 3). Textes :
+l'étape 19 (relecture D4, décisions du chef de projet, lots 2 et 3) et à l'étape 20 (C2, C4). Textes :
 `apps/web/src/lib/i18n/upcoming.ts`, dans les cinq langues.
 
 **Lien** : `/`, l'accueil de l'espace, ouvert à l'éditeur comme à la personne responsable.
@@ -35,8 +35,12 @@ Sans séance : `Aucune séance dans les sept prochains jours.` et le lien `Crée
 
 ## Une séance
 
-Le titre, sa marque (`annulée`, `déplacée`, `date exceptionnelle`, `nouvelle heure`), l'heure, la
-salle, l'intervenant et le public, dans la langue de l'écran. Le titre est celui de la langue de
+Le titre, sa marque (`Séance annulée`, `Séance déplacée`, `date exceptionnelle`, `nouvelle heure`),
+l'heure, la salle, l'intervenant et le public, dans la langue de l'écran. L'état d'une carte annulée
+ou partie ailleurs s'écrit avec son propre nom, jamais accordé au titre à côté : `Séance annulée`
+pour un cours, `Session annulée` pour une session du vendredi, et de même `Séance déplacée`,
+`Session déplacée` (étape 20, C4 ; en allemand `Termin` et `Durchgang`, en italien `Lezione` et
+`Turno`, en anglais `Session` pour les deux, en arabe `حصة` et `موعد`). Le titre est celui de la langue de
 l'écran quand le cours y est traduit, sinon celui de sa langue source (étape 19) : `Abendkurs` sur
 un écran allemand, `Cours du soir` sur un écran italien sans traduction italienne. Une session du
 vendredi qui porte le nom proposé par le service prend le nom de la prière dans la langue de
@@ -45,7 +49,8 @@ page publique ni dans le programme de la semaine. Une session du vendredi en bro
 sa propre heure, mais ne donne pas la sienne au Dhuhr : un cours prévu après le Dhuhr a sur sa
 carte l'heure de la page publique et du programme de la semaine, et un déplacement le même jour
 l'annonce « au lieu de » cette heure-là (étape 19, relecture de D4). Une séance déplacée dit
-`Déplacée au mardi 29.09.2026 à 18:00` ; sa nouvelle date dit
+`Séance déplacée au mardi 29.09.2026 à 18:00`, une session du vendredi
+`Session déplacée au samedi 03.10.2026 à 15:00` ; sa nouvelle date dit
 `Prévue à l'origine le lundi 28.09.2026`. Déplacée le même jour à une autre heure, la carte
 d'arrivée porte `nouvelle heure` et `Prévue à l'origine : 19:00 – 20:30`.
 
@@ -74,6 +79,15 @@ pendant qu'une autre personne rétablissait la séance puis la changeait de nouv
 changement, même quand il ressemble au premier, une annulation refaite par exemple : elle reçoit le
 refus d'une carte périmée, plus bas.
 
+**Une séance déplacée dont la date prévue est passée** (étape 20, C2, décision du chef de projet),
+strictement avant aujourd'hui : sa carte `date exceptionnelle` n'a plus `Rétablir la séance`, qui
+la ramenait à une date passée et la faisait disparaître sans message. Elle a un repli `Annuler`,
+fermé au chargement, avec `Sa date prévue est déjà passée : la séance ne peut plus avoir lieu à
+cette date. Une fois annulée, elle ne pourra pas être rétablie.` et le bouton `Annuler cette
+séance`. Le formulaire envoie ce que la carte montrait, comme `Rétablir la séance`. Annulée, la
+séance reste sur sa nouvelle date, marquée `Séance annulée`, sans bouton. Une séance déplacée dont
+la date prévue est aujourd'hui ou plus tard garde `Rétablir la séance` seul.
+
 ## Après un geste
 
 Un titre qui dit ce qui s'est passé : `La séance est annulée.`, `La séance est déplacée.`,
@@ -85,7 +99,10 @@ est traduit quand il l'est. Un déplacement le même jour se dit comme un change
 une seule fois : `Le cours « Cours du soir » du mardi 29.09.2026 commence à 20:30 au lieu de
 19:00.` Une session du vendredi a ses propres mots (étape 19) : `« Prière du vendredi » : la prière
 du vendredi 02.10.2026 est annulée.`, puis `Les autres prières du vendredi ont lieu comme
-d'habitude.`, et de même pour un déplacement ou un changement d'heure.
+d'habitude.`, et de même pour un déplacement ou un changement d'heure. L'annulation d'une séance
+déplacée dont la date prévue est passée nomme sa nouvelle date et sa nouvelle heure, celles que la
+communauté attend (étape 20) : `Le cours « Cours du soir » du mercredi 30.09.2026 à 20:30 est
+annulé.`
 
 Les erreurs d'un déplacement s'affichent dans la carte concernée, rouverte, au-dessus des champs, et
 la saisie est gardée :
@@ -124,7 +141,8 @@ page. Rien n'a été enregistré. Si le message n'a pas encore été envoyé, il
   la même séance annulée une seconde fois, par une autre personne ou depuis une page restée
   ouverte. Rien ne s'écrit, mais le titre `La séance est annulée.` et le message prêt à coller
   suivent, dans chaque langue publiée : la personne ne sait pas si la communauté a déjà été
-  prévenue (étape 19).
+  prévenue (étape 19). De même pour `Annuler cette séance` d'une séance déplacée, depuis l'étape 20 :
+  la phrase nomme alors sa nouvelle date.
 - `La séance « Cercle de lecture » du lundi 28.09.2026 a déjà été rétablie depuis l'ouverture de la
 page. Rien n'a été enregistré. Le programme ci-dessous est à jour.` : `Rétablir la séance` touché
   sur une page restée ouverte, après qu'une autre personne ou un autre onglet l'a déjà rétablie.
@@ -139,8 +157,20 @@ Le programme ci-dessous est à jour.` (400) : annuler ou déplacer une séance u
   l'écran ou plus loin : une séance de la semaine suivante s'annule toujours. Avant, l'action
   acceptait toute date à partir d'aujourd'hui, répondait `La séance est annulée.` et gardait une
   exception qui ne tombe sur aucune séance. Une séance arrivée d'un autre jour, la carte
-  `date exceptionnelle`, se rétablit, et ne s'annule ni ne se déplace sous ce jour-là, où le calcul
-  ignorerait l'exception : l'envoi reçoit le refus d'une carte périmée, plus haut.
+  `date exceptionnelle`, se rétablit, ou, sa date prévue passée, s'annule à sa nouvelle date ; elle
+  ne s'annule ni ne se déplace sous ce jour-là, où le calcul ignorerait l'exception : l'envoi reçoit
+  le refus d'une carte périmée, plus haut.
+- `La séance « Cours du soir » du lundi 21.09.2026 ne peut plus être rétablie : cette date est
+passée. Rien n'a été enregistré. Le programme ci-dessous est à jour.` (400) : `Rétablir la séance`
+  vers une date prévue déjà passée, d'une page restée ouverte depuis la veille ou d'un formulaire
+  écrit à la main. Rien ne s'écrit, pas même au journal (étape 20).
+- `Cette séance est déjà passée : vous ne pouvez annuler ou déplacer que les séances d'aujourd'hui
+et des jours suivants.` (400) : annuler ou déplacer une séance dont la date est passée, ou annuler
+  une séance déplacée dont la nouvelle date est passée. Déplacer une séance dont la date prévue est
+  passée est refusé depuis l'étape 20, comme l'annuler.
+- `La date prévue de cette séance n'est pas encore passée : « Rétablir la séance » la remet à cette
+date. Rien n'a été enregistré.` (400) : `Annuler cette séance` envoyé pour une séance déplacée dont
+  la date prévue n'est pas passée, qu'aucune carte ne propose (étape 20).
 - `Cette séance n'existe plus. La liste ci-dessous est à jour.` : la page renvoyée est déjà à jour,
   et, sans JavaScript, recharger renverrait le formulaire refusé (étape 19).
 - `La date de cette séance n'a pas pu être lue. Rechargez la page, puis recommencez.` : de même

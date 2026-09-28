@@ -56,7 +56,8 @@ remontent donc jamais jusqu'à lui.
 - **Annuler** et **Déplacer** ne visent qu'une séance encore prévue telle quelle. Une page restée
   ouverte qui envoie la carte d'une séance annulée ou déplacée depuis est refusée : rien n'est écrit,
   et l'écran rendu est à jour.
-- **Rétablir** défait l'un comme l'autre.
+- **Rétablir** défait l'un comme l'autre, tant que la date prévue de la séance n'est pas passée
+  (addendum du 28.09.2026).
 - Après une annulation ou un déplacement, **le message prêt à coller s'affiche**. C'est ce que les
   responsables font déjà à la main, dans WhatsApp.
 
@@ -165,18 +166,21 @@ la main peut en envoyer un d'avant, et l'écran l'écrivait.
 Chaque refus a son nom, que l'écran écrit dans la langue de la personne. Ceux des gestes de « Ce
 vendredi » et des boutons d'une session s'affichent en tête de l'écran :
 
-| Refus             | Statut | Quand                                                                                                                                                   |
-| ----------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `changed`         | 409    | la session a déjà été annulée ou déplacée ce jour-là, ici ou sur À venir ; pour Rétablir, la ligne montrait un autre changement, même semblable (lot 2) |
-| `timeChanged`     | 409    | l'heure de la session a changé depuis l'ouverture de la page                                                                                            |
-| `alreadyRestored` | 409    | un second Rétablir : la session n'a plus rien à rétablir ce jour-là (relecture de D2)                                                                   |
-| `unchanged`       | 400    | le déplacement vise le jour et l'heure où la session est déjà prévue                                                                                    |
-| `pastSession`     | 400    | l'annulation d'un jour déjà passé (étape 19, D2)                                                                                                        |
-| `pastDate`        | 400    | un déplacement vers un jour déjà passé (étape 19, lot 2)                                                                                                |
-| `notPlanned`      | 400    | annuler ou déplacer la session un jour où elle n'a pas lieu : un lundi, après sa fin, pendant une pause (lot 3)                                         |
-| `sessionGone`     | 404    | la session n'existe pas, ou plus, ou l'identifiant est celui d'un cours                                                                                 |
-| `dateUnreadable`  | 400    | une date illisible, impossible (un 30 février) ou hors des années 1970 à 2100                                                                           |
-| `timeUnreadable`  | 400    | une heure illisible ou impossible, 25:99 par exemple                                                                                                    |
+| Refus              | Statut | Quand                                                                                                                                                        |
+| ------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `changed`          | 409    | la session a déjà été annulée ou déplacée ce jour-là, ici ou sur À venir ; pour Rétablir, la ligne montrait un autre changement, même semblable (lot 2)      |
+| `timeChanged`      | 409    | l'heure de la session a changé depuis l'ouverture de la page                                                                                                 |
+| `alreadyRestored`  | 409    | un second Rétablir : la session n'a plus rien à rétablir ce jour-là (relecture de D2)                                                                        |
+| `alreadyCancelled` | 409    | une seconde annulation d'une session déplacée dont le jour prévu est passé : le message à copier est rendu quand même (étape 20)                             |
+| `unchanged`        | 400    | le déplacement vise le jour et l'heure où la session est déjà prévue                                                                                         |
+| `pastSession`      | 400    | l'annulation d'un jour déjà passé (étape 19, D2), le déplacement d'une session dont le jour prévu est passé, ou son annulation vers un jour passé (étape 20) |
+| `pastOrigin`       | 400    | Rétablir vers un jour prévu déjà passé (étape 20)                                                                                                            |
+| `originNotPast`    | 400    | l'annulation d'une session déplacée dont le jour prévu n'est pas passé : sa ligne a Rétablir (étape 20)                                                      |
+| `pastDate`         | 400    | un déplacement vers un jour déjà passé (étape 19, lot 2)                                                                                                     |
+| `notPlanned`       | 400    | annuler ou déplacer la session un jour où elle n'a pas lieu : un lundi, après sa fin, pendant une pause (lot 3)                                              |
+| `sessionGone`      | 404    | la session n'existe pas, ou plus, ou l'identifiant est celui d'un cours                                                                                      |
+| `dateUnreadable`   | 400    | une date illisible, impossible (un 30 février) ou hors des années 1970 à 2100                                                                                |
+| `timeUnreadable`   | 400    | une heure illisible ou impossible, 25:99 par exemple                                                                                                         |
 
 Ceux du formulaire d'une session, à l'ajout comme à la modification, restent dans ce formulaire,
 avec la saisie :
@@ -246,7 +250,8 @@ que si elle a supprimé une ligne, comme pour Publier et Supprimer.
 - **Une carte « date exceptionnelle » a « Rétablir »**. Elle envoie la date prévue de la séance,
   celle que garde le changement, qui n'est pas toujours à l'écran : une séance peut être avancée
   de loin. Une séance qui n'a changé que d'heure garde un seul « Rétablir », sur la carte de son
-  heure prévue, le même jour.
+  heure prévue, le même jour. Quand la date prévue est passée, la carte propose « Annuler cette
+  séance » à la place (addendum du 28.09.2026).
 - **Le refus d'une carte périmée nomme la séance**, par son titre et sa date : `changed` et
   `timeChanged`, et `alreadyCancelled` et `alreadyRestored`, ci-dessous. Le titre, saisi par une
   personne, est isolé dans la phrase comme sur la carte (`<bdi>`, ADR 0007) : l'action rend le
@@ -375,7 +380,8 @@ Le lot 1 a laissé trois défauts, relevés par sa relecture et corrigés ici.
 - **La ligne « Nouvelle date, à la place du … » de l'écran du vendredi a « Rétablir comme
   d'habitude »**, comme la carte « date exceptionnelle » d'« À venir » : elle vise le vendredi d'où
   vient la session. Un changement d'heure le même jour garde un seul bouton, sur la ligne de l'heure
-  habituelle.
+  habituelle. Quand ce vendredi est passé, la ligne propose « Annuler cette session » à la place
+  (addendum du 28.09.2026).
 
 ### Addendum du 27.09.2026 : les reprises du lot 3 (étape 19)
 
@@ -415,15 +421,65 @@ Deux défauts relevés par les chantiers du lot 2, chacun prouvé d'abord par so
   de la semaine suivante s'annule et se déplace toujours. Une séance arrivée d'un autre jour compte
   comme une séance, et ne reçoit donc pas cette phrase, mais elle ne s'annule ni ne se déplace sous
   ce jour-là : son exception y serait écrite là où le rythme n'a pas de séance, et le calcul
-  l'ignorerait. Sa carte n'a que « Rétablir », et l'envoi reçoit le refus d'une carte périmée
-  (`changed`, 409), comme une séance qui n'est plus prévue telle quelle. L'heure prévue qui sert à
+  l'ignorerait. Sa carte a « Rétablir », ou, sa date prévue passée, « Annuler cette séance »
+  (addendum du 28.09.2026), et l'envoi d'une annulation ou d'un déplacement sous ce jour-là reçoit
+  le refus d'une carte périmée (`changed`, 409), comme une séance qui n'est plus prévue telle quelle. L'heure prévue qui sert à
   refuser un déplacement sans changement, ou une carte dont l'heure a changé, reste celle des sept
   jours de l'écran, comme l'a décidé l'étape 18.
 
   Rétablir ne change pas : un jour sans exception n'a rien à rétablir, et rien ne s'écrit depuis le
   lot 1 (`alreadyRestored`, 409). Un test le prouve maintenant sur les deux écrans, pour un jour où
   le cours n'a pas de séance. Un « Rétablir » sur une nouvelle date dont la date d'origine est
-  passée reste tel quel : il attend une décision.
+  passée est refusé depuis l'étape 20 : voir l'addendum suivant.
+
+### Addendum du 28.09.2026 : une séance déplacée dont la date prévue est passée (étape 20, C2)
+
+Décision du chef de projet. « Rétablir » ramenait une séance déplacée à sa date prévue, même
+passée : elle disparaissait de l'écran et de la page publique, sans message pour la communauté,
+qui l'attendait à sa nouvelle date.
+
+- **Le modèle.** Une exception se range sous la date prévue de la séance. Remplacer le déplacement
+  par une annulation ordinaire aurait retiré la séance de sa nouvelle date, sans marque. Une
+  annulation peut donc garder le jour et l'heure où la séance avait été déplacée (migration 0075) :
+  `@jadwal/core` la dit partie ailleurs à sa date prévue et annulée à sa nouvelle date. L'écran, la
+  page publique et le programme de la semaine la montrent annulée à cette date, et le flux agenda la
+  retire comme une annulation.
+- **Rétablir est refusé** vers une date prévue déjà passée, strictement avant aujourd'hui dans le
+  fuseau de l'organisation, sur les deux écrans (`pastOrigin`) : rien ne s'écrit, pas même au
+  journal. La carte d'« À venir », ou la ligne de l'écran du vendredi, d'une séance déplacée dont la
+  date prévue est passée n'a plus de bouton « Rétablir ». Une séance déplacée dont la date prévue
+  est aujourd'hui ou plus tard garde « Rétablir » seul, comme avant.
+- **Le nouveau geste.** Cette carte propose « Annuler cette séance », « Annuler cette session » sur
+  l'écran du vendredi, derrière des options fermées (« Annuler »), avec une aide : la date prévue
+  est passée, et une séance annulée ne pourra pas être rétablie. L'action `annulerDeplacee`,
+  distincte d'`annuler`, reçoit ce que la carte montrait, comme Rétablir : l'exception, le jour et
+  l'heure d'arrivée. Dans une transaction, elle remplace ce déplacement par une annulation qui les
+  garde, avec un nouvel identifiant, puisque le service ne modifie jamais une exception
+  (`cancelMoved`). Le journal garde `exception.cancel`, avec le déplacement avant et l'annulation
+  après. La page dit que c'est fait et donne le message à copier, dans chaque langue publiée, la
+  langue du cours d'abord : il nomme la nouvelle date et la nouvelle heure, qui n'est pas celle du
+  rythme. L'écran du vendredi gagne ce bloc de messages pour ce geste seul ; son annulation
+  ordinaire reste sans message. Une seconde demande n'écrit rien et rend le message quand même,
+  comme une seconde annulation (D4). La séance annulée reste sur la carte de sa nouvelle date,
+  marquée annulée, sans « Rétablir ».
+- **Déplacer** une séance dont la date prévue est passée est refusé aussi, sur les deux écrans
+  (`pastSession`), comme l'annuler l'était déjà : c'était l'autre chemin vers ce cas. La phrase de
+  ce refus dit désormais les deux gestes.
+
+Les refus de ces gestes, sur les deux écrans. Sur « À venir », `pastOrigin`, `changed` et
+`alreadyCancelled` nomment la séance, par son titre et sa date ; rien ne s'écrit, pas même au
+journal.
+
+| Geste                | Refus                                                                     | Statut | Quand                                                                                     |
+| -------------------- | ------------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------- |
+| Rétablir             | `pastOrigin`                                                              | 400    | la date prévue est passée                                                                 |
+| Déplacer             | `pastSession`                                                             | 400    | la date prévue est passée                                                                 |
+| Annuler cette séance | `originNotPast`                                                           | 400    | la date prévue n'est pas passée : aucune carte ne l'envoie, elle a Rétablir               |
+| Annuler cette séance | `pastSession`                                                             | 400    | la nouvelle date est passée                                                               |
+| Annuler cette séance | `alreadyCancelled`                                                        | 409    | déjà annulée à la même date et à la même heure ; le message est rendu                     |
+| Annuler cette séance | `changed`                                                                 | 409    | la séance a changé autrement depuis l'ouverture de la page                                |
+| Annuler cette séance | `unreadableDate` (À venir), `dateUnreadable`, `timeUnreadable` (vendredi) | 400    | une date ou une heure manque ou est illisible : la carte n'envoie pas ce qu'elle montrait |
+| Annuler cette séance | `sessionGone`                                                             | 404    | le cours ou la session n'existe pas, ou plus                                              |
 
 ## Statut
 
@@ -437,3 +493,5 @@ d'« À venir » ; au lot 2, les écrans des cours, puis Rétablir qui envoie l'
 montrait, et l'écran du vendredi qui refuse un jour passé et rétablit une nouvelle date ; au lot 3,
 les champs de l'horaire d'un cours, exigés et bornés selon le choix seulement avec JavaScript, et
 les deux écrans qui refusent d'annuler ou de déplacer une séance un jour où le cours n'en a pas.
+Complété le 28.09.2026 (étape 20) : une séance déplacée dont la date prévue est passée ne se
+rétablit plus, elle s'annule à sa nouvelle date, avec son message.

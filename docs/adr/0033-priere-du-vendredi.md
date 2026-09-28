@@ -116,9 +116,10 @@ Décrit écran par écran dans `docs/maquettes/public-vendredi.md` et
 ## Addendum du 27.09.2026 : le type d'une ligne ne change pas
 
 Un cours reste un cours, et une session reste une session. Depuis la migration 0065, la suppression
-d'un cours est réservée à la personne responsable, et celle d'une session reste ouverte à l'éditeur,
-qui la fait depuis l'écran Vendredi (ADR 0046). La modification reste ouverte à tout membre : sans
-autre règle, une éditrice faisait d'un cours une session par un appel direct, puis la supprimait.
+d'un cours est réservée à la personne responsable ; celle d'une session restait ouverte à l'éditeur,
+qui la faisait depuis l'écran Vendredi (ADR 0046), jusqu'à la migration 0073 (addendum du
+28.09.2026). La modification reste ouverte à tout membre : sans autre règle, une éditrice faisait
+d'un cours une session par un appel direct, puis la supprimait.
 
 Le déclencheur `course_kind_fixed` (migration 0069) refuse que le type d'une ligne change, pour tous
 les rôles. Aucun écran ne le faisait volontairement : l'écran Vendredi ne modifie qu'une session.
@@ -186,9 +187,26 @@ La liste du formulaire d'un cours, elle, ne change pas : les langues d'enseignem
 restent celles que l'organisation publie.
 
 **L'écran du vendredi, à la suite du lot 1.** Déplacer refuse un jour passé, comme « À venir » ; la
-ligne d'une session arrivée d'un autre jour a son « Rétablir » ; et chaque « Rétablir » envoie ce que
-sa ligne montrait, pour qu'une page restée ouverte n'efface pas un changement fait depuis (addendum
-du même jour de l'ADR 0021).
+ligne d'une session arrivée d'un autre jour a son « Rétablir », sauf, depuis l'étape 20, quand son
+vendredi prévu est passé (addendum du 28.09.2026) ; et chaque « Rétablir » envoie ce que sa ligne
+montrait, pour qu'une page restée ouverte n'efface pas un changement fait depuis (addendum du même
+jour de l'ADR 0021).
+
+## Addendum du 28.09.2026 : supprimer une session, et une session déplacée depuis un vendredi passé (étape 20)
+
+**Supprimer une session est réservé à la personne responsable** (décision C3 du chef de projet),
+comme supprimer un cours. La politique `course_delete` perd sa branche `kind = 'jumua'` (migration
+0073), l'action `supprimer` de l'écran passe par la garde du responsable (l'éditeur est renvoyé à
+l'accueil, et rien ne s'écrit), et le bouton « Supprimer cette session » n'est rendu que pour lui.
+L'éditeur garde les autres gestes de l'écran : ajouter une session, la modifier, la publier,
+l'annuler, la déplacer et la rétablir. L'écran Membres range ce geste parmi ceux du responsable,
+« Supprimer une prière du vendredi » (ADR 0046). Le déclencheur `course_kind_fixed` reste : il
+tient toujours le type d'une ligne.
+
+**Une session déplacée depuis un vendredi passé** (décision C2) ne se rétablit plus sur ce vendredi,
+ni ne se déplace de nouveau : sa ligne propose « Annuler cette session », qui l'annule à sa nouvelle
+date et donne le message à copier, le seul que rend cet écran. Le détail, et les refus de ces
+gestes, sont dans l'addendum du même jour de l'ADR 0021.
 
 ## Statut
 
@@ -196,4 +214,5 @@ Accepté, 2026-09-21. Étape 8 de la feuille de route. Complète l'ADR 0003 (ré
 (ancrage sur une prière). Complété le 27.09.2026 (étape 19) : le type d'une ligne ne change pas ; les
 mots d'une session dans les messages prêts à coller, les refus de son écran, et une session en
 brouillon qui ne remplace pas le Dhuhr ; puis au lot 2, la langue du sermon parmi toutes les
-langues d'enseignement.
+langues d'enseignement. Complété le 28.09.2026 (étape 20) : supprimer une session est réservé au
+responsable, et une session déplacée depuis un vendredi passé s'annule à sa nouvelle date.

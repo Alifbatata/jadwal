@@ -2,7 +2,8 @@
 
 **Lien** : `/vendredi`, dans la navigation de l'espace des responsables sous le nom
 `Prière du vendredi`, le titre même de l'écran (étape 18). L'écran n'existe que si les heures de
-prière sont activées ; un éditeur y a accès comme une personne responsable.
+prière sont activées ; un éditeur y a accès comme une personne responsable, sauf pour supprimer une
+session, réservé à la personne responsable depuis l'étape 20.
 
 Un écran distinct de la liste des cours, pour une raison simple : une organisation y vient deux fois
 par an, au changement de saison, et elle ne doit pas avoir à chercher ses sessions parmi vingt cours.
@@ -61,9 +62,10 @@ Jusqu'au mercredi 25.11.2026
 - **Modifier cette session** ouvre le formulaire rempli.
 - **Supprimer cette session** ouvre un avertissement : `Elle disparaîtra de cet écran et de votre
 page publique, pour tous les vendredis. Pour un seul vendredi, annulez-la plutôt dans « Ce
-vendredi », plus bas.`, puis `Oui, supprimer`. Un éditeur le peut comme une personne responsable :
-  depuis l'étape 19, la base réserve la suppression d'un cours à la personne responsable, mais pas
-  celle d'une session du vendredi (migration 0065).
+vendredi », plus bas.`, puis `Oui, supprimer`. Ce repli n'est rendu que pour la personne
+  responsable : depuis l'étape 20, la base lui réserve la suppression d'une session du vendredi,
+  comme celle d'un cours (migrations 0065 et 0073), et l'action renvoie un éditeur à l'accueil sans
+  rien supprimer. Un éditeur voit la carte sans `Supprimer cette session`.
 
 ## Ajouter ou modifier une session
 
@@ -132,10 +134,21 @@ Cette session seulement. Les autres vendredis ne changent pas.
 - Une session annulée porte `Annulée ce jour-là`, une session déplacée
   `Déplacée au samedi 03.10.2026 à 15:00`, et sa nouvelle date
   `Nouvelle date, à la place du vendredi 02.10.2026`. Les trois ont le bouton
-  `Rétablir comme d'habitude` ; celui de la nouvelle date défait le déplacement du vendredi d'où
+  `Rétablir comme d'habitude`, sauf une nouvelle date dont le vendredi prévu est passé (plus bas) ;
+  celui de la nouvelle date défait le déplacement du vendredi d'où
   elle vient, même quand ce vendredi n'est plus à l'écran. Une session déplacée le même jour à une
   autre heure garde un seul bouton, sur la ligne de son heure habituelle, comme sur `À venir`.
   Jusqu'à l'étape 19 (lot 2), la ligne de la nouvelle date n'avait pas de bouton.
+- **Une session déplacée dont le vendredi prévu est passé** (étape 20, décision du chef de projet),
+  strictement avant aujourd'hui : sa ligne `Nouvelle date, à la place du …` n'a plus `Rétablir
+comme d'habitude`, qui la ramenait à un vendredi passé et la faisait disparaître sans message.
+  Elle a un repli `Annuler`, fermé au chargement, avec `Son jour prévu est déjà passé : la session
+ne peut plus avoir lieu ce jour-là. Une fois annulée, elle ne pourra pas être rétablie.` et le
+  bouton `Annuler cette session`. Le formulaire envoie ce que la ligne montrait. Annulée, la
+  session reste sur la ligne de sa nouvelle date, `Annulée ce jour-là`, sans bouton ; l'écran dit
+  `La session est annulée à sa nouvelle date. Les autres vendredis ne changent pas.` et donne le
+  message à copier (plus bas). Une session déplacée dont le vendredi prévu est aujourd'hui ou plus
+  tard garde `Rétablir comme d'habitude` seul.
 - Chaque `Rétablir comme d'habitude` envoie ce que sa ligne montrait : l'annulation ou le
   déplacement lui-même, par son identifiant, et pour un déplacement son jour et son heure. Une page
   restée ouverte, après qu'une autre personne a rétabli la session puis l'a de nouveau annulée ou
@@ -158,7 +171,9 @@ Cette session seulement. Les autres vendredis ne changent pas.
   un jour d'arrivée passé : sa liste de jours commence aujourd'hui, mais un formulaire écrit à la
   main, ou la page d'une semaine d'avant, peut en envoyer un. Jusqu'à l'étape 19 (lot 2), il
   l'écrivait ; `À venir` le refusait déjà. Une session déjà annulée ou déplacée ce jour-là reçoit le
-  refus d'une page restée ouverte avant celui d'un jour passé : elle n'a rien à corriger.
+  refus d'une page restée ouverte avant celui d'un jour passé : elle n'a rien à corriger. Depuis
+  l'étape 20, `Déplacer` refuse aussi une session dont le jour prévu est passé, comme `Annuler`, et
+  `Rétablir comme d'habitude` un jour prévu déjà passé.
 - `Annuler` et `Déplacer` refusent un jour où la session n'a pas lieu : un lundi, un vendredi
   avant son début ou après sa date de fin, ou un vendredi dans une pause, de la session ou de toute
   l'organisation (étape 19, lot 3). Aucune ligne ne l'envoie, mais un formulaire écrit à la main
@@ -166,8 +181,9 @@ Cette session seulement. Les autres vendredis ne changent pas.
   une exception qui ne tombe sur aucune séance. Rien ne s'écrit désormais, pas même au journal.
   Les séances comptent comme l'écran et `À venir` les montrent, par le même calcul, que le jour
   soit dans les sept jours de l'écran ou plus loin. Une session arrivée d'un autre jour, la ligne
-  `Nouvelle date, à la place du …`, se rétablit, et ne s'annule ni ne se déplace sous ce jour-là :
-  l'envoi reçoit le refus d'une ligne périmée.
+  `Nouvelle date, à la place du …`, se rétablit, ou, son vendredi prévu passé, s'annule à sa
+  nouvelle date ; elle ne s'annule ni ne se déplace sous ce jour-là : l'envoi reçoit le refus d'une
+  ligne périmée.
 - `Rétablir comme d'habitude`, `Publier`, `Retirer de la page publique` et `Oui, supprimer`
   répondent `Cette session n'existe plus` à une session supprimée entre-temps, ou à un cours, et
   n'écrivent rien, pas même au journal. Avant l'étape 19, ils disaient l'avoir fait, et
@@ -189,8 +205,19 @@ Une phrase par geste, au lieu d'un « Enregistré. » unique :
 - `La session est publiée : elle s'affiche sur votre page publique.` ;
 - `La session est retirée de votre page publique. Elle reste ici, en brouillon.` ;
 - `La session est annulée pour ce vendredi. Les autres vendredis ne changent pas.` ;
+- `La session est annulée à sa nouvelle date. Les autres vendredis ne changent pas.` : une session
+  déplacée dont le vendredi prévu est passé (étape 20) ;
 - `La session est déplacée pour ce vendredi. Les autres vendredis ne changent pas.` ;
 - `La session retrouve son jour et son heure habituels.`
+
+Après l'annulation d'une session déplacée dont le vendredi prévu est passé, et seulement après ce
+geste, l'écran donne le message à copier (étape 20) : `Un message à envoyer à votre communauté, par
+exemple dans WhatsApp. Il est écrit dans chaque langue de votre page publique : ouvrez une langue,
+puis copiez son texte.`, puis un repli par langue publiée, le premier ouvert, chacun avec sa zone
+`Message à copier`, comme sur `À venir`. Le message nomme la nouvelle date et la nouvelle heure :
+`« Prière du vendredi » : la prière du samedi 03.10.2026 à 15:00 est annulée.`, puis `Les autres
+prières du vendredi ont lieu comme d'habitude.` L'annulation ordinaire d'une session, pour ce
+vendredi, reste sans message.
 
 Les erreurs disent quoi faire : `L'heure de fin doit venir après l'heure de début.`,
 `Donnez une heure de début et une heure de fin. Exemple : 12:10 et 12:50.`,
@@ -211,8 +238,18 @@ nouvelle heure est écrite plus bas, dans « Ce vendredi » : vérifiez le jour 
 puis recommencez.` ;
 - `La session est déjà prévue ce jour-là à cette heure : rien n'a été déplacé. Choisissez une autre
 heure ou un autre jour dans « Ce vendredi », plus bas.` ;
-- `Cette session est déjà passée : vous ne pouvez annuler que les sessions d'aujourd'hui et des
-jours suivants.` (étape 19) ;
+- `Cette session est déjà passée : vous ne pouvez annuler ou déplacer que les sessions
+d'aujourd'hui et des jours suivants.` (étape 19 ; depuis l'étape 20, aussi pour déplacer une
+  session dont le jour prévu est passé, ou pour annuler une session déplacée vers un jour passé) ;
+- `Le jour prévu de cette session est déjà passé : elle ne peut plus être rétablie. Rien n'a été
+enregistré. La partie « Ce vendredi », plus bas, est à jour.` : `Rétablir comme d'habitude` vers un
+  vendredi prévu déjà passé (étape 20) ;
+- `Le jour prévu de cette session n'est pas encore passé : « Rétablir comme d'habitude » la remet à
+ce jour. Rien n'a été enregistré.` : `Annuler cette session` envoyé pour une session déplacée dont
+  le vendredi prévu n'est pas passé, qu'aucune ligne ne propose (étape 20) ;
+- `Cette session a déjà été annulée depuis l'ouverture de la page. Rien n'a été enregistré. Si le
+message n'a pas encore été envoyé, il est prêt ci-dessous.` : une seconde annulation d'une session
+  déplacée dont le vendredi prévu est passé ; le message à copier suit quand même (étape 20) ;
 - `Ce jour est déjà passé : rien n'a été déplacé. Choisissez aujourd'hui ou un jour suivant dans
 « Ce vendredi », plus bas.` : un déplacement vers un jour passé (étape 19, lot 2) ;
 - `Cette session n'a pas lieu ce jour-là. Rien n'a été enregistré. La partie « Ce vendredi », plus
@@ -223,7 +260,8 @@ bas, est à jour.` : annuler ou déplacer la session un jour où elle n'a pas li
 partie « Ce vendredi », plus bas, est à jour.` : un second `Rétablir comme d'habitude`, qui n'a
   plus rien à rétablir (étape 19, relecture de D2).
 
-La liste des refus de l'écran, avec leur statut, est dans l'addendum du 27.09.2026 de l'ADR 0021.
+La liste des refus de l'écran, avec leur statut, est dans l'addendum du 27.09.2026 de l'ADR 0021,
+complété le 28.09.2026 (étape 20).
 
 ## Dans les messages d'« À venir »
 

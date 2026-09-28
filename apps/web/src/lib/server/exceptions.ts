@@ -110,7 +110,7 @@ export async function restore(
 /**
  * Annule une séance déplacée à sa nouvelle date (étape 20, C2) : le déplacement que la carte montrait
  * est remplacé, dans la même transaction, par une annulation qui garde le jour et l'heure d'arrivée
- * (migration 0075). La séance reste ainsi sur sa nouvelle date, annulée, et sa date prévue la dit
+ * (migration 0075). La séance reste donc sur sa nouvelle date, annulée, et sa date prévue la dit
  * partie ailleurs. Le service ne modifie jamais une exception : l'annulation est une nouvelle ligne,
  * avec un nouvel identifiant, écrite par la personne qui annule.
  *

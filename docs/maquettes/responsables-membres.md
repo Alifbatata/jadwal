@@ -44,7 +44,7 @@ Sous le choix du rôle, deux listes, qu'une personne lit au moment de choisir.
 - Créer un cours, le modifier et le publier
 - Poser une pause, par exemple pendant les vacances, puis la retirer
 - Quand les heures de prière sont activées : ajouter une prière du vendredi, la modifier, la
-  publier, l'annuler, la déplacer ou la supprimer
+  publier, l'annuler ou la déplacer
 - Partager le programme : le lien, le code QR et le code à coller sur un site
 - Choisir la langue de son espace
 - Passer d'une organisation à l'autre, quand on est membre de plusieurs
@@ -54,6 +54,7 @@ Sous le choix du rôle, deux listes, qu'une personne lit au moment de choisir.
 **Réservé au responsable, en plus de tout ce que fait un éditeur**
 
 - Supprimer un cours
+- Supprimer une prière du vendredi
 - Voir les membres, leur rôle et les invitations en attente
 - Inviter une personne, comme éditeur ou comme responsable, et annuler une invitation
 - Changer le rôle d'un membre
@@ -74,7 +75,11 @@ montre : il nomme les membres et les personnes invitées. Depuis le lot 1 de l'�
 aussi la suppression d'un cours à la personne responsable (migration 0065) ; depuis le lot 2, l'écran
 Cours la lui propose, et la ligne `Supprimer un cours` ouvre la liste, comme l'écran Cours ouvre la
 navigation. Jusqu'au lot 4 de l'étape 18, la ligne des cours de l'éditeur disait aussi « et le
-supprimer » : l'éditeur ne peut pas supprimer un cours, et ces mots sont retirés de sa liste. La
+supprimer » : l'éditeur ne peut pas supprimer un cours, et ces mots sont retirés de sa liste. De
+même à l'étape 20 pour la prière du vendredi : la base réserve sa suppression à la personne
+responsable (migration 0073), l'écran du vendredi ne propose le bouton qu'à elle, la ligne de
+l'éditeur ne dit plus « ou la supprimer », et `Supprimer une prière du vendredi` suit
+`Supprimer un cours`, comme l'écran du vendredi suit l'écran Cours dans la navigation. La
 liste des membres elle-même, que la ligne « Voir les membres » réserve, l'est aussi dans la base
 depuis l'étape 19 (migration 0064) : un éditeur ne lit plus que sa propre adhésion.
 
