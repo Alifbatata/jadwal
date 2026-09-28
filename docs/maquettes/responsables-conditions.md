@@ -82,7 +82,8 @@ c'est lui qui propose ce texte.
 
 1. Titre de niveau 1 : `Conditions d'utilisation`.
    - Après un envoi de `Ne pas accepter et quitter l'organisation` (étape 20), et là seulement : la
-     demande de confirmation ou le refus, décrits plus bas.
+     demande de confirmation ou le refus, décrits plus bas. Après un envoi qui nommait une autre
+     organisation que celle de la session, de l'un ou l'autre bouton : le refus qui le dit.
 2. Pourquoi l'écran s'affiche :
    `Avant d'entrer dans l'espace de <organisation>, lisez les conditions d'utilisation et
 acceptez-les. Elles disent ce que le service conserve, combien de temps, et ce que l'exploitant peut
@@ -97,13 +98,16 @@ d'essai` (relevé D8 du 27.09.2026, règle de `deDevant` dans `apps/web/src/lib/
    pas à parcourir tout le document pour le trouver.
 5. Le document en entier, sans son titre, que le titre de la page reprend déjà : il commence à
    `Ce texte s'adresse aux organisations […]`.
-6. Le bouton, seul dans son formulaire : `J'accepte les conditions d'utilisation`.
+6. Le bouton `J'accepte les conditions d'utilisation`. Son formulaire porte, dans un champ caché,
+   l'organisation que l'écran nomme. Il a le fond de la couleur d'accent et un bord de la couleur de
+   son texte : noir sur un accent clair, où sans lui le bouton se perdrait dans la page blanche.
 7. Sous le bouton :
    `Tant que vous ne les avez pas acceptées, l'espace de <organisation> reste fermé.`, avec la même
    élision.
-8. Depuis l'étape 20, un second formulaire, au bouton secondaire, blanc et bordé de gris :
-   `Ne pas accepter et quitter l'organisation`. Il porte l'organisation que l'écran nomme, dans un
-   champ caché.
+8. Depuis l'étape 20, un second formulaire : `Ne pas accepter et quitter l'organisation`, un texte
+   souligné, sans bord ni fond, qui garde la hauteur d'un bouton. Il ne ressemble jamais plus à un
+   bouton que celui qui accepte, même sur une couleur d'accent très claire. Il porte la même
+   organisation, dans un champ caché.
 
 ### L'en-tête, pendant ce temps
 
@@ -131,7 +135,8 @@ Il enregistre une ligne : l'organisation, la personne, la version (`2026-09-26` 
 renvoie vers `/`, l'accueil de l'espace. Son action est nommée, `?/accepter`, depuis que l'écran en
 a une seconde.
 
-Un second envoi du même formulaire n'ajoute rien et ne lève rien.
+Un second envoi du même formulaire n'ajoute rien et ne lève rien. Il n'accepte que pour
+l'organisation que l'écran nomme : voir plus bas « Une autre organisation choisie ailleurs ».
 
 Quand le texte change de version, c'est-à-dire quand sa date de mise à jour change, chacun repasse
 par cet écran à sa prochaine entrée.
@@ -159,10 +164,24 @@ Pour y revenir, il faudra qu'une personne responsable vous invite de nouveau.`, 
 d'abord les conditions, puis, dans l'écran Membres, donnez le rôle de responsable à un autre membre
 ou invitez une personne comme responsable.` La phrase de « Vos organisations » dit « ouvrez-la »,
   ce qui la ramènerait ici.
-- **Un formulaire trafiqué**, qui nomme une organisation dont la personne n'est pas membre ou aucun
-  identifiant lisible : `Vous n'êtes pas membre de cette organisation.`, au même endroit, et rien ne
-  change.
-- **Une personne qui a déjà accepté** est renvoyée vers `/`, sans que rien ne soit supprimé.
+- **Une personne qui a déjà accepté** dans l'organisation de sa session est renvoyée vers `/`, sans
+  que rien ne soit supprimé.
+
+### Une autre organisation choisie ailleurs (étape 20)
+
+Les deux formulaires portent l'organisation que l'écran nomme. Le serveur la compare à celle de la
+session. Si elles diffèrent, parce qu'un autre onglet a choisi une autre organisation depuis
+l'affichage, ou parce que le formulaire est trafiqué (une autre organisation, aucun identifiant
+lisible), rien n'est accepté ni supprimé. L'écran revient, rendu pour l'organisation de la session,
+avec en haut, après le titre et avant le texte des conditions, un encadré rouge annoncé
+(`role="alert"`) :
+
+`Depuis l'ouverture de la page, vous avez choisi une autre organisation, peut-être dans un autre
+onglet. Rien n'a été enregistré.`, puis `La page concerne maintenant cette organisation :` et son
+nom.
+
+Quand l'organisation de la session est déjà acceptée, la porte renvoie vers `/` avant toute
+comparaison : rien n'est fait, et rien ne le dit.
 
 ## Les titres manquants, relevés par axe
 

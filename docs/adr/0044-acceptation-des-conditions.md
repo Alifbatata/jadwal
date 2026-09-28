@@ -105,14 +105,25 @@ organisation` ne paraît qu'à qui a plusieurs organisations ou une invitation q
 personne d'une seule organisation n'atteignait « Vos organisations » que par l'arrivée d'un lien de
 connexion, ou par l'adresse tapée à la main.
 
-L'écran porte donc, sous le bouton qui accepte et la phrase qui le suit, un second formulaire, au
-bouton secondaire : `Ne pas accepter et quitter l'organisation`, dans les cinq langues. Il vise
-l'organisation que l'écran nomme, par un champ caché que le serveur revérifie : une session changée
-dans un autre onglet ne fait pas quitter une autre organisation.
+L'écran porte donc, sous le bouton qui accepte et la phrase qui le suit, un second formulaire :
+`Ne pas accepter et quitter l'organisation`, dans les cinq langues. Son bouton ne ressemble jamais
+plus à un bouton que celui qui accepte, quelle que soit la couleur d'accent : un texte souligné,
+sans bord ni fond. Le bouton qui accepte a un bord de la couleur de son texte, noir sur un accent
+clair : les réglages acceptent le blanc, et il se perdait alors dans la page.
 
-- **Le chemin de « Vos organisations ».** L'action passe d'abord par la porte de l'écran
-  (`mustHaveTermsToAccept`) : une personne qui a déjà accepté retourne à l'accueil, et rien n'est
-  supprimé. Puis par le module que « Vos organisations » emploie depuis la même étape
+- **L'organisation que l'écran nomme.** Les deux formulaires la portent, dans un champ caché. Chaque
+  action passe d'abord par la porte de l'écran (`mustHaveTermsToAccept`), qui juge l'organisation de
+  la session : sans session, vers `/connexion` ; sans organisation, vers `/organisations` ; une
+  personne qui y a déjà accepté retourne à l'accueil, et rien n'est ajouté ni supprimé. Puis
+  l'action compare l'organisation du formulaire à celle de la session. Si elles diffèrent, parce
+  qu'un autre onglet en a choisi une autre depuis l'affichage ou parce que le formulaire est
+  trafiqué, rien n'est accepté ni supprimé, et l'écran, rendu pour l'organisation de la session, le
+  dit en haut. L'accord et le départ ne visent donc que l'organisation de la session, et seulement
+  si l'écran la nommait. Une limite, voulue : quand l'autre onglet a choisi une organisation où la
+  personne a déjà accepté, la porte la renvoie à l'accueil de celle-ci sans rien dire, puisque rien
+  n'a été fait.
+- **Le chemin de « Vos organisations ».** Le départ passe ensuite par le module que « Vos
+  organisations » emploie depuis la même étape
   (`apps/web/src/routes/organisations/leave.server.ts`) : l'appartenance est revérifiée, le premier
   envoi ne supprime rien et demande une confirmation, la dernière personne responsable est refusée
   avant la confirmation et, par le refus de la base traduit, après elle. Le second envoi supprime
