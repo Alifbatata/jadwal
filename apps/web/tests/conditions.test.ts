@@ -738,6 +738,10 @@ describe('ne pas accepter les conditions, et quitter l’organisation (étape 20
 	const DEJA = 'conditions-deja@example.test';
 	/** Membre de QUITTEE et d'AUTRE, sans avoir accepté dans aucune des deux. */
 	const CHANGE = 'conditions-change@example.test';
+	/** Membre de trois organisations : QUITTEE, où elle n'a pas accepté, GARDEE et AUTRE, où si. */
+	const TROIS = 'conditions-trois@example.test';
+	/** Un compte super-admin, éditeur de QUITTEE : la porte ne l'arrête jamais (ADR 0044). */
+	const EXPLOITANT = 'conditions-exploitant-depart@example.test';
 	const MEMBRES = [
 		[RESTE, QUITTEE.id, 'org_admin'],
 		[RESTE, GARDEE.id, 'org_admin'],
@@ -748,14 +752,20 @@ describe('ne pas accepter les conditions, et quitter l’organisation (étape 20
 		[DEJA, QUITTEE.id, 'editor'],
 		[UNIQUE, SEULE.id, 'org_admin'],
 		[CHANGE, QUITTEE.id, 'editor'],
-		[CHANGE, AUTRE.id, 'editor']
+		[CHANGE, AUTRE.id, 'editor'],
+		[TROIS, QUITTEE.id, 'editor'],
+		[TROIS, GARDEE.id, 'editor'],
+		[TROIS, AUTRE.id, 'editor'],
+		[EXPLOITANT, QUITTEE.id, 'editor']
 	] as const;
 	/** Les adhésions dont la personne a accepté la version en cours. */
 	const ACCEPTEES = [
 		`${RESTE} ${QUITTEE.id}`,
 		`${RESTE} ${AUTRE.id}`,
 		`${DEUX} ${GARDEE.id}`,
-		`${DEJA} ${QUITTEE.id}`
+		`${DEJA} ${QUITTEE.id}`,
+		`${TROIS} ${GARDEE.id}`,
+		`${TROIS} ${AUTRE.id}`
 	];
 	const personnes: Record<string, string> = {};
 	/** Les adhésions, par adresse et par organisation : `adresse organisation`. */
@@ -809,7 +819,9 @@ describe('ne pas accepter les conditions, et quitter l’organisation (étape 20
 
 	beforeAll(async () => {
 		appHandle = createDatabase({ role: 'app', overrides: { database: testDatabase } });
-		for (const email of [SOLO, RESTE, UNIQUE, DEUX, DEJA, CHANGE]) personnes[email] = newId();
+		for (const email of [SOLO, RESTE, UNIQUE, DEUX, DEJA, CHANGE, TROIS, EXPLOITANT]) {
+			personnes[email] = newId();
+		}
 		for (const [email, organisation] of MEMBRES) {
 			adhesions[`${email} ${organisation}`] = newId();
 		}
@@ -824,12 +836,15 @@ describe('ne pas accepter les conditions, et quitter l’organisation (étape 20
 			}
 			for (const [email, id] of Object.entries(personnes)) {
 				await tx.execute(sql`
-					insert into "user" ("id", "email", "email_verified") values (${id}, ${email}, true)
+					insert into "user" ("id", "email", "email_verified", "is_super_admin")
+					values (${id}, ${email}, true, ${email === EXPLOITANT})
 				`);
 			}
 		});
 		for (const [email, organisation, role] of MEMBRES) await remettre(email, organisation, role);
-		for (const email of [SOLO, UNIQUE, DEUX, DEJA, CHANGE]) cookies[email] = await signIn(email);
+		for (const email of [SOLO, UNIQUE, DEUX, DEJA, CHANGE, TROIS, EXPLOITANT]) {
+			cookies[email] = await signIn(email);
+		}
 	});
 
 	afterAll(async () => {
@@ -911,6 +926,12 @@ describe('ne pas accepter les conditions, et quitter l’organisation (étape 20
 			).toBe(303);
 			expect(await organisationDeLaSession(cookie)).toBe(QUITTEE.id);
 			expect((await get('/', cookie)).headers.get('location')).toBe('/conditions/accepter');
+			// Le cas de cet écran : on lui redemande son accord parce que le texte a changé. Sans cette
+			// acceptation, la vérification d'après, « son acceptation part avec elle », passerait à vide.
+			await maintenance((tx) =>
+				tx.execute(conditionsAcceptees(QUITTEE.id, personnes[SOLO] ?? '', '2026-01-01'))
+			);
+			expect(await acceptations(SOLO, QUITTEE.id), 'l’acceptation d’avant le départ').toBe(1);
 
 			const reponse = await postForm(
 				'/conditions/accepter?/quitter',
@@ -1180,6 +1201,92 @@ describe('ne pas accepter les conditions, et quitter l’organisation (étape 20
 			});
 		}
 	);
+
+	it('sends a departure without a session to sign in', async () => {
+		await remettre(SOLO, QUITTEE.id, 'editor');
+		const reponse = await postForm('/conditions/accepter?/quitter', {
+			organizationId: QUITTEE.id,
+			confirm: 'yes'
+		});
+		expect(reponse.status).toBe(303);
+		expect(reponse.headers.get('location')).toBe('/connexion');
+		expect(await roleDans(SOLO, QUITTEE.id)).toBe('editor');
+	});
+
+	it('sends a departure without an organisation to the choice', async () => {
+		const sans = await signIn(SANS_ORGANISATION);
+		const reponse = await postForm(
+			'/conditions/accepter?/quitter',
+			{ organizationId: QUITTEE.id, confirm: 'yes' },
+			sans
+		);
+		expect(reponse.status).toBe(303);
+		expect(reponse.headers.get('location')).toBe('/organisations');
+	});
+
+	it('sends a super-admin who is a member back to the space, and deletes nothing', async () => {
+		// La porte ne l'arrête jamais (ADR 0044) : il n'a rien à refuser, donc rien à quitter d'ici.
+		const reponse = await postForm(
+			'/conditions/accepter?/quitter',
+			{ organizationId: QUITTEE.id, confirm: 'yes' },
+			cookies[EXPLOITANT]
+		);
+		expect(reponse.status).toBe(303);
+		expect(reponse.headers.get('location')).toBe('/');
+		expect(await roleDans(EXPLOITANT, QUITTEE.id)).toBe('editor');
+	});
+
+	it('refuses a departure sent from another site', async () => {
+		await remettre(SOLO, QUITTEE.id, 'editor');
+		const reponse = await fetch(`${origin}/conditions/accepter?/quitter`, {
+			method: 'POST',
+			redirect: 'manual',
+			headers: {
+				'content-type': 'application/x-www-form-urlencoded',
+				accept: 'text/html',
+				origin: 'https://ailleurs.example',
+				cookie: cookies[SOLO] ?? ''
+			},
+			body: new URLSearchParams({ organizationId: QUITTEE.id, confirm: 'yes' }).toString()
+		});
+		expect(reponse.status).toBe(403);
+		expect(await roleDans(SOLO, QUITTEE.id)).toBe('editor');
+	});
+
+	it('leaves one organisation of three, and arrives on the choice of the two others', async () => {
+		await poserLangueDuCompte(TROIS, 'fr');
+		const cookie = cookies[TROIS] ?? '';
+		expect(
+			(await postForm('/organisations?/choisir', { organizationId: QUITTEE.id }, cookie)).status
+		).toBe(303);
+		expect((await get('/', cookie)).headers.get('location')).toBe('/conditions/accepter');
+		const reponse = await postForm(
+			'/conditions/accepter?/quitter',
+			{ organizationId: QUITTEE.id, confirm: 'yes' },
+			cookie
+		);
+		expect(reponse.status).toBe(303);
+		const arrivee = new URL(reponse.headers.get('location') ?? '', origin);
+		expect(`${arrivee.pathname}${arrivee.search}`).toBe(
+			`/organisations?avis=depart&organisation=${QUITTEE.id}`
+		);
+		expect(await roleDans(TROIS, QUITTEE.id)).toBeUndefined();
+		for (const organisation of [GARDEE.id, AUTRE.id]) {
+			expect(await roleDans(TROIS, organisation), organisation).toBe('editor');
+			expect(await acceptations(TROIS, organisation), organisation).toBe(1);
+		}
+		// Deux organisations lui restent, et aucune n'est choisie : l'espace la mène au choix.
+		expect(await organisationDeLaSession(cookie)).toBeNull();
+		expect((await get('/', cookie)).headers.get('location')).toBe('/organisations');
+		const page = await get(`${arrivee.pathname}${arrivee.search}`, cookie);
+		expect(page.status).toBe(200);
+		const html = await page.text();
+		expect(lu(element(html, 'avis-depart'))).toBe(PARTIE.fr);
+		const proposees = [...html.matchAll(/<form\b[^>]*action="\?\/choisir"[^>]*>[\s\S]*?<\/form>/g)]
+			.map(([bloc]) => bloc.match(/name="organizationId" value="([^"]*)"/)?.[1])
+			.sort();
+		expect(proposees).toEqual([GARDEE.id, AUTRE.id].sort());
+	});
 
 	it('draws the button that accepts more than the one that leaves, even on a very light accent', async () => {
 		await remettre(SOLO, QUITTEE.id, 'editor');
