@@ -8351,13 +8351,22 @@ async function devenirEditrice(navigateur, page) {
 			await retour('20-C3', async () => {
 				await ouvrir(page, '/vendredi');
 				await ouvrir(seconde, '/vendredi');
-				const sessions = await page.locator('section.session').count();
+				// Les sections des sessions seules : celle de l'ajout, toujours là, a la même classe, et
+				// aucune suppression. Chaque session porte son titre, `session-<id>`, à l'étape 19 comme à
+				// l'étape 20.
+				const SESSIONS = 'section.session[aria-labelledby^="session-"]';
+				const sessions = await page.locator(SESSIONS).count();
 				const pourLEditrice = await page.locator('form[action="?/supprimer"]').count();
 				const repliDeLEditrice = await page
 					.getByText('Supprimer cette session', { exact: true })
 					.count();
-				const pourLaResponsable = await seconde.locator('form[action="?/supprimer"]').count();
-				const sessionsDeLaResponsable = await seconde.locator('section.session').count();
+				const sessionsDeLaResponsable = await seconde.locator(SESSIONS).count();
+				// Chaque session de la responsable, avec sa suppression et son repli, dans sa section.
+				const pourLaResponsable = await seconde
+					.locator(SESSIONS)
+					.filter({ has: seconde.locator('form[action="?/supprimer"]') })
+					.filter({ has: seconde.getByText('Supprimer cette session', { exact: true }) })
+					.count();
 				verifierChaque(
 					'sur l’écran du vendredi, une éditrice ne voit aucun « Supprimer cette session », et la responsable le voit sur chaque session',
 					{
@@ -8366,7 +8375,7 @@ async function devenirEditrice(navigateur, page) {
 						'« Supprimer cette session » pour la responsable':
 							sessionsDeLaResponsable > 0 && pourLaResponsable === sessionsDeLaResponsable
 					},
-					`${sessions} session(s) ; ${pourLEditrice} suppression(s) offerte(s) à l’éditrice, ${pourLaResponsable} à la responsable`
+					`${sessions} session(s) ; ${pourLEditrice} suppression(s) offerte(s) à l’éditrice, ${pourLaResponsable} session(s) sur ${sessionsDeLaResponsable} à la responsable`
 				);
 			});
 			// La seconde responsable lui rend son rôle.
