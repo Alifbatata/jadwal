@@ -264,6 +264,12 @@
  *   base. Le refus d'un vendredi passé dit qu'une session passée ne s'annule ni ne se déplace ;
  *   19-D2 en garde le début et la fin. Une carte déplacée dont la date prévue est à venir garde
  *   « Rétablir » seul : 19-D4 et 19-retablir-nouvelle-date le vérifient toujours.
+ * - 20-cles : « À venir », avec deux séances annulées d'un même cours le même jour, celle du rythme
+ *   et une séance déplacée là puis annulée, se charge et s'hydrate sans erreur dans la console : le
+ *   routeur de SvelteKit, qui ne démarre qu'une fois la page hydratée, suit un lien de la
+ *   navigation sans recharger la page. Chaque séance y a sa propre clé, sa date prévue comprise.
+ *   Contre l'image de l'étape 19, où une séance déplacée ne s'annule pas à sa nouvelle date, le
+ *   geste est impossible.
  *
  * Supprimer une session du vendredi, réservé au responsable :
  *
@@ -298,7 +304,7 @@
  * - en arabe seul : 20-B1 et 20-B2, les phrases relues ;
  * - en français, en allemand et en arabe : 20-C7 (la connexion en français et en allemand, Membres
  *   en français et en arabe) ;
- * - en français seul : 20-C2, 20-C3, et les marques des cartes d'« À venir » (20-C4).
+ * - en français seul : 20-C2, 20-C3, 20-cles, et les marques des cartes d'« À venir » (20-C4).
  *
  * ## La date figée (étape 19, D9)
  *
@@ -1122,7 +1128,7 @@ const RETOURS_DE_L_ETAPE_19 = [
  * relu (B1, B2), puis les questions de l'étape 19 (C2 à C7). L'en-tête du script dit ce que chacune
  * vérifie.
  */
-const RETOURS_DE_L_ETAPE_20 = ['20-B1', '20-B2', '20-C2', '20-C3', '20-C4', '20-C7'];
+const RETOURS_DE_L_ETAPE_20 = ['20-B1', '20-B2', '20-C2', '20-C3', '20-C4', '20-C7', '20-cles'];
 /** Tous les retours, dans l'ordre du tableau final. */
 const RETOURS = [...RETOURS_DE_L_ETAPE_18, ...RETOURS_DE_L_ETAPE_19, ...RETOURS_DE_L_ETAPE_20];
 /**
@@ -8556,6 +8562,59 @@ async function deplaceeSurLAccueil(page) {
 			`« ${titreDuBloc} » ; ${francais.split('\n').find((ligne) => ligne.includes(nom)) ?? 'aucun message en français'} ; ${uneAnnulee ? await texteDe(annulee) : `${await annulee.count()} carte(s) annulée(s) à ${arrivee}`}`
 		);
 	});
+	// La séance du rythme, le même jour, annulée à son tour, comme à l'étape c : le J4, ce cours a
+	// deux séances annulées, celle du rythme et celle arrivée d'un jour passé.
+	const duRythme = carteDuJour('scheduled');
+	await duRythme.getByText('Annuler ou déplacer', { exact: true }).click();
+	await envoyer(page, boutonsDAnnulationVisibles(duRythme));
+	verifier(
+		`la séance de « ${nom} » du ${dateSuisse(jour)} à ${debut}, celle de son rythme, est annulée`,
+		(await carteDuJour('cancelled')
+			.filter({ hasText: `${debut} – ` })
+			.count()) === 1,
+		`${await carteDuJour('cancelled').count()} carte(s) annulée(s) de « ${nom} » ce jour-là`
+	);
+	// Deux séances annulées d'un même cours, le même jour : l'écran range chacune sous sa propre
+	// clé, sans quoi Svelte refuse la liste à l'hydratation et l'écran ne répond plus (étape 20). Le
+	// routeur de SvelteKit ne démarre qu'une fois la page hydratée : un lien de la navigation suivi
+	// sans recharger la page le prouve. Une ressource que le navigateur ne trouve pas, comme l'icône
+	// qu'il demande de lui-même, n'est pas une erreur de la page.
+	await retour('20-cles', async () => {
+		const erreurs = [];
+		const surErreur = (erreur) => erreurs.push(`exception : ${erreur.message.split('\n')[0]}`);
+		const surConsole = (message) => {
+			if (message.type() === 'error' && !message.text().startsWith('Failed to load resource')) {
+				erreurs.push(`console : ${message.text().split('\n')[0]}`);
+			}
+		};
+		page.on('pageerror', surErreur);
+		page.on('console', surConsole);
+		try {
+			await ouvrir(page, '/');
+			const annulees = await carteDuJour('cancelled').count();
+			if (annulees !== 2) {
+				throw new Error(
+					`deux séances annulées de « ${nom} » le ${dateSuisse(jour)} attendues : ${annulees} à l’écran`
+				);
+			}
+			await page.evaluate(() => {
+				window.parcoursSansRechargement = true;
+			});
+			await naviguer(page, '/partager');
+			const sansRechargement = await page.evaluate(() => window.parcoursSansRechargement === true);
+			verifierChaque(
+				`« À venir », avec deux séances annulées de « ${nom} » le même jour, celle du rythme et une séance déplacée là puis annulée, se charge et s’hydrate sans erreur : rien dans la console, et un lien de la navigation change d’écran sans recharger la page`,
+				{
+					'aucune erreur': erreurs.length === 0,
+					'hydratée : le lien suivi sans recharger la page': sansRechargement
+				},
+				erreurs.join(' | ') || `${annulees} séances annulées, aucune erreur`
+			);
+		} finally {
+			page.off('pageerror', surErreur);
+			page.off('console', surConsole);
+		}
+	});
 	await supprimerLeCours(page, nom, id);
 }
 
@@ -8953,6 +9012,7 @@ B3 | une responsable qui se donne le rôle d’éditeur arrive sur « À venir �
 19-membres-quitter | membre d’une seule organisation, sans invitation qui attende, elle trouve dans la navigation un seul lien vers /organisations, « Vos organisations », dans les cinq langues, à la place de « Changer d’organisation »
 20-C2 | sur « À venir », une séance déplacée dont la date prévue est passée n’a plus « Rétablir la séance » : ses options, fermées sous « Annuler », proposent « Annuler cette séance », avec l’aide qui dit qu’elle ne pourra pas être rétablie
 20-C2 | annulée, elle le dit, « La séance est annulée. », le message à copier nomme sa nouvelle date et sa nouvelle heure, « Le cours « Révision de la semaine » du JOUR JJ.MM.AAAA à 07:00 est annulé. », et sa carte porte « Séance annulée », sans « Rétablir la séance »
+20-cles | « À venir », avec deux séances annulées de « Révision de la semaine » le même jour, celle du rythme et une séance déplacée là puis annulée, se charge et s’hydrate sans erreur : rien dans la console, et un lien de la navigation change d’écran sans recharger la page
 20-C2 | sur l’écran du vendredi, une session déplacée d’un vendredi passé n’a plus « Rétablir comme d’habitude » : ses options, fermées sous « Annuler », proposent « Annuler cette session », avec l’aide qui dit qu’elle ne pourra pas être rétablie
 20-C2 | annulée, elle le dit, « La session est annulée à sa nouvelle date. Les autres vendredis ne changent pas. », le bloc « Message à copier » nomme sa nouvelle date et sa nouvelle heure, « « Prière du vendredi » : la prière du JOUR JJ.MM.AAAA à 16:30 est annulée. », et sa ligne porte « Annulée ce jour-là », sans « Rétablir comme d’habitude »
 A3 | aucune date écrite AAAA-MM-JJ sur les N écrans traversés (espace, super-admin, page publique, widget)
