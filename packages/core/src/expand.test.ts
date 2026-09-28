@@ -695,6 +695,128 @@ describe('expandOccurrences: moved sessions', () => {
 	});
 });
 
+describe('expandOccurrences: a moved session cancelled at its new date', () => {
+	// Une séance déplacée dont la date prévue est passée ne revient pas à cette date : on l'annule là
+	// où elle avait été déplacée, et elle y reste, barrée (étape 20, C2). L'annulation garde le jour
+	// et l'heure d'arrivée (`movedTo`) : à la date prévue, la séance est partie ailleurs ; à la
+	// nouvelle date, elle est annulée, aux heures d'arrivée, avec sa date d'origine.
+	const cancelledThere = (date: IsoDate, to: IsoDate, start: LocalTime): SessionException => ({
+		kind: 'cancelled',
+		courseId: 'a',
+		date,
+		movedTo: { date: to, start }
+	});
+
+	it('both dates in the range: moved_away at the planned date, cancelled at the new one', () => {
+		const result = expandOccurrences({
+			schedules: [course('a')],
+			exceptions: [cancelledThere('2026-09-14', '2026-09-16', '18:30')],
+			range: SEPTEMBER
+		});
+		expect(result).toEqual([
+			occurrence('a', '2026-09-07'),
+			occurrence('a', '2026-09-14', {
+				status: 'moved_away',
+				movedTo: { date: '2026-09-16', start: '18:30' }
+			}),
+			occurrence('a', '2026-09-16', {
+				start: '18:30',
+				end: '20:30',
+				status: 'cancelled',
+				originalDate: '2026-09-14'
+			}),
+			occurrence('a', '2026-09-21'),
+			occurrence('a', '2026-09-28')
+		]);
+	});
+
+	it('the planned date before the range: the cancelled session alone, at its new date', () => {
+		// C'est le cas de l'étape 20 : la date prévue est passée, la nouvelle date est à venir.
+		const result = expandOccurrences({
+			schedules: [course('a')],
+			exceptions: [cancelledThere('2026-09-07', '2026-09-10', '18:00')],
+			range: { from: '2026-09-08', to: '2026-09-30' }
+		});
+		expect(result).toEqual([
+			occurrence('a', '2026-09-10', {
+				start: '18:00',
+				end: '20:00',
+				status: 'cancelled',
+				originalDate: '2026-09-07'
+			}),
+			occurrence('a', '2026-09-14'),
+			occurrence('a', '2026-09-21'),
+			occurrence('a', '2026-09-28')
+		]);
+	});
+
+	it('the new date after the range: moved_away only', () => {
+		const result = expandOccurrences({
+			schedules: [course('a')],
+			exceptions: [cancelledThere('2026-09-28', '2026-10-05', '19:00')],
+			range: SEPTEMBER
+		});
+		expect(summary(result)).toEqual([
+			'a 2026-09-07 19:00 scheduled',
+			'a 2026-09-14 19:00 scheduled',
+			'a 2026-09-21 19:00 scheduled',
+			'a 2026-09-28 19:00 moved_away'
+		]);
+		expect(result[3]?.movedTo).toEqual({ date: '2026-10-05', start: '19:00' });
+	});
+
+	it('the same day at another time: both occurrences on that day', () => {
+		const result = expandOccurrences({
+			schedules: [course('a')],
+			exceptions: [cancelledThere('2026-09-14', '2026-09-14', '20:00')],
+			range: { from: '2026-09-14', to: '2026-09-14' }
+		});
+		expect(result).toEqual([
+			occurrence('a', '2026-09-14', {
+				status: 'moved_away',
+				movedTo: { date: '2026-09-14', start: '20:00' }
+			}),
+			occurrence('a', '2026-09-14', {
+				start: '20:00',
+				end: '22:00',
+				status: 'cancelled',
+				originalDate: '2026-09-14'
+			})
+		]);
+	});
+
+	it('a planned date inside a pause is ignored, like a move: nothing at the new date either', () => {
+		const result = expandOccurrences({
+			schedules: [course('a')],
+			exceptions: [cancelledThere('2026-09-14', '2026-09-16', '18:30')],
+			pauses: [{ from: '2026-09-14', to: '2026-09-14' }],
+			range: SEPTEMBER
+		});
+		expect(dates(result)).toEqual(['2026-09-07', '2026-09-21', '2026-09-28']);
+	});
+
+	it('an anchored course: the cancelled session keeps the arrival time and has no anchor', () => {
+		const result = expandOccurrences({
+			schedules: [
+				course('a', {
+					timing: { kind: 'prayer', prayer: 'maghrib', offsetMinutes: 10, durationMinutes: 60 }
+				})
+			],
+			exceptions: [cancelledThere('2026-09-07', '2026-09-09', '18:00')],
+			range: { from: '2026-09-08', to: '2026-09-09' }
+		});
+		expect(result).toEqual([
+			occurrence('a', '2026-09-09', {
+				start: '18:00',
+				end: '19:00',
+				status: 'cancelled',
+				originalDate: '2026-09-07'
+			})
+		]);
+		expect(result[0]).not.toHaveProperty('anchor');
+	});
+});
+
 describe('expandOccurrences: prayer-anchored courses', () => {
 	// Maghrib à 19:47 tous les jours : 19:47 + 10 min = 19:57, arrondi à 20:00 ; fin 21:00.
 	const table: PrayerTimesLookup = (date) => ({
@@ -1343,6 +1465,37 @@ describe('nextOccurrences', () => {
 			'a 2026-09-16 18:00 moved_here',
 			'a 2026-09-21 19:00 scheduled',
 			'a 2026-09-28 19:00 scheduled'
+		]);
+	});
+
+	it('keeps a moved session cancelled at its new date there when asked, and nowhere else', () => {
+		// La date prévue, le lundi 7, est passée ; la séance avait été déplacée au mercredi 9, où
+		// elle est annulée (étape 20, C2). La page publique d'un cours la montre barrée à cette date.
+		const input = {
+			schedules: [course('a')],
+			exceptions: [
+				{
+					kind: 'cancelled',
+					courseId: 'a',
+					date: '2026-09-07',
+					movedTo: { date: '2026-09-09', start: '18:00' }
+				}
+			] as SessionException[],
+			from: '2026-09-08' as IsoDate,
+			limit: 2
+		};
+		expect(nextOccurrences({ ...input, includeCancelled: true })).toEqual([
+			occurrence('a', '2026-09-09', {
+				start: '18:00',
+				end: '20:00',
+				status: 'cancelled',
+				originalDate: '2026-09-07'
+			}),
+			occurrence('a', '2026-09-14')
+		]);
+		expect(summary(nextOccurrences(input))).toEqual([
+			'a 2026-09-14 19:00 scheduled',
+			'a 2026-09-21 19:00 scheduled'
 		]);
 	});
 

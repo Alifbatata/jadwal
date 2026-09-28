@@ -260,21 +260,29 @@ export function expandOccurrences(input: ExpandInput): Occurrence[] {
 		if (!isRuleDay(schedule, day)) continue;
 		if (isPaused(pausesByCourse.get(schedule.id) ?? [], day)) continue;
 		const original = byCourseAndDay.get(key(schedule.id, day));
-		if (exception.kind === 'cancelled') {
+		// Où la séance est partie : un déplacement, ou une annulation qui garde l'endroit où la séance
+		// avait été déplacée (étape 20). Une annulation sans cela reste à sa date.
+		const movedTo =
+			exception.kind === 'moved'
+				? { date: exception.toDate, start: exception.toStart }
+				: exception.movedTo;
+		if (movedTo === undefined) {
 			if (original) original.status = 'cancelled';
 			continue;
 		}
 		if (original) {
 			original.status = 'moved_away';
-			original.movedTo = { date: exception.toDate, start: exception.toStart };
+			original.movedTo = { date: movedTo.date, start: movedTo.start };
 		}
-		const toDay = isoDateToDays(exception.toDate);
+		const toDay = isoDateToDays(movedTo.date);
 		if (inRange(toDay)) {
 			occurrences.push({
 				courseId: schedule.id,
-				date: exception.toDate,
-				...movedTimes(schedule.timing, exception.toStart),
-				status: 'moved_here',
+				date: movedTo.date,
+				...movedTimes(schedule.timing, movedTo.start),
+				// Déplacée puis annulée, la séance reste à sa nouvelle date, annulée, comme toute
+				// séance annulée reste à la sienne.
+				status: exception.kind === 'moved' ? 'moved_here' : 'cancelled',
 				originalDate: exception.date
 			});
 		}
@@ -309,7 +317,8 @@ const CHUNK_DAYS = 56;
 /**
  * Les prochaines séances qui ont lieu (statuts `scheduled` et `moved_here`), triées, jusqu'à `limit`,
  * en explorant l'horizon par tranches de huit semaines. Avec `includeCancelled`, les séances annulées
- * aussi ; jamais une séance partie ailleurs (`moved_away`), qui figure à sa nouvelle date.
+ * aussi, une séance déplacée puis annulée à sa nouvelle date ; jamais une séance partie ailleurs
+ * (`moved_away`), qui figure à sa nouvelle date.
  */
 export function nextOccurrences(input: NextOccurrencesInput): Occurrence[] {
 	const horizonDays = input.horizonDays ?? MAX_RANGE_DAYS;

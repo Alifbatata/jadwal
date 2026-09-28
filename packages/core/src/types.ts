@@ -53,7 +53,16 @@ export interface CourseSchedule {
 }
 
 export type SessionException =
-	| { kind: 'cancelled'; courseId: string; date: IsoDate }
+	| {
+			kind: 'cancelled';
+			courseId: string;
+			date: IsoDate;
+			/**
+			 * Où la séance avait été déplacée avant d'être annulée, jour et heure ensemble (étape 20).
+			 * Elle est alors partie ailleurs à `date`, et annulée à `movedTo.date`, où on l'attendait.
+			 */
+			movedTo?: { date: IsoDate; start: LocalTime };
+	  }
 	| { kind: 'moved'; courseId: string; date: IsoDate; toDate: IsoDate; toStart: LocalTime };
 
 /** Période sans séance, inclusive. Sans `courseId`, la pause vaut pour toute l'organisation. */
@@ -105,9 +114,12 @@ export interface Occurrence {
 	endDayOffset: number;
 	anchor?: { prayer: Prayer; offsetMinutes: number };
 	status: OccurrenceStatus;
-	/** Pour `moved_here` : la date d'origine de la séance. */
+	/**
+	 * Pour `moved_here` : la date d'origine de la séance. Pour `cancelled`, quand la séance avait été
+	 * déplacée avant d'être annulée : sa date d'origine, et `date` est celle du déplacement.
+	 */
 	originalDate?: IsoDate;
-	/** Pour `moved_away` : où la séance a été déplacée. */
+	/** Pour `moved_away` : où la séance a été déplacée, qu'elle y ait lieu ou qu'elle y soit annulée. */
 	movedTo?: { date: IsoDate; start: LocalTime };
 }
 

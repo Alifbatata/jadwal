@@ -261,8 +261,15 @@ export function validateException(
 	checkId(exception.courseId, `${path}.courseId`, issues);
 	checkDate(exception.date, `${path}.date`, issues);
 	switch (exception.kind) {
-		case 'cancelled':
+		case 'cancelled': {
+			// L'endroit où la séance avait été déplacée, s'il est là : un jour et une heure, ensemble.
+			if (exception.movedTo === undefined) return issues;
+			const movedTo: unknown = exception.movedTo;
+			const arrival = isObject(movedTo) ? (movedTo as { date?: unknown; start?: unknown }) : {};
+			checkDate(arrival.date, `${path}.movedTo.date`, issues);
+			checkTime(arrival.start, `${path}.movedTo.start`, issues);
 			return issues;
+		}
 		case 'moved':
 			checkDate(exception.toDate, `${path}.toDate`, issues);
 			checkTime(exception.toStart, `${path}.toStart`, issues);

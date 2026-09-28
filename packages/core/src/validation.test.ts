@@ -646,6 +646,28 @@ describe('validateException', () => {
 		]);
 	});
 
+	it('checks the day and time that a cancellation keeps from a move, together', () => {
+		// Une séance déplacée puis annulée garde son jour et son heure d'arrivée (étape 20, C2).
+		expect(
+			validateException({ ...CANCELLED, movedTo: { date: '2026-09-16', start: '18:30' } })
+		).toEqual([]);
+		const broken = { ...CANCELLED, movedTo: { date: '2026-09-31', start: '9:00' } };
+		expect(pairs(validateException(broken as unknown as SessionException))).toEqual([
+			['invalid_date', 'exception.movedTo.date'],
+			['invalid_time', 'exception.movedTo.start']
+		]);
+		// Autre chose qu'un jour et une heure : ni une date seule, ni une valeur vide.
+		for (const movedTo of ['2026-09-16', null, {}]) {
+			expect(
+				pairs(validateException({ ...CANCELLED, movedTo } as unknown as SessionException)),
+				JSON.stringify(movedTo)
+			).toEqual([
+				['invalid_date', 'exception.movedTo.date'],
+				['invalid_time', 'exception.movedTo.start']
+			]);
+		}
+	});
+
 	it('reports invalid_kind on an unknown kind, after the common fields', () => {
 		const broken = { kind: 'skipped', courseId: 'arabic-1', date: '2026-09-09' };
 		const issues = validateException(broken as unknown as SessionException);

@@ -1426,6 +1426,80 @@ describe('buildCalendar: moved and paused first sessions', () => {
 	});
 });
 
+describe('buildCalendar: a moved session cancelled at its new date', () => {
+	// La séance avait été déplacée, puis elle est annulée là où elle devait se tenir (étape 20, C2).
+	// Le flux la traite comme une annulation : la séance du rythme sort de la série, et rien ne la
+	// remplace, ni à sa date prévue ni à sa nouvelle date.
+	const cancelledThere = (
+		courseId: string,
+		date: IsoDate,
+		to: IsoDate,
+		start: LocalTime
+	): SessionException => ({ kind: 'cancelled', courseId, date, movedTo: { date: to, start } });
+
+	it('lists the planned date in EXDATE of a recurring course, with no RECURRENCE-ID', () => {
+		const ics = buildCalendar(
+			calendarInput({
+				courses: [course('a', weekly([1]), fixed('19:00', '20:00'))],
+				exceptions: [cancelledThere('a', '2026-09-14', '2026-09-16', '18:00')]
+			})
+		);
+		const blocks = veventBlocks(ics);
+		expect(blocks).toHaveLength(1);
+		expect(lineValue(blocks[0] ?? [], 'EXDATE')).toBe('20260914T190000');
+		expect(ics).not.toContain('RECURRENCE-ID');
+		// Relu par ical.js : ni le lundi 14, ni le mercredi 16.
+		ICAL.TimezoneService.reset();
+		const sessions = expandWithIcalJs(
+			masterEvent(parseCalendar(ics), `a@${HOST}`),
+			'2026-09-30'
+		).map((session) => session.start);
+		expect(sessions).toEqual(['2026-09-07 19:00', '2026-09-21 19:00', '2026-09-28 19:00']);
+	});
+
+	it('writes no event for it in a course exported session by session, dated or anchored', () => {
+		const table: PrayerTimesLookup = (date) => ({
+			date,
+			fajr: '05:30',
+			dhuhr: '13:00',
+			asr: '16:30',
+			maghrib: '19:47',
+			isha: '21:15'
+		});
+		const ics = buildCalendar(
+			calendarInput({
+				courses: [
+					course('seminar', dates(['2026-09-25', '2026-10-02']), fixed('14:00', '16:00')),
+					course('tafsir', weekly([5]), {
+						kind: 'prayer',
+						prayer: 'maghrib',
+						offsetMinutes: 10,
+						durationMinutes: 60
+					})
+				],
+				exceptions: [
+					cancelledThere('seminar', '2026-10-02', '2026-10-03', '10:00'),
+					cancelledThere('tafsir', '2026-09-25', '2026-09-26', '18:00')
+				],
+				prayerTimes: table,
+				horizonDays: 14
+			})
+		);
+		// La fenêtre va du 21 août au 4 octobre, les cours commencent le 1er septembre : le séminaire
+		// du 25 septembre et les vendredis du tafsir, sauf le 25 septembre ; rien le 26 septembre ni
+		// le 3 octobre.
+		expect(uidsOf(ics)).toEqual([
+			`seminar-2026-09-25@${HOST}`,
+			`tafsir-2026-09-04@${HOST}`,
+			`tafsir-2026-09-11@${HOST}`,
+			`tafsir-2026-09-18@${HOST}`,
+			`tafsir-2026-10-02@${HOST}`
+		]);
+		expect(ics).not.toContain('20261003T');
+		expect(ics).not.toContain('20260926T');
+	});
+});
+
 describe('buildCalendar: URL is a URI, not text', () => {
 	it('writes a URL containing a comma or a semicolon without backslashes', () => {
 		// RFC 5545 §3.3.13 : la valeur URI n'est pas soumise à l'échappement par contre-oblique, que

@@ -325,6 +325,8 @@ function addRecurringCourse(context: CourseContext, course: CalendarCourse): voi
 		rule += `;UNTIL=${formatUtc(until)}`;
 	}
 
+	// Une annulation retire la séance de la série, qu'elle garde ou non l'endroit où la séance avait
+	// été déplacée (étape 20) : rien ne la remplace, ni à sa date ni ailleurs.
 	const excluded = new Set<number>();
 	for (const exception of exceptions) {
 		if (exception.kind === 'cancelled') excluded.add(isoDateToDays(exception.date));
@@ -399,6 +401,8 @@ function addDatedCourses(
 		range
 	});
 	for (const occurrence of occurrences) {
+		// Seules les séances qui ont lieu. Une séance annulée ne sort pas, y compris à la nouvelle
+		// date d'une séance déplacée puis annulée (étape 20).
 		if (occurrence.status !== 'scheduled' && occurrence.status !== 'moved_here') continue;
 		if (occurrence.start === null || occurrence.end === null) continue; // heure de prière inconnue
 		const course = byId.get(occurrence.courseId);
