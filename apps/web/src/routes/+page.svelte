@@ -263,12 +263,16 @@
 					<p class="titre">
 						<bdi>{seance.title}</bdi>
 						{#if seance.draft}<span class="marque">{text.marks.draft}</span>{/if}
-						{#if seance.status === 'cancelled'}<span class="marque">{text.marks.cancelled}</span
+						<!-- L'état s'écrit avec son propre nom, « Séance annulée » ou « Session annulée »,
+						     jamais accordé au titre à côté, que l'organisation a choisi (étape 20, C4). -->
+						{#if seance.status === 'cancelled'}<span class="marque"
+								>{text.marks.cancelled[seance.kind]}</span
 							>{/if}
 						{#if seance.status === 'moved_here'}<span class="marque"
 								>{origine ? text.marks.newTime : text.marks.movedHere}</span
 							>{/if}
-						{#if seance.status === 'moved_away'}<span class="marque">{text.marks.movedAway}</span
+						{#if seance.status === 'moved_away'}<span class="marque"
+								>{text.marks.movedAway[seance.kind]}</span
 							>{/if}
 					</p>
 					<p class="details">
@@ -278,7 +282,9 @@
 						· {audienceLabel(seance.audience, language)}
 					</p>
 					{#if seance.status === 'moved_away' && seance.movedTo}
-						<p class="details">{text.movedTo(date(seance.movedTo.date), seance.movedTo.start)}</p>
+						<p class="details">
+							{text.movedTo[seance.kind](date(seance.movedTo.date), seance.movedTo.start)}
+						</p>
 					{/if}
 					{#if origine}
 						<p class="details">{text.originallyAt(describeSessionTime(origine, language))}</p>

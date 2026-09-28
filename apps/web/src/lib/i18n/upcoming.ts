@@ -5,7 +5,10 @@
 // Une séance se dit « Termin » en allemand, « lezione » en italien, « session » en anglais et « حصة »
 // en arabe, comme dans les messages prêts à coller (`../messages.ts`) : l'écran et le message qu'il
 // prépare parlent de la même chose avec le même mot. Le titre de l'écran est celui de la navigation
-// (`common.ts`), pour qu'un lien et la page qu'il ouvre portent le même nom.
+// (`common.ts`), pour qu'un lien et la page qu'il ouvre portent le même nom. Une session, une fois
+// où la prière du vendredi a lieu, se dit « Durchgang », « turno », « session » et « موعد », comme
+// sur l'écran du vendredi (`friday.ts`) : l'état d'une carte annulée ou partie ailleurs s'écrit avec
+// l'un ou l'autre nom (étape 20, C4).
 
 import { plural, type PluralForms, type Translations } from './space.js';
 
@@ -63,6 +66,15 @@ export type NamedUpcomingError =
 /** Une phrase qui nomme une séance. */
 type Named = (title: string, date: string) => string;
 
+/**
+ * Un texte par sorte de carte, selon le type du cours : `course`, une séance, une fois où un cours a
+ * lieu ; `jumua`, une session, une fois où la prière du vendredi a lieu (étape 20, C4).
+ */
+interface ByKind<T> {
+	readonly course: T;
+	readonly jumua: T;
+}
+
 interface UpcomingTexts {
 	/** Ce que montre l'écran, et où se trouvent les options d'une séance. */
 	readonly intro: string;
@@ -93,16 +105,21 @@ interface UpcomingTexts {
 	 * Les marques d'une séance, à côté de son titre. `newTime` : une séance déplacée le même jour, à
 	 * une autre heure ; sa date n'a rien d'exceptionnel. `draft` : un cours en brouillon, que la page
 	 * publique et le programme de la semaine ne montrent pas (étape 19, D4).
+	 *
+	 * Annulée ou partie ailleurs, la carte dit son état avec son propre nom, jamais accordé au titre
+	 * que l'organisation a choisi : « Séance annulée » pour un cours, « Session annulée » pour la
+	 * prière du vendredi (étape 20, C4, décision du chef de projet). L'italien et l'arabe accordaient
+	 * au mot « séance » l'état d'une session, masculine dans ces deux langues.
 	 */
 	readonly marks: {
-		readonly cancelled: string;
-		readonly movedAway: string;
+		readonly cancelled: ByKind<string>;
+		readonly movedAway: ByKind<string>;
 		readonly movedHere: string;
 		readonly newTime: string;
 		readonly draft: string;
 	};
-	/** Sous une séance déplacée : sa nouvelle date et sa nouvelle heure. */
-	readonly movedTo: (date: string, time: string) => string;
+	/** Sous une séance partie ailleurs : son nom, sa nouvelle date et sa nouvelle heure. */
+	readonly movedTo: ByKind<(date: string, time: string) => string>;
 	/** Sous une séance arrivée d'une autre date : la date où elle était prévue. */
 	readonly originallyOn: (date: string) => string;
 	/**
@@ -197,13 +214,16 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		empty: 'Aucune séance dans les sept prochains jours.',
 		emptyLink: 'Créer un cours',
 		marks: {
-			cancelled: 'annulée',
-			movedAway: 'déplacée',
+			cancelled: { course: 'Séance annulée', jumua: 'Session annulée' },
+			movedAway: { course: 'Séance déplacée', jumua: 'Session déplacée' },
 			movedHere: 'date exceptionnelle',
 			newTime: 'nouvelle heure',
 			draft: 'brouillon'
 		},
-		movedTo: (date, time) => `Déplacée au ${date} à ${time}`,
+		movedTo: {
+			course: (date, time) => `Séance déplacée au ${date} à ${time}`,
+			jumua: (date, time) => `Session déplacée au ${date} à ${time}`
+		},
 		originallyOn: (date) => `Prévue à l’origine le ${date}`,
 		originallyAt: (time) => `Prévue à l’origine : ${time}`,
 		options: 'Annuler ou déplacer',
@@ -307,13 +327,16 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		empty: 'Keine Termine in den nächsten sieben Tagen.',
 		emptyLink: 'Kurs erstellen',
 		marks: {
-			cancelled: 'abgesagt',
-			movedAway: 'verschoben',
+			cancelled: { course: 'Termin abgesagt', jumua: 'Durchgang abgesagt' },
+			movedAway: { course: 'Termin verschoben', jumua: 'Durchgang verschoben' },
 			movedHere: 'Ausnahmetermin',
 			newTime: 'neue Uhrzeit',
 			draft: 'Entwurf'
 		},
-		movedTo: (date, time) => `Verschoben auf ${date}, um ${time}`,
+		movedTo: {
+			course: (date, time) => `Termin verschoben auf ${date}, um ${time}`,
+			jumua: (date, time) => `Durchgang verschoben auf ${date}, um ${time}`
+		},
 		originallyOn: (date) => `Ursprünglich geplant am ${date}`,
 		originallyAt: (time) => `Ursprünglich geplant: ${time}`,
 		options: 'Absagen oder verschieben',
@@ -416,13 +439,16 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		empty: 'Nessuna lezione nei prossimi sette giorni.',
 		emptyLink: 'Crea un corso',
 		marks: {
-			cancelled: 'annullata',
-			movedAway: 'spostata',
+			cancelled: { course: 'Lezione annullata', jumua: 'Turno annullato' },
+			movedAway: { course: 'Lezione spostata', jumua: 'Turno spostato' },
 			movedHere: 'data eccezionale',
 			newTime: 'nuovo orario',
 			draft: 'bozza'
 		},
-		movedTo: (date, time) => `Spostata a ${date} alle ${time}`,
+		movedTo: {
+			course: (date, time) => `Lezione spostata a ${date} alle ${time}`,
+			jumua: (date, time) => `Turno spostato a ${date} alle ${time}`
+		},
 		originallyOn: (date) => `Prevista inizialmente per ${date}`,
 		originallyAt: (time) => `Prevista inizialmente: ${time}`,
 		options: 'Annulla o sposta',
@@ -525,13 +551,16 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		empty: 'No sessions in the next seven days.',
 		emptyLink: 'Create a course',
 		marks: {
-			cancelled: 'cancelled',
-			movedAway: 'moved',
+			cancelled: { course: 'Session cancelled', jumua: 'Session cancelled' },
+			movedAway: { course: 'Session moved', jumua: 'Session moved' },
 			movedHere: 'rescheduled',
 			newTime: 'new time',
 			draft: 'draft'
 		},
-		movedTo: (date, time) => `Moved to ${date} at ${time}`,
+		movedTo: {
+			course: (date, time) => `Session moved to ${date} at ${time}`,
+			jumua: (date, time) => `Session moved to ${date} at ${time}`
+		},
 		originallyOn: (date) => `Originally planned for ${date}`,
 		originallyAt: (time) => `Originally planned: ${time}`,
 		options: 'Cancel or move',
@@ -640,13 +669,16 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		empty: 'لا حصص خلال الأيام السبعة القادمة.',
 		emptyLink: 'إنشاء درس',
 		marks: {
-			cancelled: 'ملغاة',
-			movedAway: 'منقولة',
+			cancelled: { course: 'حصة ملغاة', jumua: 'موعد ملغى' },
+			movedAway: { course: 'حصة منقولة', jumua: 'موعد منقول' },
 			movedHere: 'موعد استثنائي',
 			newTime: 'وقت جديد',
 			draft: 'مسودة'
 		},
-		movedTo: (date, time) => `نُقلت إلى يوم ${date} في الساعة ${time}`,
+		movedTo: {
+			course: (date, time) => `حصة منقولة إلى يوم ${date} في الساعة ${time}`,
+			jumua: (date, time) => `موعد منقول إلى يوم ${date} في الساعة ${time}`
+		},
 		originallyOn: (date) => `كانت مقرّرة يوم ${date}`,
 		originallyAt: (time) => `الوقت المقرّر أصلًا: ${time}`,
 		options: 'إلغاء أو نقل',

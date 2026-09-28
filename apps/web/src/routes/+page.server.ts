@@ -226,6 +226,11 @@ export const load: PageServerLoad = async (event) => {
 		movedTo: seance.movedTo,
 		/** L'exception que « Rétablir la séance » défait, qu'il envoie (reprise du lot 2). */
 		exceptionId: seance.exceptionId,
+		/**
+		 * Le type du cours : l'état d'une carte annulée ou partie ailleurs s'écrit « Séance … » pour un
+		 * cours, « Session … » pour la prière du vendredi (étape 20, C4).
+		 */
+		kind: kinds.get(seance.courseId) === 'jumua' ? ('jumua' as const) : ('course' as const),
 		// Le titre de la carte suit la langue de l'écran (décision du chef de projet, étape 19).
 		title: titleIn(seance, langue),
 		/** Un cours en brouillon : sa carte le dit, et le programme de la semaine ne le montre pas. */

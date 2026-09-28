@@ -3711,3 +3711,197 @@ describe('C2 : une séance déplacée dont la date prévue est passée (étape 2
 		expect(await lignesDuJournal()).toBe(journalAvant);
 	});
 });
+
+describe('C4 : l’état d’une carte s’écrit avec son propre nom (étape 20)', () => {
+	// Décision du chef de projet : l'état s'écrit avec son propre nom, jamais accordé à un titre
+	// libre. Une séance est une fois où un cours a lieu, une session une fois où la prière du
+	// vendredi a lieu : « Séance annulée », « Session annulée », « Séance déplacée au … à … »,
+	// « Session déplacée au … à … », dans les cinq langues. L'italien et l'arabe accordaient au mot
+	// « séance » l'état d'une session du vendredi, masculine dans ces deux langues.
+
+	/** Chaque marque, par état et par sorte de carte, dans chaque langue. */
+	const MARQUE: Record<
+		'annulee' | 'deplacee',
+		Record<'seance' | 'session', Record<Langue, string>>
+	> = {
+		annulee: {
+			seance: {
+				fr: 'Séance annulée',
+				de: 'Termin abgesagt',
+				it: 'Lezione annullata',
+				en: 'Session cancelled',
+				ar: 'حصة ملغاة'
+			},
+			session: {
+				fr: 'Session annulée',
+				de: 'Durchgang abgesagt',
+				it: 'Turno annullato',
+				en: 'Session cancelled',
+				ar: 'موعد ملغى'
+			}
+		},
+		deplacee: {
+			seance: {
+				fr: 'Séance déplacée',
+				de: 'Termin verschoben',
+				it: 'Lezione spostata',
+				en: 'Session moved',
+				ar: 'حصة منقولة'
+			},
+			session: {
+				fr: 'Session déplacée',
+				de: 'Durchgang verschoben',
+				it: 'Turno spostato',
+				en: 'Session moved',
+				ar: 'موعد منقول'
+			}
+		}
+	};
+	/** La phrase sous la carte d'une séance ou d'une session partie ailleurs. */
+	const DEPLACEE_AU: Record<
+		'seance' | 'session',
+		Record<Langue, (date: string, heure: string) => string>
+	> = {
+		seance: {
+			fr: (date, heure) => `Séance déplacée au ${date} à ${heure}`,
+			de: (date, heure) => `Termin verschoben auf ${date}, um ${heure}`,
+			it: (date, heure) => `Lezione spostata a ${date} alle ${heure}`,
+			en: (date, heure) => `Session moved to ${date} at ${heure}`,
+			ar: (date, heure) => `حصة منقولة إلى يوم ${date} في الساعة ${heure}`
+		},
+		session: {
+			fr: (date, heure) => `Session déplacée au ${date} à ${heure}`,
+			de: (date, heure) => `Durchgang verschoben auf ${date}, um ${heure}`,
+			it: (date, heure) => `Turno spostato a ${date} alle ${heure}`,
+			en: (date, heure) => `Session moved to ${date} at ${heure}`,
+			ar: (date, heure) => `موعد منقول إلى يوم ${date} في الساعة ${heure}`
+		}
+	};
+
+	const organisation = newId();
+	const RESPONSABLE_C4 = 'avenir-c4@example.test';
+	const utilisateur = newId();
+	const fiqh = newId();
+	const FIQH = 'Cercle de fiqh';
+	/** Deux sessions du vendredi, sous un titre choisi : la première annulée, la seconde déplacée. */
+	const premiere = newId();
+	const seconde = newId();
+	const JUMUA = ['Jumu’a de midi', 'Jumu’a de l’après-midi'] as const;
+	/** Le prochain vendredi de l'écran, aujourd'hui compris. */
+	const vendredi = [0, 1, 2, 3, 4, 5, 6]
+		.map((pas) => jour(pas))
+		.find((date) => weekdayFromDays(isoDateToDays(date)) === 5) as IsoDate;
+	/** Le jour où part la seconde session : le lendemain, ou la veille quand il sort de l'écran. */
+	const ailleurs = addDays(vendredi, 1) > jour(6) ? addDays(vendredi, -1) : addDays(vendredi, 1);
+	let cookie: string;
+
+	/** Les marques d'une carte, dans l'ordre, chacune réduite à son texte. */
+	function marques(fragment: string): string[] {
+		return [...fragment.matchAll(/<span\b[^>]*class="marque[^"]*"[^>]*>([\s\S]*?)<\/span>/g)].map(
+			(trouve) => texte(trouve[1] ?? '')
+		);
+	}
+
+	beforeAll(async () => {
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+					"enabled_language", "prayer_module", "greeting")
+				values (${organisation}, 'a-venir-c4', 'Association des états', ${FUSEAU}, 'fr',
+					array['fr','de','it','en','ar'], true, ${ACCUEIL})
+			`);
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "email_verified", "language")
+				values (${utilisateur}, ${RESPONSABLE_C4}, true, 'fr')
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${organisation}, ${utilisateur}, 'org_admin')
+			`);
+			await tx.execute(conditionsAcceptees(organisation, utilisateur));
+			await tx.execute(sql`
+				insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",
+					"source_language", "recurrence_kind", "recurrence_weekday", "recurrence_interval",
+					"recurrence_anchor_date", "timing_kind", "timing_start", "timing_end", "starts_on")
+				values (${fiqh}, ${organisation}, 'published', 'adults', array['fr'], 'fr', 'weekly',
+					array[1,2,3,4,5,6,7]::smallint[], 1, ${jour(-30)}, 'fixed', '18:00', '19:30',
+					${jour(-30)})
+			`);
+			for (const [id, rang, debut, fin] of [
+				[premiere, 1, '12:10', '12:50'],
+				[seconde, 2, '13:30', '14:10']
+			] as const) {
+				await tx.execute(sql`
+					insert into "course" ("id", "organization_id", "kind", "jumua_order", "status",
+						"audience", "teaching_language", "source_language", "recurrence_kind",
+						"recurrence_weekday", "recurrence_interval", "recurrence_anchor_date", "timing_kind",
+						"timing_start", "timing_end", "starts_on")
+					values (${id}, ${organisation}, 'jumua', ${rang}, 'published', 'open', array['ar'], 'fr',
+						'weekly', array[5]::smallint[], 1, ${jour(-30)}, 'fixed', ${debut}, ${fin},
+						${jour(-30)})
+				`);
+			}
+			for (const [id, titre] of [
+				[fiqh, FIQH],
+				[premiere, JUMUA[0]],
+				[seconde, JUMUA[1]]
+			] as const) {
+				await tx.execute(sql`
+					insert into "course_translation" ("id", "organization_id", "course_id", "language",
+						"title")
+					values (${newId()}, ${organisation}, ${id}, 'fr', ${titre})
+				`);
+			}
+			// Le cours annulé demain et déplacé d'après-demain au jour suivant ; la première session
+			// annulée ce vendredi, la seconde déplacée.
+			for (const [id, date, kind, versLe, heure] of [
+				[fiqh, jour(1), 'cancelled', null, null],
+				[fiqh, jour(2), 'moved', jour(3), '20:30'],
+				[premiere, vendredi, 'cancelled', null, null],
+				[seconde, vendredi, 'moved', ailleurs, '15:00']
+			] as const) {
+				await tx.execute(sql`
+					insert into "session_exception" ("id", "organization_id", "course_id", "date", "kind",
+						"to_date", "to_start", "created_by")
+					values (${newId()}, ${organisation}, ${id}, ${date}, ${kind}, ${versLe}, ${heure},
+						${utilisateur})
+				`);
+			}
+		});
+		cookie = await signIn(RESPONSABLE_C4);
+	});
+
+	it.each(LANGUES)(
+		'writes « Séance annulée » and « Session annulée » on the cancelled cards, in %s',
+		async (langue) => {
+			await maintenance((tx) =>
+				tx.execute(sql`update "user" set "language" = ${langue} where "id" = ${utilisateur}`)
+			);
+			const html = await (await get('/', cookie)).text();
+			expect(marques(carte(html, jour(1), FIQH, 'cancelled'))).toEqual([
+				MARQUE.annulee.seance[langue]
+			]);
+			expect(marques(carte(html, vendredi, JUMUA[0], 'cancelled'))).toEqual([
+				MARQUE.annulee.session[langue]
+			]);
+		}
+	);
+
+	it.each(LANGUES)(
+		'writes « Séance déplacée » and « Session déplacée », with where they went, on the cards they left, in %s',
+		async (langue) => {
+			await maintenance((tx) =>
+				tx.execute(sql`update "user" set "language" = ${langue} where "id" = ${utilisateur}`)
+			);
+			const html = await (await get('/', cookie)).text();
+			const cours = carte(html, jour(2), FIQH, 'moved_away');
+			expect(marques(cours)).toEqual([MARQUE.deplacee.seance[langue]]);
+			expect(texte(cours)).toContain(DEPLACEE_AU.seance[langue](dateLue(langue, jour(3)), '20:30'));
+			const session = carte(html, vendredi, JUMUA[1], 'moved_away');
+			expect(marques(session)).toEqual([MARQUE.deplacee.session[langue]]);
+			expect(texte(session)).toContain(
+				DEPLACEE_AU.session[langue](dateLue(langue, ailleurs), '15:00')
+			);
+		}
+	);
+});
