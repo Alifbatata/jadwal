@@ -1211,7 +1211,9 @@ const langueDuCourriel = (courriel) =>
 /**
  * Une requête jouée dans la base du parcours, par son propriétaire, là où aucun écran ne mène : une
  * vue du widget datée d'avant la semaine (B10), un cours enregistré avant la règle de l'étape 18
- * (dates hors de sa période). Le texte de la requête ne vient que de ce script.
+ * (dates hors de sa période), l'arabe pour langue par défaut de l'organisation voisine, où la
+ * personne du parcours n'est qu'éditrice, le temps d'un 404 (19-404-organisation). Le texte de la
+ * requête ne vient que de ce script.
  */
 function ecrireDansLaBase(requete) {
 	const passage = spawnSync(
