@@ -252,6 +252,19 @@
  * - 20-B2 : Membres en arabe, le geste de l'éditeur qui quitte une organisation, « مغادرة مؤسسة
  *   يكون عضوًا فيها ».
  *
+ * Une séance déplacée dont la date prévue est passée :
+ *
+ * - 20-C2 : sur « À venir », sa carte n'a plus « Rétablir la séance », qui la ramenait à cette date
+ *   où elle disparaissait sans message, mais des options fermées, « Annuler », qui proposent
+ *   « Annuler cette séance », avec l'aide qui dit qu'elle ne pourra pas être rétablie ; l'envoi dit
+ *   que c'est fait et donne le message à copier, qui nomme la nouvelle date et la nouvelle heure ; la
+ *   carte dit ensuite « Séance annulée », sans « Rétablir ». De même sur l'écran du vendredi, pour
+ *   une session déplacée d'un vendredi passé au vendredi qui vient, avec le bloc « Message à
+ *   copier ». Aucun écran ne déplace une séance depuis une date passée : l'étape r l'écrit dans la
+ *   base. Le refus d'un vendredi passé dit qu'une session passée ne s'annule ni ne se déplace ;
+ *   19-D2 en garde le début et la fin. Une carte déplacée dont la date prévue est à venir garde
+ *   « Rétablir » seul : 19-D4 et 19-retablir-nouvelle-date le vérifient toujours.
+ *
  * Supprimer une session du vendredi, réservé au responsable :
  *
  * - 20-C3 : dans Membres, « Quand les heures de prière sont activées : supprimer une prière du
@@ -285,7 +298,7 @@
  * - en arabe seul : 20-B1 et 20-B2, les phrases relues ;
  * - en français, en allemand et en arabe : 20-C7 (la connexion en français et en allemand, Membres
  *   en français et en arabe) ;
- * - en français seul : 20-C3, et les marques des cartes d'« À venir » (20-C4).
+ * - en français seul : 20-C2, 20-C3, et les marques des cartes d'« À venir » (20-C4).
  *
  * ## La date figée (étape 19, D9)
  *
@@ -360,8 +373,11 @@
  * vendredi, renvoient ensuite leur carte restée telle quelle ; la session, rétablie, est annulée
  * pour ce vendredi, lue sur la page publique, puis rétablie. Le nom et la formule d'accueil sont
  * tapés dans Réglages, puis remis. Une seconde personne responsable rejoint l'organisation, la
- * première se donne le rôle d'éditeur, la seconde lui rend le sien, puis s'en va. Enfin, la
- * personne du parcours quitte l'organisation voisine (étape q).
+ * première se donne le rôle d'éditeur, la seconde lui rend le sien, puis s'en va. La personne du
+ * parcours quitte ensuite l'organisation voisine (étape q). Enfin, une séance déplacée dont la date
+ * prévue est passée s'annule à sa nouvelle date, sur « À venir » puis sur l'écran du vendredi
+ * (étape r, étape 20) : le cours créé pour cela est supprimé, et la session du vendredi retrouve son
+ * premier jour.
  *
  * ## Les heures de prière attendues
  *
@@ -628,6 +644,53 @@ const NOUVELLE_HEURE_DANS_LA_SEMAINE = {
  * ce que lit une responsable qui s'est donné le rôle d'éditeur (`common.ts`).
  */
 const SESSION_SUPPRIMEE = 'La session est supprimée.';
+/**
+ * Le refus d'une session dont le vendredi est passé, sur l'écran du vendredi (`friday.ts`,
+ * `pastSession`). Il dit, depuis l'étape 20 (C2), qu'une session passée ne s'annule ni ne se
+ * déplace ; il ne parlait que d'annuler. 19-D2 en garde le début et la fin, 20-C2 la phrase entière.
+ */
+const SESSION_PASSEE = {
+	debut: 'Cette session est déjà passée : vous ne pouvez annuler ',
+	fin: 'que les sessions d’aujourd’hui et des jours suivants.',
+	phrase:
+		'Cette session est déjà passée : vous ne pouvez annuler ou déplacer que les sessions d’aujourd’hui et des jours suivants.'
+};
+/**
+ * Une séance déplacée dont la date prévue est passée, annulée à sa nouvelle date (étape 20, C2) : ce
+ * que sa carte d'« À venir » (`upcoming.ts`) et sa ligne de l'écran du vendredi (`friday.ts`)
+ * proposent à la place de « Rétablir », le résumé des options, le bouton et son aide, puis ce que
+ * l'écran dit une fois l'annulation faite, et, sur l'écran du vendredi, la marque de la ligne.
+ */
+const ANNULER_LA_DEPLACEE = {
+	aVenir: {
+		resume: 'Annuler',
+		bouton: 'Annuler cette séance',
+		aide: 'Sa date prévue est déjà passée : la séance ne peut plus avoir lieu à cette date. Une fois annulée, elle ne pourra pas être rétablie.',
+		fait: 'La séance est annulée.'
+	},
+	vendredi: {
+		resume: 'Annuler',
+		bouton: 'Annuler cette session',
+		aide: 'Son jour prévu est déjà passé : la session ne peut plus avoir lieu ce jour-là. Une fois annulée, elle ne pourra pas être rétablie.',
+		fait: 'La session est annulée à sa nouvelle date. Les autres vendredis ne changent pas.',
+		annulee: 'Annulée ce jour-là'
+	}
+};
+/**
+ * r. Un cours dont une séance, prévue un jour déjà passé, a été déplacée au J4, à 07:00, le jour
+ * même d'une séance de son rythme, à 18:30 (étape 20, C2). Il est supprimé à la fin.
+ */
+const DEPLACEE_D_UN_JOUR_PASSE = {
+	titre: 'Révision de la semaine',
+	debut: '18:30',
+	fin: '19:15',
+	arrivee: '07:00'
+};
+/**
+ * r. L'heure où la session du vendredi, déplacée d'un vendredi passé, arrive le vendredi qui vient,
+ * après la session de 12:30, qui a lieu le même jour (étape 20, C2).
+ */
+const HEURE_DE_LA_SESSION_VENUE = '16:30';
 const AIDE_DE_LA_MODIFICATION =
 	'La session a lieu chaque vendredi à partir de cette date. Changez cette date seulement pour corriger une erreur.';
 const SESSION_CHANGEE =
@@ -1059,7 +1122,7 @@ const RETOURS_DE_L_ETAPE_19 = [
  * relu (B1, B2), puis les questions de l'étape 19 (C2 à C7). L'en-tête du script dit ce que chacune
  * vérifie.
  */
-const RETOURS_DE_L_ETAPE_20 = ['20-B1', '20-B2', '20-C3', '20-C4', '20-C7'];
+const RETOURS_DE_L_ETAPE_20 = ['20-B1', '20-B2', '20-C2', '20-C3', '20-C4', '20-C7'];
 /** Tous les retours, dans l'ordre du tableau final. */
 const RETOURS = [...RETOURS_DE_L_ETAPE_18, ...RETOURS_DE_L_ETAPE_19, ...RETOURS_DE_L_ETAPE_20];
 /**
@@ -7520,7 +7583,9 @@ async function vendrediEtape19(page) {
 
 	// Le vendredi passé précède le premier jour de la session, ajoutée à l'étape g : une annulation
 	// écrite pour lui ne se lirait sur aucun écran. Ce que l'écran dit de son geste est tout ce qui se
-	// vérifie ici : un refus, et aucune confirmation.
+	// vérifie ici : un refus, et aucune confirmation. La phrase dit, depuis l'étape 20, qu'on ne peut
+	// ni annuler ni déplacer une session passée : 19-D2 en garde le début et la fin, 20-C2 la lit
+	// entière.
 	await retour('19-D2', async () => {
 		await ouvrir(page, '/vendredi');
 		const annuler = await exiger(
@@ -7533,14 +7598,19 @@ async function vendrediEtape19(page) {
 		verifierChaque(
 			'sur l’écran du vendredi, « Annuler cette session » envoyé pour le vendredi passé (formulaire modifié dans la page) est refusé en tête : « Cette session est déjà passée : … », sans confirmation',
 			{
-				'la phrase':
-					phrase ===
-					'Cette session est déjà passée : vous ne pouvez annuler que les sessions d’aujourd’hui et des jours suivants.',
+				'la phrase': phrase.startsWith(SESSION_PASSEE.debut) && phrase.endsWith(SESSION_PASSEE.fin),
 				'en tête': enTete,
 				'aucune confirmation': confirmations === 0
 			},
 			phrase
 		);
+		await retour('20-C2', async () => {
+			verifier(
+				`sur l’écran du vendredi, le refus d’un vendredi passé dit qu’une session passée ne s’annule ni ne se déplace : « ${SESSION_PASSEE.phrase} »`,
+				phrase === SESSION_PASSEE.phrase,
+				phrase
+			);
+		});
 	});
 
 	// Une salle libre, supprimée depuis un onglet de Réglages pendant qu'un second onglet de Réglages
@@ -8384,6 +8454,230 @@ async function quitterLaVoisine(page) {
 	});
 }
 
+/**
+ * r. Une séance déplacée dont la date prévue est passée (étape 20, C2). « Rétablir » la ramenait à
+ * cette date, où elle disparaissait sans message ; sa carte d'« À venir » et sa ligne de l'écran du
+ * vendredi proposent à la place de l'annuler à sa nouvelle date, avec le message à copier. Aucun
+ * écran ne déplace une séance depuis une date passée : le déplacement est écrit dans la base, pour
+ * un cours créé ici dont le premier jour est reculé, puis pour la session du vendredi, déplacée d'un
+ * vendredi passé au vendredi qui vient. Le cours est supprimé à la fin, et la session retrouve son
+ * premier jour, sans ce déplacement.
+ */
+async function deplaceeDUnJourPasse(page) {
+	etape('r. Une séance déplacée dont la date prévue est passée (étape 20)');
+	await deplaceeSurLAccueil(page);
+	await deplaceeSurLEcranDuVendredi(page);
+}
+
+/** r, sur « À venir » : un cours de la semaine, sa séance d'un jour passé arrivée au J4. */
+async function deplaceeSurLAccueil(page) {
+	const { titre: nom, debut, fin, arrivee } = DEPLACEE_D_UN_JOUR_PASSE;
+	const texte = ANNULER_LA_DEPLACEE.aVenir;
+	const jour = J4;
+	// Le même jour de la semaine, sept jours plus tôt : un jour déjà passé.
+	const prevue = plusJours(jour, -7);
+	const id = await creerCours(page, {
+		titre: nom,
+		public: 'open',
+		jour: jourDeSemaine(jour),
+		debut,
+		fin,
+		etat: 'publié'
+	});
+	verifier(`l’identifiant de « ${nom} » est lisible`, UUID.test(id), id || 'aucun identifiant');
+	// Le premier jour du cours est reculé avant la date prévue : sans cela, cette date ne serait pas
+	// une séance du cours, et son déplacement ne se lirait nulle part.
+	const pose = ecrireDansLaBase(
+		`update course set starts_on = '${plusJours(prevue, -7)}' where id = '${id}'; ` +
+			'insert into session_exception (id, organization_id, course_id, date, kind, to_date, to_start) ' +
+			`select uuidv7(), organization_id, id, '${prevue}', 'moved', '${jour}', '${arrivee}' from course where id = '${id}'`
+	);
+	verifier(
+		`la base déplace la séance de « ${nom} » prévue le ${dateSuisse(prevue)}, un jour passé, au ${dateSuisse(jour)} à ${arrivee}`,
+		pose.ok,
+		pose.sortie
+	);
+	const carteDuJour = (statut) =>
+		page
+			.locator('section', { has: page.locator(`[id="jour-${jour}"]`) })
+			.locator(`li.${statut}`)
+			.filter({ hasText: nom });
+	await ouvrir(page, '/');
+	await retour('20-C2', async () => {
+		const carte = carteDuJour('moved_here');
+		const presente = (await carte.count()) === 1;
+		const lue = presente ? await texteDe(carte) : `${await carte.count()} carte(s) d’arrivée`;
+		const options = carte.locator('details.options');
+		const repli = (await options.count()) === 1;
+		const resume = repli ? await texteDe(options.locator(':scope > summary')) : '';
+		const bouton = options.locator('form[action="?/annulerDeplacee"] button[type="submit"]');
+		const unBouton = (await bouton.count()) === 1;
+		verifierChaque(
+			`sur « À venir », une séance déplacée dont la date prévue est passée n’a plus « Rétablir la séance » : ses options, fermées sous « ${texte.resume} », proposent « ${texte.bouton} », avec l’aide qui dit qu’elle ne pourra pas être rétablie`,
+			{
+				'la carte, arrivée d’un jour passé':
+					presente && lue.includes(`Prévue à l’origine le ${dateLongue(prevue)}`),
+				'pas de « Rétablir la séance »':
+					(await carte.locator('form[action="?/retablir"]').count()) === 0,
+				[`les options « ${texte.resume} », fermées`]:
+					repli && resume === texte.resume && !(await estOuvert(options)),
+				[`« ${texte.bouton} »`]: unBouton && (await texteDe(bouton)) === texte.bouton,
+				'son aide': unBouton && (await descriptionDe(bouton)) === texte.aide
+			},
+			lue
+		);
+		await auditer(page, 'accueil, séance déplacée d’un jour passé');
+		const envoi = await exiger(
+			bouton,
+			`« ${texte.bouton} » sur la carte d’une séance déplacée dont la date prévue est passée`
+		);
+		await options.locator(':scope > summary').click();
+		await envoyer(page, envoi);
+		const titreDuBloc =
+			(await page.locator('#message-titre').count()) === 1
+				? await texteDe(page.locator('#message-titre'))
+				: '';
+		const francais =
+			(await messagesDeLAccueil(page, 'message')).find((message) => message.lang === 'fr')?.texte ??
+			'';
+		const annonce = `Le cours « ${nom} » du ${dateLongue(jour)} à ${arrivee} est annulé.`;
+		const annulee = carteDuJour('cancelled').filter({ hasText: `${arrivee} – ` });
+		const uneAnnulee = (await annulee.count()) === 1;
+		verifierChaque(
+			`annulée, elle le dit, « ${texte.fait} », le message à copier nomme sa nouvelle date et sa nouvelle heure, « ${annonce} », et sa carte porte « Séance annulée », sans « Rétablir la séance »`,
+			{
+				[`« ${texte.fait} »`]: titreDuBloc === texte.fait,
+				'le message, avec la nouvelle date et la nouvelle heure': francais.includes(annonce),
+				'« Séance annulée » sur la carte':
+					uneAnnulee && (await texteDe(annulee.locator('.titre .marque'))) === 'Séance annulée',
+				'pas de « Rétablir la séance »':
+					uneAnnulee && (await annulee.locator('form[action="?/retablir"]').count()) === 0
+			},
+			`« ${titreDuBloc} » ; ${francais.split('\n').find((ligne) => ligne.includes(nom)) ?? 'aucun message en français'} ; ${uneAnnulee ? await texteDe(annulee) : `${await annulee.count()} carte(s) annulée(s) à ${arrivee}`}`
+		);
+	});
+	await supprimerLeCours(page, nom, id);
+}
+
+/**
+ * r, sur l'écran du vendredi : la session du parcours, déplacée d'un vendredi passé au vendredi qui
+ * vient, à 16:30. Si le vendredi qui vient est aujourd'hui, le vendredi passé est celui d'il y a
+ * sept jours.
+ */
+async function deplaceeSurLEcranDuVendredi(page) {
+	const texte = ANNULER_LA_DEPLACEE.vendredi;
+	const jour = VENDREDI_QUI_VIENT;
+	const prevu = plusJours(jour, -7);
+	const heure = HEURE_DE_LA_SESSION_VENUE;
+	await ouvrir(page, '/vendredi');
+	const id =
+		(await page
+			.locator('section.session')
+			.filter({ hasText: `${VENDREDI.debut} – ${VENDREDI.fin}` })
+			.locator('input[name="courseId"]')
+			.first()
+			.getAttribute('value')) ?? '';
+	verifier(
+		`l’écran du vendredi donne l’identifiant de la session de ${VENDREDI.debut}`,
+		UUID.test(id),
+		id || 'aucun identifiant'
+	);
+	const premierJour = ecrireDansLaBase(`select starts_on::text from course where id = '${id}'`);
+	verifier(
+		'la base donne le premier jour de la session du vendredi',
+		premierJour.ok && /^\d{4}-\d{2}-\d{2}$/.test(premierJour.sortie),
+		premierJour.sortie
+	);
+	// Le premier jour de la session est reculé avant le vendredi passé, comme celui du cours sur
+	// « À venir » : sans cela, ce vendredi ne serait pas une de ses dates.
+	const pose = ecrireDansLaBase(
+		`update course set starts_on = '${plusJours(prevu, -7)}' where id = '${id}'; ` +
+			'insert into session_exception (id, organization_id, course_id, date, kind, to_date, to_start) ' +
+			`select uuidv7(), organization_id, id, '${prevu}', 'moved', '${jour}', '${heure}' from course where id = '${id}'`
+	);
+	try {
+		verifier(
+			`la base déplace la session du vendredi ${dateSuisse(prevu)}, passé, au ${dateSuisse(jour)} à ${heure}`,
+			pose.ok,
+			pose.sortie
+		);
+		await retour('20-C2', async () => {
+			await ouvrir(page, '/vendredi');
+			const ligne = page
+				.locator('section[aria-labelledby="ce-vendredi"] div.seance')
+				.filter({ hasText: `${heure} – ` });
+			const lue = async () =>
+				(await ligne.count()) === 1
+					? await texteDe(ligne)
+					: `${await ligne.count()} ligne(s) à ${heure} dans « Ce vendredi »`;
+			const avant = await lue();
+			const options = ligne.locator('details.options');
+			const repli = (await options.count()) === 1;
+			const resume = repli ? await texteDe(options.locator(':scope > summary')) : '';
+			const bouton = options.locator('form[action="?/annulerDeplacee"] button[type="submit"]');
+			const unBouton = (await bouton.count()) === 1;
+			verifierChaque(
+				`sur l’écran du vendredi, une session déplacée d’un vendredi passé n’a plus « Rétablir comme d’habitude » : ses options, fermées sous « ${texte.resume} », proposent « ${texte.bouton} », avec l’aide qui dit qu’elle ne pourra pas être rétablie`,
+				{
+					'la ligne « Nouvelle date, à la place du … »': avant.includes(
+						`Nouvelle date, à la place du ${dateLongue(prevu)}`
+					),
+					'pas de « Rétablir comme d’habitude »':
+						(await ligne.locator('form[action="?/retablir"]').count()) === 0,
+					[`les options « ${texte.resume} », fermées`]:
+						repli && resume === texte.resume && !(await estOuvert(options)),
+					[`« ${texte.bouton} »`]: unBouton && (await texteDe(bouton)) === texte.bouton,
+					'son aide': unBouton && (await descriptionDe(bouton)) === texte.aide
+				},
+				avant
+			);
+			const envoi = await exiger(
+				bouton,
+				`« ${texte.bouton} » sur la ligne d’une session déplacée d’un vendredi passé`
+			);
+			await options.locator(':scope > summary').click();
+			await envoyer(page, envoi);
+			const dit = (await page.getByRole('status').allTextContents()).map((phrase) =>
+				phrase.replace(/\s+/g, ' ').trim()
+			);
+			const bloc = page.locator('section.messages');
+			const titreDuBloc =
+				(await bloc.count()) === 1 ? await texteDe(bloc.locator('#message-titre')) : '';
+			const francais =
+				(await bloc.locator('#message-fr').count()) === 1
+					? await bloc.locator('#message-fr').inputValue()
+					: '';
+			const annonce = `« ${PRIERE_DU_VENDREDI.fr} » : la prière du ${dateLongue(jour)} à ${heure} est annulée.`;
+			const apres = await lue();
+			verifierChaque(
+				`annulée, elle le dit, « ${texte.fait} », le bloc « Message à copier » nomme sa nouvelle date et sa nouvelle heure, « ${annonce} », et sa ligne porte « ${texte.annulee} », sans « Rétablir comme d’habitude »`,
+				{
+					[`« ${texte.fait} »`]: dit.includes(texte.fait),
+					'le bloc « Message à copier »': titreDuBloc === 'Message à copier',
+					'le message, avec la nouvelle date et la nouvelle heure': francais.includes(annonce),
+					[`« ${texte.annulee} »`]: apres.includes(texte.annulee),
+					'pas de « Rétablir comme d’habitude »':
+						(await ligne.locator('form[action="?/retablir"]').count()) === 0
+				},
+				`${dit.map((phrase) => `« ${phrase} »`).join(', ') || 'aucune confirmation'} ; ${francais.split('\n').find((une) => une.includes(heure)) ?? 'aucun message en français'} ; ${apres}`
+			);
+			await auditer(page, 'vendredi, session déplacée d’un vendredi passé, annulée', {
+				recharger: false
+			});
+		});
+	} finally {
+		const remise = ecrireDansLaBase(
+			`delete from session_exception where course_id = '${id}' and date = '${prevu}'; ` +
+				`update course set starts_on = '${premierJour.sortie}' where id = '${id}'`
+		);
+		verifier(
+			'la session du vendredi retrouve son premier jour, sans son déplacement d’un vendredi passé',
+			remise.ok,
+			remise.sortie
+		);
+	}
+}
+
 // ---------------------------------------------------------------------------------------------
 // Le catalogue des vérifications des retours
 // ---------------------------------------------------------------------------------------------
@@ -8621,6 +8915,7 @@ C2 | sans JavaScript, de cette position, Bienne se cherche, se coche et s’enre
 D2 | depuis l’écran en allemand, la copie de « Winter » pour l’année suivante s’appelle « Winter (nächstes Jahr) »
 19-cours-session-vendredi | l’adresse /cours/<id> d’une session du vendredi mène, dans les cinq langues, au 404 de l’espace, « Page introuvable », « Seite nicht gefunden », « Pagina non trovata », « Page not found », « الصفحة غير موجودة », et non au formulaire d’un cours
 19-D2 | sur l’écran du vendredi, « Annuler cette session » envoyé pour le vendredi passé (formulaire modifié dans la page) est refusé en tête : « Cette session est déjà passée : … », sans confirmation
+20-C2 | sur l’écran du vendredi, le refus d’un vendredi passé dit qu’une session passée ne s’annule ni ne se déplace : « Cette session est déjà passée : vous ne pouvez annuler ou déplacer que les sessions d’aujourd’hui et des jours suivants. »
 19-membres-salle | dans Réglages, « Supprimer » sur une salle déjà supprimée depuis un autre onglet dit « Cette salle n’existe plus. », et non « Salle supprimée. »
 19-D2 | sur l’écran du vendredi, une session ajoutée dans une salle supprimée entre-temps est refusée, dans la section d’ajout, saisie gardée : « Cette salle n’existe plus : … »
 19-sermon | une session au sermon en albanais et en turc, deux langues que la page publique ne publie pas : sa carte dit « Sermon en albanais et turc », et la page publique « albanais et turc »
@@ -8656,6 +8951,10 @@ B3 | une responsable qui se donne le rôle d’éditeur arrive sur « À venir �
 19-membres-quitter | dans « Vos organisations », la seule personne responsable de « Centre du Parcours » qui veut la quitter lit, dans les cinq langues, un refus qui la nomme et dit quoi faire, sans demande de confirmation, et reste membre
 19-membres-quitter | dans « Vos organisations », « Quitter l’organisation » sur « Association voisine » : le bouton porte son nom pour les lecteurs d’écran, l’écran demande de confirmer en la nommant, puis l’encadré dit le départ, et l’organisation a quitté la liste
 19-membres-quitter | membre d’une seule organisation, sans invitation qui attende, elle trouve dans la navigation un seul lien vers /organisations, « Vos organisations », dans les cinq langues, à la place de « Changer d’organisation »
+20-C2 | sur « À venir », une séance déplacée dont la date prévue est passée n’a plus « Rétablir la séance » : ses options, fermées sous « Annuler », proposent « Annuler cette séance », avec l’aide qui dit qu’elle ne pourra pas être rétablie
+20-C2 | annulée, elle le dit, « La séance est annulée. », le message à copier nomme sa nouvelle date et sa nouvelle heure, « Le cours « Révision de la semaine » du JOUR JJ.MM.AAAA à 07:00 est annulé. », et sa carte porte « Séance annulée », sans « Rétablir la séance »
+20-C2 | sur l’écran du vendredi, une session déplacée d’un vendredi passé n’a plus « Rétablir comme d’habitude » : ses options, fermées sous « Annuler », proposent « Annuler cette session », avec l’aide qui dit qu’elle ne pourra pas être rétablie
+20-C2 | annulée, elle le dit, « La session est annulée à sa nouvelle date. Les autres vendredis ne changent pas. », le bloc « Message à copier » nomme sa nouvelle date et sa nouvelle heure, « « Prière du vendredi » : la prière du JOUR JJ.MM.AAAA à 16:30 est annulée. », et sa ligne porte « Annulée ce jour-là », sans « Rétablir comme d’habitude »
 A3 | aucune date écrite AAAA-MM-JJ sur les N écrans traversés (espace, super-admin, page publique, widget)
 F1 | aucun des N écrans traversés ne nomme la personne retirée du dépôt
 `
@@ -8712,6 +9011,7 @@ try {
 	await reglagesAuClavier(page);
 	await devenirEditrice(navigateur, page);
 	await quitterLaVoisine(page);
+	await deplaceeDUnJourPasse(page);
 	await bilanDesEcrans();
 } catch (erreur) {
 	echoue = true;
