@@ -4153,7 +4153,7 @@ describe('C2 : « aujourd’hui » est celui du fuseau de l’organisation (éta
 	});
 
 	it.each(['/', '/vendredi'] as const)(
-		'judges « Rétablir » and « Annuler cette séance » on %s by today in that zone',
+		'judges « Rétablir », « Annuler cette séance » and « Déplacer » on %s by today in that zone',
 		async (ecran) => {
 			const courseId = ecran === '/' ? cours : session;
 			const action = (nom: string) => `${ecran}?/${nom}`;
@@ -4164,10 +4164,11 @@ describe('C2 : « aujourd’hui » est celui du fuseau de l’organisation (éta
 				shownToDate: vers,
 				shownToStart: '20:30'
 			});
+			// La séance de la veille est déplacée à aujourd'hui, celle du jour à dans trois jours.
 			const deLaVeille = envoi(
 				hier,
-				await poserDeplacement(courseId, hier, addDays(aujourdhui, 2)),
-				addDays(aujourdhui, 2)
+				await poserDeplacement(courseId, hier, aujourdhui),
+				aujourdhui
 			);
 			const duJour = envoi(
 				aujourdhui,
@@ -4176,20 +4177,42 @@ describe('C2 : « aujourd’hui » est celui du fuseau de l’organisation (éta
 			);
 			try {
 				const avant = await exceptionsDe(courseId);
-				// Hier dans ce fuseau : « Rétablir » est refusé. Aujourd'hui : l'annulation de ce genre
-				// est refusée, sa carte a « Rétablir ». Rien ne s'écrit.
+				// Hier dans ce fuseau : « Rétablir » et « Déplacer » sont refusés. Aujourd'hui :
+				// l'annulation de ce genre est refusée, sa carte a « Rétablir ». Rien ne s'écrit.
 				const refusDuRetablissement = await postForm(action('retablir'), deLaVeille, cookie);
 				expect(refusDuRetablissement.status).toBe(400);
 				expect(alerte(await refusDuRetablissement.text())).toContain('ne peut plus être rétablie');
 				const refusDeLAnnulation = await postForm(action('annulerDeplacee'), duJour, cookie);
 				expect(refusDeLAnnulation.status).toBe(400);
 				expect(alerte(await refusDeLAnnulation.text())).toContain('n’est pas encore passé');
+				const refusDuDeplacement = await postForm(
+					action('deplacer'),
+					{ courseId, date: hier, toDate: addDays(aujourdhui, 4), toStart: '18:00' },
+					cookie
+				);
+				expect(refusDuDeplacement.status).toBe(400);
+				expect(alerte(await refusDuDeplacement.text())).toContain('est déjà passée');
 				expect(await exceptionsDe(courseId)).toEqual(avant);
-				// Et chacun passe là où l'autre est refusé.
+				// Et chacun passe là où l'autre est refusé : « Rétablir » la séance du jour, et annuler
+				// vers aujourd'hui la séance de la veille.
 				expect((await postForm(action('retablir'), duJour, cookie)).status).toBe(200);
 				expect((await postForm(action('annulerDeplacee'), deLaVeille, cookie)).status).toBe(200);
+				const annulee = { date: hier, kind: 'cancelled', to_date: aujourdhui, to_start: '20:30' };
+				if (ecran === '/vendredi') {
+					expect(await exceptionsDe(courseId)).toMatchObject([annulee]);
+					return;
+				}
+				// Sur « À venir », la séance du jour, rétablie, se déplace : aujourd'hui n'est pas passé.
+				// La session du vendredi, elle, n'a lieu que le vendredi.
+				const deplacement = await postForm(
+					action('deplacer'),
+					{ courseId, date: aujourdhui, toDate: addDays(aujourdhui, 4), toStart: '18:00' },
+					cookie
+				);
+				expect(deplacement.status).toBe(200);
 				expect(await exceptionsDe(courseId)).toMatchObject([
-					{ date: hier, kind: 'cancelled', to_date: addDays(aujourdhui, 2), to_start: '20:30' }
+					annulee,
+					{ date: aujourdhui, kind: 'moved', to_date: addDays(aujourdhui, 4), to_start: '18:00' }
 				]);
 			} finally {
 				await effacer();
