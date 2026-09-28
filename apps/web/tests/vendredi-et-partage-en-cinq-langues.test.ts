@@ -3219,6 +3219,26 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 		await poserLangueDuCompte(RESPONSABLE, 'fr');
 	});
 
+	it('describes « Annuler cette session » by its help, which says it cannot be undone, in each language', async () => {
+		// Au clavier, la personne passe du résumé au bouton : sans ce lien, le lecteur d'écran ne lisait
+		// pas l'aide, et la personne annulait sans savoir que c'est définitif.
+		try {
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const html = await (await get('/vendredi', cookies)).text();
+				const ligne = ligneDArrivee(html, langue)[0] ?? '';
+				const decrit =
+					attribut(ligne.match(/<button\b[^>]*>/)?.[0] ?? '', 'aria-describedby') ?? '';
+				expect(decrit, langue).not.toBe('');
+				expect(html.split(`id="${decrit}"`), langue).toHaveLength(2);
+				const aide = ligne.match(new RegExp(`<p\\b[^>]*\\sid="${decrit}"[^>]*>([\\s\\S]*?)</p>`));
+				expect(lu(aide?.[1] ?? ''), langue).toBe(AIDE[langue]);
+			}
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+		}
+	});
+
 	it('refuses « Rétablir » to a past Friday, says so at the top in each language, and writes nothing to the journal', async () => {
 		const avant = await exceptionsDeLaPremiere();
 		const journalAvant = await lignesDuJournalDeVendredi();

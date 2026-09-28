@@ -366,7 +366,10 @@
 							     « Rétablir » l'y ramenait, et elle disparaissait sans message (étape 20, C2). Sa
 							     carte propose de l'annuler à sa nouvelle date, derrière des options fermées,
 							     comme toute annulation (retour A1). Le formulaire envoie ce que la carte
-							     montrait, comme « Rétablir ». -->
+							     montrait, comme « Rétablir ». L'aide, qui dit que l'annulation est définitive,
+							     décrit le bouton : au clavier, le lecteur d'écran la lit avec lui. Sa date
+							     prévue la distingue : un cours n'a qu'une exception par date prévue. -->
+							{@const aide = `annulation-${seance.courseId}-${change.date}-aide`}
 							<details class="options">
 								<summary>{text.cancelOnly}</summary>
 								<form method="post" action="?/annulerDeplacee">
@@ -375,8 +378,10 @@
 									<input type="hidden" name="shownId" value={change.id} />
 									<input type="hidden" name="shownToDate" value={change.toDate} />
 									<input type="hidden" name="shownToStart" value={change.toStart} />
-									<p class="aide">{text.cancelMovedHelp}</p>
-									<button type="submit" class="danger">{text.cancelButton}</button>
+									<p id={aide} class="aide">{text.cancelMovedHelp}</p>
+									<button type="submit" class="danger" aria-describedby={aide}>
+										{text.cancelButton}
+									</button>
 								</form>
 							</details>
 						{:else}

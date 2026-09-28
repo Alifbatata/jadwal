@@ -3559,6 +3559,21 @@ describe('C2 : une séance déplacée dont la date prévue est passée (étape 2
 		}
 	});
 
+	it('describes « Annuler cette séance » by its help, which says it cannot be undone, in each language', async () => {
+		// Au clavier, la personne passe du résumé au bouton : sans ce lien, le lecteur d'écran ne lisait
+		// pas l'aide, et la personne annulait sans savoir que c'est définitif.
+		for (const langue of LANGUES) {
+			const html = await pageEn(langue);
+			const contenu = blocsDetails(carte(html, arrivee, LECTURE, 'moved_here'))[0]?.contenu ?? '';
+			const bouton = attributs(contenu.match(/<button\b[^>]*>/)?.[0] ?? '');
+			const decrit = bouton['aria-describedby'] ?? '';
+			expect(decrit, langue).not.toBe('');
+			expect(html.split(`id="${decrit}"`), langue).toHaveLength(2);
+			const aide = contenu.match(new RegExp(`<p\\b[^>]*\\sid="${decrit}"[^>]*>([\\s\\S]*?)</p>`));
+			expect(texte(aide?.[1] ?? ''), langue).toBe(AIDE[langue]);
+		}
+	});
+
 	it('keeps « Rétablir » alone on the card of a session moved from today or a later date', async () => {
 		const aujourdhui = await poserDeplacement(today, jour(4));
 		const demain = await poserDeplacement(jour(1), jour(5));

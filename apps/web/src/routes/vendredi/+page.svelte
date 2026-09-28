@@ -270,7 +270,9 @@
 							     « Rétablir » l'y ramenait, et elle disparaissait sans message (étape 20, C2).
 							     La ligne propose de l'annuler à sa nouvelle date, derrière des options
 							     fermées, comme sur « À venir ». Le formulaire envoie ce que la ligne
-							     montrait. -->
+							     montrait. L'aide, qui dit que l'annulation est définitive, décrit le bouton,
+							     comme sur « À venir ». -->
+							{@const aide = `annulation-${session.id}-${change.date}-aide`}
 							<details class="options">
 								<summary>{text.thisFriday.cancelOnly}</summary>
 								<form method="post" action="?/annulerDeplacee">
@@ -279,8 +281,10 @@
 									<input type="hidden" name="shownId" value={change.id} />
 									<input type="hidden" name="shownToDate" value={change.toDate} />
 									<input type="hidden" name="shownToStart" value={change.toStart} />
-									<p class="avertissement">{text.thisFriday.cancelMovedHelp}</p>
-									<button type="submit" class="danger">{text.thisFriday.cancel}</button>
+									<p id={aide} class="avertissement">{text.thisFriday.cancelMovedHelp}</p>
+									<button type="submit" class="danger" aria-describedby={aide}>
+										{text.thisFriday.cancel}
+									</button>
 								</form>
 							</details>
 						{:else}
