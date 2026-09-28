@@ -289,6 +289,16 @@
  *   « À venir » et sur la page publique), 19-cours-seance-barree et 19-annulee (une séance barrée,
  *   avec sa marque).
  *
+ * Ne pas accepter les conditions, et quitter l'organisation :
+ *
+ * - 20-C5 : l'écran d'acceptation propose « Ne pas accepter et quitter l’organisation ». La seule
+ *   personne responsable de l'organisation du parcours est refusée, en haut, avec la phrase propre à
+ *   cet écran, et accepte ensuite ; dans l'organisation voisine, où elle est éditrice, le premier
+ *   envoi demande de confirmer en haut de l'écran, sans rien supprimer, et « Rester dans
+ *   l’organisation » ramène à l'écran ; la personne invitée en italien dans la voisine, qui ne s'était
+ *   jamais connectée, confirme, quitte l'organisation et arrive sur « Vos organisations », avec
+ *   l'encadré du départ.
+ *
  * Les adresses d'exemple :
  *
  * - 20-C7 : l'exemple sous le champ de connexion et sous l'adresse d'une invitation, dans Membres,
@@ -304,7 +314,8 @@
  * - en arabe seul : 20-B1 et 20-B2, les phrases relues ;
  * - en français, en allemand et en arabe : 20-C7 (la connexion en français et en allemand, Membres
  *   en français et en arabe) ;
- * - en français seul : 20-C2, 20-C3, 20-cles, et les marques des cartes d'« À venir » (20-C4).
+ * - en français seul : 20-C2, 20-C3, 20-C5, 20-cles, et les marques des cartes d'« À venir »
+ *   (20-C4).
  *
  * ## La date figée (étape 19, D9)
  *
@@ -1125,10 +1136,21 @@ const RETOURS_DE_L_ETAPE_19 = [
 ];
 /**
  * Les corrections de l'étape 20 qui se voient à l'écran, dans l'ordre du plan de l'étape : l'arabe
- * relu (B1, B2), puis les questions de l'étape 19 (C2 à C7). L'en-tête du script dit ce que chacune
- * vérifie.
+ * relu (B1, B2), puis les questions de l'étape 19 (C2 à C7), et les clés des listes de séances,
+ * corrigées pendant l'étape (20-cles). C6, l'adresse sans lettre, ne se voit pas à l'écran : le
+ * super-admin la refusait déjà, et c'est la base qui la refuse aussi depuis l'étape 20, ce que les
+ * tests de `packages/db` éprouvent. L'en-tête du script dit ce que chacune vérifie.
  */
-const RETOURS_DE_L_ETAPE_20 = ['20-B1', '20-B2', '20-C2', '20-C3', '20-C4', '20-C7', '20-cles'];
+const RETOURS_DE_L_ETAPE_20 = [
+	'20-B1',
+	'20-B2',
+	'20-C2',
+	'20-C3',
+	'20-C4',
+	'20-C5',
+	'20-C7',
+	'20-cles'
+];
 /** Tous les retours, dans l'ordre du tableau final. */
 const RETOURS = [...RETOURS_DE_L_ETAPE_18, ...RETOURS_DE_L_ETAPE_19, ...RETOURS_DE_L_ETAPE_20];
 /**
@@ -2844,6 +2866,35 @@ async function superAdminEtape19(page) {
 }
 
 const AUTRE_ORGANISATION = 'Choisir une autre organisation';
+/**
+ * L'écran d'acceptation des conditions, ce que l'étape 20 y a ajouté (C5) : le bouton de qui ne veut
+ * pas les accepter (`terms.ts`), la phrase qu'y lit la seule personne responsable, propre à cet
+ * écran, et la demande de confirmation, qui reprend les mots de « Vos organisations »
+ * (`organisations.ts`).
+ */
+const QUITTER_SANS_ACCEPTER = {
+	bouton: 'Ne pas accepter et quitter l’organisation',
+	seuleResponsable:
+		'Une organisation garde toujours au moins une personne responsable. Pour la quitter, acceptez d’abord les conditions, puis, dans l’écran Membres, donnez le rôle de responsable à un autre membre ou invitez une personne comme responsable.',
+	demande: 'Vous allez quitter cette organisation :',
+	confirmer: 'Confirmer le départ',
+	rester: 'Rester dans l’organisation'
+};
+/**
+ * L'encadré de « Vos organisations » à l'arrivée d'une personne qui vient de quitter une
+ * organisation (`organisations.ts`, étape 19), depuis l'écran d'acceptation aussi (étape 20).
+ */
+const AVIS_DE_DEPART =
+	'Vous avez quitté l’organisation. Son espace ne vous est plus ouvert. Pour y revenir, demandez à une personne responsable de vous inviter de nouveau.';
+
+/** Vrai si l'élément vient avant le premier paragraphe de la page qui porte cette classe. */
+const avantLe = (element, classe) =>
+	element.evaluate((bloc, nom) => {
+		const suivant = document.querySelector(`main p.${nom}`);
+		return Boolean(
+			suivant && bloc.compareDocumentPosition(suivant) & Node.DOCUMENT_POSITION_FOLLOWING
+		);
+	}, classe);
 
 /**
  * L'écran `/conditions/accepter`, où la porte de l'espace renvoie : le texte entier, sa version, le
@@ -2978,6 +3029,39 @@ async function personneInvitee(navigateur) {
 		pourquoi: 'avec une organisation et une invitation qui attend'
 	});
 	await auditer(page, 'conditions à accepter');
+	// Ne pas accepter, et partir (étape 20, C5) : la seule personne responsable de l'organisation est
+	// refusée, en haut de l'écran, avec la phrase propre à cet écran. Elle reste membre, et accepte
+	// ensuite.
+	await retour('20-C5', async () => {
+		await envoyer(
+			page,
+			await exiger(
+				page.getByRole('button', { name: QUITTER_SANS_ACCEPTER.bouton, exact: true }),
+				`le bouton « ${QUITTER_SANS_ACCEPTER.bouton} »`
+			)
+		);
+		const refus = page.locator('#refus-depart');
+		const present = (await refus.count()) === 1;
+		const texte = (await refus.locator('p').allTextContents())
+			.map((paragraphe) => paragraphe.replace(/\s+/g, ' ').trim())
+			.join(' ');
+		verifierChaque(
+			`sur l’écran d’acceptation, la seule personne responsable de « ${ORGANISATION.nom} » qui choisit « ${QUITTER_SANS_ACCEPTER.bouton} » est refusée en haut, avec la phrase propre à cet écran, sans demande de confirmation, et l’écran reste celui des conditions`,
+			{
+				'le refus, avec la phrase de cet écran':
+					texte ===
+					`${SEULE_RESPONSABLE.fr.avantLeNom} ${ORGANISATION.nom} ${QUITTER_SANS_ACCEPTER.seuleResponsable}`,
+				'annoncé (role=alert), en haut':
+					present &&
+					(await refus.getAttribute('role')) === 'alert' &&
+					(await avantLe(refus, 'raison')),
+				'sans demande de confirmation': (await page.locator('#confirmer-depart').count()) === 0,
+				'l’écran des conditions, le bouton qui accepte en place':
+					chemin(page) === '/conditions/accepter' && (await bouton.count()) === 1
+			},
+			texte || `aucun refus, ${chemin(page)}`
+		);
+	});
 	await envoyer(page, bouton);
 	verifierChaque(
 		'après avoir accepté, elle arrive à l’accueil de son espace, et la navigation revient',
@@ -3027,6 +3111,55 @@ async function personneInvitee(navigateur) {
 	const { lien: autre } = await ecranDAcceptation(page, VOISINE, {
 		lienAttendu: true,
 		pourquoi: 'avec deux organisations'
+	});
+	// Ne pas accepter, et partir (étape 20, C5) : éditrice, elle peut quitter la voisine d'ici. Le
+	// premier envoi ne supprime rien : il demande de confirmer, en haut de l'écran, et « Rester dans
+	// l’organisation » ramène à l'écran, qui la nomme encore, preuve qu'elle en est toujours membre.
+	await retour('20-C5', async () => {
+		await envoyer(
+			page,
+			await exiger(
+				page.getByRole('button', { name: QUITTER_SANS_ACCEPTER.bouton, exact: true }),
+				`le bouton « ${QUITTER_SANS_ACCEPTER.bouton} »`
+			)
+		);
+		const demande = page.locator('#confirmer-depart');
+		const presente = (await demande.count()) === 1;
+		const texte = presente ? await texteDe(demande) : '';
+		const rester = demande.getByRole('link', { name: QUITTER_SANS_ACCEPTER.rester, exact: true });
+		verifierChaque(
+			`sur l’écran d’acceptation de « ${VOISINE.nom} », « ${QUITTER_SANS_ACCEPTER.bouton} » ne supprime rien au premier envoi : en haut, « ${QUITTER_SANS_ACCEPTER.demande} ${VOISINE.nom} », « ${QUITTER_SANS_ACCEPTER.confirmer} » et « ${QUITTER_SANS_ACCEPTER.rester} »`,
+			{
+				'la demande nomme l’organisation': texte.startsWith(
+					`${QUITTER_SANS_ACCEPTER.demande} ${VOISINE.nom}`
+				),
+				'annoncée (role=alert), en haut':
+					presente &&
+					(await demande.getAttribute('role')) === 'alert' &&
+					(await avantLe(demande, 'raison')),
+				[`« ${QUITTER_SANS_ACCEPTER.confirmer} »`]:
+					(await demande
+						.getByRole('button', { name: QUITTER_SANS_ACCEPTER.confirmer, exact: true })
+						.count()) === 1,
+				[`« ${QUITTER_SANS_ACCEPTER.rester} »`]: (await rester.count()) === 1
+			},
+			texte || `aucune demande, ${chemin(page)}`
+		);
+		await envoyer(page, await exiger(rester, `le lien « ${QUITTER_SANS_ACCEPTER.rester} »`));
+		const raison = await texteDe(page.locator('main p.raison'));
+		verifierChaque(
+			`« ${QUITTER_SANS_ACCEPTER.rester} » ramène à l’écran d’acceptation de « ${VOISINE.nom} », sans demande, et elle en est toujours membre`,
+			{
+				'l’écran d’acceptation': chemin(page) === '/conditions/accepter',
+				'sans demande': (await page.locator('#confirmer-depart').count()) === 0,
+				'l’écran nomme toujours la voisine': raison.includes(VOISINE.nom),
+				'le bouton qui accepte':
+					(await page
+						.getByRole('button', { name: 'J’accepte les conditions d’utilisation', exact: true })
+						.count()) === 1
+			},
+			`${chemin(page)} ; « ${raison.slice(0, 80)} »`
+		);
 	});
 	await suivre(page, autre, '/organisations');
 	await envoyer(page, page.getByRole('button', { name: ORGANISATION.nom, exact: true }));
@@ -3118,6 +3251,73 @@ async function personneInvitee(navigateur) {
 		`${chemin(page)} « ${await page.title()} »`
 	);
 	return { contexte, page };
+}
+
+/**
+ * b, ne pas accepter les conditions, et quitter l'organisation (étape 20, C5). La personne invitée en
+ * italien dans l'organisation voisine, sans compte jusqu'ici, se connecte et accepte l'invitation ;
+ * sur l'écran des conditions, elle choisit de ne pas les accepter et de quitter l'organisation, puis
+ * confirme. Elle arrive sur « Vos organisations », où l'encadré dit le départ. Rien d'autre dans le
+ * parcours ne dépend de cette invitation.
+ */
+async function quitterSansAccepter(navigateur) {
+	etape('b, ne pas accepter les conditions, et quitter l’organisation (étape 20)');
+	const contexte = await nouveauContexte(navigateur);
+	try {
+		const page = await contexte.newPage();
+		await ouvrir(page, '/connexion');
+		const avant = courriels().length;
+		await demanderUnLien(page, INVITEE_EN_ITALIEN);
+		const lien = await nouveauLienDeConnexion(INVITEE_EN_ITALIEN, avant);
+		verifier(
+			`la personne invitée en italien dans « ${VOISINE.nom} » reçoit son lien de connexion`,
+			Boolean(lien)
+		);
+		await ouvrir(page, /** @type {string} */ (lien));
+		await envoyer(
+			page,
+			page.locator('li').filter({ hasText: VOISINE.nom }).getByRole('button', { name: 'Accepter' })
+		);
+		verifier(
+			`elle accepte l’invitation de « ${VOISINE.nom} », et la porte la mène aux conditions`,
+			chemin(page) === '/conditions/accepter',
+			chemin(page)
+		);
+		await retour('20-C5', async () => {
+			await envoyer(
+				page,
+				await exiger(
+					page.getByRole('button', { name: QUITTER_SANS_ACCEPTER.bouton, exact: true }),
+					`le bouton « ${QUITTER_SANS_ACCEPTER.bouton} »`
+				)
+			);
+			await envoyer(
+				page,
+				await exiger(
+					page
+						.locator('#confirmer-depart')
+						.getByRole('button', { name: QUITTER_SANS_ACCEPTER.confirmer, exact: true }),
+					`le bouton « ${QUITTER_SANS_ACCEPTER.confirmer} »`
+				)
+			);
+			const adresse = new URL(page.url());
+			const avis = page.locator('#avis-depart');
+			const texte = (await avis.count()) === 1 ? await texteDe(avis) : '';
+			verifierChaque(
+				`sur l’écran d’acceptation, une personne qui confirme « ${QUITTER_SANS_ACCEPTER.bouton} » quitte « ${VOISINE.nom} » : elle arrive sur « Vos organisations », où l’encadré dit le départ, et l’organisation n’y est plus`,
+				{
+					'l’arrivée sur « Vos organisations »':
+						adresse.pathname === '/organisations' && (await titre(page)) === 'Vos organisations',
+					'l’encadré du départ': texte === AVIS_DE_DEPART,
+					'l’organisation n’y est plus':
+						(await page.locator('main').getByText(VOISINE.nom).count()) === 0
+				},
+				`${adresse.pathname} ; « ${texte || 'aucun encadré'} »`
+			);
+		});
+	} finally {
+		await contexte.close();
+	}
 }
 
 /**
@@ -8295,9 +8495,7 @@ async function seRetirerDeMembres(seconde, ligne) {
 				'la demande « Vous allez vous retirer vous-même de l’organisation. »':
 					texteDeLaDemande.startsWith('Vous allez vous retirer vous-même de l’organisation.'),
 				'l’arrivée sur « Vos organisations »': adresse.pathname === '/organisations',
-				'l’encadré':
-					texte ===
-					'Vous avez quitté l’organisation. Son espace ne vous est plus ouvert. Pour y revenir, demandez à une personne responsable de vous inviter de nouveau.',
+				'l’encadré': texte === AVIS_DE_DEPART,
 				'annoncé (role=status), avant le titre': avantLeTitre && role === 'status',
 				'visible sans défiler': boite !== null && boite.y >= 0 && boite.y + boite.height <= hauteur,
 				'plus d’encadré au rechargement': apresRechargement === 0
@@ -8412,9 +8610,7 @@ async function quitterLaVoisine(page) {
 				'la demande nomme l’organisation': texteDeLaDemande.startsWith(
 					`Vous allez quitter cette organisation : ${VOISINE.nom}`
 				),
-				'l’encadré du départ':
-					texte ===
-					'Vous avez quitté l’organisation. Son espace ne vous est plus ouvert. Pour y revenir, demandez à une personne responsable de vous inviter de nouveau.',
+				'l’encadré du départ': texte === AVIS_DE_DEPART,
 				'l’organisation a quitté la liste': restantes === 0
 			},
 			`« ${description} » ; « ${texteDeLaDemande.slice(0, 80)} » ; « ${texte || 'aucun encadré'} »`
@@ -8788,7 +8984,11 @@ D3 | une invitation envoyée depuis l’écran en allemand part en allemand, <ht
 B2 | sans JavaScript, « École du Lac », créée à la confirmation, reçoit l’adresse que le serveur a proposée, « ecole-du-lac », et l’écran dit l’adresse entière
 A3 | la version et la date du texte s’écrivent en JJ.MM.AAAA, « Version du JJ.MM.AAAA »
 H2 | avec une organisation et une invitation qui attend, le lien « Choisir une autre organisation » est là, vers le choix
+20-C5 | sur l’écran d’acceptation, la seule personne responsable de « Centre du Parcours » qui choisit « Ne pas accepter et quitter l’organisation » est refusée en haut, avec la phrase propre à cet écran, sans demande de confirmation, et l’écran reste celui des conditions
 19-D8 | l’écran d’acceptation écrit « l’espace d’Association voisine », en haut et sous le bouton
+20-C5 | sur l’écran d’acceptation de « Association voisine », « Ne pas accepter et quitter l’organisation » ne supprime rien au premier envoi : en haut, « Vous allez quitter cette organisation : Association voisine », « Confirmer le départ » et « Rester dans l’organisation »
+20-C5 | « Rester dans l’organisation » ramène à l’écran d’acceptation de « Association voisine », sans demande, et elle en est toujours membre
+20-C5 | sur l’écran d’acceptation, une personne qui confirme « Ne pas accepter et quitter l’organisation » quitte « Association voisine » : elle arrive sur « Vos organisations », où l’encadré dit le départ, et l’organisation n’y est plus
 D1 | les réglages proposent l’anglais parmi les langues de la page publique
 B1 | la navigation nomme ces écrans par leur titre, « Heures de prière » et « Prière du vendredi »
 B1 | l’écran le confirme sans jargon, « Les heures de prière sont activées. »
@@ -9052,6 +9252,7 @@ try {
 
 	await superAdmin(navigateur);
 	const { page } = await personneInvitee(navigateur);
+	await quitterSansAccepter(navigateur);
 	await programme(page);
 
 	const visiteurs = await nouveauContexte(navigateur);
