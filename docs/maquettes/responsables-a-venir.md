@@ -182,8 +182,12 @@ Titre `Le programme de la semaine`, puis `Le programme des sept prochains jours,
 WhatsApp. Il est écrit dans chaque langue de votre page publique, la langue par défaut d'abord :
 ouvrez une langue, puis copiez son texte.` Un repli par langue publiée, le premier ouvert, avec sa
 zone `Programme de la semaine`. Une séance déplacée y porte `(date exceptionnelle)`, ou
-`(nouvelle heure)` quand elle n'a changé que d'heure, le même jour. Une session du vendredi qui
-porte le nom proposé par le service y prend le nom de la prière dans chaque langue.
+`(nouvelle heure)` quand elle n'a changé que d'heure, le même jour. Une séance annulée y reste à sa
+date, avec `(SÉANCE ANNULÉE)`, et une session du vendredi avec `(SESSION ANNULÉE)` : l'état s'écrit
+avec son propre nom, jamais accordé au titre qui le précède (étape 20). La ligne disait `(ANNULÉ)`
+après tout titre. Déplacée puis annulée, une séance y figure à sa nouvelle date et à sa nouvelle
+heure, avec la même marque. Une session du vendredi qui porte le nom proposé par le service y prend
+le nom de la prière dans chaque langue.
 
 C'est le message de l'écran Partager, mot pour mot (étape 19) : les cours publiés seulement. Un
 cours en brouillon n'y est pas, et une session du vendredi en brouillon ne donne pas son heure à un

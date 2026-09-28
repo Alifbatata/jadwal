@@ -20,7 +20,9 @@ jours, annulations comprises.`, puis `Il est écrit dans chacune des langues de 
 ouvrez celle de votre groupe.` Un repli par langue publiée, la langue de l'organisation d'abord et
    ouverte (`En français (la langue principale de votre page)`, `En allemand`…). Chaque zone porte
    `lang`, `dir` et un nom : `Programme de la semaine en allemand`. Un cours y garde son titre
-   traduit quand il existe, sinon son titre source.
+   traduit quand il existe, sinon son titre source. Une séance annulée y porte `(SÉANCE ANNULÉE)`,
+   une session du vendredi `(SESSION ANNULÉE)` (étape 20) : c'est le message d'À venir, décrit dans
+   `responsables-a-venir.md`, section « Le programme de la semaine ».
 4. **Le QR code** : `Un téléphone qui photographie ce carré ouvre votre page publique. Imprimez-le
 sur une affiche ou une annonce.`, l'image (nommée `QR code de votre page publique` pour les lecteurs
    d'écran, dans la langue de l'écran), et `Télécharger le QR code (image)`.
