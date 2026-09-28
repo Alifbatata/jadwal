@@ -109,7 +109,7 @@
  *   Membres et un rôle inconnu, que le parcours ajoute au choix du rôle comme un formulaire écrit à
  *   la main (B8), l'aide du bouton de Google sur Android (B11).
  * - 19-B12 : l'exemple du super-admin, « Association Horizon » et « association-horizon », en
- *   arabe « جمعية الأفق », et la règle de l'adresse.
+ *   arabe « جمعية الأفق », et la règle de l'adresse, dans les cinq langues.
  * - 19-C : l'invitation part dans la langue choisie sous l'adresse, et non dans celle de l'écran.
  *
  * Les défauts :
@@ -131,7 +131,8 @@
  *
  * Les décisions appliquées, sur la page publique et l'agenda :
  *
- * - 19-agenda-outlook : « Outlook (travail ou école) », et à quels comptes sert chaque Outlook.
+ * - 19-agenda-outlook : « Outlook (travail ou école) », et à quels comptes sert chaque Outlook,
+ *   dans les cinq langues.
  * - 19-agenda-android : sur Android, « ouvrez cette page sur un ordinateur », puis l'adresse de la
  *   page, sur la page d'abonnement et sur celle d'un cours.
  * - 19-agenda-derniere-minute : la page du programme pour un changement de dernière minute, à la
@@ -140,7 +141,7 @@
  * - 19-agenda-autre-appareil : « Une autre application ou un autre appareil ? », puis le lien
  *   « Voir tous les choix », seul.
  * - 19-annulee : une session du vendredi annulée porte « Annulée », accordé à la prière, dans la vue
- *   Semaine, l'onglet « Prières » et la vue Mois.
+ *   Semaine, l'onglet « Prières » et la vue Mois, dans les cinq langues.
  * - 19-widget-prieres : le widget posé avec `view="prieres"` s'ouvre sur l'onglet « Prières ».
  * - 19-og-locale : `og:locale` et un `og:locale:alternate` par autre langue publiée.
  * - 19-langue-non-activee : une langue que l'organisation ne publie pas renvoie à sa langue par
@@ -197,6 +198,22 @@
  * - 19-retablir-nouvelle-date : « Rétablir comme d’habitude » sur la ligne « Nouvelle date ».
  * - 19-jour-sans-seance : annuler un jour sans séance, par un formulaire modifié dans la page, est
  *   refusé par une phrase, sur « À venir » et sur l'écran du vendredi.
+ *
+ * Les langues vérifiées, retour par retour. Une correction faite dans les cinq langues n'est pas
+ * toujours vérifiée dans les cinq : les phrases de chaque langue sont éprouvées par les tests de
+ * `apps/web`, et le parcours en lit ici :
+ *
+ * - dans les cinq langues : 19-B12, 19-agenda-outlook, 19-annulee, 19-og-locale (la page du
+ *   programme ; la page d'un cours et celle de l'abonnement en français, en anglais et en arabe),
+ *   19-prieres-angle, le refus fait à la seule personne responsable (19-membres-quitter), et le
+ *   programme de la semaine de 19-D4 ;
+ * - en arabe seul : 19-B1 à 19-B11, les phrases relues ;
+ * - dans deux langues ou plus, sans les cinq : 19-cours-seance-barree (français, anglais, arabe),
+ *   19-titre-langue-ecran (allemand, arabe), 19-C (l'écran en français, le courriel en italien) ;
+ * - dans une autre langue que le français : 19-D7 (italien), 19-adresse-sans-langue (allemand),
+ *   19-404-organisation et 19-langue-non-activee (l'anglais demandé ; l'arabe, puis le français
+ *   servis) ;
+ * - en français seul : tous les autres.
  *
  * Ce que l'étape 19 a changé sans que cela se voie à l'écran n'est pas ici : la base (le journal
  * signé, les droits de lecture, la suppression réservée, le type figé, le départ permis) est
@@ -395,6 +412,34 @@ const EXEMPLE_DU_SUPER_ADMIN = {
 	nom: 'Association Horizon',
 	nomArabe: 'جمعية الأفق',
 	adresse: 'association-horizon'
+};
+/**
+ * Sous les champs du super-admin, dans chaque langue (`apps/web/src/lib/i18n/super-admin.ts`) : le
+ * mot qui annonce l'exemple, et la règle de l'adresse, qui demande une lettre (étape 19, B12).
+ */
+const SOUS_LES_CHAMPS_DU_SUPER_ADMIN = {
+	fr: {
+		exemple: 'Exemple :',
+		regle:
+			'Lettres minuscules sans accent ni cédille, chiffres et traits d’union, avec au moins une lettre.'
+	},
+	de: {
+		exemple: 'Beispiel:',
+		regle:
+			'Kleinbuchstaben ohne Umlaute und Akzente, Ziffern und Bindestriche, mit mindestens einem Buchstaben.'
+	},
+	it: {
+		exemple: 'Esempio:',
+		regle: 'Lettere minuscole senza accenti, cifre e trattini, con almeno una lettera.'
+	},
+	en: {
+		exemple: 'Example:',
+		regle: 'Lower-case letters without accents, digits and hyphens, with at least one letter.'
+	},
+	ar: {
+		exemple: 'مثال:',
+		regle: 'أحرف لاتينية صغيرة بلا علامات، وأرقام، وشرطات، مع حرف واحد على الأقل.'
+	}
 };
 /** La seconde organisation de la personne invitée, où elle est éditrice. */
 const VOISINE = {
@@ -608,6 +653,48 @@ const PRIERE_DU_VENDREDI = {
 	it: 'Preghiera del venerdì',
 	en: 'Friday prayer',
 	ar: 'صلاة الجمعة'
+};
+/**
+ * La marque d'une session du vendredi annulée, accordée à la prière, dans chaque langue de la page
+ * publique (`cancelledJumua`, `apps/web/src/lib/i18n.ts`, étape 19).
+ */
+const ANNULEE_DU_VENDREDI = {
+	fr: 'Annulée',
+	de: 'Abgesagt',
+	it: 'Annullata',
+	en: 'Cancelled',
+	ar: 'ملغاة'
+};
+/**
+ * Sur un ordinateur, l'Outlook des comptes de travail ou d'école, et ce que l'aide de chaque Outlook
+ * dit des comptes qu'il sert, dans chaque langue (`apps/web/src/lib/i18n.ts`, étape 19).
+ */
+const OUTLOOK_TRAVAIL = {
+	fr: {
+		lien: 'Outlook (travail ou école)',
+		personnels: 'Ce lien sert aux comptes personnels.',
+		travail: 'Ce lien sert aux comptes de travail ou d’école.'
+	},
+	de: {
+		lien: 'Outlook (Arbeit oder Schule)',
+		personnels: 'Dieser Link ist für private Konten.',
+		travail: 'Dieser Link ist für Geschäfts- oder Schulkonten.'
+	},
+	it: {
+		lien: 'Outlook (lavoro o scuola)',
+		personnels: 'Questo link è per gli account personali.',
+		travail: 'Questo link è per gli account di lavoro o di scuola.'
+	},
+	en: {
+		lien: 'Outlook (work or school)',
+		personnels: 'This link is for personal accounts.',
+		travail: 'This link is for work or school accounts.'
+	},
+	ar: {
+		lien: 'Outlook (عمل أو مدرسة)',
+		personnels: 'هذا الرابط للحسابات الشخصية.',
+		travail: 'هذا الرابط لحسابات العمل أو المدرسة.'
+	}
 };
 /**
  * La fin de l'aide de la règle des nuits courtes, dans chaque langue (`ruleHint`,
@@ -2385,34 +2472,34 @@ async function inviterDansLaLangueChoisie(page) {
 async function superAdminEtape19(page) {
 	await retour('19-B12', async () => {
 		const lus = {};
-		for (const langue of ['fr', 'ar']) {
+		for (const langue of LANGUES) {
 			await ouvrir(page, '/super-admin');
-			if (langue !== 'fr') await choisirLaLangue(page, langue);
+			if ((await racineDit(page, 'lang')) !== langue) await choisirLaLangue(page, langue);
 			lus[langue] = {
 				nom: await texteDe(await exiger(page.locator('#name-aide'), 'l’aide du nom')),
 				adresse: await texteDe(await exiger(page.locator('#slug-regle'), 'la règle de l’adresse'))
 			};
 		}
 		verifierChaque(
-			`sous le nom et sous l’adresse d’une organisation, l’exemple est « ${EXEMPLE_DU_SUPER_ADMIN.nom} » et « ${EXEMPLE_DU_SUPER_ADMIN.adresse} », en arabe « ${EXEMPLE_DU_SUPER_ADMIN.nomArabe} », et la règle de l’adresse demande une lettre`,
-			{
-				[`« ${EXEMPLE_DU_SUPER_ADMIN.nom} » sous le nom`]: lus.fr.nom.endsWith(
-					`Exemple : ${EXEMPLE_DU_SUPER_ADMIN.nom}`
-				),
-				'la règle de l’adresse': lus.fr.adresse.startsWith(
-					'Lettres minuscules sans accent ni cédille, chiffres et traits d’union, avec au moins une lettre.'
-				),
-				[`« ${EXEMPLE_DU_SUPER_ADMIN.adresse} » sous l’adresse`]: lus.fr.adresse.endsWith(
-					`Exemple : ${EXEMPLE_DU_SUPER_ADMIN.adresse}`
-				),
-				[`« ${EXEMPLE_DU_SUPER_ADMIN.nomArabe} » sous le nom, en arabe`]: lus.ar.nom.endsWith(
-					EXEMPLE_DU_SUPER_ADMIN.nomArabe
-				),
-				[`« ${EXEMPLE_DU_SUPER_ADMIN.adresse} » sous l’adresse, en arabe`]: lus.ar.adresse.endsWith(
-					EXEMPLE_DU_SUPER_ADMIN.adresse
-				)
-			},
-			`« ${lus.fr.nom} » ; « ${lus.fr.adresse} » ; « ${lus.ar.nom} » ; « ${lus.ar.adresse} »`
+			`dans les cinq langues, sous le nom et sous l’adresse d’une organisation, l’exemple est « ${EXEMPLE_DU_SUPER_ADMIN.nom} » et « ${EXEMPLE_DU_SUPER_ADMIN.adresse} », en arabe « ${EXEMPLE_DU_SUPER_ADMIN.nomArabe} », et la règle de l’adresse demande une lettre`,
+			Object.fromEntries(
+				LANGUES.flatMap((langue) => {
+					const { exemple, regle } = SOUS_LES_CHAMPS_DU_SUPER_ADMIN[langue];
+					const nom =
+						langue === 'ar' ? EXEMPLE_DU_SUPER_ADMIN.nomArabe : EXEMPLE_DU_SUPER_ADMIN.nom;
+					return [
+						[`« ${nom} » sous le nom, ${langue}`, lus[langue].nom.endsWith(`${exemple} ${nom}`)],
+						[`la règle de l’adresse, ${langue}`, lus[langue].adresse.startsWith(regle)],
+						[
+							`« ${EXEMPLE_DU_SUPER_ADMIN.adresse} » sous l’adresse, ${langue}`,
+							lus[langue].adresse.endsWith(`${exemple} ${EXEMPLE_DU_SUPER_ADMIN.adresse}`)
+						]
+					];
+				})
+			),
+			LANGUES.map(
+				(langue) => `${langue} : « ${lus[langue].nom} » ; « ${lus[langue].adresse} »`
+			).join(' | ')
 		);
 	});
 	if ((await racineDit(page, 'lang')) !== 'fr') await choisirLaLangue(page, 'fr');
@@ -4388,24 +4475,53 @@ async function appareils(navigateur) {
 			`iPhone : ${iphone.page.slice(Math.max(0, delaiOutlook), delaiOutlook + 200)}`
 		);
 	});
+	// Dans les cinq langues : la page française est celle du choix complet, déjà lue plus haut, et
+	// les quatre autres sont demandées par le même ordinateur. Le flux d'une autre langue porte
+	// `?lang=` : l'adresse d'Outlook commence de même.
 	await retour('19-agenda-outlook', async () => {
-		const travail = windows.liens.find((lien) =>
-			lien.texte.startsWith('Outlook (travail ou école)')
+		const pages = { fr: windows };
+		for (const langue of LANGUES.filter((code) => code !== 'fr')) {
+			pages[langue] = await abonnementSelon(
+				navigateur,
+				APPAREILS.windows,
+				`/m/${ORGANISATION.slug}/${langue}/agenda`
+			);
+		}
+		const travail = Object.fromEntries(
+			LANGUES.map((langue) => [
+				langue,
+				pages[langue].liens.find((lien) => lien.texte.startsWith(OUTLOOK_TRAVAIL[langue].lien))
+			])
 		);
 		verifierChaque(
-			'sur un ordinateur, « Outlook (travail ou école) » ouvre outlook.office.com dans un nouvel onglet, et chaque Outlook dit à quels comptes il sert',
-			{
-				'le lien « Outlook (travail ou école) »': Boolean(travail),
-				'vers outlook.office.com': commencePar(travail?.href ?? '', outlookTravail),
-				'dans un nouvel onglet': travail?.target === '_blank',
-				'« Ce lien sert aux comptes personnels. »': windows.texte.includes(
-					'Ce lien sert aux comptes personnels.'
-				),
-				'« Ce lien sert aux comptes de travail ou d’école. »': windows.texte.includes(
-					'Ce lien sert aux comptes de travail ou d’école.'
-				)
-			},
-			windows.liens.map((lien) => lien.texte).join(' | ') || 'aucun lien'
+			'sur un ordinateur, dans les cinq langues, « Outlook (travail ou école) » ouvre outlook.office.com dans un nouvel onglet, et chaque Outlook dit à quels comptes il sert',
+			Object.fromEntries(
+				LANGUES.flatMap((langue) => [
+					[`« ${OUTLOOK_TRAVAIL[langue].lien} »`, Boolean(travail[langue])],
+					[
+						`vers outlook.office.com, ${langue}`,
+						commencePar(travail[langue]?.href ?? '', outlookTravail)
+					],
+					[`dans un nouvel onglet, ${langue}`, travail[langue]?.target === '_blank'],
+					[
+						`« ${OUTLOOK_TRAVAIL[langue].personnels} »`,
+						pages[langue].texte.includes(OUTLOOK_TRAVAIL[langue].personnels)
+					],
+					[
+						`« ${OUTLOOK_TRAVAIL[langue].travail} »`,
+						pages[langue].texte.includes(OUTLOOK_TRAVAIL[langue].travail)
+					]
+				])
+			),
+			LANGUES.map(
+				(langue) =>
+					`${langue} : ${
+						pages[langue].liens
+							.filter((lien) => lien.texte.startsWith('Outlook'))
+							.map((lien) => lien.texte)
+							.join(' | ') || 'aucun lien Outlook'
+					}`
+			).join(' ; ')
 		);
 	});
 	await retour('19-agenda-page-du-cours', async () => {
@@ -6692,10 +6808,9 @@ async function vendrediAnnule(page) {
 		try {
 			const visiteur = await contexte.newPage();
 			const marques = {};
-			for (const [langue, titreDeLaSession, annulee] of [
-				['fr', nom, 'Annulée'],
-				['ar', PRIERE_DU_VENDREDI.ar, 'ملغاة']
-			]) {
+			for (const langue of LANGUES) {
+				const titreDeLaSession = PRIERE_DU_VENDREDI[langue];
+				const annulee = ANNULEE_DU_VENDREDI[langue];
 				const base = `/m/${ORGANISATION.slug}${langue === 'fr' ? '' : `/${langue}`}`;
 				await ouvrir(visiteur, base);
 				const semaine = (await seancesPubliques(visiteur, titreDeLaSession)).find(
@@ -6713,7 +6828,7 @@ async function vendrediAnnule(page) {
 				};
 			}
 			verifierChaque(
-				'annulée, la session du vendredi porte « Annulée » (en arabe « ملغاة »), accordé à la prière, dans la vue Semaine, l’onglet « Prières » et la vue Mois',
+				'annulée, la session du vendredi porte, dans les cinq langues, « Annulée », « Abgesagt », « Annullata », « Cancelled » et « ملغاة », accordé à la prière, dans la vue Semaine, l’onglet « Prières » et la vue Mois',
 				Object.fromEntries(
 					Object.entries(marques).flatMap(([langue, lu]) => [
 						[`vue Semaine, ${langue}`, lu.semaine === lu.annulee],
@@ -7603,7 +7718,7 @@ B2 | « Créer une organisation », avec la phrase qui dit ce qu’est une organ
 B2 | le fuseau se choisit dans une liste, les fuseaux d’Europe en tête, Europe/Zurich par défaut
 B2 | une phrase sous le fuseau dit à quoi il sert : les heures du programme et celles des prières
 B2 | le lien de connexion de secours dit quand s’en servir, ce qui se passe et combien il vaut
-19-B12 | sous le nom et sous l’adresse d’une organisation, l’exemple est « Association Horizon » et « association-horizon », en arabe « جمعية الأفق », et la règle de l’adresse demande une lettre
+19-B12 | dans les cinq langues, sous le nom et sous l’adresse d’une organisation, l’exemple est « Association Horizon » et « association-horizon », en arabe « جمعية الأفق », et la règle de l’adresse demande une lettre
 19-D6 | avec JavaScript, l’adresse proposée pendant la frappe : « Club № 5 » donne « club-no-5 », « Horizon™ » donne « horizon », et un nom sans lettre latine ne propose rien et dit d’écrire l’adresse
 B2 | « Adresse de la page publique » est proposée pendant la frappe, « centre-du-parcours », adresse complète en direct
 B2 | l’adresse se modifie, et l’adresse complète la suit
@@ -7703,7 +7818,7 @@ E2 | sur un ordinateur, sous Outlook, le délai qu’il met à rafraîchir un ab
 19-agenda-android | sur un Android, la page d’un cours : après le bouton de Google, « Si Google Agenda ne propose rien sur votre téléphone, ouvrez cette page sur un ordinateur : », puis l’adresse de la page dans son propre paragraphe, puis celle du flux, et plus « L’adresse à coller »
 19-agenda-derniere-minute | la page renvoie à la page du programme pour un changement de dernière minute, sous l’aide du bouton d’Android et une fois sous le choix complet, et ne dit plus que Google peut mettre 24 heures
 19-agenda-derniere-minute | sur un iPhone, les étapes à la main renvoient à la page du programme, une fois, après le délai d’Outlook
-19-agenda-outlook | sur un ordinateur, « Outlook (travail ou école) » ouvre outlook.office.com dans un nouvel onglet, et chaque Outlook dit à quels comptes il sert
+19-agenda-outlook | sur un ordinateur, dans les cinq langues, « Outlook (travail ou école) » ouvre outlook.office.com dans un nouvel onglet, et chaque Outlook dit à quels comptes il sert
 19-agenda-page-du-cours | sur un iPhone, sous le nom de chaque cours, un lien « Page du cours » vers le bloc d’abonnement de sa page, d’au moins 44 px de haut
 19-agenda-autre-appareil | sur un iPhone, le bloc finit par « Une autre application ou un autre appareil ? » en texte, puis le lien « Voir tous les choix », seul, vers ?appareil=tous
 19-agenda-autre-appareil | sur un Android, le bloc finit par « Une autre application ou un autre appareil ? » en texte, puis le lien « Voir tous les choix », seul, vers ?appareil=tous
@@ -7809,7 +7924,7 @@ A2 | une carte restée ouverte dans un autre onglet, envoyée après ce déplace
 19-D4 | sur « À venir », le refus d’une carte restée ouverte nomme la séance : « La séance « Prière du vendredi » du JOUR JJ.MM.AAAA a changé depuis l’ouverture de la page : … »
 A2 | sur l’écran du vendredi, une carte restée ouverte dans un autre onglet, envoyée après ce déplacement (« Annuler cette session »), est refusée par une phrase en tête, et rien n’est écrit : la session reste déplacée à 13:00
 19-texte-vendredi | annulée, la session du vendredi : le message dit « « Prière du vendredi » : la prière du JOUR JJ.MM.AAAA est annulée. », puis « Les autres prières du vendredi ont lieu comme d’habitude. », sans « Le cours »
-19-annulee | annulée, la session du vendredi porte « Annulée » (en arabe « ملغاة »), accordé à la prière, dans la vue Semaine, l’onglet « Prières » et la vue Mois
+19-annulee | annulée, la session du vendredi porte, dans les cinq langues, « Annulée », « Abgesagt », « Annullata », « Cancelled » et « ملغاة », accordé à la prière, dans la vue Semaine, l’onglet « Prières » et la vue Mois
 B1 | avec JavaScript, le nom et la formule d’accueil tapés au clavier, puis une autre couleur : c’est ce qui a été tapé qui s’enregistre
 19-membres-confirmations | sur sa propre ligne, « Donner le rôle d’éditeur » ne change rien au premier envoi : en haut, « Vous allez vous donner le rôle d’éditeur. », « Prendre le rôle d’éditeur » et « Ne rien changer »
 B3 | une responsable qui se donne le rôle d’éditeur arrive sur « À venir », où une phrase, visible sans défiler, lui dit ce qui s’est passé et comment retrouver ses écrans
