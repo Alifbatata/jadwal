@@ -512,6 +512,13 @@
       "when": 1790523249173,
       "tag": "0072_prayer_module_repair",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1790582094703,
+      "tag": "0073_course_delete_friday_by_manager",
+      "breakpoints": true
     }
   ]
 }

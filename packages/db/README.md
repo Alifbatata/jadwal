@@ -104,7 +104,9 @@ l'exigent pour lire et écrire les invitations de l'organisation (la branche de 
 par son adresse, ne change pas), modifier et retirer une adhésion, modifier l'organisation, et
 écrire `room`, `prayer_settings`, `prayer_day` et `prayer_period`. La lecture de ces dernières reste
 ouverte aux membres. Les cours, leurs traductions, les exceptions, les pauses, le journal et les
-acceptations s'écrivent toujours par tout membre. Le super-admin n'est pas concerné. La modification
+acceptations s'écrivent toujours par tout membre, sauf la suppression d'un cours (migration 0065) et
+celle d'une session du vendredi (migration 0073), réservées aux responsables. Le super-admin n'est
+pas concerné. La modification
 de l'organisation est bornée aux huit colonnes de l'écran des réglages : le plan, l'état et
 l'identifiant d'URL relèvent du super-admin.
 

@@ -105,11 +105,20 @@ function touched(result: unknown): number {
 	return typeof count === 'number' ? count : allRows(result).length;
 }
 
-/** Joue une instruction dans le contexte donné, puis annule tout : chaque cas part du même décor. */
-async function attempt(db: Database, context: Context | string, statement: SQL): Promise<Outcome> {
+/**
+ * Joue une instruction dans le contexte donné, puis annule tout : chaque cas part du même décor.
+ * `setup`, joué avant dans la même transaction, n'est pas compté.
+ */
+async function attempt(
+	db: Database,
+	context: Context | string,
+	statement: SQL,
+	setup?: SQL
+): Promise<Outcome> {
 	let rows = 0;
 	const message = await messageOfFailure(() =>
 		withOrg(db, context, async (tx) => {
+			if (setup) await tx.execute(setup);
 			rows = touched(await tx.execute(statement));
 			throw new Error(ROLLED_BACK);
 		})
@@ -157,7 +166,9 @@ beforeAll(async () => {
 		select "id" from "invitation" where "organization_id" = ${a.id} and "status" = 'pending'
 	`);
 	period = await lookup(sql`select "id" from "prayer_period" where "organization_id" = ${a.id}`);
-	courseOfA = await lookup(sql`select "id" from "course" where "organization_id" = ${a.id}`);
+	courseOfA = await lookup(sql`
+		select "id" from "course" where "organization_id" = ${a.id} and "kind" = 'course'
+	`);
 	// C garde la seule invitation que `seedOrganisation` pose, en attente. Son éditrice entre par le
 	// propriétaire et non par une invitation : une invitation consommée ne change plus de statut
 	// (migration 0058), et une instruction sans WHERE qui la toucherait lèverait pour cette raison,
@@ -188,9 +199,17 @@ afterAll(async () => {
  */
 interface Gesture {
 	name: string;
+	/**
+	 * Ce que le geste vise, quand ce n'est pas dans le décor : écrit par la même personne, dans la
+	 * même transaction, et annulé avec elle. Il n'est pas compté.
+	 */
+	setup?: () => SQL;
 	statement: () => SQL;
 	admin: number;
 }
+
+/** La session du vendredi que le geste de suppression vise : posée, puis annulée, à chaque essai. */
+const FRIDAY_OF_A = newId();
 
 const GESTURES: Gesture[] = [
 	{
@@ -382,26 +401,47 @@ const GESTURES: Gesture[] = [
 		name: '/cours ?/supprimer : supprimer un cours (course, delete)',
 		statement: () => sql`delete from "course" where "id" = ${courseOfA} returning "id"`,
 		admin: 1
+	},
+	{
+		// Réservé depuis la migration 0073 : l'écran Vendredi le propose à la personne responsable
+		// seule. La session n'est pas dans le décor, qui empêcherait d'éteindre le module des prières
+		// dans le geste des réglages ; chacun la crée d'abord, ce que tout membre peut faire.
+		name: '/vendredi ?/supprimer : supprimer une session du vendredi (course, delete)',
+		setup: () => sql`
+			insert into "course" (
+				"id", "organization_id", "kind", "jumua_order", "status", "audience",
+				"teaching_language", "source_language", "recurrence_kind", "recurrence_weekday",
+				"recurrence_interval", "recurrence_anchor_date", "timing_kind", "timing_start",
+				"timing_end", "starts_on"
+			) values (
+				${FRIDAY_OF_A}, ${a.id}, 'jumua', 1, 'published', 'open', array['ar'], 'fr',
+				'weekly', array[5]::smallint[], 1, '2026-09-11', 'fixed', '13:30', '14:10',
+				'2026-09-11'
+			)
+		`,
+		// L'instruction de l'écran Vendredi, `kind = 'jumua'` compris.
+		statement: () => sql`
+			delete from "course" where "id" = ${FRIDAY_OF_A} and "kind" = 'jumua' returning "id"
+		`,
+		admin: 1
 	}
 ];
 
 describe('les gestes réservés : l’éditrice est refusée, la personne responsable passe', () => {
 	it.each(GESTURES.map((gesture) => [gesture.name, gesture] as const))('%s', async (_, gesture) => {
-		const asEditor = await attempt(app, inA(editor.id), gesture.statement());
+		const run = (db: Database, context: Context | string) =>
+			attempt(db, context, gesture.statement(), gesture.setup?.());
+		const asEditor = await run(app, inA(editor.id));
 		// Refusée par la politique, ou rien de touché : les deux disent « non », selon l'opération.
 		if ('refused' in asEditor) expect(asEditor.refused).toMatch(NO_POLICY);
 		else expect(asEditor).toEqual({ rows: 0 });
 
-		expect(await attempt(app, inA(a.userId), gesture.statement())).toEqual({
-			rows: gesture.admin
-		});
+		expect(await run(app, inA(a.userId))).toEqual({ rows: gesture.admin });
 		// La seconde responsable, entrée par une invitation acceptée, passe aussi : ce n'est pas la
 		// personne qui compte, c'est son rôle.
-		expect(await attempt(app, inA(second.id), gesture.statement())).toEqual({
-			rows: gesture.admin
-		});
+		expect(await run(app, inA(second.id))).toEqual({ rows: gesture.admin });
 		// Le super-admin garde ses pouvoirs (ADR 0025), dans l'organisation où il est entré.
-		expect(await attempt(superAdmin, a.id, gesture.statement())).toEqual({ rows: gesture.admin });
+		expect(await run(superAdmin, a.id)).toEqual({ rows: gesture.admin });
 	});
 
 	it('reads the role in the organisation of the context, not in another one', async () => {
@@ -850,31 +890,41 @@ describe('ce que l’éditeur fait toujours', () => {
 		expect(outcome).toBe(ROLLED_BACK);
 	});
 
-	it('lets an editor delete a Friday session, as the Vendredi screen offers her', async () => {
-		// La suppression d'un cours est réservée depuis la migration 0065 ; celle d'une session du
-		// vendredi ne l'est pas : l'écran Vendredi la propose à l'éditeur (ADR 0033, ADR 0046).
+	it('lets an editor create a Friday session, but no longer delete it, even her own', async () => {
+		// La suppression d'un cours est réservée depuis la migration 0065, celle d'une session du
+		// vendredi depuis la migration 0073 : l'écran Vendredi ne la propose plus qu'à la personne
+		// responsable. Créer une session, la publier, l'annuler ou la déplacer restent à l'éditeur.
 		const outcome = await messageOfFailure(() =>
 			withOrg(app, inA(editor.id), async (tx) => {
 				const sessionId = newId();
-				await tx.execute(sql`
-					insert into "course" (
-						"id", "organization_id", "kind", "jumua_order", "status", "audience",
-						"teaching_language", "source_language", "recurrence_kind", "recurrence_weekday",
-						"recurrence_interval", "recurrence_anchor_date", "timing_kind", "timing_start",
-						"timing_end", "starts_on", "updated_by"
-					) values (
-						${sessionId}, ${a.id}, 'jumua', 2, 'published', 'open', array['fr'], 'fr',
-						'weekly', array[5]::smallint[], 1, '2026-09-11', 'fixed', '13:30', '14:10',
-						'2026-09-11', ${editor.id}
-					)
-				`);
-				// L'instruction de l'écran Vendredi, `kind = 'jumua'` compris.
+				const created = allRows(
+					await tx.execute(sql`
+						insert into "course" (
+							"id", "organization_id", "kind", "jumua_order", "status", "audience",
+							"teaching_language", "source_language", "recurrence_kind", "recurrence_weekday",
+							"recurrence_interval", "recurrence_anchor_date", "timing_kind", "timing_start",
+							"timing_end", "starts_on", "updated_by"
+						) values (
+							${sessionId}, ${a.id}, 'jumua', 2, 'published', 'open', array['fr'], 'fr',
+							'weekly', array[5]::smallint[], 1, '2026-09-11', 'fixed', '13:30', '14:10',
+							'2026-09-11', ${editor.id}
+						)
+						returning "id"
+					`)
+				);
+				expect(created).toHaveLength(1);
+				// L'instruction de l'écran Vendredi, `kind = 'jumua'` compris : écartée sans erreur.
 				const deleted = allRows(
 					await tx.execute(sql`
 						delete from "course" where "id" = ${sessionId} and "kind" = 'jumua' returning "id"
 					`)
 				);
-				expect(deleted).toHaveLength(1);
+				expect(deleted).toHaveLength(0);
+				// Et la session est toujours là.
+				const kept = allRows(
+					await tx.execute(sql`select "id" from "course" where "id" = ${sessionId}`)
+				);
+				expect(kept).toHaveLength(1);
 				throw new Error(ROLLED_BACK);
 			})
 		);
@@ -883,11 +933,12 @@ describe('ce que l’éditeur fait toujours', () => {
 });
 
 /**
- * Le type d'un cours ne change pas (migration 0069). La suppression d'une session du vendredi reste
- * ouverte à l'éditeur, et celle d'un cours ne l'est plus (migration 0065) : si un cours pouvait
- * devenir une session, l'éditrice le supprimerait en deux instructions, la modification qui en fait
- * une session, puis la suppression. Aucun écran ne change le type d'une ligne, et la base le refuse
- * à tout le monde.
+ * Le type d'un cours ne change pas (migration 0069). Il a été posé quand la suppression d'une
+ * session du vendredi restait ouverte à l'éditeur et celle d'un cours ne l'était plus (migration
+ * 0065) : si un cours pouvait devenir une session, l'éditrice le supprimait en deux instructions, la
+ * modification qui en fait une session, puis la suppression. Depuis la migration 0073, les deux
+ * suppressions sont réservées ; la règle reste : aucun écran ne change le type d'une ligne, et la
+ * base le refuse à tout le monde.
  */
 describe('le type d’un cours ne change pas', () => {
 	/** Le refus du déclencheur. */
@@ -901,8 +952,9 @@ describe('le type d’un cours ne change pas', () => {
 	`;
 
 	it('refuses an editor who would make a course a Friday session, then delete it', async () => {
-		// L'attaque en deux temps, dans une seule transaction : la modification, puis la suppression
-		// que la politique laisse à l'éditrice pour une session du vendredi.
+		// L'attaque en deux temps de l'étape 19, dans une seule transaction : la modification, puis la
+		// suppression, que la politique laissait alors à l'éditrice pour une session du vendredi. Le
+		// déclencheur refuse la première : la seconde n'est jamais jouée.
 		let deleted = -1;
 		const message = await messageOfFailure(() =>
 			withOrg(app, inA(editor.id), async (tx) => {

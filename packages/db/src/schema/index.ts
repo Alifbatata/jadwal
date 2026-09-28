@@ -826,14 +826,14 @@ export const course = pgTable(
 					and ${table.timingStart} is null and ${table.timingEnd} is null
 				else false end`
 		),
-		// Supprimer un cours est réservé aux responsables (migration 0065, ADR 0046) ; le créer, le
-		// modifier et le publier restent à tout membre. Une session du vendredi garde sa suppression
-		// ouverte : l'écran Vendredi la propose à l'éditeur (ADR 0033). Un cours ne devient pas une
-		// session pour autant : le déclencheur `course_kind_fixed`, écrit à la main par la migration
-		// 0069 parce que Drizzle ne connaît pas les déclencheurs, refuse que le type d'une ligne change.
-		...orgPolicies('course', table.organizationId, [table.updatedBy], {
-			deletable: sql`${table.kind} = 'jumua' or ${orgAdmin}`
-		}),
+		// Supprimer un cours est réservé aux responsables (migration 0065, ADR 0046), et supprimer une
+		// session du vendredi aussi, depuis la migration 0073 : l'écran Vendredi ne le propose plus
+		// qu'à eux. Créer, modifier et publier restent à tout membre. Le déclencheur
+		// `course_kind_fixed`, écrit à la main par la migration 0069 parce que Drizzle ne connaît pas
+		// les déclencheurs, refuse que le type d'une ligne change : il empêchait de faire d'un cours
+		// une session pour la supprimer, quand l'éditeur supprimait encore une session. Aucun écran ne
+		// change le type d'une ligne, et il reste.
+		...orgPolicies('course', table.organizationId, [table.updatedBy], { deletable: orgAdmin }),
 		// Seuls les cours publiés, et seulement d'une organisation active. Un brouillon est invisible
 		// du public par la base, pas par une clause qu'on pourrait oublier.
 		publicSelect('course', table.organizationId, sql`${table.status} = 'published'`)
