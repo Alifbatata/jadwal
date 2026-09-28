@@ -32,6 +32,8 @@ indexe.
    Déplacée le même jour à une autre heure, elle porte `Nouvelle heure`, puis l'heure d'avant,
    `Initialement à 19:30`, la même que la vue Semaine, y compris pour un cours placé après une
    prière (étape 18). Si aucune heure de prière ne couvre ce jour, l'heure d'avant n'est pas dite.
+   La page d'une session du vendredi garde les mots d'un cours, ce titre compris, comme `Cours` et
+   `Ajouter ce cours à mon agenda` : seule la marque de l'état suit la sorte (étape 20).
 7. **Ajouter ce cours à mon agenda**, titre de niveau 2, à l'ancre `#agenda` (ADR 0028, ADR 0048).
    Dessous, le même bloc que la page d'abonnement, selon l'appareil, pour le flux de **ce** cours
    seul (voir `public-agenda.md`) : le bouton `Ajouter à mon calendrier` en `webcal:` sur un

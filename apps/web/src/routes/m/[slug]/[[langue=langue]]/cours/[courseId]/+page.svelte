@@ -115,6 +115,9 @@
 			{/if}
 		</dl>
 
+		<!-- La page d'une session du vendredi garde les mots d'un cours, ce titre compris, comme le fil
+		     d'Ariane et « Ajouter ce cours à mon agenda » : seule la marque de l'état suit la sorte
+		     (étape 20, C4), comme sur les cartes d'À venir. -->
 		<h2>{mots.nextSessions}</h2>
 		{#if data.prochaines.length === 0}
 			<p class="vide">{mots.noNextSessions}</p>
