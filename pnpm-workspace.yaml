@@ -33,7 +33,7 @@ catalog:
   '@sveltejs/vite-plugin-svelte': 7.3.0
   # Doit rester strictement égal à vitest (peerDependency exacte).
   '@vitest/coverage-v8': 5.0.0
-  svelte: 5.57.0
+  svelte: 5.57.1
   svelte-check: 4.7.6
   typescript: 6.0.3
   vite: 8.3.0
