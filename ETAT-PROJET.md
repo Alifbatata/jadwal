@@ -113,6 +113,17 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   l'invitation part dans la langue que choisit qui invite. 3 748 tests, tous réussis, aucun sauté,
   et 22 tests liés au temps, à part ; parcours complet : 381 vérifications, dont 92 pour l'étape 19,
   et axe sans rien de sérieux sur 38 pages. Mesurés par la CI le 28.09.2026 sur le commit livré.
+- **Étape 20** (dernières questions, A_LIVRER propre) : **livrée le 29.09.2026**. Chaque question
+  laissée par l'étape 19 est appliquée comme le chef de projet l'a tranchée. Une séance déplacée
+  dont la date d'origine est passée ne se rétablit plus : sa carte propose « Annuler cette séance »
+  et le message à copier, et la séance annulée reste visible, barrée, à sa nouvelle date (migration
+  0075). Supprimer une session du vendredi est réservé au responsable (0073), et la base refuse une
+  adresse publique sans lettre (0074). L'état s'écrit avec son propre nom (« Séance annulée »,
+  « Session déplacée »), on peut refuser les conditions et quitter l'organisation depuis leur écran,
+  et les adresses d'exemple sont sur `example.org`. Le dépôt n'est pas recréé : les anciens commits
+  que GitHub sert encore sont acceptés. 3 924 tests, tous réussis, aucun sauté, et 24 tests liés au
+  temps, à part ; parcours complet : 430 vérifications, dont 35 pour l'étape 20, et axe sans rien de
+  sérieux sur 42 pages. Mesurés par la CI le 29.09.2026 sur le code livré.
 
 ## Fait
 
@@ -833,6 +844,55 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   `README`, `CONTRIBUTING.md` et les descriptions des écrans touchés dans `docs/maquettes/` mis à
   jour.
 
+Étape 20 (dernières questions, A_LIVRER propre) :
+
+- **Le dépôt reste tel quel.** GitHub sert encore, par leur empreinte, les commits d'avant la
+  réécriture de l'étape 19 ; le chef de projet l'accepte, ce qu'ils portent étant public par
+  ailleurs. Le dépôt n'est pas recréé et le support de GitHub n'est pas sollicité. Le garde-fou
+  garde les termes retirés dans sa liste, pour tout ce qui entre désormais dans les fichiers.
+- **Une séance déplacée dont la date d'origine est passée** (question 2, voie b) : « Rétablir »
+  disparaît et le serveur le refuse ; la carte propose « Annuler cette séance », derrière un repli,
+  avec une aide qui dit que ce sera définitif, et le message à copier nomme la nouvelle date et la
+  nouvelle heure. Dans À venir et à l'écran du vendredi, qui gagne pour ce geste son bloc de
+  messages. Une annulation peut garder la date et l'heure où la séance avait été déplacée
+  (migration 0075) : `core` rend la date d'origine « déplacée » et la nouvelle date « annulée », et
+  la séance reste visible, barrée, partout où une séance annulée l'est ; le flux agenda la retire
+  comme toute annulation. Le déplacement d'une séance dont la date d'origine est passée est refusé
+  aussi. En chemin : l'API `/courses` lit enfin une séance déplacée dont la date d'origine est
+  passée, et deux séances d'un même cours le même jour ont chacune leur clé, sans quoi l'écran ne
+  s'hydratait pas.
+- **Supprimer une session du vendredi** est réservé au responsable (question 3) : base (0073, la
+  politique perd sa branche `jumua`), serveur, écran, et la liste de Membres.
+- **L'état avec son propre nom** (question 4) : « Séance annulée », « Session annulée », « Séance
+  déplacée au … », « Session déplacée au … », dans les cinq langues (Termin et Durchgang, lezione et
+  turno, session, حصة et موعد), sur la page publique, l'onglet Prières, la page d'un cours, dans À
+  venir et dans le programme à copier (« (SÉANCE ANNULÉE) »). La décision de l'étape 19, « Annulée »
+  accordé à la prière, est remplacée.
+- **Ne pas accepter, et quitter** (question 5) : l'écran des conditions propose « Ne pas accepter et
+  quitter l'organisation », avec confirmation, refusé à la dernière personne responsable, par le
+  même chemin que « Vos organisations » ; chaque action de l'écran ne vaut que pour l'organisation
+  qu'il nomme (ADR 0044).
+- **Une adresse publique sans lettre** est refusée par la base (question 6, migration 0074), qui
+  compte d'abord les adresses en place et refuse de s'appliquer s'il en trouve une, sans jamais en
+  réécrire.
+- **Les adresses d'exemple** sont sur `example.org` dans les cinq langues (question 7), et le
+  contrôle de style refuse une adresse d'exemple hors d'un domaine réservé.
+- **L'arabe relu** : les deux corrections du chef de projet sur les textes de l'étape 19.
+- **Les outils** : le flux Orthographe se déclenche aussi quand seul un texte de
+  `apps/web/src/lib/i18n/` change ; `JADWAL_TEST_PORT_BASE` est documentée dans `.env.example`.
+- **Le parcours automatique** : chaque correction de l'étape 20 qui se voit à l'écran a sa
+  vérification (8 identifiants, 35 vérifications, catalogue de 276 libellés). Rejoué contre l'image
+  de l'étape 19 : les vérifications des étapes 18 et 19 restent vertes (152 et 92), et aucune de
+  l'étape 20 ne l'est (26 rouges, 8 gestes impossibles, faute de leur écran).
+- 3 924 tests dans le dépôt, mesurés par la CI le 29.09.2026 sur le code livré, tous réussis,
+  aucun sauté : 691 dans `core`, 493 dans la base, 82 pour les sauvegardes, 2 626 dans
+  l'application, 32 pour le widget (2 145 octets en gzip, inchangé) ; et 24 tests liés au temps, à
+  part (`pnpm test:temps`). Parcours complet : 430 vérifications, dont 152 pour les retours de
+  l'étape 18, 92 pour l'étape 19 et 35 pour l'étape 20, axe sans rien de sérieux sur 42 pages.
+- Migrations 0073 à 0075 ; addenda aux ADR 0003, 0011, 0019, 0021, 0033, 0042, 0044 et 0046 ;
+  `docs/API.md`, `docs/SECURITE.md`, `docs/CADRAGE.md`, `packages/db/README.md` et les
+  descriptions des écrans touchés dans `docs/maquettes/` mis à jour.
+
 **Un script ou une commande qu'aucun test ne _lance_ n'est pas éprouvé.** C'est la règle du dépôt
 depuis l'étape 12, et elle répond à la question laissée ouverte à l'étape 11.
 
@@ -882,7 +942,8 @@ tests.
 | 16    | Conditions en ligne et acceptées, arabe corrigé, parcours complet   | terminée |
 | 17    | 182 jours vérifiés, garde du déploiement, invitations tenues        | terminée |
 | 18    | Retours des tests : cinq langues, écrans clairs, rôles dans la base | terminée |
-| 19    | Zéro défaut connu, arabe relu, historique réécrit                   | livrée   |
+| 19    | Zéro défaut connu, arabe relu, historique réécrit                   | terminée |
+| 20    | Dernières questions : Rétablir, vendredi, états, conditions         | livrée   |
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
 passkeys, paiement.
@@ -994,14 +1055,8 @@ passkeys, paiement.
 - Les pages de l'espace, la page d'abonnement et la page d'un cours changent selon la langue, le
   cookie ou l'appareil, et le disent par `Vary`. Un cache partagé qui l'ignorerait servirait la
   mauvaise version ; le modèle de `infra/` n'en place aucun.
-- **GitHub sert encore les anciens commits par leur empreinte** (étape 19, A3). L'historique est
-  réécrit et ne porte plus le nom, mais l'adresse d'un commit d'avant la réécriture répond encore,
-  page, API et `.patch` compris, et le `.patch` montre ce que le commit portait. Les faire
-  disparaître demande de supprimer et de recréer le dépôt, comme le 21.09.2026, ou une demande au
-  support de GitHub ; aucune des deux n'est autorisée à ce jour.
-- Trois limites de la base, écrites et laissées : une adresse publique sans aucune lettre n'est
-  refusée que par l'application (la base accepte encore `2026`, migration 0003) ; la base ne
-  vérifie pas que le compte qui écrit comme super-admin porte `is_super_admin` (ADR 0025) ; un
+- Deux limites de la base, écrites et laissées : la base ne vérifie pas que le compte qui écrit
+  comme super-admin porte `is_super_admin` (ADR 0025) ; un
   éditeur lit l'identifiant de la personne qui a écrit une ligne (`course.updated_by`,
   `created_by` des changements et des pauses), sans plus pouvoir le relier à un nom ni à une
   adresse (ADR 0046).
@@ -1019,6 +1074,9 @@ passkeys, paiement.
   d'autres applications : jadwal s'installe donc sans rien supposer de ce qui tourne à côté, ses
   secrets restent illisibles à tout compte non privilégié, et rien de ce qu'il pose ne peut être
   remplacé depuis un compte ordinaire de la machine.
+- ~~Les anciens commits que GitHub sert encore par leur empreinte~~ : acceptés à l'étape 20. Ce
+  qu'ils portent est public par ailleurs ; le dépôt n'est pas recréé et le support de GitHub n'est
+  pas sollicité. Le garde-fou garde les termes retirés dans sa liste, pour les fichiers.
 - **L'insertion du bloc de site dans la configuration du serveur web** : une ligne, additive, mais
   posée dans la configuration d'un service en fonctionnement. Elle revient à qui exploite le
   serveur visé.
@@ -1046,8 +1104,9 @@ passkeys, paiement.
   widget ; une version épinglée avant garde ses trois vues (ADR 0005).
 - ~~La relecture par des locuteurs des textes de l'étape 18~~ : faite. Le chef de projet a relu
   l'arabe (ses corrections sont faites à l'étape 19), et accepte `Durchgang`, `turno` et les
-  noms du bloc WordPress. **Reste** la relecture des textes arabes, allemands et italiens écrits à
-  l'étape 19.
+  noms du bloc WordPress. L'arabe écrit à l'étape 19 est relu aussi : deux corrections, faites à
+  l'étape 20. **Reste** la relecture des textes allemands et italiens des étapes 19 et 20, et celle
+  des 43 textes arabes nouveaux ou changés à l'étape 20 (hors du dépôt, dans le rapport de l'étape).
 - **La relecture, par le chef de projet, d'un texte arabe écrit sans lui** : la place des
   parenthèses autour de l'annonce qu'il a donnée, « شروط الاستخدام (يُفتح في علامة تبويب جديدة) »
   (étape 17). Les autres textes de cette ligne (le lien des conditions, les formes en « قبل », la
@@ -1058,20 +1117,23 @@ passkeys, paiement.
 
 ## Défauts connus
 
-Aucun. Les défauts relevés à l'étape 18 sont tous corrigés à l'étape 19, avec ceux que ses propres
-relectures ont trouvés. Restent des **questions**, où le code attend une décision du chef de projet
-et n'a rien changé en l'attendant :
+Aucun. Les quatre questions laissées par l'étape 19 sont tranchées et appliquées à l'étape 20.
+Restent des **questions**, où le code attend une décision du chef de projet et n'a rien changé en
+l'attendant :
 
-- un « Rétablir » sur une séance déplacée dont la date d'origine est déjà passée la remet à cette
-  date, donc la fait disparaître de l'écran et de la page publique, sans message à envoyer (À venir
-  et l'écran du vendredi) ;
-- la suppression d'une session du vendredi reste ouverte à l'éditeur, qui la fait depuis l'écran
-  du vendredi : D3 ne visait que l'écran des cours ;
-- « Déplacé » reste au masculin après « Prière du vendredi », la décision ne visant que
-  « Annulée » ; et « Annulée » s'écrit aussi après un titre que l'organisation a choisi, même
-  masculin ;
-- une personne d'une seule organisation qui n'a pas encore accepté les conditions ne peut pas
-  atteindre « Vos organisations » pour la quitter (ADR 0044).
+- la page publique d'une session du vendredi garde les mots d'un cours (« Prochaines séances »,
+  « Ajouter ce cours à mon agenda ») : seule la marque de l'état suit la sorte ;
+- l'écran du vendredi garde « Annulée ce jour-là » et « Déplacée au … » sur ses lignes, qui ne
+  portent aucun titre libre ; son annulation ordinaire ne donne pas de message à copier, seule
+  l'annulation d'une session déplacée d'un vendredi passé le fait ;
+- dans À venir, l'aide et le bouton « Annuler cette séance » disent « séance » sur la carte d'une
+  session du vendredi aussi, comme le bouton depuis l'étape 18 ; et une carte déplacée dit
+  « Séance déplacée » deux fois, dans sa marque et dans la phrase qui suit ;
+- la marque d'arrivée « Date exceptionnelle » reste « Ausnahmetermin » en allemand et
+  « موعد استثنائي » en arabe, où « موعد » nomme désormais aussi une session du vendredi ;
+- « Annuler cette séance » n'est offert que sur une carte déplacée dont la date d'origine est
+  passée ; déplacée vers une date à venir, une séance ne s'annule qu'en la rétablissant, puis en
+  annulant sa date d'origine, et le message nomme alors celle-ci.
 
 ## À poser avant la mise en production
 
