@@ -17,6 +17,7 @@ import {
 	DATE_DES_CONDITIONS,
 	VERSION_DES_CONDITIONS
 } from './conditions-acceptees.js';
+import { contraste } from '../src/lib/couleur.js';
 import { visibleText } from './textes-lus.js';
 
 const origin = inject('origin');
@@ -646,6 +647,73 @@ const SESSION_CHANGEE: Record<Langue, { quoi: string; maintenant: string }> = {
 	}
 };
 
+/** Le blanc de la page, sous les boutons de l'écran. */
+const PAGE = '#ffffff';
+
+/**
+ * Un bord ou un fond qui ne dessine rien : `none`, `transparent`, ou les formes courtes que la
+ * construction en écrit (`#0000` pour `transparent`, `0 0` pour un fond `none`).
+ */
+const INVISIBLE = /^(none|transparent|#0000|#00000000|0 0)$/;
+
+/**
+ * Les déclarations des règles servies dont la liste de sélecteurs contient exactement `selecteur`,
+ * dans l'ordre : la dernière l'emporte. Les feuilles liées et en ligne, comme un navigateur.
+ */
+async function declarationsServies(
+	html: string,
+	chemin: string,
+	selecteur: string
+): Promise<[string, string][]> {
+	const liees = await Promise.all(
+		[...html.matchAll(/<link\b[^>]*\brel="stylesheet"[^>]*>/g)].map(async (trouve) => {
+			const href = trouve[0].match(/\bhref="([^"]*)"/)?.[1] ?? '';
+			return (await fetch(new URL(href, `${origin}${chemin}`))).text();
+		})
+	);
+	const enLigne = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)].map(
+		(trouve) => trouve[1] ?? ''
+	);
+	const declarations: [string, string][] = [];
+	for (const [, selecteurs, corps] of [...liees, ...enLigne]
+		.join('\n')
+		.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+		if (!(selecteurs ?? '').split(',').some((un) => un.trim() === selecteur)) continue;
+		for (const declaration of (corps ?? '').split(';')) {
+			const deuxPoints = declaration.indexOf(':');
+			if (deuxPoints < 0) continue;
+			declarations.push([
+				declaration.slice(0, deuxPoints).trim(),
+				declaration.slice(deuxPoints + 1).trim()
+			]);
+		}
+	}
+	return declarations;
+}
+
+/**
+ * La couleur du bord que ces déclarations dessinent : `none` quand il est retiré, `currentcolor`
+ * quand rien ne la fixe.
+ */
+function couleurDuBord(declarations: [string, string][]): string {
+	let couleur = 'currentcolor';
+	for (const [propriete, valeur] of declarations) {
+		if (propriete === 'border-color') couleur = valeur;
+		if (propriete === 'border') {
+			const morceaux = valeur.split(/\s+/);
+			couleur =
+				morceaux.find((morceau) => /^(#|var\(|transparent$)/i.test(morceau)) ??
+				(morceaux.includes('none') || morceaux[0] === '0' ? 'none' : 'currentcolor');
+		}
+	}
+	return couleur;
+}
+
+/** La dernière valeur d'une propriété, ou `undefined`. */
+function valeurDe(declarations: [string, string][], propriete: string): string | undefined {
+	return declarations.filter(([nom]) => nom === propriete).at(-1)?.[1];
+}
+
 describe('ne pas accepter les conditions, et quitter l’organisation (étape 20)', () => {
 	/** Celle que l'on quitte : une responsable qui a accepté, et des membres qui ne l'ont pas fait. */
 	const QUITTEE = { id: newId(), slug: 'conditions-quittee', nom: 'Association du départ' };
@@ -1112,4 +1180,68 @@ describe('ne pas accepter les conditions, et quitter l’organisation (étape 20
 			});
 		}
 	);
+
+	it('draws the button that accepts more than the one that leaves, even on a very light accent', async () => {
+		await remettre(SOLO, QUITTEE.id, 'editor');
+		await poserLangueDuCompte(SOLO, 'fr');
+		await maintenance((tx) =>
+			tx.execute(
+				sql`update "organization" set "accent_color" = '#ffffff' where "id" = ${QUITTEE.id}`
+			)
+		);
+		try {
+			const html = await (await get('/conditions/accepter', cookies[SOLO])).text();
+			// Les réglages acceptent cet accent : le bouton qui accepte est alors blanc sur la page.
+			const coquille = html.match(/<div\b[^>]*\bclass="coquille[^"]*"[^>]*>/)?.[0] ?? '';
+			const variables: Record<string, string> = Object.fromEntries(
+				[...coquille.matchAll(/(--accent(?:-texte)?):\s*(#[0-9a-f]{6})/gi)].map((trouve) => [
+					trouve[1] ?? '',
+					(trouve[2] ?? '').toLowerCase()
+				])
+			);
+			expect(variables).toEqual({ '--accent': '#ffffff', '--accent-texte': '#000000' });
+
+			const classesDe = (action: string) =>
+				(formulaireDeLaPage(html, action)?.balise.match(/\bclass="([^"]*)"/)?.[1] ?? '')
+					.split(/\s+/)
+					.filter(Boolean);
+			const portee = classesDe('?/accepter').find((nom) => nom.startsWith('svelte-'));
+			expect(portee, 'la classe de portée du composant').toBeTruthy();
+			expect(classesDe('?/quitter')).toEqual(['secondaire', portee]);
+			const bouton = await declarationsServies(html, '/conditions/accepter', `button.${portee}`);
+
+			// Le bord du bouton qui accepte se voit sur la page, quel que soit l'accent : 3:1 au moins,
+			// le seuil des éléments d'une interface (WCAG 1.4.11).
+			const bord = couleurDuBord(bouton).replace(
+				/^var\((--[a-z-]+)\)$/,
+				(tout, nom: string) => variables[nom] ?? tout
+			);
+			expect.soft(bord, 'la couleur du bord du bouton qui accepte').toMatch(/^#[0-9a-f]{6}$/i);
+			expect.soft(contraste(bord, PAGE), `le contraste du bord ${bord}`).toBeGreaterThanOrEqual(3);
+
+			// Le bouton qui fait partir ne dessine ni bord ni fond : il ne ressemble jamais plus à un
+			// bouton que celui qui accepte. Un texte souligné, comme un lien.
+			const secondaire = [
+				...bouton,
+				...(await declarationsServies(html, '/conditions/accepter', `button.secondaire.${portee}`))
+			];
+			expect
+				.soft({
+					bord: couleurDuBord(secondaire),
+					fond: valeurDe(secondaire, 'background'),
+					souligne: valeurDe(secondaire, 'text-decoration')
+				})
+				.toEqual({
+					bord: expect.stringMatching(INVISIBLE),
+					fond: expect.stringMatching(INVISIBLE),
+					souligne: 'underline'
+				});
+		} finally {
+			await maintenance((tx) =>
+				tx.execute(
+					sql`update "organization" set "accent_color" = '#0f766e' where "id" = ${QUITTEE.id}`
+				)
+			);
+		}
+	});
 });

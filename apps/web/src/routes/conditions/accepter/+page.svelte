@@ -117,24 +117,30 @@
 		padding-top: 1.25rem;
 		border-top: 1px solid #c8ced4;
 	}
+	/* Le bord prend la couleur du texte du bouton : noir sur un accent clair, où sans lui le bouton
+	   se perdrait dans la page blanche ; blanc sur un accent sombre, où le fond dessine déjà le
+	   bouton. Les réglages acceptent toute couleur, blanc compris. */
 	button {
 		min-height: 44px;
 		font: inherit;
 		font-weight: 600;
 		padding: 0.5rem 1rem;
 		border-radius: 0.375rem;
-		border: 1px solid var(--accent);
+		border: 1px solid var(--accent-texte);
 		background: var(--accent);
 		color: var(--accent-texte);
 		cursor: pointer;
 	}
-	/* Le départ ne ressemble pas à l'accord : un bouton blanc sous l'accord, un bouton rouge pour la
-	   confirmation, comme les autres suppressions de l'espace. */
+	/* Le départ ne ressemble jamais plus à un bouton que l'accord, quel que soit l'accent : ni bord ni
+	   fond, un texte souligné, comme un lien, qui garde la hauteur d'un bouton pour le doigt. La
+	   confirmation, elle, a un bouton rouge, comme les autres suppressions de l'espace. */
 	button.secondaire {
 		font-weight: 400;
-		border-color: #888;
-		background: #fff;
+		padding-inline: 0;
+		border-color: transparent;
+		background: none;
 		color: #1a1a1a;
+		text-decoration: underline;
 	}
 	button.danger {
 		border-color: #b91c1c;
