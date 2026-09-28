@@ -64,6 +64,8 @@ describe('Arabic reviewed by the project lead (step 19)', () => {
 	it('B10: the code to paste is « الشيفرة », as on the share screen', () => {
 		expect(upcomingTexts.ar.widgetSilent).toContain('لصقت فيها الشيفرة');
 		expect(upcomingTexts.ar.widgetSilent).not.toContain('الرمز');
+		// Ce qu'on a retiré, c'est le code : « الشيفرة », féminin (l'allemand dit « ihn », der Code).
+		expect(upcomingTexts.ar.widgetSilent).toContain('إن كنت أزلتها عن قصد');
 		expect(upcomingTexts.ar.widgetLink).toBe('عرض الشيفرة المراد لصقها مرة أخرى');
 	});
 
