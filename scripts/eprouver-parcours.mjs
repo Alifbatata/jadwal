@@ -3145,6 +3145,8 @@ async function personneInvitee(navigateur) {
 			},
 			texte || `aucune demande, ${chemin(page)}`
 		);
+		// La demande n'existe que comme réponse du formulaire : la recharger la perdrait.
+		await auditer(page, 'conditions à accepter, départ à confirmer', { recharger: false });
 		await envoyer(page, await exiger(rester, `le lien « ${QUITTER_SANS_ACCEPTER.rester} »`));
 		const raison = await texteDe(page.locator('main p.raison'));
 		verifierChaque(
