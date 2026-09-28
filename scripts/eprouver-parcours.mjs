@@ -250,9 +250,18 @@
  * - 20-B2 : Membres en arabe, le geste de l'éditeur qui quitte une organisation, « مغادرة مؤسسة
  *   يكون عضوًا فيها ».
  *
+ * Les adresses d'exemple :
+ *
+ * - 20-C7 : l'exemple sous le champ de connexion et sous l'adresse d'une invitation, dans Membres,
+ *   écrit sur `example.org`, un domaine réservé aux exemples : « prenom.nom@example.org »,
+ *   « vorname.name@example.org », « name@example.org ». Les deux vérifications de B1 qui lisaient
+ *   l'ancien exemple gardent ce qui ne change pas : une aide qui donne un exemple.
+ *
  * Les langues vérifiées :
  *
- * - en arabe seul : 20-B1 et 20-B2, les phrases relues.
+ * - en arabe seul : 20-B1 et 20-B2, les phrases relues ;
+ * - en français, en allemand et en arabe : 20-C7 (la connexion en français et en allemand, Membres
+ *   en français et en arabe).
  *
  * ## La date figée (étape 19, D9)
  *
@@ -475,6 +484,18 @@ const SOUS_LES_CHAMPS_DU_SUPER_ADMIN = {
 		exemple: 'مثال:',
 		regle: 'أحرف لاتينية صغيرة بلا علامات، وأرقام، وشرطات، مع حرف واحد على الأقل.'
 	}
+};
+/**
+ * L'exemple d'adresse sous le champ de connexion et sous l'adresse d'une invitation, dans les
+ * langues où le parcours le lit (`sign-in.ts`, `members.ts`) : sur `example.org`, un domaine
+ * réservé aux exemples, depuis l'étape 20 (C7). Il était écrit sur un domaine en `.ch`, qui n'en est
+ * pas un. `debut` : ce que l'aide française garde d'une étape à l'autre (retour B1).
+ */
+const EXEMPLE_D_ADRESSE = {
+	debut: 'Exemple : prenom.nom@',
+	fr: 'Exemple : prenom.nom@example.org',
+	de: 'Beispiel: vorname.name@example.org',
+	ar: 'مثال: name@example.org'
 };
 /** La seconde organisation de la personne invitée, où elle est éditrice. */
 const VOISINE = {
@@ -950,7 +971,7 @@ const RETOURS_DE_L_ETAPE_19 = [
  * relu (B1, B2), puis les questions de l'étape 19 (C2 à C7). L'en-tête du script dit ce que chacune
  * vérifie.
  */
-const RETOURS_DE_L_ETAPE_20 = ['20-B1', '20-B2'];
+const RETOURS_DE_L_ETAPE_20 = ['20-B1', '20-B2', '20-C7'];
 /** Tous les retours, dans l'ordre du tableau final. */
 const RETOURS = [...RETOURS_DE_L_ETAPE_18, ...RETOURS_DE_L_ETAPE_19, ...RETOURS_DE_L_ETAPE_20];
 /**
@@ -1850,6 +1871,15 @@ async function premierPassage(navigateur) {
 				`<html lang="${lang}">, « ${await titre(page)} »`
 			);
 		});
+		// L'exemple sous le champ, en allemand, sur un domaine réservé aux exemples (étape 20, C7).
+		await retour('20-C7', async () => {
+			const aide = await descriptionDe(page.locator('main input[type="email"]'));
+			verifier(
+				`au premier passage, /connexion en allemand donne sous le champ l’exemple « ${EXEMPLE_D_ADRESSE.de.split(' ').pop()} », sur un domaine réservé aux exemples`,
+				aide.includes(EXEMPLE_D_ADRESSE.de),
+				aide || 'aucune aide reliée au champ'
+			);
+		});
 		await retour('D3', async () => {
 			await ouvrir(page, '/connexion');
 			await demanderUnLien(page, SUPER_ADMIN);
@@ -1902,9 +1932,17 @@ async function superAdmin(navigateur) {
 		const aide = await descriptionDe(champ);
 		verifier(
 			'la connexion dit, sous le champ, quelle adresse écrire, avec un exemple',
-			aide.includes('Exemple : prenom.nom@exemple.ch'),
+			aide.includes(EXEMPLE_D_ADRESSE.debut),
 			aide || 'aucune aide reliée au champ'
 		);
+		// L'exemple lui-même, sur un domaine réservé aux exemples (étape 20, C7).
+		await retour('20-C7', async () => {
+			verifier(
+				`la connexion donne sous le champ l’exemple « ${EXEMPLE_D_ADRESSE.fr.split(' ').pop()} », sur un domaine réservé aux exemples`,
+				aide.includes(EXEMPLE_D_ADRESSE.fr),
+				aide || 'aucune aide reliée au champ'
+			);
+		});
 	});
 	await auditer(page, 'connexion');
 	await lireLesConditions(
@@ -2448,9 +2486,17 @@ async function ceQueFaitChaqueRole(page) {
 		const aide = await descriptionDe(page.locator('#email'));
 		verifier(
 			'l’invitation dit, sous l’adresse, un exemple de la bonne forme',
-			aide.includes('Exemple : prenom.nom@exemple.ch'),
+			aide.includes(EXEMPLE_D_ADRESSE.debut),
 			aide || 'aucune aide'
 		);
+		// L'exemple lui-même, sur un domaine réservé aux exemples (étape 20, C7).
+		await retour('20-C7', async () => {
+			verifier(
+				`l’invitation donne sous l’adresse l’exemple « ${EXEMPLE_D_ADRESSE.fr.split(' ').pop()} », sur un domaine réservé aux exemples`,
+				aide.includes(EXEMPLE_D_ADRESSE.fr),
+				aide || 'aucune aide'
+			);
+		});
 	});
 }
 
@@ -3762,6 +3808,16 @@ async function arabeDeLEspace(page) {
 				gestes.includes(QUITTER_EN_ARABE),
 				gestes.find((geste) => geste.startsWith('مغادرة')) ??
 					`${gestes.length} gestes, aucun qui commence par « مغادرة »`
+			);
+		});
+		// L'exemple sous l'adresse d'une invitation, sur un domaine réservé aux exemples (étape 20, C7).
+		await retour('20-C7', async () => {
+			await ouvrir(page, '/membres');
+			const aide = await descriptionDe(page.locator('#email'));
+			verifier(
+				`Membres en arabe : l’exemple sous l’adresse est « ${EXEMPLE_D_ADRESSE.ar.split(' ').pop()} »`,
+				aide.includes(EXEMPLE_D_ADRESSE.ar),
+				aide || 'aucune aide'
 			);
 		});
 	} finally {
@@ -8081,8 +8137,10 @@ async function quitterLaVoisine(page) {
  */
 const CATALOGUE = `
 D2 | au premier passage, un navigateur réglé en allemand (de-CH) voit /connexion en allemand
+20-C7 | au premier passage, /connexion en allemand donne sous le champ l’exemple « vorname.name@example.org », sur un domaine réservé aux exemples
 D3 | le lien demandé depuis cet écran allemand part en allemand, <html lang="de"> compris
 B1 | la connexion dit, sous le champ, quelle adresse écrire, avec un exemple
+20-C7 | la connexion donne sous le champ l’exemple « prenom.nom@example.org », sur un domaine réservé aux exemples
 A3 | les conditions sont datées en JJ.MM.AAAA, « Dernière mise à jour : JJ.MM.AAAA. »
 F1 | les conditions nomment Voltia comme exploitant, et nulle part la personne retirée
 A3 | la passkey est datée du jour en Suisse, « Enregistrée le JJ.MM.AAAA »
@@ -8109,6 +8167,7 @@ B3 | ce que peut faire un éditeur ne promet pas de supprimer un cours : « Cré
 19-D3 | la liste réservée au responsable dit « Supprimer un cours »
 B3 | le choix du rôle renvoie à ces deux listes pour les lecteurs d’écran
 B1 | l’invitation dit, sous l’adresse, un exemple de la bonne forme
+20-C7 | l’invitation donne sous l’adresse l’exemple « prenom.nom@example.org », sur un domaine réservé aux exemples
 D3 | une invitation envoyée depuis l’écran en allemand part en allemand, <html lang="de"> compris
 19-C | depuis l’écran en français, l’invitation part dans la langue choisie sous l’adresse, « Italiano », objet et <html lang="it"> compris
 19-D6 | sans JavaScript, « École du Lac », envoyée sans adresse écrite, n’est pas encore créée : l’écran montre en entier l’adresse proposée, « HÔTE/m/ecole-du-lac », dans un champ où la confirmer ou la changer
@@ -8145,6 +8204,7 @@ B1 | l’écran Partager dit où coller le code, avec un exemple, et nomme le ca
 19-B1 | Partager en arabe : le code pour un site très strict « وهي لا تُحدَّث تلقائيًا »
 19-B8 | Membres en arabe, un rôle inconnu envoyé par un formulaire écrit à la main : « هذا الدور غير موجود. اختر دور المحرر أو دور المسؤول. »
 20-B2 | Membres en arabe : ce que peut faire un éditeur dit « مغادرة مؤسسة يكون عضوًا فيها »
+20-C7 | Membres en arabe : l’exemple sous l’adresse est « name@example.org »
 19-cours-facultatif | le résumé d’un nouveau cours marque « (facultatif) » chaque ligne facultative, sans la signaler comme un manque
 19-cours-titre-manquant | une description allemande sans titre allemand : le résumé signale le titre qui manque, et la description à corriger ; écrire le titre retire la marque
 19-cours-langue-de-saisie | sur un nouveau cours, choisir l’arabe comme langue de saisie coche l’arabe comme langue d’enseignement, à la place du français
