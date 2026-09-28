@@ -104,9 +104,10 @@
  *   « À venir » (B2, B9 ; B10, l'alerte d'un programme qui ne s'affiche plus sur le site, une vue
  *   du widget datée d'avant la semaine écrite dans la base), l'écran du vendredi après « Retirer de
  *   la page publique » (B3), la lecture d'un fichier d'heures séparé par des tabulations, dont
- *   vingt-cinq lignes sont refusées (B4 à B6), l'aide d'une nouvelle période (B7), Membres et un
- *   rôle inconnu, que le parcours ajoute au choix du rôle comme un formulaire écrit à la main (B8),
- *   l'aide du bouton de Google sur Android (B11).
+ *   vingt-cinq lignes sont refusées, l'ordre des dates choisi à l'écran, jour puis mois, pour que
+ *   le compte ne dépende pas du jour du passage (B4 à B6), l'aide d'une nouvelle période (B7),
+ *   Membres et un rôle inconnu, que le parcours ajoute au choix du rôle comme un formulaire écrit à
+ *   la main (B8), l'aide du bouton de Google sur Android (B11).
  * - 19-B12 : l'exemple du super-admin, « Association Horizon » et « association-horizon », en
  *   arabe « جمعية الأفق », et la règle de l'adresse.
  * - 19-C : l'invitation part dans la langue choisie sous l'adresse, et non dans celle de l'écran.
@@ -5117,6 +5118,12 @@ async function importEnArabe(page) {
 			mimeType: 'text/csv',
 			buffer: Buffer.from(`${fichier}\n`, 'utf8')
 		});
+		// L'ordre des dates est choisi dans la liste de l'écran, jour puis mois. Deviné, il dépendrait
+		// du jour du passage. Le service ne tranche que sur les lignes gardées, les trois bonnes : quand
+		// elles tombent toutes le 12 du mois ou avant, « 01.10 » se lit aussi « 10 janvier », l'ordre
+		// reste ambigu, et les trois sont refusées avec les autres. Cela fait vingt-huit refus au lieu
+		// de vingt-cinq, cent vingt jours de lancement par an (relecture du lot 4 de l'étape 19).
+		await page.locator('#ordre').selectOption('jour-mois');
 		await envoyer(page, page.locator('form[action$="/lireFichier"] button[type="submit"]'));
 		const rapport = page.locator('.rapport');
 		await retour('19-B5', async () => {
