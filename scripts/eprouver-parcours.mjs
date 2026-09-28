@@ -144,8 +144,9 @@
  * - 19-agenda-page-du-cours : « Page du cours » sous chaque cours, sur un iPhone.
  * - 19-agenda-autre-appareil : « Une autre application ou un autre appareil ? », puis le lien
  *   « Voir tous les choix », seul.
- * - 19-annulee : une session du vendredi annulée porte « Annulée », accordé à la prière, dans la vue
- *   Semaine, l'onglet « Prières » et la vue Mois, dans les cinq langues.
+ * - 19-annulee : une session du vendredi annulée reste, barrée, avec sa marque, dans la vue Semaine,
+ *   l'onglet « Prières » et la vue Mois, dans les cinq langues. Le mot de la marque, « Annulée »
+ *   accordé à la prière à l'étape 19, est celui d'une session depuis l'étape 20 : 20-C4 le lit.
  * - 19-widget-prieres : le widget posé avec `view="prieres"` s'ouvre sur l'onglet « Prières ».
  * - 19-og-locale : `og:locale` et un `og:locale:alternate` par autre langue publiée.
  * - 19-langue-non-activee : une langue que l'organisation ne publie pas renvoie à sa langue par
@@ -166,7 +167,8 @@
  *   dans la liste ; la base lui donne ce dernier jour, que le formulaire refuse depuis l'étape 18.
  * - 19-cours-titre-manquant : une description sans le titre de sa langue se signale dans le résumé.
  * - 19-cours-message : un cours publié donne le message « nouveau cours », prêt à coller.
- * - 19-cours-seance-barree : sur la page publique d'un cours, la séance annulée reste, barrée.
+ * - 19-cours-seance-barree : sur la page publique d'un cours, la séance annulée reste, barrée, avec
+ *   sa marque, dont le mot, « Annulé » à l'étape 19, est lu par 20-C4.
  * - 19-cours-sans-js : le formulaire d'un cours sans JavaScript, le choix d'une prière envoyé heures
  *   vides, et « après une prière » qui laisse partir 0 minute comme 180.
  * - 19-cours-session-vendredi : l'adresse d'une session du vendredi sous /cours mène au 404 de
@@ -250,6 +252,17 @@
  * - 20-B2 : Membres en arabe, le geste de l'éditeur qui quitte une organisation, « مغادرة مؤسسة
  *   يكون عضوًا فيها ».
  *
+ * L'état d'une séance, avec son propre nom :
+ *
+ * - 20-C4 : « Séance annulée », « Séance déplacée au … » pour un cours, « Session annulée »,
+ *   « Session déplacée au … » pour la prière du vendredi, et leurs formes dans chaque langue, là où
+ *   le parcours lisait déjà l'état : les cartes d'« À venir », le programme de la semaine à copier,
+ *   « (SÉANCE ANNULÉE) » ou « (SESSION ANNULÉE) », la page publique, vue Semaine, page d'un cours,
+ *   et, pour la session du vendredi, l'onglet « Prières » et la vue Mois. Les vérifications qui
+ *   lisaient l'ancien mot en gardent ce qui ne change pas : A2 (la nouvelle date et l'heure, sur
+ *   « À venir » et sur la page publique), 19-cours-seance-barree et 19-annulee (une séance barrée,
+ *   avec sa marque).
+ *
  * Les adresses d'exemple :
  *
  * - 20-C7 : l'exemple sous le champ de connexion et sous l'adresse d'une invitation, dans Membres,
@@ -259,9 +272,13 @@
  *
  * Les langues vérifiées :
  *
+ * - dans les cinq langues : 20-C4 sur la page publique (vue Semaine ; pour la session du vendredi,
+ *   l'onglet « Prières » et la vue Mois) et dans le programme de la semaine d'« À venir » ;
+ * - en français, en anglais et en arabe : 20-C4 sur la page d'un cours ;
  * - en arabe seul : 20-B1 et 20-B2, les phrases relues ;
  * - en français, en allemand et en arabe : 20-C7 (la connexion en français et en allemand, Membres
- *   en français et en arabe).
+ *   en français et en arabe) ;
+ * - en français seul : les marques des cartes d'« À venir » (20-C4).
  *
  * ## La date figée (étape 19, D9)
  *
@@ -654,41 +671,50 @@ const NOM_DE_LANGUE = {
 };
 /**
  * Ce que la page publique écrit, langue par langue (`apps/web/src/lib/i18n.ts`) : le lien du pied,
- * l'annonce du nouvel onglet que ce lien porte pour les lecteurs d'écran, le début des deux
- * mentions d'une séance déplacée, au départ et à l'arrivée, et la page d'une organisation inconnue.
- * L'arabe est celui que le chef de projet a relu.
+ * l'annonce du nouvel onglet que ce lien porte pour les lecteurs d'écran, la marque d'une séance
+ * annulée, le début des deux mentions d'une séance déplacée, au départ et à l'arrivée, et la page
+ * d'une organisation inconnue. L'arabe est celui que le chef de projet a relu.
+ *
+ * La marque d'une séance annulée et la mention de son départ disent son état avec son propre nom
+ * depuis l'étape 20 (C4) : « Séance annulée », « Séance déplacée au … ». Elles disaient « Annulé » et
+ * « Déplacé au … » : 20-C4 lit les nouvelles, A2 et 19-cours-seance-barree ce qui ne change pas.
  */
 const TEXTES_PUBLICS = {
 	fr: {
 		conditions: 'Conditions d’utilisation',
 		nouvelOnglet: 's’ouvre dans un nouvel onglet',
-		depart: 'Déplacé au ',
+		annulee: 'Séance annulée',
+		depart: 'Séance déplacée au ',
 		arrivee: 'Initialement le ',
 		introuvable: { titre: 'Page introuvable', phrase: 'Vérifiez l’adresse.' }
 	},
 	de: {
 		conditions: 'Nutzungsbedingungen',
 		nouvelOnglet: 'öffnet sich in einem neuen Tab',
-		depart: 'Verschoben auf ',
+		annulee: 'Termin abgesagt',
+		depart: 'Termin verschoben auf ',
 		arrivee: 'Ursprünglich am '
 	},
 	it: {
 		conditions: 'Condizioni d’uso',
 		nouvelOnglet: 'si apre in una nuova scheda',
-		depart: 'Spostato a ',
+		annulee: 'Lezione annullata',
+		depart: 'Lezione spostata a ',
 		arrivee: 'Inizialmente '
 	},
 	en: {
 		conditions: 'Terms of use',
 		nouvelOnglet: 'opens in a new tab',
-		depart: 'Moved to ',
+		annulee: 'Session cancelled',
+		depart: 'Session moved to ',
 		arrivee: 'Originally on ',
 		introuvable: { titre: 'Page not found', phrase: 'Please check the address.' }
 	},
 	ar: {
 		conditions: 'شروط الاستخدام',
 		nouvelOnglet: 'يُفتح في علامة تبويب جديدة',
-		depart: 'نُقل إلى ',
+		annulee: 'حصة ملغاة',
+		depart: 'حصة منقولة إلى ',
 		arrivee: 'كان مقرّرًا في ',
 		introuvable: { titre: 'الصفحة غير موجودة', phrase: 'تحقّق من العنوان.' }
 	}
@@ -727,16 +753,61 @@ const PRIERE_DU_VENDREDI = {
 	ar: 'صلاة الجمعة'
 };
 /**
- * La marque d'une session du vendredi annulée, accordée à la prière, dans chaque langue de la page
- * publique (`cancelledJumua`, `apps/web/src/lib/i18n.ts`, étape 19).
+ * La marque d'une session du vendredi annulée, avec le nom d'une session, dans chaque langue de la
+ * page publique (`cancelledJumua`, `apps/web/src/lib/i18n.ts`, étape 20, C4). Elle était, à l'étape
+ * 19, « Annulée » accordé à la prière : 20-C4 lit la nouvelle, 19-annulee ce qui ne change pas.
  */
 const ANNULEE_DU_VENDREDI = {
-	fr: 'Annulée',
-	de: 'Abgesagt',
-	it: 'Annullata',
-	en: 'Cancelled',
-	ar: 'ملغاة'
+	fr: 'Session annulée',
+	de: 'Durchgang abgesagt',
+	it: 'Turno annullato',
+	en: 'Session cancelled',
+	ar: 'موعد ملغى'
 };
+/**
+ * La marque d'une ligne annulée du programme de la semaine, prêt à coller, dans chaque langue
+ * (`apps/web/src/lib/messages.ts`) : avec le nom d'une séance pour un cours, d'une session pour la
+ * prière du vendredi, depuis l'étape 20 (C4). Elle disait « (ANNULÉ) » pour l'un comme pour l'autre.
+ */
+const ANNULEE_DANS_LA_SEMAINE = {
+	seance: {
+		fr: '(SÉANCE ANNULÉE)',
+		de: '(TERMIN ABGESAGT)',
+		it: '(LEZIONE ANNULLATA)',
+		en: '(SESSION CANCELLED)',
+		ar: '(حصة ملغاة)'
+	},
+	session: {
+		fr: '(SESSION ANNULÉE)',
+		de: '(DURCHGANG ABGESAGT)',
+		it: '(TURNO ANNULLATO)',
+		en: '(SESSION CANCELLED)',
+		ar: '(موعد ملغى)'
+	}
+};
+/**
+ * Dans le programme de la semaine de chaque langue, la ligne d'une séance, qui n'y est qu'une fois :
+ * la première que `retenue(langue)` accepte. Rend une condition par langue, que sa ligne finisse
+ * par la marque de cette langue, et, pour le détail, la ligne française et celles qui n'ont pas leur
+ * marque.
+ */
+function marquesDuProgramme(messages, retenue, marques) {
+	const lignes = Object.fromEntries(
+		LANGUES.map((langue) => {
+			const texte = messages.find((message) => message.lang === langue)?.texte ?? '';
+			return [langue, texte.split('\n').find(retenue(langue))?.trim() ?? ''];
+		})
+	);
+	const marquee = (langue) => lignes[langue].endsWith(marques[langue]);
+	return {
+		conditions: Object.fromEntries(
+			LANGUES.map((langue) => [`« ${marques[langue]} » en ${langue}`, marquee(langue)])
+		),
+		lues: LANGUES.filter((langue) => langue === 'fr' || !marquee(langue))
+			.map((langue) => `${langue} : ${lignes[langue] || 'aucune ligne'}`)
+			.join(' ; ')
+	};
+}
 /**
  * Sur un ordinateur, l'Outlook des comptes de travail ou d'école, et ce que l'aide de chaque Outlook
  * dit des comptes qu'il sert, dans chaque langue (`apps/web/src/lib/i18n.ts`, étape 19). Le nom
@@ -971,7 +1042,7 @@ const RETOURS_DE_L_ETAPE_19 = [
  * relu (B1, B2), puis les questions de l'étape 19 (C2 à C7). L'en-tête du script dit ce que chacune
  * vérifie.
  */
-const RETOURS_DE_L_ETAPE_20 = ['20-B1', '20-B2', '20-C7'];
+const RETOURS_DE_L_ETAPE_20 = ['20-B1', '20-B2', '20-C4', '20-C7'];
 /** Tous les retours, dans l'ordre du tableau final. */
 const RETOURS = [...RETOURS_DE_L_ETAPE_18, ...RETOURS_DE_L_ETAPE_19, ...RETOURS_DE_L_ETAPE_20];
 /**
@@ -3249,16 +3320,31 @@ async function deplacerPlusTot(page) {
 		await rouverte.getByLabel('Heure de début', { exact: true }).fill('20:30');
 		await envoyer(page, rouverte.getByRole('button', { name: 'Déplacer la séance', exact: true }));
 		const parti = seanceDuJour(page, J3, COURS_2);
+		// Le nom de l'état, « Déplacée au … » à l'étape 19, « Séance déplacée au … » depuis l'étape 20
+		// (C4), est lu par 20-C4 : A2 n'en garde que ce qui ne change pas, la nouvelle date et l'heure.
 		verifierChaque(
 			`la séance du ${dateSuisse(J3)} part au ${dateSuisse(J2)}, plus tôt que prévu, et se dit déplacée`,
 			{
 				'« déplacée »': (await texteDe(parti)).includes('déplacée'),
-				'« Déplacée au … à 20:30 »': (await texteDe(parti)).includes(
-					`Déplacée au ${dateLongue(J2)} à 20:30`
-				)
+				'« … au <date> à 20:30 »': (await texteDe(parti)).includes(`au ${dateLongue(J2)} à 20:30`)
 			},
 			await texteDe(parti)
 		);
+		await retour('20-C4', async () => {
+			// Le cours est encore en brouillon : sa carte porte aussi « brouillon ».
+			const marques = (await parti.locator('.titre .marque').allTextContents()).map((texte) =>
+				texte.trim()
+			);
+			const deplacee = `Séance déplacée au ${dateLongue(J2)} à 20:30`;
+			verifierChaque(
+				`sur « À venir », la séance partie plus tôt porte « Séance déplacée », et « ${deplacee} »`,
+				{
+					'la marque « Séance déplacée »': marques.includes('Séance déplacée'),
+					[`« ${deplacee} »`]: (await texteDe(parti)).includes(deplacee)
+				},
+				`marques : ${marques.join(', ') || 'aucune'} ; ${await texteDe(parti)}`
+			);
+		});
 		const arrivee = seanceDuJour(page, J2, COURS_2);
 		verifierChaque(
 			`elle apparaît le ${dateSuisse(J2)}, en date exceptionnelle, prévue à l’origine le ${dateSuisse(J3)}`,
@@ -3406,6 +3492,21 @@ async function programme(page) {
 		},
 		await texteDe(premiere.locator('.titre'))
 	);
+	// L'état avec son propre nom, sur la carte et dans le programme de la semaine (étape 20, C4).
+	await retour('20-C4', async () => {
+		const marque = await texteDe(premiere.locator('.titre .marque'));
+		const marques = ANNULEE_DANS_LA_SEMAINE.seance;
+		const programme = marquesDuProgramme(
+			await messagesDeLAccueil(page, 'semaine'),
+			() => (ligne) => ligne.includes(COURS_1.fr) || ligne.includes(COURS_1.ar),
+			marques
+		);
+		verifierChaque(
+			`sur « À venir », la séance annulée du ${dateSuisse(J1)} porte « Séance annulée », et le programme de la semaine la marque dans chaque langue : ${LANGUES.map((langue) => `« ${marques[langue]} »`).join(', ')}`,
+			{ '« Séance annulée » sur la carte': marque === 'Séance annulée', ...programme.conditions },
+			`« ${marque} » ; ${programme.lues}`
+		);
+	});
 	await deplacerPlusTot(page);
 	// La carte d'arrivée, « date exceptionnelle », défait le déplacement elle aussi (étape 19, D4). Le
 	// bouton n'est pas touché : la séance déplacée sert à la suite du parcours.
@@ -3935,6 +4036,8 @@ async function pagesPubliques(page) {
 			);
 			// Au départ, la mention dit où va la séance ; à l'arrivée, la marque dit « date
 			// exceptionnelle » et le détail d'où elle vient. Chacune avec sa date entière, JJ.MM.AAAA.
+			// Le début de la mention du départ, « Déplacé au » à l'étape 19, dit le nom de l'état depuis
+			// l'étape 20 : 20-C4 le lit, A2 garde la date où la séance va.
 			const depart = second.find((vue) => vue.barree);
 			const arrivee = second.find((vue) => !vue.barree);
 			await retour('A2', async () => {
@@ -3942,13 +4045,23 @@ async function pagesPubliques(page) {
 					`${adresse} : la séance ramenée plus tôt se voit au départ (${dateSuisse(J3)}) et à l’arrivée (${dateSuisse(J2)})`,
 					{
 						'au départ et à l’arrivée': second.length === 2,
-						'le départ dit où elle va':
-							Boolean(depart?.mention.startsWith(textes.depart)) &&
-							(depart?.mention ?? '').includes(dateSuisse(J2)),
+						'le départ dit où elle va': (depart?.mention ?? '').includes(dateSuisse(J2)),
 						'l’arrivée a sa marque': Boolean(arrivee?.mention),
 						'l’arrivée dit d’où elle vient': (arrivee?.texte ?? '').includes(dateSuisse(J3))
 					},
 					`${depart?.mention ?? 'départ absent'} | ${arrivee?.mention ?? 'arrivée absente'} · ${arrivee?.texte ?? ''}`
+				);
+			});
+			// L'état avec son propre nom, celui d'une séance (étape 20, C4).
+			await retour('20-C4', async () => {
+				verifierChaque(
+					`${adresse} : la séance annulée porte « ${textes.annulee} », et la séance ramenée plus tôt, à son départ, « ${textes.depart.trim()} … »`,
+					{
+						[`« ${textes.annulee} »`]:
+							premier.length === 1 && premier[0]?.mention === textes.annulee,
+						[`« ${textes.depart.trim()} … »`]: Boolean(depart?.mention.startsWith(textes.depart))
+					},
+					`${premier.map((vue) => vue.mention).join(' | ') || 'aucune séance annulée'} | ${depart?.mention ?? 'départ absent'}`
 				);
 			});
 			// En italien, « Inizialmente », sans article devant le jour (étape 19, D7).
@@ -4031,9 +4144,16 @@ async function pagesPubliques(page) {
 			verifier(`${base}/cours/<id> s’affiche`, reponse?.status() === 200, await titre(page));
 			if (langue !== 'fr') await verifierLaBaliseHtml(page, `${base}/cours/<id>`, langue);
 			if (langue === 'ar') sansChiffresOrientaux(await page.content(), `${base}/cours/<id>`);
-			await retour('19-cours-seance-barree', () =>
-				seanceAnnuleeSurLaPageDuCours(page, base, langue)
-			);
+			await retour('19-cours-seance-barree', () => seanceAnnuleeSurLaPageDuCours(page, base));
+			// Le mot de sa marque, celui d'une séance (étape 20, C4).
+			await retour('20-C4', async () => {
+				const { nombre, marque } = await seanceBarreeDuCours(page);
+				verifier(
+					`${base}/cours/<id> : dans « Prochaines séances », la séance annulée porte « ${TEXTES_PUBLICS[langue].annulee} »`,
+					nombre === 1 && marque === TEXTES_PUBLICS[langue].annulee,
+					marque || `${nombre} séance(s) barrée(s)`
+				);
+			});
 			await retour('19-og-locale', () => localeDePartage(page, `${base}/cours/<id>`, langue));
 			if (langue !== 'en') await auditer(page, `page d’un cours ${langue}`);
 			const abonnement = await ouvrir(page, `${base}/agenda`);
@@ -4099,32 +4219,41 @@ async function localeDePartage(page, adresse, langue) {
 	);
 }
 
-/** « Annulé » dans chaque langue de la page publique (`apps/web/src/lib/i18n.ts`). */
-const ANNULE = { fr: 'Annulé', de: 'Abgesagt', it: 'Annullato', en: 'Cancelled', ar: 'ملغى' };
+/**
+ * Sur la page publique d'un cours, dans « Prochaines séances », les séances barrées : leur nombre,
+ * et, s'il n'y en a qu'une, son texte, sa marque et le trait qui la barre.
+ */
+async function seanceBarreeDuCours(page) {
+	const barrees = page.locator('main ul li.barree');
+	const nombre = await barrees.count();
+	return {
+		nombre,
+		texte: nombre === 1 ? await texteDe(barrees) : '',
+		marque: nombre === 1 ? await texteDe(barrees.locator('.marque')) : '',
+		trait:
+			nombre === 1 &&
+			(await barrees.evaluate((ligne) =>
+				getComputedStyle(ligne).textDecorationLine.includes('line-through')
+			))
+	};
+}
 
 /**
  * La page publique d'un cours (étape 19, lot 2) : dans « Prochaines séances », la séance annulée
- * reste à sa date, barrée, avec « Annulé », au lieu de disparaître.
+ * reste à sa date, barrée, avec sa marque, au lieu de disparaître. Le mot de la marque, « Annulé »
+ * à l'étape 19, est celui d'une séance depuis l'étape 20 : 20-C4 le lit.
  */
-async function seanceAnnuleeSurLaPageDuCours(page, base, langue) {
-	const barrees = page.locator('main ul li.barree');
-	const nombre = await barrees.count();
-	const lue = nombre === 1 ? await texteDe(barrees) : '';
-	const marque = nombre === 1 ? await texteDe(barrees.locator('.marque')) : '';
-	const trait =
-		nombre === 1 &&
-		(await barrees.evaluate((ligne) =>
-			getComputedStyle(ligne).textDecorationLine.includes('line-through')
-		));
+async function seanceAnnuleeSurLaPageDuCours(page, base) {
+	const { nombre, texte, marque, trait } = await seanceBarreeDuCours(page);
 	verifierChaque(
-		`${base}/cours/<id> : dans « Prochaines séances », la séance annulée du ${dateSuisse(J1)} reste, barrée, avec « ${ANNULE[langue]} »`,
+		`${base}/cours/<id> : dans « Prochaines séances », la séance annulée du ${dateSuisse(J1)} reste, barrée, avec sa marque`,
 		{
 			'une séance barrée': nombre === 1,
-			'à sa date': lue.includes(dateSuisse(J1)),
-			[`« ${ANNULE[langue]} »`]: marque === ANNULE[langue],
+			'à sa date': texte.includes(dateSuisse(J1)),
+			'une marque': marque !== '',
 			'le trait sur le texte': trait
 		},
-		lue || `${nombre} séance(s) barrée(s)`
+		texte || `${nombre} séance(s) barrée(s)`
 	);
 }
 
@@ -6791,6 +6920,24 @@ async function vendrediSurLAccueil(page) {
 				},
 				lue
 			);
+			// La carte de départ, à l'heure prévue, dit son état avec le nom d'une session (étape 20, C4).
+			await retour('20-C4', async () => {
+				const depart = carte(page, 'moved_away');
+				const presente = (await depart.count()) === 1;
+				const deplacee = `Session déplacée au ${dateLongue(jour)} à ${HEURE_DU_VENDREDI_DEPLACE}`;
+				const texteDuDepart = presente
+					? await texteDe(depart)
+					: `${await depart.count()} carte(s) de départ`;
+				verifierChaque(
+					`sur « À venir », la session du vendredi déplacée le même jour porte « Session déplacée », et « ${deplacee} »`,
+					{
+						'la marque « Session déplacée »':
+							presente && (await texteDe(depart.locator('.titre .marque'))) === 'Session déplacée',
+						[`« ${deplacee} »`]: texteDuDepart.includes(deplacee)
+					},
+					texteDuDepart
+				);
+			});
 			const messagesDuDeplacement = await messagesDeLAccueil(page, 'message');
 			const francais =
 				messagesDuDeplacement[0]?.lang === 'fr' ? messagesDuDeplacement[0].texte : '';
@@ -6886,6 +7033,8 @@ async function vendrediSurLAccueil(page) {
 				(await depart.count()) === 1 ? await texteDe(depart) : 'aucune carte de départ';
 			const messagesPrepares = await ouvertAvant.locator('#message-titre').count();
 			const arrivees = await carte(ouvertAvant, 'moved_here').count();
+			// La carte de départ dit où la session est partie. Le nom de son état, « Déplacée au … » à
+			// l'étape 19, « Session déplacée au … » depuis l'étape 20, est lu par 20-C4.
 			verifierChaque(
 				`une carte restée ouverte dans un autre onglet, envoyée après ce déplacement, est refusée par une phrase en haut, et rien n’est écrit : la session reste à ${HEURE_DU_VENDREDI_DEPLACE}`,
 				{
@@ -6893,7 +7042,7 @@ async function vendrediSurLAccueil(page) {
 					'le refus en haut': enHaut,
 					'aucun message préparé': messagesPrepares === 0,
 					[`la session à ${HEURE_DU_VENDREDI_DEPLACE}`]: departLu.includes(
-						`Déplacée au ${dateLongue(jour)} à ${HEURE_DU_VENDREDI_DEPLACE}`
+						`au ${dateLongue(jour)} à ${HEURE_DU_VENDREDI_DEPLACE}`
 					),
 					'une seule carte d’arrivée': arrivees === 1
 				},
@@ -6964,9 +7113,11 @@ async function vendrediSurLAccueil(page) {
 /**
  * La session du vendredi, rétablie à son heure, puis annulée pour ce vendredi sur « À venir »
  * (étape 19) : le message prêt à coller parle d'une prière, et dit que les autres ont lieu comme
- * d'habitude, sans les mots d'un cours. La page publique la marque « Annulée », accordé à la
- * prière, dans la vue Semaine, dans l'onglet « Prières » et dans la vue Mois, dans les cinq
- * langues. La session est rétablie à la fin.
+ * d'habitude, sans les mots d'un cours. La page publique la garde, barrée, avec sa marque, dans la
+ * vue Semaine, dans l'onglet « Prières » et dans la vue Mois, dans les cinq langues. Le mot de
+ * cette marque, « Annulée » accordé à la prière à l'étape 19, est celui d'une session depuis l'étape
+ * 20 (C4), comme la marque de sa carte et celle de sa ligne dans le programme de la semaine. La
+ * session est rétablie à la fin.
  */
 async function vendrediAnnule(page) {
 	const nom = PRIERE_DU_VENDREDI.fr;
@@ -6996,6 +7147,23 @@ async function vendrediAnnule(page) {
 		(await carte('cancelled').count()) === 1,
 		`${await carte('cancelled').count()} carte(s) annulée(s)`
 	);
+	// Sa carte et sa ligne du programme de la semaine disent son état avec le nom d'une session
+	// (étape 20, C4).
+	await retour('20-C4', async () => {
+		const marque = await texteDe(carte('cancelled').locator('.titre .marque'));
+		const marques = ANNULEE_DANS_LA_SEMAINE.session;
+		const programme = marquesDuProgramme(
+			await messagesDeLAccueil(page, 'semaine'),
+			(langue) => (ligne) =>
+				ligne.includes(PRIERE_DU_VENDREDI[langue]) && ligne.includes(VENDREDI.debut),
+			marques
+		);
+		verifierChaque(
+			`annulée sur « À venir », la session du vendredi porte « Session annulée », et le programme de la semaine la marque dans chaque langue : ${LANGUES.map((langue) => `« ${marques[langue]} »`).join(', ')}`,
+			{ '« Session annulée » sur la carte': marque === 'Session annulée', ...programme.conditions },
+			`« ${marque} » ; ${programme.lues}`
+		);
+	});
 	await retour('19-texte-vendredi', async () => {
 		const messages = await messagesDeLAccueil(page, 'message');
 		const francais = messages.find((message) => message.lang === 'fr')?.texte ?? '';
@@ -7012,48 +7180,73 @@ async function vendrediAnnule(page) {
 			francais.split('\n').filter(Boolean).slice(1, 3).join(' | ') || 'aucun message en français'
 		);
 	});
-	await retour('19-annulee', async () => {
-		const contexte = await nouveauContexte(
-			/** @type {import('playwright-core').Browser} */ (page.context().browser())
-		);
-		try {
-			const visiteur = await contexte.newPage();
-			const marques = {};
-			for (const langue of LANGUES) {
-				const titreDeLaSession = PRIERE_DU_VENDREDI[langue];
-				const annulee = ANNULEE_DU_VENDREDI[langue];
-				const base = `/m/${ORGANISATION.slug}${langue === 'fr' ? '' : `/${langue}`}`;
-				await ouvrir(visiteur, base);
-				const semaine = (await seancesPubliques(visiteur, titreDeLaSession)).find(
-					(vue) => vue.barree
-				);
-				await ouvrir(visiteur, `${base}?vue=prieres`);
-				const prieres = await texteDe(visiteur.locator('table.semaine'));
-				await ouvrir(visiteur, `${base}?vue=mois&mois=${jour.slice(0, 7)}&jour=${jour}`);
-				const mois = (await seancesPubliques(visiteur, titreDeLaSession)).find((vue) => vue.barree);
-				marques[langue] = {
-					annulee,
-					semaine: semaine?.mention ?? 'absente',
-					prieres: prieres.includes(annulee),
-					mois: mois?.mention ?? 'absente'
-				};
-			}
-			verifierChaque(
-				'annulée, la session du vendredi porte, dans les cinq langues, « Annulée », « Abgesagt », « Annullata », « Cancelled » et « ملغاة », accordé à la prière, dans la vue Semaine, l’onglet « Prières » et la vue Mois',
-				Object.fromEntries(
-					Object.entries(marques).flatMap(([langue, lu]) => [
-						[`vue Semaine, ${langue}`, lu.semaine === lu.annulee],
-						[`onglet « Prières », ${langue}`, lu.prieres],
-						[`vue Mois, ${langue}`, lu.mois === lu.annulee]
-					])
-				),
-				Object.entries(marques)
-					.map(([langue, lu]) => `${langue} : « ${lu.semaine} », « ${lu.mois} »`)
-					.join(' ; ')
+	// La page publique, dans les cinq langues, lue par un visiteur neuf : la marque de la session
+	// barrée dans la vue Semaine, dans le tableau des sept jours de l'onglet « Prières », son heure
+	// barrée, et dans la vue Mois, ou `''` quand elle n'y est pas barrée avec une marque. 19-annulee
+	// juge ce qui ne change pas, une session barrée avec sa marque ; 20-C4, le mot de cette marque.
+	const marques = {};
+	const contexte = await nouveauContexte(
+		/** @type {import('playwright-core').Browser} */ (page.context().browser())
+	);
+	try {
+		const visiteur = await contexte.newPage();
+		for (const langue of LANGUES) {
+			const titreDeLaSession = PRIERE_DU_VENDREDI[langue];
+			const base = `/m/${ORGANISATION.slug}${langue === 'fr' ? '' : `/${langue}`}`;
+			await ouvrir(visiteur, base);
+			const semaine = (await seancesPubliques(visiteur, titreDeLaSession)).find(
+				(vue) => vue.barree
 			);
-		} finally {
-			await contexte.close();
+			await ouvrir(visiteur, `${base}?vue=prieres`);
+			const retiree = visiteur
+				.locator('table.semaine .jumua.retiree')
+				.filter({ has: visiteur.locator('s', { hasText: VENDREDI.debut }) });
+			const prieres =
+				(await retiree.count()) === 1 ? await texteDe(retiree.locator('.marque')) : '';
+			await ouvrir(visiteur, `${base}?vue=mois&mois=${jour.slice(0, 7)}&jour=${jour}`);
+			const mois = (await seancesPubliques(visiteur, titreDeLaSession)).find((vue) => vue.barree);
+			marques[langue] = {
+				semaine: semaine?.mention ?? '',
+				prieres,
+				mois: mois?.mention ?? ''
+			};
 		}
+	} finally {
+		await contexte.close();
+	}
+	const lues = LANGUES.map(
+		(langue) =>
+			`${langue} : « ${marques[langue].semaine} », « ${marques[langue].prieres} », « ${marques[langue].mois} »`
+	).join(' ; ');
+	await retour('19-annulee', async () => {
+		verifierChaque(
+			'annulée, la session du vendredi reste, barrée, avec sa marque, dans les cinq langues, dans la vue Semaine, l’onglet « Prières » et la vue Mois',
+			Object.fromEntries(
+				LANGUES.flatMap((langue) => [
+					[`vue Semaine, ${langue}`, marques[langue].semaine !== ''],
+					[`onglet « Prières », ${langue}`, marques[langue].prieres !== ''],
+					[`vue Mois, ${langue}`, marques[langue].mois !== '']
+				])
+			),
+			lues
+		);
+	});
+	// Le mot de la marque, celui d'une session (étape 20, C4).
+	await retour('20-C4', async () => {
+		verifierChaque(
+			`annulée, la session du vendredi porte, dans les cinq langues, ${LANGUES.map((langue) => `« ${ANNULEE_DU_VENDREDI[langue]} »`).join(', ')}, dans la vue Semaine, l’onglet « Prières » et la vue Mois`,
+			Object.fromEntries(
+				LANGUES.flatMap((langue) => [
+					[`vue Semaine, ${langue}`, marques[langue].semaine === ANNULEE_DU_VENDREDI[langue]],
+					[
+						`onglet « Prières », ${langue}`,
+						marques[langue].prieres === ANNULEE_DU_VENDREDI[langue]
+					],
+					[`vue Mois, ${langue}`, marques[langue].mois === ANNULEE_DU_VENDREDI[langue]]
+				])
+			),
+			lues
+		);
 	});
 	await ouvrir(page, '/');
 	await envoyer(
@@ -8189,12 +8382,14 @@ B4 | avec JavaScript, après ce refus, l’écran revient sur l’onglet de la l
 A1 | avant tout geste, aucun bouton « Annuler cette séance » n’est visible
 A1 | « Annuler ou déplacer » n’ouvre que les options de sa carte
 A1 | un second geste la referme, sans rouvrir les autres
+20-C4 | sur « À venir », la séance annulée du JJ.MM.AAAA porte « Séance annulée », et le programme de la semaine la marque dans chaque langue : « (SÉANCE ANNULÉE) », « (TERMIN ABGESAGT) », « (LEZIONE ANNULLATA) », « (SESSION CANCELLED) », « (حصة ملغاة) »
 A2 | le champ « Nouvelle date » accepte toute date à partir d’aujourd’hui (JJ.MM.AAAA)
 19-D4 | le calendrier de « Nouvelle date » s’arrête au JJ.MM.AAAA, la dernière date que l’action accepte
 B1 | l’aide de la nouvelle date dit : à partir d’aujourd’hui, plus tôt ou plus tard
 A2 | « Déplacer la séance » sans rien changer, ni la date ni l’heure, est refusé avec une phrase, dans la carte, et rien n’est déplacé
 A2 | une date passée est refusée, dans la carte de la séance
 A2 | la séance du JJ.MM.AAAA part au JJ.MM.AAAA, plus tôt que prévu, et se dit déplacée
+20-C4 | sur « À venir », la séance partie plus tôt porte « Séance déplacée », et « Séance déplacée au JOUR JJ.MM.AAAA à 20:30 »
 A2 | elle apparaît le JJ.MM.AAAA, en date exceptionnelle, prévue à l’origine le JJ.MM.AAAA
 19-D4 | la carte d’arrivée du JJ.MM.AAAA, « date exceptionnelle », a son bouton « Rétablir la séance », avec l’aide qui dit ce qu’il défait
 B1 | l’écran Partager dit où coller le code, avec un exemple, et nomme le cadre sans jargon
@@ -8213,11 +8408,14 @@ B1 | l’écran Partager dit où coller le code, avec un exemple, et nomme le ca
 19-cours-hors-periode | un cours à dates précises dont une date tombe après son dernier jour : son bloc, et lui seul, dit « À corriger : … »
 19-D3 | sur /cours, la responsable supprime un cours : « Supprimer ce cours », fermé au chargement, dit ce que la suppression emporte, et « Oui, supprimer » le retire
 A2 | /m/centre-parcours : la séance ramenée plus tôt se voit au départ (JJ.MM.AAAA) et à l’arrivée (JJ.MM.AAAA)
+20-C4 | /m/centre-parcours : la séance annulée porte « Séance annulée », et la séance ramenée plus tôt, à son départ, « Séance déplacée au … »
 19-og-locale | /m/centre-parcours : <meta property="og:locale" content="fr_CH">, et un og:locale:alternate par autre langue publiée
 A2 | /m/centre-parcours/de : la séance ramenée plus tôt se voit au départ (JJ.MM.AAAA) et à l’arrivée (JJ.MM.AAAA)
+20-C4 | /m/centre-parcours/de : la séance annulée porte « Termin abgesagt », et la séance ramenée plus tôt, à son départ, « Termin verschoben auf … »
 19-og-locale | /m/centre-parcours/de : <meta property="og:locale" content="de_CH">, et un og:locale:alternate par autre langue publiée
 D4 | les conditions ouvertes depuis /m/centre-parcours/de disent d’abord, dans cette langue, qu’elles n’existent qu’en français
 A2 | /m/centre-parcours/it : la séance ramenée plus tôt se voit au départ (JJ.MM.AAAA) et à l’arrivée (JJ.MM.AAAA)
+20-C4 | /m/centre-parcours/it : la séance annulée porte « Lezione annullata », et la séance ramenée plus tôt, à son départ, « Lezione spostata a … »
 19-D7 | /m/centre-parcours/it : à l’arrivée, « Inizialmente <giorno> JJ.MM.AAAA », sans « In origine: » ni « il » devant le jour
 19-og-locale | /m/centre-parcours/it : <meta property="og:locale" content="it_CH">, et un og:locale:alternate par autre langue publiée
 D4 | les conditions ouvertes depuis /m/centre-parcours/it disent d’abord, dans cette langue, qu’elles n’existent qu’en français
@@ -8226,25 +8424,30 @@ D1 | /m/centre-parcours/en : <html lang="en" dir="ltr">
 D1 | /m/centre-parcours/en : les deux cours y sont
 D1 | /m/centre-parcours/en : la séance annulée reste visible, barrée, avec sa mention
 A2 | /m/centre-parcours/en : la séance ramenée plus tôt se voit au départ (JJ.MM.AAAA) et à l’arrivée (JJ.MM.AAAA)
+20-C4 | /m/centre-parcours/en : la séance annulée porte « Session cancelled », et la séance ramenée plus tôt, à son départ, « Session moved to … »
 19-og-locale | /m/centre-parcours/en : <meta property="og:locale" content="en_GB">, et un og:locale:alternate par autre langue publiée
 D1 | /m/centre-parcours/en : le nom accessible du lien des conditions est « Terms of use (opens in a new tab) », selon playwright et selon Chrome, et l’annonce est cachée aux yeux
 D1 | /m/centre-parcours/en : le pied porte ce lien, vers /conditions, dans un nouvel onglet
 D1 | /m/centre-parcours/en : aucune phrase de la page française n’y reste en français
 D4 | les conditions ouvertes depuis /m/centre-parcours/en disent d’abord, dans cette langue, qu’elles n’existent qu’en français
 A2 | /m/centre-parcours/ar : la séance ramenée plus tôt se voit au départ (JJ.MM.AAAA) et à l’arrivée (JJ.MM.AAAA)
+20-C4 | /m/centre-parcours/ar : la séance annulée porte « حصة ملغاة », et la séance ramenée plus tôt, à son départ, « حصة منقولة إلى … »
 19-og-locale | /m/centre-parcours/ar : <meta property="og:locale" content="ar_AR">, et un og:locale:alternate par autre langue publiée
 D4 | les conditions ouvertes depuis /m/centre-parcours/ar disent d’abord, dans cette langue, qu’elles n’existent qu’en français
-19-cours-seance-barree | /m/centre-parcours/cours/<id> : dans « Prochaines séances », la séance annulée du JJ.MM.AAAA reste, barrée, avec « Annulé »
+19-cours-seance-barree | /m/centre-parcours/cours/<id> : dans « Prochaines séances », la séance annulée du JJ.MM.AAAA reste, barrée, avec sa marque
+20-C4 | /m/centre-parcours/cours/<id> : dans « Prochaines séances », la séance annulée porte « Séance annulée »
 19-og-locale | /m/centre-parcours/cours/<id> : <meta property="og:locale" content="fr_CH">, et un og:locale:alternate par autre langue publiée
 19-og-locale | /m/centre-parcours/agenda : <meta property="og:locale" content="fr_CH">, et un og:locale:alternate par autre langue publiée
 D1 | /m/centre-parcours/en/cours/<id> s’affiche
 D1 | /m/centre-parcours/en/cours/<id> : <html lang="en" dir="ltr">
-19-cours-seance-barree | /m/centre-parcours/en/cours/<id> : dans « Prochaines séances », la séance annulée du JJ.MM.AAAA reste, barrée, avec « Cancelled »
+19-cours-seance-barree | /m/centre-parcours/en/cours/<id> : dans « Prochaines séances », la séance annulée du JJ.MM.AAAA reste, barrée, avec sa marque
+20-C4 | /m/centre-parcours/en/cours/<id> : dans « Prochaines séances », la séance annulée porte « Session cancelled »
 19-og-locale | /m/centre-parcours/en/cours/<id> : <meta property="og:locale" content="en_GB">, et un og:locale:alternate par autre langue publiée
 D1 | /m/centre-parcours/en/agenda s’affiche
 D1 | /m/centre-parcours/en/agenda : <html lang="en" dir="ltr">
 19-og-locale | /m/centre-parcours/en/agenda : <meta property="og:locale" content="en_GB">, et un og:locale:alternate par autre langue publiée
-19-cours-seance-barree | /m/centre-parcours/ar/cours/<id> : dans « Prochaines séances », la séance annulée du JJ.MM.AAAA reste, barrée, avec « ملغى »
+19-cours-seance-barree | /m/centre-parcours/ar/cours/<id> : dans « Prochaines séances », la séance annulée du JJ.MM.AAAA reste, barrée, avec sa marque
+20-C4 | /m/centre-parcours/ar/cours/<id> : dans « Prochaines séances », la séance annulée porte « حصة ملغاة »
 19-og-locale | /m/centre-parcours/ar/cours/<id> : <meta property="og:locale" content="ar_AR">, et un og:locale:alternate par autre langue publiée
 19-og-locale | /m/centre-parcours/ar/agenda : <meta property="og:locale" content="ar_AR">, et un og:locale:alternate par autre langue publiée
 19-D8 | /m/association-voisine/agenda : « Le programme d’Association voisine s’ajoute à votre calendrier », dans la page et dans sa description, jamais « de Association »
@@ -8363,6 +8566,7 @@ D2 | depuis l’écran en allemand, la copie de « Winter » pour l’année sui
 19-titre-langue-ecran | sur « À venir », une séance porte son titre dans la langue de l’écran : « Freitagsgebet » en allemand, « قراءة القرآن » en arabe
 D1 | sur « À venir », le programme de la semaine nomme la session du vendredi dans la langue de chaque message : « Freitagsgebet », « Preghiera del venerdì », « Friday prayer », « صلاة الجمعة »
 A2 | déplacée le même jour de 12:30 à 13:00, la session du vendredi porte sur sa carte « nouvelle heure » et « Prévue à l’origine : 12:30 – 13:15 »
+20-C4 | sur « À venir », la session du vendredi déplacée le même jour porte « Session déplacée », et « Session déplacée au JOUR JJ.MM.AAAA à 13:00 »
 B1 | le message prêt à coller le dit comme un changement d’heure, la date une seule fois : « … commence à 13:00 au lieu de 12:30. »
 19-texte-vendredi | déplacée le même jour, la session du vendredi : le message dit « « Prière du vendredi » : la prière du JOUR JJ.MM.AAAA commence à 13:00 au lieu de 12:30. », sans « Le cours »
 D1 | ce message nomme la session du vendredi dans la langue de chaque message : « Freitagsgebet », « Preghiera del venerdì », « Friday prayer », « صلاة الجمعة »
@@ -8370,8 +8574,10 @@ B1 | le programme de la semaine dit la session déplacée le même jour comme un
 A2 | une carte restée ouverte dans un autre onglet, envoyée après ce déplacement, est refusée par une phrase en haut, et rien n’est écrit : la session reste à 13:00
 19-D4 | sur « À venir », le refus d’une carte restée ouverte nomme la séance : « La séance « Prière du vendredi » du JOUR JJ.MM.AAAA a changé depuis l’ouverture de la page : … »
 A2 | sur l’écran du vendredi, une carte restée ouverte dans un autre onglet, envoyée après ce déplacement (« Annuler cette session »), est refusée par une phrase en tête, et rien n’est écrit : la session reste déplacée à 13:00
+20-C4 | annulée sur « À venir », la session du vendredi porte « Session annulée », et le programme de la semaine la marque dans chaque langue : « (SESSION ANNULÉE) », « (DURCHGANG ABGESAGT) », « (TURNO ANNULLATO) », « (SESSION CANCELLED) », « (موعد ملغى) »
 19-texte-vendredi | annulée, la session du vendredi : le message dit « « Prière du vendredi » : la prière du JOUR JJ.MM.AAAA est annulée. », puis « Les autres prières du vendredi ont lieu comme d’habitude. », sans « Le cours »
-19-annulee | annulée, la session du vendredi porte, dans les cinq langues, « Annulée », « Abgesagt », « Annullata », « Cancelled » et « ملغاة », accordé à la prière, dans la vue Semaine, l’onglet « Prières » et la vue Mois
+19-annulee | annulée, la session du vendredi reste, barrée, avec sa marque, dans les cinq langues, dans la vue Semaine, l’onglet « Prières » et la vue Mois
+20-C4 | annulée, la session du vendredi porte, dans les cinq langues, « Session annulée », « Durchgang abgesagt », « Turno annullato », « Session cancelled », « موعد ملغى », dans la vue Semaine, l’onglet « Prières » et la vue Mois
 B1 | avec JavaScript, le nom et la formule d’accueil tapés au clavier, puis une autre couleur : c’est ce qui a été tapé qui s’enregistre
 19-membres-confirmations | sur sa propre ligne, « Donner le rôle d’éditeur » ne change rien au premier envoi : en haut, « Vous allez vous donner le rôle d’éditeur. », « Prendre le rôle d’éditeur » et « Ne rien changer »
 B3 | une responsable qui se donne le rôle d’éditeur arrive sur « À venir », où une phrase, visible sans défiler, lui dit ce qui s’est passé et comment retrouver ses écrans
