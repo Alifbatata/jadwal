@@ -1507,10 +1507,15 @@ const langueDuCourriel = (courriel) =>
  * Une requête jouée dans la base du parcours, par son propriétaire, là où aucun écran ne mène : une
  * vue du widget datée d'avant la semaine (B10), un cours enregistré avant la règle de l'étape 18
  * (dates hors de sa période), l'arabe pour langue par défaut de l'organisation voisine, où la
- * personne du parcours n'est qu'éditrice, le temps d'un 404 (19-404-organisation). Le texte de la
- * requête vient de ce script. Une seule valeur y entre depuis le serveur : l'identifiant du cours
- * à dates précises, lu à l'adresse où l'écran revient ; il n'y entre qu'avec la forme d'un
- * identifiant (`UUID`), sinon le geste est impossible.
+ * personne du parcours n'est qu'éditrice, le temps d'un 404 (19-404-organisation), et, à l'étape r
+ * (étape 20, 20-C2 et 20-cles), des séances déplacées d'un jour passé ou vers un même jour, et le
+ * premier jour de la session du vendredi, lu, reculé puis remis. Le texte de la requête vient de ce
+ * script. Les valeurs qui y entrent depuis le serveur n'y entrent qu'après avoir passé leur forme :
+ * celle d'un identifiant (`UUID`) pour l'identifiant du cours à dates précises, lu à l'adresse où
+ * l'écran revient, pour celui du cours de l'étape r, lu dans le lien de sa ligne sur /cours, et pour
+ * celui de la session du vendredi, lu dans un formulaire de son écran ; celle d'une date
+ * (`AAAA-MM-JJ`) pour le premier jour de la session, lu dans la base. Sinon, la requête n'est pas
+ * jouée : le geste est impossible (19-cours-hors-periode), ou le parcours s'arrête (étape r).
  */
 function ecrireDansLaBase(requete) {
 	const passage = spawnSync(
