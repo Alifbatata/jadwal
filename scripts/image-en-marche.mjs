@@ -160,9 +160,12 @@ export class MiseEnMarche {
 	 * `horloge`, un instant ISO 8601 avec son fuseau, pose l'horloge de ce seul conteneur à cet
 	 * instant : `scripts/horloge-figee.mjs` y est monté en lecture seule, et `NODE_OPTIONS` le fait
 	 * charger par le serveur, sans rien changer à l'image. Le module est celui du dépôt qui lance
-	 * l'épreuve, et non celui de l'image, qui ne le porte pas. `--mount`, et non `--volume` : le
-	 * chemin d'un poste Windows commence par une lettre suivie de deux-points, que `--volume` lit
-	 * comme un séparateur.
+	 * l'épreuve, et non celui de l'image, qui ne le porte pas. `--mount`, et non `--volume` : sous
+	 * Linux, dans la CI, une source absente y arrête `docker run` (« bind source path does not
+	 * exist »), là où `--volume` monterait à sa place un dossier vide, créé pour l'occasion : le
+	 * serveur s'arrêterait alors sur une erreur d'import, loin de la cause. `readonly` y est écrit
+	 * en toutes lettres. Docker Desktop pour Windows lit les deux formes avec un chemin `C:\…`, et
+	 * crée ce dossier dans les deux cas : mesuré à la relecture du lot 4 de l'étape 19.
 	 */
 	lancerLeServeur(publication, extra = {}, { horloge } = {}) {
 		const horlogeFigee = horloge
