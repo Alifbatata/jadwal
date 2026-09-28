@@ -28,6 +28,8 @@ on:
       - 'SECURITY.md'
       - 'apps/web/src/**/*.svelte'
       - 'apps/web/src/lib/i18n.ts'
+      # Les textes de l'espace et leur LISEZMOI : `scripts/orthographe.mjs` les relit par motif.
+      - 'apps/web/src/lib/i18n/**'
       - 'apps/web/src/lib/messages.ts'
       - 'apps/web/src/lib/server/mail/messages.ts'
       - 'apps/web/src/lib/public/affichage.ts'
@@ -47,6 +49,8 @@ on:
       - 'SECURITY.md'
       - 'apps/web/src/**/*.svelte'
       - 'apps/web/src/lib/i18n.ts'
+      # Les textes de l'espace et leur LISEZMOI : `scripts/orthographe.mjs` les relit par motif.
+      - 'apps/web/src/lib/i18n/**'
       - 'apps/web/src/lib/messages.ts'
       - 'apps/web/src/lib/server/mail/messages.ts'
       - 'apps/web/src/lib/public/affichage.ts'
