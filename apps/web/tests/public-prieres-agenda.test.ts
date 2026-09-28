@@ -1556,7 +1556,7 @@ const OUTLOOK_TRAVAIL: Record<Langue, [string, string]> = {
 		'Outlook on the web opens with the address already filled in: choose Import. This link is for work or school accounts.'
 	],
 	ar: [
-		'Outlook (عمل أو مدرسة)',
+		'Outlook (حساب عمل أو مدرسة)',
 		'يُفتح Outlook على الويب والعنوان مُدخل مسبقًا: اختر استيراد. هذا الرابط لحسابات العمل أو المدرسة.'
 	]
 };

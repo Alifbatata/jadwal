@@ -75,3 +75,14 @@ describe('Arabic reviewed by the project lead (step 19)', () => {
 		);
 	});
 });
+
+// Étape 20 : les deux textes que le chef de projet a relus dans le relevé de l'étape 19.
+describe('Arabic reviewed by the project lead (step 20)', () => {
+	it('B1: Outlook for a work or school account', () => {
+		expect(t('ar').choiceOutlookWork).toBe('Outlook (حساب عمل أو مدرسة)');
+	});
+
+	it('B2: leave an organisation one is a member of', () => {
+		expect(membersTexts.ar.gestures.editor.leave).toBe('مغادرة مؤسسة يكون عضوًا فيها');
+	});
+});

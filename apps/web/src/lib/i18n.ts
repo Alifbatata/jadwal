@@ -1088,7 +1088,7 @@ const ar: Dictionnaire = {
 	choiceOutlook: 'Outlook',
 	choiceOutlookHelp:
 		'يُفتح Outlook على الويب والعنوان مُدخل مسبقًا: اختر استيراد. هذا الرابط للحسابات الشخصية.',
-	choiceOutlookWork: 'Outlook (عمل أو مدرسة)',
+	choiceOutlookWork: 'Outlook (حساب عمل أو مدرسة)',
 	choiceOutlookWorkHelp:
 		'يُفتح Outlook على الويب والعنوان مُدخل مسبقًا: اختر استيراد. هذا الرابط لحسابات العمل أو المدرسة.',
 	outlookDelay: 'قد يستغرق Outlook أكثر من 24 ساعة لتحديث الاشتراك.',

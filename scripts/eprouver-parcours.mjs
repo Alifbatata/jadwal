@@ -722,7 +722,7 @@ const OUTLOOK_TRAVAIL = {
 		travail: 'This link is for work or school accounts.'
 	},
 	ar: {
-		lien: 'Outlook (عمل أو مدرسة)',
+		lien: 'Outlook (حساب عمل أو مدرسة)',
 		personnels: 'هذا الرابط للحسابات الشخصية.',
 		travail: 'هذا الرابط لحسابات العمل أو المدرسة.'
 	}

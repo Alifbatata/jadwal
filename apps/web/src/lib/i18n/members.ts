@@ -579,7 +579,7 @@ export const membersTexts: Translations<MembersTexts> = {
 				language: 'اختيار لغة مساحته',
 				switchOrganisation: 'الانتقال من مؤسسة إلى أخرى لمن هو عضو في أكثر من مؤسسة',
 				acceptance: 'قبول شروط الاستخدام والدعوات الواردة',
-				leave: 'مغادرة مؤسسة هو عضو فيها'
+				leave: 'مغادرة مؤسسة يكون عضوًا فيها'
 			},
 			manager: {
 				deleteCourse: 'حذف درس',
