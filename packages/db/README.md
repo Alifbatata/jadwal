@@ -44,7 +44,10 @@ script Node seul.
 Le rythme et l'horaire d'un cours reprennent colonne par colonne le modèle de `@jadwal/core` : pas
 de chaîne `RRULE` en base, elle n'est produite qu'à l'export agenda (ADR 0003). Des contraintes de
 vérification imposent que chaque forme porte ses colonnes et seulement les siennes : un cours
-hebdomadaire a ses jours, son intervalle et sa semaine d'ancrage, et rien des autres formes.
+hebdomadaire a ses jours, son intervalle et sa semaine d'ancrage, et rien des autres formes. De même
+pour une exception (`session_exception_shape_ck`) : un déplacement a son jour et son heure
+d'arrivée ; une annulation n'en a aucun, ou, depuis la migration 0075, les deux ensemble, ceux de
+la séance déplacée qu'elle annule à sa nouvelle date (ADR 0003, addendum du 28.09.2026).
 
 ## Rôles
 
@@ -106,9 +109,8 @@ par son adresse, ne change pas), modifier et retirer une adhésion, modifier l'o
 ouverte aux membres. Les cours, leurs traductions, les exceptions, les pauses, le journal et les
 acceptations s'écrivent toujours par tout membre, sauf la suppression d'un cours (migration 0065) et
 celle d'une session du vendredi (migration 0073), réservées aux responsables. Le super-admin n'est
-pas concerné. La modification
-de l'organisation est bornée aux huit colonnes de l'écran des réglages : le plan, l'état et
-l'identifiant d'URL relèvent du super-admin.
+pas concerné. La modification de l'organisation est bornée aux huit colonnes de l'écran des
+réglages : le plan, l'état et l'identifiant d'URL relèvent du super-admin.
 
 Conséquence pour un script ou un test : une écriture réservée pose l'organisation **et** la
 personne responsable (`asAdmin(organisation)` dans `test/helpers.ts`), comme les écrans. Sous

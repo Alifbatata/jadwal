@@ -375,7 +375,9 @@ Le lot 1 a laissé trois défauts, relevés par sa relecture et corrigés ici.
   même semblable. Le jour et l'heure restent comparés pour une exception changée sur place, ce que
   seul l'entretien fait. Le type ne s'envoie plus : la forme d'une exception le fixe
   (`session_exception_shape_ck`), une annulation n'a ni jour ni heure d'arrivée, un déplacement a
-  les deux.
+  les deux. Depuis l'étape 20, une annulation qui remplace un déplacement les garde aussi
+  (migration 0075, addendum du 28.09.2026) : l'identifiant suffit à les distinguer, puisque chaque
+  changement en reçoit un nouveau.
 
 - **L'écran du vendredi refuse un déplacement vers un jour passé** (`pastDate`, 400), comme
   « À venir ». Une session déjà annulée ou déplacée ce jour-là reçoit d'abord `changed` : elle n'a
@@ -426,9 +428,9 @@ Deux défauts relevés par les chantiers du lot 2, chacun prouvé d'abord par so
   ce jour-là : son exception y serait écrite là où le rythme n'a pas de séance, et le calcul
   l'ignorerait. Sa carte a « Rétablir », ou, sa date prévue passée, « Annuler cette séance »
   (addendum du 28.09.2026), et l'envoi d'une annulation ou d'un déplacement sous ce jour-là reçoit
-  le refus d'une carte périmée (`changed`, 409), comme une séance qui n'est plus prévue telle quelle. L'heure prévue qui sert à
-  refuser un déplacement sans changement, ou une carte dont l'heure a changé, reste celle des sept
-  jours de l'écran, comme l'a décidé l'étape 18.
+  le refus d'une carte périmée (`changed`, 409), comme une séance qui n'est plus prévue telle
+  quelle. L'heure prévue qui sert à refuser un déplacement sans changement, ou une carte dont
+  l'heure a changé, reste celle des sept jours de l'écran, comme l'a décidé l'étape 18.
 
   Rétablir ne change pas : un jour sans exception n'a rien à rétablir, et rien ne s'écrit depuis le
   lot 1 (`alreadyRestored`, 409). Un test le prouve maintenant sur les deux écrans, pour un jour où

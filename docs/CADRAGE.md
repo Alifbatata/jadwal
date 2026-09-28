@@ -85,7 +85,9 @@ indicative.
 - annulée ;
 - déplacée (nouvelle date et nouvelle heure). Une séance déplacée apparaît aux deux endroits :
   barrée à l'ancienne date, marquée « date exceptionnelle » à la nouvelle. Déplacée le même jour à
-  une autre heure, elle est marquée « nouvelle heure », avec l'heure d'avant (étape 18).
+  une autre heure, elle est marquée « nouvelle heure », avec l'heure d'avant (étape 18). Une séance
+  déplacée dont la date prévue est passée ne peut plus y être rétablie ; annulée, elle reste barrée
+  à sa nouvelle date (étape 20).
 
 ### Heures de prière
 

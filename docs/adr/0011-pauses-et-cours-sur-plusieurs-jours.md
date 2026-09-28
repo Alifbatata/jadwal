@@ -46,6 +46,24 @@ L'étape 1 implémente la récurrence dans `packages/core` (ADR 0003) et doit tr
   (étape 4) devra le signaler au responsable.
 - Le modèle de la base (étape 2) porte les pauses dans une table à part, avec `courseId` `nullable`.
 
+## Addendum du 28.09.2026 : une séance déplacée dans une pause, puis annulée (étape 20)
+
+Depuis l'étape 20, une annulation peut garder le jour et l'heure où la séance avait été déplacée :
+c'est ce que devient une séance déplacée dont la date prévue est passée, quand on l'annule à sa
+nouvelle date (ADR 0003 et ADR 0021, addenda du même jour). La règle des pauses s'y applique comme
+à un déplacement :
+
+- sa date prévue tombe dans une pause : l'exception est ignorée, la pause l'emporte, et rien ne
+  paraît à la nouvelle date non plus ;
+- sa nouvelle date tombe dans une pause : la séance y figure, barrée, avec le statut `cancelled` et
+  sa date d'origine (`originalDate`), comme elle y figurait déplacée (`moved_here`).
+
+Cela ne contredit pas la conséquence « une séance en pause ne peut pas être affichée barrée » : elle
+vise les dates du rythme. Cette séance n'est pas une séance du rythme à cette date, c'est celle que
+le responsable y avait déplacée. `packages/core/src/expand.test.ts` éprouve les deux cas, et
+`docs/API.md` le dit au lecteur de l'API.
+
 ## Statut
 
-Accepté, 2026-09-20. Étape 1 de la feuille de route (`core` et ses tests).
+Accepté, 2026-09-20. Étape 1 de la feuille de route (`core` et ses tests). Complété le 28.09.2026
+(étape 20) : une séance déplacée dans une pause, puis annulée, y figure barrée.

@@ -51,7 +51,10 @@ Expansion (`expandOccurrences({ schedules, exceptions, pauses, range, prayerTime
 - Une occurrence n'existe que dans `[startsOn, endsOn]` (bornes incluses ; `endsOn` absent = sans fin).
 - Une date couverte par une pause (du cours ou de toute l'organisation) ne produit aucune occurrence,
   et une exception dont la date d'origine tombe dans une pause est ignorée (ADR 0011).
-- `cancelled` : l'occurrence reste dans la sortie avec le statut `cancelled`.
+- `cancelled` : l'occurrence reste dans la sortie avec le statut `cancelled`. Une annulation qui
+  porte `movedTo` se range comme un déplacement, sauf à l'arrivée : l'occurrence d'origine passe en
+  `moved_away`, et celle de `movedTo.date` a le statut `cancelled`, avec `originalDate` (addendum du
+  28.09.2026).
 - `moved` : l'occurrence d'origine passe en `moved_away` avec `movedTo` ; une occurrence
   `moved_here` apparaît à `toDate`, début `toStart`, même durée, `originalDate` renseigné.
   `moved_here` est incluse quand sa propre date est dans la plage, même si la date d'origine n'y est
@@ -124,7 +127,34 @@ sans dépendance à l'exécution, ce qui précise l'ADR 0002) :
 - Un flux abonné est relu par les applications d'agenda à leur rythme : les changements de dernière
   minute passent par le message WhatsApp (étape 4), pas par le flux.
 
+## Addendum du 28.09.2026 : une annulation qui garde l'endroit où la séance était partie (étape 20)
+
+Une séance déplacée dont la date prévue est passée ne peut plus revenir à cette date : le chef de
+projet a refusé « Rétablir » sur sa carte, qui propose à la place de l'annuler à sa nouvelle date
+(ADR 0021, addendum du même jour). Une exception se range sous la date prévue de la séance.
+Remplacer le déplacement par une annulation ordinaire aurait retiré la séance de sa nouvelle date,
+sans aucune marque, alors que la communauté l'y attendait.
+
+Une annulation peut donc porter `movedTo` : le jour et l'heure où la séance avait été déplacée,
+ensemble (`SessionException` ; migration 0075 pour la base). `validateException` les vérifie comme
+ceux d'un déplacement. L'expansion la range comme un déplacement, sauf à l'arrivée :
+
+- à la date prévue, l'occurrence passe en `moved_away`, avec `movedTo` ;
+- à `movedTo.date`, une occurrence `cancelled` apparaît, début `movedTo.start`, même durée, avec
+  `originalDate`, aux mêmes conditions que `moved_here` : la séance reste visible, barrée, là où on
+  l'attendait ;
+- `nextOccurrences`, avec `includeCancelled`, la rend à sa nouvelle date, jamais à sa date prévue.
+
+Une pause s'y applique comme à un déplacement (ADR 0011, addendum du même jour).
+
+Le flux agenda la traite comme une annulation. Un cours récurrent à heure fixe a un `EXDATE` sur la
+date prévue, et aucun événement à la nouvelle date ; un cours à dates précises ou ancré sur une
+prière n'a d'événement ni à l'une ni à l'autre. Le code du flux ne change pas : il lisait déjà une
+annulation par sa seule date prévue. L'API publique rend la séance `cancelled` à sa nouvelle date,
+avec `originalDate` (`docs/API.md`). Une annulation sans `movedTo` ne change pas.
+
 ## Statut
 
 Accepté, 2026-09-19 ; complété avec les règles exactes le 2026-09-20. Étape 1 de la feuille de route
-(`core` et ses tests).
+(`core` et ses tests). Complété le 28.09.2026 (étape 20) : une annulation peut garder l'endroit où la
+séance avait été déplacée.
