@@ -618,7 +618,8 @@ describe('une séance déplacée puis annulée reste annulée à sa nouvelle dat
 		});
 		expect(seances.map((seance) => seance.status)).not.toContain('moved_here');
 
-		// Les prochaines séances de l'API n'ont que celles qui ont lieu : rien demain.
+		// La liste des cours lit aussi une exception dont le jour d'arrivée est à venir, même rangée
+		// sous hier. Ses prochaines séances n'ont que celles qui ont lieu : rien demain.
 		const cours = (await json(`${origin}/api/v1/organisations/${SLUG_DEPLACEE}/courses`)) as {
 			groups: { courses: { id: string; nextSessions: { date: string; status: string }[] }[] }[];
 		};
@@ -638,6 +639,60 @@ describe('une séance déplacée puis annulée reste annulée à sa nouvelle dat
 		expect(ics).toContain(`EXDATE;TZID=${FUSEAU}:${compact(hier)}T180000`);
 		expect(ics).not.toContain('RECURRENCE-ID');
 		expect(ics).not.toContain(`${compact(demain)}T`);
+	});
+});
+
+describe('la liste des cours de l’API lit une séance déplacée dont la date prévue est passée (étape 20)', () => {
+	// La séance d'hier a été déplacée à demain. Son exception est rangée sous hier, sa date prévue :
+	// la liste des cours ne lisait que les exceptions datées d'aujourd'hui ou plus tard, et la séance
+	// de demain manquait à ses prochaines séances. Elle y est, `moved_here`, à sa nouvelle heure.
+	const SLUG_DEMAIN = 'publique-deplacee-demain';
+	const organisation = newId();
+	const coursId = newId();
+	let demain = '' as IsoDate;
+
+	beforeAll(async () => {
+		const today = todayInZone(FUSEAU, new Date());
+		const hier = addDays(today, -1);
+		demain = addDays(today, 1);
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+					"enabled_language")
+				values (${organisation}, ${SLUG_DEMAIN}, 'Association au cours déplacé à demain',
+					${FUSEAU}, 'fr', array['fr'])
+			`);
+			// Chaque semaine, le jour de la semaine d'hier seulement : demain n'en est pas un.
+			await tx.execute(sql`
+				insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",
+					"source_language", "recurrence_kind", "recurrence_weekday", "recurrence_interval",
+					"recurrence_anchor_date", "timing_kind", "timing_start", "timing_end", "starts_on")
+				values (${coursId}, ${organisation}, 'published', 'open', array['fr'], 'fr', 'weekly',
+					array[${weekdayFromDays(isoDateToDays(hier))}]::smallint[], 1, ${DEBUT}, 'fixed',
+					'18:00', '19:00', ${DEBUT})
+			`);
+			await tx.execute(sql`
+				insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
+				values (${newId()}, ${organisation}, ${coursId}, 'fr', 'Cours déplacé à demain')
+			`);
+			await tx.execute(sql`
+				insert into "session_exception" ("id", "organization_id", "course_id", "date", "kind",
+					"to_date", "to_start")
+				values (${newId()}, ${organisation}, ${coursId}, ${hier}, 'moved', ${demain}, '18:30')
+			`);
+		});
+	});
+
+	it('gives the moved session tomorrow first in the next sessions of the course', async () => {
+		const cours = (await json(`${origin}/api/v1/organisations/${SLUG_DEMAIN}/courses`)) as {
+			groups: {
+				courses: { id: string; nextSessions: { date: string; start: string; status: string }[] }[];
+			}[];
+		};
+		const prochaines = cours.groups
+			.flatMap((groupe) => groupe.courses)
+			.find((candidat) => candidat.id === coursId)?.nextSessions;
+		expect(prochaines?.[0]).toEqual({ date: demain, start: '18:30', status: 'moved_here' });
 	});
 });
 

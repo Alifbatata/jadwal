@@ -39,12 +39,16 @@ export const GET: RequestHandler = async (event) => {
 	const courses = await readPublicCourses(organisation.id, langue);
 	const pauses = await readPublicPauses(organisation.id);
 	// Toutes les exceptions à venir, une seule fois : les prochaines dates de chaque cours les
-	// prennent en compte, et une requête par cours serait une requête de trop par cours.
+	// prennent en compte, et une requête par cours serait une requête de trop par cours. Une
+	// exception se range sous la date prévue de la séance : celle d'une séance déplacée dont la date
+	// prévue est passée, mais dont le jour d'arrivée est à venir, se lit par ce jour-là, comme dans
+	// `readPublicExceptions` (étape 20).
 	const exceptions = (
 		(await publicDatabase().execute(sql`
 			select "id", "course_id", "date"::text, "kind", "to_date"::text, "to_start"::text
 			from "session_exception"
-			where "organization_id" = ${organisation.id} and "date" >= ${today}
+			where "organization_id" = ${organisation.id}
+				and ("date" >= ${today} or "to_date" >= ${today})
 		`)) as unknown as Parameters<typeof toException>[0][]
 	).map(toException);
 
