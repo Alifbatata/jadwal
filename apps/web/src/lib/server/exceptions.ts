@@ -24,8 +24,9 @@ function rows<T>(result: unknown): T[] {
 /**
  * Ce que la carte montrait : l'identifiant de l'exception, et pour un déplacement le jour et l'heure
  * d'arrivée, `AAAA-MM-JJ` et `HH:MM`, vides pour une annulation. Le type ne s'envoie pas : la forme
- * d'une exception (`session_exception_shape_ck`) le fixe, une annulation n'a ni jour ni heure
- * d'arrivée, un déplacement a les deux.
+ * d'une exception (`session_exception_shape_ck`) le fixe, un déplacement a le jour et l'heure
+ * d'arrivée, une annulation ni l'un ni l'autre, sauf celle d'une séance déplacée puis annulée, qui
+ * garde les deux (étape 20, migration 0075). L'identifiant les distingue de toute façon.
  */
 export interface ShownChange {
 	id: string;

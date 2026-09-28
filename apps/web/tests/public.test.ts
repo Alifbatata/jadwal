@@ -10,7 +10,9 @@ import ICAL from 'ical.js';
 import {
 	addDays,
 	expandOccurrences,
+	isoDateToDays,
 	todayInZone,
+	weekdayFromDays,
 	type IsoDate,
 	type Occurrence
 } from '@jadwal/core';
@@ -547,6 +549,95 @@ describe('la page d’un cours montre une séance annulée, barrée (étape 19, 
 		expect(cours?.nextSessions.length).toBeGreaterThan(0);
 		expect(cours?.nextSessions.map((seance) => seance.status)).not.toContain('cancelled');
 		expect(cours?.nextSessions.map((seance) => seance.date)).not.toContain(demain);
+	});
+});
+
+describe('une séance déplacée puis annulée reste annulée à sa nouvelle date (étape 20, C2)', () => {
+	// La séance d'hier avait été déplacée à demain, puis annulée là : sa date prévue est passée, elle
+	// ne peut plus y revenir. L'annulation garde le jour et l'heure d'arrivée (migration 0075). L'API
+	// la sert à demain, annulée, avec sa date prévue ; le flux agenda la retire comme une annulation.
+	const SLUG_DEPLACEE = 'publique-deplacee-annulee';
+	const TITRE = 'Cours déplacé puis annulé';
+	const organisation = newId();
+	const coursId = newId();
+	let hier = '' as IsoDate;
+	let demain = '' as IsoDate;
+
+	beforeAll(async () => {
+		const today = todayInZone(FUSEAU, new Date());
+		hier = addDays(today, -1);
+		demain = addDays(today, 1);
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+					"enabled_language")
+				values (${organisation}, ${SLUG_DEPLACEE}, 'Association au cours déplacé', ${FUSEAU},
+					'fr', array['fr'])
+			`);
+			// Chaque semaine, le jour de la semaine d'hier seulement : demain n'en est pas un.
+			await tx.execute(sql`
+				insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",
+					"source_language", "recurrence_kind", "recurrence_weekday", "recurrence_interval",
+					"recurrence_anchor_date", "timing_kind", "timing_start", "timing_end", "starts_on")
+				values (${coursId}, ${organisation}, 'published', 'open', array['fr'], 'fr', 'weekly',
+					array[${weekdayFromDays(isoDateToDays(hier))}]::smallint[], 1, ${DEBUT}, 'fixed',
+					'18:00', '19:00', ${DEBUT})
+			`);
+			await tx.execute(sql`
+				insert into "course_translation" ("id", "organization_id", "course_id", "language", "title")
+				values (${newId()}, ${organisation}, ${coursId}, 'fr', ${TITRE})
+			`);
+			await tx.execute(sql`
+				insert into "session_exception" ("id", "organization_id", "course_id", "date", "kind",
+					"to_date", "to_start")
+				values (${newId()}, ${organisation}, ${coursId}, ${hier}, 'cancelled', ${demain}, '18:30')
+			`);
+		});
+	});
+
+	it('serves it cancelled at its new date with its planned date, and the feed drops it as a cancellation', async () => {
+		const today = todayInZone(FUSEAU, new Date());
+		const programme = (await json(
+			`${origin}/api/v1/organisations/${SLUG_DEPLACEE}/schedule?from=${today}&to=${addDays(today, 6)}`
+		)) as { sessions: { courseId: string; date: string; status: string }[] };
+		const seances = programme.sessions.filter((seance) => seance.courseId === coursId);
+		expect(seances.find((seance) => seance.date === demain)).toEqual({
+			courseId: coursId,
+			date: demain,
+			start: '18:30',
+			end: '19:30',
+			startDayOffset: 0,
+			endDayOffset: 0,
+			status: 'cancelled',
+			originalDate: hier,
+			title: TITRE,
+			audience: 'open',
+			room: null,
+			teacher: null,
+			kind: 'course'
+		});
+		expect(seances.map((seance) => seance.status)).not.toContain('moved_here');
+
+		// Les prochaines séances de l'API n'ont que celles qui ont lieu : rien demain.
+		const cours = (await json(`${origin}/api/v1/organisations/${SLUG_DEPLACEE}/courses`)) as {
+			groups: { courses: { id: string; nextSessions: { date: string; status: string }[] }[] }[];
+		};
+		const prochaines = cours.groups
+			.flatMap((groupe) => groupe.courses)
+			.find((candidat) => candidat.id === coursId)?.nextSessions;
+		expect(prochaines?.length).toBeGreaterThan(0);
+		expect(prochaines?.map((seance) => seance.date)).not.toContain(demain);
+		expect(prochaines?.map((seance) => seance.status)).not.toContain('cancelled');
+
+		// Le flux : la séance d'hier sort de la série, et rien ne la remplace, ni hier ni demain.
+		const ics = (await (await fetch(`${origin}/m/${SLUG_DEPLACEE}/agenda.ics`)).text()).replace(
+			/\r\n[ \t]/g,
+			''
+		);
+		const compact = (date: string) => date.replaceAll('-', '');
+		expect(ics).toContain(`EXDATE;TZID=${FUSEAU}:${compact(hier)}T180000`);
+		expect(ics).not.toContain('RECURRENCE-ID');
+		expect(ics).not.toContain(`${compact(demain)}T`);
 	});
 });
 

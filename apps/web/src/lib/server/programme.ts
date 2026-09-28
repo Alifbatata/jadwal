@@ -178,9 +178,18 @@ export function toSchedule(row: CourseRow): CourseSchedule {
 	};
 }
 
+/**
+ * Une exception de la base vers le modèle de l'étape 1. Une annulation garde le jour et l'heure où
+ * la séance avait été déplacée, quand elle les a (étape 20, migration 0075) : la contrainte de forme
+ * garantit qu'ils vont ensemble.
+ */
 export function toException(row: ExceptionRow): SessionException {
 	if (row.kind === 'cancelled') {
-		return { kind: 'cancelled', courseId: row.course_id, date: isoDate(row.date) };
+		const movedTo =
+			row.to_date && row.to_start
+				? { movedTo: { date: isoDate(row.to_date), start: localTime(row.to_start) } }
+				: {};
+		return { kind: 'cancelled', courseId: row.course_id, date: isoDate(row.date), ...movedTo };
 	}
 	return {
 		kind: 'moved',
@@ -399,9 +408,11 @@ export async function readProgramme(
  * (étape 19, lot 3) : la lecture de `readProgramme`, sur ce seul jour, qu'il soit dans les sept jours
  * de l'écran ou non. `none` quand l'écran n'y montrerait aucune séance du cours : un autre jour de la
  * semaine, avant son premier jour, après son dernier, pendant une pause. `elsewhere` quand il n'y
- * montrerait qu'une séance arrivée d'un autre jour : une exception écrite sous ce jour-là, où le
- * rythme n'a pas de séance, serait ignorée par le calcul (`expandOccurrences`). Sinon, la séance du
- * rythme ce jour-là, prévue, annulée ou partie ailleurs.
+ * montrerait qu'une séance arrivée d'un autre jour, qu'elle y ait lieu ou qu'elle y soit annulée
+ * après un déplacement (étape 20) : une exception écrite sous ce jour-là, où le rythme n'a pas de
+ * séance, serait ignorée par le calcul (`expandOccurrences`). Sinon, la séance du rythme ce jour-là,
+ * prévue, annulée ou partie ailleurs. Une séance arrivée d'ailleurs porte sa date d'origine
+ * (`originalDate`), celle du rythme jamais.
  */
 export async function seanceOn(
 	tx: Transaction,
@@ -412,5 +423,5 @@ export async function seanceOn(
 	const { seances } = await readProgramme(tx, now, 1, { from: date });
 	const shown = seances.filter((seance) => seance.courseId === courseId);
 	if (shown.length === 0) return 'none';
-	return shown.find((seance) => seance.status !== 'moved_here') ?? 'elsewhere';
+	return shown.find((seance) => seance.originalDate === undefined) ?? 'elsewhere';
 }

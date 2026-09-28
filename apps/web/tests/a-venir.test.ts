@@ -3243,6 +3243,37 @@ describe('un jour où le cours n’a pas de séance (étape 19, lot 3)', () => {
 		}
 	});
 
+	it('refuses to cancel or move a session on the day where it was moved then cancelled, and keeps the cancellation (étape 20)', async () => {
+		// La séance de la semaine passée, déplacée au lendemain de celle de cette semaine, puis annulée
+		// là : l'annulation garde le jour et l'heure d'arrivée (migration 0075), et l'écran la montre
+		// ce jour-là, où le rythme n'a pas de séance. Comme une séance arrivée d'un autre jour, elle ne
+		// s'annule ni ne se déplace sous ce jour-là : l'exception écrite serait ignorée par le calcul.
+		const origine = jour(-6);
+		await maintenance((tx) =>
+			tx.execute(sql`
+				insert into "session_exception"
+					("id", "organization_id", "course_id", "date", "kind", "to_date", "to_start")
+				values (${newId()}, ${organisation}, ${atelier}, ${origine}, 'cancelled', ${sansSeance},
+					'20:00')
+			`)
+		);
+		const annulation = await exceptionsDuCours();
+		expect(annulation).toEqual([{ date: origine, kind: 'cancelled', to_date: sansSeance }]);
+		const journalAvant = await lignesDuJournal();
+		for (const [action, envoi] of [
+			['annuler', { courseId: atelier, date: sansSeance }],
+			['deplacer', { courseId: atelier, date: sansSeance, toDate: jour(3), toStart: '18:00' }]
+		] as const) {
+			const reponse = await postForm(`/?/${action}`, envoi, cookie);
+			expect(reponse.status, action).toBe(409);
+			const html = await reponse.text();
+			expect(alerte(html), action).toBe(CHANGEE.fr(ATELIER, dateLue('fr', sansSeance)));
+			expect(section(html, 'message-titre'), action).toBe('');
+		}
+		expect(await exceptionsDuCours()).toEqual(annulation);
+		expect(await lignesDuJournal()).toBe(journalAvant);
+	});
+
 	it('answers « Rétablir » on a day without a session nor a change with a refusal, and writes nothing, not even the journal', async () => {
 		// Il n'y a rien à rétablir ce jour-là : rien ne s'écrit (étape 19, lot 1), ni dans la table des
 		// exceptions, ni au journal.

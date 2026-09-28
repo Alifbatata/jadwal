@@ -141,7 +141,7 @@ GET /api/v1/organisations/belvedere/schedule?from=2026-09-01&to=2027-06-30&maxDa
 | `endDayOffset`    | entier            | 0, 1 ou 2, même raison                                                |
 | `status`          | énumération       | voir ci-dessous                                                       |
 | `anchor`          | objet, facultatif | `{ "prayer": "maghrib", "offsetMinutes": 15 }` pour un cours ancré    |
-| `originalDate`    | date, facultatif  | pour `moved_here` : d'où la séance vient                              |
+| `originalDate`    | date, facultatif  | `moved_here`, ou `cancelled` après un déplacement : la date d'origine |
 | `movedTo`         | objet, facultatif | pour `moved_away` : `{ "date": …, "start": … }`                       |
 | `title`           | chaîne            | déjà dans la langue demandée, repli compris                           |
 | `audience`        | énumération       | `kids`, `youth`, `women`, `adults`, `open`                            |
@@ -181,6 +181,13 @@ une rupture, et `/api/v1/` reste `/api/v1/`.
 Une séance déplacée apparaît **deux fois** : `moved_away` à sa date d'origine, `moved_here` à sa
 nouvelle date. C'est voulu : un visiteur qui regarde l'ancienne date doit comprendre, et un visiteur
 qui regarde la nouvelle aussi.
+
+Une séance déplacée, puis annulée à sa nouvelle date, apparaît deux fois de même : `moved_away` à sa
+date d'origine, avec `movedTo`, et `cancelled` à sa nouvelle date, à la nouvelle heure, avec
+`originalDate`. C'est le cas d'une séance déplacée dont la date d'origine est passée : elle ne peut
+plus y revenir, elle est annulée là où on l'attendait, et elle y reste, barrée. Une séance annulée
+sans avoir été déplacée n'a pas `originalDate`. Depuis l'étape 20 ; un lecteur plus ancien montre
+la séance annulée à sa nouvelle date, sans rien perdre.
 
 Une date couverte par une pause ne produit **aucune** séance — ni annulée, ni autre. Une pause n'est
 pas une annulation : la séance n'existe pas.
