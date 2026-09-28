@@ -114,8 +114,9 @@
  *
  * Les défauts :
  *
- * - 19-D2, le vendredi : un vendredi passé, une salle ou une session supprimées entre-temps depuis
- *   un autre onglet, refusés par une phrase, sans erreur 500 ni rien d'écrit.
+ * - 19-D2, le vendredi : un vendredi passé à annuler, la veille comme jour d'arrivée d'un
+ *   déplacement, une salle ou une session supprimées entre-temps depuis un autre onglet, refusés
+ *   par une phrase, sans erreur 500 ni rien d'écrit.
  * - 19-D3, les cours : la responsable supprime un cours depuis /cours, avec et sans JavaScript.
  * - 19-D4, « À venir » : un cours en brouillon marqué, et hors du programme de la semaine ; une
  *   carte « date exceptionnelle » qui se rétablit ; le refus d'une carte restée ouverte qui nomme la
@@ -147,6 +148,8 @@
  * - 19-404-organisation : sous une organisation connue, le 404 dans sa langue par défaut. La base
  *   donne l'arabe pour langue par défaut à l'organisation voisine le temps de ce 404 : en français,
  *   il ne se distinguerait pas du français que le site prend faute de mieux, l'ancien défaut.
+ * - 19-adresse-sans-langue : le lien de connexion qui porte la langue choisie avant la connexion
+ *   arrive à une adresse sans elle, sans « ?language= ».
  *
  * Sur les cours :
  *
@@ -171,12 +174,18 @@
  * - 19-prieres-hors-de-suisse : sans JavaScript, une position tapée l'emporte sur la localité
  *   cochée, sans toucher à la liste : le serveur coche lui-même « Hors de Suisse ». Avec
  *   JavaScript, la case se cochait déjà pendant la frappe à l'étape 18 : C2 le vérifie.
+ * - 19-prieres-angle : l'aide de la règle des nuits courtes dit que « Proportionnelle à l’angle »
+ *   donne des heures qui changent avec la méthode de calcul.
+ * - 19-prieres-jumua-brouillon : le vendredi, le tableau des heures servies ne dit que l'heure des
+ *   sessions publiées, et non celle d'une session en brouillon.
  *
  * Sur les membres :
  *
- * - 19-membres-confirmations : changer un rôle se confirme en haut de l'écran.
+ * - 19-membres-confirmations : changer un rôle, et retirer un autre membre, se confirment en haut
+ *   de l'écran ; « Ne rien changer » ne change rien.
  * - 19-membres-depart : une responsable qui se retire elle-même lit un encadré à l'arrivée.
- * - 19-membres-quitter : « Quitter l’organisation » depuis « Vos organisations ».
+ * - 19-membres-quitter : « Quitter l’organisation » depuis « Vos organisations », et le refus fait à
+ *   la seule personne responsable, qui dit pourquoi et quoi faire.
  * - 19-membres-salle : une salle déjà supprimée dans un autre onglet, « Cette salle n’existe
  *   plus. ».
  *
@@ -601,6 +610,51 @@ const PRIERE_DU_VENDREDI = {
 	ar: 'صلاة الجمعة'
 };
 /**
+ * La fin de l'aide de la règle des nuits courtes, dans chaque langue (`ruleHint`,
+ * `apps/web/src/lib/i18n/prayers.ts`) : les heures « proportionnelles à l'angle » changent avec la
+ * méthode de calcul, le champ juste au-dessus (étape 19). Elles dépendaient, avant, « de l'angle de
+ * la méthode choisie ».
+ */
+const NUITS_COURTES = {
+	fr: '« Proportionnelle à l’angle » donne des heures entre les deux, qui changent avec la méthode de calcul.',
+	de: '«Anteilig zum Winkel» ergibt Zeiten zwischen den beiden, die sich mit der Berechnungsmethode ändern.',
+	it: '«Proporzionale all’angolo» dà orari tra i due, che cambiano con il metodo di calcolo.',
+	en: '‘In proportion to the angle’ gives times between the two, which change with the calculation method.',
+	ar: '«بنسبة الزاوية» تعطي مواقيت بين الاثنتين، تتغير بحسب طريقة الحساب.'
+};
+/**
+ * Le refus fait à la seule personne responsable qui veut quitter son organisation, dans chaque
+ * langue (`apps/web/src/lib/i18n/organisations.ts`, étape 19) : la phrase avant le nom de
+ * l'organisation, puis ce qu'elle doit faire pour partir.
+ */
+const SEULE_RESPONSABLE = {
+	fr: {
+		avantLeNom: 'Vous êtes la seule personne responsable de cette organisation :',
+		quoiFaire:
+			'Une organisation garde toujours au moins une personne responsable. Avant de la quitter, ouvrez-la, puis, dans l’écran Membres, donnez le rôle de responsable à un autre membre ou invitez une personne comme responsable.'
+	},
+	de: {
+		avantLeNom: 'Sie sind die einzige Person in der Leitung dieser Organisation:',
+		quoiFaire:
+			'Eine Organisation behält immer mindestens eine Person in der Leitung. Bevor Sie sie verlassen, öffnen Sie sie und geben Sie auf der Seite «Mitglieder» einem anderen Mitglied die Rolle «Leitung», oder laden Sie eine Person für die Leitung ein.'
+	},
+	it: {
+		avantLeNom: 'Sei l’unica persona responsabile di questa organizzazione:',
+		quoiFaire:
+			'Un’organizzazione ha sempre almeno un responsabile. Prima di lasciarla, aprila e, nella pagina Membri, dai il ruolo di responsabile a un altro membro o invita una persona come responsabile.'
+	},
+	en: {
+		avantLeNom: 'You are the only manager of this organisation:',
+		quoiFaire:
+			'An organisation always keeps at least one manager. Before leaving it, open it, then, on the Members screen, give the manager role to another member or invite someone as a manager.'
+	},
+	ar: {
+		avantLeNom: 'أنت المسؤول الوحيد عن هذه المؤسسة:',
+		quoiFaire:
+			'تحتفظ المؤسسة دائمًا بمسؤول واحد أو أكثر. قبل مغادرتها، افتحها، ثم امنح في صفحة «الأعضاء» دور المسؤول لعضو آخر أو ادعُ شخصًا بصفة مسؤول.'
+	}
+};
+/**
  * Le nom accessible d'un lien qui ouvre un nouvel onglet : son texte visible, puis l'annonce entre
  * parenthèses, que seuls les lecteurs d'écran reçoivent (technique G201 des WCAG). Le widget dit la
  * même annonce que la page (`packages/widget/src/element.ts`).
@@ -715,6 +769,7 @@ const RETOURS_DE_L_ETAPE_19 = [
 	'19-og-locale',
 	'19-langue-non-activee',
 	'19-404-organisation',
+	'19-adresse-sans-langue',
 	'19-cours-langue-de-saisie',
 	'19-cours-facultatif',
 	'19-cours-premier-jour',
@@ -727,6 +782,8 @@ const RETOURS_DE_L_ETAPE_19 = [
 	'19-prieres-copie',
 	'19-prieres-periode-passee',
 	'19-prieres-hors-de-suisse',
+	'19-prieres-angle',
+	'19-prieres-jumua-brouillon',
 	'19-membres-confirmations',
 	'19-membres-depart',
 	'19-membres-quitter',
@@ -4729,6 +4786,7 @@ async function prieres(page, navigateur) {
 	await replisPendantLaFrappe(page);
 	await rechercheDUneLocalite(page);
 	await importEnArabe(page);
+	await aideDesNuitsCourtes(page);
 	await ouvrir(page, '/prieres?source=computed');
 	await auditer(page, 'prières');
 
@@ -5151,6 +5209,40 @@ async function importEnArabe(page) {
 	} finally {
 		if ((await racineDit(page, 'lang')) !== 'fr') await choisirLaLangue(page, 'fr');
 	}
+}
+
+/**
+ * L'aide de la règle des nuits courtes, dans les cinq langues (étape 19) : ce que donne
+ * « Proportionnelle à l’angle » change avec la méthode de calcul, le champ juste au-dessus, au lieu
+ * de dépendre « de l’angle de la méthode choisie », qui demandait de savoir qu'une méthode règle un
+ * angle. Le texte est lu dans la page, repli fermé ou non. L'écran revient au français.
+ */
+async function aideDesNuitsCourtes(page) {
+	await retour('19-prieres-angle', async () => {
+		const lues = {};
+		try {
+			for (const langue of LANGUES) {
+				if ((await racineDit(page, 'lang')) !== langue) await choisirLaLangue(page, langue);
+				await ouvrir(page, '/prieres?source=computed');
+				lues[langue] = await texteDe(
+					await exiger(page.locator('#regle-aide'), 'l’aide de la règle des nuits courtes')
+				);
+			}
+		} finally {
+			if ((await racineDit(page, 'lang')) !== 'fr') await choisirLaLangue(page, 'fr');
+		}
+		verifierChaque(
+			'dans les cinq langues, l’aide de la règle des nuits courtes dit que « Proportionnelle à l’angle » donne des heures qui changent avec la méthode de calcul',
+			Object.fromEntries(
+				LANGUES.map((langue) => [langue, lues[langue].includes(NUITS_COURTES[langue])])
+			),
+			// Ce que l'aide dit de la règle, depuis le guillemet qui ouvre son nom.
+			LANGUES.map((langue) => {
+				const debut = Math.max(0, lues[langue].search(/[«‘]/));
+				return `${langue} : ${lues[langue].slice(debut, debut + 110)}`;
+			}).join(' | ')
+		);
+	});
 }
 
 /**
@@ -5649,6 +5741,19 @@ async function langueChoisieAvantLaConnexion(navigateur, page) {
 				},
 				`${lien ? 'lien reçu' : 'aucun lien'}, ${chemin(arrivee)}, <html lang="${await racineDit(arrivee, 'lang')}">, « ${await titre(arrivee)} »`
 			);
+			// Le lien portait la langue, et l'adresse où il arrive ne la porte plus : aucun écran ne
+			// lit `?language=`, que la personne aurait gardé en copiant l'adresse (étape 19).
+			await retour('19-adresse-sans-langue', async () => {
+				const adresse = new URL(arrivee.url());
+				verifierChaque(
+					'le lien de connexion arrive à une adresse sans la langue qu’il portait : /organisations, sans « ?language= »',
+					{
+						'l’adresse /organisations': adresse.pathname === '/organisations',
+						'sans « ?language= »': adresse.search === ''
+					},
+					`${adresse.pathname}${adresse.search}`
+				);
+			});
 			if ((await racineDit(arrivee, 'lang')) !== 'fr') await choisirLaLangue(arrivee, 'fr');
 		} finally {
 			await avantLaConnexion.close();
@@ -6861,6 +6966,26 @@ async function vendrediEtape19(page) {
 		);
 	});
 	await choisirLaLangue(page, 'fr');
+	// La seconde session, en brouillon, n'a lieu nulle part : le tableau des heures servies n'en dit
+	// pas l'heure, comme la page publique (étape 19). Il disait celles de toutes les sessions.
+	await retour('19-prieres-jumua-brouillon', async () => {
+		await ouvrir(page, '/prieres');
+		const ceJourLa = page
+			.locator('section', { has: page.locator('#servies-titre') })
+			.locator('tbody tr')
+			.filter({ has: page.locator('th', { hasText: dateSuisse(jour) }) });
+		const dhuhr = ceJourLa.locator('td').nth(1).locator('.iqama');
+		const lu = (await dhuhr.count()) === 1 ? await texteDe(dhuhr) : '';
+		verifierChaque(
+			`dans « Heures de prière », le vendredi, la cellule de Dhuhr dit « Jumu’a ${VENDREDI.debut} », la session publiée, sans l’heure de celle en brouillon, ${SESSION_DANS_LA_SALLE.debut}`,
+			{
+				[`« Jumu’a ${VENDREDI.debut} »`]: lu === `Jumu’a ${VENDREDI.debut}`,
+				[`sans ${SESSION_DANS_LA_SALLE.debut}`]: !lu.includes(SESSION_DANS_LA_SALLE.debut)
+			},
+			lu ? `« ${lu} »` : `aucune session dans la cellule de Dhuhr du ${dateLongue(jour)}`
+		);
+	});
+	await ouvrir(page, '/vendredi');
 	const autreOnglet = await contexte.newPage();
 	try {
 		await ouvrir(autreOnglet, '/vendredi');
@@ -6891,6 +7016,48 @@ async function vendrediEtape19(page) {
 		});
 	} finally {
 		await autreOnglet.close();
+	}
+
+	// « Déplacer » vers la veille, par un formulaire modifié dans la page : la liste des jours commence
+	// aujourd'hui, et l'écran refuse un jour passé depuis l'étape 19. Avant, il l'écrivait : la
+	// session déplacée au passé est alors rétablie, pour la suite.
+	const deplacees = page
+		.locator('section[aria-labelledby="ce-vendredi"] div.seance')
+		.filter({ hasText: 'Déplacée au' });
+	await retour('19-D2', async () => {
+		await ouvrir(page, '/vendredi');
+		const deplacer = await exiger(
+			ceVendredi(page)
+				.filter({ hasText: dateLongue(jour) })
+				.locator('form[action="?/deplacer"]'),
+			'« Déplacer » dans « Ce vendredi »'
+		);
+		const veille = plusJours(T, -1);
+		const jours = deplacer.locator('select[name="toDate"]');
+		await jours
+			.locator('option')
+			.first()
+			.evaluate((option, valeur) => {
+				/** @type {HTMLOptionElement} */ (option).value = valeur;
+			}, veille);
+		await jours.selectOption(veille);
+		await envoyer(page, deplacer.locator('button[type="submit"]'));
+		const { phrase, enTete, confirmations } = await refusEnTete(page);
+		verifierChaque(
+			'sur l’écran du vendredi, « Déplacer » envoyé pour la veille (formulaire modifié dans la page) est refusé en tête : « Ce jour est déjà passé : rien n’a été déplacé. … », et rien n’est déplacé',
+			{
+				'la phrase':
+					phrase ===
+					'Ce jour est déjà passé : rien n’a été déplacé. Choisissez aujourd’hui ou un jour suivant dans « Ce vendredi », plus bas.',
+				'en tête': enTete,
+				'aucune confirmation': confirmations === 0,
+				'rien de déplacé': (await deplacees.count()) === 0
+			},
+			phrase
+		);
+	});
+	if ((await deplacees.count()) === 1) {
+		await envoyer(page, deplacees.locator('form[action="?/retablir"] button[type="submit"]'));
 	}
 
 	// « Rétablir comme d’habitude » sur la ligne « Nouvelle date » d'une session déplacée à un autre
@@ -7191,6 +7358,48 @@ async function devenirEditrice(navigateur, page) {
 			if ((await confirmer(seconde, 'Donner ce rôle').count()) === 1) {
 				await envoyer(seconde, confirmer(seconde, 'Donner ce rôle'));
 			}
+			// La première, de nouveau responsable, commence à retirer la seconde, puis ne change rien :
+			// retirer un autre membre se confirme aussi (étape 19). Avant, la personne partait au premier
+			// envoi ; sur une image de ce temps-là, la seconde ne peut plus ensuite se retirer elle-même.
+			await retour('19-membres-confirmations', async () => {
+				await ouvrir(page, '/membres');
+				await envoyer(
+					page,
+					await exiger(
+						ligne(page, SECONDE_RESPONSABLE).getByRole('button', {
+							name: 'Retirer de l’organisation',
+							exact: true
+						}),
+						'le bouton « Retirer de l’organisation » sur la ligne de la seconde'
+					)
+				);
+				const demande = page.locator('#confirmer-membre');
+				const texte = (await demande.count()) === 1 ? await texteDe(demande) : '';
+				const role = texte ? await demande.getAttribute('role') : null;
+				const retirer = await confirmer(page, 'Retirer cette personne').count();
+				const garder = demande.getByRole('link', { name: 'Ne rien changer', exact: true });
+				const garderPresent = (await garder.count()) === 1;
+				if (garderPresent) {
+					await garder.click();
+					await demande.waitFor({ state: 'detached', timeout: 5000 }).catch(() => undefined);
+					await page.waitForLoadState('networkidle');
+				}
+				const apres = await ligne(page, SECONDE_RESPONSABLE).count();
+				verifierChaque(
+					'sur la ligne d’un autre membre, « Retirer de l’organisation » demande d’abord de confirmer : « Vous allez retirer cette personne de l’organisation : <adresse> », « Retirer cette personne », et « Ne rien changer », qui la laisse membre',
+					{
+						'la personne nommée': texte.includes(
+							`Vous allez retirer cette personne de l’organisation : ${SECONDE_RESPONSABLE}`
+						),
+						'annoncée (role=alert)': role === 'alert',
+						'« Retirer cette personne »': retirer === 1,
+						'« Ne rien changer »': garderPresent,
+						'la demande refermée': (await demande.count()) === 0,
+						'toujours membre': apres === 1
+					},
+					`${texte || `aucune demande, ${chemin(page)}`} ; ${apres} ligne(s) pour ${SECONDE_RESPONSABLE}`
+				);
+			});
 			await seRetirerDeMembres(seconde, ligne);
 		} finally {
 			await ailleurs.close();
@@ -7209,10 +7418,13 @@ async function seRetirerDeMembres(seconde, ligne) {
 		await ouvrir(seconde, '/membres');
 		await envoyer(
 			seconde,
-			ligne(seconde, SECONDE_RESPONSABLE).getByRole('button', {
-				name: 'Retirer de l’organisation',
-				exact: true
-			})
+			await exiger(
+				ligne(seconde, SECONDE_RESPONSABLE).getByRole('button', {
+					name: 'Retirer de l’organisation',
+					exact: true
+				}),
+				'le bouton « Retirer de l’organisation » sur sa propre ligne'
+			)
 		);
 		const demande = seconde.locator('#confirmer-membre');
 		const texteDeLaDemande = (await demande.count()) === 1 ? await texteDe(demande) : '';
@@ -7265,6 +7477,60 @@ async function seRetirerDeMembres(seconde, ligne) {
  */
 async function quitterLaVoisine(page) {
 	etape('q. Vos organisations : quitter une organisation');
+	// D'abord l'organisation du parcours, dont elle est la seule personne responsable depuis que la
+	// seconde s'est retirée (étape o) : l'écran refuse, dit pourquoi et ce qu'il faut faire, sans
+	// demander de confirmation, dans les cinq langues ; elle reste membre.
+	await retour('19-membres-quitter', async () => {
+		const lus = {};
+		try {
+			for (const langue of LANGUES) {
+				if ((await racineDit(page, 'lang')) !== langue) await choisirLaLangue(page, langue);
+				await ouvrir(page, '/organisations');
+				const ligne = page.locator('li').filter({
+					has: page.getByRole('button', { name: ORGANISATION.nom, exact: true })
+				});
+				await envoyer(
+					page,
+					await exiger(
+						ligne.locator('form[action="?/quitter"] button[type="submit"]'),
+						'le bouton « Quitter l’organisation »'
+					)
+				);
+				const refus = page.locator('#refus-depart');
+				// Ses paragraphes un à un, joints par une espace : le texte du bloc entier dépend des
+				// blancs que le rendu laisse entre eux.
+				const paragraphes = (await refus.locator('p').allTextContents()).map((texte) =>
+					texte.replace(/\s+/g, ' ').trim()
+				);
+				lus[langue] = {
+					texte: paragraphes.join(' '),
+					role: (await refus.count()) === 1 ? await refus.getAttribute('role') : null,
+					demandes: await page.locator('#confirmer-depart').count(),
+					restee: await page.getByRole('button', { name: ORGANISATION.nom, exact: true }).count()
+				};
+			}
+		} finally {
+			if ((await racineDit(page, 'lang')) !== 'fr') await choisirLaLangue(page, 'fr');
+		}
+		verifierChaque(
+			`dans « Vos organisations », la seule personne responsable de « ${ORGANISATION.nom} » qui veut la quitter lit, dans les cinq langues, un refus qui la nomme et dit quoi faire, sans demande de confirmation, et reste membre`,
+			Object.fromEntries(
+				LANGUES.flatMap((langue) => {
+					const { avantLeNom, quoiFaire } = SEULE_RESPONSABLE[langue];
+					const lu = lus[langue];
+					return [
+						[`le refus, ${langue}`, lu.texte === `${avantLeNom} ${ORGANISATION.nom} ${quoiFaire}`],
+						[`annoncé (role=alert), ${langue}`, lu.role === 'alert'],
+						[`sans demande de confirmation, ${langue}`, lu.demandes === 0],
+						[`toujours membre, ${langue}`, lu.restee === 1]
+					];
+				})
+			),
+			LANGUES.map(
+				(langue) => `${langue} : « ${lus[langue].texte.slice(0, 90) || 'aucun refus'} »`
+			).join(' | ')
+		);
+	});
 	await retour('19-membres-quitter', async () => {
 		await ouvrir(page, '/organisations');
 		const ligne = page
@@ -7455,6 +7721,7 @@ D2 | la langue choisie, l’italien, reste au rechargement
 D2 | reconnectée dans un autre navigateur réglé en français, elle retrouve l’italien de son compte
 D2 | revenue au français par le compte, le premier navigateur le suit
 D2 | une langue choisie sur /connexion avant de demander le lien devient celle du compte : ouvert dans un autre navigateur, réglé en français, le lien arrive en allemand
+19-adresse-sans-langue | le lien de connexion arrive à une adresse sans la langue qu’il portait : /organisations, sans « ?language= »
 C1 | l’écran commence par « D’où viennent vos heures de prière ? », avec ses trois réponses
 C1 | « Source que vous déclarez » a disparu, et rien du calcul n’est montré avant la réponse
 C2 | par son nom, « Bienne », la localité « 2502 Biel/Bienne (BE) » est proposée
@@ -7472,6 +7739,7 @@ C2 | avec JavaScript, « Méthode de calcul, école et ajustements (facultatif) 
 19-B4 | l’écran des prières en arabe, « importées depuis un fichier » : l’aide du modèle dit « النموذج مُعبّأ » et « ثم ارفعه هنا »
 19-B5 | un fichier séparé par des tabulations, lu en arabe : le séparateur se lit « علامة الجدولة (Tab) »
 19-B6 | vingt-cinq lignes refusées, vingt montrées : la ligne finale se lit « … و5 أخرى. »
+19-prieres-angle | dans les cinq langues, l’aide de la règle des nuits courtes dit que « Proportionnelle à l’angle » donne des heures qui changent avec la méthode de calcul
 B1 | l’heure d’une session du vendredi a son aide, avec un exemple
 19-sermon | dans « Ajouter une session », « Langue du sermon » propose les huit langues d’enseignement, dans l’ordre, et son aide le dit
 C4 | une session du vendredi est ajoutée
@@ -7525,7 +7793,9 @@ D2 | depuis l’écran en allemand, la copie de « Winter » pour l’année sui
 19-D2 | sur l’écran du vendredi, une session ajoutée dans une salle supprimée entre-temps est refusée, dans la section d’ajout, saisie gardée : « Cette salle n’existe plus : … »
 19-sermon | une session au sermon en albanais et en turc, deux langues que la page publique ne publie pas : sa carte dit « Sermon en albanais et turc », et la page publique « albanais et turc »
 19-B3 | l’écran du vendredi en arabe, après « Retirer de la page publique » : « لكنه يبقى هنا كمسودة »
+19-prieres-jumua-brouillon | dans « Heures de prière », le vendredi, la cellule de Dhuhr dit « Jumu’a 12:30 », la session publiée, sans l’heure de celle en brouillon, 14:30
 19-D2 | dans un second onglet, « Publier » sur une session supprimée entre-temps est refusé en tête : « Cette session n’existe plus : elle a été supprimée entre-temps. La liste ci-dessous est à jour. »
+19-D2 | sur l’écran du vendredi, « Déplacer » envoyé pour la veille (formulaire modifié dans la page) est refusé en tête : « Ce jour est déjà passé : rien n’a été déplacé. … », et rien n’est déplacé
 19-retablir-nouvelle-date | une session déplacée à un autre jour : sur la ligne « Nouvelle date, à la place du JOUR JJ.MM.AAAA », « Rétablir comme d’habitude » la ramène à son vendredi
 19-jour-sans-seance | « Annuler » envoyé pour un jour où il n’y a pas de séance (formulaire modifié dans la page) : une phrase qui le dit, en tête, et rien d’écrit, sur l’écran du vendredi comme sur « À venir »
 19-titre-langue-ecran | sur « À venir », une séance porte son titre dans la langue de l’écran : « Freitagsgebet » en allemand, « قراءة القرآن » en arabe
@@ -7544,7 +7814,9 @@ B1 | avec JavaScript, le nom et la formule d’accueil tapés au clavier, puis u
 19-membres-confirmations | sur sa propre ligne, « Donner le rôle d’éditeur » ne change rien au premier envoi : en haut, « Vous allez vous donner le rôle d’éditeur. », « Prendre le rôle d’éditeur » et « Ne rien changer »
 B3 | une responsable qui se donne le rôle d’éditeur arrive sur « À venir », où une phrase, visible sans défiler, lui dit ce qui s’est passé et comment retrouver ses écrans
 19-membres-confirmations | sur la ligne d’un autre membre, « Donner le rôle de responsable » demande d’abord de confirmer : « Vous allez donner le rôle de responsable à cette personne : <adresse> », ce qu’elle pourra faire, et « Donner ce rôle »
+19-membres-confirmations | sur la ligne d’un autre membre, « Retirer de l’organisation » demande d’abord de confirmer : « Vous allez retirer cette personne de l’organisation : <adresse> », « Retirer cette personne », et « Ne rien changer », qui la laisse membre
 19-membres-depart | une responsable qui se retire elle-même, depuis Membres, confirme d’abord, puis arrive sur « Vos organisations », où un encadré, avant le titre et visible sans défiler, dit qu’elle a quitté l’organisation
+19-membres-quitter | dans « Vos organisations », la seule personne responsable de « Centre du Parcours » qui veut la quitter lit, dans les cinq langues, un refus qui la nomme et dit quoi faire, sans demande de confirmation, et reste membre
 19-membres-quitter | dans « Vos organisations », « Quitter l’organisation » sur « Association voisine » : le bouton porte son nom pour les lecteurs d’écran, l’écran demande de confirmer en la nommant, puis l’encadré dit le départ, et l’organisation a quitté la liste
 A3 | aucune date écrite AAAA-MM-JJ sur les N écrans traversés (espace, super-admin, page publique, widget)
 F1 | aucun des N écrans traversés ne nomme la personne retirée du dépôt
