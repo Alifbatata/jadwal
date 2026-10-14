@@ -194,8 +194,8 @@ importers:
         specifier: 10.0.1
         version: 10.0.1(eslint@10.10.0)
       axe-core:
-        specifier: 4.13.0
-        version: 4.13.0
+        specifier: 4.14.0
+        version: 4.14.0
       eslint:
         specifier: 10.10.0
         version: 10.10.0
@@ -1662,8 +1662,8 @@ packages:
   ast-v8-to-istanbul@1.0.6:
     resolution: {integrity: sha512-fvpl29helSO2w/z7utIbrkNXILdrLwDwAMH2I/zPKlGf5244+gf+B4cyS1sANcrPY2h+hWCGSgC8N61s/+AF9A==}
 
-  axe-core@4.13.0:
-    resolution: {integrity: sha512-UzGt8zg7Ny8djbYMhxl2zuEevVa7r2gJjYY5Lwr1xM7+XU2nd6CkIWFTVcCIbAP63vSz71NaVyyuSk9lHKcy0A==}
+  axe-core@4.14.0:
+    resolution: {integrity: sha512-9WTZxEjsZ7b13TH8JPmbV2z8CHbl80/2hm3XPEG4JgNdQLK81IBRXmSxHfMAOkSqQeRxT/0dwNDz2GOm3zzpcQ==}
     engines: {node: '>=4'}
 
   axobject-query@4.1.0:
@@ -3796,7 +3796,7 @@ snapshots:
       estree-walker: 3.0.3
       js-tokens: 10.0.0
 
-  axe-core@4.13.0: {}
+  axe-core@4.14.0: {}
 
   axobject-query@4.1.0: {}
 
