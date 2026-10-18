@@ -4,10 +4,12 @@
 
 import { describe, expect, it } from 'vitest';
 import { t } from '../i18n.js';
+import { commonTexts } from './common.js';
 import { fridayTexts } from './friday.js';
 import { membersTexts } from './members.js';
 import { prayersTexts } from './prayers.js';
 import { shareTexts } from './share.js';
+import { signInTexts } from './sign-in.js';
 import { upcomingTexts } from './upcoming.js';
 
 describe('Arabic reviewed by the project lead (step 19)', () => {
@@ -84,5 +86,18 @@ describe('Arabic reviewed by the project lead (step 20)', () => {
 
 	it('B2: leave an organisation one is a member of', () => {
 		expect(membersTexts.ar.gestures.editor.leave).toBe('مغادرة مؤسسة يكون عضوًا فيها');
+	});
+});
+
+// Étape 21 : ma relecture des textes arabes de l'étape 20. Deux tournures reprises, le reste tient.
+describe('Arabic reviewed again (step 21)', () => {
+	it('R1: the address the invitation reached', () => {
+		expect(signInTexts.ar.emailHint).toBe('العنوان الذي وصلت إليه دعوتك. مثال: name@example.org');
+	});
+
+	it('R2: an address in the format of an email address', () => {
+		expect(commonTexts.ar.errors.invalidEmail).toBe(
+			'هذا العنوان ليس بصيغة عنوان بريد إلكتروني. مثال: name@example.org'
+		);
 	});
 });

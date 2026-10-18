@@ -191,7 +191,7 @@ export const commonTexts: Translations<CommonTexts> = {
 			'لديك الآن دور المحرر. لم تعد الصفحات الخاصة بالمسؤولين، مثل «الأعضاء» و«الإعدادات»، مفتوحة لك. لاستعادتها، اطلب من مسؤول آخر أن يمنحك دور المسؤول من جديد.',
 		roles: { org_admin: 'مسؤول', editor: 'محرر' },
 		errors: {
-			invalidEmail: 'هذا العنوان ليس على شكل بريد إلكتروني. مثال: name@example.org'
+			invalidEmail: 'هذا العنوان ليس بصيغة عنوان بريد إلكتروني. مثال: name@example.org'
 		}
 	}
 };
