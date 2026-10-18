@@ -1132,7 +1132,7 @@ const DELAI_GOOGLE: Record<Langue, string> = {
  */
 const DERNIERE_MINUTE: Record<Langue, string> = {
 	fr: 'Pour un changement de dernière minute, regardez la page du programme : elle est toujours à jour.',
-	de: 'Bei einer Änderung in letzter Minute sehen Sie auf der Seite des Programms nach: Sie ist immer aktuell.',
+	de: 'Bei einer Änderung in letzter Minute sehen Sie auf der Seite des Programms nach: Diese ist immer aktuell.',
 	it: 'Per un cambiamento dell’ultimo minuto, guarda la pagina del programma: è sempre aggiornata.',
 	en: 'For a last-minute change, check the programme page: it is always up to date.',
 	ar: 'عند أي تغيير في آخر لحظة، راجع صفحة البرنامج: فهي محدَّثة دائمًا.'

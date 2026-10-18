@@ -594,7 +594,7 @@ const de: Dictionnaire = {
 	googleHelp:
 		'Tippen Sie auf die Schaltfläche: Sie öffnet Google Kalender und bittet darum, diesen Kalender hinzuzufügen. Wenn Google Kalender es Ihnen anbietet, bestätigen Sie.',
 	lastMinute:
-		'Bei einer Änderung in letzter Minute sehen Sie auf der Seite des Programms nach: Sie ist immer aktuell.',
+		'Bei einer Änderung in letzter Minute sehen Sie auf der Seite des Programms nach: Diese ist immer aktuell.',
 	googleComputer:
 		'Wenn Google Kalender auf Ihrem Telefon nichts anbietet, öffnen Sie diese Seite an einem Computer:',
 	chooseApp: 'Wählen Sie Ihre Kalender-App:',

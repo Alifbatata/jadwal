@@ -1893,7 +1893,7 @@ const CASES_DU_SERMON: Record<Langue, readonly string[]> = {
 const AIDE_DU_SERMON: Record<Langue, string> = {
 	fr: 'Cochez chaque langue dans laquelle le sermon est dit, même si votre page publique n’est pas écrite dans cette langue.',
 	de: 'Kreuzen Sie jede Sprache an, in der gepredigt wird, auch wenn Ihre öffentliche Seite nicht in dieser Sprache erscheint.',
-	it: 'Seleziona ogni lingua in cui viene detto il sermone, anche se la tua pagina pubblica non è in quella lingua.',
+	it: 'Seleziona ogni lingua in cui viene tenuto il sermone, anche se la tua pagina pubblica non è in quella lingua.',
 	en: 'Tick each language the sermon is given in, even if your public page is not in that language.',
 	ar: 'اختر كل لغة تُلقى بها الخطبة، حتى إن لم تكن صفحتك العامة مكتوبة بهذه اللغة.'
 };

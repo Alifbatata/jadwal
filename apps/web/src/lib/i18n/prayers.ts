@@ -746,7 +746,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			},
 			ruleLabel: 'Regel für die kurzen Sommernächte',
 			ruleHint:
-				'Im Juni ist die Nacht so kurz, dass Ischa spät und Fadschr sehr früh fällt. Die Nachtmitte behält die astronomischen Zeiten; das letzte Siebtel legt Ischa früher und Fadschr später, damit die Zeiten leichter einzuhalten sind. «Anteilig zum Winkel» ergibt Zeiten zwischen den beiden, die sich mit der Berechnungsmethode ändern.',
+				'Im Juni ist die Nacht so kurz, dass Ischa spät und Fadschr sehr früh beginnt. Die Nachtmitte behält die astronomischen Zeiten; das letzte Siebtel legt Ischa früher und Fadschr später, damit die Zeiten leichter einzuhalten sind. «Anteilig zum Winkel» ergibt Zeiten zwischen den beiden, die sich mit der Berechnungsmethode ändern.',
 			rules: {
 				middleofthenight: 'Nachtmitte',
 				seventhofthenight: 'Letztes Siebtel der Nacht',
@@ -1073,7 +1073,7 @@ export const prayersTexts: Translations<PrayersTexts> = {
 			},
 			ruleLabel: 'Regola per le notti corte d’estate',
 			ruleHint:
-				'A giugno la notte è così corta che Isha cade tardi e Fajr molto presto. La metà della notte tiene gli orari astronomici; l’ultimo settimo anticipa Isha e posticipa Fajr, per orari più facili da rispettare. «Proporzionale all’angolo» dà orari tra i due, che cambiano con il metodo di calcolo.',
+				'A giugno la notte è così corta che Isha cade tardi e Fajr molto presto. La metà della notte mantiene gli orari astronomici; l’ultimo settimo anticipa Isha e posticipa Fajr, per orari più facili da rispettare. «Proporzionale all’angolo» dà orari tra i due, che cambiano con il metodo di calcolo.',
 			rules: {
 				middleofthenight: 'Metà della notte',
 				seventhofthenight: 'Ultimo settimo della notte',

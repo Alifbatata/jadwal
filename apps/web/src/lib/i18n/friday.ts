@@ -479,7 +479,7 @@ export const fridayTexts: Translations<FridayTexts> = {
 			roomHelp: 'Le sale le crea una persona responsabile in Impostazioni.',
 			sermon: 'Lingua del sermone',
 			sermonHelp:
-				'Seleziona ogni lingua in cui viene detto il sermone, anche se la tua pagina pubblica non è in quella lingua.',
+				'Seleziona ogni lingua in cui viene tenuto il sermone, anche se la tua pagina pubblica non è in quella lingua.',
 			teacher: 'Imam o relatore (facoltativo)',
 			teacherHelp: 'Il suo nome compare sulla tua pagina pubblica. Esempio: Imam Omar',
 			startsOn: 'Valido dal',
