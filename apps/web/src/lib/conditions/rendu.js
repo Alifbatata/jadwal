@@ -269,6 +269,38 @@ export function typographierHtml(html) {
 // ------------------------------------------------------------------------------------------------
 
 /**
+ * Où le texte nomme l'exploitant : le nom par défaut, entre deux marques que GitHub n'affiche pas.
+ */
+const EXPLOITANT = /<!-- exploitant -->([^<\n]*)<!-- \/exploitant -->/g;
+
+/**
+ * Le texte, l'exploitant nommé comme l'instance le dit (`JADWAL_EXPLOITANT`), ou par le nom par
+ * défaut du texte. La loi demande l'identité du responsable du traitement (art. 19 nLPD) ; elle est
+ * propre à chaque instance, et le dépôt public n'en porte que le nom par défaut.
+ *
+ * Le nom passe ensuite par le convertisseur : il ne doit rien porter que celui-ci lirait comme une
+ * structure du texte, et une valeur qui en porte est refusée plutôt que rendue de travers. Un texte
+ * sans marque, ou avec deux, lève aussi : l'exploitant serait nommé nulle part, ou deux fois.
+ *
+ * @param {string} markdown
+ * @param {string | undefined} nom
+ * @returns {string}
+ */
+export function nommerExploitant(markdown, nom) {
+	const marques = [...markdown.matchAll(EXPLOITANT)].length;
+	if (marques !== 1) {
+		throw new Error(`le texte doit marquer le nom de l'exploitant une fois, et non ${marques}`);
+	}
+	const choisi = nom?.trim() ?? '';
+	if (/[\n`*[\]<>]/.test(choisi)) {
+		throw new Error(
+			`JADWAL_EXPLOITANT ne doit porter ni saut de ligne, ni \` * [ ] < > : « ${choisi} »`
+		);
+	}
+	return markdown.replace(EXPLOITANT, (_marque, parDefaut) => choisi || parDefaut);
+}
+
+/**
  * La date de la version, lue dans le document : une seule source, jamais deux.
  *
  * @param {string} markdown

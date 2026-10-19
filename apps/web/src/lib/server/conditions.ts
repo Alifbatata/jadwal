@@ -10,13 +10,20 @@
 // fichier-là, jamais un texte venu d'un visiteur : le convertisseur n'échappe pas tout, et son
 // en-tête le dit.
 
-import source from '../../../../../docs/CONDITIONS.md?raw';
+import brut from '../../../../../docs/CONDITIONS.md?raw';
 import {
 	dateDeLaVersion as dateLue,
+	nommerExploitant,
 	typographierHtml,
 	versHtml,
 	versionIso as versionLue
 } from '$lib/conditions/rendu.js';
+
+/**
+ * Le texte, l'exploitant nommé par l'instance (`JADWAL_EXPLOITANT`, lue au démarrage du serveur) :
+ * le dépôt public ne porte que le nom par défaut. La version reste celle du texte du dépôt.
+ */
+const source: string = nommerExploitant(brut, process.env['JADWAL_EXPLOITANT']);
 
 /**
  * La version en cours, en ISO (`2026-09-22`) : la date de « Dernière mise à jour » du texte. C'est

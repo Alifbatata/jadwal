@@ -7,7 +7,14 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { dateDeLaVersion, typographier, typographierHtml, versHtml, versionIso } from './rendu.js';
+import {
+	dateDeLaVersion,
+	nommerExploitant,
+	typographier,
+	typographierHtml,
+	versHtml,
+	versionIso
+} from './rendu.js';
 
 const CONDITIONS = readFileSync(
 	new URL('../../../../../docs/CONDITIONS.md', import.meta.url),
@@ -116,14 +123,13 @@ describe('la version du texte', () => {
 	// n'a lu. Chaque version a donc son empreinte, ajoutée ici quand la date change. Les fins de
 	// ligne sont ramenées à LF : un poste Windows ne doit pas changer l'empreinte.
 	const EMPREINTES: Record<string, string> = {
-		'2026-09-26': 'ce107d7a3d36101abd5ed79a5412c30f842b162afee3606b2af9c799c5e4a867'
+		'2026-09-26': 'ce107d7a3d36101abd5ed79a5412c30f842b162afee3606b2af9c799c5e4a867',
+		'2026-10-19': '4ef7a278e8ab516f94c3e6d4f8ec85325d4dea1095d0bf25f25bfaf554f895cf'
 	};
 
 	it('gives every change of docs/CONDITIONS.md a new date, so that everyone accepts it again', () => {
 		const version = versionIso(CONDITIONS);
-		const empreinte = createHash('sha256')
-			.update(CONDITIONS.replace(/\r\n/g, '\n'))
-			.digest('hex');
+		const empreinte = createHash('sha256').update(CONDITIONS.replace(/\r\n/g, '\n')).digest('hex');
 		expect(
 			EMPREINTES[version],
 			`version ${version} sans empreinte : ajoutez « '${version}': '${empreinte}' »`
@@ -132,6 +138,45 @@ describe('la version du texte', () => {
 			empreinte,
 			`le texte de la version ${version} a changé : donnez-lui une nouvelle date de mise à jour`
 		).toBe(EMPREINTES[version]);
+	});
+});
+
+describe('le nom de l’exploitant', () => {
+	const texte =
+		'Le service est exploité par <!-- exploitant -->Voltia<!-- /exploitant -->, en Suisse.';
+
+	it('keeps the default name, without its marks, where the instance names no one', () => {
+		expect(nommerExploitant(texte, undefined)).toBe(
+			'Le service est exploité par Voltia, en Suisse.'
+		);
+		expect(nommerExploitant(texte, '  ')).toBe('Le service est exploité par Voltia, en Suisse.');
+	});
+
+	it('puts the name the instance sets in place of the default one', () => {
+		expect(nommerExploitant(texte, ' Voltia, entreprise individuelle de Jean Exemple ')).toBe(
+			'Le service est exploité par Voltia, entreprise individuelle de Jean Exemple, en Suisse.'
+		);
+	});
+
+	it.each([
+		['a line break', 'Voltia\n# Titre'],
+		['a tag', 'Voltia <script>'],
+		['bold', '**Voltia**'],
+		['a link', '[Voltia](https://example.test)'],
+		['code', '`Voltia`']
+	])('refuses a name with %s, which the converter would read as text structure', (_cas, nom) => {
+		expect(() => nommerExploitant(texte, nom)).toThrow(/JADWAL_EXPLOITANT/);
+	});
+
+	it.each([
+		['no mark', 'Le service est exploité par Voltia.'],
+		['two marks', `${texte}\n\n${texte}`]
+	])('throws on a text with %s, rather than leave the operator unnamed', (_cas, markdown) => {
+		expect(() => nommerExploitant(markdown, 'Voltia')).toThrow(/exploitant/);
+	});
+
+	it('finds the one mark in docs/CONDITIONS.md', () => {
+		expect(nommerExploitant(CONDITIONS, 'Témoin')).toContain('exploité par Témoin, en Suisse');
 	});
 });
 

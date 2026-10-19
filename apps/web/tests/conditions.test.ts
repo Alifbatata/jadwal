@@ -21,6 +21,7 @@ import { contraste } from '../src/lib/couleur.js';
 import { visibleText } from './textes-lus.js';
 
 const origin = inject('origin');
+const secondOrigin = inject('secondOrigin');
 const outbox = inject('outbox');
 const testDatabase = inject('testDatabase');
 
@@ -245,6 +246,20 @@ describe('la page /conditions, ouverte à tous', () => {
 		expect(texte).toContain(
 			'<div class="tableau" role="region" tabindex="0" aria-label="Tableau : Combien de temps"><table>'
 		);
+	});
+
+	// L'identité de l'exploitant vient de l'instance (`JADWAL_EXPLOITANT`) : le dépôt public ne
+	// porte que le nom par défaut. La seconde instance la pose, la première non.
+	it('names the operator as the instance sets it, and the default name where it sets nothing', async () => {
+		const parDefaut = await (await get('/conditions')).text();
+		expect(parDefaut).toContain('Le service est exploité par Voltia, en Suisse');
+		expect(parDefaut).not.toContain('exploitant --');
+
+		const nomme = await (await fetch(`${secondOrigin}/conditions`)).text();
+		expect(nomme).toContain(
+			'Le service est exploité par Voltia, entreprise individuelle d’Une Personne, en Suisse'
+		);
+		expect(nomme).not.toContain('exploitant --');
 	});
 });
 

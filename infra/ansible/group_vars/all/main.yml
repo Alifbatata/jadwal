@@ -67,6 +67,11 @@ jadwal_garde_source: 'https://github.com/{{ jadwal_garde_depot }}'
 # `infra/README.md`.
 jadwal_garde_derogation: {}
 
+# L'identité de l'exploitant, telle que les conditions d'utilisation la donnent (art. 19 nLPD), par
+# exemple « Voltia, entreprise individuelle de Prénom Nom ». Vide ici : chaque instance la pose dans
+# son propre inventaire, et le nom par défaut du texte reste tant qu'elle ne l'a pas fait.
+jadwal_exploitant: ''
+
 # Le courriel. L'adresse d'envoi n'est pas lue ; c'est `reply_to` qui reçoit les réponses.
 jadwal_mail_from: noreply@voltia.ch
 jadwal_mail_from_name: jadwal

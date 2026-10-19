@@ -54,6 +54,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import {
 	dateDeLaVersion,
+	nommerExploitant,
 	typographier,
 	typographierHtml,
 	versHtml,
@@ -62,7 +63,7 @@ import {
 
 // Ses épreuves et le correcteur les importent d'ici depuis l'étape 14 : ils n'ont pas à savoir où
 // le rendu a déménagé.
-export { dateDeLaVersion, typographier, typographierHtml, versHtml, versionIso };
+export { dateDeLaVersion, nommerExploitant, typographier, typographierHtml, versHtml, versionIso };
 
 const racine = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SOURCE = join(racine, 'docs', 'CONDITIONS.md');
@@ -919,7 +920,8 @@ const VARIANTES = [
 
 /** Lit `docs/CONDITIONS.md`, écrit le PDF, et rend de quoi en rendre compte. */
 export async function produire({ avecPied = true, variantes = VARIANTES } = {}) {
-	const markdown = readFileSync(SOURCE, 'utf8');
+	// L'exploitant nommé comme sur la page de l'instance qui lance ce script, s'il le dit.
+	const markdown = nommerExploitant(readFileSync(SOURCE, 'utf8'), process.env['JADWAL_EXPLOITANT']);
 	const version = dateDeLaVersion(markdown);
 	// La version que l'application enregistrera à chaque acceptation : si elle est illisible, le PDF
 	// n'est pas produit, plutôt que de partir sous une version que personne n'a écrite.

@@ -106,7 +106,14 @@ export default async function setup(project: TestProject) {
 				// La page d'essai du widget n'existe que si ce réglage est posé (étape 7, partie A).
 				// Elle ne l'est que sur la seconde instance : les deux branches — ouverte et fermée —
 				// sont ainsi éprouvées sur un vrai serveur, et non simulées.
-				...(index === 1 ? { JADWAL_WIDGET_TEST_ORG: 'widget' } : {}),
+				// De même, l'identité de l'exploitant dans les conditions : la seconde instance la
+				// pose, la première garde le nom par défaut du texte.
+				...(index === 1
+					? {
+							JADWAL_WIDGET_TEST_ORG: 'widget',
+							JADWAL_EXPLOITANT: 'Voltia, entreprise individuelle d’Une Personne'
+						}
+					: {}),
 				// La troisième instance seulement : adapter-node lit alors `X-Forwarded-For` et prend
 				// la dernière valeur, à un rang depuis la droite : celle que le mandataire a écrite.
 				// Les deux autres n'ont pas cet en-tête déclaré et lèveraient sur toute requête qui ne

@@ -91,6 +91,7 @@ import {
 	lignesParPage,
 	LIGNES_MINIMUM_DERNIERE_PAGE,
 	nombreDePages,
+	nommerExploitant,
 	piedDePage,
 	produire,
 	QUESTIONS,
@@ -553,7 +554,7 @@ function lignesDeTexte(haut, n, interligne = 15) {
 	return Array.from({ length: n }, (_, index) => ({ y: haut - index * interligne, corps: 10.5 }));
 }
 
-const markdown = readFileSync(SOURCE, 'utf8');
+const markdown = nommerExploitant(readFileSync(SOURCE, 'utf8'), process.env['JADWAL_EXPLOITANT']);
 const version = dateDeLaVersion(markdown);
 const html = construire(markdown);
 const texte = texteSeul(html);
