@@ -64,7 +64,7 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   quatre langues : `pnpm orthographe`, et un flux de CI qui le relance quand un texte change
   (**c'était faux pour les huit documents de la racine de `docs/`**, `CONDITIONS.md` compris :
   le motif de fichiers exigeait un sous-dossier ; trouvé et corrigé à l'étape 16). Le
-  PDF pour le juriste ne finit plus sur une page presque vide, et sa mise en pages est mesurée
+  PDF des conditions ne finit plus sur une page presque vide, et sa mise en pages est mesurée
   dans le PDF rendu, pas supposée.
 - **Étape 15** (conditions exactes au mot près, relecture de l'arabe) : **terminée le 2026-09-22**.
   Six phrases des conditions d'utilisation affirmaient plus que le code ne tient : chacune est
@@ -547,8 +547,8 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
 Étape 16 :
 
 - **Les conditions sont en ligne et acceptées** (ADR 0044). `/conditions` rend `docs/CONDITIONS.md`,
-  lu à la construction et mis en mots par le même module que le PDF du juriste
-  (`apps/web/src/lib/conditions/rendu.js`) : ce qu'il lit est, au caractère près, ce que les
+  lu à la construction et mis en mots par le même module que le PDF des conditions
+  (`apps/web/src/lib/conditions/rendu.js`) : le PDF dit, au caractère près, ce que les
   organisations acceptent. À l'entrée dans l'espace d'une organisation, chaque personne, éditeurs
   compris, accepte d'un clic la version en cours ; la base garde qui, quelle version et quand, pose
   le moment elle-même, et efface l'acceptation avec l'adhésion. Une nouvelle date du texte
@@ -573,8 +573,8 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
 - **Une commande d'exploitant supprime une organisation**, aperçu d'abord
   (`packages/db/scripts/delete-organization.mjs`) : les conditions le promettaient, rien ne le
   faisait.
-- **Le PDF du juriste** : liste des données personnelles suivie de 1 à 10, plus aucune ligne seule
-  (le contrôle lisait les pages à l'envers), point 10 sur l'acceptation. Version du 23 septembre 2026.
+- **Le PDF des conditions** : liste des données personnelles suivie de 1 à 10, plus aucune ligne
+  seule (le contrôle lisait les pages à l'envers), une question sur l'acceptation. Version du 23 septembre 2026.
 - 1 417 tests dans le dépôt, tous réussis, aucun sauté. ADR 0044 ; addendum à l'ADR 0013 ; ADR
   0035, 0037 et 0039 révisées.
 
@@ -604,8 +604,8 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   script ; la lecture des
   organisations du super-admin est bornée au contexte quand il en a un (migration 0055) ; le
   `TRUNCATE` du propriétaire est écrit comme limite (ADR 0019). « على iPhone و iPad » reste tel quel,
-  et le DMARC reste sans adresse `rua`, par décision. La preuve d'acceptation attend l'avis du
-  juriste.
+  et le DMARC reste sans adresse `rua`, par décision. La preuve d'acceptation reste une question
+  ouverte (tranchée à l'étape 21).
 - **Les invitations, tenues par la base** : quatorze jours au plus, comptés à l'horloge, par la
   migration 0056 ; une invitation échue ne s'accepte plus, même par un appel direct, par la 0057 ;
   l'adhésion porte le rôle de l'invitation, une invitation ne sert qu'une fois, et ses passages de
@@ -617,7 +617,7 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   super-admin membre d'une seule organisation qui ne pouvait pas en visiter une autre ; une
   réinvitation qui ne créait rien quand l'ancienne invitation avait échu ; une invitation annulée ou
   consommée qui resservait ; « à Maghrib » dans la liste des cours.
-- **Le PDF du juriste**, version du 25 septembre 2026, avec 182 jours au point 5.
+- **Le PDF des conditions**, version du 25 septembre 2026, avec 182 jours.
 - 1 581 tests dans le dépôt, tous réussis, aucun sauté. Parcours complet : 139 vérifications, axe
   sur 29 pages, rien de sérieux. ADR 0045 ; addenda aux ADR 0017, 0019 et 0025 ; ADR 0035, 0037 et
   0044 révisées.
@@ -730,8 +730,8 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   reste à faire.
 - **Les conditions (F1 à F3).** Voltia seul, comme exploitant et comme titulaire du droit d'auteur :
   le nom de la personne a quitté les fichiers du dépôt ; l'historique de git le garde. Une onzième
-  question pour le juriste : « Voltia » seul suffit-il ? Nouvelle version, du 26.09.2026, que
-  chacun accepte de nouveau, sa date écrite comme partout ; le PDF du juriste la suit.
+  question ouverte : « Voltia » seul suffit-il ? Nouvelle version, du 26.09.2026, que chacun
+  accepte de nouveau, sa date écrite comme partout ; le PDF des conditions la suit.
 - **L'acceptation (H2).** `Choisir une autre organisation` s'affiche aussi pour une personne d'une
   seule organisation qu'une invitation attend encore.
 - **Le bloc de site (H3, H4).** Le navigateur reçoit la page et le widget en `gzip`, que le bloc
@@ -937,7 +937,7 @@ tests.
 | 11    | Courriel, fausses alertes, IPv6, premier compte super-admin         | terminée |
 | 12    | Caddy à jour, conteneur de démarrage, finitions                     | terminée |
 | 13    | Organisations de tout genre, conditions exactes, serveur            | terminée |
-| 14    | Licence MIT, correcteur en quatre langues, PDF pour le juriste      | terminée |
+| 14    | Licence MIT, correcteur en quatre langues, PDF des conditions       | terminée |
 | 15    | Conditions exactes au mot près, relevé de l'arabe                   | terminée |
 | 16    | Conditions en ligne et acceptées, arabe corrigé, parcours complet   | terminée |
 | 17    | 182 jours vérifiés, garde du déploiement, invitations tenues        | terminée |
@@ -1083,10 +1083,10 @@ passkeys, paiement.
 - **La destination des sauvegardes** et sa clé publique `age` : à fournir par l'exploitant.
 - ~~Texte du CLA et outil de signature~~ : tranché à l'étape 19, il n'y a pas de CLA. Les
   contributions arrivent sous la licence MIT du dépôt, et `CONTRIBUTING.md` le dit.
-- **L'avis du juriste** sur les onze points de la page de garde, dont le point 10 : l'acceptation
-  par personne, rattachée à son adhésion, suffit-elle ? Et le point 11, ajouté à l'étape 18 :
-  « Voltia » seul suffit-il comme exploitant et comme titulaire du droit d'auteur ? Voltia est une
-  entreprise individuelle : l'exploitant l'a confirmé à l'étape 19, et la page de garde le dit.
+- ~~Les onze questions ouvertes sur les conditions~~ : tranchées à l'étape 21, le texte relu sur
+  le fond contre la nLPD, le CO et le code (version du 19.10.2026). L'acceptation par personne,
+  rattachée à son adhésion, suffit ; l'identité de l'exploitant vient de l'instance
+  (`JADWAL_EXPLOITANT`), et « Voltia » seul reste titulaire du droit d'auteur.
 - ~~La langue d'une invitation~~ : tranchée à l'étape 19. Le formulaire d'invitation propose
   « Langue du courriel », les cinq langues, celle de l'écran par défaut ; aucune recherche de compte
   (ADR 0017 inchangée). Le lien de connexion reste dans la langue de l'écran où il est demandé.
@@ -1094,9 +1094,8 @@ passkeys, paiement.
   le lien (ADR 0047). Accepté à l'étape 19, tel que livré, ce que la règle laisse : un
   choix fait sans demander de lien peut, jusqu'à un an plus tard, remettre sa langue sur le compte
   par-dessus une langue changée ailleurs, et une demande freinée consomme le choix.
-- **Les deux cookies de langue** sont fonctionnels, posés sur demande, sans donnée personnelle.
-  Faut-il les nommer dans `docs/CONDITIONS.md`, qui ne parle que des cookies de mesure
-  d'audience ? La question revient au juriste.
+- ~~Les deux cookies de langue~~ : nommés à l'étape 21 dans `docs/CONDITIONS.md`, avec ceux de
+  la session et de la passkey.
 - ~~Ce que la base laisse encore à un éditeur~~ : fermé à l'étape 19 (migrations 0063, 0064 et
   0070, ADR 0046). Chacun peut quitter une organisation depuis « Vos organisations », sauf le
   dernier responsable (migration 0066).

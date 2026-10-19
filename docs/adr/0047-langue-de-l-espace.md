@@ -159,9 +159,8 @@ langue (ADR 0017, addendum du 27.09.2026).
   lien qui l'aurait porté n'existe pas. L'autre voie serait un repère côté serveur, la date du
   dernier changement de langue du compte : une colonne et une migration de plus. La question est
   posée dans `ETAT-PROJET.md`.
-- Les deux cookies sont fonctionnels et posés sur demande. Faut-il les nommer dans
-  `docs/CONDITIONS.md`, qui ne parle que des cookies de mesure d'audience ? La question revient au
-  juriste.
+- Les deux cookies sont fonctionnels et posés sur demande. `docs/CONDITIONS.md` les nomme depuis
+  l'étape 21, avec ceux de la session et de la passkey.
 - Le lien de connexion porte une chose de plus qu'avant l'étape 18, et une seule : la langue choisie
   avant la connexion, quand un choix attend. Sans choix en attente, son adresse de retour reste
   `/organisations`, sans rien d'autre.

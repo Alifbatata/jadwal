@@ -1,7 +1,7 @@
 # Conditions d'utilisation
 
-Ce texte s'adresse aux organisations qui publient leur programme avec ce service. Il est écrit pour
-être lu, pas pour être opposé.
+Ce texte s'adresse aux organisations qui publient leur programme avec ce service, et aux personnes
+de leur équipe. Il est écrit pour être lu : chaque phrase dit ce que le service fait vraiment.
 
 Dernière mise à jour : 19.10.2026.
 
@@ -26,34 +26,42 @@ plus bas, « Ce que vous acceptez ».
 
 ### Les données personnelles, la liste complète
 
-1. **L'adresse électronique des personnes de votre équipe**, responsables ou éditeurs, et leur nom
-   si elles l'ont donné. C'est la seule identité que le service demande : il n'y a pas de mot de
-   passe, et donc rien d'autre à retenir de vous.
+1. **L'adresse électronique des personnes de votre équipe**, responsables ou éditeurs, leur nom si
+   le service le connaît, et la langue qu'elles ont choisie pour l'espace. C'est la seule identité
+   que le service demande : il n'y a pas de mot de passe, et donc rien d'autre à retenir de vous.
 2. **Le lien entre une personne et votre organisation** : qui est responsable de quoi. Le service ne
-   peut pas fonctionner sans, puisque c'est lui qui décide qui voit quoi.
-3. **L'adresse électronique d'une personne invitée**, tant que l'invitation court, même si cette
-   personne n'ouvre jamais de compte.
-4. **Un journal des modifications** : qui a changé quoi, et quand. Il permet de revenir en arrière et
-   de comprendre ce qui s'est passé.
+   peut pas fonctionner sans, puisque c'est lui qui décide qui voit quoi. Le programme garde aussi
+   qui a modifié un cours en dernier, et qui a annulé ou déplacé une séance ou posé une pause ; ce
+   lien part avec le compte de la personne. Appartenir à l'équipe d'une organisation religieuse peut
+   révéler une conviction : ce lien n'est montré qu'aux personnes de votre organisation et à
+   l'exploitant, jamais sur votre page publique.
+3. **L'adresse électronique d'une personne invitée**, même si cette personne n'ouvre jamais de
+   compte, avec qui l'a invitée et qui a accepté l'invitation. L'invitation est effacée 90 jours
+   après sa fin. Son envoi est aussi écrit au journal des modifications, avec l'adresse et le rôle
+   proposé, et il y reste la durée du journal.
+4. **Un journal des modifications** : qui a changé quoi, et quand. Il sert à comprendre ce qui s'est
+   passé et à répondre en cas de contestation. Il n'est pas affiché dans votre espace : sa copie
+   fait partie de ce que vous pouvez demander.
 5. **Les sessions de connexion** : quel compte, depuis quand, jusqu'à quand, et la dernière
    organisation choisie quand la personne en a plusieurs. C'est ce qui vous garde connecté d'une
    page à l'autre.
 6. **Les liens de connexion en attente** : l'adresse à laquelle le lien est parti, tant qu'il court.
    Le lien lui-même n'est pas conservé en clair.
-7. **Les passkeys** des personnes qui en enregistrent une. Le service garde le nom que vous lui
-   donnez, sa clé publique, son identifiant, un compteur d'usage, le type d'appareil, le fait
-   qu'elle soit copiée ailleurs que sur cet appareil, les moyens par lesquels elle se présente,
-   l'identifiant du modèle d'authentificateur, et la date d'enregistrement.
+7. **Les passkeys de l'exploitant.** Seuls ses comptes peuvent en enregistrer une : elles protègent
+   son accès à vos données (voir plus bas). Le service garde pour chacune un nom, fait du système de
+   l'appareil et de la date, sa clé publique, son identifiant, un compteur d'usage, le type
+   d'appareil, le fait qu'elle soit copiée ailleurs que sur cet appareil, les moyens par lesquels
+   elle se présente, l'identifiant du modèle d'authentificateur, et la date d'enregistrement.
 
    **Ce qui est vrai de toutes** : le service ne reçoit jamais le secret de la passkey, ni une
-   empreinte digitale, ni un visage. Une passkey **synchronisée** est en revanche recopiée par votre
-   trousseau sur vos autres appareils : cela se passe entre vous et le fabricant de votre appareil,
-   et le service ne fait qu'en enregistrer le fait.
+   empreinte digitale, ni un visage. Une passkey **synchronisée** est en revanche recopiée par son
+   trousseau sur les autres appareils de son titulaire : cela se passe entre lui et le fabricant de
+   son appareil, et le service ne fait qu'en enregistrer le fait.
 
 8. **Une empreinte de l'adresse IP ou de l'adresse électronique**, le temps de compter les demandes
    trop nombreuses. Voir plus bas.
-9. **Les traces d'accès de l'exploitant** : quand il a regardé les données d'une organisation, et
-   laquelle. Voir « L'accès de l'exploitant à vos données ».
+9. **Les traces d'accès de l'exploitant** : quand il a regardé les données d'une organisation,
+   laquelle, et quelle page. Voir « L'accès de l'exploitant à vos données ».
 10. **L'acceptation de ces conditions** : qui les a acceptées, quelle version du texte, et quand.
     Voir « Comment ce texte est accepté ».
 
@@ -65,11 +73,30 @@ publique ne sont pas identifiés et ne s'inscrivent à rien.
 
 Une session ouverte ne retient **ni l'adresse IP ni le navigateur** de la personne connectée.
 
+### Les cookies
+
+Le service pose quatre cookies, tous nécessaires à ce que vous lui demandez, et aucun autre :
+
+- **La session**, quand vous vous connectez : c'est elle qui porte votre connexion, trente jours au
+  plus sans revenir.
+- **La langue**, quand vous en choisissez une : un an.
+- **La langue choisie avant la connexion**, le temps de la reporter sur votre compte : retirée à la
+  connexion, un an au plus.
+- **Le défi d'une passkey**, pour l'exploitant seulement : cinq minutes.
+
+Un visiteur de votre page publique qui ne choisit pas de langue n'en reçoit aucun.
+
 ### Le journal technique du serveur
 
-Le serveur tient un journal des requêtes qu'il a servies, où l'adresse du visiteur est **tronquée
-avant d'être écrite**, au point de ne plus désigner personne, où la page d'où il vient ne figure pas,
-et dont aucune ligne n'est gardée plus de **quatorze jours**.
+Le serveur tient un journal des requêtes qu'il a servies. Il sert à réparer une panne et à repérer
+un abus. L'adresse du visiteur y est **tronquée avant d'être écrite**, au point de ne plus désigner
+personne : le dernier nombre d'une adresse IPv4 est effacé, et tout ce qui suit les trois premiers
+groupes d'une adresse IPv6. Le journal garde le navigateur, tel qu'il se présente ; la page d'où
+vient le visiteur n'y figure pas, et un lien de connexion y est masqué. Aucune ligne n'est gardée
+plus de **quatorze jours**.
+
+Les messages d'erreur de l'application sont gardés à part, en quantité bornée, et ne servent qu'à
+réparer. Un courriel refusé n'y laisse que le domaine de l'adresse, jamais l'adresse entière.
 
 ### Le compteur de consultations
 
@@ -96,82 +123,96 @@ ne sait pas sur quelle page vous l'avez collé, puisqu'il ne conserve pas la pro
 
 ## Combien de temps
 
-| Ce qui est conservé                         | Durée                                                  | Comment il est effacé             |
-| ------------------------------------------- | ------------------------------------------------------ | --------------------------------- |
-| Le programme de vos cours                   | tant que votre organisation utilise le service         | vous l'effacez vous-même          |
-| L'acceptation de ces conditions             | tant que la personne fait partie de votre organisation | règle de la base, avec l'adhésion |
-| Le journal des modifications                | 24 mois, puis effacé automatiquement                   | règle de la base, chaque nuit     |
-| Le compteur de consultations                | 25 mois, puis effacé automatiquement                   | règle de la base, chaque nuit     |
-| Une invitation qui n'est plus en cours      | 90 jours après sa fin, puis effacée automatiquement    | règle de la base, chaque nuit     |
-| Un compte sans organisation, inactif        | 12 mois au plus, puis effacé automatiquement           | règle de la base, chaque nuit     |
-| Une session de connexion                    | 30 jours sans usage, puis effacée automatiquement      | règle de la base, chaque nuit     |
-| Un lien de connexion non utilisé            | 15 minutes, puis effacé automatiquement                | règle de la base, chaque nuit     |
-| L'empreinte du compteur de demandes         | un à deux jours, puis effacée automatiquement          | règle de la base, chaque nuit     |
-| Les traces d'accès internes de l'exploitant | 24 mois, puis effacées automatiquement                 | règle de la base, chaque nuit     |
-| Le journal technique du serveur             | 14 jours au plus, puis effacé automatiquement          | fichier découpé chaque nuit       |
+| Ce qui est conservé                            | Durée                                                  | Comment il est effacé             |
+| ---------------------------------------------- | ------------------------------------------------------ | --------------------------------- |
+| Le programme de vos cours                      | tant que votre organisation utilise le service         | vous l'effacez vous-même          |
+| L'acceptation de ces conditions                | tant que la personne fait partie de votre organisation | règle de la base, avec l'adhésion |
+| Le journal des modifications                   | 24 mois, puis effacé automatiquement                   | règle de la base, chaque nuit     |
+| Le compteur de consultations                   | 25 mois, puis effacé automatiquement                   | règle de la base, chaque nuit     |
+| Une invitation qui n'est plus en cours         | 90 jours après sa fin, puis effacée automatiquement    | procédure de la base, chaque nuit |
+| Un compte sans organisation ni session ouverte | effacé dès qu'il a plus de 12 mois                     | procédure de la base, chaque nuit |
+| Une session de connexion                       | 30 jours sans usage, puis effacée automatiquement      | règle de la base, chaque nuit     |
+| Un lien de connexion non utilisé               | 15 minutes, puis effacé automatiquement                | règle de la base, chaque nuit     |
+| L'empreinte du compteur de demandes            | un à deux jours, puis effacée automatiquement          | règle de la base, chaque nuit     |
+| Les traces d'accès internes de l'exploitant    | 24 mois, puis effacées automatiquement                 | règle de la base, chaque nuit     |
+| Le journal technique du serveur                | 14 jours au plus, puis effacé automatiquement          | fichier découpé chaque nuit       |
 
 **Une session en usage se prolonge.** Les trente jours comptent depuis la dernière fois qu'elle a
 servi : tant que vous revenez, elle ne se ferme pas. Un mois sans revenir, et elle part.
 
-Ces durées ne sont pas des intentions. Partout où la troisième colonne dit « règle de la base »,
+Ces durées ne sont pas des intentions. Là où la troisième colonne dit « règle de la base »,
 l'effacement est porté par une **règle de la base de données** : elle dit ce qui a le droit de
-partir. Là où la colonne ajoute « chaque nuit », une tâche passe chaque nuit pour emporter ce qui a
+partir. Là où elle dit « procédure de la base », la durée est écrite dans la procédure que la base
+exécute. Là où la colonne ajoute « chaque nuit », une tâche passe chaque nuit pour emporter ce qui a
 dépassé sa durée. L'acceptation de ces conditions, elle, n'attend pas la nuit : la base de données
-l'efface en même temps que l'adhésion, quand la personne est retirée de l'organisation, quand son
-compte est supprimé ou quand l'organisation est supprimée. Le journal technique du serveur, lui,
-n'est pas dans la base : c'est un fichier, qu'un script découpe chaque nuit et dont il ne garde
-aucune ligne plus de quatorze jours.
+l'efface en même temps que l'adhésion, quand la personne quitte l'organisation ou en est retirée,
+quand son compte est supprimé ou quand l'organisation est supprimée. Le journal technique du
+serveur, lui, n'est pas dans la base : c'est un fichier, qu'un script découpe chaque nuit et dont il
+ne garde aucune ligne plus de quatorze jours.
 
 Une seule exception, et elle se voit : si votre organisation conteste un accès, l'exploitant peut
 poser un verrou qui suspend l'effacement du journal des modifications et de ses propres traces, le
-temps que la contestation se règle.
+temps que la contestation se règle. Tant que ce verrou est posé, votre organisation ne peut pas non
+plus être supprimée : elle emporterait avec elle ce que le verrou garde.
 
 ## L'accès de l'exploitant à vos données
 
 **L'exploitant peut accéder aux données de votre organisation, les lire et les modifier**, pour
-l'assistance et la maintenance du service. C'est ce qui permet de réparer une saisie, de retrouver
-un cours disparu ou de corriger une erreur sans vous demander de tout recopier.
+l'assistance et la maintenance du service. C'est ce qui permet de réparer une saisie ou de corriger
+une erreur sans vous demander de tout recopier.
 
 Trois précisions, parce qu'elles comptent :
 
-- **Ses modifications apparaissent dans votre journal**, avec la date, ce qui a changé et son
-  identité. Vous pouvez les voir et revenir en arrière, exactement comme pour une modification faite
-  par une personne de votre équipe.
-- **Ses consultations n'y apparaissent pas.** Si l'exploitant regarde vos données sans rien changer,
+- **Ses modifications sont écrites dans le journal des modifications** de votre organisation, avec
+  la date, ce qui a changé et son identité, exactement comme celles d'une personne de votre équipe.
+  La copie du journal que vous pouvez demander les montre.
+- **Ses consultations n'y sont pas écrites.** Si l'exploitant regarde vos données sans rien changer,
   rien ne vous le signale. Elles sont notées dans un registre interne que l'exploitant conserve
   24 mois, et qui sert à répondre en cas de contestation.
-- **L'accès est protégé par une passkey.** Un simple lien reçu par courriel ne suffit jamais à
-  obtenir ces droits : il faut en plus une passkey enregistrée sur un appareil de l'exploitant. La
-  session qui porte ces droits dure au plus douze heures.
+- **L'accès est protégé par une passkey.** Ces droits ne s'ouvrent que dans une session ouverte avec
+  une passkey enregistrée sur un appareil de l'exploitant : un lien reçu par courriel n'y suffit
+  jamais. La session qui porte ces droits dure au plus douze heures.
 
 Si cette possibilité d'accès vous pose un problème, dites-le avant d'ouvrir votre organisation :
 sans elle, l'assistance n'est pas possible.
 
 ## Ce que vous pouvez demander
 
-- **Une copie de vos données.** Écrivez à contact@voltia.ch ; la réponse arrive sous trente
-  jours.
-- **La correction** d'une donnée inexacte, que vous pouvez aussi faire vous-même depuis votre
-  espace.
+Écrivez à **contact@voltia.ch** ; la réponse arrive sous trente jours.
+
+Chaque personne peut demander :
+
+- **Une copie des données qui la concernent.**
+- **La correction** d'une donnée inexacte. La langue se change aussi depuis l'espace.
+- **La suppression de son compte.** Elle peut aussi quitter elle-même chacune de ses organisations,
+  depuis « Vos organisations » : un compte sans organisation est ensuite effacé de lui-même (voir le
+  tableau). Une organisation garde toujours au moins une personne responsable : la dernière ne peut
+  pas partir sans en nommer une autre.
+
+Votre organisation peut demander :
+
+- **Une copie de ses données**, journal des modifications compris.
+- **Le retrait d'une personne**, que les responsables font aussi depuis l'écran des membres.
 - **La suppression de votre organisation.** Elle efface le programme, les salles, les réglages, les
   adhésions, les acceptations de ces conditions, les invitations, le compteur de consultations et le
   journal des modifications. Les traces d'accès de l'exploitant gardent leur durée de 24 mois. Une
   suppression est définitive : nous n'avons pas de corbeille. Les sauvegardes chiffrées déjà
   parties, elles, ne se réécrivent pas. Voir plus bas : **182 jours au plus**.
-- **Le retrait d'une personne responsable**, depuis l'écran des membres. Une organisation garde
-  toujours au moins une personne responsable ; la dernière ne peut pas être retirée sans en nommer
-  une autre.
+
+Si vous estimez que nous traitons mal vos données, vous pouvez aussi vous adresser au Préposé
+fédéral à la protection des données et à la transparence (PFPDT).
 
 ## Comment ce texte est accepté
 
 Chaque personne qui a accès à l'espace de votre organisation, responsable ou éditeur, doit accepter
 ce texte pour y entrer. Le service le lui montre en entier, et elle l'accepte d'un clic sur le
-bouton « J'accepte les conditions d'utilisation ».
+bouton « J'accepte les conditions d'utilisation ». Une personne responsable l'accepte aussi pour
+votre organisation.
 
 Le service garde qui a accepté, quelle version du texte et quand. La version est la date de la
 dernière mise à jour, écrite en tête de ce texte. Le moment est noté par la base de données, pas par
-l'application. Quand le texte change de version, le service demande à nouveau l'accord de chacun
-avant de le laisser entrer.
+l'application. Quand le texte change, il change de version, et le service demande à nouveau
+l'accord de chacun avant de le laisser entrer.
 
 Cette acceptation est conservée tant que la personne fait partie de votre organisation, et effacée
 avec son adhésion. L'exploitant n'y est pas soumis : c'est lui qui propose ce texte.
@@ -180,9 +221,17 @@ avec son adhésion. L'exploitant n'y est pas soumis : c'est lui qui propose ce t
 
 - Que le programme que vous publiez soit **public** : page, widget, flux agenda.
 - De ne publier des données personnelles d'autres personnes dans les champs libres, comme le nom
-  d'un intervenant, **qu'avec leur accord**.
+  d'un intervenant, **qu'avec leur accord**. Ces données, c'est votre organisation qui décide de les
+  publier, et qui en répond.
 - Que le service soit fourni **sans garantie de disponibilité**. Il est gratuit et tenu par une
-  seule personne.
+  seule personne : une interruption reste possible, et une perte de données aussi, que les
+  sauvegardes limitent.
+
+## Ce dont nous répondons, et le droit applicable
+
+Nous répondons des dommages que nous causons intentionnellement ou par une négligence grave. Pour le
+reste, et autant que la loi le permet, nous n'en répondons pas : le service est gratuit. Ce texte
+est soumis au droit suisse.
 
 ## Ce que nous ne faisons pas
 
@@ -231,8 +280,9 @@ envoie la clé au serveur le temps d'un essai, où elle ne passe qu'en mémoire.
 nulle part, et elle repart avec le processus.
 
 **Ce que vous effacez reste au plus 182 jours dans ces sauvegardes.** Une suppression est immédiate
-dans le service, mais les sauvegardes déjà parties ne se réécrivent pas, et c'est ce qui fait leur
-valeur le jour d'un incident. Passé 182 jours, aucune sauvegarde ne contient plus vos données
+dans le service ; dans les sauvegardes déjà parties, elle est différée, parce qu'elles ne se
+réécrivent pas, et c'est ce qui fait leur valeur le jour d'un incident. Elles ne servent qu'à
+remettre le service en état. Passé 182 jours, aucune sauvegarde ne contient plus vos données
 effacées.
 
 Le code du service est ouvert et peut être auto-hébergé : rien n'oblige une organisation à dépendre

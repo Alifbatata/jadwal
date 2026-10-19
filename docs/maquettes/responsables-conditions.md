@@ -4,8 +4,8 @@
 renvoie toute personne qui n'a pas encore accepté la version en cours.
 
 Deux écrans, un seul texte : `docs/CONDITIONS.md`, lu à la construction et mis en mots par le même
-module que le PDF remis au juriste (`apps/web/src/lib/conditions/rendu.js`). Ce que le juriste a lu
-est, au caractère près, ce que les organisations acceptent.
+module que le PDF des conditions (`apps/web/src/lib/conditions/rendu.js`). Le PDF dit, au
+caractère près, ce que les organisations acceptent.
 
 ## Ce qui est commun aux deux écrans
 

@@ -1,5 +1,5 @@
 // La mise en mots des conditions d'utilisation : le Markdown du dépôt, rendu une seule fois pour le
-// PDF du juriste et pour la page `/conditions`.
+// PDF des conditions et pour la page `/conditions`.
 //
 // Le document réel est lu ici, et pas une copie : c'est lui que les organisations acceptent, et un
 // défaut de rendu qui ne toucherait que lui passerait sous un exemple inventé.
@@ -71,7 +71,9 @@ describe('la liste numérotée', () => {
 		expect(listesNumerotees(html)).toEqual([10]);
 		const liste = elements(html);
 		// Le paragraphe sur les passkeys reste dans leur élément, et l'acceptation ferme la liste.
-		expect(liste[6]).toMatch(/^<p><strong>Les passkeys<\/strong>.*<\/p><p><strong>Ce qui est vrai/);
+		expect(liste[6]).toMatch(
+			/^<p><strong>Les passkeys de l'exploitant\.<\/strong>.*<\/p><p><strong>Ce qui est vrai/
+		);
 		expect(liste[9]).toMatch(/acceptation/i);
 	});
 });
@@ -124,7 +126,7 @@ describe('la version du texte', () => {
 	// ligne sont ramenées à LF : un poste Windows ne doit pas changer l'empreinte.
 	const EMPREINTES: Record<string, string> = {
 		'2026-09-26': 'ce107d7a3d36101abd5ed79a5412c30f842b162afee3606b2af9c799c5e4a867',
-		'2026-10-19': '4ef7a278e8ab516f94c3e6d4f8ec85325d4dea1095d0bf25f25bfaf554f895cf'
+		'2026-10-19': 'b41aa0c011e590e44fdde7ed48235ae863bd55edb6a0e7606429dd8f47296f80'
 	};
 
 	it('gives every change of docs/CONDITIONS.md a new date, so that everyone accepts it again', () => {

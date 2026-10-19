@@ -58,7 +58,7 @@ celui qu'une organisation pose à la main.
 
 **Le texte vient du fichier du dépôt, à la construction.** `apps/web/src/lib/server/conditions.ts`
 importe `docs/CONDITIONS.md` et le rend avec le module du PDF (`apps/web/src/lib/conditions/
-rendu.js`) : ce que le juriste a lu est, au caractère près, ce que les organisations acceptent. La
+rendu.js`) : le PDF dit, au caractère près, ce que les organisations acceptent. La
 version en découle, et une date illisible lève une erreur plutôt que d'inventer une version.
 L'image de production reçoit ce seul fichier de `docs/` (`.dockerignore`) : sans lui, elle ne se
 construit pas.
@@ -85,7 +85,7 @@ construit pas.
   l'acceptation suivrait l'adhésion vers une personne qui n'a rien accepté.
 - La preuve d'une acceptation ne survit pas à l'adhésion. Si une organisation retire une personne,
   la base ne garde plus son acceptation ; les sauvegardes chiffrées la gardent 182 jours au plus.
-  C'est la question posée au juriste (point 10).
+  C'était une question ouverte ; tranchée à l'étape 21, voir plus bas.
 
 ## Ce qui n'est pas fait
 
@@ -156,3 +156,21 @@ Décision du chef de projet. L'écran de connexion nommait les conditions deux f
 son texte des dictionnaires ; le second reste, et c'est désormais le seul chemin vers `/conditions`
 depuis cet écran. Le texte se lit toujours avant tout compte : le pied paraît sur l'écran de
 connexion comme sur toute page de l'espace.
+
+## Addendum du 19.10.2026 : le texte relu sur le fond, sa version gardée (étape 21)
+
+Le texte a été relu sur le fond contre la nLPD, le Code des obligations et le code du service, et
+corrigé là où il promettait autre chose que ce que le service fait. Nouvelle version, du
+19.10.2026 : chacun l'accepte de nouveau.
+
+- **Une version par texte.** L'acceptation enregistre la date, pas le texte : un texte changé sous
+  la même date ne serait redemandé à personne. `apps/web/src/lib/conditions/rendu.test.ts` garde
+  l'empreinte SHA-256 du texte de chaque version ; un texte changé sans nouvelle date échoue.
+- **L'identité de l'exploitant vient de l'instance.** La nLPD demande celle du responsable du
+  traitement (art. 19). Le texte marque le nom par défaut entre deux commentaires HTML ;
+  `JADWAL_EXPLOITANT` le remplace au rendu, sur `/conditions`, sur l'écran d'acceptation et dans le
+  PDF. Le dépôt public ne porte que le nom par défaut, et la version reste celle du texte du dépôt.
+- **L'acceptation par personne suffit.** Le texte est montré en entier avant le clic, ce qui suffit
+  à une acceptation globale de conditions générales. Une personne responsable l'accepte aussi pour
+  son organisation, et le texte le dit. La preuve part avec l'adhésion : la garder plus longtemps ne
+  servirait que l'exploitant, et la proportionnalité (art. 6 nLPD) l'emporte.
