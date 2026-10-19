@@ -124,6 +124,12 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   que GitHub sert encore sont acceptés. 3 924 tests, tous réussis, aucun sauté, et 24 tests liés au
   temps, à part ; parcours complet : 430 vérifications, dont 35 pour l'étape 20, et axe sans rien de
   sérieux sur 42 pages. Mesurés par la CI le 29.09.2026 sur le code livré.
+- **Étape 21** (retours du chef de projet après l'étape 20) : **en cours**. Six chantiers sur neuf
+  sont faits sur le poste, rien n'est encore poussé : les dépendances à jour, l'arabe, l'allemand et
+  l'italien relus, les conditions nommées une fois sur `/connexion`, le choix de la langue en liste
+  déroulante, les cinq questions de l'étape 20 appliquées, les conditions relues sur le fond
+  (version du 19.10.2026). Les plans d'une organisation entrent dans la feuille de route, pour plus
+  tard. Restent le parcours automatique, la poussée, la CI et le déploiement.
 
 ## Fait
 
@@ -893,6 +899,42 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   `docs/API.md`, `docs/SECURITE.md`, `docs/CADRAGE.md`, `packages/db/README.md` et les
   descriptions des écrans touchés dans `docs/maquettes/` mis à jour.
 
+Étape 21 (retours du chef de projet après l'étape 20, en cours) :
+
+- **Les dépendances** : six propositions de Dependabot sur sept appliquées (`actions/setup-node`
+  7.1.0, prettier 3.9.9, axe-core 4.14.0, svelte 5.57.2, vitest et sa couverture 5.0.3).
+  `pnpm/setup` 3.0.0 est écartée : version majeure qui installerait Node une seconde fois, par une
+  source que l'ADR 0010 ne décrit pas, sans rien apporter aujourd'hui.
+- **Les textes relus** : les 43 textes arabes de l'étape 20, puis les 124 clés dont l'allemand ou
+  l'italien est nouveau ou a changé aux étapes 19 et 20. Six corrections, deux par langue, chacune
+  avec son test.
+- **`/connexion`** ne nomme les conditions qu'une fois : le lien sous le formulaire part, celui du
+  pied de page reste (ADR 0044).
+- **Le choix de la langue** est une liste déroulante et un bouton, partout où il paraît : dans
+  l'espace, et sur les pages publiques sans JavaScript, par un formulaire `GET` et la route
+  `/m/<identifiant>/langue`, qui ne renvoie que sous la page de l'organisation ; dans un cadre, sans
+  entrée dans l'historique du site hôte. Rien ne part au simple changement de valeur, qu'une flèche
+  au clavier suffit à provoquer (WCAG 3.2.2). ADR 0027 et 0047.
+- **Les cinq questions de l'étape 20**, toutes tranchées « oui ». La page publique d'une session du
+  vendredi parle de prières (« Prochaines prières », « Ajouter cette prière à mon agenda »). L'écran
+  du vendredi écrit « Session annulée » et « Session déplacée », et donne le message à copier. Une
+  carte de session dit « Annuler cette session », et sous une carte déplacée « Au … à … » seul. La
+  marque d'arrivée suit la sorte là où la langue a deux mots (« حصة استثنائية » et « موعد استثنائي »,
+  « Ausnahmetermin » et « Ausnahmedatum »). Toute séance déplacée s'annule à sa nouvelle date, et se
+  rétablit tant que sa date prévue n'est pas passée. ADR 0021 et 0033.
+- **Les conditions d'utilisation**, relues sur le fond contre la nLPD, le CO et le code : une
+  nouvelle version, du 19.10.2026, que chacun accepte de nouveau. L'exploitant est nommé par
+  l'instance (`JADWAL_EXPLOITANT`). Le texte ne dit plus le journal des modifications visible, car
+  aucun écran ne le lit : sa copie se demande. La liste des données, les cookies, le journal
+  technique, les droits de chaque personne et la limite de responsabilité (art. 100 CO) sont
+  refaits. Un test lie le texte à sa date de version ; le PDF ne porte plus que le texte ; un
+  courriel refusé ne laisse que le domaine du destinataire dans les traces.
+- **Les plans d'une organisation** (gratuit, offert, payant) entrent dans la feuille de route, pour
+  plus tard ; rien n'est codé.
+- 2 732 tests dans l'application web, dont 24 liés au temps, tous réussis, sur le serveur construit,
+  mesurés sur le poste le 19.10.2026. Le parcours automatique, la CI et le déploiement restent à
+  faire.
+
 **Un script ou une commande qu'aucun test ne _lance_ n'est pas éprouvé.** C'est la règle du dépôt
 depuis l'étape 12, et elle répond à la question laissée ouverte à l'étape 11.
 
@@ -943,10 +985,15 @@ tests.
 | 17    | 182 jours vérifiés, garde du déploiement, invitations tenues        | terminée |
 | 18    | Retours des tests : cinq langues, écrans clairs, rôles dans la base | terminée |
 | 19    | Zéro défaut connu, arabe relu, historique réécrit                   | terminée |
-| 20    | Dernières questions : Rétablir, vendredi, états, conditions         | livrée   |
+| 20    | Dernières questions : Rétablir, vendredi, états, conditions         | terminée |
+| 21    | Retours de l'étape 20 : langue en liste, vendredi, conditions       | en cours |
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
-passkeys, paiement.
+passkeys pour tous les comptes, et **les plans d'une organisation** : gratuit, offert, payant. Le
+super-admin choisit déjà le plan de chaque organisation, et la base le garde (`free`, `sponsored`,
+`paid`) ; mais aucun plan ne change encore ce qu'une organisation peut faire. Resteront à décider
+ce que chaque plan donne, à l'appliquer dans l'espace et dans la base, puis à coder le paiement
+d'un plan payant. Inscrit à l'étape 21, sans rien coder.
 
 ## Risques ouverts
 
@@ -1104,35 +1151,23 @@ passkeys, paiement.
 - ~~La relecture par des locuteurs des textes de l'étape 18~~ : faite. Le chef de projet a relu
   l'arabe (ses corrections sont faites à l'étape 19), et accepte `Durchgang`, `turno` et les
   noms du bloc WordPress. L'arabe écrit à l'étape 19 est relu aussi : deux corrections, faites à
-  l'étape 20. **Reste** la relecture des textes allemands et italiens des étapes 19 et 20, et celle
-  des 43 textes arabes nouveaux ou changés à l'étape 20 (hors du dépôt, dans le rapport de l'étape).
-- **La relecture, par le chef de projet, d'un texte arabe écrit sans lui** : la place des
-  parenthèses autour de l'annonce qu'il a donnée, « شروط الاستخدام (يُفتح في علامة تبويب جديدة) »
-  (étape 17). Les autres textes de cette ligne (le lien des conditions, les formes en « قبل », la
-  page 404) étaient dans la relecture de l'étape 18.
+  l'étape 20. Les 43 textes arabes de l'étape 20, et l'allemand et l'italien des étapes 19 et 20,
+  sont relus à l'étape 21 : six corrections, deux par langue.
+- ~~La place des parenthèses de « شروط الاستخدام (يُفتح في علامة تبويب جديدة) »~~ (étape 17) :
+  relue à l'étape 21 et gardée. « يُفتح » s'accorde avec le lien, sous-entendu, et l'annonce se lit
+  à sa place, de droite à gauche, après le nom du lien.
+- **Ce que chaque plan d'une organisation donne** (gratuit, offert, payant), et le paiement : plus
+  tard, voir la feuille de route.
 - ~~La séparation des rôles dans la base~~ : tranchée à l'étape 18, ADR 0046. Une fonction de la
   base, `jadwal.is_org_admin()`, dit si la personne du contexte est responsable de l'organisation
   du contexte, et les politiques des gestes réservés au responsable l'exigent (migration 0059).
 
 ## Défauts connus
 
-Aucun. Les quatre questions laissées par l'étape 19 sont tranchées et appliquées à l'étape 20.
-Restent des **questions**, où le code attend une décision du chef de projet et n'a rien changé en
-l'attendant :
-
-- la page publique d'une session du vendredi garde les mots d'un cours (« Prochaines séances »,
-  « Ajouter ce cours à mon agenda ») : seule la marque de l'état suit la sorte ;
-- l'écran du vendredi garde « Annulée ce jour-là » et « Déplacée au … » sur ses lignes, qui ne
-  portent aucun titre libre ; son annulation ordinaire ne donne pas de message à copier, seule
-  l'annulation d'une session déplacée d'un vendredi passé le fait ;
-- dans À venir, l'aide et le bouton « Annuler cette séance » disent « séance » sur la carte d'une
-  session du vendredi aussi, comme le bouton depuis l'étape 18 ; et une carte déplacée dit
-  « Séance déplacée » deux fois, dans sa marque et dans la phrase qui suit ;
-- la marque d'arrivée « Date exceptionnelle » reste « Ausnahmetermin » en allemand et
-  « موعد استثنائي » en arabe, où « موعد » nomme désormais aussi une session du vendredi ;
-- « Annuler cette séance » n'est offert que sur une carte déplacée dont la date d'origine est
-  passée ; déplacée vers une date à venir, une séance ne s'annule qu'en la rétablissant, puis en
-  annulant sa date d'origine, et le message nomme alors celle-ci.
+Aucun. Les cinq questions laissées par l'étape 20 sont tranchées et appliquées à l'étape 21 : la
+page publique d'une session du vendredi parle de prières, l'écran du vendredi écrit l'état de la
+session et donne le message à copier, une carte de session parle de session, la marque d'arrivée
+suit la sorte, et toute séance déplacée s'annule à sa nouvelle date.
 
 ## À poser avant la mise en production
 

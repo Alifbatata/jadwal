@@ -233,12 +233,15 @@ leur durée, est dans `docs/CONDITIONS.md`.
 9. Finitions, infrastructure en fichiers, déploiement, pose sur le site de la première
    organisation.
 
-Les étapes suivantes, de la mise en ligne aux retours des tests du chef de projet (étape 18), sont
-dans `ETAT-PROJET.md`.
+Les étapes suivantes, de la mise en ligne aux retours du chef de projet (étape 21), sont dans
+`ETAT-PROJET.md`.
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
-passkeys pour tous les comptes, paiement. (Les passkeys sont arrivées à l'étape 4 pour le seul
-super-admin, où elles sont obligatoires : ADR 0025.)
+passkeys pour tous les comptes (elles sont arrivées à l'étape 4 pour le seul super-admin, où elles
+sont obligatoires : ADR 0025), et les plans d'une organisation, gratuit, offert, payant. Le
+super-admin choisit déjà le plan, et la base le garde ; aucun plan ne change encore ce qu'une
+organisation peut faire. Resteront à décider ce que chaque plan donne, à l'appliquer, puis à coder
+le paiement d'un plan payant.
 
 ## Risques ouverts
 
