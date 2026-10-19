@@ -131,9 +131,11 @@ Cette session seulement. Les autres vendredis ne changent pas.
 [Annuler cette session]   Nouveau jour [liste]   Nouvelle heure [12:10]   [Déplacer]
 ```
 
-- Une session annulée porte `Annulée ce jour-là`, une session déplacée
-  `Déplacée au samedi 03.10.2026 à 15:00`, et sa nouvelle date
-  `Nouvelle date, à la place du vendredi 02.10.2026`. Les trois ont le bouton
+- Une session annulée porte `Session annulée`, une session déplacée `Session déplacée`, suivie
+  d'une ligne `Au samedi 03.10.2026 à 15:00`, comme les cartes d'`À venir` (étape 21, question 2
+  de l'étape 20 : elles disaient `Annulée ce jour-là` et `Déplacée au … à …`), et sa nouvelle date
+  `Nouvelle date, à la place du vendredi 02.10.2026`. Seules les deux premières sont barrées : la
+  session a lieu à sa nouvelle date. Les trois ont le bouton
   `Rétablir comme d'habitude`, sauf une nouvelle date dont le vendredi prévu est passé (plus bas) ;
   celui de la nouvelle date défait le déplacement du vendredi d'où
   elle vient, même quand ce vendredi n'est plus à l'écran. Une session déplacée le même jour à une
@@ -145,7 +147,7 @@ comme d'habitude`, qui la ramenait à un vendredi passé et la faisait disparaî
   Elle a un repli `Annuler`, fermé au chargement, avec `Son jour prévu est déjà passé : la session
 ne peut plus avoir lieu ce jour-là. Une fois annulée, elle ne pourra pas être rétablie.` et le
   bouton `Annuler cette session`. Le formulaire envoie ce que la ligne montrait. Annulée, la
-  session reste sur la ligne de sa nouvelle date, `Annulée ce jour-là`, sans bouton ; l'écran dit
+  session reste sur la ligne de sa nouvelle date, `Session annulée`, sans bouton ; l'écran dit
   `La session est annulée à sa nouvelle date. Les autres vendredis ne changent pas.` et donne le
   message à copier (plus bas).
 - **Toute session déplacée s'annule** (étape 21, question 5 de l'étape 20), comme sur `À venir`.
@@ -215,15 +217,20 @@ Une phrase par geste, au lieu d'un « Enregistré. » unique :
 - `La session est déplacée pour ce vendredi. Les autres vendredis ne changent pas.` ;
 - `La session retrouve son jour et son heure habituels.`
 
-Après l'annulation d'une session déplacée dont le vendredi prévu est passé, et seulement après ce
-geste, l'écran donne le message à copier (étape 20). Le bloc a son titre, `Message à copier`, comme
+Après une annulation ou un déplacement, l'écran donne le message à copier, comme `À venir` (étape
+21, question 2 de l'étape 20 ; seule l'annulation d'une session déplacée dont le vendredi prévu est
+passé le donnait depuis l'étape 20). Une seconde annulation, depuis une page restée ouverte, n'écrit
+rien, et le donne quand même, avec le refus `Cette session a déjà été annulée depuis l'ouverture de
+la page. […]`. Le bloc a son titre, `Message à copier`, comme
 celui d'`À venir` a le sien, puis l'aide `Un message à envoyer à votre communauté, par exemple dans
 WhatsApp. Il est écrit dans chaque langue de votre page publique : ouvrez une langue, puis copiez
 son texte.`, puis un repli par langue publiée, le premier ouvert, chacun avec sa zone
-`Message à copier`, comme sur `À venir`. Le message nomme la nouvelle date et la nouvelle heure :
-`« Prière du vendredi » : la prière du samedi 03.10.2026 à 15:00 est annulée.`, puis `Les autres
-prières du vendredi ont lieu comme d'habitude.` L'annulation ordinaire d'une session, pour ce
-vendredi, reste sans message.
+`Message à copier`, comme sur `À venir`. Les phrases sont celles d'`À venir` pour une session :
+`« Prière du vendredi » : la prière du vendredi 02.10.2026 est annulée.`, ou
+`« Prière du vendredi » : la prière du vendredi 02.10.2026 est déplacée au samedi 03.10.2026 à
+15:00.`, puis `Les autres prières du vendredi ont lieu comme d'habitude.` L'annulation d'une session
+déplacée nomme la nouvelle date et la nouvelle heure : `« Prière du vendredi » : la prière du samedi
+03.10.2026 à 15:00 est annulée.`
 
 Les erreurs disent quoi faire : `L'heure de fin doit venir après l'heure de début.`,
 `Donnez une heure de début et une heure de fin. Exemple : 12:10 et 12:50.`,
@@ -252,7 +259,8 @@ enregistré. La partie « Ce vendredi », plus bas, est à jour.` : `Rétablir c
   vendredi prévu déjà passé (étape 20) ;
 - `Cette session a déjà été annulée depuis l'ouverture de la page. Rien n'a été enregistré. Si le
 message n'a pas encore été envoyé, il est prêt ci-dessous.` : une seconde annulation d'une session
-  déplacée dont le vendredi prévu est passé ; le message à copier suit quand même (étape 20) ;
+  déplacée (étape 20), ou d'une session pour ce vendredi (étape 21 ; elle recevait le refus d'une
+  ligne périmée) ; le message à copier suit quand même ;
 - `Ce jour est déjà passé : rien n'a été déplacé. Choisissez aujourd'hui ou un jour suivant dans
 « Ce vendredi », plus bas.` : un déplacement vers un jour passé (étape 19, lot 2) ;
 - `Cette session n'a pas lieu ce jour-là. Rien n'a été enregistré. La partie « Ce vendredi », plus

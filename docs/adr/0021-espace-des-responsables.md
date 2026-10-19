@@ -174,7 +174,7 @@ vendredi » et des boutons d'une session s'affichent en tête de l'écran :
 | `changed`          | 409    | la session a déjà été annulée ou déplacée ce jour-là, ici ou sur À venir ; pour Rétablir, la ligne montrait un autre changement, même semblable (lot 2)      |
 | `timeChanged`      | 409    | l'heure de la session a changé depuis l'ouverture de la page                                                                                                 |
 | `alreadyRestored`  | 409    | un second Rétablir : la session n'a plus rien à rétablir ce jour-là (relecture de D2)                                                                        |
-| `alreadyCancelled` | 409    | une seconde annulation d'une session déplacée dont le jour prévu est passé : le message à copier est rendu quand même (étape 20)                             |
+| `alreadyCancelled` | 409    | une seconde annulation, ordinaire (étape 21) ou d'une session déplacée (étape 20) : le message à copier est rendu quand même                                 |
 | `unchanged`        | 400    | le déplacement vise le jour et l'heure où la session est déjà prévue                                                                                         |
 | `pastSession`      | 400    | l'annulation d'un jour déjà passé (étape 19, D2), le déplacement d'une session dont le jour prévu est passé, ou son annulation vers un jour passé (étape 20) |
 | `pastOrigin`       | 400    | Rétablir vers un jour prévu déjà passé (étape 20)                                                                                                            |
@@ -466,7 +466,8 @@ qui l'attendait à sa nouvelle date.
   donne le message à copier, dans chaque langue publiée, la langue du cours d'abord : il nomme la
   nouvelle date et la nouvelle heure, qui n'est pas celle du rythme. L'écran du vendredi gagne ce
   bloc de messages pour ce geste seul, avec son titre, `Message à copier`, comme celui d'« À venir »
-  a le sien ; son annulation ordinaire reste sans message. Une seconde demande n'écrit rien et rend
+  a le sien ; son annulation ordinaire reste sans message (jusqu'à l'étape 21). Une seconde demande
+  n'écrit rien et rend
   le message quand même, comme une seconde annulation (D4). La séance annulée reste sur la carte de
   sa nouvelle date, marquée annulée, sans « Rétablir ».
 - **Déplacer** une séance dont la date prévue est passée est refusé aussi, sur les deux écrans
@@ -510,6 +511,12 @@ Le chef de projet les a toutes tranchées « oui ».
   séance retrouve sa date et son heure habituelles. Le programme dit de chaque séance si son
   exception est un déplacement ou une annulation : la carte de départ d'une séance déplacée puis
   annulée ne propose plus de l'annuler. Une séance avancée à une date passée n'a rien à annuler.
+- **L'écran du vendredi fait comme « À venir »** (question 2). Ses lignes disent l'état avec son
+  propre nom, « Session annulée », « Session déplacée » puis « Au … à … », au lieu d'« Annulée ce
+  jour-là » et de « Déplacée au … ». Seules une session annulée et une session partie ailleurs sont
+  barrées : la ligne d'une nouvelle date l'était aussi. Annuler et déplacer y rendent le message à
+  copier, comme sur « À venir » ; une seconde annulation n'écrit rien, rend le message, et reçoit
+  `alreadyCancelled` au lieu de `changed`.
 
 ## Statut
 
@@ -526,4 +533,5 @@ les deux écrans qui refusent d'annuler ou de déplacer une séance un jour où 
 Complété le 28.09.2026 (étape 20) : une séance déplacée dont la date prévue est passée ne se
 rétablit plus, elle s'annule à sa nouvelle date, avec son message.
 Complété le 19.10.2026 (étape 21) : les gestes d'une carte suivent sa sorte, la phrase sous une
-carte déplacée ne répète plus sa marque, et toute séance déplacée s'annule à sa nouvelle date.
+carte déplacée ne répète plus sa marque, toute séance déplacée s'annule à sa nouvelle date, et
+l'écran du vendredi dit les états et donne les messages comme « À venir ».

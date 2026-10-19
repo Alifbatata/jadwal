@@ -58,7 +58,12 @@ import { isLangue, t, type Langue } from '$lib/i18n.js';
 import type { FridayDone, FridayError } from '$lib/i18n/friday.js';
 import { LANGUES_D_ENSEIGNEMENT } from '$lib/public/affichage.js';
 import { record } from '$lib/server/audit.js';
-import { cancellationMessages, readCourse } from '$lib/server/change-messages.js';
+import {
+	cancellationMessages,
+	messageLanguages,
+	readCourse,
+	type Message
+} from '$lib/server/change-messages.js';
 import { withSessionOrg } from '$lib/server/context.js';
 import { insertCourse, updateCourse } from '$lib/server/courses.js';
 import { FIRST_SUPPORTED_DATE, isSupportedDate, LAST_SUPPORTED_DATE } from '$lib/server/dates.js';
@@ -72,6 +77,7 @@ import {
 	readSettings,
 	seanceOn
 } from '$lib/server/programme.js';
+import { moveMessage } from '$lib/messages.js';
 import { parseFridayForm, proposedOrder, readFridayEntry } from './form.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
@@ -370,7 +376,12 @@ export const actions: Actions = {
 		});
 	},
 
-	/** Annuler une session ce vendredi-là. Les autres vendredis ne changent pas. */
+	/**
+	 * Annuler une session ce vendredi-là. Les autres vendredis ne changent pas. Le geste rend le
+	 * message à copier, comme sur « À venir » (étape 21, question 2 de l'étape 20) ; une seconde
+	 * annulation, depuis une page restée ouverte ou par une autre personne, n'écrit rien, mais le rend
+	 * quand même : la personne ne sait pas si la communauté a déjà été prévenue (étape 19, D4).
+	 */
 	annuler: async (event) => {
 		const context = await mustHavePrayerModule(event);
 		const form = await event.request.formData();
@@ -390,6 +401,9 @@ export const actions: Actions = {
 			const seance = await seanceOn(tx, maintenant, courseId, date);
 			if (seance === 'none') return refus(400, 'notPlanned');
 			if (seance === 'elsewhere') return refus(409, 'changed');
+			const course = await readCourse(tx, courseId);
+			if (!course) return refus(404, 'sessionGone');
+			const messages = cancellationMessages(settings, course, date);
 			// Une session déjà annulée ou déplacée ce jour-là garde ce qui lui est arrivé :
 			// l'annulation ne s'écrit que si la place est libre, et rien ne s'écrit sinon, pas même
 			// le journal.
@@ -403,17 +417,32 @@ export const actions: Actions = {
 					returning "id"
 				`)
 			);
-			if (ecrite.length === 0) return refus(409, 'changed');
+			if (ecrite.length === 0) {
+				// Déjà annulée : c'est ce que la personne voulait, et elle reçoit le message. Déplacée
+				// depuis, elle n'a pas de message d'annulation.
+				if ((await currentChange(tx, courseId, date)) === 'cancelled') {
+					return fail(409, {
+						errors: ['alreadyCancelled'] satisfies FridayError[],
+						entry: null,
+						messages
+					});
+				}
+				return refus(409, 'changed');
+			}
 			await record(tx, context.organizationId, context.userId, {
 				action: 'exception.cancel',
 				targetTable: 'session_exception',
 				targetId: courseId,
 				after: { date, kind: 'cancelled' }
 			});
-			return fait('cancelled');
+			return { done: 'cancelled' as const, messages };
 		});
 	},
 
+	/**
+	 * Déplacer une session ce vendredi-là, à un autre jour ou à une autre heure. Le geste rend le
+	 * message à copier, comme sur « À venir » (étape 21, question 2 de l'étape 20).
+	 */
 	deplacer: async (event) => {
 		const context = await mustHavePrayerModule(event);
 		const form = await event.request.formData();
@@ -480,7 +509,26 @@ export const actions: Actions = {
 				targetId: courseId,
 				after: { date, toDate, toStart }
 			});
-			return fait('moved');
+			const course = await readCourse(tx, courseId);
+			if (!course) return fait('moved');
+			// Le même jour, l'heure prévue sert au message, qui dit un changement d'heure.
+			const prevue = toDate === date ? (seance?.start ?? null) : null;
+			const messages: Message[] = messageLanguages(settings.enabled_language, course.source).map(
+				(language) => ({
+					language,
+					text: moveMessage(
+						settings.greeting,
+						course.title(language),
+						date,
+						toDate,
+						toStart,
+						language,
+						prevue,
+						course.kind
+					)
+				})
+			);
+			return { done: 'moved' as const, messages };
 		});
 	},
 

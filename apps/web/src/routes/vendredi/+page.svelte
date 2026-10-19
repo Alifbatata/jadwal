@@ -7,7 +7,9 @@
 	// que le navigateur déplie seul, et la suppression demande sa confirmation sur place. Depuis
 	// l'étape 20, seul le responsable supprime une session (`data.canDelete`), et la ligne d'une
 	// session déplacée dont le vendredi prévu est passé propose de l'annuler, avec le message à
-	// copier, au lieu de « Rétablir » (C2).
+	// copier, au lieu de « Rétablir » (C2). Depuis l'étape 21 (questions 2 et 5 de l'étape 20), les
+	// lignes disent l'état comme les cartes d'« À venir », toute session déplacée s'annule, et
+	// l'annulation comme le déplacement donnent le message à copier.
 	import { resolve } from '$app/paths';
 	import { shortDate } from '$lib/format.js';
 	import { direction, NOM_DE_LANGUE } from '$lib/i18n.js';
@@ -154,9 +156,9 @@
 {#if erreursEnTete.length > 0}{@render erreurs(erreursEnTete)}{/if}
 {#if form?.done && enregistre === null}{@render confirmation(form.done)}{/if}
 
-<!-- Le message à copier d'une session déplacée puis annulée (étape 20, C2), le seul geste de cet
-     écran qui en rend un, et sa seconde demande aussi : la personne ne sait pas si la communauté a
-     déjà été prévenue. Une langue par bloc, la première ouverte, comme sur « À venir » : chaque bloc
+<!-- Le message à copier d'une annulation ou d'un déplacement, comme sur « À venir » (étape 21 ;
+     seule l'annulation d'une session déplacée en rendait un depuis l'étape 20, C2), et d'une seconde
+     annulation aussi : la personne ne sait pas si la communauté a déjà été prévenue. Une langue par bloc, la première ouverte, comme sur « À venir » : chaque bloc
      porte la langue et le sens de son texte, et le nom de chaque zone dit sa langue, dans celle de
      l'écran. Le bloc a son titre, comme sur « À venir » : la navigation par titres le rencontre, et
      il se nomme par ce titre, et non par tout le paragraphe d'aide. -->
@@ -253,26 +255,37 @@
 		<p class="aide">{text.thisFriday.intro}</p>
 		{#each data.sessions as session (session.id)}
 			{#each seancesDe(session.id) as seance (sessionKey(seance))}
-				<div class="seance" class:barree={seance.status !== 'scheduled'}>
+				<!-- Barrée quand la session n'a pas lieu à cette heure : annulée, ou partie ailleurs. Une
+				     session arrivée d'un autre jour a lieu, et ne l'est pas, comme sur « À venir » (étape
+				     21). -->
+				<div
+					class="seance"
+					class:barree={seance.status === 'cancelled' || seance.status === 'moved_away'}
+				>
 					<p class="ligne">
 						<strong>{seance.start ?? '–'} – {seance.end ?? '–'}</strong>
 						· {rang(session.jumuaOrder)}
 						· {date(seance.date)}
+						<!-- L'état avec son propre nom, comme sur les cartes d'« À venir » (étape 21, question
+						     2 de l'étape 20) : « Session annulée », « Session déplacée ». -->
 						{#if seance.status === 'cancelled'}
 							<span class="marque">{text.thisFriday.cancelled}</span>
 						{/if}
 						{#if seance.status === 'moved_away' && seance.movedTo}
-							<span class="marque">
-								{text.thisFriday.movedTo(
-									date(seance.movedTo.date),
-									String(seance.movedTo.start).slice(0, 5)
-								)}
-							</span>
+							<span class="marque">{text.thisFriday.movedAway}</span>
 						{/if}
 						{#if seance.status === 'moved_here' && seance.originalDate}
 							<span class="marque">{text.thisFriday.movedFrom(date(seance.originalDate))}</span>
 						{/if}
 					</p>
+					{#if seance.status === 'moved_away' && seance.movedTo}
+						<p class="details">
+							{text.thisFriday.movedTo(
+								date(seance.movedTo.date),
+								String(seance.movedTo.start).slice(0, 5)
+							)}
+						</p>
+					{/if}
 					{#if seance.status === 'scheduled'}
 						<p class="avertissement">{text.thisFriday.onlyThis}</p>
 						<div class="gestes">

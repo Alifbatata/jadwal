@@ -30,7 +30,9 @@ import type { Translations } from './space.js';
  * sans message ; `alreadyCancelled`, la seconde annulation d'une session déplacée, qui rend quand
  * même le message à copier, comme sur « À venir ». L'annulation d'une session déplacée dont le jour
  * prévu n'est pas passé était refusée (`originNotPast`) : toute session déplacée s'annule depuis
- * l'étape 21 (question 5 de l'étape 20).
+ * l'étape 21 (question 5 de l'étape 20). Depuis la même étape (question 2), `alreadyCancelled`
+ * répond aussi à la seconde annulation ordinaire d'une session, avec le message, comme sur
+ * « À venir ».
  */
 export type FridayError =
 	| 'titleTooLong'
@@ -139,7 +141,14 @@ interface FridayTexts {
 	readonly thisFriday: {
 		readonly title: string;
 		readonly intro: string;
+		/**
+		 * L'état d'une ligne, avec son propre nom, comme sur les cartes d'« À venir » (étape 21, question
+		 * 2 de l'étape 20) : « Session annulée », « Session déplacée », puis, sous la ligne partie
+		 * ailleurs, le jour et l'heure seuls, « Au … à … ». La ligne disait « Annulée ce jour-là » et
+		 * « Déplacée au … à … ».
+		 */
 		readonly cancelled: string;
+		readonly movedAway: string;
 		readonly movedTo: (date: string, time: string) => string;
 		readonly movedFrom: (date: string) => string;
 		readonly onlyThis: string;
@@ -165,9 +174,10 @@ interface FridayTexts {
 	readonly coursesLink: string;
 	readonly done: Readonly<Record<FridayDone, string>>;
 	/**
-	 * Le message à copier d'une session déplacée puis annulée (étape 20, C2), le seul geste de cet
-	 * écran qui en rend un : ce qu'il est et dans quelles langues il est écrit, le nom de chaque zone
-	 * de texte pour les lecteurs d'écran, puis sa langue (« Message à copier en allemand »). Ce nom est
+	 * Le message à copier d'une annulation ou d'un déplacement, comme sur « À venir » (étape 21,
+	 * question 2 de l'étape 20 ; seule l'annulation d'une session déplacée en rendait un depuis
+	 * l'étape 20, C2) : ce qu'il est et dans quelles langues il est écrit, le nom de chaque zone de
+	 * texte pour les lecteurs d'écran, puis sa langue (« Message à copier en allemand »). Ce nom est
 	 * aussi le titre du bloc.
 	 */
 	readonly messageHelp: string;
@@ -237,8 +247,9 @@ export const fridayTexts: Translations<FridayTexts> = {
 			title: 'Ce vendredi',
 			intro:
 				'Pour un seul vendredi, vous pouvez annuler une session, ou la déplacer à un autre jour ou à une autre heure.',
-			cancelled: 'Annulée ce jour-là',
-			movedTo: (date, time) => `Déplacée au ${date} à ${time}`,
+			cancelled: 'Session annulée',
+			movedAway: 'Session déplacée',
+			movedTo: (date, time) => `Au ${date} à ${time}`,
 			movedFrom: (date) => `Nouvelle date, à la place du ${date}`,
 			onlyThis: 'Cette session seulement. Les autres vendredis ne changent pas.',
 			cancel: 'Annuler cette session',
@@ -368,8 +379,9 @@ export const fridayTexts: Translations<FridayTexts> = {
 			title: 'Diesen Freitag',
 			intro:
 				'Für einen einzigen Freitag können Sie einen Durchgang absagen oder ihn auf einen anderen Tag oder eine andere Zeit verschieben.',
-			cancelled: 'An diesem Tag abgesagt',
-			movedTo: (date, time) => `Verschoben auf ${date}, um ${time}`,
+			cancelled: 'Durchgang abgesagt',
+			movedAway: 'Durchgang verschoben',
+			movedTo: (date, time) => `Auf ${date}, um ${time}`,
 			movedFrom: (date) => `Neues Datum, anstelle von ${date}`,
 			onlyThis: 'Nur dieser Durchgang. Die anderen Freitage bleiben unverändert.',
 			cancel: 'Diesen Durchgang absagen',
@@ -506,8 +518,9 @@ export const fridayTexts: Translations<FridayTexts> = {
 			title: 'Questo venerdì',
 			intro:
 				'Per un solo venerdì puoi annullare un turno, oppure spostarlo a un altro giorno o a un altro orario.',
-			cancelled: 'Annullato quel giorno',
-			movedTo: (date, time) => `Spostato a ${date} alle ${time}`,
+			cancelled: 'Turno annullato',
+			movedAway: 'Turno spostato',
+			movedTo: (date, time) => `A ${date} alle ${time}`,
 			movedFrom: (date) => `Nuova data, al posto di ${date}`,
 			onlyThis: 'Solo questo turno. Gli altri venerdì non cambiano.',
 			cancel: 'Annulla questo turno',
@@ -636,8 +649,9 @@ export const fridayTexts: Translations<FridayTexts> = {
 			title: 'This Friday',
 			intro:
 				'For a single Friday, you can cancel a session, or move it to another day or another time.',
-			cancelled: 'Cancelled that day',
-			movedTo: (date, time) => `Moved to ${date} at ${time}`,
+			cancelled: 'Session cancelled',
+			movedAway: 'Session moved',
+			movedTo: (date, time) => `To ${date} at ${time}`,
 			movedFrom: (date) => `New date, instead of ${date}`,
 			onlyThis: 'This session only. Other Fridays do not change.',
 			cancel: 'Cancel this session',
@@ -762,8 +776,9 @@ export const fridayTexts: Translations<FridayTexts> = {
 		thisFriday: {
 			title: 'هذه الجمعة',
 			intro: 'في جمعة واحدة فقط، يمكنك إلغاء موعد، أو نقله إلى يوم آخر أو إلى وقت آخر.',
-			cancelled: 'أُلغي في ذلك اليوم',
-			movedTo: (date, time) => `نُقل إلى يوم ${date} في الساعة ${time}`,
+			cancelled: 'موعد ملغى',
+			movedAway: 'موعد منقول',
+			movedTo: (date, time) => `إلى يوم ${date} في الساعة ${time}`,
 			movedFrom: (date) => `موعد جديد، بدلًا من يوم ${date}`,
 			onlyThis: 'هذا الموعد فقط. لا تتغيّر أيام الجمعة الأخرى.',
 			cancel: 'إلغاء هذا الموعد',

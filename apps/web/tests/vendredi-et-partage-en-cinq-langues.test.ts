@@ -557,9 +557,21 @@ const ERREURS = /<div\b[^>]*role="alert"[^>]*>\s*<ul\b[^>]*>([\s\S]*?)<\/ul>/g;
  * langue (relecture du lot 5). Tous s'écrivent en tête de l'écran.
  */
 const REFUS_DU_VENDREDI: Record<
-	'changed' | 'timeChanged' | 'unchanged' | 'sessionGone' | 'alreadyRestored',
+	'changed' | 'timeChanged' | 'unchanged' | 'sessionGone' | 'alreadyRestored' | 'alreadyCancelled',
 	Record<Langue, string>
 > = {
+	/**
+	 * Une seconde annulation, depuis une page restée ouverte : rien ne s'écrit, et le message est
+	 * rendu quand même, comme sur « À venir » (étape 21, question 2 de l'étape 20). Elle recevait
+	 * `changed`.
+	 */
+	alreadyCancelled: {
+		fr: 'Cette session a déjà été annulée depuis l’ouverture de la page. Rien n’a été enregistré. Si le message n’a pas encore été envoyé, il est prêt ci-dessous.',
+		de: 'Dieser Durchgang ist schon abgesagt worden, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Wenn die Nachricht noch nicht verschickt ist, steht sie unten bereit.',
+		it: 'Questo turno è già stato annullato da quando hai aperto la pagina. Non è stato salvato niente. Se il messaggio non è ancora stato mandato, è pronto qui sotto.',
+		en: 'Since the page was opened, this session has already been cancelled. Nothing has been saved. If the message has not been sent yet, it is ready below.',
+		ar: 'أُلغي هذا الموعد منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. إن لم تُرسَل الرسالة بعد، فهي جاهزة أدناه.'
+	},
 	changed: {
 		fr: 'Cette session a changé depuis l’ouverture de la page : elle a déjà été annulée ou déplacée ce jour-là. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.',
 		de: 'Dieser Durchgang hat sich geändert, seit die Seite geöffnet wurde: Er wurde an diesem Tag schon abgesagt oder verschoben. Es wurde nichts gespeichert. Der Abschnitt «Diesen Freitag» weiter unten ist aktuell.',
@@ -1381,7 +1393,8 @@ describe('une page /vendredi restée ouverte ne défait pas un changement (relec
 					]);
 				}
 			}
-			// La session annulée une fois : l'annuler encore est le refus d'une page restée ouverte.
+			// La session annulée une fois : l'annuler encore est le refus d'une page restée ouverte, qui
+			// rend le message quand même depuis l'étape 21.
 			expect(
 				(await postForm('/vendredi?/annuler', { courseId: sessions[1], date }, cookies)).status
 			).toBe(200);
@@ -1393,7 +1406,9 @@ describe('une page /vendredi restée ouverte ne défait pas un changement (relec
 					cookies
 				);
 				expect(reponse.status, langue).toBe(409);
-				expect(enTete(await reponse.text()), langue).toEqual([REFUS_DU_VENDREDI.changed[langue]]);
+				expect(enTete(await reponse.text()), langue).toEqual([
+					REFUS_DU_VENDREDI.alreadyCancelled[langue]
+				]);
 			}
 		} finally {
 			await poserLangueDuCompte(RESPONSABLE, 'fr');
@@ -3665,7 +3680,8 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 				debut(ligne).includes(dateEcrite('fr', jourDuDeplacement()))
 		);
 		expect(arrivee).toHaveLength(1);
-		expect(lu(arrivee[0] ?? '')).toContain('Annulée ce jour-là');
+		// « Session annulée » depuis l'étape 21 (question 2 de l'étape 20) : « Annulée ce jour-là ».
+		expect(lu(arrivee[0] ?? '')).toContain('Session annulée');
 		expect(retablissementDeLaLigne(arrivee[0] ?? '')).toBeNull();
 		expect(annulationDeLaLigne(arrivee[0] ?? '')).toBeNull();
 		expect(arrivee[0]).not.toMatch(/<details\b/);
@@ -3724,6 +3740,198 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 		} finally {
 			await poserLangueDuCompte(RESPONSABLE, 'fr');
 			await effacer(depuis);
+		}
+	});
+});
+
+describe('« Ce vendredi » comme « À venir » (étape 21, question 2 de l’étape 20)', () => {
+	// Tranché « oui » par le chef de projet : l'écran du vendredi écrit l'état d'une session avec son
+	// propre nom, « Session annulée », « Session déplacée » puis « Au … à … », comme les cartes
+	// d'« À venir », au lieu d'« Annulée ce jour-là » et de « Déplacée au … ». Et son annulation
+	// ordinaire donne le message à copier, comme « À venir » ; son déplacement aussi.
+	const vendredi = () => prochainVendredi(today());
+	const lu = (fragment: string) => visibleText(`<body>${fragment}</body>`);
+
+	const ANNULEE: Record<Langue, string> = {
+		fr: 'Session annulée',
+		de: 'Durchgang abgesagt',
+		it: 'Turno annullato',
+		en: 'Session cancelled',
+		ar: 'موعد ملغى'
+	};
+	const DEPLACEE: Record<Langue, string> = {
+		fr: 'Session déplacée',
+		de: 'Durchgang verschoben',
+		it: 'Turno spostato',
+		en: 'Session moved',
+		ar: 'موعد منقول'
+	};
+	/** Sous la marque, le jour et l'heure seuls, comme sous une carte d'« À venir » (question 3). */
+	const AU: Record<Langue, (date: string, heure: string) => string> = {
+		fr: (date, heure) => `Au ${date} à ${heure}`,
+		de: (date, heure) => `Auf ${date}, um ${heure}`,
+		it: (date, heure) => `A ${date} alle ${heure}`,
+		en: (date, heure) => `To ${date} at ${heure}`,
+		ar: (date, heure) => `إلى يوم ${date} في الساعة ${heure}`
+	};
+	/** La phrase d'une annulation ordinaire, dans le message de chaque langue. */
+	const PRIERE_ANNULEE: Record<Langue, (date: string) => string> = {
+		fr: (date) => `« ${NOM_DE_LA_PRIERE.fr} » : la prière du ${date} est annulée.`,
+		de: (date) => `«${NOM_DE_LA_PRIERE.de}»: Das Gebet vom ${date}, fällt aus.`,
+		it: (date) => `«${NOM_DE_LA_PRIERE.it}»: la preghiera di ${date} è annullata.`,
+		en: (date) => `‘${NOM_DE_LA_PRIERE.en}’: the prayer on ${date} is cancelled.`,
+		ar: (date) => `«${NOM_DE_LA_PRIERE.ar}»: أُلغيت الصلاة يوم ${date}.`
+	};
+	/** Le refus d'une seconde annulation, qui rend le message quand même (D4). */
+	const DEJA_ANNULEE: Record<Langue, string> = {
+		fr: 'Cette session a déjà été annulée depuis l’ouverture de la page. Rien n’a été enregistré. Si le message n’a pas encore été envoyé, il est prêt ci-dessous.',
+		de: 'Dieser Durchgang ist schon abgesagt worden, seit die Seite geöffnet wurde. Es wurde nichts gespeichert. Wenn die Nachricht noch nicht verschickt ist, steht sie unten bereit.',
+		it: 'Questo turno è già stato annullato da quando hai aperto la pagina. Non è stato salvato niente. Se il messaggio non è ancora stato mandato, è pronto qui sotto.',
+		en: 'Since the page was opened, this session has already been cancelled. Nothing has been saved. If the message has not been sent yet, it is ready below.',
+		ar: 'أُلغي هذا الموعد منذ أن فُتحت الصفحة. لم يُحفظ أي شيء. إن لم تُرسَل الرسالة بعد، فهي جاهزة أدناه.'
+	};
+
+	/** Les messages à copier, en tête de l'écran, dans l'ordre de la page, avec leur langue. */
+	function messages(html: string): { langue: string | undefined; texte: string }[] {
+		return zonesDeTexte(section(html, 'message-titre')).map((zone) => ({
+			langue: attribut(zone.match(/<textarea\b[^>]*>/)?.[0] ?? '', 'lang'),
+			texte: contenu(zone)
+		}));
+	}
+
+	/** Les lignes de la première session dont le début nomme ce jour. */
+	function lignesDu(html: string, langue: Langue, date: IsoDate): string[] {
+		const debut = (ligne: string) =>
+			lu(ligne.match(/<p\b[^>]*class="ligne[^"]*"[^>]*>[\s\S]*?<\/p>/)?.[0] ?? '');
+		return lignesDeCeVendredi(html).filter(
+			(ligne) =>
+				debut(ligne).includes(PREMIERE_SESSION[langue]) &&
+				debut(ligne).includes(dateEcrite(langue, date))
+		);
+	}
+
+	/** Les marques d'une ligne, puis ses lignes de détail, chacune réduite à son texte. */
+	function marquesEtDetails(ligne: string): { marques: string[]; details: string[] } {
+		return {
+			marques: [...ligne.matchAll(/<span\b[^>]*class="marque[^"]*"[^>]*>([\s\S]*?)<\/span>/g)].map(
+				(trouve) => lu(trouve[1] ?? '')
+			),
+			details: [...ligne.matchAll(/<p\b[^>]*class="details[^"]*"[^>]*>([\s\S]*?)<\/p>/g)].map(
+				(trouve) => lu(trouve[1] ?? '')
+			)
+		};
+	}
+
+	afterAll(async () => {
+		await poserLangueDuCompte(RESPONSABLE, 'fr');
+		await effacerLesExceptionsDeLaPremiere();
+	});
+
+	it('cancels a session for one Friday, gives the message in each published language, and writes « Session annulée » on its line, in each language', async () => {
+		const date = vendredi();
+		try {
+			const reponse = await postForm(
+				'/vendredi?/annuler',
+				{ courseId: sessions[1], date },
+				cookies
+			);
+			expect(reponse.status).toBe(200);
+			const ecrits = messages(await reponse.text());
+			expect(ecrits.map((message) => message.langue)).toEqual([...LANGUES]);
+			for (const [index, langue] of LANGUES.entries()) {
+				expect(ecrits[index]?.texte, langue).toContain(
+					PRIERE_ANNULEE[langue](dateEcrite(langue, date))
+				);
+			}
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const lignes = lignesDu(await (await get('/vendredi', cookies)).text(), langue, date);
+				expect(lignes, langue).toHaveLength(1);
+				expect(marquesEtDetails(lignes[0] ?? ''), langue).toEqual({
+					marques: [ANNULEE[langue]],
+					details: []
+				});
+			}
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await effacerLesExceptionsDeLaPremiere();
+		}
+	});
+
+	it('answers a second cancellation with the same message, at the top, and writes nothing (D4)', async () => {
+		const date = vendredi();
+		try {
+			const premiere = await postForm(
+				'/vendredi?/annuler',
+				{ courseId: sessions[1], date },
+				cookies
+			);
+			expect(premiere.status).toBe(200);
+			const attendus = messages(await premiere.text()).map((message) => message.texte);
+			expect(attendus).toHaveLength(5);
+			const avant = await exceptionDe(sessions[1], date);
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const reponse = await postForm(
+					'/vendredi?/annuler',
+					{ courseId: sessions[1], date },
+					cookies
+				);
+				expect(reponse.status, langue).toBe(409);
+				const html = await reponse.text();
+				expect(enTete(html), langue).toEqual([DEJA_ANNULEE[langue]]);
+				expect(
+					messages(html).map((message) => message.texte),
+					langue
+				).toEqual(attendus);
+			}
+			expect(await exceptionDe(sessions[1], date)).toEqual(avant);
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await effacerLesExceptionsDeLaPremiere();
+		}
+	});
+
+	it('moves a session, gives the message, and writes « Session déplacée » then « Au … à … » on the line it left, in each language; the line it reaches is not struck through', async () => {
+		const date = vendredi();
+		const vers = jourDuDeplacement();
+		try {
+			const reponse = await postForm(
+				'/vendredi?/deplacer',
+				{ courseId: sessions[1], date, toDate: vers, toStart: '15:00' },
+				cookies
+			);
+			expect(reponse.status).toBe(200);
+			const ecrits = messages(await reponse.text());
+			expect(ecrits.map((message) => message.langue)).toEqual([...LANGUES]);
+			expect(ecrits[0]?.texte).toContain(
+				`« ${NOM_DE_LA_PRIERE.fr} » : la prière du ${dateEcrite('fr', date)} est déplacée au ${dateEcrite('fr', vers)} à 15:00.`
+			);
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const html = await (await get('/vendredi', cookies)).text();
+				const depart = lignesDu(html, langue, date).filter(
+					(ligne) => !lu(ligne).includes(NOUVELLE_DATE[langue](dateEcrite(langue, date)))
+				);
+				expect(depart, langue).toHaveLength(1);
+				expect(marquesEtDetails(depart[0] ?? ''), langue).toEqual({
+					marques: [DEPLACEE[langue]],
+					details: [AU[langue](dateEcrite(langue, vers), '15:00')]
+				});
+				// La ligne de sa nouvelle date n'est pas barrée : la session y a lieu, comme sur la carte
+				// « date exceptionnelle » d'« À venir ».
+				// La troisième session y arrive aussi, depuis le jeu d'essai : la première seulement.
+				const arrivee = lignesDeCeVendredi(html).filter(
+					(ligne) =>
+						lu(ligne).includes(PREMIERE_SESSION[langue]) &&
+						lu(ligne).includes(NOUVELLE_DATE[langue](dateEcrite(langue, date)))
+				);
+				expect(arrivee, langue).toHaveLength(1);
+				expect(arrivee[0]?.match(/^<div\b[^>]*>/)?.[0], langue).not.toMatch(/\bbarree\b/);
+			}
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await effacerLesExceptionsDeLaPremiere();
 		}
 	});
 });

@@ -205,7 +205,7 @@ déclencheur `course_kind_fixed` reste : il tient toujours le type d'une ligne.
 
 **Une session déplacée depuis un vendredi passé** (décision C2) ne se rétablit plus sur ce vendredi,
 ni ne se déplace de nouveau : sa ligne propose « Annuler cette session », qui l'annule à sa nouvelle
-date et donne le message à copier, le seul que rende cet écran. Le détail, et les refus de ces
+date et donne le message à copier, le seul que rende cet écran jusqu'à l'étape 21. Le détail, et les refus de ces
 gestes, sont dans l'addendum du même jour de l'ADR 0021.
 
 ## Addendum du 19.10.2026 : une session parle de prière (étape 21)
@@ -225,7 +225,9 @@ là où la langue en a deux : `موعد استثنائي` en arabe, où une séa
 
 **Toute session déplacée s'annule** à sa nouvelle date, depuis l'une ou l'autre de ses lignes, et pas
 seulement celle dont le vendredi prévu est passé ; tant que celui-ci n'est pas passé, « Rétablir
-comme d'habitude » défait l'annulation. Le détail est dans l'addendum du même jour de l'ADR 0021.
+comme d'habitude » défait l'annulation. **L'écran du vendredi fait comme « À venir »** : ses lignes
+disent « Session annulée », « Session déplacée » puis « Au … à … », et annuler ou déplacer une
+session y donne le message à copier. Le détail est dans l'addendum du même jour de l'ADR 0021.
 
 ## Statut
 
