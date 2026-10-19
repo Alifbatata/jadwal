@@ -4,6 +4,7 @@
 // Le document réel est lu ici, et pas une copie : c'est lui que les organisations acceptent, et un
 // défaut de rendu qui ne toucherait que lui passerait sous un exemple inventé.
 
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { dateDeLaVersion, typographier, typographierHtml, versHtml, versionIso } from './rendu.js';
@@ -108,6 +109,29 @@ describe('la version du texte', () => {
 	it('reads the version of docs/CONDITIONS.md, whose date is written as on the screen', () => {
 		expect(dateDeLaVersion(CONDITIONS)).toMatch(/^\d\d\.\d\d\.20\d\d$/);
 		expect(versionIso(CONDITIONS)).toMatch(/^20\d\d-\d\d-\d\d$/);
+	});
+
+	// L'acceptation enregistre la date, pas le texte : un texte changé sous la même date ne serait
+	// redemandé à personne, et les acceptations déjà gardées diraient avoir accepté ce que personne
+	// n'a lu. Chaque version a donc son empreinte, ajoutée ici quand la date change. Les fins de
+	// ligne sont ramenées à LF : un poste Windows ne doit pas changer l'empreinte.
+	const EMPREINTES: Record<string, string> = {
+		'2026-09-26': 'ce107d7a3d36101abd5ed79a5412c30f842b162afee3606b2af9c799c5e4a867'
+	};
+
+	it('gives every change of docs/CONDITIONS.md a new date, so that everyone accepts it again', () => {
+		const version = versionIso(CONDITIONS);
+		const empreinte = createHash('sha256')
+			.update(CONDITIONS.replace(/\r\n/g, '\n'))
+			.digest('hex');
+		expect(
+			EMPREINTES[version],
+			`version ${version} sans empreinte : ajoutez « '${version}': '${empreinte}' »`
+		).toBeDefined();
+		expect(
+			empreinte,
+			`le texte de la version ${version} a changé : donnez-lui une nouvelle date de mise à jour`
+		).toBe(EMPREINTES[version]);
 	});
 });
 
