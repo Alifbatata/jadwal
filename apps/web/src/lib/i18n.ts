@@ -118,6 +118,13 @@ interface Dictionnaire {
 	readonly jumua: string;
 	/** « sermon en arabe et français » : le mot juste, qui n'est pas « enseigné en ». */
 	readonly sermonIn: (languages: string) => string;
+	/**
+	 * Sur la page d'une session du vendredi, les étiquettes de la langue du sermon et de la personne
+	 * qui le dit, celles du formulaire de l'écran du vendredi, et non « Enseigné en » et « Intervenant »
+	 * (étape 21, question 1 de l'étape 20).
+	 */
+	readonly sermonLanguage: string;
+	readonly imam: string;
 	readonly fromTo: (from: string, to: string) => string;
 	readonly datesLabel: string;
 	readonly nextSessions: string;
@@ -141,6 +148,8 @@ interface Dictionnaire {
 	 * mot du fil d'Ariane, au pluriel en anglais, en allemand et en italien.
 	 */
 	readonly coursePage: string;
+	/** `nextSessions` sur la page d'une session du vendredi : « Prochaines prières » (étape 21). */
+	readonly nextPrayers: string;
 	readonly subscribe: string;
 	readonly subscribeTitle: string;
 	/**
@@ -169,6 +178,12 @@ interface Dictionnaire {
 	/** Le titre du bloc d'abonnement de la page d'un cours, au-dessus de ce que l'appareil propose. */
 	readonly addCourseToCalendar: string;
 	readonly courseFeedAddress: string;
+	/**
+	 * `addCourseToCalendar` et `courseFeedAddress` sur la page d'une session du vendredi, qui parle
+	 * d'une prière et non d'un cours (étape 21, question 1 de l'étape 20).
+	 */
+	readonly addPrayerToCalendar: string;
+	readonly prayerFeedAddress: string;
 	/** Le bouton d'un Android : Google Agenda, avec la demande d'abonnement prête. */
 	readonly addToGoogle: string;
 	/** Ce qui se passe quand on touche le bouton `webcal:`, sur un iPhone, un iPad ou un Mac. */
@@ -407,6 +422,8 @@ const fr: Dictionnaire = {
 	taughtIn: 'Enseigné en',
 	jumua: 'Prière du vendredi',
 	sermonIn: (languages) => `sermon en ${languages}`,
+	sermonLanguage: 'Langue du sermon',
+	imam: 'Imam ou intervenant',
 	fromTo: (from, to) => `Du ${from} au ${to}`,
 	datesLabel: 'Dates',
 	nextSessions: 'Prochaines séances',
@@ -415,6 +432,7 @@ const fr: Dictionnaire = {
 	backToProgramme: 'Retour au programme',
 	coursesCrumb: 'Cours',
 	coursePage: 'Page du cours',
+	nextPrayers: 'Prochaines prières',
 	subscribe: 'S’abonner au calendrier',
 	subscribeTitle: 'S’abonner au calendrier',
 	subscribeIntro: (name) =>
@@ -433,6 +451,8 @@ const fr: Dictionnaire = {
 	subscribeWhole: 'S’abonner à tout le programme',
 	addCourseToCalendar: 'Ajouter ce cours à mon agenda',
 	courseFeedAddress: 'Ou copiez cette adresse, qui ne porte que ce cours :',
+	addPrayerToCalendar: 'Ajouter cette prière à mon agenda',
+	prayerFeedAddress: 'Ou copiez cette adresse, qui ne porte que cette prière :',
 	// Le libellé du bouton d'Android est rangé sous celui de l'iPhone, et non ici : le correcteur
 	// recolle les chaînes voisines en un paragraphe, et lisait ce libellé, sans point, comme la fin
 	// d'une phrase.
@@ -575,6 +595,8 @@ const de: Dictionnaire = {
 	taughtIn: 'Unterrichtssprache',
 	jumua: 'Freitagsgebet',
 	sermonIn: (languages) => `Predigt auf ${languages}`,
+	sermonLanguage: 'Sprache der Predigt',
+	imam: 'Imam oder Referent',
 	fromTo: (from, to) => `Vom ${from} bis ${to}`,
 	datesLabel: 'Zeitraum',
 	nextSessions: 'Nächste Termine',
@@ -583,6 +605,7 @@ const de: Dictionnaire = {
 	backToProgramme: 'Zurück zum Programm',
 	coursesCrumb: 'Kurse',
 	coursePage: 'Seite des Kurses',
+	nextPrayers: 'Nächste Gebete',
 	subscribe: 'Kalender abonnieren',
 	subscribeTitle: 'Kalender abonnieren',
 	subscribeIntro: (name) =>
@@ -600,6 +623,8 @@ const de: Dictionnaire = {
 	subscribeWhole: 'Das ganze Programm abonnieren',
 	addCourseToCalendar: 'Diesen Kurs zu meinem Kalender hinzufügen',
 	courseFeedAddress: 'Oder kopieren Sie diese Adresse, die nur diesen Kurs enthält:',
+	addPrayerToCalendar: 'Dieses Gebet zu meinem Kalender hinzufügen',
+	prayerFeedAddress: 'Oder kopieren Sie diese Adresse, die nur dieses Gebet enthält:',
 	addToGoogle: 'Zu Google Kalender hinzufügen',
 	appleHelp:
 		'Tippen Sie auf die Schaltfläche, auf dem Mac klicken Sie darauf: Die App Kalender bietet an, den Kalender zu abonnieren. Bestätigen Sie, und der Kalender aktualisiert sich von selbst, etwa einmal pro Stunde.',
@@ -740,6 +765,8 @@ const it: Dictionnaire = {
 	taughtIn: 'Lingua del corso',
 	jumua: 'Preghiera del venerdì',
 	sermonIn: (languages) => `sermone in ${languages}`,
+	sermonLanguage: 'Lingua del sermone',
+	imam: 'Imam o relatore',
 	fromTo: (from, to) => `Dal ${from} al ${to}`,
 	datesLabel: 'Date',
 	nextSessions: 'Prossime lezioni',
@@ -748,6 +775,7 @@ const it: Dictionnaire = {
 	backToProgramme: 'Torna al programma',
 	coursesCrumb: 'Corsi',
 	coursePage: 'Pagina del corso',
+	nextPrayers: 'Prossime preghiere',
 	subscribe: 'Iscriviti al calendario',
 	subscribeTitle: 'Iscriviti al calendario',
 	subscribeIntro: (name) =>
@@ -765,6 +793,8 @@ const it: Dictionnaire = {
 	subscribeWhole: 'Iscriviti a tutto il programma',
 	addCourseToCalendar: 'Aggiungi questo corso al mio calendario',
 	courseFeedAddress: 'Oppure copia questo indirizzo, che contiene solo questo corso:',
+	addPrayerToCalendar: 'Aggiungi questa preghiera al mio calendario',
+	prayerFeedAddress: 'Oppure copia questo indirizzo, che contiene solo questa preghiera:',
 	addToGoogle: 'Aggiungi a Google Calendar',
 	appleHelp:
 		'Tocca il pulsante (sul computer, fai clic): l’app Calendario propone di iscriverti. Accetta, e il calendario si aggiorna da solo, circa una volta all’ora.',
@@ -904,6 +934,8 @@ const en: Dictionnaire = {
 	taughtIn: 'Taught in',
 	jumua: 'Friday prayer',
 	sermonIn: (languages) => `sermon in ${languages}`,
+	sermonLanguage: 'Language of the sermon',
+	imam: 'Imam or speaker',
 	fromTo: (from, to) => `From ${from} to ${to}`,
 	datesLabel: 'Dates',
 	nextSessions: 'Upcoming sessions',
@@ -912,6 +944,7 @@ const en: Dictionnaire = {
 	backToProgramme: 'Back to the programme',
 	coursesCrumb: 'Courses',
 	coursePage: 'Course page',
+	nextPrayers: 'Upcoming prayers',
 	subscribe: 'Subscribe to the calendar',
 	subscribeTitle: 'Subscribe to the calendar',
 	subscribeIntro: (name) =>
@@ -929,6 +962,8 @@ const en: Dictionnaire = {
 	subscribeWhole: 'Subscribe to the whole programme',
 	addCourseToCalendar: 'Add this course to my calendar',
 	courseFeedAddress: 'Or copy this address, which covers only this course:',
+	addPrayerToCalendar: 'Add this prayer to my calendar',
+	prayerFeedAddress: 'Or copy this address, which covers only this prayer:',
 	addToGoogle: 'Add to Google Calendar',
 	appleHelp:
 		'Tap the button, or click it on a Mac: the Calendar app offers to subscribe. Accept, and the calendar updates itself, about once an hour.',
@@ -1088,6 +1123,8 @@ const ar: Dictionnaire = {
 	taughtIn: 'لغة التدريس',
 	jumua: 'صلاة الجمعة',
 	sermonIn: (languages) => `لغة الخطبة: ${languages}`,
+	sermonLanguage: 'لغة الخطبة',
+	imam: 'الإمام أو المتحدث',
 	fromTo: (from, to) => `من ${from} إلى ${to}`,
 	datesLabel: 'الفترة',
 	nextSessions: 'الحصص القادمة',
@@ -1096,6 +1133,7 @@ const ar: Dictionnaire = {
 	backToProgramme: 'العودة إلى البرنامج',
 	coursesCrumb: 'الدروس',
 	coursePage: 'صفحة الدرس',
+	nextPrayers: 'الصلوات القادمة',
 	subscribe: 'الاشتراك في التقويم',
 	subscribeTitle: 'الاشتراك في التقويم',
 	// La phrase relue par le chef de projet, sans « مرة كل ساعة تقريبًا » depuis l'étape 18 : le délai
@@ -1115,6 +1153,8 @@ const ar: Dictionnaire = {
 	subscribeWhole: 'الاشتراك في البرنامج كاملًا',
 	addCourseToCalendar: 'أضف هذا الدرس إلى تقويمي',
 	courseFeedAddress: 'أو انسخ هذا العنوان، وهو خاص بهذا الدرس وحده:',
+	addPrayerToCalendar: 'أضف هذه الصلاة إلى تقويمي',
+	prayerFeedAddress: 'أو انسخ هذا العنوان، وهو خاص بهذه الصلاة وحدها:',
 	addToGoogle: 'أضف إلى تقويم Google',
 	appleHelp:
 		'اضغط على الزر، أو انقر عليه على الحاسوب: يقترح تطبيق التقويم الاشتراك. وافق، وسيُحدَّث التقويم تلقائيًا، مرة كل ساعة تقريبًا.',

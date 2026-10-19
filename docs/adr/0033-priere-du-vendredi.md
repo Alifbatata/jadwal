@@ -208,6 +208,21 @@ ni ne se déplace de nouveau : sa ligne propose « Annuler cette session », qui
 date et donne le message à copier, le seul que rende cet écran. Le détail, et les refus de ces
 gestes, sont dans l'addendum du même jour de l'ADR 0021.
 
+## Addendum du 19.10.2026 : une session parle de prière (étape 21)
+
+Les questions laissées par l'étape 20 sont tranchées « oui » par le chef de projet.
+
+**La page publique d'une session** parle d'une prière : `Prochaines prières`, `Ajouter cette prière
+à mon agenda`, l'adresse « qui ne porte que cette prière », et dans ses précisions `Imam ou
+intervenant` et `Langue du sermon`, les étiquettes de l'écran du vendredi. Elle gardait les mots
+d'un cours, `Prochaines séances`, `Ajouter ce cours à mon agenda`, `Enseigné en`. Le fil d'Ariane
+garde `Cours` : il nomme la vue vers laquelle il mène, `Tous les cours`, qui range la prière du
+vendredi dans son propre groupe, en tête.
+
+**La date exceptionnelle** d'une session arrivée d'un autre jour se dit avec le mot d'une session
+là où la langue en a deux : `موعد استثنائي` en arabe, où une séance d'un cours dit désormais
+`حصة استثنائية`, et `Ausnahmedatum` en allemand, où `Ausnahmetermin` reste celui d'un cours.
+
 ## Statut
 
 Accepté, 2026-09-21. Étape 8 de la feuille de route. Complète l'ADR 0003 (récurrence) et l'ADR 0004
@@ -216,3 +231,5 @@ mots d'une session dans les messages prêts à coller, les refus de son écran, 
 brouillon qui ne remplace pas le Dhuhr ; puis au lot 2, la langue du sermon parmi toutes les
 langues d'enseignement. Complété le 28.09.2026 (étape 20) : supprimer une session est réservé au
 responsable, et une session déplacée depuis un vendredi passé s'annule à sa nouvelle date.
+Complété le 19.10.2026 (étape 21) : une session parle de prière, sur sa page publique et dans sa
+date exceptionnelle.

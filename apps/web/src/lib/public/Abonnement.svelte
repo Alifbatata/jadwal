@@ -23,6 +23,7 @@
 		nom,
 		adresse,
 		cours = false,
+		priere = false,
 		tousLesChoix = null
 	}: {
 		langue: Langue;
@@ -40,6 +41,8 @@
 		adresse: string;
 		/** Un seul cours : seule la phrase qui présente l'adresse change. */
 		cours?: boolean;
+		/** Ce cours est une session du vendredi : la phrase parle d'une prière (étape 21). */
+		priere?: boolean;
 		/** Le lien vers le choix complet, quand la page a choisi pour le visiteur ; `null` sinon. */
 		tousLesChoix?: string | null;
 	} = $props();
@@ -116,7 +119,9 @@
 		<!-- L'adresse du flux, un autre choix après le bouton, sur un iPhone comme sur Android. Sur
 		     Android, elle avait son étiquette à elle, « L'adresse à coller », tant que la phrase d'avant
 		     disait de la coller sur un ordinateur (relecture du lot 4) : elle ne le dit plus. -->
-		<p class="adresse">{cours ? mots.courseFeedAddress : mots.subscribeAddress}</p>
+		<p class="adresse">
+			{cours ? (priere ? mots.prayerFeedAddress : mots.courseFeedAddress) : mots.subscribeAddress}
+		</p>
 		<!-- Une adresse se lit de gauche à droite, même sur une page arabe : sans `dir`, elle se
 		     rangeait à droite, et sa ponctuation de fin changeait de côté. -->
 		<p class="lien"><code dir="ltr">{https}</code></p>

@@ -33,8 +33,6 @@ indexe.
    Déplacée le même jour à une autre heure, elle porte `Nouvelle heure`, puis l'heure d'avant,
    `Initialement à 19:30`, la même que la vue Semaine, y compris pour un cours placé après une
    prière (étape 18). Si aucune heure de prière ne couvre ce jour, l'heure d'avant n'est pas dite.
-   La page d'une session du vendredi garde les mots d'un cours, ce titre compris, comme `Cours` et
-   `Ajouter ce cours à mon agenda` : seule la marque de l'état suit la sorte (étape 20).
 7. **Ajouter ce cours à mon agenda**, titre de niveau 2, à l'ancre `#agenda` (ADR 0028, ADR 0048).
    Dessous, le même bloc que la page d'abonnement, selon l'appareil, pour le flux de **ce** cours
    seul (voir `public-agenda.md`) : le bouton `Ajouter à mon calendrier` en `webcal:` sur un
@@ -46,9 +44,17 @@ indexe.
    `Une autre application ou un autre appareil ?` suivi du lien `Voir tous les choix`, vers
    `?appareil=tous#agenda`. La réponse porte
    `Vary: Sec-CH-UA-Platform, User-Agent`, sauf pour le choix complet.
-8. **Deux liens** sur une ligne : `S'abonner à tout le programme`, vers la page d'abonnement, et
-   `Retour au programme`, vers la vue Semaine.
-9. **Le pied commun**.
+
+### La page d'une session du vendredi
+
+Elle parle d'une prière, et non d'un cours (étape 21, question 1 de l'étape 20, décision du chef de
+projet) : `Prochaines prières` au lieu de `Prochaines séances`, `Ajouter cette prière à mon agenda`,
+`Ou copiez cette adresse, qui ne porte que cette prière :`, et dans les précisions
+`Imam ou intervenant` et `Langue du sermon`, les étiquettes de l'écran du vendredi, au lieu
+d'`Intervenant` et d'`Enseigné en`. Les marques de l'état suivent aussi la sorte : `Session annulée`
+(étape 20), et la date exceptionnelle en arabe et en allemand (étape 21). Le fil d'Ariane garde
+`Cours` : il nomme la vue où il mène, `Tous les cours`, où la prière du vendredi a son groupe en tête. 8. **Deux liens** sur une ligne : `S'abonner à tout le programme`, vers la page d'abonnement, et
+`Retour au programme`, vers la vue Semaine. 9. **Le pied commun**.
 
 ## Métadonnées de partage
 

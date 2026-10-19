@@ -2410,3 +2410,144 @@ describe('chaque écran touché, dans les cinq langues (D2, A3)', () => {
 		}
 	);
 });
+
+describe('la page d’une session du vendredi parle de prières (étape 21, question 1 de l’étape 20)', () => {
+	// Tranché « oui » par le chef de projet : la page d'une session du vendredi gardait les mots d'un
+	// cours, « Prochaines séances », « Ajouter ce cours à mon agenda », « Enseigné en ». Elle dit
+	// « Prochaines prières », « Ajouter cette prière à mon agenda », la langue du sermon et l'imam,
+	// avec les mots de l'écran du vendredi. La page d'un cours garde les siens.
+	const SLUG_MOTS = 'vendredi-mots';
+	const session = newId();
+	const cours = newId();
+	const IMAM = 'Imam Youssef';
+	const ENSEIGNANT = 'Karim Haddad';
+
+	const ATTENDUS: Record<
+		Langue,
+		Record<'prochaines' | 'agenda' | 'adresse' | 'langue' | 'personne', [string, string]>
+	> = {
+		fr: {
+			prochaines: ['Prochaines prières', 'Prochaines séances'],
+			agenda: ['Ajouter cette prière à mon agenda', 'Ajouter ce cours à mon agenda'],
+			adresse: [
+				'Ou copiez cette adresse, qui ne porte que cette prière :',
+				'Ou copiez cette adresse, qui ne porte que ce cours :'
+			],
+			langue: ['Langue du sermon', 'Enseigné en'],
+			personne: ['Imam ou intervenant', 'Intervenant']
+		},
+		de: {
+			prochaines: ['Nächste Gebete', 'Nächste Termine'],
+			agenda: [
+				'Dieses Gebet zu meinem Kalender hinzufügen',
+				'Diesen Kurs zu meinem Kalender hinzufügen'
+			],
+			adresse: [
+				'Oder kopieren Sie diese Adresse, die nur dieses Gebet enthält:',
+				'Oder kopieren Sie diese Adresse, die nur diesen Kurs enthält:'
+			],
+			langue: ['Sprache der Predigt', 'Unterrichtssprache'],
+			personne: ['Imam oder Referent', 'Leitung']
+		},
+		it: {
+			prochaines: ['Prossime preghiere', 'Prossime lezioni'],
+			agenda: [
+				'Aggiungi questa preghiera al mio calendario',
+				'Aggiungi questo corso al mio calendario'
+			],
+			adresse: [
+				'Oppure copia questo indirizzo, che contiene solo questa preghiera:',
+				'Oppure copia questo indirizzo, che contiene solo questo corso:'
+			],
+			langue: ['Lingua del sermone', 'Lingua del corso'],
+			personne: ['Imam o relatore', 'Docente']
+		},
+		en: {
+			prochaines: ['Upcoming prayers', 'Upcoming sessions'],
+			agenda: ['Add this prayer to my calendar', 'Add this course to my calendar'],
+			adresse: [
+				'Or copy this address, which covers only this prayer:',
+				'Or copy this address, which covers only this course:'
+			],
+			langue: ['Language of the sermon', 'Taught in'],
+			personne: ['Imam or speaker', 'Teacher']
+		},
+		ar: {
+			prochaines: ['الصلوات القادمة', 'الحصص القادمة'],
+			agenda: ['أضف هذه الصلاة إلى تقويمي', 'أضف هذا الدرس إلى تقويمي'],
+			adresse: [
+				'أو انسخ هذا العنوان، وهو خاص بهذه الصلاة وحدها:',
+				'أو انسخ هذا العنوان، وهو خاص بهذا الدرس وحده:'
+			],
+			langue: ['لغة الخطبة', 'لغة التدريس'],
+			personne: ['الإمام أو المتحدث', 'المدرّس']
+		}
+	};
+
+	/** Ce que la page dit, aux endroits que la question visait. */
+	function motsDeLaPage(html: string) {
+		return {
+			titres: [...html.matchAll(/<h2\b[^>]*>([\s\S]*?)<\/h2>/g)].map((titre) => lu(titre[1] ?? '')),
+			adresse: lu(html.match(/<p class="adresse[^"]*">([\s\S]*?)<\/p>/)?.[1] ?? ''),
+			etiquettes: [...html.matchAll(/<dt\b[^>]*>([\s\S]*?)<\/dt>/g)].map((dt) => lu(dt[1] ?? ''))
+		};
+	}
+
+	beforeAll(async () => {
+		const organisation = newId();
+		await maintenance(async (tx) => {
+			await tx.execute(sql`
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
+					"enabled_language", "prayer_module")
+				values (${organisation}, ${SLUG_MOTS}, 'Association des mots', ${FUSEAU}, 'fr',
+					array['fr','de','it','en','ar'], true)
+			`);
+			for (const [id, kind, ordre, jours, langues, personne, titre] of [
+				[session, 'jumua', 1, '{5}', '{ar,fr}', IMAM, 'Jumu’a'],
+				[cours, 'course', null, '{6}', '{fr}', ENSEIGNANT, 'Tafsir']
+			] as const) {
+				await tx.execute(sql`
+					insert into "course" ("id", "organization_id", "kind", "jumua_order", "status",
+						"audience", "teaching_language", "source_language", "recurrence_kind",
+						"recurrence_weekday", "recurrence_interval", "recurrence_anchor_date", "timing_kind",
+						"timing_start", "timing_end", "starts_on", "teacher")
+					values (${id}, ${organisation}, ${kind}, ${ordre}, 'published', 'open',
+						${langues}::text[], 'fr', 'weekly', ${jours}::smallint[], 1, ${DEBUT}, 'fixed',
+						'12:30', '13:10', ${DEBUT}, ${personne})
+				`);
+				await tx.execute(sql`
+					insert into "course_translation" ("id", "organization_id", "course_id", "language",
+						"title")
+					values (${newId()}, ${organisation}, ${id}, 'fr', ${titre})
+				`);
+			}
+		});
+	});
+
+	it.each(LANGUES)(
+		'says next prayers, adds this prayer, names the sermon language and the imam, in %s, and a course keeps its words',
+		async (langue) => {
+			const [deLaSession, duCours] = await Promise.all(
+				[session, cours].map((id) => servir(`${base(langue, SLUG_MOTS)}/cours/${id}`, IPHONE))
+			);
+			expect(deLaSession?.statut).toBe(200);
+			expect(duCours?.statut).toBe(200);
+			const attendus = ATTENDUS[langue];
+			for (const [page, rang] of [
+				[deLaSession, 0],
+				[duCours, 1]
+			] as const) {
+				const mots = motsDeLaPage(page?.html ?? '');
+				expect(mots.titres, `${langue} ${rang}`).toEqual([
+					attendus.prochaines[rang],
+					attendus.agenda[rang]
+				]);
+				expect(mots.adresse, `${langue} ${rang}`).toBe(attendus.adresse[rang]);
+				expect(mots.etiquettes, `${langue} ${rang}`).toEqual([
+					attendus.personne[rang],
+					attendus.langue[rang]
+				]);
+			}
+		}
+	);
+});

@@ -49,6 +49,14 @@
 	});
 
 	const versLangue = (langue: Langue) => lienCours({ ...adresse, langue }, data.cours.id);
+
+	/**
+	 * Une session du vendredi parle d'une prière, et non d'un cours : ses prochaines dates, son
+	 * abonnement, la langue du sermon et l'imam (étape 21, question 1 de l'étape 20). Le fil d'Ariane
+	 * garde `Cours` : il nomme la vue où il mène, « Tous les cours », où la prière du vendredi a son
+	 * groupe.
+	 */
+	const priere = $derived(data.cours.kind === 'jumua');
 </script>
 
 <svelte:head>
@@ -99,10 +107,10 @@
 				<dd>{data.cours.room}</dd>
 			{/if}
 			{#if data.cours.teacher}
-				<dt>{mots.teacher}</dt>
+				<dt>{priere ? mots.imam : mots.teacher}</dt>
 				<dd>{data.cours.teacher}</dd>
 			{/if}
-			<dt>{mots.taughtIn}</dt>
+			<dt>{priere ? mots.sermonLanguage : mots.taughtIn}</dt>
 			<dd>{languesEnClair(data.langue, data.cours.teachingLanguages)}</dd>
 			{#if data.cours.endsOn}
 				<dt>{mots.datesLabel}</dt>
@@ -115,10 +123,9 @@
 			{/if}
 		</dl>
 
-		<!-- La page d'une session du vendredi garde les mots d'un cours, ce titre compris, comme le fil
-		     d'Ariane et « Ajouter ce cours à mon agenda » : seule la marque de l'état suit la sorte
-		     (étape 20, C4), comme sur les cartes d'À venir. -->
-		<h2>{mots.nextSessions}</h2>
+		<!-- « Prochaines prières » pour une session du vendredi, « Prochaines séances » pour un cours
+		     (étape 21). La marque de l'état suit aussi la sorte (étape 20, C4). -->
+		<h2>{priere ? mots.nextPrayers : mots.nextSessions}</h2>
 		{#if data.prochaines.length === 0}
 			<p class="vide">{mots.noNextSessions}</p>
 		{:else}
@@ -153,10 +160,11 @@
 			</ul>
 		{/if}
 
-		<!-- « Ajouter ce cours à mon agenda », puis ce que l'appareil sait ouvrir (étape 18, retour E1).
+		<!-- « Ajouter ce cours à mon agenda », ou « Ajouter cette prière à mon agenda » pour une session
+		     du vendredi (étape 21), puis ce que l'appareil sait ouvrir (étape 18, retour E1).
 		     L'ancre `#agenda` est celle où mène chaque cours depuis la page d'abonnement. -->
 		<section id="agenda" aria-labelledby="agenda-titre">
-			<h2 id="agenda-titre">{mots.addCourseToCalendar}</h2>
+			<h2 id="agenda-titre">{priere ? mots.addPrayerToCalendar : mots.addCourseToCalendar}</h2>
 			<Abonnement
 				langue={data.langue}
 				appareil={data.appareil}
@@ -165,6 +173,7 @@
 				nom={data.flux.nom}
 				adresse={data.canonical}
 				cours
+				{priere}
 				tousLesChoix={data.appareil === 'autre'
 					? null
 					: `${lienCours(adresse, data.cours.id)}?${PARAMETRE_APPAREIL}=${TOUS_LES_CHOIX}#agenda`}

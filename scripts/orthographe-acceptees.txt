@@ -632,6 +632,7 @@ docs/adr/0005-widget.md | DATE | 19.10.2026
 docs/adr/0027-pages-publiques.md | DATE | 19.10.2026
 docs/adr/0044-acceptation-des-conditions.md | DATE | 19.10.2026
 docs/adr/0047-langue-de-l-espace.md | DATE | 19.10.2026
+docs/adr/0033-priere-du-vendredi.md | DATE | 19.10.2026
 # La marque d'une séance arrivée d'un autre jour, rangée par sorte (question 4 de l'étape 20) : le
 # français et l'anglais n'ont qu'un mot pour la séance d'un cours et la session du vendredi, et les
 # deux valeurs voisines s'écrivent de même, comme « Session cancelled » plus haut.

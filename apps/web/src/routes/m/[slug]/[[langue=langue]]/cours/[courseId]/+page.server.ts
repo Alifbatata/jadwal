@@ -133,7 +133,10 @@ export const load: PageServerLoad = async (event) => {
 		langues: languesProposees(organisation),
 		cours: {
 			id: cours.id,
-			/** `jumua` : une séance annulée dit « Session annulée », comme la vue Semaine (étape 20, C4). */
+			/**
+			 * `jumua` : la page parle d'une prière (étape 21), et une séance annulée dit « Session
+			 * annulée », comme la vue Semaine (étape 20, C4).
+			 */
 			kind: cours.kind,
 			title: cours.title ?? '',
 			description: cours.description,
