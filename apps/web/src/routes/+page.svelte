@@ -201,7 +201,7 @@
      communauté a déjà été prévenue (étape 19, D4). -->
 {#if form?.done || form?.messages}
 	<section class="message" aria-labelledby="message-titre">
-		<h2 id="message-titre">{text.done[form.done ?? 'cancelled']}</h2>
+		<h2 id="message-titre">{text.done[form.done ?? 'cancelled'][form.kind ?? 'course']}</h2>
 		{#if form.messages}
 			<p class="aide">{text.messageHelp}</p>
 			{@render messagesInLanguages(form.messages, text.messageLabel, 'message', 5)}
@@ -283,7 +283,7 @@
 					</p>
 					{#if seance.status === 'moved_away' && seance.movedTo}
 						<p class="details">
-							{text.movedTo[seance.kind](date(seance.movedTo.date), seance.movedTo.start)}
+							{text.movedTo(date(seance.movedTo.date), seance.movedTo.start)}
 						</p>
 					{/if}
 					{#if origine}
@@ -301,8 +301,8 @@
 							<form method="post" action="?/annuler">
 								<input type="hidden" name="courseId" value={seance.courseId} />
 								<input type="hidden" name="date" value={seance.date} />
-								<p class="aide">{text.cancelHelp}</p>
-								<button type="submit" class="danger">{text.cancelButton}</button>
+								<p class="aide">{text.cancelHelp[seance.kind]}</p>
+								<button type="submit" class="danger">{text.cancelButton[seance.kind]}</button>
 							</form>
 
 							<!-- L'heure que la carte montre part avec elle, vide pour une séance sans heure : si
@@ -313,7 +313,7 @@
 								<input type="hidden" name="date" value={seance.date} />
 								<input type="hidden" name="plannedStart" value={seance.start ?? ''} />
 								<fieldset>
-									<legend>{text.moveLegend}</legend>
+									<legend>{text.moveLegend[seance.kind]}</legend>
 									<!-- Une erreur qui retrouve sa carte vient toujours d'un déplacement
 									     (`REFUS_D_UNE_CARTE`) : les autres s'affichent en haut. Elle se lit donc
 									     au-dessus des champs à corriger. -->
@@ -355,7 +355,7 @@
 										/>
 										<p id={`heure-${k}-aide`} class="aide">{text.newTimeHelp}</p>
 									</div>
-									<button type="submit">{text.moveButton}</button>
+									<button type="submit">{text.moveButton[seance.kind]}</button>
 								</fieldset>
 							</form>
 						</details>
@@ -378,9 +378,9 @@
 									<input type="hidden" name="shownId" value={change.id} />
 									<input type="hidden" name="shownToDate" value={change.toDate} />
 									<input type="hidden" name="shownToStart" value={change.toStart} />
-									<p id={aide} class="aide">{text.cancelMovedHelp}</p>
+									<p id={aide} class="aide">{text.cancelMovedHelp[seance.kind]}</p>
 									<button type="submit" class="danger" aria-describedby={aide}>
-										{text.cancelButton}
+										{text.cancelButton[seance.kind]}
 									</button>
 								</form>
 							</details>
@@ -395,8 +395,8 @@
 										<input type="hidden" name="shownToStart" value={change.toStart} />
 									{/if}
 								{/if}
-								<button type="submit">{text.restoreButton}</button>
-								<span class="aide">{text.restoreHelp}</span>
+								<button type="submit">{text.restoreButton[seance.kind]}</button>
+								<span class="aide">{text.restoreHelp[seance.kind]}</span>
 							</form>
 						{/if}
 					{/if}

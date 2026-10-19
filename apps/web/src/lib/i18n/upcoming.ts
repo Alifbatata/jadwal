@@ -8,10 +8,12 @@
 // (`common.ts`), pour qu'un lien et la page qu'il ouvre portent le même nom. Une session, une fois
 // où la prière du vendredi a lieu, se dit « Durchgang », « turno », « session » et « موعد », comme
 // sur l'écran du vendredi (`friday.ts`) : l'état d'une carte annulée ou partie ailleurs s'écrit avec
-// l'un ou l'autre nom (étape 20, C4). C4 ne vise que cet état, qui suit le titre de la carte : ses
-// options, ses aides, ses boutons et les refus de ses gestes gardent le mot de l'écran, « séance »,
-// pour toute carte, depuis l'étape 18. Une aide qui suivrait la sorte de la carte, à côté d'un bouton
-// qui ne la suit pas, mêlerait les deux mots dans le même formulaire.
+// l'un ou l'autre nom (étape 20, C4). Depuis l'étape 21 (question 3 de l'étape 20, tranchée « oui »),
+// les gestes d'une carte suivent aussi sa sorte : « Annuler cette session » sur la carte d'une session
+// du vendredi, avec son aide, ses autres boutons et la phrase qui dit ce qui vient d'être fait. Une
+// aide qui suivrait la sorte à côté d'un bouton qui ne la suit pas mêlerait les deux mots dans le même
+// formulaire. Les refus gardent le mot de l'écran, « séance », pour toute carte : ils nomment la
+// séance par son titre, et le refus d'une action ne lit pas toujours le cours.
 
 import { plural, type PluralForms, type Translations } from './space.js';
 
@@ -121,8 +123,12 @@ interface UpcomingTexts {
 		readonly newTime: string;
 		readonly draft: string;
 	};
-	/** Sous une séance partie ailleurs : son nom, sa nouvelle date et sa nouvelle heure. */
-	readonly movedTo: ByKind<(date: string, time: string) => string>;
+	/**
+	 * Sous une séance partie ailleurs : sa nouvelle date et sa nouvelle heure, seules, « Au … à … ».
+	 * La marque dit déjà l'état ; la phrase le répétait, « Séance déplacée au … à … » (étape 21,
+	 * question 3 de l'étape 20).
+	 */
+	readonly movedTo: (date: string, time: string) => string;
 	/** Sous une séance arrivée d'une autre date : la date où elle était prévue. */
 	readonly originallyOn: (date: string) => string;
 	/**
@@ -132,26 +138,26 @@ interface UpcomingTexts {
 	readonly originallyAt: (time: string) => string;
 	/** Le bouton qui ouvre les options d'une séance, et elles seules (retour A1). */
 	readonly options: string;
-	readonly cancelHelp: string;
-	readonly cancelButton: string;
+	readonly cancelHelp: ByKind<string>;
+	readonly cancelButton: ByKind<string>;
 	/**
 	 * Sur la carte d'une séance déplacée dont la date prévue est passée (étape 20, C2) : le bouton qui
 	 * ouvre ses options, qui ne proposent que l'annulation, et l'aide avant le bouton qui annule. Elle
 	 * ne promet pas de rétablir la séance, comme `cancelHelp` : elle ne se rétablit plus.
 	 */
 	readonly cancelOnly: string;
-	readonly cancelMovedHelp: string;
-	readonly moveLegend: string;
+	readonly cancelMovedHelp: ByKind<string>;
+	readonly moveLegend: ByKind<string>;
 	readonly newDate: string;
 	/** Les dates acceptées, avec celle d'aujourd'hui : plus tôt comme plus tard (retour A2). */
 	readonly newDateHelp: (today: string) => string;
 	readonly newTime: string;
 	readonly newTimeHelp: string;
-	readonly moveButton: string;
-	readonly restoreButton: string;
-	readonly restoreHelp: string;
+	readonly moveButton: ByKind<string>;
+	readonly restoreButton: ByKind<string>;
+	readonly restoreHelp: ByKind<string>;
 	/** Le titre qui dit ce que la dernière action a fait. */
-	readonly done: { readonly [D in UpcomingDone]: string };
+	readonly done: { readonly [D in UpcomingDone]: ByKind<string> };
 	/** Sous ce titre, ce qu'est le message et dans quelles langues il est écrit (retour D1). */
 	readonly messageHelp: string;
 	/**
@@ -223,32 +229,52 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			newTime: 'nouvelle heure',
 			draft: 'brouillon'
 		},
-		movedTo: {
-			course: (date, time) => `Séance déplacée au ${date} à ${time}`,
-			jumua: (date, time) => `Session déplacée au ${date} à ${time}`
-		},
+		movedTo: (date, time) => `Au ${date} à ${time}`,
 		originallyOn: (date) => `Prévue à l’origine le ${date}`,
 		originallyAt: (time) => `Prévue à l’origine : ${time}`,
 		options: 'Annuler ou déplacer',
-		cancelHelp:
-			'Seule cette séance est annulée : le cours continue les autres semaines. Vous pourrez la rétablir ensuite.',
-		cancelButton: 'Annuler cette séance',
+		cancelHelp: {
+			course:
+				'Seule cette séance est annulée : le cours continue les autres semaines. Vous pourrez la rétablir ensuite.',
+			jumua:
+				'Seule cette session est annulée : les autres vendredis ne changent pas. Vous pourrez la rétablir ensuite.'
+		},
+		cancelButton: {
+			course: 'Annuler cette séance',
+			jumua: 'Annuler cette session'
+		},
 		cancelOnly: 'Annuler',
-		cancelMovedHelp:
-			'Sa date prévue est déjà passée : la séance ne peut plus avoir lieu à cette date. Une fois annulée, elle ne pourra pas être rétablie.',
-		moveLegend: 'Déplacer cette séance',
+		cancelMovedHelp: {
+			course:
+				'Sa date prévue est déjà passée : la séance ne peut plus avoir lieu à cette date. Une fois annulée, elle ne pourra pas être rétablie.',
+			jumua:
+				'Son jour prévu est déjà passé : la session ne peut plus avoir lieu ce jour-là. Une fois annulée, elle ne pourra pas être rétablie.'
+		},
+		moveLegend: {
+			course: 'Déplacer cette séance',
+			jumua: 'Déplacer cette session'
+		},
 		newDate: 'Nouvelle date',
 		newDateHelp: (today) =>
 			`À partir d’aujourd’hui, ${today}, plus tôt ou plus tard que la date prévue.`,
 		newTime: 'Heure de début',
 		newTimeHelp: 'Exemple : 19:30',
-		moveButton: 'Déplacer la séance',
-		restoreButton: 'Rétablir la séance',
-		restoreHelp: 'Cela défait le changement : la séance retrouve sa date et son heure habituelles.',
+		moveButton: {
+			course: 'Déplacer la séance',
+			jumua: 'Déplacer la session'
+		},
+		restoreButton: {
+			course: 'Rétablir la séance',
+			jumua: 'Rétablir la session'
+		},
+		restoreHelp: {
+			course: 'Cela défait le changement : la séance retrouve sa date et son heure habituelles.',
+			jumua: 'Cela défait le changement : la session retrouve son jour et son heure habituels.'
+		},
 		done: {
-			cancelled: 'La séance est annulée.',
-			moved: 'La séance est déplacée.',
-			restored: 'La séance est rétablie.'
+			cancelled: { course: 'La séance est annulée.', jumua: 'La session est annulée.' },
+			moved: { course: 'La séance est déplacée.', jumua: 'La session est déplacée.' },
+			restored: { course: 'La séance est rétablie.', jumua: 'La session est rétablie.' }
 		},
 		messageHelp:
 			'Un message à envoyer à votre communauté, par exemple dans WhatsApp. Il est écrit dans chaque langue de votre page publique, la langue du cours d’abord : ouvrez une langue, puis copiez son texte.',
@@ -336,32 +362,59 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			newTime: 'neue Uhrzeit',
 			draft: 'Entwurf'
 		},
-		movedTo: {
-			course: (date, time) => `Termin verschoben auf ${date}, um ${time}`,
-			jumua: (date, time) => `Durchgang verschoben auf ${date}, um ${time}`
-		},
+		movedTo: (date, time) => `Auf ${date}, um ${time}`,
 		originallyOn: (date) => `Ursprünglich geplant am ${date}`,
 		originallyAt: (time) => `Ursprünglich geplant: ${time}`,
 		options: 'Absagen oder verschieben',
-		cancelHelp:
-			'Nur dieser Termin wird abgesagt: Der Kurs geht in den anderen Wochen weiter. Sie können den Termin danach wiederherstellen.',
-		cancelButton: 'Diesen Termin absagen',
+		cancelHelp: {
+			course:
+				'Nur dieser Termin wird abgesagt: Der Kurs geht in den anderen Wochen weiter. Sie können den Termin danach wiederherstellen.',
+			jumua:
+				'Nur dieser Durchgang wird abgesagt: Die anderen Freitage bleiben unverändert. Sie können den Durchgang danach wiederherstellen.'
+		},
+		cancelButton: {
+			course: 'Diesen Termin absagen',
+			jumua: 'Diesen Durchgang absagen'
+		},
 		cancelOnly: 'Absagen',
-		cancelMovedHelp:
-			'Das geplante Datum ist schon vorbei: Der Termin kann nicht mehr an diesem Datum stattfinden. Wenn Sie ihn absagen, können Sie ihn danach nicht wiederherstellen.',
-		moveLegend: 'Diesen Termin verschieben',
+		cancelMovedHelp: {
+			course:
+				'Das geplante Datum ist schon vorbei: Der Termin kann nicht mehr an diesem Datum stattfinden. Wenn Sie ihn absagen, können Sie ihn danach nicht wiederherstellen.',
+			jumua:
+				'Der geplante Tag ist schon vorbei: Der Durchgang kann nicht mehr an diesem Tag stattfinden. Wenn Sie ihn absagen, können Sie ihn danach nicht wiederherstellen.'
+		},
+		moveLegend: {
+			course: 'Diesen Termin verschieben',
+			jumua: 'Diesen Durchgang verschieben'
+		},
 		newDate: 'Neues Datum',
 		newDateHelp: (today) => `Ab heute, ${today}, früher oder später als das geplante Datum.`,
 		newTime: 'Anfangszeit',
 		newTimeHelp: 'Beispiel: 19:30',
-		moveButton: 'Termin verschieben',
-		restoreButton: 'Termin wiederherstellen',
-		restoreHelp:
-			'Damit machen Sie die Änderung rückgängig: Der Termin findet wieder an seinem üblichen Datum und zu seiner üblichen Zeit statt.',
+		moveButton: {
+			course: 'Termin verschieben',
+			jumua: 'Durchgang verschieben'
+		},
+		restoreButton: {
+			course: 'Termin wiederherstellen',
+			jumua: 'Durchgang wiederherstellen'
+		},
+		restoreHelp: {
+			course:
+				'Damit machen Sie die Änderung rückgängig: Der Termin findet wieder an seinem üblichen Datum und zu seiner üblichen Zeit statt.',
+			jumua:
+				'Damit machen Sie die Änderung rückgängig: Der Durchgang findet wieder an seinem üblichen Tag und zu seiner üblichen Zeit statt.'
+		},
 		done: {
-			cancelled: 'Der Termin ist abgesagt.',
-			moved: 'Sie haben den Termin verschoben.',
-			restored: 'Der Termin ist wiederhergestellt.'
+			cancelled: { course: 'Der Termin ist abgesagt.', jumua: 'Der Durchgang ist abgesagt.' },
+			moved: {
+				course: 'Sie haben den Termin verschoben.',
+				jumua: 'Sie haben den Durchgang verschoben.'
+			},
+			restored: {
+				course: 'Der Termin ist wiederhergestellt.',
+				jumua: 'Der Durchgang ist wiederhergestellt.'
+			}
 		},
 		messageHelp:
 			'Eine Nachricht für Ihre Gemeinschaft, zum Beispiel für WhatsApp. Sie steht in jeder Sprache Ihrer öffentlichen Seite bereit, die Sprache des Kurses zuerst: Öffnen Sie eine Sprache und kopieren Sie deren Text.',
@@ -448,32 +501,51 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			newTime: 'nuovo orario',
 			draft: 'bozza'
 		},
-		movedTo: {
-			course: (date, time) => `Lezione spostata a ${date} alle ${time}`,
-			jumua: (date, time) => `Turno spostato a ${date} alle ${time}`
-		},
+		movedTo: (date, time) => `A ${date} alle ${time}`,
 		originallyOn: (date) => `Prevista inizialmente per ${date}`,
 		originallyAt: (time) => `Prevista inizialmente: ${time}`,
 		options: 'Annulla o sposta',
-		cancelHelp:
-			'Viene annullata solo questa lezione: il corso continua nelle altre settimane. Potrai ripristinarla dopo.',
-		cancelButton: 'Annulla questa lezione',
+		cancelHelp: {
+			course:
+				'Viene annullata solo questa lezione: il corso continua nelle altre settimane. Potrai ripristinarla dopo.',
+			jumua:
+				'Viene annullato solo questo turno: gli altri venerdì non cambiano. Potrai ripristinarlo dopo.'
+		},
+		cancelButton: {
+			course: 'Annulla questa lezione',
+			jumua: 'Annulla questo turno'
+		},
 		cancelOnly: 'Annulla',
-		cancelMovedHelp:
-			'La data prevista è già passata: la lezione non può più tenersi in quella data. Una volta annullata, non potrai ripristinarla.',
-		moveLegend: 'Sposta questa lezione',
+		cancelMovedHelp: {
+			course:
+				'La data prevista è già passata: la lezione non può più tenersi in quella data. Una volta annullata, non potrai ripristinarla.',
+			jumua:
+				'Il giorno previsto è già passato: il turno non può più tenersi quel giorno. Una volta annullato, non potrai ripristinarlo.'
+		},
+		moveLegend: {
+			course: 'Sposta questa lezione',
+			jumua: 'Sposta questo turno'
+		},
 		newDate: 'Nuova data',
 		newDateHelp: (today) => `Da oggi, ${today}, prima o dopo la data prevista.`,
 		newTime: 'Ora di inizio',
 		newTimeHelp: 'Esempio: 19:30',
-		moveButton: 'Sposta la lezione',
-		restoreButton: 'Ripristina la lezione',
-		restoreHelp:
-			'Così annulli la modifica: la lezione torna alla sua data e al suo orario abituali.',
+		moveButton: {
+			course: 'Sposta la lezione',
+			jumua: 'Sposta il turno'
+		},
+		restoreButton: {
+			course: 'Ripristina la lezione',
+			jumua: 'Ripristina il turno'
+		},
+		restoreHelp: {
+			course: 'Così annulli la modifica: la lezione torna alla sua data e al suo orario abituali.',
+			jumua: 'Così annulli la modifica: il turno torna al suo giorno e al suo orario abituali.'
+		},
 		done: {
-			cancelled: 'La lezione è annullata.',
-			moved: 'La lezione è spostata.',
-			restored: 'La lezione è ripristinata.'
+			cancelled: { course: 'La lezione è annullata.', jumua: 'Il turno è annullato.' },
+			moved: { course: 'La lezione è spostata.', jumua: 'Il turno è spostato.' },
+			restored: { course: 'La lezione è ripristinata.', jumua: 'Il turno è ripristinato.' }
 		},
 		messageHelp:
 			'Un messaggio da mandare alla tua comunità, per esempio su WhatsApp. È scritto in ogni lingua della tua pagina pubblica, prima la lingua del corso: apri una lingua, poi copia il suo testo.',
@@ -560,31 +632,54 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			newTime: 'new time',
 			draft: 'draft'
 		},
-		movedTo: {
-			course: (date, time) => `Session moved to ${date} at ${time}`,
-			jumua: (date, time) => `Session moved to ${date} at ${time}`
-		},
+		movedTo: (date, time) => `To ${date} at ${time}`,
 		originallyOn: (date) => `Originally planned for ${date}`,
 		originallyAt: (time) => `Originally planned: ${time}`,
 		options: 'Cancel or move',
-		cancelHelp:
-			'Only this session is cancelled: the course continues in the other weeks. You can restore it afterwards.',
-		cancelButton: 'Cancel this session',
+		cancelHelp: {
+			course:
+				'Only this session is cancelled: the course continues in the other weeks. You can restore it afterwards.',
+			jumua:
+				'Only this session is cancelled: other Fridays do not change. You can restore it afterwards.'
+		},
+		cancelButton: {
+			course: 'Cancel this session',
+			jumua: 'Cancel this session'
+		},
 		cancelOnly: 'Cancel',
-		cancelMovedHelp:
-			'Its planned date has already passed: the session can no longer take place on that date. Once cancelled, it cannot be restored.',
-		moveLegend: 'Move this session',
+		cancelMovedHelp: {
+			course:
+				'Its planned date has already passed: the session can no longer take place on that date. Once cancelled, it cannot be restored.',
+			jumua:
+				'Its planned day has already passed: the session can no longer take place on that day. Once cancelled, it cannot be restored.'
+		},
+		moveLegend: {
+			course: 'Move this session',
+			jumua: 'Move this session'
+		},
 		newDate: 'New date',
 		newDateHelp: (today) => `From today, ${today}, earlier or later than the planned date.`,
 		newTime: 'Start time',
 		newTimeHelp: 'Example: 19:30',
-		moveButton: 'Move the session',
-		restoreButton: 'Restore the session',
-		restoreHelp: 'This undoes the change: the session goes back to its usual date and time.',
+		moveButton: {
+			course: 'Move the session',
+			jumua: 'Move the session'
+		},
+		restoreButton: {
+			course: 'Restore the session',
+			jumua: 'Restore the session'
+		},
+		restoreHelp: {
+			course: 'This undoes the change: the session goes back to its usual date and time.',
+			jumua: 'This undoes the change: the session goes back to its usual day and time.'
+		},
 		done: {
-			cancelled: 'The session is cancelled.',
-			moved: 'The session has been moved.',
-			restored: 'The session has been restored.'
+			cancelled: { course: 'The session is cancelled.', jumua: 'The session is cancelled.' },
+			moved: { course: 'The session has been moved.', jumua: 'The session has been moved.' },
+			restored: {
+				course: 'The session has been restored.',
+				jumua: 'The session has been restored.'
+			}
 		},
 		messageHelp:
 			'A message to send to your community, for example on WhatsApp. It is written in each language of your public page, the language of the course first: open a language, then copy its text.',
@@ -678,30 +773,49 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			newTime: 'وقت جديد',
 			draft: 'مسودة'
 		},
-		movedTo: {
-			course: (date, time) => `حصة منقولة إلى يوم ${date} في الساعة ${time}`,
-			jumua: (date, time) => `موعد منقول إلى يوم ${date} في الساعة ${time}`
-		},
+		movedTo: (date, time) => `إلى يوم ${date} في الساعة ${time}`,
 		originallyOn: (date) => `كانت مقرّرة يوم ${date}`,
 		originallyAt: (time) => `الوقت المقرّر أصلًا: ${time}`,
 		options: 'إلغاء أو نقل',
-		cancelHelp: 'تُلغى هذه الحصة وحدها: يستمر الدرس في الأسابيع الأخرى. يمكنك استعادتها بعد ذلك.',
-		cancelButton: 'إلغاء هذه الحصة',
+		cancelHelp: {
+			course: 'تُلغى هذه الحصة وحدها: يستمر الدرس في الأسابيع الأخرى. يمكنك استعادتها بعد ذلك.',
+			jumua: 'يُلغى هذا الموعد وحده: لا تتغيّر أيام الجمعة الأخرى. يمكنك استعادته بعد ذلك.'
+		},
+		cancelButton: {
+			course: 'إلغاء هذه الحصة',
+			jumua: 'إلغاء هذا الموعد'
+		},
 		cancelOnly: 'إلغاء',
-		cancelMovedHelp:
-			'التاريخ المقرّر لهذه الحصة قد مضى: لم يعد من الممكن أن تُقام فيه. وإذا ألغيتها، فلن يمكنك استعادتها بعد ذلك.',
-		moveLegend: 'نقل هذه الحصة',
+		cancelMovedHelp: {
+			course:
+				'التاريخ المقرّر لهذه الحصة قد مضى: لم يعد من الممكن أن تُقام فيه. وإذا ألغيتها، فلن يمكنك استعادتها بعد ذلك.',
+			jumua:
+				'اليوم المقرّر لهذا الموعد قد مضى: لم يعد من الممكن أن يُقام فيه. وإذا ألغيته، فلن يمكنك استعادته بعد ذلك.'
+		},
+		moveLegend: {
+			course: 'نقل هذه الحصة',
+			jumua: 'نقل هذا الموعد'
+		},
 		newDate: 'التاريخ الجديد',
 		newDateHelp: (today) => `ابتداءً من اليوم، ${today}، قبل التاريخ المقرّر أو بعده.`,
 		newTime: 'وقت البداية',
 		newTimeHelp: 'مثال: 19:30',
-		moveButton: 'نقل الحصة',
-		restoreButton: 'استعادة الحصة',
-		restoreHelp: 'بهذا يُلغى التغيير: تعود الحصة إلى تاريخها ووقتها المعتادين.',
+		moveButton: {
+			course: 'نقل الحصة',
+			jumua: 'نقل الموعد'
+		},
+		restoreButton: {
+			course: 'استعادة الحصة',
+			jumua: 'استعادة الموعد'
+		},
+		restoreHelp: {
+			course: 'بهذا يُلغى التغيير: تعود الحصة إلى تاريخها ووقتها المعتادين.',
+			jumua: 'بهذا يُلغى التغيير: يعود الموعد إلى يومه ووقته المعتادين.'
+		},
 		done: {
-			cancelled: 'أُلغيت الحصة.',
-			moved: 'نُقلت الحصة.',
-			restored: 'استُعيدت الحصة.'
+			cancelled: { course: 'أُلغيت الحصة.', jumua: 'أُلغي الموعد.' },
+			moved: { course: 'نُقلت الحصة.', jumua: 'نُقل الموعد.' },
+			restored: { course: 'استُعيدت الحصة.', jumua: 'استُعيد الموعد.' }
 		},
 		messageHelp:
 			'رسالة ترسلها إلى جماعتك، في WhatsApp مثلًا. هي مكتوبة بكل لغة من لغات صفحتك العامة، ولغة الدرس أولًا: افتح لغة، ثم انسخ نصها.',

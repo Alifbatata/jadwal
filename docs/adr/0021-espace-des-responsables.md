@@ -487,6 +487,19 @@ journal.
 | Annuler cette séance | `unreadableDate` (À venir), `dateUnreadable`, `timeUnreadable` (vendredi) | 400    | une date ou une heure manque ou est illisible : la carte n'envoie pas ce qu'elle montrait |
 | Annuler cette séance | `sessionGone`                                                             | 404    | le cours ou la session n'existe pas, ou plus                                              |
 
+### Addendum du 19.10.2026 : les questions laissées par l'étape 20 (étape 21)
+
+Le chef de projet les a toutes tranchées « oui ».
+
+- **Les gestes d'une carte suivent sa sorte** (question 3). Sur la carte d'une session du vendredi,
+  « Annuler cette session », avec son aide (« les autres vendredis ne changent pas »), et de même
+  le déplacement, « Rétablir » et son aide, l'aide d'une annulation définitive, et le titre qui suit
+  le geste, « La session est annulée. » : l'action rend la sorte du cours avec ce qu'elle a fait.
+  Une aide qui suivrait la sorte à côté d'un bouton qui ne la suit pas mêlerait les deux mots dans
+  le même formulaire. Les refus gardent « séance » : ils nomment la séance par son titre.
+- **Sous une carte déplacée**, la phrase ne dit plus que le jour et l'heure, « Au mardi 29.09.2026
+  à 18:00 » : la marque, juste au-dessus, dit déjà « Séance déplacée », que la phrase répétait.
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 4 de la feuille de route (espace des responsables). Les numéros 0022 et
@@ -501,3 +514,5 @@ les champs de l'horaire d'un cours, exigés et bornés selon le choix seulement 
 les deux écrans qui refusent d'annuler ou de déplacer une séance un jour où le cours n'en a pas.
 Complété le 28.09.2026 (étape 20) : une séance déplacée dont la date prévue est passée ne se
 rétablit plus, elle s'annule à sa nouvelle date, avec son message.
+Complété le 19.10.2026 (étape 21) : les gestes d'une carte suivent sa sorte, et la phrase sous une
+carte déplacée ne répète plus sa marque.

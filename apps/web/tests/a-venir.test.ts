@@ -4266,26 +4266,24 @@ describe('C4 : l’état d’une carte s’écrit avec son propre nom (étape 20
 			}
 		}
 	};
-	/** La phrase sous la carte d'une séance ou d'une session partie ailleurs. */
-	const DEPLACEE_AU: Record<
-		'seance' | 'session',
-		Record<Langue, (date: string, heure: string) => string>
-	> = {
-		seance: {
-			fr: (date, heure) => `Séance déplacée au ${date} à ${heure}`,
-			de: (date, heure) => `Termin verschoben auf ${date}, um ${heure}`,
-			it: (date, heure) => `Lezione spostata a ${date} alle ${heure}`,
-			en: (date, heure) => `Session moved to ${date} at ${heure}`,
-			ar: (date, heure) => `حصة منقولة إلى يوم ${date} في الساعة ${heure}`
-		},
-		session: {
-			fr: (date, heure) => `Session déplacée au ${date} à ${heure}`,
-			de: (date, heure) => `Durchgang verschoben auf ${date}, um ${heure}`,
-			it: (date, heure) => `Turno spostato a ${date} alle ${heure}`,
-			en: (date, heure) => `Session moved to ${date} at ${heure}`,
-			ar: (date, heure) => `موعد منقول إلى يوم ${date} في الساعة ${heure}`
-		}
+	/**
+	 * La phrase sous la carte d'une séance ou d'une session partie ailleurs : le jour et l'heure
+	 * seuls, « Au … à … », après la marque qui dit déjà l'état (étape 21, question 3 de l'étape 20).
+	 * Elle répétait la marque : « Séance déplacée », puis « Séance déplacée au … à … ».
+	 */
+	const AU: Record<Langue, (date: string, heure: string) => string> = {
+		fr: (date, heure) => `Au ${date} à ${heure}`,
+		de: (date, heure) => `Auf ${date}, um ${heure}`,
+		it: (date, heure) => `A ${date} alle ${heure}`,
+		en: (date, heure) => `To ${date} at ${heure}`,
+		ar: (date, heure) => `إلى يوم ${date} في الساعة ${heure}`
 	};
+	/** Les lignes de détail d'une carte, chacune réduite à son texte. */
+	function details(fragment: string): string[] {
+		return [...fragment.matchAll(/<p\b[^>]*class="details[^"]*"[^>]*>([\s\S]*?)<\/p>/g)].map(
+			(trouve) => texte(trouve[1] ?? '')
+		);
+	}
 
 	const organisation = newId();
 	const RESPONSABLE_C4 = 'avenir-c4@example.test';
@@ -4296,6 +4294,9 @@ describe('C4 : l’état d’une carte s’écrit avec son propre nom (étape 20
 	const premiere = newId();
 	const seconde = newId();
 	const JUMUA = ['Jumu’a de midi', 'Jumu’a de l’après-midi'] as const;
+	/** Une troisième session, prévue telle quelle : ses options (étape 21, question 3). */
+	const troisieme = newId();
+	const JUMUA_DU_SOIR = 'Jumu’a du soir';
 	/** Le prochain vendredi de l'écran, aujourd'hui compris. */
 	const vendredi = [0, 1, 2, 3, 4, 5, 6]
 		.map((pas) => jour(pas))
@@ -4338,7 +4339,8 @@ describe('C4 : l’état d’une carte s’écrit avec son propre nom (étape 20
 			`);
 			for (const [id, rang, debut, fin] of [
 				[premiere, 1, '12:10', '12:50'],
-				[seconde, 2, '13:30', '14:10']
+				[seconde, 2, '13:30', '14:10'],
+				[troisieme, 3, '15:30', '16:10']
 			] as const) {
 				await tx.execute(sql`
 					insert into "course" ("id", "organization_id", "kind", "jumua_order", "status",
@@ -4353,7 +4355,8 @@ describe('C4 : l’état d’une carte s’écrit avec son propre nom (étape 20
 			for (const [id, titre] of [
 				[fiqh, FIQH],
 				[premiere, JUMUA[0]],
-				[seconde, JUMUA[1]]
+				[seconde, JUMUA[1]],
+				[troisieme, JUMUA_DU_SOIR]
 			] as const) {
 				await tx.execute(sql`
 					insert into "course_translation" ("id", "organization_id", "course_id", "language",
@@ -4403,14 +4406,15 @@ describe('C4 : l’état d’une carte s’écrit avec son propre nom (étape 20
 				tx.execute(sql`update "user" set "language" = ${langue} where "id" = ${utilisateur}`)
 			);
 			const html = await (await get('/', cookie)).text();
+			// La phrase qui suit la marque ne la répète plus (étape 21) : l'état ne se lit qu'une fois.
 			const cours = carte(html, jour(2), FIQH, 'moved_away');
 			expect(marques(cours)).toEqual([MARQUE.deplacee.seance[langue]]);
-			expect(texte(cours)).toContain(DEPLACEE_AU.seance[langue](dateLue(langue, jour(3)), '20:30'));
+			expect(details(cours).at(-1)).toBe(AU[langue](dateLue(langue, jour(3)), '20:30'));
+			expect(texte(cours).split(MARQUE.deplacee.seance[langue])).toHaveLength(2);
 			const session = carte(html, vendredi, JUMUA[1], 'moved_away');
 			expect(marques(session)).toEqual([MARQUE.deplacee.session[langue]]);
-			expect(texte(session)).toContain(
-				DEPLACEE_AU.session[langue](dateLue(langue, ailleurs), '15:00')
-			);
+			expect(details(session).at(-1)).toBe(AU[langue](dateLue(langue, ailleurs), '15:00'));
+			expect(texte(session).split(MARQUE.deplacee.session[langue])).toHaveLength(2);
 		}
 	);
 
@@ -4449,6 +4453,255 @@ describe('C4 : l’état d’une carte s’écrit avec son propre nom (étape 20
 			expect(marques(carte(html, ailleurs, JUMUA[1], 'moved_here'))).toEqual([
 				DATE_EXCEPTIONNELLE.session[langue]
 			]);
+		}
+	);
+
+	/**
+	 * Les textes des gestes d'une carte, selon sa sorte (étape 21, question 3 de l'étape 20, tranchée
+	 * « oui ») : « Annuler cette session » sur la carte d'une session du vendredi, et avec lui son
+	 * aide, ses autres gestes et la phrase qui dit ce qui vient d'être fait. Une aide qui suivrait la
+	 * sorte à côté d'un bouton qui ne la suit pas mêlerait les deux mots dans le même formulaire.
+	 */
+	const GESTES: Record<
+		'seance' | 'session',
+		Record<
+			Langue,
+			{
+				aide: string;
+				annuler: string;
+				legende: string;
+				deplacer: string;
+				retablir: string;
+				aideRetablir: string;
+				fait: [string, string, string];
+			}
+		>
+	> = {
+		seance: {
+			fr: {
+				aide: 'Seule cette séance est annulée : le cours continue les autres semaines. Vous pourrez la rétablir ensuite.',
+				annuler: 'Annuler cette séance',
+				legende: 'Déplacer cette séance',
+				deplacer: 'Déplacer la séance',
+				retablir: 'Rétablir la séance',
+				aideRetablir:
+					'Cela défait le changement : la séance retrouve sa date et son heure habituelles.',
+				fait: ['La séance est annulée.', 'La séance est déplacée.', 'La séance est rétablie.']
+			},
+			de: {
+				aide: 'Nur dieser Termin wird abgesagt: Der Kurs geht in den anderen Wochen weiter. Sie können den Termin danach wiederherstellen.',
+				annuler: 'Diesen Termin absagen',
+				legende: 'Diesen Termin verschieben',
+				deplacer: 'Termin verschieben',
+				retablir: 'Termin wiederherstellen',
+				aideRetablir:
+					'Damit machen Sie die Änderung rückgängig: Der Termin findet wieder an seinem üblichen Datum und zu seiner üblichen Zeit statt.',
+				fait: [
+					'Der Termin ist abgesagt.',
+					'Sie haben den Termin verschoben.',
+					'Der Termin ist wiederhergestellt.'
+				]
+			},
+			it: {
+				aide: 'Viene annullata solo questa lezione: il corso continua nelle altre settimane. Potrai ripristinarla dopo.',
+				annuler: 'Annulla questa lezione',
+				legende: 'Sposta questa lezione',
+				deplacer: 'Sposta la lezione',
+				retablir: 'Ripristina la lezione',
+				aideRetablir:
+					'Così annulli la modifica: la lezione torna alla sua data e al suo orario abituali.',
+				fait: ['La lezione è annullata.', 'La lezione è spostata.', 'La lezione è ripristinata.']
+			},
+			en: {
+				aide: 'Only this session is cancelled: the course continues in the other weeks. You can restore it afterwards.',
+				annuler: 'Cancel this session',
+				legende: 'Move this session',
+				deplacer: 'Move the session',
+				retablir: 'Restore the session',
+				aideRetablir: 'This undoes the change: the session goes back to its usual date and time.',
+				fait: [
+					'The session is cancelled.',
+					'The session has been moved.',
+					'The session has been restored.'
+				]
+			},
+			ar: {
+				aide: 'تُلغى هذه الحصة وحدها: يستمر الدرس في الأسابيع الأخرى. يمكنك استعادتها بعد ذلك.',
+				annuler: 'إلغاء هذه الحصة',
+				legende: 'نقل هذه الحصة',
+				deplacer: 'نقل الحصة',
+				retablir: 'استعادة الحصة',
+				aideRetablir: 'بهذا يُلغى التغيير: تعود الحصة إلى تاريخها ووقتها المعتادين.',
+				fait: ['أُلغيت الحصة.', 'نُقلت الحصة.', 'استُعيدت الحصة.']
+			}
+		},
+		session: {
+			fr: {
+				aide: 'Seule cette session est annulée : les autres vendredis ne changent pas. Vous pourrez la rétablir ensuite.',
+				annuler: 'Annuler cette session',
+				legende: 'Déplacer cette session',
+				deplacer: 'Déplacer la session',
+				retablir: 'Rétablir la session',
+				aideRetablir:
+					'Cela défait le changement : la session retrouve son jour et son heure habituels.',
+				fait: ['La session est annulée.', 'La session est déplacée.', 'La session est rétablie.']
+			},
+			de: {
+				aide: 'Nur dieser Durchgang wird abgesagt: Die anderen Freitage bleiben unverändert. Sie können den Durchgang danach wiederherstellen.',
+				annuler: 'Diesen Durchgang absagen',
+				legende: 'Diesen Durchgang verschieben',
+				deplacer: 'Durchgang verschieben',
+				retablir: 'Durchgang wiederherstellen',
+				aideRetablir:
+					'Damit machen Sie die Änderung rückgängig: Der Durchgang findet wieder an seinem üblichen Tag und zu seiner üblichen Zeit statt.',
+				fait: [
+					'Der Durchgang ist abgesagt.',
+					'Sie haben den Durchgang verschoben.',
+					'Der Durchgang ist wiederhergestellt.'
+				]
+			},
+			it: {
+				aide: 'Viene annullato solo questo turno: gli altri venerdì non cambiano. Potrai ripristinarlo dopo.',
+				annuler: 'Annulla questo turno',
+				legende: 'Sposta questo turno',
+				deplacer: 'Sposta il turno',
+				retablir: 'Ripristina il turno',
+				aideRetablir:
+					'Così annulli la modifica: il turno torna al suo giorno e al suo orario abituali.',
+				fait: ['Il turno è annullato.', 'Il turno è spostato.', 'Il turno è ripristinato.']
+			},
+			en: {
+				aide: 'Only this session is cancelled: other Fridays do not change. You can restore it afterwards.',
+				annuler: 'Cancel this session',
+				legende: 'Move this session',
+				deplacer: 'Move the session',
+				retablir: 'Restore the session',
+				aideRetablir: 'This undoes the change: the session goes back to its usual day and time.',
+				fait: [
+					'The session is cancelled.',
+					'The session has been moved.',
+					'The session has been restored.'
+				]
+			},
+			ar: {
+				aide: 'يُلغى هذا الموعد وحده: لا تتغيّر أيام الجمعة الأخرى. يمكنك استعادته بعد ذلك.',
+				annuler: 'إلغاء هذا الموعد',
+				legende: 'نقل هذا الموعد',
+				deplacer: 'نقل الموعد',
+				retablir: 'استعادة الموعد',
+				aideRetablir: 'بهذا يُلغى التغيير: يعود الموعد إلى يومه ووقته المعتادين.',
+				fait: ['أُلغي الموعد.', 'نُقل الموعد.', 'استُعيد الموعد.']
+			}
+		}
+	};
+
+	/** Ce que disent les options d'une carte prévue : l'aide et le bouton qui annule, puis le déplacement. */
+	function optionsDe(fragment: string) {
+		const contenu = blocsDetails(fragment)[0]?.contenu ?? '';
+		const annulation =
+			contenu.match(/<form\b[^>]*action="\?\/annuler"[^>]*>([\s\S]*?)<\/form>/)?.[1] ?? '';
+		const deplacement =
+			contenu.match(/<form\b[^>]*action="\?\/deplacer"[^>]*>([\s\S]*?)<\/form>/)?.[1] ?? '';
+		return {
+			aide: texte(annulation.match(/<p\b[^>]*class="aide[^"]*"[^>]*>([\s\S]*?)<\/p>/)?.[1] ?? ''),
+			annuler: texte(annulation.match(/<button\b[^>]*>([\s\S]*?)<\/button>/)?.[1] ?? ''),
+			legende: texte(deplacement.match(/<legend\b[^>]*>([\s\S]*?)<\/legend>/)?.[1] ?? ''),
+			deplacer: texte(deplacement.match(/<button\b[^>]*>([\s\S]*?)<\/button>/)?.[1] ?? '')
+		};
+	}
+
+	/** Ce que dit le « Rétablir » d'une carte : son bouton, puis son aide. */
+	function retablissementDe(fragment: string) {
+		const formulaire =
+			fragment.match(/<form\b[^>]*action="\?\/retablir"[^>]*>([\s\S]*?)<\/form>/)?.[1] ?? '';
+		return {
+			retablir: texte(formulaire.match(/<button\b[^>]*>([\s\S]*?)<\/button>/)?.[1] ?? ''),
+			aideRetablir: texte(
+				formulaire.match(/<span\b[^>]*class="aide[^"]*"[^>]*>([\s\S]*?)<\/span>/)?.[1] ?? ''
+			)
+		};
+	}
+
+	/** Le titre qui dit ce que l'action vient de faire. */
+	function fait(html: string): string {
+		return texte(section(html, 'message-titre').match(/<h2\b[^>]*>([\s\S]*?)<\/h2>/)?.[1] ?? '');
+	}
+
+	async function enLangue(langue: Langue): Promise<string> {
+		await maintenance((tx) =>
+			tx.execute(sql`update "user" set "language" = ${langue} where "id" = ${utilisateur}`)
+		);
+		return (await get('/', cookie)).text();
+	}
+
+	it.each(LANGUES)(
+		'says « session » on the options of a Friday session, and « séance » on those of a course, in %s (step 21)',
+		async (langue) => {
+			const html = await enLangue(langue);
+			const { aide, annuler, legende, deplacer } = GESTES.seance[langue];
+			expect(optionsDe(carte(html, jour(4), FIQH, 'scheduled'))).toEqual({
+				aide,
+				annuler,
+				legende,
+				deplacer
+			});
+			const session = GESTES.session[langue];
+			expect(optionsDe(carte(html, vendredi, JUMUA_DU_SOIR, 'scheduled'))).toEqual({
+				aide: session.aide,
+				annuler: session.annuler,
+				legende: session.legende,
+				deplacer: session.deplacer
+			});
+		}
+	);
+
+	it.each(LANGUES)(
+		'says « session » on « Rétablir » of a Friday session, and « séance » for a course, in %s (step 21)',
+		async (langue) => {
+			const html = await enLangue(langue);
+			for (const [fragment, sorte] of [
+				[carte(html, jour(1), FIQH, 'cancelled'), 'seance'],
+				[carte(html, jour(2), FIQH, 'moved_away'), 'seance'],
+				[carte(html, vendredi, JUMUA[0], 'cancelled'), 'session'],
+				[carte(html, vendredi, JUMUA[1], 'moved_away'), 'session']
+			] as const) {
+				const { retablir, aideRetablir } = GESTES[sorte][langue];
+				expect(retablissementDe(fragment), sorte).toEqual({ retablir, aideRetablir });
+			}
+		}
+	);
+
+	it.each(LANGUES)(
+		'says what was just done to a Friday session with its own word, in %s (step 21)',
+		async (langue) => {
+			await enLangue(langue);
+			const [annulee, deplacee, retablie] = GESTES.session[langue].fait;
+			try {
+				const annulation = await postForm(
+					'/?/annuler',
+					{ courseId: troisieme, date: vendredi },
+					cookie
+				);
+				expect(annulation.status).toBe(200);
+				expect(fait(await annulation.text())).toBe(annulee);
+				const retablissement = await postForm(
+					'/?/retablir',
+					{ courseId: troisieme, date: vendredi },
+					cookie
+				);
+				expect(fait(await retablissement.text())).toBe(retablie);
+				const deplacement = await postForm(
+					'/?/deplacer',
+					{ courseId: troisieme, date: vendredi, toDate: vendredi, toStart: '17:00' },
+					cookie
+				);
+				expect(deplacement.status).toBe(200);
+				expect(fait(await deplacement.text())).toBe(deplacee);
+			} finally {
+				await maintenance((tx) =>
+					tx.execute(sql`delete from "session_exception" where "course_id" = ${troisieme}`)
+				);
+			}
 		}
 	);
 });

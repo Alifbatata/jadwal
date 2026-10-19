@@ -51,10 +51,10 @@ l'écran. Un cours en brouillon s'affiche aussi, avec la marque `brouillon` : il
 page publique ni dans le programme de la semaine. Une session du vendredi en brouillon s'affiche à
 sa propre heure, mais ne donne pas la sienne au Dhuhr : un cours prévu après le Dhuhr a sur sa
 carte l'heure de la page publique et du programme de la semaine, et un déplacement le même jour
-l'annonce « au lieu de » cette heure-là (étape 19, relecture de D4). Une séance déplacée dit
-`Séance déplacée au mardi 29.09.2026 à 18:00`, une session du vendredi
-`Session déplacée au samedi 03.10.2026 à 15:00` ; sa nouvelle date dit
-`Prévue à l'origine le lundi 28.09.2026`. Déplacée le même jour à une autre heure, la carte
+l'annonce « au lieu de » cette heure-là (étape 19, relecture de D4). Une séance déplacée porte la
+marque `Séance déplacée`, ou `Session déplacée`, puis la seule phrase `Au mardi 29.09.2026 à 18:00`
+(étape 21, question 3 de l'étape 20 : la phrase répétait la marque, `Séance déplacée au …`) ; sa
+nouvelle date dit `Prévue à l'origine le lundi 28.09.2026`. Déplacée le même jour à une autre heure, la carte
 d'arrivée porte `nouvelle heure` et `Prévue à l'origine : 19:00 – 20:30`.
 
 **Les options sont fermées** (retour A1). Chaque carte a un repli `Annuler ou déplacer`, fermé au
@@ -70,6 +70,14 @@ ensuite.` et le bouton `Annuler cette séance` ;
   - `Heure de début`, avec l'aide `Exemple : 19:30` ;
   - le bouton `Déplacer la séance`. Le formulaire envoie aussi, sans le montrer, l'heure que la
     carte affichait.
+
+Sur la carte d'une session du vendredi, ces textes parlent d'une session (étape 21, question 3 de
+l'étape 20, décision du chef de projet) : `Seule cette session est annulée : les autres vendredis ne
+changent pas. Vous pourrez la rétablir ensuite.`, `Annuler cette session`, `Déplacer cette
+session`, `Déplacer la session`, puis `Rétablir la session` et `Cela défait le changement : la
+session retrouve son jour et son heure habituels.`, et le titre qui suit un geste, `La session est
+annulée.` Dans les autres langues, les mots de l'écran du vendredi : `Durchgang`, `turno`, `session`,
+`موعد`. Les refus gardent `séance` : ils nomment la séance par son titre.
 
 Une séance annulée ou déplacée a le bouton `Rétablir la séance`, suivi de `Cela défait le
 changement : la séance retrouve sa date et son heure habituelles.` La carte `date exceptionnelle`

@@ -633,8 +633,16 @@ docs/adr/0027-pages-publiques.md | DATE | 19.10.2026
 docs/adr/0044-acceptation-des-conditions.md | DATE | 19.10.2026
 docs/adr/0047-langue-de-l-espace.md | DATE | 19.10.2026
 docs/adr/0033-priere-du-vendredi.md | DATE | 19.10.2026
+docs/adr/0021-espace-des-responsables.md | DATE | 19.10.2026
 # La marque d'une séance arrivée d'un autre jour, rangée par sorte (question 4 de l'étape 20) : le
 # français et l'anglais n'ont qu'un mot pour la séance d'un cours et la session du vendredi, et les
 # deux valeurs voisines s'écrivent de même, comme « Session cancelled » plus haut.
 apps/web/src/lib/i18n/upcoming.ts | FRENCH_WORD_REPEAT_RULE | date exceptionnelle date exceptionnelle
 apps/web/src/lib/i18n/upcoming.ts | ENGLISH_WORD_REPEAT_RULE | rescheduled rescheduled
+# Les libellés des boutons d'une carte, rangés par sorte (question 3 de l'étape 20) : « Termin
+# verschieben » puis « Durchgang verschieben », et « Termin wiederherstellen » puis « Durchgang
+# wiederherstellen », recollés d'un seul tenant. Un bouton n'a pas d'article, et le singulier est
+# juste : il vise une séance. L'ADR 0021 donne une date d'exemple, « Au mardi 29.09.2026 à 18:00 »,
+# écrite avec des points comme toutes celles du service.
+apps/web/src/lib/i18n/upcoming.ts | SENT_START_SIN_PLU | Termin
+docs/adr/0021-espace-des-responsables.md | DATE | 29.09.2026

@@ -87,6 +87,16 @@ const HEURE = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 /** L'heure que le champ « Heure de début » propose pour une séance sans heure (`+page.svelte`). */
 const HEURE_PROPOSEE = '19:00';
 
+/**
+ * La sorte d'une séance, pour les mots de la phrase qui dit ce qu'une action vient de faire :
+ * « La session est annulée. » pour une session du vendredi (étape 21, question 3 de l'étape 20).
+ */
+type Kind = 'course' | 'jumua';
+
+function kindOf(course: { kind: string }): Kind {
+	return course.kind === 'jumua' ? 'jumua' : 'course';
+}
+
 function rows<T>(result: unknown): T[] {
 	if (Array.isArray(result)) return result as T[];
 	const inner = (result as { rows?: unknown[] }).rows;
@@ -149,6 +159,7 @@ function refuse(
 		toStart?: string | null;
 		title?: string;
 		messages?: Message[];
+		kind?: Kind;
 	},
 	status = 400
 ) {
@@ -159,7 +170,8 @@ function refuse(
 		toDate: fields.toDate ?? '',
 		toStart: fields.toStart === undefined ? '' : fields.toStart,
 		title: fields.title ?? '',
-		messages: fields.messages
+		messages: fields.messages,
+		kind: fields.kind
 	});
 }
 
@@ -338,7 +350,8 @@ export const actions: Actions = {
 					return refuseStale('alreadyCancelled', course, langue, {
 						courseId,
 						date,
-						messages: cancellationMessages(settings, course, date)
+						messages: cancellationMessages(settings, course, date),
+						kind: kindOf(course)
 					});
 				}
 				return refuseStale('changed', course, langue, { courseId, date });
@@ -349,7 +362,11 @@ export const actions: Actions = {
 				targetId: courseId,
 				after: { date, kind: 'cancelled' }
 			});
-			return { done: 'cancelled' as const, messages: cancellationMessages(settings, course, date) };
+			return {
+				done: 'cancelled' as const,
+				kind: kindOf(course),
+				messages: cancellationMessages(settings, course, date)
+			};
 		});
 	},
 
@@ -453,7 +470,7 @@ export const actions: Actions = {
 					)
 				})
 			);
-			return { done: 'moved' as const, messages };
+			return { done: 'moved' as const, kind: kindOf(course), messages };
 		});
 	},
 
@@ -496,7 +513,7 @@ export const actions: Actions = {
 				targetId: courseId,
 				before: { date }
 			});
-			return { done: 'restored' as const };
+			return { done: 'restored' as const, kind: kindOf(course) };
 		});
 	},
 
@@ -547,7 +564,8 @@ export const actions: Actions = {
 				return refuseStale('alreadyCancelled', course, langue, {
 					courseId,
 					date: toDate,
-					messages
+					messages,
+					kind: kindOf(course)
 				});
 			}
 			if (cancelled === 'changed') {
@@ -561,7 +579,7 @@ export const actions: Actions = {
 				before: { date, kind: 'moved', ...moved },
 				after: { date, kind: 'cancelled', ...moved }
 			});
-			return { done: 'cancelled' as const, messages };
+			return { done: 'cancelled' as const, kind: kindOf(course), messages };
 		});
 	}
 };
