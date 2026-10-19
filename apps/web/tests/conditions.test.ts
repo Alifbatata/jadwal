@@ -459,20 +459,35 @@ describe('la porte de l’espace des responsables', () => {
 });
 
 describe('les liens vers les conditions, et les titres', () => {
-	it('links the sign-in page to the terms, under the form and in the common footer', async () => {
+	it('links the sign-in page to the terms in the common footer', async () => {
 		const reponse = await get('/connexion');
 		expect(reponse.status).toBe(200);
 		const html = await reponse.text();
 		expect(html).toContain('<title>Se connecter | jadwal</title>');
-		expect(liens(html, '/connexion')).toContainEqual({
-			texte: 'Lire les conditions d’utilisation',
-			chemin: '/conditions'
-		});
 		expect(liens(pied(html), '/connexion')).toContainEqual({
 			texte: 'Conditions d’utilisation',
 			chemin: '/conditions'
 		});
 	});
+
+	// Étape 21 : les conditions ne sont nommées qu'une fois sur l'écran de connexion, au pied. Le
+	// lien qui suivait le formulaire répétait celui du pied, deux lignes plus bas.
+	it.each(['fr', 'de-CH', 'it-CH', 'en', 'ar'])(
+		'names the terms only once on the sign-in page, in the footer (%s)',
+		async (navigateur) => {
+			const reponse = await fetch(`${origin}/connexion`, {
+				redirect: 'manual',
+				headers: { 'accept-language': navigateur }
+			});
+			expect(reponse.status).toBe(200);
+			const html = await reponse.text();
+			const versLesConditions = liens(html, '/connexion').filter(
+				(lien) => lien.chemin === '/conditions'
+			);
+			expect(versLesConditions).toHaveLength(1);
+			expect(liens(pied(html), '/connexion')).toContainEqual(versLesConditions[0]);
+		}
+	);
 
 	it('puts the same footer on a page of the space, and titles the choice of organisation', async () => {
 		const cookie = await signIn(RESPONSABLE);

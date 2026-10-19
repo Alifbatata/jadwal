@@ -71,7 +71,8 @@ adresse électronique : vous recevrez un lien pour vous connecter. Il n'y a pas 
    pour les responsables et les maquettes.
 4. Le bouton `Recevoir un lien de connexion`.
 5. `Pas encore invité ? Demandez à la personne responsable de votre organisation de vous inviter.`
-6. Le lien `Lire les conditions d'utilisation`.
+6. Le pied commun, avec le lien `Conditions d'utilisation` : depuis l'étape 21, c'est le seul endroit
+   de l'écran qui nomme les conditions.
 
 **Après l'envoi**, l'écran dit ce qu'il faut faire : `Si cette adresse peut se connecter, un lien
 vient d'y être envoyé. Ouvrez votre messagerie et touchez le lien : il est valable quinze minutes et

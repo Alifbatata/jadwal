@@ -43,12 +43,6 @@
 	<p class="invitation">{text.notInvited}</p>
 {/if}
 
-<!-- Le texte que chacun accepte à sa première entrée dans un espace : il se lit avant d'avoir un
-     compte (ADR 0044). -->
-<p class="conditions">
-	<a href={resolve('/conditions')}>{text.readTerms}</a>
-</p>
-
 <style>
 	form {
 		display: grid;
@@ -69,9 +63,6 @@
 		padding: 0.5rem;
 	}
 	.invitation {
-		margin-top: 1.5rem;
-	}
-	.conditions {
 		margin-top: 1.5rem;
 	}
 </style>

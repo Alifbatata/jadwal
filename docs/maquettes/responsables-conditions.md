@@ -185,6 +185,6 @@ comparaison : rien n'est fait, et rien ne le dit.
 
 ## Les titres manquants, relevés par axe
 
-- `/connexion` : `Se connecter | jadwal`, et sous le formulaire le lien
-  `Lire les conditions d'utilisation`.
+- `/connexion` : `Se connecter | jadwal`. Les conditions n'y sont nommées qu'une fois, par le lien
+  `Conditions d'utilisation` du pied commun ; celui qui suivait le formulaire est parti à l'étape 21.
 - `/organisations` : `Vos organisations | jadwal`.

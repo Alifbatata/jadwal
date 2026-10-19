@@ -48,9 +48,10 @@ l'accepte ; depuis l'étape 20, un second bouton y fait partir sans accepter (ad
 membre d'une organisation : c'est l'exploitant, et c'est lui qui propose ce texte.
 
 **Le texte se lit avant tout compte.** La page `/conditions` est ouverte à tous, sans session et
-sans JavaScript, et reste `noindex`. Trois liens y mènent : sous le formulaire de connexion, dans le
-pied de chaque page de l'espace des responsables, et dans le pied de la page publique d'une
-organisation. Ce dernier est écrit dans la langue de la page, mais les conditions n'existent qu'en
+sans JavaScript, et reste `noindex`. Deux liens y mènent : dans le pied de chaque page de l'espace
+des responsables, l'écran de connexion compris, et dans le pied de la page publique d'une
+organisation (jusqu'à l'étape 21, un troisième suivait le formulaire de connexion : voir l'addendum
+du 19.10.2026). Celui de la page publique est écrit dans la langue de la page, mais les conditions n'existent qu'en
 français, et le lien le dit par `hreflang`. Il s'ouvre toujours dans un nouvel onglet : la page des
 conditions refuse d'être encadrée, et la page publique vit souvent dans un cadre, celui du widget ou
 celui qu'une organisation pose à la main.
@@ -146,3 +147,12 @@ responsable.`
 Aucune migration : la base laisse déjà chacun supprimer sa propre adhésion, et rien de plus
 (migration 0066), et retient la dernière personne responsable (migration 0012). Le détail de
 l'écran est dans `docs/maquettes/responsables-conditions.md`.
+
+## Addendum du 19.10.2026 : les conditions nommées une fois sur l'écran de connexion (étape 21)
+
+Décision du chef de projet. L'écran de connexion nommait les conditions deux fois : le lien
+`Lire les conditions d'utilisation`, sous le formulaire, et celui du pied commun,
+`Conditions d'utilisation`, quelques lignes plus bas. Le premier part, dans les cinq langues, avec
+son texte des dictionnaires ; le second reste, et c'est désormais le seul chemin vers `/conditions`
+depuis cet écran. Le texte se lit toujours avant tout compte : le pied paraît sur l'écran de
+connexion comme sur toute page de l'espace.

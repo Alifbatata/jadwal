@@ -17,7 +17,6 @@ interface SignInTexts {
 	readonly close: string;
 	readonly askAgain: string;
 	readonly notInvited: string;
-	readonly readTerms: string;
 }
 
 export const signInTexts: Translations<SignInTexts> = {
@@ -35,8 +34,7 @@ export const signInTexts: Translations<SignInTexts> = {
 		close: 'Vous pouvez fermer cette page.',
 		askAgain: 'Demander un autre lien',
 		notInvited:
-			'Pas encore invité ? Demandez à la personne responsable de votre organisation de vous inviter.',
-		readTerms: 'Lire les conditions d’utilisation'
+			'Pas encore invité ? Demandez à la personne responsable de votre organisation de vous inviter.'
 	},
 	de: {
 		title: 'Anmelden',
@@ -52,8 +50,7 @@ export const signInTexts: Translations<SignInTexts> = {
 		close: 'Sie können diese Seite schliessen.',
 		askAgain: 'Neuen Link anfordern',
 		notInvited:
-			'Noch nicht eingeladen? Bitten Sie die verantwortliche Person Ihrer Organisation, Sie einzuladen.',
-		readTerms: 'Nutzungsbedingungen lesen'
+			'Noch nicht eingeladen? Bitten Sie die verantwortliche Person Ihrer Organisation, Sie einzuladen.'
 	},
 	it: {
 		title: 'Accedi',
@@ -68,8 +65,7 @@ export const signInTexts: Translations<SignInTexts> = {
 		close: 'Puoi chiudere questa pagina.',
 		askAgain: 'Chiedi un altro link',
 		notInvited:
-			'Non hai ancora ricevuto un invito? Chiedi alla persona responsabile della tua organizzazione di invitarti.',
-		readTerms: 'Leggi le condizioni d’uso'
+			'Non hai ancora ricevuto un invito? Chiedi alla persona responsabile della tua organizzazione di invitarti.'
 	},
 	en: {
 		title: 'Sign in',
@@ -82,8 +78,7 @@ export const signInTexts: Translations<SignInTexts> = {
 		sentHint: 'Nothing after a few minutes? Look in your junk mail, or ask for another link.',
 		close: 'You can close this page.',
 		askAgain: 'Ask for another link',
-		notInvited: 'Not invited yet? Ask the person in charge of your organisation to invite you.',
-		readTerms: 'Read the terms of use'
+		notInvited: 'Not invited yet? Ask the person in charge of your organisation to invite you.'
 	},
 	ar: {
 		title: 'تسجيل الدخول',
@@ -96,7 +91,6 @@ export const signInTexts: Translations<SignInTexts> = {
 		sentHint: 'لم يصلك شيء بعد بضع دقائق؟ ابحث في البريد غير المرغوب فيه، أو اطلب رابطًا آخر.',
 		close: 'يمكنك إغلاق هذه الصفحة.',
 		askAgain: 'اطلب رابطًا آخر',
-		notInvited: 'لم تصلك دعوة بعد؟ اطلب من المسؤول عن مؤسستك أن يدعوك.',
-		readTerms: 'اقرأ شروط الاستخدام'
+		notInvited: 'لم تصلك دعوة بعد؟ اطلب من المسؤول عن مؤسستك أن يدعوك.'
 	}
 };

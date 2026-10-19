@@ -2147,18 +2147,21 @@ async function superAdmin(navigateur) {
 		});
 	});
 	await auditer(page, 'connexion');
-	await lireLesConditions(
-		page,
-		page.getByRole('link', { name: 'Lire les conditions d’utilisation', exact: true }),
-		'le lien sous le formulaire'
+	// Les conditions ne sont nommées qu'une fois sur cet écran, au pied (étape 21) : le lien qui
+	// suivait le formulaire est parti.
+	const versLesConditions = await page.locator('a[href$="/conditions"]').count();
+	const auPied = await page.locator('footer a[href$="/conditions"]').count();
+	verifier(
+		'la connexion ne nomme les conditions qu’une fois, par le lien du pied commun',
+		versLesConditions === 1 && auPied === 1,
+		`${versLesConditions} lien(s) vers /conditions, dont ${auPied} au pied`
 	);
-	await auditer(page, 'conditions');
-	await ouvrir(page, '/connexion');
 	await lireLesConditions(
 		page,
 		page.locator('footer').getByRole('link', { name: 'Conditions d’utilisation', exact: true }),
 		'le lien du pied commun'
 	);
+	await auditer(page, 'conditions');
 
 	await ouvrir(page, '/connexion');
 	await demanderUnLien(page, SUPER_ADMIN);
