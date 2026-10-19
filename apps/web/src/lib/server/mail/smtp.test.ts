@@ -202,7 +202,10 @@ describe('ce que le transport fait d’un échec', () => {
 		);
 		await expect(mailer.send(MESSAGE)).rejects.toThrow();
 		const trace = traces.join('\n');
-		expect(trace).toContain('responsable@example.test');
+		// Le domaine suffit à savoir quel serveur refuse ; l'adresse entière resterait dans les traces
+		// du conteneur, qui ne sont bornées que par leur taille (docs/CONDITIONS.md).
+		expect(trace).toContain('…@example.test');
+		expect(trace).not.toContain('responsable@');
 		expect(trace).toContain('550');
 		expect(trace).toContain('définitif');
 		// Ce que la trace ne doit jamais porter : un lien magique dans un fichier de traces vaut

@@ -57,7 +57,9 @@ export function isTemporary(error: unknown): boolean {
 /**
  * Ce qu'un échec veut dire, en clair, pour les traces du serveur. **Ne porte jamais le contenu du
  * message** : un lien magique dans un fichier de traces vaut un mot de passe en clair. Seuls le
- * destinataire, le code et la commande SMTP en cause y figurent.
+ * domaine du destinataire, le code et la commande SMTP en cause y figurent. Le domaine dit quel
+ * serveur refuse ; l'adresse entière resterait dans les traces du conteneur, que seule leur taille
+ * borne, et `docs/CONDITIONS.md` dit que ces traces ne portent aucune donnée personnelle.
  */
 export function describeSmtpFailure(error: unknown, to: string): string {
 	const failure = error as {
@@ -66,7 +68,8 @@ export function describeSmtpFailure(error: unknown, to: string): string {
 		command?: unknown;
 		message?: unknown;
 	};
-	const parts = [`envoi à ${to} refusé`];
+	const domaine = to.includes('@') ? to.slice(to.lastIndexOf('@') + 1) : '?';
+	const parts = [`envoi à …@${domaine} refusé`];
 	if (typeof failure.code === 'string') parts.push(`code ${failure.code}`);
 	if (typeof failure.responseCode === 'number') parts.push(`réponse SMTP ${failure.responseCode}`);
 	if (typeof failure.command === 'string') parts.push(`commande ${failure.command}`);
