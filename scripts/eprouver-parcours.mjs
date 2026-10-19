@@ -31,7 +31,7 @@
  * porte sa lettre, et le parcours imprime à la fin un tableau « retour | vérification | verdict ».
  * Un retour sans aucune ligne fait échouer le parcours : on ne perd pas une vérification sans le
  * voir. L'étape 19 suit la même règle pour chacune de ses corrections qui se voient à l'écran, et
- * l'étape 20 aussi.
+ * les étapes 20 et 21 aussi.
  *
  * ### Les retours de l'étape 18
  *
@@ -327,6 +327,45 @@
  * - en français seul : 20-C2, 20-C3, 20-C5, 20-cles, et les marques des cartes d'« À venir »
  *   (20-C4).
  *
+ * ### Les corrections de l'étape 21
+ *
+ * Même règle qu'à l'étape 20 : une vérification plus ancienne dont l'attendu change est scindée, ce
+ * qui ne change pas garde son identifiant et reste vert contre l'image de l'étape 20, ce qui change
+ * passe sous un identifiant de l'étape 21, qui tombe contre elle. Les gestes qui visaient un bouton
+ * par un libellé que l'étape 21 a changé, « Déplacer la séance » sur la carte d'une session du
+ * vendredi, le visent par son formulaire.
+ *
+ * - 21-relecture : les six textes corrigés à la relecture de l'arabe, de l'allemand et de
+ *   l'italien, à leur place : la connexion en arabe, son aide et son refus d'une adresse mal
+ *   formée ; la page d'abonnement en allemand ; l'aide de la règle des nuits courtes en allemand et
+ *   en italien ; l'aide de la langue du sermon en italien.
+ * - 21-connexion : la connexion ne nomme les conditions qu'une fois, par le lien du pied commun.
+ *   Le parcours suit ce lien seul, que l'image de l'étape 20 a aussi.
+ * - 21-langue : le choix de la langue est une liste déroulante, nommée par son étiquette, et un
+ *   seul bouton, sur chaque écran du super-admin et de l'espace, dans les cinq langues. D2 garde ce
+ *   qui ne change pas : les cinq langues, chacune écrite dans sa langue, celle de l'écran choisie.
+ *   Choisir une autre langue dans la liste n'envoie rien, au clavier comme à la souris ; la page
+ *   publique change de langue sans JavaScript, sur la même vue ; dans le cadre du widget, elle
+ *   change de langue sans ajouter d'entrée à l'historique du site qui l'accueille.
+ * - 21-Q1 : la page publique d'une session du vendredi parle d'une prière : « Prochaines
+ *   prières », « Ajouter cette prière à mon agenda », « Langue du sermon ».
+ * - 21-Q2 : l'écran du vendredi dit l'état d'une ligne avec le nom d'une session, « Session
+ *   annulée », « Session déplacée », puis « Au … à … » seul ; un déplacement et une annulation y
+ *   donnent le message à copier. 20-C2 garde, de la ligne d'une session déplacée d'un vendredi
+ *   passé puis annulée, qu'elle se dit annulée.
+ * - 21-Q3 : sur « À venir », la carte d'une session du vendredi parle d'une session, « Annuler
+ *   cette session » et son aide, « Déplacer la session », « La session est déplacée. », « La
+ *   session est annulée. » ; sous une carte partie ailleurs, « Au … à … » seul. 20-C4 garde la
+ *   marque, « Séance déplacée » ou « Session déplacée », et A2 la date et l'heure où la séance va.
+ * - 21-Q4 : en arabe, la séance d'un cours arrivée d'un autre jour porte « حصة استثنائية », sur
+ *   « À venir » et sur la page publique.
+ * - 21-Q5 : une séance déplacée vers une date à venir s'annule aussi à sa nouvelle date : ses deux
+ *   cartes, sur « À venir », et ses deux lignes, sur l'écran du vendredi, ont « Rétablir » et les
+ *   options « Annuler », avec l'aide qui dit que l'annulation se défait ; annulée, elle se rétablit.
+ *
+ * Les langues vérifiées : 21-langue dans les cinq ; 21-relecture en arabe, en allemand et en
+ * italien ; 21-Q4 en arabe ; les autres en français.
+ *
  * ## La date figée (étape 19, D9)
  *
  * Le parcours ne lit plus la date de son lancement pour savoir ce qu'il attend. Il pose l'horloge
@@ -368,7 +407,7 @@
  * A3 et F1, ceux de l'espace parcourus par D2), qui change d'une image à l'autre, y sont remplacés
  * par un mot. Un passage strict échoue si une
  * vérification du catalogue n'a pas été jouée, ou si une vérification jouée n'y est pas. Le bilan
- * donne ces nombres pour l'étape 18, pour l'étape 19 et pour l'étape 20, à part.
+ * donne ces nombres pour chaque étape, de la 18 à la 21, à part.
  *
  * Une vérification faite de plusieurs conditions les nomme (`verifierChaque`), qu'elle soit celle
  * d'un retour ou non : sa ligne rouge commence par « tombé : » et le nom de celles qui manquent,
@@ -700,9 +739,58 @@ const ANNULER_LA_DEPLACEE = {
 		resume: 'Annuler',
 		bouton: 'Annuler cette session',
 		aide: 'Son jour prévu est déjà passé : la session ne peut plus avoir lieu ce jour-là. Une fois annulée, elle ne pourra pas être rétablie.',
-		fait: 'La session est annulée à sa nouvelle date. Les autres vendredis ne changent pas.',
-		annulee: 'Annulée ce jour-là'
+		fait: 'La session est annulée à sa nouvelle date. Les autres vendredis ne changent pas.'
 	}
+};
+/**
+ * Étape 21 (questions 2, 3 et 5 de l'étape 20). Sur « À venir », la carte d'une session du vendredi
+ * parle d'une session (`upcoming.ts`) : son bouton d'annulation et son aide, la légende et le bouton
+ * du déplacement, le titre du message qui suit chaque geste. Elle disait « séance ».
+ */
+const CARTE_D_UNE_SESSION = {
+	bouton: 'Annuler cette session',
+	aide: 'Seule cette session est annulée : les autres vendredis ne changent pas. Vous pourrez la rétablir ensuite.',
+	legende: 'Déplacer cette session',
+	deplacer: 'Déplacer la session',
+	deplacee: 'La session est déplacée.',
+	annulee: 'La session est annulée.'
+};
+/**
+ * L'aide de l'annulation d'une séance déplacée dont la date prévue est à venir (étape 21, question
+ * 5) : elle se défait. La même pour une session sur « À venir » et sur l'écran du vendredi.
+ */
+const ANNULATION_QUI_SE_DEFAIT = {
+	seance:
+		'Seule cette séance est annulée, à sa nouvelle date. Vous pourrez la rétablir ensuite : elle retrouvera sa date et son heure habituelles.',
+	session:
+		'Seule cette session est annulée, à sa nouvelle date. Vous pourrez la rétablir ensuite : elle retrouvera son jour et son heure habituels.'
+};
+/**
+ * L'état d'une ligne de l'écran du vendredi, avec le nom d'une session (étape 21, question 2) : elle
+ * disait « Annulée ce jour-là » et « Déplacée au … à … ».
+ */
+const LIGNE_DU_VENDREDI = {
+	annulee: 'Session annulée',
+	deplacee: 'Session déplacée',
+	vers: (date, heure) => `Au ${date} à ${heure}`
+};
+/**
+ * Les six textes corrigés à la relecture de l'étape 21 (chantier 2), tels qu'ils doivent se lire :
+ * la connexion en arabe (`signIn.ts`, `common.ts`), l'abonnement en allemand (`i18n.ts`), l'aide
+ * de la règle des nuits courtes en allemand et en italien (`prayers.ts`), et l'aide de la langue du
+ * sermon en italien (`friday.ts`). Pour les deux aides des nuits courtes, le passage corrigé.
+ */
+const RELECTURE_DE_L_ETAPE_21 = {
+	aideDeLaConnexion: 'العنوان الذي وصلت إليه دعوتك. مثال: name@example.org',
+	adresseMalFormee: 'هذا العنوان ليس بصيغة عنوان بريد إلكتروني. مثال: name@example.org',
+	derniereMinute:
+		'Bei einer Änderung in letzter Minute sehen Sie auf der Seite des Programms nach: Diese ist immer aktuell.',
+	nuitsCourtes: {
+		de: 'dass Ischa spät und Fadschr sehr früh beginnt.',
+		it: 'La metà della notte mantiene gli orari astronomici'
+	},
+	sermon:
+		'Seleziona ogni lingua in cui viene tenuto il sermone, anche se la tua pagina pubblica non è in quella lingua.'
 };
 /**
  * r. Un cours dont une séance, prévue un jour déjà passé, a été déplacée au J4, à 07:00, le jour
@@ -1180,8 +1268,28 @@ const RETOURS_DE_L_ETAPE_20 = [
 	'20-C7',
 	'20-cles'
 ];
+/**
+ * Les corrections de l'étape 21 qui se voient à l'écran, dans l'ordre de ses chantiers : la
+ * relecture (2), la connexion (3), le choix de la langue (4), puis les questions 1 à 5 de l'étape
+ * 20 (5). L'en-tête du script dit ce que chacune vérifie.
+ */
+const RETOURS_DE_L_ETAPE_21 = [
+	'21-relecture',
+	'21-connexion',
+	'21-langue',
+	'21-Q1',
+	'21-Q2',
+	'21-Q3',
+	'21-Q4',
+	'21-Q5'
+];
 /** Tous les retours, dans l'ordre du tableau final. */
-const RETOURS = [...RETOURS_DE_L_ETAPE_18, ...RETOURS_DE_L_ETAPE_19, ...RETOURS_DE_L_ETAPE_20];
+const RETOURS = [
+	...RETOURS_DE_L_ETAPE_18,
+	...RETOURS_DE_L_ETAPE_19,
+	...RETOURS_DE_L_ETAPE_20,
+	...RETOURS_DE_L_ETAPE_21
+];
 /**
  * Chaque vérification d'un retour : `{ retour, quoi, ok, detail }`, et `impossible` pour un geste
  * que l'écran n'offre pas, qui a arrêté son bloc.
@@ -1833,25 +1941,30 @@ async function choisirLaLangue(page, langue) {
 }
 
 /**
- * Ce que le choix de la langue montre sur un écran (étape 21) : une liste déroulante nommée par son
- * étiquette, les cinq langues, chacune écrite dans sa langue et marquée comme telle, la langue de
- * l'écran choisie, et un seul bouton pour l'envoyer.
+ * Ce que le choix de la langue montre sur un écran, depuis l'étape 18 (D2) : les cinq langues,
+ * chacune écrite dans sa langue et marquée comme telle, et la langue de l'écran choisie. Les options
+ * d'une liste depuis l'étape 21, les boutons d'une image plus ancienne : D2 vérifie ce qui ne change
+ * pas, et `choixEnListe` la forme de l'étape 21.
  */
 async function choixPresent(page, langue) {
 	const choix = choixDeLaLangue(page);
-	const liste = choix.getByLabel(TEXTES_DU_CHOIX[langue].etiquette, { exact: true });
-	if ((await liste.count()) !== 1) return false;
-	const vus = await liste.locator('option').evaluateAll((options) =>
-		options.map((option) => ({
-			valeur: option.value,
-			lang: option.lang,
-			texte: option.textContent?.trim(),
-			courant: option.selected
-		}))
+	const options = choix.locator('select[name="language"] option');
+	const langues = (await options.count()) > 0 ? options : choix.locator('button[name="language"]');
+	const vus = await langues.evaluateAll((elements) =>
+		elements.map((element) => {
+			const choisi =
+				element instanceof HTMLOptionElement
+					? element.selected
+					: element.getAttribute('aria-current') === 'true';
+			return {
+				valeur: /** @type {HTMLOptionElement | HTMLButtonElement} */ (element).value,
+				lang: /** @type {HTMLElement} */ (element).lang,
+				texte: element.textContent?.trim(),
+				courant: choisi
+			};
+		})
 	);
-	const boutons = choix.locator('button');
 	return (
-		(await liste.getAttribute('name')) === 'language' &&
 		vus.length === LANGUES.length &&
 		vus.every(
 			(vu, index) =>
@@ -1859,11 +1972,29 @@ async function choixPresent(page, langue) {
 				vu.lang === LANGUES[index] &&
 				vu.texte === NOM_DE_LANGUE[LANGUES[index]] &&
 				vu.courant === (vu.valeur === langue)
-		) &&
+		)
+	);
+}
+
+/**
+ * La forme du choix depuis l'étape 21 (21-langue) : une liste déroulante, `language`, nommée par
+ * l'étiquette de la langue de l'écran, et un seul bouton pour l'envoyer, dans cette langue.
+ */
+async function choixEnListe(page, langue) {
+	const choix = choixDeLaLangue(page);
+	const liste = choix.getByLabel(TEXTES_DU_CHOIX[langue].etiquette, { exact: true });
+	const boutons = choix.locator('button');
+	return (
+		(await liste.count()) === 1 &&
+		(await liste.evaluate((element) => element.tagName)) === 'SELECT' &&
+		(await liste.getAttribute('name')) === 'language' &&
 		(await boutons.count()) === 1 &&
 		(await boutons.textContent())?.trim() === TEXTES_DU_CHOIX[langue].bouton
 	);
 }
+
+/** Le libellé de 21-langue pour une suite d'écrans : la liste et son bouton, dans chaque langue. */
+const LISTE_DANS_LES_CINQ_LANGUES = `dans les cinq langues, le choix de la langue est une liste nommée ${LANGUES.map((langue) => `« ${TEXTES_DU_CHOIX[langue].etiquette} »`).join(', ')}, et un seul bouton, ${LANGUES.map((langue) => `« ${TEXTES_DU_CHOIX[langue].bouton} »`).join(', ')}`;
 
 /**
  * Chaque morceau de texte d'une page ou d'un cadre : le contenu de chaque nœud de texte, et les
@@ -2175,14 +2306,17 @@ async function superAdmin(navigateur) {
 	});
 	await auditer(page, 'connexion');
 	// Les conditions ne sont nommées qu'une fois sur cet écran, au pied (étape 21) : le lien qui
-	// suivait le formulaire est parti.
-	const versLesConditions = await page.locator('a[href$="/conditions"]').count();
-	const auPied = await page.locator('footer a[href$="/conditions"]').count();
-	verifier(
-		'la connexion ne nomme les conditions qu’une fois, par le lien du pied commun',
-		versLesConditions === 1 && auPied === 1,
-		`${versLesConditions} lien(s) vers /conditions, dont ${auPied} au pied`
-	);
+	// suivait le formulaire est parti. Le parcours suit celui du pied, que l'image de l'étape 20 a
+	// aussi.
+	await retour('21-connexion', async () => {
+		const versLesConditions = await page.locator('a[href$="/conditions"]').count();
+		const auPied = await page.locator('footer a[href$="/conditions"]').count();
+		verifier(
+			'la connexion ne nomme les conditions qu’une fois, par le lien du pied commun',
+			versLesConditions === 1 && auPied === 1,
+			`${versLesConditions} lien(s) vers /conditions, dont ${auPied} au pied`
+		);
+	});
 	await lireLesConditions(
 		page,
 		page.locator('footer').getByRole('link', { name: 'Conditions d’utilisation', exact: true }),
@@ -2432,6 +2566,10 @@ async function adresseSansScript(navigateur, contexte) {
  * quelle. Puis retour au français, pour la suite du parcours.
  */
 async function languesDuSuperAdmin(page) {
+	// Les écrans où le choix n'est pas une liste et son bouton (21-langue), jugés après D2, et le
+	// nombre d'écrans regardés : deux, dans les cinq langues.
+	const sansListe = [];
+	let regardes = 0;
 	await retour('D2', async () => {
 		const ecrans = ['/super-admin', '/super-admin/passkey'];
 		const francais = new Map();
@@ -2441,6 +2579,8 @@ async function languesDuSuperAdmin(page) {
 				`${ecran} porte en haut le choix des cinq langues, le français choisi`,
 				await choixPresent(page, 'fr')
 			);
+			regardes += 1;
+			if (!(await choixEnListe(page, 'fr'))) sansListe.push(`${ecran} en fr`);
 			francais.set(ecran, await segmentsLus(page));
 		}
 		for (const langue of LANGUES.filter((code) => code !== 'fr')) {
@@ -2455,6 +2595,8 @@ async function languesDuSuperAdmin(page) {
 					problemes.push(`${ecran} : <html lang="${lang}" dir="${dir}">`);
 				}
 				if (!(await choixPresent(page, langue))) problemes.push(`${ecran} : choix de la langue`);
+				regardes += 1;
+				if (!(await choixEnListe(page, langue))) sansListe.push(`${ecran} en ${langue}`);
 				// Le nom d'une passkey, « Windows, 26.09.2026 », s'écrit de même dans toutes les langues :
 				// ce n'est pas une phrase, et il n'a pas à être écarté. L'exemple d'un nom d'organisation,
 				// « Association Horizon », est un nom : il reste tel quel hors de l'arabe (étape 19, B12).
@@ -2479,6 +2621,13 @@ async function languesDuSuperAdmin(page) {
 		});
 		await choisirLaLangue(page, 'fr');
 		verifier('retour au français', (await racineDit(page, 'lang')) === 'fr');
+	});
+	await retour('21-langue', async () => {
+		verifier(
+			`sur /super-admin et /super-admin/passkey, ${LISTE_DANS_LES_CINQ_LANGUES}`,
+			regardes === 2 * LANGUES.length && sansListe.length === 0,
+			`${regardes} écran(s) regardé(s) ; ${sansListe.join(', ') || 'tous en liste'}`
+		);
 	});
 }
 
@@ -3698,9 +3847,12 @@ function seanceDuJour(page, date, titreDuCours) {
 		.filter({ hasText: titreDuCours });
 }
 
-/** Les boutons « Annuler cette séance » qu'une personne voit sur l'accueil, sans rien ouvrir. */
+/**
+ * Les boutons « Annuler cette séance » qu'une personne voit sur l'accueil, sans rien ouvrir. Celui
+ * d'une session du vendredi dit « Annuler cette session » depuis l'étape 21 : il compte aussi.
+ */
 const boutonsDAnnulationVisibles = (cible) =>
-	cible.getByRole('button', { name: 'Annuler cette séance', exact: true });
+	cible.getByRole('button', { name: /^Annuler cette (?:séance|session)$/ });
 
 /**
  * « À venir » (A1) : les options sont fermées, « Annuler ou déplacer » n'ouvre que celles de sa
@@ -3813,13 +3965,14 @@ async function deplacerPlusTot(page) {
 		await rouverte.getByLabel('Heure de début', { exact: true }).fill('20:30');
 		await envoyer(page, rouverte.getByRole('button', { name: 'Déplacer la séance', exact: true }));
 		const parti = seanceDuJour(page, J3, COURS_2);
-		// Le nom de l'état, « Déplacée au … » à l'étape 19, « Séance déplacée au … » depuis l'étape 20
-		// (C4), est lu par 20-C4 : A2 n'en garde que ce qui ne change pas, la nouvelle date et l'heure.
+		// Le nom de l'état, « Déplacée au … » à l'étape 19, « Séance déplacée au … » à l'étape 20 (C4),
+		// la marque « Séance déplacée » puis « Au … à … » seul depuis l'étape 21 : A2 n'en garde que ce
+		// qui ne change pas, la nouvelle date et l'heure ; 20-C4 la marque, 21-Q3 la phrase.
 		verifierChaque(
 			`la séance du ${dateSuisse(J3)} part au ${dateSuisse(J2)}, plus tôt que prévu, et se dit déplacée`,
 			{
 				'« déplacée »': (await texteDe(parti)).includes('déplacée'),
-				'« … au <date> à 20:30 »': (await texteDe(parti)).includes(`au ${dateLongue(J2)} à 20:30`)
+				'« <date> à 20:30 »': (await texteDe(parti)).includes(`${dateLongue(J2)} à 20:30`)
 			},
 			await texteDe(parti)
 		);
@@ -3828,14 +3981,24 @@ async function deplacerPlusTot(page) {
 			const marques = (await parti.locator('.titre .marque').allTextContents()).map((texte) =>
 				texte.trim()
 			);
-			const deplacee = `Séance déplacée au ${dateLongue(J2)} à 20:30`;
-			verifierChaque(
-				`sur « À venir », la séance partie plus tôt porte « Séance déplacée », et « ${deplacee} »`,
-				{
-					'la marque « Séance déplacée »': marques.includes('Séance déplacée'),
-					[`« ${deplacee} »`]: (await texteDe(parti)).includes(deplacee)
-				},
+			verifier(
+				'sur « À venir », la séance partie plus tôt porte « Séance déplacée »',
+				marques.includes('Séance déplacée'),
 				`marques : ${marques.join(', ') || 'aucune'} ; ${await texteDe(parti)}`
+			);
+		});
+		await retour('21-Q3', async () => {
+			const vers = `Au ${dateLongue(J2)} à 20:30`;
+			const details = (await parti.locator('p.details').allTextContents()).map((texte) =>
+				texte.replace(/\s+/g, ' ').trim()
+			);
+			verifierChaque(
+				`sous la carte de la séance partie plus tôt, « ${vers} » seul, sans « Séance déplacée au … »`,
+				{
+					[`« ${vers} »`]: details.includes(vers),
+					'sans « Séance déplacée au »': !(await texteDe(parti)).includes('Séance déplacée au')
+				},
+				details.join(' | ')
 			);
 		});
 		const arrivee = seanceDuJour(page, J2, COURS_2);
@@ -4017,6 +4180,36 @@ async function programme(page) {
 					(await texteDe(aide)).startsWith('Cela défait le changement')
 			},
 			await texteDe(arrivee)
+		);
+	});
+	// La date prévue, le J3, est à venir : la séance s'annule aussi à sa nouvelle date, depuis ses deux
+	// cartes, et l'aide dit que l'annulation se défait (étape 21, question 5). Rien n'est envoyé ici.
+	await retour('21-Q5', async () => {
+		const lues = [];
+		const conditions = {};
+		for (const [quelle, carte] of /** @type {const} */ ([
+			['d’arrivée', seanceDuJour(page, J2, COURS_2)],
+			['de départ', seanceDuJour(page, J3, COURS_2)]
+		])) {
+			const options = carte.locator('details.options');
+			const bouton = options.locator('form[action="?/annulerDeplacee"] button[type="submit"]');
+			const unBouton = (await bouton.count()) === 1;
+			conditions[`la carte ${quelle} : « Rétablir la séance »`] =
+				(await carte.locator('form[action="?/retablir"] button[type="submit"]').count()) === 1;
+			conditions[`la carte ${quelle} : les options « Annuler », fermées`] =
+				(await options.count()) === 1 &&
+				(await texteDe(options.locator(':scope > summary'))) === 'Annuler' &&
+				!(await estOuvert(options));
+			conditions[`la carte ${quelle} : « Annuler cette séance »`] =
+				unBouton && (await texteDe(bouton)) === 'Annuler cette séance';
+			conditions[`la carte ${quelle} : l’aide qui dit que l’annulation se défait`] =
+				unBouton && (await descriptionDe(bouton)) === ANNULATION_QUI_SE_DEFAIT.seance;
+			lues.push(`${quelle} : ${await texteDe(carte)}`);
+		}
+		verifierChaque(
+			`la séance déplacée du ${dateSuisse(J3)}, une date à venir, au ${dateSuisse(J2)} : ses deux cartes ont « Rétablir la séance » et les options « Annuler », qui proposent « Annuler cette séance », avec l’aide « ${ANNULATION_QUI_SE_DEFAIT.seance} »`,
+			conditions,
+			lues.join(' | ')
 		);
 	});
 	await auditer(page, 'accueil de l’espace');
@@ -4325,6 +4518,19 @@ async function arabeDeLEspace(page) {
 				note
 			);
 		});
+		// La séance d'un cours arrivée d'un autre jour, en arabe : « حصة », le mot d'une séance, et non
+		// « موعد », celui d'une session du vendredi (étape 21, question 4).
+		await retour('21-Q4', async () => {
+			const arrivee = seanceDuJour(page, J2, COURS_2);
+			const marques = (await arrivee.locator('.titre .marque').allTextContents()).map((texte) =>
+				texte.trim()
+			);
+			verifier(
+				'« À venir » en arabe : la séance d’un cours arrivée d’un autre jour porte « حصة استثنائية »',
+				marques.includes('حصة استثنائية'),
+				`marques : ${marques.join(', ') || 'aucune'}`
+			);
+		});
 		await retour('19-B10', async () => {
 			const alerte = page.locator('p.mention').filter({ has: page.locator('a[href="/partager"]') });
 			const lue = (await alerte.count()) === 1 ? await texteDe(alerte) : '';
@@ -4557,6 +4763,16 @@ async function pagesPubliques(page) {
 					`${premier.map((vue) => vue.mention).join(' | ') || 'aucune séance annulée'} | ${depart?.mention ?? 'départ absent'}`
 				);
 			});
+			// En arabe, la marque d'arrivée d'une séance de cours dit « حصة » (étape 21, question 4).
+			if (langue === 'ar') {
+				await retour('21-Q4', async () => {
+					verifier(
+						`${adresse} : la séance ramenée plus tôt porte à son arrivée « حصة استثنائية »`,
+						arrivee?.mention === 'حصة استثنائية',
+						arrivee?.mention ?? 'arrivée absente'
+					);
+				});
+			}
 			// En italien, « Inizialmente », sans article devant le jour (étape 19, D7).
 			if (langue === 'it') {
 				await retour('19-D7', async () => {
@@ -4957,6 +5173,42 @@ async function widget(page) {
 					'rien de resté en français': restes.length === 0
 				},
 				restes.slice(0, 5).join(' | ')
+			);
+		});
+
+		// Dans le cadre du widget, le choix de la langue remplace la page encadrée : la langue change,
+		// le mode intégré reste, et l'historique du site qui l'accueille ne gagne aucune entrée, sans
+		// quoi « Précédent » ramènerait d'abord le cadre à l'ancienne langue (étape 21).
+		await retour('21-langue', async () => {
+			await ouvrir(page, `${origineHote}/`);
+			const encadre = /** @type {import('playwright-core').Frame} */ (
+				await cadreDuWidget(page, `${ORIGINE}/m/${ORGANISATION.slug}`)
+			);
+			await encadre.waitForLoadState('load');
+			const avant = await page.evaluate(() => history.length);
+			const liste = await exiger(
+				encadre.getByLabel(TEXTES_DU_CHOIX.fr.etiquette, { exact: true }),
+				'la liste du choix de la langue dans le cadre'
+			);
+			await liste.selectOption({ label: NOM_DE_LANGUE.de });
+			await encadre.getByRole('button', { name: TEXTES_DU_CHOIX.fr.bouton, exact: true }).click();
+			await encadre
+				.waitForURL((adresse) => adresse.pathname === `/m/${ORGANISATION.slug}/de`, {
+					timeout: 15000
+				})
+				.catch(() => undefined);
+			await encadre.waitForLoadState('load');
+			const adresse = new URL(encadre.url());
+			const apres = await page.evaluate(() => history.length);
+			verifierChaque(
+				`dans le cadre du widget, « ${NOM_DE_LANGUE.de} » choisi puis « ${TEXTES_DU_CHOIX.fr.bouton} » met la page encadrée en allemand, toujours intégrée, sans entrée de plus dans l’historique du site`,
+				{
+					[`/m/${ORGANISATION.slug}/de`]: adresse.pathname === `/m/${ORGANISATION.slug}/de`,
+					'embed=1 gardé': adresse.searchParams.get('embed') === '1',
+					'la page hôte à la même adresse': page.url() === `${origineHote}/`,
+					'aucune entrée de plus dans l’historique': apres === avant
+				},
+				`cadre ${adresse.pathname}${adresse.search} ; historique ${avant} → ${apres}`
 			);
 		});
 	} finally {
@@ -5701,6 +5953,7 @@ async function prieres(page, navigateur) {
 	await rechercheDUneLocalite(page);
 	await importEnArabe(page);
 	await aideDesNuitsCourtes(page);
+	await relectureDeLEtape21(navigateur, page);
 	await ouvrir(page, '/prieres?source=computed');
 	await auditer(page, 'prières');
 
@@ -6160,6 +6413,69 @@ async function aideDesNuitsCourtes(page) {
 }
 
 /**
+ * 21-relecture : les six textes corrigés à la relecture de l'étape 21, chacun à sa place, dans sa
+ * langue. L'aide de la règle des nuits courtes en allemand et en italien, et celle de la langue du
+ * sermon en italien, dans l'espace ; la page d'abonnement en allemand, avec tous les choix, par un
+ * visiteur ; la connexion en arabe, choisie avant de se connecter, son aide et son refus d'une
+ * adresse mal formée, envoyée sans la validation du navigateur pour que le serveur réponde.
+ */
+async function relectureDeLEtape21(navigateur, page) {
+	const attendus = RELECTURE_DE_L_ETAPE_21;
+	await retour('21-relecture', async () => {
+		const lus = { de: '', it: '', sermon: '', abonnement: '', aide: '', refus: '' };
+		try {
+			for (const langue of /** @type {const} */ (['de', 'it'])) {
+				if ((await racineDit(page, 'lang')) !== langue) await choisirLaLangue(page, langue);
+				await ouvrir(page, '/prieres?source=computed');
+				lus[langue] = await texteDe(
+					await exiger(page.locator('#regle-aide'), 'l’aide de la règle des nuits courtes')
+				);
+			}
+			await ouvrir(page, '/vendredi');
+			lus.sermon = await texteDe(
+				await exiger(page.locator('[id^="aide-sermon-"]').first(), 'l’aide de la langue du sermon')
+			);
+		} finally {
+			if ((await racineDit(page, 'lang')) !== 'fr') await choisirLaLangue(page, 'fr');
+		}
+		const contexte = await nouveauContexte(navigateur);
+		try {
+			const visiteur = await contexte.newPage();
+			await ouvrir(visiteur, `/m/${ORGANISATION.slug}/de/agenda?appareil=tous`);
+			lus.abonnement = await visiteur.locator('main').innerText();
+			await ouvrir(visiteur, '/connexion');
+			await choisirLaLangue(visiteur, 'ar');
+			const champ = visiteur.locator('main input[type="email"]');
+			lus.aide = await descriptionDe(champ);
+			await champ.evaluate((saisie) => {
+				/** @type {HTMLInputElement} */ (saisie).form?.setAttribute('novalidate', '');
+			});
+			await champ.fill('adresse-sans-arobase');
+			await envoyer(
+				visiteur,
+				visiteur.locator('main form:has(input[type="email"]) button[type="submit"]')
+			);
+			const erreur = visiteur.locator('#email-erreur');
+			lus.refus = (await erreur.count()) === 1 ? await texteDe(erreur) : 'aucun refus';
+		} finally {
+			await contexte.close();
+		}
+		verifierChaque(
+			`les six textes relus à l’étape 21, à leur place : la connexion en arabe, « ${attendus.aideDeLaConnexion} » et « ${attendus.adresseMalFormee} » ; l’abonnement en allemand, « ${attendus.derniereMinute} » ; les nuits courtes, « ${attendus.nuitsCourtes.de} » et « ${attendus.nuitsCourtes.it} » ; le sermon en italien, « ${attendus.sermon} »`,
+			{
+				'l’aide de la connexion en arabe': lus.aide === attendus.aideDeLaConnexion,
+				'le refus en arabe': lus.refus === attendus.adresseMalFormee,
+				'l’abonnement en allemand': lus.abonnement.includes(attendus.derniereMinute),
+				'les nuits courtes en allemand': lus.de.includes(attendus.nuitsCourtes.de),
+				'les nuits courtes en italien': lus.it.includes(attendus.nuitsCourtes.it),
+				'le sermon en italien': lus.sermon === attendus.sermon
+			},
+			`« ${lus.aide} » ; « ${lus.refus} » ; « ${lus.sermon} »`
+		);
+	});
+}
+
+/**
  * Un cours placé avant une prière (C3) : le choix existe, les minutes restent positives à l'écran,
  * dans la liste des cours et dans sa fiche rouverte.
  */
@@ -6546,12 +6862,18 @@ async function languesDeLEspace(navigateur, page) {
 		'/reglages',
 		'/organisations'
 	];
+	// Les écrans où le choix n'est pas une liste et son bouton (21-langue), jugés après D2, et le
+	// nombre d'écrans regardés, chacun dans les cinq langues.
+	const sansListe = [];
+	let regardes = 0;
 	await retour('D2', async () => {
 		const francais = new Map();
 		const sansChoix = [];
 		for (const ecran of ecrans) {
 			await ouvrir(page, ecran);
 			if (!(await choixPresent(page, 'fr'))) sansChoix.push(ecran);
+			regardes += 1;
+			if (!(await choixEnListe(page, 'fr'))) sansListe.push(`${ecran} en fr`);
 			francais.set(ecran, await segmentsLus(page));
 		}
 		verifier(
@@ -6571,6 +6893,8 @@ async function languesDeLEspace(navigateur, page) {
 					problemes.push(`${ecran} : <html lang="${lang}" dir="${dir}">`);
 				}
 				if (!(await choixPresent(page, langue))) problemes.push(`${ecran} : choix de la langue`);
+				regardes += 1;
+				if (!(await choixEnListe(page, langue))) sansListe.push(`${ecran} en ${langue}`);
 				const restes = resteEnFrancais(
 					/** @type {string[]} */ (francais.get(ecran)),
 					await segmentsLus(page),
@@ -6623,6 +6947,36 @@ async function languesDeLEspace(navigateur, page) {
 			(await racineDit(page, 'lang')) === 'fr',
 			`<html lang="${await racineDit(page, 'lang')}">`
 		);
+	});
+	await retour('21-langue', async () => {
+		verifier(
+			`sur les ${ecrans.length} écrans de l’espace, ${LISTE_DANS_LES_CINQ_LANGUES}`,
+			regardes === ecrans.length * LANGUES.length && sansListe.length === 0,
+			`${regardes} écran(s) regardé(s) ; ${sansListe.slice(0, 8).join(', ') || 'tous en liste'}`
+		);
+		// Choisir une autre langue dans la liste ne recharge rien : seul le bouton envoie (aucun envoi
+		// au changement, WCAG 3.2.2). Une flèche au clavier, sur la liste fermée, puis le choix fait
+		// comme à la souris, qui déclenche l'événement `change` sur toutes les plateformes.
+		await ouvrir(page, '/');
+		const liste = await exiger(
+			choixDeLaLangue(page).locator('select[name="language"]'),
+			'la liste du choix de la langue'
+		);
+		await liste.focus();
+		await page.keyboard.press('ArrowDown');
+		await liste.selectOption('de');
+		await attendre(800);
+		const lang = await racineDit(page, 'lang');
+		verifierChaque(
+			'choisir l’allemand dans la liste, au clavier puis à la souris, n’envoie rien : l’écran reste en français, sur « À venir », l’allemand choisi dans la liste',
+			{
+				'l’allemand choisi': (await liste.inputValue()) === 'de',
+				'la même adresse': chemin(page) === '/',
+				'toujours en français': lang === 'fr'
+			},
+			`${chemin(page)}, <html lang="${lang}">, « ${await liste.inputValue()} » choisi`
+		);
+		await ouvrir(page, '/');
 	});
 	await langueChoisieAvantLaConnexion(navigateur, page);
 }
@@ -6829,6 +7183,46 @@ async function sansJavaScript(navigateur, page) {
 					'un seul bouton visible': (await boutonsDAnnulationVisibles(sans).count()) === 1
 				},
 				`${await ouvertes()} ouverte(s), ${await boutonsDAnnulationVisibles(sans).count()} bouton(s) visible(s)`
+			);
+		});
+		// La page publique, sans JavaScript : le choix de la langue est un formulaire qui mène à la même
+		// vue dans la langue choisie, et à la vue suivante de même (étape 21).
+		await retour('21-langue', async () => {
+			const base = `/m/${ORGANISATION.slug}`;
+			await ouvrir(sans, `${base}?vue=mois`);
+			const liste = await exiger(
+				sans.getByLabel(TEXTES_DU_CHOIX.fr.etiquette, { exact: true }),
+				'la liste du choix de la langue sur la page publique'
+			);
+			await liste.selectOption({ label: NOM_DE_LANGUE.it });
+			await envoyer(
+				sans,
+				sans.getByRole('button', { name: TEXTES_DU_CHOIX.fr.bouton, exact: true })
+			);
+			const italien = new URL(sans.url());
+			const enItalien = `${italien.pathname}${italien.search}`;
+			await exiger(
+				sans.getByLabel(TEXTES_DU_CHOIX.it.etiquette, { exact: true }),
+				'la liste du choix de la langue, en italien'
+			);
+			await sans
+				.getByLabel(TEXTES_DU_CHOIX.it.etiquette, { exact: true })
+				.selectOption({ label: NOM_DE_LANGUE.fr });
+			await envoyer(
+				sans,
+				sans.getByRole('button', { name: TEXTES_DU_CHOIX.it.bouton, exact: true })
+			);
+			const retourEnFrancais = new URL(sans.url());
+			verifierChaque(
+				`sans JavaScript, sur ${base}?vue=mois, « ${NOM_DE_LANGUE.it} » choisi dans la liste puis « ${TEXTES_DU_CHOIX.fr.bouton} » mène à la vue Mois en italien, et « ${NOM_DE_LANGUE.fr} » puis « ${TEXTES_DU_CHOIX.it.bouton} » la ramène en français`,
+				{
+					[`${base}/it`]: italien.pathname === `${base}/it`,
+					'la vue Mois en italien': italien.searchParams.get('vue') === 'mois',
+					[`${base} en français`]: retourEnFrancais.pathname === base,
+					'la vue Mois en français': retourEnFrancais.searchParams.get('vue') === 'mois',
+					'<html lang="fr">': (await racineDit(sans, 'lang')) === 'fr'
+				},
+				`${enItalien} puis ${retourEnFrancais.pathname}${retourEnFrancais.search}`
 			);
 		});
 		await retour('B1', async () => {
@@ -7398,8 +7792,41 @@ async function vendrediSurLAccueil(page) {
 		await retour('A2', async () => {
 			const prevue = carte(page, 'scheduled');
 			await prevue.getByText('Annuler ou déplacer', { exact: true }).click();
+			// Les options d'une session parlent d'une session (étape 21, question 3) : elles disaient
+			// « séance », le mot d'un cours. Les gestes visent donc le formulaire, et non le libellé.
+			await retour('21-Q3', async () => {
+				const annuler = prevue.locator('form[action="?/annuler"]');
+				const deplacer = prevue.locator('form[action="?/deplacer"]');
+				const lus = {
+					bouton: await texteDe(annuler.locator('button[type="submit"]')),
+					aide: await texteDe(annuler.locator('.aide')),
+					legende: await texteDe(deplacer.locator('legend')),
+					deplacer: await texteDe(deplacer.locator('button[type="submit"]'))
+				};
+				verifierChaque(
+					`sur « À venir », les options de la session du vendredi disent « ${CARTE_D_UNE_SESSION.bouton} », avec l’aide « ${CARTE_D_UNE_SESSION.aide} », puis « ${CARTE_D_UNE_SESSION.legende} » et « ${CARTE_D_UNE_SESSION.deplacer} »`,
+					{
+						[`« ${CARTE_D_UNE_SESSION.bouton} »`]: lus.bouton === CARTE_D_UNE_SESSION.bouton,
+						'son aide': lus.aide === CARTE_D_UNE_SESSION.aide,
+						[`« ${CARTE_D_UNE_SESSION.legende} »`]: lus.legende === CARTE_D_UNE_SESSION.legende,
+						[`« ${CARTE_D_UNE_SESSION.deplacer} »`]: lus.deplacer === CARTE_D_UNE_SESSION.deplacer
+					},
+					`« ${lus.bouton} » ; « ${lus.aide} » ; « ${lus.legende} » ; « ${lus.deplacer} »`
+				);
+			});
 			await prevue.getByLabel('Heure de début', { exact: true }).fill(HEURE_DU_VENDREDI_DEPLACE);
-			await envoyer(page, prevue.getByRole('button', { name: 'Déplacer la séance', exact: true }));
+			await envoyer(page, prevue.locator('form[action="?/deplacer"] button[type="submit"]'));
+			await retour('21-Q3', async () => {
+				const titreDuBloc =
+					(await page.locator('#message-titre').count()) === 1
+						? await texteDe(page.locator('#message-titre'))
+						: 'aucun message';
+				verifier(
+					`déplacée sur « À venir », la session du vendredi : le message qui suit le geste a pour titre « ${CARTE_D_UNE_SESSION.deplacee} »`,
+					titreDuBloc === CARTE_D_UNE_SESSION.deplacee,
+					titreDuBloc
+				);
+			});
 			const arrivee = carte(page, 'moved_here');
 			const presente = (await arrivee.count()) === 1;
 			const marque = presente ? await texteDe(arrivee.locator('.marque')) : '';
@@ -7413,22 +7840,58 @@ async function vendrediSurLAccueil(page) {
 				},
 				lue
 			);
-			// La carte de départ, à l'heure prévue, dit son état avec le nom d'une session (étape 20, C4).
+			// La carte de départ, à l'heure prévue, dit son état avec le nom d'une session (étape 20, C4),
+			// puis, depuis l'étape 21 (question 3), le jour et l'heure seuls, « Au … à … ».
+			const partie = carte(page, 'moved_away');
+			const partiePresente = (await partie.count()) === 1;
+			const texteDeLaPartie = partiePresente
+				? await texteDe(partie)
+				: `${await partie.count()} carte(s) de départ`;
 			await retour('20-C4', async () => {
-				const depart = carte(page, 'moved_away');
-				const presente = (await depart.count()) === 1;
-				const deplacee = `Session déplacée au ${dateLongue(jour)} à ${HEURE_DU_VENDREDI_DEPLACE}`;
-				const texteDuDepart = presente
-					? await texteDe(depart)
-					: `${await depart.count()} carte(s) de départ`;
+				verifier(
+					'sur « À venir », la session du vendredi déplacée le même jour porte « Session déplacée »',
+					partiePresente &&
+						(await texteDe(partie.locator('.titre .marque'))) === 'Session déplacée',
+					texteDeLaPartie
+				);
+			});
+			await retour('21-Q3', async () => {
+				const vers = `Au ${dateLongue(jour)} à ${HEURE_DU_VENDREDI_DEPLACE}`;
+				const details = (await partie.locator('p.details').allTextContents()).map((texte) =>
+					texte.replace(/\s+/g, ' ').trim()
+				);
 				verifierChaque(
-					`sur « À venir », la session du vendredi déplacée le même jour porte « Session déplacée », et « ${deplacee} »`,
+					`sous la carte de départ de la session du vendredi déplacée le même jour, « ${vers} » seul, sans « Session déplacée au … »`,
 					{
-						'la marque « Session déplacée »':
-							presente && (await texteDe(depart.locator('.titre .marque'))) === 'Session déplacée',
-						[`« ${deplacee} »`]: texteDuDepart.includes(deplacee)
+						[`« ${vers} »`]: details.includes(vers),
+						'sans « Session déplacée au »': !texteDeLaPartie.includes('Session déplacée au')
 					},
-					texteDuDepart
+					details.join(' | ') || texteDeLaPartie
+				);
+			});
+			// Sa date prévue, aujourd'hui ou plus tard, n'est pas passée : la carte de départ a
+			// « Rétablir la session » et les options « Annuler », avec l'aide qui dit que l'annulation
+			// se défait (étape 21, question 5). Rien n'est envoyé ici.
+			await retour('21-Q5', async () => {
+				const options = partie.locator('details.options');
+				const bouton = options.locator('form[action="?/annulerDeplacee"] button[type="submit"]');
+				const unBouton = (await bouton.count()) === 1;
+				const retablir = partie.locator('form[action="?/retablir"] button[type="submit"]');
+				verifierChaque(
+					`sur « À venir », la carte de départ de la session du vendredi déplacée le même jour a « Rétablir la session » et les options « Annuler », qui proposent « ${CARTE_D_UNE_SESSION.bouton} », avec l’aide « ${ANNULATION_QUI_SE_DEFAIT.session} »`,
+					{
+						'« Rétablir la session »':
+							(await retablir.count()) === 1 && (await texteDe(retablir)) === 'Rétablir la session',
+						'les options « Annuler », fermées':
+							(await options.count()) === 1 &&
+							(await texteDe(options.locator(':scope > summary'))) === 'Annuler' &&
+							!(await estOuvert(options)),
+						[`« ${CARTE_D_UNE_SESSION.bouton} »`]:
+							unBouton && (await texteDe(bouton)) === CARTE_D_UNE_SESSION.bouton,
+						'l’aide qui dit que l’annulation se défait':
+							unBouton && (await descriptionDe(bouton)) === ANNULATION_QUI_SE_DEFAIT.session
+					},
+					texteDeLaPartie
 				);
 			});
 			const messagesDuDeplacement = await messagesDeLAccueil(page, 'message');
@@ -7506,7 +7969,7 @@ async function vendrediSurLAccueil(page) {
 			await perimee.getByText('Annuler ou déplacer', { exact: true }).click();
 			await envoyer(
 				ouvertAvant,
-				perimee.getByRole('button', { name: 'Déplacer la séance', exact: true })
+				perimee.locator('form[action="?/deplacer"] button[type="submit"]')
 			);
 			const refus = ouvertAvant.getByRole('alert');
 			const phrase =
@@ -7526,8 +7989,9 @@ async function vendrediSurLAccueil(page) {
 				(await depart.count()) === 1 ? await texteDe(depart) : 'aucune carte de départ';
 			const messagesPrepares = await ouvertAvant.locator('#message-titre').count();
 			const arrivees = await carte(ouvertAvant, 'moved_here').count();
-			// La carte de départ dit où la session est partie. Le nom de son état, « Déplacée au … » à
-			// l'étape 19, « Session déplacée au … » depuis l'étape 20, est lu par 20-C4.
+			// La carte de départ dit où la session est partie : le jour et l'heure, que toutes les images
+			// écrivent. Le nom de son état, « Déplacée au … » à l'étape 19, « Session déplacée au … » à
+			// l'étape 20, est lu par 20-C4, et « Au … à … », depuis l'étape 21, par 21-Q3.
 			verifierChaque(
 				`une carte restée ouverte dans un autre onglet, envoyée après ce déplacement, est refusée par une phrase en haut, et rien n’est écrit : la session reste à ${HEURE_DU_VENDREDI_DEPLACE}`,
 				{
@@ -7535,7 +7999,7 @@ async function vendrediSurLAccueil(page) {
 					'le refus en haut': enHaut,
 					'aucun message préparé': messagesPrepares === 0,
 					[`la session à ${HEURE_DU_VENDREDI_DEPLACE}`]: departLu.includes(
-						`au ${dateLongue(jour)} à ${HEURE_DU_VENDREDI_DEPLACE}`
+						`${dateLongue(jour)} à ${HEURE_DU_VENDREDI_DEPLACE}`
 					),
 					'une seule carte d’arrivée': arrivees === 1
 				},
@@ -7589,12 +8053,32 @@ async function vendrediSurLAccueil(page) {
 					'la phrase du refus': refusDuVendredi === SESSION_CHANGEE,
 					'le refus en tête': enTete,
 					'aucune confirmation': confirmations === 0,
-					[`la session déplacée à ${HEURE_DU_VENDREDI_DEPLACE}`]: seanceLue.includes(
-						`Déplacée au ${dateLongue(jour)} à ${HEURE_DU_VENDREDI_DEPLACE}`
-					)
+					[`la session déplacée à ${HEURE_DU_VENDREDI_DEPLACE}`]:
+						/déplacée/i.test(seanceLue) &&
+						seanceLue.includes(`${dateLongue(jour)} à ${HEURE_DU_VENDREDI_DEPLACE}`)
 				},
 				`« ${refusDuVendredi} », ${enTete ? 'avant' : 'pas avant'} la première session ; ${confirmations} confirmation(s) ; ${seanceLue}`
 			);
+			// La ligne dit son état avec le nom d'une session, puis le jour et l'heure seuls (étape 21,
+			// question 2) : elle disait « Déplacée au … à … ».
+			await retour('21-Q2', async () => {
+				const vers = LIGNE_DU_VENDREDI.vers(dateLongue(jour), HEURE_DU_VENDREDI_DEPLACE);
+				const marques = (await seance.locator('.marque').allTextContents()).map((texte) =>
+					texte.trim()
+				);
+				const details = (await seance.locator('p.details').allTextContents()).map((texte) =>
+					texte.replace(/\s+/g, ' ').trim()
+				);
+				verifierChaque(
+					`sur l’écran du vendredi, la ligne de la session déplacée le même jour porte « ${LIGNE_DU_VENDREDI.deplacee} », puis « ${vers} » seul`,
+					{
+						[`« ${LIGNE_DU_VENDREDI.deplacee} »`]: marques.includes(LIGNE_DU_VENDREDI.deplacee),
+						[`« ${vers} »`]: details.includes(vers),
+						'sans « Déplacée au »': !seanceLue.includes('Déplacée au')
+					},
+					seanceLue
+				);
+			});
 		});
 	} finally {
 		await ouvertAvant.close();
@@ -7631,15 +8115,25 @@ async function vendrediAnnule(page) {
 		`${await carte('scheduled').count()} carte(s) prévue(s)`
 	);
 	await carte('scheduled').getByText('Annuler ou déplacer', { exact: true }).click();
-	await envoyer(
-		page,
-		carte('scheduled').getByRole('button', { name: 'Annuler cette séance', exact: true })
-	);
+	// Le bouton, par son formulaire : son libellé, « Annuler cette session » depuis l'étape 21, est
+	// lu par 21-Q3.
+	await envoyer(page, carte('scheduled').locator('form[action="?/annuler"] button[type="submit"]'));
 	verifier(
 		'annulée sur « À venir », la session du vendredi porte « annulée »',
 		(await carte('cancelled').count()) === 1,
 		`${await carte('cancelled').count()} carte(s) annulée(s)`
 	);
+	await retour('21-Q3', async () => {
+		const titreDuBloc =
+			(await page.locator('#message-titre').count()) === 1
+				? await texteDe(page.locator('#message-titre'))
+				: 'aucun message';
+		verifier(
+			`annulée sur « À venir », la session du vendredi : le message qui suit le geste a pour titre « ${CARTE_D_UNE_SESSION.annulee} »`,
+			titreDuBloc === CARTE_D_UNE_SESSION.annulee,
+			titreDuBloc
+		);
+	});
 	// Sa carte et sa ligne du programme de la semaine disent son état avec le nom d'une session
 	// (étape 20, C4).
 	await retour('20-C4', async () => {
@@ -7914,6 +8408,25 @@ async function sessionHorsDesCours(page) {
 		);
 	});
 	if ((await racineDit(page, 'lang')) !== 'fr') await choisirLaLangue(page, 'fr');
+	// Sa page publique parle d'une prière, et non d'un cours (étape 21, question 1) : elle disait
+	// « Prochaines séances », « Ajouter ce cours à mon agenda » et « Enseigné en ».
+	await retour('21-Q1', async () => {
+		const adresse = `/m/${ORGANISATION.slug}/cours/${id}`;
+		await ouvrir(page, adresse);
+		const titres = (await page.locator('main h2').allTextContents()).map((texte) => texte.trim());
+		const termes = (await page.locator('main dt').allTextContents()).map((texte) => texte.trim());
+		verifierChaque(
+			`${adresse.replace(id, '<id>')}, la page publique de la session du vendredi : « Prochaines prières », « Ajouter cette prière à mon agenda » et « Langue du sermon »`,
+			{
+				'« Prochaines prières »': titres.includes('Prochaines prières'),
+				'« Ajouter cette prière à mon agenda »': titres.includes(
+					'Ajouter cette prière à mon agenda'
+				),
+				'« Langue du sermon »': termes.includes('Langue du sermon')
+			},
+			`titres : ${titres.join(', ') || 'aucun'} ; ${termes.join(', ') || 'aucun terme'}`
+		);
+	});
 }
 
 /**
@@ -8211,9 +8724,11 @@ async function vendrediEtape19(page) {
 	// « Déplacer » vers la veille, par un formulaire modifié dans la page : la liste des jours commence
 	// aujourd'hui, et l'écran refuse un jour passé depuis l'étape 19. Avant, il l'écrivait : la
 	// session déplacée au passé est alors rétablie, pour la suite.
+	// La ligne d'une session partie ailleurs : « Déplacée au … » jusqu'à l'étape 20, « Session
+	// déplacée » depuis l'étape 21.
 	const deplacees = page
 		.locator('section[aria-labelledby="ce-vendredi"] div.seance')
-		.filter({ hasText: 'Déplacée au' });
+		.filter({ hasText: /déplacée/i });
 	await retour('19-D2', async () => {
 		await ouvrir(page, '/vendredi');
 		const deplacer = await exiger(
@@ -8270,6 +8785,71 @@ async function vendrediEtape19(page) {
 		const nouvelleDate = ceVendredi(page).filter({
 			hasText: `Nouvelle date, à la place du ${dateLongue(jour)}`
 		});
+		const depart = ceVendredi(page)
+			.filter({ hasText: dateLongue(jour) })
+			.filter({ hasNotText: 'Nouvelle date' });
+		// Le déplacement donne le message à copier, comme sur « À venir », et la ligne de départ dit
+		// son état avec le nom d'une session, puis le jour et l'heure seuls (étape 21, question 2).
+		await retour('21-Q2', async () => {
+			const bloc = page.locator('section.messages');
+			const titreDuBloc =
+				(await bloc.count()) === 1 ? await texteDe(bloc.locator('#message-titre')) : '';
+			const francais =
+				(await bloc.locator('#message-fr').count()) === 1
+					? await bloc.locator('#message-fr').inputValue()
+					: '';
+			const annonce = `« ${PRIERE_DU_VENDREDI.fr} » : la prière du ${dateLongue(jour)} est déplacée au ${dateLongue(autreJour)} à ${VENDREDI.debut}.`;
+			const vers = LIGNE_DU_VENDREDI.vers(dateLongue(autreJour), VENDREDI.debut);
+			const departLu =
+				(await depart.count()) === 1 ? await texteDe(depart) : `${await depart.count()} ligne(s)`;
+			const marques = (await depart.locator('.marque').allTextContents()).map((texte) =>
+				texte.trim()
+			);
+			const details = (await depart.locator('p.details').allTextContents()).map((texte) =>
+				texte.replace(/\s+/g, ' ').trim()
+			);
+			verifierChaque(
+				`sur l’écran du vendredi, « Déplacer » vers un autre jour donne le bloc « Message à copier », « ${annonce} », et la ligne de départ porte « ${LIGNE_DU_VENDREDI.deplacee} », puis « ${vers} » seul`,
+				{
+					'le bloc « Message à copier »': titreDuBloc === 'Message à copier',
+					'le message du déplacement': francais.includes(annonce),
+					[`« ${LIGNE_DU_VENDREDI.deplacee} »`]: marques.includes(LIGNE_DU_VENDREDI.deplacee),
+					[`« ${vers} »`]: details.includes(vers)
+				},
+				`« ${titreDuBloc || 'aucun bloc'} » ; ${francais.split('\n').find((ligne) => ligne.includes('déplacée')) ?? 'aucun message en français'} ; ${departLu}`
+			);
+		});
+		// Le jour prévu est à venir : ses deux lignes, départ et nouvelle date, ont « Rétablir comme
+		// d’habitude » et les options « Annuler », avec l'aide qui dit que l'annulation se défait
+		// (étape 21, question 5). Rien n'est envoyé ici.
+		await retour('21-Q5', async () => {
+			const conditions = {};
+			for (const [quelle, ligneLue] of /** @type {const} */ ([
+				['de départ', depart],
+				['« Nouvelle date »', nouvelleDate]
+			])) {
+				const options = ligneLue.locator('details.options');
+				const annuler = options.locator('form[action="?/annulerDeplacee"] button[type="submit"]');
+				const unBouton = (await annuler.count()) === 1;
+				const retablir = ligneLue.locator('form[action="?/retablir"] button[type="submit"]');
+				conditions[`la ligne ${quelle} : « Rétablir comme d’habitude »`] =
+					(await retablir.count()) === 1 &&
+					(await texteDe(retablir)) === 'Rétablir comme d’habitude';
+				conditions[`la ligne ${quelle} : les options « Annuler », fermées`] =
+					(await options.count()) === 1 &&
+					(await texteDe(options.locator(':scope > summary'))) === 'Annuler' &&
+					!(await estOuvert(options));
+				conditions[`la ligne ${quelle} : « Annuler cette session »`] =
+					unBouton && (await texteDe(annuler)) === 'Annuler cette session';
+				conditions[`la ligne ${quelle} : l’aide qui dit que l’annulation se défait`] =
+					unBouton && (await descriptionDe(annuler)) === ANNULATION_QUI_SE_DEFAIT.session;
+			}
+			verifierChaque(
+				`sur l’écran du vendredi, une session déplacée vers un autre jour, son jour prévu à venir : ses deux lignes ont « Rétablir comme d’habitude » et les options « Annuler », qui proposent « Annuler cette session », avec l’aide « ${ANNULATION_QUI_SE_DEFAIT.session} »`,
+				conditions,
+				`${await texteDe(depart)} | ${await texteDe(nouvelleDate)}`
+			);
+		});
 		const bouton = nouvelleDate.locator('form[action="?/retablir"] button[type="submit"]');
 		const present =
 			(await bouton.count()) === 1 && (await texteDe(bouton)) === 'Rétablir comme d’habitude';
@@ -8291,7 +8871,7 @@ async function vendrediEtape19(page) {
 			dit.map((texte) => `« ${texte} »`).join(', ') || 'aucun message'
 		);
 	});
-	const deplacee = ceVendredi(page).filter({ hasText: 'Déplacée au' });
+	const deplacee = ceVendredi(page).filter({ hasText: /déplacée/i });
 	if ((await deplacee.count()) === 1) {
 		await envoyer(page, deplacee.locator('form[action="?/retablir"] button[type="submit"]'));
 	}
@@ -8302,6 +8882,7 @@ async function vendrediEtape19(page) {
 			.locator('form[action="?/annuler"]')
 			.count()) === 1
 	);
+	await annulerSurLEcranDuVendredi(page, ceVendredi);
 
 	// Un jour sans séance n'en montre aucune, sur aucun écran, qu'une annulation soit écrite pour lui
 	// ou non. Ce qui se vérifie, c'est ce que l'écran dit de son geste : un refus en tête, aucune
@@ -8371,6 +8952,145 @@ async function vendrediEtape19(page) {
 	});
 	await ouvrir(page, '/');
 	if ((await racineDit(page, 'lang')) !== 'fr') await choisirLaLangue(page, 'fr');
+}
+
+/**
+ * p, étape 21 (questions 5 et 2), sur l'écran du vendredi. La session déplacée vers un autre jour,
+ * son jour prévu à venir, s'annule à sa nouvelle date, avec le message à copier, puis se rétablit :
+ * elle retrouve son vendredi. Une annulation ordinaire donne elle aussi le message à copier, et la
+ * ligne dit « Session annulée » ; elle est rétablie. Si un écran n'offre pas un geste, la base retire
+ * ce qui a été écrit pour ce vendredi : la suite part de la session prévue à son heure.
+ */
+async function annulerSurLEcranDuVendredi(page, ceVendredi) {
+	const jour = VENDREDI_QUI_VIENT;
+	const duJour = () => ceVendredi(page).filter({ hasText: dateLongue(jour) });
+	const prevue = async () => (await duJour().locator('form[action="?/annuler"]').count()) === 1;
+	/** Ce que l'écran confirme, et le message à copier en français, après un geste. */
+	const ceQueDitLEcran = async () => {
+		const bloc = page.locator('section.messages');
+		return {
+			dit: (await page.getByRole('status').allTextContents()).map((phrase) =>
+				phrase.replace(/\s+/g, ' ').trim()
+			),
+			titreDuBloc: (await bloc.count()) === 1 ? await texteDe(bloc.locator('#message-titre')) : '',
+			francais:
+				(await bloc.locator('#message-fr').count()) === 1
+					? await bloc.locator('#message-fr').inputValue()
+					: ''
+		};
+	};
+	await ouvrir(page, '/vendredi');
+	const id = (await duJour().locator('input[name="courseId"]').first().getAttribute('value')) ?? '';
+	verifier(
+		`l’écran du vendredi donne l’identifiant de la session de ${VENDREDI.debut}`,
+		UUID.test(id),
+		id || 'aucun identifiant'
+	);
+	try {
+		await retour('21-Q5', async () => {
+			const deplacer = duJour().locator('form[action="?/deplacer"]');
+			const autreJour = await deplacer
+				.locator('select[name="toDate"] option')
+				.evaluateAll(
+					(options, date) =>
+						options
+							.map((option) => /** @type {HTMLOptionElement} */ (option).value)
+							.find((valeur) => valeur !== date) ?? '',
+					jour
+				);
+			await deplacer.locator('select[name="toDate"]').selectOption(autreJour);
+			await envoyer(page, deplacer.locator('button[type="submit"]'));
+			const options = ceVendredi(page)
+				.filter({ hasText: `Nouvelle date, à la place du ${dateLongue(jour)}` })
+				.locator('details.options');
+			const annuler = await exiger(
+				options.locator('form[action="?/annulerDeplacee"] button[type="submit"]'),
+				'« Annuler cette session » sur la ligne « Nouvelle date »'
+			);
+			await options.locator(':scope > summary').click();
+			await envoyer(page, annuler);
+			const apres = await ceQueDitLEcran();
+			const fait = ANNULER_LA_DEPLACEE.vendredi.fait;
+			const annonce = `« ${PRIERE_DU_VENDREDI.fr} » : la prière du ${dateLongue(autreJour)} à ${VENDREDI.debut} est annulée.`;
+			const annulee = ceVendredi(page).filter({ hasText: LIGNE_DU_VENDREDI.annulee });
+			const retablir = annulee.locator('form[action="?/retablir"] button[type="submit"]');
+			const uneAnnulee = (await annulee.count()) === 1;
+			verifierChaque(
+				`sur l’écran du vendredi, la session déplacée vers un autre jour, annulée à sa nouvelle date : « ${fait} », le bloc « Message à copier », « ${annonce} », et sa ligne porte « ${LIGNE_DU_VENDREDI.annulee} », avec « Rétablir comme d’habitude »`,
+				{
+					[`« ${fait} »`]: apres.dit.includes(fait),
+					'le bloc « Message à copier »': apres.titreDuBloc === 'Message à copier',
+					'le message, avec la nouvelle date et l’heure': apres.francais.includes(annonce),
+					[`une ligne « ${LIGNE_DU_VENDREDI.annulee} »`]: uneAnnulee,
+					'« Rétablir comme d’habitude »':
+						uneAnnulee &&
+						(await retablir.count()) === 1 &&
+						(await texteDe(retablir)) === 'Rétablir comme d’habitude'
+				},
+				`${apres.dit.map((phrase) => `« ${phrase} »`).join(', ') || 'aucune confirmation'} ; ${apres.francais.split('\n').find((ligne) => ligne.includes('annulée')) ?? 'aucun message en français'} ; ${uneAnnulee ? await texteDe(annulee) : `${await annulee.count()} ligne(s) annulée(s)`}`
+			);
+			await envoyer(
+				page,
+				await exiger(retablir, '« Rétablir comme d’habitude » sur la ligne annulée')
+			);
+			const retablie = await ceQueDitLEcran();
+			verifierChaque(
+				'annulée à sa nouvelle date, la session se rétablit : « Rétablir comme d’habitude » la ramène à son vendredi',
+				{
+					'« La session retrouve son jour et son heure habituels. »': retablie.dit.includes(
+						'La session retrouve son jour et son heure habituels.'
+					),
+					'la session de nouveau prévue ce vendredi': await prevue(),
+					'aucune ligne annulée': (await annulee.count()) === 0
+				},
+				retablie.dit.map((phrase) => `« ${phrase} »`).join(', ') || 'aucun message'
+			);
+		});
+		await retour('21-Q2', async () => {
+			await ouvrir(page, '/vendredi');
+			await envoyer(
+				page,
+				await exiger(
+					duJour().locator('form[action="?/annuler"] button[type="submit"]'),
+					'« Annuler cette session » dans « Ce vendredi »'
+				)
+			);
+			const apres = await ceQueDitLEcran();
+			const annonce = `« ${PRIERE_DU_VENDREDI.fr} » : la prière du ${dateLongue(jour)} est annulée.`;
+			const marques = (await duJour().locator('.marque').allTextContents()).map((texte) =>
+				texte.trim()
+			);
+			verifierChaque(
+				`sur l’écran du vendredi, « Annuler cette session » donne le bloc « Message à copier », « ${annonce} », et la ligne porte « ${LIGNE_DU_VENDREDI.annulee} »`,
+				{
+					'le bloc « Message à copier »': apres.titreDuBloc === 'Message à copier',
+					'le message de l’annulation': apres.francais.includes(annonce),
+					[`« ${LIGNE_DU_VENDREDI.annulee} »`]: marques.includes(LIGNE_DU_VENDREDI.annulee)
+				},
+				`« ${apres.titreDuBloc || 'aucun bloc'} » ; ${apres.francais.split('\n').find((ligne) => ligne.includes('annulée')) ?? 'aucun message en français'} ; marques : ${marques.join(', ') || 'aucune'}`
+			);
+			await envoyer(
+				page,
+				await exiger(
+					duJour().locator('form[action="?/retablir"] button[type="submit"]'),
+					'« Rétablir comme d’habitude » sur la ligne annulée'
+				)
+			);
+		});
+	} finally {
+		await ouvrir(page, '/vendredi');
+		if (!(await prevue())) {
+			const remise = ecrireDansLaBase(
+				`delete from session_exception where course_id = '${id}' and date = '${jour}'`
+			);
+			verifier('la base retire ce qui a été écrit pour ce vendredi', remise.ok, remise.sortie);
+			await ouvrir(page, '/vendredi');
+		}
+		verifier(
+			`la session du vendredi est prévue à ${VENDREDI.debut}, ce vendredi, pour la suite du parcours`,
+			await prevue()
+		);
+	}
 }
 
 /**
@@ -9161,18 +9881,28 @@ async function deplaceeSurLEcranDuVendredi(page) {
 					: '';
 			const annonce = `« ${PRIERE_DU_VENDREDI.fr} » : la prière du ${dateLongue(jour)} à ${heure} est annulée.`;
 			const apres = await lue();
+			// La marque de la ligne, « Annulée ce jour-là » à l'étape 20, dit « Session annulée » depuis
+			// l'étape 21 (question 2) : 20-C2 garde qu'elle se dit annulée, 21-Q2 lit le mot.
 			verifierChaque(
-				`annulée, elle le dit, « ${texte.fait} », le bloc « Message à copier » nomme sa nouvelle date et sa nouvelle heure, « ${annonce} », et sa ligne porte « ${texte.annulee} », sans « Rétablir comme d’habitude »`,
+				`annulée, elle le dit, « ${texte.fait} », le bloc « Message à copier » nomme sa nouvelle date et sa nouvelle heure, « ${annonce} », et sa ligne se dit annulée, sans « Rétablir comme d’habitude »`,
 				{
 					[`« ${texte.fait} »`]: dit.includes(texte.fait),
 					'le bloc « Message à copier »': titreDuBloc === 'Message à copier',
 					'le message, avec la nouvelle date et la nouvelle heure': francais.includes(annonce),
-					[`« ${texte.annulee} »`]: apres.includes(texte.annulee),
+					'la ligne se dit annulée': /annulée/i.test(apres),
 					'pas de « Rétablir comme d’habitude »':
 						(await ligne.locator('form[action="?/retablir"]').count()) === 0
 				},
 				`${dit.map((phrase) => `« ${phrase} »`).join(', ') || 'aucune confirmation'} ; ${francais.split('\n').find((une) => une.includes(heure)) ?? 'aucun message en français'} ; ${apres}`
 			);
+			await retour('21-Q2', async () => {
+				const marques = (await ligne.locator('.marque').allTextContents()).map((une) => une.trim());
+				verifier(
+					`sur l’écran du vendredi, la session déplacée d’un vendredi passé, annulée, porte « ${LIGNE_DU_VENDREDI.annulee} »`,
+					marques.includes(LIGNE_DU_VENDREDI.annulee),
+					`marques : ${marques.join(', ') || 'aucune'} ; ${apres}`
+				);
+			});
 			await auditer(page, 'vendredi, session déplacée d’un vendredi passé, annulée', {
 				recharger: false
 			});
@@ -9251,6 +9981,7 @@ D2 | au premier passage, un navigateur réglé en allemand (de-CH) voit /connexi
 D3 | le lien demandé depuis cet écran allemand part en allemand, <html lang="de"> compris
 B1 | la connexion dit, sous le champ, quelle adresse écrire, avec un exemple
 20-C7 | la connexion donne sous le champ l’exemple « prenom.nom@example.org », sur un domaine réservé aux exemples
+21-connexion | la connexion ne nomme les conditions qu’une fois, par le lien du pied commun
 A3 | les conditions sont datées en JJ.MM.AAAA, « Dernière mise à jour : JJ.MM.AAAA. »
 F1 | les conditions nomment Voltia comme exploitant, et nulle part la personne retirée
 A3 | la passkey est datée du jour en Suisse, « Enregistrée le JJ.MM.AAAA »
@@ -9264,6 +9995,7 @@ D2 | en English, les écrans du super-admin sont dans cette langue, rien en fran
 D2 | en العربية, les écrans du super-admin sont dans cette langue, rien en français
 D2 | la langue choisie reste au rechargement
 D2 | retour au français
+21-langue | sur /super-admin et /super-admin/passkey, dans les cinq langues, le choix de la langue est une liste nommée « Langue », « Sprache », « Lingua », « Language », « اللغة », et un seul bouton, « Changer », « Ändern », « Cambia », « Change », « تغيير »
 B2 | « Créer une organisation », avec la phrase qui dit ce qu’est une organisation
 B2 | le fuseau se choisit dans une liste, les fuseaux d’Europe en tête, Europe/Zurich par défaut
 B2 | une phrase sous le fuseau dit à quoi il sert : les heures du programme et celles des prières
@@ -9313,11 +10045,14 @@ B1 | l’aide de la nouvelle date dit : à partir d’aujourd’hui, plus tôt o
 A2 | « Déplacer la séance » sans rien changer, ni la date ni l’heure, est refusé avec une phrase, dans la carte, et rien n’est déplacé
 A2 | une date passée est refusée, dans la carte de la séance
 A2 | la séance du JJ.MM.AAAA part au JJ.MM.AAAA, plus tôt que prévu, et se dit déplacée
-20-C4 | sur « À venir », la séance partie plus tôt porte « Séance déplacée », et « Séance déplacée au JOUR JJ.MM.AAAA à 20:30 »
+20-C4 | sur « À venir », la séance partie plus tôt porte « Séance déplacée »
+21-Q3 | sous la carte de la séance partie plus tôt, « Au JOUR JJ.MM.AAAA à 20:30 » seul, sans « Séance déplacée au … »
 A2 | elle apparaît le JJ.MM.AAAA, en date exceptionnelle, prévue à l’origine le JJ.MM.AAAA
 19-D4 | la carte d’arrivée du JJ.MM.AAAA, « date exceptionnelle », a son bouton « Rétablir la séance », avec l’aide qui dit ce qu’il défait
+21-Q5 | la séance déplacée du JJ.MM.AAAA, une date à venir, au JJ.MM.AAAA : ses deux cartes ont « Rétablir la séance » et les options « Annuler », qui proposent « Annuler cette séance », avec l’aide « Seule cette séance est annulée, à sa nouvelle date. Vous pourrez la rétablir ensuite : elle retrouvera sa date et son heure habituelles. »
 B1 | l’écran Partager dit où coller le code, avec un exemple, et nomme le cadre sans jargon
 19-B2 | « À venir » en arabe : la note de l’audience dit « فالتقويم يُحدَّث من تلقاء نفسه »
+21-Q4 | « À venir » en arabe : la séance d’un cours arrivée d’un autre jour porte « حصة استثنائية »
 19-B10 | « À venir » en arabe, le programme qui ne s’affiche plus sur le site : l’alerte parle de « الشيفرة », et son lien dit « عرض الشيفرة المراد لصقها مرة أخرى »
 19-B9 | en arabe, le programme de la semaine se copie puis se colle : « لتنسخه وتلصقه في WhatsApp » sur « À venir », « انسخ هذه الرسالة والصقها في مجموعة WhatsApp الخاصة بك » dans Partager
 19-B1 | Partager en arabe : le code pour un site très strict « وهي لا تُحدَّث تلقائيًا »
@@ -9356,6 +10091,7 @@ D1 | /m/centre-parcours/en : aucune phrase de la page française n’y reste en 
 D4 | les conditions ouvertes depuis /m/centre-parcours/en disent d’abord, dans cette langue, qu’elles n’existent qu’en français
 A2 | /m/centre-parcours/ar : la séance ramenée plus tôt se voit au départ (JJ.MM.AAAA) et à l’arrivée (JJ.MM.AAAA)
 20-C4 | /m/centre-parcours/ar : la séance annulée porte « حصة ملغاة », et la séance ramenée plus tôt, à son départ, « حصة منقولة إلى … »
+21-Q4 | /m/centre-parcours/ar : la séance ramenée plus tôt porte à son arrivée « حصة استثنائية »
 19-og-locale | /m/centre-parcours/ar : <meta property="og:locale" content="ar_AR">, et un og:locale:alternate par autre langue publiée
 D4 | les conditions ouvertes depuis /m/centre-parcours/ar disent d’abord, dans cette langue, qu’elles n’existent qu’en français
 19-cours-seance-barree | /m/centre-parcours/cours/<id> : dans « Prochaines séances », la séance annulée du JJ.MM.AAAA reste, barrée, avec sa marque
@@ -9378,6 +10114,7 @@ D1 | /m/centre-parcours/en/agenda : <html lang="en" dir="ltr">
 D1 | le widget demandé en anglais pose le cadre de la page anglaise
 D1 | le nom accessible du lien du widget est « See the full programme (opens in a new tab) », selon playwright et selon Chrome, et l’annonce est cachée aux yeux
 D1 | dans le cadre anglais, aucune phrase du cadre français ne reste en français
+21-langue | dans le cadre du widget, « Deutsch » choisi puis « Changer » met la page encadrée en allemand, toujours intégrée, sans entrée de plus dans l’historique du site
 A2 | la séance ramenée plus tôt a son RECURRENCE-ID (JJ.MM.AAAA) et sa nouvelle date, la veille (JJ.MM.AAAA)
 E1 | sur un iPhone, le premier lien est l’abonnement webcal, sans Google ni Outlook
 E1 | sur un Android, le lien ouvre Google Agenda avec la demande d’abonnement prête, dans un nouvel onglet
@@ -9406,6 +10143,8 @@ D2 | en العربية, les N écrans sont dans cette langue, rien en français
 D2 | la langue choisie, l’italien, reste au rechargement
 D2 | reconnectée dans un autre navigateur réglé en français, elle retrouve l’italien de son compte
 D2 | revenue au français par le compte, le premier navigateur le suit
+21-langue | sur les N écrans de l’espace, dans les cinq langues, le choix de la langue est une liste nommée « Langue », « Sprache », « Lingua », « Language », « اللغة », et un seul bouton, « Changer », « Ändern », « Cambia », « Change », « تغيير »
+21-langue | choisir l’allemand dans la liste, au clavier puis à la souris, n’envoie rien : l’écran reste en français, sur « À venir », l’allemand choisi dans la liste
 D2 | une langue choisie sur /connexion avant de demander le lien devient celle du compte : ouvert dans un autre navigateur, réglé en français, le lien arrive en allemand
 19-adresse-sans-langue | le lien de connexion arrive à une adresse sans la langue qu’il portait : /organisations, sans « ?language= »
 C1 | l’écran commence par « D’où viennent vos heures de prière ? », avec ses trois réponses
@@ -9426,6 +10165,7 @@ C2 | avec JavaScript, « Méthode de calcul, école et ajustements (facultatif) 
 19-B5 | un fichier séparé par des tabulations, lu en arabe : le séparateur se lit « علامة الجدولة (Tab) »
 19-B6 | vingt-cinq lignes refusées, vingt montrées : la ligne finale se lit « … و5 أخرى. »
 19-prieres-angle | dans les cinq langues, l’aide de la règle des nuits courtes dit que « Proportionnelle à l’angle » donne des heures qui changent avec la méthode de calcul
+21-relecture | les six textes relus à l’étape 21, à leur place : la connexion en arabe, « العنوان الذي وصلت إليه دعوتك. مثال: name@example.org » et « هذا العنوان ليس بصيغة عنوان بريد إلكتروني. مثال: name@example.org » ; l’abonnement en allemand, « Bei einer Änderung in letzter Minute sehen Sie auf der Seite des Programms nach: Diese ist immer aktuell. » ; les nuits courtes, « dass Ischa spät und Fadschr sehr früh beginnt. » et « La metà della notte mantiene gli orari astronomici » ; le sermon en italien, « Seleziona ogni lingua in cui viene tenuto il sermone, anche se la tua pagina pubblica non è in quella lingua. »
 B1 | l’heure d’une session du vendredi a son aide, avec un exemple
 19-sermon | dans « Ajouter une session », « Langue du sermon » propose les huit langues d’enseignement, dans l’ordre, et son aide le dit
 C4 | une session du vendredi est ajoutée
@@ -9461,6 +10201,7 @@ B1 | à 390 px, supprimer « Grande salle », qu’un cours occupe, demande d’
 C4 | à 390 px de large, axe ne relève rien de sérieux sur l’onglet « Prières », en français et en arabe, tableau de la semaine compris
 A1 | sans JavaScript, les options de chaque séance sont fermées au chargement, et aucun bouton « Annuler cette séance » ne se voit
 A1 | sans JavaScript, « Annuler ou déplacer » ouvre les options de sa carte, et d’elle seule
+21-langue | sans JavaScript, sur /m/centre-parcours?vue=mois, « Italiano » choisi dans la liste puis « Changer » mène à la vue Mois en italien, et « Français » puis « Cambia » la ramène en français
 B1 | sans JavaScript, une session du vendredi se supprime : ouvrir « Supprimer cette session », confirmer, et elle a disparu, « La session est supprimée. »
 19-cours-sans-js | sans JavaScript, « avant une prière » choisi sur un nouveau cours, heures vidées, s’envoie, et la page revient avec les champs de la prière et la phrase des minutes
 19-cours-sans-js | sans JavaScript, « après une prière » choisi sur la page revenue pour « avant une prière » laisse partir 0 minute comme 180
@@ -9476,6 +10217,7 @@ C2 | sans JavaScript, de cette position, Bienne se cherche, se coche et s’enre
 19-prieres-copie | une période au nom de soixante signes se copie pour l’année suivante : la marque « (année suivante) » entière, le nom raccourci, soixante signes au plus
 D2 | depuis l’écran en allemand, la copie de « Winter » pour l’année suivante s’appelle « Winter (nächstes Jahr) »
 19-cours-session-vendredi | l’adresse /cours/<id> d’une session du vendredi mène, dans les cinq langues, au 404 de l’espace, « Page introuvable », « Seite nicht gefunden », « Pagina non trovata », « Page not found », « الصفحة غير موجودة », et non au formulaire d’un cours
+21-Q1 | /m/centre-parcours/cours/<id>, la page publique de la session du vendredi : « Prochaines prières », « Ajouter cette prière à mon agenda » et « Langue du sermon »
 19-D2 | sur l’écran du vendredi, « Annuler cette session » envoyé pour le vendredi passé (formulaire modifié dans la page) est refusé en tête : « Cette session est déjà passée : … », sans confirmation
 20-C2 | sur l’écran du vendredi, le refus d’un vendredi passé dit qu’une session passée ne s’annule ni ne se déplace : « Cette session est déjà passée : vous ne pouvez annuler ou déplacer que les sessions d’aujourd’hui et des jours suivants. »
 19-membres-salle | dans Réglages, « Supprimer » sur une salle déjà supprimée depuis un autre onglet dit « Cette salle n’existe plus. », et non « Salle supprimée. »
@@ -9486,12 +10228,21 @@ D2 | depuis l’écran en allemand, la copie de « Winter » pour l’année sui
 19-D4 | le vendredi, un cours publié « 30 min après Dhuhr » prend l’heure de la session publiée, 12:30, et non celle de la session en brouillon, 14:30 : 13:00 – 14:00 sur sa carte d’« À venir » et dans le programme de la semaine de chaque langue, 13:00 dans chaque message de son déplacement le même jour
 19-D2 | dans un second onglet, « Publier » sur une session supprimée entre-temps est refusé en tête : « Cette session n’existe plus : elle a été supprimée entre-temps. La liste ci-dessous est à jour. »
 19-D2 | sur l’écran du vendredi, « Déplacer » envoyé pour la veille (formulaire modifié dans la page) est refusé en tête : « Ce jour est déjà passé : rien n’a été déplacé. … », et rien n’est déplacé
+21-Q2 | sur l’écran du vendredi, « Déplacer » vers un autre jour donne le bloc « Message à copier », « « Prière du vendredi » : la prière du JOUR JJ.MM.AAAA est déplacée au JOUR JJ.MM.AAAA à 12:30. », et la ligne de départ porte « Session déplacée », puis « Au JOUR JJ.MM.AAAA à 12:30 » seul
+21-Q5 | sur l’écran du vendredi, une session déplacée vers un autre jour, son jour prévu à venir : ses deux lignes ont « Rétablir comme d’habitude » et les options « Annuler », qui proposent « Annuler cette session », avec l’aide « Seule cette session est annulée, à sa nouvelle date. Vous pourrez la rétablir ensuite : elle retrouvera son jour et son heure habituels. »
 19-retablir-nouvelle-date | une session déplacée à un autre jour : sur la ligne « Nouvelle date, à la place du JOUR JJ.MM.AAAA », « Rétablir comme d’habitude » la ramène à son vendredi
+21-Q5 | sur l’écran du vendredi, la session déplacée vers un autre jour, annulée à sa nouvelle date : « La session est annulée à sa nouvelle date. Les autres vendredis ne changent pas. », le bloc « Message à copier », « « Prière du vendredi » : la prière du JOUR JJ.MM.AAAA à 12:30 est annulée. », et sa ligne porte « Session annulée », avec « Rétablir comme d’habitude »
+21-Q5 | annulée à sa nouvelle date, la session se rétablit : « Rétablir comme d’habitude » la ramène à son vendredi
+21-Q2 | sur l’écran du vendredi, « Annuler cette session » donne le bloc « Message à copier », « « Prière du vendredi » : la prière du JOUR JJ.MM.AAAA est annulée. », et la ligne porte « Session annulée »
 19-jour-sans-seance | « Annuler » envoyé pour un jour où il n’y a pas de séance (formulaire modifié dans la page) : une phrase qui le dit, en tête, sans confirmation sur l’écran du vendredi ni message préparé sur « À venir »
 19-titre-langue-ecran | sur « À venir », une séance porte son titre dans la langue de l’écran : « Freitagsgebet » en allemand, « قراءة القرآن » en arabe
 D1 | sur « À venir », le programme de la semaine nomme la session du vendredi dans la langue de chaque message : « Freitagsgebet », « Preghiera del venerdì », « Friday prayer », « صلاة الجمعة »
+21-Q3 | sur « À venir », les options de la session du vendredi disent « Annuler cette session », avec l’aide « Seule cette session est annulée : les autres vendredis ne changent pas. Vous pourrez la rétablir ensuite. », puis « Déplacer cette session » et « Déplacer la session »
+21-Q3 | déplacée sur « À venir », la session du vendredi : le message qui suit le geste a pour titre « La session est déplacée. »
 A2 | déplacée le même jour de 12:30 à 13:00, la session du vendredi porte sur sa carte « nouvelle heure » et « Prévue à l’origine : 12:30 – 13:15 »
-20-C4 | sur « À venir », la session du vendredi déplacée le même jour porte « Session déplacée », et « Session déplacée au JOUR JJ.MM.AAAA à 13:00 »
+20-C4 | sur « À venir », la session du vendredi déplacée le même jour porte « Session déplacée »
+21-Q3 | sous la carte de départ de la session du vendredi déplacée le même jour, « Au JOUR JJ.MM.AAAA à 13:00 » seul, sans « Session déplacée au … »
+21-Q5 | sur « À venir », la carte de départ de la session du vendredi déplacée le même jour a « Rétablir la session » et les options « Annuler », qui proposent « Annuler cette session », avec l’aide « Seule cette session est annulée, à sa nouvelle date. Vous pourrez la rétablir ensuite : elle retrouvera son jour et son heure habituels. »
 B1 | le message prêt à coller le dit comme un changement d’heure, la date une seule fois : « … commence à 13:00 au lieu de 12:30. »
 19-texte-vendredi | déplacée le même jour, la session du vendredi : le message dit « « Prière du vendredi » : la prière du JOUR JJ.MM.AAAA commence à 13:00 au lieu de 12:30. », sans « Le cours »
 D1 | ce message nomme la session du vendredi dans la langue de chaque message : « Freitagsgebet », « Preghiera del venerdì », « Friday prayer », « صلاة الجمعة »
@@ -9499,6 +10250,8 @@ B1 | le programme de la semaine dit la session déplacée le même jour comme un
 A2 | une carte restée ouverte dans un autre onglet, envoyée après ce déplacement, est refusée par une phrase en haut, et rien n’est écrit : la session reste à 13:00
 19-D4 | sur « À venir », le refus d’une carte restée ouverte nomme la séance : « La séance « Prière du vendredi » du JOUR JJ.MM.AAAA a changé depuis l’ouverture de la page : … »
 A2 | sur l’écran du vendredi, une carte restée ouverte dans un autre onglet, envoyée après ce déplacement (« Annuler cette session »), est refusée par une phrase en tête, et rien n’est écrit : la session reste déplacée à 13:00
+21-Q2 | sur l’écran du vendredi, la ligne de la session déplacée le même jour porte « Session déplacée », puis « Au JOUR JJ.MM.AAAA à 13:00 » seul
+21-Q3 | annulée sur « À venir », la session du vendredi : le message qui suit le geste a pour titre « La session est annulée. »
 20-C4 | annulée sur « À venir », la session du vendredi porte « Session annulée », et le programme de la semaine la marque dans chaque langue : « (SESSION ANNULÉE) », « (DURCHGANG ABGESAGT) », « (TURNO ANNULLATO) », « (SESSION CANCELLED) », « (موعد ملغى) »
 19-texte-vendredi | annulée, la session du vendredi : le message dit « « Prière du vendredi » : la prière du JOUR JJ.MM.AAAA est annulée. », puis « Les autres prières du vendredi ont lieu comme d’habitude. », sans « Le cours »
 19-annulee | annulée, la session du vendredi reste, barrée, avec sa marque, dans les cinq langues, dans la vue Semaine, l’onglet « Prières » et la vue Mois
@@ -9518,7 +10271,8 @@ B3 | une responsable qui se donne le rôle d’éditeur arrive sur « À venir �
 20-cles | « À venir », avec deux séances annulées de « Révision de la semaine » le même jour, celle du rythme et une séance déplacée là puis annulée, se charge et s’hydrate sans erreur : rien dans la console, et un lien de la navigation change d’écran sans recharger la page
 20-cles | « À venir », avec deux séances de « Révision de la semaine » déplacées le même jour depuis deux dates prévues à venir, se charge et s’hydrate sans erreur : rien dans la console, et un lien de la navigation change d’écran sans recharger la page
 20-C2 | sur l’écran du vendredi, une session déplacée d’un vendredi passé n’a plus « Rétablir comme d’habitude » : ses options, fermées sous « Annuler », proposent « Annuler cette session », avec l’aide qui dit qu’elle ne pourra pas être rétablie
-20-C2 | annulée, elle le dit, « La session est annulée à sa nouvelle date. Les autres vendredis ne changent pas. », le bloc « Message à copier » nomme sa nouvelle date et sa nouvelle heure, « « Prière du vendredi » : la prière du JOUR JJ.MM.AAAA à 16:30 est annulée. », et sa ligne porte « Annulée ce jour-là », sans « Rétablir comme d’habitude »
+20-C2 | annulée, elle le dit, « La session est annulée à sa nouvelle date. Les autres vendredis ne changent pas. », le bloc « Message à copier » nomme sa nouvelle date et sa nouvelle heure, « « Prière du vendredi » : la prière du JOUR JJ.MM.AAAA à 16:30 est annulée. », et sa ligne se dit annulée, sans « Rétablir comme d’habitude »
+21-Q2 | sur l’écran du vendredi, la session déplacée d’un vendredi passé, annulée, porte « Session annulée »
 20-cles | l’écran du vendredi, avec deux sessions de 12:30 déplacées au vendredi qui vient depuis deux vendredis à venir, se charge et s’hydrate sans erreur : rien dans la console, et un lien de la navigation change d’écran sans recharger la page
 A3 | aucune date écrite AAAA-MM-JJ sur les N écrans traversés (espace, super-admin, page publique, widget)
 F1 | aucun des N écrans traversés ne nomme la personne retirée du dépôt
@@ -9675,6 +10429,7 @@ process.stdout.write('\n');
 bilanDe('étape 18', RETOURS_DE_L_ETAPE_18);
 bilanDe('étape 19', RETOURS_DE_L_ETAPE_19);
 bilanDe('étape 20', RETOURS_DE_L_ETAPE_20);
+bilanDe('étape 21', RETOURS_DE_L_ETAPE_21);
 process.stdout.write(
 	`\n  ${jouees.length} vérifications des retours jouées, ${jouees.length - rouges.length} vertes, ${rouges.length} rouges ; ` +
 		`${impossibles.length} geste(s) impossible(s), dont le bloc s’est arrêté là ; ` +
