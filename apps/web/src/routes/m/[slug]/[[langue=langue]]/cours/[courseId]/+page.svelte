@@ -142,7 +142,11 @@
 									>{mots.originallyAt(seance.originalStart)}</span
 								>{/if}
 						{:else if seance.status === 'moved_here'}
-							<span class="marque">{mots.exceptionalDate}</span>
+							<span class="marque"
+								>{data.cours.kind === 'jumua'
+									? mots.exceptionalDateJumua
+									: mots.exceptionalDate}</span
+							>
 						{/if}
 					</li>
 				{/each}

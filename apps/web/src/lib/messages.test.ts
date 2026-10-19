@@ -176,7 +176,7 @@ describe('le programme de la semaine, dans les cinq langues', () => {
 				'- Fiqh، بعد المغرب بـ30 دقيقة',
 				'',
 				'الخميس 24.09.2026',
-				'- Hifz، 18:00 – 19:00 (موعد استثنائي)',
+				'- Hifz، 18:00 – 19:00 (حصة استثنائية)',
 				'',
 				'السبت 26.09.2026',
 				'- Cercle، الوقت لم يُحدَّد بعد'
@@ -287,7 +287,53 @@ describe('le programme de la semaine après un changement d’heure le même jou
 			['- Hifz, 20:00 – 21:00 (neue Uhrzeit)', '- Tafsir, 18:00 – 19:00 (Ausnahmetermin)'],
 			['- Hifz, 20:00 – 21:00 (nuovo orario)', '- Tafsir, 18:00 – 19:00 (data eccezionale)'],
 			['- Hifz, 20:00 – 21:00 (new time)', '- Tafsir, 18:00 – 19:00 (rescheduled)'],
-			['- Hifz، 20:00 – 21:00 (وقت جديد)', '- Tafsir، 18:00 – 19:00 (موعد استثنائي)']
+			['- Hifz، 20:00 – 21:00 (وقت جديد)', '- Tafsir، 18:00 – 19:00 (حصة استثنائية)']
+		]);
+	});
+});
+
+describe('le programme de la semaine, la date exceptionnelle avec le mot de sa sorte (étape 21)', () => {
+	// Question 4 de l'étape 20, tranchée « oui » : en arabe, « موعد » nomme une session du vendredi
+	// depuis l'étape 20. Une séance d'un cours arrivée d'un autre jour devient « حصة استثنائية », et
+	// une session du vendredi garde « موعد استثنائي ». En allemand, « Termin » est le mot d'une séance
+	// de cours : la session du vendredi dit « Ausnahmedatum ».
+	const VENUES = [
+		{
+			date: '2026-10-10' as IsoDate,
+			title: 'Jumu’a',
+			start: '12:30',
+			end: '13:10',
+			room: null,
+			status: 'moved_here',
+			originalDate: '2026-10-09' as IsoDate,
+			kind: 'jumua'
+		},
+		{
+			date: '2026-10-10' as IsoDate,
+			title: 'Tafsir',
+			start: '18:00',
+			end: '19:00',
+			room: null,
+			status: 'moved_here',
+			originalDate: '2026-10-08' as IsoDate,
+			kind: 'course'
+		}
+	];
+
+	it('marks a Friday session and a session of a course that came from another day each with its own word', () => {
+		expect(
+			LANGUES.map((langue) =>
+				weekMessage(SALUT, ORGANISATION, VENUES, langue).split('\n').slice(-2)
+			)
+		).toEqual([
+			[
+				'- Jumu’a, 12:30 – 13:10 (date exceptionnelle)',
+				'- Tafsir, 18:00 – 19:00 (date exceptionnelle)'
+			],
+			['- Jumu’a, 12:30 – 13:10 (Ausnahmedatum)', '- Tafsir, 18:00 – 19:00 (Ausnahmetermin)'],
+			['- Jumu’a, 12:30 – 13:10 (data eccezionale)', '- Tafsir, 18:00 – 19:00 (data eccezionale)'],
+			['- Jumu’a, 12:30 – 13:10 (rescheduled)', '- Tafsir, 18:00 – 19:00 (rescheduled)'],
+			['- Jumu’a، 12:30 – 13:10 (موعد استثنائي)', '- Tafsir، 18:00 – 19:00 (حصة استثنائية)']
 		]);
 	});
 });

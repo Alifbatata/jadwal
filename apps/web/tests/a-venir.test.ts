@@ -2106,7 +2106,7 @@ describe('B1 : un déplacement le même jour dit un changement d’heure (relect
 				ar: {
 					marque: 'وقت جديد',
 					origine: 'الوقت المقرّر أصلًا: 19:00 – 20:30',
-					ancienne: 'موعد استثنائي'
+					ancienne: 'حصة استثنائية'
 				}
 			};
 			for (const langue of LANGUES) {
@@ -4411,6 +4411,44 @@ describe('C4 : l’état d’une carte s’écrit avec son propre nom (étape 20
 			expect(texte(session)).toContain(
 				DEPLACEE_AU.session[langue](dateLue(langue, ailleurs), '15:00')
 			);
+		}
+	);
+
+	/**
+	 * La marque d'une carte arrivée d'un autre jour (étape 21, question 4 de l'étape 20) : en arabe,
+	 * « موعد » nomme une session du vendredi, et une séance d'un cours dit « حصة استثنائية » ; en
+	 * allemand, « Termin » est le mot d'une séance de cours, et une session dit « Ausnahmedatum ».
+	 */
+	const DATE_EXCEPTIONNELLE: Record<'seance' | 'session', Record<Langue, string>> = {
+		seance: {
+			fr: 'date exceptionnelle',
+			de: 'Ausnahmetermin',
+			it: 'data eccezionale',
+			en: 'rescheduled',
+			ar: 'حصة استثنائية'
+		},
+		session: {
+			fr: 'date exceptionnelle',
+			de: 'Ausnahmedatum',
+			it: 'data eccezionale',
+			en: 'rescheduled',
+			ar: 'موعد استثنائي'
+		}
+	};
+
+	it.each(LANGUES)(
+		'marks the arrival card of a session of a course and of a Friday session each with the word of its kind, in %s (step 21)',
+		async (langue) => {
+			await maintenance((tx) =>
+				tx.execute(sql`update "user" set "language" = ${langue} where "id" = ${utilisateur}`)
+			);
+			const html = await (await get('/', cookie)).text();
+			expect(marques(carte(html, jour(3), FIQH, 'moved_here'))).toEqual([
+				DATE_EXCEPTIONNELLE.seance[langue]
+			]);
+			expect(marques(carte(html, ailleurs, JUMUA[1], 'moved_here'))).toEqual([
+				DATE_EXCEPTIONNELLE.session[langue]
+			]);
 		}
 	);
 });

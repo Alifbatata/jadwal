@@ -28,7 +28,8 @@ indexe.
    sa nouvelle date et à sa nouvelle heure. La page ne la montrait pas jusqu'au lot 2 de l'étape 19
    (27.09.2026) : ses prochaines dates ne gardaient que les séances qui ont lieu. Les prochaines
    séances de l'API n'en ont toujours pas (`docs/API.md`). Une séance déplacée figure à sa nouvelle
-   date avec `Date exceptionnelle`.
+   date avec `Date exceptionnelle`, celle de la vue Semaine, selon la sorte en arabe et en
+   allemand (étape 21).
    Déplacée le même jour à une autre heure, elle porte `Nouvelle heure`, puis l'heure d'avant,
    `Initialement à 19:30`, la même que la vue Semaine, y compris pour un cours placé après une
    prière (étape 18). Si aucune heure de prière ne couvre ce jour, l'heure d'avant n'est pas dite.

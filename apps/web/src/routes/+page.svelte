@@ -269,7 +269,7 @@
 								>{text.marks.cancelled[seance.kind]}</span
 							>{/if}
 						{#if seance.status === 'moved_here'}<span class="marque"
-								>{origine ? text.marks.newTime : text.marks.movedHere}</span
+								>{origine ? text.marks.newTime : text.marks.movedHere[seance.kind]}</span
 							>{/if}
 						{#if seance.status === 'moved_away'}<span class="marque"
 								>{text.marks.movedAway[seance.kind]}</span

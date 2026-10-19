@@ -132,6 +132,9 @@ nouvelle heure avec `Nouvelle heure` et `Initialement à 19:00` (étape 18). Une
 dit `Session déplacée au …` et `Session déplacée à …`. Déplacée puis annulée, une séance est barrée
 à sa date d'origine avec `Séance déplacée au …`, et à sa nouvelle date et à sa nouvelle heure avec
 `Séance annulée` (étape 20).
+La marque d'arrivée suit aussi la sorte là où la langue a deux mots (étape 21) : en arabe,
+`حصة استثنائية` pour une séance d'un cours, `موعد استثنائي` pour une session du vendredi ; en
+allemand, `Ausnahmetermin` et `Ausnahmedatum`. Le français, l'italien et l'anglais n'en ont qu'un.
 
 ### Une adresse qui ne mène nulle part
 

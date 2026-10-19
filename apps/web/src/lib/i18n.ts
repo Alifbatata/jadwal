@@ -91,6 +91,12 @@ interface Dictionnaire {
 	readonly movedToJumua: (date: string) => string;
 	/** `movedToTime` pour une session du vendredi : « Session déplacée à 13:30 » (étape 20, C4). */
 	readonly movedToTimeJumua: (time: string) => string;
+	/**
+	 * `exceptionalDate` pour une session du vendredi arrivée d'un autre jour (étape 21, question 4 de
+	 * l'étape 20) : en arabe, « موعد » nomme la session, et « حصة » la séance d'un cours ; en allemand,
+	 * « Termin » est le mot d'une séance de cours. Les autres langues n'ont qu'un mot pour les deux.
+	 */
+	readonly exceptionalDateJumua: string;
 	readonly after: (prayer: string) => string;
 	/** « 15 min après Maghrib ». Le nombre est positif : le signe est déjà dans le choix du mot. */
 	readonly afterOffset: (offset: number, prayer: string) => string;
@@ -383,6 +389,7 @@ const fr: Dictionnaire = {
 	originallyAt: (time) => `Initialement à ${time}`,
 	movedToJumua: (date) => `Session déplacée au ${date}`,
 	movedToTimeJumua: (time) => `Session déplacée à ${time}`,
+	exceptionalDateJumua: 'Date exceptionnelle',
 	after: (prayer) => `Après ${prayer}`,
 	afterOffset: (offset, prayer) => `${offset} min après ${prayer}`,
 	beforeOffset: (offset, prayer) => `${offset} min avant ${prayer}`,
@@ -550,6 +557,7 @@ const de: Dictionnaire = {
 	originallyAt: (time) => `Ursprünglich um ${time}`,
 	movedToJumua: (date) => `Durchgang verschoben auf ${date}`,
 	movedToTimeJumua: (time) => `Durchgang verschoben auf ${time}`,
+	exceptionalDateJumua: 'Ausnahmedatum',
 	after: (prayer) => `Nach ${prayer}`,
 	afterOffset: (offset, prayer) => `${offset} Min. nach ${prayer}`,
 	beforeOffset: (offset, prayer) => `${offset} Min. vor ${prayer}`,
@@ -714,6 +722,7 @@ const it: Dictionnaire = {
 	originallyAt: (time) => `Inizialmente alle ${time}`,
 	movedToJumua: (date) => `Turno spostato a ${date}`,
 	movedToTimeJumua: (time) => `Turno spostato alle ${time}`,
+	exceptionalDateJumua: 'Data eccezionale',
 	after: (prayer) => `Dopo ${prayer}`,
 	afterOffset: (offset, prayer) => `${offset} min dopo ${prayer}`,
 	beforeOffset: (offset, prayer) => `${offset} min prima di ${prayer}`,
@@ -877,6 +886,7 @@ const en: Dictionnaire = {
 	originallyAt: (time) => `Originally at ${time}`,
 	movedToJumua: (date) => `Session moved to ${date}`,
 	movedToTimeJumua: (time) => `Session moved to ${time}`,
+	exceptionalDateJumua: 'Rescheduled',
 	after: (prayer) => `After ${prayer}`,
 	afterOffset: (offset, prayer) => `${offset} min after ${prayer}`,
 	beforeOffset: (offset, prayer) => `${offset} min before ${prayer}`,
@@ -1032,7 +1042,7 @@ const ar: Dictionnaire = {
 	// « ملغاة » accordé à « صلاة » (décision du chef de projet, 27.09.2026).
 	cancelled: 'حصة ملغاة',
 	cancelledJumua: 'موعد ملغى',
-	exceptionalDate: 'موعد استثنائي',
+	exceptionalDate: 'حصة استثنائية',
 	movedTo: (date) => `حصة منقولة إلى ${date}`,
 	originallyOn: (date) => `كان مقرّرًا في ${date}`,
 	movedToTime: (time) => `حصة منقولة إلى الساعة ${time}`,
@@ -1040,6 +1050,7 @@ const ar: Dictionnaire = {
 	originallyAt: (time) => `كان مقرّرًا في الساعة ${time}`,
 	movedToJumua: (date) => `موعد منقول إلى ${date}`,
 	movedToTimeJumua: (time) => `موعد منقول إلى الساعة ${time}`,
+	exceptionalDateJumua: 'موعد استثنائي',
 	after: (prayer) => `بعد ${prayer}`,
 	// Zéro n'est pas une phrase de minutes : c'est « après » tout court, la phrase de `after`.
 	afterOffset: (offset, prayer) =>

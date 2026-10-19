@@ -117,7 +117,7 @@ interface UpcomingTexts {
 	readonly marks: {
 		readonly cancelled: ByKind<string>;
 		readonly movedAway: ByKind<string>;
-		readonly movedHere: string;
+		readonly movedHere: ByKind<string>;
 		readonly newTime: string;
 		readonly draft: string;
 	};
@@ -219,7 +219,7 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		marks: {
 			cancelled: { course: 'Séance annulée', jumua: 'Session annulée' },
 			movedAway: { course: 'Séance déplacée', jumua: 'Session déplacée' },
-			movedHere: 'date exceptionnelle',
+			movedHere: { course: 'date exceptionnelle', jumua: 'date exceptionnelle' },
 			newTime: 'nouvelle heure',
 			draft: 'brouillon'
 		},
@@ -332,7 +332,7 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		marks: {
 			cancelled: { course: 'Termin abgesagt', jumua: 'Durchgang abgesagt' },
 			movedAway: { course: 'Termin verschoben', jumua: 'Durchgang verschoben' },
-			movedHere: 'Ausnahmetermin',
+			movedHere: { course: 'Ausnahmetermin', jumua: 'Ausnahmedatum' },
 			newTime: 'neue Uhrzeit',
 			draft: 'Entwurf'
 		},
@@ -444,7 +444,7 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		marks: {
 			cancelled: { course: 'Lezione annullata', jumua: 'Turno annullato' },
 			movedAway: { course: 'Lezione spostata', jumua: 'Turno spostato' },
-			movedHere: 'data eccezionale',
+			movedHere: { course: 'data eccezionale', jumua: 'data eccezionale' },
 			newTime: 'nuovo orario',
 			draft: 'bozza'
 		},
@@ -556,7 +556,7 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		marks: {
 			cancelled: { course: 'Session cancelled', jumua: 'Session cancelled' },
 			movedAway: { course: 'Session moved', jumua: 'Session moved' },
-			movedHere: 'rescheduled',
+			movedHere: { course: 'rescheduled', jumua: 'rescheduled' },
 			newTime: 'new time',
 			draft: 'draft'
 		},
@@ -674,7 +674,7 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 		marks: {
 			cancelled: { course: 'حصة ملغاة', jumua: 'موعد ملغى' },
 			movedAway: { course: 'حصة منقولة', jumua: 'موعد منقول' },
-			movedHere: 'موعد استثنائي',
+			movedHere: { course: 'حصة استثنائية', jumua: 'موعد استثنائي' },
 			newTime: 'وقت جديد',
 			draft: 'مسودة'
 		},

@@ -448,6 +448,49 @@ describe('l’état d’une séance ou d’une session, avec son propre nom (ét
 	);
 });
 
+describe('la date exceptionnelle, avec le mot de sa sorte (étape 21, question 4 de l’étape 20)', () => {
+	// Tranché « oui » par le chef de projet : en arabe, « موعد » nomme une session du vendredi depuis
+	// l'étape 20 (C4). Une séance d'un cours arrivée d'un autre jour devient « حصة استثنائية » ; une
+	// session du vendredi garde « موعد استثنائي ». En allemand, « Termin » est le mot d'une séance de
+	// cours : une session du vendredi dit « Ausnahmedatum ». Les trois autres langues n'ont qu'un mot,
+	// qui ne nomme ni l'une ni l'autre.
+	const ATTENDUS: Record<Langue, { course: string; jumua: string; carte: [string, string] }> = {
+		fr: {
+			course: 'Date exceptionnelle',
+			jumua: 'Date exceptionnelle',
+			carte: ['date exceptionnelle', 'date exceptionnelle']
+		},
+		de: {
+			course: 'Ausnahmetermin',
+			jumua: 'Ausnahmedatum',
+			carte: ['Ausnahmetermin', 'Ausnahmedatum']
+		},
+		it: {
+			course: 'Data eccezionale',
+			jumua: 'Data eccezionale',
+			carte: ['data eccezionale', 'data eccezionale']
+		},
+		en: { course: 'Rescheduled', jumua: 'Rescheduled', carte: ['rescheduled', 'rescheduled'] },
+		ar: {
+			course: 'حصة استثنائية',
+			jumua: 'موعد استثنائي',
+			carte: ['حصة استثنائية', 'موعد استثنائي']
+		}
+	};
+
+	it.each(LANGUES)(
+		'names a session of a course and a Friday session that came from another day, on the public page and on the upcoming screen, in %s',
+		(langue) => {
+			const marques = upcomingTexts[langue].marks.movedHere;
+			expect({
+				course: t(langue).exceptionalDate,
+				jumua: t(langue).exceptionalDateJumua,
+				carte: [marques.course, marques.jumua]
+			}).toEqual(ATTENDUS[langue]);
+		}
+	);
+});
+
 /**
  * Chaque texte d'un dictionnaire, les phrases à trous remplies d'un exemple : c'est ce que la page
  * affiche, et ce que les règles de ponctuation ci-dessous relisent.

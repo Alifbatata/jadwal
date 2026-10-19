@@ -143,6 +143,8 @@ const HORLOGES = [
 ] as const;
 /** La deuxième session du vendredi changé, déplacée le même jour de 13:45 à 14:15 : sa page de cours. */
 let sessionMemeJour = '';
+/** La troisième session du vendredi changé, partie au vendredi suivant : sa page de cours. */
+let sessionPartie = '';
 
 const COURS = {
 	/** Un cours qui a lieu chaque semaine le jour de demain ; la séance de demain est déplacée. */
@@ -407,6 +409,7 @@ beforeAll(async () => {
 		}
 		const [premiere, deuxieme, troisieme] = ids as [string, string, string];
 		sessionMemeJour = deuxieme;
+		sessionPartie = troisieme;
 		await tx.execute(sql`
 			insert into "course" ("id", "organization_id", "status", "audience", "teaching_language",
 				"source_language", "recurrence_kind", "recurrence_weekday", "recurrence_interval",
@@ -1945,10 +1948,22 @@ const INITIALEMENT_A: Record<Langue, (heure: string) => string> = {
 	en: (heure) => `Originally at ${heure}`,
 	ar: (heure) => `كان مقرّرًا في الساعة ${heure}`
 };
-/** La marque d'une séance venue d'un autre jour, qu'un vrai changement de date garde. */
+/**
+ * La marque d'une séance venue d'un autre jour, qu'un vrai changement de date garde. En arabe,
+ * « حصة استثنائية » depuis l'étape 21 (question 4 de l'étape 20) : « موعد » nomme une session du
+ * vendredi.
+ */
 const DATE_EXCEPTIONNELLE: Record<Langue, string> = {
 	fr: 'Date exceptionnelle',
 	de: 'Ausnahmetermin',
+	it: 'Data eccezionale',
+	en: 'Rescheduled',
+	ar: 'حصة استثنائية'
+};
+/** La même marque pour une session du vendredi (étape 21) : « Termin » est le mot d'un cours. */
+const DATE_EXCEPTIONNELLE_SESSION: Record<Langue, string> = {
+	fr: 'Date exceptionnelle',
+	de: 'Ausnahmedatum',
 	it: 'Data eccezionale',
 	en: 'Rescheduled',
 	ar: 'موعد استثنائي'
@@ -2036,6 +2051,18 @@ describe('une séance déplacée le même jour, à une autre heure', () => {
 			const arrivee = jourEtDate(langue, APRES_DEMAIN);
 			expect(prochainesDuCours(autre.html).find((ligne) => ligne.startsWith(arrivee))).toBe(
 				`${arrivee} 18:00 – 19:00 ${DATE_EXCEPTIONNELLE[langue]}`
+			);
+		}
+	);
+
+	it.each(LANGUES)(
+		'marks a Friday session that came from another day with the word of a session on its page, in %s (step 21)',
+		async (langue) => {
+			const page = await servir(`${base(langue, SLUG_CHANGE)}/cours/${sessionPartie}`);
+			expect(page.statut).toBe(200);
+			const arrivee = jourEtDate(langue, VENDREDI_SUIVANT);
+			expect(prochainesDuCours(page.html)).toContain(
+				`${arrivee} 15:00 – 15:40 ${DATE_EXCEPTIONNELLE_SESSION[langue]}`
 			);
 		}
 	);

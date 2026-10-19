@@ -40,7 +40,10 @@ l'heure, la salle, l'intervenant et le public, dans la langue de l'écran. L'ét
 ou partie ailleurs s'écrit avec son propre nom, jamais accordé au titre à côté : `Séance annulée`
 pour un cours, `Session annulée` pour une session du vendredi, et de même `Séance déplacée`,
 `Session déplacée` (étape 20, C4 ; en allemand `Termin` et `Durchgang`, en italien `Lezione` et
-`Turno`, en anglais `Session` pour les deux, en arabe `حصة` et `موعد`). Le titre est celui de la langue de
+`Turno`, en anglais `Session` pour les deux, en arabe `حصة` et `موعد`). La marque d'une carte
+arrivée d'un autre jour suit la sorte depuis l'étape 21 : en arabe `حصة استثنائية` et
+`موعد استثنائي`, en allemand `Ausnahmetermin` et `Ausnahmedatum` ; le programme de la semaine la
+reprend entre parenthèses. Le titre est celui de la langue de
 l'écran quand le cours y est traduit, sinon celui de sa langue source (étape 19) : `Abendkurs` sur
 un écran allemand, `Cours du soir` sur un écran italien sans traduction italienne. Une session du
 vendredi qui porte le nom proposé par le service prend le nom de la prière dans la langue de

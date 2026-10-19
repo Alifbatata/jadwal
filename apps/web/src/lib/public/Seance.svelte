@@ -50,6 +50,11 @@
 	const annulee = $derived(session ? mots.cancelledJumua : mots.cancelled);
 	const deplaceeAu = $derived(session ? mots.movedToJumua : mots.movedTo);
 	const deplaceeA = $derived(session ? mots.movedToTimeJumua : mots.movedToTime);
+	/**
+	 * Arrivée d'un autre jour : en arabe, « حصة استثنائية » pour un cours, « موعد استثنائي » pour une
+	 * session du vendredi (étape 21, question 4 de l'étape 20).
+	 */
+	const exceptionnelle = $derived(session ? mots.exceptionalDateJumua : mots.exceptionalDate);
 	const barree = $derived(seance.status === 'cancelled' || seance.status === 'moved_away');
 	/** Déplacée sans changer de jour : seule l'heure a changé. */
 	const memeJour = $derived(
@@ -64,7 +69,7 @@
 		<a class="titre" href={lienCours(seance.courseId)}>{seance.title}</a>
 		{#if seance.status === 'cancelled'}<span class="marque">{annulee}</span>{/if}
 		{#if seance.status === 'moved_here'}
-			<span class="marque">{memeJour ? mots.newTime : mots.exceptionalDate}</span>
+			<span class="marque">{memeJour ? mots.newTime : exceptionnelle}</span>
 		{/if}
 		{#if seance.status === 'moved_away' && seance.movedTo}
 			<span class="marque"
