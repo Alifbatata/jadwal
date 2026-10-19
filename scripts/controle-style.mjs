@@ -68,8 +68,8 @@ const SURFACES = [
 	{ motif: 'apps/web/src/lib/i18n.ts', genre: 'chaines' },
 	{ motif: 'apps/web/src/lib/messages.ts', genre: 'chaines' },
 	{ motif: 'apps/web/src/lib/server/mail/messages.ts', genre: 'chaines' },
-	// La page de garde du PDF pour le juriste vit dans ce script, et nulle part ailleurs : sans
-	// cette ligne, le seul texte du document que personne ne relirait serait celui-là.
+	// Le titre et le pied de page du PDF des conditions vivent dans ce script, et nulle part
+	// ailleurs : sans cette ligne, ce sont les seuls mots du PDF que personne ne relirait.
 	{ motif: 'scripts/conditions-pdf.mjs', genre: 'chaines' },
 	// Les deux documents écrits pour une personne responsable, qui les suit pas à pas. Les autres
 	// documents de `docs/` (API, cadrage, exploitation, sécurité, maquettes) s'adressent aux

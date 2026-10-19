@@ -76,7 +76,7 @@ pnpm image:test                 # l'image de production, construite, lancée et 
 pnpm parcours:test              # le parcours d'une organisation dans Chrome, et axe (Docker, Chrome)
 pnpm garde:test                 # la garde du déploiement, cas par cas, contre une fausse API (Docker)
 pnpm sauvegarde:test            # la sauvegarde de nuit, jusqu'à l'âge des objets distants (Docker)
-pnpm conditions:pdf             # le PDF des conditions pour le juriste (Chrome)
+pnpm conditions:pdf             # le PDF des conditions, à imprimer ou à envoyer (Chrome)
 pnpm conditions:test            # éprouve le générateur de ce PDF
 ```
 

@@ -1,7 +1,7 @@
 <!--
   Le texte des conditions d'utilisation, mis en page pour l'écran (ADR 0044).
 
-  La typographie est celle du PDF remis au juriste (`scripts/conditions-pdf.mjs`) : les mêmes
+  La typographie est celle du PDF des conditions (`scripts/conditions-pdf.mjs`) : les mêmes
   polices, les mêmes tableaux bordés, le même alignement à gauche. Elle change d'unités, pas de
   caractère : des rem au lieu des points, une taille de lecture d'écran, et un tableau qui défile de
   côté dans son cadre au lieu d'élargir la page d'un téléphone.

@@ -2,9 +2,9 @@
 /**
  * La mise en mots de `docs/CONDITIONS.md` : Markdown vers HTML, puis typographie française.
  *
- * Deux lecteurs, et un seul texte : le PDF pour le juriste (`scripts/conditions-pdf.mjs`) et la page
- * `/conditions` de l'application. Tous deux passent par ce module, pour que ce que le juriste a lu
- * soit, au caractère près, ce que les organisations acceptent.
+ * Deux rendus, et un seul texte : le PDF des conditions (`scripts/conditions-pdf.mjs`) et la page
+ * `/conditions` de l'application. Tous deux passent par ce module, pour que le PDF et la page
+ * disent, au caractère près, le texte que les organisations acceptent.
  *
  * JavaScript et non TypeScript : le script du PDF est lancé par Node sans étape de construction, et
  * l'application l'importe tel quel. Les types sont en JSDoc, et `svelte-check` les vérifie.

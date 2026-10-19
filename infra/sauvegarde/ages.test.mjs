@@ -23,7 +23,6 @@ import { AGE_PROMIS, CYCLE_DE_VIE, EntreeIllisible, verifier } from './ages.mjs'
 
 const SCRIPT = fileURLToPath(new URL('./ages.mjs', import.meta.url));
 const CONDITIONS = fileURLToPath(new URL('../../docs/CONDITIONS.md', import.meta.url));
-const PAGE_DE_GARDE = fileURLToPath(new URL('../../scripts/conditions-pdf.mjs', import.meta.url));
 
 /** L'heure où la tâche de nuit vérifie, juste après l'envoi et la relecture. */
 const MAINTENANT = '2026-09-23T02:25:00Z';
@@ -90,7 +89,8 @@ describe('les âges promis', () => {
 
 	it('disent pour mensuel/ la durée écrite dans les conditions d’utilisation', () => {
 		// Les conditions ne connaissent qu'une durée, celle du préfixe qui garde le plus longtemps.
-		// Si le texte et la règle divergent, l'un des deux ment : ce test tombe.
+		// Si le texte et la règle divergent, l'un des deux ment : ce test tombe. Le PDF des
+		// conditions est ce texte mis en pages, et rien d'autre : il n'a pas de durée à lui.
 		const texte = readFileSync(CONDITIONS, 'utf8');
 		const phrases = [
 			/\*\*(\d+) jours au plus\*\*/g,
@@ -100,20 +100,6 @@ describe('les âges promis', () => {
 		const durees = phrases.flatMap((motif) => [...texte.matchAll(motif)].map((t) => Number(t[1])));
 		// Le témoin : trois phrases trouvées. Reformulées, elles échapperaient à la comparaison.
 		expect(durees, 'les trois phrases des conditions qui disent la durée').toHaveLength(3);
-		for (const duree of durees) expect(duree).toBe(AGE_PROMIS.mensuel);
-	});
-
-	it('disent pour mensuel/ la durée que la page de garde du PDF soumet au juriste', () => {
-		// La page de garde n'est pas dans les conditions : elle est écrite dans le script qui fait
-		// le PDF, et le point sur les sauvegardes y redit la durée, dans son titre et dans son corps.
-		// Lu comme un texte, sans importer le script : ce test ne dépend pas de Chrome.
-		const script = readFileSync(PAGE_DE_GARDE, 'utf8');
-		const phrases = [
-			/reste jusqu’à (\d+) jours dans les sauvegardes/g,
-			/<strong>(\d+) jours au\s+plus/g
-		];
-		const durees = phrases.flatMap((motif) => [...script.matchAll(motif)].map((t) => Number(t[1])));
-		expect(durees, 'le titre et le corps du point sur les sauvegardes').toHaveLength(2);
 		for (const duree of durees) expect(duree).toBe(AGE_PROMIS.mensuel);
 	});
 });

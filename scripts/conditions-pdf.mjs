@@ -1,21 +1,25 @@
 #!/usr/bin/env node
 /**
- * Met en page `docs/CONDITIONS.md` pour un juriste, et rend un PDF.
+ * Met en page `docs/CONDITIONS.md`, et rend un PDF : le texte seul, pour qui veut l'imprimer ou
+ * l'envoyer.
  *
  *     pnpm conditions:pdf
  *
+ * Le document produit est `A_LIVRER/CONDITIONS-jadwal.pdf`. Il ne porte rien d'autre que le texte
+ * des conditions, et un pied de page qui dit la version et le numéro de page.
+ *
  * ## Pourquoi un script plutôt qu'un fichier tenu à la main
  *
- * `docs/CONDITIONS.md` est vivant : il changera après la relecture du juriste, puis à chaque fois
- * qu'un sous-traitant ou une durée de rétention bouge. Un PDF recopié à la main serait faux la
- * première fois qu'on oublierait de le refaire, et personne ne le saurait. Ici, le PDF **est** le
- * document, mis en page : il n'y a rien à tenir à jour de séparé, sauf la première page.
+ * `docs/CONDITIONS.md` est vivant : il change à chaque fois qu'un sous-traitant ou une durée de
+ * rétention bouge. Un PDF recopié à la main serait faux la première fois qu'on oublierait de le
+ * refaire, et personne ne le saurait. Ici, le PDF **est** le document, mis en page : il n'y a rien à
+ * tenir à jour de séparé.
  *
- * ## La première page
+ * ## L'exploitant
  *
- * Elle n'est pas dans `CONDITIONS.md`, et c'est voulu : ce sont les questions posées au juriste, pas
- * les conditions offertes aux organisations. Elle vit ci-dessous, dans `QUESTIONS`, et le contrôle de
- * style du dépôt la relit comme il relit le document lui-même.
+ * Le texte du dépôt porte un nom d'exploitant par défaut. Une instance qui pose `JADWAL_EXPLOITANT`
+ * se nomme elle-même, sur sa page `/conditions` comme dans ce PDF : les deux passent par
+ * `nommerExploitant`.
  *
  * ## La typographie
  *
@@ -27,7 +31,8 @@
  *
  * Le convertisseur Markdown et cette passe typographique vivent dans
  * `apps/web/src/lib/conditions/rendu.js`, que la page `/conditions` de l'application importe aussi :
- * le juriste et les organisations lisent le même rendu, et non deux rendus qui se ressemblent.
+ * le PDF et la page disent, au caractère près, le texte que les organisations acceptent, et non deux
+ * rendus qui se ressemblent.
  *
  * ## Ce qu'il faut pour le lancer
  *
@@ -67,118 +72,7 @@ export { dateDeLaVersion, nommerExploitant, typographier, typographierHtml, vers
 
 const racine = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SOURCE = join(racine, 'docs', 'CONDITIONS.md');
-const SORTIE = join(racine, 'A_LIVRER', 'CONDITIONS-jadwal-juriste.pdf');
-
-/**
- * Les points à valider, en français simple. Une question par point, et la raison pour laquelle elle
- * se pose : un juriste qui reçoit un texte sans savoir ce qui inquiète relit tout à poids égal.
- */
-export const QUESTIONS = [
-	{
-		titre: 'Responsable du traitement, ou sous-traitant ?',
-		corps: `Le texte dit que l'exploitant est <strong>responsable du traitement</strong> au sens de la
-		nLPD. C'est la question la plus structurante du document : si les organisations étaient
-		responsables et l'exploitant leur sous-traitant, il faudrait un contrat de sous-traitance avec
-		chacune, et la nature de ce texte changerait. Est-ce le bon choix pour un service gratuit, où
-		c'est l'exploitant qui décide de ce qui est conservé et combien de temps ?`
-	},
-	{
-		titre: 'Cloudflare, Inc. et la question des transferts',
-		corps: `Les sauvegardes sont confiées à <strong>Cloudflare, Inc., société américaine</strong>,
-		dans sa juridiction « Union européenne », qui garde les fichiers sur des sites de l'Union et ne
-		les réplique pas ailleurs. <strong>La société et le lieu de stockage ne sont donc pas dans le
-		même pays.</strong> Le texte le dit sans en tirer de conclusion. Faut-il qualifier cela de
-		communication à l'étranger au sens des art. 16 et 17 nLPD ? Des garanties supplémentaires,
-		clauses contractuelles types ou analyse d'impact, sont-elles nécessaires ?<br><br>
-		Un fait à peser dans la réponse : <strong>les sauvegardes sont chiffrées sur le serveur, avant
-		de le quitter</strong>, et la clé qui permet de les lire n'est conservée ni sur ce serveur, ni
-		chez Cloudflare : elle ne passe sur le serveur qu'en mémoire, le temps de vérifier qu'une
-		sauvegarde se relit. Celui qui détient les sauvegardes ne peut pas les ouvrir.`
-	},
-	{
-		titre: 'Une phrase a été retirée, doit-elle revenir ?',
-		corps: `Une version précédente affirmait : « Aucun transfert vers un pays tiers n'est
-		nécessaire, et il n'y en a aucun. » Elle a été <strong>supprimée</strong>, parce que c'est une
-		qualification juridique et que le document se limite aux faits. Est-elle exacte ? Doit-elle
-		revenir, et sous quelle formulation ?`
-	},
-	{
-		titre: 'Le journal technique, et ses quatorze jours',
-		corps: `Le serveur conserve au plus quatorze jours un journal des requêtes servies. L'adresse du
-		visiteur y est <strong>tronquée avant d'être écrite</strong>, au point de ne plus désigner
-		personne ; la page d'où il vient n'y figure pas. Cette donnée tronquée reste-t-elle une donnée
-		personnelle ? La durée de quatorze jours est-elle défendable, et faut-il la justifier dans le
-		texte ?`
-	},
-	{
-		titre: 'Ce qui est effacé reste jusqu’à 182 jours dans les sauvegardes',
-		corps: `Une suppression est immédiate dans le service, mais les sauvegardes déjà parties ne se
-		réécrivent pas : c'est ce qui fait leur valeur le jour d'un incident. Une sauvegarde mensuelle
-		arrive à échéance 181 jours après sa création, et le fournisseur du stockage l'efface « en
-		général dans les 24 heures » qui suivent : le texte annonce donc <strong>182 jours au
-		plus</strong>, et le service vérifie chaque nuit qu'aucune sauvegarde n'a dépassé cet âge.
-		Est-ce compatible avec le droit à l'effacement ? La formulation actuelle suffit-elle, ou
-		faut-il dire explicitement que la suppression est <em>différée</em> dans les sauvegardes ?`
-	},
-	{
-		titre: 'L’exploitant lit vos données, et ses consultations ne sont pas signalées',
-		corps: `L'exploitant peut lire et modifier les données de toute organisation. Ses
-		<strong>modifications</strong> apparaissent dans le journal de l'organisation ; ses
-		<strong>consultations</strong> n'y apparaissent pas : elles sont notées dans un registre interne
-		que l'exploitant conserve 24 mois. Le texte le dit en toutes lettres. Est-ce suffisant, ou
-		faut-il un consentement distinct, voire une notification ?`
-	},
-	{
-		titre: 'La liste des données personnelles, et ce qu’elle vaut',
-		corps: `Le texte énumère dix catégories : l'adresse électronique et le nom d'une personne de
-		l'équipe, responsable ou éditeur, le lien entre elle et son organisation, l'adresse d'une
-		personne invitée, le journal des modifications, les sessions de connexion, les liens de
-		connexion en attente, les passkeys avec le détail de ce qui en est gardé, une empreinte de
-		l'adresse IP ou de l'adresse électronique, les traces d'accès de l'exploitant, et l'acceptation
-		de ces conditions : qui, quelle version, quand. La liste a été refaite table par table contre
-		le schéma de la base. Est-elle complète au sens de la loi, et la forme de l'énumération
-		convient-elle ? Le nom d'un intervenant, écrit par l'organisation dans un champ libre et
-		publié, y est traité à part.`
-	},
-	{
-		titre: 'Une empreinte calculée avec une clé secrète',
-		corps: `Le compteur d'abus ne retient pas l'adresse IP mais une empreinte calculée avec une clé
-		secrète. Sans la clé, l'empreinte ne rend pas l'adresse ; avec elle, et il faut un accès au
-		serveur pour l'avoir, une adresse IPv4 pourrait être retrouvée en les essayant toutes. Le texte
-		l'écrit et conclut : « C'est une pseudonymisation, pas un anonymat. » Est-ce la bonne
-		qualification, et l'écrire noir sur blanc est-il prudent ou imprudent ?`
-	},
-	{
-		titre: 'Sans garantie de disponibilité, et gratuit',
-		corps: `Le texte demande d'accepter que le service soit fourni <strong>sans garantie de
-		disponibilité</strong>. Une telle clause est-elle opposable en droit suisse pour un service
-		gratuit ? Faut-il une limitation de responsabilité rédigée autrement ?`
-	},
-	{
-		titre: 'Comment ce texte est-il accepté ?',
-		corps: `Il n'existe pas de contrat signé avec chaque organisation. Chaque personne qui a accès à
-		l'espace d'une organisation, responsable ou éditeur, doit accepter le texte pour y entrer : le
-		service le lui montre en entier, et elle l'accepte d'un clic sur le bouton « J'accepte les
-		conditions d'utilisation ». Le service garde qui a accepté, quelle version et quand ; le
-		moment est noté par la base de données, pas par l'application. Quand le texte change de
-		version, le service redemande l'accord avant de laisser entrer. L'exploitant n'y est pas
-		soumis. L'acceptation est effacée avec l'adhésion, dès que la personne quitte l'organisation.
-		<strong>C'est une acceptation par personne, et non au nom de l'organisation. Elle n'est pas
-		écrite au journal des modifications, et aucune copie n'est envoyée par courriel.</strong>
-		Est-ce suffisant ? Faut-il garder la preuve de l'acceptation plus longtemps que l'adhésion ?`
-	},
-	{
-		titre: 'Voltia, sans le nom de son titulaire',
-		corps: `Le texte nomme l'exploitant <strong>« Voltia »</strong>, en Suisse, avec une adresse de
-		contact, et aucun nom de personne. Voltia est une entreprise individuelle, et non une société.
-		Or le nom d'une entreprise individuelle doit contenir le nom de famille de son titulaire
-		(art. 945 du Code des obligations), et la nLPD demande d'identifier le responsable du
-		traitement et de dire comment le joindre (art. 19 nLPD). Le même nom figure seul comme
-		titulaire des droits d'auteur du code publié. <strong>« Voltia » seul suffit-il ?</strong>
-		Sinon, quel est le minimum, et où l'écrire : dans ce texte, au pied des pages publiques, ou
-		ailleurs ?`
-	}
-];
+const SORTIE = join(racine, 'A_LIVRER', 'CONDITIONS-jadwal.pdf');
 
 const STYLE = `
 @page { size: A4; margin: 18mm 16mm 22mm 16mm; }
@@ -212,60 +106,19 @@ a { color: #14171a; text-decoration: none; border-bottom: 0.3pt solid #9aa4ad; }
 table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 9.5pt; break-inside: avoid; }
 th, td { border: 0.4pt solid #c8ced4; padding: 1.6mm 2.2mm; text-align: left; vertical-align: top; }
 th { background: #eef1f4; font-family: "Segoe UI", system-ui, sans-serif; font-weight: 600; }
-
-.garde { break-after: page; }
-.garde .chapeau { font-family: "Segoe UI", system-ui, sans-serif; font-size: 8.5pt; letter-spacing: 0.08em; text-transform: uppercase; color: #5a666f; margin-bottom: 3mm; }
-.garde .intro { font-size: 11pt; margin-bottom: 6mm; }
-.point { break-inside: avoid; margin-bottom: 4.5mm; padding-left: 9mm; position: relative; }
-.point .n {
-	position: absolute; left: 0; top: 0.2mm;
-	font-family: "Segoe UI", system-ui, sans-serif; font-size: 9pt; font-weight: 600;
-	width: 6mm; height: 6mm; line-height: 6mm; text-align: center;
-	background: #14171a; color: #fff; border-radius: 3mm;
-}
-.point h3 { margin: 0 0 1mm; font-size: 10.5pt; }
-.point p { margin: 0; font-size: 9.8pt; }
-.pied { margin-top: 7mm; padding-top: 3mm; border-top: 0.4pt solid #c8ced4; font-size: 9pt; color: #5a666f; }
 .document h1 { margin-bottom: 2mm; }
 `;
 
-export function page(contenuMarkdown, version, styleEnPlus = '') {
-	const points = QUESTIONS.map(
-		(q, index) => `
-	<div class="point">
-		<span class="n">${index + 1}</span>
-		<h3>${q.titre}</h3>
-		<p>${q.corps.replace(/\s+/g, ' ').trim()}</p>
-	</div>`
-	).join('\n');
-
+/** Le document HTML qui part chez Chrome : le texte des conditions, rien d'autre. */
+export function page(contenuMarkdown, styleEnPlus = '') {
 	return `<!doctype html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<title>Conditions d'utilisation de jadwal, pour relecture juridique</title>
+<title>Conditions d'utilisation de jadwal</title>
 <style>${STYLE}${styleEnPlus}</style>
 </head>
 <body>
-
-<section class="garde">
-	<div class="chapeau">jadwal, un service de Voltia. Pour relecture juridique. Version du ${version}.</div>
-	<h1>Ce sur quoi votre avis est demandé</h1>
-	<p class="intro">
-		Les pages qui suivent sont le texte que les organisations liront, tel qu'il est publié
-		aujourd'hui. Il n'a <strong>jamais été relu par un juriste</strong>.
-	</p>
-	<p class="intro">
-		Onze points nous paraissent demander votre avis. Les autres passages sont des faits techniques
-		vérifiables ; ceux-ci sont des choix, et nous ne savons pas s'ils sont les bons.
-	</p>
-	${points}
-	<p class="pied">
-		Le service est exploité par Voltia, en Suisse.
-		Pour toute question : <strong>contact@voltia.ch</strong>.
-		Le code du service est ouvert et peut être auto-hébergé.
-	</p>
-</section>
 
 <section class="document">
 ${contenuMarkdown}
@@ -679,10 +532,10 @@ function dictionnaire(objets, dict, cle) {
  *
  * ## Pourquoi il le lit, et comment
  *
- * Ce qui part chez le juriste, c'est le PDF : un nom qui y serait dessiné, par le texte, par la page
- * de garde ou par le pied de page, y serait lu, quel que soit l'endroit où il est entré. Le relire
- * dans le HTML, avant Chrome, laisserait passer le pied de page, que Chrome compose à part, et ce
- * que la feuille de style change, comme les capitales du chapeau.
+ * Ce qui quitte le poste, c'est le PDF : un nom qui y serait dessiné, par le texte ou par le pied de
+ * page, y serait lu, quel que soit l'endroit où il est entré. Le relire dans le HTML, avant Chrome,
+ * laisserait passer le pied de page, que Chrome compose à part, et ce que la feuille de style
+ * change.
  *
  * Chrome dessine chaque glyphe par son numéro, et l'espace est un glyphe comme un autre. Le texte
  * se retrouve donc par la table `ToUnicode` de chaque police, sans rien deviner. Il reste à séparer
@@ -823,7 +676,7 @@ export const ECART_ENTRE_DEUX_BLOCS = 1.12;
  *
  * Un bloc d'une seule ligne en haut ou en bas de page est signalé lui aussi : rien, dans les
  * positions, ne le distingue d'une fin de bloc. Le contrôle préfère une mise en pages refaite pour
- * rien à une ligne seule qui part chez le juriste.
+ * rien à une ligne seule dans le document imprimé.
  *
  * `ecart` ne sert qu'à l'épreuve : elle rejoue l'ancien seuil pour montrer ce qu'il laissait passer.
  */
@@ -883,7 +736,7 @@ export function piedDePage(version) {
 
 /** Le document entier, mis en page et typographié, tel qu'il part chez Chrome. */
 export function construire(markdown, styleEnPlus = '') {
-	return typographierHtml(page(versHtml(markdown), dateDeLaVersion(markdown), styleEnPlus));
+	return typographierHtml(page(versHtml(markdown), styleEnPlus));
 }
 
 /** Le nombre de pages annoncé par le PDF lui-même, sans passer par un outil extérieur. */
@@ -927,7 +780,7 @@ export async function produire({ avecPied = true, variantes = VARIANTES } = {}) 
 	// n'est pas produit, plutôt que de partir sous une version que personne n'a écrite.
 	versionIso(markdown);
 	mkdirSync(dirname(SORTIE), { recursive: true });
-	const travail = join(racine, 'A_LIVRER', '.conditions-juriste.html');
+	const travail = join(racine, 'A_LIVRER', '.conditions.html');
 
 	let dernier = null;
 	try {
@@ -963,7 +816,7 @@ if (import.meta.main) {
 	const rendu = await produire();
 	process.stdout.write(
 		`${rendu.chemin}\n` +
-			`${QUESTIONS.length} points pour le juriste, puis docs/CONDITIONS.md en entier.\n` +
+			`docs/CONDITIONS.md en entier, et rien d’autre.\n` +
 			`version du ${rendu.version}, ${rendu.pages} pages, ` +
 			`${rendu.octets.toLocaleString('fr-CH')} octets.\n` +
 			`mise en pages : ${rendu.variante}. Lignes par page : ${rendu.lignes.join(', ')}.\n` +

@@ -5,10 +5,10 @@
 // L'image de production n'a besoin du fichier que le temps de sa construction : `.dockerignore` le
 // laisse passer, seul de `docs/`.
 //
-// La mise en mots est celle du PDF remis au juriste (`$lib/conditions/rendu.js`) : ce qu'il a lu est,
-// au caractère près, ce que les organisations acceptent. Ce module ne passe à ce convertisseur que ce
-// fichier-là, jamais un texte venu d'un visiteur : le convertisseur n'échappe pas tout, et son
-// en-tête le dit.
+// La mise en mots est celle du PDF des conditions (`$lib/conditions/rendu.js`) : le PDF et la page
+// disent, au caractère près, le texte que les organisations acceptent. Ce module ne passe à ce
+// convertisseur que ce fichier-là, jamais un texte venu d'un visiteur : le convertisseur n'échappe
+// pas tout, et son en-tête le dit.
 
 import brut from '../../../../../docs/CONDITIONS.md?raw';
 import {

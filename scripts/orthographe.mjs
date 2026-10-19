@@ -55,8 +55,6 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { QUESTIONS } from './conditions-pdf.mjs';
-
 const racine = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 /**
@@ -582,8 +580,8 @@ function tranche(texte, de, a) {
  * la moitié des signalements. Les plages sont donc réduites à une espace, **ligne par ligne**,
  * pour que le numéro de ligne reste juste.
  *
- * Les balises HTML écrites à l'intérieur d'une chaîne — la page de garde du PDF en est faite — ne
- * sont pas vues par l'extracteur de chaînes, qui ne connaît que les guillemets.
+ * Les balises HTML écrites à l'intérieur d'une chaîne ne sont pas vues par l'extracteur de chaînes,
+ * qui ne connaît que les guillemets.
  */
 function degraisser(texte) {
 	return texte
@@ -711,14 +709,6 @@ function corpus() {
 			ajouter(chemin, langue, chaines(texte, { identifiants: false }));
 		}
 	}
-
-	// La page de garde du PDF : ses onze points, lus depuis le module qui les porte. Extraire les
-	// chaînes de ce fichier rendrait aussi sa feuille de style, qui n'est pas du français.
-	ajouter(
-		'scripts/conditions-pdf.mjs',
-		'fr',
-		QUESTIONS.map((point) => `${point.titre}\n${point.corps}`).join('\n\n')
-	);
 
 	// `i18n.ts` porte les cinq langues, chacune dans son propre objet. Les relire toutes en
 	// français rendrait trois cents fautes qui n'en sont pas.

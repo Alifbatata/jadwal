@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 /**
- * Éprouve le générateur du PDF pour le juriste.
+ * Éprouve le générateur du PDF des conditions d'utilisation.
  *
  *     pnpm conditions:test
  *
  * ## Pourquoi ce test existe
  *
- * `scripts/conditions-pdf.mjs` produit le seul document du dépôt qui sorte du dépôt pour être lu par
- * quelqu'un qui ne le lira qu'une fois. Ce qui y est faux ne sera pas rattrapé : le juriste répondra
- * sur ce qu'il a vu. Trois choses peuvent y être fausses sans que rien ne se plaigne.
+ * `scripts/conditions-pdf.mjs` produit un document qui sort du dépôt pour être imprimé ou envoyé, et
+ * lu par quelqu'un qui ne le lira qu'une fois. Ce qui y est faux ne sera pas rattrapé. Trois choses
+ * peuvent y être fausses sans que rien ne se plaigne.
  *
- * **Le tiret cadratin.** Le contrôle de style interdit `—` dans `docs/CONDITIONS.md` et dans la page
- * de garde. Il ne dit rien du rendu : une entité HTML, un caractère venu d'un titre, et il
- * réapparaît dans le PDF sans que personne ne l'ait tapé.
+ * **Le tiret cadratin.** Le contrôle de style interdit `—` dans `docs/CONDITIONS.md`. Il ne dit rien
+ * du rendu : une entité HTML, un caractère venu d'un titre, et il réapparaît dans le PDF sans que
+ * personne ne l'ait tapé.
  *
  * **La typographie.** Le Markdown du dépôt s'écrit avec des apostrophes droites et des espaces
  * ordinaires. Le rendu les transforme. Si cette transformation cesse de s'appliquer, le PDF reste
@@ -28,31 +28,27 @@
  * le contrôle de mise en pages de la même étape : il lisait les pages à l'envers et ne voyait que la
  * fin d'un paragraphe. Chacun a désormais son contrôle, et son témoin.
  *
- * **La durée des sauvegardes.** Le point de la page de garde qui en parle est écrit à la main, dans
- * `QUESTIONS`, et le texte la promet de son côté. Le contrôle lit les deux et les compare.
- *
- * **Le nom de l'exploitant.** Depuis l'étape 18, c'est Voltia, sans nom de personne. Les conditions
- * l'écrivent, le pied de la page de garde le redit, et le onzième point demande au juriste s'il
- * suffit : le contrôle lit les trois et les compare. Il compte aussi les points que l'introduction
- * annonce en lettres, écrits à la main comme elle.
- *
- * Depuis l'étape 19, le nom est aussi cherché **partout dans le PDF**, et non plus dans une seule
- * phrase : un nom écrit juste à côté de « Voltia », au chapeau ou au milieu d'un paragraphe, passait.
- * Le texte que Chrome a dessiné est relu, page par page, pied de page compris, avec les métadonnées
- * du PDF, dont son titre ; chaque « Voltia » y est lu avec toute sa phrase, et chaque phrase qui
- * nomme l'exploitant ou le titulaire des droits d'auteur doit nommer Voltia. Quand le poste porte la
- * liste privée des termes interdits, celle du garde-fou, aucun de ses termes ne doit paraître dans
- * le PDF, ni dans ses pages, ni dans ses métadonnées. Un terme trouvé n'est jamais recopié : seul son
- * numéro dans la liste est donné. Le contrôle du nom ne recopie pas le nom qu'il lit, celui du
- * cadratin ne recopie pas le titre, et tout ce que l'épreuve écrit passe par le même masque
- * (`masquer`) : un terme de la liste n'en sort que par son rang. Le onzième point, enfin, dit comme
- * un fait que Voltia est une entreprise individuelle, ce que l'exploitant a confirmé.
+ * **Le nom de l'exploitant.** Le texte du dépôt nomme Voltia, et aucune personne à côté. Le nom est
+ * cherché **partout dans le PDF** : le texte que Chrome a dessiné est relu, page par page, pied de
+ * page compris, avec les métadonnées du PDF, dont son titre ; chaque « Voltia » y est lu avec toute
+ * sa phrase, et chaque phrase qui nomme l'exploitant doit nommer Voltia. Ces phrases ne sont pas
+ * écrites ici : elles sont lues dans `docs/CONDITIONS.md`, aux marques du nom de l'exploitant. Quand
+ * le poste porte la liste privée des termes interdits, celle du garde-fou, aucun de ses termes ne
+ * doit paraître dans le PDF, ni dans ses pages, ni dans ses métadonnées. Un terme trouvé n'est
+ * jamais recopié : seul son numéro dans la liste est donné. Le contrôle du nom ne recopie pas le nom
+ * qu'il lit, celui du cadratin ne recopie pas le titre, et tout ce que l'épreuve écrit passe par le
+ * même masque (`masquer`) : un terme de la liste n'en sort que par son rang.
  *
  * ## Ce qu'il joue
  *
  * Le document réel, celui de `docs/CONDITIONS.md`, et pas un document inventé : c'est lui qui part.
  * Le script est aussi lancé **comme en production**, en sous-processus, par la même commande que
  * `pnpm conditions:pdf`.
+ *
+ * Le texte est rendu **tel que le dépôt le porte**, avec le nom d'exploitant par défaut : la
+ * variable `JADWAL_EXPLOITANT` est retirée de l'environnement avant tout rendu, pour l'épreuve comme
+ * pour le script qu'elle lance. Une instance qui se nomme autrement ne fait pas tomber l'épreuve, et
+ * l'épreuve ne relit pas un nom que le dépôt public ne porte pas.
  *
  * Chaque contrôle est doublé d'un témoin qui le fait tomber : un contrôle qui ne sait pas échouer ne
  * prouve rien.
@@ -61,9 +57,9 @@
  *
  * Il ne relit le texte dessiné que pour y chercher des noms et des termes : la typographie, elle,
  * est vérifiée sur le HTML qui part chez Chrome. Un nom est reconnu à sa majuscule, dans la phrase
- * de Voltia ou dans celle du titulaire des droits : une phrase qu'un saut de page coupe est lue page
- * par page, et un nom écrit dans une autre phrase n'est vu que par la liste privée, quand le poste en
- * a une. Le texte est retrouvé par la table `ToUnicode` de chaque police (`texteDuPdf`, dans
+ * de Voltia, ou à sa place dans une phrase qui nomme l'exploitant : une phrase qu'un saut de page
+ * coupe est lue page par page, et un nom écrit dans une autre phrase n'est vu que par la liste
+ * privée, quand le poste en a une. Le texte est retrouvé par la table `ToUnicode` de chaque police (`texteDuPdf`, dans
  * `conditions-pdf.mjs`), sans outil de plus. Le pied de page est aussi prouvé autrement : le même
  * document est rendu deux fois, avec et sans pied, et les deux PDF sont comparés.
  *
@@ -94,15 +90,20 @@ import {
 	nommerExploitant,
 	piedDePage,
 	produire,
-	QUESTIONS,
 	texteDuPdf,
 	typographierHtml
 } from './conditions-pdf.mjs';
 import { AUCUNE, cheminDeLaListe, lireListe } from './controle-fuites.mjs';
 
+// Le dépôt public ne porte que le nom d'exploitant par défaut, et c'est lui que l'épreuve relit.
+// Retirée ici, la variable ne joue ni sur les rendus de l'épreuve ni sur le script qu'elle lance en
+// sous-processus, qui hérite de cet environnement : le nom qu'une instance se donne n'a pas à
+// passer par la sortie de l'épreuve, et ne doit pas la faire tomber.
+delete process.env['JADWAL_EXPLOITANT'];
+
 const racine = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SOURCE = join(racine, 'docs', 'CONDITIONS.md');
-const PDF = join(racine, 'A_LIVRER', 'CONDITIONS-jadwal-juriste.pdf');
+const PDF = join(racine, 'A_LIVRER', 'CONDITIONS-jadwal.pdf');
 
 /** Espace fine insécable, et espace insécable : les deux que la typographie française demande. */
 const FINE = ' ';
@@ -185,90 +186,6 @@ function listeSuivie(source, html) {
 	};
 }
 
-/**
- * La durée que le point sur les sauvegardes annonce au juriste, dans son titre et dans son corps,
- * et celle que le texte promet (« reste au plus N jours dans ces sauvegardes »). Les deux sont
- * lues, aucune n'est écrite ici : si l'une change sans l'autre, le juriste répondrait sur une durée
- * que le texte ne dit plus.
- */
-function dureeDesSauvegardes(source, questions) {
-	const promise = /reste au plus (\d+) jours dans ces sauvegardes/.exec(source)?.[1];
-	const points = questions.filter((point) => /sauvegardes/.test(point.titre));
-	const titre = /jusqu.à (\d+) jours/.exec(points[0]?.titre ?? '')?.[1];
-	const corps = /(\d+) jours\s+au\s+plus/.exec(points[0]?.corps ?? '')?.[1];
-	return {
-		accord: promise !== undefined && points.length === 1 && titre === promise && corps === promise,
-		detail:
-			`conditions : ${promise ?? '(phrase introuvable)'} jours ; point : titre ${titre ?? '?'},` +
-			` corps ${corps ?? '?'} ; ${points.length} point(s) sur les sauvegardes`
-	};
-}
-
-/** Les nombres que l'introduction de la page de garde peut écrire en lettres. */
-const NOMBRES = [
-	'zéro',
-	'un',
-	'deux',
-	'trois',
-	'quatre',
-	'cinq',
-	'six',
-	'sept',
-	'huit',
-	'neuf',
-	'dix',
-	'onze',
-	'douze',
-	'treize',
-	'quatorze',
-	'quinze'
-];
-
-/**
- * Le nombre de points que l'introduction annonce en lettres (« Onze points nous paraissent… »), et
- * celui que la page porte. L'annonce est écrite à la main : un point ajouté sans elle ferait dire
- * « dix » à une page qui en montre onze.
- */
-function annonceDesPoints(html) {
-	const mot = /(\S+) points nous paraissent/.exec(texteSeul(html))?.[1]?.toLocaleLowerCase('fr');
-	const points = html.split('<div class="point">').length - 1;
-	return {
-		accord: mot !== undefined && NOMBRES.indexOf(mot) === points,
-		detail: `annoncés : ${mot ?? '(phrase introuvable)'} ; présents : ${points}`
-	};
-}
-
-/**
- * Le nom de l'exploitant, lu à trois endroits : la phrase des conditions (« Le service est exploité
- * par X, en Suisse »), la même phrase au pied de la page de garde, et le point qui demande au
- * juriste si ce nom suffit (art. 945 CO). Depuis l'étape 18, c'est Voltia, et aucun nom de personne
- * ne l'accompagne. Si l'un des trois change sans les autres, le juriste répondrait sur un nom que
- * le texte ne porte plus.
- *
- * Le détail ne dit jamais le nom lu, seulement « Voltia » ou « un autre nom » : le vrai nom de
- * l'exploitant, écrit là par erreur, est justement ce que la sortie de l'épreuve ne doit pas porter.
- */
-function exploitantNomme(source, html, questions) {
-	const motif = /exploité par ([^,.]+), en Suisse/;
-	const conditions = motif.exec(source)?.[1];
-	const garde = /<section class="garde">([\s\S]*?)<\/section>/.exec(html)?.[1] ?? '';
-	const pied = motif.exec(garde)?.[1];
-	const points = questions.filter((point) => /art\. 945/.test(point.corps));
-	const cite =
-		points.length === 1 &&
-		conditions !== undefined &&
-		points[0].corps.includes(`« ${conditions} »`);
-	const dit = (nom) =>
-		nom === undefined ? '(phrase introuvable)' : nom === 'Voltia' ? 'Voltia' : 'un autre nom';
-	return {
-		accord: conditions === 'Voltia' && pied === conditions && cite,
-		detail:
-			`conditions : ${dit(conditions)} ; pied de la page de garde : ${dit(pied)} ; ` +
-			`${points.length} point(s) sur l'art. 945 CO` +
-			(points.length === 1 ? (cite ? ', qui cite ce nom' : ', qui ne cite pas ce nom') : '')
-	};
-}
-
 /** Les espaces insécables du rendu, et l'apostrophe courbe, ramenées à leur forme tapée. */
 function aplatir(texte) {
 	return texte.replace(/[\u00a0\u202f\u2009]/g, ' ').replace(/’/g, "'");
@@ -276,9 +193,9 @@ function aplatir(texte) {
 
 /**
  * Les mots qui peuvent s'écrire avec une majuscule dans la phrase de « Voltia » sans être un nom :
- * ceux qui ouvrent une phrase ou un titre, et ceux du chapeau de la page de garde, qui écrit tout en
- * capitales (« JADWAL, UN SERVICE DE VOLTIA »). La liste est courte à dessein : un mot en majuscule
- * qui n'y est pas fait tomber l'épreuve, et il ne s'y ajoute qu'après une relecture de sa phrase.
+ * ceux qui ouvrent une phrase ou un titre, et ceux qu'un titre écrit avec une majuscule. La liste
+ * est courte à dessein : un mot en majuscule qui n'y est pas fait tomber l'épreuve, et il ne s'y
+ * ajoute qu'après une relecture de sa phrase.
  */
 const MOTS_DE_PHRASE = new Set([
 	// Les mots de liaison, et ceux qui ouvrent une phrase ou un titre.
@@ -330,8 +247,7 @@ function suspect(mot) {
 }
 
 /**
- * « Voltia », seul, partout où le PDF le dessine : dans le texte, la page de garde, les titres, le
- * chapeau en capitales et le pied de page.
+ * « Voltia », seul, partout où le PDF le dessine : dans le texte, les titres et le pied de page.
  *
  * Le nom qu'on craint de voir revenir est celui d'une personne, écrit **à côté** de Voltia :
  * « Une Personne (Voltia) », « Voltia, Une Personne », « VOLTIA, UNE PERSONNE » en capitales, ou
@@ -398,50 +314,42 @@ function voltiaSeulDansLePdf(octets) {
 }
 
 /**
- * Les phrases qui nomment l'exploitant, et le nom qu'elles donnent : il doit être « Voltia », seul.
- * `voltiaSeul` voit un nom écrit à côté de Voltia ; celles-ci voient un nom écrit **à sa place**.
- * Chacune doit être trouvée au moins une fois : une phrase récrite sans que ce contrôle suive ne
- * serait plus contrôlée du tout.
+ * Les phrases du texte qui nomment l'exploitant, lues dans `docs/CONDITIONS.md` et non écrites ici.
+ * Le texte marque le nom (`<!-- exploitant -->Voltia<!-- /exploitant -->`) pour que
+ * `nommerExploitant` le remplace : chaque marque donne les deux mots qui la précèdent, « exploité
+ * par » aujourd'hui, et le nom par défaut qu'elle porte. Une phrase récrite dans le texte est suivie
+ * sans que l'épreuve change ; une phrase écrite en dur ici aurait cessé d'être lue le jour où le
+ * texte l'a récrite, sans que rien ne tombe (« … est le responsable du traitement », jusqu'à la
+ * version du 19.10.2026).
  */
-const PHRASES_QUI_NOMMENT = [
-	['« exploité par … »', /exploité par\s+([^\s,.]+)/gi],
-	['« jadwal, un service de … »', /jadwal, un service de\s+([^\s,.]+)/gi],
-	['« … est le responsable du traitement »', /([^\s,.]+)\s+est le responsable du traitement/gi],
-	["« nomme l'exploitant « … » »", /nomme l'exploitant\s+«\s*([^»]+?)\s*»/gi]
-];
+function phrasesQuiNomment(source) {
+	return [
+		...source.matchAll(/(\S+\s+\S+)\s*<!-- exploitant -->([^<\n]*)<!-- \/exploitant -->/g)
+	].map(([, avant, nom]) => ({ avant: aplatir(avant).replace(/\s+/g, ' '), nom: nom.trim() }));
+}
 
 /**
- * Les phrases qui nomment le **titulaire des droits** d'auteur. Le document ne le fait qu'une fois,
- * au onzième point : « Le même nom figure seul comme titulaire des droits d'auteur du code publié ».
- * Aucun mot fixe n'y précède le nom, qui peut être le sujet de la phrase : c'est donc la phrase
- * entière qui est lue, de la fin de la phrase d'avant à la sienne. Elle doit nommer Voltia, ou
- * « le même nom » que le point vient de donner, et aucun de ses mots ne prend de majuscule hors de
- * Voltia et de `MOTS_DE_PHRASE`. Jusqu'à la relecture de l'étape 19, aucune phrase du titulaire
- * n'était lue : « Une Personne figure comme titulaire des droits » passait.
+ * Le nom que donne chaque phrase qui nomme l'exploitant, dans le texte relu : il doit être le nom par
+ * défaut du texte, seul. `voltiaSeul` voit un nom écrit à côté de Voltia ; ce contrôle voit un nom
+ * écrit **à sa place**. Chaque phrase doit être trouvée au moins une fois : une phrase que le rendu
+ * aurait perdue ne serait plus contrôlée du tout. Le détail ne dit jamais le nom lu.
  */
-const TITULAIRE_DES_DROITS = /titulaire des droits|droits d'auteur|©|copyright/i;
-
-function exploitantNommePartout(pages) {
+function exploitantNommePartout(pages, phrases) {
 	const texte = aplatir(pages.join('\n')).replace(/\s+/g, ' ');
 	const ecarts = [];
-	for (const [phrase, motif] of PHRASES_QUI_NOMMENT) {
+	if (phrases.length === 0) ecarts.push('aucune marque du nom de l’exploitant dans le texte');
+	for (const { avant, nom } of phrases) {
+		const phrase = `« ${avant} … »`;
+		const motif = new RegExp(
+			`${avant.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '\\s+')}\\s+([^\\s,.;:]+)`,
+			'gi'
+		);
 		const noms = [...texte.matchAll(motif)].map((trouve) => trouve[1]);
 		if (noms.length === 0) ecarts.push(`${phrase} : phrase introuvable`);
-		const autres = noms.filter((nom) => nom.toLocaleLowerCase('fr') !== 'voltia').length;
-		if (autres > 0) ecarts.push(`${phrase} : ${autres} fois un autre nom que Voltia`);
-	}
-	const titulaire = '« … titulaire des droits »';
-	const phrases = texte
-		.split(/(?<=[.!?…])\s+/u)
-		.filter((phrase) => TITULAIRE_DES_DROITS.test(phrase));
-	if (phrases.length === 0) ecarts.push(`${titulaire} : phrase introuvable`);
-	const sansVoltia = phrases.filter((phrase) => !/voltia|\ble même nom\b/i.test(phrase)).length;
-	if (sansVoltia > 0) {
-		ecarts.push(`${titulaire} : ${sansVoltia} phrase(s) qui ne nomment ni Voltia ni le même nom`);
-	}
-	const avecUnNom = phrases.filter((phrase) => mots(phrase).some(suspect)).length;
-	if (avecUnNom > 0) {
-		ecarts.push(`${titulaire} : un mot en majuscule dans ${avecUnNom} phrase(s)`);
+		const autres = noms.filter(
+			(lu) => lu.toLocaleLowerCase('fr') !== nom.toLocaleLowerCase('fr')
+		).length;
+		if (autres > 0) ecarts.push(`${phrase} : ${autres} fois un autre nom que le nom par défaut`);
 	}
 	return ecarts;
 }
@@ -479,11 +387,11 @@ function chainesHorsDesPages(octets) {
  * La liste peut autoriser un terme dans un fichier (`terme | chemin`), et le garde-fou la lit ainsi.
  * L'épreuve aussi : `CLAUDE.md` permet à `docs/CONDITIONS.md` de nommer l'hébergeur et le pays des
  * données, et le PDF est ce fichier, mis en pages. Chaque morceau du PDF répond donc au fichier
- * d'où il vient : les pages du document et les adresses de ses liens à `docs/CONDITIONS.md`, la
- * page de garde, le pied de chaque page et les métadonnées à `scripts/conditions-pdf.mjs`. Seule
- * une autorisation sans commit compte ici : le PDF est fait de l'arbre de travail, pas d'un commit.
+ * d'où il vient : les pages et les adresses des liens à `docs/CONDITIONS.md`, le pied de chaque
+ * page et les métadonnées à `scripts/conditions-pdf.mjs`. Seule une autorisation sans commit compte
+ * ici : le PDF est fait de l'arbre de travail, pas d'un commit.
  */
-function termesDansLePdf(pages, horsDesPages, termes, debutDuDocument) {
+function termesDansLePdf(pages, horsDesPages, termes) {
 	const GENERATEUR = 'scripts/conditions-pdf.mjs';
 	const CONDITIONS = 'docs/CONDITIONS.md';
 	const morceaux = [];
@@ -492,8 +400,7 @@ function termesDansLePdf(pages, horsDesPages, termes, debutDuDocument) {
 		const pied = /^jadwal, conditions d'utilisation\./i.test(aplatir(lignes.at(-1) ?? ''))
 			? lignes.pop()
 			: '';
-		const source = debutDuDocument >= 0 && index >= debutDuDocument ? CONDITIONS : GENERATEUR;
-		morceaux.push({ ou: `page ${index + 1}`, source, texte: lignes.join('\n') });
+		morceaux.push({ ou: `page ${index + 1}`, source: CONDITIONS, texte: lignes.join('\n') });
 		if (pied)
 			morceaux.push({ ou: `pied de la page ${index + 1}`, source: GENERATEUR, texte: pied });
 	});
@@ -530,34 +437,20 @@ function listeDesTermes() {
 	return { etat: 'lue', termes: lireListe(chemin) };
 }
 
-/**
- * Le onzième point dit, **comme un fait**, que Voltia est une entreprise individuelle : l'exploitant
- * l'a confirmé à l'étape 19. Une tournure qui en ferait de nouveau une hypothèse, ou qui demanderait
- * une confirmation, ferait répondre le juriste sur une situation que personne n'affirme.
- */
-function entrepriseIndividuelle(questions) {
-	const points = questions.filter((point) => /art\. 945/.test(point.corps));
-	const corps = points[0]?.corps.replace(/\s+/g, ' ') ?? '';
-	const fait = /Voltia est une entreprise individuelle/.test(corps);
-	const doute = /confirm|suppos|serait une entreprise|semble/i.test(corps);
-	return {
-		accord: points.length === 1 && fait && !doute,
-		detail:
-			`${points.length} point(s) sur l'art. 945 CO ; ` +
-			(fait ? 'le fait est écrit' : 'le fait n’est pas écrit') +
-			(doute ? ', avec une réserve qui en refait une hypothèse' : '')
-	};
-}
-
 /** Des lignes de texte courant, construites : `n` lignes à un interligne l'une de l'autre. */
 function lignesDeTexte(haut, n, interligne = 15) {
 	return Array.from({ length: n }, (_, index) => ({ y: haut - index * interligne, corps: 10.5 }));
 }
 
-const markdown = nommerExploitant(readFileSync(SOURCE, 'utf8'), process.env['JADWAL_EXPLOITANT']);
+// Le texte du dépôt, avec le nom d'exploitant par défaut : `JADWAL_EXPLOITANT` a été retirée plus
+// haut, et le nom n'est demandé à personne.
+const source = readFileSync(SOURCE, 'utf8');
+const markdown = nommerExploitant(source, undefined);
 const version = dateDeLaVersion(markdown);
 const html = construire(markdown);
 const texte = texteSeul(html);
+const phrases = phrasesQuiNomment(source);
+const titreDuTexte = /^# (.+)$/m.exec(markdown)?.[1] ?? '';
 
 ecrire(`\nLe document rendu, à partir de docs/CONDITIONS.md (version du ${version})\n`);
 
@@ -584,19 +477,26 @@ verifier(
 	fautes.length === 0,
 	fautes.length ? fautes.slice(0, 3).join(' | ') : ''
 );
+// Un signe que le texte n'emploie pas n'a rien à prouver : il est dit, et sauté. Le texte des
+// conditions n'a plus de « ? » depuis que le PDF ne porte plus que lui ; le témoin plus bas compose
+// une question. Il faut au moins un signe présent, sans quoi ce contrôle ne vérifierait rien.
+let signesPresents = 0;
 for (const [signe, attendu, nom] of [
 	[';', FINE, 'fine insécable'],
 	['?', FINE, 'fine insécable'],
+	['!', FINE, 'fine insécable'],
 	[':', INSECABLE, 'insécable']
 ]) {
 	const total = texte.split(signe).length - 1;
+	if (total === 0) {
+		ecrire(`  (aucun « ${signe} » dans le texte : rien à y vérifier)\n`);
+		continue;
+	}
+	signesPresents += 1;
 	const bons = texte.split(attendu + signe).length - 1;
-	verifier(
-		`chaque « ${signe} » précédé d'une espace ${nom}`,
-		total > 0 && bons === total,
-		`${bons}/${total}`
-	);
+	verifier(`chaque « ${signe} » précédé d'une espace ${nom}`, bons === total, `${bons}/${total}`);
 }
+verifier('au moins un signe double est employé, et donc vérifié', signesPresents > 0);
 verifier(
 	'les guillemets serrent leur contenu',
 	texte.split(`«${INSECABLE}`).length - 1 === texte.split('«').length - 1 &&
@@ -608,25 +508,25 @@ verifier(
 	!html.includes('justify;') && !html.includes('text-align: justify')
 );
 
-const points = html.split('<div class="point">').length - 1;
-verifier('les onze points pour le juriste sont là', points === 11, `${points} trouvé(s)`);
-const annonce = annonceDesPoints(html);
+// Le document est le texte seul : une section, qui ouvre le corps, et dont le premier titre est
+// celui du texte.
 verifier(
-	'l’introduction annonce autant de points qu’elle en montre',
-	annonce.accord,
-	annonce.detail
+	'le rendu ne porte que le texte des conditions, qui ouvre le document',
+	/<body>\s*<section class="document">\s*<h1>/.test(html) &&
+		html.split('<section').length - 1 === 1 &&
+		titreDuTexte !== '' &&
+		aplatir(texte.trimStart()).startsWith(titreDuTexte),
+	`${html.split('<section').length - 1} section(s)`
 );
-const exploitant = exploitantNomme(markdown, html, QUESTIONS);
 verifier(
-	'l’exploitant est Voltia seul, dans les conditions, au pied de la page de garde et au point sur son nom',
-	exploitant.accord,
-	exploitant.detail
+	'le titre du document est « Conditions d’utilisation de jadwal »',
+	aplatir(/<title>([^<]*)<\/title>/.exec(html)?.[1] ?? '') === "Conditions d'utilisation de jadwal"
 );
-const individuelle = entrepriseIndividuelle(QUESTIONS);
 verifier(
-	'le point sur le nom dit, comme un fait, que Voltia est une entreprise individuelle',
-	individuelle.accord,
-	individuelle.detail
+	'le texte du dépôt marque le nom de l’exploitant, et le nom par défaut est Voltia',
+	phrases.length > 0 && phrases.every((phrase) => phrase.nom === 'Voltia'),
+	`${phrases.length} marque(s) ; nom par défaut : ` +
+		(phrases.every((phrase) => phrase.nom === 'Voltia') ? 'Voltia' : 'un autre nom')
 );
 const liste = listeSuivie(markdown, html);
 verifier(
@@ -637,16 +537,10 @@ verifier(
 // Les mots cherchés s'écrivent ici sans apparaître en toutes lettres : une classe d'une lettre pour
 // le latin, des échappements pour l'arabe. Le dépôt ne les porte ainsi que dans le module des heures
 // de prière et dans les ADR, et une recherche de ces mots sur tout le dépôt n'a pas à tomber sur le
-// contrôle même qui vérifie qu'ils ont disparu (étape 19, B12). Le motif est le même qu'avant.
+// contrôle même qui vérifie qu'ils sont absents (étape 19, B12). Le motif est le même qu'avant.
 verifier(
-	'la page de garde ne parle plus d’un lieu de culte',
+	'le rendu ne parle pas d’un lieu de culte',
 	!/mos[q]u|mos[c]he[ae]|\u0645\u0633\u062c\u062f/i.test(html)
-);
-const duree = dureeDesSauvegardes(markdown, QUESTIONS);
-verifier(
-	'le point sur les sauvegardes dit la durée que promettent les conditions',
-	duree.accord,
-	duree.detail
 );
 
 ecrire(`\nLes témoins : chaque contrôle sait tomber\n`);
@@ -679,142 +573,96 @@ verifier(
 	desindente === markdown ? 'le paragraphe des passkeys est introuvable' : coupee.detail
 );
 
-// Un point qui annonce un jour de moins que le texte, 181 jours contre 182 par exemple. Le jour de
-// moins est compté depuis le texte : le contrôle doit tomber, quelle que soit la durée que le point
-// écrit.
-const joursDuTexte = Number(/reste au plus (\d+) jours dans ces sauvegardes/.exec(markdown)?.[1]);
-const enRetard = QUESTIONS.map((point) =>
-	/sauvegardes/.test(point.titre)
-		? {
-				...point,
-				titre: point.titre.replace(/\d+ jours/, `${joursDuTexte - 1} jours`),
-				corps: point.corps.replace(/\d+(?= jours\s+au\s+plus)/, String(joursDuTexte - 1))
-			}
-		: point
-);
-const ecart = dureeDesSauvegardes(markdown, enRetard);
-verifier('un point qui annonce un jour de moins que le texte est vu', !ecart.accord, ecart.detail);
+/**
+ * Le texte du dépôt, où la première phrase qui nomme l'exploitant donne `nouveau` à la place du nom
+ * par défaut. La phrase est celle que `phrasesQuiNomment` a lue dans le texte, pas une phrase
+ * écrite ici.
+ */
+function nommeAutrement(nouveau) {
+	if (!premiere) return markdown;
+	return markdown.replace(`${premiere.avant} ${premiere.nom}`, `${premiere.avant} ${nouveau}`);
+}
+const [premiere] = phrases;
 
-// Une annonce qui compte un point de trop, comme « Dix points » l'aurait fait devant neuf.
-const annonceFausse = annonceDesPoints(
-	html.replace(/\S+( points nous paraissent)/, `${NOMBRES[points + 1] ?? 'mille'}$1`)
-);
+// Un nom de personne revenu devant Voltia, dans la phrase qui nomme l'exploitant. Les deux contrôles
+// le voient, et leur détail ne le recopie pas : un nom réel, terme de la liste privée, partirait
+// avec la sortie de l'épreuve dans un journal ou un rapport (relecture de l'étape 19).
+const avecUnNom = nommeAutrement('Une Personne (Voltia)');
+const texteAvecUnNom = texteSeul(construire(avecUnNom));
+const nomALaPlace = exploitantNommePartout([texteAvecUnNom], phrases);
+const nomACote = voltiaSeul([texteAvecUnNom]);
 verifier(
-	'une introduction qui annonce un point de trop est vue',
-	!annonceFausse.accord,
-	annonceFausse.detail
-);
-
-// Un nom de personne revenu devant Voltia, dans les conditions puis au seul pied de la page de
-// garde ; et une page de garde qui a perdu le point sur le nom. Le nom est vu, et le détail du
-// contrôle ne le recopie pas : un nom réel, terme de la liste privée, partirait avec la sortie de
-// l'épreuve dans un journal ou un rapport (relecture de l'étape 19).
-const avecUnNom = markdown.replace(
-	/exploité par [^,.]+, en Suisse/,
-	'exploité par Une Personne (Voltia), en Suisse'
-);
-const nomDansLeTexte = exploitantNomme(avecUnNom, html, QUESTIONS);
-verifier(
-	'un nom de personne revenu dans les conditions est vu, sans être recopié',
+	'un nom de personne revenu devant Voltia dans le texte est vu, sans être recopié',
 	avecUnNom !== markdown &&
-		!nomDansLeTexte.accord &&
-		!nomDansLeTexte.detail.includes('Une Personne'),
-	nomDansLeTexte.detail
+		nomALaPlace.length > 0 &&
+		nomACote.ecarts.length > 0 &&
+		![...nomALaPlace, ...nomACote.ecarts].some((ecart) => /Une Personne/.test(ecart)),
+	[...nomALaPlace, ...nomACote.ecarts].join(' ; ') || 'rien vu'
 );
-const piedAvecUnNom = html.replace(
-	/(<section class="garde">[\s\S]*?exploité par )[^,.]+/,
-	'$1Une Personne (Voltia)'
-);
-const nomAuPied = exploitantNomme(markdown, piedAvecUnNom, QUESTIONS);
+const surLeTexte = [...exploitantNommePartout([texte], phrases), ...voltiaSeul([texte]).ecarts];
 verifier(
-	'un nom de personne revenu au pied de la page de garde est vu, sans être recopié',
-	piedAvecUnNom !== html && !nomAuPied.accord && !nomAuPied.detail.includes('Une Personne'),
-	nomAuPied.detail
-);
-const sansLePointDuNom = exploitantNomme(
-	markdown,
-	html,
-	QUESTIONS.filter((point) => !/art\. 945/.test(point.corps))
-);
-verifier(
-	'une page de garde sans le point sur le nom est vue',
-	!sansLePointDuNom.accord,
-	sansLePointDuNom.detail
+	'le texte du dépôt, lui, ne fait rien dire aux deux contrôles',
+	surLeTexte.length === 0,
+	surLeTexte.join(' ; ')
 );
 
-// Le onzième point tel qu'il était avant que l'exploitant ne confirme : une hypothèse, et une
-// confirmation demandée.
-const enHypothese = entrepriseIndividuelle(
-	QUESTIONS.map((point) =>
-		/art\. 945/.test(point.corps)
-			? {
-					...point,
-					corps: point.corps.replace(
-						'Voltia est une entreprise individuelle, et non une société.',
-						'La question suppose que Voltia est une entreprise individuelle, ce que ' +
-							'l’exploitant doit confirmer.'
-					)
-				}
-			: point
-	)
-);
+// La phrase qui nomme l'exploitant, perdue au rendu : un contrôle qui ne trouve plus sa phrase ne
+// contrôle plus rien, et il doit le dire. Puis un texte sans marque du nom.
+const sansLaPhrase = premiere ? markdown.replace(`${premiere.avant} `, 'tenu par ') : markdown;
+const phrasePerdue = exploitantNommePartout([texteSeul(construire(sansLaPhrase))], phrases);
 verifier(
-	'un point qui refait de l’entreprise individuelle une hypothèse est vu',
-	!enHypothese.accord,
-	enHypothese.detail
+	'une phrase qui nomme l’exploitant, perdue au rendu, est vue',
+	sansLaPhrase !== markdown && phrasePerdue.some((ecart) => ecart.endsWith('phrase introuvable')),
+	phrasePerdue.join(' ; ') || 'rien vu'
+);
+const sansMarque = exploitantNommePartout([texte], phrasesQuiNomment(markdown));
+verifier(
+	'un texte sans marque du nom de l’exploitant ne passe pas',
+	sansMarque.some((ecart) => ecart.startsWith('aucune marque')),
+	sansMarque.join(' ; ') || 'rien vu'
 );
 
-// Les termes interdits, sur un PDF construit, une page de garde puis une page du document, et une
+// Les termes interdits, sur une page construite dont la dernière ligne est le pied de page, et une
 // liste de témoin : un terme absent, un terme sans autorisation, et un terme que la liste autorise
-// dans `docs/CONDITIONS.md`. Le deuxième est vu aux deux pages, le troisième à la seule page de
-// garde, et seuls leurs rangs reviennent.
+// dans `docs/CONDITIONS.md`. Le deuxième est vu dans la page, le troisième dans le seul pied, qui
+// vient du générateur, et seuls leurs rangs reviennent.
 const temoinDesTermes = termesDansLePdf(
-	['Page de garde, pour le juriste : Témoin-Autorisé.', 'Le document : Témoin-Autorisé.'],
+	[
+		'Le document : Témoin-Autorisé et Témoin-Seul.\n' +
+			'jadwal, conditions d’utilisation. Version du Témoin-Autorisé.'
+	],
 	{ information: [], liens: [] },
 	[
 		{ rang: 1, texte: 'terme-absent-du-texte', autorises: [] },
-		{ rang: 2, texte: 'JURISTE', autorises: [] },
+		{ rang: 2, texte: 'TÉMOIN-SEUL', autorises: [] },
 		{ rang: 3, texte: 'témoin-autorisé', autorises: ['docs/CONDITIONS.md'] }
-	],
-	1
+	]
 );
 const rendu = temoinDesTermes.map((trouve) => `terme n°${trouve.rang} : ${trouve.ou.join(', ')}`);
 verifier(
 	'un terme de la liste est vu, par son seul rang, sauf là où la liste l’autorise',
-	rendu.join(' ; ') === 'terme n°2 : page 1 ; terme n°3 : page 1',
+	rendu.join(' ; ') === 'terme n°2 : page 1 ; terme n°3 : pied de la page 1',
 	rendu.join(' ; ')
 );
 
-// Un terme de la liste posé après « exploité par », à la place de Voltia : le contrôle du nom le
-// voit sans le recopier, et un détail qui le recopierait quand même ne le ferait sortir que par son
-// rang, en capitales, avec une espace insécable ou une apostrophe courbe comme en toutes lettres.
+// Un terme de la liste posé à la place de Voltia : le contrôle du nom le voit sans le recopier, et
+// un détail qui le recopierait quand même ne le ferait sortir que par son rang, en capitales, avec
+// une espace insécable ou une apostrophe courbe comme en toutes lettres.
 const listeDuTemoin = [{ rang: 7, texte: "Jean l'Exemple", autorises: [] }];
-const nomDeLaListe = exploitantNomme(
-	markdown.replace(/exploité par [^,.]+, en Suisse/, "exploité par Jean l'Exemple, en Suisse"),
-	html,
-	QUESTIONS
+const nomDeLaListe = exploitantNommePartout(
+	[texteSeul(construire(nommeAutrement("Jean l'Exemple")))],
+	phrases
 );
 const sortieDuTemoin = masquer(
-	`${nomDeLaListe.detail} ; exploité par Jean l'Exemple ; JEAN L’EXEMPLE ; Jean\u00a0l'exemple`,
+	`${nomDeLaListe.join(' ; ')} ; exploité par Jean l'Exemple ; JEAN L’EXEMPLE ; Jean\u00a0l'exemple`,
 	listeDuTemoin
 );
 verifier(
 	'un terme de la liste mis à la place de Voltia est vu, et ne sort de l’épreuve que par son rang',
-	!nomDeLaListe.accord &&
+	nomDeLaListe.length > 0 &&
 		!/exemple/i.test(sortieDuTemoin) &&
 		sortieDuTemoin.split('[terme n°7]').length - 1 === 3,
 	sortieDuTemoin
-);
-
-// Un nom glissé dans la phrase du titulaire des droits, qui garde « le même nom » : la phrase est
-// lue en entier, et ce nom y prend une majuscule.
-const titulaireAvecUnNom = exploitantNommePartout([
-	"Le même nom, celui de Jean Exemple, figure seul comme titulaire des droits d'auteur du code."
-]).filter((ecart) => ecart.startsWith('« … titulaire des droits »'));
-verifier(
-	'un nom glissé dans la phrase du titulaire des droits, à côté du « même nom », est vu',
-	titulaireAvecUnNom.some((ecart) => ecart.includes('majuscule')),
-	titulaireAvecUnNom.join(' ; ') || 'rien vu'
 );
 
 ecrire(`\nLes lignes seules, sur des pages construites\n`);
@@ -911,39 +759,31 @@ try {
 		`${pagesLues.length} page(s), ${toutLeTexte.length} caractères`
 	);
 	verifier(
-		'le texte relu porte le chapeau en capitales, le document et le pied de page',
-		toutLeTexte.includes('UN SERVICE DE VOLTIA') &&
-			toutLeTexte.includes("Conditions d'utilisation") &&
-			toutLeTexte.includes(`page 1 sur ${pages}`)
+		'le texte relu porte le document et le pied de page',
+		toutLeTexte.includes(titreDuTexte) && toutLeTexte.includes(`page 1 sur ${pages}`)
 	);
+	verifier(
+		'le PDF commence par le texte : la première page s’ouvre sur son titre',
+		aplatir(pagesLues[0] ?? '').startsWith(`${titreDuTexte}\n`)
+	);
+	// Le texte du dépôt dit Voltia un certain nombre de fois : le PDF doit au moins les dessiner
+	// toutes, sans quoi le contrôle n'aurait relu qu'une partie du document.
+	const mentionsDuTexte = (aplatir(texte).match(/voltia/gi) ?? []).length;
 	const seul = voltiaSeulDansLePdf(octets);
 	verifier(
 		'partout où le PDF porte Voltia, pages et métadonnées, aucun nom n’est écrit à côté',
-		seul.mentions >= 6 && seul.ecarts.length === 0,
-		`${seul.mentions} mention(s)${seul.ecarts.length > 0 ? ` ; ${seul.ecarts.join(' ; ')}` : ''}`
+		mentionsDuTexte > 0 && seul.mentions >= mentionsDuTexte && seul.ecarts.length === 0,
+		`${seul.mentions} mention(s) dans le PDF, ${mentionsDuTexte} dans le texte` +
+			(seul.ecarts.length > 0 ? ` ; ${seul.ecarts.join(' ; ')}` : '')
 	);
-	const nomme = exploitantNommePartout(pagesLues);
+	const nomme = exploitantNommePartout(pagesLues, phrases);
 	verifier(
-		'chaque phrase qui nomme l’exploitant ou le titulaire des droits nomme Voltia',
+		'chaque phrase qui nomme l’exploitant nomme Voltia',
 		nomme.length === 0,
 		nomme.join(' ; ')
 	);
-	// La page où le document commence, après la page de garde : son titre ouvre la page.
-	const debutDuDocument = pagesLues.findIndex((texte) =>
-		aplatir(texte).startsWith("Conditions d'utilisation\n")
-	);
-	verifier(
-		'le document commence après la page de garde, sur une page à lui',
-		debutDuDocument > 0,
-		`page ${debutDuDocument + 1}`
-	);
 	if (listePrivee.etat === 'lue') {
-		const trouves = termesDansLePdf(
-			pagesLues,
-			chainesHorsDesPages(octets),
-			listePrivee.termes,
-			debutDuDocument
-		);
+		const trouves = termesDansLePdf(pagesLues, chainesHorsDesPages(octets), listePrivee.termes);
 		verifier(
 			`aucun des ${listePrivee.termes.length} termes de la liste privée ne paraît dans le PDF, ` +
 				`hors de ce que la liste autorise`,
@@ -962,138 +802,83 @@ try {
 		);
 	}
 
-	// Le témoin rendu : le même document, avec un nom écrit à côté de Voltia dans le chapeau, que la
-	// feuille de style met en capitales, et un autre à sa place dans les conditions. Rendu par Chrome
-	// dans un dossier temporaire, relu dans le PDF, comme le document livré.
+	// Les témoins rendus : le même document, avec un nom écrit à côté de Voltia ou à sa place, rendu
+	// par Chrome dans un dossier temporaire et relu dans le PDF, comme le document livré.
 	ecrire(`\nLe témoin : un nom écrit à côté de Voltia, dans un PDF rendu\n`);
-	const auChapeau = html.replace('un service de Voltia.', 'un service de Voltia, Jean Exemple.');
-	const avecDesNoms = auChapeau.replace(
-		/(<section class="document">[\s\S]*?exploité par )Voltia/,
-		'$1Jean Exemple (Voltia)'
-	);
 	const dossierDuTemoin = mkdtempSync(join(tmpdir(), 'jadwal-conditions-temoin-'));
+	/** Le HTML donné, rendu par Chrome avec son pied de page, et relu page par page. */
+	const rendre = async (nom, contenu) => {
+		const chemin = join(dossierDuTemoin, `${nom}.html`);
+		writeFileSync(chemin, contenu, 'utf8');
+		await imprimer(chemin, join(dossierDuTemoin, `${nom}.pdf`), piedDePage(version));
+		return readFileSync(join(dossierDuTemoin, `${nom}.pdf`));
+	};
+	/** Les mentions de Voltia que `voltiaSeul` signale, une fois chacune. */
+	const mentionsSignalees = (ecarts) => [...new Set(ecarts.map((ecart) => ecart.split(' : ')[0]))];
 	try {
-		const cheminDuTemoin = join(dossierDuTemoin, 'temoin.html');
-		writeFileSync(cheminDuTemoin, avecDesNoms, 'utf8');
-		await imprimer(cheminDuTemoin, join(dossierDuTemoin, 'temoin.pdf'), piedDePage(version));
-		const pagesDuTemoin = texteDuPdf(readFileSync(join(dossierDuTemoin, 'temoin.pdf')));
+		// Le premier : un nom écrit devant Voltia, dans la phrase qui nomme l'exploitant. Il est à
+		// côté de Voltia, et à sa place après les mots qui l'annoncent : les deux contrôles le voient.
+		const avecDesNoms = nommeAutrement('Jean Exemple (Voltia)');
+		const pagesDuTemoin = texteDuPdf(await rendre('temoin', construire(avecDesNoms)));
 		const seulTemoin = voltiaSeul(pagesDuTemoin);
 		verifier(
-			'un nom écrit juste à côté de Voltia, en capitales au chapeau puis dans le texte, est vu',
-			auChapeau !== html &&
-				avecDesNoms !== auChapeau &&
-				seulTemoin.ecarts.some((ecart) => ecart.startsWith('page 1,')) &&
-				seulTemoin.ecarts.filter((ecart) => !ecart.startsWith('page 1,')).length > 0,
+			'un nom écrit juste devant Voltia, dans le texte, est vu',
+			avecDesNoms !== markdown &&
+				seulTemoin.ecarts.some((ecart) => /juste avant Voltia/.test(ecart)),
 			seulTemoin.ecarts.join(' ; ') || 'rien vu'
 		);
-		const nommeTemoin = exploitantNommePartout(pagesDuTemoin);
+		const nommeTemoin = exploitantNommePartout(pagesDuTemoin, phrases);
 		verifier(
-			'un nom écrit à la place de Voltia, après « exploité par », est vu',
-			nommeTemoin.some((ecart) => ecart.startsWith('« exploité par')),
+			'le même nom, écrit à la place de Voltia après les mots qui l’annoncent, est vu',
+			nommeTemoin.some((ecart) => /autre nom/.test(ecart)),
 			nommeTemoin.join(' ; ') || 'rien vu'
 		);
-		// L'ancien contrôle ne lisait le nom que dans la phrase « exploité par … » : le nom du chapeau
-		// lui échappait.
-		const ancien = exploitantNomme(markdown, auChapeau, QUESTIONS);
-		verifier(
-			'l’ancien contrôle, qui ne lisait qu’une phrase, laissait passer le nom du chapeau',
-			ancien.accord,
-			ancien.detail
-		);
 
-		// Le second témoin rendu : un nom écrit derrière un mot de phrase, « VOLTIA DE JEAN EXEMPLE »
-		// au chapeau, « Voltia de Jean Exemple » puis « Voltia, entreprise de Jean Exemple » dans le
-		// texte. Le mot qui touche Voltia est un mot de liaison ou un mot en minuscules : un contrôle
-		// qui ne lit que ce voisin laisse passer le nom (relecture de l'étape 19).
-		const derriereAuChapeau = html.replace(
-			'un service de Voltia.',
-			'un service de Voltia de Jean Exemple.'
+		// Le deuxième : un nom écrit derrière un mot de liaison ou un mot en minuscules, « Voltia de
+		// Jean Exemple » dans la phrase qui nomme l'exploitant, puis « Voltia, entreprise de Jean
+		// Exemple » dans celle de l'adresse de contact. Le mot qui touche Voltia ne prend pas de
+		// majuscule : un contrôle qui ne lit que ce voisin laisse passer le nom (relecture de
+		// l'étape 19).
+		const derriere = nommeAutrement('Voltia de Jean Exemple').replace(
+			'Pour toute question ou demande :',
+			'Pour toute question ou demande à Voltia, entreprise de Jean Exemple :'
 		);
-		const derriere = derriereAuChapeau
-			.replace(/(<section class="document">[\s\S]*?exploité par Voltia)/, '$1 de Jean Exemple')
-			.replace(
-				/(<section class="document">[\s\S]*?)Voltia est le responsable/,
-				'$1Voltia, entreprise de Jean Exemple, est le responsable'
-			);
-		const cheminDerriere = join(dossierDuTemoin, 'derriere.html');
-		writeFileSync(cheminDerriere, derriere, 'utf8');
-		await imprimer(cheminDerriere, join(dossierDuTemoin, 'derriere.pdf'), piedDePage(version));
-		const seulDerriere = voltiaSeul(
-			texteDuPdf(readFileSync(join(dossierDuTemoin, 'derriere.pdf')))
-		);
-		const mentionsVues = [...new Set(seulDerriere.ecarts.map((ecart) => ecart.split(' : ')[0]))];
+		const seulDerriere = voltiaSeul(texteDuPdf(await rendre('derriere', construire(derriere))));
 		verifier(
-			'un nom écrit derrière un mot de liaison ou un mot en minuscules, en capitales au chapeau ' +
-				'puis deux fois dans le texte, est vu',
-			derriereAuChapeau !== html &&
-				derriere.split('Jean Exemple').length - 1 === 3 &&
-				mentionsVues.filter((mention) => mention.startsWith('page 1,')).length === 1 &&
-				mentionsVues.filter((mention) => !mention.startsWith('page 1,')).length === 2,
+			'un nom écrit derrière un mot de liaison ou un mot en minuscules, deux fois dans le texte, ' +
+				'est vu deux fois',
+			derriere.split('Jean Exemple').length - 1 === 2 &&
+				mentionsSignalees(seulDerriere.ecarts).length === 2,
 			seulDerriere.ecarts.join(' ; ') || 'rien vu'
 		);
 
-		// Le troisième témoin rendu : un nom écrit derrière un deux-points ou un point-virgule,
-		// « VOLTIA : JEAN EXEMPLE » au chapeau, « à Voltia : Jean Exemple » puis « exploité par
-		// Voltia ; Jean Exemple » dans le texte. Ni l'un ni l'autre ne ferme la phrase : un contrôle
-		// qui s'y arrête laisse passer le nom (relecture de l'étape 19).
-		const deuxPoints = construire(
-			markdown
-				.replace(
-					'Pour toute question ou demande : **contact@voltia.ch**.',
-					'Pour toute question ou demande à Voltia : Jean Exemple, **contact@voltia.ch**.'
-				)
-				.replace('exploité par Voltia, en Suisse', 'exploité par Voltia ; Jean Exemple, en Suisse')
-		).replace('un service de Voltia.', 'un service de Voltia : Jean Exemple.');
-		const cheminDeuxPoints = join(dossierDuTemoin, 'deux-points.html');
-		writeFileSync(cheminDeuxPoints, deuxPoints, 'utf8');
-		await imprimer(cheminDeuxPoints, join(dossierDuTemoin, 'deux-points.pdf'), piedDePage(version));
-		const seulDeuxPoints = voltiaSeul(
-			texteDuPdf(readFileSync(join(dossierDuTemoin, 'deux-points.pdf')))
+		// Le troisième : un nom écrit derrière un deux-points ou un point-virgule, « à Voltia : Jean
+		// Exemple » puis « exploité par Voltia ; Jean Exemple ». Ni l'un ni l'autre ne ferme la
+		// phrase : un contrôle qui s'y arrête laisse passer le nom (relecture de l'étape 19).
+		const deuxPoints = nommeAutrement('Voltia ; Jean Exemple').replace(
+			'Pour toute question ou demande :',
+			'Pour toute question ou demande à Voltia : Jean Exemple,'
 		);
-		const vuesDeuxPoints = [
-			...new Set(seulDeuxPoints.ecarts.map((ecart) => ecart.split(' : ')[0]))
-		];
+		const seulDeuxPoints = voltiaSeul(
+			texteDuPdf(await rendre('deux-points', construire(deuxPoints)))
+		);
 		verifier(
-			'un nom écrit derrière un deux-points ou un point-virgule, en capitales au chapeau puis ' +
-				'deux fois dans le texte, est vu',
-			deuxPoints.split('Jean Exemple').length - 1 === 3 &&
-				vuesDeuxPoints.filter((mention) => mention.startsWith('page 1,')).length === 1 &&
-				vuesDeuxPoints.filter((mention) => !mention.startsWith('page 1,')).length === 2,
+			'un nom écrit derrière un deux-points ou un point-virgule, deux fois dans le texte, est vu ' +
+				'deux fois',
+			deuxPoints.split('Jean Exemple').length - 1 === 2 &&
+				mentionsSignalees(seulDeuxPoints.ecarts).length === 2,
 			seulDeuxPoints.ecarts.join(' ; ') || 'rien vu'
 		);
 
-		// Le quatrième témoin rendu : un autre nom que Voltia comme titulaire des droits d'auteur, au
-		// onzième point. La phrase ne dit pas « Voltia » : le contrôle des voisins ne la lit pas, et
-		// seul celui des phrases qui nomment peut la voir (relecture de l'étape 19).
-		const autreTitulaire = html.replace(
-			'Le même nom figure seul comme',
-			'Jean Exemple figure comme'
-		);
-		const cheminTitulaire = join(dossierDuTemoin, 'titulaire.html');
-		writeFileSync(cheminTitulaire, autreTitulaire, 'utf8');
-		await imprimer(cheminTitulaire, join(dossierDuTemoin, 'titulaire.pdf'), piedDePage(version));
-		const nommeTitulaire = exploitantNommePartout(
-			texteDuPdf(readFileSync(join(dossierDuTemoin, 'titulaire.pdf')))
-		);
-		verifier(
-			'un autre nom que Voltia, écrit comme titulaire des droits, est vu',
-			autreTitulaire !== html &&
-				nommeTitulaire.some((ecart) => ecart.startsWith('« … titulaire des droits »')),
-			nommeTitulaire.join(' ; ') || 'rien vu'
-		);
-
-		// Le cinquième témoin rendu : un nom écrit à côté de Voltia dans le titre du document, que le
-		// lecteur de PDF affiche dans sa barre. Le titre n'est dessiné sur aucune page : seules les
-		// métadonnées le portent. Le contrôle doit l'y voir, et celui du cadratin, qui lit le même
-		// titre, ne doit pas le recopier (relecture de l'étape 19).
+		// Le quatrième : un nom écrit à côté de Voltia dans le titre du document, que le lecteur de
+		// PDF affiche dans sa barre. Le titre n'est dessiné sur aucune page : seules les métadonnées
+		// le portent. Le contrôle doit l'y voir, et celui du cadratin, qui lit le même titre, ne doit
+		// pas le recopier (relecture de l'étape 19).
 		const titreAvecUnNom = html.replace(
 			/<title>[^<]*<\/title>/,
-			'<title>Conditions d’utilisation de jadwal (Voltia, Jean Exemple), pour relecture juridique</title>'
+			'<title>Conditions d’utilisation de jadwal (Voltia, Jean Exemple)</title>'
 		);
-		const cheminTitre = join(dossierDuTemoin, 'titre.html');
-		writeFileSync(cheminTitre, titreAvecUnNom, 'utf8');
-		await imprimer(cheminTitre, join(dossierDuTemoin, 'titre.pdf'), piedDePage(version));
-		const octetsDuTitre = readFileSync(join(dossierDuTemoin, 'titre.pdf'));
+		const octetsDuTitre = await rendre('titre', titreAvecUnNom);
 		const seulTitre = voltiaSeulDansLePdf(octetsDuTitre);
 		verifier(
 			'un nom écrit juste à côté de Voltia, dans le titre que portent les métadonnées, est vu',
@@ -1124,12 +909,13 @@ try {
 		parPage.length === pages,
 		`${parPage.length} contre ${pages}`
 	);
-	// Le titre du document, 20 points, ouvre la page qui suit la page de garde. Lue à l'envers,
-	// comme jusqu'à l'étape 15, cette page commencerait par sa dernière ligne de texte courant.
+	// Le titre du document, 20 points, ouvre la première page, et c'est la seule ligne de ce corps.
+	// Lue à l'envers, comme jusqu'à l'étape 15, cette page commencerait par sa dernière ligne de
+	// texte courant.
 	const pageDuTitre = parPage.findLastIndex((page) => page.some((ligne) => ligne.corps > 18));
 	verifier(
-		'les pages se lisent de haut en bas : le titre du document ouvre sa page',
-		pageDuTitre >= 0 && parPage[pageDuTitre][0].corps > 18,
+		'les pages se lisent de haut en bas : le titre du document ouvre la première page',
+		pageDuTitre === 0 && parPage[pageDuTitre][0].corps > 18,
 		`page ${pageDuTitre + 1}, première ligne de corps ${parPage[pageDuTitre]?.[0]?.corps}`
 	);
 	verifier(

@@ -35,7 +35,6 @@ on:
       - 'apps/web/src/lib/public/affichage.ts'
       - 'apps/web/src/lib/server/agenda.ts'
       - 'packages/widget/src/element.ts'
-      - 'scripts/conditions-pdf.mjs'
       - 'scripts/orthographe.mjs'
       - 'scripts/dictionnaire-orthographe.txt'
       - 'scripts/orthographe-acceptees.txt'
@@ -56,7 +55,6 @@ on:
       - 'apps/web/src/lib/public/affichage.ts'
       - 'apps/web/src/lib/server/agenda.ts'
       - 'packages/widget/src/element.ts'
-      - 'scripts/conditions-pdf.mjs'
       - 'scripts/orthographe.mjs'
       - 'scripts/dictionnaire-orthographe.txt'
       - 'scripts/orthographe-acceptees.txt'
@@ -91,8 +89,6 @@ jobs:
         with:
           node-version-file: .node-version
 
-      # `git ls-files` est la source du corpus : sans les dépendances, le script ne démarre pas,
-      # parce qu'il importe la page de garde du PDF depuis `scripts/conditions-pdf.mjs`.
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 

@@ -52,8 +52,8 @@ function grep(args) {
 export const AUCUNE = 'aucune';
 
 /**
- * Le chemin de la liste, tel que le poste le donne. L'épreuve du PDF du juriste le lit aussi : le
- * PDF quitte le poste, et les mêmes termes n'y ont pas leur place.
+ * Le chemin de la liste, tel que le poste le donne. L'épreuve du PDF des conditions le lit aussi :
+ * le PDF quitte le poste, et les mêmes termes n'y ont pas leur place.
  */
 export function cheminDeLaListe() {
 	let configure = '';

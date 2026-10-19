@@ -269,13 +269,13 @@ docs/CALENDRIER-PRIERES.md | JOURS | Vendredi
 docs/CALENDRIER-PRIERES.md | VIRG_NON_TROUVEE | vous
 
 # docs/CONDITIONS.md
-# Le texte que le juriste a lu : rien n'y est touché pour un faux signalement. Tableaux
+# Le texte que les organisations acceptent : rien n'y est touché pour un faux signalement. Tableaux
 # (famille 2) : l'en-tête « Ce qui est conservé / Durée », la cellule finale « chaque nuit »,
 # « chiffrées » accordé à « sauvegardes » et non à la cellule voisine. « Voyez plus bas » est la
 # formule du renvoi, et « au bout d'un à deux jours » élide devant le numéral, ce que l'usage admet.
-# « 26.09.2026 » : la date de mise à jour s'écrit JJ.MM.AAAA, avec des points, comme toutes les
+# « 19.10.2026 » : la date de mise à jour s'écrit JJ.MM.AAAA, avec des points, comme toutes les
 # dates du service et comme en Suisse (étape 18, retour A3) ; la règle propose des barres obliques.
-docs/CONDITIONS.md | DATE | 26.09.2026
+docs/CONDITIONS.md | DATE | 19.10.2026
 docs/CONDITIONS.md | J_N | chiffrées Union
 docs/CONDITIONS.md | PAS_D_ELISION | d'un
 docs/CONDITIONS.md | POINT | nuit
@@ -469,10 +469,6 @@ docs/adr/0046-editeur-et-responsable-dans-la-base.md | FR_REPEATEDWORDS_EXIGER |
 # packages/widget/src/element.ts
 packages/widget/src/element.ts | AR_DIACRITICS_REPLACE | البرنامج
 packages/widget/src/element.ts | AR_DIACRITICS_REPLACE | برنامج
-
-# scripts/conditions-pdf.mjs
-scripts/conditions-pdf.mjs | OU | ou
-scripts/conditions-pdf.mjs | PLACE_DE_LA_VIRGULE |  mais
 
 # Étape 18, la documentation (chantier des documents de l'étape).
 # « NPA » : le numéro postal d'acheminement, le mot de la Suisse romande et du Tessin, déjà accepté

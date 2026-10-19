@@ -8,8 +8,8 @@
 
 <svelte:head><title>{text.title} | jadwal</title></svelte:head>
 
-<!-- Le texte reste en français dans toutes les langues : c'est celui que relit le juriste (retour
-     D4). Dans une autre langue, une phrase le dit d'abord, dans cette langue. -->
+<!-- Le texte reste en français dans toutes les langues : c'est un seul texte, celui que chacun
+     accepte (retour D4). Dans une autre langue, une phrase le dit d'abord, dans cette langue. -->
 {#if text.onlyInFrench}
 	<p class="francais-seulement">{text.onlyInFrench}</p>
 {/if}

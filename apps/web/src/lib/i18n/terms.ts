@@ -1,9 +1,9 @@
 // Les textes autour des conditions d'utilisation : la page ouverte à tous (`/conditions`) et l'écran
 // d'acceptation (`/conditions/accepter`).
 //
-// Le texte des conditions lui-même reste en français, dans toutes les langues : c'est celui que relit
-// le juriste, et celui que chacun accepte (retour D4, ADR 0044). Dans les quatre autres langues, une
-// phrase le dit en tête de la page.
+// Le texte des conditions lui-même reste en français, dans toutes les langues : c'est un seul texte,
+// celui que chacun accepte (retour D4, ADR 0044). Dans les quatre autres langues, une phrase le dit
+// en tête de la page.
 //
 // Depuis l'étape 20, l'écran propose aussi de ne pas accepter et de quitter l'organisation. La
 // demande de confirmation et les refus reprennent les phrases de « Vos organisations »
