@@ -147,8 +147,13 @@ ne peut plus avoir lieu ce jour-là. Une fois annulée, elle ne pourra pas être
   bouton `Annuler cette session`. Le formulaire envoie ce que la ligne montrait. Annulée, la
   session reste sur la ligne de sa nouvelle date, `Annulée ce jour-là`, sans bouton ; l'écran dit
   `La session est annulée à sa nouvelle date. Les autres vendredis ne changent pas.` et donne le
-  message à copier (plus bas). Une session déplacée dont le vendredi prévu est aujourd'hui ou plus
-  tard garde `Rétablir comme d'habitude` seul.
+  message à copier (plus bas).
+- **Toute session déplacée s'annule** (étape 21, question 5 de l'étape 20), comme sur `À venir`.
+  Dont le vendredi prévu est aujourd'hui ou plus tard, ses deux lignes, celle de son départ et celle
+  de son arrivée, ont `Rétablir comme d'habitude`, puis le repli `Annuler`, avec `Seule cette
+session est annulée, à sa nouvelle date. Vous pourrez la rétablir ensuite : elle retrouvera son
+jour et son heure habituels.` et le bouton `Annuler cette session`. Annulée, elle se rétablit
+  depuis l'une ou l'autre ligne, et retrouve son jour et son heure habituels.
 - Chaque `Rétablir comme d'habitude` envoie ce que sa ligne montrait : l'annulation ou le
   déplacement lui-même, par son identifiant, et pour un déplacement son jour et son heure. Une page
   restée ouverte, après qu'une autre personne a rétabli la session puis l'a de nouveau annulée ou
@@ -245,9 +250,6 @@ d'aujourd'hui et des jours suivants.` (étape 19 ; depuis l'étape 20, aussi pou
 - `Le jour prévu de cette session est déjà passé : elle ne peut plus être rétablie. Rien n'a été
 enregistré. La partie « Ce vendredi », plus bas, est à jour.` : `Rétablir comme d'habitude` vers un
   vendredi prévu déjà passé (étape 20) ;
-- `Le jour prévu de cette session n'est pas encore passé : « Rétablir comme d'habitude » la remet à
-ce jour. Rien n'a été enregistré.` : `Annuler cette session` envoyé pour une session déplacée dont
-  le vendredi prévu n'est pas passé, qu'aucune ligne ne propose (étape 20) ;
 - `Cette session a déjà été annulée depuis l'ouverture de la page. Rien n'a été enregistré. Si le
 message n'a pas encore été envoyé, il est prêt ci-dessous.` : une seconde annulation d'une session
   déplacée dont le vendredi prévu est passé ; le message à copier suit quand même (étape 20) ;

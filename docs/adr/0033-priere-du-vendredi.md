@@ -223,6 +223,10 @@ vendredi dans son propre groupe, en tête.
 là où la langue en a deux : `موعد استثنائي` en arabe, où une séance d'un cours dit désormais
 `حصة استثنائية`, et `Ausnahmedatum` en allemand, où `Ausnahmetermin` reste celui d'un cours.
 
+**Toute session déplacée s'annule** à sa nouvelle date, depuis l'une ou l'autre de ses lignes, et pas
+seulement celle dont le vendredi prévu est passé ; tant que celui-ci n'est pas passé, « Rétablir
+comme d'habitude » défait l'annulation. Le détail est dans l'addendum du même jour de l'ADR 0021.
+
 ## Statut
 
 Accepté, 2026-09-21. Étape 8 de la feuille de route. Complète l'ADR 0003 (récurrence) et l'ADR 0004

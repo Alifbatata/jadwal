@@ -66,11 +66,21 @@
 	 * (étape 19, lot 2). `id` est l'exception que la carte montre : une annulation refaite ailleurs
 	 * ressemble à la première, mais c'en est une autre (reprise du lot 2).
 	 *
-	 * Une séance déplacée puis annulée à sa nouvelle date (étape 20, C2) ne se rétablit pas : sa date
-	 * prévue était passée, et « Rétablir » l'y ramenait. Sa carte, annulée, n'a rien à défaire.
+	 * Une date prévue déjà passée ne se rétablit pas (étape 20, C2) : « Rétablir » y ramenait la séance,
+	 * qui disparaissait sans message. Une séance déplacée puis annulée à sa nouvelle date se rétablit
+	 * tant que sa date prévue n'est pas passée, depuis la carte de sa nouvelle date (étape 21, question
+	 * 5 de l'étape 20) : elle retrouve sa date et son heure habituelles.
 	 */
 	function aRetablir(seance: (typeof data.seances)[number]) {
-		if (seance.status === 'cancelled' && seance.originalDate) return null;
+		if (seance.status === 'cancelled' && seance.originalDate) {
+			if (seance.originalDate < data.today) return null;
+			return {
+				date: seance.originalDate,
+				id: seance.exceptionId,
+				toDate: seance.date,
+				toStart: String(seance.start ?? '').slice(0, 5)
+			};
+		}
 		if (seance.status === 'cancelled') {
 			return { date: seance.date, id: seance.exceptionId, toDate: '', toStart: '' };
 		}
@@ -85,13 +95,51 @@
 		if (
 			seance.status === 'moved_here' &&
 			seance.originalDate &&
-			seance.originalDate !== seance.date
+			seance.originalDate !== seance.date &&
+			seance.originalDate >= data.today
 		) {
 			return {
 				date: seance.originalDate,
 				id: seance.exceptionId,
 				toDate: seance.date,
 				toStart: String(seance.start ?? '').slice(0, 5)
+			};
+		}
+		return null;
+	}
+
+	/**
+	 * Ce que « Annuler cette séance » annule sur la carte d'une séance déplacée, tel que la carte le
+	 * montre, ou rien quand elle ne le propose pas. Toute séance déplacée s'annule à sa nouvelle date
+	 * (étape 21, question 5 de l'étape 20) : depuis la carte de son départ, ou de son arrivée quand
+	 * elle vient d'une autre date. Il fallait la rétablir, puis annuler sa date prévue, et le message
+	 * nommait alors celle-ci, pas celle que la communauté connaissait. Les champs sont ceux de
+	 * « Rétablir » (étape 20, C2). `passee` : la date prévue est passée, et l'annulation ne se
+	 * défera pas ; sinon, « Rétablir » ramène la séance à sa date prévue. Rien pour une séance déjà
+	 * annulée, ni pour une nouvelle date passée, où la séance a déjà eu lieu.
+	 */
+	function aAnnuler(seance: (typeof data.seances)[number]) {
+		if (seance.exceptionKind !== 'moved') return null;
+		if (seance.status === 'moved_away' && seance.movedTo && seance.movedTo.date >= data.today) {
+			return {
+				date: seance.date,
+				id: seance.exceptionId,
+				toDate: seance.movedTo.date,
+				toStart: String(seance.movedTo.start).slice(0, 5),
+				passee: false
+			};
+		}
+		if (
+			seance.status === 'moved_here' &&
+			seance.originalDate &&
+			seance.originalDate !== seance.date
+		) {
+			return {
+				date: seance.originalDate,
+				id: seance.exceptionId,
+				toDate: seance.date,
+				toStart: String(seance.start ?? '').slice(0, 5),
+				passee: seance.originalDate < data.today
 			};
 		}
 		return null;
@@ -359,36 +407,14 @@
 								</fieldset>
 							</form>
 						</details>
-					{:else if aRetablir(seance)}
+					{:else}
 						{@const change = aRetablir(seance)}
-						{#if seance.status === 'moved_here' && change && change.date < data.today}
-							<!-- Une séance déplacée dont la date prévue est passée ne revient plus à cette date :
-							     « Rétablir » l'y ramenait, et elle disparaissait sans message (étape 20, C2). Sa
-							     carte propose de l'annuler à sa nouvelle date, derrière des options fermées,
-							     comme toute annulation (retour A1). Le formulaire envoie ce que la carte
-							     montrait, comme « Rétablir ». L'aide, qui dit que l'annulation est définitive,
-							     décrit le bouton : au clavier, le lecteur d'écran la lit avec lui. Sa date
-							     prévue la distingue : un cours n'a qu'une exception par date prévue. -->
-							{@const aide = `annulation-${seance.courseId}-${change.date}-aide`}
-							<details class="options">
-								<summary>{text.cancelOnly}</summary>
-								<form method="post" action="?/annulerDeplacee">
-									<input type="hidden" name="courseId" value={seance.courseId} />
-									<input type="hidden" name="date" value={change.date} />
-									<input type="hidden" name="shownId" value={change.id} />
-									<input type="hidden" name="shownToDate" value={change.toDate} />
-									<input type="hidden" name="shownToStart" value={change.toStart} />
-									<p id={aide} class="aide">{text.cancelMovedHelp[seance.kind]}</p>
-									<button type="submit" class="danger" aria-describedby={aide}>
-										{text.cancelButton[seance.kind]}
-									</button>
-								</form>
-							</details>
-						{:else}
+						{@const annulable = aAnnuler(seance)}
+						{#if change}
 							<form method="post" action="?/retablir" class="retablir">
 								<input type="hidden" name="courseId" value={seance.courseId} />
-								<input type="hidden" name="date" value={change?.date} />
-								{#if change?.id}
+								<input type="hidden" name="date" value={change.date} />
+								{#if change.id}
 									<input type="hidden" name="shownId" value={change.id} />
 									{#if change.toDate}
 										<input type="hidden" name="shownToDate" value={change.toDate} />
@@ -398,6 +424,34 @@
 								<button type="submit">{text.restoreButton[seance.kind]}</button>
 								<span class="aide">{text.restoreHelp[seance.kind]}</span>
 							</form>
+						{/if}
+						{#if annulable}
+							<!-- Toute séance déplacée s'annule à sa nouvelle date (étape 20, C2 ; étape 21,
+							     question 5), derrière des options fermées, comme toute annulation (retour A1).
+							     Le formulaire envoie ce que la carte montrait, comme « Rétablir ». L'aide dit si
+							     l'annulation se défera : elle ne se défait plus quand la date prévue est
+							     passée. Elle décrit le bouton : au clavier, le lecteur d'écran la lit avec lui.
+							     Les deux dates la distinguent : un cours n'a qu'une exception par date prévue,
+							     et elle a deux cartes, celle de son départ et celle de son arrivée. -->
+							{@const aide = `annulation-${seance.courseId}-${annulable.date}-${seance.date}-aide`}
+							<details class="options">
+								<summary>{text.cancelOnly}</summary>
+								<form method="post" action="?/annulerDeplacee">
+									<input type="hidden" name="courseId" value={seance.courseId} />
+									<input type="hidden" name="date" value={annulable.date} />
+									<input type="hidden" name="shownId" value={annulable.id} />
+									<input type="hidden" name="shownToDate" value={annulable.toDate} />
+									<input type="hidden" name="shownToStart" value={annulable.toStart} />
+									<p id={aide} class="aide">
+										{annulable.passee
+											? text.cancelMovedHelp[seance.kind]
+											: text.cancelMovedRestorableHelp[seance.kind]}
+									</p>
+									<button type="submit" class="danger" aria-describedby={aide}>
+										{text.cancelButton[seance.kind]}
+									</button>
+								</form>
+							</details>
 						{/if}
 					{/if}
 				</li>

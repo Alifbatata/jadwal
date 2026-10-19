@@ -2963,12 +2963,16 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 		en: 'The planned day of this session has already passed: the session can no longer be restored. Nothing has been saved. The ‘This Friday’ section further down shows the latest changes.',
 		ar: 'اليوم المقرّر لهذا الموعد قد مضى: لم يعد من الممكن إعادة هذا الموعد. لم يُحفظ أي شيء. قسم «هذه الجمعة» في الأسفل محدَّث.'
 	};
-	const PAS_ENCORE_PASSE: Record<Langue, string> = {
-		fr: 'Le jour prévu de cette session n’est pas encore passé : « Rétablir comme d’habitude » la remet à ce jour. Rien n’a été enregistré.',
-		de: 'Der geplante Tag dieses Durchgangs ist noch nicht vorbei: Mit «Wie gewohnt wiederherstellen» findet der Durchgang wieder an diesem Tag statt. Es wurde nichts gespeichert.',
-		it: 'Il giorno previsto di questo turno non è ancora passato: «Ripristina come al solito» riporta il turno a quel giorno. Non è stato salvato niente.',
-		en: 'The planned day of this session has not passed yet: ‘Restore as usual’ puts the session back on that day. Nothing has been saved.',
-		ar: 'لم يمضِ اليوم المقرّر لهذا الموعد بعد: زر «إعادته كالمعتاد» يعيد الموعد إلى ذلك اليوم. لم يُحفظ أي شيء.'
+	/**
+	 * L'aide de « Annuler cette session » sur les lignes d'une session déplacée dont le jour prévu
+	 * n'est pas passé (étape 21, question 5 de l'étape 20) : l'annulation se défait.
+	 */
+	const AIDE_RETABLISSABLE: Record<Langue, string> = {
+		fr: 'Seule cette session est annulée, à sa nouvelle date. Vous pourrez la rétablir ensuite : elle retrouvera son jour et son heure habituels.',
+		de: 'Nur dieser Durchgang wird abgesagt, an seinem neuen Datum. Sie können ihn danach wiederherstellen: Er findet dann wieder an seinem üblichen Tag und zu seiner üblichen Zeit statt.',
+		it: 'Viene annullato solo questo turno, nella sua nuova data. Potrai ripristinarlo dopo: tornerà al suo giorno e al suo orario abituali.',
+		en: 'Only this session is cancelled, on its new date. You can restore it afterwards: it will go back to its usual day and time.',
+		ar: 'يُلغى هذا الموعد وحده في تاريخه الجديد. يمكنك إعادته بعد ذلك: سيعود إلى يومه ووقته المعتادين.'
 	};
 	const DEJA_ANNULEE: Record<Langue, string> = {
 		fr: 'Cette session a déjà été annulée depuis l’ouverture de la page. Rien n’a été enregistré. Si le message n’a pas encore été envoyé, il est prêt ci-dessous.',
@@ -3265,9 +3269,8 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 		expect(await lignesDuJournalDeVendredi()).toBe(journalAvant);
 	});
 
-	it('refuses a hand-written cancellation of this kind when the Friday is not past, or the new day is past, and a move from a past Friday, in each language, and writes nothing', async () => {
+	it('refuses a hand-written cancellation of this kind when the new day is past, and a move from a past Friday, in each language, and writes nothing', async () => {
 		const vendredi = prochainVendredi(today());
-		const avance = await poserDeplacement(vendredi, jourDuDeplacement());
 		const ilYADeuxSemaines = addDays(vendrediPasse(), -7);
 		const toutPasse = await poserDeplacement(ilYADeuxSemaines, addDays(vendrediPasse(), 1));
 		try {
@@ -3276,17 +3279,6 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 			for (const langue of LANGUES) {
 				await poserLangueDuCompte(RESPONSABLE, langue);
 				for (const [action, envoi, phrase] of [
-					[
-						'annulerDeplacee',
-						{
-							courseId: sessions[1],
-							date: vendredi,
-							shownId: avance,
-							shownToDate: jourDuDeplacement(),
-							shownToStart: '16:00'
-						},
-						PAS_ENCORE_PASSE[langue]
-					],
 					[
 						'annulerDeplacee',
 						{
@@ -3358,6 +3350,77 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 			});
 		} finally {
 			await effacer(depuis);
+		}
+	});
+
+	it('gives both lines of a session moved from the coming Friday « Rétablir » and « Annuler cette session », cancels it at its new day with the message, and restores it (step 21)', async () => {
+		// Question 5 de l'étape 20, tranchée « oui », comme sur « À venir » : toute session déplacée
+		// s'annule à sa nouvelle date. Son jour prévu n'est pas passé : l'annulation se défait.
+		const vendredi = prochainVendredi(today());
+		const vers = jourDuDeplacement();
+		const id = await poserDeplacement(vendredi, vers);
+		const envoi = envoiDe(vendredi, id, vers);
+		try {
+			for (const langue of LANGUES) {
+				await poserLangueDuCompte(RESPONSABLE, langue);
+				const html = await (await get('/vendredi', cookies)).text();
+				const lignesDeLaSession = lignesDeCeVendredi(html).filter(
+					(ligne) =>
+						lu(ligne).includes(PREMIERE_SESSION[langue]) &&
+						lu(ligne).includes(dateEcrite(langue, vendredi))
+				);
+				expect(lignesDeLaSession, langue).toHaveLength(2);
+				for (const ligne of lignesDeLaSession) {
+					expect(retablissementDeLaLigne(ligne), langue).toEqual(envoi);
+					const options = [...ligne.matchAll(/(<details\b[^>]*>)([\s\S]*?)<\/details>/g)];
+					expect(options, langue).toHaveLength(1);
+					const [, balise = '', interieur = ''] = options[0] ?? [];
+					expect(ouvert(balise), langue).toBe(false);
+					expect(
+						lu(interieur.match(/<summary\b[^>]*>[\s\S]*?<\/summary>/)?.[0] ?? ''),
+						langue
+					).toBe(REPLI[langue]);
+					expect(lu(interieur.match(/<p\b[^>]*>[\s\S]*?<\/p>/)?.[0] ?? ''), langue).toBe(
+						AIDE_RETABLISSABLE[langue]
+					);
+					expect(lu(interieur.match(/<button\b[^>]*>[\s\S]*?<\/button>/)?.[0] ?? ''), langue).toBe(
+						ANNULER[langue]
+					);
+					expect(annulationDeLaLigne(interieur), langue).toEqual(envoi);
+				}
+			}
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			const reponse = await postForm('/vendredi?/annulerDeplacee', envoi, cookies);
+			expect(reponse.status).toBe(200);
+			const apres = await reponse.text();
+			expect(await exceptionDe(sessions[1], vendredi)).toEqual({
+				kind: 'cancelled',
+				to_date: vers,
+				to_start: '16:00'
+			});
+			expect(messagesEnTete(apres)[0]?.texte).toContain(
+				PHRASE_DU_MESSAGE.fr(dateEcrite('fr', vers))
+			);
+			// Annulée, la session se rétablit, depuis la ligne de sa nouvelle date comme depuis celle de
+			// son jour prévu ; aucune ne propose plus de l'annuler.
+			const annulation = ((await exceptionsDeLaPremiere()) as { id: string; date: string }[]).find(
+				(une) => une.date === vendredi
+			);
+			const retour = envoiDe(vendredi, annulation?.id ?? '', vers);
+			const lignesApres = lignesDeCeVendredi(apres).filter(
+				(ligne) => retablissementDeLaLigne(ligne)?.['shownId'] === retour.shownId
+			);
+			expect(lignesApres).toHaveLength(2);
+			for (const ligne of lignesApres) {
+				expect(retablissementDeLaLigne(ligne)).toEqual(retour);
+				expect(annulationDeLaLigne(ligne)).toBeNull();
+			}
+			const retablie = await postForm('/vendredi?/retablir', retour, cookies);
+			expect(retablie.status).toBe(200);
+			expect(await exceptionDe(sessions[1], vendredi)).toBeUndefined();
+		} finally {
+			await poserLangueDuCompte(RESPONSABLE, 'fr');
+			await effacer(vendredi);
 		}
 	});
 

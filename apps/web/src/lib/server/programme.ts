@@ -329,6 +329,12 @@ export interface Seance extends Occurrence {
 	 * semblable (étape 19, reprise du lot 2).
 	 */
 	exceptionId: string | null;
+	/**
+	 * Ce qu'est cette exception : `moved`, un déplacement, ou `cancelled`, une annulation, celle d'une
+	 * séance déplacée puis annulée comprise. La carte de départ d'une séance partie ailleurs ne propose
+	 * de l'annuler que tant qu'elle est déplacée (étape 21, question 5 de l'étape 20).
+	 */
+	exceptionKind: 'moved' | 'cancelled' | null;
 }
 
 export interface Programme {
@@ -376,7 +382,7 @@ export async function readProgramme(
 	const byId = new Map(courses.map((course) => [course.id, course]));
 	// Une exception par cours et par jour (`session_exception_course_date_uq`) : celle d'une séance
 	// arrivée d'un autre jour est rangée sous son jour d'origine.
-	const exceptionIds = new Map(exceptions.map((row) => [`${row.course_id} ${row.date}`, row.id]));
+	const exceptionRows = new Map(exceptions.map((row) => [`${row.course_id} ${row.date}`, row]));
 	const occurrences = expandOccurrences({
 		schedules: courses.map(toSchedule),
 		exceptions: exceptions.map(toException),
@@ -386,18 +392,18 @@ export async function readProgramme(
 	});
 	const seances: Seance[] = occurrences.map((occurrence) => {
 		const course = byId.get(occurrence.courseId);
+		const exception =
+			occurrence.status === 'scheduled'
+				? undefined
+				: exceptionRows.get(`${occurrence.courseId} ${occurrence.originalDate ?? occurrence.date}`);
 		return {
 			...occurrence,
 			title: course?.title ?? 'Cours sans titre',
 			room: course?.room ?? null,
 			teacher: course?.teacher ?? null,
 			audience: course?.audience ?? 'open',
-			exceptionId:
-				occurrence.status === 'scheduled'
-					? null
-					: (exceptionIds.get(
-							`${occurrence.courseId} ${occurrence.originalDate ?? occurrence.date}`
-						) ?? null)
+			exceptionId: exception?.id ?? null,
+			exceptionKind: exception ? (exception.kind === 'moved' ? 'moved' : 'cancelled') : null
 		};
 	});
 	return { from, to, today, courses, pauses, seances, settings };

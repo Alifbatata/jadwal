@@ -47,6 +47,9 @@
 // déjà passé est refusé (`pastOrigin`) ; la ligne d'une session déplacée dont le jour prévu est
 // passé propose de l'annuler à sa nouvelle date (`annulerDeplacee`), et ce geste rend le message à
 // copier ; déplacer une session dont le jour prévu est passé est refusé, comme l'annuler.
+//
+// Étape 21 (question 5 de l'étape 20), comme « À venir » : toute session déplacée s'annule à sa
+// nouvelle date ; tant que son jour prévu n'est pas passé, « Rétablir » défait l'annulation.
 
 import { fail } from '@sveltejs/kit';
 import { addDays, isLocalTime, todayInZone, type IsoDate } from '@jadwal/core';
@@ -234,7 +237,9 @@ export const load: PageServerLoad = async (event) => {
 					movedTo: seance.movedTo ?? null,
 					originalDate: seance.originalDate ?? null,
 					/** L'exception que « Rétablir » défait, qu'il envoie (reprise du lot 2). */
-					exceptionId: seance.exceptionId
+					exceptionId: seance.exceptionId,
+					/** Un déplacement, ou une annulation : seul un déplacement s'annule (étape 21). */
+					exceptionKind: seance.exceptionKind
 				})),
 			/** Aujourd'hui et les sept jours qui suivent, pour le choix de déplacement. */
 			joursSuivants: Array.from({ length: 8 }, (_, index) => addDays(today, index))
@@ -517,12 +522,13 @@ export const actions: Actions = {
 	},
 
 	/**
-	 * Annuler une session déplacée dont le jour prévu est passé, à sa nouvelle date (étape 20, C2),
-	 * comme sur « À venir » : le déplacement que la ligne montrait devient une annulation qui garde le
-	 * jour et l'heure d'arrivée (`cancelMoved`). C'est le seul geste de cet écran qui rend le message à
-	 * copier, dans chaque langue publiée : la communauté attendait la session ce jour-là, à cette
-	 * heure. Refusé, sans rien écrire : un jour prévu qui n'est pas passé (la ligne a « Rétablir »), une
-	 * nouvelle date passée, et une ligne périmée. La seconde demande reçoit le message quand même.
+	 * Annuler une session déplacée, à sa nouvelle date (étape 20, C2, pour un jour prévu passé ;
+	 * étape 21, question 5 de l'étape 20, pour toute session déplacée), comme sur « À venir » : le
+	 * déplacement que la ligne montrait devient une annulation qui garde le jour et l'heure d'arrivée
+	 * (`cancelMoved`). Le geste rend le message à copier, dans chaque langue publiée : la communauté
+	 * attendait la session ce jour-là, à cette heure. Tant que le jour prévu n'est pas passé,
+	 * « Rétablir » défait l'annulation. Refusé, sans rien écrire : une nouvelle date passée, et une
+	 * ligne périmée. La seconde demande reçoit le message quand même.
 	 */
 	annulerDeplacee: async (event) => {
 		const context = await mustHavePrayerModule(event);
@@ -542,7 +548,6 @@ export const actions: Actions = {
 			if (!course || course.kind !== 'jumua') return refus(404, 'sessionGone');
 			const settings = await readSettings(tx);
 			const today = todayInZone(settings.time_zone, maintenant);
-			if (date >= today) return refus(400, 'originNotPast');
 			if (toDate < today) return refus(400, 'pastSession');
 			const messages = cancellationMessages(settings, course, toDate, shown.toStart);
 			const annulee = await cancelMoved(

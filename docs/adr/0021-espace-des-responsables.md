@@ -178,7 +178,7 @@ vendredi » et des boutons d'une session s'affichent en tête de l'écran :
 | `unchanged`        | 400    | le déplacement vise le jour et l'heure où la session est déjà prévue                                                                                         |
 | `pastSession`      | 400    | l'annulation d'un jour déjà passé (étape 19, D2), le déplacement d'une session dont le jour prévu est passé, ou son annulation vers un jour passé (étape 20) |
 | `pastOrigin`       | 400    | Rétablir vers un jour prévu déjà passé (étape 20)                                                                                                            |
-| `originNotPast`    | 400    | l'annulation d'une session déplacée dont le jour prévu n'est pas passé : sa ligne a « Rétablir » (étape 20)                                                  |
+| `originNotPast`    | 400    | l'annulation d'une session déplacée dont le jour prévu n'est pas passé (étape 20) ; retiré à l'étape 21                                                      |
 | `pastDate`         | 400    | un déplacement vers un jour déjà passé (étape 19, lot 2)                                                                                                     |
 | `notPlanned`       | 400    | annuler ou déplacer la session un jour où elle n'a pas lieu : un lundi, après sa fin, pendant une pause (lot 3)                                              |
 | `sessionGone`      | 404    | la session n'existe pas, ou plus, ou l'identifiant est celui d'un cours                                                                                      |
@@ -453,7 +453,8 @@ qui l'attendait à sa nouvelle date.
   fuseau de l'organisation, sur les deux écrans (`pastOrigin`) : rien ne s'écrit, pas même au
   journal. La carte d'« À venir », ou la ligne de l'écran du vendredi, d'une séance déplacée dont la
   date prévue est passée n'a plus de bouton « Rétablir ». Une séance déplacée dont la date prévue
-  est aujourd'hui ou plus tard garde « Rétablir » seul, comme avant.
+  est aujourd'hui ou plus tard garde « Rétablir » seul, comme avant (jusqu'à l'étape 21 : voir
+  l'addendum du 19.10.2026).
 - **Le nouveau geste.** Cette carte propose « Annuler cette séance », « Annuler cette session » sur
   l'écran du vendredi, derrière des options fermées (« Annuler »), avec une aide : la date prévue
   est passée, et une séance annulée ne pourra pas être rétablie. Cette aide décrit le bouton, et un
@@ -480,7 +481,7 @@ journal.
 | -------------------- | ------------------------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------- |
 | Rétablir             | `pastOrigin`                                                              | 400    | la date prévue est passée                                                                 |
 | Déplacer             | `pastSession`                                                             | 400    | la date prévue est passée                                                                 |
-| Annuler cette séance | `originNotPast`                                                           | 400    | la date prévue n'est pas passée : aucune carte ne l'envoie, elle a « Rétablir »           |
+| Annuler cette séance | `originNotPast`                                                           | 400    | la date prévue n'est pas passée ; retiré à l'étape 21                                     |
 | Annuler cette séance | `pastSession`                                                             | 400    | la nouvelle date est passée                                                               |
 | Annuler cette séance | `alreadyCancelled`                                                        | 409    | déjà annulée à la même date et à la même heure ; le message est rendu                     |
 | Annuler cette séance | `changed`                                                                 | 409    | la séance a changé autrement depuis l'ouverture de la page                                |
@@ -499,6 +500,16 @@ Le chef de projet les a toutes tranchées « oui ».
   le même formulaire. Les refus gardent « séance » : ils nomment la séance par son titre.
 - **Sous une carte déplacée**, la phrase ne dit plus que le jour et l'heure, « Au mardi 29.09.2026
   à 18:00 » : la marque, juste au-dessus, dit déjà « Séance déplacée », que la phrase répétait.
+- **Toute séance déplacée s'annule à sa nouvelle date** (question 5), sur les deux écrans, et non
+  plus seulement celle dont la date prévue est passée. Il fallait la rétablir, puis annuler sa date
+  prévue, et le message nommait celle-ci, pas celle que la communauté connaissait. Les deux cartes
+  d'une séance déplacée, celle de son départ et celle de son arrivée, ont « Rétablir » et
+  « Annuler cette séance », avec une aide qui dit que l'annulation se défait. Le geste est
+  `annulerDeplacee`, et `originNotPast` disparaît. Annulée, la séance se rétablit tant que sa date
+  prévue n'est pas passée : « Rétablir » retire l'annulation, qui garde le déplacement, et la
+  séance retrouve sa date et son heure habituelles. Le programme dit de chaque séance si son
+  exception est un déplacement ou une annulation : la carte de départ d'une séance déplacée puis
+  annulée ne propose plus de l'annuler. Une séance avancée à une date passée n'a rien à annuler.
 
 ## Statut
 
@@ -514,5 +525,5 @@ les champs de l'horaire d'un cours, exigés et bornés selon le choix seulement 
 les deux écrans qui refusent d'annuler ou de déplacer une séance un jour où le cours n'en a pas.
 Complété le 28.09.2026 (étape 20) : une séance déplacée dont la date prévue est passée ne se
 rétablit plus, elle s'annule à sa nouvelle date, avec son message.
-Complété le 19.10.2026 (étape 21) : les gestes d'une carte suivent sa sorte, et la phrase sous une
-carte déplacée ne répète plus sa marque.
+Complété le 19.10.2026 (étape 21) : les gestes d'une carte suivent sa sorte, la phrase sous une
+carte déplacée ne répète plus sa marque, et toute séance déplacée s'annule à sa nouvelle date.

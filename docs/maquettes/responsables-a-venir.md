@@ -96,8 +96,18 @@ la ramenait à une date passée et la faisait disparaître sans message. Elle a 
 fermé au chargement, avec `Sa date prévue est déjà passée : la séance ne peut plus avoir lieu à
 cette date. Une fois annulée, elle ne pourra pas être rétablie.` et le bouton `Annuler cette
 séance`. Le formulaire envoie ce que la carte montrait, comme `Rétablir la séance`. Annulée, la
-séance reste sur sa nouvelle date, marquée `Séance annulée`, sans bouton. Une séance déplacée dont
-la date prévue est aujourd'hui ou plus tard garde `Rétablir la séance` seul.
+séance reste sur sa nouvelle date, marquée `Séance annulée`, sans bouton.
+
+**Toute séance déplacée s'annule** (étape 21, question 5 de l'étape 20, décision du chef de projet).
+Dont la date prévue est aujourd'hui ou plus tard, ses deux cartes, celle de son départ et celle de
+son arrivée, ont `Rétablir la séance`, puis le repli `Annuler`, fermé au chargement, avec `Seule
+cette séance est annulée, à sa nouvelle date. Vous pourrez la rétablir ensuite : elle retrouvera sa
+date et son heure habituelles.` et le bouton `Annuler cette séance`. Le message à copier nomme la
+nouvelle date et la nouvelle heure, celles que la communauté connaît : il fallait rétablir la
+séance, puis annuler sa date prévue, et le message nommait celle-ci. Annulée, la séance reste sur
+sa nouvelle date, marquée `Séance annulée`, avec `Rétablir la séance`, qui la ramène à sa date
+prévue ; la carte de son départ garde `Rétablir la séance` seul. Une séance avancée à une date
+déjà passée n'a rien à annuler : elle a eu lieu.
 
 ## Après un geste
 
@@ -179,9 +189,6 @@ passée. Rien n'a été enregistré. Le programme ci-dessous est à jour.` (400)
 et des jours suivants.` (400) : annuler ou déplacer une séance dont la date est passée, ou annuler
   une séance déplacée dont la nouvelle date est passée. Déplacer une séance dont la date prévue est
   passée est refusé depuis l'étape 20, comme l'annuler.
-- `La date prévue de cette séance n'est pas encore passée : « Rétablir la séance » la remet à cette
-date. Rien n'a été enregistré.` (400) : `Annuler cette séance` envoyé pour une séance déplacée dont
-  la date prévue n'est pas passée, qu'aucune carte ne propose (étape 20).
 - `Cette séance n'existe plus. La liste ci-dessous est à jour.` : la page renvoyée est déjà à jour,
   et, sans JavaScript, recharger renverrait le formulaire refusé (étape 19).
 - `La date de cette séance n'a pas pu être lue. Rechargez la page, puis recommencez.` : de même

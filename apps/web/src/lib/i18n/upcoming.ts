@@ -40,8 +40,8 @@ export type UpcomingDone = 'cancelled' | 'moved' | 'restored';
  * qu'aucune carte ne propose non plus (étape 19, lot 3). `pastSession` refuse aussi le
  * déplacement d'une séance dont la date prévue est passée (étape 20, C2). `pastOrigin` : « Rétablir »
  * vers une date prévue déjà passée, où la séance disparaîtrait sans message (étape 20, C2).
- * `originNotPast` : l'annulation d'une séance déplacée dont la date prévue n'est pas passée,
- * qu'aucune carte ne propose : sa carte a « Rétablir ».
+ * L'annulation d'une séance déplacée dont la date prévue n'est pas passée était refusée
+ * (`originNotPast`) : toute séance déplacée s'annule depuis l'étape 21.
  */
 export type UpcomingError =
 	| 'unreadableDate'
@@ -50,7 +50,6 @@ export type UpcomingError =
 	| 'pastDate'
 	| 'pastSession'
 	| 'pastOrigin'
-	| 'originNotPast'
 	| 'notPlanned'
 	| 'unchanged'
 	| 'changed'
@@ -147,6 +146,12 @@ interface UpcomingTexts {
 	 */
 	readonly cancelOnly: string;
 	readonly cancelMovedHelp: ByKind<string>;
+	/**
+	 * L'aide avant ce bouton sur la carte d'une séance déplacée dont la date prévue n'est pas passée
+	 * (étape 21, question 5 de l'étape 20) : l'annulation se défait, et « Rétablir » ramène la séance
+	 * à sa date prévue.
+	 */
+	readonly cancelMovedRestorableHelp: ByKind<string>;
 	readonly moveLegend: ByKind<string>;
 	readonly newDate: string;
 	/** Les dates acceptées, avec celle d'aujourd'hui : plus tôt comme plus tard (retour A2). */
@@ -250,6 +255,12 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			jumua:
 				'Son jour prévu est déjà passé : la session ne peut plus avoir lieu ce jour-là. Une fois annulée, elle ne pourra pas être rétablie.'
 		},
+		cancelMovedRestorableHelp: {
+			course:
+				'Seule cette séance est annulée, à sa nouvelle date. Vous pourrez la rétablir ensuite : elle retrouvera sa date et son heure habituelles.',
+			jumua:
+				'Seule cette session est annulée, à sa nouvelle date. Vous pourrez la rétablir ensuite : elle retrouvera son jour et son heure habituels.'
+		},
 		moveLegend: {
 			course: 'Déplacer cette séance',
 			jumua: 'Déplacer cette session'
@@ -306,8 +317,6 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				'Cette séance est déjà passée : vous ne pouvez annuler ou déplacer que les séances d’aujourd’hui et des jours suivants.',
 			pastOrigin: (title, date) =>
 				`La séance « ${title} » du ${date} ne peut plus être rétablie : cette date est passée. Rien n’a été enregistré. Le programme ci-dessous est à jour.`,
-			originNotPast:
-				'La date prévue de cette séance n’est pas encore passée : « Rétablir la séance » la remet à cette date. Rien n’a été enregistré.',
 			notPlanned: (title, date) =>
 				`Aucune séance « ${title} » n’est prévue le ${date}. Rien n’a été enregistré. Le programme ci-dessous est à jour.`,
 			unchanged:
@@ -383,6 +392,12 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			jumua:
 				'Der geplante Tag ist schon vorbei: Der Durchgang kann nicht mehr an diesem Tag stattfinden. Wenn Sie ihn absagen, können Sie ihn danach nicht wiederherstellen.'
 		},
+		cancelMovedRestorableHelp: {
+			course:
+				'Nur dieser Termin wird abgesagt, an seinem neuen Datum. Sie können ihn danach wiederherstellen: Er findet dann wieder an seinem üblichen Datum und zu seiner üblichen Zeit statt.',
+			jumua:
+				'Nur dieser Durchgang wird abgesagt, an seinem neuen Datum. Sie können ihn danach wiederherstellen: Er findet dann wieder an seinem üblichen Tag und zu seiner üblichen Zeit statt.'
+		},
 		moveLegend: {
 			course: 'Diesen Termin verschieben',
 			jumua: 'Diesen Durchgang verschieben'
@@ -446,8 +461,6 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				'Dieser Termin ist schon vorbei: Sie können nur Termine von heute oder von einem späteren Tag absagen oder verschieben.',
 			pastOrigin: (title, date) =>
 				`Der Termin «${title}» vom ${date}, kann nicht mehr wiederhergestellt werden: Dieses Datum ist schon vorbei. Es wurde nichts gespeichert. Das Programm unten ist aktuell.`,
-			originNotPast:
-				'Das geplante Datum dieses Termins ist noch nicht vorbei: Mit «Termin wiederherstellen» findet er wieder an diesem Datum statt. Es wurde nichts gespeichert.',
 			notPlanned: (title, date) =>
 				`Am ${date}, ist kein Termin «${title}» geplant. Es wurde nichts gespeichert. Das Programm unten ist aktuell.`,
 			unchanged:
@@ -522,6 +535,12 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			jumua:
 				'Il giorno previsto è già passato: il turno non può più tenersi quel giorno. Una volta annullato, non potrai ripristinarlo.'
 		},
+		cancelMovedRestorableHelp: {
+			course:
+				'Viene annullata solo questa lezione, nella sua nuova data. Potrai ripristinarla dopo: tornerà alla sua data e al suo orario abituali.',
+			jumua:
+				'Viene annullato solo questo turno, nella sua nuova data. Potrai ripristinarlo dopo: tornerà al suo giorno e al suo orario abituali.'
+		},
 		moveLegend: {
 			course: 'Sposta questa lezione',
 			jumua: 'Sposta questo turno'
@@ -577,8 +596,6 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				'Questa lezione è già passata: puoi annullare o spostare solo le lezioni di oggi o dei giorni successivi.',
 			pastOrigin: (title, date) =>
 				`La lezione «${title}» di ${date} non può più essere ripristinata: questa data è già passata. Non è stato salvato niente. Il programma qui sotto è aggiornato.`,
-			originNotPast:
-				'La data prevista di questa lezione non è ancora passata: «Ripristina la lezione» la riporta a quella data. Non è stato salvato niente.',
 			notPlanned: (title, date) =>
 				`Non è prevista nessuna lezione «${title}» per ${date}. Non è stato salvato niente. Il programma qui sotto è aggiornato.`,
 			unchanged:
@@ -653,6 +670,12 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			jumua:
 				'Its planned day has already passed: the session can no longer take place on that day. Once cancelled, it cannot be restored.'
 		},
+		cancelMovedRestorableHelp: {
+			course:
+				'Only this session is cancelled, on its new date. You can restore it afterwards: it will go back to its usual date and time.',
+			jumua:
+				'Only this session is cancelled, on its new date. You can restore it afterwards: it will go back to its usual day and time.'
+		},
 		moveLegend: {
 			course: 'Move this session',
 			jumua: 'Move this session'
@@ -710,8 +733,6 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 				'This session has already passed: you can only cancel or move sessions from today onwards.',
 			pastOrigin: (title, date) =>
 				`The ‘${title}’ session on ${date} can no longer be restored: that date has already passed. Nothing has been saved. The programme below shows the latest changes.`,
-			originNotPast:
-				'The planned date of this session has not passed yet: ‘Restore the session’ puts it back on that date. Nothing has been saved.',
 			notPlanned: (title, date) =>
 				`There is no ‘${title}’ session on ${date}. Nothing has been saved. The programme below shows the latest changes.`,
 			unchanged:
@@ -792,6 +813,12 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			jumua:
 				'اليوم المقرّر لهذا الموعد قد مضى: لم يعد من الممكن أن يُقام فيه. وإذا ألغيته، فلن يمكنك استعادته بعد ذلك.'
 		},
+		cancelMovedRestorableHelp: {
+			course:
+				'تُلغى هذه الحصة وحدها في تاريخها الجديد. يمكنك استعادتها بعد ذلك: ستعود إلى تاريخها ووقتها المعتادين.',
+			jumua:
+				'يُلغى هذا الموعد وحده في تاريخه الجديد. يمكنك استعادته بعد ذلك: سيعود إلى يومه ووقته المعتادين.'
+		},
 		moveLegend: {
 			course: 'نقل هذه الحصة',
 			jumua: 'نقل هذا الموعد'
@@ -843,8 +870,6 @@ export const upcomingTexts: Translations<UpcomingTexts> = {
 			pastSession: 'موعد هذه الحصة قد مضى: يمكنك إلغاء حصص اليوم والأيام التالية أو نقلها فقط.',
 			pastOrigin: (title, date) =>
 				`لم يعد من الممكن استعادة حصة «${title}» يوم ${date}: هذا التاريخ قد مضى. لم يُحفظ أي شيء. برنامجك المعروض أدناه محدَّث.`,
-			originNotPast:
-				'لم يمضِ التاريخ المقرّر لهذه الحصة بعد: زر «استعادة الحصة» يعيدها إليه. لم يُحفظ أي شيء.',
 			notPlanned: (title, date) =>
 				`لا توجد حصة «${title}» مقرّرة يوم ${date}. لم يُحفظ أي شيء. برنامجك المعروض أدناه محدَّث.`,
 			unchanged: 'الحصة مقرّرة أصلًا في هذا التاريخ وفي هذا الوقت. اختر تاريخًا آخر أو وقتًا آخر.',

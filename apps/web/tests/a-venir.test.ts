@@ -3355,13 +3355,17 @@ describe('C2 : une séance déplacée dont la date prévue est passée (étape 2
 		ar: (titre, date) =>
 			`لم يعد من الممكن استعادة حصة «${titre}» يوم ${date}: هذا التاريخ قد مضى. لم يُحفظ أي شيء. برنامجك المعروض أدناه محدَّث.`
 	};
-	/** Le refus d'une annulation de ce genre quand la date prévue n'est pas passée : aucune carte ne l'envoie. */
-	const PAS_ENCORE_PASSEE: Record<Langue, string> = {
-		fr: 'La date prévue de cette séance n’est pas encore passée : « Rétablir la séance » la remet à cette date. Rien n’a été enregistré.',
-		de: 'Das geplante Datum dieses Termins ist noch nicht vorbei: Mit «Termin wiederherstellen» findet er wieder an diesem Datum statt. Es wurde nichts gespeichert.',
-		it: 'La data prevista di questa lezione non è ancora passata: «Ripristina la lezione» la riporta a quella data. Non è stato salvato niente.',
-		en: 'The planned date of this session has not passed yet: ‘Restore the session’ puts it back on that date. Nothing has been saved.',
-		ar: 'لم يمضِ التاريخ المقرّر لهذه الحصة بعد: زر «استعادة الحصة» يعيدها إليه. لم يُحفظ أي شيء.'
+	/**
+	 * L'aide de « Annuler cette séance » sur la carte d'une séance déplacée dont la date prévue est
+	 * aujourd'hui ou plus tard (étape 21, question 5 de l'étape 20) : l'annulation se défait, et
+	 * « Rétablir » ramène la séance à sa date prévue.
+	 */
+	const AIDE_RETABLISSABLE: Record<Langue, string> = {
+		fr: 'Seule cette séance est annulée, à sa nouvelle date. Vous pourrez la rétablir ensuite : elle retrouvera sa date et son heure habituelles.',
+		de: 'Nur dieser Termin wird abgesagt, an seinem neuen Datum. Sie können ihn danach wiederherstellen: Er findet dann wieder an seinem üblichen Datum und zu seiner üblichen Zeit statt.',
+		it: 'Viene annullata solo questa lezione, nella sua nuova data. Potrai ripristinarla dopo: tornerà alla sua data e al suo orario abituali.',
+		en: 'Only this session is cancelled, on its new date. You can restore it afterwards: it will go back to its usual date and time.',
+		ar: 'تُلغى هذه الحصة وحدها في تاريخها الجديد. يمكنك استعادتها بعد ذلك: ستعود إلى تاريخها ووقتها المعتادين.'
 	};
 
 	const organisation = newId();
@@ -3574,25 +3578,45 @@ describe('C2 : une séance déplacée dont la date prévue est passée (étape 2
 		}
 	});
 
-	it('keeps « Rétablir » alone on the card of a session moved from today or a later date', async () => {
+	it('gives both cards of a session moved from today or a later date « Rétablir » and, behind closed options, « Annuler cette séance », in each language (step 21)', async () => {
+		// Question 5 de l'étape 20, tranchée « oui » : toute séance déplacée s'annule à sa nouvelle
+		// date. Il fallait la rétablir, puis annuler sa date d'origine, et le message nommait alors
+		// celle-ci, pas celle que la communauté connaissait.
 		const aujourdhui = await poserDeplacement(today, jour(4));
 		const demain = await poserDeplacement(jour(1), jour(5));
 		try {
-			const html = await pageEn('fr');
-			for (const [depuis, vers, id] of [
-				[today, jour(4), aujourdhui],
-				[jour(1), jour(5), demain]
-			] as const) {
-				const carteDArrivee = carte(html, vers, LECTURE, 'moved_here');
-				expect(formulaireDeRetablissement(carteDArrivee), depuis).toEqual({
-					courseId: lecture,
-					date: depuis,
-					shownId: id,
-					shownToDate: vers,
-					shownToStart: '20:30'
-				});
-				expect(formulaireDAnnulationDeplacee(carteDArrivee), depuis).toBeNull();
-				expect(blocsDetails(carteDArrivee), depuis).toEqual([]);
+			for (const langue of LANGUES) {
+				const html = await pageEn(langue);
+				for (const [depuis, vers, id] of [
+					[today, jour(4), aujourdhui],
+					[jour(1), jour(5), demain]
+				] as const) {
+					const envoi = {
+						courseId: lecture,
+						date: depuis,
+						shownId: id,
+						shownToDate: vers,
+						shownToStart: '20:30'
+					};
+					for (const fragment of [
+						carte(html, vers, LECTURE, 'moved_here'),
+						carte(html, depuis, LECTURE, 'moved_away')
+					]) {
+						expect(formulaireDeRetablissement(fragment), `${langue} ${depuis}`).toEqual(envoi);
+						const options = blocsDetails(fragment);
+						expect(options, `${langue} ${depuis}`).toHaveLength(1);
+						expect(options[0]?.ouvert, `${langue} ${depuis}`).toBe(false);
+						expect(options[0]?.resume, `${langue} ${depuis}`).toBe(REPLI[langue]);
+						const contenu = options[0]?.contenu ?? '';
+						expect(
+							texte(contenu.match(/<p\b[^>]*class="aide[^"]*"[^>]*>[\s\S]*?<\/p>/)?.[0] ?? ''),
+							`${langue} ${depuis}`
+						).toBe(AIDE_RETABLISSABLE[langue]);
+						const bouton = contenu.match(/<button\b[^>]*>[\s\S]*?<\/button>/)?.[0] ?? '';
+						expect(texte(bouton), `${langue} ${depuis}`).toBe(ANNULER[langue]);
+						expect(formulaireDAnnulationDeplacee(contenu), `${langue} ${depuis}`).toEqual(envoi);
+					}
+				}
 			}
 		} finally {
 			await maintenance((tx) =>
@@ -3636,41 +3660,36 @@ describe('C2 : une séance déplacée dont la date prévue est passée (étape 2
 		expect(await lignesDuJournal()).toBe(journalAvant);
 	});
 
-	it('refuses a hand-written cancellation of this kind when the planned date is not past, or when the new date is past, in each language, and writes nothing', async () => {
-		const aujourdhui = await poserDeplacement(today, jour(4));
+	it('refuses a hand-written cancellation of this kind when the new date is past, whatever the planned date, in each language, and writes nothing', async () => {
+		// Une séance avancée de demain à hier : sa carte de départ ne propose pas de l'annuler, puisque
+		// la séance a déjà eu lieu, mais un formulaire écrit à la main peut l'envoyer.
 		const hier = await poserDeplacement(jour(-5), jour(-1));
+		const avancee = await poserDeplacement(jour(1), jour(-1));
 		try {
+			expect(blocsDetails(carte(await pageEn('fr'), jour(1), LECTURE, 'moved_away'))).toEqual([]);
 			const avant = await exceptionsDuCours();
 			const journalAvant = await lignesDuJournal();
 			for (const langue of LANGUES) {
 				await pageEn(langue);
-				for (const [envoi, phrase] of [
-					[
+				for (const [date, id] of [
+					[jour(-5), hier],
+					[jour(1), avancee]
+				] as const) {
+					const reponse = await postForm(
+						'/?/annulerDeplacee',
 						{
 							courseId: lecture,
-							date: today,
-							shownId: aujourdhui,
-							shownToDate: jour(4),
-							shownToStart: '20:30'
-						},
-						PAS_ENCORE_PASSEE[langue]
-					],
-					[
-						{
-							courseId: lecture,
-							date: jour(-5),
-							shownId: hier,
+							date,
+							shownId: id,
 							shownToDate: jour(-1),
 							shownToStart: '20:30'
 						},
-						SEANCE_PASSEE[langue]
-					]
-				] as const) {
-					const reponse = await postForm('/?/annulerDeplacee', envoi, cookie);
-					expect(reponse.status, `${langue} ${envoi.date}`).toBe(400);
+						cookie
+					);
+					expect(reponse.status, `${langue} ${date}`).toBe(400);
 					const html = await reponse.text();
-					expect(alerte(html), `${langue} ${envoi.date}`).toBe(phrase);
-					expect(section(html, 'message-titre'), `${langue} ${envoi.date}`).toBe('');
+					expect(alerte(html), `${langue} ${date}`).toBe(SEANCE_PASSEE[langue]);
+					expect(section(html, 'message-titre'), `${langue} ${date}`).toBe('');
 				}
 			}
 			expect(await exceptionsDuCours()).toEqual(avant);
@@ -3679,9 +3698,67 @@ describe('C2 : une séance déplacée dont la date prévue est passée (étape 2
 			await maintenance((tx) =>
 				tx.execute(sql`
 					delete from "session_exception"
-					where "course_id" = ${lecture} and "date" in (${today}, ${jour(-5)})
+					where "course_id" = ${lecture} and "date" in (${jour(-5)}, ${jour(1)})
 				`)
 			);
+		}
+	});
+
+	it('cancels a session moved from a later date at its new date, gives the message with that date and time, and lets « Rétablir » bring it back to its planned date (step 21)', async () => {
+		// Question 5 de l'étape 20 : la séance que la communauté attend au J4 s'annule là, et le
+		// message nomme ce jour-là. La date prévue n'est pas passée : l'annulation se défait, et
+		// « Rétablir », sur l'une ou l'autre carte, ramène la séance à sa date prévue.
+		const depuis = jour(1);
+		const vers = jour(4);
+		const id = await poserDeplacement(depuis, vers);
+		try {
+			const envoi =
+				formulaireDAnnulationDeplacee(carte(await pageEn('fr'), vers, LECTURE, 'moved_here')) ?? {};
+			expect(envoi).toEqual(formulaireDe(depuis, id, vers));
+			const journalAvant = await lignesDuJournal();
+			const reponse = await postForm('/?/annulerDeplacee', envoi, cookie);
+			expect(reponse.status).toBe(200);
+			const apres = await reponse.text();
+			expect(await exception(lecture, depuis)).toEqual({
+				kind: 'cancelled',
+				to_date: vers,
+				to_start: '20:30'
+			});
+			expect(await lignesDuJournal()).toBe(journalAvant + 1);
+			expect(texte(section(apres, 'message-titre').match(/^[\s\S]*?<\/h2>/)?.[0] ?? '')).toBe(
+				'La séance est annulée.'
+			);
+			expect(messages(section(apres, 'message-titre'))[0]?.texte).toBe(
+				[
+					`${ACCUEIL},`,
+					'',
+					`Le cours « ${LECTURE} » du ${dateLue('fr', vers)} à 20:30 est annulé.`,
+					'Les autres séances ont lieu normalement.'
+				].join('\n')
+			);
+			// La carte de sa nouvelle date la dit annulée, et la rétablit ; celle de sa date prévue la
+			// dit partie ailleurs, et la rétablit aussi, sans rien proposer d'annuler.
+			const annulationEcrite = ((await exceptionsDuCours()) as { id: string; date: string }[]).find(
+				(une) => une.date === depuis
+			);
+			const retour = {
+				courseId: lecture,
+				date: depuis,
+				shownId: annulationEcrite?.id ?? '',
+				shownToDate: vers,
+				shownToStart: '20:30'
+			};
+			const annulee = carte(apres, vers, LECTURE, 'cancelled');
+			expect(formulaireDeRetablissement(annulee)).toEqual(retour);
+			expect(blocsDetails(annulee)).toEqual([]);
+			const partie = carte(apres, depuis, LECTURE, 'moved_away');
+			expect(formulaireDeRetablissement(partie)).toEqual(retour);
+			expect(blocsDetails(partie)).toEqual([]);
+			const retablie = await postForm('/?/retablir', retour, cookie);
+			expect(retablie.status).toBe(200);
+			expect(await exception(lecture, depuis)).toBeUndefined();
+		} finally {
+			await effacer(depuis);
 		}
 	});
 
@@ -4026,13 +4103,14 @@ describe('C2 : une séance déplacée dont la date prévue est passée (étape 2
 });
 
 describe('C2 : « aujourd’hui » est celui du fuseau de l’organisation (étape 20)', () => {
-	// `pastOrigin`, `originNotPast` et `pastSession` comparent une date à aujourd'hui dans le fuseau
+	// `pastOrigin` et `pastSession` comparent une date à aujourd'hui dans le fuseau
 	// de l'organisation. Les autres organisations de ce fichier sont à Zurich, comme le poste : un
 	// calcul fait dans le fuseau du poste, ou en UTC, y passait inaperçu. Celle-ci est dans un fuseau
 	// dont la date, à l'heure du test, n'est pas celle du poste, ni celle d'UTC quand c'est possible :
 	// Kiritimati (UTC+14) ou Pago Pago (UTC-11), l'un des deux convient à toute heure. Une séance
-	// déplacée depuis la veille de ce fuseau a « Annuler cette séance », une séance déplacée depuis son
-	// aujourd'hui garde « Rétablir », et les actions des deux écrans en jugent de même.
+	// déplacée depuis la veille de ce fuseau a « Annuler cette séance » seul, une séance déplacée
+	// depuis son aujourd'hui garde aussi « Rétablir » (étape 21), et les actions des deux écrans en
+	// jugent de même.
 	const maintenant = new Date();
 	const duPoste = todayInZone(Intl.DateTimeFormat().resolvedOptions().timeZone, maintenant);
 	const enUtc = todayInZone('UTC', maintenant);
@@ -4133,8 +4211,10 @@ describe('C2 : « aujourd’hui » est celui du fuseau de l’organisation (éta
 		cookie = await signIn(RESPONSABLE_FUSEAU);
 	});
 
-	it('gives « Annuler cette séance » to a session moved from yesterday in that zone, and « Rétablir » to one moved from today there', async () => {
-		// Le fuseau n'a pas la date du poste : sans cela, le test ne prouverait rien.
+	it('gives a session moved from yesterday in that zone « Annuler cette séance » alone, for good, and one moved from today there « Rétablir » too', async () => {
+		// Le fuseau n'a pas la date du poste : sans cela, le test ne prouverait rien. Depuis l'étape 21
+		// (question 5 de l'étape 20), les deux cartes proposent « Annuler cette séance » ; seule celle
+		// dont la date prévue est passée dit que l'annulation est définitive, sans « Rétablir ».
 		expect(aujourdhui, fuseau).not.toBe(duPoste);
 		const depuisHier = await poserDeplacement(cours, hier, addDays(aujourdhui, 2));
 		const depuisAujourdhui = await poserDeplacement(cours, aujourdhui, addDays(aujourdhui, 3));
@@ -4144,9 +4224,11 @@ describe('C2 : « aujourd’hui » est celui du fuseau de l’organisation (éta
 			expect(deLaVeille).not.toBe('');
 			expect(formulaireDeRetablissement(deLaVeille)).toBeNull();
 			expect(formulaireDAnnulationDeplacee(deLaVeille)?.['shownId']).toBe(depuisHier);
+			expect(texte(deLaVeille)).toContain('ne pourra pas être rétablie');
 			const duJour = carte(html, addDays(aujourdhui, 3), COURS, 'moved_here');
 			expect(formulaireDeRetablissement(duJour)?.['shownId']).toBe(depuisAujourdhui);
-			expect(formulaireDAnnulationDeplacee(duJour)).toBeNull();
+			expect(formulaireDAnnulationDeplacee(duJour)?.['shownId']).toBe(depuisAujourdhui);
+			expect(texte(duJour)).toContain('Vous pourrez la rétablir ensuite');
 		} finally {
 			await effacer();
 		}
@@ -4164,7 +4246,8 @@ describe('C2 : « aujourd’hui » est celui du fuseau de l’organisation (éta
 				shownToDate: vers,
 				shownToStart: '20:30'
 			});
-			// La séance de la veille est déplacée à aujourd'hui, celle du jour à dans trois jours.
+			// La séance de la veille est déplacée à aujourd'hui, celle du jour à dans trois jours, et
+			// celle de demain avancée à hier.
 			const deLaVeille = envoi(
 				hier,
 				await poserDeplacement(courseId, hier, aujourdhui),
@@ -4175,16 +4258,19 @@ describe('C2 : « aujourd’hui » est celui du fuseau de l’organisation (éta
 				await poserDeplacement(courseId, aujourdhui, addDays(aujourdhui, 3)),
 				addDays(aujourdhui, 3)
 			);
+			const demain = addDays(aujourdhui, 1);
+			const versHier = envoi(demain, await poserDeplacement(courseId, demain, hier), hier);
 			try {
 				const avant = await exceptionsDe(courseId);
-				// Hier dans ce fuseau : « Rétablir » et « Déplacer » sont refusés. Aujourd'hui :
-				// l'annulation de ce genre est refusée, sa carte a « Rétablir ». Rien ne s'écrit.
+				// Hier dans ce fuseau : « Rétablir » vers hier et « Déplacer » depuis hier sont refusés,
+				// comme l'annulation d'une séance déplacée à hier (étape 21 : la date prévue ne compte
+				// plus pour ce geste, sa nouvelle date oui). Rien ne s'écrit.
 				const refusDuRetablissement = await postForm(action('retablir'), deLaVeille, cookie);
 				expect(refusDuRetablissement.status).toBe(400);
 				expect(alerte(await refusDuRetablissement.text())).toContain('ne peut plus être rétablie');
-				const refusDeLAnnulation = await postForm(action('annulerDeplacee'), duJour, cookie);
+				const refusDeLAnnulation = await postForm(action('annulerDeplacee'), versHier, cookie);
 				expect(refusDeLAnnulation.status).toBe(400);
-				expect(alerte(await refusDeLAnnulation.text())).toContain('n’est pas encore passé');
+				expect(alerte(await refusDeLAnnulation.text())).toContain('est déjà passée');
 				const refusDuDeplacement = await postForm(
 					action('deplacer'),
 					{ courseId, date: hier, toDate: addDays(aujourdhui, 4), toStart: '18:00' },
@@ -4198,8 +4284,9 @@ describe('C2 : « aujourd’hui » est celui du fuseau de l’organisation (éta
 				expect((await postForm(action('retablir'), duJour, cookie)).status).toBe(200);
 				expect((await postForm(action('annulerDeplacee'), deLaVeille, cookie)).status).toBe(200);
 				const annulee = { date: hier, kind: 'cancelled', to_date: aujourdhui, to_start: '20:30' };
+				const avancee = { date: demain, kind: 'moved', to_date: hier, to_start: '20:30' };
 				if (ecran === '/vendredi') {
-					expect(await exceptionsDe(courseId)).toMatchObject([annulee]);
+					expect(await exceptionsDe(courseId)).toMatchObject([annulee, avancee]);
 					return;
 				}
 				// Sur « À venir », la séance du jour, rétablie, se déplace : aujourd'hui n'est pas passé.
@@ -4212,7 +4299,8 @@ describe('C2 : « aujourd’hui » est celui du fuseau de l’organisation (éta
 				expect(deplacement.status).toBe(200);
 				expect(await exceptionsDe(courseId)).toMatchObject([
 					annulee,
-					{ date: aujourdhui, kind: 'moved', to_date: addDays(aujourdhui, 4), to_start: '18:00' }
+					{ date: aujourdhui, kind: 'moved', to_date: addDays(aujourdhui, 4), to_start: '18:00' },
+					avancee
 				]);
 			} finally {
 				await effacer();
@@ -4667,6 +4755,49 @@ describe('C4 : l’état d’une carte s’écrit avec son propre nom (étape 20
 			] as const) {
 				const { retablir, aideRetablir } = GESTES[sorte][langue];
 				expect(retablissementDe(fragment), sorte).toEqual({ retablir, aideRetablir });
+			}
+		}
+	);
+
+	/**
+	 * L'aide de « Annuler cette séance » sur une carte déplacée dont la date prévue n'est pas passée
+	 * (étape 21, question 5 de l'étape 20), par sorte : l'annulation se défait.
+	 */
+	const AIDE_RETABLISSABLE: Record<'seance' | 'session', Record<Langue, string>> = {
+		seance: {
+			fr: 'Seule cette séance est annulée, à sa nouvelle date. Vous pourrez la rétablir ensuite : elle retrouvera sa date et son heure habituelles.',
+			de: 'Nur dieser Termin wird abgesagt, an seinem neuen Datum. Sie können ihn danach wiederherstellen: Er findet dann wieder an seinem üblichen Datum und zu seiner üblichen Zeit statt.',
+			it: 'Viene annullata solo questa lezione, nella sua nuova data. Potrai ripristinarla dopo: tornerà alla sua data e al suo orario abituali.',
+			en: 'Only this session is cancelled, on its new date. You can restore it afterwards: it will go back to its usual date and time.',
+			ar: 'تُلغى هذه الحصة وحدها في تاريخها الجديد. يمكنك استعادتها بعد ذلك: ستعود إلى تاريخها ووقتها المعتادين.'
+		},
+		session: {
+			fr: 'Seule cette session est annulée, à sa nouvelle date. Vous pourrez la rétablir ensuite : elle retrouvera son jour et son heure habituels.',
+			de: 'Nur dieser Durchgang wird abgesagt, an seinem neuen Datum. Sie können ihn danach wiederherstellen: Er findet dann wieder an seinem üblichen Tag und zu seiner üblichen Zeit statt.',
+			it: 'Viene annullato solo questo turno, nella sua nuova data. Potrai ripristinarlo dopo: tornerà al suo giorno e al suo orario abituali.',
+			en: 'Only this session is cancelled, on its new date. You can restore it afterwards: it will go back to its usual day and time.',
+			ar: 'يُلغى هذا الموعد وحده في تاريخه الجديد. يمكنك استعادته بعد ذلك: سيعود إلى يومه ووقته المعتادين.'
+		}
+	};
+
+	it.each(LANGUES)(
+		'offers to cancel a moved session of a course and a moved Friday session, each with its own words, in %s (step 21)',
+		async (langue) => {
+			const html = await enLangue(langue);
+			for (const [fragment, sorte] of [
+				[carte(html, jour(2), FIQH, 'moved_away'), 'seance'],
+				[carte(html, jour(3), FIQH, 'moved_here'), 'seance'],
+				[carte(html, vendredi, JUMUA[1], 'moved_away'), 'session'],
+				[carte(html, ailleurs, JUMUA[1], 'moved_here'), 'session']
+			] as const) {
+				const contenu = blocsDetails(fragment)[0]?.contenu ?? '';
+				expect(
+					texte(contenu.match(/<p\b[^>]*class="aide[^"]*"[^>]*>([\s\S]*?)<\/p>/)?.[1] ?? ''),
+					sorte
+				).toBe(AIDE_RETABLISSABLE[sorte][langue]);
+				expect(texte(contenu.match(/<button\b[^>]*>([\s\S]*?)<\/button>/)?.[1] ?? ''), sorte).toBe(
+					GESTES[sorte][langue].annuler
+				);
 			}
 		}
 	);

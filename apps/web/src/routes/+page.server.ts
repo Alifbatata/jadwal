@@ -53,9 +53,13 @@
 // Étape 20 (C2, décision du chef de projet) : « Rétablir » vers une date prévue déjà passée est
 // refusé (`pastOrigin`), et n'écrit rien. La carte d'une séance déplacée dont la date prévue est
 // passée n'a donc plus « Rétablir », mais « Annuler cette séance » (`annulerDeplacee`), qui l'annule
-// à sa nouvelle date et rend le message à copier, avec cette date et cette heure ; une carte déplacée
-// dont la date prévue est aujourd'hui ou plus tard garde « Rétablir » seul. Déplacer une séance dont
-// la date prévue est passée est refusé, comme l'annuler (`pastSession`).
+// à sa nouvelle date et rend le message à copier, avec cette date et cette heure. Déplacer une séance
+// dont la date prévue est passée est refusé, comme l'annuler (`pastSession`).
+//
+// Étape 21 (questions 3 et 5 de l'étape 20, tranchées « oui ») : toute séance déplacée s'annule à sa
+// nouvelle date, et pas seulement celle dont la date prévue est passée ; tant que celle-ci n'est pas
+// passée, « Rétablir » défait l'annulation comme le déplacement. Chaque action rend la sorte du cours
+// avec ce qu'elle a fait : « La session est annulée. » pour la prière du vendredi.
 
 import { fail } from '@sveltejs/kit';
 import { todayInZone } from '@jadwal/core';
@@ -238,6 +242,8 @@ export const load: PageServerLoad = async (event) => {
 		movedTo: seance.movedTo,
 		/** L'exception que « Rétablir la séance » défait, qu'il envoie (reprise du lot 2). */
 		exceptionId: seance.exceptionId,
+		/** Un déplacement, ou une annulation : seul un déplacement s'annule (étape 21). */
+		exceptionKind: seance.exceptionKind,
 		/**
 		 * Le type du cours : l'état d'une carte annulée ou partie ailleurs s'écrit « Séance … » pour un
 		 * cours, « Session … » pour la prière du vendredi (étape 20, C4).
@@ -518,17 +524,20 @@ export const actions: Actions = {
 	},
 
 	/**
-	 * Annuler une séance déplacée dont la date prévue est passée, à sa nouvelle date (étape 20, C2,
-	 * décision du chef de projet). Un nom distinct d'`annuler` : celle-ci vise une séance du rythme,
-	 * encore prévue, sous sa date ; celle-là, une séance arrivée d'un autre jour, sous sa date prévue.
+	 * Annuler une séance déplacée, à sa nouvelle date (étape 20, C2, décision du chef de projet, pour
+	 * une date prévue passée ; étape 21, question 5 de l'étape 20, pour toute séance déplacée). Un nom
+	 * distinct d'`annuler` : celle-ci vise une séance du rythme, encore prévue, sous sa date ;
+	 * celle-là, une séance partie à un autre jour ou à une autre heure, sous sa date prévue.
 	 *
 	 * La carte envoie ce qu'elle montrait, comme « Rétablir » : l'exception, le jour et l'heure
 	 * d'arrivée. Le déplacement est remplacé par une annulation qui les garde (`cancelMoved`) : la
 	 * séance reste sur sa nouvelle date, annulée, sur cet écran, sur la page publique et dans le
-	 * programme de la semaine, et le flux agenda la retire. Refusé, sans rien écrire : une date prévue
-	 * qui n'est pas passée (sa carte a « Rétablir »), une nouvelle date passée, comme toute
-	 * annulation, et une carte périmée. La seconde demande reçoit, comme toute seconde annulation, le
-	 * message quand même (étape 19, D4). Le message nomme la nouvelle date et la nouvelle heure.
+	 * programme de la semaine, et le flux agenda la retire. Tant que sa date prévue n'est pas passée,
+	 * « Rétablir » la ramène à cette date, comme toute séance annulée. Refusé, sans rien écrire : une
+	 * nouvelle date passée, comme toute annulation, et une carte périmée. La seconde demande reçoit,
+	 * comme toute seconde annulation, le message quand même (étape 19, D4). Le message nomme la
+	 * nouvelle date et la nouvelle heure, celles que la communauté connaît : avant l'étape 21, il
+	 * fallait rétablir la séance, puis annuler sa date prévue, et le message nommait celle-ci.
 	 */
 	annulerDeplacee: async (event) => {
 		const context = await mustBeInOrganisation(event);
@@ -552,7 +561,6 @@ export const actions: Actions = {
 			if (!course) return refuse('sessionGone', { courseId, date: toDate }, 404);
 			const settings = await readSettings(tx);
 			const today = todayInZone(settings.time_zone, now);
-			if (date >= today) return refuse('originNotPast', { courseId, date: toDate });
 			if (toDate < today) return refuse('pastSession', { courseId, date: toDate });
 			const messages = cancellationMessages(settings, course, toDate, shown.toStart);
 			const cancelled = await cancelMoved(

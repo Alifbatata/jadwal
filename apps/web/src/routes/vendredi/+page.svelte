@@ -69,11 +69,21 @@
 	 * une annulation refaite ailleurs ressemble à la première, mais c'en est une autre (reprise du
 	 * lot 2).
 	 *
-	 * Une session déplacée puis annulée à sa nouvelle date (étape 20, C2) ne se rétablit pas : son
-	 * vendredi prévu était passé, et « Rétablir » l'y ramenait. Sa ligne, annulée, n'a rien à défaire.
+	 * Un vendredi prévu déjà passé ne se rétablit pas (étape 20, C2) : « Rétablir » y ramenait la
+	 * session, qui disparaissait sans message. Une session déplacée puis annulée à sa nouvelle date se
+	 * rétablit tant que son jour prévu n'est pas passé, depuis la ligne de sa nouvelle date (étape 21,
+	 * question 5 de l'étape 20), comme sur « À venir ».
 	 */
 	function aRetablir(seance: (typeof data.prochaines)[number]) {
-		if (seance.status === 'cancelled' && seance.originalDate) return null;
+		if (seance.status === 'cancelled' && seance.originalDate) {
+			if (seance.originalDate < data.today) return null;
+			return {
+				date: seance.originalDate,
+				id: seance.exceptionId,
+				toDate: seance.date,
+				toStart: String(seance.start ?? '').slice(0, 5)
+			};
+		}
 		if (seance.status === 'cancelled') {
 			return { date: seance.date, id: seance.exceptionId, toDate: '', toStart: '' };
 		}
@@ -88,13 +98,47 @@
 		if (
 			seance.status === 'moved_here' &&
 			seance.originalDate &&
-			seance.originalDate !== seance.date
+			seance.originalDate !== seance.date &&
+			seance.originalDate >= data.today
 		) {
 			return {
 				date: seance.originalDate,
 				id: seance.exceptionId,
 				toDate: seance.date,
 				toStart: String(seance.start ?? '').slice(0, 5)
+			};
+		}
+		return null;
+	}
+
+	/**
+	 * Ce que « Annuler cette session » annule sur la ligne d'une session déplacée, ou rien quand elle
+	 * ne le propose pas : toute session déplacée s'annule à sa nouvelle date (étape 21, question 5 de
+	 * l'étape 20), depuis la ligne de son départ ou celle de son arrivée, comme sur « À venir ».
+	 * `passee` : le vendredi prévu est passé, et l'annulation ne se défera pas.
+	 */
+	function aAnnuler(seance: (typeof data.prochaines)[number]) {
+		if (seance.exceptionKind !== 'moved') return null;
+		if (seance.status === 'moved_away' && seance.movedTo && seance.movedTo.date >= data.today) {
+			return {
+				date: seance.date,
+				id: seance.exceptionId,
+				toDate: seance.movedTo.date,
+				toStart: String(seance.movedTo.start).slice(0, 5),
+				passee: false
+			};
+		}
+		if (
+			seance.status === 'moved_here' &&
+			seance.originalDate &&
+			seance.originalDate !== seance.date
+		) {
+			return {
+				date: seance.originalDate,
+				id: seance.exceptionId,
+				toDate: seance.date,
+				toStart: String(seance.start ?? '').slice(0, 5),
+				passee: seance.originalDate < data.today
 			};
 		}
 		return null;
@@ -263,35 +307,14 @@
 								<button type="submit">{text.thisFriday.move}</button>
 							</form>
 						</div>
-					{:else if aRetablir(seance)}
+					{:else}
 						{@const change = aRetablir(seance)}
-						{#if seance.status === 'moved_here' && change && change.date < data.today}
-							<!-- Une session déplacée dont le vendredi prévu est passé n'y revient plus :
-							     « Rétablir » l'y ramenait, et elle disparaissait sans message (étape 20, C2).
-							     La ligne propose de l'annuler à sa nouvelle date, derrière des options
-							     fermées, comme sur « À venir ». Le formulaire envoie ce que la ligne
-							     montrait. L'aide, qui dit que l'annulation est définitive, décrit le bouton,
-							     comme sur « À venir ». -->
-							{@const aide = `annulation-${session.id}-${change.date}-aide`}
-							<details class="options">
-								<summary>{text.thisFriday.cancelOnly}</summary>
-								<form method="post" action="?/annulerDeplacee">
-									<input type="hidden" name="courseId" value={session.id} />
-									<input type="hidden" name="date" value={change.date} />
-									<input type="hidden" name="shownId" value={change.id} />
-									<input type="hidden" name="shownToDate" value={change.toDate} />
-									<input type="hidden" name="shownToStart" value={change.toStart} />
-									<p id={aide} class="avertissement">{text.thisFriday.cancelMovedHelp}</p>
-									<button type="submit" class="danger" aria-describedby={aide}>
-										{text.thisFriday.cancel}
-									</button>
-								</form>
-							</details>
-						{:else}
+						{@const annulable = aAnnuler(seance)}
+						{#if change}
 							<form method="post" action="?/retablir">
 								<input type="hidden" name="courseId" value={session.id} />
-								<input type="hidden" name="date" value={change?.date} />
-								{#if change?.id}
+								<input type="hidden" name="date" value={change.date} />
+								{#if change.id}
 									<input type="hidden" name="shownId" value={change.id} />
 									{#if change.toDate}
 										<input type="hidden" name="shownToDate" value={change.toDate} />
@@ -300,6 +323,32 @@
 								{/if}
 								<button type="submit">{text.thisFriday.restore}</button>
 							</form>
+						{/if}
+						{#if annulable}
+							<!-- Toute session déplacée s'annule à sa nouvelle date (étape 20, C2 ; étape 21,
+							     question 5), derrière des options fermées, comme sur « À venir ». Le formulaire
+							     envoie ce que la ligne montrait. L'aide dit si l'annulation se défera, et décrit
+							     le bouton. Les deux dates la distinguent : la session a une ligne à son départ
+							     et une à son arrivée. -->
+							{@const aide = `annulation-${session.id}-${annulable.date}-${seance.date}-aide`}
+							<details class="options">
+								<summary>{text.thisFriday.cancelOnly}</summary>
+								<form method="post" action="?/annulerDeplacee">
+									<input type="hidden" name="courseId" value={session.id} />
+									<input type="hidden" name="date" value={annulable.date} />
+									<input type="hidden" name="shownId" value={annulable.id} />
+									<input type="hidden" name="shownToDate" value={annulable.toDate} />
+									<input type="hidden" name="shownToStart" value={annulable.toStart} />
+									<p id={aide} class="avertissement">
+										{annulable.passee
+											? text.thisFriday.cancelMovedHelp
+											: text.thisFriday.cancelMovedRestorableHelp}
+									</p>
+									<button type="submit" class="danger" aria-describedby={aide}>
+										{text.thisFriday.cancel}
+									</button>
+								</form>
+							</details>
 						{/if}
 					{/if}
 				</div>

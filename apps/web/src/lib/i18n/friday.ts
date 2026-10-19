@@ -27,9 +27,10 @@ import type { Translations } from './space.js';
  *
  * Étape 20 (C2) : `pastSession` refuse aussi le déplacement d'une session dont le jour prévu est
  * passé ; `pastOrigin`, un « Rétablir » vers un jour prévu déjà passé, où la session disparaîtrait
- * sans message ; `originNotPast`, l'annulation d'une session déplacée dont le jour prévu n'est pas
- * passé, qu'aucune ligne ne propose : sa ligne a « Rétablir » ; `alreadyCancelled`, la seconde
- * annulation d'une session déplacée, qui rend quand même le message à copier, comme sur « À venir ».
+ * sans message ; `alreadyCancelled`, la seconde annulation d'une session déplacée, qui rend quand
+ * même le message à copier, comme sur « À venir ». L'annulation d'une session déplacée dont le jour
+ * prévu n'est pas passé était refusée (`originNotPast`) : toute session déplacée s'annule depuis
+ * l'étape 21 (question 5 de l'étape 20).
  */
 export type FridayError =
 	| 'titleTooLong'
@@ -47,7 +48,6 @@ export type FridayError =
 	| 'pastSession'
 	| 'pastDate'
 	| 'pastOrigin'
-	| 'originNotPast'
 	| 'notPlanned'
 	| 'changed'
 	| 'alreadyCancelled'
@@ -151,6 +151,11 @@ interface FridayTexts {
 		 */
 		readonly cancelOnly: string;
 		readonly cancelMovedHelp: string;
+		/**
+		 * L'aide avant ce bouton sur les lignes d'une session déplacée dont le jour prévu n'est pas passé
+		 * (étape 21, question 5 de l'étape 20) : l'annulation se défait.
+		 */
+		readonly cancelMovedRestorableHelp: string;
 		readonly newDay: string;
 		readonly newTime: string;
 		readonly move: string;
@@ -240,6 +245,8 @@ export const fridayTexts: Translations<FridayTexts> = {
 			cancelOnly: 'Annuler',
 			cancelMovedHelp:
 				'Son jour prévu est déjà passé : la session ne peut plus avoir lieu ce jour-là. Une fois annulée, elle ne pourra pas être rétablie.',
+			cancelMovedRestorableHelp:
+				'Seule cette session est annulée, à sa nouvelle date. Vous pourrez la rétablir ensuite : elle retrouvera son jour et son heure habituels.',
 			newDay: 'Nouveau jour',
 			newTime: 'Nouvelle heure',
 			move: 'Déplacer',
@@ -283,8 +290,6 @@ export const fridayTexts: Translations<FridayTexts> = {
 				'Cette session est déjà passée : vous ne pouvez annuler ou déplacer que les sessions d’aujourd’hui et des jours suivants.',
 			pastOrigin:
 				'Le jour prévu de cette session est déjà passé : elle ne peut plus être rétablie. Rien n’a été enregistré. La partie « Ce vendredi », plus bas, est à jour.',
-			originNotPast:
-				'Le jour prévu de cette session n’est pas encore passé : « Rétablir comme d’habitude » la remet à ce jour. Rien n’a été enregistré.',
 			pastDate:
 				'Ce jour est déjà passé : rien n’a été déplacé. Choisissez aujourd’hui ou un jour suivant dans « Ce vendredi », plus bas.',
 			notPlanned:
@@ -371,6 +376,8 @@ export const fridayTexts: Translations<FridayTexts> = {
 			cancelOnly: 'Absagen',
 			cancelMovedHelp:
 				'Der geplante Tag ist schon vorbei: Der Durchgang kann nicht mehr an diesem Tag stattfinden. Wenn Sie ihn absagen, können Sie ihn danach nicht wiederherstellen.',
+			cancelMovedRestorableHelp:
+				'Nur dieser Durchgang wird abgesagt, an seinem neuen Datum. Sie können ihn danach wiederherstellen: Er findet dann wieder an seinem üblichen Tag und zu seiner üblichen Zeit statt.',
 			newDay: 'Neuer Tag',
 			newTime: 'Neue Uhrzeit',
 			move: 'Verschieben',
@@ -420,8 +427,6 @@ export const fridayTexts: Translations<FridayTexts> = {
 				'Dieser Durchgang ist schon vorbei: Sie können nur Durchgänge von heute oder von einem späteren Tag absagen oder verschieben.',
 			pastOrigin:
 				'Der geplante Tag dieses Durchgangs ist schon vorbei: Der Durchgang kann nicht mehr wiederhergestellt werden. Es wurde nichts gespeichert. Der Abschnitt «Diesen Freitag» weiter unten ist aktuell.',
-			originNotPast:
-				'Der geplante Tag dieses Durchgangs ist noch nicht vorbei: Mit «Wie gewohnt wiederherstellen» findet der Durchgang wieder an diesem Tag statt. Es wurde nichts gespeichert.',
 			pastDate:
 				'Dieser Tag ist schon vorbei: Es wurde nichts verschoben. Wählen Sie weiter unten unter «Diesen Freitag» heute oder einen späteren Tag.',
 			notPlanned:
@@ -509,6 +514,8 @@ export const fridayTexts: Translations<FridayTexts> = {
 			cancelOnly: 'Annulla',
 			cancelMovedHelp:
 				'Il giorno previsto è già passato: il turno non può più tenersi quel giorno. Una volta annullato, non potrai ripristinarlo.',
+			cancelMovedRestorableHelp:
+				'Viene annullato solo questo turno, nella sua nuova data. Potrai ripristinarlo dopo: tornerà al suo giorno e al suo orario abituali.',
 			newDay: 'Nuovo giorno',
 			newTime: 'Nuovo orario',
 			move: 'Sposta',
@@ -551,8 +558,6 @@ export const fridayTexts: Translations<FridayTexts> = {
 				'Questo turno è già passato: puoi annullare o spostare solo i turni di oggi o dei giorni successivi.',
 			pastOrigin:
 				'Il giorno previsto di questo turno è già passato: il turno non può più essere ripristinato. Non è stato salvato niente. La sezione «Questo venerdì», più in basso, è aggiornata.',
-			originNotPast:
-				'Il giorno previsto di questo turno non è ancora passato: «Ripristina come al solito» riporta il turno a quel giorno. Non è stato salvato niente.',
 			pastDate:
 				'Questo giorno è già passato: non è stato spostato niente. Scegli oggi o un giorno successivo più in basso, in «Questo venerdì».',
 			notPlanned:
@@ -639,6 +644,8 @@ export const fridayTexts: Translations<FridayTexts> = {
 			cancelOnly: 'Cancel',
 			cancelMovedHelp:
 				'Its planned day has already passed: the session can no longer take place on that day. Once cancelled, it cannot be restored.',
+			cancelMovedRestorableHelp:
+				'Only this session is cancelled, on its new date. You can restore it afterwards: it will go back to its usual day and time.',
 			newDay: 'New day',
 			newTime: 'New time',
 			move: 'Move',
@@ -681,8 +688,6 @@ export const fridayTexts: Translations<FridayTexts> = {
 				'This session has already passed: you can only cancel or move sessions from today onwards.',
 			pastOrigin:
 				'The planned day of this session has already passed: the session can no longer be restored. Nothing has been saved. The ‘This Friday’ section further down shows the latest changes.',
-			originNotPast:
-				'The planned day of this session has not passed yet: ‘Restore as usual’ puts the session back on that day. Nothing has been saved.',
 			pastDate:
 				'This day has already passed: nothing has been moved. Choose today or a later day under ‘This Friday’, further down.',
 			notPlanned:
@@ -765,6 +770,8 @@ export const fridayTexts: Translations<FridayTexts> = {
 			cancelOnly: 'إلغاء',
 			cancelMovedHelp:
 				'اليوم المقرّر لهذا الموعد قد مضى: لم يعد من الممكن أن يُقام فيه. وإذا ألغيته، فلن يمكنك إعادته بعد ذلك.',
+			cancelMovedRestorableHelp:
+				'يُلغى هذا الموعد وحده في تاريخه الجديد. يمكنك إعادته بعد ذلك: سيعود إلى يومه ووقته المعتادين.',
 			newDay: 'اليوم الجديد',
 			newTime: 'الوقت الجديد',
 			move: 'نقل',
@@ -804,8 +811,6 @@ export const fridayTexts: Translations<FridayTexts> = {
 			pastSession: 'هذا الموعد قد مضى: يمكنك إلغاء مواعيد اليوم والأيام التالية أو نقلها فقط.',
 			pastOrigin:
 				'اليوم المقرّر لهذا الموعد قد مضى: لم يعد من الممكن إعادة هذا الموعد. لم يُحفظ أي شيء. قسم «هذه الجمعة» في الأسفل محدَّث.',
-			originNotPast:
-				'لم يمضِ اليوم المقرّر لهذا الموعد بعد: زر «إعادته كالمعتاد» يعيد الموعد إلى ذلك اليوم. لم يُحفظ أي شيء.',
 			pastDate:
 				'هذا اليوم قد مضى: لم يُنقل أي شيء. اختر اليوم أو يومًا بعده في قسم «هذه الجمعة» في الأسفل.',
 			notPlanned:
