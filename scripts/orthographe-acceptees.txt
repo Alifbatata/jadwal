@@ -622,3 +622,13 @@ apps/web/src/lib/i18n/upcoming.ts | GERMAN_WORD_REPEAT_RULE | absagen Absagen
 apps/web/src/lib/i18n/upcoming.ts | PHRASE_REPETITION | Session cancelled Session cancelled
 apps/web/src/lib/i18n/upcoming.ts | PHRASE_REPETITION | Session moved Session moved
 apps/web/src/lib/i18n.ts | PHRASE_REPETITION | Session cancelled Session cancelled
+
+# Étape 21.
+#
+# « DATE » : chaque addendum de l'étape porte sa date, 19.10.2026, écrite avec des points comme
+# toutes les dates du service (étape 18, retour A3) ; la règle propose des barres obliques. Même cas
+# que les addenda des étapes 19 et 20, plus haut.
+docs/adr/0005-widget.md | DATE | 19.10.2026
+docs/adr/0027-pages-publiques.md | DATE | 19.10.2026
+docs/adr/0044-acceptation-des-conditions.md | DATE | 19.10.2026
+docs/adr/0047-langue-de-l-espace.md | DATE | 19.10.2026
