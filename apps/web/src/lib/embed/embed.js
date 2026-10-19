@@ -30,3 +30,16 @@ document.addEventListener('click', (evenement) => {
 	evenement.preventDefault();
 	location.replace(url.href);
 });
+
+// 3. Le choix de la langue est un formulaire `GET` depuis l'étape 21 : son envoi est remplacé de la
+//    même façon, pour la même raison. L'adresse est celle que le navigateur aurait construite.
+document.addEventListener('submit', (evenement) => {
+	const formulaire = evenement.target;
+	if (evenement.defaultPrevented || formulaire.method !== 'get' || formulaire.target) return;
+	const url = new URL(formulaire.action, location.href);
+	if (url.origin !== location.origin) return;
+	url.search = new URLSearchParams(new FormData(formulaire)).toString();
+	url.searchParams.set('embed', '1');
+	evenement.preventDefault();
+	location.replace(url.href);
+});

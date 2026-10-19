@@ -497,13 +497,20 @@ describe('le lien des conditions, au pied de la page publique', () => {
 		]);
 	});
 
-	it('names the list of languages in each language, and no longer in French everywhere', () => {
-		expect(LANGUES.map((langue) => t(langue).languagesLabel)).toEqual([
-			'Langues',
-			'Sprachen',
-			'Lingue',
-			'Languages',
-			'اللغات'
+	it('labels the choice of language in each language, and no longer in French everywhere', () => {
+		expect(LANGUES.map((langue) => t(langue).languageLabel)).toEqual([
+			'Langue',
+			'Sprache',
+			'Lingua',
+			'Language',
+			'اللغة'
+		]);
+		expect(LANGUES.map((langue) => t(langue).languageSubmit)).toEqual([
+			'Changer',
+			'Ändern',
+			'Cambia',
+			'Change',
+			'تغيير'
 		]);
 	});
 });

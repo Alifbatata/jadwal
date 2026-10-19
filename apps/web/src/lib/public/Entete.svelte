@@ -1,14 +1,17 @@
 <script lang="ts">
-	// L'en-tête commun aux vues : nom, vues, filtres, langues (voir docs/maquettes/README.md). Tout
-	// est lien : aucun bouton, aucune case à cocher, donc rien qui demande du JavaScript.
+	// L'en-tête commun aux vues : nom, vues, filtres, langues (voir docs/maquettes/README.md). Les vues
+	// et les filtres sont des liens ; le choix de la langue, depuis l'étape 21, une liste déroulante
+	// dans un formulaire avec son bouton (`ChoixDeLangue.svelte`). Rien ne demande du JavaScript.
 	//
 	// Depuis l'étape 18, un quatrième onglet, les heures de prière, quand le module est allumé
 	// (retour C4). Le widget n'en sait rien : il encadre cette page, et l'onglet y est donc aussi.
-	import { NOM_DE_LANGUE, t, type Langue } from '$lib/i18n.js';
+	import { t, type Langue } from '$lib/i18n.js';
+	import ChoixDeLangue from './ChoixDeLangue.svelte';
 
 	type Vue = 'semaine' | 'cours' | 'mois' | 'prieres';
 
 	let {
+		slug,
 		nom,
 		langue,
 		langues,
@@ -17,10 +20,13 @@
 		lienVue,
 		lienFiltre,
 		lienLangue,
+		integre = false,
 		avecFiltres = true,
 		avecPrieres = false,
 		vendredi
 	}: {
+		/** L'identifiant de l'organisation, pour l'adresse où le choix de la langue est envoyé. */
+		slug: string;
 		nom: string;
 		langue: Langue;
 		langues: Langue[];
@@ -29,6 +35,8 @@
 		lienVue: (vue: Vue) => string;
 		lienFiltre: (audience: string | null) => string;
 		lienLangue: (langue: Langue) => string;
+		/** La page est dans un cadre : le choix de la langue garde ce mode. */
+		integre?: boolean;
 		avecFiltres?: boolean;
 		/** L'onglet des prières, montré seulement si le module de l'organisation est allumé. */
 		avecPrieres?: boolean;
@@ -75,19 +83,7 @@
 		</nav>
 	{/if}
 
-	{#if langues.length > 1}
-		<nav class="langues" aria-label={mots.languagesLabel}>
-			{#each langues as autre (autre)}
-				<a
-					href={lienLangue(autre)}
-					hreflang={autre}
-					aria-current={autre === langue ? 'true' : undefined}
-				>
-					{NOM_DE_LANGUE[autre]}
-				</a>
-			{/each}
-		</nav>
-	{/if}
+	<ChoixDeLangue {slug} {langue} {langues} {lienLangue} {integre} />
 </header>
 
 <style>
@@ -123,8 +119,7 @@
 		border-radius: 0.375rem;
 		padding: 0 0.6rem;
 	}
-	.filtres a,
-	.langues a {
+	.filtres a {
 		font-size: 0.95rem;
 	}
 </style>

@@ -86,9 +86,11 @@ jour à la même étape.
 3. Les **filtres par public**, dans cet ordre : `Tous`, `Enfants`, `Jeunes`, `Femmes`, `Adultes`,
    `Ouvert à tous`. Le filtre actif est marqué. Un filtre est un lien, jamais une case à cocher. Les
    lecteurs d'écran entendent `Filtrer par public`. Il n'y a pas de filtre sur l'onglet `Prières`.
-4. Les **langues disponibles**, en toutes lettres : `Français`, `Deutsch`, `Italiano`, `English`,
-   `العربية`, celles que l'organisation publie. La langue courante est marquée. Chaque langue est un
-   lien vers la même vue dans cette langue.
+4. Le **choix de la langue**, depuis l'étape 21 une liste déroulante : l'étiquette `Langue`, la
+   liste des langues que l'organisation publie, en toutes lettres (`Français`, `Deutsch`,
+   `Italiano`, `English`, `العربية`), la langue courante choisie, puis le bouton `Changer`, qui mène
+   à la même vue dans cette langue, filtres compris. Sans JavaScript ; rien ne part au seul
+   changement de la liste. La page d'abonnement et la page d'un cours portent le même choix.
 
 ### Le pied, identique partout
 

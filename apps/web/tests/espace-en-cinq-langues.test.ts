@@ -279,33 +279,79 @@ describe('la langue du premier passage', () => {
 });
 
 describe('le choix de la langue', () => {
-	it('is a form on every screen of the socle, which works without JavaScript', async () => {
-		for (const chemin of ['/connexion', '/conditions', '/deconnexion', '/nulle-part']) {
-			const html = await (await get(chemin)).text();
-			const formulaire =
-				html.match(/<form\b[^>]*action="\/langue"[^>]*>[\s\S]*?<\/form>/)?.[0] ?? '';
-			expect(formulaire, chemin).toMatch(/method="post"/);
-			// Chaque langue écrite dans sa langue, et marquée comme telle pour les lecteurs d'écran.
-			const boutons = [...formulaire.matchAll(/<button\b([^>]*)>\s*([^<]*?)\s*<\/button>/g)].map(
+	/**
+	 * Le choix tel qu'un écran le rend : son étiquette, la liste déroulante qu'elle nomme, chaque
+	 * langue écrite dans sa langue et marquée comme telle pour les lecteurs d'écran, et le bouton qui
+	 * l'envoie (étape 21 : une liste au lieu de cinq boutons côte à côte).
+	 */
+	function choixDeLaLangue(html: string) {
+		const formulaire = html.match(/<form\b[^>]*action="\/langue"[^>]*>[\s\S]*?<\/form>/)?.[0] ?? '';
+		const liste = formulaire.match(/<select\b([^>]*)>([\s\S]*?)<\/select>/);
+		const pour = formulaire.match(/<label\b[^>]*\bfor="([^"]*)"[^>]*>\s*([^<]*?)\s*<\/label>/);
+		return {
+			formulaire,
+			etiquette: { pour: pour?.[1], texte: pour?.[2] },
+			liste: {
+				id: liste?.[1]?.match(/\bid="([^"]*)"/)?.[1],
+				nom: liste?.[1]?.match(/\bname="([^"]*)"/)?.[1]
+			},
+			options: [...(liste?.[2] ?? '').matchAll(/<option\b([^>]*)>\s*([^<]*?)\s*<\/option>/g)].map(
 				(trouve) => ({
 					valeur: trouve[1]?.match(/\bvalue="([^"]*)"/)?.[1],
 					langue: trouve[1]?.match(/\blang="([^"]*)"/)?.[1],
 					nom: trouve[2],
-					actuelle: /aria-current="true"/.test(trouve[1] ?? '')
+					choisie: /\sselected\b/.test(trouve[1] ?? '')
 				})
-			);
-			expect(boutons, chemin).toEqual([
-				{ valeur: 'fr', langue: 'fr', nom: 'Français', actuelle: true },
-				{ valeur: 'de', langue: 'de', nom: 'Deutsch', actuelle: false },
-				{ valeur: 'it', langue: 'it', nom: 'Italiano', actuelle: false },
-				{ valeur: 'en', langue: 'en', nom: 'English', actuelle: false },
-				{ valeur: 'ar', langue: 'ar', nom: 'العربية', actuelle: false }
+			),
+			boutons: [...formulaire.matchAll(/<button\b([^>]*)>\s*([^<]*?)\s*<\/button>/g)].map(
+				(trouve) => ({
+					type: trouve[1]?.match(/\btype="([^"]*)"/)?.[1],
+					nomme: /\bname=/.test(trouve[1] ?? ''),
+					texte: trouve[2]
+				})
+			)
+		};
+	}
+
+	it('is a drop-down list on every screen of the socle, which works without JavaScript', async () => {
+		for (const chemin of ['/connexion', '/conditions', '/deconnexion', '/nulle-part']) {
+			const html = await (await get(chemin)).text();
+			const choix = choixDeLaLangue(html);
+			expect(choix.formulaire, chemin).toMatch(/method="post"/);
+			// Une étiquette visible, liée à la liste : un lecteur d'écran annonce « Langue ».
+			expect(choix.etiquette, chemin).toEqual({ pour: 'choix-de-la-langue', texte: 'Langue' });
+			expect(choix.liste, chemin).toEqual({ id: 'choix-de-la-langue', nom: 'language' });
+			// Chaque langue écrite dans sa langue, et marquée comme telle pour les lecteurs d'écran.
+			expect(choix.options, chemin).toEqual([
+				{ valeur: 'fr', langue: 'fr', nom: 'Français', choisie: true },
+				{ valeur: 'de', langue: 'de', nom: 'Deutsch', choisie: false },
+				{ valeur: 'it', langue: 'it', nom: 'Italiano', choisie: false },
+				{ valeur: 'en', langue: 'en', nom: 'English', choisie: false },
+				{ valeur: 'ar', langue: 'ar', nom: 'العربية', choisie: false }
 			]);
-			expect(formulaire, chemin).toMatch(/name="language"/);
+			// Un seul bouton, qui envoie la liste : sans JavaScript, rien ne part au changement.
+			expect(choix.boutons, chemin).toEqual([{ type: 'submit', nomme: false, texte: 'Changer' }]);
 			// Il revient sur l'écran d'où il part.
-			expect(formulaire, chemin).toContain(`name="returnTo" value="${chemin}"`);
+			expect(choix.formulaire, chemin).toContain(`name="returnTo" value="${chemin}"`);
 		}
 	});
+
+	it.each([
+		['de-CH,de;q=0.9', 'de', 'Sprache', 'Ändern'],
+		['it-CH,it;q=0.9', 'it', 'Lingua', 'Cambia'],
+		['en-GB,en;q=0.9', 'en', 'Language', 'Change'],
+		['ar-MA,ar;q=0.9', 'ar', 'اللغة', 'تغيير']
+	] as const)(
+		'names the list and its button in the language of the screen (%s)',
+		async (navigateur, langue, etiquette, bouton) => {
+			const choix = choixDeLaLangue(await (await get('/connexion', { navigateur })).text());
+			expect(choix.etiquette.texte).toBe(etiquette);
+			expect(choix.boutons.map((trouve) => trouve.texte)).toEqual([bouton]);
+			expect(
+				choix.options.filter((option) => option.choisie).map((option) => option.valeur)
+			).toEqual([langue]);
+		}
+	);
 
 	it('keeps the choice on this browser before signing in, above what the browser asks', async () => {
 		const reponse = await postForm('/langue', { language: 'it', returnTo: '/connexion' });

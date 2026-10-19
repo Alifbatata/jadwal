@@ -4,7 +4,6 @@
 		direction,
 		LOCALE_DE_PARTAGE,
 		longDate,
-		NOM_DE_LANGUE,
 		numericDate,
 		t,
 		type Langue
@@ -12,6 +11,7 @@
 	import { lienAgenda, lienCours, lienVue } from '$lib/public/liens.js';
 	import { PARAMETRE_APPAREIL, TOUS_LES_CHOIX } from '$lib/public/abonnement.js';
 	import Abonnement from '$lib/public/Abonnement.svelte';
+	import ChoixDeLangue from '$lib/public/ChoixDeLangue.svelte';
 	import Pied from '$lib/public/Pied.svelte';
 	import { variablesAccent } from '$lib/couleur.js';
 	import {
@@ -173,19 +173,13 @@
 			<a href={lienVue(adresse)}>{mots.backToProgramme}</a>
 		</p>
 
-		{#if data.langues.length > 1}
-			<nav class="langues" aria-label={mots.languagesLabel}>
-				{#each data.langues as autre (autre)}
-					<a
-						href={versLangue(autre)}
-						hreflang={autre}
-						aria-current={autre === data.langue ? 'true' : undefined}
-					>
-						{NOM_DE_LANGUE[autre]}
-					</a>
-				{/each}
-			</nav>
-		{/if}
+		<ChoixDeLangue
+			slug={data.organisation.slug}
+			langue={data.langue}
+			langues={data.langues}
+			lienLangue={versLangue}
+			integre={data.integre}
+		/>
 	</main>
 
 	<Pied langue={data.langue} lienAgenda={lienAgenda(adresse)} integre={data.integre} />
@@ -206,8 +200,7 @@
 		margin: 0 0 0.5rem;
 	}
 	.fil a,
-	.liens a,
-	.langues a {
+	.liens a {
 		color: #0f5c55;
 		min-height: 44px;
 		display: inline-flex;
@@ -258,11 +251,5 @@
 	}
 	.vide {
 		color: #555;
-	}
-	.langues {
-		display: flex;
-		gap: 0.75rem;
-		flex-wrap: wrap;
-		font-size: 0.95rem;
 	}
 </style>

@@ -242,10 +242,13 @@ interface Dictionnaire {
 	/** Le lien du pied vers les conditions d'utilisation, qui n'existent qu'en français. */
 	readonly terms: string;
 	/**
-	 * Le nom de la liste des langues, pour les lecteurs d'écran (`aria-label`). Il était écrit
-	 * « Langues » dans les trois gabarits, et donc annoncé en français sur une page arabe.
+	 * L'étiquette du choix de la langue, une liste déroulante depuis l'étape 21. Le nom de l'ancienne
+	 * liste de liens était écrit « Langues » dans les trois gabarits, et donc annoncé en français sur
+	 * une page arabe.
 	 */
-	readonly languagesLabel: string;
+	readonly languageLabel: string;
+	/** Le bouton qui envoie ce choix : sans JavaScript, rien ne part au changement de la liste. */
+	readonly languageSubmit: string;
 	/**
 	 * Le nom des deux autres listes de liens de l'en-tête, pour les lecteurs d'écran : les vues
 	 * (semaine, tous les cours, mois) et les publics. Elles portaient le nom de leur premier lien,
@@ -470,7 +473,8 @@ const fr: Dictionnaire = {
 		'Ouvrez Outlook sur le web, allez dans Calendrier, Ajouter un calendrier, S’abonner à partir du Web, collez l’adresse, donnez-lui un nom, puis importez.',
 	offeredBy: 'Proposé gratuitement par jadwal, un service de Voltia',
 	terms: 'Conditions d’utilisation',
-	languagesLabel: 'Langues',
+	languageLabel: 'Langue',
+	languageSubmit: 'Changer',
 	viewsLabel: 'Affichage',
 	audiencesLabel: 'Filtrer par public',
 	newTab: 's’ouvre dans un nouvel onglet',
@@ -631,7 +635,8 @@ const de: Dictionnaire = {
 		'Öffnen Sie Outlook im Web, gehen Sie zu Kalender, Kalender hinzufügen, Aus dem Internet abonnieren, fügen Sie die Adresse ein, geben Sie einen Namen ein und importieren Sie.',
 	offeredBy: 'Kostenlos bereitgestellt von jadwal, einem Dienst von Voltia',
 	terms: 'Nutzungsbedingungen',
-	languagesLabel: 'Sprachen',
+	languageLabel: 'Sprache',
+	languageSubmit: 'Ändern',
 	viewsLabel: 'Ansicht',
 	audiencesLabel: 'Nach Zielgruppe filtern',
 	newTab: 'öffnet sich in einem neuen Tab',
@@ -793,7 +798,8 @@ const it: Dictionnaire = {
 		'Apri Outlook sul web, vai su Calendario, Aggiungi calendario, Iscriviti dal Web, incolla l’indirizzo, dagli un nome e importa.',
 	offeredBy: 'Offerto gratuitamente da jadwal, un servizio di Voltia',
 	terms: 'Condizioni d’uso',
-	languagesLabel: 'Lingue',
+	languageLabel: 'Lingua',
+	languageSubmit: 'Cambia',
 	viewsLabel: 'Visualizzazione',
 	audiencesLabel: 'Filtra per pubblico',
 	newTab: 'si apre in una nuova scheda',
@@ -953,7 +959,8 @@ const en: Dictionnaire = {
 		'Open Outlook on the web, go to Calendar, Add calendar, Subscribe from web, paste the address, give it a name, then import.',
 	offeredBy: 'Provided free of charge by jadwal, a service from Voltia',
 	terms: 'Terms of use',
-	languagesLabel: 'Languages',
+	languageLabel: 'Language',
+	languageSubmit: 'Change',
 	viewsLabel: 'View',
 	audiencesLabel: 'Filter by group',
 	newTab: 'opens in a new tab',
@@ -1138,7 +1145,8 @@ const ar: Dictionnaire = {
 		'افتح Outlook على الويب، اذهب إلى التقويم، إضافة تقويم، الاشتراك من الويب، الصق العنوان، سمِّه، ثم استورد.',
 	offeredBy: 'مقدَّم مجانًا من jadwal، خدمة من Voltia',
 	terms: 'شروط الاستخدام',
-	languagesLabel: 'اللغات',
+	languageLabel: 'اللغة',
+	languageSubmit: 'تغيير',
 	viewsLabel: 'طريقة العرض',
 	audiencesLabel: 'تصفية حسب الفئة',
 	newTab: 'يُفتح في علامة تبويب جديدة',

@@ -785,6 +785,17 @@ const NOM_DE_LANGUE = {
 	ar: 'العربية'
 };
 /**
+ * L'étiquette du choix de la langue et le bouton qui l'envoie, dans chaque langue de l'écran
+ * (étape 21 : une liste déroulante au lieu des langues côte à côte ; `i18n/common.ts`, `i18n.ts`).
+ */
+const TEXTES_DU_CHOIX = {
+	fr: { etiquette: 'Langue', bouton: 'Changer' },
+	de: { etiquette: 'Sprache', bouton: 'Ändern' },
+	it: { etiquette: 'Lingua', bouton: 'Cambia' },
+	en: { etiquette: 'Language', bouton: 'Change' },
+	ar: { etiquette: 'اللغة', bouton: 'تغيير' }
+};
+/**
  * Ce que la page publique écrit, langue par langue (`apps/web/src/lib/i18n.ts`) : le lien du pied,
  * l'annonce du nouvel onglet que ce lien porte pour les lecteurs d'écran, la marque d'une séance
  * annulée, le début des deux mentions d'une séance déplacée, au départ et à l'arrivée, et la page
@@ -1805,28 +1816,42 @@ async function demanderUnLien(page, adresse) {
 /** Le choix de la langue en haut de l'écran (retour D2) : un formulaire, qui marche sans script. */
 const choixDeLaLangue = (page) => page.locator('header form[action="/langue"]');
 
-/** Choisir une langue dans ce choix : la page se recharge dans cette langue. */
+/**
+ * Choisir une langue dans ce choix, puis l'envoyer : la page se recharge dans cette langue. Depuis
+ * l'étape 21, une liste déroulante et son bouton ; une image plus ancienne a encore cinq boutons, un
+ * par langue, et le parcours la joue aussi.
+ */
 async function choisirLaLangue(page, langue) {
-	await envoyer(page, choixDeLaLangue(page).locator(`button[value="${langue}"]`));
+	const choix = choixDeLaLangue(page);
+	const liste = choix.locator('select[name="language"]');
+	if ((await liste.count()) === 0) {
+		await envoyer(page, choix.locator(`button[value="${langue}"]`));
+		return;
+	}
+	await liste.selectOption(langue);
+	await envoyer(page, choix.locator('button[type="submit"]'));
 }
 
 /**
- * Ce que le choix de la langue montre sur un écran : les cinq langues, chacune écrite dans sa
- * langue et marquée comme telle, et la langue de l'écran désignée comme choisie.
+ * Ce que le choix de la langue montre sur un écran (étape 21) : une liste déroulante nommée par son
+ * étiquette, les cinq langues, chacune écrite dans sa langue et marquée comme telle, la langue de
+ * l'écran choisie, et un seul bouton pour l'envoyer.
  */
 async function choixPresent(page, langue) {
-	const boutons = choixDeLaLangue(page).locator('button[name="language"]');
-	const vus = [];
-	for (let index = 0; index < (await boutons.count()); index += 1) {
-		const bouton = boutons.nth(index);
-		vus.push({
-			valeur: await bouton.getAttribute('value'),
-			lang: await bouton.getAttribute('lang'),
-			texte: (await bouton.textContent())?.trim(),
-			courant: (await bouton.getAttribute('aria-current')) === 'true'
-		});
-	}
+	const choix = choixDeLaLangue(page);
+	const liste = choix.getByLabel(TEXTES_DU_CHOIX[langue].etiquette, { exact: true });
+	if ((await liste.count()) !== 1) return false;
+	const vus = await liste.locator('option').evaluateAll((options) =>
+		options.map((option) => ({
+			valeur: option.value,
+			lang: option.lang,
+			texte: option.textContent?.trim(),
+			courant: option.selected
+		}))
+	);
+	const boutons = choix.locator('button');
 	return (
+		(await liste.getAttribute('name')) === 'language' &&
 		vus.length === LANGUES.length &&
 		vus.every(
 			(vu, index) =>
@@ -1834,7 +1859,9 @@ async function choixPresent(page, langue) {
 				vu.lang === LANGUES[index] &&
 				vu.texte === NOM_DE_LANGUE[LANGUES[index]] &&
 				vu.courant === (vu.valeur === langue)
-		)
+		) &&
+		(await boutons.count()) === 1 &&
+		(await boutons.textContent())?.trim() === TEXTES_DU_CHOIX[langue].bouton
 	);
 }
 

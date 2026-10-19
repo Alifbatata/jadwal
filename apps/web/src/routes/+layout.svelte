@@ -85,22 +85,22 @@
 			<!-- Le choix de la langue, en haut de chaque écran de l'espace, connexion, erreurs et
 			     super-admin compris (retour D2). Un vrai formulaire, qui marche sans JavaScript et
 			     revient sur cet écran ; chaque langue est écrite dans sa propre langue, pour qu'on
-			     trouve la sienne sans lire celle de la page. -->
+			     trouve la sienne sans lire celle de la page.
+			     Depuis l'étape 21, une liste déroulante au lieu de cinq boutons côte à côte, et un
+			     bouton qui l'envoie. Rien ne part au seul changement de la liste, même avec
+			     JavaScript : au clavier, une flèche change déjà la valeur, et la page se rechargerait
+			     sur la première langue parcourue (WCAG 3.2.2). -->
 			<form class="langues" method="post" action="/langue">
 				<input type="hidden" name="returnTo" value={returnTo} />
-				<span class="langues-titre" id="choix-de-la-langue">{text.language}</span>
-				<span class="langues-choix" role="group" aria-labelledby="choix-de-la-langue">
+				<label for="choix-de-la-langue">{text.language}</label>
+				<select id="choix-de-la-langue" name="language">
 					{#each LANGUES as choice (choice)}
-						<button
-							type="submit"
-							name="language"
-							value={choice}
-							lang={choice}
-							aria-current={choice === language ? 'true' : undefined}
-							>{NOM_DE_LANGUE[choice]}</button
+						<option value={choice} lang={choice} selected={choice === language}
+							>{NOM_DE_LANGUE[choice]}</option
 						>
 					{/each}
-				</span>
+				</select>
+				<button type="submit">{text.languageSubmit}</button>
 			</form>
 			<a class="marque" href={resolve('/')}>jadwal</a>
 			<!-- Sans les conditions acceptées, pas de navigation : chacun de ses liens ramènerait à
@@ -276,23 +276,21 @@
 		gap: 0.25rem 0.5rem;
 		font-size: 0.9rem;
 	}
-	.langues-titre {
+	.langues label {
 		color: #4a5560;
 	}
-	.langues-choix {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.25rem;
+	/* La liste a la hauteur et la forme du bouton qui l'envoie, 44 px au moins. */
+	.langues select {
+		min-height: 44px;
+		font: inherit;
+		color: inherit;
+		padding: 0 0.5rem;
+		border: 1px solid #c8ced4;
+		border-radius: 0.375rem;
+		background: #fff;
 	}
 	.langues button {
 		border-color: #c8ced4;
-	}
-	/* La langue en cours : le fond d'accent et la graisse, pas la couleur seule (WCAG 1.4.1). */
-	.langues button[aria-current] {
-		font-weight: 700;
-		background: var(--accent);
-		border-color: var(--accent);
-		color: var(--accent-texte);
 	}
 	/* Hors de la vue, pas hors de l'arbre d'accessibilité, comme au pied des pages publiques. */
 	.pour-lecteur {

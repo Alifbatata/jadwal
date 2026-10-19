@@ -1,15 +1,9 @@
 <script lang="ts">
-	import {
-		annonceNouvelOnglet,
-		direction,
-		LOCALE_DE_PARTAGE,
-		NOM_DE_LANGUE,
-		t,
-		type Langue
-	} from '$lib/i18n.js';
+	import { annonceNouvelOnglet, direction, LOCALE_DE_PARTAGE, t, type Langue } from '$lib/i18n.js';
 	import { lienAgenda, lienCours, lienVue } from '$lib/public/liens.js';
 	import { lienGoogleAgenda, PARAMETRE_APPAREIL, TOUS_LES_CHOIX } from '$lib/public/abonnement.js';
 	import Abonnement from '$lib/public/Abonnement.svelte';
+	import ChoixDeLangue from '$lib/public/ChoixDeLangue.svelte';
 	import Pied from '$lib/public/Pied.svelte';
 	import { variablesAccent } from '$lib/couleur.js';
 
@@ -75,19 +69,13 @@
 	<header>
 		<h1>{mots.subscribeTitle}</h1>
 		<p class="fil"><a href={lienVue(adresse)}>{data.organisation.name}</a></p>
-		{#if data.langues.length > 1}
-			<nav class="langues" aria-label={mots.languagesLabel}>
-				{#each data.langues as autre (autre)}
-					<a
-						href={versLangue(autre)}
-						hreflang={autre}
-						aria-current={autre === data.langue ? 'true' : undefined}
-					>
-						{NOM_DE_LANGUE[autre]}
-					</a>
-				{/each}
-			</nav>
-		{/if}
+		<ChoixDeLangue
+			slug={data.organisation.slug}
+			langue={data.langue}
+			langues={data.langues}
+			lienLangue={versLangue}
+			integre={data.integre}
+		/>
 	</header>
 
 	<!-- Le contenu principal, entre l'en-tête et le pied : sans lui, axe relevait chaque section. -->
@@ -189,18 +177,11 @@
 		margin: 0.25rem 0;
 		font-size: 0.9rem;
 	}
-	.fil a,
-	.langues a {
+	.fil a {
 		color: #0f5c55;
 		min-height: 44px;
 		display: inline-flex;
 		align-items: center;
-	}
-	.langues {
-		display: flex;
-		gap: 0.75rem;
-		flex-wrap: wrap;
-		font-size: 0.95rem;
 	}
 	ul.cours {
 		margin: 0;

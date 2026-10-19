@@ -55,7 +55,8 @@ donnée, n'écrit rien nulle part.
   « précédent » du visiteur ne sort plus de la page de l'organisation. C'est le défaut le plus
   reproché aux intégrations par cadre. Le mode intégré navigue donc **par remplacement**
   (`location.replace`), ce qui n'ajoute rien — au prix assumé de ne plus avoir de « précédent » à
-  l'intérieur du widget.
+  l'intérieur du widget. Depuis l'étape 21, l'envoi du choix de la langue, un formulaire `GET`,
+  est remplacé de la même façon (ADR 0027, addendum du 19.10.2026).
 - **Une ancre interne ne fait rien** dans un cadre dimensionné à son contenu : il n'y a plus rien à
   faire défiler à l'intérieur, et le navigateur ne fait pas défiler la page hôte. Les pages
   publiques n'ont aujourd'hui aucun lien d'ancre ; il ne faut pas en ajouter.

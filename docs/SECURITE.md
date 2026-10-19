@@ -155,7 +155,9 @@ passage. Le formulaire (`POST /langue`) ne renvoie jamais vers un autre site : l
 est vérifié avant et après sa normalisation, parce que `/.//ailleurs` devient `//ailleurs`, qu'un
 navigateur lit comme une autre origine. Un envoi depuis un autre site est refusé par SvelteKit.
 Chaque réponse de l'espace porte `Vary: Accept-Language, Cookie`. Le côté public ne lit aucun de
-ces cookies.
+ces cookies. Son choix de la langue, un formulaire `GET` depuis l'étape 21, passe par
+`/m/<identifiant>/langue`, qui ne renvoie qu'à une adresse sous `/m/<identifiant>`, sur ce service,
+lue après sa normalisation : tout le reste mène à la page de l'organisation (ADR 0027).
 
 **L'appareil, lu pour deux pages publiques.** La page d'abonnement au calendrier et la page d'un
 cours lisent `Sec-CH-UA-Platform`, sinon `User-Agent`, pour proposer d'abord le bouton d'agenda qui

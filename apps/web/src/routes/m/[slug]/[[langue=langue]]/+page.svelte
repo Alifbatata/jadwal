@@ -173,9 +173,9 @@
 		<meta property="og:locale:alternate" content={LOCALE_DE_PARTAGE[autre]} />
 	{/each}
 	<meta property="og:url" content={data.canonical} />
-	<!-- L'adresse canonique et les versions linguistiques, en absolu (ADR 0029). Les liens du
-	     sélecteur de langue ne les remplacent pas : un `hreflang` sur un `<a>` n'est pas une
-	     annotation de version linguistique. -->
+	<!-- L'adresse canonique et les versions linguistiques, en absolu (ADR 0029). Le choix de la
+	     langue, une liste déroulante depuis l'étape 21, ne les remplace pas : seules ces balises
+	     sont des annotations de version linguistique. -->
 	<link rel="canonical" href={data.canonical} />
 	{#each data.alternates as autre (autre.hreflang)}
 		<link rel="alternate" hreflang={autre.hreflang} href={autre.href} />
@@ -190,6 +190,7 @@
 	data-jadwal-embed={data.integre ? '' : undefined}
 >
 	<Entete
+		slug={data.organisation.slug}
 		nom={data.organisation.name}
 		langue={data.langue}
 		langues={data.langues}
@@ -198,6 +199,7 @@
 		lienVue={(vue) => vers({ vue })}
 		lienFiltre={(audience) => vers({ public: audience })}
 		lienLangue={(autre) => vers({ langue: autre })}
+		integre={data.integre}
 		avecFiltres={data.vue !== 'prieres'}
 		avecPrieres={data.avecPrieres}
 	>

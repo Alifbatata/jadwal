@@ -49,7 +49,8 @@ il garde la langue de son adresse, et ne lit aucun cookie.
 
 Un formulaire en tête de chaque écran de l'espace, `POST /langue`, sans JavaScript. Chaque langue y
 est écrite dans sa langue (`Français`, `Deutsch`, `Italiano`, `English`, `العربية`), et la langue en
-cours est marquée.
+cours est marquée. Depuis l'étape 21, c'est une liste déroulante et son bouton, et non plus cinq
+boutons côte à côte (addendum du 19.10.2026, plus bas).
 
 - **Connectée**, la personne change la langue de son compte, et le cookie avec elle.
 - **Pas encore connectée**, elle pose le cookie `jadwal_language`, et un second cookie,
@@ -189,10 +190,26 @@ formulaire, celle de son écran d'abord (ADR 0017, addendum du 27.09.2026). Le c
 une langue qui vient de la requête ou du formulaire, jamais d'un compte lu par son adresse. Le lien
 de connexion part, lui, dans la langue de l'écran d'où il est demandé, comme avant.
 
+## Addendum du 19.10.2026 : une liste déroulante (étape 21)
+
+Décision du chef de projet : le choix de la langue est une liste déroulante, partout où il paraît,
+au lieu des langues côte à côte. Dans l'espace, connexion, erreurs et super-admin compris :
+
+- l'étiquette `Langue` (`Sprache`, `Lingua`, `Language`, `اللغة`), liée à la liste ;
+- la liste `language`, les cinq langues dans le même ordre, chacune écrite dans sa langue et marquée
+  par `lang`, celle de l'écran choisie ;
+- un seul bouton, `Changer` (`Ändern`, `Cambia`, `Change`, `تغيير`), qui envoie le formulaire.
+
+Ce qui arrive au serveur ne change pas : `language` et `returnTo`, sur `POST /langue`. **Rien ne
+part au seul changement de la liste, même avec JavaScript** : au clavier, une flèche change déjà la
+valeur, et la page se rechargerait sur la première langue parcourue, ce que le critère 3.2.2 des
+WCAG (« Saisie ») interdit sans avertissement. Le bouton coûte un clic de plus ; il ne surprend
+personne. Les pages publiques ont le même choix (ADR 0027, addendum du même jour).
+
 ## Statut
 
 Accepté, 2026-09-26. Étape 18, retours D2 (l'espace en cinq langues) et D3 (la langue des
 courriels). Révisé le même jour, à la fin de l'étape : le choix fait avant la connexion part avec le
 lien de connexion, et la règle exacte de son départ est écrite. Complété le 27.09.2026 (étape 19) :
 l'écran d'arrivée du lien ne porte plus la langue, et la personne qui invite choisit la langue de
-l'invitation.
+l'invitation. Complété le 19.10.2026 (étape 21) : le choix est une liste déroulante.

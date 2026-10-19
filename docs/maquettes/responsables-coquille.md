@@ -14,10 +14,12 @@ Dans cet ordre :
 1. **La bannière du super-admin**, seulement quand il est entré dans une organisation par ses
    pouvoirs : `Vous travaillez dans <organisation> avec vos pouvoirs de super-admin.`, puis le lien
    `Changer d'organisation`, vers la console.
-2. **Le choix de la langue** : le titre `Langue`, puis cinq boutons, chacun écrit dans sa langue :
-   `Français`, `Deutsch`, `Italiano`, `English`, `العربية`. La langue en cours est marquée. C'est un
-   vrai formulaire (`POST /langue`), qui marche sans JavaScript et revient sur le même écran. Il est
-   là sur chaque écran, connexion, erreurs et super-admin compris.
+2. **Le choix de la langue** : l'étiquette `Langue`, puis une liste déroulante des cinq langues,
+   chacune écrite dans sa langue : `Français`, `Deutsch`, `Italiano`, `English`, `العربية`. La
+   langue en cours y est choisie. Puis le bouton `Changer`. C'est un vrai formulaire
+   (`POST /langue`), qui marche sans JavaScript et revient sur le même écran ; rien ne part au seul
+   changement de la liste. Il est là sur chaque écran, connexion, erreurs et super-admin compris.
+   Jusqu'à l'étape 20, c'étaient cinq boutons côte à côte.
 3. **La marque** `jadwal`, lien vers l'accueil de l'espace.
 4. **La navigation**, une fois les conditions acceptées :
    - pour tous : `À venir`, `Cours`, `Prière du vendredi` (si les heures de prière sont activées),

@@ -167,7 +167,7 @@ describe('les langues de l’écran Réglages', () => {
 		// La page publique propose l'anglais, sous son nom anglais, et l'annonce aux moteurs.
 		const { statut, html } = await servir(`/m/${SLUG}`);
 		expect(statut).toBe(200);
-		expect(html).toMatch(/<a\b[^>]*hreflang="en"[^>]*>\s*English\s*<\/a>/);
+		expect(html).toMatch(/<option\b[^>]*\blang="en"[^>]*>\s*English\s*<\/option>/);
 		expect(html).toMatch(/<link\b[^>]*rel="alternate"[^>]*hreflang="en"/);
 	});
 

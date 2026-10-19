@@ -35,8 +35,10 @@ interface CommonTexts {
 	 * est mis en valeur entre les deux ; les cinq langues le placent au même endroit de la phrase.
 	 */
 	readonly superAdminBanner: { readonly before: string; readonly after: string };
-	/** Le titre du choix de la langue, en haut de chaque écran. */
+	/** L’étiquette du choix de la langue, une liste déroulante en haut de chaque écran. */
 	readonly language: string;
+	/** Le bouton qui envoie ce choix : sans JavaScript, rien ne part au changement de la liste. */
+	readonly languageSubmit: string;
 	/**
 	 * Ce que la coquille dit, sur l'écran où elle arrive, à une responsable qui vient de se donner le
 	 * rôle d'éditeur : l'écran Membres ne lui est plus ouvert (`routes/membres/self-editor.ts`).
@@ -71,6 +73,7 @@ export const commonTexts: Translations<CommonTexts> = {
 			after: 'avec vos pouvoirs de super-admin.'
 		},
 		language: 'Langue',
+		languageSubmit: 'Changer',
 		becameEditor:
 			'Vous avez maintenant le rôle d’éditeur. Les écrans réservés aux responsables, comme Membres et Réglages, ne vous sont plus ouverts. Pour les retrouver, demandez à une autre personne responsable de vous redonner le rôle de responsable.',
 		roles: { org_admin: 'responsable', editor: 'éditeur' },
@@ -100,6 +103,7 @@ export const commonTexts: Translations<CommonTexts> = {
 			after: 'mit Ihren Super-Admin-Rechten.'
 		},
 		language: 'Sprache',
+		languageSubmit: 'Ändern',
 		becameEditor:
 			'Sie haben jetzt die Rolle «Redaktion». Die Seiten, die der Leitung vorbehalten sind, zum Beispiel «Mitglieder» und «Einstellungen», stehen Ihnen nicht mehr offen. Um sie wieder zu öffnen, bitten Sie eine andere Person in der Leitung, Ihnen die Rolle «Leitung» zurückzugeben.',
 		roles: { org_admin: 'Leitung', editor: 'Redaktion' },
@@ -129,6 +133,7 @@ export const commonTexts: Translations<CommonTexts> = {
 			after: 'con i tuoi poteri di super-admin.'
 		},
 		language: 'Lingua',
+		languageSubmit: 'Cambia',
 		becameEditor:
 			'Ora hai il ruolo di redattore. Le pagine riservate ai responsabili, come Membri e Impostazioni, non ti sono più accessibili. Per riaverle, chiedi a un altro responsabile di ridarti il ruolo di responsabile.',
 		roles: { org_admin: 'responsabile', editor: 'redattore' },
@@ -158,6 +163,7 @@ export const commonTexts: Translations<CommonTexts> = {
 			after: 'with your super admin powers.'
 		},
 		language: 'Language',
+		languageSubmit: 'Change',
 		becameEditor:
 			'You now have the editor role. The screens reserved for managers, such as Members and Settings, are no longer open to you. To get them back, ask another manager to give you the manager role again.',
 		roles: { org_admin: 'manager', editor: 'editor' },
@@ -187,6 +193,7 @@ export const commonTexts: Translations<CommonTexts> = {
 			after: 'بصلاحيات المشرف العام.'
 		},
 		language: 'اللغة',
+		languageSubmit: 'تغيير',
 		becameEditor:
 			'لديك الآن دور المحرر. لم تعد الصفحات الخاصة بالمسؤولين، مثل «الأعضاء» و«الإعدادات»، مفتوحة لك. لاستعادتها، اطلب من مسؤول آخر أن يمنحك دور المسؤول من جديد.',
 		roles: { org_admin: 'مسؤول', editor: 'محرر' },

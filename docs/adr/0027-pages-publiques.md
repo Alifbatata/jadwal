@@ -136,9 +136,32 @@ Les décisions du chef de projet sur les langues des pages publiques.
   Outlook pour les comptes de travail ou d'école, `outlook.office.com` (ADR 0048, addendum du même
   jour) : le test admet ces trois domaines pour un lien `<a>` vers ailleurs, et aucune ressource.
 
+## Addendum du 19.10.2026 : le choix de la langue en liste déroulante (étape 21)
+
+Décision du chef de projet : le choix de la langue est une liste déroulante, comme dans l'espace
+(ADR 0047, addendum du même jour), au lieu des langues côte à côte. Dans les trois gabarits qui le
+portent (l'en-tête des vues, l'abonnement, la page d'un cours) :
+
+- **un formulaire `GET`, sans JavaScript** : l'étiquette `Langue` dans la langue de la page, la liste
+  `vers` des langues que l'organisation publie, chacune écrite dans sa langue et marquée par `lang`,
+  celle de la page choisie, et le bouton `Changer`. Rien ne part au seul changement de la liste
+  (WCAG 3.2.2) ;
+- **chaque choix est l'adresse de la page dans cette langue**, celle que le lien d'avant donnait,
+  vue et filtres compris, en absolu. La langue reste dans le chemin : une langue par lien,
+  partageable telle quelle ;
+- **la route `/m/<identifiant>/langue` y renvoie** (`303`), et seulement si l'adresse reste sous
+  `/m/<identifiant>`, sur ce service. Un autre site, une autre organisation, l'espace des
+  responsables, un chemin qui remonte, ou rien : la page de l'organisation ;
+- **dans un cadre**, un champ caché garde le mode intégré, et `embed.js` fait de l'envoi un
+  remplacement, comme pour un lien (ADR 0005) : le choix n'ajoute rien à l'historique du site.
+
+Les liens du sélecteur portaient `hreflang` ; ce n'était pas une annotation de version linguistique
+(ADR 0029), et les balises `<link rel="alternate">` de `<head>` et le plan du site, qui en sont,
+ne changent pas.
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 5 de la feuille de route. Met en œuvre les ADR 0007 (langues) et 0009
 (vie privée) du côté public. Amendé le 2026-09-21 (le script du mode intégré) et le 2026-09-26
 (cinq langues, l'agenda selon l'appareil, deux liens vers des services d'agenda). Complété le
-27.09.2026 (addendum ci-dessus).
+27.09.2026 et le 19.10.2026 (addendums ci-dessus).

@@ -631,11 +631,11 @@ describe('une page publique en anglais britannique', () => {
 		for (const mot of ['Semaine', 'Tous les cours', 'S’abonner', 'Proposé gratuitement', 'avant']) {
 			expect(lu, mot).not.toContain(mot);
 		}
-		// La liste des langues porte son nom dans la langue de la page, et plus « Langues » partout.
-		expect(html).toContain('aria-label="Languages"');
-		expect(html).not.toContain('aria-label="Langues"');
+		// Le choix de la langue porte son étiquette dans la langue de la page, et plus « Langue ».
+		expect(html).toMatch(/<label for="choix-de-la-langue">\s*Language\s*<\/label>/);
+		expect(lu).not.toContain('Langue');
 		// Le choix de langue propose l'anglais, sous son nom anglais.
-		expect(html).toMatch(/<a\b[^>]*hreflang="en"[^>]*>\s*English\s*<\/a>/);
+		expect(html).toMatch(/<option\b[^>]*\blang="en"[^>]*>\s*English\s*<\/option>/);
 	});
 
 	it('explains the subscription in English', async () => {
@@ -885,33 +885,135 @@ describe('les dates du public', () => {
 });
 
 /**
- * Le nom de la liste des langues, dans chacun des trois gabarits qui la portent : l'en-tête des
- * vues, l'abonnement et la page d'un cours. Il était écrit « Langues » en dur dans les trois, donc
- * annoncé en français sur une page arabe ; seul l'en-tête était vérifié.
+ * Le choix de la langue, dans chacun des trois gabarits qui le portent : l'en-tête des vues,
+ * l'abonnement et la page d'un cours. Depuis l'étape 21, une liste déroulante au lieu des langues
+ * côte à côte : un formulaire `GET`, sans JavaScript, dont chaque choix est l'adresse de la même page
+ * dans cette langue, et un bouton qui l'envoie. Son étiquette est dans la langue de la page : le nom
+ * de l'ancienne liste de liens était écrit « Langues » en dur dans les trois gabarits, donc annoncé en
+ * français sur une page arabe.
  */
-describe('le nom de la liste des langues', () => {
-	const NOMS = {
-		fr: 'Langues',
-		de: 'Sprachen',
-		it: 'Lingue',
-		en: 'Languages',
-		ar: 'اللغات'
+describe('le choix de la langue des pages publiques', () => {
+	const MOTS = {
+		fr: { etiquette: 'Langue', bouton: 'Changer' },
+		de: { etiquette: 'Sprache', bouton: 'Ändern' },
+		it: { etiquette: 'Lingua', bouton: 'Cambia' },
+		en: { etiquette: 'Language', bouton: 'Change' },
+		ar: { etiquette: 'اللغة', bouton: 'تغيير' }
 	} as const;
+	const NOMS = { fr: 'Français', de: 'Deutsch', it: 'Italiano', en: 'English', ar: 'العربية' };
+	const LANGUES_PUBLIEES = Object.keys(MOTS) as (keyof typeof MOTS)[];
 	const base = (langue: string) => (langue === 'fr' ? `/m/${SLUG}` : `/m/${SLUG}/${langue}`);
-	const CAS = (Object.keys(NOMS) as (keyof typeof NOMS)[]).flatMap((langue) =>
+	const CAS = LANGUES_PUBLIEES.flatMap((langue) =>
 		['', '/agenda', `/cours/${COURS.borne}`].map((suite) => ({
 			langue,
+			suite,
 			chemin: `${base(langue)}${suite}`,
-			nom: NOMS[langue]
+			...MOTS[langue]
 		}))
 	);
 
-	it.each(CAS)('is « $nom » on $chemin', async ({ chemin, nom }) => {
-		const { statut, html } = await servir(chemin);
-		expect(statut).toBe(200);
-		const listes = [...html.matchAll(/<nav\b[^>]*\bclass="langues\b[^"]*"[^>]*>/g)];
-		expect(listes, 'une seule liste des langues').toHaveLength(1);
-		expect(attributs(listes[0]?.[0] ?? '')['aria-label']).toBe(nom);
+	it.each(CAS)(
+		'is a drop-down list labelled « $etiquette » on $chemin',
+		async ({ langue, suite, chemin, etiquette, bouton }) => {
+			const { statut, html } = await servir(chemin);
+			expect(statut).toBe(200);
+			const formulaires = [
+				...html.matchAll(/<form\b[^>]*\bclass="langues\b[^"]*"[^>]*>[\s\S]*?<\/form>/g)
+			].map((trouve) => trouve[0]);
+			expect(formulaires, 'un seul choix de la langue').toHaveLength(1);
+			const formulaire = formulaires[0] ?? '';
+			const ouvrante = attributs(formulaire.match(/^<form\b[^>]*>/)?.[0] ?? '');
+			expect(ouvrante['method']).toBe('get');
+			// L'adresse rendue est relative à la page, comme toutes celles de SvelteKit : on vérifie ce
+			// qu'un navigateur en fait.
+			expect(new URL(ouvrante['action'] ?? '', `${origin}${chemin}`).pathname).toBe(
+				`/m/${SLUG}/langue`
+			);
+			// Plus de liste de liens : rien ne reste de l'ancienne navigation.
+			expect(html).not.toMatch(/<nav\b[^>]*\bclass="langues\b/);
+			// Une étiquette visible, dans la langue de la page, liée à la liste.
+			const pour = formulaire.match(/<label\b([^>]*)>\s*([^<]*?)\s*<\/label>/);
+			expect(attributs(pour?.[0] ?? '')['for']).toBe('choix-de-la-langue');
+			expect(pour?.[2]).toBe(etiquette);
+			const liste = attributs(formulaire.match(/<select\b[^>]*>/)?.[0] ?? '');
+			expect(liste['id']).toBe('choix-de-la-langue');
+			expect(liste['name']).toBe('vers');
+			// Chaque langue publiée, écrite dans sa langue et marquée comme telle ; chaque choix est
+			// l'adresse de cette page dans cette langue, et celle de la page est choisie. Une adresse
+			// absolue : elle part vers une autre route, qui ne la lit pas depuis cette page.
+			const options = [...formulaire.matchAll(/<option\b([^>]*)>\s*([^<]*?)\s*<\/option>/g)].map(
+				(trouve) => {
+					const { value, lang } = attributs(`<option${trouve[1] ?? ''}>`);
+					return { value, lang, nom: trouve[2], choisie: /\sselected\b/.test(trouve[1] ?? '') };
+				}
+			);
+			expect(options).toEqual(
+				LANGUES_PUBLIEES.map((autre) => ({
+					value: `${base(autre)}${suite}`,
+					lang: autre,
+					nom: NOMS[autre],
+					choisie: autre === langue
+				}))
+			);
+			// Un seul bouton, qui envoie le choix : sans JavaScript, rien ne part au changement.
+			const boutons = [...formulaire.matchAll(/<button\b([^>]*)>\s*([^<]*?)\s*<\/button>/g)];
+			expect(
+				boutons.map((trouve) => {
+					const { type, name } = attributs(`<button${trouve[1] ?? ''}>`);
+					return { type, name, texte: trouve[2] };
+				})
+			).toEqual([{ type: 'submit', name: undefined, texte: bouton }]);
+		}
+	);
+
+	it('keeps the embedded mode through the choice, in a hidden field', async () => {
+		const { html } = await servir(`/m/${SLUG}/de/agenda?embed=1`);
+		const formulaire = html.match(
+			/<form\b[^>]*\bclass="langues\b[^"]*"[^>]*>[\s\S]*?<\/form>/
+		)?.[0];
+		expect(formulaire).toMatch(/<input type="hidden" name="embed" value="1"\s*\/?>/);
+		// Hors d'un cadre, aucun champ caché.
+		const seule = (await servir(`/m/${SLUG}/de/agenda`)).html;
+		expect(
+			seule.match(/<form\b[^>]*\bclass="langues\b[^"]*"[^>]*>[\s\S]*?<\/form>/)?.[0]
+		).not.toContain('name="embed"');
+	});
+
+	/** Où mène le choix envoyé : la réponse, sans la suivre. */
+	async function choisir(requete: string): Promise<{ statut: number; vers: string | null }> {
+		const reponse = await fetch(`${origin}/m/${SLUG}/langue?${requete}`, { redirect: 'manual' });
+		return { statut: reponse.status, vers: reponse.headers.get('location') };
+	}
+
+	it('leads to the page chosen, with its query, and keeps the embedded mode', async () => {
+		const vers = encodeURIComponent(`/m/${SLUG}/de?vue=mois&mois=2026-11&public=kids`);
+		expect(await choisir(`vers=${vers}`)).toEqual({
+			statut: 303,
+			vers: `/m/${SLUG}/de?vue=mois&mois=2026-11&public=kids`
+		});
+		expect(await choisir(`vers=${encodeURIComponent(`/m/${SLUG}/ar/agenda`)}&embed=1`)).toEqual({
+			statut: 303,
+			vers: `/m/${SLUG}/ar/agenda?embed=1`
+		});
+		expect(await choisir(`vers=${encodeURIComponent(`/m/${SLUG}`)}`)).toEqual({
+			statut: 303,
+			vers: `/m/${SLUG}`
+		});
+	});
+
+	it.each([
+		['another site', 'https://ailleurs.example/m/langues'],
+		['a scheme-relative address', '//ailleurs.example/m/langues'],
+		['another organisation', '/m/langues-arabe'],
+		['a slug that only starts the same', '/m/languesx/de'],
+		['a path climbing out', '/m/langues/../../connexion'],
+		['the space of the managers', '/connexion'],
+		['nothing', '']
+	])('never leaves the page of the organisation for %s', async (_cas, vers) => {
+		expect(await choisir(`vers=${encodeURIComponent(vers)}`)).toEqual({
+			statut: 303,
+			vers: `/m/${SLUG}`
+		});
 	});
 });
 
