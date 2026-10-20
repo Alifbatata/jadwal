@@ -8785,9 +8785,12 @@ async function vendrediEtape19(page) {
 		const nouvelleDate = ceVendredi(page).filter({
 			hasText: `Nouvelle date, à la place du ${dateLongue(jour)}`
 		});
+		// Sans la ligne « Nouvelle date, à la place du … ». Un texte se cherche sans tenir compte de la
+		// casse : « Nouvelle date » seul trouverait aussi l'aide de la ligne de départ, « … à sa
+		// nouvelle date … ».
 		const depart = ceVendredi(page)
 			.filter({ hasText: dateLongue(jour) })
-			.filter({ hasNotText: 'Nouvelle date' });
+			.filter({ hasNotText: 'Nouvelle date, à la place du' });
 		// Le déplacement donne le message à copier, comme sur « À venir », et la ligne de départ dit
 		// son état avec le nom d'une session, puis le jour et l'heure seuls (étape 21, question 2).
 		await retour('21-Q2', async () => {
