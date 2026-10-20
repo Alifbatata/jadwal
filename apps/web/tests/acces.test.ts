@@ -1482,7 +1482,7 @@ describe('la déconnexion', () => {
 });
 
 describe('l’espace du super-admin', () => {
-	it('opens an organisation and changes its plan', async () => {
+	it('opens an organisation', async () => {
 		const cookie = await signInSuperAdmin();
 		const page = await fetch(`${origin}/super-admin`, { headers: { cookie } });
 		expect(page.status).toBe(200);
@@ -1497,30 +1497,6 @@ describe('l’espace du super-admin', () => {
 		expect(await (await fetch(`${origin}/super-admin`, { headers: { cookie } })).text()).toContain(
 			'Association ouverte'
 		);
-
-		// Le changement de plan, que le titre promettait sans l'exercer.
-		const changed = await postForm(
-			'/super-admin?/plan',
-			{ organizationId, plan: 'sponsored' },
-			cookie
-		);
-		expect(changed.status).toBe(200);
-		const plan = await ownerHandle.db.transaction(async (tx) => {
-			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
-			const found = await tx.execute<{ plan: string }>(
-				sql`select "plan" from "organization" where "id" = ${organizationId}`
-			);
-			return (Array.isArray(found) ? (found[0] as { plan: string } | undefined) : undefined)?.plan;
-		});
-		expect(plan).toBe('sponsored');
-
-		// Un plan qui n'existe pas est refusé, et ne laisse rien derrière lui.
-		const inconnu = await postForm(
-			'/super-admin?/plan',
-			{ organizationId, plan: 'offert-a-vie' },
-			cookie
-		);
-		expect(inconnu.status).toBe(400);
 	});
 
 	it('keeps an ordinary manager out of the administration', async () => {

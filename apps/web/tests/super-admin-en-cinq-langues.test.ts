@@ -822,22 +822,48 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 			const lue = texteDe(carte(html, EXISTANTE));
 			// L'adresse complète de sa page publique, et non plus l'identifiant technique seul.
 			expect(lue).toContain(`Page publique : ${HOTE}/m/${EXISTANTE_ADRESSE}`);
-			expect(lue).toContain('Enregistrer le plan');
 			expect(lue).toContain('Enregistrer l’état');
 			expect(lue).not.toContain('Changer');
 			expect(texteDe(section(html, 'liste-titre'))).toContain(
 				[
 					'Entrer dans son espace',
 					'Vous y voyez et modifiez tout, comme sa personne responsable. Une bannière le rappelle en haut de chaque écran.',
-					'Plan',
-					'Noté pour le suivi. Aucun paiement n’est demandé pour le moment, et le plan ne change rien à ce que l’organisation peut faire.',
 					'État',
 					'Une organisation suspendue n’a plus de page publique : ni sa page, ni son widget, ni son agenda ne s’affichent. Rien n’est effacé, et vous pouvez la réactiver.'
 				].join(' ')
 			);
 		});
 
-		it('confirms a saved plan or status by the name of the organisation, and says when it does not exist', async () => {
+		it('offers no plan any more, in any language: jadwal is free (ADR 0049)', async () => {
+			// Jusqu'à l'étape 22, chaque organisation avait un plan (gratuit, offert, payant) qui ne
+			// changeait rien. Il n'en reste ni mot à l'écran, ni geste pour le changer.
+			const motDuPlan: Record<Langue, RegExp> = {
+				fr: /\bplans?\b/i,
+				de: /\bTarif/i,
+				it: /\bpian[oi]\b/i,
+				en: /\bplans?\b/i,
+				ar: /باقة|باقت/
+			};
+			try {
+				for (const langue of LANGUES) {
+					await langueDuCompte(langue);
+					const html = await (await get('/super-admin', avecPouvoirs)).text();
+					expect(baliseHtml(html), langue).toBe(`<html lang="${langue}" dir="${SENS[langue]}">`);
+					expect.soft(texteDe(html), langue).not.toMatch(motDuPlan[langue]);
+					expect.soft(html, langue).not.toContain('?/plan');
+				}
+			} finally {
+				await langueDuCompte('fr');
+			}
+			const geste = await postForm(
+				'/super-admin?/plan',
+				{ organizationId: existanteId, plan: 'sponsored' },
+				avecPouvoirs
+			);
+			expect(geste.status).toBe(404);
+		});
+
+		it('confirms a saved status by the name of the organisation, and says when it does not exist', async () => {
 			// Le texte tel qu'il s'affiche, balises retirées : le point suit le nom sans espace, ce que
 			// `visibleText`, qui sépare chaque morceau par une espace, ne montrerait pas.
 			const confirmation = (html: string) =>
@@ -845,13 +871,6 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 					.replace(/<!--[\s\S]*?-->|<[^>]+>/g, '')
 					.replace(/\s+/g, ' ')
 					.trim();
-			const plan = await postForm(
-				'/super-admin?/plan',
-				{ organizationId: existanteId, plan: 'sponsored' },
-				avecPouvoirs
-			);
-			expect(plan.status).toBe(200);
-			expect(confirmation(await plan.text())).toBe(`Plan enregistré pour ${EXISTANTE}.`);
 			const etat = await postForm(
 				'/super-admin?/statut',
 				{ organizationId: existanteId, status: 'active' },
@@ -863,7 +882,6 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 			// Une organisation qui n'existe pas, ou plus : rien n'est enregistré, et l'écran le dit au
 			// lieu de confirmer.
 			for (const [chemin, champs] of [
-				['/super-admin?/plan', { organizationId: newId(), plan: 'paid' }],
 				['/super-admin?/statut', { organizationId: newId(), status: 'suspended' }]
 			] as const) {
 				const reponse = await postForm(chemin, champs, avecPouvoirs);
@@ -880,7 +898,6 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 			// inconnue.
 			for (const identifiant of ['pas-un-identifiant', '']) {
 				for (const [chemin, champs] of [
-					['/super-admin?/plan', { organizationId: identifiant, plan: 'paid' }],
 					['/super-admin?/statut', { organizationId: identifiant, status: 'suspended' }],
 					['/super-admin?/entrer', { organizationId: identifiant }]
 				] as const) {
@@ -1018,7 +1035,6 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 					{ name: 'Club', slug: EXISTANTE_ADRESSE, timeZone: 'Europe/Zurich' }
 				],
 				courriel: ['/super-admin?/lienSecours', { email: 'pas-une-adresse' }],
-				plan: ['/super-admin?/plan', { organizationId: newId(), plan: 'offert-a-vie' }],
 				etat: ['/super-admin?/statut', { organizationId: newId(), status: 'fermee' }]
 			} as const;
 			for (const langue of LANGUES) {
@@ -1073,7 +1089,7 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 		});
 
 		it('confirms each success in each language, with no French left', async () => {
-			/** Le bloc qui confirme une création, un plan, un état ou un lien de secours. */
+			/** Le bloc qui confirme une création, un état ou un lien de secours. */
 			const confirmation = (html: string) =>
 				texteDe(
 					element(html, /<section\b[^>]*class="(?:succes|secours)[\s"]/, 'section') ||
@@ -1087,7 +1103,6 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 						'/super-admin?/ouvrir',
 						{ name: `Centre ${langue}`, slug: `centre-succes-${langue}`, timeZone: 'Europe/Zurich' }
 					],
-					plan: ['/super-admin?/plan', { organizationId: existanteId, plan: 'free' }],
 					etat: ['/super-admin?/statut', { organizationId: existanteId, status: 'active' }],
 					secours: ['/super-admin?/lienSecours', { email: `sa-succes-${langue}@example.test` }]
 				} as const;

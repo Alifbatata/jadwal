@@ -20,7 +20,6 @@ export type AuditAction =
 	| 'member.leave'
 	| 'member.role'
 	| 'organization.create'
-	| 'organization.plan'
 	| 'organization.settings'
 	| 'organization.prayer_module'
 	| 'course.create'

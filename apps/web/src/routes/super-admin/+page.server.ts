@@ -1,5 +1,6 @@
-// L'espace du super-admin : créer et suspendre des organisations, attribuer le plan, entrer dans
-// l'espace d'une organisation avec tous les pouvoirs, produire un lien de connexion de secours.
+// L'espace du super-admin : créer et suspendre des organisations, entrer dans l'espace d'une
+// organisation avec tous les pouvoirs, produire un lien de connexion de secours. jadwal est gratuit :
+// il n'y a plus de plan à choisir (étape 22, ADR 0049).
 //
 // Depuis l'étape 4, il n'y a plus de fenêtre d'accès à ouvrir : il lit et écrit partout, à tout
 // moment (ADR 0025). Ce que cela coûte est écrit dans `docs/SECURITE.md`, et ce que les
@@ -21,7 +22,6 @@ import { hasNoLetter, isPublicAddress, proposePublicAddress } from './public-add
 import { DEFAULT_TIME_ZONE, isOfferedTimeZone, timeZoneChoices } from './time-zones.server.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
-const PLANS = ['free', 'sponsored', 'paid'] as const;
 const STATUTS = ['active', 'suspended'] as const;
 const ADRESSE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 /**
@@ -75,14 +75,12 @@ export const load: PageServerLoad = async (event) => {
 			id: string;
 			slug: string;
 			name: string;
-			plan: string;
 			status: string;
 		}>(
 			await superAdminDatabase().execute(sql`
-				select "id", "slug", "name", "plan", "status" from "organization" order by "name"
+				select "id", "slug", "name", "status" from "organization" order by "name"
 			`)
 		),
-		plans: PLANS,
 		statuts: STATUTS,
 		timeZones: timeZoneChoices(),
 		defaultTimeZone: DEFAULT_TIME_ZONE,
@@ -138,25 +136,6 @@ export const actions: Actions = {
 			throw cause;
 		}
 		return { created: { name, address: `${publicPrefix(event.url)}${slug}` } };
-	},
-
-	plan: async (event) => {
-		mustBeSuperAdmin(event);
-		const form = await event.request.formData();
-		const organizationId = String(form.get('organizationId') ?? '');
-		const plan = String(form.get('plan') ?? '');
-		if (!(PLANS as readonly string[]).includes(plan)) {
-			return fail(400, { error: 'unknownPlan' as const });
-		}
-		if (!UUID.test(organizationId)) return fail(404, { error: 'unknownOrganisation' as const });
-		const touched = rows<{ name: string }>(
-			await superAdminDatabase().execute(
-				sql`update "organization" set "plan" = ${plan}, "updated_at" = now()
-					where "id" = ${organizationId} returning "name"`
-			)
-		);
-		if (touched.length === 0) return fail(404, { error: 'unknownOrganisation' as const });
-		return { planSaved: touched[0]?.name ?? '' };
 	},
 
 	statut: async (event) => {

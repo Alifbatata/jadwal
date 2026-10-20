@@ -780,15 +780,12 @@ describe('les politiques d’écriture elles-mêmes, sans que la lecture répond
 	});
 });
 
-describe('ce que ni l’éditeur ni la personne responsable ne font : le plan, l’état, l’adresse', () => {
-	it('leaves the plan, the state and the web address to the super-admin', async () => {
-		// L'écran des réglages n'écrit que huit colonnes. Le plan, l'état et l'identifiant d'URL
-		// relèvent du super-admin (ADR 0025) : un appel direct les écrivait sous le rôle applicatif.
+describe('ce que ni l’éditeur ni la personne responsable ne font : l’état, l’adresse', () => {
+	it('leaves the state and the web address to the super-admin', async () => {
+		// L'écran des réglages n'écrit que huit colonnes. L'état et l'identifiant d'URL relèvent du
+		// super-admin (ADR 0025) : un appel direct les écrivait sous le rôle applicatif. Le plan, qui
+		// en était aussi, n'existe plus depuis la migration 0076 (ADR 0049).
 		const writes: [string, SQL][] = [
-			[
-				'plan',
-				sql`update "organization" set "plan" = 'sponsored' where "id" = ${a.id} returning "id"`
-			],
 			[
 				'status',
 				sql`update "organization" set "status" = 'suspended' where "id" = ${a.id} returning "id"`

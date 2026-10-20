@@ -34,21 +34,16 @@ interface SuperAdminTexts {
 	readonly created: string;
 	readonly createdAddress: string;
 	readonly createdNext: string;
-	/** Devant le nom de l'organisation dont le plan, ou l'état, vient d'être enregistré. */
-	readonly planSaved: string;
+	/** Devant le nom de l'organisation dont l'état vient d'être enregistré. */
 	readonly statusSaved: string;
 	readonly listTitle: string;
 	readonly listEmpty: string;
-	/** Ce que font les trois gestes proposés pour chaque organisation, dits une fois pour toutes. */
+	/** Ce que font les deux gestes proposés pour chaque organisation, dits une fois pour toutes. */
 	readonly enterHelp: string;
-	readonly planHelp: string;
 	readonly statusHelp: string;
 	/** Devant l'adresse de la page publique d'une organisation de la liste. */
 	readonly publicPage: string;
 	readonly enter: string;
-	readonly planLabel: string;
-	readonly plans: { readonly free: string; readonly sponsored: string; readonly paid: string };
-	readonly savePlan: string;
 	readonly statusLabel: string;
 	readonly statuses: { readonly active: string; readonly suspended: string };
 	readonly saveStatus: string;
@@ -119,7 +114,6 @@ interface SuperAdminTexts {
 		readonly addressWithoutLetter: (example: string) => string;
 		readonly addressTaken: string;
 		readonly unknownTimeZone: string;
-		readonly unknownPlan: string;
 		readonly unknownStatus: string;
 		readonly unknownOrganisation: string;
 		readonly linkFailed: string;
@@ -130,27 +124,21 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 	fr: {
 		title: 'Super-admin',
 		intro:
-			'Cet écran sert à la personne qui exploite le service : créer les organisations, régler leur plan et leur état, entrer dans leur espace pour les aider, et dépanner une connexion.',
+			'Cet écran sert à la personne qui exploite le service : créer les organisations, régler leur état, entrer dans leur espace pour les aider, et dépanner une connexion.',
 		created: 'L’organisation est créée :',
 		createdAddress: 'Sa page publique :',
 		createdNext:
 			'Pour la préparer, entrez dans son espace depuis la liste des organisations, puis invitez sa personne responsable depuis l’écran Membres.',
-		planSaved: 'Plan enregistré pour',
 		statusSaved: 'État enregistré pour',
 		listTitle: 'Organisations',
 		listEmpty:
 			'Aucune organisation pour le moment. Créez la première avec le formulaire ci-dessous.',
 		enterHelp:
 			'Vous y voyez et modifiez tout, comme sa personne responsable. Une bannière le rappelle en haut de chaque écran.',
-		planHelp:
-			'Noté pour le suivi. Aucun paiement n’est demandé pour le moment, et le plan ne change rien à ce que l’organisation peut faire.',
 		statusHelp:
 			'Une organisation suspendue n’a plus de page publique : ni sa page, ni son widget, ni son agenda ne s’affichent. Rien n’est effacé, et vous pouvez la réactiver.',
 		publicPage: 'Page publique :',
 		enter: 'Entrer dans son espace',
-		planLabel: 'Plan',
-		plans: { free: 'Gratuit', sponsored: 'Offert', paid: 'Payant' },
-		savePlan: 'Enregistrer le plan',
 		statusLabel: 'État',
 		statuses: { active: 'Active', suspended: 'Suspendue' },
 		saveStatus: 'Enregistrer l’état',
@@ -211,7 +199,6 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			addressTaken:
 				'Cette adresse est déjà celle d’une autre organisation. Choisissez-en une autre, par exemple en y ajoutant le nom de la ville.',
 			unknownTimeZone: 'Choisissez le fuseau horaire dans la liste.',
-			unknownPlan: 'Ce plan n’existe pas : prenez-en un dans la liste.',
 			unknownStatus: 'Cet état n’existe pas : prenez-en un dans la liste.',
 			unknownOrganisation: 'Cette organisation n’existe pas, ou plus.',
 			linkFailed: 'Le lien n’a pas pu être créé. Réessayez dans une minute.'
@@ -220,26 +207,20 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 	de: {
 		title: 'Super-Admin',
 		intro:
-			'Diese Seite ist für die Person, die den Dienst betreibt: Organisationen erstellen, ihren Tarif und ihren Status festlegen, ihren Bereich betreten, um zu helfen, und bei Problemen mit der Anmeldung weiterhelfen.',
+			'Diese Seite ist für die Person, die den Dienst betreibt: Organisationen erstellen, ihren Status festlegen, ihren Bereich betreten, um zu helfen, und bei Problemen mit der Anmeldung weiterhelfen.',
 		created: 'Die Organisation wurde erstellt:',
 		createdAddress: 'Ihre öffentliche Seite:',
 		createdNext:
 			'Um sie vorzubereiten, betreten Sie ihren Bereich über die Liste der Organisationen und laden Sie dann ihre verantwortliche Person auf der Seite «Mitglieder» ein.',
-		planSaved: 'Tarif gespeichert für',
 		statusSaved: 'Status gespeichert für',
 		listTitle: 'Organisationen',
 		listEmpty: 'Noch keine Organisation. Erstellen Sie die erste mit dem Formular weiter unten.',
 		enterHelp:
 			'Dort sehen und ändern Sie alles, wie die verantwortliche Person. Ein Banner oben auf jeder Seite erinnert daran.',
-		planHelp:
-			'Wird für die Übersicht festgehalten. Zurzeit wird keine Zahlung verlangt, und der Tarif ändert nichts daran, was die Organisation tun kann.',
 		statusHelp:
 			'Eine gesperrte Organisation hat keine öffentliche Seite mehr: Weder ihre Seite noch ihr Widget noch ihr Kalender werden angezeigt. Nichts wird gelöscht, und Sie können sie wieder aktivieren.',
 		publicPage: 'Öffentliche Seite:',
 		enter: 'Ihren Bereich betreten',
-		planLabel: 'Tarif',
-		plans: { free: 'Kostenlos', sponsored: 'Offeriert', paid: 'Kostenpflichtig' },
-		savePlan: 'Tarif speichern',
 		statusLabel: 'Status',
 		statuses: { active: 'Aktiv', suspended: 'Gesperrt' },
 		saveStatus: 'Status speichern',
@@ -300,7 +281,6 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			addressTaken:
 				'Diese Adresse gehört schon einer anderen Organisation. Wählen Sie eine andere, zum Beispiel mit dem Namen des Orts dazu.',
 			unknownTimeZone: 'Wählen Sie die Zeitzone aus der Liste.',
-			unknownPlan: 'Diesen Tarif gibt es nicht: Nehmen Sie einen aus der Liste.',
 			unknownStatus: 'Diesen Status gibt es nicht: Nehmen Sie einen aus der Liste.',
 			unknownOrganisation: 'Die Organisation gibt es nicht oder nicht mehr.',
 			linkFailed:
@@ -310,26 +290,20 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 	it: {
 		title: 'Super-admin',
 		intro:
-			'Questa pagina serve a chi gestisce il servizio: creare le organizzazioni, impostarne il piano e lo stato, entrare nel loro spazio per aiutarle e risolvere un problema di accesso.',
+			'Questa pagina serve a chi gestisce il servizio: creare le organizzazioni, impostarne lo stato, entrare nel loro spazio per aiutarle e risolvere un problema di accesso.',
 		created: 'L’organizzazione è stata creata:',
 		createdAddress: 'La sua pagina pubblica:',
 		createdNext:
 			'Per prepararla, entra nel suo spazio dalla lista delle organizzazioni, poi invita la persona responsabile dalla pagina Membri.',
-		planSaved: 'Piano salvato per',
 		statusSaved: 'Stato salvato per',
 		listTitle: 'Organizzazioni',
 		listEmpty: 'Ancora nessuna organizzazione. Crea la prima con il modulo qui sotto.',
 		enterHelp:
 			'Lì vedi e modifichi tutto, come la persona responsabile. Un banner te lo ricorda in cima a ogni pagina.',
-		planHelp:
-			'Serve solo come promemoria. Per ora non si chiede nessun pagamento, e il piano non cambia niente di ciò che l’organizzazione può fare.',
 		statusHelp:
 			'Un’organizzazione sospesa non ha più una pagina pubblica: né la pagina, né il widget, né il calendario vengono mostrati. Non si cancella niente, e puoi riattivarla.',
 		publicPage: 'Pagina pubblica:',
 		enter: 'Entra nel suo spazio',
-		planLabel: 'Piano',
-		plans: { free: 'Gratuito', sponsored: 'Offerto', paid: 'A pagamento' },
-		savePlan: 'Salva il piano',
 		statusLabel: 'Stato',
 		statuses: { active: 'Attiva', suspended: 'Sospesa' },
 		saveStatus: 'Salva lo stato',
@@ -389,7 +363,6 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			addressTaken:
 				'Questo indirizzo è già di un’altra organizzazione. Scegline un altro, per esempio aggiungendo il nome della città.',
 			unknownTimeZone: 'Scegli il fuso orario dalla lista.',
-			unknownPlan: 'Questo piano non esiste: prendine uno dalla lista.',
 			unknownStatus: 'Questo stato non esiste: prendine uno dalla lista.',
 			unknownOrganisation: 'L’organizzazione non esiste, o non esiste più.',
 			linkFailed: 'Non è stato possibile creare il link. Riprova tra un minuto.'
@@ -398,26 +371,20 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 	en: {
 		title: 'Super admin',
 		intro:
-			'This page is for the person who runs the service: create organisations, set their plan and status, enter their space to help them, and sort out a sign-in problem.',
+			'This page is for the person who runs the service: create organisations, set their status, enter their space to help them, and sort out a sign-in problem.',
 		created: 'The organisation has been created:',
 		createdAddress: 'Its public page:',
 		createdNext:
 			'To set it up, enter its space from the list of organisations, then invite the person in charge from the Members page.',
-		planSaved: 'Plan saved for',
 		statusSaved: 'Status saved for',
 		listTitle: 'Organisations',
 		listEmpty: 'No organisations yet. Create the first one with the form below.',
 		enterHelp:
 			'There you see and change everything, like the person in charge. A banner reminds you at the top of every page.',
-		planHelp:
-			'Kept for your records. No payment is asked for at the moment, and the plan changes nothing in what the organisation can do.',
 		statusHelp:
 			'A suspended organisation no longer has a public page: its page, widget and calendar are no longer shown. Nothing is deleted, and you can make it active again.',
 		publicPage: 'Public page:',
 		enter: 'Enter its space',
-		planLabel: 'Plan',
-		plans: { free: 'Free', sponsored: 'Sponsored', paid: 'Paid' },
-		savePlan: 'Save the plan',
 		statusLabel: 'Status',
 		statuses: { active: 'Active', suspended: 'Suspended' },
 		saveStatus: 'Save the status',
@@ -478,7 +445,6 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			addressTaken:
 				'This address already belongs to another organisation. Choose another one, for example by adding the name of the town.',
 			unknownTimeZone: 'Pick the time zone from the list.',
-			unknownPlan: 'This plan does not exist: pick one from the list.',
 			unknownStatus: 'This status does not exist: pick one from the list.',
 			unknownOrganisation: 'The organisation does not exist, or no longer exists.',
 			linkFailed: 'The link could not be created. Try again in a minute.'
@@ -487,25 +453,19 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 	ar: {
 		title: 'المشرف العام',
 		intro:
-			'هذه الصفحة مخصصة للشخص الذي يدير الخدمة: إنشاء المؤسسات، وتحديد باقتها وحالتها، والدخول إلى مساحتها لمساعدتها، وحل مشكلة في تسجيل الدخول.',
+			'هذه الصفحة مخصصة للشخص الذي يدير الخدمة: إنشاء المؤسسات، وتحديد حالتها، والدخول إلى مساحتها لمساعدتها، وحل مشكلة في تسجيل الدخول.',
 		created: 'تم إنشاء المؤسسة:',
 		createdAddress: 'صفحتها العامة:',
 		createdNext:
 			'لتجهيزها، ادخل إلى مساحتها من قائمة المؤسسات، ثم ادع المسؤول عنها من صفحة الأعضاء.',
-		planSaved: 'تم حفظ باقة',
 		statusSaved: 'تم حفظ حالة',
 		listTitle: 'المؤسسات',
 		listEmpty: 'لا توجد أي مؤسسة بعد. أنشئ الأولى بالنموذج أدناه.',
 		enterHelp: 'ترى فيها كل شيء وتعدله، مثل المسؤول عنها. ويذكرك بذلك شريط في أعلى كل صفحة.',
-		planHelp:
-			'الغرض منها المتابعة فقط. لا يطلب أي دفع حاليًا، ولا تغير الباقة شيئًا مما تستطيع المؤسسة فعله.',
 		statusHelp:
 			'المؤسسة الموقوفة لم تعد لها صفحة عامة: لا تظهر صفحتها ولا أداتها المدمجة ولا تقويمها. لا يحذف شيء، ويمكنك إعادة تفعيلها.',
 		publicPage: 'الصفحة العامة:',
 		enter: 'الدخول إلى مساحتها',
-		planLabel: 'الباقة',
-		plans: { free: 'مجانية', sponsored: 'مهداة', paid: 'مدفوعة' },
-		savePlan: 'حفظ الباقة',
 		statusLabel: 'الحالة',
 		statuses: { active: 'نشطة', suspended: 'موقوفة' },
 		saveStatus: 'حفظ الحالة',
@@ -563,7 +523,6 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			addressTaken:
 				'هذا العنوان مستعمل من قبل مؤسسة أخرى. اختر عنوانًا آخر، مثلًا بإضافة اسم المدينة.',
 			unknownTimeZone: 'اختر المنطقة الزمنية من القائمة.',
-			unknownPlan: 'اختر باقة من القائمة.',
 			unknownStatus: 'اختر حالة من القائمة.',
 			unknownOrganisation: 'هذه المؤسسة غير موجودة، أو لم تعد موجودة.',
 			linkFailed: 'تعذر إنشاء الرابط. أعد المحاولة بعد دقيقة.'

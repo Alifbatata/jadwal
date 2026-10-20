@@ -37,7 +37,7 @@ les pages publiques, l'API publique et le flux agenda (étape 5). Le widget arri
 | `/reglages`            | nom, fuseau, couleur, langues, salles, formule d'accueil (`org_admin`)  |
 | `/connexion`           | demander un lien ; la réponse est la même pour toute adresse            |
 | `/organisations`       | choisir son organisation, et accepter les invitations reçues            |
-| `/super-admin`         | organisations, plan, entrée dans un espace, lien de secours             |
+| `/super-admin`         | organisations, état, entrée dans un espace, lien de secours             |
 | `/super-admin/passkey` | enregistrer une passkey, se connecter avec, en supprimer                |
 | `/deconnexion`         | fermer la session, ou toutes les sessions                               |
 

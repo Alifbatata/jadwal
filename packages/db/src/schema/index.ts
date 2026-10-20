@@ -95,7 +95,6 @@ const createdAt = () =>
 const updatedAt = () =>
 	timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow();
 
-export const PLANS = ['free', 'sponsored', 'paid'] as const;
 export const ORGANIZATION_STATUSES = ['active', 'suspended'] as const;
 export const MEMBERSHIP_ROLES = ['org_admin', 'editor'] as const;
 /**
@@ -308,7 +307,6 @@ export const organization = pgTable(
 		accentColor: text('accent_color').notNull().default('#0f766e'),
 		defaultLanguage: text('default_language').notNull(),
 		enabledLanguages: text('enabled_language').array().notNull(),
-		plan: text().notNull().default('free'),
 		status: text().notNull().default('active'),
 		/**
 		 * Le module des heures de prière, éteint par défaut (ADR 0042). Il vit ici, et non sur
@@ -335,7 +333,6 @@ export const organization = pgTable(
 		// déjà là, sans toucher à celle de la forme (migration 0003).
 		ck('organization_slug_letter_ck', sql`${table.slug} ~ '[a-z]'`),
 		ck('organization_accent_color_ck', sql`${table.accentColor} ~ '^#[0-9a-fA-F]{6}$'`),
-		ck('organization_plan_ck', oneOf(table.plan, PLANS)),
 		ck('organization_status_ck', oneOf(table.status, ORGANIZATION_STATUSES)),
 		ck('organization_language_ck', isNonEmptyList(table.enabledLanguages)),
 		ck('organization_greeting_ck', sql`length(btrim(${table.greeting})) > 0`),
@@ -357,7 +354,7 @@ export const organization = pgTable(
 			// Son organisation… et celle qui vous invite : sans cela, une invitation ne pourrait pas
 			// même dire de quelle organisation elle vient, et personne n'accepterait à l'aveugle
 			// (ADR 0017). Une politique porte sur des lignes, pas sur des colonnes : la personne
-			// invitée lit donc la ligne entière — nom, slug, fuseau, couleur, langues, plan, état,
+			// invitée lit donc la ligne entière — nom, slug, fuseau, couleur, langues, état,
 			// dates — et rien d'autre ne s'ouvre, puisque membres, cours et journal exigent
 			// l'appartenance.
 			using: sql`${table.id} = ${orgContext}
@@ -370,7 +367,7 @@ export const organization = pgTable(
 				)`
 		}),
 		// Les réglages de l'organisation sont l'affaire de ses responsables (ADR 0046). Les colonnes
-		// que le rôle applicatif peut nommer sont celles de l'écran des réglages : le plan, l'état et
+		// que le rôle applicatif peut nommer sont celles de l'écran des réglages : l'état et
 		// l'identifiant d'URL relèvent du super-admin (migration 0059).
 		pgPolicy('organization_update', {
 			as: 'permissive',

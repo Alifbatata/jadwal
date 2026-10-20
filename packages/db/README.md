@@ -21,7 +21,7 @@ script Node seul.
 
 | Table                | Ce qu'elle porte                                                                 |
 | -------------------- | -------------------------------------------------------------------------------- |
-| `organization`       | slug, nom, fuseau IANA canonique, couleur d'accent, langues, plan, statut        |
+| `organization`       | slug, nom, fuseau IANA canonique, couleur d'accent, langues, statut              |
 | `user`               | courriel unique sans égard à la casse, nom, statut super-admin, langue           |
 | `membership`         | qui est `org_admin` ou `editor` dans quelle organisation                         |
 | `room`               | salles de l'organisation et leur ordre d'affichage                               |
@@ -110,7 +110,7 @@ ouverte aux membres. Les cours, leurs traductions, les exceptions, les pauses, l
 acceptations s'écrivent toujours par tout membre, sauf la suppression d'un cours (migration 0065) et
 celle d'une session du vendredi (migration 0073), réservées aux responsables. Le super-admin n'est
 pas concerné. La modification de l'organisation est bornée aux huit colonnes de l'écran des
-réglages : le plan, l'état et l'identifiant d'URL relèvent du super-admin.
+réglages : l'état et l'identifiant d'URL relèvent du super-admin.
 
 Conséquence pour un script ou un test : une écriture réservée pose l'organisation **et** la
 personne responsable (`asAdmin(organisation)` dans `test/helpers.ts`), comme les écrans. Sous

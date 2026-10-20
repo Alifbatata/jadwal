@@ -250,14 +250,14 @@ export async function seed(overrides = {}, env = process.env) {
 			// mises à jour rendraient « 0 ligne » sans rien dire.
 			await tx`set local jadwal.maintenance = 'on'`;
 			await tx`
-				insert into "organization" ("id", "slug", "name", "time_zone", "default_language", "enabled_language", "plan", "prayer_module")
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language", "enabled_language", "prayer_module")
 				values (${ID.organization}, ${ORGANIZATION.slug}, ${ORGANIZATION.name}, ${ORGANIZATION.timeZone},
-					${ORGANIZATION.defaultLanguage}, ${ORGANIZATION.languages}, 'sponsored', true)
+					${ORGANIZATION.defaultLanguage}, ${ORGANIZATION.languages}, true)
 				on conflict ("id") do update set
 					"slug" = excluded."slug", "name" = excluded."name", "time_zone" = excluded."time_zone",
 					"accent_color" = excluded."accent_color",
 					"default_language" = excluded."default_language",
-					"enabled_language" = excluded."enabled_language", "plan" = excluded."plan",
+					"enabled_language" = excluded."enabled_language",
 					"status" = excluded."status",
 					-- Les données de démonstration portent un cours ancré sur le Maghrib et deux sessions
 					-- du vendredi : sans le module, la base les refuse (ADR 0042).

@@ -17,7 +17,13 @@ import {
 	type Database,
 	type DatabaseHandle
 } from '../src/index.js';
-import { allRows, openDatabase, seedOrganisation, type Organisation } from './helpers.js';
+import {
+	allRows,
+	openDatabase,
+	seedOrganisation,
+	sqlStateOfFailure,
+	type Organisation
+} from './helpers.js';
 
 let ownerHandle: DatabaseHandle;
 let superAdminHandle: DatabaseHandle;
@@ -102,7 +108,7 @@ describe('le super-admin entré dans une organisation', () => {
 		// La méprise que l'ADR 0025 veut arrêter : le bon identifiant, tapé depuis la mauvaise
 		// organisation. Zéro ligne, comme pour toute autre table d'organisation.
 		expect(
-			await touchedFromA(sql`update "organization" set "plan" = 'sponsored' where "id" = ${b.id}`)
+			await touchedFromA(sql`update "organization" set "status" = 'suspended' where "id" = ${b.id}`)
 		).toBe(0);
 	});
 });
@@ -152,16 +158,25 @@ describe('le super-admin dans sa console, sans contexte', () => {
 		expect(vues).toEqual([b.id]);
 	});
 
-	it('changes the plan and the state of any organisation', async () => {
-		const plan = await superAdmin.execute(
-			sql`update "organization" set "plan" = 'sponsored', "status" = 'suspended'
-				where "id" = ${b.id}`
+	it('changes the state of any organisation', async () => {
+		const etat = await superAdmin.execute(
+			sql`update "organization" set "status" = 'suspended' where "id" = ${b.id}`
 		);
-		expect((plan as unknown as { count: number }).count).toBe(1);
+		expect((etat as unknown as { count: number }).count).toBe(1);
 		const remis = await superAdmin.execute(
-			sql`update "organization" set "plan" = 'free', "status" = 'active' where "id" = ${b.id}`
+			sql`update "organization" set "status" = 'active' where "id" = ${b.id}`
 		);
 		expect((remis as unknown as { count: number }).count).toBe(1);
+	});
+
+	it('finds no plan to read or to change: jadwal is free, and the column is gone (ADR 0049)', async () => {
+		// Jusqu'à l'étape 22, la console choisissait un plan (gratuit, offert, payant) qui ne changeait
+		// rien. La migration 0076 retire la colonne et sa règle : une lecture qui la nomme échoue.
+		expect(
+			await sqlStateOfFailure(() =>
+				superAdmin.execute(sql`select "plan" from "organization" where "id" = ${b.id}`)
+			)
+		).toBe('42703');
 	});
 
 	it('opens a new organisation, then closes it', async () => {

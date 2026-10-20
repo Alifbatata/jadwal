@@ -1,5 +1,5 @@
-// Les preuves des migrations 0073, 0074 et 0075 voient un état affaibli (étape 20, relecture du
-// chantier 1).
+// Les preuves des migrations 0073, 0074, 0075 et 0076 voient un état affaibli (étape 20, relecture
+// du chantier 1 ; étape 22 pour 0076).
 //
 // Chaque migration écrite à la main finit par un bloc `DO $verifie$` qui lève si l'état n'est pas
 // exactement celui qu'elle annonce. Une preuve qui ne lit que des fragments laisse passer une règle
@@ -82,6 +82,38 @@ async function refusDeLaPreuve(
 	if (refus === undefined) throw new Error('essai sans résultat');
 	return refus;
 }
+
+describe('la preuve de la migration 0076 (plus aucun plan)', () => {
+	const TAG = '0076_organization_plan_drop';
+
+	it('passes on the state the migration leaves', async () => {
+		expect(await refusDeLaPreuve(TAG, [])).toBeNull();
+	});
+
+	it.each([
+		[
+			'the plan column back, with its rule',
+			[
+				`alter table "organization" add column "plan" text default 'free' not null`,
+				`alter table "organization" add constraint "organization_plan_ck"
+					check (("plan" in ('free', 'sponsored', 'paid')) is true)`
+			]
+		],
+		[
+			'the plan column back, without its rule',
+			[`alter table "organization" add column "plan" text`]
+		],
+		[
+			'the rule alone, under its name',
+			[`alter table "organization" add constraint "organization_plan_ck" check (true)`]
+		]
+	])('refuses %s', async (_cas, etat) => {
+		expect(await refusDeLaPreuve(TAG, etat)).toEqual({
+			code: 'P0001',
+			message: expect.stringMatching(/^organization : /)
+		});
+	});
+});
 
 describe('la preuve de la migration 0075 (forme d’une exception)', () => {
 	const TAG = '0075_session_exception_cancelled_where_moved';

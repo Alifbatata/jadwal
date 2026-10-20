@@ -4,8 +4,8 @@
 // en français. Ce fichier est le seul endroit où une ligne de base devient une réponse : ajouter un
 // champ ailleurs serait le glisser dans le contrat sans l'y écrire.
 //
-// Ce qui ne sort jamais : une adresse, un identifiant de personne, un identifiant de salle, le
-// plan, l'état de l'organisation, un journal, un réglage interne. `tests/api.test.ts` parcourt
+// Ce qui ne sort jamais : une adresse, un identifiant de personne, un identifiant de salle, l'état
+// de l'organisation, un journal, un réglage interne. `tests/api.test.ts` parcourt
 // chaque réponse et échoue à la moindre de ces valeurs.
 
 import { nextOccurrences, type CourseSchedule, type IsoDate } from '@jadwal/core';

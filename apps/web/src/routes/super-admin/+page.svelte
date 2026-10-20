@@ -25,9 +25,7 @@
 		return typeof message === 'function' ? message(addressExample) : message;
 	});
 
-	type Plan = keyof typeof text.plans;
 	type Statut = keyof typeof text.statuses;
-	const planLabel = (plan: string) => text.plans[plan as Plan] ?? plan;
 	const statusLabel = (status: string) => text.statuses[status as Statut] ?? status;
 
 	// Le formulaire de création. Après une erreur, il revient avec ce qui avait été saisi. L'adresse
@@ -128,9 +126,6 @@
 		<p>{text.createdNext}</p>
 	</section>
 {/if}
-{#if form && 'planSaved' in form && form.planSaved}
-	<p class="succes" role="status">{text.planSaved} <bdi>{form.planSaved}</bdi>.</p>
-{/if}
 {#if form && 'statusSaved' in form && form.statusSaved}
 	<p class="succes" role="status">{text.statusSaved} <bdi>{form.statusSaved}</bdi>.</p>
 {/if}
@@ -153,8 +148,6 @@
 		<dl class="aide">
 			<dt>{text.enter}</dt>
 			<dd>{text.enterHelp}</dd>
-			<dt>{text.planLabel}</dt>
-			<dd>{text.planHelp}</dd>
 			<dt>{text.statusLabel}</dt>
 			<dd>{text.statusHelp}</dd>
 		</dl>
@@ -164,7 +157,6 @@
 			<li>
 				<p class="titre">
 					<bdi>{organisation.name}</bdi>
-					<span class="etiquette">{planLabel(organisation.plan)}</span>
 					<span class="etiquette">{statusLabel(organisation.status)}</span>
 				</p>
 				<p class="adresse">
@@ -177,19 +169,6 @@
 					<form method="post" action="?/entrer">
 						<input type="hidden" name="organizationId" value={organisation.id} />
 						<button type="submit">{text.enter}</button>
-					</form>
-
-					<form method="post" action="?/plan">
-						<input type="hidden" name="organizationId" value={organisation.id} />
-						<label for={`plan-${organisation.id}`}>{text.planLabel}</label>
-						<select id={`plan-${organisation.id}`} name="plan">
-							{#each data.plans as plan (plan)}
-								<option value={plan} selected={plan === organisation.plan}>
-									{planLabel(plan)}
-								</option>
-							{/each}
-						</select>
-						<button type="submit">{text.savePlan}</button>
 					</form>
 
 					<form method="post" action="?/statut">
