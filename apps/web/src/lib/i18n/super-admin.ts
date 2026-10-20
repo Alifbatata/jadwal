@@ -1,5 +1,10 @@
 // Les textes de l'écran du super-admin (`/super-admin`) : la liste des organisations, la création
-// d'une organisation et le lien de connexion de secours (étape 18, retours B1, B2 et D2).
+// d'une organisation et le lien de connexion de secours (étape 18, retours B1, B2 et D2), et
+// l'invitation de la personne responsable, à la création ou depuis la liste (étape 22, ADR 0049).
+//
+// Ce que disent les invitations est ce que fait le code : le rôle est celui de personne
+// responsable, l'invitation vaut `INVITATION_DAYS` jours (`invitations.ts`), et la réponse ne dit
+// jamais si l'adresse a déjà un compte (ADR 0017).
 //
 // Ce que dit le lien de secours est ce que fait le code, et rien d'autre : il vaut quinze minutes, il
 // ne sert qu'une fois, il s'affiche au lieu de partir par courriel, il ouvre une session sans aucun
@@ -76,6 +81,8 @@ interface SuperAdminTexts {
 		readonly notYet: string;
 		readonly proposed: string;
 		readonly check: string;
+		/** Devant l'adresse de la personne responsable, quand l'invitation partira à la création. */
+		readonly invite: string;
 	};
 	readonly timeZoneLabel: string;
 	/** À quoi sert le fuseau, et celui de la Suisse, que le serveur donne. */
@@ -85,6 +92,28 @@ interface SuperAdminTexts {
 	readonly timeZoneEurope: string;
 	readonly timeZoneWorld: string;
 	readonly create: string;
+	/**
+	 * La personne responsable, facultative, dans le formulaire de création (étape 22) : le titre du
+	 * groupe de champs et ce qu'il fait. Les champs eux-mêmes sont ceux de `invite`.
+	 */
+	readonly manager: { readonly legend: string; readonly intro: string };
+	/**
+	 * Inviter la personne responsable d'une organisation de la liste, sans entrer dans son espace
+	 * (étape 22), et ce que l'écran dit après l'envoi, de là comme depuis la création.
+	 */
+	readonly invite: {
+		readonly summary: string;
+		readonly help: string;
+		readonly emailLabel: string;
+		readonly emailHint: string;
+		readonly languageLabel: string;
+		readonly languageHelp: string;
+		readonly submit: string;
+		/** Devant l'adresse invitée, puis devant le nom de l'organisation. */
+		readonly sentTo: string;
+		readonly sentFor: string;
+		readonly validity: (days: number) => string;
+	};
 	readonly rescue: {
 		readonly title: string;
 		/** Les trois phrases de l'écran : quand s'en servir, ce qui se passe, combien de temps. */
@@ -117,6 +146,7 @@ interface SuperAdminTexts {
 		readonly unknownStatus: string;
 		readonly unknownOrganisation: string;
 		readonly linkFailed: string;
+		readonly invalidManagerEmail: string;
 	};
 }
 
@@ -124,11 +154,11 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 	fr: {
 		title: 'Super-admin',
 		intro:
-			'Cet écran sert à la personne qui exploite le service : créer les organisations, régler leur état, entrer dans leur espace pour les aider, et dépanner une connexion.',
+			'Cet écran sert à la personne qui exploite le service : créer les organisations et inviter leur personne responsable, régler leur état, entrer dans leur espace pour les aider, et dépanner une connexion.',
 		created: 'L’organisation est créée :',
 		createdAddress: 'Sa page publique :',
 		createdNext:
-			'Pour la préparer, entrez dans son espace depuis la liste des organisations, puis invitez sa personne responsable depuis l’écran Membres.',
+			'Pour y faire entrer sa personne responsable, touchez « Inviter une personne responsable » sous son nom, dans la liste des organisations.',
 		statusSaved: 'État enregistré pour',
 		listTitle: 'Organisations',
 		listEmpty:
@@ -163,7 +193,8 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			notYet: 'L’organisation n’est pas encore créée :',
 			proposed: 'Adresse de sa page publique, proposée à partir du nom :',
 			check:
-				'Elle ne se changera plus ensuite. Si elle vous convient, touchez « Créer l’organisation ». Sinon, écrivez-en une autre dans le champ ci-dessous.'
+				'Elle ne se changera plus ensuite. Si elle vous convient, touchez « Créer l’organisation ». Sinon, écrivez-en une autre dans le champ ci-dessous.',
+			invite: 'L’invitation de personne responsable partira à la création, à :'
 		},
 		timeZoneLabel: 'Fuseau horaire',
 		timeZoneHint: (zone) =>
@@ -172,6 +203,24 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		timeZoneEurope: 'Europe',
 		timeZoneWorld: 'Reste du monde',
 		create: 'Créer l’organisation',
+		manager: {
+			legend: 'Personne responsable (facultatif)',
+			intro:
+				'Si vous connaissez son adresse électronique, l’invitation lui part dès la création de l’organisation. Sinon, laissez le champ vide : vous pourrez l’inviter plus tard depuis la liste des organisations.'
+		},
+		invite: {
+			summary: 'Inviter une personne responsable',
+			help: 'L’invitation part par courriel. En l’acceptant, la personne devient responsable de l’organisation, sans que vous ayez à entrer dans son espace.',
+			emailLabel: 'Adresse électronique de la personne responsable',
+			emailHint: 'Exemple : prenom.nom@example.org',
+			languageLabel: 'Langue du courriel',
+			languageHelp: 'La personne invitée reçoit le courriel dans cette langue.',
+			submit: 'Envoyer l’invitation',
+			sentTo: 'L’invitation de personne responsable est partie à :',
+			sentFor: 'Organisation :',
+			validity: (days) =>
+				`Elle vaut ${days} jours. En l’acceptant, cette personne devient responsable de l’organisation.`
+		},
 		rescue: {
 			title: 'Lien de connexion de secours',
 			when: 'Servez-vous-en quand une personne ne reçoit pas le courriel de connexion, par exemple si l’envoi des courriels est en panne.',
@@ -201,17 +250,19 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			unknownTimeZone: 'Choisissez le fuseau horaire dans la liste.',
 			unknownStatus: 'Cet état n’existe pas : prenez-en un dans la liste.',
 			unknownOrganisation: 'Cette organisation n’existe pas, ou plus.',
-			linkFailed: 'Le lien n’a pas pu être créé. Réessayez dans une minute.'
+			linkFailed: 'Le lien n’a pas pu être créé. Réessayez dans une minute.',
+			invalidManagerEmail:
+				'L’adresse de la personne responsable ne convient pas. Exemple : prenom.nom@example.org'
 		}
 	},
 	de: {
 		title: 'Super-Admin',
 		intro:
-			'Diese Seite ist für die Person, die den Dienst betreibt: Organisationen erstellen, ihren Status festlegen, ihren Bereich betreten, um zu helfen, und bei Problemen mit der Anmeldung weiterhelfen.',
+			'Diese Seite ist für die Person, die den Dienst betreibt: Organisationen erstellen und ihre verantwortliche Person einladen, ihren Status festlegen, ihren Bereich betreten, um zu helfen, und bei Problemen mit der Anmeldung weiterhelfen.',
 		created: 'Die Organisation wurde erstellt:',
 		createdAddress: 'Ihre öffentliche Seite:',
 		createdNext:
-			'Um sie vorzubereiten, betreten Sie ihren Bereich über die Liste der Organisationen und laden Sie dann ihre verantwortliche Person auf der Seite «Mitglieder» ein.',
+			'Um ihre verantwortliche Person einzuladen, tippen Sie in der Liste der Organisationen unter ihrem Namen auf «Verantwortliche Person einladen».',
 		statusSaved: 'Status gespeichert für',
 		listTitle: 'Organisationen',
 		listEmpty: 'Noch keine Organisation. Erstellen Sie die erste mit dem Formular weiter unten.',
@@ -245,7 +296,8 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			notYet: 'Die Organisation ist noch nicht erstellt:',
 			proposed: 'Adresse ihrer öffentlichen Seite, aus dem Namen vorgeschlagen:',
 			check:
-				'Sie lässt sich danach nicht mehr ändern. Wenn sie passt, tippen Sie auf «Organisation erstellen». Sonst schreiben Sie im Feld unten eine andere.'
+				'Sie lässt sich danach nicht mehr ändern. Wenn sie passt, tippen Sie auf «Organisation erstellen». Sonst schreiben Sie im Feld unten eine andere.',
+			invite: 'Die Einladung der verantwortlichen Person geht bei der Erstellung an:'
 		},
 		timeZoneLabel: 'Zeitzone',
 		timeZoneHint: (zone) =>
@@ -254,6 +306,24 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		timeZoneEurope: 'Europa',
 		timeZoneWorld: 'Übrige Welt',
 		create: 'Organisation erstellen',
+		manager: {
+			legend: 'Verantwortliche Person (optional)',
+			intro:
+				'Wenn Sie ihre E-Mail-Adresse kennen, geht die Einladung gleich bei der Erstellung der Organisation an sie. Sonst lassen Sie das Feld leer: Sie können sie später über die Liste der Organisationen einladen.'
+		},
+		invite: {
+			summary: 'Verantwortliche Person einladen',
+			help: 'Die Einladung geht per E-Mail. Wer sie annimmt, wird verantwortliche Person der Organisation, ohne dass Sie ihren Bereich betreten müssen.',
+			emailLabel: 'E-Mail-Adresse der verantwortlichen Person',
+			emailHint: 'Beispiel: vorname.name@example.org',
+			languageLabel: 'Sprache der E-Mail',
+			languageHelp: 'Die eingeladene Person erhält die E-Mail in dieser Sprache.',
+			submit: 'Einladung senden',
+			sentTo: 'Die Einladung als verantwortliche Person wurde gesendet an:',
+			sentFor: 'Organisation:',
+			validity: (days) =>
+				`Sie ist ${days} Tage gültig. Wer sie annimmt, wird verantwortliche Person der Organisation.`
+		},
 		rescue: {
 			title: 'Notfall-Anmeldelink',
 			when: 'Verwenden Sie ihn, wenn eine Person die Anmelde-E-Mail nicht erhält, zum Beispiel wenn der E-Mail-Versand gestört ist.',
@@ -284,17 +354,19 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			unknownStatus: 'Diesen Status gibt es nicht: Nehmen Sie einen aus der Liste.',
 			unknownOrganisation: 'Die Organisation gibt es nicht oder nicht mehr.',
 			linkFailed:
-				'Der Link konnte nicht erstellt werden. Versuchen Sie es in einer Minute noch einmal.'
+				'Der Link konnte nicht erstellt werden. Versuchen Sie es in einer Minute noch einmal.',
+			invalidManagerEmail:
+				'Die Adresse der verantwortlichen Person hat nicht die Form einer E-Mail-Adresse. Beispiel: vorname.name@example.org'
 		}
 	},
 	it: {
 		title: 'Super-admin',
 		intro:
-			'Questa pagina serve a chi gestisce il servizio: creare le organizzazioni, impostarne lo stato, entrare nel loro spazio per aiutarle e risolvere un problema di accesso.',
+			'Questa pagina serve a chi gestisce il servizio: creare le organizzazioni e invitarne la persona responsabile, impostarne lo stato, entrare nel loro spazio per aiutarle e risolvere un problema di accesso.',
 		created: 'L’organizzazione è stata creata:',
 		createdAddress: 'La sua pagina pubblica:',
 		createdNext:
-			'Per prepararla, entra nel suo spazio dalla lista delle organizzazioni, poi invita la persona responsabile dalla pagina Membri.',
+			'Per invitare la sua persona responsabile, tocca «Invita una persona responsabile» sotto il suo nome, nella lista delle organizzazioni.',
 		statusSaved: 'Stato salvato per',
 		listTitle: 'Organizzazioni',
 		listEmpty: 'Ancora nessuna organizzazione. Crea la prima con il modulo qui sotto.',
@@ -327,7 +399,8 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			notYet: 'L’organizzazione non è ancora stata creata:',
 			proposed: 'Indirizzo della sua pagina pubblica, proposto a partire dal nome:',
 			check:
-				'Dopo non si potrà più cambiare. Se ti va bene, tocca «Crea l’organizzazione». Altrimenti scrivine un altro nel campo qui sotto.'
+				'Dopo non si potrà più cambiare. Se ti va bene, tocca «Crea l’organizzazione». Altrimenti scrivine un altro nel campo qui sotto.',
+			invite: 'L’invito alla persona responsabile partirà alla creazione, a:'
 		},
 		timeZoneLabel: 'Fuso orario',
 		timeZoneHint: (zone) =>
@@ -336,6 +409,24 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		timeZoneEurope: 'Europa',
 		timeZoneWorld: 'Resto del mondo',
 		create: 'Crea l’organizzazione',
+		manager: {
+			legend: 'Persona responsabile (facoltativo)',
+			intro:
+				'Se conosci il suo indirizzo e-mail, l’invito le arriva appena l’organizzazione è creata. Altrimenti lascia il campo vuoto: potrai invitarla più tardi dalla lista delle organizzazioni.'
+		},
+		invite: {
+			summary: 'Invita una persona responsabile',
+			help: 'L’invito parte per e-mail. Accettandolo, la persona diventa responsabile dell’organizzazione, senza che tu debba entrare nel suo spazio.',
+			emailLabel: 'Indirizzo e-mail della persona responsabile',
+			emailHint: 'Esempio: nome.cognome@example.org',
+			languageLabel: 'Lingua dell’e-mail',
+			languageHelp: 'La persona invitata riceve l’e-mail in questa lingua.',
+			submit: 'Invia l’invito',
+			sentTo: 'L’invito come persona responsabile è stato inviato a:',
+			sentFor: 'Organizzazione:',
+			validity: (days) =>
+				`È valido ${days} giorni. Accettandolo, questa persona diventa responsabile dell’organizzazione.`
+		},
 		rescue: {
 			title: 'Link di accesso di emergenza',
 			when: 'Usalo quando una persona non riceve l’e-mail di accesso, per esempio se l’invio delle e-mail non funziona.',
@@ -365,17 +456,19 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			unknownTimeZone: 'Scegli il fuso orario dalla lista.',
 			unknownStatus: 'Questo stato non esiste: prendine uno dalla lista.',
 			unknownOrganisation: 'L’organizzazione non esiste, o non esiste più.',
-			linkFailed: 'Non è stato possibile creare il link. Riprova tra un minuto.'
+			linkFailed: 'Non è stato possibile creare il link. Riprova tra un minuto.',
+			invalidManagerEmail:
+				'L’indirizzo della persona responsabile non ha la forma di un indirizzo e-mail. Esempio: nome.cognome@example.org'
 		}
 	},
 	en: {
 		title: 'Super admin',
 		intro:
-			'This page is for the person who runs the service: create organisations, set their status, enter their space to help them, and sort out a sign-in problem.',
+			'This page is for the person who runs the service: create organisations and invite the person in charge of each, set their status, enter their space to help them, and sort out a sign-in problem.',
 		created: 'The organisation has been created:',
 		createdAddress: 'Its public page:',
 		createdNext:
-			'To set it up, enter its space from the list of organisations, then invite the person in charge from the Members page.',
+			'To bring in the person in charge, tap ‘Invite the person in charge’ under its name, in the list of organisations.',
 		statusSaved: 'Status saved for',
 		listTitle: 'Organisations',
 		listEmpty: 'No organisations yet. Create the first one with the form below.',
@@ -409,7 +502,8 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			notYet: 'The organisation has not been created yet:',
 			proposed: 'Address of its public page, suggested from the name:',
 			check:
-				'It cannot be changed afterwards. If it suits you, tap ‘Create the organisation’. Otherwise, write another one in the field below.'
+				'It cannot be changed afterwards. If it suits you, tap ‘Create the organisation’. Otherwise, write another one in the field below.',
+			invite: 'The invitation for the person in charge will be sent on creation, to:'
 		},
 		timeZoneLabel: 'Time zone',
 		timeZoneHint: (zone) =>
@@ -418,6 +512,24 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		timeZoneEurope: 'Europe',
 		timeZoneWorld: 'Rest of the world',
 		create: 'Create the organisation',
+		manager: {
+			legend: 'Person in charge (optional)',
+			intro:
+				'If you know their email address, the invitation is sent as soon as the organisation is created. Otherwise, leave the field empty: you can invite them later from the list of organisations.'
+		},
+		invite: {
+			summary: 'Invite the person in charge',
+			help: 'The invitation is sent by email. By accepting it, the person becomes in charge of the organisation, without you having to enter its space.',
+			emailLabel: 'Email address of the person in charge',
+			emailHint: 'Example: first.last@example.org',
+			languageLabel: 'Language of the email',
+			languageHelp: 'The person you invite receives the email in this language.',
+			submit: 'Send the invitation',
+			sentTo: 'The invitation as person in charge has been sent to:',
+			sentFor: 'Organisation:',
+			validity: (days) =>
+				`It is valid for ${days} days. By accepting it, this person becomes in charge of the organisation.`
+		},
 		rescue: {
 			title: 'Emergency sign-in link',
 			when: 'Use it when someone does not receive the sign-in email, for example if sending emails has broken down.',
@@ -447,17 +559,18 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			unknownTimeZone: 'Pick the time zone from the list.',
 			unknownStatus: 'This status does not exist: pick one from the list.',
 			unknownOrganisation: 'The organisation does not exist, or no longer exists.',
-			linkFailed: 'The link could not be created. Try again in a minute.'
+			linkFailed: 'The link could not be created. Try again in a minute.',
+			invalidManagerEmail:
+				'The address of the person in charge does not look like an email address. Example: first.last@example.org'
 		}
 	},
 	ar: {
 		title: 'المشرف العام',
 		intro:
-			'هذه الصفحة مخصصة للشخص الذي يدير الخدمة: إنشاء المؤسسات، وتحديد حالتها، والدخول إلى مساحتها لمساعدتها، وحل مشكلة في تسجيل الدخول.',
+			'هذه الصفحة مخصصة للشخص الذي يدير الخدمة: إنشاء المؤسسات ودعوة المسؤول عن كل منها، وتحديد حالتها، والدخول إلى مساحتها لمساعدتها، وحل مشكلة في تسجيل الدخول.',
 		created: 'تم إنشاء المؤسسة:',
 		createdAddress: 'صفحتها العامة:',
-		createdNext:
-			'لتجهيزها، ادخل إلى مساحتها من قائمة المؤسسات، ثم ادع المسؤول عنها من صفحة الأعضاء.',
+		createdNext: 'لدعوة المسؤول عنها، اضغط «دعوة المسؤول» تحت اسمها في قائمة المؤسسات.',
 		statusSaved: 'تم حفظ حالة',
 		listTitle: 'المؤسسات',
 		listEmpty: 'لا توجد أي مؤسسة بعد. أنشئ الأولى بالنموذج أدناه.',
@@ -487,7 +600,8 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			notYet: 'لم تُنشأ المؤسسة بعد:',
 			proposed: 'عنوان صفحتها العامة، مقترح انطلاقًا من الاسم:',
 			check:
-				'لا يمكن تغييره بعد ذلك. إذا كان مناسبًا، فاضغط «إنشاء المؤسسة». وإلا فاكتب عنوانًا آخر في الحقل أدناه.'
+				'لا يمكن تغييره بعد ذلك. إذا كان مناسبًا، فاضغط «إنشاء المؤسسة». وإلا فاكتب عنوانًا آخر في الحقل أدناه.',
+			invite: 'ستُرسل دعوة المسؤول عند الإنشاء إلى:'
 		},
 		timeZoneLabel: 'المنطقة الزمنية',
 		timeZoneHint: (zone) =>
@@ -496,6 +610,23 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		timeZoneEurope: 'أوروبا',
 		timeZoneWorld: 'بقية العالم',
 		create: 'إنشاء المؤسسة',
+		manager: {
+			legend: 'المسؤول عن المؤسسة (اختياري)',
+			intro:
+				'إن كنت تعرف بريده الإلكتروني، تُرسل إليه الدعوة فور إنشاء المؤسسة. وإلا فاترك الحقل فارغًا: يمكنك دعوته لاحقًا من قائمة المؤسسات.'
+		},
+		invite: {
+			summary: 'دعوة المسؤول',
+			help: 'تُرسل الدعوة بالبريد الإلكتروني. بقبولها يصبح الشخص مسؤولًا عن المؤسسة، دون أن تحتاج إلى الدخول إلى مساحتها.',
+			emailLabel: 'البريد الإلكتروني للمسؤول',
+			emailHint: 'مثال: name@example.org',
+			languageLabel: 'لغة البريد الإلكتروني',
+			languageHelp: 'تصل رسالة الدعوة إلى الشخص المدعو بهذه اللغة.',
+			submit: 'إرسال الدعوة',
+			sentTo: 'أُرسلت دعوة المسؤول إلى:',
+			sentFor: 'المؤسسة:',
+			validity: (days) => `تبقى صالحة ${days} يومًا. بقبولها يصبح هذا الشخص مسؤولًا عن المؤسسة.`
+		},
 		rescue: {
 			title: 'رابط دخول احتياطي',
 			when: 'استعمله عندما لا يصل بريد تسجيل الدخول إلى شخص ما، مثلًا إذا تعطل إرسال الرسائل الإلكترونية.',
@@ -525,7 +656,8 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			unknownTimeZone: 'اختر المنطقة الزمنية من القائمة.',
 			unknownStatus: 'اختر حالة من القائمة.',
 			unknownOrganisation: 'هذه المؤسسة غير موجودة، أو لم تعد موجودة.',
-			linkFailed: 'تعذر إنشاء الرابط. أعد المحاولة بعد دقيقة.'
+			linkFailed: 'تعذر إنشاء الرابط. أعد المحاولة بعد دقيقة.',
+			invalidManagerEmail: 'عنوان المسؤول ليس بصيغة عنوان بريد إلكتروني. مثال: name@example.org'
 		}
 	}
 };

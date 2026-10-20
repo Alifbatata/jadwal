@@ -1262,15 +1262,15 @@ describe('les invitations', () => {
 		// La contrainte de la base compte une durée écoulée, 336 heures (migration 0056). Quatorze
 		// jours de calendrier, comptés dans un fuseau qui change d'heure, en font 337 : l'insertion de
 		// l'écran tombait alors sur la contrainte, et la page répondait 500. On rejoue son calcul à la
-		// lettre, lu dans le fichier de l'écran, le 20 octobre 2026 à Zurich : l'heure d'hiver arrive
-		// le 25, dans la durée.
+		// lettre, lu dans le fichier qui inscrit les invitations de l'écran des membres et de la
+		// console (étape 22), le 20 octobre 2026 à Zurich : l'heure d'hiver arrive le 25, dans la durée.
 		const source = readFileSync(
-			new URL('../src/routes/membres/+page.server.ts', import.meta.url),
+			new URL('../src/lib/server/invitations.ts', import.meta.url),
 			'utf8'
 		);
-		const jours = /^const INVITATION_DAYS = (\d+);$/m.exec(source)?.[1];
+		const jours = /^export const INVITATION_DAYS = (\d+);$/m.exec(source)?.[1];
 		const duree = /now\(\) \+ (make_interval\([^)]*\))/.exec(source)?.[1];
-		expect(jours, 'INVITATION_DAYS dans l’écran des membres').toBeTruthy();
+		expect(jours, 'INVITATION_DAYS dans invitations.ts').toBeTruthy();
 		expect(duree, 'la fin calculée par l’écran').toBeTruthy();
 		const intervalle = (duree as string).replaceAll('${INVITATION_DAYS}', jours as string);
 		const creation = '2026-10-20 12:00:00+00';

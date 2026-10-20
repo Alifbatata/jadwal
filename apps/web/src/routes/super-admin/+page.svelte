@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { resolve } from '$app/paths';
+	import { LANGUES, NOM_DE_LANGUE } from '$lib/i18n.js';
 	import { commonTexts } from '$lib/i18n/common.js';
 	import { superAdminTexts } from '$lib/i18n/super-admin.js';
 	import { PUBLIC_ADDRESS_PATTERN, proposePublicAddress } from './public-address.js';
@@ -43,6 +44,9 @@
 		const listed = data.timeZones.europe.includes(zone) || data.timeZones.world.includes(zone);
 		return listed ? zone : data.defaultTimeZone;
 	});
+	// La personne responsable, facultative, et la langue de son courriel : celle de l'écran d'abord.
+	const managerEmail = untrack(() => saisi?.managerEmail ?? '');
+	const managerLanguage = untrack(() => saisi?.language ?? data.language);
 	const shownAddress = $derived(address || proposePublicAddress(name));
 	/**
 	 * Un nom sans lettre latine ne propose aucune adresse : la phrase sous le champ demande de
@@ -56,6 +60,14 @@
 	 * qu'elle soit confirmée, ou changée, dans l'étape qui la montre en entier (étape 19, D6).
 	 */
 	const toConfirm = $derived(form && 'toConfirm' in form ? form.toConfirm : null);
+
+	/**
+	 * L'invitation saisie dans la liste et refusée : elle revient dans le formulaire de son
+	 * organisation, ouvert, avec l'adresse et la langue saisies.
+	 */
+	const inviteBack = $derived(form && 'invite' in form ? form.invite : null);
+	const inviteFor = (organizationId: string) =>
+		inviteBack?.organizationId === organizationId ? inviteBack : null;
 
 	function followName(event: Event & { currentTarget: HTMLInputElement }) {
 		name = event.currentTarget.value;
@@ -89,10 +101,20 @@
 			{text.confirm.proposed}
 			<strong><bdi dir="ltr">{toConfirm.address}</bdi></strong>
 		</p>
+		{#if toConfirm.managerEmail}
+			<p class="adresse-complete">
+				{text.confirm.invite}
+				<strong><bdi dir="ltr">{toConfirm.managerEmail}</bdi></strong>
+			</p>
+		{/if}
 		<p>{text.confirm.check}</p>
 		<form method="post" action="?/ouvrir" class="colonne">
 			<input type="hidden" name="name" value={toConfirm.name} />
 			<input type="hidden" name="timeZone" value={toConfirm.timeZone} />
+			{#if toConfirm.managerEmail}
+				<input type="hidden" name="managerEmail" value={toConfirm.managerEmail} />
+				<input type="hidden" name="emailLanguage" value={toConfirm.language} />
+			{/if}
 			<label for="slug-confirme">{text.addressLabel}</label>
 			<input
 				id="slug-confirme"
@@ -123,7 +145,28 @@
 			{text.createdAddress}
 			<bdi dir="ltr">{form.created.address}</bdi>
 		</p>
-		<p>{text.createdNext}</p>
+		{#if form.created.invited}
+			<p>
+				{text.invite.sentTo}
+				<bdi dir="ltr">{form.created.invited}</bdi>
+			</p>
+			<p>{text.invite.validity(data.invitationDays)}</p>
+		{:else}
+			<p>{text.createdNext}</p>
+		{/if}
+	</section>
+{/if}
+{#if form && 'invited' in form && form.invited}
+	<section class="succes" aria-labelledby="invitee-titre">
+		<p id="invitee-titre">
+			{text.invite.sentTo}
+			<strong><bdi dir="ltr">{form.invited.email}</bdi></strong>
+		</p>
+		<p>
+			{text.invite.sentFor}
+			<bdi>{form.invited.name}</bdi>
+		</p>
+		<p>{text.invite.validity(data.invitationDays)}</p>
 	</section>
 {/if}
 {#if form && 'statusSaved' in form && form.statusSaved}
@@ -150,6 +193,8 @@
 			<dd>{text.enterHelp}</dd>
 			<dt>{text.statusLabel}</dt>
 			<dd>{text.statusHelp}</dd>
+			<dt>{text.invite.summary}</dt>
+			<dd>{text.invite.help}</dd>
 		</dl>
 	{/if}
 	<ul>
@@ -184,6 +229,48 @@
 						<button type="submit">{text.saveStatus}</button>
 					</form>
 				</div>
+
+				<!-- Inviter sa personne responsable sans entrer dans son espace (étape 22). Un élément
+				     replié : sans JavaScript comme avec, il s'ouvre au toucher, et il revient ouvert, avec ce
+				     qui a été saisi, quand l'invitation de cette organisation a été refusée. -->
+				<details class="inviter" open={inviteFor(organisation.id) !== null}>
+					<summary>{text.invite.summary}</summary>
+					<form method="post" action="?/inviter" class="colonne">
+						<input type="hidden" name="organizationId" value={organisation.id} />
+						<label for={`invite-email-${organisation.id}`}>{text.invite.emailLabel}</label>
+						<input
+							id={`invite-email-${organisation.id}`}
+							name="email"
+							type="email"
+							dir="ltr"
+							autocomplete="off"
+							required
+							aria-describedby={`invite-email-aide-${organisation.id}`}
+							value={inviteFor(organisation.id)?.email ?? ''}
+						/>
+						<p id={`invite-email-aide-${organisation.id}`} class="aide">{text.invite.emailHint}</p>
+						<label for={`invite-language-${organisation.id}`}>{text.invite.languageLabel}</label>
+						<select
+							id={`invite-language-${organisation.id}`}
+							name="emailLanguage"
+							aria-describedby={`invite-language-aide-${organisation.id}`}
+						>
+							{#each LANGUES as langue (langue)}
+								<option
+									value={langue}
+									lang={langue}
+									selected={langue === (inviteFor(organisation.id)?.language ?? data.language)}
+								>
+									{NOM_DE_LANGUE[langue]}
+								</option>
+							{/each}
+						</select>
+						<p id={`invite-language-aide-${organisation.id}`} class="aide">
+							{text.invite.languageHelp}
+						</p>
+						<button type="submit">{text.invite.submit}</button>
+					</form>
+				</details>
 			</li>
 		{/each}
 	</ul>
@@ -255,6 +342,33 @@
 		</select>
 		<p id="timeZone-aide" class="aide">{text.timeZoneHint(data.defaultTimeZone)}</p>
 		<p id="timeZone-ville" class="aide">{text.timeZoneNotListed}</p>
+
+		<!-- La personne responsable, facultative (étape 22) : saisie, l'invitation part avec la
+		     création, dans la même transaction ; vide, l'organisation est créée seule. -->
+		<fieldset aria-describedby="manager-intro">
+			<legend>{text.manager.legend}</legend>
+			<p id="manager-intro" class="aide">{text.manager.intro}</p>
+			<label for="managerEmail">{text.invite.emailLabel}</label>
+			<input
+				id="managerEmail"
+				name="managerEmail"
+				type="email"
+				dir="ltr"
+				autocomplete="off"
+				aria-describedby="managerEmail-aide"
+				value={managerEmail}
+			/>
+			<p id="managerEmail-aide" class="aide">{text.invite.emailHint}</p>
+			<label for="emailLanguage">{text.invite.languageLabel}</label>
+			<select id="emailLanguage" name="emailLanguage" aria-describedby="emailLanguage-aide">
+				{#each LANGUES as langue (langue)}
+					<option value={langue} lang={langue} selected={langue === managerLanguage}>
+						{NOM_DE_LANGUE[langue]}
+					</option>
+				{/each}
+			</select>
+			<p id="emailLanguage-aide" class="aide">{text.invite.languageHelp}</p>
+		</fieldset>
 
 		<button type="submit">{text.create}</button>
 	</form>
@@ -331,6 +445,29 @@
 	}
 	.actions label {
 		margin-block-start: 0;
+	}
+	fieldset {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		border: 1px solid #ddd;
+		border-radius: 0.5rem;
+		padding: 0.75rem;
+		margin: 0.75rem 0 0;
+	}
+	legend {
+		font-weight: 600;
+		padding: 0 0.25rem;
+	}
+	details.inviter {
+		margin-block-start: 0.5rem;
+	}
+	details.inviter summary {
+		cursor: pointer;
+		min-height: 44px;
+		display: flex;
+		align-items: center;
+		font-weight: 600;
 	}
 	input,
 	select,

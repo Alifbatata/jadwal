@@ -16,7 +16,7 @@ import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { isCanonicalTimeZone } from '@jadwal/core/ics';
-import { createDatabase, newId, sql, type DatabaseHandle } from '@jadwal/db';
+import { createDatabase, newId, sql, withOrg, type DatabaseHandle } from '@jadwal/db';
 import { frenchLeft, ISO_DATE, textSegments, visibleText } from './textes-lus.js';
 
 const origin = inject('origin');
@@ -962,6 +962,374 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 		});
 	});
 
+	describe('22 : inviter la personne responsable depuis la console (ADR 0049)', () => {
+		/** Les invitations d'une organisation, par son adresse, de la plus ancienne à la plus récente. */
+		async function invitationsDe(adresse: string) {
+			return maintenance(async (tx) =>
+				lignes<{
+					email: string;
+					role: string;
+					status: string;
+					invited_by: string;
+					heures: number;
+				}>(
+					await tx.execute(sql`
+						select i."email", i."role", i."status", i."invited_by",
+							round(extract(epoch from (i."expires_at" - i."created_at")) / 3600)::int as "heures"
+						from "invitation" i join "organization" o on o."id" = i."organization_id"
+						where o."slug" = ${adresse}
+						order by i."created_at", i."id"
+					`)
+				)
+			);
+		}
+
+		/**
+		 * Les entrées du journal d'une organisation, par son adresse. Le journal se lit sous le rôle du
+		 * super-admin, dans le contexte de l'organisation : le propriétaire n'y a pas accès (migration
+		 * 0029), et une lecture sous lui passerait à vide.
+		 */
+		async function journalDe(adresse: string) {
+			const [organisation] = await maintenance(async (tx) =>
+				lignes<{ id: string }>(
+					await tx.execute(sql`select "id" from "organization" where "slug" = ${adresse}`)
+				)
+			);
+			if (!organisation) return [];
+			const superAdmin = createDatabase({
+				role: 'superadmin',
+				overrides: { database: testDatabase }
+			});
+			try {
+				const entrees = await withOrg(
+					superAdmin.db,
+					{ organizationId: organisation.id, userId: exploitantId },
+					async (tx) =>
+						lignes<{ action: string; actor_id: string; after: unknown }>(
+							await tx.execute(sql`
+								select "action", "actor_id", "after" from "audit_log"
+								order by "created_at", "id"
+							`)
+						)
+				);
+				return entrees.map((entree) => ({
+					...entree,
+					after: typeof entree.after === 'string' ? JSON.parse(entree.after) : entree.after
+				}));
+			} finally {
+				await superAdmin.close();
+			}
+		}
+
+		/** Le dernier courriel reçu par cette adresse, sujet compris. */
+		async function dernierCourriel(email: string) {
+			const noms = (await readdir(outbox)).filter((nom) => nom.endsWith('.json')).sort();
+			return noms
+				.map(
+					(nom) =>
+						JSON.parse(readFileSync(join(outbox, nom), 'utf8')) as {
+							to: string;
+							subject: string;
+							text: string;
+						}
+				)
+				.filter((courriel) => courriel.to === email)
+				.at(-1);
+		}
+
+		/** Le bloc qui confirme une création ou une invitation, lu comme on le lit. */
+		function succes(html: string): string {
+			return texteDe(element(html, /<section\b[^>]*class="succes[\s"]/, 'section'));
+		}
+
+		it('creates the organisation and invites its manager in the same gesture, in the language chosen', async () => {
+			const email = 'resp-horizon-est@example.test';
+			const reponse = await postForm(
+				'/super-admin?/ouvrir',
+				{
+					name: 'Horizon Est',
+					slug: 'horizon-est',
+					timeZone: 'Europe/Zurich',
+					managerEmail: email,
+					emailLanguage: 'de'
+				},
+				avecPouvoirs
+			);
+			expect(reponse.status).toBe(200);
+			const lu = succes(await reponse.text());
+			expect(lu).toContain('L’organisation est créée : Horizon Est');
+			expect(lu).toContain(`L’invitation de personne responsable est partie à : ${email}`);
+			expect(lu).toContain(
+				'Elle vaut 14 jours. En l’acceptant, cette personne devient responsable de l’organisation.'
+			);
+			expect(lu).not.toContain('Membres');
+
+			// Une invitation, de responsable, signée du super-admin, pour quatorze jours.
+			expect(await invitationsDe('horizon-est')).toEqual([
+				{ email, role: 'org_admin', status: 'pending', invited_by: exploitantId, heures: 14 * 24 }
+			]);
+			// Écrite au journal de l'organisation, signée de l'exploitant, comme depuis Membres.
+			expect(await journalDe('horizon-est')).toEqual([
+				{
+					action: 'invitation.create',
+					actor_id: exploitantId,
+					after: { email, role: 'org_admin' }
+				}
+			]);
+			// Le courriel, dans la langue choisie, nomme l'organisation.
+			const courriel = await dernierCourriel(email);
+			expect(courriel?.subject).toBe('Einladung zu Horizon Est auf jadwal');
+			expect(courriel?.text).toContain(`${origin}/connexion`);
+
+			// La personne la trouve en se connectant, l'accepte, et devient responsable.
+			const invitee = await signIn(email);
+			const choix = await (await get('/organisations', invitee)).text();
+			expect(texteDe(choix)).toContain('Horizon Est');
+			const invitationId = choix.match(/name="invitationId" value="([^"]+)"/)?.[1] ?? '';
+			const acceptee = await postForm('/organisations?/accepter', { invitationId }, invitee);
+			expect(acceptee.status).toBe(303);
+			const role = await maintenance(async (tx) =>
+				lignes<{ role: string }>(
+					await tx.execute(sql`
+						select m."role" from "membership" m
+						join "organization" o on o."id" = m."organization_id"
+						join "user" u on u."id" = m."user_id"
+						where o."slug" = 'horizon-est' and u."email" = ${email}
+					`)
+				)
+			);
+			expect(role).toEqual([{ role: 'org_admin' }]);
+		});
+
+		it('creates the organisation alone when no address is given, sends nothing, and says how to invite later', async () => {
+			const avant = (await readdir(outbox)).length;
+			const reponse = await postForm(
+				'/super-admin?/ouvrir',
+				{
+					name: 'Horizon Ouest',
+					slug: 'horizon-ouest',
+					timeZone: 'Europe/Zurich',
+					managerEmail: '  ',
+					emailLanguage: 'fr'
+				},
+				avecPouvoirs
+			);
+			expect(reponse.status).toBe(200);
+			expect(succes(await reponse.text())).toContain(
+				'Pour y faire entrer sa personne responsable, touchez « Inviter une personne responsable » sous son nom, dans la liste des organisations.'
+			);
+			expect(await invitationsDe('horizon-ouest')).toEqual([]);
+			expect((await readdir(outbox)).length).toBe(avant);
+		});
+
+		it('carries the manager’s address through the confirmation step, and invites once created', async () => {
+			const email = 'resp-horizon-nord@example.test';
+			const proposee = await postForm(
+				'/super-admin?/ouvrir',
+				{
+					name: 'Horizon Nord',
+					slug: '',
+					timeZone: 'Europe/Zurich',
+					managerEmail: email,
+					emailLanguage: 'it'
+				},
+				avecPouvoirs
+			);
+			expect(proposee.status).toBe(200);
+			const html = await proposee.text();
+			expect(await organisationA('horizon-nord')).toBeUndefined();
+			expect(await dernierCourriel(email)).toBeUndefined();
+			const etape = section(html, 'confirmer-titre');
+			expect(texteDe(etape)).toContain(
+				`L’invitation de personne responsable partira à la création, à : ${email}`
+			);
+			expect(champsDe(etape)).toEqual({
+				name: 'Horizon Nord',
+				timeZone: 'Europe/Zurich',
+				managerEmail: email,
+				emailLanguage: 'it',
+				slug: 'horizon-nord'
+			});
+			// Le formulaire de création, plus bas, garde l'adresse et la langue saisies.
+			expect(valeurDuChamp(html, 'managerEmail')).toBe(email);
+			expect(element(html, /<select\b[^>]*id="emailLanguage"/, 'select')).toMatch(
+				/<option value="it"[^>]*selected/
+			);
+
+			const confirmee = await postForm('/super-admin?/ouvrir', champsDe(etape), avecPouvoirs);
+			expect(confirmee.status).toBe(200);
+			expect(await invitationsDe('horizon-nord')).toMatchObject([
+				{ email, role: 'org_admin', status: 'pending' }
+			]);
+			expect((await dernierCourriel(email))?.subject).toBe(
+				'Invito a unirti a Horizon Nord su jadwal'
+			);
+		});
+
+		it('refuses a malformed manager address, creates nothing, and gives back what was typed', async () => {
+			const avant = await nombreDOrganisations();
+			const reponse = await postForm(
+				'/super-admin?/ouvrir',
+				{
+					name: 'Horizon Sud',
+					slug: 'horizon-sud',
+					timeZone: 'Europe/Zurich',
+					managerEmail: 'pas-une-adresse',
+					emailLanguage: 'en'
+				},
+				avecPouvoirs
+			);
+			expect(reponse.status).toBe(400);
+			const html = await reponse.text();
+			expect(erreur(html)).toBe(
+				'L’adresse de la personne responsable ne convient pas. Exemple : prenom.nom@example.org'
+			);
+			expect(await nombreDOrganisations()).toBe(avant);
+			expect(valeurDuChamp(html, 'name')).toBe('Horizon Sud');
+			expect(valeurDuChamp(html, 'slug')).toBe('horizon-sud');
+			expect(valeurDuChamp(html, 'managerEmail')).toBe('pas-une-adresse');
+			expect(element(html, /<select\b[^>]*id="emailLanguage"/, 'select')).toMatch(
+				/<option value="en"[^>]*selected/
+			);
+		});
+
+		it('invites no one when the organisation cannot be created', async () => {
+			const email = 'resp-adresse-prise@example.test';
+			const reponse = await postForm(
+				'/super-admin?/ouvrir',
+				{
+					name: 'Club',
+					slug: EXISTANTE_ADRESSE,
+					timeZone: 'Europe/Zurich',
+					managerEmail: email,
+					emailLanguage: 'fr'
+				},
+				avecPouvoirs
+			);
+			expect(reponse.status).toBe(400);
+			expect(await dernierCourriel(email)).toBeUndefined();
+			expect(await invitationsDe(EXISTANTE_ADRESSE)).not.toContainEqual(
+				expect.objectContaining({ email })
+			);
+		});
+
+		it('invites a manager later from the list, without entering the organisation', async () => {
+			const html = await (await get('/super-admin', avecPouvoirs)).text();
+			// Chaque organisation de la liste porte le formulaire, avec son identifiant.
+			const liste = section(html, 'liste-titre');
+			const formulaire = [...liste.matchAll(/<form\b[^>]*action="\?\/inviter"[\s\S]*?<\/form>/g)]
+				.map((trouve) => trouve[0])
+				.find((morceau) => morceau.includes(`value="${existanteId}"`));
+			expect(
+				formulaire,
+				'aucun formulaire d’invitation pour l’organisation existante'
+			).toBeTruthy();
+			expect(texteDe(liste)).toContain(
+				'Inviter une personne responsable L’invitation part par courriel. En l’acceptant, la personne devient responsable de l’organisation, sans que vous ayez à entrer dans son espace.'
+			);
+
+			const email = 'resp-plus-tard@example.test';
+			const premiere = await postForm(
+				'/super-admin?/inviter',
+				{ organizationId: existanteId, email, emailLanguage: 'en' },
+				avecPouvoirs
+			);
+			// Une réponse de la page, pas un passage dans l'espace de l'organisation.
+			expect(premiere.status).toBe(200);
+			const lu = succes(await premiere.text());
+			expect(lu).toContain(`L’invitation de personne responsable est partie à : ${email}`);
+			expect(lu).toContain(`Organisation : ${EXISTANTE}`);
+			expect((await dernierCourriel(email))?.subject).toBe(
+				`Invitation to join ${EXISTANTE} on jadwal`
+			);
+
+			// Une seconde invitation à la même adresse remplace la première, comme depuis Membres.
+			const seconde = await postForm(
+				'/super-admin?/inviter',
+				{ organizationId: existanteId, email, emailLanguage: 'fr' },
+				avecPouvoirs
+			);
+			expect(seconde.status).toBe(200);
+			const miennes = (await invitationsDe(EXISTANTE_ADRESSE)).filter(
+				(ligne) => ligne.email === email
+			);
+			expect(miennes.map((ligne) => [ligne.status, ligne.role, ligne.invited_by])).toEqual([
+				['cancelled', 'org_admin', exploitantId],
+				['pending', 'org_admin', exploitantId]
+			]);
+			const journal = (await journalDe(EXISTANTE_ADRESSE)).filter(
+				(entree) => entree.action === 'invitation.create'
+			);
+			expect(journal.at(-1)).toEqual({
+				action: 'invitation.create',
+				actor_id: exploitantId,
+				after: { email, role: 'org_admin' }
+			});
+
+			// La console reste la console : la session n'est entrée dans aucune organisation.
+			const accueil = await get('/', avecPouvoirs);
+			expect(accueil.status).not.toBe(200);
+		});
+
+		it('answers the same, word for word, whether the address has an account or not (ADR 0017)', async () => {
+			const lue = async (email: string) => {
+				const reponse = await postForm(
+					'/super-admin?/inviter',
+					{ organizationId: existanteId, email, emailLanguage: 'fr' },
+					avecPouvoirs
+				);
+				expect(reponse.status).toBe(200);
+				return succes(await reponse.text()).replace(email, '…');
+			};
+			expect(await lue(EXPLOITANT)).toBe(await lue('personne-inconnue@example.test'));
+		});
+
+		it('refuses an unknown organisation and a malformed address, and sends nothing', async () => {
+			const email = 'resp-nulle-part@example.test';
+			for (const organizationId of [newId(), 'pas-un-identifiant']) {
+				const reponse = await postForm(
+					'/super-admin?/inviter',
+					{ organizationId, email, emailLanguage: 'fr' },
+					avecPouvoirs
+				);
+				expect(reponse.status, organizationId).toBe(404);
+				expect(erreur(await reponse.text())).toBe('Cette organisation n’existe pas, ou plus.');
+			}
+			expect(await dernierCourriel(email)).toBeUndefined();
+
+			const mauvaise = await postForm(
+				'/super-admin?/inviter',
+				{ organizationId: existanteId, email: 'pas-une-adresse', emailLanguage: 'fr' },
+				avecPouvoirs
+			);
+			expect(mauvaise.status).toBe(400);
+			expect(erreur(await mauvaise.text())).toBe(
+				'L’adresse de la personne responsable ne convient pas. Exemple : prenom.nom@example.org'
+			);
+		});
+
+		it('keeps both gestures for the super-admin with powers', async () => {
+			for (const [chemin, champs] of [
+				[
+					'/super-admin?/ouvrir',
+					{
+						name: 'Sans pouvoir',
+						slug: 'sans-pouvoir',
+						timeZone: 'Europe/Zurich',
+						managerEmail: 'x@example.test'
+					}
+				],
+				['/super-admin?/inviter', { organizationId: existanteId, email: 'y@example.test' }]
+			] as const) {
+				const reponse = await postForm(chemin, champs, sansPouvoirs);
+				expect(reponse.status, chemin).not.toBe(200);
+			}
+			expect(await organisationA('sans-pouvoir')).toBeUndefined();
+			expect(await dernierCourriel('x@example.test')).toBeUndefined();
+			expect(await dernierCourriel('y@example.test')).toBeUndefined();
+		});
+	});
+
 	describe('D2 et A3 : les écrans en cinq langues', () => {
 		const ECRANS = [
 			['/super-admin', 'la console'],
@@ -1035,7 +1403,12 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 					{ name: 'Club', slug: EXISTANTE_ADRESSE, timeZone: 'Europe/Zurich' }
 				],
 				courriel: ['/super-admin?/lienSecours', { email: 'pas-une-adresse' }],
-				etat: ['/super-admin?/statut', { organizationId: newId(), status: 'fermee' }]
+				etat: ['/super-admin?/statut', { organizationId: newId(), status: 'fermee' }],
+				responsable: [
+					'/super-admin?/ouvrir',
+					{ name: 'Club', slug: 'club-z', timeZone: 'Europe/Zurich', managerEmail: 'nulle' }
+				],
+				invitation: ['/super-admin?/inviter', { organizationId: existanteId, email: 'nulle' }]
 			} as const;
 			for (const langue of LANGUES) {
 				await langueDuCompte(langue);
@@ -1104,7 +1477,25 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 						{ name: `Centre ${langue}`, slug: `centre-succes-${langue}`, timeZone: 'Europe/Zurich' }
 					],
 					etat: ['/super-admin?/statut', { organizationId: existanteId, status: 'active' }],
-					secours: ['/super-admin?/lienSecours', { email: `sa-succes-${langue}@example.test` }]
+					secours: ['/super-admin?/lienSecours', { email: `sa-succes-${langue}@example.test` }],
+					creationInvitee: [
+						'/super-admin?/ouvrir',
+						{
+							name: `Foyer ${langue}`,
+							slug: `foyer-succes-${langue}`,
+							timeZone: 'Europe/Zurich',
+							managerEmail: `resp-foyer-${langue}@example.test`,
+							emailLanguage: langue
+						}
+					],
+					invitation: [
+						'/super-admin?/inviter',
+						{
+							organizationId: existanteId,
+							email: `resp-existante-${langue}@example.test`,
+							emailLanguage: langue
+						}
+					]
 				} as const;
 				for (const [nom, [chemin, champs]] of Object.entries(cas)) {
 					const reponse = await postForm(chemin, champs, avecPouvoirs);

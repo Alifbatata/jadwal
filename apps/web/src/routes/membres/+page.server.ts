@@ -14,10 +14,11 @@
 
 import { fail, redirect } from '@sveltejs/kit';
 import type { IsoDate } from '@jadwal/core';
-import { newId, sql } from '@jadwal/db';
+import { sql } from '@jadwal/db';
 import { isLangue, type Langue } from '$lib/i18n.js';
 import { record } from '$lib/server/audit.js';
 import { forgetOrganisation, withSessionOrg } from '$lib/server/context.js';
+import { createInvitation, INVITATION_DAYS } from '$lib/server/invitations.js';
 import { mustAdminister, mustBeInOrganisation } from '$lib/server/guard.js';
 import { createMailer } from '$lib/server/mail/index.js';
 import { invitationEmail } from '$lib/server/mail/messages.js';
@@ -25,8 +26,6 @@ import { departureArrival } from '../organisations/departure.js';
 import type { Actions, PageServerLoad } from './$types.js';
 import { SELF_EDITOR_ARRIVAL } from './self-editor.js';
 
-/** Quatorze jours : assez pour une absence, assez court pour ne pas traîner. */
-const INVITATION_DAYS = 14;
 const ADRESSE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 /** Un identifiant d'adhésion. Autre chose n'atteint pas la base, qui le refuserait en erreur. */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -212,55 +211,16 @@ export const actions: Actions = {
 			return fail(400, { error: 'unknownRole' as const, email, role: 'editor', language });
 		}
 
-		// Aucune consultation des comptes : on enregistre l'invitation et on envoie le message. Il
-		// n'y a donc aucune branche qui puisse dépendre de l'existence d'un compte, ni par le
-		// message, ni par le temps de réponse (ADR 0017).
-		const invitationId = newId();
-		await withSessionOrg(context, async (tx) => {
-			// Une invitation encore en attente pour cette adresse, échue ou non, est close d'abord, et
-			// la nouvelle la remplace. L'index des invitations en attente n'en admet qu'une par adresse,
-			// échues comprises : sans cela, l'insertion ne faisait rien, et l'écran disait « envoyée »
-			// pour une invitation que personne ne voyait, ou qui gardait son ancien rôle (étape 17).
-			// Seules les invitations de cette organisation sont touchées, et aucun compte n'est lu : la
-			// réponse reste la même, mot pour mot.
-			const remplacees = rows<{ id: string }>(
-				await tx.execute(sql`
-					update "invitation" set "status" = 'cancelled', "resolved_at" = now()
-					where "organization_id" = ${context.organizationId}
-						and lower("email") = lower(${email}) and "status" = 'pending'
-					returning "id"
-				`)
-			);
-			for (const remplacee of remplacees) {
-				await record(tx, context.organizationId, context.userId, {
-					action: 'invitation.cancel',
-					targetTable: 'invitation',
-					targetId: remplacee.id,
-					after: { replacedBy: invitationId }
-				});
-			}
-			// La fin se compte en heures, comme la borne de la base (migration 0056) : quatorze jours de
-			// calendrier, dans un fuseau qui passe à l'heure d'hiver, font 337 heures, et la base les
-			// refusait.
-			// Il ne reste de conflit possible qu'avec une invitation envoyée au même instant, qui vaut
-			// alors pour celle-ci.
-			const creee = rows<{ id: string }>(
-				await tx.execute(sql`
-					insert into "invitation" ("id", "organization_id", "email", "role", "invited_by", "expires_at")
-					values (${invitationId}, ${context.organizationId}, ${email}, ${role}, ${context.userId},
-						now() + make_interval(hours => ${INVITATION_DAYS} * 24))
-					on conflict do nothing
-					returning "id"
-				`)
-			);
-			if (creee.length === 0) return;
-			await record(tx, context.organizationId, context.userId, {
-				action: 'invitation.create',
-				targetTable: 'invitation',
-				targetId: invitationId,
-				after: { email, role }
-			});
-		});
+		// Aucune consultation des comptes : on enregistre l'invitation et on envoie le message
+		// (`invitations.ts`, ADR 0017).
+		await withSessionOrg(context, (tx) =>
+			createInvitation(tx, {
+				organizationId: context.organizationId,
+				actorId: context.userId,
+				email,
+				role
+			})
+		);
 		const organisation = await withSessionOrg(context, organisationName);
 		// La langue que la personne qui invite a choisie, celle de son écran d'abord : lire celle du
 		// compte invité demanderait de le chercher par son adresse, ce que ce chemin ne fait jamais

@@ -1,6 +1,7 @@
-// L'espace du super-admin : créer et suspendre des organisations, entrer dans l'espace d'une
-// organisation avec tous les pouvoirs, produire un lien de connexion de secours. jadwal est gratuit :
-// il n'y a plus de plan à choisir (étape 22, ADR 0049).
+// L'espace du super-admin : créer et suspendre des organisations, inviter leur personne
+// responsable, entrer dans l'espace d'une organisation avec tous les pouvoirs, produire un lien de
+// connexion de secours. jadwal est gratuit : il n'y a plus de plan à choisir, et c'est le super-admin
+// qui donne l'accès (étape 22, ADR 0049).
 //
 // Depuis l'étape 4, il n'y a plus de fenêtre d'accès à ouvrir : il lit et écrit partout, à tout
 // moment (ADR 0025). Ce que cela coûte est écrit dans `docs/SECURITE.md`, et ce que les
@@ -13,11 +14,15 @@
 // l'espace (`i18n/super-admin.ts`, étape 18).
 
 import { fail, redirect } from '@sveltejs/kit';
-import { newId, sql } from '@jadwal/db';
+import { newId, sql, withOrg } from '@jadwal/db';
+import { isLangue, type Langue } from '$lib/i18n.js';
 import { auth, captureMagicLink } from '$lib/server/auth.js';
 import { chooseOrganisation, recordAdminAccess } from '$lib/server/context.js';
 import { superAdminDatabase } from '$lib/server/database.js';
 import { mustBeSuperAdmin } from '$lib/server/guard.js';
+import { createInvitation, INVITATION_DAYS } from '$lib/server/invitations.js';
+import { createMailer } from '$lib/server/mail/index.js';
+import { invitationEmail } from '$lib/server/mail/messages.js';
 import { hasNoLetter, isPublicAddress, proposePublicAddress } from './public-address.js';
 import { DEFAULT_TIME_ZONE, isOfferedTimeZone, timeZoneChoices } from './time-zones.server.js';
 import type { Actions, PageServerLoad } from './$types.js';
@@ -61,6 +66,15 @@ async function addressTaken(slug: string): Promise<boolean> {
 }
 
 /**
+ * La langue du courriel d'invitation : celle que le formulaire envoie, sinon celle de l'écran. Elle
+ * vient de la personne qui invite, jamais d'un compte lu par l'adresse invitée (ADR 0017).
+ */
+function emailLanguage(form: FormData, screen: Langue | undefined): Langue {
+	const chosen = String(form.get('emailLanguage') ?? '');
+	return isLangue(chosen) ? chosen : (screen ?? 'fr');
+}
+
+/**
  * Le début de l'adresse d'une page publique, tel que l'écran l'écrit : l'hôte de l'origine publique
  * du service (`ORIGIN`, que l'adaptateur donne à `event.url`), sans le protocole, puis `/m/`.
  */
@@ -84,21 +98,32 @@ export const load: PageServerLoad = async (event) => {
 		statuts: STATUTS,
 		timeZones: timeZoneChoices(),
 		defaultTimeZone: DEFAULT_TIME_ZONE,
-		publicPrefix: publicPrefix(event.url)
+		publicPrefix: publicPrefix(event.url),
+		invitationDays: INVITATION_DAYS
 	};
 };
 
 export const actions: Actions = {
-	/** Créer une organisation. Le nom de l'action date d'avant l'étape 18, où l'écran disait « ouvrir ». */
+	/**
+	 * Créer une organisation, et, si son adresse est saisie, inviter sa personne responsable dans le
+	 * même geste (étape 22). Le nom de l'action date d'avant l'étape 18, où l'écran disait « ouvrir ».
+	 */
 	ouvrir: async (event) => {
-		mustBeSuperAdmin(event);
+		const person = mustBeSuperAdmin(event);
 		const form = await event.request.formData();
 		const name = String(form.get('name') ?? '').trim();
 		const written = String(form.get('slug') ?? '').trim();
 		const timeZone = String(form.get('timeZone') ?? '').trim();
+		// Facultative : vide, l'organisation est créée seule, et sa personne responsable s'invite plus
+		// tard depuis la liste.
+		const managerEmail = String(form.get('managerEmail') ?? '').trim();
+		const language = emailLanguage(form, event.locals.langue);
 		// Ce que la personne a saisi revient dans le formulaire, pour qu'une erreur ne l'efface pas.
-		const values = { name, slug: written, timeZone };
+		const values = { name, slug: written, timeZone, managerEmail, language };
 		if (name.length === 0) return fail(400, { error: 'nameRequired' as const, values });
+		if (managerEmail !== '' && !ADRESSE.test(managerEmail)) {
+			return fail(400, { error: 'invalidManagerEmail' as const, values });
+		}
 		// Sans JavaScript, le champ arrive vide : le serveur propose l'adresse comme l'écran l'aurait
 		// fait pendant la frappe. Une adresse écrite, elle, est gardée telle quelle et vérifiée.
 		const slug = written || proposePublicAddress(name);
@@ -118,15 +143,37 @@ export const actions: Actions = {
 				return fail(400, { error: 'addressTaken' as const, values: { ...values, slug } });
 			}
 			return {
-				toConfirm: { name, slug, timeZone, address: `${publicPrefix(event.url)}${slug}` },
+				toConfirm: {
+					name,
+					slug,
+					timeZone,
+					managerEmail,
+					language,
+					address: `${publicPrefix(event.url)}${slug}`
+				},
 				values
 			};
 		}
+		// L'organisation et l'invitation dans une seule transaction : une organisation qui ne se crée
+		// pas n'invite personne, et une invitation qui échoue ne laisse pas d'organisation créée sans
+		// elle. Le contexte est celui de l'organisation nouvelle, avec la personne du super-admin : la
+		// base ne laisse inscrire l'invitation et l'entrée du journal que là (migrations 0033 et 0071),
+		// et le journal la signe de son identité (ADR 0025).
+		const organizationId = newId();
 		try {
-			await superAdminDatabase().execute(sql`
-				insert into "organization" ("id", "slug", "name", "time_zone", "default_language", "enabled_language")
-				values (${newId()}, ${slug}, ${name}, ${timeZone}, 'fr', array['fr'])
-			`);
+			await withOrg(superAdminDatabase(), { organizationId, userId: person.userId }, async (tx) => {
+				await tx.execute(sql`
+					insert into "organization" ("id", "slug", "name", "time_zone", "default_language", "enabled_language")
+					values (${organizationId}, ${slug}, ${name}, ${timeZone}, 'fr', array['fr'])
+				`);
+				if (managerEmail === '') return;
+				await createInvitation(tx, {
+					organizationId,
+					actorId: person.userId,
+					email: managerEmail,
+					role: 'org_admin'
+				});
+			});
 		} catch (cause) {
 			// L'adresse est unique dans la base (`organization_slug_uq`) : une adresse déjà prise se dit,
 			// au lieu de finir en erreur du serveur.
@@ -135,7 +182,63 @@ export const actions: Actions = {
 			}
 			throw cause;
 		}
-		return { created: { name, address: `${publicPrefix(event.url)}${slug}` } };
+		// Le courriel part après la transaction : une organisation qui n'a pas été créée n'invite
+		// personne.
+		if (managerEmail !== '') {
+			await createMailer().send(invitationEmail(managerEmail, name, event.url.origin, language));
+		}
+		return {
+			created: {
+				name,
+				address: `${publicPrefix(event.url)}${slug}`,
+				invited: managerEmail === '' ? null : managerEmail
+			}
+		};
+	},
+
+	/**
+	 * Inviter la personne responsable d'une organisation de la liste, sans entrer dans son espace
+	 * (étape 22). Le rôle est toujours `org_admin` : la personne responsable invite ensuite qui elle
+	 * veut depuis Membres. La session ne change pas d'organisation : l'invitation s'inscrit dans une
+	 * transaction posée sur celle du formulaire, à laquelle la base la borne. La réponse ne dépend
+	 * jamais de l'existence d'un compte pour l'adresse (ADR 0017).
+	 */
+	inviter: async (event) => {
+		const person = mustBeSuperAdmin(event);
+		const form = await event.request.formData();
+		const organizationId = String(form.get('organizationId') ?? '');
+		const email = String(form.get('email') ?? '').trim();
+		const language = emailLanguage(form, event.locals.langue);
+		// Ce qui a été saisi revient au formulaire de cette organisation.
+		const invite = { organizationId, email, language };
+		if (!UUID.test(organizationId)) {
+			return fail(404, { error: 'unknownOrganisation' as const, invite });
+		}
+		if (!ADRESSE.test(email)) return fail(400, { error: 'invalidManagerEmail' as const, invite });
+		const organisation = await withOrg(
+			superAdminDatabase(),
+			{ organizationId, userId: person.userId },
+			async (tx) => {
+				const [found] = rows<{ name: string }>(
+					await tx.execute(
+						sql`select "name" from "organization" where "id" = (select jadwal.current_org_id())`
+					)
+				);
+				if (!found) return null;
+				await createInvitation(tx, {
+					organizationId,
+					actorId: person.userId,
+					email,
+					role: 'org_admin'
+				});
+				return found.name;
+			}
+		);
+		if (organisation === null) {
+			return fail(404, { error: 'unknownOrganisation' as const, invite });
+		}
+		await createMailer().send(invitationEmail(email, organisation, event.url.origin, language));
+		return { invited: { name: organisation, email } };
 	},
 
 	statut: async (event) => {
