@@ -9,20 +9,19 @@ pouvoirs du super-admin sont dans l'ADR 0025.
 Réservée à l'exploitant, avec les pouvoirs d'une passkey ; sans eux, l'écran de la passkey.
 
 1. Titre de niveau 1 : `Super-admin`, puis `Cet écran sert à la personne qui exploite le service :
-créer les organisations, régler leur plan et leur état, entrer dans leur espace pour les aider, et
-dépanner une connexion.`
+créer les organisations, régler leur état, entrer dans leur espace pour les aider, et dépanner une
+connexion.`
 2. **Organisations**, avec, une seule fois au-dessus de la liste, ce que fait chaque geste :
    - `Entrer dans son espace` : `Vous y voyez et modifiez tout, comme sa personne responsable. Une
 bannière le rappelle en haut de chaque écran.`
-   - `Plan` : `Noté pour le suivi. Aucun paiement n'est demandé pour le moment, et le plan ne change
-rien à ce que l'organisation peut faire.`
    - `État` : `Une organisation suspendue n'a plus de page publique : ni sa page, ni son widget, ni
 son agenda ne s'affichent. Rien n'est effacé, et vous pouvez la réactiver.`
 
    Chaque organisation : son nom, `Page publique :` et son adresse complète en lien (avant :
-   l'identifiant seul), `Entrer dans son espace`, le plan en mots (`Gratuit`, `Offert`, `Payant`)
-   avec `Enregistrer le plan`, l'état (`Active`, `Suspendue`) avec `Enregistrer l'état`. Les deux
-   boutons s'appelaient `Changer`. Après un geste : `Plan enregistré pour <organisation>.` Sans
+   l'identifiant seul), `Entrer dans son espace`, l'état (`Active`, `Suspendue`) avec
+   `Enregistrer l'état` (avant : `Changer`). Après le geste : `État enregistré pour <organisation>.`
+   Le plan (`Gratuit`, `Offert`, `Payant`) et son bouton ont disparu à l'étape 22 : jadwal est
+   gratuit (ADR 0049). Sans
    organisation : `Aucune organisation pour le moment. Créez la première avec le formulaire
 ci-dessous.`
 

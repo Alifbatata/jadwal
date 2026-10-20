@@ -1002,11 +1002,9 @@ tests.
 | 21    | Retours de l'étape 20 : langue en liste, vendredi, conditions       | terminée |
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
-passkeys pour tous les comptes, et **les plans d'une organisation** : gratuit, offert, payant. Le
-super-admin choisit déjà le plan de chaque organisation, et la base le garde (`free`, `sponsored`,
-`paid`) ; mais aucun plan ne change encore ce qu'une organisation peut faire. Resteront à décider
-ce que chaque plan donne, à l'appliquer dans l'espace et dans la base, puis à coder le paiement
-d'un plan payant. Inscrit à l'étape 21, sans rien coder.
+passkeys pour tous les comptes. Les plans d'une organisation (gratuit, offert, payant), inscrits à
+l'étape 21, en sont retirés à l'étape 22 : jadwal est entièrement gratuit (ADR 0049), et la colonne
+qui gardait le plan a quitté la base (migration 0076).
 
 ## Risques ouverts
 
@@ -1169,8 +1167,8 @@ d'un plan payant. Inscrit à l'étape 21, sans rien coder.
 - ~~La place des parenthèses de « شروط الاستخدام (يُفتح في علامة تبويب جديدة) »~~ (étape 17) :
   relue à l'étape 21 et gardée. « يُفتح » s'accorde avec le lien, sous-entendu, et l'annonce se lit
   à sa place, de droite à gauche, après le nom du lien.
-- **Ce que chaque plan d'une organisation donne** (gratuit, offert, payant), et le paiement : plus
-  tard, voir la feuille de route.
+- ~~Ce que chaque plan d'une organisation donne (gratuit, offert, payant), et le paiement~~ : sans
+  objet depuis l'étape 22, jadwal est gratuit et les plans ont disparu (ADR 0049).
 - ~~La séparation des rôles dans la base~~ : tranchée à l'étape 18, ADR 0046. Une fonction de la
   base, `jadwal.is_org_admin()`, dit si la personne du contexte est responsable de l'organisation
   du contexte, et les politiques des gestes réservés au responsable l'exigent (migration 0059).

@@ -79,7 +79,7 @@ concerné : il garde ses pouvoirs (barrière 10).
 une seule qui les couvre toutes. Une clé étrangère composite, parce que les vérifications
 d'intégrité contournent la sécurité au niveau des lignes. Pour la même raison, le rôle applicatif
 ne modifie d'une adhésion que le rôle et sa date (migration 0053, addendum de l'ADR 0013), d'une
-organisation que les colonnes de l'écran des réglages, jamais le plan, l'état ni l'identifiant
+organisation que les colonnes de l'écran des réglages, jamais l'état ni l'identifiant
 d'URL (migration 0059), et d'un compte que sa langue, la personne elle-même (migration 0060). Avant,
 un membre pouvait repointer une adhésion de son organisation vers un compte jamais invité, puis lire
 son courriel ; et le nom de la contrainte dans l'erreur disait si une collègue avait accepté les

@@ -25,7 +25,7 @@ vous n'a aucun accès à ces tables :
 - les adresses des personnes responsables, ni aucune donnée personnelle ;
 - les brouillons ;
 - les organisations suspendues ;
-- le journal des modifications, les réglages internes, le plan de l'organisation ;
+- le journal des modifications, les réglages internes, l'état de l'organisation ;
 - les identifiants internes, à une exception près : **l'identifiant d'un cours publié**, dont vous
   avez besoin pour faire un lien.
 

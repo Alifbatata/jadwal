@@ -26,10 +26,10 @@ Une seule saisie par les responsables, quatre sorties :
 
 ### Cible
 
-- V1 : toute organisation qui donne des cours récurrents, gratuitement.
-- Plus tard : un accès payant.
-- Le modèle prévoit dès le départ un `plan` par organisation et un statut « offert » que seul le
-  super-admin peut attribuer. Aucun paiement n'est codé en V1.
+- Toute organisation qui donne des cours récurrents.
+- Le service est entièrement gratuit : aucun plan, aucun paiement (étape 22, ADR 0049). Le plan que
+  le modèle prévoyait par organisation depuis l'étape 0, gratuit, offert ou payant, ne changeait rien
+  à ce qu'une organisation peut faire ; il a disparu du code et de la base.
 
 ### Modes de déploiement
 
@@ -42,7 +42,7 @@ Deux modes avec le même code :
 
 | Rôle         | Pouvoirs                                         |
 | ------------ | ------------------------------------------------ |
-| `superadmin` | crée les organisations, attribue la gratuité     |
+| `superadmin` | crée et suspend les organisations                |
 | `org_admin`  | invite et retire les membres de son organisation |
 | `editor`     | saisit et modifie les cours                      |
 
@@ -238,10 +238,7 @@ Les étapes suivantes, de la mise en ligne aux retours du chef de projet (étape
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
 passkeys pour tous les comptes (elles sont arrivées à l'étape 4 pour le seul super-admin, où elles
-sont obligatoires : ADR 0025), et les plans d'une organisation, gratuit, offert, payant. Le
-super-admin choisit déjà le plan, et la base le garde ; aucun plan ne change encore ce qu'une
-organisation peut faire. Resteront à décider ce que chaque plan donne, à l'appliquer, puis à coder
-le paiement d'un plan payant.
+sont obligatoires : ADR 0025).
 
 ## Risques ouverts
 
