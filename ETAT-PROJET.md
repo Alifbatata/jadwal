@@ -124,12 +124,14 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   que GitHub sert encore sont acceptés. 3 924 tests, tous réussis, aucun sauté, et 24 tests liés au
   temps, à part ; parcours complet : 430 vérifications, dont 35 pour l'étape 20, et axe sans rien de
   sérieux sur 42 pages. Mesurés par la CI le 29.09.2026 sur le code livré.
-- **Étape 21** (retours du chef de projet après l'étape 20) : **en cours**. Six chantiers sur neuf
-  sont faits sur le poste, rien n'est encore poussé : les dépendances à jour, l'arabe, l'allemand et
-  l'italien relus, les conditions nommées une fois sur `/connexion`, le choix de la langue en liste
-  déroulante, les cinq questions de l'étape 20 appliquées, les conditions relues sur le fond
-  (version du 19.10.2026). Les plans d'une organisation entrent dans la feuille de route, pour plus
-  tard. Restent le parcours automatique, la poussée, la CI et le déploiement.
+- **Étape 21** (retours du chef de projet après l'étape 20) : **livrée le 20.10.2026**. Les
+  dépendances sont à jour, l'arabe, l'allemand et l'italien relus, et les conditions nommées une
+  seule fois sur `/connexion`. Le choix de la langue est une liste déroulante partout, et les cinq
+  questions de l'étape 20 sont appliquées. Les conditions sont relues sur le fond (version du
+  19.10.2026), l'exploitant nommé par l'instance. Les plans d'une organisation entrent dans la
+  feuille de route, pour plus tard. 4 005 tests, tous réussis, aucun sauté, et 24 tests liés au
+  temps, à part ; parcours complet : 453 vérifications, dont 24 pour l'étape 21, et axe sans rien de
+  sérieux sur 42 pages. Mesurés sur le poste le 20.10.2026, et rejoués par la CI sur le code livré.
 
 ## Fait
 
@@ -899,7 +901,7 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   `docs/API.md`, `docs/SECURITE.md`, `docs/CADRAGE.md`, `packages/db/README.md` et les
   descriptions des écrans touchés dans `docs/maquettes/` mis à jour.
 
-Étape 21 (retours du chef de projet après l'étape 20, en cours) :
+Étape 21 (retours du chef de projet après l'étape 20) :
 
 - **Les dépendances** : six propositions de Dependabot sur sept appliquées (`actions/setup-node`
   7.1.0, prettier 3.9.9, axe-core 4.14.0, svelte 5.57.2, vitest et sa couverture 5.0.3).
@@ -931,9 +933,20 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   courriel refusé ne laisse que le domaine du destinataire dans les traces.
 - **Les plans d'une organisation** (gratuit, offert, payant) entrent dans la feuille de route, pour
   plus tard ; rien n'est codé.
-- 2 732 tests dans l'application web, dont 24 liés au temps, tous réussis, sur le serveur construit,
-  mesurés sur le poste le 19.10.2026. Le parcours automatique, la CI et le déploiement restent à
-  faire.
+- **Le parcours automatique** : chaque correction de l'étape 21 qui se voit à l'écran a sa
+  vérification (8 identifiants, 24 vérifications, catalogue de 300 libellés). Rejoué contre l'image
+  de l'étape 20 : les vérifications des étapes 18 à 20 restent vertes (150, 92 et 35), et aucune de
+  l'étape 21 ne l'est (18 rouges, 5 gestes impossibles, faute de leur écran). L'étape 18 compte deux
+  vérifications de moins : le parcours ne lit plus les conditions qu'une fois, par le seul lien qui
+  reste sur `/connexion`.
+- 4 005 tests dans le dépôt, mesurés sur le poste le 20.10.2026, tous réussis, aucun sauté : 691
+  dans `core`, 493 dans la base, 81 pour les sauvegardes, 2 708 dans l'application, 32 pour le
+  widget (2 145 octets en gzip, inchangé) ; et 24 tests liés au temps, à part (`pnpm test:temps`).
+  Parcours complet : 453 vérifications, dont 150 pour les retours de l'étape 18, 92 pour l'étape 19,
+  35 pour l'étape 20 et 24 pour l'étape 21, axe sans rien de sérieux sur 42 pages.
+- Aucune migration ; addenda aux ADR 0005, 0021, 0027, 0033, 0044 et 0047 ; `docs/CONDITIONS.md`,
+  `docs/CADRAGE.md`, `docs/SECURITE.md`, le `README`, `.env.example` et les descriptions des écrans
+  touchés dans `docs/maquettes/` mis à jour.
 
 **Un script ou une commande qu'aucun test ne _lance_ n'est pas éprouvé.** C'est la règle du dépôt
 depuis l'étape 12, et elle répond à la question laissée ouverte à l'étape 11.
@@ -986,7 +999,7 @@ tests.
 | 18    | Retours des tests : cinq langues, écrans clairs, rôles dans la base | terminée |
 | 19    | Zéro défaut connu, arabe relu, historique réécrit                   | terminée |
 | 20    | Dernières questions : Rétablir, vendredi, états, conditions         | terminée |
-| 21    | Retours de l'étape 20 : langue en liste, vendredi, conditions       | en cours |
+| 21    | Retours de l'étape 20 : langue en liste, vendredi, conditions       | terminée |
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
 passkeys pour tous les comptes, et **les plans d'une organisation** : gratuit, offert, payant. Le
