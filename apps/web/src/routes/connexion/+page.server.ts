@@ -1,9 +1,14 @@
 // Demande d'un lien magique.
 //
 // La réponse est toujours la même, mot pour mot, que l'adresse soit connue ou non, qu'un courriel
-// soit parti ou qu'il ait été retenu par la limitation de débit. Aucune branche du code ne consulte
-// les comptes : il n'y a donc rien à faire fuir, ni par le message, ni par le temps de réponse
-// (ADR 0017).
+// soit parti ou qu'il ait été retenu par la limitation de débit. Cette action ne consulte aucun
+// compte : il n'y a donc rien à faire fuir, ni par le message, ni par ses cookies (ADR 0017).
+//
+// Depuis l'étape 22, la création de compte est fermée (ADR 0049) : seul l'envoi, dans `auth.ts`,
+// demande à la base si l'adresse est attendue, par un compte ou une invitation en attente. Attendue,
+// elle reçoit le lien ; sinon, un courriel qui dit comment demander l'accès. Les deux branches lisent
+// la base une fois et écrivent un courriel, sous le même budget par adresse : seule la boîte de
+// l'adresse apprend laquelle a joué.
 //
 // Les textes sont dans la langue de l'écran, que la page lit dans ses données (`i18n/sign-in.ts`) :
 // l'action ne rend qu'un état, jamais une phrase. Le courriel part dans la même langue, celle de la

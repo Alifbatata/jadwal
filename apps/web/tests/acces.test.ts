@@ -258,7 +258,9 @@ afterAll(async () => {
 
 describe('le lien magique', () => {
 	it('writes a message, opens a session once, and refuses the second use', async () => {
+		// Une adresse qu'une invitation attend : c'est elle qui ouvre un compte (ADR 0049).
 		const email = 'cycle@example.test';
+		await inviteAddress(email);
 		const asked = await postForm('/connexion', { email });
 		expect(asked.status).toBe(200);
 
@@ -308,6 +310,7 @@ describe('le lien magique', () => {
 		const email = 'sans-trace@example.test';
 		const MARQUEUR_AGENT = 'marqueur-navigateur-6f1c2e';
 		const MARQUEUR_ADRESSE = '198.51.100.77';
+		await accountAt(email);
 		await resetRateLimit();
 		await postForm('/connexion', { email });
 		const link = await magicLinkFor(email);
@@ -358,6 +361,7 @@ describe('le lien magique', () => {
 
 	it('stores the token hashed, never in the clear', async () => {
 		const email = 'hachage@example.test';
+		await accountAt(email);
 		await postForm('/connexion', { email });
 		const link = await magicLinkFor(email);
 		const token = new URL(link as string).searchParams.get('token');
@@ -380,8 +384,11 @@ describe('le lien magique', () => {
 
 	it('refuses a link that has run out of time', async () => {
 		const email = 'expire@example.test';
+		await accountAt(email);
 		await postForm('/connexion', { email });
 		const link = await magicLinkFor(email);
+		// Un vrai lien, sans quoi le refus ne prouverait rien.
+		expect(link).toMatch(/magic-link\/verify\?token=/);
 		await ownerHandle.db.transaction(async (tx) => {
 			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
 			await tx.execute(sql`update "verification" set "expires_at" = now() - interval '1 minute'`);
@@ -464,6 +471,117 @@ describe('la limitation de débit', () => {
 			);
 		});
 		expect(Array.isArray(enClair) ? enClair : []).toEqual([]);
+	});
+});
+
+/** Les comptes qui portent cette adresse, relus par le propriétaire. */
+async function accountsFor(email: string): Promise<number> {
+	const rows = await ownerHandle.db.transaction(async (tx) => {
+		await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+		return tx.execute<{ n: number }>(
+			sql`select count(*)::int as "n" from "user" where lower("email") = lower(${email})`
+		);
+	});
+	return Number((Array.isArray(rows) ? (rows[0] as { n: number } | undefined) : undefined)?.n ?? 0);
+}
+
+/** Un compte pour cette adresse, créé par le propriétaire : une adresse que la connexion attend. */
+async function accountAt(email: string): Promise<void> {
+	await ownerHandle.db.transaction(async (tx) => {
+		await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+		await tx.execute(sql`insert into "user" ("id", "email") values (${newId()}, ${email})`);
+	});
+}
+
+/** Une invitation en attente pour cette adresse, posée par le propriétaire. */
+async function inviteAddress(email: string, expired = false): Promise<void> {
+	await ownerHandle.db.transaction(async (tx) => {
+		await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+		await tx.execute(sql`
+			insert into "invitation" ("id", "organization_id", "email", "role", "status",
+				"created_at", "expires_at")
+			values (${newId()}, ${organizationId}, ${email}, 'editor', 'pending',
+				${expired ? sql`now() - interval '15 days'` : sql`now()`},
+				${expired ? sql`now() - interval '1 day'` : sql`now() + interval '7 days'`})
+		`);
+	});
+}
+
+/** Les noms des cookies qu'une réponse pose, sans leurs valeurs. */
+function cookieNames(response: Response): string[] {
+	return (response.headers.getSetCookie?.() ?? []).map((value) => value.split('=')[0] ?? '').sort();
+}
+
+describe('la création de compte, fermée aux adresses que personne n’attend (ADR 0049)', () => {
+	it('sends no link to an unknown address, but a message that says how to ask for access', async () => {
+		const email = `inconnue-${newId()}@example.test`;
+		await resetRateLimit();
+		const response = await postForm('/connexion', { email });
+		expect(response.status).toBe(200);
+		const mail = await lastMailTo(email);
+		expect(
+			mail,
+			'un courriel doit partir, sans quoi l’adresse ne saurait pas quoi faire'
+		).toBeTruthy();
+		expect(mail?.subject).toBe('Aucun compte jadwal à cette adresse');
+		expect(mail?.text).not.toMatch(/magic-link/);
+		expect(mail?.text.match(/https?:\/\/\S+/)?.[0]).toBe(`${origin}/demande-d-acces`);
+		expect(await accountsFor(email)).toBe(0);
+	});
+
+	it('answers an unknown address exactly as it answers an account, cookies included (ADR 0017)', async () => {
+		const known = `connue-${newId()}@example.test`;
+		await accountAt(known);
+		const unknown = `inconnue-${newId()}@example.test`;
+		await resetRateLimit();
+		const forKnown = await postForm('/connexion', { email: known });
+		const forUnknown = await postForm('/connexion', { email: unknown });
+		expect(forUnknown.status).toBe(forKnown.status);
+		expect(cookieNames(forUnknown)).toEqual(cookieNames(forKnown));
+		// Seule l'adresse saisie, recopiée dans le champ, distingue les deux pages.
+		expect(sansNonce(await forUnknown.text()).replaceAll(unknown, '@')).toBe(
+			sansNonce(await forKnown.text()).replaceAll(known, '@')
+		);
+		expect(await magicLinkFor(known)).toMatch(/magic-link\/verify\?token=/);
+		expect(await magicLinkFor(unknown)).toBe(`${origin}/demande-d-acces`);
+	});
+
+	it('sends a link to an address that a pending invitation waits for, and opens its account', async () => {
+		const email = `attendue-${newId()}@example.test`;
+		await inviteAddress(email);
+		const cookie = await signIn(email);
+		expect(cookie).toBeTruthy();
+		expect(await accountsFor(email)).toBe(1);
+	});
+
+	it('sends no link to an address whose only invitation has run out', async () => {
+		const email = `echue-${newId()}@example.test`;
+		await inviteAddress(email, true);
+		await resetRateLimit();
+		await postForm('/connexion', { email });
+		expect(await magicLinkFor(email)).toBe(`${origin}/demande-d-acces`);
+		expect(await accountsFor(email)).toBe(0);
+	});
+
+	it('sends no link either when the sign-in endpoint is called directly', async () => {
+		const email = `directe-${newId()}@example.test`;
+		await resetRateLimit();
+		const response = await fetch(`${origin}/api/auth/sign-in/magic-link`, {
+			method: 'POST',
+			headers: { 'content-type': 'application/json', origin },
+			body: JSON.stringify({ email, callbackURL: '/organisations' })
+		});
+		expect(response.status).toBe(200);
+		expect(await magicLinkFor(email)).toBe(`${origin}/demande-d-acces`);
+		expect(await accountsFor(email)).toBe(0);
+	});
+
+	it('counts both messages against the same budget per address', async () => {
+		const email = `budget-${newId()}@example.test`;
+		await resetRateLimit();
+		for (let tour = 0; tour < 6; tour += 1) await postForm('/connexion', { email });
+		const sent = (await outboxMails()).filter((mail) => mail.to === email).length;
+		expect(sent).toBe(3);
 	});
 });
 
@@ -1819,6 +1937,9 @@ describe('les pouvoirs du super-admin', () => {
 		expect(premier.cookie, 'le lien de secours doit ouvrir une session').toBeTruthy();
 		const second = await followMagicLink(propre);
 		expect(second.cookie).toBeUndefined();
+		// Il garde le pouvoir d'ouvrir un compte que personne n'attendait : c'est le super-admin qui
+		// donne l'accès (ADR 0049).
+		expect(await accountsFor('secours@example.test')).toBe(1);
 
 		const registre = await ownerHandle.db.transaction(async (tx) => {
 			await tx.execute(sql`set local jadwal.maintenance = 'on'`);

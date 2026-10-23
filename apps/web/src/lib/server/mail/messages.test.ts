@@ -1,15 +1,15 @@
-// Les deux courriels du service, dans les cinq langues (étape 18, retour D3).
+// Les courriels du service, dans les cinq langues (étape 18, retour D3 ; étape 22).
 //
 // Le lien de connexion part dans la langue de l'écran d'où il est demandé, et l'invitation dans celle
-// que la personne qui invite choisit, celle de son écran d'abord (étape 19). Aucun des deux ne dit si
-// un compte existe (ADR 0017) : la langue vient de la requête ou du formulaire, jamais d'une lecture
-// des comptes. Le parcours par HTTP, du formulaire au courriel
+// que la personne qui invite choisit, celle de son écran d'abord (étape 19). La langue vient de la
+// requête ou du formulaire, jamais d'une lecture des comptes (ADR 0017). Le troisième, celui d'une
+// adresse que personne n'attend, part dans la langue de l'écran comme le lien (ADR 0049). Le parcours par HTTP, du formulaire au courriel
 // écrit, est éprouvé dans `tests/espace-en-cinq-langues.test.ts`.
 
 import { describe, expect, it } from 'vitest';
 import { LANGUES, type Langue } from '$lib/i18n.js';
 import { mailLanguage, withMailLanguage } from './language.js';
-import { invitationEmail, magicLinkEmail } from './messages.js';
+import { invitationEmail, magicLinkEmail, noAccountEmail } from './messages.js';
 
 const URL_DU_LIEN = 'https://jadwal.example/api/auth/magic-link/verify?token=abc';
 const ORIGINE = 'https://jadwal.example';
@@ -129,5 +129,56 @@ describe('l’invitation', () => {
 			invitationEmail('b@example.test', ORGANISATION, ORIGINE)
 		);
 		expect(mail.subject).toBe(`Invito a unirti a ${ORGANISATION} su jadwal`);
+	});
+});
+
+describe('le message d’une adresse que personne n’attend (étape 22)', () => {
+	it.each([
+		['fr', 'Aucun compte jadwal à cette adresse'],
+		['de', 'Kein jadwal-Konto unter dieser Adresse'],
+		['it', 'Nessun account jadwal a questo indirizzo'],
+		['en', 'No jadwal account at this address'],
+		['ar', 'لا يوجد حساب jadwal بهذا العنوان']
+	] as const)('is written in %s, and leads to the access request form', (langue, sujet) => {
+		const mail = noAccountEmail('c@example.test', ORIGINE, langue);
+		expect(mail.to).toBe('c@example.test');
+		expect(mail.subject).toBe(sujet);
+		// Le formulaire est la première adresse du texte brut, et aucun lien de connexion n'y est.
+		expect(mail.text.match(/https?:\/\/\S+/)?.[0]).toBe(`${ORIGINE}/demande-d-acces`);
+		expect(mail.text).not.toContain('magic-link');
+		expect(mail.html).toContain(`href="${ORIGINE}/demande-d-acces"`);
+		expect(mail.html).toContain(`<html lang="${langue}" dir="${langue === 'ar' ? 'rtl' : 'ltr'}">`);
+	});
+
+	it('says in each language that no link was sent, and why', () => {
+		const phrases: Record<Langue, string> = {
+			fr: 'Aucun compte n’est ouvert à cette adresse, et aucune invitation ne l’attend : aucun lien n’a donc été envoyé.',
+			de: 'Unter dieser Adresse ist kein Konto eröffnet, und keine Einladung wartet auf sie: Deshalb wurde kein Link geschickt.',
+			it: 'A questo indirizzo non è aperto nessun account, e nessun invito lo aspetta: per questo non è stato inviato nessun link.',
+			en: 'No account is open at this address, and no invitation is waiting for it, so no link was sent.',
+			ar: 'لا يوجد حساب مفتوح بهذا العنوان، ولا دعوة تنتظره، لذلك لم يُرسَل أي رابط.'
+		};
+		for (const langue of LANGUES) {
+			const mail = noAccountEmail('c@example.test', ORIGINE, langue);
+			expect(mail.text, langue).toContain(phrases[langue]);
+			expect(sansBalises(mail.html), langue).toContain(phrases[langue]);
+		}
+	});
+
+	it('keeps no French in the four other languages, signature included', () => {
+		const francais = noAccountEmail('c@example.test', ORIGINE, 'fr');
+		for (const langue of LANGUES.filter((l) => l !== 'fr')) {
+			const mail = noAccountEmail('c@example.test', ORIGINE, langue);
+			for (const mot of ['Bonjour', 'compte', 'demandez', 'ignorez', 'un service de Voltia']) {
+				expect(francais.text, `fr : ${mot}`).toContain(mot);
+				expect(mail.text, `${langue} : ${mot}`).not.toContain(mot);
+				expect(mail.html, `${langue} : ${mot}`).not.toContain(mot);
+			}
+		}
+	});
+
+	it('is in the language of the request when none is given', () => {
+		const mail = withMailLanguage('de', () => noAccountEmail('c@example.test', ORIGINE));
+		expect(mail.subject).toBe('Kein jadwal-Konto unter dieser Adresse');
 	});
 });

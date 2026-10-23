@@ -24,7 +24,7 @@ import { signInChoice, signInLanding } from '$lib/i18n/language.js';
 import { writeAccountLanguage } from './account-language.js';
 import { authDatabase } from './database.js';
 import { createMailer } from './mail/index.js';
-import { magicLinkEmail } from './mail/messages.js';
+import { magicLinkEmail, noAccountEmail } from './mail/messages.js';
 import { consume, consumeDetailed, emailKey, MAGIC_LINK_BUDGET } from './rate-limit.js';
 
 /** Quinze minutes, en secondes : l'unité de `expiresIn` est la seconde. */
@@ -93,6 +93,19 @@ export async function captureMagicLink(run: () => Promise<unknown>): Promise<str
 	const box: { url?: string } = {};
 	await capture.run(box, run);
 	return box.url;
+}
+
+/**
+ * Oui si un compte porte cette adresse, ou si une invitation en attente et non échue l'attend. La
+ * base répond, et rien d'autre ne sort d'elle (`jadwal.may_sign_in`, migration 0077) : le rôle de
+ * connexion ne lit aucune invitation.
+ */
+async function maySignIn(email: string): Promise<boolean> {
+	const rows = await authDatabase().execute<{ allowed: boolean }>(
+		sql`select jadwal.may_sign_in(${email}) as "allowed"`
+	);
+	const row = Array.isArray(rows) ? (rows[0] as { allowed: boolean } | undefined) : undefined;
+	return row?.allowed === true;
 }
 
 export function createAuth(env: NodeJS.ProcessEnv = process.env) {
@@ -264,7 +277,14 @@ export function createAuth(env: NodeJS.ProcessEnv = process.env) {
 						MAGIC_LINK_BUDGET
 					);
 					if (!allowed) return;
-					await mailer.send(magicLinkEmail(email, url));
+					// La porte (étape 22, ADR 0049) : le lien ne part qu'à une adresse qu'un compte
+					// porte ou qu'une invitation en attente attend. Toute autre reçoit, à la place,
+					// de quoi demander l'accès. Les deux branches lisent la base une fois et envoient
+					// un courriel, sous le même budget : ni la réponse, ni ses cookies, ni le nombre
+					// d'envois ne disent si un compte existe. Le jeton déjà rangé pour une adresse
+					// inconnue n'est jamais envoyé, et sa purge l'emporte (`purge_expired_verifications`).
+					if (await maySignIn(email)) await mailer.send(magicLinkEmail(email, url));
+					else await mailer.send(noAccountEmail(email, origin));
 				}
 			}),
 			passkey({

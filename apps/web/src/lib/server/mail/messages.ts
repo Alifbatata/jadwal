@@ -1,8 +1,9 @@
 // Les courriels que le service envoie. Texte et HTML, dans les cinq langues de l'espace, sans image
 // ni pièce jointe.
 //
-// Aucun message ne dit jamais si un compte existe : le lien de connexion est le même pour une
-// adresse connue et pour une adresse inconnue (ADR 0017). Pour la même raison, la langue d'un
+// Aucun écran ne dit jamais si un compte existe (ADR 0017). Depuis l'étape 22, une adresse que
+// personne n'attend reçoit, à la place du lien, un message qui le lui dit (`noAccountEmail`,
+// ADR 0049) : seule sa boîte l'apprend, et c'est la seule à qui il revient. Pour la même raison, la langue d'un
 // courriel ne vient jamais du compte à qui l'on écrit, qu'il faudrait lire par son adresse : elle vient
 // de l'écran où le geste est fait (retour D3, voir `language.ts`), ou, pour une invitation, du choix
 // de la personne qui invite (étape 19). Sans langue donnée, c'est celle de la requête en cours.
@@ -264,4 +265,117 @@ export function invitationEmail(
 		].join('')
 	);
 	return { to, subject, text: signer(language, text), html };
+}
+
+// Le même ordre que pour le lien de connexion : le texte du lien, sans point, vient en dernier.
+interface NoAccountTexts {
+	readonly subject: string;
+	readonly greeting: string;
+	readonly asked: string;
+	readonly noAccount: string;
+	readonly howTo: string;
+	readonly member: string;
+	readonly ignore: string;
+	readonly link: string;
+}
+
+const NO_ACCOUNT: Translations<NoAccountTexts> = {
+	fr: {
+		subject: 'Aucun compte jadwal à cette adresse',
+		greeting: 'Bonjour,',
+		asked: 'Un lien de connexion à jadwal a été demandé pour cette adresse électronique.',
+		noAccount:
+			'Aucun compte n’est ouvert à cette adresse, et aucune invitation ne l’attend : aucun lien n’a donc été envoyé.',
+		howTo: 'Pour utiliser jadwal pour votre organisation, demandez l’accès sur cette page :',
+		member:
+			'Si votre organisation utilise déjà jadwal, demandez à sa personne responsable de vous inviter à cette adresse.',
+		ignore: 'Si vous n’avez rien demandé, ignorez ce message.',
+		link: 'Demander l’accès à jadwal'
+	},
+	de: {
+		subject: 'Kein jadwal-Konto unter dieser Adresse',
+		greeting: 'Guten Tag',
+		asked: 'Für diese E-Mail-Adresse wurde ein Anmeldelink für jadwal angefordert.',
+		noAccount:
+			'Unter dieser Adresse ist kein Konto eröffnet, und keine Einladung wartet auf sie: Deshalb wurde kein Link geschickt.',
+		howTo: 'Um jadwal für Ihre Organisation zu nutzen, beantragen Sie den Zugang auf dieser Seite:',
+		member:
+			'Wenn Ihre Organisation jadwal bereits nutzt, bitten Sie die verantwortliche Person, Sie an diese Adresse einzuladen.',
+		ignore: 'Wenn Sie nichts angefordert haben, ignorieren Sie diese Nachricht.',
+		link: 'Zugang zu jadwal beantragen'
+	},
+	it: {
+		subject: 'Nessun account jadwal a questo indirizzo',
+		greeting: 'Buongiorno,',
+		asked: 'Per questo indirizzo e-mail è stato chiesto un link di accesso a jadwal.',
+		noAccount:
+			'A questo indirizzo non è aperto nessun account, e nessun invito lo aspetta: per questo non è stato inviato nessun link.',
+		howTo: 'Per usare jadwal per la tua organizzazione, chiedi l’accesso su questa pagina:',
+		member:
+			'Se la tua organizzazione usa già jadwal, chiedi alla persona responsabile di invitarti a questo indirizzo.',
+		ignore: 'Se non hai chiesto nulla, ignora questo messaggio.',
+		link: 'Chiedi l’accesso a jadwal'
+	},
+	en: {
+		subject: 'No jadwal account at this address',
+		greeting: 'Hello,',
+		asked: 'A sign-in link for jadwal was requested for this email address.',
+		noAccount:
+			'No account is open at this address, and no invitation is waiting for it, so no link was sent.',
+		howTo: 'To use jadwal for your organisation, ask for access on this page:',
+		member:
+			'If your organisation already uses jadwal, ask the person in charge to invite you at this address.',
+		ignore: 'If you did not ask for anything, ignore this message.',
+		link: 'Ask for access to jadwal'
+	},
+	ar: {
+		subject: 'لا يوجد حساب jadwal بهذا العنوان',
+		greeting: 'مرحبًا،',
+		asked: 'طُلب رابط للدخول إلى jadwal لهذا البريد الإلكتروني.',
+		noAccount: 'لا يوجد حساب مفتوح بهذا العنوان، ولا دعوة تنتظره، لذلك لم يُرسَل أي رابط.',
+		howTo: 'لاستخدام jadwal لمؤسستك، اطلب الوصول من هذه الصفحة:',
+		member: 'إن كانت مؤسستك تستخدم jadwal، فاطلب من المسؤول عنها أن يدعوك بهذا العنوان.',
+		ignore: 'إن لم تطلب شيئًا، فتجاهل هذه الرسالة.',
+		link: 'اطلب الوصول إلى jadwal'
+	}
+};
+
+/**
+ * Ce que reçoit, à la place d'un lien, une adresse que personne n'attend : ni compte, ni invitation
+ * en attente (étape 22, ADR 0049). Il part dans la langue de l'écran, comme le lien, et sous le même
+ * budget par adresse : l'écran répond la même chose dans les deux cas, et seule la boîte de l'adresse
+ * apprend qu'aucun compte n'y est ouvert. L'adresse du formulaire de demande d'accès est la première
+ * du texte brut, comme le lien dans l'autre courriel.
+ */
+export function noAccountEmail(
+	to: string,
+	origin: string,
+	language: Langue = mailLanguage()
+): OutgoingEmail {
+	const words = NO_ACCOUNT[language];
+	const form = `${origin}/demande-d-acces`;
+	const text = [
+		words.greeting,
+		'',
+		`${words.asked} ${words.noAccount}`,
+		'',
+		words.howTo,
+		form,
+		'',
+		words.member,
+		words.ignore
+	].join('\n');
+	const html = layout(
+		language,
+		words.subject,
+		[
+			`<p>${escape(words.greeting)}</p>`,
+			`<p>${escape(words.asked)} ${escape(words.noAccount)}</p>`,
+			`<p>${escape(words.howTo)}</p>`,
+			`<p><a href="${escape(form)}">${escape(words.link)}</a></p>`,
+			`<p>${escape(words.member)}</p>`,
+			`<p>${escape(words.ignore)}</p>`
+		].join('')
+	);
+	return { to, subject: words.subject, text: signer(language, text), html };
 }

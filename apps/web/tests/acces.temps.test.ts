@@ -1,16 +1,23 @@
 // Le lien magique répond dans le même temps à une adresse connue et à une adresse inconnue.
 //
+// La comparaison vaut aussi pour la porte de l'étape 22 (ADR 0049) : l'adresse connue a un compte,
+// l'inconnue n'a ni compte ni invitation, et chacune reçoit son courriel à chaque tour.
+//
 // Contre un vrai serveur et une vraie base, comme `acces.test.ts`, d'où ce test vient. Il mesure un
 // écart de temps de l'ordre de la milliseconde, et sous la charge de la suite complète, le bruit de
 // la machine a dépassé son seuil de 3 ms (étape 18, lot 5). Il tourne donc à part, dans
 // `pnpm test:temps` (étape 19), avec un seuil et un délai tirés d'une mesure : `CONTRIBUTING.md`,
 // « Les tests liés au temps », dit comment.
 
+import { readFileSync } from 'node:fs';
+import { readdir } from 'node:fs/promises';
+import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { createDatabase, newId, sql, type DatabaseHandle } from '@jadwal/db';
 
 const origin = inject('origin');
 const testDatabase = inject('testDatabase');
+const outbox = inject('outbox');
 
 /**
  * Le délai du test, en millisecondes : quinze fois le maximum mesuré à l'étape 19, sur cinq passages
@@ -68,6 +75,14 @@ beforeAll(async () => {
 	});
 });
 
+/** Vide les compteurs de débit, comme `resetRateLimit` dans `acces.test.ts`. */
+async function viderLeCompteur(): Promise<void> {
+	await ownerHandle.db.transaction(async (tx) => {
+		await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+		await tx.execute(sql`delete from "rate_limit"`);
+	});
+}
+
 afterAll(async () => {
 	await ownerHandle?.close();
 });
@@ -76,9 +91,10 @@ describe('le lien magique', () => {
 	it(
 		'answers the same thing, and in the same time, for a known and an unknown address',
 		async () => {
-			// Le chemin de demande ne consulte jamais les comptes : il n'y a donc aucune branche qui
-			// puisse dépendre de l'existence d'un compte (ADR 0017). On le vérifie sur la réponse, sur
-			// le corps, et sur le temps.
+			// Depuis l'étape 22, l'envoi demande à la base si l'adresse est attendue (ADR 0049) : la
+			// connue reçoit un lien, l'inconnue un courriel qui dit comment demander l'accès. Les deux
+			// branches lisent la base une fois et écrivent un courriel, et rien ne doit le trahir
+			// (ADR 0017). On le vérifie sur la réponse, sur le corps, et sur le temps.
 			const connue = 'connue@example.test';
 			const inconnue = 'jamais-vue@example.test';
 			const corps: Record<string, string> = {};
@@ -106,8 +122,13 @@ describe('le lien magique', () => {
 			//
 			// L'ordre du couple alterne, pour qu'un éventuel avantage à « passer en premier » — un
 			// cache tiède, une connexion déjà ouverte — se compense lui aussi.
+			//
+			// Le compteur par adresse est vidé avant chaque couple, hors de la mesure : sans cela, il
+			// retiendrait l'envoi dès le quatrième, avant la porte, et le test ne mesurerait plus que
+			// le compteur, identique pour les deux adresses.
 			const ecarts: number[] = [];
 			for (let tour = 0; tour < 40; tour += 1) {
+				await viderLeCompteur();
 				if (tour % 2 === 0) {
 					const a = await mesurer('connue', connue);
 					const b = await mesurer('inconnue', inconnue);
@@ -118,6 +139,22 @@ describe('le lien magique', () => {
 					ecarts.push(a - b);
 				}
 			}
+			// Chaque branche a bien joué, sans quoi l'égalité des temps ne dirait rien : la connue a
+			// reçu un lien, l'inconnue l'adresse du formulaire de demande d'accès.
+			const recus = await Promise.all(
+				(await readdir(outbox))
+					.filter((nom) => nom.endsWith('.json'))
+					.sort()
+					.map(async (nom) => JSON.parse(readFileSync(join(outbox, nom), 'utf8')))
+			);
+			const premierLien = (email: string) =>
+				(recus as { to: string; text: string }[])
+					.filter((courriel) => courriel.to === email)
+					.at(-1)
+					?.text.match(/https?:\/\/\S+/)?.[0];
+			expect(premierLien(connue)).toMatch(/magic-link\/verify\?token=/);
+			expect(premierLien(inconnue)).toBe(`${origin}/demande-d-acces`);
+
 			// Le corps rendu est le même, mot pour mot.
 			expect(corps['connue']).toBe(corps['inconnue']);
 

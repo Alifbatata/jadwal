@@ -734,6 +734,12 @@ describe('les courriels (retour D3)', () => {
 				langue: 'fr'
 			}
 		] as const;
+		// Des adresses qu'un compte porte : la connexion n'envoie de lien qu'à elles (ADR 0049).
+		for (const { email } of cas) {
+			await maintenance((tx) =>
+				tx.execute(sql`insert into "user" ("id", "email") values (${newId()}, ${email})`)
+			);
+		}
 		for (const { email, options, sujet, langue } of cas) {
 			await maintenance((tx) => tx.execute(sql`delete from "rate_limit"`));
 			const reponse = await postForm('/connexion', { email }, options);
@@ -742,6 +748,34 @@ describe('les courriels (retour D3)', () => {
 			expect(courriel?.subject, email).toBe(sujet);
 			expect(courriel?.html, email).toContain(`<html lang="${langue}" dir="${SENS[langue]}">`);
 			// Et l'écran qui répond parle la même langue que le courriel.
+			expect(baliseHtml(await reponse.text())).toBe(
+				`<html lang="${langue}" dir="${SENS[langue]}">`
+			);
+		}
+	});
+
+	it('tells an address nobody expects how to ask for access, in the language of the screen too', async () => {
+		const cas = [
+			{
+				email: 'cinq-sans-compte-it@example.test',
+				options: { navigateur: 'it-CH,it' },
+				sujet: 'Nessun account jadwal a questo indirizzo',
+				langue: 'it'
+			},
+			{
+				email: 'cinq-sans-compte-ar@example.test',
+				options: { cookie: `${COOKIE}=ar` },
+				sujet: 'لا يوجد حساب jadwal بهذا العنوان',
+				langue: 'ar'
+			}
+		] as const;
+		for (const { email, options, sujet, langue } of cas) {
+			await maintenance((tx) => tx.execute(sql`delete from "rate_limit"`));
+			const reponse = await postForm('/connexion', { email }, options);
+			expect(reponse.status).toBe(200);
+			const courriel = await dernierCourrielA(email);
+			expect(courriel?.subject, email).toBe(sujet);
+			expect(courriel?.html, email).toContain(`<html lang="${langue}" dir="${SENS[langue]}">`);
 			expect(baliseHtml(await reponse.text())).toBe(
 				`<html lang="${langue}" dir="${SENS[langue]}">`
 			);
