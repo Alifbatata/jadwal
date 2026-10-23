@@ -28,8 +28,22 @@ import {
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const migrationsDir = join(testDir, '..', 'migrations');
-/** L'écran des membres, qui pose la fin de chaque invitation. Lu, jamais modifié. */
-const membersScreen = join(testDir, '..', '..', '..', 'apps', 'web', 'src', 'routes', 'membres');
+/**
+ * L'inscription des invitations, qui pose la fin de chacune, pour Membres comme pour la console
+ * (étape 22). Lue, jamais modifiée.
+ */
+const invitationsModule = join(
+	testDir,
+	'..',
+	'..',
+	'..',
+	'apps',
+	'web',
+	'src',
+	'lib',
+	'server',
+	'invitations.ts'
+);
 
 let ownerHandle: DatabaseHandle;
 let appHandle: DatabaseHandle;
@@ -351,18 +365,18 @@ describe('la durée d’une invitation', () => {
 		).toBe(SQLSTATE.checkViolation);
 	});
 
-	it('is the duration the members screen gives, to the second, whatever the time zone', async () => {
-		// La fin est lue dans le fichier de l'écran, qui reste le seul à la poser : si l'une des deux
-		// durées change sans l'autre, ce test tombe. L'expression de l'écran est rejouée telle quelle,
+	it('is the duration the application gives, to the second, whatever the time zone', async () => {
+		// La fin est lue dans `invitations.ts`, le seul fichier qui la pose depuis l'étape 22 : si
+		// l'une des deux durées change sans l'autre, ce test tombe. Son expression est rejouée telle quelle,
 		// sa constante remplacée par sa valeur, sous deux fuseaux et par-dessus le passage à l'heure
 		// d'hiver du 25 octobre 2026. Quatorze jours de calendrier y font 337 heures, que la borne
 		// refuse : l'écran doit compter en heures, comme la contrainte (migration 0056).
-		const source = readFileSync(join(membersScreen, '+page.server.ts'), 'utf8');
-		const found = /^const INVITATION_DAYS = (\d+);$/m.exec(source);
-		expect(found, 'INVITATION_DAYS dans l’écran des membres').not.toBeNull();
+		const source = readFileSync(invitationsModule, 'utf8');
+		const found = /^export const INVITATION_DAYS = (\d+);$/m.exec(source);
+		expect(found, 'INVITATION_DAYS dans invitations.ts').not.toBeNull();
 		const jours = Number(found?.[1]);
 		const posees = [...source.matchAll(/now\(\) \+ (make_interval\([^()]*\))/g)];
-		expect(posees, 'une seule fin posée par l’écran').toHaveLength(1);
+		expect(posees, 'une seule fin posée par invitations.ts').toHaveLength(1);
 		const fin = (posees[0]?.[1] ?? '').replaceAll('${INVITATION_DAYS}', String(jours));
 		// Garde avant `sql.raw` : un appel à `make_interval` sur des nombres, rien d'autre.
 		expect(fin).toMatch(/^make_interval\([a-z]+ => [\d *]+\)$/);
