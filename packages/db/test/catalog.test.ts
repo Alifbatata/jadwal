@@ -433,6 +433,7 @@ describe('catalogue : intégrité du schéma', () => {
 			'invited',
 			'is_org_admin',
 			'maintenance',
+			'may_sign_in',
 			'purge_admin_access_log',
 			'purge_audit_log',
 			'purge_expired_sessions',
