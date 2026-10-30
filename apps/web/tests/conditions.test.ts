@@ -237,10 +237,11 @@ describe('la page /conditions, ouverte à tous', () => {
 		expect(prose).not.toContain("'");
 		expect(texte).not.toContain('—');
 
-		// La liste des données personnelles : une seule liste numérotée, de dix éléments.
+		// La liste des données personnelles : une seule liste numérotée, de onze éléments depuis
+		// l'étape 22 (les demandes d'accès).
 		const numerotees = [...texte.matchAll(/<ol>([\s\S]*?)<\/ol>/g)];
 		expect(numerotees).toHaveLength(1);
-		expect(numerotees[0]?.[1]?.match(/<li>/g)).toHaveLength(10);
+		expect(numerotees[0]?.[1]?.match(/<li>/g)).toHaveLength(11);
 
 		// Le tableau des durées défile dans son cadre, qui prend le focus et porte un nom.
 		expect(texte).toContain(

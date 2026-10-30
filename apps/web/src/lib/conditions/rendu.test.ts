@@ -66,15 +66,17 @@ describe('la liste numérotée', () => {
 		expect(html).toContain('</ol>\n<p>Un paragraphe après la liste.</p>\n<ol>');
 	});
 
-	it('renders the personal data of docs/CONDITIONS.md as one list of ten, end to end', () => {
+	it('renders the personal data of docs/CONDITIONS.md as one list of eleven, end to end', () => {
 		const html = versHtml(CONDITIONS);
-		expect(listesNumerotees(html)).toEqual([10]);
+		expect(listesNumerotees(html)).toEqual([11]);
 		const liste = elements(html);
-		// Le paragraphe sur les passkeys reste dans leur élément, et l'acceptation ferme la liste.
-		expect(liste[6]).toMatch(
+		// Le paragraphe sur les passkeys reste dans leur élément, les demandes d'accès suivent les
+		// invitations (étape 22), et l'acceptation ferme la liste.
+		expect(liste[3]).toMatch(/^<strong>Une demande d'accès<\/strong>/);
+		expect(liste[7]).toMatch(
 			/^<p><strong>Les passkeys de l'exploitant\.<\/strong>.*<\/p><p><strong>Ce qui est vrai/
 		);
-		expect(liste[9]).toMatch(/acceptation/i);
+		expect(liste[10]).toMatch(/acceptation/i);
 	});
 });
 
@@ -126,7 +128,8 @@ describe('la version du texte', () => {
 	// ligne sont ramenées à LF : un poste Windows ne doit pas changer l'empreinte.
 	const EMPREINTES: Record<string, string> = {
 		'2026-09-26': 'ce107d7a3d36101abd5ed79a5412c30f842b162afee3606b2af9c799c5e4a867',
-		'2026-10-19': 'b41aa0c011e590e44fdde7ed48235ae863bd55edb6a0e7606429dd8f47296f80'
+		'2026-10-19': 'b41aa0c011e590e44fdde7ed48235ae863bd55edb6a0e7606429dd8f47296f80',
+		'2026-10-31': '9bb0ef4ecae4a981b64037def7706464cef5974a91361e3dd8bf53633226bd58'
 	};
 
 	it('gives every change of docs/CONDITIONS.md a new date, so that everyone accepts it again', () => {

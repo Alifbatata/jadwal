@@ -1,9 +1,10 @@
 # Conditions d'utilisation
 
-Ce texte s'adresse aux organisations qui publient leur programme avec ce service, et aux personnes
-de leur équipe. Il est écrit pour être lu : chaque phrase dit ce que le service fait vraiment.
+Ce texte s'adresse aux organisations qui publient leur programme avec ce service, aux personnes de
+leur équipe, et à celles qui demandent l'accès pour une organisation. Il est écrit pour être lu :
+chaque phrase dit ce que le service fait vraiment.
 
-Dernière mise à jour : 19.10.2026.
+Dernière mise à jour : 31.10.2026.
 
 ## Qui exploite le service
 
@@ -11,6 +12,29 @@ Le service est exploité par <!-- exploitant -->Voltia<!-- /exploitant -->, en S
 du traitement au sens de la loi fédérale sur la protection des données (nLPD).
 
 Pour toute question ou demande : **contact@voltia.ch**.
+
+## Comment on entre dans le service
+
+Le service est **gratuit** pour toutes les organisations. Il n'a ni formule ni plan : toutes ont les
+mêmes possibilités. Si cela devait changer, ce texte changerait d'abord, et le service
+demanderait de nouveau l'accord de chacun.
+
+**L'accès s'ouvre sur demande.** Une organisation qui veut utiliser le service le demande par le
+formulaire « Demander l'accès » du site. L'exploitant examine chaque demande :
+
+- s'il l'accepte, il crée l'espace de l'organisation et invite la personne qui a demandé, qui en
+  devient responsable ;
+- s'il la refuse, aucun courriel ne part.
+
+**Un compte ne s'ouvre que sur invitation.** La personne responsable d'une organisation invite les
+membres de son équipe ; l'exploitant invite la première personne responsable. Quand le courriel de
+connexion n'arrive pas, l'exploitant peut aussi donner lui-même un lien de connexion, qui ouvre un
+compte à une adresse qui n'en a pas encore.
+
+Un lien de connexion demandé pour une adresse qu'aucun compte ne porte, et qu'aucune invitation en
+cours n'attend, ne part pas. Cette adresse reçoit à la place un courriel qui dit qu'aucun compte n'y
+est ouvert, et comment demander l'accès. L'écran, lui, répond la même chose dans les deux cas : il
+ne dit à personne si une adresse a un compte.
 
 ## Ce que le service conserve
 
@@ -39,15 +63,22 @@ plus bas, « Ce que vous acceptez ».
    compte, avec qui l'a invitée et qui a accepté l'invitation. L'invitation est effacée 90 jours
    après sa fin. Son envoi est aussi écrit au journal des modifications, avec l'adresse et le rôle
    proposé, et il y reste la durée du journal.
-4. **Un journal des modifications** : qui a changé quoi, et quand. Il sert à comprendre ce qui s'est
+4. **Une demande d'accès** : le nom de l'organisation et sa localité, le nom et l'adresse
+   électronique de la personne qui demande, son message si elle en écrit un, la langue de la page,
+   le moment de la demande, sa réponse et le moment de la réponse. Elle ne sert qu'à examiner la
+   demande, et seul l'exploitant la consulte. Le formulaire n'écrit pas à l'adresse donnée : un courriel
+   n'y part que si la demande est acceptée, et c'est l'invitation. L'exploitant peut être averti
+   par courriel qu'une demande attend ; cet avis ne porte rien de la demande.
+5. **Un journal des modifications** : qui a changé quoi, et quand. Il sert à comprendre ce qui s'est
    passé et à répondre en cas de contestation. Il n'est pas affiché dans votre espace : sa copie
    fait partie de ce que vous pouvez demander.
-5. **Les sessions de connexion** : quel compte, depuis quand, jusqu'à quand, et la dernière
+6. **Les sessions de connexion** : quel compte, depuis quand, jusqu'à quand, et la dernière
    organisation choisie quand la personne en a plusieurs. C'est ce qui vous garde connecté d'une
    page à l'autre.
-6. **Les liens de connexion en attente** : l'adresse à laquelle le lien est parti, tant qu'il court.
-   Le lien lui-même n'est pas conservé en clair.
-7. **Les passkeys de l'exploitant.** Seuls ses comptes peuvent en enregistrer une : elles protègent
+7. **Les liens de connexion en attente** : l'adresse pour laquelle un lien a été demandé, tant qu'il
+   court, même quand aucun lien n'est parti, parce que ni compte ni invitation n'attendait cette
+   adresse. Le lien lui-même n'est pas conservé en clair.
+8. **Les passkeys de l'exploitant.** Seuls ses comptes peuvent en enregistrer une : elles protègent
    son accès à vos données (voir plus bas). Le service garde pour chacune un nom, fait du système de
    l'appareil et de la date, sa clé publique, son identifiant, un compteur d'usage, le type
    d'appareil, le fait qu'elle soit copiée ailleurs que sur cet appareil, les moyens par lesquels
@@ -58,11 +89,11 @@ plus bas, « Ce que vous acceptez ».
    trousseau sur les autres appareils de son titulaire : cela se passe entre lui et le fabricant de
    son appareil, et le service ne fait qu'en enregistrer le fait.
 
-8. **Une empreinte de l'adresse IP ou de l'adresse électronique**, le temps de compter les demandes
+9. **Une empreinte de l'adresse IP ou de l'adresse électronique**, le temps de compter les demandes
    trop nombreuses. Voir plus bas.
-9. **Les traces d'accès de l'exploitant** : quand il a regardé les données d'une organisation,
-   laquelle, et quelle page. Voir « L'accès de l'exploitant à vos données ».
-10. **L'acceptation de ces conditions** : qui les a acceptées, quelle version du texte, et quand.
+10. **Les traces d'accès de l'exploitant** : quand il a regardé les données d'une organisation,
+    laquelle, et quelle page. Voir « L'accès de l'exploitant à vos données ».
+11. **L'acceptation de ces conditions** : qui les a acceptées, quelle version du texte, et quand.
     Voir « Comment ce texte est accepté ».
 
 Le service n'utilise **aucun cookie de mesure d'audience**, ne fait **aucun suivi publicitaire** et
@@ -123,19 +154,20 @@ ne sait pas sur quelle page vous l'avez collé, puisqu'il ne conserve pas la pro
 
 ## Combien de temps
 
-| Ce qui est conservé                            | Durée                                                  | Comment il est effacé             |
-| ---------------------------------------------- | ------------------------------------------------------ | --------------------------------- |
-| Le programme de vos cours                      | tant que votre organisation utilise le service         | vous l'effacez vous-même          |
-| L'acceptation de ces conditions                | tant que la personne fait partie de votre organisation | règle de la base, avec l'adhésion |
-| Le journal des modifications                   | 24 mois, puis effacé automatiquement                   | règle de la base, chaque nuit     |
-| Le compteur de consultations                   | 25 mois, puis effacé automatiquement                   | règle de la base, chaque nuit     |
-| Une invitation qui n'est plus en cours         | 90 jours après sa fin, puis effacée automatiquement    | procédure de la base, chaque nuit |
-| Un compte sans organisation ni session ouverte | effacé dès qu'il a plus de 12 mois                     | procédure de la base, chaque nuit |
-| Une session de connexion                       | 30 jours sans usage, puis effacée automatiquement      | règle de la base, chaque nuit     |
-| Un lien de connexion non utilisé               | 15 minutes, puis effacé automatiquement                | règle de la base, chaque nuit     |
-| L'empreinte du compteur de demandes            | un à deux jours, puis effacée automatiquement          | règle de la base, chaque nuit     |
-| Les traces d'accès internes de l'exploitant    | 24 mois, puis effacées automatiquement                 | règle de la base, chaque nuit     |
-| Le journal technique du serveur                | 14 jours au plus, puis effacé automatiquement          | fichier découpé chaque nuit       |
+| Ce qui est conservé                            | Durée                                                         | Comment il est effacé             |
+| ---------------------------------------------- | ------------------------------------------------------------- | --------------------------------- |
+| Le programme de vos cours                      | tant que votre organisation utilise le service                | vous l'effacez vous-même          |
+| L'acceptation de ces conditions                | tant que la personne fait partie de votre organisation        | règle de la base, avec l'adhésion |
+| Le journal des modifications                   | 24 mois, puis effacé automatiquement                          | règle de la base, chaque nuit     |
+| Le compteur de consultations                   | 25 mois, puis effacé automatiquement                          | règle de la base, chaque nuit     |
+| Une invitation qui n'est plus en cours         | 90 jours après sa fin, puis effacée automatiquement           | procédure de la base, chaque nuit |
+| Une demande d'accès                            | 90 jours après la réponse, 12 mois si elle reste sans réponse | règle de la base, chaque nuit     |
+| Un compte sans organisation ni session ouverte | effacé dès qu'il a plus de 12 mois                            | procédure de la base, chaque nuit |
+| Une session de connexion                       | 30 jours sans usage, puis effacée automatiquement             | règle de la base, chaque nuit     |
+| Un lien de connexion non utilisé               | 15 minutes, puis effacé automatiquement                       | règle de la base, chaque nuit     |
+| L'empreinte du compteur de demandes            | un à deux jours, puis effacée automatiquement                 | règle de la base, chaque nuit     |
+| Les traces d'accès internes de l'exploitant    | 24 mois, puis effacées automatiquement                        | règle de la base, chaque nuit     |
+| Le journal technique du serveur                | 14 jours au plus, puis effacé automatiquement                 | fichier découpé chaque nuit       |
 
 **Une session en usage se prolonge.** Les trente jours comptent depuis la dernière fois qu'elle a
 servi : tant que vous revenez, elle ne se ferme pas. Un mois sans revenir, et elle part.
@@ -173,8 +205,8 @@ Trois précisions, parce qu'elles comptent :
   une passkey enregistrée sur un appareil de l'exploitant : un lien reçu par courriel n'y suffit
   jamais. La session qui porte ces droits dure au plus douze heures.
 
-Si cette possibilité d'accès vous pose un problème, dites-le avant d'ouvrir votre organisation :
-sans elle, l'assistance n'est pas possible.
+Si cette possibilité d'accès vous pose un problème, dites-le dans votre demande d'accès, avant que
+votre organisation soit ouverte : sans elle, l'assistance n'est pas possible.
 
 ## Ce que vous pouvez demander
 
@@ -188,6 +220,7 @@ Chaque personne peut demander :
   depuis « Vos organisations » : un compte sans organisation est ensuite effacé de lui-même (voir le
   tableau). Une organisation garde toujours au moins une personne responsable : la dernière ne peut
   pas partir sans en nommer une autre.
+- **L'effacement de sa demande d'accès**, sans attendre la fin de sa durée.
 
 Votre organisation peut demander :
 
@@ -216,6 +249,10 @@ l'accord de chacun avant de le laisser entrer.
 
 Cette acceptation est conservée tant que la personne fait partie de votre organisation, et effacée
 avec son adhésion. L'exploitant n'y est pas soumis : c'est lui qui propose ce texte.
+
+Une personne qui demande l'accès n'a rien à accepter pour cela : le formulaire dit ce que deviennent
+ses données, et renvoie à ce texte. Si la demande est acceptée, elle l'accepte en entrant dans
+l'espace de son organisation, comme toute personne de l'équipe.
 
 ## Ce que vous acceptez
 

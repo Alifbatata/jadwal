@@ -273,9 +273,9 @@ docs/CALENDRIER-PRIERES.md | VIRG_NON_TROUVEE | vous
 # (famille 2) : l'en-tête « Ce qui est conservé / Durée », la cellule finale « chaque nuit »,
 # « chiffrées » accordé à « sauvegardes » et non à la cellule voisine. « Voyez plus bas » est la
 # formule du renvoi, et « au bout d'un à deux jours » élide devant le numéral, ce que l'usage admet.
-# « 19.10.2026 » : la date de mise à jour s'écrit JJ.MM.AAAA, avec des points, comme toutes les
+# « 31.10.2026 » : la date de mise à jour s'écrit JJ.MM.AAAA, avec des points, comme toutes les
 # dates du service et comme en Suisse (étape 18, retour A3) ; la règle propose des barres obliques.
-docs/CONDITIONS.md | DATE | 19.10.2026
+docs/CONDITIONS.md | DATE | 31.10.2026
 docs/CONDITIONS.md | J_N | chiffrées Union
 docs/CONDITIONS.md | PAS_D_ELISION | d'un
 docs/CONDITIONS.md | POINT | nuit
@@ -642,3 +642,11 @@ apps/web/src/lib/i18n/upcoming.ts | ENGLISH_WORD_REPEAT_RULE | rescheduled resch
 # écrite avec des points comme toutes celles du service.
 apps/web/src/lib/i18n/upcoming.ts | SENT_START_SIN_PLU | Termin
 docs/adr/0021-espace-des-responsables.md | DATE | 29.09.2026
+
+# Étape 22.
+#
+# « DATE » : chaque addendum de l'étape porte sa date, 31.10.2026, écrite avec des points comme
+# toutes les dates du service (étape 18, retour A3) ; la règle propose des barres obliques. Même cas
+# que les addenda des étapes 19 à 21, plus haut.
+docs/adr/0017-invitation-sans-fuite-d-information.md | DATE | 31.10.2026
+docs/adr/0044-acceptation-des-conditions.md | DATE | 31.10.2026

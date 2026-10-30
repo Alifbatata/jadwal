@@ -520,9 +520,14 @@ const marche = new MiseEnMarche(IMAGE, 'jadwal-parcours', marque);
 const TEXTE_DES_CONDITIONS = [CONTEXTE, racine]
 	.map((dossier) => join(dossier, 'docs', 'CONDITIONS.md'))
 	.find((fichier) => existsSync(fichier));
-const DATE_DES_CONDITIONS = dateDeLaVersion(readFileSync(String(TEXTE_DES_CONDITIONS), 'utf8'));
-/** Le texte compte dix données personnelles, en une seule liste numérotée (`docs/CONDITIONS.md`). */
-const DONNEES_PERSONNELLES = 10;
+const CONDITIONS = readFileSync(String(TEXTE_DES_CONDITIONS), 'utf8');
+const DATE_DES_CONDITIONS = dateDeLaVersion(CONDITIONS);
+/**
+ * Les données personnelles, en une seule liste numérotée (`docs/CONDITIONS.md`) : dix jusqu'à
+ * l'étape 21, onze depuis l'étape 22 (les demandes d'accès). Comptées dans le texte du commit
+ * éprouvé, comme sa date : un élément commence une ligne par son numéro et un nom en gras.
+ */
+const DONNEES_PERSONNELLES = CONDITIONS.match(/^\d+\. \*\*/gm)?.length ?? 0;
 /** L'exploitant, tel que les conditions le nomment depuis l'étape 18 (retour F1). */
 const EXPLOITANT = 'Voltia';
 /**
