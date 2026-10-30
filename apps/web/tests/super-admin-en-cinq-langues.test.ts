@@ -14,7 +14,7 @@
 import { readFileSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, inject, it } from 'vitest';
 import { isCanonicalTimeZone } from '@jadwal/core/ics';
 import { createDatabase, newId, sql, withOrg, type DatabaseHandle } from '@jadwal/db';
 import { frenchLeft, ISO_DATE, textSegments, visibleText } from './textes-lus.js';
@@ -1327,6 +1327,410 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 			expect(await organisationA('sans-pouvoir')).toBeUndefined();
 			expect(await dernierCourriel('x@example.test')).toBeUndefined();
 			expect(await dernierCourriel('y@example.test')).toBeUndefined();
+		});
+	});
+
+	describe('22 : les demandes d’accès dans la console (ADR 0049)', () => {
+		interface Demande {
+			organization: string;
+			locality: string;
+			contact: string;
+			email: string;
+			message: string | null;
+			language: Langue;
+			createdAt?: string;
+		}
+
+		/**
+		 * Dépose une demande par le propriétaire, comme `jadwal.request_access` l'écrirait, mais à la
+		 * date voulue, et sans le plafond du jour, que ces essais n'éprouvent pas.
+		 */
+		async function deposer(demande: Demande): Promise<string> {
+			const id = newId();
+			await maintenance((tx) =>
+				tx.execute(sql`
+					insert into "access_request" ("id", "organization_name", "locality", "contact_name",
+						"email", "message", "language", "created_at")
+					values (${id}, ${demande.organization}, ${demande.locality}, ${demande.contact},
+						${demande.email}, ${demande.message}, ${demande.language},
+						${demande.createdAt ?? new Date().toISOString()})
+				`)
+			);
+			return id;
+		}
+
+		async function etatDe(id: string): Promise<{ status: string; resolved: boolean } | undefined> {
+			const [ligne] = await maintenance(async (tx) =>
+				lignes<{ status: string; resolved: boolean }>(
+					await tx.execute(sql`
+						select "status", "resolved_at" is not null as "resolved"
+						from "access_request" where "id" = ${id}
+					`)
+				)
+			);
+			return ligne;
+		}
+
+		/** Ce que la console montre d'une demande : chaque libellé avec sa valeur, lus comme on les lit. */
+		function demandeDans(html: string, organisation: string) {
+			const bloc = [...html.matchAll(/<li\b[^>]*class="demande[\s"][\s\S]*?<\/li>/g)]
+				.map((trouve) => trouve[0])
+				.find((li) => texteDe(element(li, /<p\b[^>]*class="titre/, 'p')) === organisation);
+			if (!bloc) return null;
+			return {
+				html: bloc,
+				details: [
+					...bloc.matchAll(/<dt\b[^>]*>([\s\S]*?)<\/dt>\s*<dd\b[^>]*>([\s\S]*?)<\/dd>/g)
+				].map((paire) => [texteDe(paire[1] ?? ''), texteDe(paire[2] ?? '')]),
+				// Le lien tel qu'un navigateur le suit depuis la console : SvelteKit l'écrit relatif.
+				creer: lienSuivi(bloc.match(/<a\b[^>]*href="([^"]*)"/)?.[1]?.replaceAll('&amp;', '&')),
+				refus: texteDe(element(bloc, /<details\b[^>]*class="refuser/, 'details'))
+			};
+		}
+
+		function lienSuivi(href: string | undefined): string {
+			if (href === undefined) return '';
+			const suivi = new URL(href, `${origin}/super-admin`);
+			return `${suivi.pathname}${suivi.search}${suivi.hash}`;
+		}
+
+		/** Le choix d'une liste déroulante, par son identifiant. */
+		function choisi(html: string, id: string): string {
+			const liste = element(html, new RegExp(`<select\\b[^>]*\\bid="${id}"`), 'select');
+			return liste.match(/<option\b[^>]*value="([^"]*)"[^>]*\bselected\b/)?.[1] ?? '';
+		}
+
+		/** Le formulaire de création, tel qu'il est rendu. */
+		function formulaireDeCreation(html: string): string {
+			return section(html, 'creer-titre');
+		}
+
+		async function nombreDeCourriels(): Promise<number> {
+			return (await readdir(outbox)).filter((nom) => nom.endsWith('.json')).length;
+		}
+
+		const BIENNE: Demande = {
+			organization: 'Association de Bienne',
+			locality: 'Bienne',
+			contact: 'Une Personne',
+			email: 'demande-bienne@example.test',
+			message: 'Nous aimerions publier nos cours.\nEt nos horaires de prière.',
+			language: 'de'
+		};
+
+		beforeEach(async () => {
+			await maintenance((tx) => tx.execute(sql`delete from "access_request"`));
+			await langueDuCompte('fr');
+		});
+
+		it('says when no request waits', async () => {
+			const html = await (await get('/super-admin', avecPouvoirs)).text();
+			const lu = texteDe(section(html, 'demandes-titre'));
+			expect(lu).toContain('Demandes d’accès');
+			expect(lu).toContain('Aucune demande en attente.');
+		});
+
+		it('lists each pending request with what it says, oldest first, and no answered one', async () => {
+			const recente = await deposer({
+				...BIENNE,
+				organization: 'Centre récent',
+				email: 'recent@example.test',
+				message: null,
+				language: 'fr'
+			});
+			// Déposée le 5 mars à 23:30 UTC : en Suisse, c'est déjà le 6.
+			await deposer({ ...BIENNE, createdAt: '2026-03-05 23:30:00+00' });
+			const repondue = await deposer({
+				...BIENNE,
+				organization: 'Déjà refusée',
+				email: 'deja@example.test'
+			});
+			await maintenance((tx) =>
+				tx.execute(sql`
+					update "access_request" set "status" = 'refused', "resolved_at" = now()
+					where "id" = ${repondue}
+				`)
+			);
+
+			const html = await (await get('/super-admin', avecPouvoirs)).text();
+			const demandes = section(html, 'demandes-titre');
+			// En tête de la console, avant la liste des organisations.
+			expect(html.indexOf('id="demandes-titre"')).toBeLessThan(html.indexOf('id="liste-titre"'));
+			expect(demandes.indexOf('Association de Bienne')).toBeLessThan(
+				demandes.indexOf('Centre récent')
+			);
+			expect(demandes).not.toContain('Déjà refusée');
+			expect(texteDe(demandes)).toContain(
+				'Remplit le formulaire de création avec ce que dit la demande.'
+			);
+
+			const bienne = demandeDans(html, 'Association de Bienne');
+			expect(bienne?.details).toEqual([
+				['Localité :', 'Bienne'],
+				['Personne qui demande :', 'Une Personne'],
+				['Adresse électronique :', 'demande-bienne@example.test'],
+				['Langue de la demande :', 'Deutsch'],
+				['Reçue le', '06.03.2026'],
+				['Message :', 'Nous aimerions publier nos cours. Et nos horaires de prière.']
+			]);
+			// Le message garde ses retours à la ligne.
+			expect(bienne?.html).toContain(
+				'Nous aimerions publier nos cours.\nEt nos horaires de prière.'
+			);
+			expect(bienne?.refus).toContain('Refuser cette demande');
+			expect(bienne?.refus).toContain(
+				'Aucun courriel ne part : la personne n’est pas prévenue. Une demande refusée est effacée au bout de 90 jours.'
+			);
+			// Sans message, aucune ligne « Message ».
+			expect(demandeDans(html, 'Centre récent')?.details.map(([libelle]) => libelle)).not.toContain(
+				'Message :'
+			);
+			expect(demandeDans(html, 'Centre récent')?.creer).toBe(
+				`/super-admin?demande=${recente}#creer-titre`
+			);
+		});
+
+		it('fills the creation form from a request, its address proposed and shown', async () => {
+			const id = await deposer(BIENNE);
+			const page = await (await get('/super-admin', avecPouvoirs)).text();
+			const lien = demandeDans(page, 'Association de Bienne')?.creer ?? '';
+			expect(lien).toBe(`/super-admin?demande=${id}#creer-titre`);
+
+			const html = await (await get(lien.split('#')[0] ?? '', avecPouvoirs)).text();
+			const creation = formulaireDeCreation(html);
+			expect(valeurDuChamp(creation, 'name')).toBe('Association de Bienne');
+			expect(valeurDuChamp(creation, 'slug')).toBe('association-de-bienne');
+			expect(texteDe(creation)).toContain(`${HOTE}/m/association-de-bienne`);
+			expect(valeurDuChamp(creation, 'managerEmail')).toBe('demande-bienne@example.test');
+			expect(choisi(creation, 'emailLanguage')).toBe('de');
+			expect(champsDe(creation)['accessRequestId']).toBe(id);
+			expect(texteDe(creation)).toContain(
+				'Formulaire rempli à partir de la demande de : Association de Bienne'
+			);
+			expect(texteDe(creation)).toContain(
+				'la demande est marquée acceptée à la création, et l’invitation part à l’adresse de la personne qui a demandé, dans la langue de sa demande.'
+			);
+			// Rien n'est encore accepté.
+			expect(await etatDe(id)).toEqual({ status: 'pending', resolved: false });
+		});
+
+		it('creates the organisation, invites the person who asked in her language, and accepts the request, in one gesture', async () => {
+			const id = await deposer(BIENNE);
+			const html = await (await get(`/super-admin?demande=${id}`, avecPouvoirs)).text();
+			const reponse = await postForm(
+				'/super-admin?/ouvrir',
+				{
+					...champsDe(formulaireDeCreation(html)),
+					timeZone: 'Europe/Zurich',
+					emailLanguage: choisi(formulaireDeCreation(html), 'emailLanguage')
+				},
+				avecPouvoirs
+			);
+			expect(reponse.status).toBe(200);
+			const lu = texteDe(
+				element(await reponse.text(), /<section\b[^>]*class="succes[\s"]/, 'section')
+			);
+			expect(lu).toContain('L’organisation est créée : Association de Bienne');
+			expect(lu).toContain(
+				'L’invitation de personne responsable est partie à : demande-bienne@example.test'
+			);
+			expect(lu).toContain('La demande d’accès est marquée acceptée.');
+
+			expect(await etatDe(id)).toEqual({ status: 'accepted', resolved: true });
+			expect(await organisationA('association-de-bienne')).toMatchObject({
+				name: 'Association de Bienne'
+			});
+			const courriel = (await courrielsA('demande-bienne@example.test')).at(-1) as
+				{ subject?: string; text: string } | undefined;
+			expect(courriel?.subject).toBe('Einladung zu Association de Bienne auf jadwal');
+
+			// La demande a quitté la liste.
+			const apres = await (await get('/super-admin', avecPouvoirs)).text();
+			expect(demandeDans(apres, 'Association de Bienne')).toBeNull();
+			expect(texteDe(section(apres, 'demandes-titre'))).toContain('Aucune demande en attente.');
+		});
+
+		it('carries the request through the confirmation step, and accepts it once created', async () => {
+			const id = await deposer({
+				...BIENNE,
+				organization: 'Maison de Morges',
+				email: 'morges@example.test'
+			});
+			const proposee = await postForm(
+				'/super-admin?/ouvrir',
+				{
+					name: 'Maison de Morges',
+					slug: '',
+					timeZone: 'Europe/Zurich',
+					managerEmail: 'morges@example.test',
+					emailLanguage: 'fr',
+					accessRequestId: id
+				},
+				avecPouvoirs
+			);
+			expect(proposee.status).toBe(200);
+			const etape = section(await proposee.text(), 'confirmer-titre');
+			expect(champsDe(etape)['accessRequestId']).toBe(id);
+			expect(await etatDe(id)).toEqual({ status: 'pending', resolved: false });
+
+			const creee = await postForm('/super-admin?/ouvrir', champsDe(etape), avecPouvoirs);
+			expect(creee.status).toBe(200);
+			expect(await organisationA('maison-de-morges')).toMatchObject({ name: 'Maison de Morges' });
+			expect(await etatDe(id)).toEqual({ status: 'accepted', resolved: true });
+		});
+
+		it('creates nothing when the request no longer waits, and gives the form back without it', async () => {
+			const id = await deposer({
+				...BIENNE,
+				organization: 'Foyer de Sion',
+				email: 'sion@example.test'
+			});
+			await maintenance((tx) =>
+				tx.execute(sql`
+					update "access_request" set "status" = 'refused', "resolved_at" = now() where "id" = ${id}
+				`)
+			);
+			const avant = await nombreDeCourriels();
+			for (const accessRequestId of [id, 'pas-un-identifiant']) {
+				const reponse = await postForm(
+					'/super-admin?/ouvrir',
+					{
+						name: 'Foyer de Sion',
+						slug: 'foyer-de-sion',
+						timeZone: 'Europe/Zurich',
+						managerEmail: 'sion@example.test',
+						emailLanguage: 'fr',
+						accessRequestId
+					},
+					avecPouvoirs
+				);
+				expect(reponse.status, accessRequestId).toBe(409);
+				const html = await reponse.text();
+				expect(erreur(html), accessRequestId).toBe(
+					'Cette demande n’attend plus de réponse : elle a déjà été acceptée ou refusée, ou elle a été effacée.'
+				);
+				const creation = formulaireDeCreation(html);
+				expect(valeurDuChamp(creation, 'name')).toBe('Foyer de Sion');
+				expect(valeurDuChamp(creation, 'managerEmail')).toBe('sion@example.test');
+				expect(champsDe(creation)['accessRequestId']).toBeUndefined();
+			}
+			expect(await organisationA('foyer-de-sion')).toBeUndefined();
+			expect(await etatDe(id)).toEqual({ status: 'refused', resolved: true });
+			expect(await nombreDeCourriels()).toBe(avant);
+		});
+
+		it('says so when « Créer l’organisation » leads to a request that no longer waits', async () => {
+			const id = await deposer(BIENNE);
+			await maintenance((tx) =>
+				tx.execute(sql`
+					update "access_request" set "status" = 'accepted', "resolved_at" = now() where "id" = ${id}
+				`)
+			);
+			for (const demande of [id, 'pas-un-identifiant', newId()]) {
+				const html = await (await get(`/super-admin?demande=${demande}`, avecPouvoirs)).text();
+				expect(erreur(html), demande).toBe(
+					'Cette demande n’attend plus de réponse : elle a déjà été acceptée ou refusée, ou elle a été effacée.'
+				);
+				const creation = formulaireDeCreation(html);
+				expect(valeurDuChamp(creation, 'name'), demande).toBe('');
+				expect(champsDe(creation)['accessRequestId'], demande).toBeUndefined();
+			}
+		});
+
+		it('refuses a request, sends no email, and refuses it once', async () => {
+			const id = await deposer(BIENNE);
+			const avant = await nombreDeCourriels();
+			const reponse = await postForm(
+				'/super-admin?/refuser',
+				{ accessRequestId: id },
+				avecPouvoirs
+			);
+			expect(reponse.status).toBe(200);
+			const html = await reponse.text();
+			const lu = texteDe(element(html, /<section\b[^>]*class="succes[\s"]/, 'section'));
+			expect(lu).toContain('Demande refusée : Association de Bienne');
+			expect(lu).toContain('Aucun courriel n’est parti.');
+			expect(await etatDe(id)).toEqual({ status: 'refused', resolved: true });
+			expect(demandeDans(html, 'Association de Bienne')).toBeNull();
+			expect(await nombreDeCourriels()).toBe(avant);
+
+			for (const accessRequestId of [id, 'pas-un-identifiant', newId()]) {
+				const encore = await postForm('/super-admin?/refuser', { accessRequestId }, avecPouvoirs);
+				expect(encore.status, accessRequestId).toBe(404);
+				expect(erreur(await encore.text()), accessRequestId).toBe(
+					'Cette demande n’attend plus de réponse : elle a déjà été acceptée ou refusée, ou elle a été effacée.'
+				);
+			}
+			expect(await etatDe(id)).toEqual({ status: 'refused', resolved: true });
+		});
+
+		it('refuses both gestures to a session without powers', async () => {
+			const id = await deposer(BIENNE);
+			for (const [chemin, champs] of [
+				['/super-admin?/refuser', { accessRequestId: id }],
+				[
+					'/super-admin?/ouvrir',
+					{
+						name: 'Sans pouvoirs',
+						slug: 'sans-pouvoirs',
+						timeZone: 'Europe/Zurich',
+						accessRequestId: id
+					}
+				]
+			] as const) {
+				const reponse = await postForm(chemin, champs, sansPouvoirs);
+				expect(reponse.status, chemin).not.toBe(200);
+			}
+			expect(await etatDe(id)).toEqual({ status: 'pending', resolved: false });
+			expect(await organisationA('sans-pouvoirs')).toBeUndefined();
+		});
+
+		it('shows the requests, the filled form, a refusal and a request gone in each language, with no French left', async () => {
+			const pages: Record<string, Partial<Record<Langue, string>>> = {};
+			for (const langue of LANGUES) {
+				await langueDuCompte(langue);
+				const id = await deposer({
+					...BIENNE,
+					organization: `Demande ${langue}`,
+					email: `demande-${langue}@example.test`
+				});
+				const liste = await get('/super-admin', avecPouvoirs);
+				const remplie = await get(`/super-admin?demande=${id}`, avecPouvoirs);
+				const refusee = await postForm(
+					'/super-admin?/refuser',
+					{ accessRequestId: id },
+					avecPouvoirs
+				);
+				const partie = await get(`/super-admin?demande=${id}`, avecPouvoirs);
+				for (const [nom, reponse] of Object.entries({ liste, remplie, refusee, partie })) {
+					expect(reponse.status, `${nom} ${langue}`).toBe(200);
+					(pages[nom] ??= {})[langue] = await reponse.text();
+				}
+			}
+			for (const [nom, parLangue] of Object.entries(pages)) {
+				const francais = parLangue.fr ?? '';
+				for (const langue of LANGUES.slice(1)) {
+					const html = parLangue[langue] ?? '';
+					expect(baliseHtml(html), `${nom} ${langue}`).toBe(
+						`<html lang="${langue}" dir="${SENS[langue]}">`
+					);
+					expect(visibleText(html), `${nom} ${langue}`).not.toMatch(ISO_DATE);
+					expect.soft(frenchLeft(francais, html, permis(francais)), `${nom} ${langue}`).toEqual([]);
+				}
+			}
+			// Chaque page dit bien ce qu'on attend d'elle, en français comme ailleurs.
+			expect(texteDe(section(pages.liste?.fr ?? '', 'demandes-titre'))).toContain(
+				'Refuser cette demande'
+			);
+			expect(texteDe(section(pages.remplie?.de ?? '', 'creer-titre'))).toContain(
+				'Formular ausgefüllt aus der Anfrage von: Demande de'
+			);
+			expect(
+				texteDe(element(pages.refusee?.it ?? '', /<section\b[^>]*class="succes[\s"]/, 'section'))
+			).toContain('Hai rifiutato la richiesta di: Demande it');
+			expect(erreur(pages.partie?.ar ?? '')).toBe(
+				'هذا الطلب لم يعد ينتظر ردًا: سبق قبوله أو رفضه، أو حُذف.'
+			);
 		});
 	});
 

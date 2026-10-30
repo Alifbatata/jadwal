@@ -1,7 +1,8 @@
 // L'espace du super-admin : créer et suspendre des organisations, inviter leur personne
 // responsable, entrer dans l'espace d'une organisation avec tous les pouvoirs, produire un lien de
 // connexion de secours. jadwal est gratuit : il n'y a plus de plan à choisir, et c'est le super-admin
-// qui donne l'accès (étape 22, ADR 0049).
+// qui donne l'accès (étape 22, ADR 0049) : les demandes d'accès s'affichent en tête, et il les accepte
+// en créant l'organisation, ou les refuse.
 //
 // Depuis l'étape 4, il n'y a plus de fenêtre d'accès à ouvrir : il lit et écrit partout, à tout
 // moment (ADR 0025). Ce que cela coûte est écrit dans `docs/SECURITE.md`, et ce que les
@@ -14,8 +15,13 @@
 // l'espace (`i18n/super-admin.ts`, étape 18).
 
 import { fail, redirect } from '@sveltejs/kit';
-import { newId, sql, withOrg } from '@jadwal/db';
+import { newId, setOrgContext, sql, withOrg } from '@jadwal/db';
 import { isLangue, type Langue } from '$lib/i18n.js';
+import {
+	pendingAccessRequest,
+	pendingAccessRequests,
+	resolveAccessRequest
+} from '$lib/server/access-requests.js';
 import { auth, captureMagicLink } from '$lib/server/auth.js';
 import { chooseOrganisation, recordAdminAccess } from '$lib/server/context.js';
 import { superAdminDatabase } from '$lib/server/database.js';
@@ -34,6 +40,9 @@ const ADRESSE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * serveur : c'est une organisation inconnue, et l'écran le dit comme tel.
  */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** La demande d'accès n'attend plus : la transaction qui l'acceptait est annulée. */
+class RequestGone extends Error {}
 
 function rows<T>(result: unknown): T[] {
 	if (Array.isArray(result)) return result as T[];
@@ -84,7 +93,17 @@ function publicPrefix(url: URL): string {
 
 export const load: PageServerLoad = async (event) => {
 	mustBeSuperAdmin(event);
+	// « Créer l'organisation », sur une demande, est un lien vers cette page : la demande remplit le
+	// formulaire de création. Une demande qui n'attend plus le dit, et le formulaire reste vide.
+	const asked = event.url.searchParams.get('demande');
+	const fromRequest =
+		asked !== null && UUID.test(asked)
+			? await pendingAccessRequest(asked, DEFAULT_TIME_ZONE)
+			: null;
 	return {
+		accessRequests: await pendingAccessRequests(DEFAULT_TIME_ZONE),
+		fromRequest,
+		requestGone: asked !== null && fromRequest === null,
 		organisations: rows<{
 			id: string;
 			slug: string;
@@ -118,8 +137,16 @@ export const actions: Actions = {
 		// tard depuis la liste.
 		const managerEmail = String(form.get('managerEmail') ?? '').trim();
 		const language = emailLanguage(form, event.locals.langue);
+		// La demande d'accès à laquelle la création répond, s'il y en a une : la création la marque
+		// acceptée, dans la même transaction.
+		const accessRequestId = String(form.get('accessRequestId') ?? '').trim();
 		// Ce que la personne a saisi revient dans le formulaire, pour qu'une erreur ne l'efface pas.
-		const values = { name, slug: written, timeZone, managerEmail, language };
+		const values = { name, slug: written, timeZone, managerEmail, language, accessRequestId };
+		// Sans le lien à la demande : un nouvel envoi crée l'organisation seule.
+		const unlinked = { ...values, accessRequestId: '' };
+		if (accessRequestId !== '' && !UUID.test(accessRequestId)) {
+			return fail(409, { error: 'requestGone' as const, values: unlinked });
+		}
 		if (name.length === 0) return fail(400, { error: 'nameRequired' as const, values });
 		if (managerEmail !== '' && !ADRESSE.test(managerEmail)) {
 			return fail(400, { error: 'invalidManagerEmail' as const, values });
@@ -149,6 +176,7 @@ export const actions: Actions = {
 					timeZone,
 					managerEmail,
 					language,
+					accessRequestId,
 					address: `${publicPrefix(event.url)}${slug}`
 				},
 				values
@@ -159,9 +187,18 @@ export const actions: Actions = {
 		// elle. Le contexte est celui de l'organisation nouvelle, avec la personne du super-admin : la
 		// base ne laisse inscrire l'invitation et l'entrée du journal que là (migrations 0033 et 0071),
 		// et le journal la signe de son identité (ADR 0025).
+		//
+		// Une demande d'accès est acceptée dans la même transaction, et d'abord : sans organisation en
+		// contexte, seule façon de la voir (migration 0080). Une demande qui n'attend plus annule tout.
 		const organizationId = newId();
 		try {
-			await withOrg(superAdminDatabase(), { organizationId, userId: person.userId }, async (tx) => {
+			await superAdminDatabase().transaction(async (tx) => {
+				if (accessRequestId !== '') {
+					if ((await resolveAccessRequest(tx, accessRequestId, 'accepted')) === null) {
+						throw new RequestGone();
+					}
+				}
+				await setOrgContext(tx, { organizationId, userId: person.userId });
 				await tx.execute(sql`
 					insert into "organization" ("id", "slug", "name", "time_zone", "default_language", "enabled_language")
 					values (${organizationId}, ${slug}, ${name}, ${timeZone}, 'fr', array['fr'])
@@ -175,6 +212,11 @@ export const actions: Actions = {
 				});
 			});
 		} catch (cause) {
+			// Refusée dans un autre onglet, ou partie à la purge : rien n'est créé, et le formulaire
+			// revient rempli, sans le lien à la demande.
+			if (cause instanceof RequestGone) {
+				return fail(409, { error: 'requestGone' as const, values: unlinked });
+			}
 			// L'adresse est unique dans la base (`organization_slug_uq`) : une adresse déjà prise se dit,
 			// au lieu de finir en erreur du serveur.
 			if (codeSql(cause) === '23505') {
@@ -191,9 +233,28 @@ export const actions: Actions = {
 			created: {
 				name,
 				address: `${publicPrefix(event.url)}${slug}`,
-				invited: managerEmail === '' ? null : managerEmail
+				invited: managerEmail === '' ? null : managerEmail,
+				requestAccepted: accessRequestId !== ''
 			}
 		};
+	},
+
+	/**
+	 * Refuser une demande d'accès (étape 22). Aucun courriel ne part : le formulaire public ne doit
+	 * pas servir à écrire à n'importe qui, et une réponse négative en serait un. La demande reste en
+	 * base, refusée, quatre-vingt-dix jours, puis la purge l'emporte (migration 0079).
+	 */
+	refuser: async (event) => {
+		mustBeSuperAdmin(event);
+		const form = await event.request.formData();
+		const accessRequestId = String(form.get('accessRequestId') ?? '');
+		// Un identifiant illisible est une demande qui n'existe pas : elle n'attend rien.
+		if (!UUID.test(accessRequestId)) return fail(404, { error: 'requestGone' as const });
+		const organisation = await superAdminDatabase().transaction((tx) =>
+			resolveAccessRequest(tx, accessRequestId, 'refused')
+		);
+		if (organisation === null) return fail(404, { error: 'requestGone' as const });
+		return { refused: organisation };
 	},
 
 	/**

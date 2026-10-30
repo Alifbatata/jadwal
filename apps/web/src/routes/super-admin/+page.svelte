@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { resolve } from '$app/paths';
-	import { LANGUES, NOM_DE_LANGUE } from '$lib/i18n.js';
+	import { LANGUES, NOM_DE_LANGUE, numericDate } from '$lib/i18n.js';
 	import { commonTexts } from '$lib/i18n/common.js';
 	import { superAdminTexts } from '$lib/i18n/super-admin.js';
 	import { PUBLIC_ADDRESS_PATTERN, proposePublicAddress } from './public-address.js';
@@ -17,9 +17,12 @@
 		proposePublicAddress(text.nameExample) || proposePublicAddress(superAdminTexts.fr.nameExample)
 	);
 
-	/** Le message d'une erreur rendue par une action, dans la langue de l'écran. */
+	/**
+	 * Le message d'une erreur rendue par une action, dans la langue de l'écran ; ou, à l'arrivée par
+	 * « Créer l'organisation », celui d'une demande qui n'attend plus.
+	 */
 	const errorMessage = $derived.by(() => {
-		const error = form?.error;
+		const error = form?.error ?? (data.requestGone ? 'requestGone' : undefined);
 		if (!error) return '';
 		if (error === 'invalidEmail') return commonTexts[data.language].errors.invalidEmail;
 		const message = text.errors[error];
@@ -34,8 +37,17 @@
 	// l'efface, la proposition reprend. Sans JavaScript, le champ reste vide et le serveur propose la
 	// même adresse, par la même fonction, puis la montre avant de rien créer.
 	const saisi = untrack(() => (form && 'values' in form ? form.values : undefined));
-	let name = $state(saisi?.name ?? '');
-	let address = $state(saisi?.slug ?? '');
+	// Arrivé par « Créer l'organisation » sur une demande d'accès (étape 22), le formulaire reprend ce
+	// qu'elle dit : le nom, l'adresse qu'il propose, l'adresse de la personne qui a demandé et la
+	// langue de sa demande. L'adresse proposée est dans le champ et écrite en entier : la personne la
+	// voit, et rien ne demande de la confirmer après l'envoi. La demande suit dans un champ caché, et
+	// la création l'accepte. Après une erreur, ce qui a été envoyé l'emporte.
+	const fromRequest = untrack(() => (saisi ? null : data.fromRequest));
+	const accessRequestId = untrack(() => saisi?.accessRequestId ?? fromRequest?.id ?? '');
+	let name = $state(saisi?.name ?? fromRequest?.organization ?? '');
+	let address = $state(
+		saisi?.slug ?? (fromRequest ? proposePublicAddress(fromRequest.organization) : '')
+	);
 	let addressWritten = $state(Boolean(saisi?.slug));
 	// Le fuseau saisi revient choisi s'il est dans la liste. Un nom qu'elle n'a pas ne choisirait
 	// aucune option, et le navigateur prendrait la première : c'est alors celui de la Suisse.
@@ -45,8 +57,8 @@
 		return listed ? zone : data.defaultTimeZone;
 	});
 	// La personne responsable, facultative, et la langue de son courriel : celle de l'écran d'abord.
-	const managerEmail = untrack(() => saisi?.managerEmail ?? '');
-	const managerLanguage = untrack(() => saisi?.language ?? data.language);
+	const managerEmail = untrack(() => saisi?.managerEmail ?? fromRequest?.email ?? '');
+	const managerLanguage = untrack(() => saisi?.language ?? fromRequest?.language ?? data.language);
 	const shownAddress = $derived(address || proposePublicAddress(name));
 	/**
 	 * Un nom sans lettre latine ne propose aucune adresse : la phrase sous le champ demande de
@@ -78,6 +90,10 @@
 		address = event.currentTarget.value;
 		addressWritten = address !== '';
 	}
+
+	/** « Créer l'organisation », sur une demande : cette page, le formulaire rempli par la demande. */
+	const createFromRequest = (id: string) =>
+		`${resolve('/super-admin')}?${new URLSearchParams({ demande: id })}#creer-titre`;
 
 	/** Un nom de fuseau se lit mieux sans ses traits de soulignement : « America/New York ». */
 	const zoneLabel = (zone: string) => zone.replaceAll('_', ' ');
@@ -114,6 +130,9 @@
 			{#if toConfirm.managerEmail}
 				<input type="hidden" name="managerEmail" value={toConfirm.managerEmail} />
 				<input type="hidden" name="emailLanguage" value={toConfirm.language} />
+			{/if}
+			{#if toConfirm.accessRequestId}
+				<input type="hidden" name="accessRequestId" value={toConfirm.accessRequestId} />
 			{/if}
 			<label for="slug-confirme">{text.addressLabel}</label>
 			<input
@@ -154,6 +173,15 @@
 		{:else}
 			<p>{text.createdNext}</p>
 		{/if}
+		{#if form.created.requestAccepted}
+			<p>{text.requests.accepted}</p>
+		{/if}
+	</section>
+{/if}
+{#if form && 'refused' in form && form.refused}
+	<section class="succes" aria-labelledby="refusee-titre">
+		<p id="refusee-titre">{text.requests.refused} <strong><bdi>{form.refused}</bdi></strong></p>
+		<p>{text.requests.refusedNoMail}</p>
 	</section>
 {/if}
 {#if form && 'invited' in form && form.invited}
@@ -182,6 +210,62 @@
 		<p class="details">{text.rescue.resultLog}</p>
 	</section>
 {/if}
+
+<!-- Les demandes d'accès, en tête (étape 22, ADR 0049) : tout ce qu'une demande dit est écrit par
+     la personne qui l'a faite, et isolé dans un `<bdi>`. « Créer l'organisation » est un lien, qui
+     remplit le formulaire de création ; « Refuser » s'ouvre sur ce que fait le refus et le bouton
+     qui le confirme, sans JavaScript comme avec. -->
+<section aria-labelledby="demandes-titre">
+	<h2 id="demandes-titre">{text.requests.title}</h2>
+	<p class="details">{text.requests.intro}</p>
+	{#if data.accessRequests.length === 0}
+		<p class="details">{text.requests.none}</p>
+	{:else}
+		<p class="aide">{text.requests.createHelp}</p>
+		<ul>
+			{#each data.accessRequests as request (request.id)}
+				<li class="demande">
+					<p class="titre" id={`demande-${request.id}`}><bdi>{request.organization}</bdi></p>
+					<dl>
+						<dt>{text.requests.locality}</dt>
+						<dd><bdi>{request.locality}</bdi></dd>
+						<dt>{text.requests.contact}</dt>
+						<dd><bdi>{request.contact}</bdi></dd>
+						<dt>{text.requests.email}</dt>
+						<dd><bdi dir="ltr">{request.email}</bdi></dd>
+						<dt>{text.requests.language}</dt>
+						<dd><bdi lang={request.language}>{NOM_DE_LANGUE[request.language]}</bdi></dd>
+						<dt>{text.requests.receivedOn}</dt>
+						<dd>{numericDate(request.createdOn)}</dd>
+						{#if request.message}
+							<dt>{text.requests.message}</dt>
+							<dd class="message"><bdi dir="auto">{request.message}</bdi></dd>
+						{/if}
+					</dl>
+					<p>
+						<!-- `createFromRequest` part de `resolve('/super-admin')` : la règle ne voit pas à
+						     travers une fonction, et un chemin suivi d'une requête n'est pas un chemin typé. -->
+						<!-- eslint-disable svelte/no-navigation-without-resolve -->
+						<a
+							class="bouton"
+							href={createFromRequest(request.id)}
+							aria-describedby={`demande-${request.id}`}>{text.create}</a
+						>
+						<!-- eslint-enable svelte/no-navigation-without-resolve -->
+					</p>
+					<details class="refuser">
+						<summary aria-describedby={`demande-${request.id}`}>{text.requests.refuse}</summary>
+						<form method="post" action="?/refuser" class="colonne">
+							<input type="hidden" name="accessRequestId" value={request.id} />
+							<p>{text.requests.refuseWhat}</p>
+							<button type="submit">{text.requests.refuseConfirm}</button>
+						</form>
+					</details>
+				</li>
+			{/each}
+		</ul>
+	{/if}
+</section>
 
 <section aria-labelledby="liste-titre">
 	<h2 id="liste-titre">{text.listTitle}</h2>
@@ -279,7 +363,18 @@
 <section aria-labelledby="creer-titre">
 	<h2 id="creer-titre">{text.createTitle}</h2>
 	<p>{text.createIntro}</p>
+	{#if accessRequestId}
+		<div class="depuis-demande">
+			{#if fromRequest}
+				<p>{text.requests.fromRequest} <strong><bdi>{fromRequest.organization}</bdi></strong></p>
+			{/if}
+			<p>{text.requests.fromRequestWhat}</p>
+		</div>
+	{/if}
 	<form method="post" action="?/ouvrir" class="colonne">
+		{#if accessRequestId}
+			<input type="hidden" name="accessRequestId" value={accessRequestId} />
+		{/if}
 		<label for="name">{text.nameLabel}</label>
 		<input
 			id="name"
@@ -459,9 +554,47 @@
 		font-weight: 600;
 		padding: 0 0.25rem;
 	}
-	details.inviter {
+	.demande dl {
+		display: grid;
+		grid-template-columns: max-content 1fr;
+		gap: 0.25rem 0.75rem;
+		margin: 0 0 0.75rem;
+	}
+	.demande dt {
+		font-weight: 600;
+	}
+	.demande dd {
+		margin: 0;
+		overflow-wrap: anywhere;
+	}
+	/* Le message garde ses retours à la ligne : la personne l'a écrit ainsi. */
+	.demande .message {
+		white-space: pre-line;
+	}
+	.bouton {
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		padding: 0.25rem 0.75rem;
+		border-radius: 0.375rem;
+		background: var(--accent);
+		color: var(--accent-texte);
+		text-decoration: none;
+	}
+	.depuis-demande {
+		background: #eff6ff;
+		border-inline-start: 4px solid var(--accent);
+		padding: 0.75rem;
+		margin-block-end: 0.75rem;
+	}
+	.depuis-demande p {
+		margin: 0.25rem 0;
+	}
+	details.inviter,
+	details.refuser {
 		margin-block-start: 0.5rem;
 	}
+	details.refuser summary,
 	details.inviter summary {
 		cursor: pointer;
 		min-height: 44px;

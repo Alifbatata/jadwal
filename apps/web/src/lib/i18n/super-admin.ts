@@ -35,6 +35,35 @@ const [ZURICH, PARIS, BERLIN] = ['Europe/Zurich', 'Europe/Paris', 'Europe/Berlin
 interface SuperAdminTexts {
 	readonly title: string;
 	readonly intro: string;
+	/**
+	 * Les demandes d'accès, en tête de la console (étape 22, ADR 0049) : ce que dit chaque demande,
+	 * « Créer l'organisation », qui remplit le formulaire de création et accepte la demande à la
+	 * création, et « Refuser », qui n'envoie aucun courriel. Les durées sont celles de la purge
+	 * (migration 0079).
+	 */
+	readonly requests: {
+		readonly title: string;
+		readonly intro: string;
+		readonly none: string;
+		readonly locality: string;
+		readonly contact: string;
+		readonly email: string;
+		readonly language: string;
+		readonly receivedOn: string;
+		readonly message: string;
+		readonly createHelp: string;
+		readonly refuse: string;
+		readonly refuseWhat: string;
+		readonly refuseConfirm: string;
+		/** Devant le nom de l'organisation dont la demande vient d'être refusée. */
+		readonly refused: string;
+		readonly refusedNoMail: string;
+		/** Au-dessus du formulaire de création rempli par une demande, devant le nom qu'elle donne. */
+		readonly fromRequest: string;
+		readonly fromRequestWhat: string;
+		/** Après une création qui répond à une demande. */
+		readonly accepted: string;
+	};
 	/** Après la création : le texte avant le nom de l'organisation, puis avant son adresse. */
 	readonly created: string;
 	readonly createdAddress: string;
@@ -147,6 +176,8 @@ interface SuperAdminTexts {
 		readonly unknownOrganisation: string;
 		readonly linkFailed: string;
 		readonly invalidManagerEmail: string;
+		/** La demande d'accès a déjà sa réponse, ou elle a été effacée, ou elle n'a jamais été. */
+		readonly requestGone: string;
 	};
 }
 
@@ -155,6 +186,30 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		title: 'Super-admin',
 		intro:
 			'Cet écran sert à la personne qui exploite le service : créer les organisations et inviter leur personne responsable, régler leur état, entrer dans leur espace pour les aider, et dépanner une connexion.',
+		requests: {
+			title: 'Demandes d’accès',
+			intro:
+				'Les organisations qui veulent utiliser jadwal le demandent par le formulaire du site. Chaque demande attend ici votre réponse.',
+			none: 'Aucune demande en attente.',
+			locality: 'Localité :',
+			contact: 'Personne qui demande :',
+			email: 'Adresse électronique :',
+			language: 'Langue de la demande :',
+			receivedOn: 'Reçue le',
+			message: 'Message :',
+			createHelp:
+				'Remplit le formulaire de création avec ce que dit la demande. La demande est acceptée quand l’organisation est créée, et l’invitation part à la personne qui a demandé.',
+			refuse: 'Refuser cette demande',
+			refuseWhat:
+				'Aucun courriel ne part : la personne n’est pas prévenue. Une demande refusée est effacée au bout de 90 jours.',
+			refuseConfirm: 'Refuser la demande',
+			refused: 'Demande refusée :',
+			refusedNoMail: 'Aucun courriel n’est parti.',
+			fromRequest: 'Formulaire rempli à partir de la demande de :',
+			fromRequestWhat:
+				'Vérifiez le nom et l’adresse avant de créer : la demande est marquée acceptée à la création, et l’invitation part à l’adresse de la personne qui a demandé, dans la langue de sa demande.',
+			accepted: 'La demande d’accès est marquée acceptée.'
+		},
 		created: 'L’organisation est créée :',
 		createdAddress: 'Sa page publique :',
 		createdNext:
@@ -251,6 +306,8 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			unknownStatus: 'Cet état n’existe pas : prenez-en un dans la liste.',
 			unknownOrganisation: 'Cette organisation n’existe pas, ou plus.',
 			linkFailed: 'Le lien n’a pas pu être créé. Réessayez dans une minute.',
+			requestGone:
+				'Cette demande n’attend plus de réponse : elle a déjà été acceptée ou refusée, ou elle a été effacée.',
 			invalidManagerEmail:
 				'L’adresse de la personne responsable ne convient pas. Exemple : prenom.nom@example.org'
 		}
@@ -259,6 +316,30 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		title: 'Super-Admin',
 		intro:
 			'Diese Seite ist für die Person, die den Dienst betreibt: Organisationen erstellen und ihre verantwortliche Person einladen, ihren Status festlegen, ihren Bereich betreten, um zu helfen, und bei Problemen mit der Anmeldung weiterhelfen.',
+		requests: {
+			title: 'Zugangsanfragen',
+			intro:
+				'Organisationen, die jadwal nutzen möchten, beantragen den Zugang über das Formular der Website. Jede Anfrage wartet hier auf Ihre Antwort.',
+			none: 'Keine offene Anfrage.',
+			locality: 'Ort:',
+			contact: 'Anfragende Person:',
+			email: 'E-Mail-Adresse:',
+			language: 'Sprache der Anfrage:',
+			receivedOn: 'Eingegangen am',
+			message: 'Nachricht:',
+			createHelp:
+				'Füllt das Formular zum Erstellen mit den Angaben der Anfrage aus. Die Anfrage gilt als angenommen, sobald die Organisation erstellt ist, und die Einladung geht an die anfragende Person.',
+			refuse: 'Diese Anfrage ablehnen',
+			refuseWhat:
+				'Es wird keine E-Mail verschickt: Die Person wird nicht benachrichtigt. Eine abgelehnte Anfrage wird nach 90 Tagen gelöscht.',
+			refuseConfirm: 'Anfrage ablehnen',
+			refused: 'Anfrage abgelehnt:',
+			refusedNoMail: 'Es wurde keine E-Mail verschickt.',
+			fromRequest: 'Formular ausgefüllt aus der Anfrage von:',
+			fromRequestWhat:
+				'Prüfen Sie Namen und Adresse vor dem Erstellen: Die Anfrage wird beim Erstellen als angenommen markiert, und die Einladung geht an die Adresse der anfragenden Person, in der Sprache ihrer Anfrage.',
+			accepted: 'Die Zugangsanfrage ist als angenommen markiert.'
+		},
 		created: 'Die Organisation wurde erstellt:',
 		createdAddress: 'Ihre öffentliche Seite:',
 		createdNext:
@@ -355,6 +436,8 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			unknownOrganisation: 'Die Organisation gibt es nicht oder nicht mehr.',
 			linkFailed:
 				'Der Link konnte nicht erstellt werden. Versuchen Sie es in einer Minute noch einmal.',
+			requestGone:
+				'Diese Anfrage wartet nicht mehr auf eine Antwort: Sie wurde bereits angenommen oder abgelehnt, oder sie wurde gelöscht.',
 			invalidManagerEmail:
 				'Die Adresse der verantwortlichen Person hat nicht die Form einer E-Mail-Adresse. Beispiel: vorname.name@example.org'
 		}
@@ -363,6 +446,30 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		title: 'Super-admin',
 		intro:
 			'Questa pagina serve a chi gestisce il servizio: creare le organizzazioni e invitarne la persona responsabile, impostarne lo stato, entrare nel loro spazio per aiutarle e risolvere un problema di accesso.',
+		requests: {
+			title: 'Richieste di accesso',
+			intro:
+				'Le organizzazioni che vogliono usare jadwal lo chiedono con il modulo del sito. Ogni richiesta attende qui la tua risposta.',
+			none: 'Nessuna richiesta in attesa.',
+			locality: 'Località:',
+			contact: 'Persona richiedente:',
+			email: 'Indirizzo e-mail:',
+			language: 'Lingua della richiesta:',
+			receivedOn: 'Ricevuta il',
+			message: 'Messaggio:',
+			createHelp:
+				'Compila il modulo di creazione con i dati della richiesta. La richiesta è accettata quando l’organizzazione viene creata, e l’invito parte per la persona che l’ha fatta.',
+			refuse: 'Rifiuta questa richiesta',
+			refuseWhat:
+				'Non parte nessuna e-mail: la persona non viene avvisata. Una richiesta rifiutata viene cancellata dopo 90 giorni.',
+			refuseConfirm: 'Rifiuta la richiesta',
+			refused: 'Hai rifiutato la richiesta di:',
+			refusedNoMail: 'Non è partita nessuna e-mail.',
+			fromRequest: 'Modulo compilato a partire dalla richiesta di:',
+			fromRequestWhat:
+				'Controlla il nome e l’indirizzo prima di creare: alla creazione la richiesta viene segnata come accettata, e l’invito parte all’indirizzo della persona richiedente, nella lingua della sua richiesta.',
+			accepted: 'La richiesta di accesso è segnata come accettata.'
+		},
 		created: 'L’organizzazione è stata creata:',
 		createdAddress: 'La sua pagina pubblica:',
 		createdNext:
@@ -457,6 +564,8 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			unknownStatus: 'Questo stato non esiste: prendine uno dalla lista.',
 			unknownOrganisation: 'L’organizzazione non esiste, o non esiste più.',
 			linkFailed: 'Non è stato possibile creare il link. Riprova tra un minuto.',
+			requestGone:
+				'Questa richiesta non attende più una risposta: è già stata accettata o rifiutata, oppure è stata cancellata.',
 			invalidManagerEmail:
 				'L’indirizzo della persona responsabile non ha la forma di un indirizzo e-mail. Esempio: nome.cognome@example.org'
 		}
@@ -465,6 +574,30 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		title: 'Super admin',
 		intro:
 			'This page is for the person who runs the service: create organisations and invite the person in charge of each, set their status, enter their space to help them, and sort out a sign-in problem.',
+		requests: {
+			title: 'Access requests',
+			intro:
+				'Organisations that want to use jadwal ask for access through the form on the site. Each request waits here for your answer.',
+			none: 'No request is waiting.',
+			locality: 'Town:',
+			contact: 'Person asking:',
+			email: 'Email address:',
+			language: 'Language of the request:',
+			receivedOn: 'Received on',
+			message: 'Message:',
+			createHelp:
+				'Fills in the creation form with what the request says. The request is accepted when the organisation is created, and the invitation goes to the person who asked.',
+			refuse: 'Refuse this request',
+			refuseWhat:
+				'No email is sent: the person is not told. A refused request is erased after 90 days.',
+			refuseConfirm: 'Refuse the request',
+			refused: 'You have refused the request from:',
+			refusedNoMail: 'No email was sent.',
+			fromRequest: 'Form filled in from the request of:',
+			fromRequestWhat:
+				'Check the name and the address before creating: the request is marked as accepted on creation, and the invitation goes to the address of the person who asked, in the language of their request.',
+			accepted: 'The access request is marked as accepted.'
+		},
 		created: 'The organisation has been created:',
 		createdAddress: 'Its public page:',
 		createdNext:
@@ -560,6 +693,8 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			unknownStatus: 'This status does not exist: pick one from the list.',
 			unknownOrganisation: 'The organisation does not exist, or no longer exists.',
 			linkFailed: 'The link could not be created. Try again in a minute.',
+			requestGone:
+				'This request is no longer waiting for an answer: it has already been accepted or refused, or it has been erased.',
 			invalidManagerEmail:
 				'The address of the person in charge does not look like an email address. Example: first.last@example.org'
 		}
@@ -568,6 +703,28 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		title: 'المشرف العام',
 		intro:
 			'هذه الصفحة مخصصة للشخص الذي يدير الخدمة: إنشاء المؤسسات ودعوة المسؤول عن كل منها، وتحديد حالتها، والدخول إلى مساحتها لمساعدتها، وحل مشكلة في تسجيل الدخول.',
+		requests: {
+			title: 'طلبات الوصول',
+			intro: 'تطلب المؤسسات التي تريد استعمال jadwal ذلك عبر نموذج الموقع. ينتظر كل طلب ردك هنا.',
+			none: 'لا يوجد أي طلب في الانتظار.',
+			locality: 'المدينة:',
+			contact: 'مقدّم الطلب:',
+			email: 'البريد الإلكتروني:',
+			language: 'لغة الطلب:',
+			receivedOn: 'تاريخ الاستلام:',
+			message: 'الرسالة:',
+			createHelp:
+				'يملأ نموذج الإنشاء بما جاء في الطلب. يُقبل الطلب عند إنشاء المؤسسة، وتُرسل الدعوة إلى الشخص الذي قدّمه.',
+			refuse: 'رفض هذا الطلب',
+			refuseWhat: 'لا تُرسل أي رسالة: لا يُبلَّغ الشخص بالرفض. يُحذف الطلب المرفوض بعد 90 يومًا.',
+			refuseConfirm: 'رفض الطلب',
+			refused: 'تم رفض طلب',
+			refusedNoMail: 'لم تُرسل أي رسالة.',
+			fromRequest: 'تمت تعبئة النموذج من طلب',
+			fromRequestWhat:
+				'قبل الإنشاء، تحقق من الاسم والعنوان: يُسجَّل الطلب مقبولًا عند الإنشاء، وتُرسل الدعوة إلى عنوان الشخص الذي قدّمه، بلغة طلبه.',
+			accepted: 'سُجّل طلب الوصول مقبولًا.'
+		},
 		created: 'تم إنشاء المؤسسة:',
 		createdAddress: 'صفحتها العامة:',
 		createdNext: 'لدعوة المسؤول عنها، اضغط «دعوة المسؤول» تحت اسمها في قائمة المؤسسات.',
@@ -657,6 +814,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			unknownStatus: 'اختر حالة من القائمة.',
 			unknownOrganisation: 'هذه المؤسسة غير موجودة، أو لم تعد موجودة.',
 			linkFailed: 'تعذر إنشاء الرابط. أعد المحاولة بعد دقيقة.',
+			requestGone: 'هذا الطلب لم يعد ينتظر ردًا: سبق قبوله أو رفضه، أو حُذف.',
 			invalidManagerEmail: 'عنوان المسؤول ليس بصيغة عنوان بريد إلكتروني. مثال: name@example.org'
 		}
 	}
