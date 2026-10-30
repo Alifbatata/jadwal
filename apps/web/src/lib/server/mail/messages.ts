@@ -293,7 +293,7 @@ const NO_ACCOUNT: Translations<NoAccountTexts> = {
 		link: 'Demander l’accès à jadwal'
 	},
 	de: {
-		subject: 'Kein jadwal-Konto unter dieser Adresse',
+		subject: 'Kein Konto bei jadwal unter dieser Adresse',
 		greeting: 'Guten Tag',
 		asked: 'Für diese E-Mail-Adresse wurde ein Anmeldelink für jadwal angefordert.',
 		noAccount:

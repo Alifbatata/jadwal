@@ -503,7 +503,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			proposed: 'Address of its public page, suggested from the name:',
 			check:
 				'It cannot be changed afterwards. If it suits you, tap ‘Create the organisation’. Otherwise, write another one in the field below.',
-			invite: 'The invitation for the person in charge will be sent on creation, to:'
+			invite: 'On creation, the invitation for the person in charge will be sent to this address:'
 		},
 		timeZoneLabel: 'Time zone',
 		timeZoneHint: (zone) =>
@@ -525,7 +525,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			languageLabel: 'Language of the email',
 			languageHelp: 'The person you invite receives the email in this language.',
 			submit: 'Send the invitation',
-			sentTo: 'The invitation as person in charge has been sent to:',
+			sentTo: 'Invited as person in charge:',
 			sentFor: 'Organisation:',
 			validity: (days) =>
 				`It is valid for ${days} days. By accepting it, this person becomes in charge of the organisation.`

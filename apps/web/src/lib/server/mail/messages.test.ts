@@ -135,7 +135,7 @@ describe('l’invitation', () => {
 describe('le message d’une adresse que personne n’attend (étape 22)', () => {
 	it.each([
 		['fr', 'Aucun compte jadwal à cette adresse'],
-		['de', 'Kein jadwal-Konto unter dieser Adresse'],
+		['de', 'Kein Konto bei jadwal unter dieser Adresse'],
 		['it', 'Nessun account jadwal a questo indirizzo'],
 		['en', 'No jadwal account at this address'],
 		['ar', 'لا يوجد حساب jadwal بهذا العنوان']
@@ -179,6 +179,6 @@ describe('le message d’une adresse que personne n’attend (étape 22)', () =>
 
 	it('is in the language of the request when none is given', () => {
 		const mail = withMailLanguage('de', () => noAccountEmail('c@example.test', ORIGINE));
-		expect(mail.subject).toBe('Kein jadwal-Konto unter dieser Adresse');
+		expect(mail.subject).toBe('Kein Konto bei jadwal unter dieser Adresse');
 	});
 });
