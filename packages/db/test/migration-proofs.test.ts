@@ -1,5 +1,5 @@
-// Les preuves des migrations 0073, 0074, 0075 et 0076 voient un état affaibli (étape 20, relecture
-// du chantier 1 ; étape 22 pour 0076).
+// Les preuves des migrations 0073, 0074, 0075, 0076 et 0079 voient un état affaibli (étape 20,
+// relecture du chantier 1 ; étape 22 pour 0076 et 0079).
 //
 // Chaque migration écrite à la main finit par un bloc `DO $verifie$` qui lève si l'état n'est pas
 // exactement celui qu'elle annonce. Une preuve qui ne lit que des fragments laisse passer une règle
@@ -82,6 +82,74 @@ async function refusDeLaPreuve(
 	if (refus === undefined) throw new Error('essai sans résultat');
 	return refus;
 }
+
+describe('la preuve de la migration 0079 (les demandes d’accès)', () => {
+	const TAG = '0079_access_request_rights';
+
+	it('passes on the state the migration leaves', async () => {
+		expect(await refusDeLaPreuve(TAG, [])).toBeNull();
+	});
+
+	it.each([
+		[
+			'row level security no longer forced',
+			[`alter table "access_request" no force row level security`]
+		],
+		['the public role reading the table', [`grant select on "access_request" to jadwal_public`]],
+		[
+			'the super-admin writing a column',
+			[`grant update ("status") on "access_request" to jadwal_superadmin`]
+		],
+		['the application role deleting', [`grant delete on "access_request" to jadwal_app`]],
+		[
+			'a second policy that opens the table to the public role',
+			[
+				`create policy "access_request_public_select" on "access_request" as permissive
+					for select to jadwal_public using (true)`
+			]
+		],
+		[
+			'the super-admin reading from inside an organisation',
+			[
+				`alter policy "access_request_superadmin_select" on "access_request"
+					using ((select coalesce(current_setting('jadwal.org_id', true), '')) = '' or true)`
+			]
+		],
+		[
+			'a purge that keeps answered requests longer',
+			[
+				`alter policy "access_request_owner_purge" on "access_request" using (
+					("status" <> 'pending' and "resolved_at" < now() - interval '400 days')
+					or ("status" = 'pending' and "created_at" < now() - interval '12 months'))`
+			]
+		],
+		[
+			'the writing function open to the application role',
+			[
+				`grant execute on function jadwal.request_access(text, text, text, text, text, text)
+					to jadwal_app`
+			]
+		],
+		[
+			'the writing function taken from the public role',
+			[
+				`revoke execute on function jadwal.request_access(text, text, text, text, text, text)
+					from jadwal_public`
+			]
+		],
+		[
+			'the purge open to the public role',
+			[`grant execute on function jadwal.purge_access_requests() to jadwal_public`]
+		]
+	])('refuses %s', async (_cas, etat) => {
+		expect(await refusDeLaPreuve(TAG, etat)).toEqual({
+			code: 'P0001',
+			message: expect.stringMatching(
+				/^(jadwal\.)?(access_request|request_access|purge_access_requests)/
+			)
+		});
+	});
+});
 
 describe('la preuve de la migration 0076 (plus aucun plan)', () => {
 	const TAG = '0076_organization_plan_drop';

@@ -434,6 +434,7 @@ describe('catalogue : intégrité du schéma', () => {
 			'is_org_admin',
 			'maintenance',
 			'may_sign_in',
+			'purge_access_requests',
 			'purge_admin_access_log',
 			'purge_audit_log',
 			'purge_expired_sessions',
@@ -447,7 +448,8 @@ describe('catalogue : intégrité du schéma', () => {
 			'refuse_invitation_status_change',
 			'refuse_last_org_admin',
 			'refuse_prayer_course_without_module',
-			'refuse_prayer_module_off'
+			'refuse_prayer_module_off',
+			'request_access'
 		]);
 		// Une fonction leakproof serait évaluée avant le filtre de sécurité (ADR 0013).
 		expect(functions.filter((row) => row.leakproof)).toEqual([]);
@@ -457,6 +459,8 @@ describe('catalogue : intégrité du schéma', () => {
 		//   `count_view` : la seule écriture du compteur de vues, en `SECURITY DEFINER` (ADR 0032).
 		//   `has_no_duplicate` : compare les éléments d'un tableau, ne touche à aucune table, et
 		//   sert à des contraintes de vérification que toutes les écritures traversent.
+		//   `request_access` : la seule écriture des demandes d'accès, en `SECURITY DEFINER`
+		//   (ADR 0049) ; le rôle public n'a aucun droit sur leur table.
 		const executables = allRows<{ name: string }>(
 			await db.execute(sql`
 				select p.proname as name from pg_proc p join pg_namespace n on n.oid = p.pronamespace
@@ -465,7 +469,7 @@ describe('catalogue : intégrité du schéma', () => {
 				order by 1
 			`)
 		).map((row) => row.name);
-		expect(executables).toEqual(['count_view', 'has_no_duplicate']);
+		expect(executables).toEqual(['count_view', 'has_no_duplicate', 'request_access']);
 
 		// Et une fonction `SECURITY DEFINER` sans `search_path` figé serait détournable par un
 		// schéma temporaire de l'appelant : on exige la clause sur chacune.

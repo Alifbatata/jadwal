@@ -196,6 +196,8 @@ describe('les politiques du super-admin qui ne lisent pas le contexte', () => {
 		// Relevé dans le catalogue, sans nommer de table : une politique du super-admin qui ne lit
 		// pas `jadwal.current_org_id()` fait échouer ce test tant qu'elle n'est pas ajoutée ici avec
 		// sa raison.
+		//   `access_request` SELECT : une demande d'accès n'appartient à aucune organisation ; il la
+		//     lit depuis sa console, sans contexte, et plus du tout une fois entré (ADR 0049).
 		//   `admin_access_log` : son registre à lui, qui n'est pas une donnée d'organisation ; une
 		//     consultation dans sa console n'a pas de contexte à inscrire (ADR 0025).
 		//   `organization` INSERT : créer une organisation n'en touche aucune autre.
@@ -211,6 +213,7 @@ describe('les politiques du super-admin qui ne lisent pas le contexte', () => {
 			`)
 		).map((row) => row.line);
 		expect(ouvertes).toEqual([
+			'access_request SELECT',
 			'admin_access_log INSERT',
 			'admin_access_log SELECT',
 			'organization INSERT',

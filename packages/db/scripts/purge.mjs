@@ -1,6 +1,6 @@
 // Les purges, toutes, en une commande (ADR 0036).
 //
-// Aucune rétention n'est portée par ce script. Six le sont par une **politique de suppression** : leur
+// Aucune rétention n'est portée par ce script. Sept le sont par une **politique de suppression** : leur
 // procédure `jadwal.purge_*()` supprime sans clause de restriction, et c'est la base qui décide ce
 // qui peut partir. Les deux autres, les invitations et les comptes sans organisation, portent leur
 // borne dans la procédure elle-même (le README du paquet dit pourquoi). Ce fichier ne fait que les
@@ -23,7 +23,7 @@ import { isMainModule } from './is-main.mjs';
 loadDotEnv();
 
 /**
- * Les huit purges, dans l'ordre où elles ont un sens : les journaux d'abord, parce que ce sont eux
+ * Les neuf purges, dans l'ordre où elles ont un sens : les journaux d'abord, parce que ce sont eux
  * qui grossissent ; les sessions et les vérifications ensuite, parce qu'une session expirée retient
  * le compte auquel elle appartient ; les comptes en dernier, parce que tout ce qui
  * précède peut encore les retenir.
@@ -38,6 +38,7 @@ export const PURGES = [
 	['registre interne du super-admin', 'purge_admin_access_log'],
 	['compteur de vues', 'purge_page_views'],
 	['limiteur de débit', 'purge_rate_limit'],
+	['demandes d’accès', 'purge_access_requests'],
 	['sessions expirées', 'purge_expired_sessions'],
 	['vérifications expirées', 'purge_expired_verifications'],
 	['invitations qui ne sont plus en cours', 'purge_resolved_invitations'],

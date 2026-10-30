@@ -1856,6 +1856,93 @@ export const passkey = pgTable(
 	]
 );
 
+// ---------------------------------------------------------------------------------------------
+// Demandes d'accès (étape 22, ADR 0049)
+//
+// jadwal est gratuit, et c'est le super-admin qui donne l'accès : une organisation qui veut s'en
+// servir le demande par le formulaire public `/demande-d-acces`. Ce qu'elle laisse ici est ce qu'il
+// faut pour répondre, et rien d'autre : ni adresse IP, ni agent utilisateur, ni cookie.
+//
+// Une seule écriture, `jadwal.request_access`, fonction du propriétaire ouverte au seul rôle public
+// (migration 0079) : le rôle public n'a aucun droit sur la table, il ne peut donc relire ni la
+// demande qu'il vient de déposer, ni celles des autres. Le super-admin lit, dans sa console.
+
+export const ACCESS_REQUEST_STATUSES = ['pending', 'accepted', 'refused'] as const;
+
+/** Les bornes des champs, tenues par la base et reprises par le formulaire. */
+export const ACCESS_REQUEST_LIMITS = {
+	name: 120,
+	email: 254,
+	message: 1000
+} as const;
+
+/** Un texte saisi : au moins un signe qui n'est pas un blanc, et pas plus que la borne. */
+const isFilledUpTo = (column: SQLWrapper, max: number) =>
+	sql`length(btrim(${column})) > 0 and length(${column}) <= ${sql.raw(String(max))}`;
+
+export const accessRequest = pgTable(
+	'access_request',
+	{
+		id: uuid().primaryKey(),
+		organizationName: text('organization_name').notNull(),
+		locality: text().notNull(),
+		contactName: text('contact_name').notNull(),
+		/** L'adresse à laquelle l'invitation partira si la demande est acceptée. */
+		email: text().notNull(),
+		/** Facultatif : `null` quand rien n'est écrit, jamais une chaîne vide. */
+		message: text(),
+		/** La langue de l'écran où la demande a été faite : celle de l'invitation, si elle part. */
+		language: text().notNull(),
+		status: text().notNull().default('pending'),
+		createdAt: createdAt(),
+		/** Le moment de la réponse ; nul tant que la demande attend, et seulement alors. */
+		resolvedAt: timestamp('resolved_at', { withTimezone: true, mode: 'date' })
+	},
+	(table) => [
+		// Une demande en attente au plus par adresse, casse ignorée : une seconde ne dirait rien de
+		// plus, et le formulaire ne doit pas servir à remplir la console.
+		uniqueIndex('access_request_pending_email_uq')
+			.on(sql`lower(${table.email})`)
+			.where(sql`${table.status} = 'pending'`),
+		// La console lit les demandes de la plus ancienne à la plus récente ; la purge et le plafond
+		// du jour lisent la date de dépôt.
+		index('access_request_created_at_idx').on(table.createdAt),
+		ck('access_request_id_uuid_v7_ck', isUuidV7(table.id)),
+		ck(
+			'access_request_organization_name_ck',
+			isFilledUpTo(table.organizationName, ACCESS_REQUEST_LIMITS.name)
+		),
+		ck('access_request_locality_ck', isFilledUpTo(table.locality, ACCESS_REQUEST_LIMITS.name)),
+		ck(
+			'access_request_contact_name_ck',
+			isFilledUpTo(table.contactName, ACCESS_REQUEST_LIMITS.name)
+		),
+		ck(
+			'access_request_email_ck',
+			sql`${table.email} ~ '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$'
+				and length(${table.email}) <= ${sql.raw(String(ACCESS_REQUEST_LIMITS.email))}`
+		),
+		ck(
+			'access_request_message_ck',
+			sql`${table.message} is null or ${isFilledUpTo(table.message, ACCESS_REQUEST_LIMITS.message)}`
+		),
+		ck('access_request_language_ck', oneOf(table.language, ACCOUNT_LANGUAGES)),
+		ck('access_request_status_ck', oneOf(table.status, ACCESS_REQUEST_STATUSES)),
+		ck(
+			'access_request_resolved_ck',
+			sql`(${table.status} = 'pending') = (${table.resolvedAt} is null)`
+		),
+		// Le super-admin lit, depuis sa console, sans organisation en contexte : entré dans une
+		// organisation, il ne voit qu'elle (migration 0055), et une demande n'appartient à aucune.
+		pgPolicy('access_request_superadmin_select', {
+			as: 'permissive',
+			for: 'select',
+			to: superAdminRole,
+			using: noOrgContext
+		})
+	]
+);
+
 /** Toutes les tables, pour les requêtes relationnelles de Drizzle. */
 export const schema = {
 	organization,
@@ -1879,5 +1966,6 @@ export const schema = {
 	account,
 	verification,
 	rateLimit,
-	passkey
+	passkey,
+	accessRequest
 };

@@ -243,7 +243,7 @@ une contrainte oublie l'enveloppe, sans nommer une seule table.
 
 ## Purges
 
-Huit procédures, toutes réservées au propriétaire — ni le rôle applicatif ni le super-admin ne
+Neuf procédures, toutes réservées au propriétaire — ni le rôle applicatif ni le super-admin ne
 peuvent les appeler. `scripts/purge.mjs` les lance toutes, chaque nuit :
 
 | Procédure                              | Ce qu'elle efface                                                                  |
@@ -252,12 +252,13 @@ peuvent les appeler. `scripts/purge.mjs` les lance toutes, chaque nuit :
 | `jadwal.purge_admin_access_log()`      | les traces d'accès du super-admin de plus de 24 mois                               |
 | `jadwal.purge_page_views()`            | les jours du compteur de vues de plus de 25 mois                                   |
 | `jadwal.purge_rate_limit()`            | les empreintes du limiteur de débit de plus d'un jour                              |
+| `jadwal.purge_access_requests()`       | les demandes d'accès résolues depuis 90 jours, ou sans réponse depuis 12 mois      |
 | `jadwal.purge_expired_sessions()`      | les sessions expirées                                                              |
 | `jadwal.purge_expired_verifications()` | les liens de connexion expirés                                                     |
 | `jadwal.purge_resolved_invitations()`  | les invitations qui ne sont plus en cours depuis plus de 90 jours                  |
 | `jadwal.purge_orphan_accounts()`       | les comptes de plus de 12 mois sans adhésion, session, ni invitation encore valide |
 
-Les six premières bornes sont portées par une **politique**, celles des invitations et des comptes
+Les sept premières bornes sont portées par une **politique**, celles des invitations et des comptes
 par la **procédure**. Ce n'est pas une inconséquence : le journal doit résister au propriétaire
 lui-même, alors qu'un compte, il peut déjà l'effacer sous son drapeau d'entretien. Une politique
 bornée ne lui retirerait rien et donnerait l'illusion d'une garantie.
