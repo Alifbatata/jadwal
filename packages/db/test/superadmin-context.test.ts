@@ -198,6 +198,8 @@ describe('les politiques du super-admin qui ne lisent pas le contexte', () => {
 		// sa raison.
 		//   `access_request` SELECT : une demande d'accès n'appartient à aucune organisation ; il la
 		//     lit depuis sa console, sans contexte, et plus du tout une fois entré (ADR 0049).
+		//   `access_request` UPDATE : il y répond depuis la même console ; la politique exige
+		//     l'absence de contexte comme la lecture, et ne lit donc pas `current_org_id()`.
 		//   `admin_access_log` : son registre à lui, qui n'est pas une donnée d'organisation ; une
 		//     consultation dans sa console n'a pas de contexte à inscrire (ADR 0025).
 		//   `organization` INSERT : créer une organisation n'en touche aucune autre.
@@ -214,6 +216,7 @@ describe('les politiques du super-admin qui ne lisent pas le contexte', () => {
 		).map((row) => row.line);
 		expect(ouvertes).toEqual([
 			'access_request SELECT',
+			'access_request UPDATE',
 			'admin_access_log INSERT',
 			'admin_access_log SELECT',
 			'organization INSERT',

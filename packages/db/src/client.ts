@@ -95,6 +95,27 @@ export async function withOrg<T>(
 	context: OrgContext | string,
 	callback: (tx: Transaction) => Promise<T>
 ): Promise<T> {
+	const checked = checkedContext(context);
+	return db.transaction(async (tx) => {
+		await setOrgContext(tx, checked);
+		return callback(tx);
+	});
+}
+
+/**
+ * Pose le contexte d'organisation au milieu d'une transaction déjà ouverte, pour la suite de
+ * celle-ci. Sert à la console du super-admin, qui accepte une demande d'accès sans organisation en
+ * contexte, puis crée l'organisation dans la même transaction (étape 22). Partout ailleurs,
+ * `withOrg` pose le contexte en tête, et c'est la règle.
+ */
+export async function setOrgContext(tx: Transaction, context: OrgContext | string): Promise<void> {
+	const { organizationId, userId } = checkedContext(context);
+	// Le troisième argument (`is_local`) est ce qui limite la portée à la transaction.
+	await tx.execute(sql`select set_config('jadwal.org_id', ${organizationId}, true)`);
+	await tx.execute(sql`select set_config('jadwal.user_id', ${userId ?? ''}, true)`);
+}
+
+function checkedContext(context: OrgContext | string): OrgContext {
 	const { organizationId, userId } =
 		typeof context === 'string' ? { organizationId: context, userId: undefined } : context;
 	if (!UUID.test(organizationId)) {
@@ -103,10 +124,5 @@ export async function withOrg<T>(
 	if (userId !== undefined && !UUID.test(userId)) {
 		throw new TypeError(`userId must be a UUID, got ${JSON.stringify(userId)}`);
 	}
-	return db.transaction(async (tx) => {
-		// Le troisième argument (`is_local`) est ce qui limite la portée à la transaction.
-		await tx.execute(sql`select set_config('jadwal.org_id', ${organizationId}, true)`);
-		await tx.execute(sql`select set_config('jadwal.user_id', ${userId ?? ''}, true)`);
-		return callback(tx);
-	});
+	return userId === undefined ? { organizationId } : { organizationId, userId };
 }

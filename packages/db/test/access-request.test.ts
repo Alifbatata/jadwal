@@ -2,9 +2,9 @@
 //
 // Une organisation qui veut se servir de jadwal le demande par le formulaire public. La demande
 // n'entre que par `jadwal.request_access`, que seul le rôle public exécute ; le rôle public n'a
-// aucun droit sur la table. Le super-admin lit, depuis sa console. Une demande résolue part
-// quatre-vingt-dix jours après sa réponse, une demande restée sans réponse douze mois après son
-// dépôt.
+// aucun droit sur la table. Le super-admin lit, et répond, depuis sa console : acceptée ou refusée,
+// une fois, à l'heure du serveur. Une demande résolue part quatre-vingt-dix jours après sa réponse,
+// une demande restée sans réponse douze mois après son dépôt.
 
 import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -231,7 +231,7 @@ describe('qui lit et qui écrit la table', () => {
 		expect(dedans).toEqual([]);
 	});
 
-	it('gives the super-admin no write yet: accepting and refusing come with the console', async () => {
+	it('lets the super-admin neither add nor delete a request', async () => {
 		await demander();
 		for (const instruction of [
 			sql`insert into "access_request" ("id", "organization_name", "locality", "contact_name",
@@ -241,6 +241,113 @@ describe('qui lit et qui écrit la table', () => {
 			expect(await sqlStateOfFailure(() => superAdminHandle.db.execute(instruction))).toBe(
 				SQLSTATE.insufficientPrivilege
 			);
+		}
+		expect(await lignes()).toHaveLength(1);
+	});
+});
+
+describe('répondre à une demande', () => {
+	/** Une réponse du super-admin, depuis sa console : rend le nombre de demandes touchées. */
+	async function repondre(instruction: ReturnType<typeof sql>): Promise<number> {
+		const resultat = await superAdminHandle.db.execute(instruction);
+		return (resultat as unknown as { count: number }).count;
+	}
+
+	it('lets the super-admin accept or refuse a pending request, at the time of the answer', async () => {
+		await demander({ email: 'acceptee@example.org' });
+		await demander({ email: 'refusee@example.org' });
+		expect(
+			await repondre(sql`
+				update "access_request" set "status" = 'accepted', "resolved_at" = now()
+				where "email" = 'acceptee@example.org'
+			`)
+		).toBe(1);
+		expect(
+			await repondre(sql`
+				update "access_request" set "status" = 'refused', "resolved_at" = now()
+				where "email" = 'refusee@example.org'
+			`)
+		).toBe(1);
+		const toutes = await lignes();
+		expect(toutes.map((l) => [l.email, l.status])).toEqual([
+			['acceptee@example.org', 'accepted'],
+			['refusee@example.org', 'refused']
+		]);
+		for (const ligne of toutes) {
+			// Le pilote rend la date en texte, sous `execute`.
+			expect(Date.now() - new Date(String(ligne.resolved_at)).getTime()).toBeLessThan(60_000);
+		}
+	});
+
+	it('answers once: an answered request no longer moves', async () => {
+		await demander();
+		await repondre(sql`update "access_request" set "status" = 'refused', "resolved_at" = now()`);
+		for (const instruction of [
+			sql`update "access_request" set "status" = 'accepted', "resolved_at" = now()`,
+			sql`update "access_request" set "status" = 'refused', "resolved_at" = now()`
+		]) {
+			expect(await repondre(instruction)).toBe(0);
+		}
+		expect((await lignes()).map((l) => l.status)).toEqual(['refused']);
+	});
+
+	it('refuses an answer that goes back to pending, or that is dated by anyone but the server', async () => {
+		await demander();
+		for (const instruction of [
+			sql`update "access_request" set "status" = 'pending'`,
+			sql`update "access_request" set "status" = 'accepted',
+				"resolved_at" = now() - interval '1 day'`,
+			sql`update "access_request" set "status" = 'refused',
+				"resolved_at" = '2026-01-01T00:00:00Z'`
+		]) {
+			expect(await sqlStateOfFailure(() => superAdminHandle.db.execute(instruction))).toBe(
+				SQLSTATE.insufficientPrivilege
+			);
+		}
+		expect((await lignes()).map((l) => [l.status, l.resolved_at])).toEqual([['pending', null]]);
+	});
+
+	it('lets the super-admin rewrite nothing the request says', async () => {
+		await demander();
+		for (const instruction of [
+			sql`update "access_request" set "email" = 'autre@example.org'`,
+			sql`update "access_request" set "organization_name" = 'Autre'`,
+			sql`update "access_request" set "created_at" = now()`,
+			sql`update "access_request" set "status" = 'accepted', "resolved_at" = now(),
+				"language" = 'de'`
+		]) {
+			expect(await sqlStateOfFailure(() => superAdminHandle.db.execute(instruction))).toBe(
+				SQLSTATE.insufficientPrivilege
+			);
+		}
+		expect(await lignes()).toMatchObject([
+			{ email: 'demande@example.org', language: 'fr', status: 'pending' }
+		]);
+	});
+
+	it('does not answer from inside an organisation', async () => {
+		await demander();
+		const touchees = await superAdminHandle.db.transaction(async (tx) => {
+			await tx.execute(
+				sql`select set_config('jadwal.org_id', '01900000-0000-7000-8000-000000000000', true)`
+			);
+			const resultat = await tx.execute(
+				sql`update "access_request" set "status" = 'accepted', "resolved_at" = now()`
+			);
+			return (resultat as unknown as { count: number }).count;
+		});
+		expect(touchees).toBe(0);
+		expect((await lignes()).map((l) => l.status)).toEqual(['pending']);
+	});
+
+	it('gives the other roles no answer', async () => {
+		await demander();
+		for (const db of [publicHandle.db, appHandle.db, authHandle.db]) {
+			expect(
+				await sqlStateOfFailure(() =>
+					db.execute(sql`update "access_request" set "status" = 'refused', "resolved_at" = now()`)
+				)
+			).toBe(SQLSTATE.insufficientPrivilege);
 		}
 	});
 });

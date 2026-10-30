@@ -1,5 +1,7 @@
-// Les preuves des migrations 0073, 0074, 0075, 0076 et 0079 voient un état affaibli (étape 20,
-// relecture du chantier 1 ; étape 22 pour 0076 et 0079).
+// Les preuves des migrations 0073, 0074, 0075, 0076 et 0081 voient un état affaibli (étape 20,
+// relecture du chantier 1 ; étape 22 pour 0076 et 0081). La preuve de 0079 n'est plus jouée ici :
+// elle disait que le super-admin lit la table des demandes et ne fait que lire, ce que 0081 change ;
+// la preuve de 0081 dit l'état entier de cette table, et reprend chacun de ses cas.
 //
 // Chaque migration écrite à la main finit par un bloc `DO $verifie$` qui lève si l'état n'est pas
 // exactement celui qu'elle annonce. Une preuve qui ne lit que des fragments laisse passer une règle
@@ -83,8 +85,8 @@ async function refusDeLaPreuve(
 	return refus;
 }
 
-describe('la preuve de la migration 0079 (les demandes d’accès)', () => {
-	const TAG = '0079_access_request_rights';
+describe('la preuve de la migration 0081 (les demandes d’accès, et la réponse)', () => {
+	const TAG = '0081_access_request_resolve_rights';
 
 	it('passes on the state the migration leaves', async () => {
 		expect(await refusDeLaPreuve(TAG, [])).toBeNull();
@@ -97,8 +99,49 @@ describe('la preuve de la migration 0079 (les demandes d’accès)', () => {
 		],
 		['the public role reading the table', [`grant select on "access_request" to jadwal_public`]],
 		[
-			'the super-admin writing a column',
-			[`grant update ("status") on "access_request" to jadwal_superadmin`]
+			'the super-admin rewriting what a request says',
+			[`grant update ("email") on "access_request" to jadwal_superadmin`]
+		],
+		[
+			'the super-admin writing every column',
+			[`grant update on "access_request" to jadwal_superadmin`]
+		],
+		[
+			'the super-admin no longer answering',
+			[`revoke update on "access_request" from jadwal_superadmin`]
+		],
+		['the super-admin deleting', [`grant delete on "access_request" to jadwal_superadmin`]],
+		[
+			'an answer from inside an organisation',
+			[
+				`alter policy "access_request_superadmin_resolve" on "access_request"
+					using ("status" = 'pending')`
+			]
+		],
+		[
+			'an answer that changes an answered request',
+			[
+				`alter policy "access_request_superadmin_resolve" on "access_request"
+					using ((select coalesce(current_setting('jadwal.org_id', true), '')) = '')`
+			]
+		],
+		[
+			'an answer dated by the screen',
+			[
+				`alter policy "access_request_superadmin_resolve" on "access_request"
+					with check ("status" in ('accepted', 'refused'))`
+			]
+		],
+		[
+			'an answer that puts a request back to pending',
+			[
+				`alter policy "access_request_superadmin_resolve" on "access_request"
+					with check ("status" in ('pending', 'accepted', 'refused') and "resolved_at" = now())`
+			]
+		],
+		[
+			'the answer taken away',
+			[`drop policy "access_request_superadmin_resolve" on "access_request"`]
 		],
 		['the application role deleting', [`grant delete on "access_request" to jadwal_app`]],
 		[

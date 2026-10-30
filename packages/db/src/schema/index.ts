@@ -1939,6 +1939,17 @@ export const accessRequest = pgTable(
 			for: 'select',
 			to: superAdminRole,
 			using: noOrgContext
+		}),
+		// Il répond, depuis la même console : une demande qui attend devient acceptée ou refusée, à
+		// l'heure de la transaction qui répond, et ne bouge plus ensuite. `now()` est la seule date
+		// admise : le moment appartient au serveur (ADR 0020). Les colonnes qu'il peut écrire sont
+		// données par la migration 0081.
+		pgPolicy('access_request_superadmin_resolve', {
+			as: 'permissive',
+			for: 'update',
+			to: superAdminRole,
+			using: sql`${table.status} = 'pending' and ${noOrgContext}`,
+			withCheck: sql`${table.status} in ('accepted', 'refused') and ${table.resolvedAt} = now()`
 		})
 	]
 );

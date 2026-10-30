@@ -1,7 +1,7 @@
 // Point d'entrée de @jadwal/db : schéma, connexion, contexte d'organisation et identifiants.
 
 export * from './schema/index.js';
-export { createDatabase, withOrg, withUser } from './client.js';
+export { createDatabase, setOrgContext, withOrg, withUser } from './client.js';
 export type {
 	CreateDatabaseOptions,
 	Database,

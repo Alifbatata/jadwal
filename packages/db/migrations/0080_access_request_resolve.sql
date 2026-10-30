@@ -1,0 +1,3 @@
+-- Le super-admin répond aux demandes d'accès (étape 22, ADR 0049). Fichier produit par Drizzle Kit,
+-- sans retouche. Les colonnes qu'il peut écrire, et la preuve, sont dans la migration 0081.
+CREATE POLICY "access_request_superadmin_resolve" ON "access_request" AS PERMISSIVE FOR UPDATE TO "jadwal_superadmin" USING ("access_request"."status" = 'pending' and (select coalesce(current_setting('jadwal.org_id', true), '')) = '') WITH CHECK ("access_request"."status" in ('accepted', 'refused') and "access_request"."resolved_at" = now());

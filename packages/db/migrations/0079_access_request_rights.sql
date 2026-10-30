@@ -8,7 +8,7 @@
 -- 2. une demande en attente au plus par adresse, et trente demandes au plus en vingt-quatre heures
 --    pour tout le service : le formulaire ne doit pas servir à remplir la console ;
 -- 3. le super-admin lit, depuis sa console (politique de la migration 0078). Accepter et refuser
---    viennent avec les écrans qui le font (chantier 6), et avec leurs droits ;
+--    viennent avec les écrans qui le font, et avec leurs droits (migrations 0080 et 0081) ;
 -- 4. une demande ne reste pas : résolue, elle part quatre-vingt-dix jours après sa réponse ; restée
 --    sans réponse, douze mois après son dépôt. Une politique de suppression porte la durée, comme
 --    pour le compteur de vues (migration 0043).
@@ -163,7 +163,8 @@ BEGIN
 		RAISE EXCEPTION 'access_request : sécurité au niveau des lignes non forcée';
 	END IF;
 
-	-- Le super-admin lit, et seulement lit.
+	-- Le super-admin lit, et seulement lit. La migration 0081 lui donne ensuite de répondre ; au
+	-- rejeu, le retrait plus haut le ramène ici à la lecture, et 0081 rend la réponse après.
 	IF NOT has_table_privilege('jadwal_superadmin', t, 'SELECT')
 		OR has_any_column_privilege('jadwal_superadmin', t, 'INSERT, UPDATE, REFERENCES')
 		OR has_table_privilege('jadwal_superadmin', t, 'DELETE, TRUNCATE, TRIGGER') THEN
@@ -179,7 +180,9 @@ BEGIN
 	END LOOP;
 
 	-- Les politiques, toutes, par leur nom, leur commande et leurs rôles : une politique permissive
-	-- de plus s'ajouterait aux autres et rouvrirait ce qu'elles ferment.
+	-- de plus s'ajouterait aux autres et rouvrirait ce qu'elles ferment. Toutes sauf la réponse du
+	-- super-admin, que la migration 0080 pose après celle-ci : sans cette exception, ce fichier
+	-- échouerait au rejeu. La preuve de la migration 0081 tient la liste entière.
 	attendues := 'access_request_owner_delete DELETE {jadwal_owner};'
 		|| 'access_request_owner_insert INSERT {jadwal_owner};'
 		|| 'access_request_owner_purge DELETE {jadwal_owner};'
@@ -189,7 +192,8 @@ BEGIN
 	SELECT string_agg(policyname || ' ' || cmd || ' ' || roles::text, ';' ORDER BY policyname)
 	INTO trouvees
 	FROM pg_policies
-	WHERE schemaname = 'public' AND tablename = 'access_request';
+	WHERE schemaname = 'public' AND tablename = 'access_request'
+		AND policyname <> 'access_request_superadmin_resolve';
 	IF trouvees IS DISTINCT FROM attendues THEN
 		RAISE EXCEPTION 'access_request : les politiques ne sont pas celles annoncées (%)', trouvees;
 	END IF;
