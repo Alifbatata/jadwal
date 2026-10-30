@@ -174,3 +174,15 @@ corrigé là où il promettait autre chose que ce que le service fait. Nouvelle 
   à une acceptation globale de conditions générales. Une personne responsable l'accepte aussi pour
   son organisation, et le texte le dit. La preuve part avec l'adhésion : la garder plus longtemps ne
   servirait que l'exploitant, et la proportionnalité (art. 6 nLPD) l'emporte.
+
+## Addendum du 31.10.2026 : la version des demandes d'accès (étape 22)
+
+L'accès s'ouvre désormais sur demande, et un compte sur invitation (ADR 0049). Le texte le dit, et
+dit ce que deviennent les données d'une demande d'accès : nouvelle version, du 31.10.2026, que
+chacun accepte de nouveau. Il s'adresse aussi à la personne qui demande l'accès, que la page du
+formulaire renvoie vers `/conditions`. Elle n'a rien à accepter pour demander : elle accepte le texte
+en entrant dans l'espace de son organisation, comme toute personne de l'équipe.
+
+Le service envoie aussi deux courriels de plus que la connexion et les invitations : celui qui part,
+à la place du lien, vers une adresse que personne n'attend, et l'avis à l'exploitant qu'une
+demande attend. Aucune copie des conditions n'est envoyée, pas plus qu'avant.

@@ -17,6 +17,7 @@ pour des communautés religieuses.
 | Un responsable d'une autre organisation      | lire ou modifier les données d'une organisation voisine                                          |
 | Un éditeur de l'organisation                 | se faire responsable, inviter, changer rôles et réglages, lire les membres, signer pour un autre |
 | Un curieux sans compte                       | savoir si telle adresse est responsable quelque part                                             |
+| Qui remplit le formulaire de demande d'accès | remplir la console, écrire à quelqu'un en notre nom, savoir si une adresse a déjà demandé        |
 | Quelqu'un qui a volé une boîte aux lettres   | entrer dans l'espace d'une organisation                                                          |
 | Un compte applicatif compromis               | lire toutes les organisations, effacer ses propres traces                                        |
 | Qui vole la boîte aux lettres du super-admin | obtenir la clé maîtresse du service                                                              |
@@ -109,9 +110,16 @@ base, avec le mot de passe du propriétaire : ni l'application ni le super-admin
 droit sur cette table, et la clé étrangère en `restrict` empêche aussi de supprimer l'organisation
 pour emporter son journal.
 
-**8. La connexion ne dit rien.** Demander un lien ne consulte pas les comptes : la réponse, le
-contenu affiché et le temps de réponse sont les mêmes pour une adresse connue et une adresse
-inconnue. Inviter ne consulte pas davantage (ADR 0016, 0017). Le lien dure quinze minutes, sert une
+**8. La connexion ne dit rien.** Depuis l'étape 22, un lien ne part qu'à une adresse qu'un compte
+porte ou qu'une invitation en attente et non échue attend ; toute autre adresse reçoit, à la place, un
+courriel qui dit qu'aucun compte n'y est ouvert et renvoie au formulaire de demande d'accès
+(ADR 0049). La base répond oui ou non, et rien d'autre : `jadwal.may_sign_in`, à droits du
+définisseur, exécutable par le seul rôle de connexion, qui ne lit toujours aucune invitation
+(migration 0077). Cette lecture vient après le budget par adresse, et les deux branches font la même
+chose, une lecture et un courriel : la réponse, ses cookies et le nombre d'envois sont les mêmes
+pour une adresse connue et une adresse inconnue. Seule la boîte de l'adresse apprend s'il y a un
+compte. Inviter ne consulte toujours aucun compte (ADR 0016, 0017). Le lien de secours du
+super-admin est pris avant cette porte : il ouvre un compte à une adresse qui n'en a pas. Le lien dure quinze minutes, sert une
 fois, et son jeton est stocké haché. Une invitation dure quatorze jours, et c'est la base qui le
 tient : elle refuse une durée plus longue et une date de création choisie par l'application
 (migration 0056), puis l'acceptation d'une invitation échue et l'adhésion qui la suivrait
@@ -139,6 +147,21 @@ d'arrivée sans lui : il ne reste pas dans l'adresse que la personne voit et peu
 demande retire le choix pour toute adresse de forme acceptable, qu'un courriel parte ou que la
 limite par adresse le retienne : garder le choix dans ce seul cas changerait les cookies de la
 réponse, et dirait qu'on a déjà demandé trois liens pour cette adresse dans l'heure.
+
+**8 bis. La seule page publique qui écrit n'écrit qu'une demande.** `/demande-d-acces` (étape 22,
+ADR 0049) écrit par le rôle public, qui n'a aucun droit sur la table des demandes : il appelle une
+seule fonction, `jadwal.request_access`, à droits du définisseur, qui vérifie chaque champ, refuse
+une seconde demande en attente pour la même adresse et s'arrête à trente demandes en vingt-quatre
+heures pour tout le service, sous un verrou qui empêche deux demandes simultanées de franchir ce
+plafond ensemble (migration 0079). Avant elle, trois demandes par heure et par adresse IP, sous
+une clé condensée. Une demande déposée et une demande déjà en attente rendent la même page, mot pour
+mot ; les deux limites rendent la même phrase, qui ne parle que du service. **Le formulaire n'écrit
+à personne** : aucun courriel ne part à l'adresse saisie, et l'avis à l'exploitant ne porte rien de
+la demande. Le super-admin lit les demandes dans sa console, sans organisation en contexte, et n'en
+change que l'état et la date de réponse, que la base exige égale à l'heure de la transaction ; une
+réponse ne revient pas en arrière (migrations 0080 et 0081). Ni lui ni l'application n'en
+suppriment : la purge du propriétaire les emporte, quatre-vingt-dix jours après la réponse, ou douze
+mois après le dépôt.
 
 **9. Le navigateur est bridé.** Politique de sécurité du contenu avec nonce, `frame-ancestors` calculé
 par route, pas de cadre par défaut, protection contre la soumission d'un formulaire depuis un autre
@@ -255,6 +278,14 @@ ou pointe ses adresses vers un faux service. C'est une garde contre l'oubli et l
   son préfixe, 182 jours au plus, et échoue sinon, ce qui fait partir l'alerte. Ce qui reste hors
   de portée : qui obtient à la fois une archive **et** la clé privée de l'exploitant a tout.
 - **Le déni de service.** La limitation de débit protège les boîtes aux lettres, pas le service.
+  Le plafond des demandes d'accès protège la console, pas les demandeurs : trente demandes
+  fabriquées en un jour ferment le formulaire à tout le monde jusqu'au lendemain.
+- **Une adresse que personne n'attend apprend qu'elle n'a pas de compte**, par le courriel qu'elle
+  reçoit à la place du lien. C'est voulu : ce courriel ne va qu'à cette boîte, et c'est la seule à
+  qui cela revient (ADR 0049).
+- **Le formulaire de demande d'accès peut être rempli au nom d'un autre.** Il n'en sort rien : aucun
+  courriel ne part, et une invitation n'arrive qu'à l'acceptation, que la personne invitée doit
+  encore accepter elle-même, connectée à sa propre boîte.
 - **Une personne responsable malveillante dans sa propre organisation** peut effacer le programme de
   son organisation. Le journal dit qui et quand, et l'état avant permet de revenir en arrière.
 - **Un éditeur lit l'identifiant de ses collègues** dans les cours, les séances et les pauses qu'ils
@@ -286,6 +317,9 @@ l'emporte et n'emporte rien d'autre, une adresse qui ne change la langue d'aucun
 le retour du choix de la langue par HTTP, et `src/lib/i18n/language.test.ts` essaie ce retour sous
 plus de deux mille formes de points et de barres ; `tests/espace-en-cinq-langues.test.ts` vérifie
 les deux cookies, et compare l'invitation vers un compte connu et vers une adresse inconnue ;
+`tests/acces.test.ts` compare la demande d'un lien pour une adresse attendue et pour une adresse
+inconnue, réponse, cookies et envois ; `tests/demande-d-acces.test.ts` dépose des demandes, les
+refuse, les double et les limite, et vérifie qu'aucun courriel ne part à l'adresse saisie ;
 `tests/public.test.ts` lit les pages publiques comme un Android, un iPhone et un ordinateur, et
 refuse tout lien vers un autre domaine que les deux services d'agenda.
 

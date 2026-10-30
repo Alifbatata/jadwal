@@ -8,6 +8,8 @@ toute organisation qui publie un programme régulier et doit le faire savoir.
 
 Les responsables saisissent une fois ; en sortent un widget intégrable au site de l'organisation, une
 page publique, un flux agenda (ICS) et des messages WhatsApp prêts à coller. Le service est gratuit.
+L'accès s'ouvre sur demande : une organisation remplit le formulaire « Demander l'accès », et
+l'exploitant de l'instance lui ouvre son espace en invitant sa personne responsable.
 Le même code fonctionne en service hébergé par l'auteur ou installé par l'organisation sur son propre
 serveur.
 

@@ -37,6 +37,16 @@ le code est un défaut — de l'un ou de l'autre, et il faut trancher, pas conto
 | ---------------------------- | ------------------------------------------------------------------------ |
 | `responsables-conditions.md` | la page des conditions, ouverte à tous, et l'écran qui les fait accepter |
 
+## La demande d'accès (étape 22)
+
+| Fichier                     | Écran                                                                 |
+| --------------------------- | --------------------------------------------------------------------- |
+| `public-demande-d-acces.md` | le formulaire public qui demande l'accès, ses réponses et ses erreurs |
+
+Écrite après le code, comme celles de l'étape 18. `super-admin.md` (les demandes dans la console,
+la personne responsable invitée depuis la console) et `responsables-coquille.md` (les renvois vers
+le formulaire, le courriel « aucun compte ») ont été mis à jour à la même étape.
+
 ## Les écrans récrits à l'étape 18
 
 À l'étape 18, les retours des tests du chef de projet ont récrit l'espace des responsables : chaque

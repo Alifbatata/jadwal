@@ -2,7 +2,8 @@
 
 Décrit après le code, à l'étape 18 (retours B1 et D2), et complété à l'étape 19 (le départ d'une
 organisation et le lien de la navigation qui y mène, l'écran d'arrivée du lien de connexion, la
-langue de l'invitation). Les textes sont dans `apps/web/src/lib/i18n/` : `common.ts` pour la
+langue de l'invitation), puis à l'étape 22 (le renvoi vers la demande d'accès, le courriel « aucun
+compte », ADR 0049). Les textes sont dans `apps/web/src/lib/i18n/` : `common.ts` pour la
 coquille, `sign-in.ts`, `organisations.ts`, `sign-out.ts` et `error.ts` pour les écrans ; les
 courriels dans `apps/web/src/lib/server/mail/messages.ts`. Tout existe dans les cinq langues, et
 l'arabe se lit de droite à gauche. Comment l'espace choisit sa langue est dans l'ADR 0047.
@@ -73,7 +74,9 @@ adresse électronique : vous recevrez un lien pour vous connecter. Il n'y a pas 
    pour les responsables et les maquettes.
 4. Le bouton `Recevoir un lien de connexion`.
 5. `Pas encore invité ? Demandez à la personne responsable de votre organisation de vous inviter.`
-6. Le pied commun, avec le lien `Conditions d'utilisation` : depuis l'étape 21, c'est le seul endroit
+6. `Votre organisation n'utilise pas encore jadwal ?` et le lien `Demander l'accès`, vers
+   `/demande-d-acces` (étape 22, voir `public-demande-d-acces.md`).
+7. Le pied commun, avec le lien `Conditions d'utilisation` : depuis l'étape 21, c'est le seul endroit
    de l'écran qui nomme les conditions.
 
 **Après l'envoi**, l'écran dit ce qu'il faut faire : `Si cette adresse peut se connecter, un lien
@@ -81,6 +84,11 @@ vient d'y être envoyé. Ouvrez votre messagerie et touchez le lien : il est val
 ne sert qu'une fois.`, puis `Rien reçu après quelques minutes ? Regardez dans les courriels
 indésirables, ou demandez un autre lien.`, `Vous pouvez fermer cette page.` et le lien
 `Demander un autre lien`. La phrase est la même pour une adresse connue et une adresse inconnue.
+
+**Depuis l'étape 22, le lien ne part qu'à une adresse attendue** : un compte la porte, ou une
+invitation en attente et non échue l'attend (ADR 0049). Toute autre reçoit, à sa place, le courriel
+« aucun compte » (plus bas). L'écran, ses cookies et le nombre d'envois ne changent pas : la phrase
+« Si cette adresse peut se connecter » le disait déjà.
 
 **Une langue choisie sur cet écran** part avec le lien : le courriel arrive dans cette langue, et le
 lien en fait la langue du compte, sur quelque navigateur qu'il s'ouvre. La règle exacte est dans
@@ -139,7 +147,9 @@ membre.
 
 **Sans organisation** : `Votre compte n'est rattaché à aucune organisation pour le moment. Pour
 gérer le programme d'une organisation, il faut y être invité : demandez à la personne responsable
-de vous envoyer une invitation à votre adresse.`, puis `Votre adresse :` et l'adresse du compte.
+de vous envoyer une invitation à votre adresse.`, puis, depuis l'étape 22,
+`Votre organisation n'utilise pas encore jadwal ?` et le lien `Demander l'accès`, et enfin
+`Votre adresse :` et l'adresse du compte.
 
 **Les erreurs disent quoi faire** : `Cette invitation n'est plus valable : elle a peut-être expiré ou
 été annulée. Demandez-en une nouvelle à la personne qui vous a invité.` Pour une organisation dont la
@@ -163,7 +173,7 @@ Nouvelle à l'étape 18. Elle dit, selon le code, ce qui arrive et quoi faire, p
 | 429   | `Trop de demandes`        | `Attendez une minute, puis réessayez.`                                      |
 | autre | `Une erreur est survenue` | `Le service n'a pas pu afficher cette page. Réessayez dans un instant.`     |
 
-## Les deux courriels
+## Les courriels
 
 **Le lien de connexion**, dans la langue de l'écran d'où il est demandé : objet
 `Votre lien de connexion à jadwal`, `Voici votre lien de connexion :`, le lien
@@ -177,6 +187,15 @@ Nouvelle à l'étape 18. Elle dit, selon le code, ce qui arrive et quoi faire, p
 message :`, le lien `Se connecter pour accepter`, `Vous recevrez un lien de connexion, puis
 l'invitation vous attendra sur l'écran « Vos organisations ».`, `L'invitation est valable quatorze
 jours.`, `Tant que vous n'avez pas accepté, rien n'est partagé et votre nom n'apparaît nulle part.`
+
+**Aucun compte à cette adresse** (étape 22), à la place du lien, pour une adresse que personne
+n'attend, dans la langue de l'écran d'où le lien est demandé : objet
+`Aucun compte jadwal à cette adresse`, `Un lien de connexion à jadwal a été demandé pour cette
+adresse électronique.`, `Aucun compte n'est ouvert à cette adresse, et aucune invitation ne
+l'attend : aucun lien n'a donc été envoyé.`, `Pour utiliser jadwal pour votre organisation,
+demandez l'accès sur cette page :` et le lien `Demander l'accès à jadwal`, `Si votre organisation
+utilise déjà jadwal, demandez à sa personne responsable de vous inviter à cette adresse.`, puis
+`Si vous n'avez rien demandé, ignorez ce message.`
 
 Aucune date dans ces courriels. Chacun porte `lang` et `dir` dans sa langue, et la signature du
 service.

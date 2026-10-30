@@ -132,6 +132,13 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   feuille de route, pour plus tard. 4 005 tests, tous réussis, aucun sauté, et 24 tests liés au
   temps, à part ; parcours complet : 453 vérifications, dont 24 pour l'étape 21, et axe sans rien de
   sérieux sur 42 pages. Mesurés sur le poste le 20.10.2026, et rejoués par la CI sur le code livré.
+- **Étape 22** (un service gratuit, un accès que donne le super-admin) : **en cours**, ouverte le
+  20.10.2026. jadwal est entièrement gratuit, et les plans ont quitté le code et la base. Une
+  organisation demande l'accès par un formulaire public ; le super-admin accepte la demande en
+  créant l'organisation, et l'invitation de sa personne responsable part dans le même geste, ou la
+  refuse. Un compte ne s'ouvre plus que sur invitation (ADR 0049). Les chantiers 1 à 7 sont faits ;
+  restent la relecture des textes nouveaux, le parcours automatique, la vérification complète et
+  la poussée. Rien n'est encore poussé ni déployé.
 
 ## Fait
 
@@ -948,6 +955,36 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   `docs/CADRAGE.md`, `docs/SECURITE.md`, le `README`, `.env.example` et les descriptions des écrans
   touchés dans `docs/maquettes/` mis à jour.
 
+Étape 22 (un service gratuit, un accès que donne le super-admin), en cours :
+
+- **Les plans retirés** : la colonne `organization.plan` et sa contrainte quittent la base
+  (migration 0076, qui vérifie son résultat), avec l'action, le champ et les textes de la console
+  et le type de journal `organization.plan`, jamais écrit. La mention « Proposé gratuitement par
+  jadwal » reste.
+- **La personne responsable invitée depuis la console** : à la création d'une organisation, dans
+  la même transaction, ou plus tard depuis la liste, sans entrer dans son espace. Un seul chemin
+  d'inscription des invitations pour Membres et la console (`lib/server/invitations.ts`), et une
+  réponse qui ne dépend jamais de l'existence d'un compte (ADR 0017).
+- **La création de compte fermée** : un lien de connexion ne part qu'à une adresse qu'un compte
+  porte ou qu'une invitation attend (`jadwal.may_sign_in`, migration 0077). Toute autre reçoit un
+  courriel qui renvoie au formulaire ; l'écran, ses cookies et le nombre d'envois ne changent pas.
+  Le lien de secours du super-admin garde son pouvoir d'ouvrir un compte.
+- **La demande d'accès** : la page publique `/demande-d-acces`, en cinq langues, sans JavaScript ;
+  la table `access_request`, écrite par la seule fonction `jadwal.request_access`, une demande en
+  attente au plus par adresse, trois demandes par heure et par adresse IP, trente par jour pour le
+  service ; la purge à 90 jours après la réponse et à 12 mois sans réponse ; l'avis à l'exploitant,
+  sans rien de la demande, si `JADWAL_DEMANDES_COURRIEL` est posée (migrations 0078 et 0079).
+- **Les demandes dans la console** : en tête, chacune avec ce qu'elle dit ; « Créer
+  l'organisation » remplit le formulaire de création, et la création accepte la demande dans la
+  même transaction ; « Refuser » n'envoie aucun courriel. La base n'accorde au super-admin que la
+  réponse, une fois, datée par elle (migrations 0080 et 0081).
+- **Les textes qui disent les règles** : les conditions d'utilisation, version du 31.10.2026, que
+  chacun accepte de nouveau (l'entrée sur demande et sur invitation, le service gratuit et sans
+  plan, les données d'une demande d'accès et leurs durées) ; l'ADR 0049 et des addenda aux ADR 0017
+  et 0044 ; `docs/CADRAGE.md`, `docs/SECURITE.md` (barrière 8 récrite, barrière 8 bis), les
+  maquettes de la console et de la coquille, et une maquette nouvelle,
+  `docs/maquettes/public-demande-d-acces.md`.
+
 **Un script ou une commande qu'aucun test ne _lance_ n'est pas éprouvé.** C'est la règle du dépôt
 depuis l'étape 12, et elle répond à la question laissée ouverte à l'étape 11.
 
@@ -1000,6 +1037,7 @@ tests.
 | 19    | Zéro défaut connu, arabe relu, historique réécrit                   | terminée |
 | 20    | Dernières questions : Rétablir, vendredi, états, conditions         | terminée |
 | 21    | Retours de l'étape 20 : langue en liste, vendredi, conditions       | terminée |
+| 22    | Service gratuit, accès donné par le super-admin                     | en cours |
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
 passkeys pour tous les comptes. Les plans d'une organisation (gratuit, offert, payant), inscrits à

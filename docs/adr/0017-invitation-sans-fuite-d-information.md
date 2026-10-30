@@ -246,6 +246,21 @@ invitée : elle choisit, et peut se tromper. Le service ne l'aide pas à deviner
 deviner, ce serait lire le compte. L'envoi différé reste possible un jour, par sa propre décision ;
 aucun besoin connu ne le demande plus.
 
+## Addendum du 31.10.2026 : la connexion consulte la base, l'écran ne dit toujours rien (étape 22)
+
+Depuis l'étape 22, le lien de connexion ne part qu'à une adresse qu'un compte porte ou qu'une
+invitation en attente attend (ADR 0049, migration 0077). Demander un lien consulte donc la base au
+sujet de l'adresse, ce que cet ADR excluait pour l'invitation et que l'ADR 0016 excluait pour la
+connexion. La règle qui compte tient : **la réponse ne dit rien**. Les deux branches lisent la base
+une fois et envoient un courriel, sous le même budget par adresse ; la réponse, ses cookies et le
+nombre d'envois sont les mêmes pour une adresse connue et une adresse inconnue, et un test le
+vérifie. Seule la boîte de l'adresse apprend qu'aucun compte n'y est ouvert, par le courriel qui
+l'invite à demander l'accès.
+
+Le chemin d'invitation, lui, ne change pas : il ne consulte toujours aucun compte, depuis l'écran
+Membres comme depuis la console du super-admin, qui invite désormais la personne responsable d'une
+organisation sans entrer dans son espace.
+
 ## Statut
 
 Accepté, 2026-09-20. Étape 3 de la feuille de route (connexion, organisations, rôles, invitations,
@@ -254,4 +269,5 @@ l'échéance, le rôle, l'usage unique, les passages de statut et la date de ré
 l'addendum). Complété le 2026-09-26 : seule une personne responsable écrit une invitation, et la
 limite du rôle est levée (ADR 0046) ; une invitation part dans la langue de la personne qui invite
 (point d'arrêt, question ouverte sur un envoi différé). Complété le 27.09.2026 (étape 19) : la
-personne qui invite choisit la langue du courriel, et le point d'arrêt est tranché.
+personne qui invite choisit la langue du courriel, et le point d'arrêt est tranché. Complété le
+31.10.2026 (étape 22) : la connexion consulte la base, l'écran ne dit toujours rien (ADR 0049).

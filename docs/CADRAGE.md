@@ -40,16 +40,24 @@ Deux modes avec le même code :
 
 ## Rôles
 
-| Rôle         | Pouvoirs                                         |
-| ------------ | ------------------------------------------------ |
-| `superadmin` | crée et suspend les organisations                |
-| `org_admin`  | invite et retire les membres de son organisation |
-| `editor`     | saisit et modifie les cours                      |
+| Rôle         | Pouvoirs                                                       |
+| ------------ | -------------------------------------------------------------- |
+| `superadmin` | répond aux demandes d'accès, crée et suspend les organisations |
+| `org_admin`  | invite et retire les membres de son organisation               |
+| `editor`     | saisit et modifie les cours                                    |
 
 - En pratique, 2 à 3 responsables par organisation.
 - La base elle-même sépare l'éditeur du responsable : ce que l'écran réserve au responsable, elle
   le refuse à l'éditeur (ADR 0046). L'écran Membres dit ce que chaque rôle permet.
 - Connexion par lien magique reçu par mail, sans mot de passe.
+- L'accès s'ouvre sur demande, et c'est le super-admin qui le donne (étape 22, ADR 0049). Une
+  organisation le demande par le formulaire public `/demande-d-acces` ; la demande attend dans la
+  console, où le super-admin la refuse, sans courriel, ou l'accepte en créant l'organisation, et
+  l'invitation part dans le même geste à la personne qui a demandé. Il peut aussi créer une
+  organisation seule et inviter sa personne responsable plus tard, sans entrer dans son espace.
+- Un compte ne s'ouvre que sur invitation, ou par le lien de secours du super-admin. Un lien de
+  connexion demandé pour une adresse que ni compte ni invitation n'attend ne part pas : l'adresse
+  reçoit à la place un courriel qui la renvoie au formulaire, et l'écran répond la même chose.
 - Avant d'entrer dans l'espace d'une organisation, chaque personne accepte les conditions
   d'utilisation, puis chaque nouvelle version du texte. Le super-admin n'y est pas soumis
   (ADR 0044).
@@ -233,7 +241,7 @@ leur durée, est dans `docs/CONDITIONS.md`.
 9. Finitions, infrastructure en fichiers, déploiement, pose sur le site de la première
    organisation.
 
-Les étapes suivantes, de la mise en ligne aux retours du chef de projet (étape 21), sont dans
+Les étapes suivantes, de la mise en ligne à l'accès donné par le super-admin (étape 22), sont dans
 `ETAT-PROJET.md`.
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
