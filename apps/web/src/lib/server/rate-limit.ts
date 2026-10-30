@@ -52,6 +52,13 @@ export interface Budget {
 /** Trois liens par heure et par adresse : de quoi se tromper deux fois, pas de quoi noyer. */
 export const MAGIC_LINK_BUDGET: Budget = { windowSeconds: 3600, max: 3 };
 
+/**
+ * Trois demandes d'accès par heure et par adresse IP (étape 22) : une organisation n'en dépose
+ * qu'une, et celle qui s'est trompée la refait. Au-delà, le formulaire servirait à remplir la
+ * console ; la base tient en plus un plafond pour tout le service (`jadwal.request_access`).
+ */
+export const ACCESS_REQUEST_BUDGET: Budget = { windowSeconds: 3600, max: 3 };
+
 /** Ce qu'un seau répond : accordé ou non, et dans combien de secondes il se rouvre. */
 export interface Verdict {
 	allowed: boolean;

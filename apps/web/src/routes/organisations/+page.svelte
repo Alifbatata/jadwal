@@ -1,11 +1,14 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { accessRequestTexts } from '$lib/i18n/access-request.js';
 	import { commonTexts } from '$lib/i18n/common.js';
 	import { organisationsTexts } from '$lib/i18n/organisations.js';
 
 	let { data, form } = $props();
 	const text = $derived(organisationsTexts[data.language]);
 	const roles = $derived(commonTexts[data.language].roles);
+	/** Le renvoi vers la demande d'accès, pour qui veut ouvrir l'espace d'une organisation nouvelle. */
+	const access = $derived(accessRequestTexts[data.language].elsewhere);
 	/** Le départ qui attend une confirmation (étape 19). */
 	const aConfirmer = $derived(form && 'aConfirmer' in form ? form.aConfirmer : null);
 	/** Le refus fait à la seule personne responsable, avec le nom de l'organisation. */
@@ -55,6 +58,7 @@
 
 {#if data.memberships.length === 0 && data.invitations.length === 0}
 	<p>{text.none}</p>
+	<p>{access.question} <a href={resolve('/demande-d-acces')}>{access.link}</a></p>
 	{#if data.person}
 		<!-- L'adresse du compte : c'est celle qu'il faut donner à qui invite. -->
 		<p>{text.yourAddress} <strong><bdi>{data.person.email}</bdi></strong></p>

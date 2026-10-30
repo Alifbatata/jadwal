@@ -72,6 +72,10 @@ jadwal_garde_derogation: {}
 # son propre inventaire, et le nom par défaut du texte reste tant qu'elle ne l'a pas fait.
 jadwal_exploitant: ''
 
+# L'adresse que prévient une demande d'accès déposée par le formulaire public (étape 22). L'avis ne
+# porte rien de la demande, seulement le lien de la console. Vide : aucun avis, la console suffit.
+jadwal_demandes_courriel: ''
+
 # Le courriel. L'adresse d'envoi n'est pas lue ; c'est `reply_to` qui reçoit les réponses.
 jadwal_mail_from: noreply@voltia.ch
 jadwal_mail_from_name: jadwal

@@ -379,3 +379,31 @@ export function noAccountEmail(
 	);
 	return { to, subject: words.subject, text: signer(language, text), html };
 }
+
+/**
+ * L'avis à l'exploitant qu'une demande d'accès attend (étape 22, ADR 0049). Il part à l'adresse de
+ * `JADWAL_DEMANDES_COURRIEL`, et ne porte **aucune** donnée de la demande : ni le nom de
+ * l'organisation, ni celui de la personne, ni son adresse. Elles se lisent dans la console, derrière
+ * une passkey ; une boîte aux lettres n'a pas à les garder. En français, la langue de l'exploitant :
+ * il n'y a pas d'écran dont prendre la langue, et la personne qui demande n'est pas celle qui lit.
+ */
+export function accessRequestNoticeEmail(to: string, origin: string): OutgoingEmail {
+	const language: Langue = 'fr';
+	const subject = 'jadwal : une demande d’accès attend';
+	const consoleUrl = `${origin}/super-admin`;
+	const intro = 'Une nouvelle demande d’accès attend une réponse dans la console :';
+	const content =
+		'Ce message ne contient rien de la demande : elle se lit dans la console, et nulle part ailleurs.';
+	const text = ['Bonjour,', '', intro, consoleUrl, '', content].join('\n');
+	const html = layout(
+		language,
+		subject,
+		[
+			'<p>Bonjour,</p>',
+			`<p>${escape(intro)}</p>`,
+			`<p><a href="${escape(consoleUrl)}">${escape('Ouvrir la console')}</a></p>`,
+			`<p>${escape(content)}</p>`
+		].join('')
+	);
+	return { to, subject, text: signer(language, text), html };
+}

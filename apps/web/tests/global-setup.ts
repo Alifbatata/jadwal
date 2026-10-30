@@ -55,6 +55,9 @@ function portsDeTest(): readonly [number, number, number] {
  */
 const SECRET = 'secret-de-test-assez-long-pour-ne-pas-etre-refuse';
 
+/** L'adresse que la seconde instance prévient quand une demande d'accès arrive (étape 22). */
+const OPERATOR_EMAIL = 'exploitant@example.test';
+
 // L'environnement des serveurs de test est celui de ce processus, moins ce qui dit « en test » :
 // `productionEnvironment`, dans `environnement-de-production.ts`, dit pourquoi, et ce que cela change
 // pour la limite de débit de Better Auth. Les serveurs que lancent `roles-de-base.test.ts` et
@@ -107,11 +110,13 @@ export default async function setup(project: TestProject) {
 				// Elle ne l'est que sur la seconde instance : les deux branches — ouverte et fermée —
 				// sont ainsi éprouvées sur un vrai serveur, et non simulées.
 				// De même, l'identité de l'exploitant dans les conditions : la seconde instance la
-				// pose, la première garde le nom par défaut du texte.
+				// pose, la première garde le nom par défaut du texte. Et l'avis d'une demande d'accès
+				// (étape 22) : la seconde prévient l'exploitant, la première n'écrit à personne.
 				...(index === 1
 					? {
 							JADWAL_WIDGET_TEST_ORG: 'widget',
-							JADWAL_EXPLOITANT: 'Voltia, entreprise individuelle d’Une Personne'
+							JADWAL_EXPLOITANT: 'Voltia, entreprise individuelle d’Une Personne',
+							JADWAL_DEMANDES_COURRIEL: OPERATOR_EMAIL
 						}
 					: {}),
 				// La troisième instance seulement : adapter-node lit alors `X-Forwarded-For` et prend
@@ -158,6 +163,7 @@ ${logs.join('')}
 	project.provide('outbox', outbox);
 	project.provide('authSecret', SECRET);
 	project.provide('testDatabase', database);
+	project.provide('operatorEmail', OPERATOR_EMAIL);
 
 	return async () => {
 		for (const child of servers) child.kill();
@@ -176,5 +182,7 @@ declare module 'vitest' {
 		outbox: string;
 		authSecret: string;
 		testDatabase: string;
+		/** L'adresse que la seconde instance prévient d'une demande d'accès. */
+		operatorEmail: string;
 	}
 }

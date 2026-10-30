@@ -73,6 +73,8 @@ autres :
   public, mais c'est un mot de passe de plus à poser (ADR 0026).
 - `JADWAL_EMBED_ORIGINS` : facultatif. Sans lui, les pages publiques s'affichent dans le cadre de
   n'importe quel site ; avec lui, seulement dans ceux qui y figurent.
+- `JADWAL_DEMANDES_COURRIEL` : facultatif. L'adresse que prévient chaque demande d'accès déposée par
+  `/demande-d-acces`, sans rien de la demande : elle se lit dans la console. Vide, aucun avis.
 
 Derrière un mandataire, `ORIGIN` doit être en `https://`, sans quoi l'en-tête de transport strict ne
 part jamais et la protection contre la soumission d'un formulaire venu d'ailleurs compare une origine

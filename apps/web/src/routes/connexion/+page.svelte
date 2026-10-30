@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { accessRequestTexts } from '$lib/i18n/access-request.js';
 	import { commonTexts } from '$lib/i18n/common.js';
 	import { signInTexts } from '$lib/i18n/sign-in.js';
 
 	let { data, form } = $props();
 	const text = $derived(signInTexts[data.language]);
 	const common = $derived(commonTexts[data.language]);
+	const access = $derived(accessRequestTexts[data.language].elsewhere);
 </script>
 
 <svelte:head><title>{text.title} | jadwal</title></svelte:head>
@@ -41,6 +43,8 @@
 		<button type="submit">{text.submit}</button>
 	</form>
 	<p class="invitation">{text.notInvited}</p>
+	<!-- Une adresse que personne n'attend ne reçoit pas de lien (ADR 0049) : la page dit où aller. -->
+	<p>{access.question} <a href={resolve('/demande-d-acces')}>{access.link}</a></p>
 {/if}
 
 <style>
