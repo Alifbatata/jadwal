@@ -106,7 +106,7 @@ export const accessRequestTexts: Translations<AccessRequestTexts> = {
 			'Was Sie hinzufügen möchten: Ihre Aktivitäten, eine Frage. Höchstens 1000 Zeichen.',
 		privacyTitle: 'Was mit diesen Daten geschieht',
 		privacy:
-			'Sie dienen nur dazu, Ihren Antrag zu prüfen, und nur die Person, die den Dienst betreibt, liest sie. Dieses Formular schreibt der angegebenen Adresse nicht: Eine E-Mail geht nur dorthin, wenn der Antrag angenommen wird, und es ist die Einladung. Ein Antrag wird 90 Tage nach der Antwort gelöscht, oder nach 12 Monaten, wenn er unbeantwortet bleibt.',
+			'Sie dienen nur dazu, Ihren Antrag zu prüfen, und nur die Person, die den Dienst betreibt, liest sie. Über dieses Formular geht nichts an die angegebene Adresse: Die einzige E-Mail dorthin ist die Einladung, wenn der Antrag angenommen wird. Ein Antrag wird 90 Tage nach der Antwort gelöscht oder nach 12 Monaten, wenn er unbeantwortet bleibt.',
 		privacyTerms: 'Die Einzelheiten stehen in den',
 		submit: 'Antrag senden',
 		sent: 'Ihr Antrag ist eingegangen.',
@@ -141,7 +141,7 @@ export const accessRequestTexts: Translations<AccessRequestTexts> = {
 		contactLabel: 'Il tuo nome',
 		contactHint: 'Il nome e il cognome di chi fa la richiesta.',
 		emailLabel: 'Il tuo indirizzo e-mail',
-		emailHint: 'L’invito partirà verso questo indirizzo. Esempio: nome.cognome@example.org',
+		emailHint: 'L’invito verrà inviato a questo indirizzo. Esempio: nome.cognome@example.org',
 		messageLabel: 'Messaggio (facoltativo)',
 		messageHint:
 			'Quello che vuoi aggiungere: le tue attività, una domanda. Al massimo 1000 caratteri.',
@@ -169,7 +169,7 @@ export const accessRequestTexts: Translations<AccessRequestTexts> = {
 	en: {
 		title: 'Ask for access to jadwal',
 		intro:
-			'jadwal is free for organisations that want to publish the programme of their courses and activities. Access is opened on request: fill in this form, and the person who runs the service will review it.',
+			'jadwal is free for organisations that want to publish the programme of their courses and activities. Access is opened on request: fill in this form, and the person who runs the service will review your request.',
 		outcome:
 			'If your request is accepted, an invitation will arrive at the address you give. It opens your organisation’s space, where you manage its programme.',
 		member:
@@ -186,7 +186,7 @@ export const accessRequestTexts: Translations<AccessRequestTexts> = {
 		messageHint: 'Anything you want to add: your activities, a question. 1000 characters at most.',
 		privacyTitle: 'What happens to this information',
 		privacy:
-			'It is used only to review your request, and only the person who runs the service reads it. This form does not write to the address given: an email goes there only if the request is accepted, and it is the invitation. A request is deleted 90 days after the answer, or after 12 months if it stays unanswered.',
+			'It is used only to review your request, and only the person who runs the service reads it. This form sends nothing to the address given: the only email it will receive is the invitation, if the request is accepted. A request is deleted 90 days after the answer, or after 12 months if it stays unanswered.',
 		privacyTerms: 'The details are in the',
 		submit: 'Send the request',
 		sent: 'Your request has been recorded.',
@@ -201,14 +201,14 @@ export const accessRequestTexts: Translations<AccessRequestTexts> = {
 			tooLong: 'This text is too long. Please shorten it.'
 		},
 		elsewhere: {
-			question: 'Your organisation does not use jadwal yet?',
+			question: 'Is your organisation not using jadwal yet?',
 			link: 'Ask for access'
 		}
 	},
 	ar: {
 		title: 'اطلب الوصول إلى jadwal',
 		intro:
-			'jadwal مجاني للمؤسسات التي تريد أن تنشر مواعيد دروسها وأنشطتها. يُفتح الوصول بناءً على طلب: املأ هذا النموذج، وسيدرسه الشخص الذي يدير الخدمة.',
+			'jadwal مجاني للمؤسسات التي تريد أن تنشر برنامج دروسها وأنشطتها. يُفتح الوصول بناءً على طلب: املأ هذا النموذج، وسيدرس الشخص الذي يدير الخدمة طلبك.',
 		outcome:
 			'إن قُبل طلبك، ستصل دعوة إلى العنوان الذي تكتبه. تفتح الدعوة مساحة مؤسستك، حيث تدير برنامجها.',
 		member:
@@ -222,10 +222,10 @@ export const accessRequestTexts: Translations<AccessRequestTexts> = {
 		emailLabel: 'بريدك الإلكتروني',
 		emailHint: 'ستُرسَل الدعوة إلى هذا العنوان. مثال: name@example.org',
 		messageLabel: 'رسالة (اختيارية)',
-		messageHint: 'ما تريد إضافته: أنشطتكم، أو سؤال. 1000 حرف على الأكثر.',
+		messageHint: 'ما تريد إضافته: أنشطة مؤسستك، أو سؤال. 1000 حرف على الأكثر.',
 		privacyTitle: 'ماذا يحدث لهذه البيانات',
 		privacy:
-			'لا تُستعمل إلا لدراسة طلبك، ولا يطّلع عليها إلا الشخص الذي يدير الخدمة. لا يكتب هذا النموذج إلى العنوان المذكور: لا تُرسَل إليه رسالة إلا إن قُبل الطلب، وهي الدعوة. يُحذف الطلب بعد 90 يومًا من الرد، أو بعد 12 شهرًا إن بقي بلا رد.',
+			'لا تُستعمل إلا لدراسة طلبك، ولا يطّلع عليها إلا الشخص الذي يدير الخدمة. لا يرسل هذا النموذج شيئًا إلى العنوان المذكور: لا تُرسَل إليه رسالة إلا إن قُبل الطلب، وهي الدعوة. يُحذف الطلب بعد 90 يومًا من الرد، أو بعد 12 شهرًا إن بقي بلا رد.',
 		privacyTerms: 'التفاصيل في',
 		submit: 'أرسل الطلب',
 		sent: 'سُجّل طلبك.',
@@ -239,7 +239,7 @@ export const accessRequestTexts: Translations<AccessRequestTexts> = {
 			tooLong: 'هذا النص طويل جدًا. اختصره.'
 		},
 		elsewhere: {
-			question: 'مؤسستك لا تستخدم jadwal بعد؟',
+			question: 'ألا تستخدم مؤسستك jadwal بعد؟',
 			link: 'اطلب الوصول'
 		}
 	}

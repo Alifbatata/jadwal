@@ -94,8 +94,8 @@ l'organisation n'est pas dans la liste, choisissez une ville qui a toujours la m
 qu'elle. Pour la plus grande partie de l'Europe : Europe/Zurich, Europe/Paris ou
 Europe/Berlin.`
    - Le groupe `Personne responsable (facultatif)` (étape 22) : `Si vous connaissez son adresse
-électronique, l'invitation lui part dès la création de l'organisation. Sinon, laissez le champ
-vide : vous pourrez l'inviter plus tard depuis la liste des organisations.`, puis les deux
+électronique, l'invitation lui est envoyée dès la création de l'organisation. Sinon, laissez le
+champ vide : vous pourrez l'inviter plus tard depuis la liste des organisations.`, puis les deux
      champs de l'invitation du point 3, l'adresse et la langue du courriel.
    - Le bouton `Créer l'organisation`.
 
@@ -108,9 +108,9 @@ vide : vous pourrez l'inviter plus tard depuis la liste des organisations.`, pui
    serveur en tire : rien n'est créé (étape 19, D6). La page revient avec, en haut, une étape
    `Vérifiez l'adresse avant de créer l'organisation` : `L'organisation n'est pas encore créée :` et
    son nom, `Adresse de sa page publique, proposée à partir du nom :` et l'adresse entière, si une
-   personne responsable est donnée `L'invitation de personne responsable partira à la création,
-à :` et son adresse, puis `Elle ne se changera plus ensuite. Si elle vous convient, touchez
-« Créer l'organisation ». Sinon, écrivez-en une autre dans le champ ci-dessous.` Le champ
+   personne responsable est donnée `À la création, l'invitation de personne responsable partira à
+cette adresse :` et son adresse, puis `Elle ne se changera plus ensuite. Si elle vous convient,
+touchez « Créer l'organisation ». Sinon, écrivez-en une autre dans le champ ci-dessous.` Le champ
    `Adresse de la page publique` porte l'adresse proposée, obligatoire et vérifié par le navigateur,
    avec la règle ; le nom, le fuseau, la personne responsable, la langue du courriel et la demande
    repartent tels quels, et le formulaire de création, plus bas, les garde aussi. Une adresse

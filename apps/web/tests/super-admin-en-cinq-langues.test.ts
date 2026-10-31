@@ -1141,7 +1141,7 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 			expect(await dernierCourriel(email)).toBeUndefined();
 			const etape = section(html, 'confirmer-titre');
 			expect(texteDe(etape)).toContain(
-				`L’invitation de personne responsable partira à la création, à : ${email}`
+				`À la création, l’invitation de personne responsable partira à cette adresse : ${email}`
 			);
 			expect(champsDe(etape)).toEqual({
 				name: 'Horizon Nord',
@@ -1723,7 +1723,7 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 				'Refuser cette demande'
 			);
 			expect(texteDe(section(pages.remplie?.de ?? '', 'creer-titre'))).toContain(
-				'Formular ausgefüllt aus der Anfrage von: Demande de'
+				'Formular ausgefüllt aus dem Antrag von: Demande de'
 			);
 			expect(
 				texteDe(element(pages.refusee?.it ?? '', /<section\b[^>]*class="succes[\s"]/, 'section'))

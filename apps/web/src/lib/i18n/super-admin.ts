@@ -249,7 +249,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			proposed: 'Adresse de sa page publique, proposée à partir du nom :',
 			check:
 				'Elle ne se changera plus ensuite. Si elle vous convient, touchez « Créer l’organisation ». Sinon, écrivez-en une autre dans le champ ci-dessous.',
-			invite: 'L’invitation de personne responsable partira à la création, à :'
+			invite: 'À la création, l’invitation de personne responsable partira à cette adresse :'
 		},
 		timeZoneLabel: 'Fuseau horaire',
 		timeZoneHint: (zone) =>
@@ -261,7 +261,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		manager: {
 			legend: 'Personne responsable (facultatif)',
 			intro:
-				'Si vous connaissez son adresse électronique, l’invitation lui part dès la création de l’organisation. Sinon, laissez le champ vide : vous pourrez l’inviter plus tard depuis la liste des organisations.'
+				'Si vous connaissez son adresse électronique, l’invitation lui est envoyée dès la création de l’organisation. Sinon, laissez le champ vide : vous pourrez l’inviter plus tard depuis la liste des organisations.'
 		},
 		invite: {
 			summary: 'Inviter une personne responsable',
@@ -317,28 +317,28 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		intro:
 			'Diese Seite ist für die Person, die den Dienst betreibt: Organisationen erstellen und ihre verantwortliche Person einladen, ihren Status festlegen, ihren Bereich betreten, um zu helfen, und bei Problemen mit der Anmeldung weiterhelfen.',
 		requests: {
-			title: 'Zugangsanfragen',
+			title: 'Zugangsanträge',
 			intro:
-				'Organisationen, die jadwal nutzen möchten, beantragen den Zugang über das Formular der Website. Jede Anfrage wartet hier auf Ihre Antwort.',
-			none: 'Keine offene Anfrage.',
+				'Organisationen, die jadwal nutzen möchten, beantragen den Zugang über das Formular der Website. Jeder Antrag wartet hier auf Ihre Antwort.',
+			none: 'Kein offener Antrag.',
 			locality: 'Ort:',
-			contact: 'Anfragende Person:',
+			contact: 'Antragstellende Person:',
 			email: 'E-Mail-Adresse:',
-			language: 'Sprache der Anfrage:',
+			language: 'Sprache des Antrags:',
 			receivedOn: 'Eingegangen am',
 			message: 'Nachricht:',
 			createHelp:
-				'Füllt das Formular zum Erstellen mit den Angaben der Anfrage aus. Die Anfrage gilt als angenommen, sobald die Organisation erstellt ist, und die Einladung geht an die anfragende Person.',
-			refuse: 'Diese Anfrage ablehnen',
+				'Füllt das Formular zum Erstellen mit den Angaben des Antrags aus. Der Antrag gilt als angenommen, sobald die Organisation erstellt ist, und die Einladung geht an die antragstellende Person.',
+			refuse: 'Diesen Antrag ablehnen',
 			refuseWhat:
-				'Es wird keine E-Mail verschickt: Die Person wird nicht benachrichtigt. Eine abgelehnte Anfrage wird nach 90 Tagen gelöscht.',
-			refuseConfirm: 'Anfrage ablehnen',
-			refused: 'Anfrage abgelehnt:',
+				'Es wird keine E-Mail verschickt: Die Person wird nicht benachrichtigt. Ein abgelehnter Antrag wird nach 90 Tagen gelöscht.',
+			refuseConfirm: 'Antrag ablehnen',
+			refused: 'Antrag abgelehnt:',
 			refusedNoMail: 'Es wurde keine E-Mail verschickt.',
-			fromRequest: 'Formular ausgefüllt aus der Anfrage von:',
+			fromRequest: 'Formular ausgefüllt aus dem Antrag von:',
 			fromRequestWhat:
-				'Prüfen Sie Namen und Adresse vor dem Erstellen: Die Anfrage wird beim Erstellen als angenommen markiert, und die Einladung geht an die Adresse der anfragenden Person, in der Sprache ihrer Anfrage.',
-			accepted: 'Die Zugangsanfrage ist als angenommen markiert.'
+				'Prüfen Sie Namen und Adresse vor dem Erstellen: Der Antrag wird beim Erstellen als angenommen markiert, und die Einladung geht an die Adresse der antragstellenden Person, in der Sprache ihres Antrags.',
+			accepted: 'Der Zugangsantrag ist als angenommen markiert.'
 		},
 		created: 'Die Organisation wurde erstellt:',
 		createdAddress: 'Ihre öffentliche Seite:',
@@ -378,7 +378,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			proposed: 'Adresse ihrer öffentlichen Seite, aus dem Namen vorgeschlagen:',
 			check:
 				'Sie lässt sich danach nicht mehr ändern. Wenn sie passt, tippen Sie auf «Organisation erstellen». Sonst schreiben Sie im Feld unten eine andere.',
-			invite: 'Die Einladung der verantwortlichen Person geht bei der Erstellung an:'
+			invite: 'Bei der Erstellung geht die Einladung als verantwortliche Person an:'
 		},
 		timeZoneLabel: 'Zeitzone',
 		timeZoneHint: (zone) =>
@@ -437,7 +437,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			linkFailed:
 				'Der Link konnte nicht erstellt werden. Versuchen Sie es in einer Minute noch einmal.',
 			requestGone:
-				'Diese Anfrage wartet nicht mehr auf eine Antwort: Sie wurde bereits angenommen oder abgelehnt, oder sie wurde gelöscht.',
+				'Dieser Antrag wartet nicht mehr auf eine Antwort: Er wurde bereits angenommen oder abgelehnt, oder er wurde gelöscht.',
 			invalidManagerEmail:
 				'Die Adresse der verantwortlichen Person hat nicht die Form einer E-Mail-Adresse. Beispiel: vorname.name@example.org'
 		}
@@ -458,7 +458,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			receivedOn: 'Ricevuta il',
 			message: 'Messaggio:',
 			createHelp:
-				'Compila il modulo di creazione con i dati della richiesta. La richiesta è accettata quando l’organizzazione viene creata, e l’invito parte per la persona che l’ha fatta.',
+				'Compila il modulo di creazione con i dati della richiesta. La richiesta è accettata quando l’organizzazione viene creata, e l’invito viene inviato alla persona che l’ha fatta.',
 			refuse: 'Rifiuta questa richiesta',
 			refuseWhat:
 				'Non parte nessuna e-mail: la persona non viene avvisata. Una richiesta rifiutata viene cancellata dopo 90 giorni.',
@@ -467,7 +467,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			refusedNoMail: 'Non è partita nessuna e-mail.',
 			fromRequest: 'Modulo compilato a partire dalla richiesta di:',
 			fromRequestWhat:
-				'Controlla il nome e l’indirizzo prima di creare: alla creazione la richiesta viene segnata come accettata, e l’invito parte all’indirizzo della persona richiedente, nella lingua della sua richiesta.',
+				'Controlla il nome e l’indirizzo prima di creare: alla creazione la richiesta viene segnata come accettata, e l’invito viene inviato all’indirizzo della persona richiedente, nella lingua della sua richiesta.',
 			accepted: 'La richiesta di accesso è segnata come accettata.'
 		},
 		created: 'L’organizzazione è stata creata:',
@@ -507,7 +507,7 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 			proposed: 'Indirizzo della sua pagina pubblica, proposto a partire dal nome:',
 			check:
 				'Dopo non si potrà più cambiare. Se ti va bene, tocca «Crea l’organizzazione». Altrimenti scrivine un altro nel campo qui sotto.',
-			invite: 'L’invito alla persona responsabile partirà alla creazione, a:'
+			invite: 'Alla creazione, l’invito come persona responsabile verrà inviato a:'
 		},
 		timeZoneLabel: 'Fuso orario',
 		timeZoneHint: (zone) =>
@@ -652,16 +652,16 @@ export const superAdminTexts: Translations<SuperAdminTexts> = {
 		},
 		invite: {
 			summary: 'Invite the person in charge',
-			help: 'The invitation is sent by email. By accepting it, the person becomes in charge of the organisation, without you having to enter its space.',
+			help: 'The invitation is sent by email. By accepting it, the person becomes a manager of the organisation, without you having to enter its space.',
 			emailLabel: 'Email address of the person in charge',
 			emailHint: 'Example: first.last@example.org',
 			languageLabel: 'Language of the email',
 			languageHelp: 'The person you invite receives the email in this language.',
 			submit: 'Send the invitation',
-			sentTo: 'Invited as person in charge:',
+			sentTo: 'An invitation for the person in charge has been sent to:',
 			sentFor: 'Organisation:',
 			validity: (days) =>
-				`It is valid for ${days} days. By accepting it, this person becomes in charge of the organisation.`
+				`It is valid for ${days} days. By accepting it, this person becomes a manager of the organisation.`
 		},
 		rescue: {
 			title: 'Emergency sign-in link',

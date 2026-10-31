@@ -324,7 +324,7 @@ const NO_ACCOUNT: Translations<NoAccountTexts> = {
 			'No account is open at this address, and no invitation is waiting for it, so no link was sent.',
 		howTo: 'To use jadwal for your organisation, ask for access on this page:',
 		member:
-			'If your organisation already uses jadwal, ask the person in charge to invite you at this address.',
+			'If your organisation already uses jadwal, ask the person in charge to send an invitation to this address.',
 		ignore: 'If you did not ask for anything, ignore this message.',
 		link: 'Ask for access to jadwal'
 	},
@@ -334,7 +334,7 @@ const NO_ACCOUNT: Translations<NoAccountTexts> = {
 		asked: 'طُلب رابط للدخول إلى jadwal لهذا البريد الإلكتروني.',
 		noAccount: 'لا يوجد حساب مفتوح بهذا العنوان، ولا دعوة تنتظره، لذلك لم يُرسَل أي رابط.',
 		howTo: 'لاستخدام jadwal لمؤسستك، اطلب الوصول من هذه الصفحة:',
-		member: 'إن كانت مؤسستك تستخدم jadwal، فاطلب من المسؤول عنها أن يدعوك بهذا العنوان.',
+		member: 'إن كانت مؤسستك تستخدم jadwal، فاطلب من المسؤول عنها أن يرسل دعوة إلى هذا العنوان.',
 		ignore: 'إن لم تطلب شيئًا، فتجاهل هذه الرسالة.',
 		link: 'اطلب الوصول إلى jadwal'
 	}

@@ -63,8 +63,8 @@ le courriel « aucun compte » (plus bas).
   demande est acceptée, et c'est l'invitation. L'exploitant peut être averti qu'une demande attend,
   à l'adresse de `JADWAL_DEMANDES_COURRIEL`, facultative ; cet avis ne porte rien de la demande, que
   le lien de la console.
-- **Une purge, portée par une politique** : une demande résolue part quatre-vingt-dix jours après
-  sa réponse, une demande restée sans réponse douze mois après son dépôt
+- **Une purge, portée par une politique** : une demande résolue est effacée quatre-vingt-dix jours
+  après sa réponse, une demande restée sans réponse douze mois après son dépôt
   (`jadwal.purge_access_requests()`, lancée chaque nuit par `scripts/purge.mjs`).
 
 **Le super-admin répond depuis sa console.** Les demandes en attente s'affichent en tête, de la plus

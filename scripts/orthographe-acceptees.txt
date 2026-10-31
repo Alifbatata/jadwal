@@ -650,3 +650,16 @@ docs/adr/0021-espace-des-responsables.md | DATE | 29.09.2026
 # que les addenda des étapes 19 à 21, plus haut.
 docs/adr/0017-invitation-sans-fuite-d-information.md | DATE | 31.10.2026
 docs/adr/0044-acceptation-des-conditions.md | DATE | 31.10.2026
+#
+# L'ADR 0049 porte deux dates écrites avec des points : la décision du chef de projet, 20.10.2026,
+# et la version des conditions, 31.10.2026. Même cas.
+docs/adr/0049-service-gratuit-acces-donne-par-le-super-admin.md | DATE | 20.10.2026
+docs/adr/0049-service-gratuit-acces-donne-par-le-super-admin.md | DATE | 31.10.2026
+#
+# « AR_DIACRITICS_REPLACE » : « برنامج », sans voyelles, comme dans les autres écrans (famille 6).
+# La relecture de l'étape 22 le met dans la page de demande d'accès, à la place de « مواعيد ».
+apps/web/src/lib/i18n/access-request.ts | AR_DIACRITICS_REPLACE | برنامج
+#
+# « SENT_START_SIN_PLU » : le bouton « Diesen Antrag ablehnen » et la phrase qui le suit, recollés
+# par le corpus. Le singulier est juste : le bouton vise une demande. Même cas que « Termin ».
+apps/web/src/lib/i18n/super-admin.ts | SENT_START_SIN_PLU | Antrag
