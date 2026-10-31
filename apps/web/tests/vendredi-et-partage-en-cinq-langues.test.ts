@@ -3287,7 +3287,10 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 	it('refuses a hand-written cancellation of this kind when the new day is past, and a move from a past Friday, in each language, and writes nothing', async () => {
 		const vendredi = prochainVendredi(today());
 		const ilYADeuxSemaines = addDays(vendrediPasse(), -7);
-		const toutPasse = await poserDeplacement(ilYADeuxSemaines, addDays(vendrediPasse(), 1));
+		// Le nouveau jour, passé quel que soit le jour de la semaine : la veille du vendredi passé. Le
+		// lendemain, samedi, tombait aujourd'hui le samedi, et l'annulation y est admise.
+		const nouveauJourPasse = addDays(vendrediPasse(), -1);
+		const toutPasse = await poserDeplacement(ilYADeuxSemaines, nouveauJourPasse);
 		try {
 			const avant = await exceptionsDeLaPremiere();
 			const journalAvant = await lignesDuJournalDeVendredi();
@@ -3300,7 +3303,7 @@ describe('« Ce vendredi » : une session déplacée depuis un vendredi passé (
 							courseId: sessions[1],
 							date: ilYADeuxSemaines,
 							shownId: toutPasse,
-							shownToDate: addDays(vendrediPasse(), 1),
+							shownToDate: nouveauJourPasse,
 							shownToStart: '16:00'
 						},
 						VENDREDI_PASSE[langue]
