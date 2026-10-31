@@ -132,13 +132,14 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   feuille de route, pour plus tard. 4 005 tests, tous réussis, aucun sauté, et 24 tests liés au
   temps, à part ; parcours complet : 453 vérifications, dont 24 pour l'étape 21, et axe sans rien de
   sérieux sur 42 pages. Mesurés sur le poste le 20.10.2026, et rejoués par la CI sur le code livré.
-- **Étape 22** (un service gratuit, un accès que donne le super-admin) : **en cours**, ouverte le
-  20.10.2026. jadwal est entièrement gratuit, et les plans ont quitté le code et la base. Une
-  organisation demande l'accès par un formulaire public ; le super-admin accepte la demande en
-  créant l'organisation, et l'invitation de sa personne responsable part dans le même geste, ou la
-  refuse. Un compte ne s'ouvre plus que sur invitation (ADR 0049). Les chantiers 1 à 7 sont faits ;
-  restent la relecture des textes nouveaux, le parcours automatique, la vérification complète et
-  la poussée. Rien n'est encore poussé ni déployé.
+- **Étape 22** (un service gratuit, un accès que donne le super-admin) : **livrée le 31.10.2026**.
+  jadwal est entièrement gratuit, et les plans ont quitté le code et la base. Une organisation
+  demande l'accès par un formulaire public ; le super-admin accepte la demande en créant
+  l'organisation, et l'invitation de sa personne responsable part dans le même geste, ou la refuse.
+  Un compte ne s'ouvre plus que sur invitation (ADR 0049), et les conditions, version du
+  31.10.2026, s'acceptent de nouveau. 4 139 tests, tous réussis, aucun sauté, et 24 tests liés au
+  temps, à part ; parcours complet : 475 vérifications, dont 21 pour l'étape 22, et axe sans rien de
+  sérieux sur 45 pages. Mesurés sur le poste le 31.10.2026, et rejoués par la CI sur le code livré.
 
 ## Fait
 
@@ -955,7 +956,7 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   `docs/CADRAGE.md`, `docs/SECURITE.md`, le `README`, `.env.example` et les descriptions des écrans
   touchés dans `docs/maquettes/` mis à jour.
 
-Étape 22 (un service gratuit, un accès que donne le super-admin), en cours :
+Étape 22 (un service gratuit, un accès que donne le super-admin) :
 
 - **Les plans retirés** : la colonne `organization.plan` et sa contrainte quittent la base
   (migration 0076, qui vérifie son résultat), avec l'action, le champ et les textes de la console
@@ -984,6 +985,22 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   et 0044 ; `docs/CADRAGE.md`, `docs/SECURITE.md` (barrière 8 récrite, barrière 8 bis), les
   maquettes de la console et de la coquille, et une maquette nouvelle,
   `docs/maquettes/public-demande-d-acces.md`.
+- **Les textes nouveaux relus** dans les cinq langues (la page de demande, la console, le courriel
+  « aucun compte ») : chaque correction a son test (`step-22-review.test.ts`). En allemand, la
+  console dit « Antrag », comme le formulaire.
+- **Le parcours automatique** : chaque changement de l'étape 22 qui se voit à l'écran a sa
+  vérification (7 identifiants, 21 vérifications, catalogue de 321 libellés). Rejoué contre l'image
+  de l'étape 21 : les vérifications des étapes 18 à 21 restent vertes, et aucune de l'étape 22 ne
+  l'est (7 rouges, 6 gestes impossibles, faute de leur écran).
+- **Un test qui tombait le samedi** : il annulait une session déplacée au lendemain du vendredi
+  passé en l'attendant refusée comme passée ; le samedi, ce lendemain est aujourd'hui, que la borne
+  admet. Le nouveau jour est désormais la veille du vendredi passé.
+- 4 139 tests dans le dépôt, mesurés sur le poste le 31.10.2026, tous réussis, aucun sauté : 691
+  dans `core`, 542 dans la base, 81 pour les sauvegardes, 2 793 dans l'application, 32 pour le
+  widget (2 145 octets en gzip, inchangé) ; et 24 tests liés au temps, à part (`pnpm test:temps`).
+  Parcours complet : 475 vérifications, dont 21 pour l'étape 22, axe sans rien de sérieux sur
+  45 pages.
+- Migrations 0076 à 0081.
 
 **Un script ou une commande qu'aucun test ne _lance_ n'est pas éprouvé.** C'est la règle du dépôt
 depuis l'étape 12, et elle répond à la question laissée ouverte à l'étape 11.
@@ -1037,7 +1054,7 @@ tests.
 | 19    | Zéro défaut connu, arabe relu, historique réécrit                   | terminée |
 | 20    | Dernières questions : Rétablir, vendredi, états, conditions         | terminée |
 | 21    | Retours de l'étape 20 : langue en liste, vendredi, conditions       | terminée |
-| 22    | Service gratuit, accès donné par le super-admin                     | en cours |
+| 22    | Service gratuit, accès donné par le super-admin                     | terminée |
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
 passkeys pour tous les comptes. Les plans d'une organisation (gratuit, offert, payant), inscrits à
