@@ -366,6 +366,36 @@
  * Les langues vérifiées : 21-langue dans les cinq ; 21-relecture en arabe, en allemand et en
  * italien ; 21-Q4 en arabe ; les autres en français.
  *
+ * ### Les changements de l'étape 22
+ *
+ * Un service gratuit, sans plan, et un accès que donne le super-admin. Les demandes et leurs
+ * réponses se jouent à l'étape a, une fois la voisine invitée, avec des organisations et des
+ * adresses que rien d'autre ne cherche ; les conditions, en dernier (étape s).
+ *
+ * - 22-plans : la console n'a plus de plan, ni liste, ni formulaire, ni étiquette, ni phrase.
+ * - 22-responsable : créée sans personne responsable, une organisation attend son invitation, que
+ *   la console dit d'envoyer plus tard depuis la liste ; le formulaire de création a le groupe
+ *   « Personne responsable (facultatif) », adresse et langue du courriel ; « Inviter une personne
+ *   responsable », sous une organisation de la liste, envoie l'invitation dans la langue choisie.
+ * - 22-connexion : `/connexion` renvoie vers la demande d'accès ; une adresse que personne
+ *   n'attend lit la même réponse qu'une autre et reçoit « Aucun compte jadwal à cette adresse »,
+ *   sans lien, avec l'adresse du formulaire ; invitée depuis une demande acceptée, une adresse
+ *   reçoit son lien.
+ * - 22-demande : `/demande-d-acces` en allemand pour un navigateur réglé en allemand, une demande
+ *   incomplète refusée champ par champ, une demande enregistrée sans aucun courriel à l'adresse
+ *   saisie, la même renvoyée qui reçoit la même réponse, une seconde en français, la quatrième de
+ *   l'heure depuis la même adresse IP arrêtée en 429.
+ * - 22-console : les demandes en tête de la console, la plus ancienne d'abord, avec ce qu'elles
+ *   disent ; « Créer l'organisation » remplit le formulaire, la création accepte la demande et
+ *   invite la personne qui a demandé dans la langue de sa demande ; un refus, sans courriel.
+ * - 22-organisations : « Vos organisations », sans organisation ni invitation, renvoie vers la
+ *   demande d'accès.
+ * - 22-conditions : une acceptation de la version de l'étape 21, posée dans la base, ne vaut plus ;
+ *   l'écran d'acceptation porte la date de la version en cours, et l'accepter rouvre l'espace.
+ *
+ * Les langues vérifiées : l'allemand pour la page de demande, sa demande et son invitation,
+ * l'italien pour l'invitation envoyée plus tard ; le reste en français.
+ *
  * ## La date figée (étape 19, D9)
  *
  * Le parcours ne lit plus la date de son lancement pour savoir ce qu'il attend. Il pose l'horloge
@@ -407,7 +437,7 @@
  * A3 et F1, ceux de l'espace parcourus par D2), qui change d'une image à l'autre, y sont remplacés
  * par un mot. Un passage strict échoue si une
  * vérification du catalogue n'a pas été jouée, ou si une vérification jouée n'y est pas. Le bilan
- * donne ces nombres pour chaque étape, de la 18 à la 21, à part.
+ * donne ces nombres pour chaque étape, de la 18 à la 22, à part.
  *
  * Une vérification faite de plusieurs conditions les nomme (`verifierChaque`), qu'elle soit celle
  * d'un retour ou non : sa ligne rouge commence par « tombé : » et le nom de celles qui manquent,
@@ -847,6 +877,49 @@ const SAISIE_AU_CLAVIER = {
  * responsable se donne le rôle d'éditeur (retour B3).
  */
 const SECONDE_RESPONSABLE = 'deuxieme.personne@example.test';
+/**
+ * Les demandes d'accès de l'étape 22, champ par champ. La première vient d'un navigateur réglé en
+ * allemand, et le super-admin l'accepte ; la seconde, en français, il la refuse ; la troisième est
+ * la quatrième de l'heure depuis la même adresse IP, et la limite l'arrête. Des noms que rien
+ * d'autre ne cherche dans le parcours.
+ */
+const DEMANDE_ACCEPTEE = {
+	organisation: 'Kulturverein Morgenstern',
+	adresse: 'kulturverein-morgenstern',
+	localite: 'Bienne',
+	personne: 'Lena Muster',
+	courriel: 'lena.muster@example.test',
+	message: 'Wir möchten unsere Kurse veröffentlichen.'
+};
+const DEMANDE_REFUSEE = {
+	organisation: 'Cercle des Tilleuls',
+	localite: 'Fribourg',
+	personne: 'Paul Exemple',
+	courriel: 'paul.exemple@example.test',
+	message: ''
+};
+const DEMANDE_DE_TROP = {
+	organisation: 'Club de trop',
+	localite: 'Sion',
+	personne: 'Zoé Essai',
+	courriel: 'zoe.essai@example.test',
+	message: ''
+};
+/** Une adresse que personne n'attend : la connexion lui écrit qu'aucun compte n'y est ouvert. */
+const ADRESSE_INCONNUE = 'personne.inconnue@example.test';
+/** Invitée plus tard, depuis la liste de la console, comme personne responsable, en italien. */
+const INVITEE_PLUS_TARD = 'piu.tardi@example.test';
+/** La version des conditions de l'étape 21 : depuis l'étape 22, l'avoir acceptée ne suffit plus. */
+const VERSION_DE_L_ETAPE_21 = '2026-10-19';
+/** Ce que la console dit après avoir créé une organisation sans personne responsable. */
+const SUITE_SANS_RESPONSABLE =
+	'Pour y faire entrer sa personne responsable, touchez « Inviter une personne responsable » sous son nom, dans la liste des organisations.';
+/** Le renvoi vers la demande d'accès, sous `/connexion` et sur « Vos organisations ». */
+const RENVOI_VERS_LA_DEMANDE = {
+	question: 'Votre organisation n’utilise pas encore jadwal ?',
+	lien: 'Demander l’accès',
+	titre: 'Demander l’accès à jadwal'
+};
 /** La description que reçoit le premier cours le temps de lire le résumé (retour B4). */
 const DESCRIPTION = 'Pour les enfants de 7 à 12 ans.';
 /**
@@ -1288,12 +1361,26 @@ const RETOURS_DE_L_ETAPE_21 = [
 	'21-Q4',
 	'21-Q5'
 ];
+/**
+ * Les changements de l'étape 22 qui se voient à l'écran : un service gratuit, sans plan, et un
+ * accès que donne le super-admin. L'en-tête du script dit ce que chacun vérifie.
+ */
+const RETOURS_DE_L_ETAPE_22 = [
+	'22-plans',
+	'22-responsable',
+	'22-connexion',
+	'22-demande',
+	'22-console',
+	'22-organisations',
+	'22-conditions'
+];
 /** Tous les retours, dans l'ordre du tableau final. */
 const RETOURS = [
 	...RETOURS_DE_L_ETAPE_18,
 	...RETOURS_DE_L_ETAPE_19,
 	...RETOURS_DE_L_ETAPE_20,
-	...RETOURS_DE_L_ETAPE_21
+	...RETOURS_DE_L_ETAPE_21,
+	...RETOURS_DE_L_ETAPE_22
 ];
 /**
  * Chaque vérification d'un retour : `{ retour, quoi, ok, detail }`, et `impossible` pour un geste
@@ -1633,7 +1720,8 @@ const langueDuCourriel = (courriel) =>
  * (dates hors de sa période), l'arabe pour langue par défaut de l'organisation voisine, où la
  * personne du parcours n'est qu'éditrice, le temps d'un 404 (19-404-organisation), et, à l'étape r
  * (étape 20, 20-C2 et 20-cles), des séances déplacées d'un jour passé ou vers un même jour, et le
- * premier jour de la session du vendredi, lu, reculé puis remis. Le texte de la requête vient de ce
+ * premier jour de la session du vendredi, lu, reculé puis remis, et, à l'étape s (22-conditions),
+ * l'acceptation des conditions ramenée à la version de l'étape 21. Le texte de la requête vient de ce
  * script. Les valeurs qui y entrent depuis le serveur n'y entrent qu'après avoir passé leur forme :
  * celle d'un identifiant (`UUID`) pour l'identifiant du cours à dates précises, lu à l'adresse où
  * l'écran revient, pour celui du cours de l'étape r, lu dans le lien de sa ligne sur /cours, et pour
@@ -2428,6 +2516,12 @@ async function superAdmin(navigateur) {
 	await inviterDansLaLangueChoisie(page);
 	await inviter(page, VOISINE, 'editor', 'éditeur');
 
+	// L'accès que donne le super-admin (étape 22) : deux demandes arrivent, il en accepte une en
+	// créant l'organisation, refuse l'autre, puis invite plus tard une personne responsable.
+	await demandesDAcces(navigateur);
+	await ouvrir(page, '/super-admin');
+	await reponsesDuSuperAdmin(navigateur, page);
+
 	verifier(
 		'le super-admin n’est jamais renvoyé vers des conditions à accepter',
 		!passages.some((passage) => passage.startsWith('/conditions/accepter')),
@@ -2789,6 +2883,19 @@ async function ouvrirEtEntrer(page, organisation, { proposee }) {
 	await envoyer(page, page.locator('form[action="?/ouvrir"] button[type="submit"]'));
 	const carte = page.locator('li').filter({ hasText: organisation.nom });
 	verifier(`« ${organisation.nom} » est créée`, (await carte.count()) === 1, organisation.slug);
+	// Créée sans personne responsable, l'organisation attend son invitation : depuis l'étape 22, la
+	// console dit de l'envoyer plus tard depuis la liste, sans entrer dans son espace.
+	if (proposee) {
+		await retour('22-responsable', async () => {
+			const succes = page.locator('main');
+			const texte = (await succes.innerText()).replace(/\s+/g, ' ');
+			verifier(
+				`créée sans personne responsable, « ${organisation.nom} » : la console dit de l’inviter plus tard, « ${SUITE_SANS_RESPONSABLE} »`,
+				texte.includes(SUITE_SANS_RESPONSABLE),
+				/Pour (?:la préparer|y faire entrer)[^.]*\./.exec(texte)?.[0] ?? 'aucune phrase de suite'
+			);
+		});
+	}
 
 	await envoyer(page, carte.getByRole('button', { name: 'Entrer dans son espace' }));
 	const banniere = await texteDe(page.getByRole('status'));
@@ -2998,6 +3105,420 @@ async function inviterDansLaLangueChoisie(page) {
 				'<html lang="it">': langueDuCourriel(courriel) === 'it'
 			},
 			`« ${statut} » ; reçus : ${sujetsRecus(INVITEE_EN_ITALIEN) || 'rien'}`
+		);
+	});
+}
+
+/** Le bouton qui envoie la demande d'accès : celui du formulaire de la page, pas du choix de la langue. */
+const envoiDeLaDemande = (page) => page.locator('main form[method="post"] button[type="submit"]');
+
+/** Le texte d'un élément tel qu'il se lit, blancs ramenés à une espace : une ligne par `dt` et `dd`. */
+const texteLisible = async (locator) => (await locator.innerText()).replace(/\s+/g, ' ').trim();
+
+/**
+ * Le formulaire de demande d'accès, rempli par l'`id` de ses champs, puis envoyé. Une image d'avant
+ * l'étape 22 n'a pas cette page : le geste y est impossible.
+ */
+async function envoyerUneDemande(page, demande) {
+	await (
+		await exiger(page.locator('#organization'), 'le champ du nom de l’organisation')
+	).fill(demande.organisation);
+	await page.locator('#locality').fill(demande.localite);
+	await page.locator('#contact').fill(demande.personne);
+	await page.locator('#email').fill(demande.courriel);
+	await page.locator('#message').fill(demande.message);
+	await envoyer(page, envoiDeLaDemande(page));
+}
+
+/**
+ * a, les demandes d'accès (étape 22), faites par des visiteurs sans compte. Un navigateur réglé en
+ * allemand ouvre la page : une demande incomplète revient avec ses erreurs, puis la demande part,
+ * et la même, renvoyée, reçoit la même réponse. Un navigateur en français passe par `/connexion` :
+ * une adresse que personne n'attend y reçoit un courriel qui renvoie au formulaire, et le lien de
+ * la page y mène ; une seconde demande part, et la suivante, la quatrième de l'heure depuis la même
+ * adresse IP, est arrêtée. Rien n'est encore accepté : le super-admin répond ensuite.
+ */
+async function demandesDAcces(navigateur) {
+	etape('a, deux demandes d’accès, faites sans compte (étape 22)');
+	const allemand = await nouveauContexte(navigateur, { locale: 'de-CH' });
+	try {
+		const page = await allemand.newPage();
+		await retour('22-demande', async () => {
+			const reponse = await ouvrir(page, '/demande-d-acces');
+			const champs = await page
+				.locator('main form[method="post"]')
+				.locator('#organization, #locality, #contact, #email, #message')
+				.count();
+			verifierChaque(
+				'un navigateur réglé en allemand (de-CH) voit /demande-d-acces en allemand, « Zugang zu jadwal beantragen », avec ses cinq champs',
+				{
+					'la page': reponse?.status() === 200,
+					'<html lang="de">': (await racineDit(page, 'lang')) === 'de',
+					'le titre « Zugang zu jadwal beantragen »':
+						(await titre(page)) === 'Zugang zu jadwal beantragen',
+					'les cinq champs': champs === 5
+				},
+				`${reponse?.status()}, « ${await titre(page)} », ${champs} champ(s)`
+			);
+			await auditer(page, 'demande d’accès');
+			// Seul le nom est écrit : le navigateur ne laisserait pas partir la demande, d'où
+			// `noValidate`, pour lire ce que le serveur répond à un navigateur qui ne contrôle rien.
+			await exiger(page.locator('#organization'), 'le champ du nom de l’organisation');
+			await page.locator('main form[method="post"]').evaluate((formulaire) => {
+				/** @type {HTMLFormElement} */ (formulaire).noValidate = true;
+			});
+			await page.locator('#organization').fill(DEMANDE_ACCEPTEE.organisation);
+			await envoyer(page, envoiDeLaDemande(page));
+			const alerte = await texteDe(page.locator('main').getByRole('alert'));
+			const erreurs = await page
+				.locator('main p.erreur[id$="-erreur"]')
+				.evaluateAll((elements) =>
+					elements.map((element) => `${element.id} ${(element.textContent ?? '').trim()}`)
+				);
+			verifierChaque(
+				'une demande où seul le nom est écrit revient en allemand, le nom gardé : « Der Antrag wurde nicht gesendet. … », et « Dieses Feld muss ausgefüllt werden. » sous la localité, le nom et l’adresse',
+				{
+					'« Der Antrag wurde nicht gesendet. … »': alerte.startsWith(
+						'Der Antrag wurde nicht gesendet.'
+					),
+					'une erreur sous chacun des trois champs vides':
+						erreurs.join('|') ===
+						['locality', 'contact', 'email']
+							.map((champ) => `${champ}-erreur Dieses Feld muss ausgefüllt werden.`)
+							.join('|'),
+					'les trois champs marqués invalides':
+						(await page.locator('main [aria-invalid="true"]').count()) === 3,
+					'le nom gardé':
+						(await page.locator('#organization').inputValue()) === DEMANDE_ACCEPTEE.organisation
+				},
+				`« ${alerte} » ; ${erreurs.join(' ; ') || 'aucune erreur sous les champs'}`
+			);
+			await auditer(page, 'demande d’accès, avec ses erreurs', { recharger: false });
+			await envoyerUneDemande(page, DEMANDE_ACCEPTEE);
+			const premiere = await texteLisible(page.locator('main'));
+			await ouvrir(page, '/demande-d-acces');
+			await envoyerUneDemande(page, DEMANDE_ACCEPTEE);
+			const seconde = await texteLisible(page.locator('main'));
+			// Le courriel qui partirait à l'adresse saisie, s'il partait, a le temps d'arriver.
+			await attendre(1000);
+			verifierChaque(
+				'la demande part, « Ihr Antrag ist eingegangen. » ; renvoyée, la même reçoit mot pour mot la même réponse, et aucun courriel ne part à l’adresse saisie',
+				{
+					'« Ihr Antrag ist eingegangen. »':
+						(await texteDe(page.locator('main').getByRole('status'))) ===
+						'Ihr Antrag ist eingegangen.',
+					'la même réponse': premiere === seconde,
+					'aucun courriel à l’adresse saisie': sujetsRecus(DEMANDE_ACCEPTEE.courriel) === ''
+				},
+				`« ${premiere.slice(0, 120)} » ; reçus : ${sujetsRecus(DEMANDE_ACCEPTEE.courriel) || 'rien'}`
+			);
+		});
+	} finally {
+		await allemand.close();
+	}
+
+	const francais = await nouveauContexte(navigateur);
+	try {
+		const page = await francais.newPage();
+		await ouvrir(page, '/connexion');
+		const renvoi = page
+			.locator('main')
+			.getByRole('link', { name: RENVOI_VERS_LA_DEMANDE.lien, exact: true });
+		await retour('22-connexion', async () => {
+			const question = page.locator('main p').filter({ hasText: RENVOI_VERS_LA_DEMANDE.question });
+			verifierChaque(
+				`/connexion renvoie vers la demande d’accès : « ${RENVOI_VERS_LA_DEMANDE.question} ${RENVOI_VERS_LA_DEMANDE.lien} », vers /demande-d-acces`,
+				{
+					'la question': (await question.count()) === 1,
+					'le lien': (await renvoi.count()) === 1,
+					'vers /demande-d-acces':
+						(await renvoi.count()) === 1 && (await cheminDuLien(renvoi)) === '/demande-d-acces'
+				},
+				`${await renvoi.count()} lien(s)`
+			);
+		});
+		await demanderUnLien(page, ADRESSE_INCONNUE);
+		const statut = await texteDe(page.locator('main').getByRole('status'));
+		await retour('22-connexion', async () => {
+			const courriel = await attendreCourriel(ADRESSE_INCONNUE, /./);
+			verifierChaque(
+				'une adresse que personne n’attend lit la même réponse qu’une autre, « Si cette adresse… », et reçoit « Aucun compte jadwal à cette adresse », sans lien de connexion, avec l’adresse du formulaire de demande',
+				{
+					'la même réponse à l’écran': statut.startsWith('Si cette adresse'),
+					'l’objet « Aucun compte jadwal à cette adresse »':
+						courriel?.subject === 'Aucun compte jadwal à cette adresse',
+					'aucun lien de connexion': courriel !== undefined && !lienDeConnexion(courriel),
+					'l’adresse du formulaire': (courriel?.text ?? '').includes(`${ORIGINE}/demande-d-acces`)
+				},
+				`« ${statut.slice(0, 60)}… » ; reçus : ${sujetsRecus(ADRESSE_INCONNUE) || 'rien'}`
+			);
+		});
+		await retour('22-demande', async () => {
+			await ouvrir(page, '/connexion');
+			await suivre(
+				page,
+				await exiger(renvoi, `le lien « ${RENVOI_VERS_LA_DEMANDE.lien} »`),
+				'/demande-d-acces'
+			);
+			verifier(
+				`le lien de /connexion mène à « ${RENVOI_VERS_LA_DEMANDE.titre} »`,
+				(await titre(page)) === RENVOI_VERS_LA_DEMANDE.titre,
+				await titre(page)
+			);
+			await envoyerUneDemande(page, DEMANDE_REFUSEE);
+			const recue = await texteDe(page.locator('main').getByRole('status'));
+			verifier(
+				'une seconde demande part, en français : « Votre demande est enregistrée. »',
+				recue === 'Votre demande est enregistrée.',
+				recue
+			);
+			await ouvrir(page, '/demande-d-acces');
+			const envoi = page
+				.waitForResponse(
+					(reponse) =>
+						reponse.request().method() === 'POST' &&
+						new URL(reponse.url()).pathname === '/demande-d-acces'
+				)
+				.catch(() => null);
+			await envoyerUneDemande(page, DEMANDE_DE_TROP);
+			const code = (await envoi)?.status();
+			const alerte = await texteDe(page.locator('main').getByRole('alert'));
+			verifierChaque(
+				'la quatrième demande de l’heure depuis la même adresse IP est arrêtée, en 429 : « Trop de demandes ont été envoyées ces dernières heures. … », et ce qui a été tapé reste',
+				{
+					'« Trop de demandes … »': alerte.startsWith(
+						'Trop de demandes ont été envoyées ces dernières heures.'
+					),
+					429: code === 429,
+					'ce qui a été tapé reste':
+						(await page.locator('#organization').inputValue()) === DEMANDE_DE_TROP.organisation
+				},
+				`${code ?? 'aucune réponse'}, « ${alerte} »`
+			);
+		});
+	} finally {
+		await francais.close();
+	}
+}
+
+/**
+ * a, la console répond aux demandes (étape 22). Plus de plan. Les deux demandes, en tête ;
+ * « Créer l'organisation » remplit le formulaire, et la création accepte la demande et invite la
+ * personne qui a demandé, dans la langue de sa demande, qui reçoit dès lors son lien de connexion ;
+ * l'autre demande est refusée, sans courriel. Puis une personne responsable est invitée plus tard,
+ * depuis la liste des organisations.
+ */
+async function reponsesDuSuperAdmin(navigateur, page) {
+	etape('a, le super-admin répond aux demandes d’accès (étape 22)');
+	await retour('22-plans', async () => {
+		const texte = await texteLisible(page.locator('main'));
+		const mot = /\bplans?\b/i.exec(texte)?.[0] ?? /\b(?:Gratuit|Offert|Payant)\b/.exec(texte)?.[0];
+		verifierChaque(
+			'la console n’a plus de plan : ni liste ni formulaire « Plan », ni étiquette « Gratuit », « Offert » ou « Payant », ni phrase qui en parle',
+			{
+				'aucune liste « Plan »': (await page.locator('main select[name="plan"]').count()) === 0,
+				'aucun formulaire ?/plan': (await page.locator('main form[action="?/plan"]').count()) === 0,
+				'aucun mot du plan': mot === undefined
+			},
+			mot ? `« ${mot} » à l’écran` : 'aucun mot du plan à l’écran'
+		);
+	});
+
+	const section = page.locator('section[aria-labelledby="demandes-titre"]');
+	const demandes = section.locator('li.demande');
+	const lire = async () => Promise.all((await demandes.all()).map(texteLisible));
+	await retour('22-console', async () => {
+		await exiger(section, 'la section « Demandes d’accès »');
+		const avantLaListe = await section.evaluate((element) => {
+			const liste = document.getElementById('liste-titre');
+			return (
+				liste !== null &&
+				Boolean(element.compareDocumentPosition(liste) & Node.DOCUMENT_POSITION_FOLLOWING)
+			);
+		});
+		const lues = await lire();
+		const premiere = lues[0] ?? '';
+		const attendus = [
+			`Localité : ${DEMANDE_ACCEPTEE.localite}`,
+			`Personne qui demande : ${DEMANDE_ACCEPTEE.personne}`,
+			`Adresse électronique : ${DEMANDE_ACCEPTEE.courriel}`,
+			'Langue de la demande : Deutsch',
+			`Reçue le ${dateSuisse(T)}`,
+			`Message : ${DEMANDE_ACCEPTEE.message}`
+		];
+		verifierChaque(
+			`« Demandes d’accès », avant la liste des organisations : « ${DEMANDE_ACCEPTEE.organisation} » puis « ${DEMANDE_REFUSEE.organisation} », avec la localité, la personne, l’adresse, la langue, « Reçue le ${dateSuisse(T)} » et le message ; la demande arrêtée n’y est pas`,
+			{
+				'le titre « Demandes d’accès »':
+					(await section
+						.getByRole('heading', { name: 'Demandes d’accès', exact: true })
+						.count()) === 1,
+				'avant la liste des organisations': avantLaListe,
+				'deux demandes, la plus ancienne d’abord':
+					lues.length === 2 &&
+					premiere.startsWith(DEMANDE_ACCEPTEE.organisation) &&
+					(lues[1] ?? '').startsWith(DEMANDE_REFUSEE.organisation),
+				'ce que dit la première': attendus.every((morceau) => premiere.includes(morceau)),
+				'la demande arrêtée n’y est pas': !lues.some((texte) =>
+					texte.includes(DEMANDE_DE_TROP.organisation)
+				)
+			},
+			lues.map((texte) => `« ${texte.slice(0, 160)} »`).join(' ; ') || 'aucune demande'
+		);
+		await auditer(page, 'super-admin, demandes d’accès');
+
+		const creer = await exiger(
+			demandes
+				.filter({ hasText: DEMANDE_ACCEPTEE.organisation })
+				.getByRole('link', { name: 'Créer l’organisation', exact: true }),
+			'le lien « Créer l’organisation » de la demande'
+		);
+		await ouvrir(page, (await creer.getAttribute('href')) ?? '');
+		const note = page.locator('.depuis-demande');
+		const lue = (await note.count()) === 1 ? await texteLisible(note) : '';
+		verifierChaque(
+			`« Créer l’organisation », sur la demande, remplit le formulaire : « ${DEMANDE_ACCEPTEE.organisation} », l’adresse « ${DEMANDE_ACCEPTEE.adresse} », la personne responsable ${DEMANDE_ACCEPTEE.courriel}, et Deutsch, la langue de la demande`,
+			{
+				'« Formulaire rempli à partir de la demande de : … »': lue.startsWith(
+					`Formulaire rempli à partir de la demande de : ${DEMANDE_ACCEPTEE.organisation}`
+				),
+				'le nom': (await page.locator('#name').inputValue()) === DEMANDE_ACCEPTEE.organisation,
+				'l’adresse proposée':
+					(await page.locator('#slug').inputValue()) === DEMANDE_ACCEPTEE.adresse,
+				'la personne responsable':
+					(await page.locator('#managerEmail').inputValue()) === DEMANDE_ACCEPTEE.courriel,
+				'la langue de la demande': (await page.locator('#emailLanguage').inputValue()) === 'de'
+			},
+			`« ${lue.slice(0, 120) || 'aucune note'} »`
+		);
+		await envoyer(
+			page,
+			page.locator(
+				'section[aria-labelledby="creer-titre"] form[action="?/ouvrir"] button[type="submit"]'
+			)
+		);
+		const succes = page.locator('section[aria-labelledby="succes-titre"]');
+		const dit = (await succes.count()) === 1 ? await texteLisible(succes) : '';
+		const invitation = await attendreCourriel(DEMANDE_ACCEPTEE.courriel, /^Einladung zu /);
+		const restantes = await lire();
+		verifierChaque(
+			`créée depuis la demande, « ${DEMANDE_ACCEPTEE.organisation} » : la demande est acceptée et quitte la liste, et l’invitation part en allemand à ${DEMANDE_ACCEPTEE.courriel}, « Einladung zu ${DEMANDE_ACCEPTEE.organisation} auf jadwal »`,
+			{
+				'« L’organisation est créée : … »': dit.includes(
+					`L’organisation est créée : ${DEMANDE_ACCEPTEE.organisation}`
+				),
+				'« L’invitation de personne responsable est partie à : … »': dit.includes(
+					`L’invitation de personne responsable est partie à : ${DEMANDE_ACCEPTEE.courriel}`
+				),
+				'« La demande d’accès est marquée acceptée. »': dit.includes(
+					'La demande d’accès est marquée acceptée.'
+				),
+				'l’invitation en allemand':
+					invitation?.subject === `Einladung zu ${DEMANDE_ACCEPTEE.organisation} auf jadwal` &&
+					langueDuCourriel(invitation) === 'de',
+				'la demande quitte la liste':
+					restantes.length === 1 &&
+					!restantes.some((texte) => texte.includes(DEMANDE_ACCEPTEE.organisation))
+			},
+			`« ${dit.slice(0, 160)} » ; reçus : ${sujetsRecus(DEMANDE_ACCEPTEE.courriel) || 'rien'}`
+		);
+		// Invitée, l'adresse de la demande passe la porte de la connexion : son lien part.
+		await retour('22-connexion', async () => {
+			const contexte = await nouveauContexte(navigateur);
+			try {
+				const autre = await contexte.newPage();
+				await ouvrir(autre, '/connexion');
+				const avant = courriels().length;
+				await demanderUnLien(autre, DEMANDE_ACCEPTEE.courriel);
+				const lien = await nouveauLienDeConnexion(DEMANDE_ACCEPTEE.courriel, avant);
+				verifier(
+					'invitée depuis la demande acceptée, son adresse reçoit maintenant son lien de connexion',
+					Boolean(lien),
+					`reçus : ${sujetsRecus(DEMANDE_ACCEPTEE.courriel) || 'rien'}`
+				);
+			} finally {
+				await contexte.close();
+			}
+		});
+
+		const refusee = demandes.filter({ hasText: DEMANDE_REFUSEE.organisation });
+		await (await exiger(refusee.locator('summary'), '« Refuser cette demande »')).click();
+		const ceQueFaitLeRefus = await texteLisible(refusee.locator('details form p'));
+		await envoyer(page, refusee.getByRole('button', { name: 'Refuser la demande', exact: true }));
+		await attendre(1000);
+		const reponse = page.locator('section[aria-labelledby="refusee-titre"]');
+		const ditDuRefus = (await reponse.count()) === 1 ? await texteLisible(reponse) : '';
+		verifierChaque(
+			`« Refuser cette demande » dit ce que fait le refus ; « Refuser la demande » retire « ${DEMANDE_REFUSEE.organisation} », sans aucun courriel, et la console dit « Aucune demande en attente. »`,
+			{
+				'ce que fait le refus':
+					ceQueFaitLeRefus ===
+					'Aucun courriel ne part : la personne n’est pas prévenue. Une demande refusée est effacée au bout de 90 jours.',
+				'« Demande refusée : … »': ditDuRefus.startsWith(
+					`Demande refusée : ${DEMANDE_REFUSEE.organisation}`
+				),
+				'« Aucun courriel n’est parti. »': ditDuRefus.includes('Aucun courriel n’est parti.'),
+				'aucun courriel à cette adresse': sujetsRecus(DEMANDE_REFUSEE.courriel) === '',
+				'« Aucune demande en attente. »':
+					(await demandes.count()) === 0 &&
+					(await texteLisible(section)).includes('Aucune demande en attente.')
+			},
+			`« ${ceQueFaitLeRefus} » ; « ${ditDuRefus} » ; reçus : ${sujetsRecus(DEMANDE_REFUSEE.courriel) || 'rien'}`
+		);
+	});
+
+	await ouvrir(page, '/super-admin');
+	await retour('22-responsable', async () => {
+		const groupe = page.locator('section[aria-labelledby="creer-titre"] fieldset');
+		const legende =
+			(await groupe.count()) === 1 ? await texteLisible(groupe.locator('legend')) : '';
+		const langues = await page
+			.locator('#emailLanguage option')
+			.evaluateAll((options) => options.map((option) => option.getAttribute('value')));
+		verifierChaque(
+			'le formulaire de création a le groupe « Personne responsable (facultatif) » : son adresse, et la langue du courriel, les cinq, celle de l’écran choisie',
+			{
+				'le groupe': legende === 'Personne responsable (facultatif)',
+				'« Adresse électronique de la personne responsable »':
+					(await groupe
+						.getByLabel('Adresse électronique de la personne responsable', { exact: true })
+						.count()) === 1,
+				'« Langue du courriel », les cinq langues':
+					(await groupe.getByLabel('Langue du courriel', { exact: true }).count()) === 1 &&
+					langues.join('|') === LANGUES.join('|'),
+				'celle de l’écran choisie':
+					langues.length > 0 && (await page.locator('#emailLanguage').inputValue()) === 'fr'
+			},
+			`« ${legende || 'aucun groupe'} » ; ${langues.join(', ') || 'aucune langue'}`
+		);
+
+		const carte = page
+			.locator('section[aria-labelledby="liste-titre"] li')
+			.filter({ hasText: DEMANDE_ACCEPTEE.organisation });
+		await (
+			await exiger(
+				carte.locator('summary').filter({ hasText: 'Inviter une personne responsable' }),
+				`« Inviter une personne responsable » sous « ${DEMANDE_ACCEPTEE.organisation} »`
+			)
+		).click();
+		await carte.locator('input[name="email"]').fill(INVITEE_PLUS_TARD);
+		await carte.locator('select[name="emailLanguage"]').selectOption('it');
+		await envoyer(page, carte.locator('form[action="?/inviter"] button[type="submit"]'));
+		const reponse = page.locator('section[aria-labelledby="invitee-titre"]');
+		const dit = (await reponse.count()) === 1 ? await texteLisible(reponse) : '';
+		const courriel = await attendreCourriel(INVITEE_PLUS_TARD, /./);
+		verifierChaque(
+			`plus tard, « Inviter une personne responsable », sous « ${DEMANDE_ACCEPTEE.organisation} » dans la liste, en Italiano : l’écran le dit, et l’invitation part en italien`,
+			{
+				'« L’invitation de personne responsable est partie à : … »': dit.includes(
+					`L’invitation de personne responsable est partie à : ${INVITEE_PLUS_TARD}`
+				),
+				'« Organisation : … »': dit.includes(`Organisation : ${DEMANDE_ACCEPTEE.organisation}`),
+				'l’objet en italien':
+					courriel?.subject === `Invito a unirti a ${DEMANDE_ACCEPTEE.organisation} su jadwal`,
+				'<html lang="it">': langueDuCourriel(courriel) === 'it'
+			},
+			`« ${dit.slice(0, 160)} » ; reçus : ${sujetsRecus(INVITEE_PLUS_TARD) || 'rien'}`
 		);
 	});
 }
@@ -3647,6 +4168,34 @@ async function quitterSansAccepter(navigateur) {
 						(await page.locator('main').getByText(VOISINE.nom).count()) === 0
 				},
 				`${adresse.pathname} ; « ${texte || 'aucun encadré'} »`
+			);
+		});
+		// Sans organisation ni invitation, « Vos organisations » dit où demander l'accès (étape 22).
+		await retour('22-organisations', async () => {
+			const renvoi = page
+				.locator('main')
+				.getByRole('link', { name: RENVOI_VERS_LA_DEMANDE.lien, exact: true });
+			const question = page.locator('main p').filter({ hasText: RENVOI_VERS_LA_DEMANDE.question });
+			verifierChaque(
+				`sur « Vos organisations », sans organisation ni invitation, « ${RENVOI_VERS_LA_DEMANDE.question} ${RENVOI_VERS_LA_DEMANDE.lien} », vers /demande-d-acces`,
+				{
+					'« Vos organisations »': chemin(page) === '/organisations',
+					'la question': (await question.count()) === 1,
+					'le lien': (await renvoi.count()) === 1,
+					'vers /demande-d-acces':
+						(await renvoi.count()) === 1 && (await cheminDuLien(renvoi)) === '/demande-d-acces'
+				},
+				`${chemin(page)} ; ${await renvoi.count()} lien(s)`
+			);
+			await suivre(
+				page,
+				await exiger(renvoi, `le lien « ${RENVOI_VERS_LA_DEMANDE.lien} »`),
+				'/demande-d-acces'
+			);
+			verifier(
+				`le lien de « Vos organisations » mène à « ${RENVOI_VERS_LA_DEMANDE.titre} »`,
+				(await titre(page)) === RENVOI_VERS_LA_DEMANDE.titre,
+				await titre(page)
 			);
 		});
 	} finally {
@@ -9972,6 +10521,51 @@ async function deplaceeSurLEcranDuVendredi(page) {
 	}
 }
 
+/**
+ * s. Les conditions de l'étape 22 sont une nouvelle version, que chacun accepte de nouveau (ADR
+ * 0044). L'acceptation de la personne du parcours est ramenée, dans la base, à la version de
+ * l'étape 21 : l'espace la renvoie alors à l'écran d'acceptation, daté de la version en cours, et
+ * l'accepter le rouvre. Contre l'image de l'étape 21, dont c'est la version, rien ne change.
+ */
+async function conditionsDeNouveau(page) {
+	etape('s. Les conditions de l’étape 22, à accepter de nouveau');
+	const ramenee = ecrireDansLaBase(
+		`update "terms_acceptance" set "version" = '${VERSION_DE_L_ETAPE_21}' where "user_id" = (select "id" from "user" where "email" = '${RESPONSABLE}')`
+	);
+	verifier(
+		`l’acceptation de la personne du parcours est ramenée à la version du ${dateSuisse(VERSION_DE_L_ETAPE_21)}`,
+		ramenee.ok,
+		ramenee.sortie
+	);
+	await ouvrir(page, '/');
+	await retour('22-conditions', async () => {
+		// Sur l'accueil, aucune date : la vérification tombe, sans attendre un paragraphe absent.
+		const ligne = page.locator('main p').filter({ hasText: /^Dernière mise à jour/ });
+		const date = (await ligne.count()) === 1 ? await texteDe(ligne) : '';
+		verifierChaque(
+			`une acceptation de la version du ${dateSuisse(VERSION_DE_L_ETAPE_21)} ne vaut plus : l’espace renvoie à l’écran d’acceptation, « Dernière mise à jour : ${DATE_DES_CONDITIONS}. », une version plus récente`,
+			{
+				'l’écran d’acceptation': chemin(page) === '/conditions/accepter',
+				'la date de la version en cours': date === `Dernière mise à jour : ${DATE_DES_CONDITIONS}.`,
+				'une version plus récente': isoDuTexte(DATE_DES_CONDITIONS) > VERSION_DE_L_ETAPE_21
+			},
+			`${chemin(page)} ; « ${date || 'aucune date'} »`
+		);
+		await envoyer(
+			page,
+			await exiger(
+				page.getByRole('button', { name: 'J’accepte les conditions d’utilisation', exact: true }),
+				'le bouton « J’accepte les conditions d’utilisation »'
+			)
+		);
+		verifier(
+			'acceptées de nouveau, les conditions rouvrent l’espace, sur l’accueil',
+			chemin(page) === '/',
+			chemin(page)
+		);
+	});
+}
+
 // ---------------------------------------------------------------------------------------------
 // Le catalogue des vérifications des retours
 // ---------------------------------------------------------------------------------------------
@@ -10012,6 +10606,7 @@ B2 | le lien de connexion de secours dit quand s’en servir, ce qui se passe et
 19-D6 | avec JavaScript, l’adresse proposée pendant la frappe : « Club № 5 » donne « club-no-5 », « Horizon™ » donne « horizon », et un nom sans lettre latine ne propose rien et dit d’écrire l’adresse
 B2 | « Adresse de la page publique » est proposée pendant la frappe, « centre-du-parcours », adresse complète en direct
 B2 | l’adresse se modifie, et l’adresse complète la suit
+22-responsable | créée sans personne responsable, « Centre du Parcours » : la console dit de l’inviter plus tard, « Pour y faire entrer sa personne responsable, touchez « Inviter une personne responsable » sous son nom, dans la liste des organisations. »
 B3 | sous le choix du rôle, ce que peut faire un éditeur, et ce qui est réservé au responsable
 B3 | ce que peut faire un éditeur ne promet pas de supprimer un cours : « Créer un cours, le modifier et le publier »
 19-D3 | la liste réservée au responsable dit « Supprimer un cours »
@@ -10021,6 +10616,22 @@ B1 | l’invitation dit, sous l’adresse, un exemple de la bonne forme
 20-C7 | l’invitation donne sous l’adresse l’exemple « prenom.nom@example.org », sur un domaine réservé aux exemples
 D3 | une invitation envoyée depuis l’écran en allemand part en allemand, <html lang="de"> compris
 19-C | depuis l’écran en français, l’invitation part dans la langue choisie sous l’adresse, « Italiano », objet et <html lang="it"> compris
+22-demande | un navigateur réglé en allemand (de-CH) voit /demande-d-acces en allemand, « Zugang zu jadwal beantragen », avec ses cinq champs
+22-demande | une demande où seul le nom est écrit revient en allemand, le nom gardé : « Der Antrag wurde nicht gesendet. … », et « Dieses Feld muss ausgefüllt werden. » sous la localité, le nom et l’adresse
+22-demande | la demande part, « Ihr Antrag ist eingegangen. » ; renvoyée, la même reçoit mot pour mot la même réponse, et aucun courriel ne part à l’adresse saisie
+22-connexion | /connexion renvoie vers la demande d’accès : « Votre organisation n’utilise pas encore jadwal ? Demander l’accès », vers /demande-d-acces
+22-connexion | une adresse que personne n’attend lit la même réponse qu’une autre, « Si cette adresse… », et reçoit « Aucun compte jadwal à cette adresse », sans lien de connexion, avec l’adresse du formulaire de demande
+22-demande | le lien de /connexion mène à « Demander l’accès à jadwal »
+22-demande | une seconde demande part, en français : « Votre demande est enregistrée. »
+22-demande | la quatrième demande de l’heure depuis la même adresse IP est arrêtée, en 429 : « Trop de demandes ont été envoyées ces dernières heures. … », et ce qui a été tapé reste
+22-plans | la console n’a plus de plan : ni liste ni formulaire « Plan », ni étiquette « Gratuit », « Offert » ou « Payant », ni phrase qui en parle
+22-console | « Demandes d’accès », avant la liste des organisations : « Kulturverein Morgenstern » puis « Cercle des Tilleuls », avec la localité, la personne, l’adresse, la langue, « Reçue le JJ.MM.AAAA » et le message ; la demande arrêtée n’y est pas
+22-console | « Créer l’organisation », sur la demande, remplit le formulaire : « Kulturverein Morgenstern », l’adresse « kulturverein-morgenstern », la personne responsable lena.muster@example.test, et Deutsch, la langue de la demande
+22-console | créée depuis la demande, « Kulturverein Morgenstern » : la demande est acceptée et quitte la liste, et l’invitation part en allemand à lena.muster@example.test, « Einladung zu Kulturverein Morgenstern auf jadwal »
+22-connexion | invitée depuis la demande acceptée, son adresse reçoit maintenant son lien de connexion
+22-console | « Refuser cette demande » dit ce que fait le refus ; « Refuser la demande » retire « Cercle des Tilleuls », sans aucun courriel, et la console dit « Aucune demande en attente. »
+22-responsable | le formulaire de création a le groupe « Personne responsable (facultatif) » : son adresse, et la langue du courriel, les cinq, celle de l’écran choisie
+22-responsable | plus tard, « Inviter une personne responsable », sous « Kulturverein Morgenstern » dans la liste, en Italiano : l’écran le dit, et l’invitation part en italien
 19-D6 | sans JavaScript, « École du Lac », envoyée sans adresse écrite, n’est pas encore créée : l’écran montre en entier l’adresse proposée, « HÔTE/m/ecole-du-lac », dans un champ où la confirmer ou la changer
 B2 | sans JavaScript, « École du Lac », créée à la confirmation, reçoit l’adresse que le serveur a proposée, « ecole-du-lac », et l’écran dit l’adresse entière
 A3 | la version et la date du texte s’écrivent en JJ.MM.AAAA, « Version du JJ.MM.AAAA »
@@ -10032,6 +10643,8 @@ H2 | avec une organisation et une invitation qui attend, le lien « Choisir une 
 20-C5 | « Rester dans l’organisation » ramène à l’écran d’acceptation de « Association voisine », sans demande, et elle en est toujours membre
 20-C5 | un onglet resté sur l’écran d’acceptation de « Centre du Parcours », qui envoie « J’accepte les conditions d’utilisation » une fois « Association voisine » choisie dans un autre, est refusé : en haut, l’encadré dit que rien n’a été enregistré et nomme « Association voisine », dont les conditions attendent encore
 20-C5 | sur l’écran d’acceptation, une personne qui confirme « Ne pas accepter et quitter l’organisation » quitte « Association voisine » : elle arrive sur « Vos organisations », où l’encadré dit le départ, et l’organisation n’y est plus
+22-organisations | sur « Vos organisations », sans organisation ni invitation, « Votre organisation n’utilise pas encore jadwal ? Demander l’accès », vers /demande-d-acces
+22-organisations | le lien de « Vos organisations » mène à « Demander l’accès à jadwal »
 D1 | les réglages proposent l’anglais parmi les langues de la page publique
 B1 | la navigation nomme ces écrans par leur titre, « Heures de prière » et « Prière du vendredi »
 B1 | l’écran le confirme sans jargon, « Les heures de prière sont activées. »
@@ -10282,6 +10895,8 @@ B3 | une responsable qui se donne le rôle d’éditeur arrive sur « À venir �
 20-C2 | annulée, elle le dit, « La session est annulée à sa nouvelle date. Les autres vendredis ne changent pas. », le bloc « Message à copier » nomme sa nouvelle date et sa nouvelle heure, « « Prière du vendredi » : la prière du JOUR JJ.MM.AAAA à 16:30 est annulée. », et sa ligne se dit annulée, sans « Rétablir comme d’habitude »
 21-Q2 | sur l’écran du vendredi, la session déplacée d’un vendredi passé, annulée, porte « Session annulée »
 20-cles | l’écran du vendredi, avec deux sessions de 12:30 déplacées au vendredi qui vient depuis deux vendredis à venir, se charge et s’hydrate sans erreur : rien dans la console, et un lien de la navigation change d’écran sans recharger la page
+22-conditions | une acceptation de la version du JJ.MM.AAAA ne vaut plus : l’espace renvoie à l’écran d’acceptation, « Dernière mise à jour : JJ.MM.AAAA. », une version plus récente
+22-conditions | acceptées de nouveau, les conditions rouvrent l’espace, sur l’accueil
 A3 | aucune date écrite AAAA-MM-JJ sur les N écrans traversés (espace, super-admin, page publique, widget)
 F1 | aucun des N écrans traversés ne nomme la personne retirée du dépôt
 `
@@ -10340,6 +10955,7 @@ try {
 	await devenirEditrice(navigateur, page);
 	await quitterLaVoisine(page);
 	await deplaceeDUnJourPasse(page);
+	await conditionsDeNouveau(page);
 	await bilanDesEcrans();
 } catch (erreur) {
 	echoue = true;
@@ -10438,6 +11054,7 @@ bilanDe('étape 18', RETOURS_DE_L_ETAPE_18);
 bilanDe('étape 19', RETOURS_DE_L_ETAPE_19);
 bilanDe('étape 20', RETOURS_DE_L_ETAPE_20);
 bilanDe('étape 21', RETOURS_DE_L_ETAPE_21);
+bilanDe('étape 22', RETOURS_DE_L_ETAPE_22);
 process.stdout.write(
 	`\n  ${jouees.length} vérifications des retours jouées, ${jouees.length - rouges.length} vertes, ${rouges.length} rouges ; ` +
 		`${impossibles.length} geste(s) impossible(s), dont le bloc s’est arrêté là ; ` +
