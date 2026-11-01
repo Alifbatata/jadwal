@@ -1,9 +1,9 @@
 // L'index des plans de site : un plan par organisation (ADR 0029).
 
 import type { RequestHandler } from './$types.js';
-import { publicResponse } from '$lib/server/api.js';
-import { etagOf, listPublicOrganisations } from '$lib/server/public.js';
-import { CACHE_PLAN, indexDesPlans, jour, XML_CONTENT_TYPE } from '$lib/server/sitemap.js';
+import { publicResponse } from '#lib/server/api.js';
+import { etagOf, listPublicOrganisations } from '#lib/server/public.js';
+import { CACHE_PLAN, indexDesPlans, jour, XML_CONTENT_TYPE } from '#lib/server/sitemap.js';
 
 export const GET: RequestHandler = async (event) => {
 	const organisations = await listPublicOrganisations();

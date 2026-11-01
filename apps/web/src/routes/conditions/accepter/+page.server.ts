@@ -19,10 +19,10 @@
 import { fail, redirect, type RequestEvent } from '@sveltejs/kit';
 import type { IsoDate } from '@jadwal/core';
 import { newId, sql, withOrg } from '@jadwal/db';
-import { numericDate } from '$lib/i18n.js';
-import { appDatabase } from '$lib/server/database.js';
-import { conditionsHtmlSansTitre, versionIso } from '$lib/server/conditions.js';
-import { mustHaveTermsToAccept } from '$lib/server/guard.js';
+import { numericDate } from '#lib/i18n.js';
+import { appDatabase } from '#lib/server/database.js';
+import { conditionsHtmlSansTitre, versionIso } from '#lib/server/conditions.js';
+import { mustHaveTermsToAccept } from '#lib/server/guard.js';
 import { leaveOrganisation } from '../../organisations/leave.server.js';
 import type { Actions, PageServerLoad } from './$types.js';
 

@@ -13,7 +13,7 @@
 // `readPublicCourses` (`public.ts`), les messages prêts à coller par l'écran Partager, et tous
 // appellent cette fonction.
 
-import { LANGUES, t, type Langue } from '$lib/i18n.js';
+import { LANGUES, t, type Langue } from '#lib/i18n.js';
 
 /** Les noms que le service propose à une session du vendredi, un par langue. */
 const PROPOSED: ReadonlySet<string> = new Set(LANGUES.map((langue) => t(langue).jumua));

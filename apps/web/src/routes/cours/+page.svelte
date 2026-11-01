@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import type { IsoDate } from '@jadwal/core';
-	import { audienceLabel, describeRecurrence, describeTiming, shortDate } from '$lib/format.js';
-	import { direction, NOM_DE_LANGUE } from '$lib/i18n.js';
-	import { coursesTexts } from '$lib/i18n/courses.js';
-	import { languesEnClair } from '$lib/public/affichage.js';
+	import { audienceLabel, describeRecurrence, describeTiming, shortDate } from '#lib/format.js';
+	import { direction, NOM_DE_LANGUE } from '#lib/i18n.js';
+	import { coursesTexts } from '#lib/i18n/courses.js';
+	import { languesEnClair } from '#lib/public/affichage.js';
 
 	let { data, form } = $props();
 	const text = $derived(coursesTexts[data.language]);
@@ -50,7 +50,7 @@
 	</section>
 {/if}
 
-<p><a class="bouton" href={resolve('/cours/nouveau')}>{text.add}</a></p>
+<p><a class="bouton" href={resolve('cours/nouveau')}>{text.add}</a></p>
 
 {#if data.courses.length === 0}
 	<p class="vide">{text.none}</p>

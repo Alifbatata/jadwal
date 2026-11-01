@@ -15,9 +15,9 @@
 
 import { fail, redirect } from '@sveltejs/kit';
 import { newId, sql, withUser } from '@jadwal/db';
-import { appDatabase } from '$lib/server/database.js';
-import { chooseOrganisation, membershipsOf, pendingInvitationsOf } from '$lib/server/context.js';
-import { record } from '$lib/server/audit.js';
+import { appDatabase } from '#lib/server/database.js';
+import { chooseOrganisation, membershipsOf, pendingInvitationsOf } from '#lib/server/context.js';
+import { record } from '#lib/server/audit.js';
 import { departedFrom } from './departure.js';
 import { leaveOrganisation } from './leave.server.js';
 import type { Actions, PageServerLoad } from './$types.js';

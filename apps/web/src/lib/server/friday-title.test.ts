@@ -4,7 +4,7 @@
 // agenda et les messages prêts à coller appellent, et qui décide seule.
 
 import { describe, expect, it } from 'vitest';
-import { LANGUES, t } from '$lib/i18n.js';
+import { LANGUES, t } from '#lib/i18n.js';
 import { fridayTitle } from './friday-title.js';
 
 describe('fridayTitle', () => {

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { resolve } from '$app/paths';
-	import { languageLabel } from '$lib/format.js';
-	import { settingsTexts } from '$lib/i18n/settings.js';
-	import { accentValide, contraste, texteSur, variablesAccent } from '$lib/couleur.js';
+	import { languageLabel } from '#lib/format.js';
+	import { settingsTexts } from '#lib/i18n/settings.js';
+	import { accentValide, contraste, texteSur, variablesAccent } from '#lib/couleur.js';
 
 	let { data, form } = $props();
 	const text = $derived(settingsTexts[data.language]);
@@ -83,7 +83,7 @@
 				<input type="hidden" name="confirm" value="yes" />
 				<button type="submit">{text.confirmDelete}</button>
 			</form>
-			<a href={resolve('/reglages')}>{text.keepRoom}</a>
+			<a href={resolve('reglages')}>{text.keepRoom}</a>
 		</div>
 	</div>
 {/if}

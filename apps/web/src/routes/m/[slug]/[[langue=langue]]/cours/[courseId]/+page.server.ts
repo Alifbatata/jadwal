@@ -6,7 +6,7 @@
 
 import { expandOccurrences, todayInZone, type IsoDate } from '@jadwal/core';
 import type { PageServerLoad } from './$types.js';
-import { CACHE_PROGRAMME } from '$lib/server/api.js';
+import { CACHE_PROGRAMME } from '#lib/server/api.js';
 import {
 	publicDatabase,
 	readPublicCourses,
@@ -14,18 +14,18 @@ import {
 	readPublicPrayerDays,
 	tableDesPrieres,
 	type Langue
-} from '$lib/server/public.js';
-import { toException, toSchedule } from '$lib/server/programme.js';
-import { nextDates } from '$lib/server/serialise.js';
-import { appliquerVendredi, sessionsDuVendredi } from '$lib/server/vendredi.js';
+} from '#lib/server/public.js';
+import { toException, toSchedule } from '#lib/server/programme.js';
+import { nextDates } from '#lib/server/serialise.js';
+import { appliquerVendredi, sessionsDuVendredi } from '#lib/server/vendredi.js';
 import {
 	appareilDuVisiteur,
 	introuvable,
 	languesProposees,
 	publicContext,
 	referencement
-} from '$lib/server/pages.js';
-import { lienCours, lienFluxCours } from '$lib/public/liens.js';
+} from '#lib/server/pages.js';
+import { lienCours, lienFluxCours } from '#lib/public/liens.js';
 import { sql } from '@jadwal/db';
 
 /** Dix dates à venir : au-delà, personne ne lit (docs/maquettes/public-cours.md). */

@@ -7,7 +7,7 @@
 // (`pnpm orthographe`) relit chaque chaîne dans la langue de la clé qui la porte, `fr:`, `de:`,
 // `it:`, `en:` ou `ar:`. Dans un ternaire, il ne saurait pas laquelle est laquelle.
 
-import { t, type Langue } from '$lib/i18n.js';
+import { t, type Langue } from '#lib/i18n.js';
 
 export interface SeanceAffichable {
 	start: string | null;

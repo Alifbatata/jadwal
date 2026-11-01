@@ -13,7 +13,7 @@ import type { IsoDate } from '@jadwal/core';
 import { sql, type Transaction } from '@jadwal/db';
 import { ACCESS_REQUEST_LIMITS } from '@jadwal/db/schema';
 import type { RequestEvent } from '@sveltejs/kit';
-import { isLangue, type Langue } from '$lib/i18n.js';
+import { isLangue, type Langue } from '#lib/i18n.js';
 import { clientAddress } from './api.js';
 import { superAdminDatabase } from './database.js';
 import { createMailer } from './mail/index.js';

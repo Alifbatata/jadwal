@@ -6,8 +6,8 @@
 	// l'erreur, écrit pour celui qui lit le code. Les adresses publiques ont la leur, sous `/m/`.
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import type { Langue } from '$lib/i18n.js';
-	import { errorTexts } from '$lib/i18n/error.js';
+	import type { Langue } from '#lib/i18n.js';
+	import { errorTexts } from '#lib/i18n/error.js';
 
 	const text = $derived(errorTexts[(page.data['language'] as Langue | undefined) ?? 'fr']);
 	const shown = $derived(

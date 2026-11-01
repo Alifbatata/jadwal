@@ -6,7 +6,7 @@
   caractère : des rem au lieu des points, une taille de lecture d'écran, et un tableau qui défile de
   côté dans son cadre au lieu d'élargir la page d'un téléphone.
 
-  Le HTML vient de `$lib/server/conditions.ts`, qui ne rend que `docs/CONDITIONS.md`, relu et
+  Le HTML vient de `#lib/server/conditions.ts`, qui ne rend que `docs/CONDITIONS.md`, relu et
   versionné. Aucun texte de visiteur n'arrive jamais ici.
 -->
 <script lang="ts">

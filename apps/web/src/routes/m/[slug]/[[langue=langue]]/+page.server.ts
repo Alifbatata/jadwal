@@ -22,15 +22,15 @@ import {
 	readPublicPrayerDays,
 	readPublicProgramme,
 	type SeancePublique
-} from '$lib/server/public.js';
+} from '#lib/server/public.js';
 import {
 	languesProposees,
 	publicContext,
 	publicDemande,
 	referencement
-} from '$lib/server/pages.js';
-import { lienVue } from '$lib/public/liens.js';
-import { CACHE_PROGRAMME } from '$lib/server/api.js';
+} from '#lib/server/pages.js';
+import { lienVue } from '#lib/public/liens.js';
+import { CACHE_PROGRAMME } from '#lib/server/api.js';
 
 export type Vue = 'semaine' | 'cours' | 'mois' | 'prieres';
 
@@ -185,7 +185,7 @@ export const load: PageServerLoad = async (event) => {
 		)
 	);
 	// La langue du document, que le hook écrit sur `<html>`. Posée au moment où la page va être
-	// rendue ; un 404 levé plus haut pose la sienne, par `introuvable` (`$lib/server/pages.ts`).
+	// rendue ; un 404 levé plus haut pose la sienne, par `introuvable` (`#lib/server/pages.ts`).
 	event.locals.langue = langue;
 	return {
 		canonical: moteur.canonical,

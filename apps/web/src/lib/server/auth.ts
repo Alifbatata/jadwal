@@ -20,7 +20,7 @@ import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { passkey } from '@better-auth/passkey';
 import { getRequestEvent } from '$app/server';
 import { v7 as uuidv7 } from 'uuid';
-import { signInChoice, signInLanding } from '$lib/i18n/language.js';
+import { signInChoice, signInLanding } from '#lib/i18n/language.js';
 import { writeAccountLanguage } from './account-language.js';
 import { authDatabase } from './database.js';
 import { createMailer } from './mail/index.js';

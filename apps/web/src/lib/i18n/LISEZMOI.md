@@ -29,7 +29,7 @@ droite à gauche. Les pages publiques ont les leurs dans `../i18n.ts`.
 
    ```svelte
    <script lang="ts">
-   	import { membersTexts } from '$lib/i18n/members.js';
+   	import { membersTexts } from '#lib/i18n/members.js';
 
    	let { data } = $props();
    	const text = $derived(membersTexts[data.language]);

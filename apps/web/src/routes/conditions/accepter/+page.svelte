@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import Texte from '$lib/conditions/Texte.svelte';
-	import { organisationsTexts } from '$lib/i18n/organisations.js';
-	import { termsTexts } from '$lib/i18n/terms.js';
+	import Texte from '#lib/conditions/Texte.svelte';
+	import { organisationsTexts } from '#lib/i18n/organisations.js';
+	import { termsTexts } from '#lib/i18n/terms.js';
 
 	let { data, form } = $props();
 	const text = $derived(termsTexts[data.language]);
@@ -55,7 +55,7 @@
 				<input type="hidden" name="confirm" value="yes" />
 				<button type="submit" class="danger">{depart.confirmLeave.button}</button>
 			</form>
-			<a href={resolve('/conditions/accepter')}>{depart.confirmLeave.stay}</a>
+			<a href={resolve('conditions/accepter')}>{depart.confirmLeave.stay}</a>
 		</div>
 	</div>
 {/if}
@@ -68,7 +68,7 @@
 <!-- Avant le texte, et non sous le bouton : qui voulait entrer dans une autre organisation n'a pas à
      parcourir tout le document pour le trouver. -->
 {#if data.autreOrganisation}
-	<p><a href={resolve('/organisations')}>{text.otherOrganisation}</a></p>
+	<p><a href={resolve('organisations')}>{text.otherOrganisation}</a></p>
 {/if}
 
 <!-- Le texte reste en français dans toutes les langues (retour D4), et le dit d'abord dans une autre. -->

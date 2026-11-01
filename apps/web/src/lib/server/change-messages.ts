@@ -6,8 +6,8 @@
 
 import type { IsoDate } from '@jadwal/core';
 import { sql, type Transaction } from '@jadwal/db';
-import { LANGUES, type Langue } from '$lib/i18n.js';
-import { cancellationMessage } from '$lib/messages.js';
+import { LANGUES, type Langue } from '#lib/i18n.js';
+import { cancellationMessage } from '#lib/messages.js';
 import { fridayTitle } from './friday-title.js';
 
 /** Un identifiant de cours. Autre chose n'atteint pas la base, qui le refuserait en erreur. */

@@ -13,7 +13,7 @@
 	// Le texte vient de `i18n.ts`, où le correcteur le relit dans sa langue ; la langue vient du corps
 	// de l'erreur, posé par `introuvable` en même temps que celle de `<html>`.
 	import { page } from '$app/state';
-	import { t } from '$lib/i18n.js';
+	import { t } from '#lib/i18n.js';
 
 	const mots = $derived(t(page.error?.langue ?? 'fr'));
 	const introuvable = $derived(page.status === 404);

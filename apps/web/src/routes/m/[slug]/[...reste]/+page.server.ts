@@ -15,13 +15,13 @@
 // l'organisation. Sous une organisation inconnue ou suspendue, rien ne change : la langue du
 // segment, sinon le français, et rien ne dit qu'une organisation a existé.
 
-import { findOrganisation } from '$lib/server/public.js';
+import { findOrganisation } from '#lib/server/public.js';
 import {
 	introuvable,
 	langueDuChemin,
 	langueParDefaut,
 	languesProposees
-} from '$lib/server/pages.js';
+} from '#lib/server/pages.js';
 import type { PageServerLoad } from './$types.js';
 
 export const load: PageServerLoad = async (event) => {

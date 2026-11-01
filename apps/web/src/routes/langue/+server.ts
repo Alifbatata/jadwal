@@ -14,14 +14,14 @@
 // l'origine des formulaires). Le retour ne quitte jamais le service (`returnPath`).
 
 import { redirect } from '@sveltejs/kit';
-import { isLangue } from '$lib/i18n.js';
+import { isLangue } from '#lib/i18n.js';
 import {
 	LANGUAGE_COOKIE,
 	languageCookieOptions,
 	PENDING_CHOICE_COOKIE,
 	returnPath
-} from '$lib/i18n/language.js';
-import { writeAccountLanguage } from '$lib/server/account-language.js';
+} from '#lib/i18n/language.js';
+import { writeAccountLanguage } from '#lib/server/account-language.js';
 import type { RequestHandler } from './$types.js';
 
 export const POST: RequestHandler = async ({ request, cookies, locals, url }) => {

@@ -12,7 +12,7 @@
 // se tromper, et le nom aide à reconnaître une passkey sans rien prouver.
 
 import { todayInZone } from '@jadwal/core';
-import { numericDate } from '$lib/i18n.js';
+import { numericDate } from '#lib/i18n.js';
 
 /** Ce que le navigateur dit de son système. */
 export interface DeviceHints {

@@ -8,21 +8,21 @@
 		numericDate,
 		t,
 		type Langue
-	} from '$lib/i18n.js';
-	import { lienAgenda, lienCours, lienVue } from '$lib/public/liens.js';
-	import Entete from '$lib/public/Entete.svelte';
-	import Pied from '$lib/public/Pied.svelte';
-	import { variablesAccent } from '$lib/couleur.js';
-	import Vendredi from '$lib/public/Vendredi.svelte';
-	import Prieres from '$lib/public/Prieres.svelte';
-	import Seance from '$lib/public/Seance.svelte';
-	import { horaireEnClair, languesEnClair, rythmeEnClair } from '$lib/public/affichage.js';
+	} from '#lib/i18n.js';
+	import { lienAgenda, lienCours, lienVue } from '#lib/public/liens.js';
+	import Entete from '#lib/public/Entete.svelte';
+	import Pied from '#lib/public/Pied.svelte';
+	import { variablesAccent } from '#lib/couleur.js';
+	import Vendredi from '#lib/public/Vendredi.svelte';
+	import Prieres from '#lib/public/Prieres.svelte';
+	import Seance from '#lib/public/Seance.svelte';
+	import { horaireEnClair, languesEnClair, rythmeEnClair } from '#lib/public/affichage.js';
 
 	let { data } = $props();
 	const mots = $derived(t(data.langue));
 	const dir = $derived(direction(data.langue));
 
-	/** Toutes les adresses de cette page passent par `resolve` (voir $lib/public/liens.ts). */
+	/** Toutes les adresses de cette page passent par `resolve` (voir #lib/public/liens.ts). */
 	const adresse = $derived({
 		slug: data.organisation.slug,
 		langue: data.langue,

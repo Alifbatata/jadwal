@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import type { IsoDate } from '@jadwal/core';
-	import { audienceLabel, describeSessionTime, shortDate } from '$lib/format.js';
-	import { direction, NOM_DE_LANGUE, type Langue } from '$lib/i18n.js';
-	import { commonTexts } from '$lib/i18n/common.js';
+	import { audienceLabel, describeSessionTime, shortDate } from '#lib/format.js';
+	import { direction, NOM_DE_LANGUE, type Langue } from '#lib/i18n.js';
+	import { commonTexts } from '#lib/i18n/common.js';
 	import {
 		upcomingErrorParts,
 		upcomingTexts,
 		type UpcomingError,
 		type UpcomingErrorPart
-	} from '$lib/i18n/upcoming.js';
-	import { languesEnClair } from '$lib/public/affichage.js';
-	import { sessionKey } from '$lib/session-key.js';
+	} from '#lib/i18n/upcoming.js';
+	import { languesEnClair } from '#lib/public/affichage.js';
+	import { sessionKey } from '#lib/session-key.js';
 
 	let { data, form } = $props();
 
@@ -267,7 +267,7 @@
 			? text.untimedNotCovered
 			: text.untimedNotSet}
 		{#if data.canSetPrayers}
-			<a href={resolve('/prieres')}>{text.untimedLink}</a>
+			<a href={resolve('prieres')}>{text.untimedLink}</a>
 		{:else if data.role === 'editor'}
 			{text.untimedAskManager}
 		{/if}
@@ -279,7 +279,7 @@
 		{text.importEnds(date(data.prieres.finDeLImport), data.prieres.joursRestants ?? 0)}
 		{data.prieres.calculPossible ? text.importThenComputed : text.importThenUntimed}
 		{#if data.canSetPrayers}
-			<a href={resolve('/prieres')}>{text.importLink}</a>
+			<a href={resolve('prieres')}>{text.importLink}</a>
 		{:else if data.role === 'editor'}
 			{text.importAskManager}
 		{/if}
@@ -289,14 +289,14 @@
 {#if data.audience.widgetMuet}
 	<p class="mention" role="status">
 		{text.widgetSilent}
-		<a href={resolve('/partager')}>{text.widgetLink}</a>
+		<a href={resolve('partager')}>{text.widgetLink}</a>
 	</p>
 {/if}
 
 {#if parJour.length === 0}
 	<p class="vide">
 		{text.empty}
-		<a href={resolve('/cours/nouveau')}>{text.emptyLink}</a>
+		<a href={resolve('cours/nouveau')}>{text.emptyLink}</a>
 	</p>
 {/if}
 

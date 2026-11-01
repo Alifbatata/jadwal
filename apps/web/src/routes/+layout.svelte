@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { variablesAccent } from '$lib/couleur.js';
-	import { direction, LANGUES, NOM_DE_LANGUE, t } from '$lib/i18n.js';
-	import { commonTexts } from '$lib/i18n/common.js';
-	import { returnPath } from '$lib/i18n/language.js';
+	import { variablesAccent } from '#lib/couleur.js';
+	import { direction, LANGUES, NOM_DE_LANGUE, t } from '#lib/i18n.js';
+	import { commonTexts } from '#lib/i18n/common.js';
+	import { returnPath } from '#lib/i18n/language.js';
 	import { SELF_EDITOR_PARAM, SELF_EDITOR_VALUE } from './membres/self-editor.js';
 
 	let { data, children } = $props();
@@ -58,7 +58,7 @@
 		     `../../widget/embed.js` depuis `/m/<slug>/<langue>` : SvelteKit compte les segments pour
 		     chaque page. C'est voulu et correct, mais cela se vérifie en résolvant l'adresse, pas en
 		     comparant une chaîne — `tests/widget.test.ts` le fait sur les trois profondeurs. -->
-		<script src={resolve('/widget/embed.js')} defer></script>
+		<script src={resolve('widget/embed.js')} defer></script>
 	{/if}
 </svelte:head>
 
@@ -77,7 +77,7 @@
 				{text.superAdminBanner.before}
 				<strong><bdi>{organisation.name}</bdi></strong>
 				{text.superAdminBanner.after}
-				<a href={resolve('/super-admin')}>{text.navigation.switchOrganisation}</a>
+				<a href={resolve('super-admin')}>{text.navigation.switchOrganisation}</a>
 			</p>
 		{/if}
 
@@ -108,17 +108,17 @@
 			{#if organisation?.termsAccepted}
 				<nav aria-label={text.navigationLabel}>
 					<a href={resolve('/')}>{text.navigation.upcoming}</a>
-					<a href={resolve('/cours')}>{text.navigation.courses}</a>
+					<a href={resolve('cours')}>{text.navigation.courses}</a>
 					{#if organisation.prayerModule}
-						<a href={resolve('/vendredi')}>{text.navigation.friday}</a>
+						<a href={resolve('vendredi')}>{text.navigation.friday}</a>
 					{/if}
-					<a href={resolve('/partager')}>{text.navigation.share}</a>
+					<a href={resolve('partager')}>{text.navigation.share}</a>
 					{#if peutAdministrer}
-						<a href={resolve('/membres')}>{text.navigation.members}</a>
+						<a href={resolve('membres')}>{text.navigation.members}</a>
 						{#if organisation.prayerModule}
-							<a href={resolve('/prieres')}>{text.navigation.prayers}</a>
+							<a href={resolve('prieres')}>{text.navigation.prayers}</a>
 						{/if}
-						<a href={resolve('/reglages')}>{text.navigation.settings}</a>
+						<a href={resolve('reglages')}>{text.navigation.settings}</a>
 					{/if}
 					<!-- Pour toute personne membre de plusieurs organisations, éditeurs compris, et
 					     pour qui n'en a qu'une mais a une invitation qui court encore, qu'elle accepte
@@ -129,9 +129,9 @@
 					     organisation (étape 19). Le super-admin entré par ses pouvoirs n'est membre de
 					     rien ici, et garde le seul lien de sa bannière. -->
 					{#if organisation.canSwitch}
-						<a href={resolve('/organisations')}>{text.navigation.switchOrganisation}</a>
+						<a href={resolve('organisations')}>{text.navigation.switchOrganisation}</a>
 					{:else if !organisation.asSuperAdmin}
-						<a href={resolve('/organisations')}>{text.navigation.yourOrganisations}</a>
+						<a href={resolve('organisations')}>{text.navigation.yourOrganisations}</a>
 					{/if}
 				</nav>
 			{/if}
@@ -143,7 +143,7 @@
 					></span
 				>
 				{#if data.person.isSuperAdmin}
-					<a class="compte" href={resolve('/super-admin')}>{text.superAdmin}</a>
+					<a class="compte" href={resolve('super-admin')}>{text.superAdmin}</a>
 				{/if}
 				<form method="post" action="/deconnexion?/ici">
 					<button type="submit">{text.signOut}</button>
@@ -163,7 +163,7 @@
 		     trouver depuis n'importe quelle page, avant même d'avoir un compte (ADR 0044). -->
 		<footer>
 			<a
-				href={resolve('/conditions')}
+				href={resolve('conditions')}
 				aria-current={page.url.pathname === '/conditions' ? 'page' : undefined}
 			>
 				{t(language).terms}

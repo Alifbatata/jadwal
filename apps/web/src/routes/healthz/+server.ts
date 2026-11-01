@@ -1,4 +1,3 @@
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = () => json({ status: 'ok' });
+export const GET: RequestHandler = () => Response.json({ status: 'ok' });

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { accessRequestTexts } from '$lib/i18n/access-request.js';
-	import { commonTexts } from '$lib/i18n/common.js';
-	import { organisationsTexts } from '$lib/i18n/organisations.js';
+	import { accessRequestTexts } from '#lib/i18n/access-request.js';
+	import { commonTexts } from '#lib/i18n/common.js';
+	import { organisationsTexts } from '#lib/i18n/organisations.js';
 
 	let { data, form } = $props();
 	const text = $derived(organisationsTexts[data.language]);
@@ -51,14 +51,14 @@
 				<input type="hidden" name="confirm" value="yes" />
 				<button type="submit">{text.confirmLeave.button}</button>
 			</form>
-			<a href={resolve('/organisations')}>{text.confirmLeave.stay}</a>
+			<a href={resolve('organisations')}>{text.confirmLeave.stay}</a>
 		</div>
 	</div>
 {/if}
 
 {#if data.memberships.length === 0 && data.invitations.length === 0}
 	<p>{text.none}</p>
-	<p>{access.question} <a href={resolve('/demande-d-acces')}>{access.link}</a></p>
+	<p>{access.question} <a href={resolve('demande-d-acces')}>{access.link}</a></p>
 	{#if data.person}
 		<!-- L'adresse du compte : c'est celle qu'il faut donner à qui invite. -->
 		<p>{text.yourAddress} <strong><bdi>{data.person.email}</bdi></strong></p>

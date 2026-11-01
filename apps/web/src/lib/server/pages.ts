@@ -7,14 +7,14 @@
 import { error, redirect, type RequestEvent } from '@sveltejs/kit';
 import { findOrganisation, isLangue, type Langue, type OrganisationPublique } from './public.js';
 import { vueDe } from './vues.js';
-import { LANGUES } from '$lib/i18n.js';
+import { LANGUES } from '#lib/i18n.js';
 import {
 	appareilDe,
 	ENTETES_DE_L_APPAREIL,
 	PARAMETRE_APPAREIL,
 	TOUS_LES_CHOIX,
 	type Appareil
-} from '$lib/public/abonnement.js';
+} from '#lib/public/abonnement.js';
 
 export interface PublicContext {
 	organisation: OrganisationPublique;
@@ -49,7 +49,7 @@ export function introuvable(
 	langue: Langue | undefined = langueDuChemin(event)
 ): never {
 	event.locals.langue = langue;
-	error(404, { message: 'Page introuvable.', langue });
+	error(404, 'Page introuvable.', { langue });
 }
 
 /**

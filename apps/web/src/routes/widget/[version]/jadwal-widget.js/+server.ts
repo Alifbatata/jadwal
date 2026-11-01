@@ -11,8 +11,8 @@
 
 import { createHash } from 'node:crypto';
 import type { RequestHandler } from './$types.js';
-import { publicError, publicOptions, publicResponse } from '$lib/server/api.js';
-import { CACHE_WIDGET_VERSIONNE, JS_CONTENT_TYPE, VERSIONS } from '$lib/server/widget.js';
+import { publicError, publicOptions, publicResponse } from '#lib/server/api.js';
+import { CACHE_WIDGET_VERSIONNE, JS_CONTENT_TYPE, VERSIONS } from '#lib/server/widget.js';
 
 export const GET: RequestHandler = (event) => {
 	const source = VERSIONS.get(event.params.version);

@@ -12,8 +12,8 @@
 
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types.js';
-import { listPublicOrganisations } from '$lib/server/public.js';
-import { WIDGET_INTEGRITY, widgetPath } from '$lib/server/widget.js';
+import { listPublicOrganisations } from '#lib/server/public.js';
+import { WIDGET_INTEGRITY, widgetPath } from '#lib/server/widget.js';
 
 export const load: PageServerLoad = async (event) => {
 	// La page n'existe que si l'exploitant l'a ouverte. Sans ce réglage, elle répond comme une page

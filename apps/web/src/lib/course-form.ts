@@ -162,7 +162,7 @@ const SWISS_DATE = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/;
 
 /**
  * Les dates qu'un formulaire de cours accepte, la première et la dernière comprises : celles de
- * `$lib/server/dates.ts`, du 01.01.1970 au 31.12.2100, que la page reçoit du serveur. Ce module
+ * `#lib/server/dates.ts`, du 01.01.1970 au 31.12.2100, que la page reçoit du serveur. Ce module
  * sert aussi le navigateur, qui ne peut pas importer un module du serveur (étape 19, lot 2).
  */
 export interface DateRange {

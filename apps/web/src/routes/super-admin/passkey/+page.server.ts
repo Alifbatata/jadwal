@@ -10,8 +10,8 @@
 import { redirect } from '@sveltejs/kit';
 import type { IsoDate } from '@jadwal/core';
 import { sql } from '@jadwal/db';
-import { authDatabase } from '$lib/server/database.js';
-import { mustBeSignedIn } from '$lib/server/guard.js';
+import { authDatabase } from '#lib/server/database.js';
+import { mustBeSignedIn } from '#lib/server/guard.js';
 import { DEFAULT_TIME_ZONE } from '../time-zones.server.js';
 import type { PageServerLoad } from './$types.js';
 

@@ -8,8 +8,8 @@
 // de l'écran où le geste est fait (retour D3, voir `language.ts`), ou, pour une invitation, du choix
 // de la personne qui invite (étape 19). Sans langue donnée, c'est celle de la requête en cours.
 
-import { direction, type Langue } from '$lib/i18n.js';
-import type { Translations } from '$lib/i18n/space.js';
+import { direction, type Langue } from '#lib/i18n.js';
+import type { Translations } from '#lib/i18n/space.js';
 import { mailLanguage } from './language.js';
 import type { OutgoingEmail } from './types.js';
 

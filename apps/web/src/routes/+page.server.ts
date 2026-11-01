@@ -5,7 +5,7 @@
 // pour tout l'écran, quel que soit le nombre de cours.
 //
 // Depuis l'étape 18, l'écran parle la langue de l'espace, et ses actions rendent le nom d'une erreur,
-// jamais sa phrase (`$lib/i18n/upcoming.ts`). Les messages prêts à coller s'écrivent dans chacune des
+// jamais sa phrase (`#lib/i18n/upcoming.ts`). Les messages prêts à coller s'écrivent dans chacune des
 // langues que l'organisation publie, la langue source d'abord (retour D1) ; une session du vendredi
 // qui porte le nom proposé par le service s'y nomme dans la langue du message, comme dans ceux de
 // l'écran Partager (`friday-title.ts`). Une séance se déplace à toute date à partir d'aujourd'hui,
@@ -42,7 +42,7 @@
 //   pas, donnait une erreur 500 à Déplacer et à Rétablir (relecture de D2) ;
 // - la carte « Rétablir » envoie ce qu'elle montrait, comme celle d'un déplacement envoie son heure :
 //   une séance rétablie puis changée de nouveau par une autre personne garde ce changement, et la
-//   carte périmée est refusée (lot 2, `$lib/server/exceptions.ts`) ;
+//   carte périmée est refusée (lot 2, `#lib/server/exceptions.ts`) ;
 // - annuler ou déplacer une séance un jour où le cours n'en a pas est refusé (`notPlanned`), et
 //   n'écrit rien : l'action acceptait toute date à partir d'aujourd'hui, et gardait une exception qui
 //   ne tombe sur aucune séance. Les séances comptent comme l'écran les montre (`seanceOn`), ce jour-là
@@ -64,24 +64,24 @@
 import { fail } from '@sveltejs/kit';
 import { todayInZone } from '@jadwal/core';
 import { newId, sql, type Transaction } from '@jadwal/db';
-import { type Langue } from '$lib/i18n.js';
-import type { NamedUpcomingError, UpcomingError } from '$lib/i18n/upcoming.js';
-import { record } from '$lib/server/audit.js';
+import { type Langue } from '#lib/i18n.js';
+import type { NamedUpcomingError, UpcomingError } from '#lib/i18n/upcoming.js';
+import { record } from '#lib/server/audit.js';
 import {
 	cancellationMessages,
 	messageLanguages,
 	readCourse,
 	type Message
-} from '$lib/server/change-messages.js';
-import { withSessionOrg } from '$lib/server/context.js';
-import { isSupportedDate, LAST_SUPPORTED_DATE } from '$lib/server/dates.js';
-import { cancelMoved, currentChange, restore, shownChange } from '$lib/server/exceptions.js';
-import { fridayTitle } from '$lib/server/friday-title.js';
-import { mustBeInOrganisation } from '$lib/server/guard.js';
-import { etatDesSources, readReglages } from '$lib/server/prieres.js';
-import { readProgramme, readSettings, seanceOn } from '$lib/server/programme.js';
-import { lireAudience } from '$lib/server/vues.js';
-import { moveMessage, weekMessage } from '$lib/messages.js';
+} from '#lib/server/change-messages.js';
+import { withSessionOrg } from '#lib/server/context.js';
+import { isSupportedDate, LAST_SUPPORTED_DATE } from '#lib/server/dates.js';
+import { cancelMoved, currentChange, restore, shownChange } from '#lib/server/exceptions.js';
+import { fridayTitle } from '#lib/server/friday-title.js';
+import { mustBeInOrganisation } from '#lib/server/guard.js';
+import { etatDesSources, readReglages } from '#lib/server/prieres.js';
+import { readProgramme, readSettings, seanceOn } from '#lib/server/programme.js';
+import { lireAudience } from '#lib/server/vues.js';
+import { moveMessage, weekMessage } from '#lib/messages.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
 /** Sept jours : la semaine qui vient, celle dont on parle dans un message. */

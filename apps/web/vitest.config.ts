@@ -1,17 +1,14 @@
-import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 // Deux projets : les tests unitaires, et ceux qui lancent un vrai serveur contre un vrai
 // PostgreSQL. Les seconds partagent une base et un port : un fichier à la fois.
 //
-// Les tests unitaires tournent sans le greffon de SvelteKit, qui est celui qui pose l'alias `$lib`.
-// Ils le reçoivent ici : `affichage.ts` et `agenda.ts` importent par lui, et sans lui leurs tests
-// tombaient sur « Cannot find module '$lib/i18n.js' » avant la première assertion.
+// Les tests unitaires tournent sans le greffon de SvelteKit. `#lib` n'a plus besoin de lui : c'est un
+// import interne du `package.json`, que Vite résout seul.
 export default defineConfig({
 	test: {
 		projects: [
 			{
-				resolve: { alias: { $lib: fileURLToPath(new URL('./src/lib', import.meta.url)) } },
 				test: { name: 'unit', environment: 'node', include: ['src/**/*.test.ts'] }
 			},
 			{

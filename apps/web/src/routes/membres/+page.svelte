@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { LANGUES, NOM_DE_LANGUE, numericDate } from '$lib/i18n.js';
-	import { commonTexts } from '$lib/i18n/common.js';
-	import { EDITOR_GESTURES, MANAGER_GESTURES, membersTexts } from '$lib/i18n/members.js';
+	import { LANGUES, NOM_DE_LANGUE, numericDate } from '#lib/i18n.js';
+	import { commonTexts } from '#lib/i18n/common.js';
+	import { EDITOR_GESTURES, MANAGER_GESTURES, membersTexts } from '#lib/i18n/members.js';
 
 	let { data, form } = $props();
 	const text = $derived(membersTexts[data.language]);
@@ -92,7 +92,7 @@
 					{/if}
 				</button>
 			</form>
-			<a href={resolve('/membres')}>{text.confirm.keep}</a>
+			<a href={resolve('membres')}>{text.confirm.keep}</a>
 		</div>
 	</div>
 {/if}

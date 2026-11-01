@@ -40,9 +40,9 @@ import {
 	type OrdreDeDate
 } from '@jadwal/core/prayer';
 import type { ResolvedPrayerRow } from '@jadwal/db';
-import { prayersTexts } from '$lib/i18n/prayers.js';
-import { withSessionOrg } from '$lib/server/context.js';
-import { mustAdministerPrayerModule } from '$lib/server/guard.js';
+import { prayersTexts } from '#lib/i18n/prayers.js';
+import { withSessionOrg } from '#lib/server/context.js';
+import { mustAdministerPrayerModule } from '#lib/server/guard.js';
 import {
 	DEFAULT_LIMIT,
 	findLocality,
@@ -51,7 +51,7 @@ import {
 	searchLocalities,
 	toChoice,
 	type LocalityChoice
-} from '$lib/server/localites/localities.js';
+} from '#lib/server/localites/localities.js';
 import {
 	apercu,
 	effacerImport,
@@ -68,9 +68,9 @@ import {
 	versCalcul,
 	type IqamaSaisie,
 	type Priere
-} from '$lib/server/prieres.js';
-import { readCourses, readPrayerDays, readSettings } from '$lib/server/programme.js';
-import { sessionsDuVendredi } from '$lib/server/vendredi.js';
+} from '#lib/server/prieres.js';
+import { readCourses, readPrayerDays, readSettings } from '#lib/server/programme.js';
+import { sessionsDuVendredi } from '#lib/server/vendredi.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
 /** La taille de corps qu'adapter-node accepte, pour le dire à l'écran plutôt que de la coder en dur. */

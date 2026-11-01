@@ -5,8 +5,8 @@
 // bouton, et dit qu'elle servira à la prochaine connexion.
 
 import { describe, expect, it } from 'vitest';
-import { LANGUES } from '$lib/i18n.js';
-import { passkeyTexts } from '$lib/i18n/super-admin-passkey.js';
+import { LANGUES } from '#lib/i18n.js';
+import { passkeyTexts } from '#lib/i18n/super-admin-passkey.js';
 import { afterRegistration, passkeyButtons } from './screen.js';
 
 /** Le mot « bouton » dans chaque langue : un message qui le porte renvoie à un bouton de l'écran. */

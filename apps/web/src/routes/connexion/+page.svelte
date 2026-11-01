@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { accessRequestTexts } from '$lib/i18n/access-request.js';
-	import { commonTexts } from '$lib/i18n/common.js';
-	import { signInTexts } from '$lib/i18n/sign-in.js';
+	import { accessRequestTexts } from '#lib/i18n/access-request.js';
+	import { commonTexts } from '#lib/i18n/common.js';
+	import { signInTexts } from '#lib/i18n/sign-in.js';
 
 	let { data, form } = $props();
 	const text = $derived(signInTexts[data.language]);
@@ -17,7 +17,7 @@
 {#if form?.sent}
 	<p role="status">{text.sent}</p>
 	<p>{text.sentHint}</p>
-	<p><a href={resolve('/connexion')}>{text.askAgain}</a></p>
+	<p><a href={resolve('connexion')}>{text.askAgain}</a></p>
 	<p>{text.close}</p>
 {:else}
 	<p>{text.intro}</p>
@@ -44,7 +44,7 @@
 	</form>
 	<p class="invitation">{text.notInvited}</p>
 	<!-- Une adresse que personne n'attend ne reçoit pas de lien (ADR 0049) : la page dit où aller. -->
-	<p>{access.question} <a href={resolve('/demande-d-acces')}>{access.link}</a></p>
+	<p>{access.question} <a href={resolve('demande-d-acces')}>{access.link}</a></p>
 {/if}
 
 <style>

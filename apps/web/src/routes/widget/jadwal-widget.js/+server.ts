@@ -5,8 +5,8 @@
 // L'adresse versionnée et immuable est à côté, sous `/widget/<version>/` (ADR 0005).
 
 import type { RequestHandler } from './$types.js';
-import { publicOptions, publicResponse } from '$lib/server/api.js';
-import { CACHE_WIDGET_MOUVANT, JS_CONTENT_TYPE, WIDGET, WIDGET_ETAG } from '$lib/server/widget.js';
+import { publicOptions, publicResponse } from '#lib/server/api.js';
+import { CACHE_WIDGET_MOUVANT, JS_CONTENT_TYPE, WIDGET, WIDGET_ETAG } from '#lib/server/widget.js';
 
 // Pas de limitation de débit ici, et c'est délibéré : ce fichier est servi de mémoire, sans
 // toucher la base, et il est chargé une fois par visiteur de chaque site d'organisation. Le compter

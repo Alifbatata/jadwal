@@ -5,7 +5,7 @@
 // puisque le contexte n'est pas construit à partir de ce qu'elle envoie.
 //
 // Les actions rendent le nom d'une erreur, jamais sa phrase : la page l'écrit dans la langue de
-// l'écran (`$lib/i18n/members.ts`, étape 18).
+// l'écran (`#lib/i18n/members.ts`, étape 18).
 //
 // Retirer un membre et changer un rôle demandent une confirmation (étape 19), comme la suppression
 // d'une salle occupée : le premier envoi ne change rien, il rend ce que la page demande de
@@ -15,13 +15,13 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { IsoDate } from '@jadwal/core';
 import { sql } from '@jadwal/db';
-import { isLangue, type Langue } from '$lib/i18n.js';
-import { record } from '$lib/server/audit.js';
-import { forgetOrganisation, withSessionOrg } from '$lib/server/context.js';
-import { createInvitation, INVITATION_DAYS } from '$lib/server/invitations.js';
-import { mustAdminister, mustBeInOrganisation } from '$lib/server/guard.js';
-import { createMailer } from '$lib/server/mail/index.js';
-import { invitationEmail } from '$lib/server/mail/messages.js';
+import { isLangue, type Langue } from '#lib/i18n.js';
+import { record } from '#lib/server/audit.js';
+import { forgetOrganisation, withSessionOrg } from '#lib/server/context.js';
+import { createInvitation, INVITATION_DAYS } from '#lib/server/invitations.js';
+import { mustAdminister, mustBeInOrganisation } from '#lib/server/guard.js';
+import { createMailer } from '#lib/server/mail/index.js';
+import { invitationEmail } from '#lib/server/mail/messages.js';
 import { departureArrival } from '../organisations/departure.js';
 import type { Actions, PageServerLoad } from './$types.js';
 import { SELF_EDITOR_ARRIVAL } from './self-editor.js';

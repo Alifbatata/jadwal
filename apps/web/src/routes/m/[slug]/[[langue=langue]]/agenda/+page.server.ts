@@ -11,15 +11,15 @@
 // complet reste toujours à un lien, et les étapes à suivre à la main restent sur la page.
 
 import type { PageServerLoad } from './$types.js';
-import { CACHE_REGLAGES } from '$lib/server/api.js';
+import { CACHE_REGLAGES } from '#lib/server/api.js';
 import {
 	appareilDuVisiteur,
 	languesProposees,
 	publicContext,
 	referencement
-} from '$lib/server/pages.js';
-import { readPublicCourses } from '$lib/server/public.js';
-import { lienAgenda, lienFlux, lienFluxCours } from '$lib/public/liens.js';
+} from '#lib/server/pages.js';
+import { readPublicCourses } from '#lib/server/public.js';
+import { lienAgenda, lienFlux, lienFluxCours } from '#lib/public/liens.js';
 
 /** `https://…` et `webcal://…` désignent le même fichier ; seul le second ouvre l'application. */
 function deuxFormes(chemin: string, origine: string): { https: string; webcal: string } {

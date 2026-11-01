@@ -12,10 +12,10 @@ import {
 	publicOptions,
 	publicResponse,
 	tooManyRequests
-} from '$lib/server/api.js';
-import { agendaFilename, buildAgenda } from '$lib/server/agenda.js';
-import { etagOf, findOrganisation, fingerprint, isLangue } from '$lib/server/public.js';
-import { vueDe } from '$lib/server/vues.js';
+} from '#lib/server/api.js';
+import { agendaFilename, buildAgenda } from '#lib/server/agenda.js';
+import { etagOf, findOrganisation, fingerprint, isLangue } from '#lib/server/public.js';
+import { vueDe } from '#lib/server/vues.js';
 
 export const GET: RequestHandler = async (event) => {
 	if (!(await allowRequest(event))) return tooManyRequests();

@@ -9,7 +9,7 @@ import {
 	publicOptions,
 	publicResponse,
 	tooManyRequests
-} from '$lib/server/api.js';
+} from '#lib/server/api.js';
 import {
 	etagOf,
 	findOrganisation,
@@ -17,10 +17,10 @@ import {
 	isLangue,
 	readPublicCourses,
 	readPublicPauses
-} from '$lib/server/public.js';
-import { toException, toSchedule } from '$lib/server/programme.js';
-import { courseOf, coursesOf, nextDates, RYTHMES, rythmeOf } from '$lib/server/serialise.js';
-import { publicDatabase } from '$lib/server/public.js';
+} from '#lib/server/public.js';
+import { toException, toSchedule } from '#lib/server/programme.js';
+import { courseOf, coursesOf, nextDates, RYTHMES, rythmeOf } from '#lib/server/serialise.js';
+import { publicDatabase } from '#lib/server/public.js';
 import { sql } from '@jadwal/db';
 
 /** Au plus cinq dates à venir par cours : la vue Tous les cours n'en montre pas davantage. */

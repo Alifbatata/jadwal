@@ -15,7 +15,7 @@
 // (ADR 0017).
 
 import { AsyncLocalStorage } from 'node:async_hooks';
-import type { Langue } from '$lib/i18n.js';
+import type { Langue } from '#lib/i18n.js';
 
 const current = new AsyncLocalStorage<Langue>();
 

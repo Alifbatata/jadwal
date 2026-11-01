@@ -12,7 +12,7 @@
 	// page l'est souvent, dans le widget d'un site. Le lien le dit aux lecteurs d'écran, comme celui
 	// des conditions (technique G201 des WCAG). Le lien `webcal:` reste dans l'onglet : c'est une
 	// application qui le prend, pas une page.
-	import { annonceNouvelOnglet, t, type Langue } from '$lib/i18n.js';
+	import { annonceNouvelOnglet, t, type Langue } from '#lib/i18n.js';
 	import { lienGoogleAgenda, lienOutlook, type Appareil } from './abonnement.js';
 
 	let {

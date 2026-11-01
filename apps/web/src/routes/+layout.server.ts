@@ -1,5 +1,5 @@
-import type { Langue } from '$lib/i18n.js';
-import { currentOrganisation } from '$lib/server/context.js';
+import type { Langue } from '#lib/i18n.js';
+import { currentOrganisation } from '#lib/server/context.js';
 import type { LayoutServerLoad } from './$types.js';
 
 /**

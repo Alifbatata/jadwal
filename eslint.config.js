@@ -69,7 +69,7 @@ export default defineConfig(
 		}
 	},
 	{
-		// Les pages publiques construisent toutes leurs adresses dans `$lib/public/liens.ts`, qui
+		// Les pages publiques construisent toutes leurs adresses dans `#lib/public/liens.ts`, qui
 		// appelle bien `resolve`. La règle, elle, cherche l'appel dans l'attribut lui-même et ne
 		// voit pas à travers une fonction : elle est donc désactivée ici, et seulement ici. La
 		// vérification qu'elle apporte est faite à sa place par ce fichier unique, plus une route

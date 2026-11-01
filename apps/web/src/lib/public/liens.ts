@@ -5,7 +5,7 @@
 // parce que `resolve` ne s'occupe que du chemin.
 
 import { resolve } from '$app/paths';
-import type { Langue } from '$lib/i18n.js';
+import type { Langue } from '#lib/i18n.js';
 
 export interface Adresse {
 	slug: string;

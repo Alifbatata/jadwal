@@ -9,7 +9,7 @@
 // passent par la même table d'exceptions.
 //
 // Depuis l'étape 18, une action rend le nom de ce qu'elle a fait ou de ce qu'elle refuse, jamais
-// une phrase : la page l'écrit dans la langue de la personne (`$lib/i18n/friday.ts`).
+// une phrase : la page l'écrit dans la langue de la personne (`#lib/i18n/friday.ts`).
 //
 // Annuler et déplacer suivent la règle d'« À venir » (relecture du lot 5) : ils ne visent qu'une
 // session encore prévue telle quelle ce jour-là. Une page restée ouverte (Retour, un autre onglet,
@@ -32,7 +32,7 @@
 // plus parmi les seules langues publiées ; Déplacer refuse un jour passé, comme « À venir » ; la
 // ligne d'une session arrivée d'un autre jour a son « Rétablir » ; et chaque « Rétablir » envoie ce
 // que sa ligne montrait, pour qu'une page restée ouverte n'efface pas un changement fait depuis
-// (`$lib/server/exceptions.ts`).
+// (`#lib/server/exceptions.ts`).
 //
 // Étape 19, lot 3 : annuler ou déplacer une session un jour où elle n'a pas lieu, un lundi, ou un
 // vendredi hors de sa période, est refusé (`notPlanned`) et n'écrit rien. Un formulaire écrit à la
@@ -54,30 +54,30 @@
 import { fail } from '@sveltejs/kit';
 import { addDays, isLocalTime, todayInZone, type IsoDate } from '@jadwal/core';
 import { newId, sql, type Transaction } from '@jadwal/db';
-import { isLangue, t, type Langue } from '$lib/i18n.js';
-import type { FridayDone, FridayError } from '$lib/i18n/friday.js';
-import { LANGUES_D_ENSEIGNEMENT } from '$lib/public/affichage.js';
-import { record } from '$lib/server/audit.js';
+import { isLangue, t, type Langue } from '#lib/i18n.js';
+import type { FridayDone, FridayError } from '#lib/i18n/friday.js';
+import { LANGUES_D_ENSEIGNEMENT } from '#lib/public/affichage.js';
+import { record } from '#lib/server/audit.js';
 import {
 	cancellationMessages,
 	messageLanguages,
 	readCourse,
 	type Message
-} from '$lib/server/change-messages.js';
-import { withSessionOrg } from '$lib/server/context.js';
-import { insertCourse, updateCourse } from '$lib/server/courses.js';
-import { FIRST_SUPPORTED_DATE, isSupportedDate, LAST_SUPPORTED_DATE } from '$lib/server/dates.js';
-import { cancelMoved, currentChange, restore, shownChange } from '$lib/server/exceptions.js';
-import { fridayTitle } from '$lib/server/friday-title.js';
-import { mustAdministerPrayerModule, mustHavePrayerModule } from '$lib/server/guard.js';
+} from '#lib/server/change-messages.js';
+import { withSessionOrg } from '#lib/server/context.js';
+import { insertCourse, updateCourse } from '#lib/server/courses.js';
+import { FIRST_SUPPORTED_DATE, isSupportedDate, LAST_SUPPORTED_DATE } from '#lib/server/dates.js';
+import { cancelMoved, currentChange, restore, shownChange } from '#lib/server/exceptions.js';
+import { fridayTitle } from '#lib/server/friday-title.js';
+import { mustAdministerPrayerModule, mustHavePrayerModule } from '#lib/server/guard.js';
 import {
 	readCourses,
 	readProgramme,
 	readRooms,
 	readSettings,
 	seanceOn
-} from '$lib/server/programme.js';
-import { moveMessage } from '$lib/messages.js';
+} from '#lib/server/programme.js';
+import { moveMessage } from '#lib/messages.js';
 import { parseFridayForm, proposedOrder, readFridayEntry } from './form.js';
 import type { Actions, PageServerLoad } from './$types.js';
 

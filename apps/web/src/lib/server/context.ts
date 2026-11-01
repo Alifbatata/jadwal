@@ -14,7 +14,7 @@
 import { appDatabase, authDatabase, superAdminDatabase } from './database.js';
 import { auth } from './auth.js';
 import { versionIso as versionDesConditions } from './conditions.js';
-import { isLangue, type Langue } from '$lib/i18n.js';
+import { isLangue, type Langue } from '#lib/i18n.js';
 import { MEMBERSHIP_ROLES, newId, sql, withOrg, withUser, type Transaction } from '@jadwal/db';
 
 export type MembershipRole = (typeof MEMBERSHIP_ROLES)[number];

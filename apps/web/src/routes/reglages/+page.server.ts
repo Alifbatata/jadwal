@@ -5,18 +5,18 @@
 // les salles (ADR 0046). Le test le vérifie route par route.
 //
 // Les actions rendent le nom d'une erreur, jamais sa phrase : la page l'écrit dans la langue de
-// l'écran (`$lib/i18n/settings.ts`, étape 18).
+// l'écran (`#lib/i18n/settings.ts`, étape 18).
 
 import { fail } from '@sveltejs/kit';
 import { newId, sql } from '@jadwal/db';
 // Les langues qu'on peut activer sont celles des pages publiques (ADR 0007), lues dans la liste
 // commune. L'écran en gardait une copie à quatre langues : l'anglais, ajouté à l'étape 18, n'y était
 // pas, et un « en » envoyé par le formulaire était retiré sans rien dire.
-import { LANGUES } from '$lib/i18n.js';
-import { record } from '$lib/server/audit.js';
-import { withSessionOrg } from '$lib/server/context.js';
-import { mustAdminister } from '$lib/server/guard.js';
-import { readSettings } from '$lib/server/programme.js';
+import { LANGUES } from '#lib/i18n.js';
+import { record } from '#lib/server/audit.js';
+import { withSessionOrg } from '#lib/server/context.js';
+import { mustAdminister } from '#lib/server/guard.js';
+import { readSettings } from '#lib/server/programme.js';
 // La liste des fuseaux de la création d'une organisation, pour que les deux écrans proposent les
 // mêmes et refusent les mêmes (étape 18) : des noms canoniques, sans alias ni `Etc/`.
 import { isOfferedTimeZone, timeZoneChoices } from '../super-admin/time-zones.server.js';

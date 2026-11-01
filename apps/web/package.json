@@ -16,8 +16,8 @@
 		"test:temps": "vitest run .temps.test. --reporter=default --reporter=json --outputFile=.vitest-temps-resultats.json"
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-node": "5.5.7",
-		"@sveltejs/kit": "2.70.3",
+		"@sveltejs/adapter-node": "6.0.0",
+		"@sveltejs/kit": "3.1.0",
 		"@sveltejs/vite-plugin-svelte": "catalog:",
 		"@types/nodemailer": "8.0.1",
 		"ical.js": "2.2.1",
@@ -28,13 +28,16 @@
 		"vitest": "catalog:"
 	},
 	"dependencies": {
-		"@better-auth/passkey": "1.7.4",
+		"@better-auth/passkey": "1.7.13",
 		"@jadwal/core": "workspace:*",
 		"@jadwal/db": "workspace:*",
 		"@jadwal/widget": "workspace:*",
-		"better-auth": "1.7.4",
+		"better-auth": "1.7.13",
 		"nodemailer": "10.0.9",
 		"qrcode-generator": "2.0.4",
 		"uuid": "14.0.2"
+	},
+	"imports": {
+		"#lib/*": "./src/lib/*"
 	}
 }

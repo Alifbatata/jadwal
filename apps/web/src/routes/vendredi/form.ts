@@ -2,19 +2,19 @@
 // (ADR 0033), prêt pour `insertCourse` et `updateCourse`.
 //
 // Depuis l'étape 18, il rend le nom de chaque erreur, jamais sa phrase : l'écran l'écrit dans la
-// langue de la personne (`$lib/i18n/friday.ts`). Il remplace `parseJumuaForm` de
-// `$lib/server/courses.ts`, qui rendait des phrases en français ; les vérifications sont les mêmes,
+// langue de la personne (`#lib/i18n/friday.ts`). Il remplace `parseJumuaForm` de
+// `#lib/server/courses.ts`, qui rendait des phrases en français ; les vérifications sont les mêmes,
 // dans le même ordre.
 //
 // Ce que le formulaire ne demande pas ne se lit pas : le jour est le vendredi, le rythme chaque
 // semaine, le public tout le monde.
 
 import { isLocalTime, type IsoDate, type LocalTime } from '@jadwal/core';
-import { isLangue, t } from '$lib/i18n.js';
-import type { FridayError } from '$lib/i18n/friday.js';
-import { LANGUES_D_ENSEIGNEMENT } from '$lib/public/affichage.js';
-import type { CourseValues } from '$lib/server/courses.js';
-import { isSupportedDate } from '$lib/server/dates.js';
+import { isLangue, t } from '#lib/i18n.js';
+import type { FridayError } from '#lib/i18n/friday.js';
+import { LANGUES_D_ENSEIGNEMENT } from '#lib/public/affichage.js';
+import type { CourseValues } from '#lib/server/courses.js';
+import { isSupportedDate } from '#lib/server/dates.js';
 
 // Les deux formes que le formulaire accepte sont celles d'un champ de date et d'heure du navigateur,
 // `AAAA-MM-JJ` et `HH:MM`, et seulement des valeurs qui existent (`isSupportedDate`, `isLocalTime`).

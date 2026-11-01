@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Texte from '$lib/conditions/Texte.svelte';
-	import { termsTexts } from '$lib/i18n/terms.js';
+	import Texte from '#lib/conditions/Texte.svelte';
+	import { termsTexts } from '#lib/i18n/terms.js';
 
 	let { data } = $props();
 	const text = $derived(termsTexts[data.language]);

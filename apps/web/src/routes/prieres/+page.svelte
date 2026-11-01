@@ -9,10 +9,10 @@
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import type { IsoDate } from '@jadwal/core';
-	import { longDate, numericDate } from '$lib/i18n.js';
-	import { prayersTexts } from '$lib/i18n/prayers.js';
-	import { nomPriere } from '$lib/public/affichage.js';
-	import type { RaisonLue } from '$lib/server/prieres.js';
+	import { longDate, numericDate } from '#lib/i18n.js';
+	import { prayersTexts } from '#lib/i18n/prayers.js';
+	import { nomPriere } from '#lib/public/affichage.js';
+	import type { RaisonLue } from '#lib/server/prieres.js';
 	import { localityKey, localityOptions, pinnedLocality } from './locality-options.js';
 
 	let { data, form } = $props();
@@ -144,7 +144,7 @@
 		}
 		try {
 			const reponse = await fetch(
-				`${resolve('/prieres/localites')}?q=${encodeURIComponent(texte)}`,
+				`${resolve('prieres/localites')}?q=${encodeURIComponent(texte)}`,
 				{ headers: { accept: 'application/json' } }
 			);
 			// Une réponse arrivée après une frappe plus récente ne remplace pas la sienne.
@@ -654,7 +654,7 @@
 		</details>
 
 		<p class="aide">
-			<a href={resolve('/prieres/modele.csv')} download>{text.file.template}</a>
+			<a href={resolve('prieres/modele.csv')} download>{text.file.template}</a>
 			{text.file.templateHint}
 		</p>
 
@@ -911,7 +911,7 @@
 {#snippet periodes(mode: 'shown' | 'iqama')}
 	<p class="aide">
 		{text.periods.noOverlap}
-		{text.periods.fridayBefore}<a href={resolve('/vendredi')}>{text.periods.fridayLink}</a>{text
+		{text.periods.fridayBefore}<a href={resolve('vendredi')}>{text.periods.fridayLink}</a>{text
 			.periods.fridayAfter}
 	</p>
 

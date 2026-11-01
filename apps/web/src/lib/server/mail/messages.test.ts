@@ -7,7 +7,7 @@
 // écrit, est éprouvé dans `tests/espace-en-cinq-langues.test.ts`.
 
 import { describe, expect, it } from 'vitest';
-import { LANGUES, type Langue } from '$lib/i18n.js';
+import { LANGUES, type Langue } from '#lib/i18n.js';
 import { mailLanguage, withMailLanguage } from './language.js';
 import { invitationEmail, magicLinkEmail, noAccountEmail } from './messages.js';
 

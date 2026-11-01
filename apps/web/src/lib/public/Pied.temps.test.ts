@@ -2,9 +2,10 @@
 // comme SvelteKit le rend.
 //
 // Les tests unitaires tournent sans le greffon de Svelte. Ce fichier monte donc un Vite à lui, le
-// temps de ses tests, avec le seul greffon de Svelte, l'alias `$lib`, et un `$app/paths` réduit à
-// ce que le pied en attend : `resolve` rend le chemin tel quel, puisque la page publique n'a pas de
-// chemin de base. Rien n'est écrit sur le disque, et le serveur n'écoute sur aucun port.
+// temps de ses tests, avec le seul greffon de Svelte et un `$app/paths` réduit à ce que le pied
+// en attend : `resolve` rend le chemin précédé de sa barre, comme SvelteKit 3 le fait d'un chemin
+// sans barre (`'conditions'`), puisque la page publique n'a pas de chemin de base. `#lib` se résout
+// seul, par les `imports` du `package.json`. Rien n'est écrit sur le disque, et le serveur n'écoute sur aucun port.
 //
 // Sous la charge de la suite complète, ce démarrage de Vite a dépassé son délai (étape 18). Ce
 // fichier tourne donc à part, dans `pnpm test:temps` (étape 19), avec un délai tiré d'une mesure :
@@ -15,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createServer, type ViteDevServer } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
-import { LANGUES, t, type Langue } from '$lib/i18n.js';
+import { LANGUES, t, type Langue } from '#lib/i18n.js';
 
 const RACINE = fileURLToPath(new URL('../../..', import.meta.url));
 const CHEMINS = '\0app-paths';
@@ -37,13 +38,15 @@ beforeAll(async () => {
 		appType: 'custom',
 		server: { middlewareMode: true, hmr: false, watch: null },
 		optimizeDeps: { noDiscovery: true, include: [] },
-		resolve: { alias: { $lib: fileURLToPath(new URL('..', import.meta.url)) } },
 		plugins: [
 			svelte({ configFile: false, compilerOptions: { runes: true } }),
 			{
 				name: 'jadwal-app-paths',
 				resolveId: (id) => (id === '$app/paths' ? CHEMINS : undefined),
-				load: (id) => (id === CHEMINS ? 'export const resolve = (chemin) => chemin;' : undefined)
+				load: (id) =>
+					id === CHEMINS
+						? "export const resolve = (chemin) => (chemin.startsWith('/') ? chemin : '/' + chemin);"
+						: undefined
 			}
 		]
 	});

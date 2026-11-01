@@ -19,7 +19,7 @@ import {
 	notifyOperator,
 	readAccessRequest,
 	requestAccess
-} from '$lib/server/access-requests.js';
+} from '#lib/server/access-requests.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
 /** Les bornes de chaque champ, celles de la table, que la page pose en `maxlength`. */

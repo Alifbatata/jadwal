@@ -28,7 +28,7 @@
 	// dans son cadre, et la page ne défile jamais de côté. Chaque case dit aux lecteurs d'écran ce
 	// qu'est chacune de ses deux heures : l'œil a la phrase d'aide, l'oreille n'a que la case.
 	import { isoDateToDays, weekdayFromDays, type IsoDate } from '@jadwal/core';
-	import { longDate, t, type Langue } from '$lib/i18n.js';
+	import { longDate, t, type Langue } from '#lib/i18n.js';
 	import { joindre, languesEnClair, nomPriere } from './affichage.js';
 
 	interface Heure {

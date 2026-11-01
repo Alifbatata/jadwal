@@ -4,7 +4,7 @@
 // d'avoir un compte. La page vit pourtant dans la coquille de l'espace des responsables et reste
 // `noindex` : c'est le texte du service, pas une page d'organisation.
 
-import { conditionsHtml } from '$lib/server/conditions.js';
+import { conditionsHtml } from '#lib/server/conditions.js';
 import type { PageServerLoad } from './$types.js';
 
 /** Aucun JavaScript : un texte à lire n'a rien à hydrater. */

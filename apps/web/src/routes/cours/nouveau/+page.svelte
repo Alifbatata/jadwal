@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import FormulaireCours from '$lib/FormulaireCours.svelte';
-	import type { CourseFormValues } from '$lib/course-form.js';
-	import { courseFormTexts } from '$lib/i18n/course-form.js';
+	import FormulaireCours from '#lib/FormulaireCours.svelte';
+	import type { CourseFormValues } from '#lib/course-form.js';
+	import { courseFormTexts } from '#lib/i18n/course-form.js';
 
 	let { data, form } = $props();
 	const text = $derived(courseFormTexts[data.language]);

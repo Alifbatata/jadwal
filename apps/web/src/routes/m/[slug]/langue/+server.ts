@@ -1,6 +1,6 @@
 // Le choix de la langue d'une page publique (étape 21) : une liste déroulante dans un formulaire
 // `GET`, sans JavaScript, dont chaque choix est l'adresse de la page dans cette langue
-// (`$lib/public/ChoixDeLangue.svelte`). Cette route y renvoie.
+// (`#lib/public/ChoixDeLangue.svelte`). Cette route y renvoie.
 //
 // L'adresse vient du navigateur, donc de n'importe qui : elle n'est suivie que si elle reste dans
 // les pages de cette organisation, sur ce service. Toute autre, un autre site, une autre

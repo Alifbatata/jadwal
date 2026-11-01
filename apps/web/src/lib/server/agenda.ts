@@ -24,7 +24,7 @@ import {
 import { appliquerVendredi, sessionsDuVendredi } from './vendredi.js';
 import { publicDatabase } from './public.js';
 import { sql } from '@jadwal/db';
-import { decalageEnClair, nomPriere } from '$lib/public/affichage.js';
+import { decalageEnClair, nomPriere } from '#lib/public/affichage.js';
 
 /**
  * Le libellé d'ancrage, dans la langue de la page : c'est la première ligne de la description.

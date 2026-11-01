@@ -19,9 +19,9 @@
 
 import { fail, redirect } from '@sveltejs/kit';
 import { sql, withOrg, type Transaction } from '@jadwal/db';
-import { appDatabase } from '$lib/server/database.js';
-import { forgetOrganisation, membershipsOf, type SignedIn } from '$lib/server/context.js';
-import { record } from '$lib/server/audit.js';
+import { appDatabase } from '#lib/server/database.js';
+import { forgetOrganisation, membershipsOf, type SignedIn } from '#lib/server/context.js';
+import { record } from '#lib/server/audit.js';
 import { departureArrival } from './departure.js';
 
 /** Un identifiant d'organisation. Autre chose n'atteint pas la base, qui le refuserait en erreur. */

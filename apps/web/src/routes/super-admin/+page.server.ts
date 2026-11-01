@@ -16,19 +16,19 @@
 
 import { fail, redirect } from '@sveltejs/kit';
 import { newId, setOrgContext, sql, withOrg } from '@jadwal/db';
-import { isLangue, type Langue } from '$lib/i18n.js';
+import { isLangue, type Langue } from '#lib/i18n.js';
 import {
 	pendingAccessRequest,
 	pendingAccessRequests,
 	resolveAccessRequest
-} from '$lib/server/access-requests.js';
-import { auth, captureMagicLink } from '$lib/server/auth.js';
-import { chooseOrganisation, recordAdminAccess } from '$lib/server/context.js';
-import { superAdminDatabase } from '$lib/server/database.js';
-import { mustBeSuperAdmin } from '$lib/server/guard.js';
-import { createInvitation, INVITATION_DAYS } from '$lib/server/invitations.js';
-import { createMailer } from '$lib/server/mail/index.js';
-import { invitationEmail } from '$lib/server/mail/messages.js';
+} from '#lib/server/access-requests.js';
+import { auth, captureMagicLink } from '#lib/server/auth.js';
+import { chooseOrganisation, recordAdminAccess } from '#lib/server/context.js';
+import { superAdminDatabase } from '#lib/server/database.js';
+import { mustBeSuperAdmin } from '#lib/server/guard.js';
+import { createInvitation, INVITATION_DAYS } from '#lib/server/invitations.js';
+import { createMailer } from '#lib/server/mail/index.js';
+import { invitationEmail } from '#lib/server/mail/messages.js';
 import { hasNoLetter, isPublicAddress, proposePublicAddress } from './public-address.js';
 import { DEFAULT_TIME_ZONE, isOfferedTimeZone, timeZoneChoices } from './time-zones.server.js';
 import type { Actions, PageServerLoad } from './$types.js';

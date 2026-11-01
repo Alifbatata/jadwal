@@ -13,7 +13,7 @@
 	// déplacée au … » pour une session du vendredi. Une séance déplacée puis annulée est annulée à sa
 	// nouvelle date, à sa nouvelle heure, et partie ailleurs à sa date d'origine : c'est ce que rend
 	// l'expansion, et ce composant n'a rien de plus à en savoir.
-	import { longDate, t, type Langue } from '$lib/i18n.js';
+	import { longDate, t, type Langue } from '#lib/i18n.js';
 	import { heureDeSeance, languesEnClair } from './affichage.js';
 	import type { IsoDate } from '@jadwal/core';
 

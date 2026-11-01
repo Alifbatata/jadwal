@@ -6,23 +6,23 @@
 // ce qui rend la réciprocité structurelle plutôt que surveillée.
 
 import type { RequestHandler } from './$types.js';
-import { publicError, publicResponse } from '$lib/server/api.js';
+import { publicError, publicResponse } from '#lib/server/api.js';
 import {
 	etagOf,
 	findOrganisation,
 	fingerprint,
 	readPublicCourseStamps,
 	type Langue
-} from '$lib/server/public.js';
-import { languesProposees, langueParDefaut, referencement } from '$lib/server/pages.js';
-import { lienAgenda, lienCours, lienVue } from '$lib/public/liens.js';
+} from '#lib/server/public.js';
+import { languesProposees, langueParDefaut, referencement } from '#lib/server/pages.js';
+import { lienAgenda, lienCours, lienVue } from '#lib/public/liens.js';
 import {
 	CACHE_PLAN,
 	jour,
 	planDeSite,
 	XML_CONTENT_TYPE,
 	type EntreePlan
-} from '$lib/server/sitemap.js';
+} from '#lib/server/sitemap.js';
 
 export const GET: RequestHandler = async (event) => {
 	const organisation = await findOrganisation(event.params.slug);

@@ -7,8 +7,8 @@
 // fonction pure, et c'est elle que `buildAgenda` appelle.
 
 import { describe, expect, it } from 'vitest';
-import { LANGUES } from '$lib/i18n.js';
-import { horaireEnClair } from '$lib/public/affichage.js';
+import { LANGUES } from '#lib/i18n.js';
+import { horaireEnClair } from '#lib/public/affichage.js';
 import { libelleAncrage } from './agenda.js';
 
 describe('le libellé d’ancrage du flux agenda', () => {

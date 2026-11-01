@@ -14,10 +14,10 @@
 
 import { addDays, todayInZone } from '@jadwal/core';
 import { computePrayerDay } from '@jadwal/core/prayer';
-import { withSessionOrg } from '$lib/server/context.js';
-import { mustAdministerPrayerModule } from '$lib/server/guard.js';
-import { readReglages, versCalcul } from '$lib/server/prieres.js';
-import { readSettings } from '$lib/server/programme.js';
+import { withSessionOrg } from '#lib/server/context.js';
+import { mustAdministerPrayerModule } from '#lib/server/guard.js';
+import { readReglages, versCalcul } from '#lib/server/prieres.js';
+import { readSettings } from '#lib/server/programme.js';
 import type { RequestHandler } from './$types.js';
 
 /** Soixante jours : deux mois de panneau, ce qu'une organisation corrige d'un coup. */

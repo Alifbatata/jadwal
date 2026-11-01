@@ -1,13 +1,13 @@
 <script lang="ts">
-	// Les textes sont dans `$lib/i18n/share.ts`, dans les cinq langues de l'espace (étape 18).
+	// Les textes sont dans `#lib/i18n/share.ts`, dans les cinq langues de l'espace (étape 18).
 	//
 	// Deux sortes de texte gardent leur propre langue, quelle que soit celle de l'écran, et le disent
 	// par `lang` : chaque message de la semaine, écrit dans sa langue (retour D1), et les codes, dont
 	// les quelques mots sont dans la langue de l'organisation. Un code se lit toujours de gauche à
 	// droite, même dans un écran arabe.
-	import { direction, type Langue } from '$lib/i18n.js';
-	import { shareTexts } from '$lib/i18n/share.js';
-	import { languesEnClair } from '$lib/public/affichage.js';
+	import { direction, type Langue } from '#lib/i18n.js';
+	import { shareTexts } from '#lib/i18n/share.js';
+	import { languesEnClair } from '#lib/public/affichage.js';
 
 	let { data } = $props();
 

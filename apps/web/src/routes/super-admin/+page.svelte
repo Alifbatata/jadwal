@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { resolve } from '$app/paths';
-	import { LANGUES, NOM_DE_LANGUE, numericDate } from '$lib/i18n.js';
-	import { commonTexts } from '$lib/i18n/common.js';
-	import { superAdminTexts } from '$lib/i18n/super-admin.js';
+	import { LANGUES, NOM_DE_LANGUE, numericDate } from '#lib/i18n.js';
+	import { commonTexts } from '#lib/i18n/common.js';
+	import { superAdminTexts } from '#lib/i18n/super-admin.js';
 	import { PUBLIC_ADDRESS_PATTERN, proposePublicAddress } from './public-address.js';
 
 	let { data, form } = $props();
@@ -93,7 +93,7 @@
 
 	/** « Créer l'organisation », sur une demande : cette page, le formulaire rempli par la demande. */
 	const createFromRequest = (id: string) =>
-		`${resolve('/super-admin')}?${new URLSearchParams({ demande: id })}#creer-titre`;
+		`${resolve('super-admin')}?${new URLSearchParams({ demande: id })}#creer-titre`;
 
 	/** Un nom de fuseau se lit mieux sans ses traits de soulignement : « America/New York ». */
 	const zoneLabel = (zone: string) => zone.replaceAll('_', ' ');
@@ -243,7 +243,7 @@
 						{/if}
 					</dl>
 					<p>
-						<!-- `createFromRequest` part de `resolve('/super-admin')` : la règle ne voit pas à
+						<!-- `createFromRequest` part de `resolve('super-admin')` : la règle ne voit pas à
 						     travers une fonction, et un chemin suivi d'une requête n'est pas un chemin typé. -->
 						<!-- eslint-disable svelte/no-navigation-without-resolve -->
 						<a

@@ -10,7 +10,7 @@ import {
 	publicOptions,
 	publicResponse,
 	tooManyRequests
-} from '$lib/server/api.js';
+} from '#lib/server/api.js';
 import {
 	boundedRange,
 	etagOf,
@@ -20,8 +20,8 @@ import {
 	MAX_JOURS_DEMANDE,
 	plafondDemande,
 	readPublicProgramme
-} from '$lib/server/public.js';
-import { scheduleOf } from '$lib/server/serialise.js';
+} from '#lib/server/public.js';
+import { scheduleOf } from '#lib/server/serialise.js';
 import { todayInZone } from '@jadwal/core';
 
 export const GET: RequestHandler = async (event) => {

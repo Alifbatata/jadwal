@@ -10,7 +10,7 @@
 	// déplacée se lit dans la vue Semaine, là où sont toutes les exceptions. Un bloc qui changerait
 	// chaque semaine ne serait plus une réponse, il serait une question de plus.
 	import { languesEnClair } from './affichage.js';
-	import { t, type Langue } from '$lib/i18n.js';
+	import { t, type Langue } from '#lib/i18n.js';
 
 	let {
 		langue,

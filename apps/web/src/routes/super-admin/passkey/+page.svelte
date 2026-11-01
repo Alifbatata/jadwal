@@ -1,9 +1,9 @@
 <script lang="ts">
 	// Le seul écran qui exige JavaScript : WebAuthn n'existe que dans le navigateur. Le client
 	// Better Auth est importé à la demande, pour que le reste des pages n'en porte pas le poids.
-	import { invalidateAll } from '$app/navigation';
-	import { numericDate } from '$lib/i18n.js';
-	import { passkeyTexts } from '$lib/i18n/super-admin-passkey.js';
+	import { refreshAll } from '$app/navigation';
+	import { numericDate } from '#lib/i18n.js';
+	import { passkeyTexts } from '#lib/i18n/super-admin-passkey.js';
 	import { passkeyName, systemName } from './passkey-name.js';
 	import { afterRegistration, passkeyButtons } from './screen.js';
 
@@ -73,7 +73,7 @@
 			// donne les pouvoirs à cette session. Pour une passkey de plus, la session a déjà ses
 			// pouvoirs : aucun bouton n'apparaît, et le message le dit.
 			outcome = said;
-			await invalidateAll();
+			await refreshAll();
 		} catch (erreur) {
 			failed('registerFailed', erreur);
 		}
@@ -98,7 +98,7 @@
 			const { error } = await authClient.passkey.deletePasskey({ id });
 			if (error) throw new Error(error.message ?? '');
 			etat = 'repos';
-			await invalidateAll();
+			await refreshAll();
 		} catch (erreur) {
 			failed('deleteFailed', erreur);
 		}

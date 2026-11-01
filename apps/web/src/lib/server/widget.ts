@@ -10,7 +10,7 @@
 
 import { createHash } from 'node:crypto';
 import source from '@jadwal/widget?raw';
-import embedSource from '$lib/embed/embed.js?raw';
+import embedSource from '#lib/embed/embed.js?raw';
 
 /** Les octets du widget, tels qu'ils partiront sur le réseau. */
 export const WIDGET = source;

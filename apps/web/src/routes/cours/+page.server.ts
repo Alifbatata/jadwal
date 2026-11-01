@@ -20,22 +20,22 @@
 import { fail } from '@sveltejs/kit';
 import type { IsoDate } from '@jadwal/core';
 import { newId, sql, type Transaction } from '@jadwal/db';
-import { splitByPeriod } from '$lib/course-form.js';
-import { describeRecurrence, describeTiming } from '$lib/format.js';
-import { LANGUES, type Langue } from '$lib/i18n.js';
-import { newCourseMessage } from '$lib/messages.js';
-import { rythmeEnClair } from '$lib/public/affichage.js';
-import { record } from '$lib/server/audit.js';
-import { withSessionOrg } from '$lib/server/context.js';
-import { FIRST_SUPPORTED_DATE, isSupportedDate, LAST_SUPPORTED_DATE } from '$lib/server/dates.js';
-import { mustAdminister, mustBeInOrganisation } from '$lib/server/guard.js';
+import { splitByPeriod } from '#lib/course-form.js';
+import { describeRecurrence, describeTiming } from '#lib/format.js';
+import { LANGUES, type Langue } from '#lib/i18n.js';
+import { newCourseMessage } from '#lib/messages.js';
+import { rythmeEnClair } from '#lib/public/affichage.js';
+import { record } from '#lib/server/audit.js';
+import { withSessionOrg } from '#lib/server/context.js';
+import { FIRST_SUPPORTED_DATE, isSupportedDate, LAST_SUPPORTED_DATE } from '#lib/server/dates.js';
+import { mustAdminister, mustBeInOrganisation } from '#lib/server/guard.js';
 import {
 	readCourses,
 	readPauses,
 	readSettings,
 	type CourseRow,
 	type OrganisationSettings
-} from '$lib/server/programme.js';
+} from '#lib/server/programme.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
 /** Un message prêt à coller, dans une langue. */

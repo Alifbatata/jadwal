@@ -7,19 +7,19 @@
 		numericDate,
 		t,
 		type Langue
-	} from '$lib/i18n.js';
-	import { lienAgenda, lienCours, lienVue } from '$lib/public/liens.js';
-	import { PARAMETRE_APPAREIL, TOUS_LES_CHOIX } from '$lib/public/abonnement.js';
-	import Abonnement from '$lib/public/Abonnement.svelte';
-	import ChoixDeLangue from '$lib/public/ChoixDeLangue.svelte';
-	import Pied from '$lib/public/Pied.svelte';
-	import { variablesAccent } from '$lib/couleur.js';
+	} from '#lib/i18n.js';
+	import { lienAgenda, lienCours, lienVue } from '#lib/public/liens.js';
+	import { PARAMETRE_APPAREIL, TOUS_LES_CHOIX } from '#lib/public/abonnement.js';
+	import Abonnement from '#lib/public/Abonnement.svelte';
+	import ChoixDeLangue from '#lib/public/ChoixDeLangue.svelte';
+	import Pied from '#lib/public/Pied.svelte';
+	import { variablesAccent } from '#lib/couleur.js';
 	import {
 		heureDeSeance,
 		horaireEnClair,
 		languesEnClair,
 		rythmeEnClair
-	} from '$lib/public/affichage.js';
+	} from '#lib/public/affichage.js';
 
 	let { data } = $props();
 	const mots = $derived(t(data.langue));

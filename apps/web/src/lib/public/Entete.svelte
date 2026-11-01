@@ -5,7 +5,7 @@
 	//
 	// Depuis l'étape 18, un quatrième onglet, les heures de prière, quand le module est allumé
 	// (retour C4). Le widget n'en sait rien : il encadre cette page, et l'onglet y est donc aussi.
-	import { t, type Langue } from '$lib/i18n.js';
+	import { t, type Langue } from '#lib/i18n.js';
 	import ChoixDeLangue from './ChoixDeLangue.svelte';
 
 	type Vue = 'semaine' | 'cours' | 'mois' | 'prieres';

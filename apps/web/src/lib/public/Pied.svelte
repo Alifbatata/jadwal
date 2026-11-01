@@ -2,7 +2,7 @@
 	// Le pied commun : deux lignes, et rien d'autre (docs/maquettes/README.md). La première porte
 	// les deux liens, l'abonnement et les conditions d'utilisation ; la seconde, la mention.
 	import { resolve } from '$app/paths';
-	import { annonceNouvelOnglet, t, type Langue } from '$lib/i18n.js';
+	import { annonceNouvelOnglet, t, type Langue } from '#lib/i18n.js';
 
 	let {
 		langue,
@@ -29,11 +29,8 @@
 		     L'adresse passe la langue de la page (`?lang=`, étape 18, retour D4) : les conditions
 		     s'ouvrent dans cette langue, avec la phrase qui dit, dans cette langue, que le texte
 		     n'existe qu'en français. -->
-		<a
-			href={`${resolve('/conditions')}?lang=${langue}`}
-			hreflang="fr"
-			target="_blank"
-			rel="noopener">{mots.terms}<span class="pour-lecteur">{annonceNouvelOnglet(langue)}</span></a
+		<a href={`${resolve('conditions')}?lang=${langue}`} hreflang="fr" target="_blank" rel="noopener"
+			>{mots.terms}<span class="pour-lecteur">{annonceNouvelOnglet(langue)}</span></a
 		>
 	</p>
 	<!-- En mode intégré, la mention est portée par le pied du widget, juste sous le cadre : elle

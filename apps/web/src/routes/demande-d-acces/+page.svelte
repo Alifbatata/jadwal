@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { t } from '$lib/i18n.js';
-	import { accessRequestTexts } from '$lib/i18n/access-request.js';
-	import { commonTexts } from '$lib/i18n/common.js';
-	import type { AccessRequestError, AccessRequestField } from '$lib/server/access-requests.js';
+	import { t } from '#lib/i18n.js';
+	import { accessRequestTexts } from '#lib/i18n/access-request.js';
+	import { commonTexts } from '#lib/i18n/common.js';
+	import type { AccessRequestError, AccessRequestField } from '#lib/server/access-requests.js';
 
 	let { data, form } = $props();
 	const text = $derived(accessRequestTexts[data.language]);
@@ -116,7 +116,7 @@
 		<section aria-labelledby="donnees">
 			<h2 id="donnees">{text.privacyTitle}</h2>
 			<p>{text.privacy}</p>
-			<p>{text.privacyTerms} <a href={resolve('/conditions')}>{t(data.language).terms}</a>.</p>
+			<p>{text.privacyTerms} <a href={resolve('conditions')}>{t(data.language).terms}</a>.</p>
 		</section>
 
 		<button type="submit">{text.submit}</button>

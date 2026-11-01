@@ -13,7 +13,7 @@
 	// `hreflang` sur un lien n'en était pas une.
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { NOM_DE_LANGUE, t, type Langue } from '$lib/i18n.js';
+	import { NOM_DE_LANGUE, t, type Langue } from '#lib/i18n.js';
 
 	let {
 		slug,
@@ -36,7 +36,7 @@
 	 * à cette page ; elle part vers une autre route, qui ne saurait plus d'où elle se lit.
 	 */
 	function absolue(autre: Langue): string {
-		const vers = new URL(lienLangue(autre), page.url);
+		const vers = new URL(lienLangue(autre), page.url.href);
 		return `${vers.pathname}${vers.search}`;
 	}
 </script>

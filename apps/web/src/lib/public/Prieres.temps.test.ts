@@ -61,7 +61,6 @@ beforeAll(async () => {
 		appType: 'custom',
 		server: { middlewareMode: true, hmr: false, watch: null },
 		optimizeDeps: { noDiscovery: true, include: [] },
-		resolve: { alias: { $lib: fileURLToPath(new URL('..', import.meta.url)) } },
 		plugins: [svelte({ configFile: false, compilerOptions: { runes: true } })]
 	});
 	const { default: Prieres } = await vite.ssrLoadModule('/src/lib/public/Prieres.svelte');

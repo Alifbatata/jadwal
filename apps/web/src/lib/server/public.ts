@@ -24,7 +24,7 @@ import {
 	type DatabaseHandle,
 	type ResolvedPrayerRow
 } from '@jadwal/db';
-import type { Langue } from '$lib/i18n.js';
+import type { Langue } from '#lib/i18n.js';
 import { fridayTitle } from './friday-title.js';
 import { appliquerVendredi, sessionsDuVendredi } from './vendredi.js';
 import {
@@ -54,7 +54,7 @@ export async function closePublicDatabase(): Promise<void> {
  * l'étape 18, ce fichier tenait sa propre liste, et ajouter une langue demandait de penser aux deux.
  * La page, l'API publique et le flux agenda lisent celle-ci.
  */
-export { isLangue, LANGUES } from '$lib/i18n.js';
+export { isLangue, LANGUES } from '#lib/i18n.js';
 export type { Langue };
 
 /** Plage maximale servie quand l'appelant ne demande rien : 92 jours, un trimestre. */

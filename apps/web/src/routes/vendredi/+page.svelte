@@ -2,7 +2,7 @@
 	// Voir docs/maquettes/responsables-vendredi.md : c'est la référence, et un désaccord entre ce
 	// fichier et elle est un défaut de l'un ou de l'autre.
 	//
-	// Les textes sont dans `$lib/i18n/friday.ts`, dans les cinq langues de l'espace (étape 18). Tout
+	// Les textes sont dans `#lib/i18n/friday.ts`, dans les cinq langues de l'espace (étape 18). Tout
 	// l'écran fonctionne sans script : modifier et supprimer une session s'ouvrent dans un `details`,
 	// que le navigateur déplie seul, et la suppression demande sa confirmation sur place. Depuis
 	// l'étape 20, seul le responsable supprime une session (`data.canDelete`), et la ligne d'une
@@ -11,11 +11,11 @@
 	// lignes disent l'état comme les cartes d'« À venir », toute session déplacée s'annule, et
 	// l'annulation comme le déplacement donnent le message à copier.
 	import { resolve } from '$app/paths';
-	import { shortDate } from '$lib/format.js';
-	import { direction, NOM_DE_LANGUE } from '$lib/i18n.js';
-	import { fridayTexts, type FridayDone, type FridayError } from '$lib/i18n/friday.js';
-	import { languesEnClair } from '$lib/public/affichage.js';
-	import { sessionKey } from '$lib/session-key.js';
+	import { shortDate } from '#lib/format.js';
+	import { direction, NOM_DE_LANGUE } from '#lib/i18n.js';
+	import { fridayTexts, type FridayDone, type FridayError } from '#lib/i18n/friday.js';
+	import { languesEnClair } from '#lib/public/affichage.js';
+	import { sessionKey } from '#lib/session-key.js';
 	import type { IsoDate } from '@jadwal/core';
 
 	let { data, form } = $props();
@@ -372,7 +372,7 @@
 
 <p class="aide">
 	{text.coursesElsewhere}
-	<a href={resolve('/cours')}>{text.coursesLink}</a>
+	<a href={resolve('cours')}>{text.coursesLink}</a>
 </p>
 
 {#snippet erreurs(liste: readonly FridayError[])}

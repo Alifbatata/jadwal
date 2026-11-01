@@ -36,8 +36,8 @@ import {
 	languageCookieOptions,
 	PENDING_CHOICE_COOKIE,
 	signInCallback
-} from '$lib/i18n/language.js';
-import { auth } from '$lib/server/auth.js';
+} from '#lib/i18n/language.js';
+import { auth } from '#lib/server/auth.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
 const ADRESSE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

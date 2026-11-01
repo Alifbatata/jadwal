@@ -8,9 +8,9 @@ import {
 	publicOptions,
 	publicResponse,
 	tooManyRequests
-} from '$lib/server/api.js';
-import { etagOf, findOrganisation, fingerprint, readPublicRooms } from '$lib/server/public.js';
-import { settingsOf } from '$lib/server/serialise.js';
+} from '#lib/server/api.js';
+import { etagOf, findOrganisation, fingerprint, readPublicRooms } from '#lib/server/public.js';
+import { settingsOf } from '#lib/server/serialise.js';
 
 export const GET: RequestHandler = async (event) => {
 	if (!(await allowRequest(event))) return tooManyRequests();

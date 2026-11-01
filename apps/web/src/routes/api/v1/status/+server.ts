@@ -6,8 +6,8 @@
 
 import type { RequestHandler } from './$types.js';
 import { sql } from '@jadwal/db';
-import { publicError, publicOptions, publicResponse } from '$lib/server/api.js';
-import { publicDatabase } from '$lib/server/public.js';
+import { publicError, publicOptions, publicResponse } from '#lib/server/api.js';
+import { publicDatabase } from '#lib/server/public.js';
 
 export const GET: RequestHandler = async (event) => {
 	try {

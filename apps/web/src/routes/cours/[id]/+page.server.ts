@@ -8,13 +8,13 @@
 
 import { error, fail, redirect } from '@sveltejs/kit';
 import { sql } from '@jadwal/db';
-import { timingChoice, writeDates, type CourseFormValues } from '$lib/course-form.js';
-import { withSessionOrg } from '$lib/server/context.js';
-import { readCourseForm } from '$lib/server/course-form.js';
-import { FIRST_SUPPORTED_DATE, LAST_SUPPORTED_DATE } from '$lib/server/dates.js';
-import { mustBeInOrganisation } from '$lib/server/guard.js';
-import { updateCourse } from '$lib/server/courses.js';
-import { readRooms, readSettings, type CourseRow } from '$lib/server/programme.js';
+import { timingChoice, writeDates, type CourseFormValues } from '#lib/course-form.js';
+import { withSessionOrg } from '#lib/server/context.js';
+import { readCourseForm } from '#lib/server/course-form.js';
+import { FIRST_SUPPORTED_DATE, LAST_SUPPORTED_DATE } from '#lib/server/dates.js';
+import { mustBeInOrganisation } from '#lib/server/guard.js';
+import { updateCourse } from '#lib/server/courses.js';
+import { readRooms, readSettings, type CourseRow } from '#lib/server/programme.js';
 import type { Actions, PageServerLoad } from './$types.js';
 
 /** Un identifiant de cours. Autre chose n'atteint pas la base, qui le refuserait en erreur. */

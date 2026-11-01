@@ -6,10 +6,11 @@
 // perdrait son code — un 404 redeviendrait un 200 — ainsi que le type de contenu et l'empreinte de
 // cache. On mute donc les en-têtes de la réponse rendue, sans jamais la consommer.
 
-import { building } from '$app/environment';
+import { building } from '$app/env';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
-import { error, type Handle, type RequestEvent } from '@sveltejs/kit';
-import { documentDansSaLangue, type Langue } from '$lib/i18n.js';
+import { error, type RequestEvent } from '@sveltejs/kit';
+import type { Handle } from '@sveltejs/kit/hooks';
+import { documentDansSaLangue, type Langue } from '#lib/i18n.js';
 import {
 	LANGUAGE_COOKIE,
 	LANGUAGE_PARAMETER,
@@ -17,13 +18,13 @@ import {
 	languageForTheAccount,
 	PENDING_CHOICE_COOKIE,
 	spaceLanguage
-} from '$lib/i18n/language.js';
-import { writeAccountLanguage } from '$lib/server/account-language.js';
-import { auth } from '$lib/server/auth.js';
-import { passkeyCount, recordAdminAccess, signedIn } from '$lib/server/context.js';
-import { strictTransportSecurity } from '$lib/server/hsts.js';
-import { withMailLanguage } from '$lib/server/mail/language.js';
-import { compter } from '$lib/server/vues.js';
+} from '#lib/i18n/language.js';
+import { writeAccountLanguage } from '#lib/server/account-language.js';
+import { auth } from '#lib/server/auth.js';
+import { passkeyCount, recordAdminAccess, signedIn } from '#lib/server/context.js';
+import { strictTransportSecurity } from '#lib/server/hsts.js';
+import { withMailLanguage } from '#lib/server/mail/language.js';
+import { compter } from '#lib/server/vues.js';
 
 /**
  * Les routes que l'on accepte de voir intégrées dans un cadre d'un autre site : les pages publiques

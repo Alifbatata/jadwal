@@ -5,7 +5,7 @@
 // (`README.md`, à côté, dit d'où elle vient et sous quelles conditions). Vite l'incorpore au serveur
 // construit (`?raw`), comme les conditions d'utilisation : aucune lecture de disque à l'exécution,
 // aucun service extérieur, et rien de tout cela n'atteint le navigateur, puisque le fichier vit sous
-// `$lib/server`.
+// `#lib/server`.
 //
 // La recherche répond à ce qu'une personne tape : un nom, avec ou sans accents, avec ses trémas ou
 // écrit sans eux (« Zuerich »), dans sa langue ; un NPA, entier ou commencé ; les deux à la suite ;

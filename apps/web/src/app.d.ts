@@ -3,7 +3,7 @@
 // Les types de Vite déclarent `*?raw`, dont le service du widget se sert : le fichier construit est
 // incorporé au serveur à la construction, parce que `packages/widget/dist` n'existe pas en
 // production (ADR 0005).
-import type { SignedIn } from '$lib/server/context.js';
+import type { SignedIn } from '#lib/server/context.js';
 
 declare global {
 	namespace App {
@@ -14,7 +14,7 @@ declare global {
 			 * celle que le hook écrit sur `<html>`. Posée par `introuvable`, seule à les poser toutes
 			 * deux ; absente, la page d'erreur parle français.
 			 */
-			langue?: import('$lib/i18n.js').Langue | undefined;
+			langue?: import('#lib/i18n.js').Langue | undefined;
 		}
 		interface Locals {
 			/** Qui est connecté, d'après la session vérifiée côté serveur. `null` si personne. */
@@ -29,7 +29,7 @@ declare global {
 			 * La vue à compter, posée par une route publique et écrite par le hook après la
 			 * réponse. Un seul point d'écriture pour tout le compteur (ADR 0032).
 			 */
-			vue?: import('$lib/server/vues.js').VueAcompter | undefined;
+			vue?: import('#lib/server/vues.js').VueAcompter | undefined;
 			/**
 			 * La langue de la page, écrite par le hook sur `<html>`, avec son sens. Pour une page
 			 * publique, posée par sa route quand la page va être rendue ; pour l'espace des
@@ -37,7 +37,7 @@ declare global {
 			 * français), et la coquille la donne à chaque écran (étape 18). Absente, le document est en
 			 * français.
 			 */
-			langue?: import('$lib/i18n.js').Langue | undefined;
+			langue?: import('#lib/i18n.js').Langue | undefined;
 		}
 	}
 }

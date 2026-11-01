@@ -14,15 +14,15 @@
 // Le QR code est produit ici, sans dépendance : il pointe vers le lien public.
 
 import { sql } from '@jadwal/db';
-import { isLangue, type Langue } from '$lib/i18n.js';
-import { shareTexts } from '$lib/i18n/share.js';
-import { weekMessage } from '$lib/messages.js';
-import { qrSvg } from '$lib/qr.js';
-import { withSessionOrg } from '$lib/server/context.js';
-import { fridayTitle } from '$lib/server/friday-title.js';
-import { mustBeInOrganisation } from '$lib/server/guard.js';
-import { readProgramme } from '$lib/server/programme.js';
-import { WIDGET_INTEGRITY, widgetPath } from '$lib/server/widget.js';
+import { isLangue, type Langue } from '#lib/i18n.js';
+import { shareTexts } from '#lib/i18n/share.js';
+import { weekMessage } from '#lib/messages.js';
+import { qrSvg } from '#lib/qr.js';
+import { withSessionOrg } from '#lib/server/context.js';
+import { fridayTitle } from '#lib/server/friday-title.js';
+import { mustBeInOrganisation } from '#lib/server/guard.js';
+import { readProgramme } from '#lib/server/programme.js';
+import { WIDGET_INTEGRITY, widgetPath } from '#lib/server/widget.js';
 import type { PageServerLoad } from './$types.js';
 
 const JOURS_AFFICHES = 7;
