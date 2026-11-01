@@ -65,7 +65,8 @@ autres :
   base, les liens produits pointent à côté, et toutes ses routes répondent que l'origine est
   invalide. Le serveur refuse de démarrer plutôt que de le découvrir en production. C'est aussi
   cette origine qui sert d'identifiant de partie de confiance aux passkeys : la changer invalide
-  celles qui existent.
+  celles qui existent. adapter-node 6 ne la lit plus : c'est le point d'entrée `server.js` qui la
+  lui rend, et c'est lui qu'on lance, jamais `build/index.js` (ADR 0050).
 - `BETTER_AUTH_SECRET` : signe les cookies de session. Obligatoire.
 - `JADWAL_IP_HEADER` : l'en-tête que le mandataire inverse **réécrit** avec l'adresse du client. Sans
   mandataire de confiance, un client choisirait son propre seau de limitation de débit.

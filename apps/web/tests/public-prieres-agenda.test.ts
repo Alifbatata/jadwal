@@ -263,27 +263,23 @@ const serveurs: ChildProcess[] = [];
 async function demarrer(port: number, instant: string): Promise<void> {
 	const depuis = `http://127.0.0.1:${port}`;
 	const journal: string[] = [];
-	const serveur = spawn(
-		process.execPath,
-		['--import', HORLOGE, join(appDir, 'build', 'index.js')],
-		{
-			cwd: appDir,
-			stdio: ['ignore', 'pipe', 'pipe'],
-			env: {
-				...productionEnvironment(),
-				NODE_ENV: 'production',
-				PORT: String(port),
-				HOST: '127.0.0.1',
-				ORIGIN: depuis,
-				POSTGRES_DB: testDatabase,
-				MAIL_TRANSPORT: 'file',
-				MAIL_OUTBOX_DIR: inject('outbox'),
-				MAIL_FROM: 'jadwal@example.test',
-				BETTER_AUTH_SECRET: inject('authSecret'),
-				JADWAL_HORLOGE_FIGEE: instant
-			}
+	const serveur = spawn(process.execPath, ['--import', HORLOGE, join(appDir, 'server.js')], {
+		cwd: appDir,
+		stdio: ['ignore', 'pipe', 'pipe'],
+		env: {
+			...productionEnvironment(),
+			NODE_ENV: 'production',
+			PORT: String(port),
+			HOST: '127.0.0.1',
+			ORIGIN: depuis,
+			POSTGRES_DB: testDatabase,
+			MAIL_TRANSPORT: 'file',
+			MAIL_OUTBOX_DIR: inject('outbox'),
+			MAIL_FROM: 'jadwal@example.test',
+			BETTER_AUTH_SECRET: inject('authSecret'),
+			JADWAL_HORLOGE_FIGEE: instant
 		}
-	);
+	});
 	serveurs.push(serveur);
 	serveur.stdout?.on('data', (morceau: Buffer) => journal.push(morceau.toString()));
 	serveur.stderr?.on('data', (morceau: Buffer) => {

@@ -14,7 +14,8 @@ export const STRICT_TRANSPORT_SECURITY = 'max-age=63072000; includeSubDomains';
 
 /**
  * La valeur à poser sur une réponse, ou `undefined` en clair. Derrière un mandataire, l'adresse
- * vient d'`ORIGIN` : sans `ORIGIN` en https, l'en-tête ne partirait jamais.
+ * vient d'`ORIGIN`, par le point d'entrée `server.js` (ADR 0050) : sans `ORIGIN` en https,
+ * l'en-tête ne partirait jamais.
  */
 export function strictTransportSecurity(url: URL): string | undefined {
 	return url.protocol === 'https:' ? STRICT_TRANSPORT_SECURITY : undefined;

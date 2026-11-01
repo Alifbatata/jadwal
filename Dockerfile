@@ -76,4 +76,4 @@ LABEL org.opencontainers.image.licenses="MIT AND LicenseRef-swisstopo-OGD"
 EXPOSE 3000
 # Pas de `HEALTHCHECK` ici : le conteneur est piloté par Compose, qui porte le sien. Une sonde
 # écrite à deux endroits finit par diverger.
-CMD ["node", "build/index.js"]
+CMD ["node", "server.js"]

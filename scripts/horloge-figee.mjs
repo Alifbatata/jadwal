@@ -3,7 +3,7 @@
  * réel. La production ne le charge jamais : il n'entre ni dans le serveur construit, ni dans
  * l'image, et il ne fait rien tant qu'on ne le nomme pas au lancement de Node.
  *
- *     JADWAL_HORLOGE_FIGEE=2026-10-09T08:00:00Z node --import ./scripts/horloge-figee.mjs build/index.js
+ *     JADWAL_HORLOGE_FIGEE=2026-10-09T08:00:00Z node --import ./scripts/horloge-figee.mjs server.js
  *
  * ## Pourquoi
  *

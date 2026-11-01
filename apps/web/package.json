@@ -9,7 +9,7 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
-		"start": "node build",
+		"start": "node server.js",
 		"prepare": "svelte-kit sync",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"test": "vitest run --exclude \"**/*.temps.test.ts\" --reporter=default --reporter=json --outputFile=.vitest-resultats.json",
