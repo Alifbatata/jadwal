@@ -47,13 +47,14 @@ jadwal.voltia.ch {
 	#
 	# Trois écarts, que `pnpm caddy:test` relève et affiche à chaque passage, gzip en premier, en
 	# 2.10.0, la version que le rôle exige, comme en 2.11.4. Il compresse aussi une réponse `206`,
-	# mais garde le `Content-Range` de la forme brute. sirv, qui sert les fichiers de `/_app/` pour
-	# adapter-node, répond aux plages. Un navigateur reçoit le fichier déjà compressé en brotli ou en
-	# gzip, qu'`encode` laisse passer. Mais un client qui n'accepte que zstd reçoit une plage
-	# compressée dont le `Content-Range` ne décrit pas le corps. Mettre gzip en premier ne change rien
-	# pour lui. Les routes de l'application, elles, ne servent pas de plages. En `HEAD`, il annonce
-	# dans `Content-Length` la taille d'un flux compressé vide : 20 octets en gzip, ce que reçoit
-	# désormais un navigateur. Un `304` rend l'ETag sans le suffixe de compression.
+	# mais garde le `Content-Range` de la forme brute. adapter-node, qui sert lui-même les fichiers de
+	# `/_app/` depuis sa version 6, répond aux plages, et en `GET` ou `HEAD` seulement. Un navigateur
+	# reçoit le fichier déjà compressé en brotli ou en gzip, qu'`encode` laisse passer. Mais un client
+	# qui n'accepte que zstd reçoit une plage compressée dont le `Content-Range` ne décrit pas le
+	# corps. Mettre gzip en premier ne change rien pour lui. Les routes de l'application, elles, ne
+	# servent pas de plages. En `HEAD`, il annonce dans `Content-Length` la taille d'un flux compressé
+	# vide : 20 octets en gzip, ce que reçoit désormais un navigateur. Un `304` rend l'ETag sans le
+	# suffixe de compression.
 	#
 	# BREACH ne trouve rien à lire ici : il lui faut, dans un même corps compressé, un secret stable
 	# et un texte choisi par l'attaquant. Le nonce de la politique de contenu change à chaque
