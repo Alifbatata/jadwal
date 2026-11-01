@@ -34,6 +34,7 @@
 		"parcours:test": "node scripts/eprouver-parcours.mjs",
 		"garde:test": "node scripts/eprouver-garde-deploiement.mjs",
 		"licences": "node scripts/licences-tierces.mjs",
+		"licences:test": "node scripts/eprouver-licences-tierces.mjs",
 		"orthographe": "node scripts/orthographe.mjs"
 	},
 	"devDependencies": {

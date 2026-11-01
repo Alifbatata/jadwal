@@ -47,13 +47,16 @@ RUN --mount=type=cache,target=/pnpm/store,sharing=locked \
 	# la sortie intermédiaire de la construction. adapter-node en a fait `build/`, qui ne l'importe
 	# pas ; elle portait une copie de plus du serveur, liste des localités comprise (étape 19).
 	rm -rf /app/out/src /app/out/tests /app/out/vite.config.ts /app/out/vitest.config.ts \
-		/app/out/tsconfig.json /app/out/pnpm-lock.yaml /app/out/pnpm-workspace.yaml \
-		/app/out/.svelte-kit && \
+		/app/out/bundled-packages.js /app/out/tsconfig.json /app/out/pnpm-lock.yaml \
+		/app/out/pnpm-workspace.yaml /app/out/.svelte-kit && \
 	# Ce qui n'est atteignable par aucun `import` part, et les cartes de sources avec. L'ordre
 	# compte : l'avis des licences se lit **après**, sur ce qui reste, pour qu'il décrive l'image et
-	# non l'arbre du poste.
+	# non l'arbre du poste. Il lit aussi le relevé du code que la construction a fondu dans le
+	# serveur et le client, qui n'est plus un paquet de l'image : ce relevé reste ici, dans l'étage
+	# de construction, avec les paquets qu'il désigne.
 	node scripts/elaguer-arbre-de-production.mjs /app/out && \
-	node scripts/licences-tierces.mjs /app/out > /app/out/LICENCES-TIERCES.md && \
+	node scripts/licences-tierces.mjs /app/out apps/web/.svelte-kit/bundled-packages \
+		> /app/out/LICENCES-TIERCES.md && \
 	cp LICENSE /app/out/LICENSE
 
 # La même image, le même digest : l'étage d'exécution ne doit pas dériver de celui qui construit.

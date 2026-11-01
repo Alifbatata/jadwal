@@ -1,6 +1,7 @@
 import adapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vitest/config';
+import { bundledPackages } from './bundled-packages.js';
 
 export default defineConfig({
 	plugins: [
@@ -39,6 +40,8 @@ export default defineConfig({
 					// configuration est globale. Elle est ajoutée dans `hooks.server.ts`.
 				}
 			}
-		})
+		}),
+		// Le relevé du code tiers fondu dans le serveur et le client, pour l'avis des licences.
+		bundledPackages()
 	]
 });

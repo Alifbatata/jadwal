@@ -2,7 +2,7 @@
 /**
  * Engendre l'avis des licences tierces pour ce qui est **réellement** embarqué.
  *
- *     node scripts/licences-tierces.mjs <arbre déployé> [> LICENCES-TIERCES.md]
+ *     node scripts/licences-tierces.mjs <arbre déployé> <relevé> [> LICENCES-TIERCES.md]
  *
  * ## Pourquoi il lit un arbre plutôt que le dépôt
  *
@@ -12,6 +12,15 @@
  *
  * Il est donc lancé **après** `elaguer-arbre-de-production.mjs`, sur l'arbre qui part. Ce qui reste
  * dans son magasin est exactement ce que l'image contient.
+ *
+ * ## Le code incorporé, et le relevé
+ *
+ * Le magasin ne dit pas tout. L'empaqueteur fond SvelteKit, Svelte et d'autres dans le serveur et
+ * le client construits : ce ne sont plus des paquets de l'image, et l'avis les oubliait (étape 23).
+ * Le greffon `apps/web/bundled-packages.js` écrit, à la construction, le paquet de chaque module
+ * fondu : un fichier par environnement, `ssr.json` et `client.json`, dans le dossier du relevé. Le
+ * script le lit en plus du magasin, et **refuse** de produire l'avis si le relevé manque, s'il lui
+ * manque un environnement, ou si un module n'y a pas de paquet connu : un avis incomplet ne part pas.
  *
  * ## Ce qu'il recopie, et pourquoi
  *
@@ -45,12 +54,21 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const cible = process.argv[2];
-if (!cible) {
-	process.stderr.write('usage : node scripts/licences-tierces.mjs <arbre deploye>\n');
+const [cible, releve] = process.argv.slice(2);
+if (!cible || !releve) {
+	process.stderr.write(
+		'usage : node scripts/licences-tierces.mjs <arbre deploye> <relevé du code incorporé>\n'
+	);
 	process.exit(2);
 }
 const magasin = join(resolve(cible), 'node_modules', '.pnpm');
+
+/** Les environnements que le relevé doit couvrir, et ce que l'avis en dit. */
+const ENVIRONNEMENTS = [
+	['ssr', 'incorporé au serveur'],
+	['client', 'incorporé au client']
+];
+const DANS_LE_MAGASIN = "dans le magasin de l'image";
 const depot = fileURLToPath(new URL('..', import.meta.url));
 
 /**
@@ -133,26 +151,71 @@ function paquets() {
 				} catch {
 					continue;
 				}
-				if (!paquet.name || !paquet.version) continue;
-				// Nos propres paquets ne sont pas des tiers : ils sont couverts par le LICENSE du dépôt.
-				if (paquet.name.startsWith('@jadwal/')) continue;
-				const clef = `${paquet.name}@${paquet.version}`;
-				if (trouves.has(clef)) continue;
-				trouves.set(clef, {
-					nom: paquet.name,
-					version: paquet.version,
-					licence:
-						typeof paquet.license === 'string'
-							? paquet.license
-							: (paquet.license?.type ?? paquet.licenses?.[0]?.type ?? 'non déclarée'),
-					source: source(paquet),
-					texte: fichierCorrespondant(dossier, NOMS_DE_LICENCE),
-					notice: fichierCorrespondant(dossier, NOMS_DE_NOTICE)
-				});
+				ajouter(trouves, dossier, paquet, DANS_LE_MAGASIN);
 			}
 		}
 	}
-	return [...trouves.values()].sort((a, b) => a.nom.localeCompare(b.nom));
+	return trouves;
+}
+
+/** Ajoute un paquet à la liste, ou, s'il y est déjà, l'endroit où il se trouve aussi. */
+function ajouter(trouves, dossier, paquet, ou) {
+	if (!paquet.name || !paquet.version) return;
+	// Nos propres paquets ne sont pas des tiers : ils sont couverts par le LICENSE du dépôt.
+	if (paquet.name.startsWith('@jadwal/')) return;
+	const clef = `${paquet.name}@${paquet.version}`;
+	const deja = trouves.get(clef);
+	if (deja) {
+		deja.ou.add(ou);
+		return;
+	}
+	trouves.set(clef, {
+		nom: paquet.name,
+		version: paquet.version,
+		licence:
+			typeof paquet.license === 'string'
+				? paquet.license
+				: (paquet.license?.type ?? paquet.licenses?.[0]?.type ?? 'non déclarée'),
+		source: source(paquet),
+		texte: fichierCorrespondant(dossier, NOMS_DE_LICENCE),
+		notice: fichierCorrespondant(dossier, NOMS_DE_NOTICE),
+		ou: new Set([ou])
+	});
+}
+
+/** Arrête tout : un avis incomplet ne doit pas partir. */
+function refuser(message) {
+	process.stderr.write(`licences-tierces : ${message}\n`);
+	process.exit(1);
+}
+
+/** Ajoute les paquets du relevé, environnement par environnement. */
+function incorpores(trouves) {
+	for (const [environnement, ou] of ENVIRONNEMENTS) {
+		const chemin = join(resolve(releve), `${environnement}.json`);
+		let contenu;
+		try {
+			contenu = JSON.parse(readFileSync(chemin, 'utf8'));
+		} catch {
+			refuser(`le relevé du code incorporé n'a pas ${chemin}, ou il est illisible`);
+		}
+		if (contenu.unknown?.length > 0) {
+			refuser(
+				`des modules incorporés (${environnement}) n'ont pas de paquet connu : ` +
+					contenu.unknown.map((id) => JSON.stringify(id)).join(', ')
+			);
+		}
+		for (const { dir } of contenu.packages ?? []) {
+			let paquet;
+			try {
+				paquet = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+			} catch {
+				refuser(`le paquet incorporé de ${dir} est illisible`);
+			}
+			ajouter(trouves, dir, paquet, ou);
+		}
+	}
+	return trouves;
 }
 
 /** Le texte de chaque fichier JavaScript du serveur construit, un à un. */
@@ -197,7 +260,8 @@ function donneesTierces() {
 	});
 }
 
-const liste = paquets();
+const ORDRE = [DANS_LE_MAGASIN, ...ENVIRONNEMENTS.map(([, ou]) => ou)];
+const liste = [...incorpores(paquets()).values()].sort((a, b) => a.nom.localeCompare(b.nom));
 const donnees = donneesTierces();
 const parLicence = new Map();
 for (const paquet of liste) {
@@ -210,8 +274,9 @@ lignes.push('');
 lignes.push(
 	'jadwal est distribué sous licence MIT (voir `LICENSE`). Ce fichier est **engendré** par',
 	"`scripts/licences-tierces.mjs` à partir du contenu réel de l'image de production, après",
-	"l'élagage qui en retire tout ce qui n'est pas chargé à l'exécution. Il n'est pas tenu à la main :",
-	'un composant ajouté ou retiré y apparaît ou en disparaît tout seul.'
+	"l'élagage qui en retire tout ce qui n'est pas chargé à l'exécution, et du relevé que la",
+	'construction fait du code incorporé au serveur et au client (celui que reçoit le navigateur).',
+	"Il n'est pas tenu à la main : un composant ajouté ou retiré y apparaît ou en disparaît tout seul."
 );
 lignes.push('');
 lignes.push(`**${liste.length} composants tiers.** Par licence :`);
@@ -253,6 +318,7 @@ for (const paquet of liste) {
 	lignes.push(`## ${paquet.nom} ${paquet.version}`);
 	lignes.push('');
 	lignes.push(`Licence déclarée : **${paquet.licence}**`);
+	lignes.push('', `Présent : ${ORDRE.filter((ou) => paquet.ou.has(ou)).join(', ')}`);
 	if (paquet.source) lignes.push('', `Code source : ${paquet.source}`);
 	if (RECIPROQUES_PAR_FICHIER.test(paquet.licence)) {
 		lignes.push(

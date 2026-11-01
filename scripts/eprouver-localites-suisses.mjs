@@ -254,7 +254,14 @@ const embarque = arbre(
 );
 const sans = arbre('sans', 'export const data = "rien";\n');
 
-const avec = spawnSync(process.execPath, [LICENCES, embarque], { encoding: 'utf8' });
+// Le relevé du code incorporé, que le script exige : vide ici, la liste n'est pas un paquet.
+const releve = join(dossier, 'releve');
+mkdirSync(releve, { recursive: true });
+for (const environnement of ['ssr', 'client']) {
+	writeFileSync(join(releve, `${environnement}.json`), '{"packages":[],"unknown":[]}\n', 'utf8');
+}
+
+const avec = spawnSync(process.execPath, [LICENCES, embarque, releve], { encoding: 'utf8' });
 verifier(
 	'le script réussit sur l’arbre qui contient la liste',
 	avec.status === 0,
@@ -275,7 +282,7 @@ verifier(
 	)
 );
 
-const pas = spawnSync(process.execPath, [LICENCES, sans], { encoding: 'utf8' });
+const pas = spawnSync(process.execPath, [LICENCES, sans, releve], { encoding: 'utf8' });
 verifier(
 	'le script réussit sur l’arbre qui ne la contient pas',
 	pas.status === 0,

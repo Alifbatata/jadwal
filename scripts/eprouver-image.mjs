@@ -183,6 +183,18 @@ verifier(
 	donneesTierces ? `${donneesTierces.trim().split('\n').length} lignes` : 'section absente'
 );
 
+// Le code que l'empaqueteur fond dans le serveur et dans le client n'est plus un paquet de l'image :
+// sans le relevé de la construction, l'avis l'oubliait (constat de l'étape 23). SvelteKit et Svelte
+// sont les deux qu'aucune version de jadwal ne peut perdre ; `devalue` n'entre que par eux.
+const sections = new Set([...avis.matchAll(/^## (\S+) \S+$/gm)].map((section) => section[1]));
+const incorpores = ['@sveltejs/kit', 'svelte', 'devalue'];
+const absents = incorpores.filter((nom) => !sections.has(nom));
+verifier(
+	'le fichier des licences tierces couvre le code incorporé au serveur et au client',
+	absents.length === 0,
+	absents.length > 0 ? `absents : ${absents.join(', ')}` : incorpores.join(', ')
+);
+
 const LICENCE_DE_L_IMAGE = 'MIT AND LicenseRef-swisstopo-OGD';
 const licenceOci = docker([
 	'image',
