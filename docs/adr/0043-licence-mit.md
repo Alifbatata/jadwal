@@ -172,6 +172,24 @@ plus. Il n'y a ni texte à signer, ni outil de signature à choisir.
 Le contexte et les raisons plus haut, qui comptaient sur le CLA, sont gardés tels qu'ils ont été
 écrits. `CONTRIBUTING.md`, le `README` et le cadrage disent la règle d'aujourd'hui.
 
+## Addendum du 1er novembre 2026 : l'avis couvre aussi le code incorporé
+
+L'avis ne lisait que le magasin de l'image. Or l'empaqueteur fond une partie du code tiers dans le
+serveur et dans le client construits : SvelteKit, Svelte, `devalue`, et, côté serveur, Better Auth
+et ce qu'il emporte. Ce code n'est plus un paquet de l'image, et l'avis l'oubliait, alors que c'est
+précisément pour lui qu'il existe, puisque le regroupement en retire les commentaires. Le constat
+date de l'étape 23 ; il était déjà vrai avant.
+
+Le greffon `apps/web/bundled-packages.js` relève, à la construction, le paquet de chaque module
+fondu, un fichier par environnement. `scripts/licences-tierces.mjs` lit ce relevé en plus du
+magasin, indique l'emplacement de chaque composant, et refuse de produire l'avis si le relevé
+manque ou si un module n'a pas de paquet connu. `pnpm licences:test` l'éprouve sur des arbres
+factices ; `pnpm image:test` contrôle, sur l'image elle-même, la présence de SvelteKit, de Svelte
+et de `devalue`.
+
+Le client part dans le navigateur de chaque visiteur. L'avis est dans l'image, pas sur le site :
+une page qui le donnerait à lire reste à décider.
+
 ## Ce que cette décision ne dit pas
 
 Elle ne disait rien du CLA, qui ne changeait pas ; l'addendum du 27.09.2026 l'abandonne. Elle ne
