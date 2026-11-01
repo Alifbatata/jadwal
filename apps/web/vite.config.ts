@@ -11,6 +11,11 @@ export default defineConfig({
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
 			adapter: adapter(),
+			// SvelteKit 3 fait demander `/_app/version.json` toutes les heures par chaque page
+			// ouverte. jadwal n'en lit pas le résultat (`updated`), et une page laissée ouverte sur un
+			// écran enverrait vingt-quatre requêtes par jour sans que personne n'ait rien demandé :
+			// zéro, comme avec SvelteKit 2.
+			version: { pollInterval: 0 },
 			// La configuration de SvelteKit vit ici et non dans un `svelte.config.js` : quand elle
 			// est passée au greffon, ce fichier est ignoré, et on ne s'en apercevrait pas.
 			csp: {
