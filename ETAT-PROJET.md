@@ -140,6 +140,12 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   31.10.2026, s'acceptent de nouveau. 4 139 tests, tous réussis, aucun sauté, et 24 tests liés au
   temps, à part ; parcours complet : 475 vérifications, dont 21 pour l'étape 22, et axe sans rien de
   sérieux sur 45 pages. Mesurés sur le poste le 31.10.2026, et rejoués par la CI sur le code livré.
+- **Étape 23** (passer à SvelteKit 3) : **en cours**, ouverte le 01.11.2026. Rien ne doit changer
+  pour qui se sert de jadwal. Les versions sont montées et le code migré ; l'origine publique est
+  lue au démarrage par un point d'entrée de jadwal, puisque `adapter-node` 6 ne la lit plus
+  (ADR 0050) ; l'avis des licences tierces couvre désormais le code fondu dans le serveur et le
+  client. Restent le parcours complet contre la nouvelle image, la vérification complète, la
+  poussée et le déploiement.
 
 ## Fait
 
@@ -1002,6 +1008,33 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   45 pages.
 - Migrations 0076 à 0081.
 
+Étape 23 (passer à SvelteKit 3), en cours :
+
+- **Les versions** : `@sveltejs/kit` 2.70.3 → 3.1.0, `@sveltejs/adapter-node` 5.5.7 → 6.0.0,
+  `better-auth` et `@better-auth/passkey` 1.7.4 → 1.7.13, la première série qui accepte SvelteKit 3.
+  Aucune dépendance nouvelle au manifeste. Elle ferme les alertes GHSA-pfhg-q3qv-9q6r et
+  GHSA-27mw-82g8-phjj, et `cookie@0.6.0` (GHSA-pxg6-pf52-xh8x) a quitté le verrou.
+- **Le code migré** : `$lib` devient `#lib`, déclaré dans `imports` du `package.json` ;
+  `$app/env`, `$app/tsconfig`, un seul `src/params.ts`, `refreshAll`, `Response.json`, et
+  `error(404, …, { langue })`. L'outil `sv migrate sveltekit-3` a servi pour les `.ts` ; son
+  reformatage des `.svelte` est rejeté, parce qu'il changeait les espaces rendues.
+- **L'origine lue au démarrage** : `adapter-node` 6 ne lit plus `ORIGIN`. Le point d'entrée
+  `apps/web/server.js` la vérifie, refuse `PROTOCOL_HEADER`, `HOST_HEADER` et `PORT_HEADER`, et
+  écrit protocole et hôte dans deux en-têtes internes avant chaque requête, par-dessus ce que le
+  client envoie (ADR 0050). Le `CMD` de l'image, `pnpm start` et les serveurs des tests le lancent ;
+  rien ne change au déploiement. Sans lui, chaque formulaire était refusé en HTTP local, et un
+  formulaire d'un autre site, avec un `Host` falsifié, était accepté : `origine.test.ts`, 21 tests,
+  montrés en échec d'abord.
+- **Ce qui change dans l'adaptateur** : il sert lui-même `/_app/`, en `GET` et `HEAD` seulement,
+  avec une `ETag` qui est l'empreinte du contenu et sans `Last-Modified`. SvelteKit 3 faisait
+  demander `/_app/version.json` toutes les heures par chaque page ouverte : coupé
+  (`version.pollInterval: 0`). Mêmes 60 paquets gardés dans l'image, qui passe de 410 à 401 Mo.
+- **L'avis des licences couvre le code incorporé** : un greffon Vite, `apps/web/bundled-packages.js`,
+  relève à la construction chaque module fondu dans le serveur et dans le client, et le paquet d'où
+  il vient ; `licences-tierces.mjs` recopie leur licence et refuse de produire l'avis si le relevé
+  manque ou si un module n'a pas de paquet connu (`pnpm licences:test`, addendum de l'ADR 0043).
+  L'avis passe à 65 composants. Une page « Licences » sur le site reste à décider.
+
 **Un script ou une commande qu'aucun test ne _lance_ n'est pas éprouvé.** C'est la règle du dépôt
 depuis l'étape 12, et elle répond à la question laissée ouverte à l'étape 11.
 
@@ -1055,6 +1088,7 @@ tests.
 | 20    | Dernières questions : Rétablir, vendredi, états, conditions         | terminée |
 | 21    | Retours de l'étape 20 : langue en liste, vendredi, conditions       | terminée |
 | 22    | Service gratuit, accès donné par le super-admin                     | terminée |
+| 23    | SvelteKit 3, origine lue au démarrage, licences du code incorporé   | en cours |
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
 passkeys pour tous les comptes. Les plans d'une organisation (gratuit, offert, payant), inscrits à
@@ -1143,9 +1177,10 @@ qui gardait le plan a quitté la base (migration 0076).
   partir de la v25 : la CI n'en dépend plus ; en local, il faudra alors installer pnpm autrement.
 - Dependabot ne suit pas `.node-version` : à chaque étape, vérifier les publications de sécurité de
   Node 24 (https://nodejs.org/dist/index.json, champ `security`) et relever l'épingle si besoin.
-- `pnpm audit` signale une vulnérabilité de gravité faible dans `cookie@0.6.0`, dépendance transitive
-  de `@sveltejs/kit` 2.70.3 (GHSA-pxg6-pf52-xh8x) : rien à corriger de notre côté, à suivre à la
-  prochaine mise à jour de SvelteKit.
+- Le point d'entrée `apps/web/server.js` dépend de deux choses d'`adapter-node` 6 : `build/index.js`
+  exporte `server`, et `PROTOCOL_HEADER` et `HOST_HEADER` sont lus au chargement du module
+  (ADR 0050). Une montée de version qui changerait l'une ou l'autre ferait échouer
+  `origine.test.ts` : relire ce test à chaque montée d'`adapter-node`.
 - **Google Agenda sur Android, à vérifier sur un vrai téléphone** (étape 18, E3). L'aide de Google
   dit qu'on ne s'abonne à un agenda par son adresse que depuis un ordinateur, jamais depuis
   l'application Android ; le bouton de la page d'abonnement ouvre la version web de Google Agenda

@@ -80,6 +80,7 @@ pnpm garde:test                 # la garde du déploiement, cas par cas, contre 
 pnpm sauvegarde:test            # la sauvegarde de nuit, jusqu'à l'âge des objets distants (Docker)
 pnpm conditions:pdf             # le PDF des conditions, à imprimer ou à envoyer (Chrome)
 pnpm conditions:test            # éprouve le générateur de ce PDF
+pnpm licences:test              # éprouve l'avis des licences tierces sur des arbres factices
 ```
 
 Les variables d'environnement sont documentées dans `.env.example`. La base de développement est
