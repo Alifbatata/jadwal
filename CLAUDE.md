@@ -53,6 +53,40 @@ pas.
   `origin main` à la fin de l'étape.
 - Si une consigne est impossible ou en contredit une autre, s'arrêter et poser la question.
 
+## Reprise et vérifications
+
+- Au mot « continue » ou « reprends », souvent après un `/clear` : lire `PRIVE/REPRISE.md`, puis la
+  section Plan de `A_LIVRER/RAPPORT_DERNIER.md`, et faire le prochain chantier sans redemander ce
+  qui est tranché. À la fin de chaque chantier : le rapport et `PRIVE/REPRISE.md` à jour, puis dire
+  que `/clear` est possible, mais jamais pendant qu'une commande tourne en arrière-plan.
+- Faire soi-même tout test qu'un outil peut jouer : parcours, navigateur, lectures publiques. Ne
+  laisser au chef de projet que ce qui demande un humain ou ses accès (relecture par un locuteur,
+  vrai téléphone, comptes chez les fournisseurs) et ses décisions.
+- Les épreuves lourdes (image Docker, parcours dans Chrome, LanguageTool) se lancent seules, au
+  premier plan. Avant, mesurer la mémoire libre ; sous 3 Go environ, demander d'abord de fermer des
+  applications. Une commande arrêtée faute de mémoire ne se relance pas sans accord : la CI rejoue
+  le reste.
+
+## Pièges de Windows
+
+- Un texte qui porte un antislash ne passe jamais par un heredoc, par `sed -i` ni par `node -e "…"`
+  sous Git Bash : ils mangent ou interprètent `\n`, `\b` ou `\c` sans rien dire, et les accents
+  graves y sont exécutés. Passer par l'outil d'édition, ou par un script `.mjs` écrit puis lancé.
+- Python sous Windows écrit des fins de ligne `\r\n` : toujours passer `newline=''` à `open()`. Un
+  script shell en CRLF ne tourne pas sous Linux, et ce qui part sur un serveur vient de l'arbre de
+  travail, pas de git.
+- Sous PowerShell, `| Select-Object -First N` arrête la commande en amont : un build coupé, puis
+  « No test files found ». Filtrer avec `-Last N`.
+- Une commande `pnpm` qui réinstalle et s'arrête sur « Accès refusé. (os error 5) » bute sur un
+  verrou passager, pas sur des droits : relancer `pnpm install --frozen-lockfile`.
+
+## Consignes privées
+
+Ce qui est propre au poste de travail et à l'instance en service vit dans `PRIVE/CLAUDE.md`,
+absent du dépôt public :
+
+@PRIVE/CLAUDE.md
+
 ## Structure
 
 - `apps/web/` : SvelteKit (adapter-node), espace des responsables, pages publiques, API, flux ICS.
