@@ -28,9 +28,9 @@
 # étiquette mouvante ferait qu'une reconstruction de la même version du code produirait une image
 # différente, ce qui rendrait un retour arrière incertain.
 
-# node:24.21.0-trixie-slim — la version de .node-version, épinglée par le digest de son index
-# multi-architecture (relevé le 2026-09-21 : docker buildx imagetools inspect).
-FROM node@sha256:8ec5d7557396cfe32d21c3f9c13072355ceab22b584578ca4bb28af31120cffe AS build
+# node:24.22.3-trixie-slim — la version de .node-version, épinglée par le digest de son index
+# multi-architecture (relevé le 2026-11-21 : docker buildx imagetools inspect).
+FROM node@sha256:af02d57b57719b9657a45199a79264a9437940cd55b3c7b3fc99615654f124a0 AS build
 WORKDIR /app
 ENV CI=1 COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 COPY . .
@@ -60,7 +60,7 @@ RUN --mount=type=cache,target=/pnpm/store,sharing=locked \
 	cp LICENSE /app/out/LICENSE
 
 # La même image, le même digest : l'étage d'exécution ne doit pas dériver de celui qui construit.
-FROM node@sha256:8ec5d7557396cfe32d21c3f9c13072355ceab22b584578ca4bb28af31120cffe AS runtime
+FROM node@sha256:af02d57b57719b9657a45199a79264a9437940cd55b3c7b3fc99615654f124a0 AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 # `node` existe déjà dans l'image officielle, uid 1000. On n'en crée pas un de plus : celui-là
