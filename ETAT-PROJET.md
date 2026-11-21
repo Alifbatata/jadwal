@@ -1036,6 +1036,11 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   il vient ; `licences-tierces.mjs` recopie leur licence et refuse de produire l'avis si le relevé
   manque ou si un module n'a pas de paquet connu (`pnpm licences:test`, addendum de l'ADR 0043).
   L'avis passe à 65 composants. Une page « Licences » sur le site reste à décider.
+- **Les dépendances signalées par Dependabot** après la poussée, toutes verrouillées avant l'étape :
+  `nodemailer` 10.0.9 → 10.5.0, `vite` 8.3.0 → 8.3.8 et, dans le verrou seulement, `zod` 4.6.7,
+  `devalue` 5.9.4, `undici` 8.12.4, `source-map-js` 1.2.2, `brace-expansion` 5.0.13. `vite` 8.3.8
+  réduit le widget autrement : une version de plus, `bEkx974zyk5w`, sans une ligne changée
+  (addendum de l'ADR 0005).
 
 **Un script ou une commande qu'aucun test ne _lance_ n'est pas éprouvé.** C'est la règle du dépôt
 depuis l'étape 12, et elle répond à la question laissée ouverte à l'étape 11.
@@ -1181,6 +1186,11 @@ qui gardait le plan a quitté la base (migration 0076).
   Node 24 (https://nodejs.org/dist/index.json, champ `security`) et relever l'épingle si besoin.
 - `ORIGIN` n'est lue par `adapter-node` que si `paths.origin` n'est pas posé dans
   `vite.config.ts` (ADR 0051) : n'en jamais poser. `origine.test.ts` le verrait.
+- `pnpm audit` signale deux vulnérabilités modérées dans des outils de développement, qu'aucune
+  version de leurs parents ne corrige encore : `esbuild` 0.18.20, tiré par `@esbuild-kit` de
+  `drizzle-kit` (GHSA-67mh-4wv8-2f99, le serveur de développement d'esbuild, que jadwal ne lance
+  pas), et `minimatch` 10.2.6, tiré par ESLint (GHSA-g3hv-75wg-m249, corrigé en 11). Rien n'entre
+  dans l'image. À relever à la prochaine montée de `drizzle-kit` et d'ESLint.
 - **Google Agenda sur Android, à vérifier sur un vrai téléphone** (étape 18, E3). L'aide de Google
   dit qu'on ne s'abonne à un agenda par son adresse que depuis un ordinateur, jamais depuis
   l'application Android ; le bouton de la page d'abonnement ouvre la version web de Google Agenda

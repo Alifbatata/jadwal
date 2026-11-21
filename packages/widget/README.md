@@ -14,8 +14,9 @@ qu'une ligne de ce paquet change, parce qu'il est dans la page. Il suit le modul
 l'organisation, comme sur la page. Depuis le 27.09.2026, `view="prieres"` ouvre le cadre sur cet
 onglet : c'est la seule ligne qui a changé, et elle a publié la version `o6RZrATXsMVS`.
 
-Aucune bibliothèque, aucune dépendance à l'exécution : **2 145 octets gzip** (2,15 ko, soit
-2,09 Kio), mesurés le 27.09.2026 par `pnpm --filter @jadwal/widget size`.
+Aucune bibliothèque, aucune dépendance à l'exécution : **2 149 octets gzip** (2,15 ko, soit
+2,10 Kio), mesurés le 21.11.2026 par `pnpm --filter @jadwal/widget size`. Ce jour-là, `vite` 8.3.8
+a réduit le même code autrement et publié la version `bEkx974zyk5w` (ADR 0005, addendum).
 
 Pour un responsable d'organisation, la marche à suivre est dans `docs/INTEGRATION.md`. Ce fichier-ci
 s'adresse à qui travaille sur le paquet.
