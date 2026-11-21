@@ -140,14 +140,16 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   31.10.2026, s'acceptent de nouveau. 4 139 tests, tous réussis, aucun sauté, et 24 tests liés au
   temps, à part ; parcours complet : 475 vérifications, dont 21 pour l'étape 22, et axe sans rien de
   sérieux sur 45 pages. Mesurés sur le poste le 31.10.2026, et rejoués par la CI sur le code livré.
-- **Étape 23** (passer à SvelteKit 3) : **en cours**, ouverte le 01.11.2026. Rien ne doit changer
+- **Étape 23** (passer à SvelteKit 3) : **livrée sur `main` le 21.11.2026, pas déployée**. Aucune
+  instance n'est en service pour l'instant : l'hébergement sera choisi quand le service sera
+  complet, et le déploiement attendra ce choix. Rien ne doit changer
   pour qui se sert de jadwal. Les versions sont montées (SvelteKit 3.2.0, `adapter-node` 6.0.2)
   et le code migré ; l'origine publique est lue au démarrage par l'adaptateur, et vérifiée par
   jadwal (ADR 0051) ; l'avis des licences tierces couvre désormais le code fondu dans le serveur
   et le client ; les dépendances que Dependabot signalait, et Node, sont montées à des versions
   corrigées. 4 160 tests, tous réussis, aucun sauté, et 24 tests liés au temps, à part ;
   parcours complet contre la nouvelle image : 475 vérifications, et axe sans rien de sérieux sur
-  45 pages. Mesurés sur le poste le 21.11.2026. Reste le déploiement.
+  45 pages. Mesurés sur le poste le 21.11.2026, et rejoués par la CI sur le code livré.
 
 ## Fait
 
@@ -1010,7 +1012,7 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   45 pages.
 - Migrations 0076 à 0081.
 
-Étape 23 (passer à SvelteKit 3), en cours :
+Étape 23 (passer à SvelteKit 3), livrée sur `main`, pas déployée :
 
 - **Les versions** : `@sveltejs/kit` 2.70.3 → 3.2.0, `@sveltejs/adapter-node` 5.5.7 → 6.0.2,
   `better-auth` et `@better-auth/passkey` 1.7.4 → 1.7.13, la première série qui accepte SvelteKit 3.
@@ -1097,7 +1099,7 @@ tests.
 | 20    | Dernières questions : Rétablir, vendredi, états, conditions         | terminée |
 | 21    | Retours de l'étape 20 : langue en liste, vendredi, conditions       | terminée |
 | 22    | Service gratuit, accès donné par le super-admin                     | terminée |
-| 23    | SvelteKit 3, origine lue au démarrage, licences du code incorporé   | en cours |
+| 23    | SvelteKit 3, origine lue au démarrage, licences du code incorporé   | terminée |
 
 Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
 passkeys pour tous les comptes. Les plans d'une organisation (gratuit, offert, payant), inscrits à
