@@ -199,7 +199,7 @@ a échoué sur cette nouvelle version tant que le serveur n'avait pas été reco
 to be 200 »), puis réussi : c'est le registre qui fait son travail. Un site qui a épinglé une
 version plus ancienne garde son programme, sans cette vue.
 
-## Addendum du 21.11.2026 : une version publiée par l'outil de construction
+## Addendum du 21 novembre 2026 : une version publiée par l'outil de construction
 
 Aucune ligne du widget n'a changé, mais `vite` 8.3.8 (étape 23, correctifs de sécurité) le réduit
 autrement que `vite` 8.3.0 : la garde finale s'écrit `typeof customElements<"u"&&(…)` au lieu de
@@ -211,6 +211,6 @@ l'intention, et une version qui a été publiée ne disparaît pas.
 ## Statut
 
 Révisé et accepté, 2026-09-21, étape 6 ; précisé le 2026-09-21 (étape 7) sur la conservation des
-versions publiées ; complété le 27.09.2026 (`view="prieres"`) et le 21.11.2026 (une version
-publiée par `vite`). Remplace la décision du 2026-09-19. Amende l'ADR 0027 (pages publiques) et
-complète l'ADR 0029 (référencement).
+versions publiées ; complété le 27.09.2026 (`view="prieres"`) et le 21 novembre 2026 (une
+version publiée par `vite`). Remplace la décision du 2026-09-19. Amende l'ADR 0027 (pages
+publiques) et complète l'ADR 0029 (référencement).

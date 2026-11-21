@@ -144,7 +144,8 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   pour qui se sert de jadwal. Les versions sont montées (SvelteKit 3.2.0, `adapter-node` 6.0.2)
   et le code migré ; l'origine publique est lue au démarrage par l'adaptateur, et vérifiée par
   jadwal (ADR 0051) ; l'avis des licences tierces couvre désormais le code fondu dans le serveur
-  et le client. 4 160 tests, tous réussis, aucun sauté, et 24 tests liés au temps, à part ;
+  et le client ; les dépendances que Dependabot signalait, et Node, sont montées à des versions
+  corrigées. 4 160 tests, tous réussis, aucun sauté, et 24 tests liés au temps, à part ;
   parcours complet contre la nouvelle image : 475 vérifications, et axe sans rien de sérieux sur
   45 pages. Mesurés sur le poste le 21.11.2026. Reste le déploiement.
 
@@ -1040,7 +1041,8 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   `nodemailer` 10.0.9 → 10.5.0, `vite` 8.3.0 → 8.3.8 et, dans le verrou seulement, `zod` 4.6.7,
   `devalue` 5.9.4, `undici` 8.12.4, `source-map-js` 1.2.2, `brace-expansion` 5.0.13. `vite` 8.3.8
   réduit le widget autrement : une version de plus, `bEkx974zyk5w`, sans une ligne changée
-  (addendum de l'ADR 0005).
+  (addendum de l'ADR 0005). Node 24.21.0 → 24.22.3, publication de sécurité du 10.11.2026
+  (`.node-version` et l'image de base).
 
 **Un script ou une commande qu'aucun test ne _lance_ n'est pas éprouvé.** C'est la règle du dépôt
 depuis l'étape 12, et elle répond à la question laissée ouverte à l'étape 11.
