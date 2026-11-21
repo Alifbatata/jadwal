@@ -86,9 +86,8 @@ export default async function setup(project: TestProject) {
 			`Serveur non construit (${build} absent). Lancer « pnpm build » avant « pnpm test ».`
 		);
 	}
-	// Le point d'entrée de jadwal, et non `build/index.js` : c'est lui qui donne `ORIGIN` à
-	// adapter-node (ADR 0050), comme dans l'image.
-	const entry = join(appDir, 'server.js');
+	// Le serveur de l'adaptateur, comme dans l'image : il lit `ORIGIN` lui-même (ADR 0051).
+	const entry = join(appDir, 'build', 'index.js');
 	const database = await createTestDatabase();
 	outbox = await mkdtemp(join(tmpdir(), 'jadwal-tests-courriels-'));
 	const origins = PORTS.map((port) => `http://127.0.0.1:${port}`);

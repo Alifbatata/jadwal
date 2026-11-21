@@ -81,7 +81,7 @@ beforeAll(async () => {
 		MAIL_FROM: 'jadwal@example.test',
 		BETTER_AUTH_SECRET: inject('authSecret')
 	};
-	serveur = spawn(process.execPath, [join(appDir, 'server.js')], {
+	serveur = spawn(process.execPath, [join(appDir, 'build', 'index.js')], {
 		cwd: appDir,
 		stdio: ['ignore', 'pipe', 'pipe'],
 		env: environnementDuServeur

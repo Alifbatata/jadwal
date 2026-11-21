@@ -1,14 +1,15 @@
-// L'origine publique, lue au démarrage (ADR 0050).
+// L'origine publique, lue au démarrage (ADR 0051, qui remplace l'ADR 0050).
 //
-// adapter-node 6 n'écoute plus `ORIGIN` : sans rien de plus, il tire l'adresse du site de l'en-tête
-// `Host` et suppose `https`. Le point d'entrée de jadwal, `server.js`, rend à `ORIGIN` son rôle :
-// c'est d'elle seule que viennent le protocole et l'hôte d'`event.url`, quoi que le client écrive.
+// adapter-node lit `ORIGIN` au démarrage : c'est d'elle seule que viennent le protocole et l'hôte
+// d'`event.url`, quoi que le client écrive. Le crochet `init` de jadwal refuse ce que l'adaptateur
+// laisserait passer : une `ORIGIN` absente (l'adresse viendrait alors de `Host`), ou qui porte un
+// chemin, une requête, un fragment ou un compte (il les retirerait sans rien dire).
 //
 // Ce que ce fichier éprouve, sur de vrais serveurs construits :
 //
 //   1. un formulaire posté en HTTP local est accepté, et un formulaire venu d'un autre site refusé ;
-//   2. ni `Host`, ni les en-têtes `X-Forwarded-*`, ni les deux en-têtes internes du point d'entrée,
-//      écrits par le client, ne changent l'adresse que le service voit ;
+//   2. ni `Host` ni les en-têtes `X-Forwarded-*`, écrits par le client, ne changent l'adresse que
+//      le service voit ;
 //   3. une origine en https se voit comme telle derrière un mandataire qui parle en clair ;
 //   4. une `ORIGIN` absente, illisible, avec un chemin, ou des réglages d'adapter-node qui la
 //      contrediraient, arrêtent le démarrage avec un message qui le dit.
@@ -21,7 +22,7 @@ import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { productionEnvironment } from './environnement-de-production.js';
 
 const appDir = dirname(dirname(fileURLToPath(import.meta.url)));
-const ENTREE = join(appDir, 'server.js');
+const ENTREE = join(appDir, 'build', 'index.js');
 
 const origin = inject('origin');
 const proxiedOrigin = inject('proxiedOrigin');
@@ -34,9 +35,7 @@ const ORIGINE_HTTPS = 'https://exemple.test';
 const EN_TETES_FALSIFIES = {
 	host: 'autre.example',
 	'x-forwarded-host': 'autre.example',
-	'x-forwarded-proto': 'https',
-	'x-jadwal-host': 'autre.example',
-	'x-jadwal-protocol': 'https'
+	'x-forwarded-proto': 'https'
 };
 
 interface Reponse {
@@ -239,13 +238,14 @@ describe('le démarrage', () => {
 
 	it.each([
 		['absente', undefined, /ORIGIN is required/],
-		['vide', '', /ORIGIN is required/],
-		['illisible', 'jadwal.example', /ORIGIN is not a valid URL/],
+		// Ces trois-là, adapter-node les refuse lui-même, avant le crochet `init`.
+		['vide', '', /Invalid ORIGIN: ''/],
+		['illisible', 'jadwal.example', /Invalid ORIGIN: 'jadwal\.example'/],
 		['avec un chemin', 'https://jadwal.example/agenda', /ORIGIN must not carry a path/],
 		['avec une requête', 'https://jadwal.example/?a=1', /ORIGIN must not carry a query/],
 		['avec un fragment', 'https://jadwal.example/#a', /ORIGIN must not carry a fragment/],
 		['avec un compte', 'https://moi:secret@jadwal.example', /ORIGIN must not carry credentials/],
-		['ni http ni https', 'ftp://jadwal.example', /ORIGIN must use http or https/]
+		['ni http ni https', 'ftp://jadwal.example', /Only http:\/\/ and https:\/\/ protocols/]
 	])('refuse une ORIGIN %s', (_cas, valeur, attendu) => {
 		const { code, sortie } = demarrer({ ORIGIN: valeur });
 		expect(code, sortie).not.toBe(0);

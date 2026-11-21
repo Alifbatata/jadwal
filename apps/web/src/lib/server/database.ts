@@ -6,9 +6,10 @@
 
 import { createDatabase, loadDotEnv, type Database, type DatabaseHandle } from '@jadwal/db';
 
-// En développement, le fichier `.env` de la racine ; en production, l'environnement du serveur,
-// qui gagne toujours sur le fichier.
-loadDotEnv();
+// En développement, le fichier `.env` de la racine. En production (`NODE_ENV=production`, comme
+// dans l'image et les serveurs des tests), l'environnement du serveur seul : un `.env` resté à côté
+// du serveur construit y remettrait une `ORIGIN` que le démarrage doit voir absente (ADR 0051).
+if (process.env['NODE_ENV'] !== 'production') loadDotEnv();
 
 let authHandle: DatabaseHandle | undefined;
 let appHandle: DatabaseHandle | undefined;

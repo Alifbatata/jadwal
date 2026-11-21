@@ -9,7 +9,7 @@
 import { building } from '$app/env';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { error, type RequestEvent } from '@sveltejs/kit';
-import type { Handle } from '@sveltejs/kit/hooks';
+import type { Handle, ServerInit } from '@sveltejs/kit/hooks';
 import { documentDansSaLangue, type Langue } from '#lib/i18n.js';
 import {
 	LANGUAGE_COOKIE,
@@ -24,7 +24,16 @@ import { auth } from '#lib/server/auth.js';
 import { passkeyCount, recordAdminAccess, signedIn } from '#lib/server/context.js';
 import { strictTransportSecurity } from '#lib/server/hsts.js';
 import { withMailLanguage } from '#lib/server/mail/language.js';
+import { checkPublicOrigin } from '#lib/server/origin.js';
 import { compter } from '#lib/server/vues.js';
+
+/**
+ * Au démarrage, avant la première requête : adapter-node attend ce crochet avant d'écouter, et une
+ * `ORIGIN` que jadwal refuse arrête donc le service (ADR 0051).
+ */
+export const init: ServerInit = () => {
+	if (!building) checkPublicOrigin(process.env);
+};
 
 /**
  * Les routes que l'on accepte de voir intégrées dans un cadre d'un autre site : les pages publiques
