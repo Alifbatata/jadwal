@@ -1377,6 +1377,18 @@ describe('copier une période pour l’année suivante (retour D2)', () => {
 	);
 });
 
+/**
+ * Les heures de Maghrib d'un tableau d'aperçu, une par ligne : la quatrième cellule, après Fajr,
+ * Dhuhr et Asr. Compter les « 19:00 » du tableau entier ne suffit pas : certains soirs de janvier,
+ * Isha calculé tombe aussi à 19:00 (vu le 21.11.2026, sur l'aperçu qui commence 60 jours plus tard).
+ */
+function maghribDe(tableau: string): string[] {
+	return [...tableau.matchAll(/<tr\b[\s\S]*?<\/tr>/g)].map((ligne) => {
+		const cellule = [...ligne[0].matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/g)][3]?.[1] ?? '';
+		return visibleText(`<body>${cellule}</body>`).slice(0, 5);
+	});
+}
+
 describe('l’aperçu d’une période préparée à l’avance (retour B1)', () => {
 	/** Le titre de l'aperçu d'une période qui commence après les sept prochains jours. */
 	const TITRE: Record<Langue, string> = {
@@ -1426,7 +1438,7 @@ describe('l’aperçu d’une période préparée à l’avance (retour B1)', ()
 			for (let pas = 0; pas < 7; pas += 1) {
 				expect(visibleText(`<body>${tableau}</body>`)).toContain(jjmmaaaa(addDays(debut, pas)));
 			}
-			expect(tableau.match(/19:00/g)?.length ?? 0).toBe(7);
+			expect(maghribDe(tableau)).toEqual(Array(7).fill('19:00'));
 			// Un aperçu, rien de plus : la période n'est pas écrite.
 			expect(await nombreDePeriodes()).toBe(avant);
 		}
@@ -1480,7 +1492,7 @@ describe('l’aperçu d’une période préparée à l’avance (retour B1)', ()
 				const apres = html.slice(html.indexOf(`${TITRE_ENTIERE[langue]}</h3>`));
 				const tableau = apres.match(/<tbody>[\s\S]*?<\/tbody>/)?.[0] ?? '';
 				expect(tableau.match(/<tr\b/g)?.length ?? 0).toBe(jours);
-				expect(tableau.match(/19:00/g)?.length ?? 0).toBe(jours);
+				expect(maghribDe(tableau)).toEqual(Array(jours).fill('19:00'));
 				expect(visibleText(`<body>${tableau}</body>`)).not.toContain(
 					jjmmaaaa(addDays(debut, jours))
 				);
@@ -1510,7 +1522,7 @@ describe('l’aperçu d’une période préparée à l’avance (retour B1)', ()
 			expect(lu).not.toContain(TITRE_ENTIERE.fr);
 			const tableau =
 				html.slice(html.indexOf(`${TITRE.fr}</h3>`)).match(/<tbody>[\s\S]*?<\/tbody>/)?.[0] ?? '';
-			expect(tableau.match(/19:00/g)?.length ?? 0).toBe(7);
+			expect(maghribDe(tableau)).toEqual(Array(7).fill('19:00'));
 		}
 	});
 
