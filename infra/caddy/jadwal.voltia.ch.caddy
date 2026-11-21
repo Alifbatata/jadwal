@@ -78,9 +78,9 @@ jadwal.voltia.ch {
 		# X-Forwarded-For porte l'adresse de qui s'est connecté à Caddy. C'est le seul des quatre
 		# que l'application lit, et adapter-node en prend la **dernière** valeur (`XFF_DEPTH=1`),
 		# celle que Caddy a écrite. Les trois autres, personne ne les lit : l'adresse du site vient
-		# d'`ORIGIN`, que le point d'entrée de l'application écrit dans deux en-têtes internes à la
-		# place de tout ce que la requête porte (ADR 0050) ; `PROTOCOL_HEADER` et `HOST_HEADER`
-		# nomment ces deux-là, jamais X-Forwarded-Proto ni X-Forwarded-Host. Et rien ne lit `Via`.
+		# d'`ORIGIN`, qu'adapter-node lit au démarrage et qui l'emporte sur tout ce que la requête
+		# porte (ADR 0051) ; l'application refuse `PROTOCOL_HEADER` et `HOST_HEADER`. Et rien ne lit
+		# `Via`.
 		#
 		# Jusqu'à l'étape 19, deux lignes `header_up` redisaient X-Forwarded-Proto et
 		# X-Forwarded-Host. `caddy validate` les disait inutiles ; elles sont retirées, et
