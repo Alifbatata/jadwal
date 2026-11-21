@@ -1,4 +1,4 @@
-# 0051 : l'origine publique, lue par adapter-node et vérifiée au démarrage
+# 0051 : l'origine publique, lue par `adapter-node` et vérifiée au démarrage
 
 - Statut : accepté
 - Date : 2026-11-21
@@ -9,15 +9,15 @@
 
 L'ADR 0050 a rendu à `ORIGIN` son rôle par un point d'entrée de jadwal, `apps/web/server.js`,
 parce qu'`adapter-node` 6.0.0 ne la lisait plus. Ce point d'entrée dépendait de deux détails de
-l'adaptateur : `build/index.js` exporte `server`, et `PROTOCOL_HEADER` et `HOST_HEADER` sont lus au
-chargement du module.
+l'adaptateur : `build/index.js` exporte `server`, et les en-têtes `PROTOCOL_HEADER` et
+`HOST_HEADER` sont lus au chargement du module.
 
-`adapter-node` 6.0.2 (publié le 10.11.2026, avec SvelteKit 3.2.0, qu'il exige) relit `ORIGIN` au
-démarrage quand `paths.origin` n'est pas posé (sveltejs/kit#17632, lu dans son code publié). Quand
+`adapter-node` 6.0.2 (publié le 10 novembre 2026, avec SvelteKit 3.2.0, qu'il exige) relit `ORIGIN` au
+démarrage quand `paths.origin` n'est pas posé (`sveltejs/kit#17632`, lu dans son code publié). Quand
 elle est posée, elle donne l'adresse de toute requête, `event.url`, sans regarder `Host` ni aucun
-autre en-tête. Il refuse de démarrer sur une `ORIGIN` vide, illisible, ou ni en `http` ni en `https`.
+autre en-tête. Il refuse de démarrer si `ORIGIN` est vide, illisible, ou ni en `http` ni en `https`.
 
-Ce qu'il ne fait pas, mesuré sur le serveur construit : il démarre **sans** `ORIGIN`, et tire alors
+Ce qu'il ne fait pas, mesuré sur le serveur construit : il se lance **sans** `ORIGIN`, et tire alors
 l'adresse de `Host` et suppose `https` ; et il réduit **sans rien dire** une `ORIGIN` qui porte un
 chemin, une requête, un fragment ou un compte à son origine. Avec un chemin, Better Auth
 abandonnerait son chemin de base, mais ne le découvrirait qu'à la première requête qui le sollicite.
