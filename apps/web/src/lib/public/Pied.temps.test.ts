@@ -5,7 +5,8 @@
 // temps de ses tests, avec le seul greffon de Svelte et un `$app/paths` réduit à ce que le pied
 // en attend : `resolve` rend le chemin précédé de sa barre, comme SvelteKit 3 le fait d'un chemin
 // sans barre (`'conditions'`), puisque la page publique n'a pas de chemin de base. `#lib` se résout
-// seul, par les `imports` du `package.json`. Rien n'est écrit sur le disque, et le serveur n'écoute sur aucun port.
+// seul, par les `imports` du `package.json`. Rien n'est écrit sur le disque, et le serveur
+// n'écoute sur aucun port.
 //
 // Sous la charge de la suite complète, ce démarrage de Vite a dépassé son délai (étape 18). Ce
 // fichier tourne donc à part, dans `pnpm test:temps` (étape 19), avec un délai tiré d'une mesure :
