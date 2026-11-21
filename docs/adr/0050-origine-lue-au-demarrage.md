@@ -1,4 +1,4 @@
-﻿# 0050 : l'origine publique, lue au démarrage par un point d'entrée de jadwal
+# 0050 : l'origine publique, lue au démarrage par un point d'entrée de jadwal
 
 - Statut : remplacé par [0051](0051-origine-lue-par-adapter-node.md) le 2026-11-21
 - Date : 2026-11-01

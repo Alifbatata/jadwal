@@ -12,10 +12,11 @@ parce qu'`adapter-node` 6.0.0 ne la lisait plus. Ce point d'entrée dépendait d
 l'adaptateur : `build/index.js` exporte `server`, et les en-têtes `PROTOCOL_HEADER` et
 `HOST_HEADER` sont lus au chargement du module.
 
-`adapter-node` 6.0.2 (publié le 10 novembre 2026, avec SvelteKit 3.2.0, qu'il exige) relit `ORIGIN` au
-démarrage quand `paths.origin` n'est pas posé (`sveltejs/kit#17632`, lu dans son code publié). Quand
-elle est posée, elle donne l'adresse de toute requête, `event.url`, sans regarder `Host` ni aucun
-autre en-tête. Il refuse de démarrer si `ORIGIN` est vide, illisible, ou ni en `http` ni en `https`.
+`adapter-node` 6.0.2 (publié le 10 novembre 2026, avec SvelteKit 3.2.0, qu'il exige) relit
+`ORIGIN` au démarrage quand `paths.origin` n'est pas posé (`sveltejs/kit#17632`, lu dans son code
+publié). Quand elle est posée, elle donne l'adresse de toute requête, `event.url`, sans regarder
+`Host` ni aucun autre en-tête. Il refuse de démarrer si `ORIGIN` est vide, illisible, ou ni en
+`http` ni en `https`.
 
 Ce qu'il ne fait pas, mesuré sur le serveur construit : il se lance **sans** `ORIGIN`, et tire alors
 l'adresse de `Host` et suppose `https` ; et il réduit **sans rien dire** une `ORIGIN` qui porte un

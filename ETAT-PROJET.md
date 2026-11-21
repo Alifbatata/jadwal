@@ -144,8 +144,9 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   pour qui se sert de jadwal. Les versions sont montées (SvelteKit 3.2.0, `adapter-node` 6.0.2)
   et le code migré ; l'origine publique est lue au démarrage par l'adaptateur, et vérifiée par
   jadwal (ADR 0051) ; l'avis des licences tierces couvre désormais le code fondu dans le serveur
-  et le client. Restent le parcours complet contre la nouvelle image, la vérification complète,
-  la poussée et le déploiement.
+  et le client. 4 160 tests, tous réussis, aucun sauté, et 24 tests liés au temps, à part ;
+  parcours complet contre la nouvelle image : 475 vérifications, et axe sans rien de sérieux sur
+  45 pages. Mesurés sur le poste le 21.11.2026. Reste le déploiement.
 
 ## Fait
 
