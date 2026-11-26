@@ -90,6 +90,8 @@ absent du dépôt public :
 ## Structure
 
 - `apps/web/` : SvelteKit (adapter-node), espace des responsables, pages publiques, API, flux ICS.
+  Le poste « Diffuser » du direct (`/direct`, ADR 0056) n'existe que si `JADWAL_LIVE_URL` est
+  posée ; `pnpm direct:test` l'éprouve dans Chrome avec un faux micro.
 - `apps/live/` : le relais du direct (ADR 0055), un programme Node à part du serveur web. Une
   dépendance, `ws`. Éteint sans `JADWAL_LIVE_TRANSLATOR` ; le seul traducteur est simulé.
 - `packages/core/` : bibliothèque TypeScript pure (récurrence, exceptions, prières, ICS).

@@ -166,11 +166,12 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   sur le poste le 26.11.2026 ; la CI les rejoue à chaque poussée.
 - **Étape 25** (le direct : le sermon du vendredi traduit à l'oral) : **ouverte le 26.11.2026**.
   Cinq chantiers : le relais, le poste « Diffuser », l'écoute, la preuve sur un vrai sermon, puis
-  la charge, le parcours et les conditions. **Le premier est fait** : `apps/live`, le relais du
-  direct (ADR 0055), avec un traducteur simulé. Aucun écran ne s'en sert encore, aucun service de
-  traduction n'est branché, et rien ne quitte le relais. Le service sera choisi au quatrième
-  chantier, sur un vrai sermon : il y faudra une clé chez chaque service essayé et un
-  enregistrement, que l'exploitant fournira.
+  la charge, le parcours et les conditions. **Les deux premiers sont faits** : `apps/live`, le
+  relais du direct (ADR 0055), avec un traducteur simulé, et le poste « Diffuser », `/direct`
+  (ADR 0056), d'où un membre lance le direct depuis son navigateur. Personne ne peut encore
+  écouter depuis une page, aucun service de traduction n'est branché, et rien ne quitte le relais.
+  Le service sera choisi au quatrième chantier, sur un vrai sermon : il y faudra une clé chez
+  chaque service essayé et un enregistrement, que l'exploitant fournira.
 
 ## Fait
 
@@ -1115,8 +1116,8 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   tous se parlent en WebSocket et prennent le même format de son (PCM 16 bits, mono, 24 kHz), que
   le relais adopte sans rien convertir.
 - **Qui diffuse** : un jeton court, signé par le serveur web avec un secret partagé, présenté dans
-  le premier message de la liaison. Le serveur web ne le signe pas encore : c'est le chantier
-  suivant. **Qui écoute** : sans compte ni cookie.
+  le premier message de la liaison. Le serveur web le signe depuis le chantier suivant.
+  **Qui écoute** : sans compte ni cookie.
 - **Les arrêts seuls** : durée maximale, silence du poste, liaison tombée, plafond du mois, débit
   anormal, traducteur qui lâche, compteur qui ne s'écrit plus. Le plafond se compte en temps
   facturé (durée fois nombre de langues), dans un fichier qui ne porte que le mois et un nombre.
@@ -1127,9 +1128,35 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   production. Quinze fautes introduites exprès dans le code ont toutes été attrapées. L'une des
   épreuves a trouvé un défaut : sur un port déjà pris, le programme restait en vie sans rien
   écouter.
-- **Ce qui n'est pas fait** : aucun écran ; aucune image Docker du relais ; aucun pas du parcours ;
-  le format du son servi aux téléphones, trop lourd tel quel pour une salle pleine ; la limite du
-  nombre de liaisons par adresse.
+
+Deuxième chantier, livré sur `main` le 26.11.2026, pas déployé :
+
+- **Le poste « Diffuser »**, `/direct` (ADR 0056) : un écran de l'espace des responsables d'où un
+  membre de l'organisation lance le direct. Les langues du relais, un bouton ; pendant le direct,
+  la durée, le niveau du micro et les personnes à l'écoute par langue ; à la fin, une phrase qui dit
+  pourquoi. Dans les cinq langues de l'espace.
+- **Qui diffuse** : tout membre, responsable ou éditeur, conditions acceptées ; jamais le
+  super-admin entré par ses pouvoirs. Le serveur web signe pour lui un jeton d'une minute, demandé
+  au moment d'appuyer, pour l'organisation de la session ; chaque jeton laisse une ligne au journal
+  de l'organisation.
+- **Éteint sans réglage** : sans `JADWAL_LIVE_URL`, ni écran ni lien dans la navigation. Une
+  adresse sans secret, ou fausse, arrête le serveur au démarrage.
+- **Le micro et la liaison vers le relais ne sont ouverts que sur cet écran**, dans ses en-têtes.
+  On y arrive et on en repart par un vrai chargement de document.
+- **Le son** est capté par un `AudioWorklet`, ramené à 24 kHz, mis en 16 bits et coupé en morceaux
+  de 200 ms dans le navigateur. L'écran reste allumé pendant le direct. Une coupure de réseau ne
+  finit pas le direct : le poste se rebranche seul, cinq essais en vingt-trois secondes.
+- **Les tests** : 4 608 dans tout le dépôt, tous réussis, aucun sauté, et 25 liés au temps. Un
+  test d'accès lance le vrai relais à côté du vrai serveur web et conduit un direct entier.
+  `pnpm direct:test` rejoue l'écran dans Chrome avec un fichier pour micro : 26 vérifications,
+  dont la fréquence du son à la sortie du relais (440 Hz lus à 24 kHz), son rythme (48 000 octets
+  par seconde), la reprise après une coupure du relais, un micro refusé, et axe sans rien à
+  signaler. Vingt-cinq fautes introduites exprès ont toutes été attrapées ; l'une d'elles a
+  montré un contrôle que le cadre faisait déjà pour une partie des cas, et le test a été précisé.
+- **Ce qui n'est pas fait** : l'écran d'écoute ; l'image Docker du relais ; aucun pas du parcours,
+  et `pnpm direct:test` n'est pas encore dans la CI ; le format du son servi aux téléphones, trop
+  lourd tel quel pour une salle pleine ; la limite du nombre de liaisons par adresse ; le choix
+  des langues retenu par organisation ; Safari, Firefox et un vrai téléphone.
 
 **Un script ou une commande qu'aucun test ne _lance_ n'est pas éprouvé.** C'est la règle du dépôt
 depuis l'étape 12, et elle répond à la question laissée ouverte à l'étape 11.

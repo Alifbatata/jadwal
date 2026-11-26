@@ -1,0 +1,120 @@
+# 0056 : le poste « Diffuser »
+
+- Statut : accepté
+- Date : 2026-11-26
+- Met en œuvre : [0052](0052-application-mobile-et-sermon-traduit-en-direct.md),
+  [0055](0055-le-relais-du-direct.md)
+
+## Contexte
+
+Le relais du direct existe (ADR 0055) : il reçoit la voix d'un poste, la passe à un traducteur et
+distribue ce qui en revient. Il ne connaît ni comptes ni organisations, et n'ouvre un direct que
+sur présentation d'un jeton signé. Il manquait l'autre bout : l'écran d'où quelqu'un, à la
+mosquée, lance le direct, et le serveur qui signe pour lui.
+
+Cet écran est tenu par une personne debout près de la sono, un vendredi, qui a autre chose à
+faire. Il doit tenir en un bouton, dire ce qui se passe, et ne rien coûter s'il est oublié.
+
+Lu dans les documentations officielles le 26 novembre 2026 :
+
+- Un navigateur ne donne le micro qu'à une page servie en HTTPS, et l'en-tête `Permissions-Policy`
+  du document peut le lui interdire. Le serveur de jadwal l'interdit sur toutes ses pages.
+- La politique de sécurité du contenu gouverne les liaisons WebSocket par `connect-src`, et
+  `'self'` n'y vaut pas pour une liaison WebSocket dans tous les navigateurs.
+- Ces deux en-têtes appartiennent au document : un navigateur les lit quand il le charge, pas
+  quand une application change d'écran sans recharger.
+- Le son d'un micro se lit hors du fil de la page, par un `AudioWorklet`, en blocs de
+  128 échantillons à la fréquence du contexte.
+- Un écran peut demander à rester allumé ; le verrou tombe dès que la page n'est plus visible.
+
+## Décision
+
+### Un écran de l'espace des responsables : `/direct`
+
+Un titre, les langues, un bouton. Pendant le direct : la durée, le niveau du micro, les personnes
+à l'écoute par langue, et « Arrêter le direct ». À la fin, une phrase qui dit pourquoi.
+
+Sans l'adresse du relais, `JADWAL_LIVE_URL`, l'écran n'existe pas : ni page, ni lien dans la
+navigation. Une adresse sans secret, un secret trop court, une adresse qui n'est pas celle d'un
+relais, ou une liaison en clair sous un site en HTTPS arrêtent le serveur au démarrage, comme une
+`ORIGIN` fausse (ADR 0051). Un direct à moitié réglé montrerait un bouton qui ne mène nulle part.
+
+### Qui diffuse : tout membre de l'organisation
+
+Responsable ou éditeur, connecté, conditions d'utilisation acceptées. La personne à la sono n'est
+pas forcément responsable ; lui donner le rôle d'éditeur suffit.
+
+Le super-admin entré dans une organisation par ses pouvoirs ne diffuse pas : pour lui, l'écran
+n'existe pas. La voix d'une organisation est lancée par l'un des siens.
+
+### Le jeton se demande en appuyant, et vit une minute
+
+L'écran demande le jeton au serveur web au moment d'ouvrir la liaison, par une requête à part. Le
+serveur prend l'organisation dans la session, jamais dans la requête (ADR 0013), refuse une
+demande venue d'un autre site, et écrit une ligne au journal de l'organisation avant de répondre :
+on sait qui a lancé un direct, et quand. Le jeton n'est jamais rendu dans une page ni gardé dans
+un cache.
+
+Le serveur web et le relais ne partagent aucun fichier : la forme du jeton est écrite des deux
+côtés. Un jeton témoin, identique dans les tests des deux programmes, fait tomber l'un ou l'autre
+s'ils divergent ; et un test lance le relais lui-même, pour lui présenter un jeton que le serveur
+web vient de signer.
+
+### Le micro et la liaison ne s'ouvrent que sur cet écran
+
+Sur la réponse de `/direct`, et sur elle seule, `Permissions-Policy` autorise le micro à la page
+elle-même, et `connect-src` reçoit l'origine du relais, écrite en toutes lettres. Partout
+ailleurs, le micro reste interdit.
+
+On arrive sur cet écran, et on en repart, par un vrai chargement de document : le lien de la
+navigation et ceux de l'écran le demandent. Sans cela, l'écran hériterait des en-têtes de la page
+d'où l'on vient, et le navigateur refuserait le micro.
+
+### Le son : capté par un `AudioWorklet`, ramené à 24 kHz dans le navigateur
+
+Le relais ne connaît qu'un format (ADR 0055). Le poste demande au navigateur un contexte à
+24 kHz ; un petit découpeur, dans le fil du son, ramène de toute façon à 24 kHz ce qu'il reçoit,
+le met en 16 bits et le coupe en morceaux de 200 ms. Chaque morceau part au relais tel quel, avec
+son niveau de crête, que l'écran montre : on voit que le micro capte, et l'écran le dit quand il
+ne capte rien depuis cinq secondes.
+
+Le micro est demandé en mono, sans annulation d'écho, puisque le poste ne rejoue rien, avec la
+réduction de bruit et le gain automatique du navigateur. Ce réglage sera mesuré sur un vrai
+sermon.
+
+### L'écran reste allumé, et une coupure ne finit pas le direct
+
+Pendant le direct, l'écran demande à rester allumé : un téléphone qui s'endort coupe son micro.
+
+Quand la liaison tombe en plein direct, le poste se rebranche seul : un jeton neuf, les mêmes
+langues, cinq essais en vingt-trois secondes. Le relais garde ceux qui écoutent entre-temps
+(ADR 0055). Passé cinq essais, l'écran dit que la liaison est perdue. Un direct qui n'a jamais
+commencé n'est pas retenté : l'écran le dit, et la personne réessaie.
+
+### La logique du poste vit hors de la page
+
+Ce que le poste dit au relais, ce qu'il en entend et ce qu'il fait d'une coupure tient dans un
+module sans navigateur, à qui l'on donne la liaison, le jeton et les minuteries. La page lui
+donne les vrais ; les tests lui en donnent de faux, puis le branchent sur le vrai relais. La page
+n'y ajoute que le micro et l'écran.
+
+## Conséquences
+
+- **Tout membre peut faire dépenser.** Un éditeur lance un direct, donc du temps de traduction
+  facturé, jusqu'au plafond du mois. Une désignation plus fine, membre par membre, demanderait une
+  colonne et un écran de plus ; elle viendra si le besoin se montre.
+- **Les langues se choisissent à chaque direct**, toutes cochées au départ. Une organisation qui
+  ne veut jamais d'une langue doit la décocher chaque vendredi, et l'oublier coûte une langue de
+  plus. Retenir ce choix appartient aux réglages de l'organisation : à faire.
+- **Le navigateur retient l'accord donné pour le micro**, pour tout le site. Les autres écrans ne
+  peuvent pas s'en servir pour autant : leur en-tête l'interdit, quel que soit cet accord.
+- **Le secret du direct est maintenant lu par deux programmes.** Qui lit l'environnement du
+  serveur web le tient, et peut ouvrir un direct au nom de n'importe quelle organisation
+  (ADR 0055).
+- **Un poste qui quitte l'écran arrête le direct** : la liaison tombe avec la page. C'est voulu ;
+  l'écran le dit pendant tout le direct.
+- **Le découpeur n'est pas un filtre de studio.** Quand le navigateur refuse un contexte à
+  24 kHz, il fait la moyenne des échantillons reçus. C'est assez pour de la voix.
+- **Seul Chrome est prouvé**, par une épreuve qui lui donne un fichier pour micro. Safari, Firefox
+  et un vrai téléphone restent à essayer.
+- **Le traducteur est toujours simulé** : avec lui, la voix ne quitte pas le relais.

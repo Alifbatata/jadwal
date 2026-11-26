@@ -267,11 +267,24 @@ sermon traduit passe par `apps/live` (ADR 0055). Ce programme n'a ni base ni com
 aucune variable du serveur web. Il portera la clé du service de traduction, que le serveur web ne
 voit jamais. Sans réglage, il refuse de démarrer : rien n'écoute.
 
-Pour diffuser, il faut un jeton que le serveur web signe pour un responsable connecté : une
+Pour diffuser, il faut un jeton que le serveur web signe pour un membre connecté : une
 organisation, une échéance, une signature HMAC-SHA-256. Le jeton voyage dans le premier message de
 la liaison, jamais dans son adresse. Faux, échu ou signé par un autre, il reçoit le même refus. La
 signature est comparée en temps constant, avant que rien du contenu soit lu. Un poste qui ne
 s'annonce pas en cinq secondes est décroché, et un message de plus de 64 Kio ferme la liaison.
+
+Le serveur web ne signe que pour un membre de l'organisation, responsable ou éditeur, qui a
+accepté les conditions ; jamais pour le super-admin entré par ses pouvoirs (ADR 0056).
+L'organisation vient de la session, pas de la requête. Le jeton vit une minute, se demande au
+moment d'appuyer, n'est rendu dans aucune page ni gardé dans aucun cache, et une demande venue
+d'un autre site est refusée. Chaque jeton signé laisse une ligne au journal de l'organisation.
+
+Le micro reste interdit par `Permissions-Policy` sur toutes les pages du service, sauf une :
+l'écran « Diffuser », qui l'ouvre à la page elle-même. La liaison vers le relais n'est permise par
+la politique de sécurité du contenu que sur ce même écran, pour la seule origine du relais. On y
+arrive et on en repart par un vrai chargement de document, parce qu'un navigateur ne relit ces
+en-têtes qu'à ce moment-là. Sans l'adresse du relais dans son environnement, le serveur web n'a ni
+cet écran ni son lien ; avec une adresse fausse ou sans secret, il refuse de démarrer.
 
 Écouter ne demande ni compte ni cookie, comme lire une page publique. Une demande de navigateur
 venue d'une autre origine que celle du site est refusée. Qui écoute n'a rien à dire : son premier
@@ -293,7 +306,13 @@ quitte pas le relais.
 - **Le secret du direct ouvre un direct au nom de n'importe quelle organisation.** Qui tient
   `JADWAL_LIVE_SECRET` fabrique un jeton valable : il fait dépenser jusqu'au plafond du mois, et
   fait entendre ce qu'il veut à ceux qui écoutent. Il n'ouvre ni la base ni les comptes. C'est un
-  secret d'hébergement, distinct de celui des sessions.
+  secret d'hébergement, distinct de celui des sessions. Deux programmes le lisent : le relais et
+  le serveur web.
+- **Tout membre d'une organisation peut lancer un direct**, éditeur compris, donc faire dépenser du
+  temps de traduction jusqu'au plafond du mois. Le journal de l'organisation dit qui l'a fait.
+  Rien ne désigne encore, membre par membre, qui a ce droit.
+- **Le poste « Diffuser » n'est prouvé que dans Chrome**, avec un fichier pour micro. Safari,
+  Firefox et un vrai téléphone restent à essayer.
 - **Les places d'écoute se prennent.** Rien ne limite encore le nombre de liaisons d'une même
   adresse : un seul programme peut ouvrir toutes les places et empêcher d'écouter. La limite par
   adresse revient au mandataire ; elle sera réglée avec l'épreuve de charge de l'étape 25.
@@ -394,6 +413,16 @@ avance une horloge à la main : chaque arrêt seul y est joué, le français n'y
 origine étrangère, message trop gros, appareil muet. `tests/program.test.ts` construit le
 programme et le lance comme en production : il refuse de démarrer sans réglage, et après un
 direct, ni sa sortie ni son dossier ne portent le son ou le texte.
+
+Le poste « Diffuser » a les siens dans `apps/web`. `src/lib/server/live.test.ts` refuse un direct
+à moitié réglé, et signe le même jeton témoin que `apps/live/src/token.test.ts` vérifie.
+`src/lib/direct/session.test.ts` joue le fil du poste avec une fausse liaison : refus, fin, coupure
+et reprise. `tests/direct.test.ts` lance le vrai relais à côté du vrai serveur web : l'écran
+n'existe pas sans réglage ; le jeton est refusé sans session, sans les conditions, au super-admin
+et à un autre site ; le micro et la liaison ne sont ouverts que sur cet écran ; et un direct
+entier arrive à qui écoute cette organisation, et à personne d'autre. `pnpm direct:test` rejoue
+l'écran dans Chrome, avec un fichier pour micro, et mesure à la sortie du relais la fréquence et
+le rythme du son.
 
 `pnpm parcours:test` rejoue ce qu'une organisation vit, dans Chrome, sur l'image de production et
 une base neuve lancées par Docker : la passkey du super-admin, l'invitation, les conditions à
