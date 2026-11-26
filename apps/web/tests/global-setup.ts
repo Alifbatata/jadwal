@@ -34,9 +34,9 @@ const PORTS = portsDeTest();
 /**
  * Trois ports qui se suivent, à partir de `JADWAL_TEST_PORT_BASE` (4173 par défaut). Deux arbres de
  * travail peuvent ainsi lancer ces tests en même temps, chacun avec sa base (`JADWAL_TEST_DB`) et
- * ses ports, sans se prendre un serveur. `roles-de-base.test.ts` prend le quatrième, et
+ * ses ports, sans se prendre un serveur. `roles-de-base.test.ts` prend le quatrième,
  * `public-prieres-agenda.test.ts` le cinquième et le sixième, pour ses deux serveurs à l'horloge
- * posée, un vendredi et la veille.
+ * posée, un vendredi et la veille, et `direct.test.ts` le septième, pour le relais du direct.
  */
 function portsDeTest(): readonly [number, number, number] {
 	const base = Number(process.env['JADWAL_TEST_PORT_BASE'] ?? 4173);
@@ -57,6 +57,15 @@ const SECRET = 'secret-de-test-assez-long-pour-ne-pas-etre-refuse';
 
 /** L'adresse que la seconde instance prévient quand une demande d'accès arrive (étape 22). */
 const OPERATOR_EMAIL = 'exploitant@example.test';
+
+/**
+ * Le direct (étape 25) : la seconde instance seule connaît un relais, sur le septième port. Le
+ * relais lui-même est lancé par `direct.test.ts`, avec ce secret et ces langues ; les autres
+ * fichiers n'en ont pas besoin, l'écran s'affiche sans lui.
+ */
+const LIVE_SECRET = 'secret-du-direct-de-test-assez-long-pour-passer';
+const LIVE_URL = `ws://127.0.0.1:${PORTS[0] + 6}`;
+const LIVE_LANGUAGES = 'fr,de,tr';
 
 // L'environnement des serveurs de test est celui de ce processus, moins ce qui dit « en test » :
 // `productionEnvironment`, dans `environnement-de-production.ts`, dit pourquoi, et ce que cela change
@@ -108,6 +117,9 @@ export default async function setup(project: TestProject) {
 				MAIL_OUTBOX_DIR: outbox,
 				MAIL_FROM: 'jadwal@example.test',
 				BETTER_AUTH_SECRET: SECRET,
+				// Le direct est éteint, quoi que porte le `.env` du poste ; la seconde instance le
+				// rallume plus bas. Les deux branches sont ainsi éprouvées sur de vrais serveurs.
+				JADWAL_LIVE_URL: '',
 				// La page d'essai du widget n'existe que si ce réglage est posé (étape 7, partie A).
 				// Elle ne l'est que sur la seconde instance : les deux branches — ouverte et fermée —
 				// sont ainsi éprouvées sur un vrai serveur, et non simulées.
@@ -118,7 +130,10 @@ export default async function setup(project: TestProject) {
 					? {
 							JADWAL_WIDGET_TEST_ORG: 'widget',
 							JADWAL_EXPLOITANT: 'Voltia, entreprise individuelle d’Une Personne',
-							JADWAL_DEMANDES_COURRIEL: OPERATOR_EMAIL
+							JADWAL_DEMANDES_COURRIEL: OPERATOR_EMAIL,
+							JADWAL_LIVE_URL: LIVE_URL,
+							JADWAL_LIVE_SECRET: LIVE_SECRET,
+							JADWAL_LIVE_LANGUAGES: LIVE_LANGUAGES
 						}
 					: {}),
 				// La troisième instance seulement : adapter-node lit alors `X-Forwarded-For` et prend
@@ -166,6 +181,9 @@ ${logs.join('')}
 	project.provide('authSecret', SECRET);
 	project.provide('testDatabase', database);
 	project.provide('operatorEmail', OPERATOR_EMAIL);
+	project.provide('liveSecret', LIVE_SECRET);
+	project.provide('liveUrl', LIVE_URL);
+	project.provide('liveLanguages', LIVE_LANGUAGES);
 
 	return async () => {
 		for (const child of servers) child.kill();
@@ -186,5 +204,11 @@ declare module 'vitest' {
 		testDatabase: string;
 		/** L'adresse que la seconde instance prévient d'une demande d'accès. */
 		operatorEmail: string;
+		/** Le secret que la seconde instance partage avec le relais du direct. */
+		liveSecret: string;
+		/** L'adresse du relais que la seconde instance annonce : `ws://127.0.0.1:<septième port>`. */
+		liveUrl: string;
+		/** Les langues du direct sur la seconde instance, séparées par des virgules. */
+		liveLanguages: string;
 	}
 }

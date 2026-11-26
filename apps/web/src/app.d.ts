@@ -38,6 +38,12 @@ declare global {
 			 * français.
 			 */
 			langue?: import('#lib/i18n.js').Langue | undefined;
+			/**
+			 * L'adresse du relais du direct, posée par l'écran « Diffuser » quand il va être rendu, et
+			 * par lui seul. Le hook ouvre alors, sur cette réponse, le micro et la liaison vers le
+			 * relais ; partout ailleurs ils restent fermés (ADR 0056).
+			 */
+			relay?: string | undefined;
 		}
 	}
 }

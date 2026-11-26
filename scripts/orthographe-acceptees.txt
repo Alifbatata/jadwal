@@ -667,3 +667,20 @@ apps/web/src/lib/i18n/access-request.ts | AR_DIACRITICS_REPLACE | برنامج
 # « SENT_START_SIN_PLU » : le bouton « Diesen Antrag ablehnen » et la phrase qui le suit, recollés
 # par le corpus. Le singulier est juste : le bouton vise une demande. Même cas que « Termin ».
 apps/web/src/lib/i18n/super-admin.ts | SENT_START_SIN_PLU | Antrag
+#
+# Le poste « Diffuser » (étape 25, ADR 0056). Sans voyelles, comme les autres écrans (famille 6) :
+# « الترجمة », « بدء », « البدء ». « الخطبة », le sermon : le mot de la page publique. « على الأقل »,
+# que la règle veut « في الأقل » par purisme, comme dans `prayers.ts`.
+# « est » : la légende « Langues de traduction » et la phrase d'aide qui la suit, recollées par le
+# corpus (famille 2) ; « Chaque langue cochée est traduite » est juste.
+# « Übertragung » : le bouton « Übertragung starten », au singulier : il lance un direct.
+# « Die » : les phrases de fin d'un direct, dont l'écran n'affiche qu'une à la fois, commencent
+# toutes par « Die Übertragung » ; le corpus les lit à la suite (famille 2).
+apps/web/src/lib/i18n/live.ts | AR_DIACRITICS_REPLACE | الترجمة
+apps/web/src/lib/i18n/live.ts | AR_DIACRITICS_REPLACE | بدء
+apps/web/src/lib/i18n/live.ts | AR_DIACRITICS_REPLACE | البدء
+apps/web/src/lib/i18n/live.ts | AR_HOMOPHONES_REPLACE | الخطبة
+apps/web/src/lib/i18n/live.ts | AR_SIMPLE_REPLACE | على الأقل
+apps/web/src/lib/i18n/live.ts | ACCORD_SUJET_VERBE | est
+apps/web/src/lib/i18n/live.ts | SENT_START_SIN_PLU | Übertragung
+apps/web/src/lib/i18n/live.ts | GERMAN_WORD_REPEAT_BEGINNING_RULE | Die

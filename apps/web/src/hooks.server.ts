@@ -23,16 +23,20 @@ import { writeAccountLanguage } from '#lib/server/account-language.js';
 import { auth } from '#lib/server/auth.js';
 import { passkeyCount, recordAdminAccess, signedIn } from '#lib/server/context.js';
 import { strictTransportSecurity } from '#lib/server/hsts.js';
+import { liveHeaders, liveSettings } from '#lib/server/live.js';
 import { withMailLanguage } from '#lib/server/mail/language.js';
 import { checkPublicOrigin } from '#lib/server/origin.js';
 import { compter } from '#lib/server/vues.js';
 
 /**
  * Au démarrage, avant la première requête : adapter-node attend ce crochet avant d'écouter, et une
- * `ORIGIN` que jadwal refuse arrête donc le service (ADR 0051).
+ * `ORIGIN` que jadwal refuse arrête donc le service (ADR 0051). De même un direct à moitié
+ * réglé : une adresse de relais sans secret, ou fausse (ADR 0056).
  */
 export const init: ServerInit = () => {
-	if (!building) checkPublicOrigin(process.env);
+	if (building) return;
+	checkPublicOrigin(process.env);
+	liveSettings();
 };
 
 /**
@@ -247,9 +251,14 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// On ajoute à la politique existante au lieu de la remplacer : SvelteKit y a posé le nonce de
 	// son script de démarrage, et l'écraser bloquerait l'hydratation de toutes les pages.
 	const existing = response.headers.get('content-security-policy');
+	// L'écran « Diffuser », et lui seul, ouvre la liaison vers le relais et le micro (ADR 0056). Il
+	// le dit par `locals.relay`, posé quand il va être rendu : une redirection ou un refus sur la
+	// même adresse n'ouvrent rien.
+	const live = event.locals.relay ? liveHeaders(existing ?? '', event.locals.relay) : null;
+	const policy = live?.contentSecurityPolicy ?? existing;
 	response.headers.set(
 		'content-security-policy',
-		existing ? `${existing}; ${frameAncestors}` : frameAncestors
+		policy ? `${policy}; ${frameAncestors}` : frameAncestors
 	);
 
 	// `X-Frame-Options` ne sert jamais à autoriser : dès qu'une politique porte `frame-ancestors`,
@@ -268,7 +277,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 	response.headers.set(
 		'permissions-policy',
-		'camera=(), microphone=(), geolocation=(), payment=(), usb=()'
+		live?.permissionsPolicy ?? 'camera=(), microphone=(), geolocation=(), payment=(), usb=()'
 	);
 	// Une route peut en vouloir une plus stricte : on ne remplace pas ce qu'elle a posé.
 	if (!response.headers.has('referrer-policy')) {

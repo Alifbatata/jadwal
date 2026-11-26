@@ -15,6 +15,8 @@ interface CommonTexts {
 		readonly upcoming: string;
 		readonly courses: string;
 		readonly friday: string;
+		/** Le poste « Diffuser » du sermon traduit, quand le direct est réglé (ADR 0056). */
+		readonly live: string;
 		readonly share: string;
 		readonly members: string;
 		readonly prayers: string;
@@ -58,6 +60,7 @@ export const commonTexts: Translations<CommonTexts> = {
 			upcoming: 'À venir',
 			courses: 'Cours',
 			friday: 'Prière du vendredi',
+			live: 'Direct',
 			share: 'Partager',
 			members: 'Membres',
 			prayers: 'Heures de prière',
@@ -88,6 +91,7 @@ export const commonTexts: Translations<CommonTexts> = {
 			upcoming: 'Demnächst',
 			courses: 'Kurse',
 			friday: 'Freitagsgebet',
+			live: 'Live',
 			share: 'Teilen',
 			members: 'Mitglieder',
 			prayers: 'Gebetszeiten',
@@ -118,6 +122,7 @@ export const commonTexts: Translations<CommonTexts> = {
 			upcoming: 'In arrivo',
 			courses: 'Corsi',
 			friday: 'Preghiera del venerdì',
+			live: 'Diretta',
 			share: 'Condividi',
 			members: 'Membri',
 			prayers: 'Orari di preghiera',
@@ -148,6 +153,7 @@ export const commonTexts: Translations<CommonTexts> = {
 			upcoming: 'Coming up',
 			courses: 'Courses',
 			friday: 'Friday prayer',
+			live: 'Live',
 			share: 'Share',
 			members: 'Members',
 			prayers: 'Prayer times',
@@ -178,6 +184,7 @@ export const commonTexts: Translations<CommonTexts> = {
 			upcoming: 'القادم',
 			courses: 'الدروس',
 			friday: 'صلاة الجمعة',
+			live: 'البث المباشر',
 			share: 'المشاركة',
 			members: 'الأعضاء',
 			prayers: 'مواقيت الصلاة',

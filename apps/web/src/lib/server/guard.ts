@@ -7,6 +7,7 @@
 
 import { error, redirect, type RequestEvent } from '@sveltejs/kit';
 import { currentOrganisation, type OrganisationContext, type SignedIn } from './context.js';
+import { liveSettings, type LiveSettings } from './live.js';
 
 /** Connecté, sinon la page de connexion. */
 export function mustBeSignedIn(event: RequestEvent): SignedIn {
@@ -73,6 +74,24 @@ export async function mustAdministerPrayerModule(
 	const context = await mustAdminister(event);
 	if (!context.organizationPrayerModule) error(404, 'Not Found');
 	return context;
+}
+
+/**
+ * L'écran du poste « Diffuser » (ADR 0056) : le direct réglé sur cette instance, et un **membre**
+ * de l'organisation, responsable ou éditeur, conditions acceptées.
+ *
+ * **404 quand le direct est éteint**, avant même de regarder qui demande : sans relais, l'écran
+ * n'existe pas, comme le module des heures de prière. Et 404 pour le super-admin entré par ses
+ * pouvoirs : la voix d'une organisation est lancée par l'un des siens, jamais par l'exploitant.
+ */
+export async function mustBroadcast(
+	event: RequestEvent
+): Promise<{ context: OrganisationContext; live: LiveSettings }> {
+	const live = liveSettings();
+	if (!live) error(404, 'Not Found');
+	const context = await mustBeInOrganisation(event);
+	if (context.asSuperAdmin) error(404, 'Not Found');
+	return { context, live };
 }
 
 /** Les écrans du super-admin. Sans passkey prouvée, il n'y a aucun pouvoir (ADR 0025). */

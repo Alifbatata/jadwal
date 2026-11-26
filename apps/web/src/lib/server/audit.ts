@@ -37,7 +37,9 @@ export type AuditAction =
 	| 'prayer.import.delete'
 	| 'prayer.period.create'
 	| 'prayer.period.update'
-	| 'prayer.period.delete';
+	| 'prayer.period.delete'
+	/** Un jeton du poste « Diffuser » a été signé : qui a lancé un direct, et quand (ADR 0056). */
+	| 'live.token';
 
 export interface AuditEntry {
 	action: AuditAction;

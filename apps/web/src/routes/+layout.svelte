@@ -69,7 +69,14 @@
 	     organisation. -->
 	{@render children?.()}
 {:else}
-	<div style={accent} class="coquille">
+	<!-- L'écran « Diffuser » a ses propres en-têtes : le micro et la liaison vers le relais n'y sont
+	     ouverts que pour lui (ADR 0056). Un navigateur les lit au chargement du document, pas à un
+	     changement d'écran : on y arrive et on en repart donc par un vrai chargement. -->
+	<div
+		style={accent}
+		class="coquille"
+		data-sveltekit-reload={page.url.pathname === '/direct' ? 'true' : undefined}
+	>
 		{#if organisation?.asSuperAdmin}
 			<!-- La bannière n'est pas décorative : elle empêche de modifier la mauvaise organisation
 	     par inadvertance, ce qui est le risque propre aux pouvoirs de super-admin (ADR 0025). -->
@@ -111,6 +118,9 @@
 					<a href={resolve('cours')}>{text.navigation.courses}</a>
 					{#if organisation.prayerModule}
 						<a href={resolve('vendredi')}>{text.navigation.friday}</a>
+					{/if}
+					{#if organisation.live}
+						<a href={resolve('direct')} data-sveltekit-reload>{text.navigation.live}</a>
 					{/if}
 					<a href={resolve('partager')}>{text.navigation.share}</a>
 					{#if peutAdministrer}

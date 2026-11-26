@@ -32,6 +32,7 @@
 		"conditions:test": "node scripts/eprouver-conditions-pdf.mjs",
 		"image:test": "node scripts/eprouver-image.mjs",
 		"parcours:test": "node scripts/eprouver-parcours.mjs",
+		"direct:test": "node scripts/eprouver-direct.mjs",
 		"garde:test": "node scripts/eprouver-garde-deploiement.mjs",
 		"licences": "node scripts/licences-tierces.mjs",
 		"licences:test": "node scripts/eprouver-licences-tierces.mjs",

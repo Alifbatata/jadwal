@@ -75,3 +75,27 @@ describe('le jeton du poste « Diffuser »', () => {
 		expect(() => signToken(SECRET, { organization: 'Centre Démo', expiresAt: NOW })).toThrow();
 	});
 });
+
+// Le serveur web signe avec son propre code (`apps/web/src/lib/server/live.ts`) : les deux
+// programmes ne partagent aucun fichier. Ce qui les tient d'accord est ce jeton témoin, écrit à
+// l'identique dans `apps/web/src/lib/server/live.test.ts`. Qui change la forme du jeton d'un côté
+// fait tomber ce test-ci, ou celui d'en face.
+describe('le jeton témoin, commun au serveur web et au relais', () => {
+	const WITNESS_SECRET = 'secret-temoin-du-direct-partage-par-les-deux-tests';
+	const WITNESS_EXPIRY = 1_795_000_000_000;
+	const WITNESS =
+		'eyJvIjoibW9zcXVlZS10ZW1vaW4iLCJlIjoxNzk1MDAwMDAwMDAwLCJwIjoiYnJvYWRjYXN0In0.GHmXfhCkFatGWq8h_NJ5SGdUbSkggbc1PxZHWuMk0OY';
+
+	it('est celui que le relais signe', () => {
+		expect(
+			signToken(WITNESS_SECRET, { organization: 'mosquee-temoin', expiresAt: WITNESS_EXPIRY })
+		).toBe(WITNESS);
+	});
+
+	it('est accepté par le relais', () => {
+		expect(verifyToken(WITNESS_SECRET, WITNESS, WITNESS_EXPIRY - 1)).toEqual({
+			ok: true,
+			organization: 'mosquee-temoin'
+		});
+	});
+});

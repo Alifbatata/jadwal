@@ -1,5 +1,6 @@
 import type { Langue } from '#lib/i18n.js';
 import { currentOrganisation } from '#lib/server/context.js';
+import { liveSettings } from '#lib/server/live.js';
 import type { LayoutServerLoad } from './$types.js';
 
 /**
@@ -73,6 +74,9 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 					// La navigation ne propose pas ce qui n'existe pas pour cette organisation
 					// (ADR 0042).
 					prayerModule: context.organizationPrayerModule,
+					// Le poste « Diffuser », quand le direct est réglé sur cette instance, et pour un
+					// membre seulement : le super-admin entré par ses pouvoirs ne diffuse pas (ADR 0056).
+					live: liveSettings() !== null && !context.asSuperAdmin,
 					role: context.role,
 					asSuperAdmin: context.asSuperAdmin,
 					// Tant que les conditions ne sont pas acceptées, la navigation n'est pas
