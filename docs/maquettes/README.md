@@ -18,6 +18,13 @@ le code est un défaut — de l'un ou de l'autre, et il faut trancher, pas conto
 | `public-cours.md`          | la page d'un cours, à son propre lien                      |
 | `public-agenda.md`         | la page d'abonnement au flux agenda                        |
 
+## L'application (étape 24)
+
+| Fichier                | Écran                                                                    |
+| ---------------------- | ------------------------------------------------------------------------ |
+| `public-aujourdhui.md` | la navigation principale, et la vue Aujourd'hui où s'ouvre l'application |
+| `public-infos.md`      | l'onglet Infos, et l'annonce                                             |
+
 ## Le widget (étape 6)
 
 | Fichier     | Écran                                                     |
@@ -90,13 +97,17 @@ jour à la même étape.
 ### L'en-tête, identique sur toutes les vues
 
 1. Le **nom de l'organisation**, en titre de niveau 1.
-2. Les **vues**, dans cet ordre, la vue courante marquée : `Semaine`, `Tous les cours`, `Mois`, et
-   `Prières` quand le module des heures de prière est allumé (voir `public-prieres.md`). Les
-   lecteurs d'écran entendent le nom de la liste, `Affichage`.
-3. Les **filtres par public**, dans cet ordre : `Tous`, `Enfants`, `Jeunes`, `Femmes`, `Adultes`,
+2. Depuis l'étape 24, hors du cadre du widget, la **navigation principale** : `Aujourd'hui`,
+   `Programme`, `Prières`, `Infos` (voir `public-aujourdhui.md`).
+3. Les **vues** du programme, dans cet ordre, la vue courante marquée : `Semaine`,
+   `Tous les cours`, `Mois`. Les lecteurs d'écran entendent le nom de la liste, `Affichage`. Elle
+   ne se montre que sous `Programme`. Dans le cadre du widget, où il n'y a pas de navigation
+   principale, elle se montre toujours, et porte aussi `Prières` quand le module des heures de
+   prière est allumé (voir `public-prieres.md`).
+4. Les **filtres par public**, dans cet ordre : `Tous`, `Enfants`, `Jeunes`, `Femmes`, `Adultes`,
    `Ouvert à tous`. Le filtre actif est marqué. Un filtre est un lien, jamais une case à cocher. Les
    lecteurs d'écran entendent `Filtrer par public`. Il n'y a pas de filtre sur l'onglet `Prières`.
-4. Le **choix de la langue**, depuis l'étape 21 une liste déroulante : l'étiquette `Langue`, la
+5. Le **choix de la langue**, depuis l'étape 21 une liste déroulante : l'étiquette `Langue`, la
    liste des langues que l'organisation publie, en toutes lettres (`Français`, `Deutsch`,
    `Italiano`, `English`, `العربية`), la langue courante choisie, puis le bouton `Changer`, qui mène
    à la même vue dans cette langue, filtres compris. Sans JavaScript ; rien ne part au seul

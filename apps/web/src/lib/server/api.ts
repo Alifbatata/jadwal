@@ -15,6 +15,11 @@ import { publicDatabase } from './public.js';
  * organisation.
  */
 export const CACHE_PROGRAMME = 'public, max-age=120, stale-while-revalidate=86400';
+/**
+ * La vue « Aujourd'hui » dit la prochaine prière, qui change avec l'heure : une minute de cache, et
+ * aucune réponse périmée servie pendant une revalidation (étape 24).
+ */
+export const CACHE_AUJOURDHUI = 'public, max-age=60';
 /** Le flux agenda annonce déjà un rafraîchissement d'une heure : le cache dit la même chose. */
 export const CACHE_AGENDA = 'public, max-age=3600, stale-while-revalidate=86400';
 /** Les réglages d'affichage changent rarement, mais un changement de couleur doit se voir vite. */

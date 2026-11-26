@@ -5,13 +5,24 @@
 	//
 	// Depuis l'étape 18, un quatrième onglet, les heures de prière, quand le module est allumé
 	// (retour C4). Le widget n'en sait rien : il encadre cette page, et l'onglet y est donc aussi.
+	//
+	// Depuis l'étape 24, hors du cadre du widget, la navigation principale (`Onglets.svelte`) vient
+	// juste sous le nom : Aujourd'hui, Programme, Prières, Infos. La liste des vues ne garde alors que
+	// celles du programme, Semaine, Tous les cours et Mois, et ne se montre que sous « Programme ».
+	// Dans le cadre, rien ne change : pas de navigation principale, et la liste garde ses quatre vues
+	// (ADR 0053, docs/maquettes/public-aujourdhui.md).
 	import { t, type Langue } from '#lib/i18n.js';
 	import ChoixDeLangue from './ChoixDeLangue.svelte';
+	import Onglets, { type Onglet } from './Onglets.svelte';
+	import type { Adresse } from './liens.js';
 
-	type Vue = 'semaine' | 'cours' | 'mois' | 'prieres';
+	type Vue = 'semaine' | 'cours' | 'mois' | 'prieres' | 'aujourdhui';
+	/** Les vues du programme : celles que la liste des vues porte toujours. */
+	const DU_PROGRAMME: readonly Vue[] = ['semaine', 'cours', 'mois'];
 
 	let {
 		slug,
+		adresse,
 		nom,
 		langue,
 		langues,
@@ -27,6 +38,8 @@
 	}: {
 		/** L'identifiant de l'organisation, pour l'adresse où le choix de la langue est envoyé. */
 		slug: string;
+		/** L'adresse de la page, pour les liens de la navigation principale. */
+		adresse: Adresse;
 		nom: string;
 		langue: Langue;
 		langues: Langue[];
@@ -49,26 +62,42 @@
 
 	const mots = $derived(t(langue));
 	const PUBLICS = ['kids', 'youth', 'women', 'adults', 'open'] as const;
-	const onglets = $derived<[Vue, string][]>([
+	const programme = $derived(DU_PROGRAMME.includes(vue));
+	/** L'onglet de la navigation principale où l'on est. */
+	const onglet = $derived<Onglet>(programme ? 'programme' : (vue as Onglet));
+	/** Dans le cadre du widget, la liste des vues garde l'onglet des prières : c'est sa seule porte. */
+	const vues = $derived<[Vue, string][]>([
 		['semaine', mots.views.week],
 		['cours', mots.views.courses],
 		['mois', mots.views.month],
-		...(avecPrieres ? [['prieres', mots.views.prayers] as [Vue, string]] : [])
+		...(integre && avecPrieres ? [['prieres', mots.views.prayers] as [Vue, string]] : [])
 	]);
 </script>
 
 <header>
 	<h1>{nom}</h1>
 
+	{#if !integre}
+		<Onglets
+			{adresse}
+			{langue}
+			courant={onglet}
+			exact={!programme || vue === 'semaine'}
+			{avecPrieres}
+		/>
+	{/if}
+
 	{@render vendredi?.()}
 
-	<nav class="vues" aria-label={mots.viewsLabel}>
-		{#each onglets as [cle, libelle] (cle)}
-			<a href={lienVue(cle)} aria-current={vue === cle ? 'page' : undefined}>
-				{libelle}
-			</a>
-		{/each}
-	</nav>
+	{#if integre || programme}
+		<nav class="vues" aria-label={mots.viewsLabel}>
+			{#each vues as [cle, libelle] (cle)}
+				<a href={lienVue(cle)} aria-current={vue === cle ? 'page' : undefined}>
+					{libelle}
+				</a>
+			{/each}
+		</nav>
+	{/if}
 
 	{#if avecFiltres}
 		<nav class="filtres" aria-label={mots.audiencesLabel}>

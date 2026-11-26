@@ -131,7 +131,7 @@ export function appareilDuVisiteur(event: RequestEvent): {
 }
 
 export interface LienOptions {
-	vue?: 'semaine' | 'cours' | 'mois' | 'prieres';
+	vue?: 'semaine' | 'cours' | 'mois' | 'prieres' | 'aujourdhui';
 	public?: string | null;
 	mois?: string | null;
 	jour?: string | null;

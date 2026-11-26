@@ -206,3 +206,30 @@ export function todayInZone(timeZone: string, now: Date): IsoDate {
 		Number(parts.find((part) => part.type === type)?.value);
 	return formatIsoDate({ year: read('year'), month: read('month'), day: read('day') });
 }
+
+/**
+ * Minute du jour, dans [0, 1440[, dans un fuseau IANA à l'instant `now` : 10:00 à Zurich rend 600.
+ * Les secondes sont laissées : 12:34:59 est encore la minute 754. Elle se compte dans le jour que
+ * rend `todayInZone` pour le même instant ; les deux lisent le même fuseau, et l'horloge vient
+ * toujours de l'appelant. Sert à dire ce qui est passé dans la journée, la prochaine prière par
+ * exemple (étape 24).
+ */
+export function minuteOfDayInZone(timeZone: string, now: Date): number {
+	// Les mêmes gardes que `todayInZone`, pour la même raison : Intl retomberait sur la machine.
+	if (typeof timeZone !== 'string' || timeZone.length === 0) {
+		throw new TypeError('timeZone must be a non-empty IANA time zone name');
+	}
+	if (!(now instanceof Date) || Number.isNaN(now.getTime())) {
+		throw new TypeError('now must be a valid Date');
+	}
+	// `h23` : minuit se lit 0, jamais 24, ce que `hour12: false` seul ne garantit pas partout.
+	const parts = new Intl.DateTimeFormat('en-US', {
+		timeZone,
+		hourCycle: 'h23',
+		hour: 'numeric',
+		minute: 'numeric'
+	}).formatToParts(now);
+	const read = (type: 'hour' | 'minute'): number =>
+		Number(parts.find((part) => part.type === type)?.value);
+	return read('hour') * 60 + read('minute');
+}

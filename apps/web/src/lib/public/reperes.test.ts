@@ -5,6 +5,10 @@
 // des trois gabarits, telle que Svelte l'analyse : chaque enfant du bloc `.page` est l'en-tête, le
 // contenu principal ou le pied, et il n'y a qu'un `<main>`. L'audit lui-même reste celui du parcours
 // complet (`pnpm parcours:test`), qui passe axe sur les pages rendues.
+//
+// Depuis l'étape 24, la navigation principale suit sur les trois pages, hors du cadre du widget.
+// Elle est dans l'en-tête là où il y en a un. La page d'un cours n'en a pas : la navigation y est
+// seule devant le contenu principal, et c'est un repère à elle seule (`<nav>`).
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -17,7 +21,7 @@ const ROUTES = fileURLToPath(new URL('../../routes/m/[slug]/[[langue=langue]]/',
 /** Les trois gabarits publics, et ce qui peut se trouver au premier niveau de leur bloc `.page`. */
 const PAGES = [
 	{ nom: 'programme', fichier: '+page.svelte', attendu: ['Entete', 'main', 'Pied'] },
-	{ nom: 'cours', fichier: 'cours/[courseId]/+page.svelte', attendu: ['main', 'Pied'] },
+	{ nom: 'cours', fichier: 'cours/[courseId]/+page.svelte', attendu: ['IfBlock', 'main', 'Pied'] },
 	{ nom: 'abonnement', fichier: 'agenda/+page.svelte', attendu: ['header', 'main', 'Pied'] }
 ];
 
@@ -76,8 +80,21 @@ describe('les repères des pages publiques', () => {
 			expect(bloc, 'le bloc .page').toBeDefined();
 			expect(visibles(bloc?.fragment.nodes ?? []).map(nom)).toEqual(page.attendu);
 			expect(compter(noeuds, 'main')).toBe(1);
+			// Un bloc conditionnel au premier niveau ne porte que la navigation principale.
+			for (const noeud of visibles(bloc?.fragment.nodes ?? [])) {
+				if (noeud.type !== 'IfBlock') continue;
+				expect(visibles(noeud.consequent.nodes).map(nom)).toEqual(['Onglets']);
+				expect(noeud.alternate).toBeNull();
+			}
 		});
 	}
+
+	it('makes the main navigation a landmark of its own', () => {
+		const racine = visibles(
+			gabarit(fileURLToPath(new URL('./Onglets.svelte', import.meta.url)))
+		).map(nom);
+		expect(racine).toEqual(['nav']);
+	});
 
 	it('makes the shared header a banner and the shared footer a contentinfo', () => {
 		const racine = (fichier: string) =>

@@ -319,6 +319,30 @@ interface Dictionnaire {
 	/** « Prière du vendredi : 12:30 et 13:45 », à la place de l'iqama du Dhuhr, un vendredi. */
 	readonly jumuaAt: (times: string) => string;
 	readonly jumuaReplacesDhuhr: string;
+	/**
+	 * La navigation principale de la page publique, hors du cadre du widget (étape 24, ADR 0052 et
+	 * 0053, docs/maquettes/public-aujourdhui.md) : son nom pour les lecteurs d'écran, et ses onglets.
+	 * « Programme » ouvre la vue Semaine ; `info` n'est montré que si l'organisation a saisi une
+	 * information.
+	 */
+	readonly tabsLabel: string;
+	readonly tabs: { today: string; programme: string; prayers: string; info: string };
+	/** « Prochaine prière : Asr à 16:30. » Le nom de la prière vient de `nomPriere`. */
+	readonly nextPrayer: (prayer: string, time: string) => string;
+	/** La même, quand l'organisation a fixé une iqama. */
+	readonly nextPrayerIqama: (prayer: string, time: string, iqama: string) => string;
+	/** Un vendredi, tant qu'une session reste à venir : ses heures viennent de `joindre`. */
+	readonly nextPrayerJumua: (times: string) => string;
+	/** Après l'Isha : le Fajr du lendemain. */
+	readonly nextPrayerTomorrow: (prayer: string, time: string) => string;
+	/** Le titre des séances du jour, sous les heures de prière. */
+	readonly todayProgramme: string;
+	readonly todayEmpty: string;
+	readonly todayPauseNamed: (reason: string) => string;
+	readonly todayPause: string;
+	/** Le titre du premier jour suivant qui a des séances, et le lien vers la vue Semaine. */
+	readonly comingUp: string;
+	readonly wholeWeek: string;
 }
 
 /**
@@ -531,7 +555,21 @@ const fr: Dictionnaire = {
 	movedJumuaHelp:
 		'Quand une prière du vendredi est déplacée à un autre jour, la case du Dhuhr de ce jour-là la donne aussi, avec son nom et sa date d’origine.',
 	jumuaReplacesDhuhr: 'Elle remplace le Dhuhr chaque vendredi.',
-	jumuaAt: (times) => `Prière du vendredi : ${times}`
+	jumuaAt: (times) => `Prière du vendredi : ${times}`,
+	// La navigation principale et la vue « Aujourd'hui » (étape 24).
+	tabsLabel: 'Navigation principale',
+	tabs: { today: 'Aujourd’hui', programme: 'Programme', prayers: 'Prières', info: 'Infos' },
+	nextPrayer: (prayer, time) => `Prochaine prière : ${prayer} à ${time}.`,
+	nextPrayerIqama: (prayer, time, iqama) =>
+		`Prochaine prière : ${prayer} à ${time}, iqama à ${iqama}.`,
+	nextPrayerJumua: (times) => `Prochaine prière : prière du vendredi à ${times}.`,
+	nextPrayerTomorrow: (prayer, time) => `Prochaine prière : ${prayer}, demain à ${time}.`,
+	todayProgramme: 'Au programme aujourd’hui',
+	todayEmpty: 'Aucune séance aujourd’hui.',
+	todayPauseNamed: (reason) => `Pas de cours aujourd’hui : ${reason}.`,
+	todayPause: 'Pas de cours aujourd’hui : une pause est en cours.',
+	comingUp: 'À venir',
+	wholeWeek: 'Voir toute la semaine'
 };
 
 const de: Dictionnaire = {
@@ -699,7 +737,20 @@ const de: Dictionnaire = {
 	movedJumuaHelp:
 		'Wird ein Freitagsgebet auf einen anderen Tag verschoben, steht es auch im Feld des Dhuhr an diesem Tag, mit seinem Namen und seinem ursprünglichen Datum.',
 	jumuaReplacesDhuhr: 'Es tritt jeden Freitag an die Stelle des Dhuhr.',
-	jumuaAt: (times) => `Freitagsgebet: ${times}`
+	jumuaAt: (times) => `Freitagsgebet: ${times}`,
+	tabsLabel: 'Hauptnavigation',
+	tabs: { today: 'Heute', programme: 'Programm', prayers: 'Gebetszeiten', info: 'Über uns' },
+	nextPrayer: (prayer, time) => `Nächstes Gebet: ${prayer} um ${time}.`,
+	nextPrayerIqama: (prayer, time, iqama) =>
+		`Nächstes Gebet: ${prayer} um ${time}, Iqama um ${iqama}.`,
+	nextPrayerJumua: (times) => `Nächstes Gebet: Freitagsgebet um ${times}.`,
+	nextPrayerTomorrow: (prayer, time) => `Nächstes Gebet: ${prayer}, morgen um ${time}.`,
+	todayProgramme: 'Heute auf dem Programm',
+	todayEmpty: 'Keine Termine heute.',
+	todayPauseNamed: (reason) => `Kein Unterricht heute: ${reason}.`,
+	todayPause: 'Kein Unterricht heute: Es ist Pause.',
+	comingUp: 'Demnächst',
+	wholeWeek: 'Ganze Woche ansehen'
 };
 
 const it: Dictionnaire = {
@@ -867,7 +918,20 @@ const it: Dictionnaire = {
 	movedJumuaHelp:
 		'Quando una preghiera del venerdì viene spostata a un altro giorno, compare anche nella casella del Dhuhr di quel giorno, con il suo nome e la data prevista in origine.',
 	jumuaReplacesDhuhr: 'Sostituisce il Dhuhr ogni venerdì.',
-	jumuaAt: (times) => `Preghiera del venerdì: ${times}`
+	jumuaAt: (times) => `Preghiera del venerdì: ${times}`,
+	tabsLabel: 'Navigazione principale',
+	tabs: { today: 'Oggi', programme: 'Programma', prayers: 'Preghiere', info: 'Info' },
+	nextPrayer: (prayer, time) => `Prossima preghiera: ${prayer} alle ${time}.`,
+	nextPrayerIqama: (prayer, time, iqama) =>
+		`Prossima preghiera: ${prayer} alle ${time}, iqama alle ${iqama}.`,
+	nextPrayerJumua: (times) => `Prossima preghiera: preghiera del venerdì alle ${times}.`,
+	nextPrayerTomorrow: (prayer, time) => `Prossima preghiera: ${prayer}, domani alle ${time}.`,
+	todayProgramme: 'In programma oggi',
+	todayEmpty: 'Nessuna lezione oggi.',
+	todayPauseNamed: (reason) => `Nessun corso oggi: ${reason}.`,
+	todayPause: 'Nessun corso oggi: è in corso una pausa.',
+	comingUp: 'Prossimamente',
+	wholeWeek: 'Vedi tutta la settimana'
 };
 
 // L'anglais britannique (étape 18) : « programme », « cancelled », « fortnight », et les guillemets
@@ -1034,7 +1098,19 @@ const en: Dictionnaire = {
 	movedJumuaHelp:
 		'When a Friday prayer is moved to another day, it also appears in the Dhuhr box of that day, with its name and its original date.',
 	jumuaReplacesDhuhr: 'It takes the place of Dhuhr every Friday.',
-	jumuaAt: (times) => `Friday prayer: ${times}`
+	jumuaAt: (times) => `Friday prayer: ${times}`,
+	tabsLabel: 'Main navigation',
+	tabs: { today: 'Today', programme: 'Programme', prayers: 'Prayer times', info: 'Info' },
+	nextPrayer: (prayer, time) => `Next prayer: ${prayer} at ${time}.`,
+	nextPrayerIqama: (prayer, time, iqama) => `Next prayer: ${prayer} at ${time}, iqama at ${iqama}.`,
+	nextPrayerJumua: (times) => `Next prayer: Friday prayer at ${times}.`,
+	nextPrayerTomorrow: (prayer, time) => `Next prayer: ${prayer}, tomorrow at ${time}.`,
+	todayProgramme: 'Today’s programme',
+	todayEmpty: 'No sessions today.',
+	todayPauseNamed: (reason) => `No courses today: ${reason}.`,
+	todayPause: 'No courses today: the programme is on a break.',
+	comingUp: 'Coming up',
+	wholeWeek: 'See the whole week'
 };
 
 const ar: Dictionnaire = {
@@ -1235,7 +1311,20 @@ const ar: Dictionnaire = {
 	movedJumuaHelp:
 		'إذا نُقلت صلاة الجمعة إلى يوم آخر، تظهر أيضًا في خانة الظهر لذلك اليوم، باسمها وتاريخها الأصلي.',
 	jumuaReplacesDhuhr: 'تحلّ محلّ صلاة الظهر كل يوم جمعة.',
-	jumuaAt: (times) => `صلاة الجمعة: ${times}`
+	jumuaAt: (times) => `صلاة الجمعة: ${times}`,
+	tabsLabel: 'التنقل الرئيس',
+	tabs: { today: 'اليوم', programme: 'البرنامج', prayers: 'مواقيت الصلاة', info: 'معلومات' },
+	nextPrayer: (prayer, time) => `الصلاة القادمة: ${prayer} في الساعة ${time}.`,
+	nextPrayerIqama: (prayer, time, iqama) =>
+		`الصلاة القادمة: ${prayer} في الساعة ${time}، الإقامة في الساعة ${iqama}.`,
+	nextPrayerJumua: (times) => `الصلاة القادمة: صلاة الجمعة في الساعة ${times}.`,
+	nextPrayerTomorrow: (prayer, time) => `الصلاة القادمة: ${prayer}، غدًا في الساعة ${time}.`,
+	todayProgramme: 'برنامج اليوم',
+	todayEmpty: 'لا حصص اليوم.',
+	todayPauseNamed: (reason) => `لا دروس اليوم: ${reason}.`,
+	todayPause: 'لا دروس اليوم: هناك عطلة.',
+	comingUp: 'قريبًا',
+	wholeWeek: 'عرض الأسبوع كاملًا'
 };
 
 const DICTIONNAIRES: Record<Langue, Dictionnaire> = { fr, de, it, en, ar };

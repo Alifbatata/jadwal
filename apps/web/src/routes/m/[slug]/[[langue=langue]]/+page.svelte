@@ -15,6 +15,7 @@
 	import { variablesAccent } from '#lib/couleur.js';
 	import Vendredi from '#lib/public/Vendredi.svelte';
 	import Prieres from '#lib/public/Prieres.svelte';
+	import Aujourdhui from '#lib/public/Aujourdhui.svelte';
 	import Seance from '#lib/public/Seance.svelte';
 	import { horaireEnClair, languesEnClair, rythmeEnClair } from '#lib/public/affichage.js';
 
@@ -152,11 +153,13 @@
 	const titre = $derived(
 		data.vue === 'cours'
 			? `${data.organisation.name} | ${mots.coursesTitle}`
-			: data.vue === 'prieres'
-				? `${data.organisation.name} | ${mots.prayersTitle}`
-				: data.vue === 'mois' && data.premierDuMois
-					? `${data.organisation.name} | ${monthName(data.langue, Number(data.premierDuMois.slice(0, 4)), Number(data.premierDuMois.slice(5, 7)))}`
-					: `${data.organisation.name} | ${mots.weekTitle}`
+			: data.vue === 'aujourdhui'
+				? `${data.organisation.name} | ${mots.tabs.today}`
+				: data.vue === 'prieres'
+					? `${data.organisation.name} | ${mots.prayersTitle}`
+					: data.vue === 'mois' && data.premierDuMois
+						? `${data.organisation.name} | ${monthName(data.langue, Number(data.premierDuMois.slice(0, 4)), Number(data.premierDuMois.slice(5, 7)))}`
+						: `${data.organisation.name} | ${mots.weekTitle}`
 	);
 </script>
 
@@ -191,6 +194,7 @@
 >
 	<Entete
 		slug={data.organisation.slug}
+		{adresse}
 		nom={data.organisation.name}
 		langue={data.langue}
 		langues={data.langues}
@@ -200,13 +204,14 @@
 		lienFiltre={(audience) => vers({ public: audience })}
 		lienLangue={(autre) => vers({ langue: autre })}
 		integre={data.integre}
-		avecFiltres={data.vue !== 'prieres'}
+		avecFiltres={data.vue !== 'prieres' && data.vue !== 'aujourdhui'}
 		avecPrieres={data.avecPrieres}
 	>
 		{#snippet vendredi()}
 			<!-- L'onglet des prières porte les sessions du vendredi dans son propre contenu, avec la
 			     langue du sermon : le bloc du haut les dirait une seconde fois. -->
-			{#if data.vue !== 'prieres'}
+			<!-- « Aujourd'hui » donne elle-même la prière du vendredi, quand c'est un vendredi. -->
+			{#if data.vue !== 'prieres' && data.vue !== 'aujourdhui'}
 				<Vendredi langue={data.langue} sessions={data.vendredi} />
 			{/if}
 		{/snippet}
@@ -284,6 +289,20 @@
 					{/each}
 				</section>
 			{/each}
+		{:else if data.vue === 'aujourdhui'}
+			<Aujourdhui
+				langue={data.langue}
+				today={data.today}
+				prieres={data.prieres}
+				prochaine={data.prochaine}
+				seances={data.seances}
+				jourSuivant={data.jourSuivant}
+				pause={data.pause}
+				aucunCoursPublie={data.aucunCoursPublie}
+				lienCours={versCours}
+				lienPrieres={lienVue(adresse, { vue: 'prieres' })}
+				lienSemaine={lienVue(adresse)}
+			/>
 		{:else if data.vue === 'prieres'}
 			<Prieres
 				langue={data.langue}

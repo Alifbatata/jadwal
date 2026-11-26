@@ -5,12 +5,13 @@ elles-mêmes, et ne les trouvait qu'à travers les cours qui les suivent. L'ongl
 aujourd'hui et pour la semaine (ADR 0042, addendum du 2026-09-26).
 
 **Lien** : `?vue=prieres` sur la page de l'organisation, dans chaque langue. Il n'existe que si le
-module des heures de prière est allumé ; sinon, `?vue=prieres` montre la vue Semaine, et l'en-tête
-n'a que trois onglets.
+module des heures de prière est allumé ; sinon, `?vue=prieres` montre la vue Semaine, et la
+navigation n'a pas cet onglet.
 
 ## Structure, de haut en bas
 
-1. **L'en-tête commun**, avec le quatrième onglet marqué : `Prières` (`Gebetszeiten`, `Preghiere`,
+1. **L'en-tête commun**, avec l'onglet `Prières` marqué dans la navigation principale (depuis
+   l'étape 24 ; dans le cadre du widget, c'est la quatrième vue de la liste `Affichage`) : `Prières` (`Gebetszeiten`, `Preghiere`,
    `Prayer times`, `مواقيت الصلاة`). Ni filtres par public, ni bloc du vendredi du haut : les
    filtres ne s'appliquent pas aux heures, et l'onglet donne lui-même les sessions du vendredi.
 2. **Une phrase d'aide** : `L'adhan est l'appel à la prière. L'iqama est l'heure à laquelle elle

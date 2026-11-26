@@ -114,6 +114,8 @@ export const load: PageServerLoad = async (event) => {
 	return {
 		canonical: moteur.canonical,
 		alternates: moteur.alternates,
+		// L'onglet des prières de la navigation principale, si le module est allumé (étape 24).
+		avecPrieres: organisation.prayer_module,
 		appareil,
 		tousLesChoix,
 		flux: {

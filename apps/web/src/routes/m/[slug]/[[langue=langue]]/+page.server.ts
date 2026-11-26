@@ -5,12 +5,17 @@
 // range ; elle ne calcule aucune date. Les heures de prière viennent de la même requête que celles
 // qui placent les cours ancrés (`readPublicPrayerDays`) : l'onglet ne peut pas dire une autre heure
 // que celle qui place un cours « après Maghrib ».
+//
+// Depuis l'étape 24, une cinquième vue, « Aujourd'hui » : les prières du jour, la prochaine, les
+// séances du jour et le premier jour suivant qui en a (docs/maquettes/public-aujourdhui.md). Elle lit
+// les mêmes deux requêtes, et ce qu'elle décide est dans `#lib/public/aujourdhui.ts`.
 
 import {
 	addDays,
 	daysInMonth,
 	isIsoDate,
 	isoDateToDays,
+	minuteOfDayInZone,
 	weekdayFromDays,
 	type IsoDate
 } from '@jadwal/core';
@@ -30,9 +35,10 @@ import {
 	referencement
 } from '#lib/server/pages.js';
 import { lienVue } from '#lib/public/liens.js';
-import { CACHE_PROGRAMME } from '#lib/server/api.js';
+import { premierJourSuivant, prochainePriere } from '#lib/public/aujourdhui.js';
+import { CACHE_AUJOURDHUI, CACHE_PROGRAMME } from '#lib/server/api.js';
 
-export type Vue = 'semaine' | 'cours' | 'mois' | 'prieres';
+export type Vue = 'semaine' | 'cours' | 'mois' | 'prieres' | 'aujourdhui';
 
 const JOURS_SEMAINE = 7;
 /** La navigation par mois est bornée : un an en arrière, un an en avant. */
@@ -46,7 +52,7 @@ const PRIERES = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
  */
 function vueDemandee(value: string | null, avecPrieres: boolean): Vue {
 	if (value === 'prieres') return avecPrieres ? 'prieres' : 'semaine';
-	return value === 'cours' || value === 'mois' ? value : 'semaine';
+	return value === 'cours' || value === 'mois' || value === 'aujourdhui' ? value : 'semaine';
 }
 
 /** « 05:30 » : une heure de la base, `05:30:00`, ramenée aux minutes ; `null` si elle manque. */
@@ -72,9 +78,12 @@ function jourDemande(value: string | null): IsoDate | null {
 export const load: PageServerLoad = async (event) => {
 	const { organisation, langue } = await publicContext(event);
 	const vue = vueDemandee(event.url.searchParams.get('vue'), organisation.prayer_module);
-	const filtre = publicDemande(event);
+	// « Aujourd'hui » montre tout ce qui a lieu : la vue n'a pas de filtre à voir ni à enlever.
+	const filtre = vue === 'aujourdhui' ? null : publicDemande(event);
 
-	const programme = await readPublicProgramme(organisation, langue, new Date());
+	// Un seul instant pour toute la page : le jour et l'heure qu'il est se lisent sur la même horloge.
+	const maintenant = new Date();
+	const programme = await readPublicProgramme(organisation, langue, maintenant);
 	const today = programme.today;
 
 	let from: IsoDate = today;
@@ -93,7 +102,7 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	const complet =
-		vue === 'semaine' || vue === 'prieres'
+		vue === 'semaine' || vue === 'prieres' || vue === 'aujourdhui'
 			? programme
 			: await readPublicProgramme(organisation, langue, new Date(), { from, to });
 
@@ -130,9 +139,12 @@ export const load: PageServerLoad = async (event) => {
 	// n'est pas montré ; une iqama que l'organisation n'a pas réglée reste vide. Chaque jour porte
 	// ses sessions du vendredi réelles (relecture du lot 3) : une ligne datée dit ce qui a lieu ce
 	// jour-là, comme la vue Semaine, et non le rythme habituel.
+	// La vue « Aujourd'hui » ne lit que deux jours : aujourd'hui, et demain pour son Fajr.
+	const dernierJourDesPrieres =
+		vue === 'prieres' ? addDays(today, JOURS_SEMAINE - 1) : addDays(today, 1);
 	const prieres =
-		vue === 'prieres'
-			? (await readPublicPrayerDays(organisation.id, today, addDays(today, JOURS_SEMAINE - 1)))
+		vue === 'prieres' || (vue === 'aujourdhui' && organisation.prayer_module)
+			? (await readPublicPrayerDays(organisation.id, today, dernierJourDesPrieres))
 					.map((ligne) => {
 						const date = String(ligne.date).slice(0, 10);
 						return {
@@ -167,9 +179,31 @@ export const load: PageServerLoad = async (event) => {
 		sermonLanguages: seance.kind === 'jumua' ? seance.teachingLanguages : undefined
 	}));
 
+	// La prochaine prière : la première dont l'adhan n'est pas passé, à l'heure de l'organisation.
+	// Un vendredi où des sessions ont lieu, elles tiennent lieu de Dhuhr (ADR 0033).
+	const prieresDuJour = prieres.find((jour) => jour.date === today) ?? null;
+	const prochaine =
+		vue === 'aujourdhui' && prieresDuJour
+			? prochainePriere({
+					maintenant: minuteOfDayInZone(organisation.time_zone, maintenant),
+					heures: prieresDuJour.heures,
+					vendredi:
+						weekdayFromDays(isoDateToDays(today)) === 5
+							? prieresDuJour.vendredi
+									.filter(
+										(seance) => seance.status === 'scheduled' || seance.status === 'moved_here'
+									)
+									.flatMap((seance) => (seance.start ? [seance.start] : []))
+							: [],
+					demain: prieres.find((jour) => jour.date === addDays(today, 1))?.heures ?? null
+				})
+			: null;
+
 	// Le cache d'une page publique suit la même empreinte que l'API : une modification par un
-	// responsable change la version suivante (ADR 0026).
-	event.setHeaders({ 'cache-control': CACHE_PROGRAMME });
+	// responsable change la version suivante (ADR 0026). « Aujourd'hui » ne se garde qu'une minute.
+	event.setHeaders({
+		'cache-control': vue === 'aujourdhui' ? CACHE_AUJOURDHUI : CACHE_PROGRAMME
+	});
 
 	const pause = pauseCouvrant(complet.pauses, today);
 	// L'adresse canonique d'une vue est cette vue **sans ses filtres** : un filtre par public et une
@@ -202,7 +236,11 @@ export const load: PageServerLoad = async (event) => {
 		vue,
 		// L'onglet des prières n'est proposé que si le module est allumé (ADR 0042).
 		avecPrieres: organisation.prayer_module,
-		prieres,
+		// Pour « Aujourd'hui », le seul jour même : le lendemain n'a servi qu'à son Fajr.
+		prieres: vue === 'aujourdhui' ? prieres.filter((jour) => jour.date === today) : prieres,
+		prochaine,
+		// Le premier jour suivant qui a des séances, dans les six jours que la page a lus.
+		jourSuivant: vue === 'aujourdhui' ? premierJourSuivant(today, seances) : null,
 		filtre,
 		from,
 		to,

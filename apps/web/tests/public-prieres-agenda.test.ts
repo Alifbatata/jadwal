@@ -566,13 +566,27 @@ afterAll(async () => {
 // C4 : l'onglet des prières
 // ---------------------------------------------------------------------------------------------
 
-/** Le nom de chaque vue de l'en-tête, dans l'ordre, lu dans la liste des vues. */
-function vues(html: string): { nom: string; href: string }[] {
-	const liste = html.match(/<nav\b[^>]*\bclass="vues\b[^"]*"[^>]*>([\s\S]*?)<\/nav>/)?.[1] ?? '';
+/** Les liens d'une liste de l'en-tête, dans l'ordre, lus dans le fragment de cette liste. */
+function liensDe(liste: string): { nom: string; href: string }[] {
 	return [...liste.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/g)].map((trouve) => ({
 		nom: lu(trouve[2] ?? ''),
 		href: (attributs(`<a${trouve[1]}>`)['href'] ?? '').replaceAll('&amp;', '&')
 	}));
+}
+
+/** Le nom de chaque vue de l'en-tête, dans l'ordre, lu dans la liste des vues. */
+function vues(html: string): { nom: string; href: string }[] {
+	return liensDe(html.match(/<nav\b[^>]*\bclass="vues\b[^"]*"[^>]*>([\s\S]*?)<\/nav>/)?.[1] ?? '');
+}
+
+/**
+ * Les onglets de la navigation principale (étape 24) : hors du cadre du widget, c'est elle qui porte
+ * l'onglet des prières, et la liste des vues ne garde que celles du programme.
+ */
+function onglets(html: string): { nom: string; href: string }[] {
+	return liensDe(
+		html.match(/<nav\b[^>]*\bclass="onglets\b[^"]*"[^>]*>([\s\S]*?)<\/nav>/)?.[1] ?? ''
+	);
 }
 
 const NOMS_DES_VUES: Record<Langue, string[]> = {
@@ -732,13 +746,16 @@ describe('les horloges posées des deux serveurs de ce fichier (étape 19)', () 
 
 describe('l’onglet des prières, quand le module est allumé (C4)', () => {
 	it.each(LANGUES)(
-		'adds the tab to the views, in %s, and it leads to the prayer times',
+		'adds the tab to the main navigation, in %s, and it leads to the prayer times',
 		async (langue) => {
 			const { statut, html } = await servir(base(langue));
 			expect(statut).toBe(200);
-			const liste = vues(html);
-			expect(liste.map((vue) => vue.nom)).toEqual(NOMS_DES_VUES[langue]);
-			const onglet = new URL(liste[3]?.href ?? '', `${origin}${base(langue)}`);
+			// Depuis l'étape 24, l'onglet est dans la navigation principale, le dernier ; la liste des
+			// vues garde les trois vues du programme.
+			expect(vues(html).map((vue) => vue.nom)).toEqual(NOMS_DES_VUES[langue].slice(0, 3));
+			const dernier = onglets(html).at(-1);
+			expect(dernier?.nom).toBe(NOMS_DES_VUES[langue][3]);
+			const onglet = new URL(dernier?.href ?? '', `${origin}${base(langue)}`);
 			expect(onglet.pathname).toBe(base(langue));
 			expect(onglet.searchParams.get('vue')).toBe('prieres');
 		}
@@ -746,8 +763,11 @@ describe('l’onglet des prières, quand le module est allumé (C4)', () => {
 
 	it('marks the tab as the current view, and hides the audience filters there', async () => {
 		const { html } = await servir(`${base('en')}?vue=prieres`);
-		const courant = [...html.matchAll(/<nav\b[^>]*\bclass="vues\b[\s\S]*?<\/nav>/g)][0]?.[0] ?? '';
+		const courant =
+			[...html.matchAll(/<nav\b[^>]*\bclass="onglets\b[\s\S]*?<\/nav>/g)][0]?.[0] ?? '';
 		expect(courant).toMatch(/<a\b[^>]*aria-current="page"[^>]*>\s*Prayer times\s*<\/a>/);
+		// Hors du programme, la liste des vues n'est pas montrée non plus.
+		expect(html).not.toMatch(/<nav\b[^>]*\bclass="vues\b/);
 		expect(html).not.toMatch(/<nav\b[^>]*\bclass="filtres\b/);
 	});
 
@@ -980,10 +1000,15 @@ describe('l’onglet des prières, quand le module est allumé (C4)', () => {
 	// venu avec le lien ne se verrait pas et ne s'enlèverait pas, et une heure de prière vaut pour tous.
 	// Le bloc du bas, le rythme habituel, n'est pas filtré non plus.
 	it('ignores the audience filter a link brings: the tab has no filter to see or remove', async () => {
-		// Le visiteur arrive sur l'onglet depuis une vue filtrée : le lien de l'onglet garde le filtre.
+		// Depuis l'étape 24, l'onglet de la navigation principale ne garde plus le filtre. Dans le cadre
+		// du widget, la liste des vues le garde encore, et une adresse écrite à la main peut le porter.
 		const filtree = await servir(`${base('fr', SLUG_CHANGE)}?public=women`);
+		expect(
+			new URL(onglets(filtree.html).at(-1)?.href ?? '', origin).searchParams.get('public')
+		).toBeNull();
+		const integree = await servir(`${base('fr', SLUG_CHANGE)}?public=women&embed=1`);
 		const onglet = new URL(
-			vues(filtree.html)[3]?.href ?? '',
+			vues(integree.html)[3]?.href ?? '',
 			`${origin}${base('fr', SLUG_CHANGE)}`
 		);
 		expect(onglet.searchParams.get('vue')).toBe('prieres');

@@ -12,6 +12,7 @@
 	import { PARAMETRE_APPAREIL, TOUS_LES_CHOIX } from '#lib/public/abonnement.js';
 	import Abonnement from '#lib/public/Abonnement.svelte';
 	import ChoixDeLangue from '#lib/public/ChoixDeLangue.svelte';
+	import Onglets from '#lib/public/Onglets.svelte';
 	import Pied from '#lib/public/Pied.svelte';
 	import { variablesAccent } from '#lib/couleur.js';
 	import {
@@ -85,6 +86,17 @@
 	style={variablesAccent(data.organisation.accentColor)}
 	data-jadwal-embed={data.integre ? '' : undefined}
 >
+	<!-- La navigation principale suit sur cette page, qui fait partie du programme ; jamais dans le
+	     cadre du widget (étape 24, docs/maquettes/public-aujourdhui.md). -->
+	{#if !data.integre}
+		<Onglets
+			{adresse}
+			langue={data.langue}
+			courant="programme"
+			exact={false}
+			avecPrieres={data.avecPrieres}
+		/>
+	{/if}
 	<!-- Tout ce qui précède le pied est le contenu de la page, fil d'Ariane et choix de langue
 	     compris : cette page n'a pas d'en-tête propre. Sans ce repère, axe relevait chacun de ses
 	     blocs. -->

@@ -149,9 +149,14 @@ Trois vues :
 - **Tous les cours**, groupés par rythme ;
 - **Mois** : grille, puis liste du jour choisi.
 
-Et, quand le module des heures de prière est allumé, un quatrième onglet, **Prières** : les heures
-du jour et des sept prochains jours (adhan et iqama), puis les sessions du vendredi avec la langue
-de leur sermon (ADR 0042, addendum de l'étape 18).
+Et, quand le module des heures de prière est allumé, un onglet **Prières** : les heures du jour et
+des sept prochains jours (adhan et iqama), puis les sessions du vendredi avec la langue de leur
+sermon (ADR 0042, addendum de l'étape 18).
+
+Depuis l'étape 24, hors du cadre du widget, une navigation principale coiffe ces vues :
+**Aujourd'hui** (les prières du jour, la prochaine, les séances du jour, puis le premier jour
+suivant qui en a), **Programme** (les trois vues ci-dessus), **Prières** et **Infos**
+(`docs/maquettes/public-aujourdhui.md`). La vue par défaut reste la vue Semaine.
 
 Filtres par public. Chaque cours a sa propre page, sans modale, depuis l'étape 5 : son lien est ce
 qu'on partage dans un message, et ce qu'un moteur de recherche indexe. Elle donne le rythme,

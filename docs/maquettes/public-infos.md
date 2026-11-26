@@ -28,7 +28,7 @@ public : l'écran le dit au-dessus du formulaire.
 
 ## Structure de l'onglet, de haut en bas
 
-1. **L'en-tête**, avec `Infos` marqué (`Infos`, `Infos`, `Info`, `Info`, `معلومات`). Ni liste
+1. **L'en-tête**, avec `Infos` marqué (`Infos`, `Über uns`, `Info`, `Info`, `معلومات`). Ni liste
    `Affichage`, ni filtres, ni bloc du vendredi.
 2. **L'annonce**, si elle est saisie : un encadré sous le titre de niveau 2 `Annonce`. Les retours à
    la ligne de la saisie sont gardés.

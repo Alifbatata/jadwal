@@ -27,6 +27,10 @@
 	// Un tableau de sept lignes et six colonnes tient sur un téléphone ; s'il ne tient pas, il défile
 	// dans son cadre, et la page ne défile jamais de côté. Chaque case dit aux lecteurs d'écran ce
 	// qu'est chacune de ses deux heures : l'œil a la phrase d'aide, l'oreille n'a que la case.
+	//
+	// Depuis l'étape 24, la vue « Aujourd'hui » rend ce même composant pour le seul jour même
+	// (`seulementLeJour`) : le tableau du jour ne s'écrit qu'ici, et les deux vues ne peuvent pas dire
+	// deux heures différentes. Elle y ajoute une phrase, la prochaine prière, et un lien vers l'onglet.
 	import { isoDateToDays, weekdayFromDays, type IsoDate } from '@jadwal/core';
 	import { longDate, t, type Langue } from '#lib/i18n.js';
 	import { joindre, languesEnClair, nomPriere } from './affichage.js';
@@ -70,7 +74,10 @@
 		langue,
 		today,
 		jours,
-		sessions
+		sessions,
+		seulementLeJour = false,
+		phrase = null,
+		lienSemaine = null
 	}: {
 		langue: Langue;
 		today: string;
@@ -83,6 +90,12 @@
 			sermonLanguages: string[];
 			room: string | null;
 		}[];
+		/** Pour la vue « Aujourd'hui » : le tableau du jour seul, sans aide, sans semaine, sans bloc. */
+		seulementLeJour?: boolean;
+		/** La phrase de la prochaine prière, écrite entre le titre du jour et son tableau. */
+		phrase?: string | null;
+		/** L'adresse de l'onglet des prières, sous le tableau du jour : « Les sept prochains jours ». */
+		lienSemaine?: string | null;
 	} = $props();
 
 	const mots = $derived(t(langue));
@@ -197,15 +210,18 @@
 	{/if}
 {/snippet}
 
-<p class="aide">{mots.prayersHelp}</p>
+{#if !seulementLeJour}
+	<p class="aide">{mots.prayersHelp}</p>
 
-{#if jours.length === 0}
-	<p class="vide">{mots.noPrayerTimes}</p>
+	{#if jours.length === 0}
+		<p class="vide">{mots.noPrayerTimes}</p>
+	{/if}
 {/if}
 
 {#if aujourdhui}
 	<section aria-labelledby="prieres-aujourdhui">
 		<h2 id="prieres-aujourdhui">{mots.prayersToday(longDate(langue, today as IsoDate))}</h2>
+		{#if phrase}<p class="prochaine">{phrase}</p>{/if}
 		<table class="aujourdhui">
 			<thead>
 				<tr>
@@ -249,10 +265,11 @@
 				{/each}
 			</tbody>
 		</table>
+		{#if lienSemaine}<p class="suite"><a href={lienSemaine}>{mots.prayersWeek}</a></p>{/if}
 	</section>
 {/if}
 
-{#if jours.length > 0}
+{#if jours.length > 0 && !seulementLeJour}
 	<section aria-labelledby="prieres-semaine">
 		<h2 id="prieres-semaine">{mots.prayersWeek}</h2>
 		<p class="aide">{mots.weekBoxHelp}</p>
@@ -322,7 +339,7 @@
 	</section>
 {/if}
 
-{#if sessions.length > 0}
+{#if sessions.length > 0 && !seulementLeJour}
 	<section id="prieres-vendredi" aria-labelledby="prieres-vendredi-titre">
 		<h2 id="prieres-vendredi-titre">{mots.jumua}</h2>
 		<p class="aide">{mots.jumuaReplacesDhuhr}</p>
@@ -349,6 +366,21 @@
 		color: #555;
 		font-size: 0.95rem;
 		margin: 0.25rem 0 0.5rem;
+	}
+	/* La prochaine prière : la phrase que l'on vient lire, donc plus grande que l'aide. */
+	.prochaine {
+		font-size: 1.1rem;
+		font-weight: 600;
+		margin: 0.25rem 0 0.5rem;
+	}
+	.suite {
+		margin: 0.5rem 0 0;
+	}
+	.suite a {
+		min-height: 44px;
+		display: inline-flex;
+		align-items: center;
+		color: #0f5c55;
 	}
 	.vide {
 		color: #555;

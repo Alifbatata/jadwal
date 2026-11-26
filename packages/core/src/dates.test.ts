@@ -19,6 +19,7 @@ import {
 	isLocalTime,
 	isoDateToDays,
 	localTimeToMinutes,
+	minuteOfDayInZone,
 	nextYearSameDate,
 	nthWeekdayOfMonth,
 	parseIsoDate,
@@ -686,6 +687,43 @@ describe('todayInZone', () => {
 		const date = todayInZone('Europe/Zurich', new Date('2026-01-05T12:00:00Z'));
 		expect(date).toBe('2026-01-05');
 		expect(isIsoDate(date)).toBe(true);
+	});
+});
+
+describe('minuteOfDayInZone', () => {
+	it('gives the minute of the day of the zone, not of UTC', () => {
+		const now = new Date('2026-10-09T08:00:00Z');
+		expect(minuteOfDayInZone('Europe/Zurich', now)).toBe(10 * 60);
+		expect(minuteOfDayInZone('UTC', now)).toBe(8 * 60);
+		expect(minuteOfDayInZone('Asia/Kolkata', now)).toBe(13 * 60 + 30);
+	});
+
+	it('drops the seconds, and never rounds up to the next minute', () => {
+		expect(minuteOfDayInZone('UTC', new Date('2026-10-09T12:34:59.999Z'))).toBe(12 * 60 + 34);
+	});
+
+	it('reads midnight as 0, never as 24:00', () => {
+		expect(minuteOfDayInZone('Europe/Zurich', new Date('2026-07-15T22:00:00Z'))).toBe(0);
+		expect(minuteOfDayInZone('Europe/Zurich', new Date('2026-07-15T21:59:59Z'))).toBe(1439);
+		expect(minuteOfDayInZone('UTC', new Date('2026-09-20T00:00:00Z'))).toBe(0);
+	});
+
+	it('follows the zone across a clock change', () => {
+		// Le 25.10.2026, Zurich repasse à l'heure d'hiver : 00:30Z est 02:30 (été), 01:30Z est 02:30 (hiver).
+		expect(minuteOfDayInZone('Europe/Zurich', new Date('2026-10-25T00:30:00Z'))).toBe(150);
+		expect(minuteOfDayInZone('Europe/Zurich', new Date('2026-10-25T01:30:00Z'))).toBe(150);
+		expect(minuteOfDayInZone('Europe/Zurich', new Date('2026-10-25T02:30:00Z'))).toBe(210);
+	});
+
+	it('agrees with todayInZone about the day it counts in', () => {
+		const now = new Date('2026-01-15T23:00:00Z');
+		expect(todayInZone('Europe/Zurich', now)).toBe('2026-01-16');
+		expect(minuteOfDayInZone('Europe/Zurich', now)).toBe(0);
+	});
+
+	it('refuses a missing zone and an invalid clock, as todayInZone does', () => {
+		expect(() => minuteOfDayInZone('', new Date())).toThrow(TypeError);
+		expect(() => minuteOfDayInZone('Europe/Zurich', new Date(Number.NaN))).toThrow(TypeError);
 	});
 });
 

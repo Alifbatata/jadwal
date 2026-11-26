@@ -58,6 +58,8 @@ export const load: PageServerLoad = async (event) => {
 		},
 		langue,
 		langues: languesProposees(organisation),
+		// L'onglet des prières de la navigation principale, si le module est allumé (étape 24).
+		avecPrieres: organisation.prayer_module,
 		appareil,
 		tousLesChoix,
 		https: organisationFlux.https,
