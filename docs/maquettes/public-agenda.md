@@ -144,7 +144,8 @@ page : un menu français dans une page allemande ne servirait à personne.
 - Elle ne cache rien : quand elle choisit pour le visiteur, le choix complet est à un lien, et les
   étapes à la main restent sur la page. Une détection se trompe parfois, et elle ne doit jamais
   cacher la bonne réponse.
-- Elle ne charge aucun script, et ne lit aucun cookie. Les liens de Google et des deux Outlook
+- Elle ne lit aucun cookie, et son seul script enregistre de quoi la relire sans réseau, sans rien
+  changer à l'affichage (ADR 0054). Les liens de Google et des deux Outlook
   sont les seuls à mener vers un autre domaine.
 - Elle ne propose pas de filtrer un flux par public. La question est fermée par l'ADR 0028 : le flux
   par cours répond au vrai besoin, qui est « je veux celui-là ».

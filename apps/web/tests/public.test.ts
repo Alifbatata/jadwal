@@ -17,6 +17,7 @@ import {
 	type Occurrence
 } from '@jadwal/core';
 import { createDatabase, newId, sql, type DatabaseHandle } from '@jadwal/db';
+import { attendreLeSeulScriptHorsReseau } from './scripts-de-page.js';
 
 const origin = inject('origin');
 const secondOrigin = inject('secondOrigin');
@@ -767,13 +768,14 @@ describe('les cinq langues', () => {
 });
 
 describe('les pages se lisent sans JavaScript et sans rien d’ailleurs', () => {
-	it('carries the programme in the raw HTML, with no script at all', async () => {
+	it('carries the programme in the raw HTML, and one script that it does not need', async () => {
 		const html = await (await fetch(`${origin}/m/${SLUG}`)).text();
 		expect(html).toContain('Hebdomadaire');
 		expect(html).toContain('19:00');
-		// `csr = false` : SvelteKit n'envoie aucun script. Une balise `<script>` ici serait une
-		// régression de la promesse de l'ADR 0027.
-		expect(html).not.toMatch(/<script[\s>]/);
+		// `csr = false` : SvelteKit n'envoie aucun script, et le programme est dans le HTML (ADR 0027).
+		// Le seul script est le fichier qui garde la page pour la relire sans réseau (ADR 0054) :
+		// toute autre balise `<script>` serait une régression.
+		attendreLeSeulScriptHorsReseau(html, `/m/${SLUG}`);
 	});
 
 	it('asks the browser for nothing from another domain', async () => {

@@ -6,6 +6,7 @@
 	import ChoixDeLangue from '#lib/public/ChoixDeLangue.svelte';
 	import Onglets from '#lib/public/Onglets.svelte';
 	import Pied from '#lib/public/Pied.svelte';
+	import Copie from '#lib/public/Copie.svelte';
 	import TeteDApplication from '#lib/public/TeteDApplication.svelte';
 	import { variablesAccent } from '#lib/couleur.js';
 
@@ -100,6 +101,10 @@
 
 	<!-- Le contenu principal, entre l'en-tête et le pied : sans lui, axe relevait chaque section. -->
 	<main>
+		<!-- La mention d’une page relue sans réseau, cachée tant que le réseau répond (ADR 0054). -->
+		{#if !data.integre}
+			<Copie langue={data.langue} />
+		{/if}
 		<p>{mots.subscribeIntro(data.organisation.name)}</p>
 
 		<section>

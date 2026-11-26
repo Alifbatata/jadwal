@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { createDatabase, newId, sql, withOrg, type DatabaseHandle } from '@jadwal/db';
 import { conditionsAcceptees } from './conditions-acceptees.js';
+import { attendreLeSeulScriptHorsReseau } from './scripts-de-page.js';
 import { visibleText } from './textes-lus.js';
 
 const origin = inject('origin');
@@ -399,7 +400,7 @@ describe('l’onglet Infos de la page publique', () => {
 				new RegExp(`<a\\b[^>]*aria-current="page"[^>]*>\\s*${ONGLET[langue]}\\s*</a>`)
 			);
 			expect(html).not.toMatch(/<nav\b[^>]*\bclass="(vues|filtres)\b/);
-			expect(html).not.toMatch(/<script\b/i);
+			attendreLeSeulScriptHorsReseau(html, `${base(langue)}?vue=infos`);
 		}
 	);
 

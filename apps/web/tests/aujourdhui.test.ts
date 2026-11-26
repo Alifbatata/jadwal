@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { addDays, isoDateToDays, todayInZone, weekdayFromDays, type IsoDate } from '@jadwal/core';
 import { createDatabase, newId, sql, type DatabaseHandle } from '@jadwal/db';
 import { demarrerALHorloge, portDeTest } from './serveur-a-l-horloge.js';
+import { attendreLeSeulScriptHorsReseau } from './scripts-de-page.js';
 import { ISO_DATE, visibleText } from './textes-lus.js';
 
 const PORT = portDeTest(8);
@@ -440,7 +441,7 @@ describe('la navigation principale de la page publique', () => {
 					[base(langue), null],
 					[base(langue), 'prieres']
 				]);
-				expect(html, langue).not.toMatch(/<script\b/i);
+				attendreLeSeulScriptHorsReseau(html, `${base(langue)}${chemin}`);
 			}
 			const integree = await servir(`${base('fr')}${chemin}?embed=1`);
 			expect(integree.statut).toBe(200);
@@ -502,10 +503,10 @@ describe('la navigation principale de la page publique', () => {
 		}
 	});
 
-	it('adds no script to the page', async () => {
+	it('adds no script of its own to the page', async () => {
 		for (const requete of ['', '?vue=aujourdhui']) {
 			const { html } = await servir(`${base('fr')}${requete}`);
-			expect(html, requete).not.toMatch(/<script\b/i);
+			attendreLeSeulScriptHorsReseau(html, `${base('fr')}${requete}`);
 		}
 	});
 });

@@ -14,6 +14,7 @@ import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import ICAL from 'ical.js';
 import { addDays, expandOccurrences, todayInZone, type IsoDate } from '@jadwal/core';
 import { createDatabase, newId, sql, type DatabaseHandle } from '@jadwal/db';
+import { attendreLeSeulScriptHorsReseau } from './scripts-de-page.js';
 
 const origin = inject('origin');
 const secondOrigin = inject('secondOrigin');
@@ -225,8 +226,10 @@ describe('le fichier du widget', () => {
 describe('le mode intégré', () => {
 	it('adds exactly one script, and only when the page is framed', async () => {
 		const ordinaire = await texte(`${origin}/m/${SLUG}`);
-		// La promesse de l'ADR 0027 ne bouge pas d'un octet pour une page non intégrée.
-		expect(ordinaire).not.toMatch(/<script[\s>]/);
+		// Une page non intégrée n'a qu'un script, et ce n'est pas celui-là : le fichier qui la garde
+		// pour la relire sans réseau (ADR 0054).
+		attendreLeSeulScriptHorsReseau(ordinaire, `/m/${SLUG}`);
+		expect(ordinaire).not.toContain('embed.js');
 
 		// Le chemin rendu est relatif à la page — `../widget/embed.js`, `../../widget/embed.js` —
 		// et SvelteKit compte les segments lui-même. On vérifie donc ce qu'un navigateur en ferait,

@@ -17,6 +17,12 @@ export default defineConfig({
 			// écran enverrait vingt-quatre requêtes par jour sans que personne n'ait rien demandé :
 			// zéro, comme avec SvelteKit 2.
 			version: { pollInterval: 0 },
+			// Le travailleur de service (`src/service-worker`) ne sert que les pages publiques, pour
+			// les relire sans réseau (ADR 0054). SvelteKit l'enregistrerait de lui-même depuis son
+			// script de démarrage : jamais sur les pages publiques, qui n'en ont pas, et toujours dans
+			// l'espace des responsables, pour le site entier. C'est donc `/m/hors-reseau.js` qui
+			// l'enregistre, avec la portée `/m/`.
+			serviceWorker: { register: false },
 			// La configuration de SvelteKit vit ici et non dans un `svelte.config.js` : quand elle
 			// est passée au greffon, ce fichier est ignoré, et on ne s'en apercevrait pas.
 			csp: {

@@ -21,7 +21,8 @@ Ce qu'il sait faire :
   gauche. La page publique, le widget, le flux agenda, l'espace des responsables, le super-admin et
   les courriels les parlent toutes ; chacun choisit la sienne. Les dates s'écrivent comme en Suisse,
   `26.09.2026` ;
-- une **page publique** sans aucun script ni aucune ressource extérieure ;
+- une **page publique** sans aucune ressource extérieure, qui se lit sans JavaScript, s'installe
+  comme une application et se relit sans réseau ;
 - un **widget** à coller sur votre site, en une balise ;
 - un **flux agenda** que chacun peut suivre depuis son téléphone : la page d'abonnement propose le
   bouton qui convient à son appareil, iPhone, Android ou ordinateur ;

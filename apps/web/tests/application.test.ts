@@ -7,6 +7,7 @@
 import { inflateSync } from 'node:zlib';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { createDatabase, newId, sql, type DatabaseHandle } from '@jadwal/db';
+import { attendreLeSeulScriptHorsReseau } from './scripts-de-page.js';
 
 const origin = inject('origin');
 const testDatabase = inject('testDatabase');
@@ -237,7 +238,8 @@ describe('ce que les pages publiques annoncent', () => {
 		expect(lien('icon')).toMatchObject({ type: 'image/png', sizes: '192x192' });
 		const pourApple = new URL(lien('apple-touch-icon')?.['href'] ?? '', page);
 		expect(pourApple.pathname).toBe(`/m/${SLUG}/icone/180.png`);
-		expect(html).not.toMatch(/<script\b/i);
+		// Et un seul script : celui qui garde la page pour la relire sans réseau (ADR 0054).
+		attendreLeSeulScriptHorsReseau(html, page);
 	});
 
 	it('asks the manifest in the language of the page', async () => {

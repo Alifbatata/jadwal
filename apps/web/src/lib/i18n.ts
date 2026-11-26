@@ -287,6 +287,16 @@ interface Dictionnaire {
 	readonly notFound: string;
 	/** La phrase qui le suit : la seule chose que le visiteur peut faire. */
 	readonly notFoundHint: string;
+	/**
+	 * La mention d'une page relue sans réseau (étape 24, ADR 0054) : « Pas de réseau : voici la copie
+	 * gardée le 26.11.2026 à 14:05. » La page la porte cachée, en trois morceaux autour de deux creux,
+	 * le jour et l'heure ; le travailleur de service les remplit et la montre.
+	 */
+	readonly offlineCopy: {
+		readonly before: string;
+		readonly between: string;
+		readonly after: string;
+	};
 	readonly weekTitle: string;
 	readonly coursesTitle: string;
 	readonly sessionCount: (count: number) => string;
@@ -544,6 +554,7 @@ const fr: Dictionnaire = {
 	newTab: 's’ouvre dans un nouvel onglet',
 	notFound: 'Page introuvable',
 	notFoundHint: 'Vérifiez l’adresse.',
+	offlineCopy: { before: 'Pas de réseau : voici la copie gardée le ', between: ' à ', after: '.' },
 	weekTitle: 'Cours de la semaine',
 	coursesTitle: 'Tous les cours',
 	sessionCount: (count) => (count === 1 ? '1 séance' : `${count} séances`),
@@ -735,6 +746,11 @@ const de: Dictionnaire = {
 	newTab: 'öffnet sich in einem neuen Tab',
 	notFound: 'Seite nicht gefunden',
 	notFoundHint: 'Bitte prüfen Sie die Adresse.',
+	offlineCopy: {
+		before: 'Keine Verbindung: Dies ist die Kopie vom ',
+		between: ', ',
+		after: ' Uhr.'
+	},
 	weekTitle: 'Kurse dieser Woche',
 	coursesTitle: 'Alle Kurse',
 	sessionCount: (count) => (count === 1 ? '1 Termin' : `${count} Termine`),
@@ -925,6 +941,11 @@ const it: Dictionnaire = {
 	newTab: 'si apre in una nuova scheda',
 	notFound: 'Pagina non trovata',
 	notFoundHint: 'Controlla l’indirizzo.',
+	offlineCopy: {
+		before: 'Nessuna connessione: questa è la copia del ',
+		between: ' alle ',
+		after: '.'
+	},
 	weekTitle: 'Corsi della settimana',
 	coursesTitle: 'Tutti i corsi',
 	sessionCount: (count) => (count === 1 ? '1 lezione' : `${count} lezioni`),
@@ -1113,6 +1134,11 @@ const en: Dictionnaire = {
 	newTab: 'opens in a new tab',
 	notFound: 'Page not found',
 	notFoundHint: 'Please check the address.',
+	offlineCopy: {
+		before: 'No connection: this is the copy kept on ',
+		between: ' at ',
+		after: '.'
+	},
 	weekTitle: 'This week’s courses',
 	coursesTitle: 'All courses',
 	sessionCount: (count) => (count === 1 ? '1 session' : `${count} sessions`),
@@ -1325,6 +1351,11 @@ const ar: Dictionnaire = {
 	newTab: 'يُفتح في علامة تبويب جديدة',
 	notFound: 'الصفحة غير موجودة',
 	notFoundHint: 'تحقّق من العنوان.',
+	offlineCopy: {
+		before: 'لا يوجد اتصال: هذه نسخة محفوظة بتاريخ ',
+		between: ' الساعة ',
+		after: '.'
+	},
 	weekTitle: 'دروس الأسبوع',
 	coursesTitle: 'كل الدروس',
 	sessionCount: (count) =>

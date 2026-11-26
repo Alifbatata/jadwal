@@ -14,6 +14,7 @@
 	import ChoixDeLangue from '#lib/public/ChoixDeLangue.svelte';
 	import Onglets from '#lib/public/Onglets.svelte';
 	import Pied from '#lib/public/Pied.svelte';
+	import Copie from '#lib/public/Copie.svelte';
 	import TeteDApplication from '#lib/public/TeteDApplication.svelte';
 	import { variablesAccent } from '#lib/couleur.js';
 	import {
@@ -109,6 +110,10 @@
 	     compris : cette page n'a pas d'en-tête propre. Sans ce repère, axe relevait chacun de ses
 	     blocs. -->
 	<main>
+		<!-- La mention d’une page relue sans réseau, cachée tant que le réseau répond (ADR 0054). -->
+		{#if !data.integre}
+			<Copie langue={data.langue} />
+		{/if}
 		<p class="fil">
 			<a href={lienVue(adresse)}>{data.organisation.name}</a> ›
 			<a href={lienVue(adresse, { vue: 'cours' })}>{mots.coursesCrumb}</a>

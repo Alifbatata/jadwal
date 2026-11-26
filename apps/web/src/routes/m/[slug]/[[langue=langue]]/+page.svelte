@@ -12,6 +12,7 @@
 	import { lienAgenda, lienCours, lienVue } from '#lib/public/liens.js';
 	import Entete from '#lib/public/Entete.svelte';
 	import Pied from '#lib/public/Pied.svelte';
+	import Copie from '#lib/public/Copie.svelte';
 	import TeteDApplication from '#lib/public/TeteDApplication.svelte';
 	import { variablesAccent } from '#lib/couleur.js';
 	import Vendredi from '#lib/public/Vendredi.svelte';
@@ -232,6 +233,10 @@
 	<!-- Le contenu principal, entre l'en-tête (`<header>`) et le pied (`<footer>`) : sans lui, rien
 	     de la page n'était dans un repère, et axe le relevait sur chaque vue. -->
 	<main>
+		<!-- La mention d’une page relue sans réseau, cachée tant que le réseau répond (ADR 0054). -->
+		{#if !data.integre}
+			<Copie langue={data.langue} />
+		{/if}
 		{#if data.vue === 'semaine'}
 			<!-- La période en dates seules, `JJ.MM.AAAA` : chaque jour, plus bas, porte déjà son nom. -->
 			<p class="periode">

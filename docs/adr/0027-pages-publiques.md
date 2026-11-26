@@ -49,6 +49,13 @@ démonstration.
 > ordinaire dans un cadre est mesurément ajoutée à l'historique du haut. La page **non** intégrée
 > n'a toujours aucun script, et un test l'affirme toujours. Les raisons sont dans l'ADR 0005 révisé.
 
+> **Amendement du 2026-11-26, à l'étape 24.** La page **non** intégrée charge désormais **un**
+> fichier de notre propre origine, qui fait une chose et pas une de plus : enregistrer le
+> travailleur de service qui garde la dernière page vue, pour qu'elle se relise sans réseau. Il ne
+> change rien à l'affichage, et la page se lit entièrement sans lui ; ce qui suit sur la lecture sans
+> JavaScript reste vrai mot pour mot. Les pages d'erreur n'ont toujours aucun script. Les raisons
+> sont dans l'[ADR 0054](0054-relire-la-page-publique-sans-reseau.md).
+
 ### Rien d'un autre domaine, y compris les polices
 
 Le texte s'affiche avec les polices du système. Aucune police n'est téléchargée, ce qui est à la
@@ -164,4 +171,5 @@ ne changent pas.
 Accepté, 2026-09-20. Étape 5 de la feuille de route. Met en œuvre les ADR 0007 (langues) et 0009
 (vie privée) du côté public. Amendé le 2026-09-21 (le script du mode intégré) et le 2026-09-26
 (cinq langues, l'agenda selon l'appareil, deux liens vers des services d'agenda). Complété le
-27.09.2026 et le 19.10.2026 (addendums ci-dessus).
+27.09.2026 et le 19.10.2026 (addendums ci-dessus). Amendé le 2026-11-26 (le script qui enregistre le
+travailleur de service, ADR 0054).

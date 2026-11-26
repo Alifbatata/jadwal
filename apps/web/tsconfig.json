@@ -12,7 +12,10 @@
 		"strict": true,
 		"noUncheckedIndexedAccess": true
 	},
-	"include": ["src", "vite.config.ts", "tests"]
+	"include": ["src", "vite.config.ts", "tests"],
+	// Le travailleur de service a sa propre configuration (`src/service-worker/tsconfig.json`) : il
+	// n'a ni `document` ni `window`. `pnpm check` vérifie les deux.
+	"exclude": ["src/service-worker"]
 	// Les imports internes passent par `#lib`, déclaré dans `imports` du `package.json` :
 	// https://svelte.dev/docs/kit/migrating-to-sveltekit-3
 }

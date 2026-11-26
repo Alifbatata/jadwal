@@ -52,7 +52,8 @@ ailleurs : ni dans le programme, ni dans le cadre du widget.
 ## Comportements
 
 - Le titre du navigateur est `<Nom de l'organisation> | Infos`.
-- Aucun script, aucune ressource d'un autre domaine, comme partout côté public.
+- Aucune ressource d'un autre domaine, et aucun script qui touche à l'affichage, comme partout côté
+  public.
 - Le lien du site ne s'affiche que s'il commence par `https://` ou `http://` : la base le garantit,
   et la page le revérifie.
 - L'API publique donne les mêmes champs, sous `info`, dans les réglages d'affichage de

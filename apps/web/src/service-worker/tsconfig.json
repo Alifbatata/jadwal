@@ -1,0 +1,13 @@
+{
+	// Le travailleur de service vit dans un autre monde que les pages : ni `document` ni `window`,
+	// mais `caches` et `FetchEvent`. SvelteKit lui engendre sa propre configuration, que le
+	// `tsconfig.json` de l'application exclut : https://svelte.dev/docs/kit/service-workers
+	"extends": "$app/tsconfig/service-worker",
+	"compilerOptions": {
+		"rewriteRelativeImportExtensions": true,
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"noEmit": true
+	},
+	"include": ["."]
+}

@@ -11,7 +11,7 @@
 		"preview": "vite preview",
 		"start": "node build/index.js",
 		"prepare": "svelte-kit sync",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json && tsc --project src/service-worker/tsconfig.json",
 		"test": "vitest run --exclude \"**/*.temps.test.ts\" --reporter=default --reporter=json --outputFile=.vitest-resultats.json",
 		"test:temps": "vitest run .temps.test. --reporter=default --reporter=json --outputFile=.vitest-temps-resultats.json"
 	},

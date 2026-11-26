@@ -39,6 +39,10 @@ apps/web/src/lib/i18n.ts | AR_DIACRITICS_REPLACE | برنامج
 apps/web/src/lib/i18n.ts | AR_HOMOPHONES_REPLACE | الخطبة
 apps/web/src/lib/i18n.ts | AR_SIMPLE_REPLACE | الفترة
 apps/web/src/lib/i18n.ts | DE_PHRASE_REPETITION | Kalender abonnieren Kalender abonnieren
+# La mention d'une page relue sans réseau, en trois morceaux autour de deux creux (ADR 0054) :
+# « Pas de réseau : voici la copie gardée le », « à », « . ». Le corpus les recolle sans le jour ni
+# l'heure, que le travailleur de service écrit entre eux.
+apps/web/src/lib/i18n.ts | DETERMINER_SENT_END | à .
 # « No sessions this week. No sessions this month. No sessions on this day. » : des textes d'écran
 # indépendants, que le corpus recolle en un paragraphe. Aucun écran ne les montre à la suite ; c'est
 # le même cas que « Kalender abonnieren » ci-dessus, et la même tournure que « Aucune séance… ».

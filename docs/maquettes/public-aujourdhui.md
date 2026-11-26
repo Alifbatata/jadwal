@@ -52,6 +52,28 @@ une nouvelle version de quoi que ce soit.
 Sur un téléphone Android, le navigateur propose alors « Installer l'application » ou « Ajouter à
 l'écran d'accueil ». Sur un iPhone, c'est « Partager », puis « Sur l'écran d'accueil ».
 
+## Sans réseau
+
+Hors du cadre du widget, une page publique déjà ouverte sur un appareil s'y relit quand le réseau
+manque, installée ou non (ADR 0054). Le navigateur rend alors la dernière page gardée, et celle-ci
+le dit, en tête de son contenu, dans un encadré :
+
+`Pas de réseau : voici la copie gardée le 26.11.2026 à 14:05.`
+
+- en allemand, `Keine Verbindung: Dies ist die Kopie vom 26.11.2026, 14:05 Uhr.` ;
+- en italien, `Nessuna connessione: questa è la copia del 26.11.2026 alle 14:05.` ;
+- en anglais, `No connection: this is the copy kept on 26.11.2026 at 14:05.` ;
+- en arabe, `لا يوجد اتصال: هذه نسخة محفوظة بتاريخ 26.11.2026 الساعة 14:05.`
+
+Le jour et l'heure sont ceux où l'appareil a gardé la page, à son heure à lui. Tant que le réseau
+répond, l'encadré n'existe pour personne : ni à l'œil, ni pour un lecteur d'écran.
+
+- La copie sert aussi quand le serveur met plus de cinq secondes à répondre, ou qu'il est en panne.
+- Seules les pages déjà ouvertes se relisent : un onglet jamais visité affiche l'erreur ordinaire
+  du navigateur.
+- Une vue `Aujourd'hui` gardée la veille montre la veille : c'est l'encadré qui le dit.
+- Rien de tout cela dans le cadre du widget.
+
 ## Structure de la vue, de haut en bas
 
 1. **L'en-tête** : le nom, la navigation principale avec `Aujourd'hui` marqué, le choix de la
@@ -83,8 +105,9 @@ l'écran d'accueil ». Sur un iPhone, c'est « Partager », puis « Sur l'écran
 
 ## Ce que la vue ne fait pas
 
-- Elle ne compte pas à rebours, et rien n'y bouge : la page n'a pas de script. La prochaine prière
-  est celle de l'instant où la page a été demandée ; la page n'est gardée en cache qu'une minute.
+- Elle ne compte pas à rebours, et rien n'y bouge : aucun script n'y touche à l'affichage. La
+  prochaine prière est celle de l'instant où la page a été demandée ; la page n'est gardée en cache
+  qu'une minute.
 - Elle n'a pas de filtre par public : elle montre tout ce qui a lieu aujourd'hui.
 
 ## Comportements

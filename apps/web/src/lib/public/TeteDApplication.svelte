@@ -1,7 +1,8 @@
 <script lang="ts">
 	// Ce que l'en-tête d'une page publique annonce pour qu'on l'installe comme une application
 	// (étape 24, ADR 0053) : le manifeste de l'organisation, sa couleur pour la barre du système, et
-	// ses icônes. Des balises, sans script.
+	// ses icônes. Des balises, et un seul script : le fichier qui demande au navigateur de garder la
+	// page pour la relire sans réseau (ADR 0054). La page se lit entièrement sans lui.
 	//
 	// Jamais dans le cadre du widget, qui encadre un programme et non une application : c'est
 	// l'appelant qui ne rend pas ce composant en mode intégré.
@@ -28,4 +29,7 @@
 	<meta name="theme-color" content={accent} />
 	<link rel="icon" type="image/png" sizes="192x192" href={icone('192.png')} />
 	<link rel="apple-touch-icon" href={icone('180.png')} />
+	<!-- Un fichier de la même origine, jamais du code en ligne : la politique de sécurité du contenu
+	     le bloquerait (voir `routes/m/hors-reseau.js`). `defer` : il ne retarde pas la lecture. -->
+	<script src={resolve('/m/hors-reseau.js')} defer></script>
 </svelte:head>
