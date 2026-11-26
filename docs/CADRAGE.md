@@ -213,15 +213,21 @@ leur durée, est dans `docs/CONDITIONS.md`.
 
 ## L'application et le direct
 
-Décidés le 25 novembre 2026 (ADR 0052), à construire aux étapes 24 à 26.
+Décidés le 25 novembre 2026 (ADR 0052) et précisés le lendemain (ADR 0053), à construire aux étapes
+24 à 26.
 
 ### L'application
 
-- Une application par organisation, sur l'App Store et sur Google Play. Une construction est réglée
-  pour une seule organisation : nom, icône, couleur, adresse du serveur.
+- **Une seule interface, celle du web.** Elle marche dans tout navigateur, sur téléphone, tablette
+  et ordinateur, et elle s'installe depuis le navigateur. Chaque organisation a son adresse, et
+  cette adresse est son application.
+- La coque native, pour l'App Store et Google Play, vient à l'étape 26. Elle enveloppe cette même
+  interface et lui ajoute l'écoute écran verrouillé.
+- Rien de propre à une organisation n'est figé dans une construction : son nom, son lieu, sa
+  couleur et ses informations viennent du serveur, et se changent par une saisie.
 - Cinq onglets : **Aujourd'hui** (prochaine prière, vendredi, cours du jour, annulations),
   **Programme**, **Prières**, **Direct**, **Infos** (adresse, contact, accès, annonces).
-- Elle ne lit que l'API publique : ni compte, ni cookie, ni saisie. Les responsables remplissent le
+- Elle ne lit que des pages et des données publiques : ni compte, ni cookie, ni saisie. Les responsables remplissent le
   programme dans l'espace web, comme avant ; tout le reste se consulte.
 - Les cinq langues de l'interface, l'arabe de droite à gauche. Le dernier programme reçu reste
   lisible sans réseau.
@@ -231,7 +237,8 @@ Décidés le 25 novembre 2026 (ADR 0052), à construire aux étapes 24 à 26.
 - Une personne désignée, sur place, lance la diffusion d'un bouton. Elle ne démarre jamais seule, et
   elle s'arrête seule après une durée maximale.
 - La personne qui écoute choisit sa langue : français, allemand, italien, anglais, albanais, bosnien
-  ou turc au départ. L'écoute se poursuit écran verrouillé. Des sous-titres accompagnent la voix.
+  ou turc au départ. Des sous-titres accompagnent la voix. Dans un navigateur, l'écran reste allumé
+  tant que l'écoute joue ; dans la coque, elle se poursuit écran verrouillé.
 - L'écran dit que la traduction est automatique et peut contenir des erreurs.
 - La voix n'est enregistrée nulle part. Elle passe par un service de traduction tiers, choisi à
   l'étape 25 sur un essai réel ; la personne qui parle doit avoir donné son accord, et les conditions
@@ -241,7 +248,7 @@ Décidés le 25 novembre 2026 (ADR 0052), à construire aux étapes 24 à 26.
 
 ## Technique
 
-- `apps/mobile` (étape 24) : l'application, dans une coque native choisie sur preuve.
+- `apps/mobile` (étape 26) : la coque native, qui enveloppe l'interface du web.
 - `apps/live` (étape 25) : le relais du direct, à part du serveur web.
 - `packages/core` : récurrence, exceptions, ancrage sur la prière, export ICS. TypeScript pur,
   très testé (changements d'heure, cinquième semaine du mois, exceptions).
@@ -281,9 +288,10 @@ Les étapes suivantes, de la mise en ligne à l'accès donné par le super-admin
 
 Depuis le changement de but du 25 novembre 2026 (ADR 0052) :
 
-24. L'application, sans le direct : coque native, API du jour et des infos, cinq onglets.
+24. L'application web, sans le direct : accueil du jour, infos, onglets, installation, lecture sans
+    réseau.
 25. Le direct : essai réel de deux voies de traduction, relais, poste de diffusion, écoute.
-26. Hébergement, mise en ligne, soumission aux magasins.
+26. Hébergement, mise en ligne, coque native, soumission aux magasins.
 
 Plus tard : pré-traduction automatique validée par le responsable, qui servirait aussi au sermon (un
 texte remis à l'avance, traduit, relu, que l'application suit pendant que l'imam parle) ; image
@@ -299,6 +307,8 @@ super-admin, où elles sont obligatoires : ADR 0025).
   fonctions natives (audio en arrière-plan, lecture sans réseau).
 - Le poste de travail est sous Windows : l'application iPhone se construit et s'essaie hors du
   poste.
+- Jusqu'à la coque, l'écoute sur iPhone peut s'arrêter écran verrouillé, et personne ne peut
+  l'essayer pour l'instant.
 
 - Vérifier que le bloc d'intégration du constructeur de site utilisé par l'organisation exécute un
   script externe. Sinon, le cadre posé à la main, livré à l'étape 6.
