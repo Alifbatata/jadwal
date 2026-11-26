@@ -150,15 +150,20 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   corrigées. 4 160 tests, tous réussis, aucun sauté, et 24 tests liés au temps, à part ;
   parcours complet contre la nouvelle image : 475 vérifications, et axe sans rien de sérieux sur
   45 pages. Mesurés sur le poste le 21.11.2026, et rejoués par la CI sur le code livré.
-- **Étape 24** (l'application, sans le direct) : **ouverte le 25.11.2026**. Le but a changé
+- **Étape 24** (l'application, sans le direct) : **livrée sur `main` le 26.11.2026, pas
+  déployée**. Le but a changé
   (ADR 0052) : la cible première devient l'application d'une organisation, avec son programme,
   ses informations et, à l'étape 25, le sermon du vendredi traduit en direct à l'oral dans sept
   langues. Rien de ce qui existe n'est refait : le serveur de jadwal devient le serveur de
   l'application. Le web d'abord (ADR 0053) : une seule interface, qui marche dans tout navigateur
   et s'installe depuis lui ; la coque des magasins vient à l'étape 26 ; rien de propre à une
-  organisation n'est figé dans une construction. Fait : le nouveau but consigné (ADR 0052 et 0053,
-  `docs/CADRAGE.md`). À faire : l'accueil du jour, la page « Infos », les onglets, l'installation
-  et la lecture sans réseau, la vérification.
+  organisation n'est figé dans une construction. La page publique s'ouvre sur « Aujourd'hui », porte
+  un onglet « Infos » et une annonce, garde sa navigation au bas de l'écran d'un téléphone,
+  s'installe depuis le navigateur et se relit sans réseau (ADR 0054). Ni l'installation ni la
+  lecture sans réseau n'ont été essayées sur un vrai téléphone : il y faut un serveur en ligne.
+  4 439 tests, tous réussis, aucun sauté, et 24 tests liés au temps, à part ; parcours complet :
+  502 vérifications, dont 26 pour l'étape 24, et axe sans rien de sérieux sur 52 pages. Mesurés
+  sur le poste le 26.11.2026 ; la CI les rejoue à chaque poussée.
 
 ## Fait
 
@@ -1055,6 +1060,43 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   (addendum de l'ADR 0005). Node 24.21.0 → 24.22.3, publication de sécurité du 10.11.2026
   (`.node-version` et l'image de base).
 
+Étape 24 (l'application d'une organisation, sans le direct), livrée sur `main`, pas déployée :
+
+- **Le nouveau but consigné** : ADR 0052 (l'application d'une organisation ; le sermon traduit à
+  l'étape 25), ADR 0053 (le web d'abord, la coque des magasins en dernier, rien de propre à une
+  organisation figé dans une construction), `docs/CADRAGE.md`.
+- **« Aujourd'hui »**, la vue sur laquelle s'ouvre l'application (`?vue=aujourdhui`) : la prochaine
+  prière, le tableau du jour, les séances du jour, puis le premier jour suivant qui en a. La règle
+  de la prochaine prière est en fonctions pures (`lib/public/aujourdhui.ts`), et la minute du jour
+  dans le fuseau de l'organisation vient de `core` (`minuteOfDayInZone`).
+- **La navigation principale** (`Onglets.svelte`) : Aujourd'hui, Programme, Prières, Infos. Sur un
+  téléphone, elle tient au bas de l'écran, en CSS seul ; sur un écran large, sous le nom. Jamais
+  dans le cadre du widget, qui garde sa liste de vues.
+- **« Infos » et l'annonce** : six champs facultatifs sur l'organisation (adresse, téléphone,
+  adresse électronique, site, accès, annonce), saisis dans Réglages, lus sur la page publique et
+  par l'API. Du texte brut, marqué dans la langue par défaut de l'organisation. L'annonce est en
+  tête de « Aujourd'hui » et de « Infos ». Migrations 0082 et 0083.
+- **Installable** (ADR 0053) : un manifeste par organisation, dans la langue de la page, et ses
+  icônes, dessinées par le serveur à la couleur de l'organisation, sans fichier d'image ni
+  dépendance.
+- **Lisible sans réseau** (ADR 0054, qui amende l'ADR 0027) : un travailleur de service, de portée
+  `/m/`, garde les pages publiques déjà ouvertes sur l'appareil. Le réseau passe toujours d'abord ;
+  une copie le dit en tête, avec son jour et son heure. Un seul script sur la page publique, un
+  fichier de notre origine qui enregistre le travailleur ; la page se lit entièrement sans lui.
+- **Le parcours automatique** : une étape de plus, 26 vérifications. La navigation du bas y est
+  mesurée en pixels ; Chrome, avec un profil gardé sur le disque, lit le manifeste, ne trouve aucun
+  obstacle à l'installation, installe l'application puis la désinstalle ; le conteneur du serveur
+  est mis en pause, et la page déjà ouverte revient avec sa mention. Contre l'image d'avant ces
+  chantiers, 11 de ces vérifications tombent et 4 gestes sont impossibles.
+- **Les tests** : 4 439, tous réussis, aucun sauté : 697 dans `core`, 594 dans la base, 81 pour
+  les sauvegardes, 3 035 dans l'application, 32 pour le widget ; et 24 tests liés au temps, à
+  part. Parcours complet : 502 vérifications, axe sans rien de sérieux sur 52 pages.
+- **Ce qui n'est pas prouvé** : l'installation et la lecture sans réseau sur un vrai téléphone, qui
+  demandent une adresse en HTTPS, donc un serveur en ligne ; Safari et Firefox. Seules les pages
+  déjà ouvertes se relisent. Les textes allemands, italiens, anglais et arabes de ces écrans
+  attendent la relecture d'un locuteur. Les conditions d'utilisation ne nomment pas encore les
+  six champs d'information : ce sera fait avec la version que demandera l'étape 25.
+
 **Un script ou une commande qu'aucun test ne _lance_ n'est pas éprouvé.** C'est la règle du dépôt
 depuis l'étape 12, et elle répond à la question laissée ouverte à l'étape 11.
 
@@ -1109,7 +1151,7 @@ tests.
 | 21    | Retours de l'étape 20 : langue en liste, vendredi, conditions       | terminée |
 | 22    | Service gratuit, accès donné par le super-admin                     | terminée |
 | 23    | SvelteKit 3, origine lue au démarrage, licences du code incorporé   | terminée |
-| 24    | L'application web d'une organisation, sans le direct                | en cours |
+| 24    | L'application web d'une organisation, sans le direct                | terminée |
 | 25    | Le direct : le sermon du vendredi traduit à l'oral                  | à venir  |
 | 26    | Hébergement, mise en ligne, coque native, magasins                  | à venir  |
 

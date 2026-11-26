@@ -199,6 +199,23 @@ message, borne la valeur, et ne traite aucun autre type. Le fichier servi porte
 `Access-Control-Allow-Origin: *` — ce qu'il ouvre est un fichier public — et une empreinte
 d'intégrité est disponible pour les sites qui l'exigent, à une adresse versionnée et immuable.
 
+**9 ter. Le travailleur de service ne se tient que devant les pages publiques, et ne garde que du
+public.** Depuis l'étape 24, la page publique d'une organisation se relit sans réseau (ADR 0054) :
+un travailleur de service garde, sur l'appareil du visiteur, les pages publiques qu'il a ouvertes.
+Sa portée est `/m/`. L'espace des responsables, la connexion, le super-admin et l'API n'y sont
+pas : aucun travailleur ne peut se placer devant eux, ni lire ni garder ce qu'ils répondent.
+L'enregistrement automatique de SvelteKit, qui l'aurait posé sur le site entier, est coupé. Le
+travailleur est installé par un seul fichier de notre origine, servi tel quel, qui ne fait que
+cela : la politique de sécurité du contenu n'autorise toujours aucun code en ligne ni aucun
+fichier d'un autre domaine. Ce fichier n'est chargé ni sur une page d'erreur ni dans le cadre du
+widget, et ne fait rien dans un cadre.
+
+Il garde les pages publiques ouvertes sur ce navigateur, quarante au plus, leurs feuilles de style
+et les icônes ; jamais l'API, un flux agenda, une page d'erreur ni une redirection. Ces pages ne
+lisent ni session ni cookie (ADR 0027) : ce qui reste sur l'appareil est ce que tout visiteur
+lirait. Le réseau passe toujours d'abord, et une copie rendue faute de réseau le dit, en tête,
+avec le jour et l'heure où elle a été gardée. Le serveur ne sait rien de ces copies.
+
 **10. Le compte super-admin est une clé maîtresse, et rien dans la base ne le contient.** Depuis
 l'étape 4, il lit et écrit dans toutes les organisations, en permanence, et ses consultations ne
 laissent aucune trace visible par elles (ADR 0025). Ce qui le protège n'est plus l'isolation, c'est
@@ -299,6 +316,10 @@ ou pointe ses adresses vers un faux service. C'est une garde contre l'oubli et l
 - **Un cache partagé qui ignorerait `Vary`** pourrait servir à un visiteur l'écran préparé pour une
   autre langue ou un autre appareil. Le modèle de `infra/` n'en place aucun devant le service ; une
   instance qui ajoute un cache devant le service vérifie qu'il respecte `Vary`.
+- **Une copie gardée sans réseau peut être périmée.** Une séance annulée après la dernière
+  ouverture n'y figure pas comme annulée. La mention en tête de la copie donne son jour et son
+  heure ; rien d'autre ne le dit. Et retirer un jour le travailleur de service demandera d'en
+  publier un dernier qui se désinscrit : un fichier supprimé laisserait l'ancien en place.
 - **L'existence d'un compte reste devinable hors du service** : si une personne est publiquement
   responsable d'une organisation, savoir qu'elle a un compte n'apprend rien. Nous protégeons ce que
   le service révèle, pas ce que le monde sait déjà.
@@ -321,11 +342,18 @@ les deux cookies, et compare l'invitation vers un compte connu et vers une adres
 inconnue, réponse, cookies et envois ; `tests/demande-d-acces.test.ts` dépose des demandes, les
 refuse, les double et les limite, et vérifie qu'aucun courriel ne part à l'adresse saisie ;
 `tests/public.test.ts` lit les pages publiques comme un Android, un iPhone et un ordinateur, et
-refuse tout lien vers un autre domaine que les deux services d'agenda.
+refuse tout lien vers un autre domaine que les deux services d'agenda ;
+`tests/hors-reseau.test.ts` vérifie le seul script d'une page publique, son absence dans le cadre
+du widget et sur une page d'erreur, la portée du travailleur de service, et qu'aucun n'est
+enregistré dans l'espace des responsables ; `src/lib/hors-reseau/copie.test.ts` éprouve ce qu'il
+accepte de garder.
 
 `pnpm parcours:test` rejoue ce qu'une organisation vit, dans Chrome, sur l'image de production et
 une base neuve lancées par Docker : la passkey du super-admin, l'invitation, les conditions à
-accepter, les cours, la page publique, le widget posé sur une autre origine et le flux agenda. Il
+accepter, les cours, la page publique, le widget posé sur une autre origine et le flux agenda.
+Depuis l'étape 24, il installe la page publique comme une application, puis met le serveur en
+pause : la page déjà ouverte revient avec sa mention de copie, une page jamais ouverte n'aboutit
+pas, et l'espace des responsables n'a aucun travailleur de service. Il
 passe axe sur chaque page traversée, et échoue sur tout problème d'accessibilité d'impact `serious`
 ou `critical`, les deux niveaux les plus graves d'axe. Le flux `parcours` le lance à chaque poussée
 sur `main`, et la garde du déploiement exige son verdict.
