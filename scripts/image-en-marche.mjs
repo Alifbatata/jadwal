@@ -197,6 +197,19 @@ export class MiseEnMarche {
 	}
 
 	/**
+	 * Le serveur ne répond plus, comme pour un visiteur dont le réseau est coupé ou dont le serveur
+	 * est en panne : son conteneur est mis en pause, puis repris. Ni arrêt ni relance : le serveur
+	 * garde son horloge posée, ses connexions à la base et son journal.
+	 */
+	suspendreLeServeur() {
+		docker(['pause', this.serveur], { stdio: 'ignore' });
+	}
+
+	reprendreLeServeur() {
+		docker(['unpause', this.serveur], { stdio: 'ignore' });
+	}
+
+	/**
 	 * Tout ce que le serveur a écrit. `docker logs` rend la sortie standard du conteneur sur la
 	 * sienne et la sortie d'erreur sur la sienne ; les 500 d'`adapter-node` passent par la seconde.
 	 * Les lire toutes les deux, ou ne rien voir d'une panne : le journal ne montrait que

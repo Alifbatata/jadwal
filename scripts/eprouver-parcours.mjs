@@ -396,6 +396,38 @@
  * Les langues vérifiées : l'allemand pour la page de demande, sa demande et son invitation,
  * l'italien pour l'invitation envoyée plus tard ; le reste en français.
  *
+ * ### L'application de l'étape 24
+ *
+ * La page publique devient l'application de l'organisation (ADR 0052, 0053 et 0054). Tout se joue
+ * à l'étape t, juste avant les conditions, chaque retour dans un navigateur neuf : aucune page
+ * gardée en cache par un pas d'avant.
+ *
+ * - 24-aujourdhui : la vue « Aujourd'hui », le jour de l'horloge, la prochaine prière avec son
+ *   heure, le tableau du jour, le programme du jour, « À venir » et le lien vers la semaine ; en
+ *   arabe, de droite à gauche, en chiffres latins ; axe sur les deux.
+ * - 24-infos : la personne responsable saisit les six informations dans Réglages ; l'onglet
+ *   « Infos » apparaît, avec l'annonce, l'adresse et son lien vers une carte, le contact et ses
+ *   trois liens, l'accès ; l'annonce est en tête de « Aujourd'hui », jamais dans le programme ni
+ *   dans le cadre du widget ; sur la page arabe, ce qui est saisi reste marqué en français. À la
+ *   fin de l'étape, tout est vidé, et l'onglet disparaît.
+ * - 24-onglets : à 390 px, la navigation principale tient au bas de la fenêtre, mesurée (fixe,
+ *   toute la largeur, quatre onglets de même largeur, 48 px de haut au moins, le pied de page
+ *   au-dessus d'elle), en français, en allemand et en arabe ; à 1280 px, elle est sous le nom ; le
+ *   cadre du widget ne l'a pas.
+ * - 24-installable : le manifeste que la page annonce, en français et en arabe, et ses icônes,
+ *   servies à la taille dite ; puis un Chrome au profil gardé sur le disque, parce qu'une fenêtre
+ *   privée ne s'installe pas : Chrome lit le manifeste sans erreur, ne trouve aucun obstacle à
+ *   l'installation, installe l'application, puis la désinstalle.
+ * - 24-hors-reseau : le travailleur de service s'installe, portée `/m/`, et garde les pages
+ *   ouvertes ; le conteneur du serveur est mis en pause (`docker pause`) : la page déjà ouverte
+ *   revient, copie gardée, avec sa mention datée, dans le contenu principal, en français et en
+ *   arabe ; une page jamais ouverte n'aboutit pas ; le serveur repris, la page vient de lui, sans
+ *   mention ; l'espace des responsables n'a aucun travailleur.
+ *
+ * Les langues vérifiées : 24-onglets en français, en allemand et en arabe ; 24-aujourdhui,
+ * 24-installable et 24-hors-reseau en français et en arabe ; 24-infos en français, et l'arabe
+ * pour la langue de ce qui est saisi.
+ *
  * ## La date figée (étape 19, D9)
  *
  * Le parcours ne lit plus la date de son lancement pour savoir ce qu'il attend. Il pose l'horloge
@@ -437,7 +469,7 @@
  * A3 et F1, ceux de l'espace parcourus par D2), qui change d'une image à l'autre, y sont remplacés
  * par un mot. Un passage strict échoue si une
  * vérification du catalogue n'a pas été jouée, ou si une vérification jouée n'y est pas. Le bilan
- * donne ces nombres pour chaque étape, de la 18 à la 22, à part.
+ * donne ces nombres pour chaque étape, de la 18 à la 22, puis la 24, à part.
  *
  * Une vérification faite de plusieurs conditions les nomme (`verifierChaque`), qu'elle soit celle
  * d'un retour ou non : sa ligne rouge commence par « tombé : » et le nom de celles qui manquent,
@@ -523,10 +555,11 @@
  */
 import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
 import { createServer as createNetServer } from 'node:net';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium } from 'playwright-core';
 import { dateDeLaVersion } from '../apps/web/src/lib/conditions/rendu.js';
@@ -1374,13 +1407,25 @@ const RETOURS_DE_L_ETAPE_22 = [
 	'22-organisations',
 	'22-conditions'
 ];
+/**
+ * L'application de l'étape 24 : ce qui fait de la page publique une application qu'on installe
+ * et qu'on relit sans réseau. L'en-tête du script dit ce que chacun vérifie.
+ */
+const RETOURS_DE_L_ETAPE_24 = [
+	'24-aujourdhui',
+	'24-infos',
+	'24-onglets',
+	'24-installable',
+	'24-hors-reseau'
+];
 /** Tous les retours, dans l'ordre du tableau final. */
 const RETOURS = [
 	...RETOURS_DE_L_ETAPE_18,
 	...RETOURS_DE_L_ETAPE_19,
 	...RETOURS_DE_L_ETAPE_20,
 	...RETOURS_DE_L_ETAPE_21,
-	...RETOURS_DE_L_ETAPE_22
+	...RETOURS_DE_L_ETAPE_22,
+	...RETOURS_DE_L_ETAPE_24
 ];
 /**
  * Chaque vérification d'un retour : `{ retour, quoi, ok, detail }`, et `impossible` pour un geste
@@ -10532,6 +10577,827 @@ async function deplaceeSurLEcranDuVendredi(page) {
 	}
 }
 
+// ---------------------------------------------------------------------------------------------
+// t. L'application de l'étape 24
+// ---------------------------------------------------------------------------------------------
+
+/** Ce que l'organisation dit d'elle, champ par champ : la clé est l'`id` du champ dans Réglages. */
+const INFOS = {
+	address: 'Rue de l’Exemple 12\n2500 Bienne',
+	contactPhone: '+41 32 000 00 00',
+	contactEmail: 'contact@example.org',
+	website: 'https://www.example.org',
+	accessNote: 'Bus 4, arrêt Exemple.\nEntrée par la cour.',
+	announcement: 'La salle du bas est fermée cette semaine.'
+};
+const INFOS_ENREGISTREES = 'Informations enregistrées.';
+/** L'adresse sur une ligne, comme le lien vers une carte la porte (`lib/public/infos.ts`). */
+const ADRESSE_SUR_UNE_LIGNE = 'Rue de l’Exemple 12, 2500 Bienne';
+/** La navigation principale de la page publique, langue par langue (`tabs`, `lib/i18n.ts`). */
+const ONGLETS = {
+	fr: ['Aujourd’hui', 'Programme', 'Prières', 'Infos'],
+	de: ['Heute', 'Programm', 'Gebetszeiten', 'Über uns'],
+	ar: ['اليوم', 'البرنامج', 'مواقيت الصلاة', 'معلومات']
+};
+const EN_LANGUE = { fr: 'en français', de: 'en allemand', ar: 'en arabe' };
+/** La mention d'une page relue sans réseau, une fois datée par le travailleur (`offlineCopy`). */
+const MENTION_DE_COPIE = {
+	fr: /^Pas de réseau : voici la copie gardée le \d{2}\.\d{2}\.\d{4} à \d{2}:\d{2}\.$/,
+	ar: /^لا يوجد اتصال: هذه نسخة محفوظة بتاريخ \d{2}\.\d{2}\.\d{4} الساعة \d{2}:\d{2}\.$/
+};
+
+/** Le texte d'un élément s'il est là, et `''` sinon : une vérification tombe, sans attendre. */
+async function texteSIlEstLa(locator) {
+	return (await locator.count()) > 0 ? texteDe(locator) : '';
+}
+
+const sansBlancs = (texte) => texte.replace(/\s+/g, ' ').trim();
+
+/** Les libellés de la navigation principale, dans l'ordre du document. */
+async function ongletsLus(page) {
+	return (await page.locator('nav.onglets a').allTextContents())
+		.map((libelle) => libelle.trim())
+		.join('|');
+}
+
+const adressePublique = (langue, suite = '') =>
+	`/m/${ORGANISATION.slug}${langue === 'fr' ? '' : `/${langue}`}${suite}`;
+
+/**
+ * t. L'application de l'étape 24 : ce qui fait de la page publique une application. Les infos
+ * sont saisies au début et vidées à la fin : l'organisation repart comme elle est arrivée.
+ */
+async function application(navigateur, page) {
+	etape(
+		't. L’application : « Aujourd’hui », « Infos », les onglets, l’installation, la lecture sans réseau (étape 24)'
+	);
+	await vueAujourdhui(navigateur);
+	await ongletInfos(navigateur, page);
+	await barreDOnglets(navigateur);
+	await installable(navigateur);
+	await horsReseau(navigateur);
+	await infosVidees(navigateur, page);
+}
+
+/** 24-aujourdhui : la vue sur laquelle s'ouvre l'application installée. */
+async function vueAujourdhui(navigateur) {
+	const contexte = await nouveauContexte(navigateur);
+	try {
+		const visiteur = await contexte.newPage();
+		await retour('24-aujourdhui', async () => {
+			const adresse = adressePublique('fr', '?vue=aujourdhui');
+			await ouvrir(visiteur, adresse);
+			const jour = await texteSIlEstLa(visiteur.locator('#prieres-aujourdhui'));
+			const prochaine = await texteSIlEstLa(visiteur.locator('p.prochaine'));
+			const heures = (await visiteur.locator('table.aujourdhui tbody td').allTextContents()).join(
+				' '
+			);
+			const nommee = /\d{2}:\d{2}/.exec(prochaine)?.[0] ?? '';
+			const courant = (
+				await visiteur.locator('nav.onglets a[aria-current="page"]').allTextContents()
+			)
+				.map((libelle) => libelle.trim())
+				.join('|');
+			const programme = await texteSIlEstLa(visiteur.locator('#aujourdhui-programme-titre'));
+			const seances = await visiteur.locator('#aujourdhui-programme ul > *').count();
+			const vide = await texteSIlEstLa(visiteur.locator('#aujourdhui-programme p.vide'));
+			const suite = await texteSIlEstLa(visiteur.locator('#aujourdhui-suite-titre'));
+			const semaine = visiteur
+				.locator('#aujourdhui-suite')
+				.getByRole('link', { name: 'Voir toute la semaine', exact: true });
+			const versLaSemaine =
+				(await semaine.count()) === 1
+					? await semaine.evaluate((lien) => {
+							const cible = new URL(/** @type {HTMLAnchorElement} */ (lien).href);
+							return cible.pathname + cible.search;
+						})
+					: 'aucun lien';
+			verifierChaque(
+				`${adresse} s’ouvre sur « Aujourd’hui, ${dateLongue(T)} » : la prochaine prière avec son heure, le tableau du jour, « Au programme aujourd’hui », « À venir » et « Voir toute la semaine », qui mène au programme`,
+				{
+					'l’onglet « Aujourd’hui » est la page courante': courant === 'Aujourd’hui',
+					'le jour de l’horloge': jour === `Aujourd’hui, ${dateLongue(T)}`,
+					'la prochaine prière, avec son heure': /^Prochaine prière : .+\d{2}:\d{2}.*\.$/.test(
+						prochaine
+					),
+					// L'heure nommée est au tableau du jour, sauf quand la prochaine prière est celle du
+					// lendemain, ou celle du vendredi, dont les heures sont celles des sessions.
+					'son heure au tableau du jour':
+						prochaine.includes('demain') ||
+						prochaine.includes('prière du vendredi') ||
+						(nommee !== '' && heures.includes(nommee)),
+					'les cinq prières du jour':
+						(await visiteur.locator('table.aujourdhui tbody tr').count()) === 5,
+					'« Au programme aujourd’hui »': programme === 'Au programme aujourd’hui',
+					'des séances, ou la phrase d’un jour sans séance': seances > 0 || vide !== '',
+					'« À venir »': suite === 'À venir',
+					'le lien vers la semaine': versLaSemaine === adressePublique('fr')
+				},
+				`« ${jour} » ; « ${prochaine} » ; « ${programme} », ${seances} séance(s)${vide ? `, « ${vide} »` : ''} ; « ${suite} » ; lien vers ${versLaSemaine}`
+			);
+			await auditer(visiteur, 'page publique fr, vue aujourd’hui');
+
+			const enArabe = adressePublique('ar', '?vue=aujourdhui');
+			await ouvrir(visiteur, enArabe);
+			const jourArabe = await texteSIlEstLa(visiteur.locator('#prieres-aujourdhui'));
+			const prochaineArabe = await texteSIlEstLa(visiteur.locator('p.prochaine'));
+			const orientaux = [...new Set((await visiteur.content()).match(CHIFFRES_ORIENTAUX) ?? [])];
+			verifierChaque(
+				'en arabe, la vue « اليوم », de droite à gauche : le jour et la prochaine prière, en chiffres latins',
+				{
+					'l’onglet « اليوم » est la page courante':
+						(await texteSIlEstLa(visiteur.locator('nav.onglets a[aria-current="page"]'))) ===
+						'اليوم',
+					'dir="rtl"': (await racineDit(visiteur, 'dir')) === 'rtl',
+					'« اليوم، … »': jourArabe.startsWith('اليوم، '),
+					'le jour de l’horloge': jourArabe.endsWith(dateSuisse(T)),
+					'« الصلاة القادمة: … »': prochaineArabe.startsWith('الصلاة القادمة: '),
+					'aucun chiffre arabe oriental': orientaux.length === 0
+				},
+				`« ${jourArabe} » ; « ${prochaineArabe} »${orientaux.length > 0 ? ` ; ${orientaux.join(' ')}` : ''}`
+			);
+			await auditer(visiteur, 'page publique ar, vue aujourd’hui');
+			const graves = gravesSur([
+				'page publique fr, vue aujourd’hui',
+				'page publique ar, vue aujourd’hui'
+			]);
+			verifier(
+				'axe ne relève rien de sérieux sur la vue « Aujourd’hui », en français et en arabe',
+				graves.length === 0,
+				graves.map((grave) => `${grave.regle} : ${grave.cible}`).join(' ; ')
+			);
+		});
+	} finally {
+		await contexte.close();
+	}
+}
+
+/** Écrit les six champs de « Informations pour le public », et rend ce que l'écran en dit. */
+async function saisirLesInfos(page, infos) {
+	await ouvrir(page, '/reglages');
+	// La page hydratée d'abord, comme à l'étape n : une saisie faite avant serait reprise.
+	await page
+		.waitForFunction(() => !document.getElementById('name')?.hasAttribute('value'), undefined, {
+			timeout: 5000
+		})
+		.catch(() => undefined);
+	for (const [champ, valeur] of Object.entries(infos)) {
+		await (await exiger(page.locator(`#${champ}`), `le champ #${champ}`)).fill(valeur);
+	}
+	await envoyer(page, page.locator('form[action="?/infos"] button[type="submit"]'));
+	const statut = await texteSIlEstLa(page.getByRole('status'));
+	const gardes = [];
+	for (const [champ, valeur] of Object.entries(infos)) {
+		if ((await page.locator(`#${champ}`).inputValue()) === valeur) gardes.push(champ);
+	}
+	return { statut, gardes };
+}
+
+/** 24-infos : ce que l'organisation dit d'elle, de la saisie à la page publique. */
+async function ongletInfos(navigateur, page) {
+	await retour('24-infos', async () => {
+		const { statut, gardes } = await saisirLesInfos(page, INFOS);
+		verifierChaque(
+			`dans Réglages, « Informations pour le public » : les six champs saisis s’enregistrent, « ${INFOS_ENREGISTREES} », et l’écran les garde`,
+			{
+				[`« ${INFOS_ENREGISTREES} »`]: statut === INFOS_ENREGISTREES,
+				'les six champs gardés': gardes.length === Object.keys(INFOS).length
+			},
+			`« ${statut || 'aucun message'} » ; gardés : ${gardes.join(', ') || 'aucun'}`
+		);
+	});
+
+	const contexte = await nouveauContexte(navigateur);
+	try {
+		const visiteur = await contexte.newPage();
+		await retour('24-infos', async () => {
+			await ouvrir(visiteur, adressePublique('fr'));
+			const onglets = await ongletsLus(visiteur);
+			await (
+				await exiger(
+					visiteur.locator('nav.onglets').getByRole('link', { name: 'Infos', exact: true }),
+					'l’onglet « Infos »'
+				)
+			).click();
+			await visiteur.waitForURL((adresse) => adresse.searchParams.get('vue') === 'infos');
+			await visiteur.waitForLoadState('networkidle');
+			await lireLEcran(visiteur);
+			const section = (titre) => visiteur.locator(`section[aria-labelledby="${titre}"]`);
+			const annonce = await texteSIlEstLa(visiteur.locator('section.annonce p.saisi'));
+			const adresse = await texteSIlEstLa(section('infos-adresse').locator('p.saisi'));
+			const carte = section('infos-adresse').getByRole('link', {
+				name: avecNouvelOnglet('Ouvrir dans une carte', 'fr'),
+				exact: true
+			});
+			const versLaCarte =
+				(await carte.count()) === 1
+					? {
+							href: (await carte.getAttribute('href')) ?? '',
+							target: (await carte.getAttribute('target')) ?? ''
+						}
+					: { href: 'aucun lien', target: '' };
+			const contact = await section('infos-contact')
+				.locator('a')
+				.evaluateAll((liens) => liens.map((lien) => lien.getAttribute('href') ?? ''));
+			const acces = await texteSIlEstLa(section('infos-acces').locator('p.saisi'));
+			verifierChaque(
+				'la page publique reçoit l’onglet « Infos » : l’annonce, l’adresse et « Ouvrir dans une carte », qui mène à OpenStreetMap dans un nouvel onglet, le téléphone, l’adresse électronique et le site en liens, puis l’accès',
+				{
+					'les quatre onglets': onglets === ONGLETS.fr.join('|'),
+					'« Infos » est la page courante':
+						(await texteSIlEstLa(visiteur.locator('nav.onglets a[aria-current="page"]'))) ===
+						'Infos',
+					'« Annonce » et son texte':
+						(await texteSIlEstLa(visiteur.locator('#annonce-titre'))) === 'Annonce' &&
+						annonce === INFOS.announcement,
+					'l’adresse': adresse === sansBlancs(INFOS.address),
+					'le lien vers OpenStreetMap':
+						versLaCarte.href ===
+						`https://www.openstreetmap.org/search?query=${encodeURIComponent(ADRESSE_SUR_UNE_LIGNE)}`,
+					'dans un nouvel onglet': versLaCarte.target === '_blank',
+					'le téléphone, l’adresse électronique, le site':
+						contact.join(' ') ===
+						`tel:${INFOS.contactPhone.replaceAll(' ', '')} mailto:${INFOS.contactEmail} ${INFOS.website}`,
+					'l’accès': acces === sansBlancs(INFOS.accessNote)
+				},
+				`${onglets} ; « ${annonce} » ; « ${adresse} » ; ${versLaCarte.href} ; ${contact.join(' ') || 'aucun lien de contact'} ; « ${acces} »`
+			);
+			await auditer(visiteur, 'page publique fr, vue infos');
+
+			// L'annonce : en tête de « Aujourd'hui », avant tout autre bloc ; pas ailleurs.
+			await ouvrir(visiteur, adressePublique('fr', '?vue=aujourdhui'));
+			const enTete = await visiteur.evaluate(() => {
+				const bloc = document.querySelector('main section.annonce');
+				const autre = document.querySelector('main section:not(.annonce)');
+				return (
+					bloc !== null &&
+					autre !== null &&
+					(bloc.compareDocumentPosition(autre) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0
+				);
+			});
+			const surAujourdhui = await texteSIlEstLa(visiteur.locator('section.annonce p.saisi'));
+			await ouvrir(visiteur, adressePublique('fr'));
+			const dansLeProgramme = await visiteur.locator('section.annonce').count();
+			await ouvrir(visiteur, adressePublique('fr', '?vue=aujourdhui&embed=1'));
+			const dansLeCadre = await visiteur.locator('section.annonce').count();
+			verifierChaque(
+				'l’annonce est en tête de « Aujourd’hui », et ni dans le programme ni dans le cadre du widget',
+				{
+					'sur « Aujourd’hui »': surAujourdhui === INFOS.announcement,
+					'avant tout autre bloc': enTete,
+					'pas dans le programme': dansLeProgramme === 0,
+					'pas dans le cadre': dansLeCadre === 0
+				},
+				`« ${surAujourdhui} » ; ${dansLeProgramme} dans le programme, ${dansLeCadre} dans le cadre`
+			);
+
+			await ouvrir(visiteur, adressePublique('ar', '?vue=infos'));
+			const saisis = await visiteur
+				.locator('p.saisi')
+				.evaluateAll((blocs) =>
+					blocs.map((bloc) => `${bloc.getAttribute('lang')} ${bloc.getAttribute('dir')}`)
+				);
+			verifierChaque(
+				'sur la page arabe, l’onglet « معلومات » garde ce qui est saisi marqué en français, de gauche à droite',
+				{
+					'l’onglet « معلومات » est la page courante':
+						(await texteSIlEstLa(visiteur.locator('nav.onglets a[aria-current="page"]'))) ===
+						'معلومات',
+					'la page de droite à gauche': (await racineDit(visiteur, 'dir')) === 'rtl',
+					'trois textes saisis': saisis.length === 3,
+					'marqués lang="fr" dir="ltr"': saisis.every((marque) => marque === 'fr ltr')
+				},
+				saisis.join(' ; ') || 'aucun texte saisi'
+			);
+			await auditer(visiteur, 'page publique ar, vue infos');
+			const graves = gravesSur(['page publique fr, vue infos', 'page publique ar, vue infos']);
+			verifier(
+				'axe ne relève rien de sérieux sur l’onglet « Infos », en français et en arabe',
+				graves.length === 0,
+				graves.map((grave) => `${grave.regle} : ${grave.cible}`).join(' ; ')
+			);
+		});
+	} finally {
+		await contexte.close();
+	}
+}
+
+/** Où est la navigation principale à l'écran, et où finit le pied de page : des pixels. */
+function mesureDeLaBarre(page) {
+	return page.evaluate(() => {
+		const nav = document.querySelector('nav.onglets');
+		if (!nav) return null;
+		const boite = nav.getBoundingClientRect();
+		const nom = document.querySelector('h1')?.getBoundingClientRect();
+		const pied = document.querySelector('footer')?.getBoundingClientRect();
+		return {
+			position: getComputedStyle(nav).position,
+			gauche: boite.left,
+			droite: boite.right,
+			haut: boite.top,
+			bas: boite.bottom,
+			fenetre: { largeur: window.innerWidth, hauteur: window.innerHeight },
+			largeurDuDocument: document.documentElement.scrollWidth,
+			onglets: [...nav.querySelectorAll('a')].map((lien) => {
+				const sa = lien.getBoundingClientRect();
+				return { x: sa.left, largeur: sa.width, hauteur: sa.height };
+			}),
+			basDuNom: nom ? nom.bottom : null,
+			basDuPied: pied ? pied.bottom : null
+		};
+	});
+}
+
+/** 24-onglets : la navigation principale, mesurée sur un téléphone, puis sur un écran large. */
+async function barreDOnglets(navigateur) {
+	const contexte = await nouveauContexte(navigateur, { viewport: TELEPHONE });
+	try {
+		const visiteur = await contexte.newPage();
+		for (const langue of /** @type {const} */ (['fr', 'de', 'ar'])) {
+			await retour('24-onglets', async () => {
+				await ouvrir(visiteur, adressePublique(langue, '?vue=aujourdhui'));
+				const onglets = await ongletsLus(visiteur);
+				// Tout en bas de la page : c'est là que le pied de page passerait sous la barre.
+				await visiteur.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+				const mesure = await mesureDeLaBarre(visiteur);
+				const largeurs = mesure?.onglets.map((onglet) => onglet.largeur) ?? [];
+				const premier = mesure?.onglets[0]?.x ?? 0;
+				const dernier = mesure?.onglets.at(-1)?.x ?? 0;
+				verifierChaque(
+					`à 390 px, ${EN_LANGUE[langue]}, la navigation principale tient au bas de la fenêtre : fixe, sur toute la largeur, quatre onglets de même largeur, hauts de 48 px au moins, dans le sens de la lecture, et le pied de page finit au-dessus d’elle`,
+					{
+						'les quatre onglets': onglets === ONGLETS[langue].join('|'),
+						'la navigation': mesure !== null,
+						fixe: mesure?.position === 'fixed',
+						'au bas de la fenêtre':
+							mesure !== null && Math.abs(mesure.bas - mesure.fenetre.hauteur) <= 1,
+						'sur toute la largeur':
+							mesure !== null && mesure.gauche <= 1 && mesure.droite >= mesure.fenetre.largeur - 1,
+						'de même largeur':
+							largeurs.length === 4 && Math.max(...largeurs) - Math.min(...largeurs) <= 1,
+						'48 px de haut au moins':
+							mesure !== null && mesure.onglets.every((onglet) => onglet.hauteur >= 48),
+						'dans le sens de la lecture': langue === 'ar' ? premier > dernier : premier < dernier,
+						'rien ne déborde de côté':
+							mesure !== null && mesure.largeurDuDocument <= mesure.fenetre.largeur,
+						'le pied de page au-dessus d’elle':
+							mesure !== null && mesure.basDuPied !== null && mesure.basDuPied <= mesure.haut + 1
+					},
+					mesure
+						? `${onglets} ; ${mesure.position}, de ${Math.round(mesure.haut)} à ${Math.round(mesure.bas)} px sur ${mesure.fenetre.hauteur} ; onglets de ${largeurs.map((largeur) => Math.round(largeur * 10) / 10).join(', ')} px de large, ${mesure.onglets.map((onglet) => Math.round(onglet.hauteur)).join(', ')} px de haut ; le pied finit à ${Math.round(mesure.basDuPied ?? -1)} px`
+						: 'aucune navigation principale'
+				);
+			});
+		}
+		await retour('24-onglets', async () => {
+			await auditer(visiteur, 'vue aujourd’hui à 390 px, ar');
+			await ouvrir(visiteur, adressePublique('fr', '?vue=aujourdhui'));
+			await auditer(visiteur, 'vue aujourd’hui à 390 px, fr');
+			const graves = gravesSur(['vue aujourd’hui à 390 px, ar', 'vue aujourd’hui à 390 px, fr']);
+			verifier(
+				'à 390 px, axe ne relève rien de sérieux sur « Aujourd’hui » avec sa barre du bas, en français et en arabe',
+				graves.length === 0,
+				graves.map((grave) => `${grave.regle} : ${grave.cible}`).join(' ; ')
+			);
+
+			await visiteur.setViewportSize(ECRAN);
+			await ouvrir(visiteur, adressePublique('fr', '?vue=aujourdhui'));
+			const large = await mesureDeLaBarre(visiteur);
+			verifierChaque(
+				'sur un écran de 1280 px, la navigation principale reprend sa place dans la page, sous le nom de l’organisation',
+				{
+					'la navigation': large !== null,
+					'dans le fil de la page': large !== null && large.position !== 'fixed',
+					'sous le nom':
+						large !== null && large.basDuNom !== null && large.haut >= large.basDuNom - 1,
+					'en haut de la page': large !== null && large.bas < 300
+				},
+				large
+					? `${large.position}, de ${Math.round(large.haut)} à ${Math.round(large.bas)} px ; le nom finit à ${Math.round(large.basDuNom ?? -1)} px`
+					: 'aucune navigation principale'
+			);
+
+			await ouvrir(visiteur, adressePublique('fr', '?embed=1'));
+			const vues = (await visiteur.locator('nav.vues a').allTextContents()).map((vue) =>
+				vue.trim()
+			);
+			verifierChaque(
+				'le cadre du widget n’a pas cette navigation : il garde sa liste de vues, « Prières » comprise',
+				{
+					'aucune navigation principale': (await visiteur.locator('nav.onglets').count()) === 0,
+					'« Prières » dans la liste des vues': vues.includes('Prières')
+				},
+				vues.join('|') || 'aucune vue'
+			);
+		});
+	} finally {
+		await contexte.close();
+	}
+}
+
+/** La largeur et la hauteur qu'un fichier PNG annonce dans son premier bloc. */
+function taillePng(octets) {
+	const vue = new DataView(octets);
+	return octets.byteLength >= 24 ? `${vue.getUint32(16)}x${vue.getUint32(20)}` : 'trop court';
+}
+
+/** Le manifeste que la page annonce : son lien, la couleur de la page, puis le fichier lu. */
+async function manifesteAnnonce(visiteur, langue) {
+	await ouvrir(visiteur, adressePublique(langue, '?vue=aujourdhui'));
+	// L'adresse telle que le navigateur la résout : la page l'écrit relative à la sienne.
+	const lien = await (
+		await exiger(visiteur.locator('link[rel="manifest"]'), 'le lien du manifeste')
+	).evaluate((balise) => {
+		const cible = new URL(/** @type {HTMLLinkElement} */ (balise).href);
+		return cible.pathname + cible.search;
+	});
+	const couleur =
+		(await visiteur.locator('meta[name="theme-color"]').first().getAttribute('content')) ?? '';
+	const reponse = await fetch(`http://127.0.0.1:${PORT}${lien}`);
+	const type = reponse.headers.get('content-type') ?? '';
+	const manifeste = reponse.ok ? await reponse.json().catch(() => ({})) : {};
+	return { lien, couleur, statut: reponse.status, type, manifeste };
+}
+
+/**
+ * Ce que Chrome dit de l'application, dans un profil gardé sur le disque : un contexte ordinaire
+ * de playwright est une fenêtre privée, où Chrome refuse d'installer quoi que ce soit
+ * (« in-incognito »). L'installation passe par le domaine `PWA` du protocole de débogage : elle
+ * est faite pour de bon, puis défaite, et le profil est jeté.
+ */
+async function selonChrome(adresse) {
+	const profil = mkdtempSync(join(tmpdir(), 'jadwal-parcours-profil-'));
+	const garde = await chromium.launchPersistentContext(profil, {
+		executablePath: chrome(),
+		headless: true,
+		locale: LANGUE_DU_NAVIGATEUR
+	});
+	const premiereLigne = (erreur) =>
+		(erreur instanceof Error ? erreur.message : String(erreur)).split('\n')[0] ?? '';
+	try {
+		const page = garde.pages()[0] ?? (await garde.newPage());
+		await page.goto(`${ORIGINE}${adresse}`);
+		await page.waitForLoadState('networkidle');
+		const dePage = await garde.newCDPSession(page);
+		await dePage.send('Page.enable');
+		const lu = await dePage.send('Page.getAppManifest');
+		const obstacles = (await dePage.send('Page.getInstallabilityErrors')).installabilityErrors.map(
+			(obstacle) => obstacle.errorId
+		);
+		const identite = (await dePage.send('Page.getAppId')).appId ?? '';
+		const navigateurGarde = garde.browser();
+		if (!navigateurGarde) throw new Error('ce Chrome ne donne pas de session au navigateur');
+		const duNavigateur = await navigateurGarde.newBrowserCDPSession();
+		const installee = () =>
+			duNavigateur.send('PWA.getOsAppState', { manifestId: identite }).then(
+				() => true,
+				() => false
+			);
+		const avant = await installee();
+		const installation = await duNavigateur
+			.send('PWA.install', { manifestId: identite, installUrlOrBundleUrl: `${ORIGINE}${adresse}` })
+			.then(() => 'faite', premiereLigne);
+		const apres = await installee();
+		const retrait = await duNavigateur
+			.send('PWA.uninstall', { manifestId: identite })
+			.then(() => 'fait', premiereLigne);
+		const aLaFin = await installee();
+		return {
+			version: navigateurGarde.version(),
+			manifeste: lu.url,
+			erreurs: lu.errors.map((erreur) => erreur.message),
+			obstacles,
+			identite,
+			avant,
+			installation,
+			apres,
+			retrait,
+			aLaFin
+		};
+	} finally {
+		await garde.close();
+		// Sous Windows, Chrome lâche son profil un instant après s'être fermé.
+		try {
+			rmSync(profil, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+		} catch {
+			// Un dossier du brouillon du système : il n'emporte rien du parcours.
+		}
+	}
+}
+
+/** 24-installable : le manifeste et ses icônes, puis ce que Chrome en fait. */
+async function installable(navigateur) {
+	const contexte = await nouveauContexte(navigateur);
+	try {
+		const visiteur = await contexte.newPage();
+		await retour('24-installable', async () => {
+			const base = adressePublique('fr');
+			const { lien, couleur, statut, type, manifeste } = await manifesteAnnonce(visiteur, 'fr');
+			const icones = [];
+			for (const icone of Array.isArray(manifeste.icons) ? manifeste.icons : []) {
+				const servie = await fetch(`http://127.0.0.1:${PORT}${icone.src}`);
+				icones.push({
+					dite: `${icone.sizes} ${icone.type} ${icone.purpose}`,
+					statut: servie.status,
+					type: servie.headers.get('content-type') ?? '',
+					taille: servie.ok ? taillePng(await servie.arrayBuffer()) : 'absente',
+					attendue: icone.sizes
+				});
+			}
+			verifierChaque(
+				`la page annonce son manifeste, ${base}/manifest.webmanifest : le nom de l’organisation, le départ sur « Aujourd’hui », la portée de son adresse, un affichage en application, la couleur de la page, et trois icônes servies en PNG à la taille dite`,
+				{
+					'le lien de la page': lien === `${base}/manifest.webmanifest`,
+					'servi comme un manifeste':
+						statut === 200 && type.startsWith('application/manifest+json'),
+					'le nom': manifeste.name === ORGANISATION.nom,
+					'le départ sur « Aujourd’hui »': manifeste.start_url === `${base}?vue=aujourdhui`,
+					'la portée': manifeste.scope === base,
+					'l’identité': manifeste.id === base,
+					'en application': manifeste.display === 'standalone',
+					'la couleur de la page': couleur !== '' && manifeste.theme_color === couleur,
+					'192, 512 et 512 rognable':
+						icones.map((icone) => icone.dite).join(' ; ') ===
+						'192x192 image/png any ; 512x512 image/png any ; 512x512 image/png maskable',
+					'chaque icône servie en PNG': icones.every(
+						(icone) => icone.statut === 200 && icone.type === 'image/png'
+					),
+					'à la taille dite': icones.every((icone) => icone.taille === icone.attendue)
+				},
+				`${lien}, ${statut} ${type} ; « ${manifeste.name} », départ ${manifeste.start_url}, portée ${manifeste.scope}, ${manifeste.display}, ${manifeste.theme_color} pour ${couleur} ; icônes : ${icones.map((icone) => `${icone.dite} → ${icone.statut} ${icone.taille}`).join(' ; ') || 'aucune'}`
+			);
+
+			const arabe = await manifesteAnnonce(visiteur, 'ar');
+			verifierChaque(
+				'depuis la page arabe, le manifeste dit l’arabe, de droite à gauche, et le départ sur la page arabe : la même application, sous la même identité',
+				{
+					'le lien de la page': arabe.lien === `${base}/manifest.webmanifest?lang=ar`,
+					'lang="ar"': arabe.manifeste.lang === 'ar',
+					'dir="rtl"': arabe.manifeste.dir === 'rtl',
+					'le départ sur la page arabe':
+						arabe.manifeste.start_url === `${adressePublique('ar')}?vue=aujourdhui`,
+					'la même identité': arabe.manifeste.id === base,
+					'la même portée': arabe.manifeste.scope === base
+				},
+				`${arabe.lien} ; ${arabe.manifeste.lang} ${arabe.manifeste.dir}, départ ${arabe.manifeste.start_url}, identité ${arabe.manifeste.id}`
+			);
+		});
+	} finally {
+		await contexte.close();
+	}
+
+	await retour('24-installable', async () => {
+		const base = adressePublique('fr');
+		const dit = await selonChrome(`${base}?vue=aujourdhui`);
+		verifierChaque(
+			'Chrome, avec un profil gardé sur le disque, lit le manifeste sans erreur et ne trouve aucun obstacle à l’installation',
+			{
+				'le manifeste de la page': dit.manifeste === `${ORIGINE}${base}/manifest.webmanifest`,
+				'aucune erreur de lecture': dit.erreurs.length === 0,
+				'aucun obstacle': dit.obstacles.length === 0
+			},
+			`Chrome ${dit.version} ; ${dit.manifeste} ; erreurs : ${dit.erreurs.join(', ') || 'aucune'} ; obstacles : ${dit.obstacles.join(', ') || 'aucun'}`
+		);
+		verifierChaque(
+			'Chrome installe l’application sous l’identité de l’adresse de l’organisation, puis la désinstalle',
+			{
+				'l’identité': dit.identite === `${ORIGINE}${base}`,
+				'pas installée avant': !dit.avant,
+				'l’installation': dit.installation === 'faite',
+				'installée après': dit.apres,
+				'la désinstallation': dit.retrait === 'fait',
+				'plus installée à la fin': !dit.aLaFin
+			},
+			`${dit.identite} ; installation : ${dit.installation} ; installée : ${dit.apres ? 'oui' : 'non'} ; retrait : ${dit.retrait} ; à la fin : ${dit.aLaFin ? 'encore installée' : 'désinstallée'}`
+		);
+	});
+}
+
+/** La mention de copie d'une page publique : cachée ou montrée, et ce qu'elle dit. */
+function mentionDeCopie(page) {
+	return page.evaluate(() => {
+		const mention = document.querySelector('p[data-jadwal-copie]');
+		if (!mention) return null;
+		return {
+			cachee: /** @type {HTMLElement} */ (mention).hidden,
+			rendue: getComputedStyle(mention).display !== 'none',
+			dansLeContenu: mention.closest('main') !== null,
+			texte: (mention.textContent ?? '').replace(/\s+/g, ' ').trim(),
+			feuilles: [...document.styleSheets].filter((feuille) => feuille.cssRules.length > 0).length
+		};
+	});
+}
+
+/**
+ * 24-hors-reseau : la page se relit quand le serveur ne répond plus (ADR 0054). Le conteneur du
+ * serveur est mis en pause, et repris quoi qu'il arrive : la suite du parcours en a besoin.
+ */
+async function horsReseau(navigateur) {
+	const contexte = await nouveauContexte(navigateur);
+	const aujourdhui = adressePublique('fr', '?vue=aujourdhui');
+	const arabe = adressePublique('ar', '?vue=aujourdhui');
+	try {
+		const visiteur = await contexte.newPage();
+		await retour('24-hors-reseau', async () => {
+			await ouvrir(visiteur, aujourdhui);
+			// Dix secondes au plus : un navigateur qui n'installe rien ne ferait jamais répondre `ready`.
+			const inscrit = await visiteur.evaluate(() =>
+				Promise.race([
+					navigator.serviceWorker.ready.then((inscription) => ({
+						portee: inscription.scope,
+						script: inscription.active?.scriptURL ?? ''
+					})),
+					new Promise((resolue) => setTimeout(() => resolue(null), 10000))
+				])
+			);
+			const mention = await mentionDeCopie(visiteur);
+			verifierChaque(
+				`${aujourdhui} installe le travailleur de service, de portée /m/, et la mention de copie y est cachée`,
+				{
+					'le travailleur installé': inscrit !== null,
+					'la portée /m/': inscrit?.portee === `${ORIGINE}/m/`,
+					'servi à /service-worker.js': inscrit?.script === `${ORIGINE}/service-worker.js`,
+					'la mention dans la page': mention !== null,
+					cachée: mention?.cachee === true && mention.rendue === false
+				},
+				`${inscrit ? `${inscrit.script}, portée ${inscrit.portee}` : 'aucun travailleur en dix secondes'} ; mention ${mention ? (mention.cachee ? 'cachée' : 'montrée') : 'absente'}`
+			);
+
+			const rouvertes = [];
+			for (const adresse of [aujourdhui, adressePublique('fr'), arabe]) {
+				const reponse = await ouvrir(visiteur, adresse);
+				rouvertes.push(reponse?.status() === 200 && reponse.fromServiceWorker());
+			}
+			// Le travailleur range une page après l'avoir rendue : trois secondes au plus.
+			let gardes = [];
+			for (let essai = 0; essai < 12; essai += 1) {
+				gardes = await visiteur.evaluate(async () => {
+					const chemins = [];
+					for (const nom of await caches.keys()) {
+						for (const requete of await (await caches.open(nom)).keys()) {
+							const adresse = new URL(requete.url);
+							chemins.push(adresse.pathname + adresse.search);
+						}
+					}
+					return chemins;
+				});
+				if ([aujourdhui, adressePublique('fr'), arabe].every((page) => gardes.includes(page)))
+					break;
+				await attendre(250);
+			}
+			verifierChaque(
+				'rouvertes, « Aujourd’hui », le programme et la page arabe passent par le travailleur, qui les garde avec leurs feuilles de style, et rien d’autre que des pages publiques et des fichiers qui ne changent jamais',
+				{
+					'les trois par le travailleur': rouvertes.every(Boolean),
+					'les trois pages gardées': [aujourdhui, adressePublique('fr'), arabe].every((page) =>
+						gardes.includes(page)
+					),
+					'des feuilles de style': gardes.some((chemin) => chemin.endsWith('.css')),
+					'rien hors de /m/ et de /_app/immutable/': gardes.every(
+						(chemin) => chemin.startsWith('/m/') || chemin.startsWith('/_app/immutable/')
+					)
+				},
+				`${gardes.length} réponses gardées : ${gardes.filter((chemin) => chemin.startsWith('/m/')).join(', ')}`
+			);
+		});
+
+		let suspendu = false;
+		try {
+			await retour('24-hors-reseau', async () => {
+				await ouvrir(visiteur, aujourdhui);
+				const nom = await titre(visiteur);
+				marche.suspendreLeServeur();
+				suspendu = true;
+				pageCourante = visiteur;
+				const debut = Date.now();
+				const reponse = await visiteur
+					.goto(`${ORIGINE}${aujourdhui}`, { timeout: 20000 })
+					.catch(() => null);
+				const duree = Date.now() - debut;
+				const mention = await mentionDeCopie(visiteur);
+				await lireLEcran(visiteur);
+				await auditer(visiteur, 'copie gardée, sans réseau, fr', { recharger: false });
+				const graves = gravesSur(['copie gardée, sans réseau, fr']);
+				verifierChaque(
+					'le serveur ne répond plus : « Aujourd’hui » revient en moins de dix secondes, copie gardée et mise en forme, avec sa mention montrée dans le contenu principal, « Pas de réseau : voici la copie gardée le JJ.MM.AAAA à HH:MM. », et axe n’y relève rien de sérieux',
+					{
+						'la page gardée': reponse?.status() === 200 && (await titre(visiteur)) === nom,
+						'en moins de dix secondes': duree < 10000,
+						'la mention montrée': mention?.cachee === false && mention.rendue === true,
+						'sa phrase, son jour et son heure': MENTION_DE_COPIE.fr.test(mention?.texte ?? ''),
+						'dans le contenu principal': mention?.dansLeContenu === true,
+						'les feuilles de style gardées': (mention?.feuilles ?? 0) > 0,
+						'rien de sérieux pour axe': graves.length === 0
+					},
+					`en ${duree} ms ; « ${mention?.texte ?? 'aucune mention'} » ; ${mention?.feuilles ?? 0} feuille(s) de style${graves.length > 0 ? ` ; ${graves.map((grave) => `${grave.regle} : ${grave.cible}`).join(' ; ')}` : ''}`
+				);
+
+				await visiteur.goto(`${ORIGINE}${arabe}`, { timeout: 20000 }).catch(() => null);
+				const enArabe = await mentionDeCopie(visiteur);
+				await lireLEcran(visiteur);
+				verifierChaque(
+					'en arabe aussi, la copie porte sa mention, « لا يوجد اتصال: … », datée en chiffres latins',
+					{
+						'la page de droite à gauche': (await racineDit(visiteur, 'dir')) === 'rtl',
+						'la mention montrée': enArabe?.cachee === false && enArabe.rendue === true,
+						'sa phrase, son jour et son heure': MENTION_DE_COPIE.ar.test(enArabe?.texte ?? '')
+					},
+					`« ${enArabe?.texte ?? 'aucune mention'} »`
+				);
+
+				// Rien n'est téléchargé d'avance : une page que cet appareil n'a jamais ouverte n'a pas
+				// de copie. Le navigateur attend le serveur, en vain ; sept secondes suffisent à le voir.
+				const jamaisOuverte = await visiteur
+					.goto(`${ORIGINE}${adressePublique('fr', '?vue=mois')}`, { timeout: 7000 })
+					.then(
+						(arrivee) => `arrivée, ${arrivee?.status() ?? 'sans réponse'}`,
+						(erreur) => (erreur instanceof Error ? erreur.message : String(erreur)).split('\n')[0]
+					);
+				verifier(
+					'une page jamais ouverte sur cet appareil, la vue Mois, n’aboutit pas : rien n’est inventé',
+					!String(jamaisOuverte).startsWith('arrivée'),
+					String(jamaisOuverte).replace(ORIGINE, '')
+				);
+			});
+		} finally {
+			if (suspendu) {
+				marche.reprendreLeServeur();
+				let code = 0;
+				for (let essai = 0; essai < 40 && code !== 200; essai += 1) {
+					try {
+						code = (await fetch(`http://127.0.0.1:${PORT}/healthz`)).status;
+					} catch {
+						await attendre(250);
+					}
+				}
+				verifier('le serveur, repris, répond de nouveau', code === 200, `healthz ${code}`);
+			}
+		}
+
+		await retour('24-hors-reseau', async () => {
+			const reponse = await ouvrir(visiteur, aujourdhui);
+			const mention = await mentionDeCopie(visiteur);
+			verifierChaque(
+				'le serveur repris, « Aujourd’hui » vient de lui : la mention de copie est de nouveau cachée',
+				{
+					200: reponse?.status() === 200,
+					'la mention cachée': mention?.cachee === true && mention.rendue === false
+				},
+				`${reponse?.status() ?? 'aucune réponse'} ; mention ${mention ? (mention.cachee ? 'cachée' : `montrée, « ${mention.texte} »`) : 'absente'}`
+			);
+
+			await ouvrir(visiteur, '/connexion');
+			const espace = await visiteur.evaluate(async () => ({
+				maitre: navigator.serviceWorker.controller?.scriptURL ?? null,
+				portees: (await navigator.serviceWorker.getRegistrations()).map(
+					(inscription) => inscription.scope
+				)
+			}));
+			verifierChaque(
+				'l’espace des responsables n’est sous la main d’aucun travailleur : /connexion n’en a pas, et le seul que ce navigateur connaît a pour portée /m/',
+				{
+					'aucun travailleur sur /connexion': espace.maitre === null,
+					'la seule portée, /m/':
+						espace.portees.length === 1 && espace.portees[0] === `${ORIGINE}/m/`
+				},
+				`sur /connexion : ${espace.maitre ?? 'aucun'} ; portées : ${espace.portees.map((portee) => portee.replace(ORIGINE, '')).join(', ') || 'aucune'}`
+			);
+		});
+	} finally {
+		await contexte.close();
+	}
+}
+
+/** 24-infos, la fin : un champ vidé retire l'information, et l'onglet avec la dernière. */
+async function infosVidees(navigateur, page) {
+	const vides = Object.fromEntries(Object.keys(INFOS).map((champ) => [champ, '']));
+	const contexte = await nouveauContexte(navigateur);
+	try {
+		const visiteur = await contexte.newPage();
+		await retour('24-infos', async () => {
+			const { statut, gardes } = await saisirLesInfos(page, vides);
+			await ouvrir(visiteur, adressePublique('fr'));
+			const onglets = await ongletsLus(visiteur);
+			await ouvrir(visiteur, adressePublique('fr', '?vue=infos'));
+			const vue = await texteSIlEstLa(visiteur.locator('nav.vues a[aria-current="page"]'));
+			const blocs = await visiteur.locator('#infos-adresse, #infos-contact, #infos-acces').count();
+			verifierChaque(
+				`les six champs vidés, « ${INFOS_ENREGISTREES} » : l’onglet « Infos » quitte la page publique, et son adresse ouvre le programme de la semaine`,
+				{
+					[`« ${INFOS_ENREGISTREES} »`]: statut === INFOS_ENREGISTREES,
+					'les six champs vides': gardes.length === Object.keys(INFOS).length,
+					'trois onglets': onglets === ONGLETS.fr.slice(0, 3).join('|'),
+					'la vue Semaine': vue === 'Semaine',
+					'aucun bloc d’infos': blocs === 0
+				},
+				`« ${statut || 'aucun message'} » ; ${onglets} ; vue « ${vue || 'aucune'} », ${blocs} bloc(s) d’infos`
+			);
+		});
+	} finally {
+		await contexte.close();
+	}
+}
+
 /**
  * s. Les conditions de l'étape 22 sont une nouvelle version, que chacun accepte de nouveau (ADR
  * 0044). L'acceptation de la personne du parcours est ramenée, dans la base, à la version de
@@ -10906,6 +11772,32 @@ B3 | une responsable qui se donne le rôle d’éditeur arrive sur « À venir �
 20-C2 | annulée, elle le dit, « La session est annulée à sa nouvelle date. Les autres vendredis ne changent pas. », le bloc « Message à copier » nomme sa nouvelle date et sa nouvelle heure, « « Prière du vendredi » : la prière du JOUR JJ.MM.AAAA à 16:30 est annulée. », et sa ligne se dit annulée, sans « Rétablir comme d’habitude »
 21-Q2 | sur l’écran du vendredi, la session déplacée d’un vendredi passé, annulée, porte « Session annulée »
 20-cles | l’écran du vendredi, avec deux sessions de 12:30 déplacées au vendredi qui vient depuis deux vendredis à venir, se charge et s’hydrate sans erreur : rien dans la console, et un lien de la navigation change d’écran sans recharger la page
+24-aujourdhui | /m/centre-parcours?vue=aujourdhui s’ouvre sur « Aujourd’hui, JOUR JJ.MM.AAAA » : la prochaine prière avec son heure, le tableau du jour, « Au programme aujourd’hui », « À venir » et « Voir toute la semaine », qui mène au programme
+24-aujourdhui | en arabe, la vue « اليوم », de droite à gauche : le jour et la prochaine prière, en chiffres latins
+24-aujourdhui | axe ne relève rien de sérieux sur la vue « Aujourd’hui », en français et en arabe
+24-infos | dans Réglages, « Informations pour le public » : les six champs saisis s’enregistrent, « Informations enregistrées. », et l’écran les garde
+24-infos | la page publique reçoit l’onglet « Infos » : l’annonce, l’adresse et « Ouvrir dans une carte », qui mène à OpenStreetMap dans un nouvel onglet, le téléphone, l’adresse électronique et le site en liens, puis l’accès
+24-infos | l’annonce est en tête de « Aujourd’hui », et ni dans le programme ni dans le cadre du widget
+24-infos | sur la page arabe, l’onglet « معلومات » garde ce qui est saisi marqué en français, de gauche à droite
+24-infos | axe ne relève rien de sérieux sur l’onglet « Infos », en français et en arabe
+24-onglets | à 390 px, en français, la navigation principale tient au bas de la fenêtre : fixe, sur toute la largeur, quatre onglets de même largeur, hauts de 48 px au moins, dans le sens de la lecture, et le pied de page finit au-dessus d’elle
+24-onglets | à 390 px, en allemand, la navigation principale tient au bas de la fenêtre : fixe, sur toute la largeur, quatre onglets de même largeur, hauts de 48 px au moins, dans le sens de la lecture, et le pied de page finit au-dessus d’elle
+24-onglets | à 390 px, en arabe, la navigation principale tient au bas de la fenêtre : fixe, sur toute la largeur, quatre onglets de même largeur, hauts de 48 px au moins, dans le sens de la lecture, et le pied de page finit au-dessus d’elle
+24-onglets | à 390 px, axe ne relève rien de sérieux sur « Aujourd’hui » avec sa barre du bas, en français et en arabe
+24-onglets | sur un écran de 1280 px, la navigation principale reprend sa place dans la page, sous le nom de l’organisation
+24-onglets | le cadre du widget n’a pas cette navigation : il garde sa liste de vues, « Prières » comprise
+24-installable | la page annonce son manifeste, /m/centre-parcours/manifest.webmanifest : le nom de l’organisation, le départ sur « Aujourd’hui », la portée de son adresse, un affichage en application, la couleur de la page, et trois icônes servies en PNG à la taille dite
+24-installable | depuis la page arabe, le manifeste dit l’arabe, de droite à gauche, et le départ sur la page arabe : la même application, sous la même identité
+24-installable | Chrome, avec un profil gardé sur le disque, lit le manifeste sans erreur et ne trouve aucun obstacle à l’installation
+24-installable | Chrome installe l’application sous l’identité de l’adresse de l’organisation, puis la désinstalle
+24-hors-reseau | /m/centre-parcours?vue=aujourdhui installe le travailleur de service, de portée /m/, et la mention de copie y est cachée
+24-hors-reseau | rouvertes, « Aujourd’hui », le programme et la page arabe passent par le travailleur, qui les garde avec leurs feuilles de style, et rien d’autre que des pages publiques et des fichiers qui ne changent jamais
+24-hors-reseau | le serveur ne répond plus : « Aujourd’hui » revient en moins de dix secondes, copie gardée et mise en forme, avec sa mention montrée dans le contenu principal, « Pas de réseau : voici la copie gardée le JJ.MM.AAAA à HH:MM. », et axe n’y relève rien de sérieux
+24-hors-reseau | en arabe aussi, la copie porte sa mention, « لا يوجد اتصال: … », datée en chiffres latins
+24-hors-reseau | une page jamais ouverte sur cet appareil, la vue Mois, n’aboutit pas : rien n’est inventé
+24-hors-reseau | le serveur repris, « Aujourd’hui » vient de lui : la mention de copie est de nouveau cachée
+24-hors-reseau | l’espace des responsables n’est sous la main d’aucun travailleur : /connexion n’en a pas, et le seul que ce navigateur connaît a pour portée /m/
+24-infos | les six champs vidés, « Informations enregistrées. » : l’onglet « Infos » quitte la page publique, et son adresse ouvre le programme de la semaine
 22-conditions | une acceptation de la version du JJ.MM.AAAA ne vaut plus : l’espace renvoie à l’écran d’acceptation, « Dernière mise à jour : JJ.MM.AAAA. », une version plus récente
 22-conditions | acceptées de nouveau, les conditions rouvrent l’espace, sur l’accueil
 A3 | aucune date écrite AAAA-MM-JJ sur les N écrans traversés (espace, super-admin, page publique, widget)
@@ -10966,6 +11858,7 @@ try {
 	await devenirEditrice(navigateur, page);
 	await quitterLaVoisine(page);
 	await deplaceeDUnJourPasse(page);
+	await application(navigateur, page);
 	await conditionsDeNouveau(page);
 	await bilanDesEcrans();
 } catch (erreur) {
@@ -11066,6 +11959,7 @@ bilanDe('étape 19', RETOURS_DE_L_ETAPE_19);
 bilanDe('étape 20', RETOURS_DE_L_ETAPE_20);
 bilanDe('étape 21', RETOURS_DE_L_ETAPE_21);
 bilanDe('étape 22', RETOURS_DE_L_ETAPE_22);
+bilanDe('étape 24', RETOURS_DE_L_ETAPE_24);
 process.stdout.write(
 	`\n  ${jouees.length} vérifications des retours jouées, ${jouees.length - rouges.length} vertes, ${rouges.length} rouges ; ` +
 		`${impossibles.length} geste(s) impossible(s), dont le bloc s’est arrêté là ; ` +
