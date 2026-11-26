@@ -24,6 +24,10 @@ const [SWISS_ZONE, PARIS_ZONE, BERLIN_ZONE] = [
 ] as const;
 const COLOUR_SAMPLE = '#0f766e';
 const GREETING_SAMPLE = 'Assalamu alaykum';
+/** Les exemples des informations pour le public (étape 24) : un numéro, une adresse, un site. */
+const PHONE_SAMPLE = '+41 32 000 00 00';
+const EMAIL_SAMPLE = 'contact@example.org';
+const WEBSITE_SAMPLE = 'https://www.example.org';
 
 /** Les formes arabes selon le nombre (voir `plural`). Le code de la langue reste hors des textes. */
 function arabic(count: number, forms: PluralForms): string {
@@ -91,6 +95,26 @@ interface SettingsTexts {
 	readonly nothingElse: string;
 	readonly confirmDelete: string;
 	readonly keepRoom: string;
+	/**
+	 * Les informations pour le public (étape 24, docs/maquettes/public-infos.md) : six champs
+	 * facultatifs, que l'onglet Infos de la page publique affiche tels quels.
+	 */
+	readonly infoTitle: string;
+	readonly infoIntro: string;
+	readonly infoAddressLabel: string;
+	readonly infoAddressHelp: string;
+	readonly infoPhoneLabel: string;
+	readonly infoPhoneHelp: string;
+	readonly infoEmailLabel: string;
+	readonly infoEmailHelp: string;
+	readonly infoWebsiteLabel: string;
+	readonly infoWebsiteHelp: string;
+	readonly infoAccessLabel: string;
+	readonly infoAccessHelp: string;
+	readonly infoNoticeLabel: string;
+	readonly infoNoticeHelp: string;
+	readonly infoSaved: string;
+	readonly infoSave: string;
 	readonly prayerTitle: string;
 	readonly prayerOn: string;
 	readonly prayerOnKeep: string;
@@ -100,6 +124,9 @@ interface SettingsTexts {
 	readonly turnOn: string;
 	readonly turnOff: string;
 	readonly errors: {
+		readonly infoTooLong: string;
+		readonly infoEmail: string;
+		readonly infoWebsite: string;
 		readonly nameRequired: string;
 		readonly colour: string;
 		readonly greetingRequired: string;
@@ -169,6 +196,24 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		nothingElse: 'Rien d’autre ne change dans votre programme.',
 		confirmDelete: 'Supprimer la salle',
 		keepRoom: 'Garder la salle',
+		infoTitle: 'Informations pour le public',
+		infoIntro:
+			'Ce que vous écrivez ici s’affiche sur l’onglet Infos de votre page publique. Chaque champ est facultatif : laissez vide ce que vous ne voulez pas publier.',
+		infoAddressLabel: 'Adresse',
+		infoAddressHelp: 'La rue et le numéro, puis le code postal et la localité, sur deux lignes.',
+		infoPhoneLabel: 'Téléphone',
+		infoPhoneHelp: `Tel qu’on le compose. Exemple : ${PHONE_SAMPLE}`,
+		infoEmailLabel: 'Adresse électronique',
+		infoEmailHelp: `Celle de l’organisation, plutôt que celle d’une personne. Exemple : ${EMAIL_SAMPLE}`,
+		infoWebsiteLabel: 'Site internet',
+		infoWebsiteHelp: `Son adresse entière. Exemple : ${WEBSITE_SAMPLE}`,
+		infoAccessLabel: 'Accès',
+		infoAccessHelp: 'Transports, stationnement, entrées, accès en fauteuil roulant.',
+		infoNoticeLabel: 'Annonce',
+		infoNoticeHelp:
+			'Une information du moment, affichée en tête de la page. Effacez-la quand elle n’a plus cours.',
+		infoSaved: 'Informations enregistrées.',
+		infoSave: 'Enregistrer les informations',
 		prayerTitle: 'Heures de prière',
 		prayerOn:
 			'Les heures de prière sont activées. Votre espace montre les heures de prière et la prière du vendredi, l’heure d’un cours peut se régler sur une prière, et votre page publique les affiche.',
@@ -181,6 +226,9 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		turnOn: 'Activer les heures de prière',
 		turnOff: 'Désactiver les heures de prière',
 		errors: {
+			infoTooLong: 'Un des textes est trop long. Raccourcissez-le, puis enregistrez de nouveau.',
+			infoEmail: `L’adresse électronique n’a pas la forme d’une adresse. Exemple : ${EMAIL_SAMPLE}`,
+			infoWebsite: `Le site internet doit commencer par https:// ou http://. Exemple : ${WEBSITE_SAMPLE}`,
 			nameRequired: 'Écrivez le nom de l’organisation.',
 			colour: `Cette couleur n’est pas valable. Elle s’écrit # suivi de six chiffres ou lettres, par exemple ${COLOUR_SAMPLE}.`,
 			greetingRequired: `Écrivez une formule d’accueil, par exemple ${GREETING_SAMPLE}.`,
@@ -245,6 +293,24 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		nothingElse: 'Sonst ändert sich nichts an Ihrem Programm.',
 		confirmDelete: 'Raum löschen',
 		keepRoom: 'Raum behalten',
+		infoTitle: 'Informationen für die Öffentlichkeit',
+		infoIntro:
+			'Was Sie hier schreiben, erscheint auf Ihrer öffentlichen Seite im Reiter Über uns. Jedes Feld ist freiwillig: Lassen Sie leer, was Sie nicht veröffentlichen möchten.',
+		infoAddressLabel: 'Anschrift',
+		infoAddressHelp: 'Strasse und Hausnummer, dann Postleitzahl und Ort, auf zwei Zeilen.',
+		infoPhoneLabel: 'Telefon',
+		infoPhoneHelp: `So, wie man die Nummer wählt. Beispiel: ${PHONE_SAMPLE}`,
+		infoEmailLabel: 'E-Mail-Adresse',
+		infoEmailHelp: `Die Adresse der Organisation, nicht die einer Person. Beispiel: ${EMAIL_SAMPLE}`,
+		infoWebsiteLabel: 'Website',
+		infoWebsiteHelp: `Die vollständige Adresse. Beispiel: ${WEBSITE_SAMPLE}`,
+		infoAccessLabel: 'Anfahrt und Zugang',
+		infoAccessHelp: 'Öffentlicher Verkehr, Parkplätze, Eingänge, Zugang mit dem Rollstuhl.',
+		infoNoticeLabel: 'Mitteilung',
+		infoNoticeHelp:
+			'Eine aktuelle Mitteilung, die oben auf der Seite steht. Löschen Sie sie, wenn sie nicht mehr gilt.',
+		infoSaved: 'Informationen gespeichert.',
+		infoSave: 'Informationen speichern',
 		prayerTitle: 'Gebetszeiten',
 		prayerOn:
 			'Die Gebetszeiten sind aktiviert. Ihr Bereich zeigt die Gebetszeiten und das Freitagsgebet, die Uhrzeit eines Kurses kann sich nach einem Gebet richten, und Ihre öffentliche Seite zeigt sie an.',
@@ -257,6 +323,9 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		turnOn: 'Gebetszeiten aktivieren',
 		turnOff: 'Gebetszeiten deaktivieren',
 		errors: {
+			infoTooLong: 'Einer der Texte ist zu lang. Kürzen Sie ihn und speichern Sie erneut.',
+			infoEmail: `Die E-Mail-Adresse hat nicht die Form einer Adresse. Beispiel: ${EMAIL_SAMPLE}`,
+			infoWebsite: `Die Website muss mit https:// oder http:// beginnen. Beispiel: ${WEBSITE_SAMPLE}`,
 			nameRequired: 'Schreiben Sie den Namen der Organisation.',
 			colour: `Diese Farbe ist ungültig. Sie wird mit # und sechs Ziffern oder Buchstaben geschrieben, zum Beispiel ${COLOUR_SAMPLE}.`,
 			greetingRequired: `Schreiben Sie eine Grussformel, zum Beispiel ${GREETING_SAMPLE}.`,
@@ -321,6 +390,24 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		nothingElse: 'Nient’altro cambia nel tuo programma.',
 		confirmDelete: 'Elimina la sala',
 		keepRoom: 'Tieni la sala',
+		infoTitle: 'Informazioni per il pubblico',
+		infoIntro:
+			'Ciò che scrivi qui appare nella scheda Info della tua pagina pubblica. Ogni campo è facoltativo: lascia vuoto ciò che non vuoi pubblicare.',
+		infoAddressLabel: 'Indirizzo',
+		infoAddressHelp: 'La via e il numero, poi il codice postale e la località, su due righe.',
+		infoPhoneLabel: 'Telefono',
+		infoPhoneHelp: `Come lo si compone. Esempio: ${PHONE_SAMPLE}`,
+		infoEmailLabel: 'Indirizzo e-mail',
+		infoEmailHelp: `Quello dell’organizzazione, non quello di una persona. Esempio: ${EMAIL_SAMPLE}`,
+		infoWebsiteLabel: 'Sito web',
+		infoWebsiteHelp: `L’indirizzo completo. Esempio: ${WEBSITE_SAMPLE}`,
+		infoAccessLabel: 'Come arrivare',
+		infoAccessHelp: 'Trasporti, parcheggio, ingressi, accesso in sedia a rotelle.',
+		infoNoticeLabel: 'Avviso',
+		infoNoticeHelp:
+			'Un’informazione del momento, mostrata in cima alla pagina. Cancellala quando non vale più.',
+		infoSaved: 'Informazioni salvate.',
+		infoSave: 'Salva le informazioni',
 		prayerTitle: 'Orari di preghiera',
 		prayerOn:
 			'Gli orari di preghiera sono attivi. La tua area mostra gli orari di preghiera e la preghiera del venerdì, l’ora di un corso può dipendere da una preghiera e la tua pagina pubblica li mostra.',
@@ -333,6 +420,9 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		turnOn: 'Attiva gli orari di preghiera',
 		turnOff: 'Disattiva gli orari di preghiera',
 		errors: {
+			infoTooLong: 'Uno dei testi è troppo lungo. Accorcialo, poi salva di nuovo.',
+			infoEmail: `L’indirizzo e-mail non ha la forma di un indirizzo. Esempio: ${EMAIL_SAMPLE}`,
+			infoWebsite: `Il sito web deve iniziare con https:// o http://. Esempio: ${WEBSITE_SAMPLE}`,
 			nameRequired: 'Scrivi il nome dell’organizzazione.',
 			colour: `Questo colore non è valido. Si scrive con # seguito da sei cifre o lettere, per esempio ${COLOUR_SAMPLE}.`,
 			greetingRequired: `Scrivi una formula di saluto, per esempio ${GREETING_SAMPLE}.`,
@@ -397,6 +487,24 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		nothingElse: 'Nothing else changes in your programme.',
 		confirmDelete: 'Delete the room',
 		keepRoom: 'Keep the room',
+		infoTitle: 'Information for the public',
+		infoIntro:
+			'What you write here appears on the Info tab of your public page. Every field is optional: leave empty what you do not want to publish.',
+		infoAddressLabel: 'Address',
+		infoAddressHelp: 'The street and number, then the postcode and the town, on two lines.',
+		infoPhoneLabel: 'Phone',
+		infoPhoneHelp: `As it is dialled. Example: ${PHONE_SAMPLE}`,
+		infoEmailLabel: 'Email address',
+		infoEmailHelp: `The organisation’s address rather than a person’s. Example: ${EMAIL_SAMPLE}`,
+		infoWebsiteLabel: 'Website',
+		infoWebsiteHelp: `Its full address. Example: ${WEBSITE_SAMPLE}`,
+		infoAccessLabel: 'Getting there',
+		infoAccessHelp: 'Public transport, parking, entrances, wheelchair access.',
+		infoNoticeLabel: 'Notice',
+		infoNoticeHelp:
+			'A notice of the moment, shown at the top of the page. Delete it when it no longer applies.',
+		infoSaved: 'Information saved.',
+		infoSave: 'Save the information',
 		prayerTitle: 'Prayer times',
 		prayerOn:
 			'Prayer times are switched on. Your area shows the prayer times and the Friday prayer, the time of a course can follow a prayer, and your public page shows them.',
@@ -409,6 +517,9 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		turnOn: 'Switch on prayer times',
 		turnOff: 'Switch off prayer times',
 		errors: {
+			infoTooLong: 'One of the texts is too long. Shorten it, then save again.',
+			infoEmail: `The email address does not have the form of an address. Example: ${EMAIL_SAMPLE}`,
+			infoWebsite: `The website must start with https:// or http://. Example: ${WEBSITE_SAMPLE}`,
 			nameRequired: 'Write the name of the organisation.',
 			colour: `This colour is not valid. It is written # followed by six digits or letters, for example ${COLOUR_SAMPLE}.`,
 			greetingRequired: `Write a greeting, for example ${GREETING_SAMPLE}.`,
@@ -478,6 +589,23 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		nothingElse: 'لا يتغير شيء آخر في برنامجك.',
 		confirmDelete: 'حذف القاعة',
 		keepRoom: 'الإبقاء على القاعة',
+		infoTitle: 'معلومات للجمهور',
+		infoIntro:
+			'ما تكتبه هنا يظهر في تبويب «معلومات» من صفحتك العامة. كل حقل اختياري، ويمكنك ترك أي حقل فارغًا.',
+		infoAddressLabel: 'العنوان',
+		infoAddressHelp: 'الشارع والرقم، ثم الرمز البريدي والبلدة، في سطرين.',
+		infoPhoneLabel: 'الهاتف',
+		infoPhoneHelp: `كما يُطلب. مثال: ${PHONE_SAMPLE}`,
+		infoEmailLabel: 'البريد الإلكتروني',
+		infoEmailHelp: `بريد المؤسسة لا بريد شخص. مثال: ${EMAIL_SAMPLE}`,
+		infoWebsiteLabel: 'الموقع الإلكتروني',
+		infoWebsiteHelp: `عنوانه كاملًا. مثال: ${WEBSITE_SAMPLE}`,
+		infoAccessLabel: 'الوصول',
+		infoAccessHelp: 'وسائل النقل، مواقف السيارات، المداخل، الوصول بالكرسي المتحرك.',
+		infoNoticeLabel: 'إعلان',
+		infoNoticeHelp: 'خبر آني يظهر في أعلى الصفحة. احذفه حين ينتهي أمره.',
+		infoSaved: 'حُفظت المعلومات.',
+		infoSave: 'حفظ المعلومات',
 		prayerTitle: 'مواقيت الصلاة',
 		prayerOn:
 			'مواقيت الصلاة مفعلة. تعرض مساحتك مواقيت الصلاة وصلاة الجمعة، ويمكن ضبط وقت الدرس على صلاة، وتعرضها صفحتك العامة.',
@@ -490,6 +618,9 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		turnOn: 'تفعيل مواقيت الصلاة',
 		turnOff: 'إيقاف مواقيت الصلاة',
 		errors: {
+			infoTooLong: 'يوجد نص طويل جدًّا. اختصره ثم احفظ من جديد.',
+			infoEmail: `البريد الإلكتروني ليس على هيئة عنوان. مثال: ${EMAIL_SAMPLE}`,
+			infoWebsite: `يجب أن يبدأ عنوان الموقع بـ https:// أو http://. مثال: ${WEBSITE_SAMPLE}`,
 			nameRequired: 'اكتب اسم المؤسسة.',
 			colour: `هذا اللون غير صالح. يُكتب بالعلامة # متبوعة بستة أرقام أو حروف، مثل ${COLOUR_SAMPLE}.`,
 			greetingRequired: 'اكتب عبارة ترحيب، مثل السلام عليكم.',

@@ -81,6 +81,16 @@ export interface OrganisationPublique {
 	enabled_language: string[];
 	/** Le module des heures de prière de cette organisation (ADR 0042). */
 	prayer_module: boolean;
+	/**
+	 * Ce que l'organisation dit d'elle (étape 24, docs/maquettes/public-infos.md) : six textes bruts,
+	 * chacun présent ou absent. Publics par nature, comme le reste de cette ligne.
+	 */
+	address: string | null;
+	contact_phone: string | null;
+	contact_email: string | null;
+	website: string | null;
+	access_note: string | null;
+	announcement: string | null;
 	/** Sert au plan de site : la date de ce qu'il décrit, jamais l'heure de la requête (ADR 0029). */
 	updated_at: string;
 }
@@ -101,7 +111,8 @@ export async function findOrganisation(slug: string): Promise<OrganisationPubliq
 	return rows<OrganisationPublique>(
 		await publicDatabase().execute(sql`
 			select "id", "slug", "name", "time_zone", "accent_color", "default_language",
-				"enabled_language", "prayer_module", "updated_at"::text as updated_at
+				"enabled_language", "prayer_module", "address", "contact_phone", "contact_email",
+				"website", "access_note", "announcement", "updated_at"::text as updated_at
 			from "organization" where "slug" = ${slug}
 		`)
 	)[0];

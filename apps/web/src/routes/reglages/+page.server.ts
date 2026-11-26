@@ -16,6 +16,7 @@ import { LANGUES } from '#lib/i18n.js';
 import { record } from '#lib/server/audit.js';
 import { withSessionOrg } from '#lib/server/context.js';
 import { mustAdminister } from '#lib/server/guard.js';
+import { lireInfos, type Infos } from '#lib/server/infos.js';
 import { readSettings } from '#lib/server/programme.js';
 // La liste des fuseaux de la création d'une organisation, pour que les deux écrans proposent les
 // mêmes et refusent les mêmes (étape 18) : des noms canoniques, sans alias ni `Etc/`.
@@ -78,12 +79,55 @@ async function readRoomsInUse(tx: Transaction, roomId?: string): Promise<RoomInU
 	}));
 }
 
+/**
+ * Ce que l'organisation dit d'elle (étape 24, docs/maquettes/public-infos.md). Lu à part des
+ * réglages : seul cet écran les écrit, et `readSettings` sert à tous les autres.
+ */
+async function readInfos(tx: Transaction): Promise<Infos> {
+	const ligne = rows<{
+		address: string | null;
+		contact_phone: string | null;
+		contact_email: string | null;
+		website: string | null;
+		access_note: string | null;
+		announcement: string | null;
+	}>(
+		await tx.execute(sql`
+			select "address", "contact_phone", "contact_email", "website", "access_note", "announcement"
+			from "organization"
+			where "id" = (select jadwal.current_org_id())
+		`)
+	)[0];
+	if (!ligne) throw new Error('aucune organisation dans le contexte courant');
+	return {
+		address: ligne.address,
+		contactPhone: ligne.contact_phone,
+		contactEmail: ligne.contact_email,
+		website: ligne.website,
+		accessNote: ligne.access_note,
+		announcement: ligne.announcement
+	};
+}
+
+/** Les six informations sous le nom de leur colonne, pour le journal. */
+function enColonnes(infos: Infos) {
+	return {
+		address: infos.address,
+		contact_phone: infos.contactPhone,
+		contact_email: infos.contactEmail,
+		website: infos.website,
+		access_note: infos.accessNote,
+		announcement: infos.announcement
+	};
+}
+
 export const load: PageServerLoad = async (event) => {
 	const context = await mustAdminister(event);
 	return withSessionOrg(context, async (tx) => {
 		const settings = await readSettings(tx);
 		return {
 			organisation: settings,
+			infos: await readInfos(tx),
 			salles: await readRoomsInUse(tx),
 			languesPossibles: LANGUES,
 			timeZones: timeZoneChoices(),
@@ -175,6 +219,44 @@ export const actions: Actions = {
 			return fail(result === 'gone' ? 404 : 400, { error: result, values });
 		}
 		return { enregistre: true };
+	},
+
+	/**
+	 * Les informations pour le public (étape 24) : l'adresse, le contact, l'accès, l'annonce.
+	 *
+	 * Un formulaire à part de celui des réglages : on change une annonce sans renvoyer le nom, le
+	 * fuseau et les langues. Un champ vide retire l'information, qui redevient absente. La base
+	 * refuse de son côté tout ce que `lireInfos` refuse (migration 0082), et ne laisse écrire ces
+	 * colonnes qu'à une personne responsable (migration 0083).
+	 */
+	infos: async (event) => {
+		const context = await mustAdminister(event);
+		const { infos, error } = lireInfos(await event.request.formData());
+		// Ce qui a été tapé revient au formulaire avec le refus, comme pour les réglages.
+		if (error) return fail(400, { error, infoValues: infos });
+
+		const result = await withSessionOrg(context, async (tx) => {
+			const before = await readInfos(tx);
+			const touched = await tx.execute(sql`
+				update "organization" set "address" = ${infos.address},
+					"contact_phone" = ${infos.contactPhone}, "contact_email" = ${infos.contactEmail},
+					"website" = ${infos.website}, "access_note" = ${infos.accessNote},
+					"announcement" = ${infos.announcement}, "updated_at" = now()
+				where "id" = ${context.organizationId}
+				returning "id"
+			`);
+			if (rows(touched).length === 0) return 'gone' as const;
+			await record(tx, context.organizationId, context.userId, {
+				action: 'organization.settings',
+				targetTable: 'organization',
+				targetId: context.organizationId,
+				before: enColonnes(before),
+				after: enColonnes(infos)
+			});
+			return 'saved' as const;
+		});
+		if (result !== 'saved') return fail(404, { error: result, infoValues: infos });
+		return { infosEnregistrees: true };
 	},
 
 	/**

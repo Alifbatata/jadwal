@@ -80,7 +80,18 @@ export function settingsOf(organisation: OrganisationPublique, rooms: readonly {
 			defaultLanguage: organisation.default_language,
 			// Les salles sortent par leur nom seul : leur identifiant interne n'est nécessaire à
 			// personne au dehors, donc il ne sort pas.
-			rooms: rooms.map((room) => room.name)
+			rooms: rooms.map((room) => room.name),
+			// Ce que l'organisation dit d'elle (étape 24) : six textes bruts, `null` quand elle n'a
+			// rien saisi. Ajoutés au contrat sans rien y changer : un client qui ne les lit pas ne voit
+			// aucune différence.
+			info: {
+				address: organisation.address,
+				phone: organisation.contact_phone,
+				email: organisation.contact_email,
+				website: organisation.website,
+				access: organisation.access_note,
+				announcement: organisation.announcement
+			}
 		}
 	};
 }

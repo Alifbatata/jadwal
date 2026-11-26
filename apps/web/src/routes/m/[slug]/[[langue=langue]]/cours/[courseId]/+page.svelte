@@ -95,6 +95,7 @@
 			courant="programme"
 			exact={false}
 			avecPrieres={data.avecPrieres}
+			avecInfos={data.avecInfos}
 		/>
 	{/if}
 	<!-- Tout ce qui précède le pied est le contenu de la page, fil d'Ariane et choix de langue

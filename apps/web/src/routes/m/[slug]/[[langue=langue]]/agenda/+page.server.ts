@@ -10,10 +10,12 @@
 // Une détection se trompe parfois, et quand elle se trompe elle cache la bonne réponse : le choix
 // complet reste toujours à un lien, et les étapes à suivre à la main restent sur la page.
 
+import { aDesInfos } from '#lib/public/infos.js';
 import type { PageServerLoad } from './$types.js';
 import { CACHE_REGLAGES } from '#lib/server/api.js';
 import {
 	appareilDuVisiteur,
+	infosDe,
 	languesProposees,
 	publicContext,
 	referencement
@@ -60,6 +62,8 @@ export const load: PageServerLoad = async (event) => {
 		langues: languesProposees(organisation),
 		// L'onglet des prières de la navigation principale, si le module est allumé (étape 24).
 		avecPrieres: organisation.prayer_module,
+		// L'onglet des infos de la navigation principale, si l'organisation en a saisi (étape 24).
+		avecInfos: aDesInfos(infosDe(organisation)),
 		appareil,
 		tousLesChoix,
 		https: organisationFlux.https,

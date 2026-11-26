@@ -47,6 +47,14 @@
 	const apercu = $derived(variablesAccent(couleur));
 	const rapport = $derived(contraste(couleur, texteSur(couleur)));
 
+	/**
+	 * Les informations pour le public : ce qui a été tapé, après un refus, sinon ce qui est
+	 * enregistré (étape 24).
+	 */
+	const infos = $derived(
+		form && 'infoValues' in form && form.infoValues ? form.infoValues : data.infos
+	);
+
 	/** Le message d'une erreur, dans la langue de l'écran. */
 	const erreur = $derived(form && 'error' in form && form.error ? text.errors[form.error] : null);
 	/** La salle occupée dont la suppression attend une confirmation. */
@@ -63,6 +71,7 @@
 {#if form && 'moduleChange' in form}
 	<p class="succes" role="status">{form.allume ? text.turnedOn : text.turnedOff}</p>
 {/if}
+{#if form && 'infosEnregistrees' in form}<p class="succes" role="status">{text.infoSaved}</p>{/if}
 {#if form && 'salleAjoutee' in form}<p class="succes" role="status">{text.roomAdded}</p>{/if}
 {#if form && 'salleSupprimee' in form}<p class="succes" role="status">{text.roomDeleted}</p>{/if}
 
@@ -187,6 +196,98 @@
 
 	<button type="submit">{text.save}</button>
 </form>
+
+<!-- Ce que l'organisation dit d'elle, sur l'onglet Infos de sa page publique (étape 24,
+     docs/maquettes/public-infos.md). Un formulaire à part : on change une annonce sans renvoyer le
+     reste. Chaque champ est facultatif, et un champ vidé retire l'information. -->
+<section aria-labelledby="infos-titre">
+	<h2 id="infos-titre">{text.infoTitle}</h2>
+	<p class="aide">{text.infoIntro}</p>
+	<form method="post" action="?/infos" class="colonne">
+		<label for="address">{text.infoAddressLabel}</label>
+		<textarea
+			id="address"
+			name="address"
+			rows="3"
+			maxlength="300"
+			dir="auto"
+			autocomplete="off"
+			aria-describedby="address-aide">{infos.address ?? ''}</textarea
+		>
+		<p id="address-aide" class="aide">{text.infoAddressHelp}</p>
+
+		<label for="contactPhone">{text.infoPhoneLabel}</label>
+		<input
+			id="contactPhone"
+			name="contactPhone"
+			type="tel"
+			maxlength="40"
+			dir="ltr"
+			autocomplete="off"
+			value={infos.contactPhone ?? ''}
+			aria-describedby="contactPhone-aide"
+		/>
+		<p id="contactPhone-aide" class="aide">{text.infoPhoneHelp}</p>
+
+		<!-- Un champ de texte, et non `type="email"` ou `type="url"` : c'est le serveur qui dit ce qui
+		     ne va pas, avec les mots de l'écran, et non la bulle du navigateur dans sa propre langue. -->
+		<label for="contactEmail">{text.infoEmailLabel}</label>
+		<input
+			id="contactEmail"
+			name="contactEmail"
+			type="text"
+			inputmode="email"
+			maxlength="254"
+			dir="ltr"
+			autocomplete="off"
+			autocapitalize="none"
+			spellcheck="false"
+			value={infos.contactEmail ?? ''}
+			aria-describedby="contactEmail-aide"
+		/>
+		<p id="contactEmail-aide" class="aide">{text.infoEmailHelp}</p>
+
+		<label for="website">{text.infoWebsiteLabel}</label>
+		<input
+			id="website"
+			name="website"
+			type="text"
+			inputmode="url"
+			maxlength="300"
+			dir="ltr"
+			autocomplete="off"
+			autocapitalize="none"
+			spellcheck="false"
+			value={infos.website ?? ''}
+			aria-describedby="website-aide"
+		/>
+		<p id="website-aide" class="aide">{text.infoWebsiteHelp}</p>
+
+		<label for="accessNote">{text.infoAccessLabel}</label>
+		<textarea
+			id="accessNote"
+			name="accessNote"
+			rows="4"
+			maxlength="1000"
+			dir="auto"
+			aria-describedby="accessNote-aide">{infos.accessNote ?? ''}</textarea
+		>
+		<p id="accessNote-aide" class="aide">{text.infoAccessHelp}</p>
+
+		<label for="announcement">{text.infoNoticeLabel}</label>
+		<textarea
+			id="announcement"
+			name="announcement"
+			rows="3"
+			maxlength="500"
+			dir="auto"
+			aria-describedby="announcement-aide">{infos.announcement ?? ''}</textarea
+		>
+		<p id="announcement-aide" class="aide">{text.infoNoticeHelp}</p>
+
+		<button type="submit">{text.infoSave}</button>
+	</form>
+</section>
 
 <section aria-labelledby="salles-titre">
 	<h2 id="salles-titre">{text.roomsTitle}</h2>

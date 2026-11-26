@@ -77,6 +77,7 @@
 				courant="programme"
 				exact={false}
 				avecPrieres={data.avecPrieres}
+				avecInfos={data.avecInfos}
 			/>
 		{/if}
 		<h1>{mots.subscribeTitle}</h1>

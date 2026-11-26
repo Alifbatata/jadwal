@@ -83,7 +83,15 @@ GET /api/v1/organisations/belvedere/schedule?from=2026-09-01&to=2027-06-30&maxDa
 		"accentColor": "#0f766e",
 		"languages": ["fr", "de", "it", "ar"],
 		"defaultLanguage": "fr",
-		"rooms": ["Grande salle", "Salle 2", "Salle des sœurs"]
+		"rooms": ["Grande salle", "Salle 2", "Salle des sœurs"],
+		"info": {
+			"address": "Rue de l'Exemple 12\n2500 Bienne",
+			"phone": "+41 32 000 00 00",
+			"email": "contact@example.org",
+			"website": "https://www.example.org",
+			"access": null,
+			"announcement": null
+		}
 	}
 }
 ```
@@ -97,6 +105,21 @@ GET /api/v1/organisations/belvedere/schedule?from=2026-09-01&to=2027-06-30&maxDa
 | `languages`       | liste  | les langues activées, parmi `fr`, `de`, `it`, `en`, `ar`    |
 | `defaultLanguage` | chaîne | celle qui s'applique quand `lang` n'est pas donné           |
 | `rooms`           | liste  | les **noms** des salles ; elles n'ont pas d'identifiant ici |
+| `info`            | objet  | ce que l'organisation dit d'elle, voir ci-dessous           |
+
+`info` existe depuis l'étape 24. Il porte toujours ses six champs, et chacun vaut `null` tant que
+l'organisation ne l'a pas saisi. Ce sont des **textes bruts**, écrits par l'organisation dans sa
+propre langue et jamais traduits : ils ne dépendent pas de `lang`. Un client les affiche comme du
+texte, jamais comme du HTML.
+
+| Champ          | Type             | Notes                                                                 |
+| -------------- | ---------------- | --------------------------------------------------------------------- |
+| `address`      | chaîne ou `null` | l'adresse postale ; ses lignes sont séparées par `\n`                 |
+| `phone`        | chaîne ou `null` | un numéro, tel que l'organisation l'a écrit, sur une ligne            |
+| `email`        | chaîne ou `null` | l'adresse électronique de l'organisation                              |
+| `website`      | chaîne ou `null` | une adresse qui commence par `http://` ou `https://`                  |
+| `access`       | chaîne ou `null` | comment venir : transports, stationnement, entrées ; plusieurs lignes |
+| `announcement` | chaîne ou `null` | l'annonce du moment ; plusieurs lignes                                |
 
 ## Le programme
 

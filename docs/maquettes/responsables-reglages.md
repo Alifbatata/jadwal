@@ -36,7 +36,24 @@ se lisent dans les langues cochées. Chaque visiteur choisit la sienne.` L'angla
    - `Langue par défaut` : `La langue de votre page publique à la première visite. Elle doit faire
 partie des langues cochées.`
    - Le bouton `Enregistrer`, puis `Réglages enregistrés.`
-3. **Salles** : `Les salles de vos cours. Un cours peut indiquer sa salle, mais ce n'est pas
+3. **Informations pour le public** (étape 24, `public-infos.md`) : `Ce que vous écrivez ici
+s'affiche sur l'onglet Infos de votre page publique. Chaque champ est facultatif : laissez vide
+ce que vous ne voulez pas publier.` Un formulaire à part de celui des réglages, avec six champs,
+   chacun avec son aide :
+   - `Adresse`, sur plusieurs lignes : `La rue et le numéro, puis le code postal et la localité,
+sur deux lignes.`
+   - `Téléphone` : `Tel qu'on le compose. Exemple : +41 32 000 00 00`
+   - `Adresse électronique` : `Celle de l'organisation, plutôt que celle d'une personne.
+Exemple : contact@example.org`
+   - `Site internet` : `Son adresse entière. Exemple : https://www.example.org`
+   - `Accès`, sur plusieurs lignes : `Transports, stationnement, entrées, accès en fauteuil
+roulant.`
+   - `Annonce`, sur plusieurs lignes : `Une information du moment, affichée en tête de la page.
+Effacez-la quand elle n'a plus cours.`
+   - Le bouton `Enregistrer les informations`, puis `Informations enregistrées.` Un champ vidé
+     retire l'information ; quand il n'en reste aucune, l'onglet Infos disparaît de la page
+     publique.
+4. **Salles** : `Les salles de vos cours. Un cours peut indiquer sa salle, mais ce n'est pas
 obligatoire.` Chaque salle, avec, si des cours l'utilisent, `2 cours utilisent cette salle ; ils
 n'auront plus de salle si vous la supprimez.` (et la même phrase pour les prières du vendredi), et
    le bouton `Supprimer`. Puis `Nouvelle salle` (`Exemple : Grande salle`) et `Ajouter`. Après un
@@ -44,7 +61,7 @@ n'auront plus de salle si vous la supprimez.` (et la même phrase pour les priè
    depuis un autre onglet par exemple, ou un identifiant mal formé, reçoit `Cette salle n'existe
 plus.` (étape 19) ; avant, l'écran disait `Salle supprimée.` pour une salle que personne n'avait
    supprimée.
-4. **Heures de prière** : `Les heures de prière sont activées.` ou `désactivées`, avec ce que cela
+5. **Heures de prière** : `Les heures de prière sont activées.` ou `désactivées`, avec ce que cela
    change et ce qui reste si on les désactive, puis le bouton `Activer les heures de prière` ou
    `Désactiver les heures de prière` (avant : « Allumer le module »). Le mot « module » a disparu de
    l'écran.
@@ -65,6 +82,12 @@ Toutes les erreurs disent quoi écrire, par exemple `Écrivez le nom de l'organi
 `La langue par défaut doit faire partie des langues cochées.`, et le refus de désactiver les heures
 de prière : `L'heure de certains cours se règle sur une prière, ou une prière du vendredi existe.
 Donnez à ces cours une heure fixe ou supprimez-les avant de désactiver les heures de prière.`
+
+Pour les informations : `Un des textes est trop long. Raccourcissez-le, puis enregistrez de
+nouveau.`, `L'adresse électronique n'a pas la forme d'une adresse. Exemple : contact@example.org`
+et `Le site internet doit commencer par https:// ou http://. Exemple : https://www.example.org`.
+Les champs de l'adresse électronique et du site sont des champs de texte : c'est l'écran qui dit ce
+qui ne va pas, dans sa langue, et non la bulle du navigateur dans la sienne.
 
 Après un refus, les champs gardent ce qui a été tapé, et non les valeurs enregistrées. Avec
 JavaScript, changer la couleur ne défait pas le nom ni la formule d'accueil en cours de frappe. La

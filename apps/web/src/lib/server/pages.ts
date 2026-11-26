@@ -7,6 +7,7 @@
 import { error, redirect, type RequestEvent } from '@sveltejs/kit';
 import { findOrganisation, isLangue, type Langue, type OrganisationPublique } from './public.js';
 import { vueDe } from './vues.js';
+import type { InfosPubliques } from '#lib/public/infos.js';
 import { LANGUES } from '#lib/i18n.js';
 import {
 	appareilDe,
@@ -86,6 +87,18 @@ function sansLeSegmentDeLangue(url: URL): string {
 	return `${parties.join('/')}${url.search}`;
 }
 
+/** Ce que l'organisation dit d'elle, dans la forme que les pages lisent (étape 24). */
+export function infosDe(organisation: OrganisationPublique): InfosPubliques {
+	return {
+		address: organisation.address,
+		contactPhone: organisation.contact_phone,
+		contactEmail: organisation.contact_email,
+		website: organisation.website,
+		accessNote: organisation.access_note,
+		announcement: organisation.announcement
+	};
+}
+
 /** La langue par défaut d'une organisation, ramenée à une des cinq que l'interface parle. */
 export function langueParDefaut(organisation: OrganisationPublique): Langue {
 	return isLangue(organisation.default_language) ? organisation.default_language : 'fr';
@@ -131,7 +144,7 @@ export function appareilDuVisiteur(event: RequestEvent): {
 }
 
 export interface LienOptions {
-	vue?: 'semaine' | 'cours' | 'mois' | 'prieres' | 'aujourdhui';
+	vue?: 'semaine' | 'cours' | 'mois' | 'prieres' | 'aujourdhui' | 'infos';
 	public?: string | null;
 	mois?: string | null;
 	jour?: string | null;

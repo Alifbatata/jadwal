@@ -29,6 +29,8 @@ import {
 	type SeancePublique
 } from '#lib/server/public.js';
 import {
+	appareilDuVisiteur,
+	infosDe,
 	languesProposees,
 	publicContext,
 	publicDemande,
@@ -36,9 +38,10 @@ import {
 } from '#lib/server/pages.js';
 import { lienVue } from '#lib/public/liens.js';
 import { premierJourSuivant, prochainePriere } from '#lib/public/aujourdhui.js';
-import { CACHE_AUJOURDHUI, CACHE_PROGRAMME } from '#lib/server/api.js';
+import { aDesInfos, lienCarte } from '#lib/public/infos.js';
+import { CACHE_AUJOURDHUI, CACHE_PROGRAMME, CACHE_REGLAGES } from '#lib/server/api.js';
 
-export type Vue = 'semaine' | 'cours' | 'mois' | 'prieres' | 'aujourdhui';
+export type Vue = 'semaine' | 'cours' | 'mois' | 'prieres' | 'aujourdhui' | 'infos';
 
 const JOURS_SEMAINE = 7;
 /** La navigation par mois est bornée : un an en arrière, un an en avant. */
@@ -50,8 +53,10 @@ const PRIERES = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
  * La vue demandée. L'onglet des prières n'existe que si le module est allumé : sans lui, l'adresse
  * `?vue=prieres` montre la semaine, comme toute vue inconnue, et ne dit rien d'un réglage.
  */
-function vueDemandee(value: string | null, avecPrieres: boolean): Vue {
+function vueDemandee(value: string | null, avecPrieres: boolean, avecInfos: boolean): Vue {
 	if (value === 'prieres') return avecPrieres ? 'prieres' : 'semaine';
+	// L'onglet des infos n'existe que si l'organisation a dit quelque chose d'elle (étape 24).
+	if (value === 'infos') return avecInfos ? 'infos' : 'semaine';
 	return value === 'cours' || value === 'mois' || value === 'aujourdhui' ? value : 'semaine';
 }
 
@@ -77,9 +82,17 @@ function jourDemande(value: string | null): IsoDate | null {
 
 export const load: PageServerLoad = async (event) => {
 	const { organisation, langue } = await publicContext(event);
-	const vue = vueDemandee(event.url.searchParams.get('vue'), organisation.prayer_module);
-	// « Aujourd'hui » montre tout ce qui a lieu : la vue n'a pas de filtre à voir ni à enlever.
-	const filtre = vue === 'aujourdhui' ? null : publicDemande(event);
+	const infos = infosDe(organisation);
+	const avecInfos = aDesInfos(infos);
+	const vue = vueDemandee(event.url.searchParams.get('vue'), organisation.prayer_module, avecInfos);
+	// « Aujourd'hui » et « Infos » ne montrent aucun filtre : il n'y en a pas à voir ni à enlever.
+	const filtre = vue === 'aujourdhui' || vue === 'infos' ? null : publicDemande(event);
+	// Le lien vers une carte dépend de l'appareil, comme l'agenda (ADR 0048) : la réponse le dit par
+	// `Vary`. Seul l'onglet Infos le lit.
+	const carte =
+		vue === 'infos' && infos.address
+			? lienCarte(appareilDuVisiteur(event).appareil, infos.address)
+			: null;
 
 	// Un seul instant pour toute la page : le jour et l'heure qu'il est se lisent sur la même horloge.
 	const maintenant = new Date();
@@ -102,7 +115,7 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	const complet =
-		vue === 'semaine' || vue === 'prieres' || vue === 'aujourdhui'
+		vue === 'semaine' || vue === 'prieres' || vue === 'aujourdhui' || vue === 'infos'
 			? programme
 			: await readPublicProgramme(organisation, langue, new Date(), { from, to });
 
@@ -201,8 +214,10 @@ export const load: PageServerLoad = async (event) => {
 
 	// Le cache d'une page publique suit la même empreinte que l'API : une modification par un
 	// responsable change la version suivante (ADR 0026). « Aujourd'hui » ne se garde qu'une minute.
+	// « Infos » suit le cache des réglages, dont ses textes font partie.
 	event.setHeaders({
-		'cache-control': vue === 'aujourdhui' ? CACHE_AUJOURDHUI : CACHE_PROGRAMME
+		'cache-control':
+			vue === 'aujourdhui' ? CACHE_AUJOURDHUI : vue === 'infos' ? CACHE_REGLAGES : CACHE_PROGRAMME
 	});
 
 	const pause = pauseCouvrant(complet.pauses, today);
@@ -236,6 +251,16 @@ export const load: PageServerLoad = async (event) => {
 		vue,
 		// L'onglet des prières n'est proposé que si le module est allumé (ADR 0042).
 		avecPrieres: organisation.prayer_module,
+		// L'onglet des infos n'est proposé que si l'organisation en a saisi au moins une.
+		avecInfos,
+		// Les six textes, pour l'onglet seul ; l'annonce, pour lui et pour « Aujourd'hui », et jamais
+		// dans le cadre du widget, qui encadre un programme (docs/maquettes/public-infos.md).
+		infos: vue === 'infos' ? infos : null,
+		carte,
+		annonce:
+			(vue === 'infos' || vue === 'aujourdhui') && event.url.searchParams.get('embed') !== '1'
+				? infos.announcement
+				: null,
 		// Pour « Aujourd'hui », le seul jour même : le lendemain n'a servi qu'à son Fajr.
 		prieres: vue === 'aujourdhui' ? prieres.filter((jour) => jour.date === today) : prieres,
 		prochaine,

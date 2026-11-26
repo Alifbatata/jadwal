@@ -343,6 +343,19 @@ interface Dictionnaire {
 	/** Le titre du premier jour suivant qui a des séances, et le lien vers la vue Semaine. */
 	readonly comingUp: string;
 	readonly wholeWeek: string;
+	/**
+	 * L'onglet Infos et l'annonce (étape 24, docs/maquettes/public-infos.md) : les titres de ses
+	 * blocs, le lien vers une carte, et les étiquettes des trois lignes du contact. Ce que
+	 * l'organisation a saisi ne se traduit pas : seuls ces mots suivent la langue de la page.
+	 */
+	readonly infoNotice: string;
+	readonly infoAddress: string;
+	readonly infoOpenMap: string;
+	readonly infoContact: string;
+	readonly infoPhone: string;
+	readonly infoEmail: string;
+	readonly infoWebsite: string;
+	readonly infoAccess: string;
 }
 
 /**
@@ -569,7 +582,16 @@ const fr: Dictionnaire = {
 	todayPauseNamed: (reason) => `Pas de cours aujourd’hui : ${reason}.`,
 	todayPause: 'Pas de cours aujourd’hui : une pause est en cours.',
 	comingUp: 'À venir',
-	wholeWeek: 'Voir toute la semaine'
+	wholeWeek: 'Voir toute la semaine',
+	// L'onglet Infos et l'annonce (étape 24).
+	infoNotice: 'Annonce',
+	infoAddress: 'Adresse',
+	infoOpenMap: 'Ouvrir dans une carte',
+	infoContact: 'Contact',
+	infoPhone: 'Téléphone',
+	infoEmail: 'Adresse électronique',
+	infoWebsite: 'Site internet',
+	infoAccess: 'Accès'
 };
 
 const de: Dictionnaire = {
@@ -750,7 +772,15 @@ const de: Dictionnaire = {
 	todayPauseNamed: (reason) => `Kein Unterricht heute: ${reason}.`,
 	todayPause: 'Kein Unterricht heute: Es ist Pause.',
 	comingUp: 'Demnächst',
-	wholeWeek: 'Ganze Woche ansehen'
+	wholeWeek: 'Ganze Woche ansehen',
+	infoNotice: 'Mitteilung',
+	infoAddress: 'Adresse',
+	infoOpenMap: 'In einer Karte öffnen',
+	infoContact: 'Kontakt',
+	infoPhone: 'Telefon',
+	infoEmail: 'E-Mail',
+	infoWebsite: 'Website',
+	infoAccess: 'Anfahrt und Zugang'
 };
 
 const it: Dictionnaire = {
@@ -931,7 +961,15 @@ const it: Dictionnaire = {
 	todayPauseNamed: (reason) => `Nessun corso oggi: ${reason}.`,
 	todayPause: 'Nessun corso oggi: è in corso una pausa.',
 	comingUp: 'Prossimamente',
-	wholeWeek: 'Vedi tutta la settimana'
+	wholeWeek: 'Vedi tutta la settimana',
+	infoNotice: 'Avviso',
+	infoAddress: 'Indirizzo',
+	infoOpenMap: 'Apri in una mappa',
+	infoContact: 'Contatti',
+	infoPhone: 'Telefono',
+	infoEmail: 'E-mail',
+	infoWebsite: 'Sito web',
+	infoAccess: 'Come arrivare'
 };
 
 // L'anglais britannique (étape 18) : « programme », « cancelled », « fortnight », et les guillemets
@@ -1110,7 +1148,15 @@ const en: Dictionnaire = {
 	todayPauseNamed: (reason) => `No courses today: ${reason}.`,
 	todayPause: 'No courses today: the programme is on a break.',
 	comingUp: 'Coming up',
-	wholeWeek: 'See the whole week'
+	wholeWeek: 'See the whole week',
+	infoNotice: 'Notice',
+	infoAddress: 'Address',
+	infoOpenMap: 'Open in a map',
+	infoContact: 'Contact',
+	infoPhone: 'Phone',
+	infoEmail: 'Email',
+	infoWebsite: 'Website',
+	infoAccess: 'Getting there'
 };
 
 const ar: Dictionnaire = {
@@ -1324,7 +1370,15 @@ const ar: Dictionnaire = {
 	todayPauseNamed: (reason) => `لا دروس اليوم: ${reason}.`,
 	todayPause: 'لا دروس اليوم: هناك عطلة.',
 	comingUp: 'قريبًا',
-	wholeWeek: 'عرض الأسبوع كاملًا'
+	wholeWeek: 'عرض الأسبوع كاملًا',
+	infoNotice: 'إعلان',
+	infoAddress: 'العنوان',
+	infoOpenMap: 'فتح في خريطة',
+	infoContact: 'للتواصل',
+	infoPhone: 'الهاتف',
+	infoEmail: 'البريد الإلكتروني',
+	infoWebsite: 'الموقع الإلكتروني',
+	infoAccess: 'الوصول'
 };
 
 const DICTIONNAIRES: Record<Langue, Dictionnaire> = { fr, de, it, en, ar };

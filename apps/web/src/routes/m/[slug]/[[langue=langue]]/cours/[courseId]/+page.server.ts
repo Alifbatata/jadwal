@@ -4,6 +4,7 @@
 // de recherche indexe. Un cours non publié, ou d'une organisation suspendue, répond comme un cours
 // qui n'existe pas — le rôle public ne le voit pas, donc il n'y a rien à filtrer ici.
 
+import { aDesInfos } from '#lib/public/infos.js';
 import { expandOccurrences, todayInZone, type IsoDate } from '@jadwal/core';
 import type { PageServerLoad } from './$types.js';
 import { CACHE_PROGRAMME } from '#lib/server/api.js';
@@ -20,6 +21,7 @@ import { nextDates } from '#lib/server/serialise.js';
 import { appliquerVendredi, sessionsDuVendredi } from '#lib/server/vendredi.js';
 import {
 	appareilDuVisiteur,
+	infosDe,
 	introuvable,
 	languesProposees,
 	publicContext,
@@ -116,6 +118,8 @@ export const load: PageServerLoad = async (event) => {
 		alternates: moteur.alternates,
 		// L'onglet des prières de la navigation principale, si le module est allumé (étape 24).
 		avecPrieres: organisation.prayer_module,
+		// L'onglet des infos de la navigation principale, si l'organisation en a saisi (étape 24).
+		avecInfos: aDesInfos(infosDe(organisation)),
 		appareil,
 		tousLesChoix,
 		flux: {
