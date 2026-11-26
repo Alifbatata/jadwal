@@ -5430,7 +5430,9 @@ async function pagesPubliques(page) {
 	await retour('19-D8', async () => {
 		const adresse = `/m/${VOISINE.slug}/agenda`;
 		await ouvrir(page, adresse);
-		const introduction = await texteDe(page.locator('main > p').first());
+		// Le premier paragraphe que l'on lit : celui de la copie sans réseau, en tête du contenu, est
+		// caché tant que le réseau répond (ADR 0054).
+		const introduction = await texteDe(page.locator('main > p:not([hidden])').first());
 		const description =
 			(await page.locator('meta[name="description"]').getAttribute('content')) ?? '';
 		const attendue = `Le programme d’${VOISINE.nom} s’ajoute à votre calendrier`;
@@ -7278,7 +7280,8 @@ async function widgetSurLesPrieres(visiteur) {
 
 /**
  * h. Une organisation qui n'existe pas. Le 404 parle la langue de l'adresse, `<html>` compris, et
- * ne porte aucun script : `/m/` n'en a jamais, erreur comprise. Le HTML est lu brut, tel que le
+ * ne porte aucun script : une page d'erreur de `/m/` n'en a jamais, pas même celui qui garde une
+ * page servie pour la relire sans réseau (ADR 0054). Le HTML est lu brut, tel que le
  * serveur l'envoie ; le texte, dans le navigateur, qui le montre aussi à axe. L'anglais est un
  * retour à lui seul (D1).
  */
