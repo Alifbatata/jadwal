@@ -136,6 +136,7 @@ PostgreSQL
 Postgres
 Drizzle
 Docker
+Capacitor
 Compose
 Caddy
 Ansible

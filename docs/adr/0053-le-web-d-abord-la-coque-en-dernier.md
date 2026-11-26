@@ -46,9 +46,9 @@ que la coque.
 
 Elle enveloppe cette même interface, embarquée dans l'application et non chargée à distance, et lui
 ajoute ce qu'un navigateur ne donne pas : l'écoute qui se poursuit écran verrouillé. La candidate
-est Capacitor ; Expo est écarté, parce qu'il demanderait d'écrire l'interface une seconde fois et ne
-donnerait pas le site. Le choix se confirme à l'étape 26, sur une coque d'essai, quand les comptes
-des magasins existent.
+est Capacitor. Nous écartons Expo, parce qu'il demanderait d'écrire l'interface une seconde fois et
+ne donnerait pas le site. Le choix se confirme à l'étape 26, sur une coque d'essai, quand les
+comptes des magasins existent.
 
 L'application iPhone se construira hors du poste de travail, qui n'est pas un Mac.
 
