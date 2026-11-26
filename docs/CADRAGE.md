@@ -5,6 +5,11 @@ programme de ses cours récurrents à partir d'une seule saisie.
 Ce document fixe le périmètre de la V1. Les décisions structurantes sont détaillées dans les ADR
 (`docs/adr/`). Le nom `jadwal` est un nom de travail.
 
+**Le but a changé le 25.11.2026 (ADR 0052).** La cible première devient une application mobile,
+propre à une organisation : son programme, ses informations, et le sermon du vendredi traduit en
+direct, à l'oral, dans plusieurs langues. Ce que ce document décrit reste vrai et reste servi : c'est
+le serveur de cette application. La section « L'application et le direct » dit ce qui s'ajoute.
+
 ## Produit
 
 ### Problème
@@ -206,8 +211,38 @@ outil de mesure d'audience ne le suit. Une inscription à un cours pourrait êtr
 au sens de la nLPD suisse. La liste complète des données personnelles que le service garde, avec
 leur durée, est dans `docs/CONDITIONS.md`.
 
+## L'application et le direct
+
+Décidés le 25.11.2026 (ADR 0052), à construire aux étapes 24 à 26.
+
+### L'application
+
+- Une application par organisation, sur l'App Store et sur Google Play. Une construction est réglée
+  pour une seule organisation : nom, icône, couleur, adresse du serveur.
+- Cinq onglets : **Aujourd'hui** (prochaine prière, vendredi, cours du jour, annulations),
+  **Programme**, **Prières**, **Direct**, **Infos** (adresse, contact, accès, annonces).
+- Elle ne lit que l'API publique : ni compte, ni cookie, ni saisie. Les responsables remplissent le
+  programme dans l'espace web, comme avant ; tout le reste se consulte.
+- Les cinq langues de l'interface, l'arabe de droite à gauche. Le dernier programme reçu reste
+  lisible sans réseau.
+
+### Le direct : le sermon du vendredi traduit à l'oral
+
+- Une personne désignée, sur place, lance la diffusion d'un bouton. Elle ne démarre jamais seule, et
+  elle s'arrête seule après une durée maximale.
+- La personne qui écoute choisit sa langue : français, allemand, italien, anglais, albanais, bosnien
+  ou turc au départ. Le son continue écran verrouillé. Des sous-titres accompagnent la voix.
+- L'écran dit que la traduction est automatique et peut contenir des erreurs.
+- La voix n'est enregistrée nulle part. Elle passe par un service de traduction tiers, choisi à
+  l'étape 25 sur un essai réel ; la personne qui parle doit avoir donné son accord, et les conditions
+  d'utilisation le diront.
+- Le relais du direct est un programme à part, avec un plafond de dépense. Sans clé de service, le
+  module est éteint et l'onglet Direct n'apparaît pas.
+
 ## Technique
 
+- `apps/mobile` (étape 24) : l'application, dans une coque native choisie sur preuve.
+- `apps/live` (étape 25) : le relais du direct, à part du serveur web.
 - `packages/core` : récurrence, exceptions, ancrage sur la prière, export ICS. TypeScript pur,
   très testé (changements d'heure, cinquième semaine du mois, exceptions).
 - `packages/db` : Drizzle + PostgreSQL, RLS par organisation, tests avec un rôle `NOBYPASSRLS`.
@@ -244,11 +279,26 @@ leur durée, est dans `docs/CONDITIONS.md`.
 Les étapes suivantes, de la mise en ligne à l'accès donné par le super-admin (étape 22), sont dans
 `ETAT-PROJET.md`.
 
-Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
-passkeys pour tous les comptes (elles sont arrivées à l'étape 4 pour le seul super-admin, où elles
-sont obligatoires : ADR 0025).
+Depuis le changement de but du 25.11.2026 (ADR 0052) :
+
+24. L'application, sans le direct : coque native, API du jour et des infos, cinq onglets.
+25. Le direct : essai réel de deux voies de traduction, relais, poste de diffusion, écoute.
+26. Hébergement, mise en ligne, soumission aux magasins.
+
+Plus tard : pré-traduction automatique validée par le responsable, qui servirait aussi au sermon (un
+texte remis à l'avance, traduit, relu, que l'application suit pendant que l'imam parle) ; image
+« story » du programme ; passkeys pour tous les comptes (elles sont arrivées à l'étape 4 pour le seul
+super-admin, où elles sont obligatoires : ADR 0025).
 
 ## Risques ouverts
+
+- **La justesse de la traduction d'un sermon.** Une machine peut mal traduire un verset ou un
+  hadith. La mention à l'écran ne l'écarte pas ; l'essai de l'étape 25 la mesure, et la
+  pré-traduction validée y répondrait.
+- Apple refuse une application qui n'est qu'un site emballé : la coque doit porter de vraies
+  fonctions natives (audio en arrière-plan, lecture sans réseau).
+- Le poste de travail est sous Windows : l'application iPhone se construit et s'essaie hors du
+  poste.
 
 - Vérifier que le bloc d'intégration du constructeur de site utilisé par l'organisation exécute un
   script externe. Sinon, le cadre posé à la main, livré à l'étape 6.

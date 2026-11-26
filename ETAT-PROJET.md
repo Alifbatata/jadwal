@@ -150,6 +150,13 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   corrigées. 4 160 tests, tous réussis, aucun sauté, et 24 tests liés au temps, à part ;
   parcours complet contre la nouvelle image : 475 vérifications, et axe sans rien de sérieux sur
   45 pages. Mesurés sur le poste le 21.11.2026, et rejoués par la CI sur le code livré.
+- **Étape 24** (l'application, sans le direct) : **ouverte le 25.11.2026**. Le but a changé
+  (ADR 0052) : la cible première devient une application mobile propre à une organisation, sur
+  l'App Store et Google Play, avec son programme, ses informations et, à l'étape 25, le sermon du
+  vendredi traduit en direct à l'oral dans sept langues. Rien de ce qui existe n'est refait : le
+  serveur de jadwal devient le serveur de l'application. Fait : le nouveau but consigné (ADR 0052,
+  `docs/CADRAGE.md`). À faire : le choix de la coque native sur preuve, ce que l'API doit donner à
+  l'application, la page « Infos », l'application elle-même, la vérification.
 
 ## Fait
 
@@ -1100,9 +1107,13 @@ tests.
 | 21    | Retours de l'étape 20 : langue en liste, vendredi, conditions       | terminée |
 | 22    | Service gratuit, accès donné par le super-admin                     | terminée |
 | 23    | SvelteKit 3, origine lue au démarrage, licences du code incorporé   | terminée |
+| 24    | L'application mobile d'une organisation, sans le direct             | en cours |
+| 25    | Le direct : le sermon du vendredi traduit à l'oral                  | à venir  |
+| 26    | Hébergement, mise en ligne, soumission aux magasins                 | à venir  |
 
-Plus tard : pré-traduction automatique validée par le responsable, image « story » du programme,
-passkeys pour tous les comptes. Les plans d'une organisation (gratuit, offert, payant), inscrits à
+Plus tard : pré-traduction automatique validée par le responsable, qui servirait aussi au sermon
+(ADR 0052) ; image « story » du programme ; passkeys pour tous les comptes.
+Les plans d'une organisation (gratuit, offert, payant), inscrits à
 l'étape 21, en sont retirés à l'étape 22 : jadwal est entièrement gratuit (ADR 0049), et la colonne
 qui gardait le plan a quitté la base (migration 0076).
 
@@ -1228,6 +1239,12 @@ qui gardait le plan a quitté la base (migration 0076).
 
 ## Décisions en attente
 
+- **Les comptes des magasins** (étape 24, ADR 0052) : un compte développeur chez Apple et chez
+  Google, à ouvrir par l'exploitant, et le nom sous lequel l'application paraît.
+- **Le nom et l'icône de l'application** : à donner par l'exploitant.
+- **Le service de traduction du direct** : choisi à l'étape 25, sur un essai réel. D'ici là, il
+  faut l'accord de la personne qui prononce le sermon, et un enregistrement d'essai.
+- **L'hébergement** : choisi à l'étape 26. Aucune instance n'est en service.
 - ~~Nom public et domaine~~ : tranché à l'étape 9. Le nom de travail `jadwal` est gardé, et le
   service est servi sur `jadwal.voltia.ch`, sous-domaine à part entière et jamais un chemin de
   `voltia.ch`. Le pied de page des pages publiques, du widget et des courriels porte « jadwal, un
