@@ -30,6 +30,28 @@ l'organisation. Les lecteurs d'écran entendent son nom, `Navigation principale`
   `Affichage` garde ses quatre vues, `Prières` comprise. Le widget encadre un programme, pas une
   application.
 
+## L'installation
+
+Hors du cadre du widget, chaque page publique annonce à un navigateur de quoi l'installer comme une
+application. Rien ne s'affiche : ce sont des balises de l'en-tête du document.
+
+- **Le manifeste** de l'organisation, à `/m/<identifiant>/manifest.webmanifest` : son nom, sa
+  couleur, et l'adresse où l'application s'ouvre, la vue `Aujourd'hui`, dans la langue de la page
+  d'où on l'installe. Installée depuis la page arabe ou la page française, c'est la même
+  application. Un lien qui sort des pages de l'organisation s'ouvre dans le navigateur.
+- **Les icônes**, dessinées par le serveur à la couleur de l'organisation : une carte claire avec
+  trois lignes, sur un fond de cette couleur. 192 et 512 pixels pour le manifeste, une troisième
+  dont le fond remplit tout le carré pour les systèmes qui rognent l'icône à leur façon, et 180
+  pixels pour un iPhone. L'adresse d'une icône porte la couleur : quand la couleur change,
+  l'adresse change.
+- **La couleur de la barre du système**, celle de l'organisation.
+
+Le nom et la couleur viennent de la base : un changement est une saisie dans l'écran Réglages, pas
+une nouvelle version de quoi que ce soit.
+
+Sur un téléphone Android, le navigateur propose alors « Installer l'application » ou « Ajouter à
+l'écran d'accueil ». Sur un iPhone, c'est « Partager », puis « Sur l'écran d'accueil ».
+
 ## Structure de la vue, de haut en bas
 
 1. **L'en-tête** : le nom, la navigation principale avec `Aujourd'hui` marqué, le choix de la

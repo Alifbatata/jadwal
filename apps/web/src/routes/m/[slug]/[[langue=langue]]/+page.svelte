@@ -12,6 +12,7 @@
 	import { lienAgenda, lienCours, lienVue } from '#lib/public/liens.js';
 	import Entete from '#lib/public/Entete.svelte';
 	import Pied from '#lib/public/Pied.svelte';
+	import TeteDApplication from '#lib/public/TeteDApplication.svelte';
 	import { variablesAccent } from '#lib/couleur.js';
 	import Vendredi from '#lib/public/Vendredi.svelte';
 	import Prieres from '#lib/public/Prieres.svelte';
@@ -188,6 +189,12 @@
 		<link rel="alternate" hreflang={autre.hreflang} href={autre.href} />
 	{/each}
 </svelte:head>
+
+<!-- Ce qui permet d'installer la page comme une application : jamais dans le cadre du widget
+     (étape 24, ADR 0053). -->
+{#if !data.integre}
+	<TeteDApplication {adresse} couleur={data.organisation.accentColor} />
+{/if}
 
 <div
 	{dir}

@@ -6,6 +6,7 @@
 	import ChoixDeLangue from '#lib/public/ChoixDeLangue.svelte';
 	import Onglets from '#lib/public/Onglets.svelte';
 	import Pied from '#lib/public/Pied.svelte';
+	import TeteDApplication from '#lib/public/TeteDApplication.svelte';
 	import { variablesAccent } from '#lib/couleur.js';
 
 	let { data } = $props();
@@ -59,6 +60,12 @@
 		<link rel="alternate" hreflang={autre.hreflang} href={autre.href} />
 	{/each}
 </svelte:head>
+
+<!-- Ce qui permet d'installer la page comme une application : jamais dans le cadre du widget
+     (étape 24, ADR 0053). -->
+{#if !data.integre}
+	<TeteDApplication {adresse} couleur={data.organisation.accentColor} />
+{/if}
 
 <div
 	{dir}
