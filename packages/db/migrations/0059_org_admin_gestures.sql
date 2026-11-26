@@ -59,6 +59,8 @@
 --    casserait toutes les adresses publiques. Le droit est ramené aux colonnes de l'écran, comme la
 --    migration 0053 l'a fait pour les adhésions. Au rejeu, la migration 0002 rend le droit large, et
 --    celle-ci le retire juste après : l'ordre des fichiers suffit.
+--    La migration 0083 (étape 24) porte ces huit colonnes à quatorze, de la même façon : elle vient
+--    après celle-ci, au premier passage comme au rejeu, et sa preuve dit l'état final.
 --
 -- Limite. Cette séparation arrête les erreurs de l'application : un contrôle oublié, un rôle mal lu,
 -- un contexte posé sur la bonne organisation mais pour la mauvaise raison. Elle n'arrête pas qui

@@ -1,5 +1,6 @@
-// Les preuves des migrations 0073, 0074, 0075, 0076 et 0081 voient un état affaibli (étape 20,
-// relecture du chantier 1 ; étape 22 pour 0076 et 0081). La preuve de 0079 n'est plus jouée ici :
+// Les preuves des migrations 0073, 0074, 0075, 0076, 0081 et 0083 voient un état affaibli (étape 20,
+// relecture du chantier 1 ; étape 22 pour 0076 et 0081 ; étape 24 pour 0083). La preuve de 0079
+// n'est plus jouée ici :
 // elle disait que le super-admin lit la table des demandes et ne fait que lire, ce que 0081 change ;
 // la preuve de 0081 dit l'état entier de cette table, et reprend chacun de ses cas.
 //
@@ -190,6 +191,70 @@ describe('la preuve de la migration 0081 (les demandes d’accès, et la répons
 			message: expect.stringMatching(
 				/^(jadwal\.)?(access_request|request_access|purge_access_requests)/
 			)
+		});
+	});
+});
+
+describe('la preuve de la migration 0083 (ce que l’organisation dit d’elle)', () => {
+	const TAG = '0083_organization_info_rights';
+
+	it('passes on the state the migration leaves', async () => {
+		expect(await refusDeLaPreuve(TAG, [])).toBeNull();
+	});
+
+	it.each([
+		[
+			'the application role writing the whole row again',
+			[`grant update on "organization" to jadwal_app`]
+		],
+		[
+			'the application role writing the public address',
+			[`grant update ("slug") on "organization" to jadwal_app`]
+		],
+		[
+			'the application role writing the state of the organisation',
+			[`grant update ("status") on "organization" to jadwal_app`]
+		],
+		[
+			'a piece of information the application role can no longer write',
+			[`revoke update ("announcement") on "organization" from jadwal_app`]
+		],
+		[
+			'a setting the application role can no longer write',
+			[`revoke update ("greeting") on "organization" from jadwal_app`]
+		],
+		[
+			'an editor writing the information',
+			[
+				`alter policy "organization_update" on "organization"
+					using ("id" = (select jadwal.current_org_id()))
+					with check ("id" = (select jadwal.current_org_id()))`
+			]
+		],
+		[
+			'a piece of information that lost its constraint',
+			[`alter table "organization" drop constraint "organization_website_ck"`]
+		],
+		[
+			'a piece of information that became mandatory',
+			[
+				// Sous le drapeau d'entretien : hors de lui, le propriétaire n'écrit aucune ligne (ADR 0019).
+				`set local jadwal.maintenance = 'on'`,
+				`update "organization" set "address" = 'x' where "address" is null`,
+				`alter table "organization" alter column "address" set not null`
+			]
+		],
+		['a column that went away', [`alter table "organization" drop column "access_note"`]],
+		['the super-admin losing the row', [`revoke update on "organization" from jadwal_superadmin`]],
+		['the public role no longer reading', [`revoke select on "organization" from jadwal_public`]],
+		[
+			'the public role writing a piece of information',
+			[`grant update ("announcement") on "organization" to jadwal_public`]
+		]
+	])('refuses %s', async (_cas, etat) => {
+		expect(await refusDeLaPreuve(TAG, etat)).toEqual({
+			code: 'P0001',
+			message: expect.stringMatching(/^organization(\.|_update| )/)
 		});
 	});
 });

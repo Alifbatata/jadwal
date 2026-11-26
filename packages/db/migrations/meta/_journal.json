@@ -575,6 +575,20 @@
       "when": 1793394586130,
       "tag": "0081_access_request_resolve_rights",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1795689908433,
+      "tag": "0082_organization_info",
+      "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1795689968433,
+      "tag": "0083_organization_info_rights",
+      "breakpoints": true
     }
   ]
 }

@@ -299,6 +299,17 @@ const GESTURES: Gesture[] = [
 		admin: 1
 	},
 	{
+		name: '/reglages ?/infos : adresse, contact, accès, annonce (organization, update)',
+		statement: () => sql`
+			update "organization" set "address" = 'Rue de l’Exemple 12', "contact_phone" = '+41 32 000 00 00',
+				"contact_email" = 'contact@example.org', "website" = 'https://www.example.org/',
+				"access_note" = 'Bus 4', "announcement" = 'Salle fermée', "updated_at" = now()
+			where "id" = ${a.id}
+			returning "id"
+		`,
+		admin: 1
+	},
+	{
 		name: '/reglages ?/modulePrieres : éteindre le module des prières (organization, update)',
 		statement: () => sql`
 			update "organization" set "prayer_module" = false, "updated_at" = now()

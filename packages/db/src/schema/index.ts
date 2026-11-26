@@ -321,6 +321,20 @@ export const organization = pgTable(
 		 * de la même façon, et personne n'a envie de corriger la même ligne chaque semaine.
 		 */
 		greeting: text().notNull().default('Salam alaykoum'),
+		/**
+		 * Ce que l'organisation dit d'elle, sur l'onglet Infos de sa page publique (étape 24, ADR 0052,
+		 * docs/maquettes/public-infos.md) : six textes bruts, tous facultatifs. Absent se dit `null`,
+		 * jamais une chaîne vide. Ils vivent ici pour la même raison que `prayer_module` : la politique
+		 * publique donne déjà cette ligne à tout le monde. Ce sont des informations publiques par
+		 * nature ; rien de privé n'a sa place dans ces colonnes.
+		 */
+		address: text(),
+		contactPhone: text('contact_phone'),
+		contactEmail: text('contact_email'),
+		website: text(),
+		accessNote: text('access_note'),
+		/** L'annonce du moment, montrée en tête de la vue « Aujourd'hui » et de l'onglet Infos. */
+		announcement: text(),
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
 	},
@@ -336,6 +350,37 @@ export const organization = pgTable(
 		ck('organization_status_ck', oneOf(table.status, ORGANIZATION_STATUSES)),
 		ck('organization_language_ck', isNonEmptyList(table.enabledLanguages)),
 		ck('organization_greeting_ck', sql`length(btrim(${table.greeting})) > 0`),
+		// Les informations (étape 24). Chacune est absente, ou dit quelque chose dans sa longueur :
+		// un texte fait de blancs n'est pas une information. Les classes POSIX évitent tout antislash.
+		ck(
+			'organization_address_ck',
+			sql`${table.address} is null or (${table.address} !~ '^[[:space:]]*$' and char_length(${table.address}) <= 300)`
+		),
+		ck(
+			'organization_access_note_ck',
+			sql`${table.accessNote} is null or (${table.accessNote} !~ '^[[:space:]]*$' and char_length(${table.accessNote}) <= 1000)`
+		),
+		ck(
+			'organization_announcement_ck',
+			sql`${table.announcement} is null or (${table.announcement} !~ '^[[:space:]]*$' and char_length(${table.announcement}) <= 500)`
+		),
+		// Les trois champs d'une ligne : aucun caractère de commande, donc aucun retour à la ligne.
+		ck(
+			'organization_contact_phone_ck',
+			sql`${table.contactPhone} is null or (${table.contactPhone} !~ '^[[:space:]]*$' and ${table.contactPhone} !~ '[[:cntrl:]]' and char_length(${table.contactPhone}) <= 40)`
+		),
+		// La forme d'une adresse électronique, sans plus : une arobase, rien de blanc. Le formulaire
+		// en dit davantage ; la base refuse seulement ce qui ne peut pas devenir un lien `mailto:`.
+		ck(
+			'organization_contact_email_ck',
+			sql`${table.contactEmail} is null or (${table.contactEmail} ~ '^[^@[:space:][:cntrl:]]+@[^@[:space:][:cntrl:]]+$' and char_length(${table.contactEmail}) <= 254)`
+		),
+		// Le site s'ouvre par un lien : il commence par `http://` ou `https://`, et rien d'autre ne
+		// passe, `javascript:` compris.
+		ck(
+			'organization_website_ck',
+			sql`${table.website} is null or (${table.website} ~ '^https?://[^[:space:][:cntrl:]]+$' and char_length(${table.website}) <= 300)`
+		),
 		ck(
 			'organization_default_language_ck',
 			sql`${table.defaultLanguage} = any(${table.enabledLanguages})`
