@@ -7129,14 +7129,22 @@ async function coursAvantUnePriere(page) {
 async function ongletDesPrieres(visiteur) {
 	await retour('C4', async () => {
 		await ouvrir(visiteur, `/m/${ORGANISATION.slug}`);
-		const vues = await visiteur.locator('nav.vues a').allTextContents();
+		// Depuis l'étape 24, hors du cadre du widget, l'onglet « Prières » est dans la navigation
+		// principale, et la liste des vues ne garde que celles du programme.
+		const lus = async (liste) =>
+			(await visiteur.locator(`${liste} a`).allTextContents()).map((lien) => lien.trim()).join('|');
+		const onglets = await lus('nav.onglets');
+		const vues = await lus('nav.vues');
 		verifier(
-			'la page publique propose quatre vues, dont « Prières »',
-			vues.map((vue) => vue.trim()).join('|') === 'Semaine|Tous les cours|Mois|Prières',
-			vues.map((vue) => vue.trim()).join(', ')
+			'la page publique propose l’onglet « Prières » dans sa navigation principale, et les trois vues du programme',
+			onglets === 'Aujourd’hui|Programme|Prières' && vues === 'Semaine|Tous les cours|Mois',
+			`${onglets} ; ${vues}`
 		);
 		// Le même chemin, une autre vue : on attend la vue dans l'adresse, pas le chemin.
-		await visiteur.locator('nav.vues').getByRole('link', { name: 'Prières', exact: true }).click();
+		await visiteur
+			.locator('nav.onglets')
+			.getByRole('link', { name: 'Prières', exact: true })
+			.click();
 		await visiteur.waitForURL((adresse) => adresse.searchParams.get('vue') === 'prieres');
 		await visiteur.waitForLoadState('networkidle');
 		await lireLEcran(visiteur);
@@ -7167,8 +7175,8 @@ async function ongletDesPrieres(visiteur) {
 			'en arabe, l’onglet « مواقيت الصلاة », de droite à gauche, avec le jour en chiffres latins',
 			{
 				'l’onglet « مواقيت الصلاة »':
-					(await visiteur.locator('nav.vues a[aria-current="page"]').count()) === 1 &&
-					(await visiteur.locator('nav.vues a[aria-current="page"]').textContent())?.trim() ===
+					(await visiteur.locator('nav.onglets a[aria-current="page"]').count()) === 1 &&
+					(await visiteur.locator('nav.onglets a[aria-current="page"]').textContent())?.trim() ===
 						'مواقيت الصلاة',
 				'dir="rtl"': (await racineDit(visiteur, 'dir')) === 'rtl',
 				'« اليوم، … »': jourArabe.startsWith('اليوم، '),
@@ -10811,7 +10819,7 @@ D1 | le flux agenda (?lang=en) dit « 15 min after Maghrib » pour « Tafsir du 
 D1 | le flux agenda (?lang=en) dit « After Maghrib » pour « Cercle de lecture », comme la page, à l’heure que le calcul donne pour la localité
 C2 | le flux agenda (?lang=ar) dit « بعد المغرب بـ15 دقيقة » pour « Tafsir du soir », comme la page, à l’heure que le calcul donne pour la localité
 C2 | le flux agenda (?lang=ar) dit « بعد المغرب » pour « Cercle de lecture », comme la page, à l’heure que le calcul donne pour la localité
-C4 | la page publique propose quatre vues, dont « Prières »
+C4 | la page publique propose l’onglet « Prières » dans sa navigation principale, et les trois vues du programme
 C4 | l’onglet montre les heures du jour, adhan et iqama, les sept prochains jours et la prière du vendredi
 C4 | en arabe, l’onglet « مواقيت الصلاة », de droite à gauche, avec le jour en chiffres latins
 C4 | /m/centre-parcours/ar?vue=prieres : aucun chiffre arabe oriental
