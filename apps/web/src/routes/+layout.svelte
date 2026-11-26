@@ -221,6 +221,14 @@
 	:global(body:has([data-jadwal-embed])) {
 		display: flow-root;
 	}
+	/* Une page publique dit elle-même qu'elle est claire, et pose son fond (étape 24). Ses couleurs
+	   de texte sont écrites pour un fond blanc : sans cela, une fenêtre d'application installée, un
+	   thème sombre forcé ou un cadre posé sur un site sombre montraient du texte sombre sur du
+	   sombre. */
+	:global(html:has(.page)) {
+		background: #fff;
+		color-scheme: light;
+	}
 	header,
 	main,
 	footer,

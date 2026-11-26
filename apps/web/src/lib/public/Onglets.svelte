@@ -85,4 +85,59 @@
 		border-radius: 0.375rem;
 		padding: 0 0.6rem;
 	}
+
+	/* Sur un téléphone, la navigation tient en bas de l'écran, à portée du pouce, comme dans une
+	   application (étape 24, ADR 0053). Du CSS seul : la page publique n'a pas de script. La barre
+	   reste dans l'en-tête pour qui lit la page dans l'ordre, clavier ou lecteur d'écran ; seule sa
+	   place à l'écran change. Elle n'est jamais rendue dans le cadre du widget, où une barre fixe
+	   suivrait la hauteur du cadre et non celle de l'écran. */
+	@media (max-width: 40rem) {
+		nav {
+			position: fixed;
+			inset-inline: 0;
+			bottom: 0;
+			z-index: 10;
+			flex-wrap: nowrap;
+			gap: 0.25rem;
+			margin: 0;
+			/* L'encoche et la barre de gestes d'un téléphone : la barre monte d'autant. */
+			padding: 0.25rem 0.25rem calc(0.25rem + env(safe-area-inset-bottom, 0px));
+			background: #fff;
+			border-top: 1px solid #ddd;
+		}
+		/* Des onglets de même largeur, quel que soit leur libellé : « Gebetszeiten » ne pousse pas
+		   « Heute ». Un libellé trop long passe sur deux lignes au lieu de déborder. */
+		a {
+			flex: 1 1 0;
+			min-width: 0;
+			min-height: 48px;
+			justify-content: center;
+			text-align: center;
+			text-decoration: none;
+			font-size: 0.85rem;
+			line-height: 1.15;
+			padding: 0 0.2rem;
+			overflow-wrap: anywhere;
+		}
+		a[aria-current] {
+			padding: 0 0.2rem;
+		}
+		/* Le bas de la page ne passe pas sous la barre, et un élément qui prend le focus au clavier
+		   n'est pas caché derrière elle (WCAG 2.4.11). */
+		:global(html:has(nav.onglets)) {
+			scroll-padding-bottom: 4.5rem;
+		}
+		:global(body:has(nav.onglets)) {
+			padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+		}
+	}
+
+	/* À l'impression, une barre fixe se répéterait sur chaque feuille : elle reprend sa place. */
+	@media print {
+		nav {
+			position: static;
+			border: 0;
+			padding: 0;
+		}
+	}
 </style>
