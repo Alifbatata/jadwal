@@ -262,7 +262,45 @@ gardée au récapitulatif. Ce qu'elle n'arrête pas : qui tient le registre, le 
 puisqu'elle croit l'étiquette de révision que la CI pose sur l'image, ni qui modifie le playbook
 ou pointe ses adresses vers un faux service. C'est une garde contre l'oubli et la hâte.
 
+**13. Le relais du direct est un programme à part, qui ne garde rien.** Depuis l'étape 25, le
+sermon traduit passe par `apps/live` (ADR 0055). Ce programme n'a ni base ni comptes, et ne lit
+aucune variable du serveur web. Il portera la clé du service de traduction, que le serveur web ne
+voit jamais. Sans réglage, il refuse de démarrer : rien n'écoute.
+
+Pour diffuser, il faut un jeton que le serveur web signe pour un responsable connecté : une
+organisation, une échéance, une signature HMAC-SHA-256. Le jeton voyage dans le premier message de
+la liaison, jamais dans son adresse. Faux, échu ou signé par un autre, il reçoit le même refus. La
+signature est comparée en temps constant, avant que rien du contenu soit lu. Un poste qui ne
+s'annonce pas en cinq secondes est décroché, et un message de plus de 64 Kio ferme la liaison.
+
+Écouter ne demande ni compte ni cookie, comme lire une page publique. Une demande de navigateur
+venue d'une autre origine que celle du site est refusée. Qui écoute n'a rien à dire : son premier
+message ferme sa liaison.
+
+Un direct s'arrête seul : à la durée maximale, au silence du poste, quand sa liaison tombe, au
+plafond du mois, quand le poste envoie plus de son que le temps n'en permet, quand le traducteur
+lâche, ou quand le compteur du mois ne s'écrit plus. Le plafond se compte en temps facturé, dans
+un fichier qui ne porte que le mois et un nombre ; illisible, il arrête le programme au démarrage.
+
+Ni le son ni le texte ne sont écrits nulle part, et le relais ne les garde pas en mémoire. Son
+journal dit qu'un direct a commencé et fini, pour quelle organisation, en quelles langues, combien
+de temps et pourquoi ; ni l'adresse de qui que ce soit, ni un message d'erreur du service de
+traduction. Pour l'instant, le seul traducteur est simulé : il n'appelle personne, et la voix ne
+quitte pas le relais.
+
 ## Ce qui n'est pas couvert
+
+- **Le secret du direct ouvre un direct au nom de n'importe quelle organisation.** Qui tient
+  `JADWAL_LIVE_SECRET` fabrique un jeton valable : il fait dépenser jusqu'au plafond du mois, et
+  fait entendre ce qu'il veut à ceux qui écoutent. Il n'ouvre ni la base ni les comptes. C'est un
+  secret d'hébergement, distinct de celui des sessions.
+- **Les places d'écoute se prennent.** Rien ne limite encore le nombre de liaisons d'une même
+  adresse : un seul programme peut ouvrir toutes les places et empêcher d'écouter. La limite par
+  adresse revient au mandataire ; elle sera réglée avec l'épreuve de charge de l'étape 25.
+- **Le plafond du direct est celui de l'instance.** Une organisation peut consommer le mois des
+  autres. Et un arrêt brutal du relais perd jusqu'à dix secondes de compte par langue.
+- **Quand un vrai service traduira, la voix partira chez lui.** Ce qu'il en fait ne relève plus de
+  jadwal. Les conditions d'utilisation devront le dire avant la première mise en ligne du direct.
 
 - **Un superutilisateur du serveur PostgreSQL voit tout.** Aucune politique ne s'applique à lui.
   C'est pourquoi il ne sert qu'à l'amorçage, et jamais à l'application — et depuis l'ADR 0040,
@@ -347,6 +385,15 @@ refuse tout lien vers un autre domaine que les deux services d'agenda ;
 du widget et sur une page d'erreur, la portée du travailleur de service, et qu'aucun n'est
 enregistré dans l'espace des responsables ; `src/lib/hors-reseau/copie.test.ts` éprouve ce qu'il
 accepte de garder.
+
+Les tests d'`apps/live` éprouvent le relais sans réseau extérieur ni clé. `src/relay.test.ts`
+avance une horloge à la main : chaque arrêt seul y est joué, le français n'y arrive qu'à ceux qui
+écoutent le français de cette organisation, et le journal y est comparé ligne à ligne.
+`src/token.test.ts` refuse un jeton échu, altéré, signé par un autre ou mal formé.
+`src/server.test.ts` ouvre de vraies liaisons : mauvais jeton, premier message qui ne vient pas,
+origine étrangère, message trop gros, appareil muet. `tests/program.test.ts` construit le
+programme et le lance comme en production : il refuse de démarrer sans réglage, et après un
+direct, ni sa sortie ni son dossier ne portent le son ou le texte.
 
 `pnpm parcours:test` rejoue ce qu'une organisation vit, dans Chrome, sur l'image de production et
 une base neuve lancées par Docker : la passkey du super-admin, l'invitation, les conditions à

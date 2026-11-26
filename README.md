@@ -45,6 +45,7 @@ Le cadrage complet est dans [`docs/CADRAGE.md`](docs/CADRAGE.md), les décisions
 
 ```
 apps/web/          SvelteKit (adapter-node) : espace des responsables, pages publiques, API, ICS
+apps/live/         relais du direct : la voix d'un poste, traduite, distribuée par langue (ADR 0055)
 packages/core/     bibliothèque TypeScript pure : récurrence, exceptions, prières, export ICS
 packages/db/       Drizzle + PostgreSQL : schéma, migrations, isolation par organisation (RLS)
 packages/widget/   élément <jadwal-widget> en TypeScript pur, sans dépendance, un seul fichier JS

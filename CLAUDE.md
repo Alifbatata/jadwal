@@ -90,6 +90,8 @@ absent du dépôt public :
 ## Structure
 
 - `apps/web/` : SvelteKit (adapter-node), espace des responsables, pages publiques, API, flux ICS.
+- `apps/live/` : le relais du direct (ADR 0055), un programme Node à part du serveur web. Une
+  dépendance, `ws`. Éteint sans `JADWAL_LIVE_TRANSLATOR` ; le seul traducteur est simulé.
 - `packages/core/` : bibliothèque TypeScript pure (récurrence, exceptions, prières, ICS).
 - `packages/db/` : Drizzle + PostgreSQL, RLS (vide jusqu'à l'étape 2).
 - `packages/widget/` : custom element `<jadwal-widget>` en TypeScript pur, sans dépendance à

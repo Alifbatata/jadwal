@@ -98,6 +98,7 @@ DKIM
 DMARC
 MTA
 HMAC
+PCM
 GnuPG
 IANA
 RLS
@@ -154,6 +155,7 @@ Vitest
 ESLint
 Prettier
 WebAuthn
+WebSocket
 BuildKit
 systemd
 rclone

@@ -55,8 +55,8 @@ paquet qui a de tels fichiers porte un script `test:temps`, et son script `test`
 `--exclude "**/*.temps.test.ts"`, écrit tel quel, comme dans `apps/web/package.json` : sinon les
 deux commandes refusent de rien lancer, et nomment le paquet (`pnpm tests:test` le fait voir).
 Aujourd'hui : la recherche sur toute la liste des localités, les écritures croisées du transport de
-courriel, les deux composants rendus par un Vite à eux (l'onglet des prières et le pied de page), et
-l'écart de temps du lien de connexion.
+courriel, les deux composants rendus par un Vite à eux (l'onglet des prières et le pied de page),
+l'écart de temps du lien de connexion, et la sonde des liaisons du relais du direct.
 
 Leurs marges sont tirées d'une mesure, écrite en commentaire à côté de chacune : le fichier lancé
 cinq fois sur un poste chargé, et le maximum relevé. Un délai vaut **quinze fois** ce maximum,

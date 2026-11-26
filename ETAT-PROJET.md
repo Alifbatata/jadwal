@@ -164,6 +164,13 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   4 439 tests, tous réussis, aucun sauté, et 24 tests liés au temps, à part ; parcours complet :
   502 vérifications, dont 26 pour l'étape 24, et axe sans rien de sérieux sur 52 pages. Mesurés
   sur le poste le 26.11.2026 ; la CI les rejoue à chaque poussée.
+- **Étape 25** (le direct : le sermon du vendredi traduit à l'oral) : **ouverte le 26.11.2026**.
+  Cinq chantiers : le relais, le poste « Diffuser », l'écoute, la preuve sur un vrai sermon, puis
+  la charge, le parcours et les conditions. **Le premier est fait** : `apps/live`, le relais du
+  direct (ADR 0055), avec un traducteur simulé. Aucun écran ne s'en sert encore, aucun service de
+  traduction n'est branché, et rien ne quitte le relais. Le service sera choisi au quatrième
+  chantier, sur un vrai sermon : il y faudra une clé chez chaque service essayé et un
+  enregistrement, que l'exploitant fournira.
 
 ## Fait
 
@@ -1097,6 +1104,33 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
   attendent la relecture d'un locuteur. Les conditions d'utilisation ne nomment pas encore les
   six champs d'information : ce sera fait avec la version que demandera l'étape 25.
 
+Étape 25 (le direct), en cours ; premier chantier livré sur `main`, pas déployé :
+
+- **Le relais du direct**, `apps/live` (ADR 0055) : un programme Node à part du serveur web, sans
+  base ni comptes. Le poste « Diffuser » lui envoie la voix par WebSocket ; il la passe à un
+  traducteur et distribue ce qui en revient, son et texte, à ceux qui écoutent, par organisation
+  et par langue. Une dépendance à l'exécution, `ws` : Node n'a pas de serveur WebSocket.
+- **Le traducteur simulé**, le seul pour l'instant : il rend le son reçu et un texte qui se dit
+  simulé, sans réseau ni clé. Les trois services candidats ont été relus dans leur documentation ;
+  tous se parlent en WebSocket et prennent le même format de son (PCM 16 bits, mono, 24 kHz), que
+  le relais adopte sans rien convertir.
+- **Qui diffuse** : un jeton court, signé par le serveur web avec un secret partagé, présenté dans
+  le premier message de la liaison. Le serveur web ne le signe pas encore : c'est le chantier
+  suivant. **Qui écoute** : sans compte ni cookie.
+- **Les arrêts seuls** : durée maximale, silence du poste, liaison tombée, plafond du mois, débit
+  anormal, traducteur qui lâche, compteur qui ne s'écrit plus. Le plafond se compte en temps
+  facturé (durée fois nombre de langues), dans un fichier qui ne porte que le mois et un nombre.
+- **Aucune trace** : ni son ni texte sur le disque, dans le journal ou en mémoire.
+- **Éteint sans réglage** : sans `JADWAL_LIVE_TRANSLATOR`, le programme refuse de démarrer.
+- **Les tests** : 90 pour le relais, et 1 lié au temps, à part ; 4 529 dans tout le dépôt, tous
+  réussis, aucun sauté, et 25 liés au temps. Le programme y est construit puis lancé comme en
+  production. Quinze fautes introduites exprès dans le code ont toutes été attrapées. L'une des
+  épreuves a trouvé un défaut : sur un port déjà pris, le programme restait en vie sans rien
+  écouter.
+- **Ce qui n'est pas fait** : aucun écran ; aucune image Docker du relais ; aucun pas du parcours ;
+  le format du son servi aux téléphones, trop lourd tel quel pour une salle pleine ; la limite du
+  nombre de liaisons par adresse.
+
 **Un script ou une commande qu'aucun test ne _lance_ n'est pas éprouvé.** C'est la règle du dépôt
 depuis l'étape 12, et elle répond à la question laissée ouverte à l'étape 11.
 
@@ -1152,7 +1186,7 @@ tests.
 | 22    | Service gratuit, accès donné par le super-admin                     | terminée |
 | 23    | SvelteKit 3, origine lue au démarrage, licences du code incorporé   | terminée |
 | 24    | L'application web d'une organisation, sans le direct                | terminée |
-| 25    | Le direct : le sermon du vendredi traduit à l'oral                  | à venir  |
+| 25    | Le direct : le sermon du vendredi traduit à l'oral                  | en cours |
 | 26    | Hébergement, mise en ligne, coque native, magasins                  | à venir  |
 
 Plus tard : pré-traduction automatique validée par le responsable, qui servirait aussi au sermon
