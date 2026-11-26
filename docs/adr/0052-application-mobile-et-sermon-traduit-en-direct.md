@@ -11,7 +11,7 @@
 Jusqu'à l'étape 23, jadwal publie le programme d'une organisation par quatre sorties, toutes sur le
 web : un widget, une page publique, un flux agenda et des messages à copier.
 
-Le chef de projet a changé le but le 25.11.2026. Il veut une application qu'on installe sur le
+Le chef de projet a changé le but le 25 novembre 2026. Il veut une application qu'on installe sur le
 téléphone, propre à l'organisation qu'il sert : elle affiche son programme et ses informations, et
 elle traduit le sermon du vendredi en direct, à l'oral, dans plusieurs langues, pendant que l'imam
 parle. Les responsables remplissent le programme ; tout le reste se consulte. D'autres fonctions
@@ -52,10 +52,10 @@ L'application vit dans `apps/mobile`. Une construction est réglée pour une seu
 nom, son icône, sa couleur, l'adresse de son serveur. Ces réglages sont des variables de
 construction, jamais des valeurs écrites dans le code.
 
-Elle paraît sur l'App Store et sur Google Play dès sa première version (chef de projet, 25.11.2026).
-La coque native est choisie sur preuve, par un ADR à part, avec trois critères : le son continue
-écran verrouillé sur iPhone, l'application iPhone se construit sans Mac, et elle porte assez de
-fonctions natives pour ne pas être un site emballé.
+Elle paraît sur l'App Store et sur Google Play dès sa première version (décision du 25 novembre
+2026). La coque native est choisie sur preuve, par un ADR à part, avec trois critères : l'écoute se
+poursuit écran verrouillé sur iPhone, l'application iPhone se construit sans Mac, et elle porte
+assez de fonctions natives pour ne pas être un site emballé.
 
 Elle a cinq onglets : Aujourd'hui, Programme, Prières, Direct, Infos. Elle parle les cinq langues de
 jadwal, et le dernier programme reçu reste lisible sans réseau.
@@ -76,8 +76,8 @@ de traduction ; le serveur web ne la voit jamais.
   auto-hébergée n'est pas obligée de payer un tiers.
 
 Le service de traduction n'est pas choisi ici. Il le sera à l'étape 25, après avoir passé un vrai
-enregistrement de sermon dans la voie voix à voix et dans la voie du texte lu par le téléphone, en
-mesurant la justesse, le retard et le coût. Un ADR consignera ce choix.
+enregistrement de sermon par la traduction voix à voix, puis par le texte traduit que lit le
+téléphone, en mesurant la justesse, le retard et le coût. Un ADR consignera ce choix.
 
 ### Trois étapes
 
