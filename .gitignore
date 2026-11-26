@@ -54,6 +54,9 @@ Thumbs.db
 # Corbeille de sortie du transport de courriel de développement : rien ne doit y être commité.
 .courriels/
 
+# Le compteur du mois du relais du direct, tel que `.env.example` le place en développement.
+.direct/
+
 # Les copies de travail du déploiement. L'original de chacune est dans `PRIVE/` — le coffre,
 # l'inventaire, les valeurs propres à l'installation — et ce qui est posé ici ne vit que le temps
 # d'un `ansible-playbook`. Ces lignes sont un filet : sous Windows, le déploiement se joue dans un

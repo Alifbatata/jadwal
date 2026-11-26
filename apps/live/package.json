@@ -1,0 +1,25 @@
+{
+	"name": "@jadwal/live",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Relais du direct de jadwal : la voix d'un poste, traduite, distribuée par langue à ceux qui écoutent.",
+	"license": "MIT",
+	"type": "module",
+	"scripts": {
+		"build": "tsc -p tsconfig.build.json",
+		"check": "tsc -p tsconfig.json",
+		"start": "node dist/index.js",
+		"test": "vitest run --exclude \"**/*.temps.test.ts\" --reporter=default --reporter=json --outputFile=.vitest-resultats.json",
+		"test:temps": "vitest run .temps.test. --reporter=default --reporter=json --outputFile=.vitest-temps-resultats.json"
+	},
+	"dependencies": {
+		"ws": "8.23.0"
+	},
+	"devDependencies": {
+		"@types/node": "26.5.1",
+		"@types/ws": "8.18.2",
+		"typescript": "catalog:",
+		"vite": "catalog:",
+		"vitest": "catalog:"
+	}
+}
