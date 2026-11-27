@@ -1,5 +1,6 @@
-// Les preuves des migrations 0073, 0074, 0075, 0076, 0081 et 0083 voient un état affaibli (étape 20,
-// relecture du chantier 1 ; étape 22 pour 0076 et 0081 ; étape 24 pour 0083). La preuve de 0079
+// Les preuves des migrations 0073, 0074, 0075, 0076, 0081, 0083 et 0085 voient un état affaibli
+// (étape 20, relecture du chantier 1 ; étape 22 pour 0076 et 0081 ; étape 24 pour 0083 ; étape 25
+// pour 0085). La preuve de 0079
 // n'est plus jouée ici :
 // elle disait que le super-admin lit la table des demandes et ne fait que lire, ce que 0081 change ;
 // la preuve de 0081 dit l'état entier de cette table, et reprend chacun de ses cas.
@@ -197,9 +198,12 @@ describe('la preuve de la migration 0081 (les demandes d’accès, et la répons
 
 describe('la preuve de la migration 0083 (ce que l’organisation dit d’elle)', () => {
 	const TAG = '0083_organization_info_rights';
+	// La migration 0085 donne en plus au rôle applicatif les langues du direct. La preuve de 0083 dit
+	// l'état que 0083 laisse : chaque essai part donc de cet état, la colonne du direct retirée.
+	const AVANT_0085 = [`revoke update ("live_language") on "organization" from jadwal_app`];
 
 	it('passes on the state the migration leaves', async () => {
-		expect(await refusDeLaPreuve(TAG, [])).toBeNull();
+		expect(await refusDeLaPreuve(TAG, AVANT_0085)).toBeNull();
 	});
 
 	it.each([
@@ -252,9 +256,78 @@ describe('la preuve de la migration 0083 (ce que l’organisation dit d’elle)'
 			[`grant update ("announcement") on "organization" to jadwal_public`]
 		]
 	])('refuses %s', async (_cas, etat) => {
-		expect(await refusDeLaPreuve(TAG, etat)).toEqual({
+		expect(await refusDeLaPreuve(TAG, [...AVANT_0085, ...etat])).toEqual({
 			code: 'P0001',
 			message: expect.stringMatching(/^organization(\.|_update| )/)
+		});
+	});
+});
+
+describe('la preuve de la migration 0085 (qui diffuse, et vers quelles langues)', () => {
+	const TAG = '0085_live_broadcast_rights';
+
+	it('passes on the state the migration leaves', async () => {
+		expect(await refusDeLaPreuve(TAG, [])).toBeNull();
+	});
+
+	it.each([
+		[
+			'the application role writing a whole membership again',
+			[`grant update on "membership" to jadwal_app`]
+		],
+		[
+			'the application role moving a membership to another account',
+			[`grant update ("user_id") on "membership" to jadwal_app`]
+		],
+		[
+			'the permission the application role can no longer write',
+			[`revoke update ("can_broadcast") on "membership" from jadwal_app`]
+		],
+		[
+			'the live languages the application role can no longer write',
+			[`revoke update ("live_language") on "organization" from jadwal_app`]
+		],
+		[
+			'the application role writing the public address',
+			[`grant update ("slug") on "organization" to jadwal_app`]
+		],
+		[
+			'an editor giving the permission',
+			[
+				`alter policy "membership_update" on "membership"
+					using ("organization_id" = (select jadwal.current_org_id()))
+					with check ("organization_id" = (select jadwal.current_org_id()))`
+			]
+		],
+		[
+			'an invitee who gives herself the permission',
+			[
+				`alter policy "membership_insert" on "membership" with check (
+					"organization_id" = (select jadwal.current_org_id())
+					and "user_id" = (select jadwal.current_user_id())
+					and jadwal.invited("organization_id", "user_id", "role"))`
+			]
+		],
+		[
+			'a permission given by default',
+			[`alter table "membership" alter column "can_broadcast" set default true`]
+		],
+		[
+			'live languages that lost their constraint',
+			[`alter table "organization" drop constraint "organization_live_language_ck"`]
+		],
+		[
+			'the super-admin losing a membership',
+			[`revoke update on "membership" from jadwal_superadmin`]
+		],
+		[
+			'the public role giving the permission',
+			[`grant update ("can_broadcast") on "membership" to jadwal_public`]
+		]
+	])('refuses %s', async (_cas, etat) => {
+		expect(await refusDeLaPreuve(TAG, etat)).toEqual({
+			code: 'P0001',
+			message: expect.stringMatching(/^(membership|organization)(\.|_update|_insert|_live| )/)
 		});
 	});
 });

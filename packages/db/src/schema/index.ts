@@ -112,6 +112,13 @@ export const ACCOUNT_LANGUAGES = ['fr', 'de', 'it', 'en', 'ar'] as const;
  */
 export const PUBLIC_LANGUAGES = ['fr', 'de', 'it', 'en', 'ar'] as const;
 /**
+ * Les langues vers lesquelles le direct sait traduire le sermon (ADR 0052) : français, allemand,
+ * italien, anglais, albanais, bosnien, turc. Ce ne sont pas celles du public : le sermon est dit en
+ * arabe, et l'albanais, le bosnien et le turc n'ont aucune page à eux. Chaque organisation choisit
+ * les siennes parmi celles-ci (migration 0085).
+ */
+export const LIVE_LANGUAGES = ['fr', 'de', 'it', 'en', 'sq', 'bs', 'tr'] as const;
+/**
  * Un cours est un brouillon ou il est publié. Un troisième état, « archivé », a existé jusqu'à
  * l'étape 19 sans qu'aucun écran le pose ; la migration 0067 l'a retiré.
  */
@@ -335,6 +342,15 @@ export const organization = pgTable(
 		accessNote: text('access_note'),
 		/** L'annonce du moment, montrée en tête de la vue « Aujourd'hui » et de l'onglet Infos. */
 		announcement: text(),
+		/**
+		 * Les langues vers lesquelles l'organisation fait traduire son direct, parmi
+		 * `LIVE_LANGUAGES` (étape 25, ADR 0056 amendée). Toutes par défaut. Le poste « Diffuser » n'offre
+		 * que celles-ci, croisées avec celles de l'instance, et le jeton les porte au relais.
+		 */
+		liveLanguages: text('live_language')
+			.array()
+			.notNull()
+			.default(sql`array['fr', 'de', 'it', 'en', 'sq', 'bs', 'tr']::text[]`),
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
 	},
@@ -391,6 +407,13 @@ export const organization = pgTable(
 		ck(
 			'organization_language_known_ck',
 			sql`${allOf(table.enabledLanguages, PUBLIC_LANGUAGES)} and ${oneOf(table.defaultLanguage, PUBLIC_LANGUAGES)}`
+		),
+		// Les langues du direct : au moins une, aucune absente, toutes parmi celles que le direct sait
+		// servir. Une liste vide ne veut pas dire « pas de direct » : c'est l'autorisation de diffuser
+		// qui en décide, pas les langues.
+		ck(
+			'organization_live_language_ck',
+			sql`${isNonEmptyList(table.liveLanguages)} and ${allOf(table.liveLanguages, LIVE_LANGUAGES)}`
 		),
 		pgPolicy('organization_select', {
 			as: 'permissive',
@@ -561,6 +584,12 @@ export const membership = pgTable(
 		organizationId: uuid('organization_id').notNull(),
 		userId: uuid('user_id').notNull(),
 		role: text().notNull(),
+		/**
+		 * L'autorisation de diffuser le direct (étape 25, ADR 0056 amendée), que la personne
+		 * responsable ou le super-admin entré donnent membre par membre. Elle ne sert qu'à un éditeur :
+		 * un `org_admin` diffuse d'office. Personne ne se l'accorde en entrant (migration 0085).
+		 */
+		canBroadcast: boolean('can_broadcast').notNull().default(false),
 		createdAt: createdAt(),
 		updatedAt: updatedAt()
 	},
@@ -630,9 +659,12 @@ export const membership = pgTable(
 			as: 'permissive',
 			for: 'insert',
 			to: appRole,
+			// Et l'autorisation de diffuser reste fausse : c'est l'invité qui écrit sa propre ligne, et
+			// il ne se la donne pas (migration 0085). Elle vient ensuite de la personne responsable.
 			withCheck: sql`${table.organizationId} = ${orgContext}
 				and ${table.userId} = ${userContext}
-				and jadwal.invited(${table.organizationId}, ${table.userId}, ${table.role})`
+				and jadwal.invited(${table.organizationId}, ${table.userId}, ${table.role})
+				and ${table.canBroadcast} = false`
 		}),
 		// Changer le rôle d'un membre ne vise qu'une personne déjà membre, donc déjà visible : rien
 		// ne fuit. Le dernier `org_admin` est protégé par un déclencheur, quel que soit l'appelant.

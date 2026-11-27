@@ -589,6 +589,20 @@
       "when": 1795689968433,
       "tag": "0083_organization_info_rights",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1795773469330,
+      "tag": "0084_live_broadcast",
+      "breakpoints": true
+    },
+    {
+      "idx": 85,
+      "version": "7",
+      "when": 1795773484963,
+      "tag": "0085_live_broadcast_rights",
+      "breakpoints": true
     }
   ]
 }

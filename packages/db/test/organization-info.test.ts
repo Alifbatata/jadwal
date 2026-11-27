@@ -207,6 +207,8 @@ describe('les informations d’une organisation', () => {
 				'default_language',
 				'enabled_language',
 				'greeting',
+				// Les langues du direct (étape 25, migration 0085).
+				'live_language',
 				'name',
 				'prayer_module',
 				'time_zone',

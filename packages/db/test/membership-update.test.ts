@@ -258,9 +258,11 @@ describe('modifier une adhésion : le rôle reste modifiable', () => {
 				order by a.attnum
 			`)
 		);
+		// Et l'autorisation de diffuser, depuis l'étape 25 (migration 0085) : elle ne rattache personne.
 		expect(columns.filter((column) => column.app).map((column) => column.name)).toEqual([
 			'role',
-			'updated_at'
+			'updated_at',
+			'can_broadcast'
 		]);
 		expect(columns.every((column) => column.superadmin)).toBe(true);
 
