@@ -219,6 +219,12 @@ export async function startServer(options: ServerOptions): Promise<RunningServer
 				// celui qui essaie.
 				const verified = verifyToken(settings.secret, message.token, clock.now());
 				if (!verified.ok) return refuseWith('token');
+				// Les langues de l'organisation, que le serveur web a signées : le poste en demande
+				// toutes ou une partie, jamais une autre (ADR 0056 amendée). Le relais vérifie ensuite
+				// qu'il les sert lui-même.
+				if (!message.languages.every((language) => verified.languages.includes(language))) {
+					return refuseWith('languages');
+				}
 				const opened = relay.open(verified.organization, message.languages, {
 					send: (reply) => send(socket, reply),
 					close: () => socket.close(NORMAL)

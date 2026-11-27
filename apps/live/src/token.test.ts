@@ -14,18 +14,34 @@ function forge(payload: string): string {
 
 describe('le jeton du poste « Diffuser »', () => {
 	it("se vérifie avec le secret qui l'a signé, et rend l'organisation", () => {
-		const token = signToken(SECRET, { organization: 'centre-demo', expiresAt: NOW + 60_000 });
-		expect(verifyToken(SECRET, token, NOW)).toEqual({ ok: true, organization: 'centre-demo' });
+		const token = signToken(SECRET, {
+			organization: 'centre-demo',
+			expiresAt: NOW + 60_000,
+			languages: ['fr', 'de']
+		});
+		expect(verifyToken(SECRET, token, NOW)).toEqual({
+			ok: true,
+			organization: 'centre-demo',
+			languages: ['fr', 'de']
+		});
 	});
 
 	it("est refusé à l'échéance, à la milliseconde", () => {
-		const token = signToken(SECRET, { organization: 'centre-demo', expiresAt: NOW + 60_000 });
+		const token = signToken(SECRET, {
+			organization: 'centre-demo',
+			expiresAt: NOW + 60_000,
+			languages: ['fr', 'de']
+		});
 		expect(verifyToken(SECRET, token, NOW + 59_999).ok).toBe(true);
 		expect(verifyToken(SECRET, token, NOW + 60_000)).toEqual({ ok: false, reason: 'expired' });
 	});
 
 	it("est refusé sous un autre secret, ou si l'on y change une lettre", () => {
-		const token = signToken(SECRET, { organization: 'centre-demo', expiresAt: NOW + 60_000 });
+		const token = signToken(SECRET, {
+			organization: 'centre-demo',
+			expiresAt: NOW + 60_000,
+			languages: ['fr', 'de']
+		});
 		expect(verifyToken(`${SECRET}x`, token, NOW)).toEqual({ ok: false, reason: 'signature' });
 
 		const [body, signature] = token.split('.') as [string, string];
@@ -56,12 +72,30 @@ describe('le jeton du poste « Diffuser »', () => {
 			'null',
 			'[]',
 			JSON.stringify({ o: 'centre-demo', e: exp }),
-			JSON.stringify({ o: 'centre-demo', e: exp, p: 'listen' }),
-			JSON.stringify({ o: 'Centre Démo', e: exp, p: 'broadcast' }),
-			JSON.stringify({ o: '', e: exp, p: 'broadcast' }),
-			JSON.stringify({ o: 'centre-demo', e: String(exp), p: 'broadcast' }),
-			JSON.stringify({ o: 'centre-demo', e: 1.5, p: 'broadcast' }),
-			JSON.stringify({ o: 'a'.repeat(101), e: exp, p: 'broadcast' })
+			// Les langues : présentes, une liste, au moins une, des codes, sans doublon. Un jeton sans
+			// elles laisserait le poste ouvrir vers n'importe quelle langue (ADR 0056 amendée).
+			JSON.stringify({ o: 'centre-demo', e: exp, p: 'broadcast' }),
+			JSON.stringify({ o: 'centre-demo', e: exp, l: [], p: 'broadcast' }),
+			JSON.stringify({ o: 'centre-demo', e: exp, l: 'fr', p: 'broadcast' }),
+			JSON.stringify({ o: 'centre-demo', e: exp, l: ['FR'], p: 'broadcast' }),
+			JSON.stringify({ o: 'centre-demo', e: exp, l: ['fr', 'fr'], p: 'broadcast' }),
+			JSON.stringify({ o: 'centre-demo', e: exp, l: [1], p: 'broadcast' }),
+			// Cinquante et une langues distinctes, de la bonne forme : « aa » à « by ». Plus que le
+			// relais n'en accepte à l'ouverture.
+			JSON.stringify({
+				o: 'centre-demo',
+				e: exp,
+				l: Array.from({ length: 51 }, (_, i) =>
+					String.fromCharCode(97 + Math.floor(i / 26), 97 + (i % 26))
+				),
+				p: 'broadcast'
+			}),
+			JSON.stringify({ o: 'centre-demo', e: exp, l: ['fr'], p: 'listen' }),
+			JSON.stringify({ o: 'Centre Démo', e: exp, l: ['fr'], p: 'broadcast' }),
+			JSON.stringify({ o: '', e: exp, l: ['fr'], p: 'broadcast' }),
+			JSON.stringify({ o: 'centre-demo', e: String(exp), l: ['fr'], p: 'broadcast' }),
+			JSON.stringify({ o: 'centre-demo', e: 1.5, l: ['fr'], p: 'broadcast' }),
+			JSON.stringify({ o: 'a'.repeat(101), e: exp, l: ['fr'], p: 'broadcast' })
 		];
 		for (const contenu of faux) {
 			expect(verifyToken(SECRET, forge(contenu), NOW), contenu).toEqual({
@@ -72,7 +106,18 @@ describe('le jeton du poste « Diffuser »', () => {
 	});
 
 	it("refuse de signer pour une organisation qui n'en a pas la forme", () => {
-		expect(() => signToken(SECRET, { organization: 'Centre Démo', expiresAt: NOW })).toThrow();
+		expect(() =>
+			signToken(SECRET, { organization: 'Centre Démo', expiresAt: NOW, languages: ['fr'] })
+		).toThrow();
+	});
+
+	it('refuse de signer sans langue, ou avec une langue qui n’en a pas la forme', () => {
+		for (const languages of [[], ['FR'], ['fr', 'fr'], ['français']]) {
+			expect(
+				() => signToken(SECRET, { organization: 'centre-demo', expiresAt: NOW, languages }),
+				JSON.stringify(languages)
+			).toThrow();
+		}
 	});
 });
 
@@ -84,18 +129,23 @@ describe('le jeton témoin, commun au serveur web et au relais', () => {
 	const WITNESS_SECRET = 'secret-temoin-du-direct-partage-par-les-deux-tests';
 	const WITNESS_EXPIRY = 1_795_000_000_000;
 	const WITNESS =
-		'eyJvIjoibW9zcXVlZS10ZW1vaW4iLCJlIjoxNzk1MDAwMDAwMDAwLCJwIjoiYnJvYWRjYXN0In0.GHmXfhCkFatGWq8h_NJ5SGdUbSkggbc1PxZHWuMk0OY';
+		'eyJvIjoibW9zcXVlZS10ZW1vaW4iLCJlIjoxNzk1MDAwMDAwMDAwLCJsIjpbImZyIiwic3EiLCJ0ciJdLCJwIjoiYnJvYWRjYXN0In0.oDbJFiAabsWyYaiB7lXKyNFme-2gvK3M4_E2H-3TEM0';
 
 	it('est celui que le relais signe', () => {
 		expect(
-			signToken(WITNESS_SECRET, { organization: 'mosquee-temoin', expiresAt: WITNESS_EXPIRY })
+			signToken(WITNESS_SECRET, {
+				organization: 'mosquee-temoin',
+				expiresAt: WITNESS_EXPIRY,
+				languages: ['fr', 'sq', 'tr']
+			})
 		).toBe(WITNESS);
 	});
 
 	it('est accepté par le relais', () => {
 		expect(verifyToken(WITNESS_SECRET, WITNESS, WITNESS_EXPIRY - 1)).toEqual({
 			ok: true,
-			organization: 'mosquee-temoin'
+			organization: 'mosquee-temoin',
+			languages: ['fr', 'sq', 'tr']
 		});
 	});
 });

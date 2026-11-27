@@ -196,7 +196,11 @@ describe('le programme, allumé', () => {
 		poste.socket.send(
 			JSON.stringify({
 				type: 'open',
-				token: signToken(SECRET, { organization: 'centre-demo', expiresAt: Date.now() + 60_000 }),
+				token: signToken(SECRET, {
+					organization: 'centre-demo',
+					expiresAt: Date.now() + 60_000,
+					languages: ['fr', 'de']
+				}),
 				languages: ['fr', 'de']
 			})
 		);
@@ -250,7 +254,11 @@ describe('le programme, allumé', () => {
 		poste.socket.send(
 			JSON.stringify({
 				type: 'open',
-				token: signToken(SECRET, { organization: 'centre-demo', expiresAt: Date.now() + 60_000 }),
+				token: signToken(SECRET, {
+					organization: 'centre-demo',
+					expiresAt: Date.now() + 60_000,
+					languages: ['fr', 'de']
+				}),
 				languages: ['fr']
 			})
 		);

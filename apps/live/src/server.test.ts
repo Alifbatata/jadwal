@@ -75,8 +75,13 @@ function connect(server: RunningServer, path: string, options: WebSocket.ClientO
 	};
 }
 
-function token(organization = 'centre-demo', expiresAt = Date.now() + 60_000): string {
-	return signToken(SECRET, { organization, expiresAt });
+/** Par défaut, le jeton permet toutes les langues du relais de ces tests. */
+function token(
+	organization = 'centre-demo',
+	expiresAt = Date.now() + 60_000,
+	languages: readonly string[] = SETTINGS.languages
+): string {
+	return signToken(SECRET, { organization, expiresAt, languages });
 }
 
 let server: RunningServer | undefined;
@@ -195,7 +200,11 @@ describe('le poste « Diffuser » refusé', () => {
 		const faux = [
 			'nimporte.quoi',
 			token('centre-demo', Date.now() - 1),
-			signToken(`${SECRET}-autre`, { organization: 'centre-demo', expiresAt: Date.now() + 60_000 })
+			signToken(`${SECRET}-autre`, {
+				organization: 'centre-demo',
+				expiresAt: Date.now() + 60_000,
+				languages: ['fr']
+			})
 		];
 		for (const jeton of faux) {
 			const poste = connect(running, '/broadcast');
@@ -214,6 +223,32 @@ describe('le poste « Diffuser » refusé', () => {
 		poste.json({ type: 'open', token: token(), languages: ['fr', 'xx'] });
 		expect(await poste.next()).toEqual({ type: 'refused', reason: 'languages' });
 		expect(await poste.closed).toBe(1000);
+	});
+
+	it('dans une langue que le relais sert, mais que le jeton ne permet pas', async () => {
+		// Les langues de l'organisation, que le serveur web a mises dans le jeton (ADR 0056 amendée) :
+		// le poste ne peut pas en demander une de plus, même servie par le relais.
+		const running = await start();
+		const refuse = connect(running, '/broadcast');
+		await refuse.open;
+		refuse.json({
+			type: 'open',
+			token: token(undefined, undefined, ['fr']),
+			languages: ['fr', 'de']
+		});
+		expect(await refuse.next()).toEqual({ type: 'refused', reason: 'languages' });
+		expect(await refuse.closed).toBe(1000);
+		expect(log).toEqual([]);
+
+		// Une partie de celles du jeton suffit : on ne traduit pas forcément vers toutes.
+		const accepte = connect(running, '/broadcast');
+		await accepte.open;
+		accepte.json({
+			type: 'open',
+			token: token(undefined, undefined, ['fr', 'tr']),
+			languages: ['tr']
+		});
+		expect(await accepte.next()).toMatchObject({ type: 'opened', languages: ['tr'] });
 	});
 
 	it('quand son premier message ne vient pas', async () => {

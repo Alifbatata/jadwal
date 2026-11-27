@@ -7,6 +7,10 @@
 //
 // Sa forme : `contenu.signature`, tous deux en base64url. Le contenu est un petit JSON ; la
 // signature est le HMAC-SHA-256 du contenu **tel qu'il est écrit**, pas du JSON relu.
+//
+// Il porte aussi les langues que l'organisation a choisies (ADR 0056 amendée) : le poste ne peut
+// ouvrir le direct que vers elles, ou vers une partie d'entre elles. Sans cela, la règle ne serait
+// tenue que par l'écran, et une langue de plus se paie.
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
@@ -20,14 +24,20 @@ const PURPOSE = 'broadcast';
 /** Bien au-delà de ce qu'un jeton pèse : on ne décode pas un roman. */
 const MAX_TOKEN_LENGTH = 512;
 
+/** Autant que le relais en accepte à l'ouverture (`isOpenMessage`). */
+const MAX_LANGUAGES = 50;
+const LANGUAGE = /^[a-z]{2,3}$/;
+
 export interface TokenClaims {
 	readonly organization: string;
 	/** L'échéance, en millisecondes depuis 1970. */
 	readonly expiresAt: number;
+	/** Les langues que le poste peut demander : au moins une, sans doublon. */
+	readonly languages: readonly string[];
 }
 
 export type TokenResult =
-	| { readonly ok: true; readonly organization: string }
+	| { readonly ok: true; readonly organization: string; readonly languages: readonly string[] }
 	| { readonly ok: false; readonly reason: 'malformed' | 'signature' | 'expired' };
 
 export function isOrganization(value: unknown): value is string {
@@ -36,16 +46,30 @@ export function isOrganization(value: unknown): value is string {
 	);
 }
 
+function isLanguageList(value: unknown): value is string[] {
+	return (
+		Array.isArray(value) &&
+		value.length >= 1 &&
+		value.length <= MAX_LANGUAGES &&
+		value.every((language) => typeof language === 'string' && LANGUAGE.test(language)) &&
+		new Set(value).size === value.length
+	);
+}
+
 function sign(secret: string, body: string): Buffer {
 	return createHmac('sha256', secret).update(body).digest();
 }
 
 export function signToken(secret: string, claims: TokenClaims): string {
-	if (!isOrganization(claims.organization) || !Number.isSafeInteger(claims.expiresAt)) {
-		throw new Error('jeton : organisation ou échéance invalide');
+	if (
+		!isOrganization(claims.organization) ||
+		!Number.isSafeInteger(claims.expiresAt) ||
+		!isLanguageList(claims.languages)
+	) {
+		throw new Error('jeton : organisation, échéance ou langues invalides');
 	}
 	const body = Buffer.from(
-		JSON.stringify({ o: claims.organization, e: claims.expiresAt, p: PURPOSE })
+		JSON.stringify({ o: claims.organization, e: claims.expiresAt, l: claims.languages, p: PURPOSE })
 	).toString('base64url');
 	return `${body}.${sign(secret, body).toString('base64url')}`;
 }
@@ -74,10 +98,16 @@ export function verifyToken(secret: string, token: string, now: number): TokenRe
 		return { ok: false, reason: 'malformed' };
 	}
 	if (typeof claims !== 'object' || claims === null) return { ok: false, reason: 'malformed' };
-	const { o, e, p } = claims as Record<string, unknown>;
-	if (p !== PURPOSE || !isOrganization(o) || typeof e !== 'number' || !Number.isSafeInteger(e)) {
+	const { o, e, l, p } = claims as Record<string, unknown>;
+	if (
+		p !== PURPOSE ||
+		!isOrganization(o) ||
+		typeof e !== 'number' ||
+		!Number.isSafeInteger(e) ||
+		!isLanguageList(l)
+	) {
 		return { ok: false, reason: 'malformed' };
 	}
 	if (now >= e) return { ok: false, reason: 'expired' };
-	return { ok: true, organization: o };
+	return { ok: true, organization: o, languages: l };
 }
