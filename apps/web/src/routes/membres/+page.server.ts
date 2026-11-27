@@ -19,7 +19,8 @@ import { isLangue, type Langue } from '#lib/i18n.js';
 import { record } from '#lib/server/audit.js';
 import { forgetOrganisation, withSessionOrg } from '#lib/server/context.js';
 import { createInvitation, INVITATION_DAYS } from '#lib/server/invitations.js';
-import { mustAdminister, mustBeInOrganisation } from '#lib/server/guard.js';
+import { mustAdminister, mustBeInOrganisation, mustHaveLive } from '#lib/server/guard.js';
+import { liveSettings } from '#lib/server/live.js';
 import { createMailer } from '#lib/server/mail/index.js';
 import { invitationEmail } from '#lib/server/mail/messages.js';
 import { departureArrival } from '../organisations/departure.js';
@@ -71,15 +72,19 @@ export const load: PageServerLoad = async (event) => {
 		role: context.role,
 		moi: context.userId,
 		invitationDays: INVITATION_DAYS,
+		// L'autorisation de diffuser ne se montre que si le direct est réglé sur cette instance.
+		live: liveSettings() !== null,
 		membres: rows<{
 			id: string;
 			user_id: string;
 			role: string;
 			email: string;
 			name: string | null;
+			/** L'autorisation de diffuser le direct ; la page ne la montre que si le direct existe. */
+			can_broadcast: boolean;
 		}>(
 			await tx.execute(sql`
-				select m."id", m."user_id", m."role", u."email", u."name"
+				select m."id", m."user_id", m."role", u."email", u."name", m."can_broadcast"
 				from "membership" m join "user" u on u."id" = m."user_id"
 				where m."organization_id" = ${context.organizationId}
 				order by m."role", u."email"
@@ -375,6 +380,48 @@ export const actions: Actions = {
 		if (issue.soiMeme && role === 'editor') redirect(303, SELF_EDITOR_ARRIVAL);
 		// Le nouveau rôle revient à la page, qui le nomme dans son message.
 		return { change: true, role };
+	},
+
+	/**
+	 * L'autorisation de diffuser le direct, donnée ou retirée à un éditeur (ADR 0056 amendée). Sans
+	 * confirmation : le geste se défait d'un clic, et ne retire l'accès à rien d'autre. La personne
+	 * responsable diffuse d'office : sa case n'existe pas. Le geste n'existe que si le direct est
+	 * réglé sur cette instance.
+	 */
+	diffusion: async (event) => {
+		const { request } = event;
+		mustHaveLive();
+		const context = await mustBeInOrganisation(event);
+		if (!mustBeAdmin(context.role)) {
+			return fail(403, { error: 'notManager' as const });
+		}
+		const form = await request.formData();
+		const membershipId = String(form.get('membershipId') ?? '');
+		const allow = String(form.get('allow') ?? '');
+		if (allow !== 'oui' && allow !== 'non') return fail(400, { error: 'unknownChoice' as const });
+		const canBroadcast = allow === 'oui';
+		const issue = await withSessionOrg(
+			context,
+			async (tx): Promise<'gone' | 'manager' | { email: string }> => {
+				const member = await readMember(tx, context.organizationId, membershipId);
+				if (!member) return 'gone';
+				if (member.role === 'org_admin') return 'manager';
+				await tx.execute(sql`
+					update "membership" set "can_broadcast" = ${canBroadcast}, "updated_at" = now()
+					where "id" = ${member.id} and "organization_id" = ${context.organizationId}
+				`);
+				await record(tx, context.organizationId, context.userId, {
+					action: 'member.broadcast',
+					targetTable: 'membership',
+					targetId: member.id,
+					after: { canBroadcast }
+				});
+				return { email: member.email };
+			}
+		);
+		if (issue === 'gone') return fail(404, { error: 'memberGone' as const });
+		if (issue === 'manager') return fail(400, { error: 'broadcastsAlready' as const });
+		return { diffusion: { email: issue.email, canBroadcast } };
 	}
 };
 

@@ -53,6 +53,11 @@
 	<p role="status">{text.done.removed}</p>
 {:else if form && 'change' in form && form.role}
 	<p role="status">{text.done.roleChanged(roleName[form.role] ?? form.role)}</p>
+{:else if form && 'diffusion' in form && form.diffusion}
+	<p role="status">
+		{form.diffusion.canBroadcast ? text.broadcast.given : text.broadcast.taken}
+		<strong><bdi>{form.diffusion.email}</bdi></strong>
+	</p>
 {/if}
 
 <!-- Retirer un membre ou changer un rôle ne se fait pas au premier envoi (étape 19) : l'écran dit ce
@@ -106,6 +111,12 @@
 				{#if membre.user_id === data.moi}({text.you}){/if}
 			</span>
 			<span>{text.role(roleName[membre.role] ?? membre.role)}</span>
+			<!-- L'autorisation de diffuser le direct (ADR 0056 amendée), quand il existe ici. -->
+			{#if data.live && membre.role === 'org_admin'}
+				<span>{text.broadcast.byRole}</span>
+			{:else if data.live && membre.can_broadcast}
+				<span>{text.broadcast.allowed}</span>
+			{/if}
 			{#if estResponsable}
 				<span class="gestes">
 					<form method="post" action="?/role">
@@ -123,6 +134,15 @@
 						<input type="hidden" name="membershipId" value={membre.id} />
 						<button type="submit">{text.remove}</button>
 					</form>
+					{#if data.live && membre.role !== 'org_admin'}
+						<form method="post" action="?/diffusion">
+							<input type="hidden" name="membershipId" value={membre.id} />
+							<input type="hidden" name="allow" value={membre.can_broadcast ? 'non' : 'oui'} />
+							<button type="submit">
+								{membre.can_broadcast ? text.broadcast.take : text.broadcast.give}
+							</button>
+						</form>
+					{/if}
 				</span>
 			{/if}
 		</li>
@@ -130,6 +150,7 @@
 </ul>
 {#if estResponsable}
 	<p class="aide">{text.removeHelp}</p>
+	{#if data.live}<p class="aide">{text.broadcast.help}</p>{/if}
 {/if}
 
 {#if estResponsable}

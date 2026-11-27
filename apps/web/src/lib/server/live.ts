@@ -103,19 +103,54 @@ export function liveSettings(): LiveSettings | null {
 }
 
 /**
- * Signe le jeton qui autorise une organisation à ouvrir un direct jusqu'à `expiresAt`.
+ * Les langues vers lesquelles une organisation peut diffuser : celles qu'elle a choisies
+ * (`organization.live_language`) que le relais sert, dans l'ordre du relais (ADR 0056 amendée).
+ * Une liste vide veut dire : pas de direct possible tant que l'un ou l'autre ne change pas.
+ */
+export function broadcastLanguages(
+	organisation: readonly string[],
+	relay: readonly string[]
+): string[] {
+	return relay.filter((language) => organisation.includes(language));
+}
+
+/**
+ * Ce que l'écran des réglages enregistre : les langues cochées que le relais sert, puis celles que
+ * l'organisation avait choisies et que le relais ne sert pas. L'écran ne montre que les premières ;
+ * les secondes ne doivent pas s'effacer en silence parce qu'un relais en sert moins aujourd'hui.
+ */
+export function keptLiveLanguages(
+	checked: readonly string[],
+	stored: readonly string[],
+	relay: readonly string[]
+): string[] {
+	return [
+		...relay.filter((language) => checked.includes(language)),
+		...stored.filter((language) => !relay.includes(language))
+	];
+}
+
+/** Deux listes de langues disent-elles le même choix, quel que soit l'ordre ? */
+export function sameLanguages(a: readonly string[], b: readonly string[]): boolean {
+	return a.length === b.length && a.every((language) => b.includes(language));
+}
+
+/**
+ * Signe le jeton qui autorise une organisation à ouvrir un direct jusqu'à `expiresAt`, vers les
+ * langues données ou une partie d'entre elles.
  *
  * Sa forme est celle que le relais vérifie : `contenu.signature`, en base64url ; le contenu est
- * `{o, e, p}` (organisation, échéance en millisecondes, usage), et la signature le HMAC-SHA-256
- * du contenu tel qu'il est écrit.
+ * `{o, e, l, p}` (organisation, échéance en millisecondes, langues, usage), et la signature le
+ * HMAC-SHA-256 du contenu tel qu'il est écrit.
  */
 export function signBroadcastToken(
 	secret: string,
 	organization: string,
-	expiresAt: number
+	expiresAt: number,
+	languages: readonly string[]
 ): string {
 	const body = Buffer.from(
-		JSON.stringify({ o: organization, e: expiresAt, p: 'broadcast' })
+		JSON.stringify({ o: organization, e: expiresAt, l: languages, p: 'broadcast' })
 	).toString('base64url');
 	return `${body}.${createHmac('sha256', secret).update(body).digest('base64url')}`;
 }

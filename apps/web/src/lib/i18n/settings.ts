@@ -141,6 +141,21 @@ interface SettingsTexts {
 		 */
 		readonly roomGone: string;
 		readonly prayerStillUsed: string;
+		/** Les langues du direct : aucune cochée. */
+		readonly noLiveLanguage: string;
+		/** Les langues du direct : une que le relais ne sert pas, venue d'un formulaire forgé. */
+		readonly unknownLiveLanguage: string;
+	};
+	/**
+	 * Les langues du direct (ADR 0056 amendée), quand il est réglé sur cette instance : la section ne
+	 * se montre pas sinon.
+	 */
+	readonly live: {
+		readonly title: string;
+		readonly legend: string;
+		readonly help: string;
+		readonly save: string;
+		readonly saved: string;
 	};
 }
 
@@ -225,6 +240,13 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		turnedOff: 'Les heures de prière sont désactivées.',
 		turnOn: 'Activer les heures de prière',
 		turnOff: 'Désactiver les heures de prière',
+		live: {
+			title: 'Le direct',
+			legend: 'Langues de traduction du direct',
+			help: 'Le sermon est traduit vers les langues cochées. L’écran « Diffuser » ne propose qu’elles ; chaque langue traduite se paie.',
+			save: 'Enregistrer les langues du direct',
+			saved: 'Les langues du direct sont enregistrées.'
+		},
 		errors: {
 			infoTooLong: 'Un des textes est trop long. Raccourcissez-le, puis enregistrez de nouveau.',
 			infoEmail: `L’adresse électronique n’a pas la forme d’une adresse. Exemple : ${EMAIL_SAMPLE}`,
@@ -239,7 +261,9 @@ export const settingsTexts: Translations<SettingsTexts> = {
 			roomNameRequired: 'Écrivez le nom de la salle.',
 			roomGone: 'Cette salle n’existe plus.',
 			prayerStillUsed:
-				'L’heure de certains cours se règle sur une prière, ou une prière du vendredi existe. Donnez à ces cours une heure fixe ou supprimez-les avant de désactiver les heures de prière.'
+				'L’heure de certains cours se règle sur une prière, ou une prière du vendredi existe. Donnez à ces cours une heure fixe ou supprimez-les avant de désactiver les heures de prière.',
+			noLiveLanguage: 'Cochez au moins une langue pour le direct.',
+			unknownLiveLanguage: 'Cette langue n’est pas proposée pour le direct.'
 		}
 	},
 	de: {
@@ -322,6 +346,13 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		turnedOff: 'Die Gebetszeiten sind deaktiviert.',
 		turnOn: 'Gebetszeiten aktivieren',
 		turnOff: 'Gebetszeiten deaktivieren',
+		live: {
+			title: 'Die Übertragung',
+			legend: 'Übersetzungssprachen der Übertragung',
+			help: 'Die Predigt wird in die angekreuzten Sprachen übersetzt. Der Bildschirm „Übertragen“ bietet nur diese an; jede übersetzte Sprache kostet.',
+			save: 'Sprachen der Übertragung speichern',
+			saved: 'Die Sprachen der Übertragung sind gespeichert.'
+		},
 		errors: {
 			infoTooLong: 'Einer der Texte ist zu lang. Kürzen Sie ihn und speichern Sie erneut.',
 			infoEmail: `Die E-Mail-Adresse hat nicht die Form einer Adresse. Beispiel: ${EMAIL_SAMPLE}`,
@@ -336,7 +367,9 @@ export const settingsTexts: Translations<SettingsTexts> = {
 			roomNameRequired: 'Schreiben Sie den Namen des Raums.',
 			roomGone: 'Diesen Raum gibt es nicht mehr.',
 			prayerStillUsed:
-				'Die Uhrzeit mancher Kurse richtet sich nach einem Gebet, oder es gibt ein Freitagsgebet. Geben Sie diesen Kursen eine feste Uhrzeit oder löschen Sie sie, bevor Sie die Gebetszeiten deaktivieren.'
+				'Die Uhrzeit mancher Kurse richtet sich nach einem Gebet, oder es gibt ein Freitagsgebet. Geben Sie diesen Kursen eine feste Uhrzeit oder löschen Sie sie, bevor Sie die Gebetszeiten deaktivieren.',
+			noLiveLanguage: 'Kreuzen Sie mindestens eine Sprache für die Übertragung an.',
+			unknownLiveLanguage: 'Diese Sprache wird für die Übertragung nicht angeboten.'
 		}
 	},
 	it: {
@@ -419,6 +452,13 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		turnedOff: 'Gli orari di preghiera sono disattivati.',
 		turnOn: 'Attiva gli orari di preghiera',
 		turnOff: 'Disattiva gli orari di preghiera',
+		live: {
+			title: 'La diretta',
+			legend: 'Lingue di traduzione della diretta',
+			help: 'Il sermone viene tradotto nelle lingue selezionate. La schermata «Trasmetti» propone solo queste; ogni lingua tradotta ha un costo.',
+			save: 'Salva le lingue della diretta',
+			saved: 'Le lingue della diretta sono state salvate.'
+		},
 		errors: {
 			infoTooLong: 'Uno dei testi è troppo lungo. Accorcialo, poi salva di nuovo.',
 			infoEmail: `L’indirizzo e-mail non ha la forma di un indirizzo. Esempio: ${EMAIL_SAMPLE}`,
@@ -433,7 +473,9 @@ export const settingsTexts: Translations<SettingsTexts> = {
 			roomNameRequired: 'Scrivi il nome della sala.',
 			roomGone: 'Questa sala non esiste più.',
 			prayerStillUsed:
-				'L’ora di alcuni corsi dipende da una preghiera, oppure esiste una preghiera del venerdì. Dai a questi corsi un orario fisso o eliminali prima di disattivare gli orari di preghiera.'
+				'L’ora di alcuni corsi dipende da una preghiera, oppure esiste una preghiera del venerdì. Dai a questi corsi un orario fisso o eliminali prima di disattivare gli orari di preghiera.',
+			noLiveLanguage: 'Seleziona almeno una lingua per la diretta.',
+			unknownLiveLanguage: 'Questa lingua non è proposta per la diretta.'
 		}
 	},
 	en: {
@@ -516,6 +558,13 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		turnedOff: 'Prayer times are switched off.',
 		turnOn: 'Switch on prayer times',
 		turnOff: 'Switch off prayer times',
+		live: {
+			title: 'The broadcast',
+			legend: 'Translation languages of the broadcast',
+			help: 'The sermon is translated into the ticked languages. The “Broadcast” screen offers only these; each translated language costs money.',
+			save: 'Save the broadcast languages',
+			saved: 'The broadcast languages have been saved.'
+		},
 		errors: {
 			infoTooLong: 'One of the texts is too long. Shorten it, then save again.',
 			infoEmail: `The email address does not have the form of an address. Example: ${EMAIL_SAMPLE}`,
@@ -530,7 +579,9 @@ export const settingsTexts: Translations<SettingsTexts> = {
 			roomNameRequired: 'Write the name of the room.',
 			roomGone: 'This room no longer exists.',
 			prayerStillUsed:
-				'Some courses have their time set by a prayer, or a Friday prayer exists. Give these courses a fixed time or delete them before switching off prayer times.'
+				'Some courses have their time set by a prayer, or a Friday prayer exists. Give these courses a fixed time or delete them before switching off prayer times.',
+			noLiveLanguage: 'Tick at least one language for the broadcast.',
+			unknownLiveLanguage: 'This language is not offered for the broadcast.'
 		}
 	},
 	ar: {
@@ -617,6 +668,13 @@ export const settingsTexts: Translations<SettingsTexts> = {
 		turnedOff: 'أُوقفت مواقيت الصلاة.',
 		turnOn: 'تفعيل مواقيت الصلاة',
 		turnOff: 'إيقاف مواقيت الصلاة',
+		live: {
+			title: 'البث المباشر',
+			legend: 'لغات تَرْجَمَة البث',
+			help: 'تُترجَم الخُطْبة إلى اللغات المحددة. لا تعرض شاشة «البث» سواها، وكل لغة مترجمة لها تكلفة.',
+			save: 'حفظ لغات البث',
+			saved: 'حُفظت لغات البث.'
+		},
 		errors: {
 			infoTooLong: 'يوجد نص طويل جدًّا. اختصره ثم احفظ من جديد.',
 			infoEmail: `البريد الإلكتروني ليس على هيئة عنوان. مثال: ${EMAIL_SAMPLE}`,
@@ -631,7 +689,9 @@ export const settingsTexts: Translations<SettingsTexts> = {
 			roomNameRequired: 'اكتب اسم القاعة.',
 			roomGone: 'هذه القاعة لم تعد موجودة.',
 			prayerStillUsed:
-				'بعض الدروس مضبوط وقتها على صلاة، أو توجد صلاة جمعة. امنح هذه الدروس وقتًا ثابتًا أو احذفها قبل إيقاف مواقيت الصلاة.'
+				'بعض الدروس مضبوط وقتها على صلاة، أو توجد صلاة جمعة. امنح هذه الدروس وقتًا ثابتًا أو احذفها قبل إيقاف مواقيت الصلاة.',
+			noLiveLanguage: 'حدّد لغة واحدة أو أكثر للبث.',
+			unknownLiveLanguage: 'هذه اللغة غير متاحة للبث.'
 		}
 	}
 };

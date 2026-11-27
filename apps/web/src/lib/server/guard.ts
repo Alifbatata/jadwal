@@ -77,12 +77,13 @@ export async function mustAdministerPrayerModule(
 }
 
 /**
- * L'écran du poste « Diffuser » (ADR 0056) : le direct réglé sur cette instance, et un **membre**
- * de l'organisation, responsable ou éditeur, conditions acceptées.
+ * L'écran du poste « Diffuser » (ADR 0056 amendée) : le direct réglé sur cette instance, et une
+ * personne qui a le droit de diffuser, conditions acceptées : la personne responsable d'office, un
+ * éditeur à qui elle en a donné l'autorisation (`canBroadcast`).
  *
  * **404 quand le direct est éteint**, avant même de regarder qui demande : sans relais, l'écran
- * n'existe pas, comme le module des heures de prière. Et 404 pour le super-admin entré par ses
- * pouvoirs : la voix d'une organisation est lancée par l'un des siens, jamais par l'exploitant.
+ * n'existe pas, comme le module des heures de prière. Et 404 pour qui n'a pas le droit, le
+ * super-admin entré par ses pouvoirs compris : pour eux, l'écran n'existe pas non plus.
  */
 export async function mustBroadcast(
 	event: RequestEvent
@@ -90,8 +91,18 @@ export async function mustBroadcast(
 	const live = liveSettings();
 	if (!live) error(404, 'Not Found');
 	const context = await mustBeInOrganisation(event);
-	if (context.asSuperAdmin) error(404, 'Not Found');
+	if (!context.canBroadcast) error(404, 'Not Found');
 	return { context, live };
+}
+
+/**
+ * Les gestes que le direct ajoute aux écrans Membres et Réglages : ils n'existent que si le direct
+ * est réglé sur cette instance, comme l'écran « Diffuser » lui-même.
+ */
+export function mustHaveLive(): LiveSettings {
+	const live = liveSettings();
+	if (!live) error(404, 'Not Found');
+	return live;
 }
 
 /** Les écrans du super-admin. Sans passkey prouvée, il n'y a aucun pouvoir (ADR 0025). */

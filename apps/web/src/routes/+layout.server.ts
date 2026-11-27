@@ -74,9 +74,10 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 					// La navigation ne propose pas ce qui n'existe pas pour cette organisation
 					// (ADR 0042).
 					prayerModule: context.organizationPrayerModule,
-					// Le poste « Diffuser », quand le direct est réglé sur cette instance, et pour un
-					// membre seulement : le super-admin entré par ses pouvoirs ne diffuse pas (ADR 0056).
-					live: liveSettings() !== null && !context.asSuperAdmin,
+					// Le poste « Diffuser », quand le direct est réglé sur cette instance, et pour qui a
+					// le droit de diffuser : la personne responsable, un éditeur qui en a reçu
+					// l'autorisation ; jamais le super-admin entré par ses pouvoirs (ADR 0056 amendée).
+					live: liveSettings() !== null && context.canBroadcast,
 					role: context.role,
 					asSuperAdmin: context.asSuperAdmin,
 					// Tant que les conditions ne sont pas acceptées, la navigation n'est pas

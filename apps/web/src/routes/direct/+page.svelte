@@ -179,30 +179,36 @@
 <p class="details">{text.automatic}</p>
 <noscript><p class="alerte">{text.noScript}</p></noscript>
 
-<form
-	onsubmit={(event) => {
-		event.preventDefault();
-		void begin();
-	}}
->
-	<fieldset disabled={busy}>
-		<legend>{text.languages.legend}</legend>
-		<p class="details">{text.languages.help}</p>
-		{#each data.languages as language (language)}
-			<label class="langue">
-				<input type="checkbox" name="languages" value={language} bind:group={chosen} />
-				{nameOf(language)}
-			</label>
-		{/each}
-	</fieldset>
-	{#if noLanguage}<p class="alerte" role="alert">{text.languages.none}</p>{/if}
+<!-- Aucune des langues choisies par l'organisation n'est servie par ce relais : pas de bouton qui
+     mènerait à un refus (ADR 0056 amendée). Les réglages disent lesquelles choisir. -->
+{#if data.languages.length === 0}
+	<p class="alerte">{text.languages.unavailable}</p>
+{:else}
+	<form
+		onsubmit={(event) => {
+			event.preventDefault();
+			void begin();
+		}}
+	>
+		<fieldset disabled={busy}>
+			<legend>{text.languages.legend}</legend>
+			<p class="details">{text.languages.help}</p>
+			{#each data.languages as language (language)}
+				<label class="langue">
+					<input type="checkbox" name="languages" value={language} bind:group={chosen} />
+					{nameOf(language)}
+				</label>
+			{/each}
+		</fieldset>
+		{#if noLanguage}<p class="alerte" role="alert">{text.languages.none}</p>{/if}
 
-	{#if onAir || broadcast.phase === 'starting'}
-		<button type="button" class="arreter" onclick={() => session?.stop()}>{text.stop}</button>
-	{:else}
-		<button type="submit" class="commencer" disabled={!ready || preparing}>{text.start}</button>
-	{/if}
-</form>
+		{#if onAir || broadcast.phase === 'starting'}
+			<button type="button" class="arreter" onclick={() => session?.stop()}>{text.stop}</button>
+		{:else}
+			<button type="submit" class="commencer" disabled={!ready || preparing}>{text.start}</button>
+		{/if}
+	</form>
+{/if}
 
 <!-- Ce qui change d'état est annoncé ; la durée, qui change chaque seconde, ne l'est pas. -->
 <div role="status">

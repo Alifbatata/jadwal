@@ -4,8 +4,13 @@
 //
 // Ce que ce fichier prouve et qu'aucun test unitaire ne voit :
 //   - sans réglage, l'écran n'existe pas (première instance) ; avec, il existe (seconde instance) ;
-//   - qui a le droit de diffuser : un membre, responsable ou éditeur, conditions acceptées ; ni un
-//     inconnu, ni le super-admin entré par ses pouvoirs, ni un autre site ;
+//   - qui a le droit de diffuser : la personne responsable d'office, un éditeur à qui elle a donné
+//     l'autorisation, conditions acceptées ; ni un autre éditeur, ni un inconnu, ni le super-admin
+//     entré par ses pouvoirs, ni un autre site (ADR 0056 amendée) ;
+//   - l'autorisation se donne dans l'écran Membres, et vaut à la requête suivante ;
+//   - les langues du direct sont celles que l'organisation a choisies dans ses réglages, croisées
+//     avec celles du relais : l'écran n'offre qu'elles, le jeton les porte, le relais refuse les
+//     autres ;
 //   - le micro et la liaison vers le relais ne sont ouverts, dans les en-têtes, que sur cet écran ;
 //   - le jeton que le serveur web signe est **accepté par le relais**, et le code du poste
 //     (`src/lib/direct/session.ts`) conduit un direct entier : ce qu'il envoie arrive à une
@@ -47,7 +52,15 @@ const relayEntry = join(appDir, '..', 'live', 'dist', 'index.js');
 const SLUG = 'direct-essai';
 const ORGANISATION = 'Association du direct';
 const RESPONSABLE = 'direct-responsable@example.test';
+/** Éditeur sans l'autorisation de diffuser. */
 const EDITEUR = 'direct-editeur@example.test';
+/** Éditeur à qui la responsable a donné l'autorisation. */
+const DIFFUSEUR = 'direct-diffuseur@example.test';
+/**
+ * Les langues que l'organisation a choisies : le français et le turc, que le relais de ces tests
+ * sert, et l'albanais, qu'il ne sert pas. L'allemand, qu'il sert, n'en est pas.
+ */
+const LANGUES_DE_L_ORGANISATION = ['fr', 'tr', 'sq'];
 /** Membre, mais qui n'a pas accepté les conditions. */
 const SANS_ACCORD = 'direct-sans-accord@example.test';
 /** L'exploitant, entré dans l'organisation par ses pouvoirs : il n'en est pas membre. */
@@ -157,6 +170,71 @@ function askToken(
 	});
 }
 
+/** Poste un formulaire comme un navigateur sans JavaScript. Un champ peut porter plusieurs valeurs. */
+function postForm(
+	origin: string,
+	path: string,
+	fields: Record<string, string | readonly string[]>,
+	cookie: string | undefined
+): Promise<Response> {
+	const body = new URLSearchParams();
+	for (const [name, value] of Object.entries(fields)) {
+		for (const one of typeof value === 'string' ? [value] : value) body.append(name, one);
+	}
+	return fetch(`${origin}${path}`, {
+		method: 'POST',
+		redirect: 'manual',
+		headers: {
+			'content-type': 'application/x-www-form-urlencoded',
+			accept: 'text/html',
+			origin,
+			...(cookie ? { cookie } : {})
+		},
+		body: body.toString()
+	});
+}
+
+/** L'adhésion d'une personne de l'organisation, et son autorisation, relevées par le propriétaire. */
+async function membershipOf(email: string): Promise<{ id: string; can_broadcast: boolean }> {
+	const [row] = await maintenance(async (tx) =>
+		rows<{ id: string; can_broadcast: boolean }>(
+			await tx.execute(sql`
+				select "id", "can_broadcast" from "membership"
+				where "organization_id" = ${organizationId} and "user_id" = ${userIds[email]}
+			`)
+		)
+	);
+	expect(row, email).toBeTruthy();
+	return row as { id: string; can_broadcast: boolean };
+}
+
+/** Les langues du direct de l'organisation, relevées par le propriétaire. */
+async function storedLiveLanguages(): Promise<string[]> {
+	const [row] = await maintenance(async (tx) =>
+		rows<{ live_language: string[] }>(
+			await tx.execute(
+				sql`select "live_language" from "organization" where "id" = ${organizationId}`
+			)
+		)
+	);
+	return row?.live_language ?? [];
+}
+
+/** Les lignes du journal d'une action donnée, lues comme la responsable les lit. */
+async function journalOf(action: string): Promise<{ actor_id: string; after: unknown }[]> {
+	return withOrg(
+		appHandle.db,
+		{ organizationId, userId: userIds[RESPONSABLE] as string },
+		async (tx) =>
+			rows<{ actor_id: string; after: unknown }>(
+				await tx.execute(sql`
+					select "actor_id", "after" from "audit_log"
+					where "action" = ${action} order by "created_at", "id"
+				`)
+			)
+	);
+}
+
 /** Attend qu'une condition soit vraie, sans dormir à l'aveugle. */
 async function until(condition: () => boolean, what: string, timeoutMs = 10_000): Promise<void> {
 	const deadline = Date.now() + timeoutMs;
@@ -175,12 +253,15 @@ beforeAll(async () => {
 	ownerHandle = createDatabase({ role: 'owner', overrides: { database: testDatabase } });
 	appHandle = createDatabase({ role: 'app', overrides: { database: testDatabase } });
 	organizationId = newId();
-	for (const email of [RESPONSABLE, EDITEUR, SANS_ACCORD, EXPLOITANT]) userIds[email] = newId();
+	for (const email of [RESPONSABLE, EDITEUR, DIFFUSEUR, SANS_ACCORD, EXPLOITANT]) {
+		userIds[email] = newId();
+	}
 	await maintenance(async (tx) => {
 		await tx.execute(sql`
 			insert into "organization" ("id", "slug", "name", "time_zone", "default_language",
-				"enabled_language")
-			values (${organizationId}, ${SLUG}, ${ORGANISATION}, 'Europe/Zurich', 'fr', array['fr'])
+				"enabled_language", "live_language")
+			values (${organizationId}, ${SLUG}, ${ORGANISATION}, 'Europe/Zurich', 'fr', array['fr'],
+				${`{${LANGUES_DE_L_ORGANISATION.join(',')}}`}::text[])
 		`);
 		for (const [email, userId] of Object.entries(userIds)) {
 			await tx.execute(sql`
@@ -191,6 +272,7 @@ beforeAll(async () => {
 		for (const [email, role] of [
 			[RESPONSABLE, 'org_admin'],
 			[EDITEUR, 'editor'],
+			[DIFFUSEUR, 'editor'],
 			[SANS_ACCORD, 'editor']
 		] as const) {
 			await tx.execute(sql`
@@ -200,9 +282,10 @@ beforeAll(async () => {
 		}
 		await tx.execute(conditionsAcceptees(organizationId, userIds[RESPONSABLE] as string));
 		await tx.execute(conditionsAcceptees(organizationId, userIds[EDITEUR] as string));
+		await tx.execute(conditionsAcceptees(organizationId, userIds[DIFFUSEUR] as string));
 		await tx.execute(sql`delete from "rate_limit"`);
 	});
-	for (const email of [RESPONSABLE, EDITEUR, SANS_ACCORD, EXPLOITANT]) {
+	for (const email of [RESPONSABLE, EDITEUR, DIFFUSEUR, SANS_ACCORD, EXPLOITANT]) {
 		cookies[email] = await signIn(email);
 	}
 	// L'exploitant a prouvé sa passkey et choisi cette organisation : ce que l'écran du super-admin
@@ -273,35 +356,256 @@ describe('sans réglage, le direct n’existe pas', () => {
 		expect(response.headers.get('permissions-policy')).toContain('microphone=()');
 		expect(response.headers.get('content-security-policy')).not.toContain('ws:');
 	});
+
+	it('offers neither the permission in Members nor the languages in Settings', async () => {
+		const members = await (await get(sans, '/membres', cookies[RESPONSABLE])).text();
+		expect(members).toContain(EDITEUR);
+		expect(members).not.toContain('?/diffusion');
+		const settings = await (await get(sans, '/reglages', cookies[RESPONSABLE])).text();
+		expect(settings).toContain('?/enregistrer');
+		expect(settings).not.toContain('?/languesDirect');
+		const { id } = await membershipOf(EDITEUR);
+		expect(
+			(
+				await postForm(
+					sans,
+					'/membres?/diffusion',
+					{ membershipId: id, allow: 'oui' },
+					cookies[RESPONSABLE]
+				)
+			).status
+		).toBe(404);
+		expect(
+			(
+				await postForm(
+					sans,
+					'/reglages?/languesDirect',
+					{ liveLanguages: 'fr' },
+					cookies[RESPONSABLE]
+				)
+			).status
+		).toBe(404);
+		expect((await membershipOf(EDITEUR)).can_broadcast).toBe(false);
+		expect(await storedLiveLanguages()).toEqual(LANGUES_DE_L_ORGANISATION);
+	});
+});
+
+describe('qui diffuse : l’autorisation, donnée dans l’écran Membres', () => {
+	it('shows the responsible person a permission to give each editor, and none to give herself', async () => {
+		const html = await (await get(avec, '/membres', cookies[RESPONSABLE])).text();
+		const { id: editor } = await membershipOf(EDITEUR);
+		const { id: manager } = await membershipOf(RESPONSABLE);
+		expect(html).toMatch(
+			new RegExp(`action="\\?/diffusion"[\\s\\S]{0,400}?name="membershipId" value="${editor}"`)
+		);
+		// Elle diffuse d'office : l'écran le dit, sans case à cocher pour elle.
+		expect(html).not.toMatch(
+			new RegExp(`action="\\?/diffusion"[\\s\\S]{0,400}?name="membershipId" value="${manager}"`)
+		);
+		expect(visibleText(html)).toContain('Diffuse d’office');
+	});
+
+	it('refuses the permission to an editor who would give it, to herself or to a colleague', async () => {
+		for (const target of [EDITEUR, DIFFUSEUR]) {
+			const { id } = await membershipOf(target);
+			const response = await postForm(
+				avec,
+				'/membres?/diffusion',
+				{ membershipId: id, allow: 'oui' },
+				cookies[EDITEUR]
+			);
+			// L'action refuse (403), puis la page, que le formulaire sans JavaScript recharge, renvoie
+			// l'éditeur à l'accueil : l'écran Membres ne s'ouvre pas pour lui.
+			expect(response.status, target).toBe(303);
+			expect((await membershipOf(target)).can_broadcast, target).toBe(false);
+		}
+		expect(await journalOf('member.broadcast')).toEqual([]);
+	});
+
+	it('is given by the responsible person, and leaves a line in the journal', async () => {
+		const { id } = await membershipOf(DIFFUSEUR);
+		const response = await postForm(
+			avec,
+			'/membres?/diffusion',
+			{ membershipId: id, allow: 'oui' },
+			cookies[RESPONSABLE]
+		);
+		expect(response.status).toBe(200);
+		expect(visibleText(await response.text())).toContain('peut maintenant diffuser le direct');
+		expect((await membershipOf(DIFFUSEUR)).can_broadcast).toBe(true);
+		expect(await journalOf('member.broadcast')).toEqual([
+			{ actor_id: userIds[RESPONSABLE], after: { canBroadcast: true } }
+		]);
+	});
+
+	it('refuses a membership that is not one, and a value that is neither yes nor no', async () => {
+		// Comme pour le rôle : un membre introuvable, 404 ; une valeur fausse, 400. La personne
+		// responsable diffuse d'office : sa propre case n'existe pas, et ne s'écrit pas.
+		const { id } = await membershipOf(EDITEUR);
+		const { id: manager } = await membershipOf(RESPONSABLE);
+		for (const [fields, status] of [
+			[{ membershipId: 'pas-un-identifiant', allow: 'oui' }, 404],
+			[{ membershipId: newId(), allow: 'oui' }, 404],
+			[{ membershipId: id, allow: 'peut-etre' }, 400],
+			[{ membershipId: id }, 400],
+			[{ membershipId: manager, allow: 'oui' }, 400]
+		] as const) {
+			const response = await postForm(avec, '/membres?/diffusion', fields, cookies[RESPONSABLE]);
+			expect(response.status, JSON.stringify(fields)).toBe(status);
+		}
+		expect((await membershipOf(EDITEUR)).can_broadcast).toBe(false);
+		expect((await membershipOf(RESPONSABLE)).can_broadcast).toBe(false);
+	});
+});
+
+describe('vers quelles langues : le choix de l’organisation, dans ses Réglages', () => {
+	it('shows the responsible person the languages of the relay, checked as the organisation chose', async () => {
+		const html = await (await get(avec, '/reglages', cookies[RESPONSABLE])).text();
+		expect(html).toContain('?/languesDirect');
+		const box = (language: string) =>
+			html.match(
+				new RegExp(`<input\\b[^>]*name="liveLanguages"[^>]*value="${language}"[^>]*>`)
+			)?.[0];
+		expect(box('fr')).toMatch(/\bchecked\b/);
+		expect(box('tr')).toMatch(/\bchecked\b/);
+		expect(box('de')).toBeDefined();
+		expect(box('de')).not.toMatch(/\bchecked\b/);
+		// Ce que le relais ne sert pas, l'écran ne le propose pas.
+		expect(box('it')).toBeUndefined();
+		expect(box('sq')).toBeUndefined();
+	});
+
+	it('refuses an editor, an empty choice and a language the relay does not serve', async () => {
+		expect(
+			(await postForm(avec, '/reglages?/languesDirect', { liveLanguages: 'de' }, cookies[EDITEUR]))
+				.status
+		).toBe(303);
+		for (const liveLanguages of [[], ['it'], ['xx'], ['sq']]) {
+			const response = await postForm(
+				avec,
+				'/reglages?/languesDirect',
+				{ liveLanguages },
+				cookies[RESPONSABLE]
+			);
+			expect(response.status, JSON.stringify(liveLanguages)).toBe(400);
+		}
+		expect(await storedLiveLanguages()).toEqual(LANGUES_DE_L_ORGANISATION);
+		expect(await journalOf('organization.live_languages')).toEqual([]);
+	});
+
+	it('keeps the languages the relay does not serve when the responsible person saves', async () => {
+		// L'albanais, choisi mais que ce relais ne sert pas, n'est pas sur l'écran : l'enregistrer ne
+		// doit pas l'effacer en silence. Le choix d'une organisation survit à un relais qui change.
+		const response = await postForm(
+			avec,
+			'/reglages?/languesDirect',
+			{ liveLanguages: ['fr', 'tr'] },
+			cookies[RESPONSABLE]
+		);
+		expect(response.status).toBe(200);
+		expect(await storedLiveLanguages()).toEqual(LANGUES_DE_L_ORGANISATION);
+		expect(await journalOf('organization.live_languages')).toEqual([]);
+	});
+
+	it('changes the choice, says so, and leaves a line in the journal', async () => {
+		const save = (liveLanguages: string[]) =>
+			postForm(avec, '/reglages?/languesDirect', { liveLanguages }, cookies[RESPONSABLE]);
+		const added = await save(['fr', 'de', 'tr']);
+		expect(added.status).toBe(200);
+		expect(visibleText(await added.text())).toContain('Les langues du direct sont enregistrées');
+		expect(await storedLiveLanguages()).toEqual(['fr', 'de', 'tr', 'sq']);
+		// Et le retour au choix de départ, pour la suite de ce fichier.
+		expect((await save(['fr', 'tr'])).status).toBe(200);
+		expect(await storedLiveLanguages()).toEqual(LANGUES_DE_L_ORGANISATION);
+		expect(await journalOf('organization.live_languages')).toEqual([
+			{
+				actor_id: userIds[RESPONSABLE],
+				after: { liveLanguages: ['fr', 'de', 'tr', 'sq'] }
+			},
+			{ actor_id: userIds[RESPONSABLE], after: { liveLanguages: LANGUES_DE_L_ORGANISATION } }
+		]);
+	});
 });
 
 describe('l’écran « Diffuser »', () => {
-	it('shows a manager the languages of the relay and the button, and never a token', async () => {
+	it('shows a manager the languages of the organisation that the relay serves, the button, and never a token', async () => {
 		const response = await get(avec, '/direct', cookies[RESPONSABLE]);
 		expect(response.status).toBe(200);
 		const html = await response.text();
 		const text = visibleText(html);
 		expect(text).toContain('Diffuser le sermon en direct');
 		expect(text).toContain('Commencer le direct');
-		for (const language of liveLanguages) {
+		// Le français et le turc : choisis par l'organisation, servis par le relais.
+		for (const language of ['fr', 'tr']) {
 			expect(html).toMatch(new RegExp(`<input\\b[^>]*name="languages"[^>]*value="${language}"`));
 		}
-		// Les langues de ce relais, et pas les sept de l'exemple.
-		expect(html).not.toMatch(/<input\b[^>]*name="languages"[^>]*value="it"/);
+		// L'allemand, que le relais sert mais que l'organisation n'a pas choisi ; l'albanais, choisi
+		// mais que le relais ne sert pas ; l'italien, ni l'un ni l'autre.
+		for (const language of ['de', 'sq', 'it']) {
+			expect(html).not.toMatch(
+				new RegExp(`<input\\b[^>]*name="languages"[^>]*value="${language}"`)
+			);
+		}
+		expect(liveLanguages).toContain('de');
 		expect(text).toContain('français');
 		expect(text).toContain('turc');
+		expect(text).not.toContain('allemand');
 		// Le jeton se demande au moment d'appuyer : il n'est jamais rendu dans la page.
 		expect(html).not.toContain('eyJ');
 		expect(html).not.toContain(liveSecret);
 	});
 
-	it('is open to an editor too', async () => {
-		expect((await get(avec, '/direct', cookies[EDITEUR])).status).toBe(200);
+	it('is open to an editor with the permission, and to no other editor', async () => {
+		expect((await get(avec, '/direct', cookies[DIFFUSEUR])).status).toBe(200);
+		expect((await get(avec, '/direct', cookies[EDITEUR])).status).toBe(404);
 	});
 
-	it('is in the navigation of a member', async () => {
-		const home = await (await get(avec, '/', cookies[EDITEUR])).text();
-		expect(home).toMatch(/<a href="[^"]*direct"[^>]*>Direct<\/a>/);
+	it('is in the navigation of those who may broadcast, and of nobody else', async () => {
+		const link = /<a href="[^"]*direct"[^>]*>Direct<\/a>/;
+		for (const email of [RESPONSABLE, DIFFUSEUR]) {
+			expect(await (await get(avec, '/', cookies[email])).text(), email).toMatch(link);
+		}
+		const editor = await get(avec, '/', cookies[EDITEUR]);
+		expect(editor.status).toBe(200);
+		expect(await editor.text()).not.toMatch(/<a href="[^"]*direct"/);
+	});
+
+	it('closes as soon as the permission is taken back, and opens again when it is given', async () => {
+		// Le droit est relu à chaque requête, jamais gardé dans la session ni dans un cookie.
+		const { id } = await membershipOf(DIFFUSEUR);
+		const give = (allow: string) =>
+			postForm(avec, '/membres?/diffusion', { membershipId: id, allow }, cookies[RESPONSABLE]);
+		expect((await give('non')).status).toBe(200);
+		expect((await get(avec, '/direct', cookies[DIFFUSEUR])).status).toBe(404);
+		expect((await askToken(avec, cookies[DIFFUSEUR])).status).toBe(403);
+		expect((await give('oui')).status).toBe(200);
+		expect((await get(avec, '/direct', cookies[DIFFUSEUR])).status).toBe(200);
+		expect((await journalOf('member.broadcast')).map((line) => line.after)).toEqual([
+			{ canBroadcast: true },
+			{ canBroadcast: false },
+			{ canBroadcast: true }
+		]);
+	});
+
+	it('says so, and offers no button, when none of the chosen languages is served', async () => {
+		await maintenance((tx) =>
+			tx.execute(sql`update "organization" set "live_language" = array['sq', 'bs']::text[]
+				where "id" = ${organizationId}`)
+		);
+		try {
+			const html = await (await get(avec, '/direct', cookies[RESPONSABLE])).text();
+			const text = visibleText(html);
+			expect(text).toContain('Aucune des langues choisies');
+			expect(text).not.toContain('Commencer le direct');
+			expect(html).not.toMatch(/<input\b[^>]*name="languages"/);
+			expect((await askToken(avec, cookies[RESPONSABLE])).status).toBe(409);
+		} finally {
+			await maintenance((tx) =>
+				tx.execute(sql`update "organization"
+					set "live_language" = ${`{${LANGUES_DE_L_ORGANISATION.join(',')}}`}::text[]
+					where "id" = ${organizationId}`)
+			);
+		}
 	});
 
 	it('sends a visitor to the sign-in screen, and a member without the terms to accept them', async () => {
@@ -342,22 +646,32 @@ describe('l’écran « Diffuser »', () => {
 		}
 	});
 
-	it.each(['de', 'it', 'en', 'ar'] as const)(
-		'leaves no French sentence in %s',
-		async (language) => {
-			const french = await (await get(avec, '/direct?lang=fr', cookies[RESPONSABLE])).text();
-			const other = await (
-				await get(avec, `/direct?lang=${language}`, cookies[RESPONSABLE])
-			).text();
-			expect(other).toMatch(new RegExp(`<html\\b[^>]*\\blang="${language}"`));
-			expect(other).toMatch(
-				new RegExp(`<html\\b[^>]*\\bdir="${language === 'ar' ? 'rtl' : 'ltr'}"`)
-			);
-			expect(frenchLeft(french, other, [ORGANISATION, RESPONSABLE])).toEqual([]);
-			// Le témoin : la page française, elle, en est pleine.
-			expect(frenchLeft(french, french, [ORGANISATION, RESPONSABLE]).length).toBeGreaterThan(5);
-		}
-	);
+	// L'écran « Diffuser », et ce que le direct ajoute aux Membres et aux Réglages, qui ne se montre
+	// que sur cette instance.
+	it.each(
+		(['de', 'it', 'en', 'ar'] as const).flatMap((language) =>
+			['/direct', '/membres', '/reglages'].map((path) => [language, path] as const)
+		)
+	)('leaves no French sentence in %s on %s', async (language, path) => {
+		const keep = [ORGANISATION, RESPONSABLE, EDITEUR, DIFFUSEUR, SANS_ACCORD];
+		// Des Réglages, la section du direct seule : le reste de l'écran est éprouvé ailleurs, et la
+		// liste des fuseaux, qui s'écrit pareil dans toutes les langues, n'a rien à y faire.
+		const part = (html: string) =>
+			path === '/reglages'
+				? `${html.match(/<html\b[^>]*>/)?.[0] ?? ''}<body>${
+						html.match(/<section aria-labelledby="direct-titre"[\s\S]*?<\/section>/)?.[0] ?? ''
+					}</body>`
+				: html;
+		const french = part(await (await get(avec, `${path}?lang=fr`, cookies[RESPONSABLE])).text());
+		const other = part(
+			await (await get(avec, `${path}?lang=${language}`, cookies[RESPONSABLE])).text()
+		);
+		expect(other).toMatch(new RegExp(`<html\\b[^>]*\\blang="${language}"`));
+		expect(other).toMatch(new RegExp(`<html\\b[^>]*\\bdir="${language === 'ar' ? 'rtl' : 'ltr'}"`));
+		expect(frenchLeft(french, other, keep)).toEqual([]);
+		// Le témoin : la page française, elle, en est pleine.
+		expect(frenchLeft(french, french, keep).length).toBeGreaterThan(path === '/reglages' ? 2 : 5);
+	});
 });
 
 describe('le jeton', () => {
@@ -371,10 +685,13 @@ describe('le jeton', () => {
 		const claims = JSON.parse(Buffer.from(body, 'base64url').toString('utf8')) as {
 			o: string;
 			e: number;
+			l: string[];
 			p: string;
 		};
 		expect(claims.o).toBe(SLUG);
 		expect(claims.p).toBe('broadcast');
+		// Les langues de l'organisation que le relais sert, et elles seules.
+		expect(claims.l).toEqual(['fr', 'tr']);
 		// Une minute après la signature, qui a eu lieu entre l'envoi et la réponse. Une seconde de jeu
 		// de chaque côté : le serveur et ce test sont deux programmes, et leurs lectures de l'horloge
 		// ne tombent pas sur le même battement (15,6 ms sous Windows ; vu : 11 ms d'écart). Ce jeu ne
@@ -386,8 +703,13 @@ describe('le jeton', () => {
 		expect(await liveJournal()).toEqual([{ actor_id: userIds[RESPONSABLE], action: 'live.token' }]);
 	});
 
-	it('is given to an editor', async () => {
-		expect((await askToken(avec, cookies[EDITEUR])).status).toBe(200);
+	it('is given to an editor with the permission, and refused to the others', async () => {
+		expect((await askToken(avec, cookies[DIFFUSEUR])).status).toBe(200);
+		const before = await liveJournal();
+		const refused = await askToken(avec, cookies[EDITEUR]);
+		expect(refused.status).toBe(403);
+		expect(await refused.text()).not.toContain('eyJ');
+		expect(await liveJournal()).toEqual(before);
 	});
 
 	it('is refused without a session, without the terms, to the super admin, and to another site', async () => {
@@ -512,7 +834,7 @@ describe('un direct entier, du serveur web au relais', () => {
 	it('the relay refuses a token signed with another secret, and the screen is told', async () => {
 		const forged = (() => {
 			const body = Buffer.from(
-				JSON.stringify({ o: SLUG, e: Date.now() + 60_000, p: 'broadcast' })
+				JSON.stringify({ o: SLUG, e: Date.now() + 60_000, l: ['fr'], p: 'broadcast' })
 			).toString('base64url');
 			const signature = createHmac('sha256', 'un-autre-secret-assez-long-pour-en-etre-un')
 				.update(body)
@@ -531,10 +853,15 @@ describe('un direct entier, du serveur web au relais', () => {
 		expect(session.state.end).toEqual({ kind: 'refused', reason: 'token' });
 	});
 
-	it('the relay refuses a language it does not serve', async () => {
+	it.each([
+		['a language neither chosen nor served', ['fr', 'it']],
+		// L'allemand est servi par le relais, mais l'organisation ne l'a pas choisi : c'est le jeton
+		// qui le refuse, et le relais avec lui. Un poste modifié à la main n'y gagne rien.
+		['a language the relay serves but the organisation did not choose', ['fr', 'de']]
+	])('the relay refuses %s', async (_case, languages) => {
 		const session = new BroadcastSession({
 			requestToken: async (): Promise<TokenAnswer> => {
-				const response = await askToken(avec, cookies[EDITEUR]);
+				const response = await askToken(avec, cookies[DIFFUSEUR]);
 				return { ok: true, token: ((await response.json()) as { token: string }).token };
 			},
 			connect: () => openRelaySocket(`${liveUrl}/broadcast`),
@@ -542,7 +869,7 @@ describe('un direct entier, du serveur web au relais', () => {
 			clearTimer: (timer) => clearTimeout(timer as NodeJS.Timeout),
 			onChange: () => undefined
 		});
-		session.start(['fr', 'it']);
+		session.start(languages);
 		await until(() => session.state.phase === 'ended', 'le relais refuse');
 		expect(session.state.end).toEqual({ kind: 'refused', reason: 'languages' });
 	});

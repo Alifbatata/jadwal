@@ -72,6 +72,7 @@
 	<p class="succes" role="status">{form.allume ? text.turnedOn : text.turnedOff}</p>
 {/if}
 {#if form && 'infosEnregistrees' in form}<p class="succes" role="status">{text.infoSaved}</p>{/if}
+{#if form && 'directChange' in form}<p class="succes" role="status">{text.live.saved}</p>{/if}
 {#if form && 'salleAjoutee' in form}<p class="succes" role="status">{text.roomAdded}</p>{/if}
 {#if form && 'salleSupprimee' in form}<p class="succes" role="status">{text.roomDeleted}</p>{/if}
 
@@ -346,6 +347,32 @@
 		</form>
 	{/if}
 </section>
+
+<!-- Les langues du direct (ADR 0056 amendée), quand il est réglé sur cette instance : celles que le
+     relais sert, cochées si l'organisation les a choisies. L'écran « Diffuser » n'offre qu'elles. -->
+{#if data.direct}
+	<section aria-labelledby="direct-titre">
+		<h2 id="direct-titre">{text.live.title}</h2>
+		<form method="post" action="?/languesDirect" class="colonne">
+			<fieldset class="cases">
+				<legend>{text.live.legend}</legend>
+				<p class="aide">{text.live.help}</p>
+				{#each data.direct.offertes as langue (langue)}
+					<label class="case">
+						<input
+							type="checkbox"
+							name="liveLanguages"
+							value={langue}
+							checked={data.direct.choisies.includes(langue)}
+						/>
+						{languageLabel(langue, data.language)}
+					</label>
+				{/each}
+			</fieldset>
+			<button type="submit">{text.live.save}</button>
+		</form>
+	</section>
+{/if}
 
 <style>
 	.discret {

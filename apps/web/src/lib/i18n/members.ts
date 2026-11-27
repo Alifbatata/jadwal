@@ -136,6 +136,24 @@ interface MembersTexts {
 		readonly lastManager: string;
 		/** Une adhésion que l'écran ne trouve pas dans l'organisation, ou un identifiant mal formé. */
 		readonly memberGone: string;
+		/** L'autorisation de diffuser : ni donner ni retirer, une valeur forgée. */
+		readonly unknownChoice: string;
+		/** L'autorisation de diffuser, demandée pour une personne responsable, qui diffuse d'office. */
+		readonly broadcastsAlready: string;
+	};
+	/**
+	 * L'autorisation de diffuser le direct (ADR 0056 amendée), sur la ligne de chaque membre, quand le
+	 * direct est réglé sur cette instance. La personne responsable diffuse d'office ; un éditeur, si
+	 * on l'y autorise. Après le geste, la phrase précède l'adresse du membre.
+	 */
+	readonly broadcast: {
+		readonly byRole: string;
+		readonly allowed: string;
+		readonly give: string;
+		readonly take: string;
+		readonly help: string;
+		readonly given: string;
+		readonly taken: string;
 	};
 }
 
@@ -239,7 +257,18 @@ export const membersTexts: Translations<MembersTexts> = {
 			unknownRole: 'Ce rôle n’existe pas. Choisissez éditeur ou responsable.',
 			lastManager:
 				'Une organisation doit toujours garder au moins une personne responsable. Donnez d’abord ce rôle à une autre personne.',
-			memberGone: 'Cette personne ne fait plus partie de l’organisation.'
+			memberGone: 'Cette personne ne fait plus partie de l’organisation.',
+			unknownChoice: 'Ce choix n’existe pas. Donnez ou retirez l’autorisation.',
+			broadcastsAlready: 'Une personne responsable diffuse déjà d’office.'
+		},
+		broadcast: {
+			byRole: 'Diffuse d’office',
+			allowed: 'Peut diffuser le direct',
+			give: 'Autoriser à diffuser le direct',
+			take: 'Retirer l’autorisation de diffuser',
+			help: 'Une personne responsable diffuse le direct d’office. Un éditeur ne le peut que si vous l’y autorisez.',
+			given: 'Cette personne peut maintenant diffuser le direct :',
+			taken: 'Cette personne ne peut plus diffuser le direct :'
 		}
 	},
 	de: {
@@ -339,7 +368,18 @@ export const membersTexts: Translations<MembersTexts> = {
 			unknownRole: 'Diese Rolle gibt es nicht. Wählen Sie Redaktion oder Leitung.',
 			lastManager:
 				'Eine Organisation muss immer mindestens eine Person in der Leitung behalten. Geben Sie diese Rolle zuerst einer anderen Person.',
-			memberGone: 'Diese Person gehört nicht mehr zur Organisation.'
+			memberGone: 'Diese Person gehört nicht mehr zur Organisation.',
+			unknownChoice: 'Diese Auswahl gibt es nicht. Erteilen oder entziehen Sie die Erlaubnis.',
+			broadcastsAlready: 'Wer die Leitung hat, darf ohnehin übertragen.'
+		},
+		broadcast: {
+			byRole: 'Darf immer übertragen',
+			allowed: 'Darf die Übertragung starten',
+			give: 'Übertragen erlauben',
+			take: 'Erlaubnis zum Übertragen entziehen',
+			help: 'Die Leitung darf die Übertragung immer starten, die Redaktion nur mit Ihrer Erlaubnis.',
+			given: 'Diese Person darf jetzt die Übertragung starten:',
+			taken: 'Diese Person darf die Übertragung nicht mehr starten:'
 		}
 	},
 	it: {
@@ -442,7 +482,18 @@ export const membersTexts: Translations<MembersTexts> = {
 			unknownRole: 'Questo ruolo non esiste. Scegli redattore o responsabile.',
 			lastManager:
 				'Un’organizzazione deve avere sempre almeno un responsabile. Prima dai questo ruolo a un’altra persona.',
-			memberGone: 'Questa persona non fa più parte dell’organizzazione.'
+			memberGone: 'Questa persona non fa più parte dell’organizzazione.',
+			unknownChoice: 'Questa scelta non esiste. Concedi o revoca l’autorizzazione.',
+			broadcastsAlready: 'Una persona responsabile trasmette già di diritto.'
+		},
+		broadcast: {
+			byRole: 'Trasmette di diritto',
+			allowed: 'Può trasmettere la diretta',
+			give: 'Autorizza a trasmettere la diretta',
+			take: 'Revoca l’autorizzazione a trasmettere',
+			help: 'Una persona responsabile trasmette la diretta di diritto. Un redattore può farlo solo se lo autorizzi.',
+			given: 'Questa persona ora può trasmettere la diretta:',
+			taken: 'Questa persona non può più trasmettere la diretta:'
 		}
 	},
 	en: {
@@ -540,7 +591,18 @@ export const membersTexts: Translations<MembersTexts> = {
 			unknownRole: 'This role does not exist. Choose editor or manager.',
 			lastManager:
 				'An organisation must always keep at least one manager. First give this role to someone else.',
-			memberGone: 'This person is no longer part of the organisation.'
+			memberGone: 'This person is no longer part of the organisation.',
+			unknownChoice: 'This choice does not exist. Give or withdraw the permission.',
+			broadcastsAlready: 'A manager may already broadcast.'
+		},
+		broadcast: {
+			byRole: 'Broadcasts by right',
+			allowed: 'May start the broadcast',
+			give: 'Allow to broadcast',
+			take: 'Withdraw the permission to broadcast',
+			help: 'A manager may always start the broadcast. An editor may only if you allow it.',
+			given: 'This person may now start the broadcast:',
+			taken: 'This person may no longer start the broadcast:'
 		}
 	},
 	ar: {
@@ -641,7 +703,18 @@ export const membersTexts: Translations<MembersTexts> = {
 			unknownRole: 'هذا الدور غير موجود. اختر دور المحرر أو دور المسؤول.',
 			lastManager:
 				'يجب أن يبقى في المؤسسة دائمًا مسؤول واحد أو أكثر. امنح هذا الدور لشخص آخر أولًا.',
-			memberGone: 'لم يعد هذا الشخص عضوًا في المؤسسة.'
+			memberGone: 'لم يعد هذا الشخص عضوًا في المؤسسة.',
+			unknownChoice: 'هذا الخِيار غير موجود. امنح الإذن أو اسحبه.',
+			broadcastsAlready: 'الشخص المسؤول يبث أصلًا بحكم دوره.'
+		},
+		broadcast: {
+			byRole: 'يبث بحكم دوره',
+			allowed: 'يمكنه بَدْء البث',
+			give: 'السماح بالبث',
+			take: 'سحب الإذن بالبث',
+			help: 'يمكن للشخص المسؤول بَدْء البث دائمًا. أما المحرر فلا يمكنه ذلك إلا إذا سمحت له.',
+			given: 'يمكن لهذا الشخص الآن بَدْء البث:',
+			taken: 'لم يعد بإمكان هذا الشخص بَدْء البث:'
 		}
 	}
 };

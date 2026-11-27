@@ -15,8 +15,14 @@ import { newId, sql } from '@jadwal/db';
 import { LANGUES } from '#lib/i18n.js';
 import { record } from '#lib/server/audit.js';
 import { withSessionOrg } from '#lib/server/context.js';
-import { mustAdminister } from '#lib/server/guard.js';
+import { mustAdminister, mustHaveLive } from '#lib/server/guard.js';
 import { lireInfos, type Infos } from '#lib/server/infos.js';
+import {
+	broadcastLanguages,
+	keptLiveLanguages,
+	liveSettings,
+	sameLanguages
+} from '#lib/server/live.js';
 import { readSettings } from '#lib/server/programme.js';
 // La liste des fuseaux de la création d'une organisation, pour que les deux écrans proposent les
 // mêmes et refusent les mêmes (étape 18) : des noms canoniques, sans alias ni `Etc/`.
@@ -121,12 +127,32 @@ function enColonnes(infos: Infos) {
 	};
 }
 
+/** Les langues du direct que l'organisation a choisies (ADR 0056 amendée). */
+async function readLiveLanguages(tx: Transaction): Promise<string[]> {
+	const ligne = rows<{ live_language: string[] }>(
+		await tx.execute(sql`
+			select "live_language" from "organization" where "id" = (select jadwal.current_org_id())
+		`)
+	)[0];
+	if (!ligne) throw new Error('aucune organisation dans le contexte courant');
+	return ligne.live_language;
+}
+
 export const load: PageServerLoad = async (event) => {
 	const context = await mustAdminister(event);
+	const live = liveSettings();
 	return withSessionOrg(context, async (tx) => {
 		const settings = await readSettings(tx);
 		return {
 			organisation: settings,
+			// Les langues du direct, quand il est réglé sur cette instance : celles que le relais sert,
+			// et parmi elles, celles que l'organisation a choisies. Sans direct, rien n'est proposé.
+			direct: live
+				? {
+						offertes: live.languages,
+						choisies: broadcastLanguages(await readLiveLanguages(tx), live.languages)
+					}
+				: null,
 			infos: await readInfos(tx),
 			salles: await readRoomsInUse(tx),
 			languesPossibles: LANGUES,
@@ -296,6 +322,42 @@ export const actions: Actions = {
 		}
 		// La page dit ce qui est fait, et non « mis à jour » : allumées ou éteintes.
 		return { moduleChange: true, allume };
+	},
+
+	/**
+	 * Les langues vers lesquelles l'organisation fait traduire son direct (ADR 0056 amendée). Au moins
+	 * une, parmi celles que le relais sert : l'écran ne propose qu'elles. Celles que l'organisation
+	 * avait choisies et que le relais ne sert plus restent choisies (`keptLiveLanguages`) : elles
+	 * reviendront avec un relais qui les sert. Un choix inchangé n'écrit rien, et ne laisse pas de
+	 * ligne au journal. Le geste n'existe que si le direct est réglé sur cette instance.
+	 */
+	languesDirect: async (event) => {
+		const live = mustHaveLive();
+		const context = await mustAdminister(event);
+		const form = await event.request.formData();
+		const cochees = form.getAll('liveLanguages').map(String);
+		if (cochees.length === 0) return fail(400, { error: 'noLiveLanguage' as const });
+		if (cochees.some((langue) => !live.languages.includes(langue))) {
+			return fail(400, { error: 'unknownLiveLanguage' as const });
+		}
+		await withSessionOrg(context, async (tx) => {
+			const avant = await readLiveLanguages(tx);
+			const apres = keptLiveLanguages(cochees, avant, live.languages);
+			if (sameLanguages(avant, apres)) return;
+			await tx.execute(sql`
+				update "organization"
+				set "live_language" = ${`{${apres.join(',')}}`}::text[], "updated_at" = now()
+				where "id" = ${context.organizationId}
+			`);
+			await record(tx, context.organizationId, context.userId, {
+				action: 'organization.live_languages',
+				targetTable: 'organization',
+				targetId: context.organizationId,
+				before: { liveLanguages: avant },
+				after: { liveLanguages: apres }
+			});
+		});
+		return { directChange: true };
 	},
 
 	ajouterSalle: async (event) => {

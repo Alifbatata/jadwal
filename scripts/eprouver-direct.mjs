@@ -300,9 +300,11 @@ async function main() {
 				insert into "user" ("id", "email", "name", "email_verified")
 				values (${userId}, ${EMAIL}, 'Personne fictive', true)
 			`);
+			// Un éditeur, la personne à la sono, à qui la responsable a donné l'autorisation de diffuser
+			// (ADR 0056, addendum du 27 novembre 2026) : sans elle, l'écran n'existe pas pour lui.
 			await tx.execute(sql`
-				insert into "membership" ("id", "organization_id", "user_id", "role")
-				values (${newId()}, ${organizationId}, ${userId}, 'editor')
+				insert into "membership" ("id", "organization_id", "user_id", "role", "can_broadcast")
+				values (${newId()}, ${organizationId}, ${userId}, 'editor', true)
 			`);
 			await tx.execute(sql`
 				insert into "terms_acceptance" ("id", "organization_id", "user_id", "version")

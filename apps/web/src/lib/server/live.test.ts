@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+	broadcastLanguages,
+	keptLiveLanguages,
 	liveHeaders,
 	readLiveSettings,
+	sameLanguages,
 	signBroadcastToken,
 	TOKEN_LIFETIME_MS,
 	type LiveSettings
@@ -111,14 +114,44 @@ describe('les réglages du direct, côté serveur web', () => {
 // Le relais vérifie avec son propre code (`apps/live/src/token.ts`) : les deux programmes ne
 // partagent aucun fichier. Ce qui les tient d'accord est ce jeton témoin, écrit à l'identique dans
 // `apps/live/src/token.test.ts`.
+describe('les langues d’un direct (ADR 0056 amendée)', () => {
+	it('sont celles de l’organisation que le relais sert, dans l’ordre du relais', () => {
+		expect(broadcastLanguages(['tr', 'sq', 'fr'], ['fr', 'de', 'tr'])).toEqual(['fr', 'tr']);
+		expect(broadcastLanguages(['sq', 'bs'], ['fr', 'de', 'tr'])).toEqual([]);
+		expect(broadcastLanguages(['fr', 'de'], ['fr', 'de'])).toEqual(['fr', 'de']);
+	});
+
+	it('gardent, à l’enregistrement, celles que le relais ne sert pas', () => {
+		// L'écran ne montre que les langues du relais : celles qu'il ne montre pas restent choisies.
+		expect(keptLiveLanguages(['fr', 'tr'], ['fr', 'tr', 'sq'], ['fr', 'de', 'tr'])).toEqual([
+			'fr',
+			'tr',
+			'sq'
+		]);
+		expect(keptLiveLanguages(['de'], ['fr', 'tr', 'sq'], ['fr', 'de', 'tr'])).toEqual(['de', 'sq']);
+		// Une langue du relais décochée part ; une langue cochée deux fois ne compte qu'une fois.
+		expect(keptLiveLanguages(['fr', 'fr'], ['fr', 'tr'], ['fr', 'de', 'tr'])).toEqual(['fr']);
+		// Ce que le relais ne sert pas ne s'ajoute pas par le formulaire.
+		expect(keptLiveLanguages(['fr', 'it'], ['fr'], ['fr', 'de', 'tr'])).toEqual(['fr']);
+	});
+
+	it('reconnaissent un choix inchangé, quel que soit l’ordre', () => {
+		expect(sameLanguages(['fr', 'tr', 'sq'], ['sq', 'fr', 'tr'])).toBe(true);
+		expect(sameLanguages(['fr', 'tr'], ['fr', 'tr', 'sq'])).toBe(false);
+		expect(sameLanguages(['fr', 'de'], ['fr', 'tr'])).toBe(false);
+	});
+});
+
 describe('le jeton témoin, commun au serveur web et au relais', () => {
 	const WITNESS_SECRET = 'secret-temoin-du-direct-partage-par-les-deux-tests';
 	const WITNESS_EXPIRY = 1_795_000_000_000;
 	const WITNESS =
-		'eyJvIjoibW9zcXVlZS10ZW1vaW4iLCJlIjoxNzk1MDAwMDAwMDAwLCJwIjoiYnJvYWRjYXN0In0.GHmXfhCkFatGWq8h_NJ5SGdUbSkggbc1PxZHWuMk0OY';
+		'eyJvIjoibW9zcXVlZS10ZW1vaW4iLCJlIjoxNzk1MDAwMDAwMDAwLCJsIjpbImZyIiwic3EiLCJ0ciJdLCJwIjoiYnJvYWRjYXN0In0.oDbJFiAabsWyYaiB7lXKyNFme-2gvK3M4_E2H-3TEM0';
 
 	it('est celui que le serveur web signe', () => {
-		expect(signBroadcastToken(WITNESS_SECRET, 'mosquee-temoin', WITNESS_EXPIRY)).toBe(WITNESS);
+		expect(
+			signBroadcastToken(WITNESS_SECRET, 'mosquee-temoin', WITNESS_EXPIRY, ['fr', 'sq', 'tr'])
+		).toBe(WITNESS);
 	});
 
 	it('vit une minute', () => {

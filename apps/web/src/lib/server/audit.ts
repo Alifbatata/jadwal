@@ -19,9 +19,13 @@ export type AuditAction =
 	| 'member.remove'
 	| 'member.leave'
 	| 'member.role'
+	/** L'autorisation de diffuser le direct, donnée ou retirée à un éditeur (ADR 0056 amendée). */
+	| 'member.broadcast'
 	| 'organization.create'
 	| 'organization.settings'
 	| 'organization.prayer_module'
+	/** Les langues du direct de l'organisation (ADR 0056 amendée). */
+	| 'organization.live_languages'
 	| 'course.create'
 	| 'course.update'
 	| 'course.delete'

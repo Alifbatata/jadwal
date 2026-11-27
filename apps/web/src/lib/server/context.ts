@@ -51,8 +51,17 @@ export interface OrganisationContext extends SignedIn {
 	organizationAccent: string;
 	/** Le module des heures de prière, pour que la navigation sache quoi proposer (ADR 0042). */
 	organizationPrayerModule: boolean;
+	/** Les langues du direct que l'organisation a choisies (ADR 0056 amendée). */
+	organizationLiveLanguages: string[];
 	/** `superadmin` quand la personne n'est pas membre mais entre par ses pouvoirs. */
 	role: MembershipRole | 'superadmin';
+	/**
+	 * La personne peut-elle diffuser le direct de l'organisation (ADR 0056 amendée) ? Une personne
+	 * responsable d'office ; un éditeur si elle lui en a donné l'autorisation ; le super-admin entré
+	 * par ses pouvoirs, jamais : il donne l'autorisation, il ne diffuse pas. Relu à chaque requête,
+	 * comme le rôle : l'autorisation retirée vaut à la requête suivante.
+	 */
+	canBroadcast: boolean;
 	/** Vrai quand la connexion à utiliser est celle du super-admin, pas celle de l'application. */
 	asSuperAdmin: boolean;
 	/**
@@ -156,7 +165,10 @@ export interface Membership {
 	organizationAccent: string;
 	/** Lu de même, et pour la même raison : la navigation en dépend (ADR 0042). */
 	organizationPrayerModule: boolean;
+	organizationLiveLanguages: string[];
 	role: MembershipRole;
+	/** Responsable d'office, ou éditeur à qui l'autorisation a été donnée. */
+	canBroadcast: boolean;
 }
 
 /**
@@ -190,15 +202,16 @@ export async function membershipsOf(person: SignedIn): Promise<Membership[]> {
 					name: string;
 					accent_color: string;
 					prayer_module: boolean;
+					live_language: string[];
 				}>(
 					await tx.execute(
-						sql`select "slug", "name", "accent_color", "prayer_module" from "organization"
-							where "id" = ${organizationId}`
+						sql`select "slug", "name", "accent_color", "prayer_module", "live_language"
+							from "organization" where "id" = ${organizationId}`
 					)
 				);
-				const membership = firstRow<{ role: MembershipRole }>(
+				const membership = firstRow<{ role: MembershipRole; can_broadcast: boolean }>(
 					await tx.execute(
-						sql`select "role" from "membership"
+						sql`select "role", "can_broadcast" from "membership"
 							where "user_id" = ${person.userId} and "organization_id" = ${organizationId}`
 					)
 				);
@@ -209,7 +222,11 @@ export async function membershipsOf(person: SignedIn): Promise<Membership[]> {
 							organizationName: organisation.name,
 							organizationAccent: organisation.accent_color,
 							organizationPrayerModule: organisation.prayer_module,
-							role: membership.role
+							organizationLiveLanguages: organisation.live_language,
+							role: membership.role,
+							// La personne responsable diffuse d'office (décision du 27 novembre 2026) :
+							// la case ne sert qu'aux éditeurs.
+							canBroadcast: membership.role === 'org_admin' || membership.can_broadcast
 						}
 					: undefined;
 			}
@@ -318,9 +335,10 @@ export async function currentOrganisation(person: SignedIn): Promise<Organisatio
 		name: string;
 		accent_color: string;
 		prayer_module: boolean;
+		live_language: string[];
 	}>(
 		await superAdminDatabase().execute(
-			sql`select "slug", "name", "accent_color", "prayer_module"
+			sql`select "slug", "name", "accent_color", "prayer_module", "live_language"
 				from "organization" where "id" = ${active}`
 		)
 	);
@@ -332,7 +350,11 @@ export async function currentOrganisation(person: SignedIn): Promise<Organisatio
 		organizationName: visited.name,
 		organizationAccent: visited.accent_color,
 		organizationPrayerModule: visited.prayer_module,
+		organizationLiveLanguages: visited.live_language,
 		role: 'superadmin',
+		// Il donne l'autorisation de diffuser ; il ne diffuse pas (ADR 0056). Question posée au chef
+		// de projet le 27 novembre 2026 : une ligne à changer ici, et dans la garde.
+		canBroadcast: false,
 		asSuperAdmin: true,
 		// L'exploitant n'accepte pas ses propres conditions (ADR 0044).
 		termsAccepted: true,

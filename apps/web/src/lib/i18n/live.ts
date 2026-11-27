@@ -16,6 +16,11 @@ interface LiveTexts {
 		readonly help: string;
 		/** Aucune langue cochée : rien à diffuser. */
 		readonly none: string;
+		/**
+		 * Aucune des langues que l'organisation a choisies dans ses réglages n'est servie par le relais
+		 * de cette instance : pas de bouton (ADR 0056 amendée).
+		 */
+		readonly unavailable: string;
 	};
 	readonly start: string;
 	readonly stop: string;
@@ -77,7 +82,9 @@ export const liveTexts: Translations<LiveTexts> = {
 		languages: {
 			legend: 'Langues de traduction',
 			help: 'Chaque langue cochée est traduite pendant tout le direct. Décochez celles dont personne n’a besoin.',
-			none: 'Cochez au moins une langue.'
+			none: 'Cochez au moins une langue.',
+			unavailable:
+				'Aucune des langues choisies pour le direct n’est disponible ici. La personne responsable les choisit dans les réglages.'
 		},
 		start: 'Commencer le direct',
 		stop: 'Arrêter le direct',
@@ -141,7 +148,9 @@ export const liveTexts: Translations<LiveTexts> = {
 		languages: {
 			legend: 'Übersetzungssprachen',
 			help: 'Jede angekreuzte Sprache wird während der ganzen Übertragung übersetzt. Entfernen Sie das Häkchen bei Sprachen, die niemand braucht.',
-			none: 'Kreuzen Sie mindestens eine Sprache an.'
+			none: 'Kreuzen Sie mindestens eine Sprache an.',
+			unavailable:
+				'Keine der für die Übertragung gewählten Sprachen ist hier verfügbar. Die verantwortliche Person wählt sie in den Einstellungen.'
 		},
 		start: 'Übertragung starten',
 		stop: 'Übertragung beenden',
@@ -208,7 +217,9 @@ export const liveTexts: Translations<LiveTexts> = {
 		languages: {
 			legend: 'Lingue di traduzione',
 			help: 'Ogni lingua selezionata viene tradotta per tutta la diretta. Togli quelle che non servono a nessuno.',
-			none: 'Seleziona almeno una lingua.'
+			none: 'Seleziona almeno una lingua.',
+			unavailable:
+				'Nessuna delle lingue scelte per la diretta è disponibile qui. La persona responsabile le sceglie nelle impostazioni.'
 		},
 		start: 'Inizia la diretta',
 		stop: 'Ferma la diretta',
@@ -273,7 +284,9 @@ export const liveTexts: Translations<LiveTexts> = {
 		languages: {
 			legend: 'Translation languages',
 			help: 'Each ticked language is translated for the whole broadcast. Remove the tick from those nobody needs.',
-			none: 'Tick at least one language.'
+			none: 'Tick at least one language.',
+			unavailable:
+				'None of the languages chosen for the broadcast is available here. The person in charge chooses them in the settings.'
 		},
 		start: 'Start the broadcast',
 		stop: 'Stop the broadcast',
@@ -337,7 +350,9 @@ export const liveTexts: Translations<LiveTexts> = {
 		languages: {
 			legend: 'لغات الترجمة',
 			help: 'تُترجَم كل لغة محددة طوال البث. ألغِ تحديد اللغات التي لا يحتاج إليها أحد.',
-			none: 'حدّد لغة واحدة على الأقل.'
+			none: 'حدّد لغة واحدة على الأقل.',
+			unavailable:
+				'لا تتوفر هنا أي لغة من اللغات المختارة للبث. يختارها الشخص المسؤول في الإعدادات.'
 		},
 		start: 'بدء البث',
 		stop: 'إيقاف البث',
