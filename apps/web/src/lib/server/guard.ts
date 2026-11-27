@@ -78,12 +78,13 @@ export async function mustAdministerPrayerModule(
 
 /**
  * L'écran du poste « Diffuser » (ADR 0056 amendée) : le direct réglé sur cette instance, et une
- * personne qui a le droit de diffuser, conditions acceptées : la personne responsable d'office, un
- * éditeur à qui elle en a donné l'autorisation (`canBroadcast`).
+ * personne qui a le droit de diffuser (`canBroadcast`), conditions acceptées : la personne
+ * responsable d'office, un éditeur à qui elle en a donné l'autorisation, et le super-admin entré
+ * par ses pouvoirs, qui a tous les droits partout.
  *
  * **404 quand le direct est éteint**, avant même de regarder qui demande : sans relais, l'écran
- * n'existe pas, comme le module des heures de prière. Et 404 pour qui n'a pas le droit, le
- * super-admin entré par ses pouvoirs compris : pour eux, l'écran n'existe pas non plus.
+ * n'existe pas, comme le module des heures de prière. Et 404 pour qui n'a pas le droit : pour
+ * lui, l'écran n'existe pas non plus.
  */
 export async function mustBroadcast(
 	event: RequestEvent

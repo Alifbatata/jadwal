@@ -8,8 +8,8 @@
 // Chaque refus répond par son code et rien d'autre : c'est un programme qui lit, pas une personne.
 //   404  le direct n'est pas réglé sur cette instance ;
 //   403  la demande vient d'un autre site ; ou la personne n'est membre d'aucune organisation,
-//        n'a pas accepté les conditions, ou n'a pas le droit de diffuser (le super-admin entré
-//        par ses pouvoirs, un éditeur sans l'autorisation : ADR 0056 amendée) ;
+//        n'a pas accepté les conditions, ou n'a pas le droit de diffuser (un éditeur sans
+//        l'autorisation : ADR 0056 amendée) ;
 //   409  aucune des langues que l'organisation a choisies n'est servie par le relais ;
 //   401  personne n'est connecté.
 //

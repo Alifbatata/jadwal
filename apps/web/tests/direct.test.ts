@@ -5,8 +5,8 @@
 // Ce que ce fichier prouve et qu'aucun test unitaire ne voit :
 //   - sans réglage, l'écran n'existe pas (première instance) ; avec, il existe (seconde instance) ;
 //   - qui a le droit de diffuser : la personne responsable d'office, un éditeur à qui elle a donné
-//     l'autorisation, conditions acceptées ; ni un autre éditeur, ni un inconnu, ni le super-admin
-//     entré par ses pouvoirs, ni un autre site (ADR 0056 amendée) ;
+//     l'autorisation, conditions acceptées, et le super-admin entré par ses pouvoirs, qui a tous
+//     les droits partout ; ni un autre éditeur, ni un inconnu, ni un autre site (ADR 0056 amendée) ;
 //   - l'autorisation se donne dans l'écran Membres, et vaut à la requête suivante ;
 //   - les langues du direct sont celles que l'organisation a choisies dans ses réglages, croisées
 //     avec celles du relais : l'écran n'offre qu'elles, le jeton les porte, le relais refuse les
@@ -617,14 +617,15 @@ describe('l’écran « Diffuser »', () => {
 		expect(pending.headers.get('location')).toBe('/conditions/accepter');
 	});
 
-	it('does not exist for the super admin who entered by his powers', async () => {
-		// Le témoin : il est bien entré dans l'organisation, et voit son espace.
+	it('is open to the super admin who entered by his powers, link included', async () => {
+		// Il a tous les droits dans toutes les organisations, diffuser compris (décision du chef de
+		// projet du 27 novembre 2026). Il n'en est pas membre : c'est son entrée qui le lui donne.
 		const home = await get(avec, '/', cookies[EXPLOITANT]);
 		expect(home.status).toBe(200);
 		const html = await home.text();
 		expect(html).toContain(ORGANISATION);
-		expect(html).not.toMatch(/<a href="[^"]*direct"/);
-		expect((await get(avec, '/direct', cookies[EXPLOITANT])).status).toBe(404);
+		expect(html).toMatch(/<a href="[^"]*direct"[^>]*>Direct<\/a>/);
+		expect((await get(avec, '/direct', cookies[EXPLOITANT])).status).toBe(200);
 	});
 
 	it('opens the microphone and the way to the relay on this screen only', async () => {
@@ -712,10 +713,25 @@ describe('le jeton', () => {
 		expect(await liveJournal()).toEqual(before);
 	});
 
-	it('is refused without a session, without the terms, to the super admin, and to another site', async () => {
+	it('is given to the super admin who entered, and the journal names him', async () => {
+		const before = await liveJournal();
+		const response = await askToken(avec, cookies[EXPLOITANT]);
+		expect(response.status).toBe(200);
+		const { token } = (await response.json()) as { token: string };
+		const claims = JSON.parse(
+			Buffer.from(token.split('.')[0] as string, 'base64url').toString('utf8')
+		) as { o: string; l: string[] };
+		expect(claims.o).toBe(SLUG);
+		expect(claims.l).toEqual(['fr', 'tr']);
+		expect(await liveJournal()).toEqual([
+			...before,
+			{ actor_id: userIds[EXPLOITANT], action: 'live.token' }
+		]);
+	});
+
+	it('is refused without a session, without the terms, and to another site', async () => {
 		expect((await askToken(avec)).status).toBe(401);
 		expect((await askToken(avec, cookies[SANS_ACCORD])).status).toBe(403);
-		expect((await askToken(avec, cookies[EXPLOITANT])).status).toBe(403);
 		const elsewhere = 'https://ailleurs.example.org';
 		expect((await askToken(avec, cookies[RESPONSABLE], elsewhere)).status).toBe(403);
 		// SvelteKit refuse de lui-même un `POST` d'un autre site sans type de contenu, mais laisse
@@ -728,7 +744,7 @@ describe('le jeton', () => {
 		expect(await refused.text()).not.toContain('eyJ');
 		const before = await liveJournal();
 		await askToken(avec, cookies[SANS_ACCORD]);
-		await askToken(avec, cookies[EXPLOITANT]);
+		await askToken(avec, cookies[EDITEUR]);
 		await askToken(avec, cookies[RESPONSABLE], 'https://ailleurs.example.org');
 		expect(await liveJournal()).toEqual(before);
 		// Le témoin : le journal, lui, a bien des lignes, et un jeton donné en ajoute une.

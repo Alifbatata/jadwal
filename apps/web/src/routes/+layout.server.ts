@@ -76,7 +76,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 					prayerModule: context.organizationPrayerModule,
 					// Le poste « Diffuser », quand le direct est réglé sur cette instance, et pour qui a
 					// le droit de diffuser : la personne responsable, un éditeur qui en a reçu
-					// l'autorisation ; jamais le super-admin entré par ses pouvoirs (ADR 0056 amendée).
+					// l'autorisation, le super-admin entré par ses pouvoirs (ADR 0056 amendée).
 					live: liveSettings() !== null && context.canBroadcast,
 					role: context.role,
 					asSuperAdmin: context.asSuperAdmin,

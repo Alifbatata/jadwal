@@ -58,7 +58,7 @@ export interface OrganisationContext extends SignedIn {
 	/**
 	 * La personne peut-elle diffuser le direct de l'organisation (ADR 0056 amendée) ? Une personne
 	 * responsable d'office ; un éditeur si elle lui en a donné l'autorisation ; le super-admin entré
-	 * par ses pouvoirs, jamais : il donne l'autorisation, il ne diffuse pas. Relu à chaque requête,
+	 * par ses pouvoirs, qui a tous les droits partout. Relu à chaque requête,
 	 * comme le rôle : l'autorisation retirée vaut à la requête suivante.
 	 */
 	canBroadcast: boolean;
@@ -352,9 +352,9 @@ export async function currentOrganisation(person: SignedIn): Promise<Organisatio
 		organizationPrayerModule: visited.prayer_module,
 		organizationLiveLanguages: visited.live_language,
 		role: 'superadmin',
-		// Il donne l'autorisation de diffuser ; il ne diffuse pas (ADR 0056). Question posée au chef
-		// de projet le 27 novembre 2026 : une ligne à changer ici, et dans la garde.
-		canBroadcast: false,
+		// Il a tous les droits dans toutes les organisations, diffuser compris (décision du chef de
+		// projet du 27 novembre 2026, addendum de l'ADR 0056). Son entrée, passkey prouvée, suffit.
+		canBroadcast: true,
 		asSuperAdmin: true,
 		// L'exploitant n'accepte pas ses propres conditions (ADR 0044).
 		termsAccepted: true,
