@@ -41,6 +41,9 @@ relais, ou une liaison en clair sous un site en HTTPS arrêtent le serveur au d�
 
 ### Qui diffuse : tout membre de l'organisation
 
+_Remplacé par l'addendum du 27 novembre 2026 : seule la personne responsable diffuse d'office, et un
+éditeur seulement si elle lui en donne l'autorisation._
+
 Responsable ou éditeur, connecté, conditions d'utilisation acceptées. La personne à la sono n'est
 pas forcément responsable ; lui donner le rôle d'éditeur suffit.
 
@@ -118,3 +121,51 @@ n'y ajoute que le micro et l'écran.
 - **Seul Chrome est prouvé**, par une épreuve qui lui donne un fichier pour micro. Safari, Firefox
   et un vrai téléphone restent à essayer.
 - **Le traducteur est toujours simulé** : avec lui, la voix ne quitte pas le relais.
+
+## Addendum du 27 novembre 2026 : qui diffuse, et vers quelles langues
+
+Le chef de projet a décidé le 27 novembre 2026 de qui gère quoi : un super-admin, qui gère toutes
+les organisations et tous les comptes ; une personne responsable par organisation, qui gère tout
+pour la sienne, accès des membres compris. Personne ne diffuse sans un compte, et seuls les comptes
+qui en ont l'autorisation diffusent. Il a ajouté que chaque organisation choisit les langues vers
+lesquelles son sermon est traduit. Deux conséquences de cet ADR tombent : « tout membre peut faire
+dépenser » et « les langues se choisissent à chaque direct ».
+
+### L'autorisation de diffuser est portée par l'adhésion
+
+Une colonne de plus sur l'adhésion, fausse par défaut. La personne responsable a ce droit
+**d'office**, sans elle ; un éditeur l'a si elle la lui a donnée. Elle la donne et la retire dans l'écran
+Membres, d'un clic, sans confirmation : le geste se défait aussitôt, et ne retire l'accès à rien
+d'autre. Le super-admin entré dans l'organisation la donne de la même façon.
+
+La base le tient, et pas seulement l'écran : le rôle applicatif ne modifie cette colonne que pour
+une personne responsable, comme le rôle ; et l'invité, qui écrit lui-même son adhésion en entrant
+(ADR 0017), ne peut pas s'y donner l'autorisation. Le droit est relu à chaque requête : retiré, il
+ne vaut plus à la requête suivante. Chaque geste laisse une ligne au journal de l'organisation.
+
+Le super-admin entré par ses pouvoirs ne diffuse toujours pas : il donne l'autorisation, il ne la
+reçoit pas. C'est le choix le plus prudent en attendant que le chef de projet dise s'il veut
+pouvoir diffuser lui-même.
+
+### Les langues du direct sont celles de l'organisation
+
+Une liste de plus sur l'organisation, parmi les sept langues du direct, les sept par défaut. La
+personne responsable la règle dans les Réglages, qui ne proposent que les langues que le relais de
+l'instance sert. Celles qu'elle avait choisies et que le relais ne sert pas restent choisies :
+elles reviendront avec un relais qui les sert, et l'enregistrement ne les efface pas en silence.
+
+L'écran « Diffuser » n'offre plus que les langues de l'organisation que le relais sert. S'il n'en
+reste aucune, il le dit, sans bouton.
+
+**Le jeton porte ces langues**, et le relais refuse une ouverture qui en demande une autre. Sans
+cela, la règle ne tiendrait que par l'écran, et une langue de plus se paie. Le jeton témoin des
+deux programmes change en conséquence.
+
+### Ce qui reste
+
+- Les langues par défaut pour toute l'instance, que le super-admin fixerait : plus tard, comme le
+  chef de projet l'a dit.
+- Une vue du super-admin sur tous les comptes de toutes les organisations : il les gère aujourd'hui
+  en entrant dans chacune.
+- L'inscription ouverte à tous, décidée le même jour : un chantier à part. Elle changera qui peut
+  écrire au service, et ne donnera rien de plus à un compte sans organisation.

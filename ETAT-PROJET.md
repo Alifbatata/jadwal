@@ -168,7 +168,9 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   Cinq chantiers : le relais, le poste « Diffuser », l'écoute, la preuve sur un vrai sermon, puis
   la charge, le parcours et les conditions. **Les deux premiers sont faits** : `apps/live`, le
   relais du direct (ADR 0055), avec un traducteur simulé, et le poste « Diffuser », `/direct`
-  (ADR 0056), d'où un membre lance le direct depuis son navigateur. Personne ne peut encore
+  (ADR 0056), d'où l'on lance le direct depuis son navigateur. Depuis le 27.11.2026, seuls
+  diffusent la personne responsable, d'office, et les éditeurs à qui elle en donne l'autorisation,
+  vers les langues que l'organisation a choisies dans ses réglages. Personne ne peut encore
   écouter depuis une page, aucun service de traduction n'est branché, et rien ne quitte le relais.
   Le service sera choisi au quatrième chantier, sur un vrai sermon : il y faudra une clé chez
   chaque service essayé et un enregistrement, que l'exploitant fournira.
@@ -1156,7 +1158,27 @@ Deuxième chantier, livré sur `main` le 26.11.2026, pas déployé :
 - **Ce qui n'est pas fait** : l'écran d'écoute ; l'image Docker du relais ; aucun pas du parcours,
   et `pnpm direct:test` n'est pas encore dans la CI ; le format du son servi aux téléphones, trop
   lourd tel quel pour une salle pleine ; la limite du nombre de liaisons par adresse ; le choix
-  des langues retenu par organisation ; Safari, Firefox et un vrai téléphone.
+  des langues retenu par organisation (fait au chantier 2 bis) ; Safari, Firefox et un vrai
+  téléphone.
+
+Chantier 2 bis, livré sur `main` le 27.11.2026, pas déployé (décisions du chef de projet du même
+jour, addendum de l'ADR 0056) :
+
+- **Qui diffuse** : la personne responsable d'office ; un éditeur seulement si elle lui en donne
+  l'autorisation, d'un clic dans l'écran Membres. Le super-admin entré dans l'organisation la
+  donne de même, et ne diffuse pas lui-même. L'autorisation est une colonne de l'adhésion : la base
+  ne la laisse écrire qu'à une personne responsable, et refuse qu'un invité se la donne en entrant
+  (migrations 0084 et 0085). Elle est relue à chaque requête, et chaque geste laisse une ligne au
+  journal.
+- **Les langues du direct** : chaque organisation choisit les siennes dans ses Réglages, parmi
+  celles que le relais sert ; les sept par défaut. L'écran « Diffuser » n'offre qu'elles, le jeton
+  les porte, et le relais refuse une ouverture vers une autre.
+- **Les tests** : 4 656 dans tout le dépôt, tous réussis, aucun sauté, et 25 liés au temps ;
+  `pnpm direct:test`, 26 vérifications sur 26. Vingt fautes introduites exprès ont toutes été
+  attrapées.
+- **Ce qui n'est pas fait** : l'inscription ouverte à tous, décidée le même jour (chantier à part) ;
+  une vue du super-admin sur les comptes de toutes les organisations ; les langues par défaut pour
+  toute l'instance.
 
 **Un script ou une commande qu'aucun test ne _lance_ n'est pas éprouvé.** C'est la règle du dépôt
 depuis l'étape 12, et elle répond à la question laissée ouverte à l'étape 11.

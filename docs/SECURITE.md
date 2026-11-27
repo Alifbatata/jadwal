@@ -268,14 +268,18 @@ aucune variable du serveur web. Il portera la clé du service de traduction, que
 voit jamais. Sans réglage, il refuse de démarrer : rien n'écoute.
 
 Pour diffuser, il faut un jeton que le serveur web signe pour un membre connecté : une
-organisation, une échéance, une signature HMAC-SHA-256. Le jeton voyage dans le premier message de
+organisation, une échéance, les langues permises, une signature HMAC-SHA-256. Le relais refuse une
+ouverture vers une langue que le jeton ne permet pas. Le jeton voyage dans le premier message de
 la liaison, jamais dans son adresse. Faux, échu ou signé par un autre, il reçoit le même refus. La
 signature est comparée en temps constant, avant que rien du contenu soit lu. Un poste qui ne
 s'annonce pas en cinq secondes est décroché, et un message de plus de 64 Kio ferme la liaison.
 
-Le serveur web ne signe que pour un membre de l'organisation, responsable ou éditeur, qui a
-accepté les conditions ; jamais pour le super-admin entré par ses pouvoirs (ADR 0056).
-L'organisation vient de la session, pas de la requête. Le jeton vit une minute, se demande au
+Le serveur web ne signe que pour qui a le droit de diffuser, conditions acceptées : la personne
+responsable d'office, un éditeur à qui elle en a donné l'autorisation ; jamais pour le super-admin
+entré par ses pouvoirs (ADR 0056 et son addendum). L'autorisation est une colonne de l'adhésion :
+la base ne la laisse écrire qu'à une personne responsable, et refuse qu'un invité se la donne en
+entrant. Elle est relue à chaque requête. Le jeton ne porte que les langues que l'organisation a
+choisies et que le relais sert. L'organisation vient de la session, pas de la requête. Le jeton vit une minute, se demande au
 moment d'appuyer, n'est rendu dans aucune page ni gardé dans aucun cache, et une demande venue
 d'un autre site est refusée. Chaque jeton signé laisse une ligne au journal de l'organisation.
 
@@ -308,9 +312,9 @@ quitte pas le relais.
   fait entendre ce qu'il veut à ceux qui écoutent. Il n'ouvre ni la base ni les comptes. C'est un
   secret d'hébergement, distinct de celui des sessions. Deux programmes le lisent : le relais et
   le serveur web.
-- **Tout membre d'une organisation peut lancer un direct**, éditeur compris, donc faire dépenser du
-  temps de traduction jusqu'au plafond du mois. Le journal de l'organisation dit qui l'a fait.
-  Rien ne désigne encore, membre par membre, qui a ce droit.
+- **Qui a le droit de diffuser fait dépenser** du temps de traduction, jusqu'au plafond du mois,
+  vers les langues de son organisation. Ce droit, la personne responsable l'a d'office et le donne
+  membre par membre ; le journal de l'organisation dit qui l'a donné, et qui a lancé chaque direct.
 - **Le poste « Diffuser » n'est prouvé que dans Chrome**, avec un fichier pour micro. Safari,
   Firefox et un vrai téléphone restent à essayer.
 - **Les places d'écoute se prennent.** Rien ne limite encore le nombre de liaisons d'une même
