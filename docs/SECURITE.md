@@ -275,8 +275,8 @@ signature est comparée en temps constant, avant que rien du contenu soit lu. Un
 s'annonce pas en cinq secondes est décroché, et un message de plus de 64 Kio ferme la liaison.
 
 Le serveur web ne signe que pour qui a le droit de diffuser, conditions acceptées : la personne
-responsable d'office, un éditeur à qui elle en a donné l'autorisation ; jamais pour le super-admin
-entré par ses pouvoirs (ADR 0056 et son addendum). L'autorisation est une colonne de l'adhésion :
+responsable d'office, un éditeur à qui elle en a donné l'autorisation, et le super-admin entré par
+ses pouvoirs, qui a tous les droits partout (ADR 0056 et son addendum). L'autorisation est une colonne de l'adhésion :
 la base ne la laisse écrire qu'à une personne responsable, et refuse qu'un invité se la donne en
 entrant. Elle est relue à chaque requête. Le jeton ne porte que les langues que l'organisation a
 choisies et que le relais sert. L'organisation vient de la session, pas de la requête. Le jeton vit une minute, se demande au

@@ -169,7 +169,7 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   la charge, le parcours et les conditions. **Les deux premiers sont faits** : `apps/live`, le
   relais du direct (ADR 0055), avec un traducteur simulé, et le poste « Diffuser », `/direct`
   (ADR 0056), d'où l'on lance le direct depuis son navigateur. Depuis le 27.11.2026, seuls
-  diffusent la personne responsable, d'office, et les éditeurs à qui elle en donne l'autorisation,
+  diffusent la personne responsable, d'office, le super-admin, et les éditeurs autorisés,
   vers les langues que l'organisation a choisies dans ses réglages. Personne ne peut encore
   écouter depuis une page, aucun service de traduction n'est branché, et rien ne quitte le relais.
   Le service sera choisi au quatrième chantier, sur un vrai sermon : il y faudra une clé chez
@@ -1166,7 +1166,7 @@ jour, addendum de l'ADR 0056) :
 
 - **Qui diffuse** : la personne responsable d'office ; un éditeur seulement si elle lui en donne
   l'autorisation, d'un clic dans l'écran Membres. Le super-admin entré dans l'organisation la
-  donne de même, et ne diffuse pas lui-même. L'autorisation est une colonne de l'adhésion : la base
+  donne de même, et diffuse aussi : il a tous les droits partout. L'autorisation est une colonne de l'adhésion : la base
   ne la laisse écrire qu'à une personne responsable, et refuse qu'un invité se la donne en entrant
   (migrations 0084 et 0085). Elle est relue à chaque requête, et chaque geste laisse une ligne au
   journal.

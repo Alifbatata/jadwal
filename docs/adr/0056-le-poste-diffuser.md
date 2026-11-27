@@ -41,8 +41,8 @@ relais, ou une liaison en clair sous un site en HTTPS arrêtent le serveur au d�
 
 ### Qui diffuse : tout membre de l'organisation
 
-_Remplacé par l'addendum du 27 novembre 2026 : seule la personne responsable diffuse d'office, et un
-éditeur seulement si elle lui en donne l'autorisation._
+_Remplacé par l'addendum du 27 novembre 2026 : la personne responsable diffuse d'office, un éditeur
+seulement si elle lui en donne l'autorisation, et le super-admin entré par ses pouvoirs aussi._
 
 Responsable ou éditeur, connecté, conditions d'utilisation acceptées. La personne à la sono n'est
 pas forcément responsable ; lui donner le rôle d'éditeur suffit.
@@ -136,16 +136,19 @@ dépenser » et « les langues se choisissent à chaque direct ».
 Une colonne de plus sur l'adhésion, fausse par défaut. La personne responsable a ce droit
 **d'office**, sans elle ; un éditeur l'a si elle la lui a donnée. Elle la donne et la retire dans l'écran
 Membres, d'un clic, sans confirmation : le geste se défait aussitôt, et ne retire l'accès à rien
-d'autre. Le super-admin entré dans l'organisation la donne de la même façon.
+d'autre. Le super-admin entré dans l'organisation la donne de la même façon, et diffuse lui-même.
 
 La base le tient, et pas seulement l'écran : le rôle applicatif ne modifie cette colonne que pour
 une personne responsable, comme le rôle ; et l'invité, qui écrit lui-même son adhésion en entrant
 (ADR 0017), ne peut pas s'y donner l'autorisation. Le droit est relu à chaque requête : retiré, il
 ne vaut plus à la requête suivante. Chaque geste laisse une ligne au journal de l'organisation.
 
-Le super-admin entré par ses pouvoirs ne diffuse toujours pas : il donne l'autorisation, il ne la
-reçoit pas. C'est le choix le plus prudent en attendant que le chef de projet dise s'il veut
-pouvoir diffuser lui-même.
+**Le super-admin entré par ses pouvoirs diffuse aussi.** La première version de cet ADR le
+tenait à l'écart (« la voix d'une organisation est lancée par l'un des siens ») ; le chef de
+projet a tranché le même jour : il a tous les droits dans toutes les organisations, diffuser
+compris. Il n'en est pas membre : c'est son entrée, passkey prouvée, qui le lui donne, comme pour
+tout le reste de l'espace (ADR 0025). Son jeton laisse au journal de l'organisation une ligne à
+son nom.
 
 ### Les langues du direct sont celles de l'organisation
 
