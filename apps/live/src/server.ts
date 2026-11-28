@@ -13,7 +13,7 @@ import { createServer, type IncomingMessage } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import type { Duplex } from 'node:stream';
 import { WebSocketServer, type RawData, type WebSocket } from 'ws';
-import { BYTES_PER_SECOND } from './audio.js';
+import { LISTENER_BYTES_PER_SECOND } from './adpcm.js';
 import type { Counter } from './counter.js';
 import {
 	Relay,
@@ -40,8 +40,10 @@ const MAX_LISTENER_MESSAGE = 1024;
 /**
  * Au-delà de trois secondes de son en attente pour un appareil, le relais saute des morceaux : un
  * direct en retard ne sert à rien, et la mémoire du relais n'est pas celle d'un téléphone lent.
+ * Ce sont des secondes de son codé (ADR 0057) : chaque paquet se décode seul, en sauter un
+ * n'abîme pas la suite.
  */
-const MAX_BUFFERED_BYTES = BYTES_PER_SECOND * 3;
+const MAX_BUFFERED_BYTES = LISTENER_BYTES_PER_SECOND * 3;
 
 /** À l'arrêt, les liaisons ont ce temps pour se fermer d'elles-mêmes avant d'être coupées. */
 const CLOSE_GRACE_MS = 3000;

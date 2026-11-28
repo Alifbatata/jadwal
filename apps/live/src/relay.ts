@@ -8,7 +8,16 @@
 // Ce que le relais garde en mémoire : les directs en cours et les liaisons de ceux qui écoutent.
 // Le son et le texte le traversent sans y rester : il n'a ni tampon ni file. Rien n'est écrit,
 // sinon le compteur du mois, et deux lignes de journal par direct.
+//
+// Le son rendu par le traducteur est codé pour les téléphones (`adpcm.ts`, ADR 0057) : une fois
+// par morceau et par langue, et le même paquet part à chacun.
 
+import {
+	createAdpcmEncoder,
+	LISTENER_FORMAT,
+	type AdpcmEncoder,
+	type ListenerFormat
+} from './adpcm.js';
 import { AUDIO_FORMAT, BYTES_PER_SAMPLE, BYTES_PER_SECOND, type AudioFormat } from './audio.js';
 import type { Counter } from './counter.js';
 import type { Settings } from './settings.js';
@@ -70,7 +79,7 @@ export type ListenerMessage =
 			readonly type: 'state';
 			readonly live: true;
 			readonly languages: readonly string[];
-			readonly format: AudioFormat;
+			readonly format: ListenerFormat;
 	  }
 	| { readonly type: 'text'; readonly text: string; readonly final: boolean };
 
@@ -83,7 +92,8 @@ export interface BroadcasterPort {
 /** De quoi écrire à une personne qui écoute. */
 export interface ListenerPort {
 	send(message: ListenerMessage): void;
-	audio(pcm: Buffer): void;
+	/** Un paquet de son codé (`adpcm.ts`), le même pour tous ceux qui écoutent cette langue. */
+	audio(packet: Buffer): void;
 }
 
 /**
@@ -127,6 +137,8 @@ interface LiveBroadcast extends Broadcast {
 	countedUntil: number;
 	bytes: number;
 	peakListeners: number;
+	/** Un codeur par langue, créé au premier morceau qu'une personne écoute. */
+	readonly encoders: Map<string, AdpcmEncoder>;
 }
 
 export type OpenResult =
@@ -199,7 +211,8 @@ export class Relay {
 			lastAudioAt: now,
 			countedUntil: now,
 			bytes: 0,
-			peakListeners: 0
+			peakListeners: 0,
+			encoders: new Map()
 		};
 		this.#broadcasts.set(organization, broadcast);
 
@@ -207,7 +220,14 @@ export class Relay {
 			.open(languages, {
 				audio: (language, pcm) => {
 					if (broadcast.state !== 'open') return;
-					for (const listener of this.#listenersOf(organization, language)) listener.audio(pcm);
+					const listeners = this.#listenersOf(organization, language);
+					// Personne n'écoute cette langue : rien à coder. Le paquet suivant porte son propre
+					// état, et se décode sans celui-ci.
+					if (listeners.size === 0) return;
+					let encoder = broadcast.encoders.get(language);
+					if (!encoder) broadcast.encoders.set(language, (encoder = createAdpcmEncoder()));
+					const packet = encoder.encode(pcm);
+					for (const listener of listeners) listener.audio(packet);
 				},
 				text: (language, text, final) => {
 					if (broadcast.state !== 'open') return;
@@ -253,7 +273,7 @@ export class Relay {
 			type: 'state',
 			live: true,
 			languages: broadcast.languages,
-			format: AUDIO_FORMAT
+			format: LISTENER_FORMAT
 		});
 	}
 
@@ -298,7 +318,7 @@ export class Relay {
 				type: 'state',
 				live: true,
 				languages: broadcast.languages,
-				format: AUDIO_FORMAT
+				format: LISTENER_FORMAT
 			});
 		} else {
 			port.send({ type: 'state', live: false });

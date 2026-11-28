@@ -13,6 +13,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
+import { createAdpcmEncoder } from '../src/adpcm.js';
 import { BYTES_PER_SECOND } from '../src/audio.js';
 import { signToken } from '../src/token.js';
 
@@ -211,8 +212,10 @@ describe('le programme, allumé', () => {
 		const son = Buffer.alloc(BYTES_PER_SECOND, 0x5a);
 		poste.socket.send(son.subarray(0, BYTES_PER_SECOND / 2));
 		poste.socket.send(son.subarray(BYTES_PER_SECOND / 2));
-		expect(await fidele.suivant()).toEqual(son.subarray(0, BYTES_PER_SECOND / 2));
-		expect(await fidele.suivant()).toEqual(son.subarray(BYTES_PER_SECOND / 2));
+		// Il arrive codé pour les téléphones (ADR 0057), morceau par morceau, d'un même codeur.
+		const codeur = createAdpcmEncoder();
+		expect(await fidele.suivant()).toEqual(codeur.encode(son.subarray(0, BYTES_PER_SECOND / 2)));
+		expect(await fidele.suivant()).toEqual(codeur.encode(son.subarray(BYTES_PER_SECOND / 2)));
 		expect(await fidele.suivant()).toEqual({
 			type: 'text',
 			text: 'Traduction simulée (fr), seconde 1.',

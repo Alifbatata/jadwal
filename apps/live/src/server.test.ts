@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
+import { createAdpcmEncoder, LISTENER_BYTES_PER_SECOND, LISTENER_FORMAT } from './adpcm.js';
 import { AUDIO_FORMAT, BYTES_PER_SECOND } from './audio.js';
 import type { Counter } from './counter.js';
 import type { LogEntry } from './relay.js';
@@ -147,13 +148,19 @@ describe('de bout en bout', () => {
 			type: 'state',
 			live: true,
 			languages: ['fr', 'de'],
-			format: AUDIO_FORMAT
+			format: LISTENER_FORMAT
 		});
 
-		// Une seconde de son, en cinq morceaux de 200 ms.
+		// Une seconde de son, en cinq morceaux de 200 ms ; ils arrivent codés, quatre fois plus
+		// légers (ADR 0057).
 		const morceaux = Array.from({ length: 5 }, (_, i) => Buffer.alloc(BYTES_PER_SECOND / 5, i + 1));
 		for (const morceau of morceaux) poste.socket.send(morceau);
-		for (const morceau of morceaux) expect(await fidele.next()).toEqual(morceau);
+		const codeur = createAdpcmEncoder();
+		for (const morceau of morceaux) {
+			const paquet = await fidele.next();
+			expect(paquet).toEqual(codeur.encode(morceau));
+			expect((paquet as Buffer).length).toBe(LISTENER_BYTES_PER_SECOND / 5);
+		}
 		expect(await fidele.next()).toEqual({
 			type: 'text',
 			text: 'Traduction simulée (fr), seconde 1.',
@@ -367,12 +374,12 @@ describe('un appareil trop lent', () => {
 	it('saute du son plutôt que de le recevoir en retard', () => {
 		const sent: Buffer[] = [];
 		const socket = { bufferedAmount: 0, send: (pcm: Buffer) => void sent.push(pcm) };
-		const pcm = Buffer.alloc(4800);
+		const pcm = Buffer.alloc(2404);
 		expect(sendAudioIfKeepingUp(socket, pcm)).toBe(true);
-		// Plus de trois secondes de son en attente : ce morceau n'est pas envoyé.
-		socket.bufferedAmount = BYTES_PER_SECOND * 3 + 1;
+		// Plus de trois secondes de son codé en attente : ce morceau n'est pas envoyé.
+		socket.bufferedAmount = LISTENER_BYTES_PER_SECOND * 3 + 1;
 		expect(sendAudioIfKeepingUp(socket, pcm)).toBe(false);
-		socket.bufferedAmount = BYTES_PER_SECOND * 3;
+		socket.bufferedAmount = LISTENER_BYTES_PER_SECOND * 3;
 		expect(sendAudioIfKeepingUp(socket, pcm)).toBe(true);
 		expect(sent).toHaveLength(2);
 	});

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createAdpcmEncoder, LISTENER_FORMAT } from './adpcm.js';
 import { AUDIO_FORMAT, BYTES_PER_SECOND } from './audio.js';
 import type { Counter } from './counter.js';
 import {
@@ -254,7 +255,8 @@ describe('le son et le texte', () => {
 		session.sink.audio('fr', voix);
 		session.sink.text('fr', 'Bonjour', false);
 		session.sink.text('fr', 'Bonjour à tous.', true);
-		expect(fr.pcm).toEqual([voix]);
+		// Codé pour les téléphones (ADR 0057) : le premier paquet d'un codeur neuf.
+		expect(fr.pcm).toEqual([createAdpcmEncoder().encode(voix)]);
 		expect(fr.messages.slice(-2)).toEqual([
 			{ type: 'text', text: 'Bonjour', final: false },
 			{ type: 'text', text: 'Bonjour à tous.', final: true }
@@ -263,6 +265,27 @@ describe('le son et le texte', () => {
 		expect(de.messages.filter((m) => m.type === 'text')).toEqual([]);
 		expect(ailleurs.pcm).toEqual([]);
 		expect(ailleurs.messages).toEqual([{ type: 'state', live: false }]);
+	});
+
+	it('code le son une fois par morceau et par langue, et en garde le pas d’un morceau à l’autre', async () => {
+		const t = setup();
+		const un = listener();
+		const deux = listener();
+		const de = listener();
+		t.relay.listen('centre-demo', 'fr', un);
+		t.relay.listen('centre-demo', 'fr', deux);
+		t.relay.listen('centre-demo', 'de', de);
+		const { session } = await opened(t);
+		const voix = [Buffer.from([0, 0, 0xe8, 0x03]), Buffer.from([0xf4, 0x01, 0xf4, 0x01])];
+		for (const morceau of voix) session.sink.audio('fr', morceau);
+		session.sink.audio('de', voix[1]!);
+		// Le même paquet, pas une copie : un seul codage, quel que soit le nombre à l'écoute.
+		expect(un.pcm).toHaveLength(2);
+		un.pcm.forEach((paquet, i) => expect(deux.pcm[i]).toBe(paquet));
+		const suite = createAdpcmEncoder();
+		expect(un.pcm).toEqual(voix.map((morceau) => suite.encode(morceau)));
+		// L'allemand a son propre codeur, neuf.
+		expect(de.pcm).toEqual([createAdpcmEncoder().encode(voix[1]!)]);
 	});
 
 	it('ignore le son d’un poste qui n’est pas encore ouvert, ou qui est fermé', async () => {
@@ -303,7 +326,7 @@ describe('ceux qui écoutent', () => {
 			type: 'state',
 			live: true,
 			languages: ['fr', 'de'],
-			format: AUDIO_FORMAT
+			format: LISTENER_FORMAT
 		});
 		t.relay.stop(broadcast, 'requested');
 		expect(fr.messages.at(-1)).toEqual({ type: 'state', live: false });
@@ -317,7 +340,7 @@ describe('ceux qui écoutent', () => {
 		const fr = listener();
 		t.relay.listen('centre-demo', 'fr', fr);
 		expect(fr.messages).toEqual([
-			{ type: 'state', live: true, languages: ['fr', 'de'], format: AUDIO_FORMAT }
+			{ type: 'state', live: true, languages: ['fr', 'de'], format: LISTENER_FORMAT }
 		]);
 		expect(fr.pcm).toEqual([]);
 	});
@@ -470,10 +493,10 @@ describe('un second poste pour la même organisation', () => {
 			type: 'state',
 			live: true,
 			languages: ['fr'],
-			format: AUDIO_FORMAT
+			format: LISTENER_FORMAT
 		});
 		second.session.sink.audio('fr', Buffer.from([7, 7]));
-		expect(fr.pcm).toEqual([Buffer.from([7, 7])]);
+		expect(fr.pcm).toEqual([createAdpcmEncoder().encode(Buffer.from([7, 7]))]);
 		// Ce que l'ancienne session rendrait encore ne passe plus.
 		premier.session.sink.audio('fr', Buffer.from([1, 1]));
 		expect(fr.pcm).toHaveLength(1);
