@@ -1,13 +1,10 @@
 // Les textes nouveaux de l'étape 22, relus dans les cinq langues : la page de demande d'accès, la
 // console du super-admin (demandes, personne responsable, invitation) et le courriel « aucun
-// compte ». Chaque correction, à sa place, et l'ancienne forme absente.
+// compte », retiré depuis (étape 25). Chaque correction, à sa place, et l'ancienne forme absente.
 
 import { describe, expect, it } from 'vitest';
-import { noAccountEmail } from '../server/mail/messages.js';
 import { accessRequestTexts } from './access-request.js';
 import { superAdminTexts } from './super-admin.js';
-
-const ORIGIN = 'https://jadwal.example.org';
 
 /** Tous les textes d'un objet de textes, fonctions comprises, appelées avec un nombre. */
 function allTexts(value: unknown): string[] {
@@ -109,11 +106,7 @@ describe('English reviewed (step 22)', () => {
 		);
 	});
 
-	it('R6: the person in charge sends an invitation to this address', () => {
-		expect(noAccountEmail('a@example.org', ORIGIN, 'en').text).toContain(
-			'ask the person in charge to send an invitation to this address.'
-		);
-	});
+	// R6 portait sur le courriel « aucun compte », retiré à l'étape 25 (ADR 0058).
 });
 
 describe('Arabic reviewed (step 22)', () => {
@@ -140,9 +133,5 @@ describe('Arabic reviewed (step 22)', () => {
 		expect(accessRequestTexts.ar.elsewhere.question).toBe('ألا تستخدم مؤسستك jadwal بعد؟');
 	});
 
-	it('R5: the person in charge sends an invitation to this address', () => {
-		expect(noAccountEmail('a@example.org', ORIGIN, 'ar').text).toContain(
-			'فاطلب من المسؤول عنها أن يرسل دعوة إلى هذا العنوان.'
-		);
-	});
+	// R5 portait sur le courriel « aucun compte », retiré à l'étape 25 (ADR 0058).
 });

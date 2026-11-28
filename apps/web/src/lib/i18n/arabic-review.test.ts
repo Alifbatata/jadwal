@@ -91,8 +91,12 @@ describe('Arabic reviewed by the project lead (step 20)', () => {
 
 // Étape 21 : ma relecture des textes arabes de l'étape 20. Deux tournures reprises, le reste tient.
 describe('Arabic reviewed again (step 21)', () => {
+	// Repris à l'étape 25 : l'inscription est ouverte (ADR 0058), la tournure relue garde sa place
+	// derrière la condition « si une invitation vous est parvenue ».
 	it('R1: the address the invitation reached', () => {
-		expect(signInTexts.ar.emailHint).toBe('العنوان الذي وصلت إليه دعوتك. مثال: name@example.org');
+		expect(signInTexts.ar.emailHint).toBe(
+			'إن وصلتك دعوة، فهو العنوان الذي وصلت إليه دعوتك. مثال: name@example.org'
+		);
 	});
 
 	it('R2: an address in the format of an email address', () => {

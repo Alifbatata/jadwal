@@ -174,7 +174,10 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   diffusent la personne responsable, d'office, le super-admin, et les éditeurs autorisés,
   vers les langues que l'organisation a choisies dans ses réglages. Aucun service de traduction
   n'est branché : on entend, traduite par le simulateur, sa propre voix, et rien ne quitte le
-  relais.
+  relais. Depuis le 28.11.2026, **l'inscription est ouverte à tous** (ADR 0058) : toute adresse
+  reçoit le lien de connexion, qui ouvre un compte rattaché à rien, sous des bornes qui empêchent
+  de faire écrire le service à n'importe qui ; le super-admin voit tous les comptes et peut en
+  supprimer un.
   Le service sera choisi au quatrième chantier, sur un vrai sermon : il y faudra une clé chez
   chaque service essayé et un enregistrement, que l'exploitant fournira.
 
@@ -1107,8 +1110,8 @@ ne connaît rien au service doit tout comprendre seule, sans aide.
 - **Ce qui n'est pas prouvé** : l'installation et la lecture sans réseau sur un vrai téléphone, qui
   demandent une adresse en HTTPS, donc un serveur en ligne ; Safari et Firefox. Seules les pages
   déjà ouvertes se relisent. Les textes allemands, italiens, anglais et arabes de ces écrans
-  attendent la relecture d'un locuteur. Les conditions d'utilisation ne nomment pas encore les
-  six champs d'information : ce sera fait avec la version que demandera l'étape 25.
+  attendent la relecture d'un locuteur. Les conditions d'utilisation nomment les six champs
+  d'information depuis leur version du 28.11.2026 (étape 25, chantier 3 bis).
 
 Étape 25 (le direct), en cours ; premier chantier livré sur `main`, pas déployé :
 
@@ -1206,6 +1209,42 @@ Troisième chantier, livré sur `main` le 27.11.2026, pas déployé (ADR 0057) :
 - **Ce qui n'est pas fait** : un vrai téléphone (le son écran verrouillé, le bouton du silence d'un
   iPhone) ; Safari et Firefox ; un réglage pour cacher l'onglet d'une organisation qui ne diffuse
   pas ; `pnpm direct:test` dans la CI.
+
+Chantier 3 bis, livré sur `main` le 28.11.2026, pas déployé (ADR 0058, mention dans l'ADR 0049) :
+
+- **L'inscription ouverte à tous**, décidée par le chef de projet le 27.11.2026. Toute adresse de
+  forme acceptable reçoit le même lien de connexion, mot pour mot, et l'ouvrir crée le compte. Le
+  courriel « aucun compte » de l'étape 22 disparaît. Un compte sans organisation ne voit rien de
+  plus qu'un visiteur : « Vos organisations » dit les deux chemins, se faire inviter ou demander
+  l'accès, qui restent les seuls pour entrer dans une organisation ou en ouvrir une.
+- **Un trou fermé.** L'action du formulaire `/connexion` appelait l'API serveur de Better Auth,
+  qui échappe à sa limitation par adresse IP (elle ne voit que les requêtes HTTP) : une seule
+  machine pouvait faire écrire le service à autant d'adresses qu'elle voulait. Un test le montrait
+  (vingt et une demandes, vingt et un courriels) avant la correction.
+- **Les bornes des liens** : vingt demandes par heure et par adresse IP, au formulaire comme à
+  l'API, seule borne dite (`429`, qui ne parle que de la connexion) ; trois liens par heure par
+  adresse ; pour ouvrir un compte, dix liens par heure depuis une adresse IP et soixante pour tout
+  le service. Ces deux dernières comptent chaque lien et ne retiennent, en silence, que l'ouverture
+  d'un compte : une adresse qui a déjà un compte, ou qu'une invitation attend, reçoit toujours le
+  sien.
+- **L'écran des comptes du super-admin**, `/super-admin/comptes`, lié depuis la console : chaque
+  compte, ses organisations, son rôle, l'autorisation de diffuser, les comptes sans organisation.
+  Les adhésions de toutes les organisations sortent par une fonction de la migration 0086,
+  `jadwal.all_memberships()` ; la politique des adhésions reste bornée à l'organisation où il est
+  entré.
+- **La suppression d'un compte** (le chef de projet, le 28.11.2026 : « le super admin doit pouvoir
+  tout faire »), en deux temps, sans JavaScript comme avec, par `jadwal.delete_account(uuid)`
+  (migration 0087). Elle refuse un compte de l'exploitant et la dernière personne responsable
+  d'une organisation, et écrit `account.delete` au journal de chaque organisation du compte.
+- **Les conditions d'utilisation**, version du 28.11.2026 : l'inscription ouverte, ce que garde un
+  compte sans organisation, les bornes, et les six champs d'information de l'étape 24. Chacun les
+  accepte de nouveau.
+- **Les tests** : 4 713 dans tout le dépôt, tous réussis, aucun sauté, et 25 liés au temps ;
+  `pnpm direct:test` 45 sur 45 ; dix-huit fautes introduites exprès, toutes attrapées. Le parcours
+  suit le nouveau courriel.
+- **Ce qui n'est pas fait** : les bornes n'ont pas été éprouvées sous un vrai flot, ni avec un vrai
+  fournisseur de courriel (rien n'est en ligne) ; les textes allemands, italiens, anglais et arabes
+  du nouvel écran attendent un locuteur.
 
 **Un script ou une commande qu'aucun test ne _lance_ n'est pas éprouvé.** C'est la règle du dépôt
 depuis l'étape 12, et elle répond à la question laissée ouverte à l'étape 11.

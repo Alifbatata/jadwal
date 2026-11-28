@@ -129,7 +129,8 @@ describe('la version du texte', () => {
 	const EMPREINTES: Record<string, string> = {
 		'2026-09-26': 'ce107d7a3d36101abd5ed79a5412c30f842b162afee3606b2af9c799c5e4a867',
 		'2026-10-19': 'b41aa0c011e590e44fdde7ed48235ae863bd55edb6a0e7606429dd8f47296f80',
-		'2026-10-31': '9bb0ef4ecae4a981b64037def7706464cef5974a91361e3dd8bf53633226bd58'
+		'2026-10-31': '9bb0ef4ecae4a981b64037def7706464cef5974a91361e3dd8bf53633226bd58',
+		'2026-11-28': '09cfa8e952ad04bee00ffd49e169d0e36dbe61cd334c9eb28c4c37c0ca617199'
 	};
 
 	it('gives every change of docs/CONDITIONS.md a new date, so that everyone accepts it again', () => {

@@ -53,6 +53,38 @@ export interface Budget {
 export const MAGIC_LINK_BUDGET: Budget = { windowSeconds: 3600, max: 3 };
 
 /**
+ * Vingt demandes de lien par heure et par adresse IP, pour le formulaire `/connexion` (étape 25,
+ * ADR 0058). La limitation de Better Auth ne voit que les requêtes HTTP vers `/api/auth/*` : une
+ * action de formulaire, qui appelle son API serveur, lui échappe. Sans ce seau, une seule machine
+ * ferait écrire le service à autant d'adresses qu'elle en invente. Le chemin HTTP reçoit la même
+ * borne, dans la règle de Better Auth (`auth.ts`).
+ */
+export const SIGN_IN_FORM_BUDGET: Budget = { windowSeconds: 3600, max: 20 };
+
+/**
+ * Dix liens par heure depuis une même adresse IP, au-delà desquels plus aucun compte ne s'ouvre
+ * depuis elle (ADR 0058). Chaque lien compte, connu ou non ; seule l'ouverture d'un compte est
+ * retenue : un compte existant reçoit toujours le sien.
+ */
+export const SIGN_UP_ADDRESS_BUDGET: Budget = { windowSeconds: 3600, max: 10 };
+
+/** Soixante liens par heure pour tout le service, avec la même règle (ADR 0058). */
+export const SIGN_UP_SERVICE_BUDGET: Budget = { windowSeconds: 3600, max: 60 };
+
+/** Le seau du service entier : une seule clé. */
+export const SIGN_UP_SERVICE_KEY = 'sign-up:service';
+
+/** Le seau d'une adresse IP pour le formulaire de connexion. */
+export function signInFormKey(address: string): string {
+	return `sign-in-form:${address}`;
+}
+
+/** Le seau d'une adresse IP pour l'ouverture des comptes. */
+export function signUpAddressKey(address: string): string {
+	return `sign-up:${address}`;
+}
+
+/**
  * Trois demandes d'accès par heure et par adresse IP (étape 22) : une organisation n'en dépose
  * qu'une, et celle qui s'est trompée la refait. Au-delà, le formulaire servirait à remplir la
  * console ; la base tient en plus un plafond pour tout le service (`jadwal.request_access`).

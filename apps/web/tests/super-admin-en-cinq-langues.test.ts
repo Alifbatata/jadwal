@@ -806,6 +806,44 @@ describe('les écrans du super-admin, avec ses pouvoirs', () => {
 		});
 	});
 
+	describe('la vue sur les comptes (étape 25, ADR 0058)', () => {
+		it('is written in the five languages, with its link from the console', async () => {
+			const titres: Record<Langue, string> = {
+				fr: 'Les comptes',
+				de: 'Die Konten',
+				it: 'Gli account',
+				en: 'The accounts',
+				ar: 'الحسابات'
+			};
+			const pages: Partial<Record<Langue, string>> = {};
+			try {
+				for (const langue of LANGUES) {
+					await langueDuCompte(langue);
+					const reponse = await get('/super-admin/comptes', avecPouvoirs);
+					expect(reponse.status, langue).toBe(200);
+					pages[langue] = await reponse.text();
+					const consoleHtml = await (await get('/super-admin', avecPouvoirs)).text();
+					expect(consoleHtml, langue).toMatch(/href="[^"]*super-admin\/comptes"/);
+				}
+			} finally {
+				await langueDuCompte('fr');
+			}
+			const francais = pages.fr ?? '';
+			for (const langue of LANGUES) {
+				const html = pages[langue] ?? '';
+				expect(baliseHtml(html), langue).toBe(`<html lang="${langue}" dir="${SENS[langue]}">`);
+				expect(texteDe(element(html, /<h1\b[^>]*>/, 'h1')), langue).toBe(titres[langue]);
+				// Une date d'ouverture s'écrit comme sur le reste de l'espace, jamais en ISO.
+				expect(visibleText(html), langue).not.toMatch(ISO_DATE);
+				if (langue === 'fr') continue;
+				expect.soft(frenchLeft(francais, html, permis(francais)), langue).toEqual([]);
+			}
+			// L'écran ne change rien, et le dit ; il nomme la purge des comptes seuls.
+			expect(texteDe(francais)).toContain('Cet écran ne change rien');
+			expect(texteDe(francais)).toContain('au bout de douze mois');
+		});
+	});
+
 	describe('B1 : la liste des organisations', () => {
 		/** La carte d'une organisation de la liste, par son nom. */
 		function carte(html: string, nom: string): string {

@@ -91,9 +91,10 @@ describe('le lien magique', () => {
 	it(
 		'answers the same thing, and in the same time, for a known and an unknown address',
 		async () => {
-			// Depuis l'étape 22, l'envoi demande à la base si l'adresse est attendue (ADR 0049) : la
-			// connue reçoit un lien, l'inconnue un courriel qui dit comment demander l'accès. Les deux
-			// branches lisent la base une fois et écrivent un courriel, et rien ne doit le trahir
+			// L'envoi demande à la base si l'adresse est attendue (ADR 0049) ; depuis l'inscription
+			// ouverte (ADR 0058), la réponse ne décide plus que des bornes de l'ouverture d'un compte,
+			// et les deux adresses reçoivent le même lien. Les deux branches lisent la base, comptent
+			// leur lien et écrivent un courriel, et rien ne doit le trahir
 			// (ADR 0017). On le vérifie sur la réponse, sur le corps, et sur le temps.
 			const connue = 'connue@example.test';
 			const inconnue = 'jamais-vue@example.test';
@@ -139,8 +140,8 @@ describe('le lien magique', () => {
 					ecarts.push(a - b);
 				}
 			}
-			// Chaque branche a bien joué, sans quoi l'égalité des temps ne dirait rien : la connue a
-			// reçu un lien, l'inconnue l'adresse du formulaire de demande d'accès.
+			// Chaque branche a bien joué, sans quoi l'égalité des temps ne dirait rien : la connue et
+			// l'inconnue ont reçu chacune leur lien, aucune n'a été retenue par une borne.
 			const recus = await Promise.all(
 				(await readdir(outbox))
 					.filter((nom) => nom.endsWith('.json'))
@@ -153,7 +154,11 @@ describe('le lien magique', () => {
 					.at(-1)
 					?.text.match(/https?:\/\/\S+/)?.[0];
 			expect(premierLien(connue)).toMatch(/magic-link\/verify\?token=/);
-			expect(premierLien(inconnue)).toBe(`${origin}/demande-d-acces`);
+			expect(premierLien(inconnue)).toMatch(/magic-link\/verify\?token=/);
+			expect(
+				(recus as { to: string }[]).filter((courriel) => courriel.to === inconnue).length,
+				'un lien par tour, rodage compris, à l’adresse inconnue'
+			).toBe(41);
 
 			// Le corps rendu est le même, mot pour mot.
 			expect(corps['connue']).toBe(corps['inconnue']);

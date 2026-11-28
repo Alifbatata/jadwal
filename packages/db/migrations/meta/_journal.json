@@ -603,6 +603,20 @@
       "when": 1795773484963,
       "tag": "0085_live_broadcast_rights",
       "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1795858602319,
+      "tag": "0086_all_memberships",
+      "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1795860648638,
+      "tag": "0087_delete_account",
+      "breakpoints": true
     }
   ]
 }

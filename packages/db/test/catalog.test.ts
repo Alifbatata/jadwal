@@ -424,11 +424,13 @@ describe('catalogue : intégrité du schéma', () => {
 		`);
 		const functions = allRows<{ name: string; volatility: string; leakproof: boolean }>(result);
 		expect(functions.map((row) => row.name)).toEqual([
+			'all_memberships',
 			'consume_invitation',
 			'consume_invitation_to_member',
 			'count_view',
 			'current_org_id',
 			'current_user_id',
+			'delete_account',
 			'has_no_duplicate',
 			'invited',
 			'is_org_admin',

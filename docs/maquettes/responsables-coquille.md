@@ -188,14 +188,8 @@ message :`, le lien `Se connecter pour accepter`, `Vous recevrez un lien de conn
 l'invitation vous attendra sur l'écran « Vos organisations ».`, `L'invitation est valable quatorze
 jours.`, `Tant que vous n'avez pas accepté, rien n'est partagé et votre nom n'apparaît nulle part.`
 
-**Aucun compte à cette adresse** (étape 22), à la place du lien, pour une adresse que personne
-n'attend, dans la langue de l'écran d'où le lien est demandé : objet
-`Aucun compte jadwal à cette adresse`, `Un lien de connexion à jadwal a été demandé pour cette
-adresse électronique.`, `Aucun compte n'est ouvert à cette adresse, et aucune invitation ne
-l'attend : aucun lien n'a donc été envoyé.`, `Pour utiliser jadwal pour votre organisation,
-demandez l'accès sur cette page :` et le lien `Demander l'accès à jadwal`, `Si votre organisation
-utilise déjà jadwal, demandez à sa personne responsable de vous inviter à cette adresse.`, puis
-`Si vous n'avez rien demandé, ignorez ce message.`
+Le courriel « Aucun compte à cette adresse » de l'étape 22 n'existe plus depuis l'étape 25 : une
+adresse que personne n'attend reçoit le même lien de connexion, qui ouvre son compte (ADR 0058).
 
 Aucune date dans ces courriels. Chacun porte `lang` et `dir` dans sa langue, et la signature du
 service.

@@ -1,10 +1,10 @@
 # Conditions d'utilisation
 
 Ce texte s'adresse aux organisations qui publient leur programme avec ce service, aux personnes de
-leur équipe, et à celles qui demandent l'accès pour une organisation. Il est écrit pour être lu :
-chaque phrase dit ce que le service fait vraiment.
+leur équipe, à celles qui demandent l'accès pour une organisation, et à toute personne qui ouvre un
+compte. Il est écrit pour être lu : chaque phrase dit ce que le service fait vraiment.
 
-Dernière mise à jour : 31.10.2026.
+Dernière mise à jour : 28.11.2026.
 
 ## Qui exploite le service
 
@@ -26,15 +26,22 @@ formulaire « Demander l'accès » du site. L'exploitant examine chaque demande 
   devient responsable ;
 - s'il la refuse, aucun courriel ne part.
 
-**Un compte ne s'ouvre que sur invitation.** La personne responsable d'une organisation invite les
-membres de son équipe ; l'exploitant invite la première personne responsable. Quand le courriel de
-connexion n'arrive pas, l'exploitant peut aussi donner lui-même un lien de connexion, qui ouvre un
-compte à une adresse qui n'en a pas encore.
+**Tout le monde peut ouvrir un compte**, et personne n'y est obligé : consulter un programme et
+écouter un direct se font sans compte. Il suffit de demander un lien de connexion à son adresse
+électronique ; l'ouvrir crée le compte. **Un compte seul n'ouvre rien de plus que les pages
+publiques** : il ne donne accès à aucune organisation.
 
-Un lien de connexion demandé pour une adresse qu'aucun compte ne porte, et qu'aucune invitation en
-cours n'attend, ne part pas. Cette adresse reçoit à la place un courriel qui dit qu'aucun compte n'y
-est ouvert, et comment demander l'accès. L'écran, lui, répond la même chose dans les deux cas : il
-ne dit à personne si une adresse a un compte.
+**On entre dans l'espace d'une organisation sur invitation.** La personne responsable d'une
+organisation invite les membres de son équipe ; l'exploitant invite la première personne
+responsable. Quand le courriel de connexion n'arrive pas, l'exploitant peut aussi donner lui-même un
+lien de connexion.
+
+L'écran de connexion répond la même chose pour toutes les adresses : il ne dit à personne si une
+adresse a un compte. Pour qu'il ne serve pas à écrire à n'importe qui au nom du service, le nombre
+de liens est borné : vingt demandes par heure depuis une même connexion, trois liens par heure à une
+même adresse, et, pour ouvrir un compte, dix liens par heure depuis une même connexion et soixante
+pour tout le service. Quand l'une de ces deux dernières bornes est atteinte, aucun compte nouveau ne
+s'ouvre pendant l'heure ; une adresse qui a déjà un compte, ou qu'une invitation attend, reçoit toujours son lien.
 
 ## Ce que le service conserve
 
@@ -48,11 +55,19 @@ sont destinées à être publiques.
 Le nom d'un intervenant est une donnée personnelle, et c'est vous qui décidez de l'écrire. Voyez
 plus bas, « Ce que vous acceptez ».
 
+**Les informations pour le public**, si vous les remplissez : l'adresse du lieu, un téléphone, une
+adresse électronique, un site internet, l'accès au lieu et une annonce du moment. Chacune est
+facultative, et toutes s'affichent sous l'onglet « Infos » de votre page publique. Un téléphone ou
+une adresse électronique peut être celui d'une personne : écrivez-y plutôt ceux de l'organisation.
+
 ### Les données personnelles, la liste complète
 
-1. **L'adresse électronique des personnes de votre équipe**, responsables ou éditeurs, leur nom si
-   le service le connaît, et la langue qu'elles ont choisie pour l'espace. C'est la seule identité
-   que le service demande : il n'y a pas de mot de passe, et donc rien d'autre à retenir de vous.
+1. **L'adresse électronique de chaque compte** : celle des personnes de votre équipe, responsables
+   ou éditeurs, et celle de toute personne qui a ouvert un compte sans entrer dans une organisation ;
+   leur nom si le service le connaît, la langue choisie pour l'espace, et le moment où le compte a
+   été ouvert. C'est la seule identité que le service demande : il n'y a pas de mot de passe, et donc
+   rien d'autre à retenir de vous. L'exploitant voit la liste de tous les comptes, avec les
+   organisations de chacun.
 2. **Le lien entre une personne et votre organisation** : qui est responsable de quoi. Le service ne
    peut pas fonctionner sans, puisque c'est lui qui décide qui voit quoi. Le programme garde aussi
    qui a modifié un cours en dernier, et qui a annulé ou déplacé une séance ou posé une pause ; ce
@@ -71,13 +86,14 @@ plus bas, « Ce que vous acceptez ».
    par courriel qu'une demande attend ; cet avis ne porte rien de la demande.
 5. **Un journal des modifications** : qui a changé quoi, et quand. Il sert à comprendre ce qui s'est
    passé et à répondre en cas de contestation. Il n'est pas affiché dans votre espace : sa copie
-   fait partie de ce que vous pouvez demander.
+   fait partie de ce que vous pouvez demander. Quand l'exploitant supprime le compte d'une personne
+   de votre équipe, le journal garde son adresse et son rôle, la durée du journal.
 6. **Les sessions de connexion** : quel compte, depuis quand, jusqu'à quand, et la dernière
    organisation choisie quand la personne en a plusieurs. C'est ce qui vous garde connecté d'une
    page à l'autre.
 7. **Les liens de connexion en attente** : l'adresse pour laquelle un lien a été demandé, tant qu'il
-   court, même quand aucun lien n'est parti, parce que ni compte ni invitation n'attendait cette
-   adresse. Le lien lui-même n'est pas conservé en clair.
+   court, même quand aucun lien n'est parti, parce qu'une des bornes du nombre de liens l'a retenu.
+   Le lien lui-même n'est pas conservé en clair.
 8. **Les passkeys de l'exploitant.** Seuls ses comptes peuvent en enregistrer une : elles protègent
    son accès à vos données (voir plus bas). Le service garde pour chacune un nom, fait du système de
    l'appareil et de la date, sa clé publique, son identifiant, un compteur d'usage, le type
@@ -219,7 +235,8 @@ Chaque personne peut demander :
 - **La suppression de son compte.** Elle peut aussi quitter elle-même chacune de ses organisations,
   depuis « Vos organisations » : un compte sans organisation est ensuite effacé de lui-même (voir le
   tableau). Une organisation garde toujours au moins une personne responsable : la dernière ne peut
-  pas partir sans en nommer une autre.
+  pas partir sans en nommer une autre. L'exploitant supprime le compte lui-même, avec ses sessions
+  et ses adhésions ; ce que la personne a modifié dans un programme reste, sans son nom.
 - **L'effacement de sa demande d'accès**, sans attendre la fin de sa durée.
 
 Votre organisation peut demander :
@@ -253,6 +270,10 @@ avec son adhésion. L'exploitant n'y est pas soumis : c'est lui qui propose ce t
 Une personne qui demande l'accès n'a rien à accepter pour cela : le formulaire dit ce que deviennent
 ses données, et renvoie à ce texte. Si la demande est acceptée, elle l'accepte en entrant dans
 l'espace de son organisation, comme toute personne de l'équipe.
+
+Une personne qui ouvre un compte sans entrer dans une organisation n'a rien à accepter non plus :
+son compte ne lui ouvre rien de plus que les pages publiques. Elle accepte ce texte le jour où elle
+entre dans l'espace d'une organisation.
 
 ## Ce que vous acceptez
 

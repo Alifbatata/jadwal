@@ -4,10 +4,12 @@
 	import { LANGUES, NOM_DE_LANGUE, numericDate } from '#lib/i18n.js';
 	import { commonTexts } from '#lib/i18n/common.js';
 	import { superAdminTexts } from '#lib/i18n/super-admin.js';
+	import { superAdminAccountsTexts } from '#lib/i18n/super-admin-accounts.js';
 	import { PUBLIC_ADDRESS_PATTERN, proposePublicAddress } from './public-address.js';
 
 	let { data, form } = $props();
 	const text = $derived(superAdminTexts[data.language]);
+	const accounts = $derived(superAdminAccountsTexts[data.language]);
 
 	/**
 	 * L'exemple d'adresse, tiré de l'exemple de nom par la fonction qui propose l'adresse pendant la
@@ -103,6 +105,8 @@
 
 <h1>{text.title}</h1>
 <p class="details">{text.intro}</p>
+<!-- La vue sur les comptes de toutes les organisations (étape 25, ADR 0058). -->
+<p><a href={resolve('/super-admin/comptes')}>{accounts.link}</a></p>
 
 {#if errorMessage}<p class="erreur" role="alert">{errorMessage}</p>{/if}
 

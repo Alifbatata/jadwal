@@ -5,6 +5,8 @@
 - Complète : [0016](0016-better-auth-liens-magiques-pas-de-mot-de-passe.md),
   [0017](0017-invitation-sans-fuite-d-information.md),
   [0025](0025-super-admin-pouvoirs-complets.md), [0044](0044-acceptation-des-conditions.md)
+- Remplacé en partie par : [0058](0058-l-inscription-ouverte-a-tous.md), qui rouvre la création de
+  compte à toute adresse (étape 25) ; le reste tient
 
 ## Contexte
 
@@ -88,6 +90,10 @@ passent par le même chemin que l'écran Membres (`apps/web/src/lib/server/invit
 l'existence d'un compte (ADR 0017).
 
 ### La création de compte est fermée aux adresses que personne n'attend
+
+> **Remplacé par l'ADR 0058** (28 novembre 2026) : toute adresse reçoit désormais son lien, le
+> courriel « aucun compte » n'existe plus, et des bornes par adresse IP et pour tout le service
+> retiennent l'ouverture des comptes. Ce qui suit dit l'état de l'étape 22.
 
 Le lien de connexion ne part qu'à une adresse qu'un compte porte, ou qu'une invitation en attente et
 non échue attend. La base répond, et rien d'autre ne sort d'elle : `jadwal.may_sign_in(text)`

@@ -21,6 +21,12 @@ export type AuditAction =
 	| 'member.role'
 	/** L'autorisation de diffuser le direct, donnée ou retirée à un éditeur (ADR 0056 amendée). */
 	| 'member.broadcast'
+	/**
+	 * Un compte supprimé par le super-admin (ADR 0058 amendée) : une entrée dans le journal de
+	 * chaque organisation dont il était membre, avec son adresse et son rôle, puisque le compte
+	 * lui-même ne sera plus là pour le dire.
+	 */
+	| 'account.delete'
 	| 'organization.create'
 	| 'organization.settings'
 	| 'organization.prayer_module'

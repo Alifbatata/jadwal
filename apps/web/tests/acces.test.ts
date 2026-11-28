@@ -15,7 +15,14 @@ import {
 	writeAccountLanguage,
 	type AccountLanguage
 } from '../src/lib/server/account-language.js';
-import { emailKey, storedKey } from '../src/lib/server/rate-limit.js';
+import {
+	emailKey,
+	SIGN_IN_FORM_BUDGET,
+	SIGN_UP_ADDRESS_BUDGET,
+	SIGN_UP_SERVICE_BUDGET,
+	SIGN_UP_SERVICE_KEY,
+	storedKey
+} from '../src/lib/server/rate-limit.js';
 import { conditionsAcceptees } from './conditions-acceptees.js';
 
 const origin = inject('origin');
@@ -512,21 +519,57 @@ function cookieNames(response: Response): string[] {
 	return (response.headers.getSetCookie?.() ?? []).map((value) => value.split('=')[0] ?? '').sort();
 }
 
-describe('la création de compte, fermée aux adresses que personne n’attend (ADR 0049)', () => {
-	it('sends no link to an unknown address, but a message that says how to ask for access', async () => {
+/** Un seau du limiteur rempli d'avance, comme si `count` demandes venaient d'y passer. */
+async function fillBucket(key: string, count: number): Promise<void> {
+	await ownerHandle.db.transaction(async (tx) => {
+		await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+		await tx.execute(sql`
+			insert into "rate_limit" ("id", "key", "count", "last_request")
+			values (${newId()}, ${storedKey(key)}, ${count}, ${Date.now()})
+			on conflict ("key") do update set "count" = excluded."count",
+				"last_request" = excluded."last_request"
+		`);
+	});
+}
+
+/** Les courriels partis à cette adresse. */
+async function mailsTo(email: string): Promise<number> {
+	return (await outboxMails()).filter((mail) => mail.to === email).length;
+}
+
+describe('la création de compte, ouverte à tous (ADR 0058)', () => {
+	it('sends a link to an unknown address, and opening it creates an account that belongs to nothing', async () => {
 		const email = `inconnue-${newId()}@example.test`;
 		await resetRateLimit();
 		const response = await postForm('/connexion', { email });
 		expect(response.status).toBe(200);
 		const mail = await lastMailTo(email);
-		expect(
-			mail,
-			'un courriel doit partir, sans quoi l’adresse ne saurait pas quoi faire'
-		).toBeTruthy();
-		expect(mail?.subject).toBe('Aucun compte jadwal à cette adresse');
-		expect(mail?.text).not.toMatch(/magic-link/);
-		expect(mail?.text.match(/https?:\/\/\S+/)?.[0]).toBe(`${origin}/demande-d-acces`);
+		expect(mail?.subject).not.toBe('Aucun compte jadwal à cette adresse');
+		const link = await magicLinkFor(email);
+		expect(link).toMatch(/magic-link\/verify\?token=/);
 		expect(await accountsFor(email)).toBe(0);
+		const { cookie } = await followMagicLink(link as string);
+		expect(cookie, 'le lien ouvre une session').toBeTruthy();
+		expect(await accountsFor(email)).toBe(1);
+		// Rien de plus qu'un visiteur : aucun écran de l'espace, seulement « Vos organisations », qui
+		// dit comment entrer dans une organisation ou en demander une.
+		for (const path of ['/', '/membres', '/reglages', '/cours', '/direct']) {
+			const page = await fetch(`${origin}${path}`, {
+				headers: { cookie: cookie as string },
+				redirect: 'manual'
+			});
+			expect([303, 404], path).toContain(page.status);
+			if (page.status === 303) expect(page.headers.get('location'), path).toBe('/organisations');
+		}
+		const choix = await fetch(`${origin}/organisations`, { headers: { cookie: cookie as string } });
+		const html = await choix.text();
+		expect(html).toContain('Votre compte n’est rattaché à aucune organisation');
+		expect(html).toContain('demande-d-acces');
+		const superAdmin = await fetch(`${origin}/super-admin`, {
+			headers: { cookie: cookie as string },
+			redirect: 'manual'
+		});
+		expect(superAdmin.headers.get('location')).toBe('/organisations');
 	});
 
 	it('answers an unknown address exactly as it answers an account, cookies included (ADR 0017)', async () => {
@@ -543,7 +586,7 @@ describe('la création de compte, fermée aux adresses que personne n’attend (
 			sansNonce(await forKnown.text()).replaceAll(known, '@')
 		);
 		expect(await magicLinkFor(known)).toMatch(/magic-link\/verify\?token=/);
-		expect(await magicLinkFor(unknown)).toBe(`${origin}/demande-d-acces`);
+		expect(await magicLinkFor(unknown)).toMatch(/magic-link\/verify\?token=/);
 	});
 
 	it('sends a link to an address that a pending invitation waits for, and opens its account', async () => {
@@ -554,16 +597,7 @@ describe('la création de compte, fermée aux adresses que personne n’attend (
 		expect(await accountsFor(email)).toBe(1);
 	});
 
-	it('sends no link to an address whose only invitation has run out', async () => {
-		const email = `echue-${newId()}@example.test`;
-		await inviteAddress(email, true);
-		await resetRateLimit();
-		await postForm('/connexion', { email });
-		expect(await magicLinkFor(email)).toBe(`${origin}/demande-d-acces`);
-		expect(await accountsFor(email)).toBe(0);
-	});
-
-	it('sends no link either when the sign-in endpoint is called directly', async () => {
+	it('sends a link to the endpoint called directly, under the same rules', async () => {
 		const email = `directe-${newId()}@example.test`;
 		await resetRateLimit();
 		const response = await fetch(`${origin}/api/auth/sign-in/magic-link`, {
@@ -572,16 +606,110 @@ describe('la création de compte, fermée aux adresses que personne n’attend (
 			body: JSON.stringify({ email, callbackURL: '/organisations' })
 		});
 		expect(response.status).toBe(200);
-		expect(await magicLinkFor(email)).toBe(`${origin}/demande-d-acces`);
-		expect(await accountsFor(email)).toBe(0);
+		expect(await magicLinkFor(email)).toMatch(/magic-link\/verify\?token=/);
+		// Le plafond du service plein : l'appel direct n'ouvre plus de compte, et répond pareil.
+		await fillBucket(SIGN_UP_SERVICE_KEY, SIGN_UP_SERVICE_BUDGET.max);
+		const other = `directe-${newId()}@example.test`;
+		const retenue = await fetch(`${origin}/api/auth/sign-in/magic-link`, {
+			method: 'POST',
+			headers: { 'content-type': 'application/json', origin },
+			body: JSON.stringify({ email: other, callbackURL: '/organisations' })
+		});
+		expect(retenue.status).toBe(200);
+		expect(await mailsTo(other)).toBe(0);
+		await resetRateLimit();
 	});
 
-	it('counts both messages against the same budget per address', async () => {
+	it('keeps the budget per address: three links an hour', async () => {
 		const email = `budget-${newId()}@example.test`;
 		await resetRateLimit();
 		for (let tour = 0; tour < 6; tour += 1) await postForm('/connexion', { email });
-		const sent = (await outboxMails()).filter((mail) => mail.to === email).length;
-		expect(sent).toBe(3);
+		expect(await mailsTo(email)).toBe(3);
+	});
+});
+
+describe('les bornes des liens de connexion, par adresse IP et pour tout le service (ADR 0058)', () => {
+	it('refuses the form beyond twenty requests an hour from one address IP, whatever the addresses', async () => {
+		await resetRateLimit();
+		const known = `connue-ip-${newId()}@example.test`;
+		await accountAt(known);
+		const codes: number[] = [];
+		for (let tour = 0; tour < SIGN_IN_FORM_BUDGET.max; tour += 1) {
+			const response = await postForm('/connexion', {
+				email: `ip-${tour}-${newId()}@example.test`
+			});
+			codes.push(response.status);
+		}
+		expect(new Set(codes)).toEqual(new Set([200]));
+		// La suivante est refusée, même pour un compte : la réponse ne parle que de la connexion
+		// d'où l'on écrit, jamais de l'adresse saisie.
+		const refused = await postForm('/connexion', { email: known });
+		expect(refused.status).toBe(429);
+		const html = await refused.text();
+		expect(html).toContain('Trop de demandes depuis votre connexion');
+		expect(html).not.toContain('vient de partir');
+		expect(await mailsTo(known)).toBe(0);
+		await resetRateLimit();
+	});
+
+	it('opens no more accounts beyond ten links an hour from one address IP, but still signs in an account', async () => {
+		await resetRateLimit();
+		const corps: string[] = [];
+		for (let tour = 0; tour < SIGN_UP_ADDRESS_BUDGET.max; tour += 1) {
+			const email = `nouvelle-${tour}-${newId()}@example.test`;
+			const response = await postForm('/connexion', { email });
+			corps.push(sansNonce(await response.text()).replaceAll(email, '@'));
+			expect(await mailsTo(email), email).toBe(1);
+		}
+		const retenue = `retenue-${newId()}@example.test`;
+		const response = await postForm('/connexion', { email: retenue });
+		expect(response.status).toBe(200);
+		corps.push(sansNonce(await response.text()).replaceAll(retenue, '@'));
+		expect(await mailsTo(retenue), 'au-delà, aucun compte ne s’ouvre depuis cette adresse IP').toBe(
+			0
+		);
+		// Un compte, lui, reçoit toujours son lien, et une adresse qu'une invitation attend aussi.
+		const known = `connue-${newId()}@example.test`;
+		await accountAt(known);
+		await postForm('/connexion', { email: known });
+		expect(await magicLinkFor(known)).toMatch(/magic-link\/verify\?token=/);
+		const invited = `invitee-${newId()}@example.test`;
+		await inviteAddress(invited);
+		await postForm('/connexion', { email: invited });
+		expect(await magicLinkFor(invited)).toMatch(/magic-link\/verify\?token=/);
+		// Et la réponse n'a pas changé d'un mot.
+		expect(new Set(corps).size).toBe(1);
+		await resetRateLimit();
+	});
+
+	it('opens no more accounts once the service has sent sixty links in the hour', async () => {
+		await resetRateLimit();
+		await fillBucket(SIGN_UP_SERVICE_KEY, SIGN_UP_SERVICE_BUDGET.max);
+		const retenue = `plafond-${newId()}@example.test`;
+		const response = await postForm('/connexion', { email: retenue });
+		expect(response.status).toBe(200);
+		expect(await mailsTo(retenue)).toBe(0);
+		const known = `connue-plafond-${newId()}@example.test`;
+		await accountAt(known);
+		await postForm('/connexion', { email: known });
+		expect(await magicLinkFor(known)).toMatch(/magic-link\/verify\?token=/);
+		await resetRateLimit();
+	});
+
+	it('counts every link in the service bucket, an account’s included', async () => {
+		await resetRateLimit();
+		const known = `connue-compte-${newId()}@example.test`;
+		await accountAt(known);
+		await postForm('/connexion', { email: known });
+		await postForm('/connexion', { email: `inconnue-compte-${newId()}@example.test` });
+		const rows = await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			return tx.execute<{ count: number }>(
+				sql`select "count" from "rate_limit" where "key" = ${storedKey(SIGN_UP_SERVICE_KEY)}`
+			);
+		});
+		expect(Number((Array.isArray(rows) ? rows[0] : undefined)?.count)).toBe(2);
+		await resetRateLimit();
 	});
 });
 
@@ -1622,6 +1750,244 @@ describe('l’espace du super-admin', () => {
 		const page = await fetch(`${origin}/super-admin`, { headers: { cookie }, redirect: 'manual' });
 		expect(page.status).toBe(303);
 		expect(page.headers.get('location')).toBe('/organisations');
+	});
+});
+
+describe('la vue du super-admin sur les comptes (ADR 0058)', () => {
+	it('is closed to a manager, and to the super-admin without his passkey', async () => {
+		const manager = await signIn('responsable@example.test');
+		const forManager = await fetch(`${origin}/super-admin/comptes`, {
+			headers: { cookie: manager },
+			redirect: 'manual'
+		});
+		expect(forManager.status).toBe(303);
+		expect(forManager.headers.get('location')).toBe('/organisations');
+		const withoutPasskey = await signIn('admin@example.test');
+		const forHim = await fetch(`${origin}/super-admin/comptes`, {
+			headers: { cookie: withoutPasskey },
+			redirect: 'manual'
+		});
+		expect(forHim.status).toBe(303);
+		expect(forHim.headers.get('location')).toBe('/super-admin/passkey');
+	});
+
+	it('lists every account, its organisations, its role and its right to broadcast', async () => {
+		// Une seconde organisation, avec un éditeur qui diffuse, et un compte rattaché à rien.
+		const otherId = newId();
+		const editorId = newId();
+		const editor = `editeur-comptes-${newId()}@example.test`;
+		const alone = `seul-${newId()}@example.test`;
+		await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			await tx.execute(sql`
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language", "enabled_language")
+				values (${otherId}, ${`comptes-${otherId.slice(-6)}`}, 'Association des comptes',
+					'Europe/Zurich', 'fr', array['fr'])
+			`);
+			await tx.execute(sql`
+				insert into "user" ("id", "email", "name") values (${editorId}, ${editor}, 'Éditrice des comptes')
+			`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role", "can_broadcast")
+				values (${newId()}, ${otherId}, ${editorId}, 'editor', true)
+			`);
+			await tx.execute(sql`insert into "user" ("id", "email") values (${newId()}, ${alone})`);
+		});
+		const cookie = await signInSuperAdmin();
+		const page = await fetch(`${origin}/super-admin/comptes`, { headers: { cookie } });
+		expect(page.status).toBe(200);
+		const html = await page.text();
+		// La ligne d'une adresse, et d'elle seule : `responsable@example.test` est aussi la fin
+		// d'autres adresses que d'autres tests ouvrent.
+		const ligne = (email: string): string => {
+			const debut = html.indexOf(`<bdi dir="ltr">${email}</bdi>`);
+			expect(debut, email).toBeGreaterThan(-1);
+			const fin = html.indexOf('</tr>', debut);
+			return html.slice(debut, fin);
+		};
+		expect(ligne('responsable@example.test')).toContain('Association d’essai');
+		expect(ligne('responsable@example.test')).toContain('Responsable');
+		expect(ligne('responsable@example.test')).not.toContain('peut diffuser');
+		expect(ligne(editor)).toContain('Association des comptes');
+		expect(ligne(editor)).toContain('Éditrice des comptes');
+		expect(ligne(editor)).toContain('Éditeur');
+		expect(ligne(editor)).toContain('peut diffuser le direct');
+		expect(ligne(alone)).toContain('Aucune organisation');
+		expect(ligne('admin@example.test')).toContain('Super-admin');
+		// Le lien vient de la console.
+		const consoleHtml = await (
+			await fetch(`${origin}/super-admin`, { headers: { cookie } })
+		).text();
+		// Les liens de l'espace sont relatifs (`resolve` de SvelteKit) : on cherche la fin.
+		expect(consoleHtml).toMatch(/href="[^"]*super-admin\/comptes"/);
+	});
+
+	it('writes each opening in the register of the operator’s accesses', async () => {
+		const cookie = await signInSuperAdmin();
+		const compter = async (): Promise<number> => {
+			const rows = await ownerHandle.db.transaction(async (tx) => {
+				await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+				return tx.execute<{ n: number }>(sql`
+					select count(*)::int as "n" from "admin_access_log"
+					where "route" = '/super-admin/comptes' and "action" = 'read'
+						and "organization_id" is null and "actor_id" = ${superAdminUserId}
+				`);
+			});
+			return Number((Array.isArray(rows) ? rows[0] : undefined)?.n ?? 0);
+		};
+		const avant = await compter();
+		// Le registre est tenu par `hooks.server.ts`, une entrée par requête du super-admin en
+		// exercice : l'écran n'a rien à écrire lui-même, mais il doit exister.
+		const page = await fetch(`${origin}/super-admin/comptes`, { headers: { cookie } });
+		expect(page.status).toBe(200);
+		expect(await compter()).toBe(avant + 1);
+	});
+});
+
+describe('la suppression d’un compte par le super-admin (ADR 0058 amendée)', () => {
+	/** Un éditeur de l'organisation d'essai, avec une session ouverte. */
+	async function editeur(): Promise<{ id: string; email: string; cookie: string }> {
+		const id = newId();
+		const email = `a-supprimer-${id}@example.test`;
+		await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			await tx.execute(sql`insert into "user" ("id", "email") values (${id}, ${email})`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${organizationId}, ${id}, 'editor')
+			`);
+		});
+		return { id, email, cookie: await signIn(email) };
+	}
+
+	it('is refused to a manager, and deletes nothing', async () => {
+		const cible = await editeur();
+		const manager = await signIn('responsable@example.test');
+		const response = await postForm(
+			'/super-admin/comptes?/supprimer',
+			{ userId: cible.id, confirm: 'yes' },
+			manager
+		);
+		expect(response.status).toBe(303);
+		expect(response.headers.get('location')).toBe('/organisations');
+		expect(await accountsFor(cible.email)).toBe(1);
+	});
+
+	it('asks first, says what goes with the account, and deletes nothing yet', async () => {
+		const cible = await editeur();
+		const cookie = await signInSuperAdmin();
+		const response = await postForm(
+			'/super-admin/comptes?/supprimer',
+			{ userId: cible.id },
+			cookie
+		);
+		expect(response.status).toBe(200);
+		const html = await response.text();
+		expect(html).toContain('Vous allez supprimer ce compte');
+		expect(html).toContain(cible.email);
+		expect(html).toContain('Ce geste ne s’annule pas');
+		expect(html).toMatch(/name="confirm" value="yes"/);
+		expect(await accountsFor(cible.email)).toBe(1);
+	});
+
+	it('deletes the account once confirmed, closes its session and writes the journal of its organisation', async () => {
+		const cible = await editeur();
+		const cookie = await signInSuperAdmin();
+		const response = await postForm(
+			'/super-admin/comptes?/supprimer',
+			{ userId: cible.id, confirm: 'yes' },
+			cookie
+		);
+		expect(response.status).toBe(200);
+		const html = await response.text();
+		expect(html).toContain('Compte supprimé');
+		expect(html).toContain(cible.email);
+		expect(await accountsFor(cible.email)).toBe(0);
+		// Sa session ne vaut plus rien.
+		const apres = await fetch(`${origin}/organisations`, {
+			headers: { cookie: cible.cookie },
+			redirect: 'manual'
+		});
+		expect(apres.status).toBe(303);
+		expect(apres.headers.get('location')).toMatch(/connexion/);
+		// Le journal de l'organisation garde la trace, signée du super-admin. Le propriétaire ne le lit
+		// pas (ADR 0020) : sa personne responsable, si (migration 0070).
+		const journal = await withOrg(
+			appHandle.db,
+			{ organizationId, userId: adminUserId },
+			async (tx) =>
+				tx.execute<{ actor_id: string; before: { role: string } }>(sql`
+				select "actor_id", "before" from "audit_log"
+				where "organization_id" = ${organizationId} and "action" = 'account.delete'
+					and "before"->>'email' = ${cible.email}
+			`)
+		);
+		const lignes = Array.isArray(journal) ? journal : [];
+		expect(lignes).toHaveLength(1);
+		expect(lignes[0]?.actor_id).toBe(superAdminUserId);
+		expect(lignes[0]?.before.role).toBe('editor');
+	});
+
+	it('refuses the last manager of an organisation, names it, and deletes nothing', async () => {
+		const seuleOrg = newId();
+		const seuleId = newId();
+		const seule = `seule-responsable-${seuleId}@example.test`;
+		await ownerHandle.db.transaction(async (tx) => {
+			await tx.execute(sql`set local jadwal.maintenance = 'on'`);
+			await tx.execute(sql`
+				insert into "organization" ("id", "slug", "name", "time_zone", "default_language", "enabled_language")
+				values (${seuleOrg}, ${`seule-${seuleOrg.slice(-6)}`}, 'Association à une responsable',
+					'Europe/Zurich', 'fr', array['fr'])
+			`);
+			await tx.execute(sql`insert into "user" ("id", "email") values (${seuleId}, ${seule})`);
+			await tx.execute(sql`
+				insert into "membership" ("id", "organization_id", "user_id", "role")
+				values (${newId()}, ${seuleOrg}, ${seuleId}, 'org_admin')
+			`);
+		});
+		const cookie = await signInSuperAdmin();
+		const response = await postForm(
+			'/super-admin/comptes?/supprimer',
+			{ userId: seuleId, confirm: 'yes' },
+			cookie
+		);
+		expect(response.status).toBe(409);
+		const html = await response.text();
+		expect(html).toContain('dernière personne responsable');
+		expect(html).toContain('Association à une responsable');
+		expect(await accountsFor(seule)).toBe(1);
+	});
+
+	it('refuses an account of the operator, his own included', async () => {
+		const cookie = await signInSuperAdmin();
+		const page = await (
+			await fetch(`${origin}/super-admin/comptes`, { headers: { cookie } })
+		).text();
+		// Aucun bouton sur sa ligne…
+		const debut = page.indexOf('<bdi dir="ltr">admin@example.test</bdi>');
+		expect(page.slice(debut, page.indexOf('</tr>', debut))).not.toContain('?/supprimer');
+		// … et le serveur refuse quand même.
+		const response = await postForm(
+			'/super-admin/comptes?/supprimer',
+			{ userId: superAdminUserId, confirm: 'yes' },
+			cookie
+		);
+		expect(response.status).toBe(409);
+		expect(await response.text()).toContain('compte de l’exploitant');
+		expect(await accountsFor('admin@example.test')).toBe(1);
+	});
+
+	it('says an unknown account is gone', async () => {
+		const cookie = await signInSuperAdmin();
+		for (const userId of [newId(), 'pas-un-identifiant']) {
+			const response = await postForm(
+				'/super-admin/comptes?/supprimer',
+				{ userId, confirm: 'yes' },
+				cookie
+			);
+			expect(response.status, userId).toBe(404);
+			expect(await response.text(), userId).toContain('Ce compte n’existe plus');
+		}
 	});
 });
 

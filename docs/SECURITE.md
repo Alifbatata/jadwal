@@ -110,16 +110,20 @@ base, avec le mot de passe du propriétaire : ni l'application ni le super-admin
 droit sur cette table, et la clé étrangère en `restrict` empêche aussi de supprimer l'organisation
 pour emporter son journal.
 
-**8. La connexion ne dit rien.** Depuis l'étape 22, un lien ne part qu'à une adresse qu'un compte
-porte ou qu'une invitation en attente et non échue attend ; toute autre adresse reçoit, à la place, un
-courriel qui dit qu'aucun compte n'y est ouvert et renvoie au formulaire de demande d'accès
-(ADR 0049). La base répond oui ou non, et rien d'autre : `jadwal.may_sign_in`, à droits du
-définisseur, exécutable par le seul rôle de connexion, qui ne lit toujours aucune invitation
-(migration 0077). Cette lecture vient après le budget par adresse, et les deux branches font la même
-chose, une lecture et un courriel : la réponse, ses cookies et le nombre d'envois sont les mêmes
-pour une adresse connue et une adresse inconnue. Seule la boîte de l'adresse apprend s'il y a un
-compte. Inviter ne consulte toujours aucun compte (ADR 0016, 0017). Le lien de secours du
-super-admin est pris avant cette porte : il ouvre un compte à une adresse qui n'en a pas. Le lien dure quinze minutes, sert une
+**8. La connexion ne dit rien.** Depuis l'étape 25, l'inscription est ouverte (ADR 0058, qui
+remplace la porte fermée de l'ADR 0049) : toute adresse reçoit le même lien, et l'ouvrir crée un
+compte rattaché à rien, qui ne voit rien de plus qu'un visiteur. Le nombre de liens est borné, pour
+que le service ne serve pas à écrire à n'importe qui : vingt demandes par heure et par adresse IP
+(le formulaire a son propre seau, parce que la limitation de Better Auth ne voit que les requêtes
+HTTP vers `/api/auth/*`, pas l'API serveur qu'appelle l'action ; au-delà, `429`, qui ne parle que de
+la connexion), trois liens par heure et par adresse électronique, et pour ouvrir un compte, dix
+liens par heure depuis une adresse IP et soixante pour tout le service. Ces deux derniers seaux
+comptent chaque lien et ne retiennent que l'adresse que personne n'attend, qu'un compte ne porte
+pas et qu'aucune invitation en attente n'attend : `jadwal.may_sign_in`, à droits du définisseur,
+exécutable par le seul rôle de connexion, qui ne lit toujours aucune invitation (migration 0077).
+Les retenues partent en silence : la réponse et ses cookies sont les mêmes pour une adresse connue
+et une adresse inconnue. Inviter ne consulte toujours aucun compte (ADR 0016, 0017). Le lien de
+secours du super-admin est pris avant toutes les bornes. Le lien dure quinze minutes, sert une
 fois, et son jeton est stocké haché. Une invitation dure quatorze jours, et c'est la base qui le
 tient : elle refuse une durée plus longue et une date de création choisie par l'application
 (migration 0056), puis l'acceptation d'une invitation échue et l'adhésion qui la suivrait
@@ -162,6 +166,19 @@ change que l'état et la date de réponse, que la base exige égale à l'heure d
 réponse ne revient pas en arrière (migrations 0080 et 0081). Ni lui ni l'application n'en
 suppriment : la purge du propriétaire les emporte, quatre-vingt-dix jours après la réponse, ou douze
 mois après le dépôt.
+
+**8 ter. La vue du super-admin sur les comptes ne lui ouvre aucune organisation** (étape 25,
+ADR 0058). L'écran `/super-admin/comptes` montre chaque compte et ses organisations, avec le rôle et
+l'autorisation de diffuser, sans rien changer. Les adhésions de toutes les organisations sortent par
+`jadwal.all_memberships()`, à droits du définisseur, exécutable par le seul rôle du super-admin, qui
+ne rend que le compte, l'organisation, le rôle et l'autorisation (migration 0086). Sa propre
+politique sur les adhésions reste bornée à l'organisation où il est entré (migration 0033) : un
+écran qui oublierait son filtre ne montrerait toujours que celle-là. Il supprime un compte depuis le
+même écran, après confirmation, par `jadwal.delete_account(uuid)` (migration 0087), à droits du
+définisseur, exécutable par lui seul : son rôle n'a toujours aucun droit de suppression sur les
+comptes. Elle refuse un compte de l'exploitant et la dernière personne responsable d'une
+organisation, et le journal de chaque organisation du compte en garde la trace, dans la même
+transaction.
 
 **9. Le navigateur est bridé.** Politique de sécurité du contenu avec nonce, `frame-ancestors` calculé
 par route, pas de cadre par défaut, protection contre la soumission d'un formulaire depuis un autre
@@ -363,9 +380,13 @@ quitte pas le relais.
 - **Le déni de service.** La limitation de débit protège les boîtes aux lettres, pas le service.
   Le plafond des demandes d'accès protège la console, pas les demandeurs : trente demandes
   fabriquées en un jour ferment le formulaire à tout le monde jusqu'au lendemain.
-- **Une adresse que personne n'attend apprend qu'elle n'a pas de compte**, par le courriel qu'elle
-  reçoit à la place du lien. C'est voulu : ce courriel ne va qu'à cette boîte, et c'est la seule à
-  qui cela revient (ADR 0049).
+- **Un flot d'inscriptions ferme l'ouverture des comptes pour une heure**, pour tout le service,
+  une fois soixante liens partis (ADR 0058). Les comptes existants et les adresses qu'une invitation
+  attend reçoivent toujours leur lien. C'est le prix d'un plafond : sans lui, une flotte de machines
+  ferait écrire le service à qui elle veut.
+- **N'importe qui peut ouvrir un compte**, et la table des comptes grandit d'autant. Il n'en tire
+  rien : sans adhésion, la base ne lui montre aucune ligne d'aucune organisation, et la purge de nuit
+  emporte au bout de douze mois un compte sans organisation ni session.
 - **Le formulaire de demande d'accès peut être rempli au nom d'un autre.** Il n'en sort rien : aucun
   courriel ne part, et une invitation n'arrive qu'à l'acceptation, que la personne invitée doit
   encore accepter elle-même, connectée à sa propre boîte.

@@ -24,8 +24,19 @@ import { signInChoice, signInLanding } from '#lib/i18n/language.js';
 import { writeAccountLanguage } from './account-language.js';
 import { authDatabase } from './database.js';
 import { createMailer } from './mail/index.js';
-import { magicLinkEmail, noAccountEmail } from './mail/messages.js';
-import { consume, consumeDetailed, emailKey, MAGIC_LINK_BUDGET } from './rate-limit.js';
+import { clientAddress } from './api.js';
+import { magicLinkEmail } from './mail/messages.js';
+import {
+	consume,
+	consumeDetailed,
+	emailKey,
+	MAGIC_LINK_BUDGET,
+	SIGN_IN_FORM_BUDGET,
+	SIGN_UP_ADDRESS_BUDGET,
+	SIGN_UP_SERVICE_BUDGET,
+	SIGN_UP_SERVICE_KEY,
+	signUpAddressKey
+} from './rate-limit.js';
 
 /** Quinze minutes, en secondes : l'unité de `expiresIn` est la seconde. */
 const MAGIC_LINK_SECONDS = 900;
@@ -96,16 +107,35 @@ export async function captureMagicLink(run: () => Promise<unknown>): Promise<str
 }
 
 /**
- * Oui si un compte porte cette adresse, ou si une invitation en attente et non échue l'attend. La
- * base répond, et rien d'autre ne sort d'elle (`jadwal.may_sign_in`, migration 0077) : le rôle de
- * connexion ne lit aucune invitation.
+ * Oui si un compte porte cette adresse, ou si une invitation en attente et non échue l'attend : le
+ * lien n'ouvrira donc pas de compte que personne n'attendait. La base répond, et rien d'autre ne
+ * sort d'elle (`jadwal.may_sign_in`, migration 0077) : le rôle de connexion ne lit aucune
+ * invitation.
+ *
+ * Le nom date de l'étape 22, où l'adresse inattendue ne recevait pas de lien (ADR 0049). Depuis que
+ * l'inscription est ouverte (ADR 0058), il dit seulement si le lien ouvre un compte, et donc s'il
+ * passe sous les bornes de l'ouverture.
  */
-async function maySignIn(email: string): Promise<boolean> {
+async function isExpected(email: string): Promise<boolean> {
 	const rows = await authDatabase().execute<{ allowed: boolean }>(
 		sql`select jadwal.may_sign_in(${email}) as "allowed"`
 	);
 	const row = Array.isArray(rows) ? (rows[0] as { allowed: boolean } | undefined) : undefined;
 	return row?.allowed === true;
+}
+
+/**
+ * L'adresse IP de la requête en cours, telle que l'adaptateur la résout (`ADDRESS_HEADER`,
+ * `XFF_DEPTH`). Le rappel d'envoi de Better Auth ne voit pas la requête : SvelteKit la garde pour
+ * nous, que le lien soit demandé par le formulaire ou par un appel direct. Hors requête, un seau
+ * commun, le plus prudent.
+ */
+function requestAddress(): string {
+	try {
+		return clientAddress(getRequestEvent());
+	} catch {
+		return 'inconnu';
+	}
 }
 
 export function createAuth(env: NodeJS.ProcessEnv = process.env) {
@@ -206,7 +236,12 @@ export function createAuth(env: NodeJS.ProcessEnv = process.env) {
 			customRules: {
 				// Le volet par adresse électronique est ajouté à part : la clé du limiteur intégré
 				// est l'adresse IP et le chemin, jamais le corps de la requête.
-				'/sign-in/magic-link': { window: 60, max: 5 },
+				// La même borne que le formulaire `/connexion` (ADR 0058), qui a son propre seau :
+				// cette règle-ci ne voit que les requêtes HTTP, jamais l'API serveur qu'il appelle.
+				'/sign-in/magic-link': {
+					window: SIGN_IN_FORM_BUDGET.windowSeconds,
+					max: SIGN_IN_FORM_BUDGET.max
+				},
 				'/magic-link/verify': { window: 60, max: 10 },
 				// La connexion du super-admin est plus serrée que le reste : c'est la porte de la
 				// clé maîtresse (ADR 0025). Une passkey n'a pas de secret à deviner, mais un essai
@@ -277,14 +312,28 @@ export function createAuth(env: NodeJS.ProcessEnv = process.env) {
 						MAGIC_LINK_BUDGET
 					);
 					if (!allowed) return;
-					// La porte (étape 22, ADR 0049) : le lien ne part qu'à une adresse qu'un compte
-					// porte ou qu'une invitation en attente attend. Toute autre reçoit, à la place,
-					// de quoi demander l'accès. Les deux branches lisent la base une fois et envoient
-					// un courriel, sous le même budget : ni la réponse, ni ses cookies, ni le nombre
-					// d'envois ne disent si un compte existe. Le jeton déjà rangé pour une adresse
-					// inconnue n'est jamais envoyé, et sa purge l'emporte (`purge_expired_verifications`).
-					if (await maySignIn(email)) await mailer.send(magicLinkEmail(email, url));
-					else await mailer.send(noAccountEmail(email, origin));
+					// L'inscription est ouverte (ADR 0058) : toute adresse reçoit son lien, et l'ouvrir
+					// crée le compte. Deux bornes de plus pour l'ouverture d'un compte : dix liens par
+					// heure depuis une adresse IP, soixante pour tout le service. **Chaque lien les
+					// consomme**, connu ou non, et seule l'adresse que personne n'attend est retenue
+					// au-delà : les deux branches font les mêmes écritures, et un flot d'inscriptions ne
+					// ferme la porte à personne qui a déjà un compte. Le seau du service n'est entamé
+					// que si celui de l'adresse IP accorde : une seule machine ne le vide pas.
+					//
+					// Rien de tout cela ne change la réponse : ni elle, ni ses cookies ne disent si un
+					// compte existe (ADR 0017). Le jeton rangé pour une adresse retenue n'est jamais
+					// envoyé, et sa purge l'emporte (`purge_expired_verifications`).
+					const fromAddress = await consume(
+						authDatabase(),
+						signUpAddressKey(requestAddress()),
+						SIGN_UP_ADDRESS_BUDGET
+					);
+					const fromService =
+						fromAddress &&
+						(await consume(authDatabase(), SIGN_UP_SERVICE_KEY, SIGN_UP_SERVICE_BUDGET));
+					if (fromService || (await isExpected(email))) {
+						await mailer.send(magicLinkEmail(email, url));
+					}
 				}
 			}),
 			passkey({

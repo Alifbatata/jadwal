@@ -378,9 +378,9 @@
  *   « Personne responsable (facultatif) », adresse et langue du courriel ; « Inviter une personne
  *   responsable », sous une organisation de la liste, envoie l'invitation dans la langue choisie.
  * - 22-connexion : `/connexion` renvoie vers la demande d'accès ; une adresse que personne
- *   n'attend lit la même réponse qu'une autre et reçoit « Aucun compte jadwal à cette adresse »,
- *   sans lien, avec l'adresse du formulaire ; invitée depuis une demande acceptée, une adresse
- *   reçoit son lien.
+ *   n'attend lit la même réponse qu'une autre et reçoit, depuis l'inscription ouverte (ADR 0058),
+ *   le même lien de connexion, qui ouvrira son compte ; invitée depuis une demande acceptée, une
+ *   adresse reçoit son lien.
  * - 22-demande : `/demande-d-acces` en allemand pour un navigateur réglé en allemand, une demande
  *   incomplète refusée champ par champ, une demande enregistrée sans aucun courriel à l'adresse
  *   saisie, la même renvoyée qui reçoit la même réponse, une seconde en français, la quatrième de
@@ -849,7 +849,9 @@ const LIGNE_DU_VENDREDI = {
  * sermon en italien (`friday.ts`). Pour les deux aides des nuits courtes, le passage corrigé.
  */
 const RELECTURE_DE_L_ETAPE_21 = {
-	aideDeLaConnexion: 'العنوان الذي وصلت إليه دعوتك. مثال: name@example.org',
+	// Depuis l'inscription ouverte (ADR 0058), la tournure relue suit la condition « si une
+	// invitation vous est parvenue ».
+	aideDeLaConnexion: 'إن وصلتك دعوة، فهو العنوان الذي وصلت إليه دعوتك. مثال: name@example.org',
 	adresseMalFormee: 'هذا العنوان ليس بصيغة عنوان بريد إلكتروني. مثال: name@example.org',
 	derniereMinute:
 		'Bei einer Änderung in letzter Minute sehen Sie auf der Seite des Programms nach: Diese ist immer aktuell.',
@@ -938,7 +940,7 @@ const DEMANDE_DE_TROP = {
 	courriel: 'zoe.essai@example.test',
 	message: ''
 };
-/** Une adresse que personne n'attend : la connexion lui écrit qu'aucun compte n'y est ouvert. */
+/** Une adresse que personne n'attend : la connexion lui envoie le lien qui ouvrira son compte. */
 const ADRESSE_INCONNUE = 'personne.inconnue@example.test';
 /** Invitée plus tard, depuis la liste de la console, comme personne responsable, en italien. */
 const INVITEE_PLUS_TARD = 'piu.tardi@example.test';
@@ -2466,7 +2468,7 @@ async function superAdmin(navigateur) {
 	await demanderUnLien(page, SUPER_ADMIN);
 	verifier(
 		'la demande de lien est prise',
-		(await texteDe(page.getByRole('status'))).startsWith('Si cette adresse')
+		(await texteDe(page.getByRole('status'))).startsWith('Un lien de connexion vient de partir')
 	);
 
 	const lien = lienDeConnexion(await attendreCourriel(SUPER_ADMIN, /lien de connexion/));
@@ -3287,13 +3289,12 @@ async function demandesDAcces(navigateur) {
 		await retour('22-connexion', async () => {
 			const courriel = await attendreCourriel(ADRESSE_INCONNUE, /./);
 			verifierChaque(
-				'une adresse que personne n’attend lit la même réponse qu’une autre, « Si cette adresse… », et reçoit « Aucun compte jadwal à cette adresse », sans lien de connexion, avec l’adresse du formulaire de demande',
+				'une adresse que personne n’attend lit la même réponse qu’une autre, « Un lien de connexion vient de partir… », et reçoit « Votre lien de connexion à jadwal », avec son lien, qui ouvrira son compte',
 				{
-					'la même réponse à l’écran': statut.startsWith('Si cette adresse'),
-					'l’objet « Aucun compte jadwal à cette adresse »':
-						courriel?.subject === 'Aucun compte jadwal à cette adresse',
-					'aucun lien de connexion': courriel !== undefined && !lienDeConnexion(courriel),
-					'l’adresse du formulaire': (courriel?.text ?? '').includes(`${ORIGINE}/demande-d-acces`)
+					'la même réponse à l’écran': statut.startsWith('Un lien de connexion vient de partir'),
+					'l’objet « Votre lien de connexion à jadwal »':
+						courriel?.subject === 'Votre lien de connexion à jadwal',
+					'un lien de connexion': courriel !== undefined && Boolean(lienDeConnexion(courriel))
 				},
 				`« ${statut.slice(0, 60)}… » ; reçus : ${sujetsRecus(ADRESSE_INCONNUE) || 'rien'}`
 			);
@@ -11497,7 +11498,7 @@ D3 | une invitation envoyée depuis l’écran en allemand part en allemand, <ht
 22-demande | une demande où seul le nom est écrit revient en allemand, le nom gardé : « Der Antrag wurde nicht gesendet. … », et « Dieses Feld muss ausgefüllt werden. » sous la localité, le nom et l’adresse
 22-demande | la demande part, « Ihr Antrag ist eingegangen. » ; renvoyée, la même reçoit mot pour mot la même réponse, et aucun courriel ne part à l’adresse saisie
 22-connexion | /connexion renvoie vers la demande d’accès : « Votre organisation n’utilise pas encore jadwal ? Demander l’accès », vers /demande-d-acces
-22-connexion | une adresse que personne n’attend lit la même réponse qu’une autre, « Si cette adresse… », et reçoit « Aucun compte jadwal à cette adresse », sans lien de connexion, avec l’adresse du formulaire de demande
+22-connexion | une adresse que personne n’attend lit la même réponse qu’une autre, « Un lien de connexion vient de partir… », et reçoit « Votre lien de connexion à jadwal », avec son lien, qui ouvrira son compte
 22-demande | le lien de /connexion mène à « Demander l’accès à jadwal »
 22-demande | une seconde demande part, en français : « Votre demande est enregistrée. »
 22-demande | la quatrième demande de l’heure depuis la même adresse IP est arrêtée, en 429 : « Trop de demandes ont été envoyées ces dernières heures. … », et ce qui a été tapé reste
@@ -11663,7 +11664,7 @@ C2 | avec JavaScript, « Méthode de calcul, école et ajustements (facultatif) 
 19-B5 | un fichier séparé par des tabulations, lu en arabe : le séparateur se lit « علامة الجدولة (Tab) »
 19-B6 | vingt-cinq lignes refusées, vingt montrées : la ligne finale se lit « … و5 أخرى. »
 19-prieres-angle | dans les cinq langues, l’aide de la règle des nuits courtes dit que « Proportionnelle à l’angle » donne des heures qui changent avec la méthode de calcul
-21-relecture | les six textes relus à l’étape 21, à leur place : la connexion en arabe, « العنوان الذي وصلت إليه دعوتك. مثال: name@example.org » et « هذا العنوان ليس بصيغة عنوان بريد إلكتروني. مثال: name@example.org » ; l’abonnement en allemand, « Bei einer Änderung in letzter Minute sehen Sie auf der Seite des Programms nach: Diese ist immer aktuell. » ; les nuits courtes, « dass Ischa spät und Fadschr sehr früh beginnt. » et « La metà della notte mantiene gli orari astronomici » ; le sermon en italien, « Seleziona ogni lingua in cui viene tenuto il sermone, anche se la tua pagina pubblica non è in quella lingua. »
+21-relecture | les six textes relus à l’étape 21, à leur place : la connexion en arabe, « إن وصلتك دعوة، فهو العنوان الذي وصلت إليه دعوتك. مثال: name@example.org » et « هذا العنوان ليس بصيغة عنوان بريد إلكتروني. مثال: name@example.org » ; l’abonnement en allemand, « Bei einer Änderung in letzter Minute sehen Sie auf der Seite des Programms nach: Diese ist immer aktuell. » ; les nuits courtes, « dass Ischa spät und Fadschr sehr früh beginnt. » et « La metà della notte mantiene gli orari astronomici » ; le sermon en italien, « Seleziona ogni lingua in cui viene tenuto il sermone, anche se la tua pagina pubblica non è in quella lingua. »
 B1 | l’heure d’une session du vendredi a son aide, avec un exemple
 19-sermon | dans « Ajouter une session », « Langue du sermon » propose les huit langues d’enseignement, dans l’ordre, et son aide le dit
 C4 | une session du vendredi est ajoutée

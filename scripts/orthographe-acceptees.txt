@@ -277,9 +277,11 @@ docs/CALENDRIER-PRIERES.md | VIRG_NON_TROUVEE | vous
 # (famille 2) : l'en-tête « Ce qui est conservé / Durée », la cellule finale « chaque nuit »,
 # « chiffrées » accordé à « sauvegardes » et non à la cellule voisine. « Voyez plus bas » est la
 # formule du renvoi, et « au bout d'un à deux jours » élide devant le numéral, ce que l'usage admet.
-# « 31.10.2026 » : la date de mise à jour s'écrit JJ.MM.AAAA, avec des points, comme toutes les
+# « 28.11.2026 » : la date de mise à jour s'écrit JJ.MM.AAAA, avec des points, comme toutes les
 # dates du service et comme en Suisse (étape 18, retour A3) ; la règle propose des barres obliques.
-docs/CONDITIONS.md | DATE | 31.10.2026
+# `conditions/rendu.js` n'en lit pas d'autre forme. La version précédente, 31.10.2026, a cédé la
+# place à celle de l'inscription ouverte (étape 25, ADR 0058).
+docs/CONDITIONS.md | DATE | 28.11.2026
 docs/CONDITIONS.md | J_N | chiffrées Union
 docs/CONDITIONS.md | PAS_D_ELISION | d'un
 docs/CONDITIONS.md | POINT | nuit
@@ -684,3 +686,20 @@ apps/web/src/lib/i18n/live.ts | AR_SIMPLE_REPLACE | على الأقل
 apps/web/src/lib/i18n/live.ts | ACCORD_SUJET_VERBE | est
 apps/web/src/lib/i18n/live.ts | SENT_START_SIN_PLU | Übertragung
 apps/web/src/lib/i18n/live.ts | GERMAN_WORD_REPEAT_BEGINNING_RULE | Die
+#
+# L'inscription ouverte et l'écran des comptes (étape 25, ADR 0058).
+# « le Organisations », « supprimé », « account Account » : des libellés voisins recollés par le
+# corpus (famille 2). L'en-tête de colonne « Ouvert le » précède l'en-tête « Organisations » ;
+# « Compte supprimé : » est le nom « compte », pas le verbe « compter » ; « Tieni l’account » et
+# « Keep the account » sont un bouton, « Account eliminato: » et « Account deleted: » le message
+# qui suit sa réussite, que l'écran n'affiche jamais ensemble.
+# « الفترة » : « في الفترة الأخيرة », « ces derniers temps », comme dans `i18n.ts` et `prayers.ts`.
+# « جلسة » et « برنامج », sans voyelles, comme dans les autres écrans (famille 6) : « جلسة », la
+# session ouverte, n'a pas d'homophone possible dans la phrase.
+apps/web/src/lib/i18n/super-admin-accounts.ts | ELISION | le Organisations
+apps/web/src/lib/i18n/super-admin-accounts.ts | FAIRE_VPPA | supprimé
+apps/web/src/lib/i18n/super-admin-accounts.ts | ITALIAN_WORD_REPEAT_RULE | account Account
+apps/web/src/lib/i18n/super-admin-accounts.ts | ENGLISH_WORD_REPEAT_RULE | account Account
+apps/web/src/lib/i18n/sign-in.ts | AR_SIMPLE_REPLACE | الفترة
+apps/web/src/lib/i18n/super-admin-accounts.ts | AR_HOMOPHONES_REPLACE | جلسة
+apps/web/src/lib/i18n/super-admin-accounts.ts | AR_DIACRITICS_REPLACE | برنامج

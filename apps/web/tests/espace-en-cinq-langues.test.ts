@@ -734,7 +734,7 @@ describe('les courriels (retour D3)', () => {
 				langue: 'fr'
 			}
 		] as const;
-		// Des adresses qu'un compte porte : la connexion n'envoie de lien qu'à elles (ADR 0049).
+		// Des adresses qu'un compte porte ; celles que personne n'attend sont éprouvées plus bas.
 		for (const { email } of cas) {
 			await maintenance((tx) =>
 				tx.execute(sql`insert into "user" ("id", "email") values (${newId()}, ${email})`)
@@ -754,18 +754,20 @@ describe('les courriels (retour D3)', () => {
 		}
 	});
 
-	it('tells an address nobody expects how to ask for access, in the language of the screen too', async () => {
+	// L'inscription est ouverte (ADR 0058) : une adresse que personne n'attend reçoit le même lien,
+	// qui ouvrira son compte, et non plus le courriel « aucun compte » de l'ADR 0049.
+	it('sends an address nobody expects the same sign-in link, in the language of the screen too', async () => {
 		const cas = [
 			{
 				email: 'cinq-sans-compte-it@example.test',
 				options: { navigateur: 'it-CH,it' },
-				sujet: 'Nessun account jadwal a questo indirizzo',
+				sujet: 'Il tuo link di accesso a jadwal',
 				langue: 'it'
 			},
 			{
 				email: 'cinq-sans-compte-ar@example.test',
 				options: { cookie: `${COOKIE}=ar` },
-				sujet: 'لا يوجد حساب jadwal بهذا العنوان',
+				sujet: 'رابط الدخول إلى jadwal',
 				langue: 'ar'
 			}
 		] as const;

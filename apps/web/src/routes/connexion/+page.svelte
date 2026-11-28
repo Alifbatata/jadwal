@@ -21,6 +21,10 @@
 	<p>{text.close}</p>
 {:else}
 	<p>{text.intro}</p>
+	{#if form?.tooMany}
+		<!-- La borne de l'adresse IP (ADR 0058) : elle ne parle que de la connexion d'où l'on écrit. -->
+		<p role="alert">{text.tooMany}</p>
+	{/if}
 	<form method="post">
 		<label for="email">{text.emailLabel}</label>
 		<!-- L'aide et l'erreur sont reliées au champ : un lecteur d'écran les lit avec son nom. Une
@@ -43,7 +47,8 @@
 		<button type="submit">{text.submit}</button>
 	</form>
 	<p class="invitation">{text.notInvited}</p>
-	<!-- Une adresse que personne n'attend ne reçoit pas de lien (ADR 0049) : la page dit où aller. -->
+	<!-- Un compte ouvert seul n'entre dans aucune organisation (ADR 0058) : la page dit comment en
+	     demander une. -->
 	<p>{access.question} <a href={resolve('demande-d-acces')}>{access.link}</a></p>
 {/if}
 

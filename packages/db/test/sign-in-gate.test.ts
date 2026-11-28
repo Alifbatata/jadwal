@@ -1,9 +1,12 @@
-// La porte de la connexion : un lien ne part qu'à une adresse attendue (étape 22, ADR 0049).
+// La porte de la connexion : une adresse est-elle attendue ? (étape 22, ADR 0049 ; étape 25,
+// ADR 0058).
 //
 // Une adresse est attendue quand un compte la porte, ou quand une invitation en attente, et non
-// échue, l'attend. Toute autre adresse reçoit un autre courriel, qui l'invite à demander l'accès :
-// le compte ne s'ouvre plus à qui le demande. `jadwal.may_sign_in` répond oui ou non, et rien
-// d'autre ; seul le rôle de connexion peut l'appeler, puisque c'est lui qui envoie les liens.
+// échue, l'attend. À l'étape 22, toute autre adresse recevait un autre courriel au lieu du lien.
+// Depuis que l'inscription est ouverte, elle reçoit le lien, qui lui ouvre un compte, mais passe
+// sous les bornes de l'ouverture des comptes ; une adresse attendue y échappe. `jadwal.may_sign_in`
+// répond oui ou non, et rien d'autre ; seul le rôle de connexion peut l'appeler, puisque c'est lui
+// qui envoie les liens. Son nom date de l'étape 22.
 //
 // Le propriétaire ne sert qu'à poser le décor. Tout ce qui est éprouvé passe par le rôle de
 // connexion, non privilégié.
