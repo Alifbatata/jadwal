@@ -99,6 +99,10 @@ DMARC
 MTA
 HMAC
 PCM
+# Le codage du son servi aux téléphones (ADR 0057) : l'Interactive Multimedia Association et sa
+# modulation par impulsions codées différentielle adaptative.
+IMA
+ADPCM
 GnuPG
 IANA
 RLS

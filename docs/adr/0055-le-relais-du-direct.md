@@ -137,3 +137,15 @@ variable.
   l'avoir accepté, et les conditions d'utilisation devront le dire avant la première mise en ligne
   du direct.
 - Le traducteur simulé n'appelle personne : avec lui, la voix ne quitte pas le relais.
+
+## Addendum du 27 novembre 2026 : le son servi est codé
+
+Le format servi aux téléphones est choisi avec la page d'écoute (ADR 0057) : IMA ADPCM, 4 bits,
+24 kHz, mono. Le relais ne se contente donc plus de passer les octets : il code ce que le
+traducteur rend, une fois par morceau et par langue (`apps/live/src/adpcm.ts`), et le même paquet
+part à chaque personne qui écoute cette langue. Personne n'écoute une langue : rien n'est codé.
+Le message `state` annonce ce format (`ima_adpcm`) ; le poste « Diffuser », lui, envoie et reçoit
+toujours du PCM.
+
+Le seuil au-delà duquel un appareil en retard saute des morceaux reste de trois secondes, comptées
+en son codé. Un paquet se décode seul : en sauter un n'abîme pas la suite.

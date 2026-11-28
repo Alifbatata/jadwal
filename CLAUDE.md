@@ -91,9 +91,11 @@ absent du dépôt public :
 
 - `apps/web/` : SvelteKit (adapter-node), espace des responsables, pages publiques, API, flux ICS.
   Le poste « Diffuser » du direct (`/direct`, ADR 0056) n'existe que si `JADWAL_LIVE_URL` est
-  posée ; `pnpm direct:test` l'éprouve dans Chrome avec un faux micro.
+  posée, comme la vue d'écoute de la page publique (`?vue=direct`, module `/m/ecoute.js`,
+  ADR 0057) ; `pnpm direct:test` éprouve les deux dans Chrome avec un faux micro.
 - `apps/live/` : le relais du direct (ADR 0055), un programme Node à part du serveur web. Une
-  dépendance, `ws`. Éteint sans `JADWAL_LIVE_TRANSLATOR` ; le seul traducteur est simulé.
+  dépendance, `ws`. Éteint sans `JADWAL_LIVE_TRANSLATOR` ; le seul traducteur est simulé. Il code
+  le son servi aux téléphones en IMA ADPCM (`src/adpcm.ts`).
 - `packages/core/` : bibliothèque TypeScript pure (récurrence, exceptions, prières, ICS).
 - `packages/db/` : Drizzle + PostgreSQL, RLS (vide jusqu'à l'étape 2).
 - `packages/widget/` : custom element `<jadwal-widget>` en TypeScript pur, sans dépendance à

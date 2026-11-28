@@ -294,6 +294,11 @@ cet écran ni son lien ; avec une adresse fausse ou sans secret, il refuse de d�
 venue d'une autre origine que celle du site est refusée. Qui écoute n'a rien à dire : son premier
 message ferme sa liaison.
 
+La vue d'écoute de la page publique (ADR 0057) ouvre la liaison vers le relais, pour sa seule
+origine, et rien d'autre : le micro y reste interdit. Son script est un fichier de la même origine,
+`/m/ecoute.js`, chargé sur cette vue seule ; il ne garde rien, ne mesure rien, et ne se branche
+qu'après un geste. Le travailleur de service ne garde pas cette vue pour une lecture sans réseau.
+
 Un direct s'arrête seul : à la durée maximale, au silence du poste, quand sa liaison tombe, au
 plafond du mois, quand le poste envoie plus de son que le temps n'en permet, quand le traducteur
 lâche, ou quand le compteur du mois ne s'écrit plus. Le plafond se compte en temps facturé, dans

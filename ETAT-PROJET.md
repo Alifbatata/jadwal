@@ -166,12 +166,15 @@ Ce fichier fait autorité sur l'avancement. Il est mis à jour à la fin de chaq
   sur le poste le 26.11.2026 ; la CI les rejoue à chaque poussée.
 - **Étape 25** (le direct : le sermon du vendredi traduit à l'oral) : **ouverte le 26.11.2026**.
   Cinq chantiers : le relais, le poste « Diffuser », l'écoute, la preuve sur un vrai sermon, puis
-  la charge, le parcours et les conditions. **Les deux premiers sont faits** : `apps/live`, le
-  relais du direct (ADR 0055), avec un traducteur simulé, et le poste « Diffuser », `/direct`
-  (ADR 0056), d'où l'on lance le direct depuis son navigateur. Depuis le 27.11.2026, seuls
+  la charge, le parcours et les conditions. **Les trois premiers sont faits** : `apps/live`, le
+  relais du direct (ADR 0055), avec un traducteur simulé ; le poste « Diffuser », `/direct`
+  (ADR 0056), d'où l'on lance le direct depuis son navigateur ; et, depuis le 27.11.2026,
+  l'écoute, un onglet « Direct » de la page publique (ADR 0057), sans compte, où l'on choisit sa
+  langue, entend la traduction et lit les sous-titres. Depuis le 27.11.2026, seuls
   diffusent la personne responsable, d'office, le super-admin, et les éditeurs autorisés,
-  vers les langues que l'organisation a choisies dans ses réglages. Personne ne peut encore
-  écouter depuis une page, aucun service de traduction n'est branché, et rien ne quitte le relais.
+  vers les langues que l'organisation a choisies dans ses réglages. Aucun service de traduction
+  n'est branché : on entend, traduite par le simulateur, sa propre voix, et rien ne quitte le
+  relais.
   Le service sera choisi au quatrième chantier, sur un vrai sermon : il y faudra une clé chez
   chaque service essayé et un enregistrement, que l'exploitant fournira.
 
@@ -1179,6 +1182,30 @@ jour, addendum de l'ADR 0056) :
 - **Ce qui n'est pas fait** : l'inscription ouverte à tous, décidée le même jour (chantier à part) ;
   une vue du super-admin sur les comptes de toutes les organisations ; les langues par défaut pour
   toute l'instance.
+
+Troisième chantier, livré sur `main` le 27.11.2026, pas déployé (ADR 0057) :
+
+- **L'écoute** : un onglet « Direct » de la page publique, entre Prières et Infos, quand le direct
+  est allumé et qu'il reste une langue (celles de l'organisation que le relais sert). Sans compte
+  ni cookie : on choisit sa langue, chacune par son propre nom, on appuie sur « Écouter » ; la page
+  attend le direct, le joue, montre les sous-titres, garde l'écran allumé, se rebranche seule et
+  dit la fin. La mention « Traduction automatique : elle peut contenir des erreurs » est toujours
+  visible. Dans les cinq langues de la page publique.
+- **Un module servi à part**, `/m/ecoute.js`, sur cette vue seule : la page reste rendue sans
+  SvelteKit dans le navigateur. Sans JavaScript, elle le dit. La vue ouvre la liaison vers le
+  relais, jamais le micro, et n'est pas gardée pour une lecture sans réseau.
+- **Le son servi aux téléphones** : IMA ADPCM, 4 bits, 24 kHz, codé une fois par morceau et par
+  langue dans le relais, décodé dans la page. 12 020 octets par seconde au lieu de 48 000, soit
+  environ 25 Mo pour 35 minutes ; 42 dB de rapport signal sur bruit sur une voix de synthèse.
+  Aucune dépendance ajoutée.
+- **Les tests** : 4 693 dans tout le dépôt, tous réussis, aucun sauté, et 25 liés au temps. Un
+  paquet témoin, calculé à la main, lie le codeur du relais au décodeur de la page.
+  `pnpm direct:test` : 45 vérifications sur 45, dont une page d'écoute dans Chrome qui donne à
+  jouer un son de 440 Hz, reçoit 12 031 octets par seconde et se rebranche après la chute du
+  relais ; axe sans rien à signaler. Vingt-cinq fautes introduites exprès ont toutes été attrapées.
+- **Ce qui n'est pas fait** : un vrai téléphone (le son écran verrouillé, le bouton du silence d'un
+  iPhone) ; Safari et Firefox ; un réglage pour cacher l'onglet d'une organisation qui ne diffuse
+  pas ; `pnpm direct:test` dans la CI.
 
 **Un script ou une commande qu'aucun test ne _lance_ n'est pas éprouvé.** C'est la règle du dépôt
 depuis l'étape 12, et elle répond à la question laissée ouverte à l'étape 11.
