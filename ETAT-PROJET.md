@@ -1394,11 +1394,12 @@ qui gardait le plan a quitté la base (migration 0076).
   Node 24 (https://nodejs.org/dist/index.json, champ `security`) et relever l'épingle si besoin.
 - `ORIGIN` n'est lue par `adapter-node` que si `paths.origin` n'est pas posé dans
   `vite.config.ts` (ADR 0051) : n'en jamais poser. `origine.test.ts` le verrait.
-- `pnpm audit` signale deux vulnérabilités modérées dans des outils de développement, qu'aucune
-  version de leurs parents ne corrige encore : `esbuild` 0.18.20, tiré par `@esbuild-kit` de
-  `drizzle-kit` (GHSA-67mh-4wv8-2f99, le serveur de développement d'esbuild, que jadwal ne lance
-  pas), et `minimatch` 10.2.6, tiré par ESLint (GHSA-g3hv-75wg-m249, corrigé en 11). Rien n'entre
-  dans l'image. À relever à la prochaine montée de `drizzle-kit` et d'ESLint.
+- `pnpm audit` signale une vulnérabilité modérée dans un outil de développement, qu'aucune version
+  de son parent ne corrige encore : `esbuild` 0.18.20, tiré par `@esbuild-kit/core-utils`, que
+  `drizzle-kit` tire encore dans sa dernière version, 0.31.11 (GHSA-67mh-4wv8-2f99, le serveur de
+  développement d'esbuild, que jadwal ne lance pas). Rien n'entre dans l'image. À relever à la
+  prochaine montée de `drizzle-kit`. L'alerte `minimatch` (GHSA-g3hv-75wg-m249) est close depuis le
+  28.11.2026 : ESLint 10.15.0 et `typescript-eslint` 8.73.0 tirent `minimatch` 11.
 - **Google Agenda sur Android, à vérifier sur un vrai téléphone** (étape 18, E3). L'aide de Google
   dit qu'on ne s'abonne à un agenda par son adresse que depuis un ordinateur, jamais depuis
   l'application Android ; le bouton de la page d'abonnement ouvre la version web de Google Agenda
