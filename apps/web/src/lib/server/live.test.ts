@@ -41,10 +41,10 @@ describe('les réglages du direct, côté serveur web', () => {
 		const settings = readLiveSettings({
 			ORIGIN: 'http://localhost:3000',
 			JADWAL_LIVE_SECRET: SECRET,
-			JADWAL_LIVE_URL: 'ws://127.0.0.1:3100',
+			JADWAL_LIVE_URL: 'ws://127.0.0.1:4180',
 			JADWAL_LIVE_LANGUAGES: 'fr, de'
 		});
-		expect(settings?.url).toBe('ws://127.0.0.1:3100');
+		expect(settings?.url).toBe('ws://127.0.0.1:4180');
 		expect(settings?.languages).toEqual(['fr', 'de']);
 	});
 
@@ -159,7 +159,7 @@ describe('le jeton témoin, commun au serveur web et au relais', () => {
 	});
 });
 
-describe('les en-têtes de l’écran « Diffuser »', () => {
+describe('les en-têtes du direct : l’écran « Diffuser » et la vue d’écoute', () => {
 	/** La politique que SvelteKit pose, telle que `vite.config.ts` la règle, avec son nonce. */
 	const POLICY =
 		"default-src 'self'; script-src 'self' 'nonce-abc'; style-src 'self' 'unsafe-inline'; " +
@@ -167,23 +167,40 @@ describe('les en-têtes de l’écran « Diffuser »', () => {
 		"base-uri 'self'; object-src 'none'";
 
 	it("ajoute l'origine du relais à connect-src, et ne touche à rien d'autre", () => {
-		const { contentSecurityPolicy } = liveHeaders(POLICY, 'wss://direct.example.org');
+		const { contentSecurityPolicy } = liveHeaders(POLICY, {
+			relay: 'wss://direct.example.org',
+			microphone: true
+		});
 		expect(contentSecurityPolicy).toBe(
 			POLICY.replace("connect-src 'self'", "connect-src 'self' wss://direct.example.org")
 		);
 	});
 
 	it('ouvre le micro à la page elle-même, et à personne d’autre', () => {
-		const { permissionsPolicy } = liveHeaders(POLICY, 'wss://direct.example.org');
+		const { permissionsPolicy } = liveHeaders(POLICY, {
+			relay: 'wss://direct.example.org',
+			microphone: true
+		});
 		expect(permissionsPolicy).toBe(
 			'camera=(), microphone=(self), geolocation=(), payment=(), usb=()'
 		);
 	});
 
 	it('pose connect-src quand la politique n’en porte pas', () => {
-		const { contentSecurityPolicy } = liveHeaders("default-src 'self'", 'ws://127.0.0.1:3100');
+		const { contentSecurityPolicy } = liveHeaders("default-src 'self'", {
+			relay: 'ws://127.0.0.1:4180',
+			microphone: false
+		});
 		expect(contentSecurityPolicy).toBe(
-			"default-src 'self'; connect-src 'self' ws://127.0.0.1:3100"
+			"default-src 'self'; connect-src 'self' ws://127.0.0.1:4180"
+		);
+	});
+
+	it('ouvre à la vue d’écoute la liaison seule : le micro y reste fermé', () => {
+		const ecoute = liveHeaders(POLICY, { relay: 'wss://direct.example.org', microphone: false });
+		expect(ecoute.contentSecurityPolicy).toContain("connect-src 'self' wss://direct.example.org");
+		expect(ecoute.permissionsPolicy).toBe(
+			'camera=(), microphone=(), geolocation=(), payment=(), usb=()'
 		);
 	});
 });

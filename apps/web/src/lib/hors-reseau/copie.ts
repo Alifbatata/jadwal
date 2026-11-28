@@ -60,6 +60,9 @@ export function genreDeRequete(requete: Requete): 'page' | 'fichier' | null {
 	// Le widget encadre un programme, pas une application (ADR 0053) : ni son cadre, que le
 	// navigateur dit par la destination `iframe`, ni son adresse ouverte à la main.
 	if (url.searchParams.has('embed')) return null;
+	// L'écoute du direct (ADR 0057) : sans réseau, il n'y a pas de direct, et une copie dirait
+	// « pas de direct » quand il y en a peut-être un.
+	if (url.searchParams.get('vue') === 'direct') return null;
 	return 'page';
 }
 

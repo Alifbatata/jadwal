@@ -9,6 +9,10 @@
 // Depuis l'étape 24, une cinquième vue, « Aujourd'hui » : les prières du jour, la prochaine, les
 // séances du jour et le premier jour suivant qui en a (docs/maquettes/public-aujourdhui.md). Elle lit
 // les mêmes deux requêtes, et ce qu'elle décide est dans `#lib/public/aujourdhui.ts`.
+//
+// Depuis l'étape 25, une sixième, « Direct » : l'écoute du prêche traduit (ADR 0057). Elle
+// n'existe que si le direct est allumé sur l'instance et qu'il reste une langue à offrir ; la page
+// n'y donne que l'adresse du relais et les langues, et le module `/m/ecoute.js` fait le reste.
 
 import {
 	addDays,
@@ -40,8 +44,9 @@ import { lienVue } from '#lib/public/liens.js';
 import { premierJourSuivant, prochainePriere } from '#lib/public/aujourdhui.js';
 import { aDesInfos, lienCarte } from '#lib/public/infos.js';
 import { CACHE_AUJOURDHUI, CACHE_PROGRAMME, CACHE_REGLAGES } from '#lib/server/api.js';
+import { broadcastLanguages, liveSettings } from '#lib/server/live.js';
 
-export type Vue = 'semaine' | 'cours' | 'mois' | 'prieres' | 'aujourdhui' | 'infos';
+export type Vue = 'semaine' | 'cours' | 'mois' | 'prieres' | 'aujourdhui' | 'infos' | 'direct';
 
 const JOURS_SEMAINE = 7;
 /** La navigation par mois est bornée : un an en arrière, un an en avant. */
@@ -53,8 +58,15 @@ const PRIERES = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
  * La vue demandée. L'onglet des prières n'existe que si le module est allumé : sans lui, l'adresse
  * `?vue=prieres` montre la semaine, comme toute vue inconnue, et ne dit rien d'un réglage.
  */
-function vueDemandee(value: string | null, avecPrieres: boolean, avecInfos: boolean): Vue {
+function vueDemandee(
+	value: string | null,
+	avecPrieres: boolean,
+	avecInfos: boolean,
+	avecDirect: boolean
+): Vue {
 	if (value === 'prieres') return avecPrieres ? 'prieres' : 'semaine';
+	// L'écoute n'existe que si le direct est allumé et qu'il reste une langue (étape 25).
+	if (value === 'direct') return avecDirect ? 'direct' : 'semaine';
 	// L'onglet des infos n'existe que si l'organisation a dit quelque chose d'elle (étape 24).
 	if (value === 'infos') return avecInfos ? 'infos' : 'semaine';
 	return value === 'cours' || value === 'mois' || value === 'aujourdhui' ? value : 'semaine';
@@ -84,9 +96,23 @@ export const load: PageServerLoad = async (event) => {
 	const { organisation, langue } = await publicContext(event);
 	const infos = infosDe(organisation);
 	const avecInfos = aDesInfos(infos);
-	const vue = vueDemandee(event.url.searchParams.get('vue'), organisation.prayer_module, avecInfos);
-	// « Aujourd'hui » et « Infos » ne montrent aucun filtre : il n'y en a pas à voir ni à enlever.
-	const filtre = vue === 'aujourdhui' || vue === 'infos' ? null : publicDemande(event);
+	// Les langues de l'écoute : celles que l'organisation a choisies et que le relais sert, dans
+	// l'ordre du relais, comme pour le poste « Diffuser ». Aucune : pas d'onglet.
+	const live = liveSettings();
+	const languesDuDirect = live
+		? broadcastLanguages(organisation.live_language, live.languages)
+		: [];
+	const avecDirect = languesDuDirect.length > 0;
+	const vue = vueDemandee(
+		event.url.searchParams.get('vue'),
+		organisation.prayer_module,
+		avecInfos,
+		avecDirect
+	);
+	// « Aujourd'hui », « Infos » et « Direct » ne montrent aucun filtre : il n'y en a pas à voir ni
+	// à enlever.
+	const filtre =
+		vue === 'aujourdhui' || vue === 'infos' || vue === 'direct' ? null : publicDemande(event);
 	// Le lien vers une carte dépend de l'appareil, comme l'agenda (ADR 0048) : la réponse le dit par
 	// `Vary`. Seul l'onglet Infos le lit.
 	const carte =
@@ -115,7 +141,11 @@ export const load: PageServerLoad = async (event) => {
 	}
 
 	const complet =
-		vue === 'semaine' || vue === 'prieres' || vue === 'aujourdhui' || vue === 'infos'
+		vue === 'semaine' ||
+		vue === 'prieres' ||
+		vue === 'aujourdhui' ||
+		vue === 'infos' ||
+		vue === 'direct'
 			? programme
 			: await readPublicProgramme(organisation, langue, new Date(), { from, to });
 
@@ -214,11 +244,19 @@ export const load: PageServerLoad = async (event) => {
 
 	// Le cache d'une page publique suit la même empreinte que l'API : une modification par un
 	// responsable change la version suivante (ADR 0026). « Aujourd'hui » ne se garde qu'une minute.
-	// « Infos » suit le cache des réglages, dont ses textes font partie.
+	// « Infos » suit le cache des réglages, dont ses textes font partie, et « Direct » aussi : ses
+	// langues en sont.
 	event.setHeaders({
 		'cache-control':
-			vue === 'aujourdhui' ? CACHE_AUJOURDHUI : vue === 'infos' ? CACHE_REGLAGES : CACHE_PROGRAMME
+			vue === 'aujourdhui'
+				? CACHE_AUJOURDHUI
+				: vue === 'infos' || vue === 'direct'
+					? CACHE_REGLAGES
+					: CACHE_PROGRAMME
 	});
+	// La vue d'écoute ouvre, sur sa réponse seule, la liaison vers le relais ; le micro reste fermé
+	// (ADR 0057).
+	if (vue === 'direct' && live) event.locals.live = { relay: live.url, microphone: false };
 
 	const pause = pauseCouvrant(complet.pauses, today);
 	// L'adresse canonique d'une vue est cette vue **sans ses filtres** : un filtre par public et une
@@ -253,6 +291,17 @@ export const load: PageServerLoad = async (event) => {
 		avecPrieres: organisation.prayer_module,
 		// L'onglet des infos n'est proposé que si l'organisation en a saisi au moins une.
 		avecInfos,
+		// L'onglet du direct, seulement s'il est allumé et qu'il reste une langue (étape 25).
+		avecDirect,
+		// Ce que le module d'écoute lit : la porte du relais pour cette organisation, jusqu'à la langue,
+		// et les langues offertes. Jamais dans le cadre du widget, qui encadre un programme.
+		direct:
+			vue === 'direct' && live
+				? {
+						relais: `${live.url}/listen/${organisation.slug}/`,
+						langues: languesDuDirect
+					}
+				: null,
 		// Les six textes, pour l'onglet seul ; l'annonce, pour lui et pour « Aujourd'hui », et jamais
 		// dans le cadre du widget, qui encadre un programme (docs/maquettes/public-infos.md).
 		infos: vue === 'infos' ? infos : null,

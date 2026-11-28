@@ -12,7 +12,7 @@ import type { PageServerLoad } from './$types.js';
 
 export const load: PageServerLoad = async (event) => {
 	const { context, live } = await mustBroadcast(event);
-	event.locals.relay = live.url;
+	event.locals.live = { relay: live.url, microphone: true };
 	return {
 		organisation: { name: context.organizationName },
 		/** La porte du poste sur le relais. Le jeton n'est pas ici : il se demande en appuyant. */

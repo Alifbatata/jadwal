@@ -44,6 +44,20 @@ export function direction(langue: Langue): 'ltr' | 'rtl' {
 }
 
 /** Le nom de chaque langue, écrit dans cette langue : c'est ainsi qu'on choisit la sienne. */
+/**
+ * Le nom de chaque langue du direct (ADR 0052), écrit dans cette langue : celle ou celui qui écoute
+ * cherche la sienne, quelle que soit la langue de la page.
+ */
+export const NOM_DE_LANGUE_DU_DIRECT: Readonly<Record<string, string>> = {
+	fr: 'Français',
+	de: 'Deutsch',
+	it: 'Italiano',
+	en: 'English',
+	sq: 'Shqip',
+	bs: 'Bosanski',
+	tr: 'Türkçe'
+};
+
 export const NOM_DE_LANGUE: Record<Langue, string> = {
 	fr: 'Français',
 	de: 'Deutsch',
@@ -336,7 +350,34 @@ interface Dictionnaire {
 	 * information.
 	 */
 	readonly tabsLabel: string;
-	readonly tabs: { today: string; programme: string; prayers: string; info: string };
+	readonly tabs: { today: string; programme: string; prayers: string; live: string; info: string };
+	/**
+	 * La vue d'écoute du direct (étape 25, ADR 0057). `states` : une phrase par état de l'écoute,
+	 * que le module `ecoute.js` montre ; il n'a lui-même aucun texte.
+	 */
+	readonly live: {
+		readonly title: string;
+		readonly intro: string;
+		readonly language: string;
+		readonly listen: string;
+		readonly stop: string;
+		readonly machine: string;
+		readonly screen: string;
+		readonly subtitles: string;
+		readonly noScript: string;
+		readonly states: {
+			readonly arret: string;
+			readonly connexion: string;
+			readonly attente: string;
+			readonly direct: string;
+			readonly fini: string;
+			readonly reprise: string;
+			readonly perdu: string;
+			readonly plein: string;
+			readonly indisponible: string;
+			readonly format: string;
+		};
+	};
 	/** « Prochaine prière : Asr à 16:30. » Le nom de la prière vient de `nomPriere`. */
 	readonly nextPrayer: (prayer: string, time: string) => string;
 	/** La même, quand l'organisation a fixé une iqama. */
@@ -582,7 +623,38 @@ const fr: Dictionnaire = {
 	jumuaAt: (times) => `Prière du vendredi : ${times}`,
 	// La navigation principale et la vue « Aujourd'hui » (étape 24).
 	tabsLabel: 'Navigation principale',
-	tabs: { today: 'Aujourd’hui', programme: 'Programme', prayers: 'Prières', info: 'Infos' },
+	tabs: {
+		today: 'Aujourd’hui',
+		programme: 'Programme',
+		prayers: 'Prières',
+		live: 'Direct',
+		info: 'Infos'
+	},
+	live: {
+		title: 'Le prêche en direct',
+		intro:
+			'Le prêche du vendredi, traduit pendant qu’il est dit. Choisissez une langue, puis appuyez sur « Écouter ».',
+		language: 'Langue de la traduction',
+		listen: 'Écouter',
+		stop: 'Arrêter',
+		machine: 'Traduction automatique : elle peut contenir des erreurs.',
+		screen: 'L’écran reste allumé durant l’écoute : sur un téléphone verrouillé, le son s’arrête.',
+		subtitles: 'Sous-titres',
+		noScript: 'L’écoute en direct demande JavaScript, désactivé dans ce navigateur.',
+		states: {
+			arret: 'Appuyez sur « Écouter » : le son vient dès que le direct commence.',
+			connexion: 'Connexion en cours…',
+			attente:
+				'Pas de direct en ce moment. Gardez la page ouverte : le son vient dès qu’il commence.',
+			direct: 'En direct.',
+			fini: 'Le direct est terminé. La page attend le suivant.',
+			reprise: 'La liaison est coupée. Nouvel essai en cours…',
+			perdu: 'La liaison est perdue. Appuyez sur « Écouter » pour réessayer.',
+			plein: 'Trop de personnes écoutent en ce moment. Réessayez dans un instant.',
+			indisponible: 'Cette langue n’est pas disponible pour le moment.',
+			format: 'Cette page est trop ancienne pour ce direct : rechargez-la.'
+		}
+	},
 	nextPrayer: (prayer, time) => `Prochaine prière : ${prayer} à ${time}.`,
 	nextPrayerIqama: (prayer, time, iqama) =>
 		`Prochaine prière : ${prayer} à ${time}, iqama à ${iqama}.`,
@@ -777,7 +849,39 @@ const de: Dictionnaire = {
 	jumuaReplacesDhuhr: 'Es tritt jeden Freitag an die Stelle des Dhuhr.',
 	jumuaAt: (times) => `Freitagsgebet: ${times}`,
 	tabsLabel: 'Hauptnavigation',
-	tabs: { today: 'Heute', programme: 'Programm', prayers: 'Gebetszeiten', info: 'Über uns' },
+	tabs: {
+		today: 'Heute',
+		programme: 'Programm',
+		prayers: 'Gebetszeiten',
+		live: 'Live',
+		info: 'Über uns'
+	},
+	live: {
+		title: 'Predigt live',
+		intro:
+			'Die Freitagspredigt, übersetzt, während sie gehalten wird. Wählen Sie eine Sprache und tippen Sie dann auf «Anhören».',
+		language: 'Sprache der Übersetzung',
+		listen: 'Anhören',
+		stop: 'Beenden',
+		machine: 'Maschinelle Übersetzung: Sie kann Fehler enthalten.',
+		screen:
+			'Der Bildschirm bleibt während des Zuhörens an: Auf einem gesperrten Telefon verstummt der Ton.',
+		subtitles: 'Untertitel',
+		noScript: 'Das Zuhören braucht JavaScript, das in diesem Browser ausgeschaltet ist.',
+		states: {
+			arret: 'Tippen Sie auf «Anhören»: Der Ton kommt, sobald die Übertragung beginnt.',
+			connexion: 'Verbindung wird aufgebaut …',
+			attente:
+				'Gerade keine Übertragung. Lassen Sie die Seite offen: Der Ton kommt, sobald sie beginnt.',
+			direct: 'Live.',
+			fini: 'Die Übertragung ist zu Ende. Diese Seite wartet auf die nächste.',
+			reprise: 'Verbindung unterbrochen. Neuer Versuch läuft …',
+			perdu: 'Die Verbindung ist verloren. Tippen Sie auf «Anhören», um es erneut zu versuchen.',
+			plein: 'Gerade hören zu viele Personen zu. Versuchen Sie es gleich noch einmal.',
+			indisponible: 'Diese Sprache ist im Moment nicht verfügbar.',
+			format: 'Diese Seite ist für diese Übertragung zu alt: Laden Sie sie neu.'
+		}
+	},
 	nextPrayer: (prayer, time) => `Nächstes Gebet: ${prayer} um ${time}.`,
 	nextPrayerIqama: (prayer, time, iqama) =>
 		`Nächstes Gebet: ${prayer} um ${time}, Iqama um ${iqama}.`,
@@ -971,7 +1075,39 @@ const it: Dictionnaire = {
 	jumuaReplacesDhuhr: 'Sostituisce il Dhuhr ogni venerdì.',
 	jumuaAt: (times) => `Preghiera del venerdì: ${times}`,
 	tabsLabel: 'Navigazione principale',
-	tabs: { today: 'Oggi', programme: 'Programma', prayers: 'Preghiere', info: 'Info' },
+	tabs: {
+		today: 'Oggi',
+		programme: 'Programma',
+		prayers: 'Preghiere',
+		live: 'Diretta',
+		info: 'Info'
+	},
+	live: {
+		title: 'Il sermone in diretta',
+		intro:
+			'Il sermone del venerdì, tradotto mentre viene pronunciato. Scegli una lingua, poi tocca «Ascolta».',
+		language: 'Lingua della traduzione',
+		listen: 'Ascolta',
+		stop: 'Interrompi',
+		machine: 'Traduzione automatica: può contenere errori.',
+		screen:
+			'Lo schermo resta acceso durante l’ascolto: su un telefono bloccato, l’audio si interrompe.',
+		subtitles: 'Sottotitoli',
+		noScript: 'L’ascolto in diretta richiede JavaScript, disattivato in questo browser.',
+		states: {
+			arret: 'Tocca «Ascolta»: l’audio arriva appena inizia la diretta.',
+			connexion: 'Connessione in corso…',
+			attente:
+				'Nessuna diretta in questo momento. Lascia la pagina aperta: l’audio arriva appena inizia.',
+			direct: 'In diretta.',
+			fini: 'La diretta è terminata. La pagina attende la prossima.',
+			reprise: 'Il collegamento si è interrotto. Nuovo tentativo in corso…',
+			perdu: 'Il collegamento è perso. Tocca «Ascolta» per riprovare.',
+			plein: 'Troppe persone stanno ascoltando in questo momento. Riprova tra poco.',
+			indisponible: 'Questa lingua non è disponibile al momento.',
+			format: 'Questa pagina è troppo vecchia per questa diretta: ricaricala.'
+		}
+	},
 	nextPrayer: (prayer, time) => `Prossima preghiera: ${prayer} alle ${time}.`,
 	nextPrayerIqama: (prayer, time, iqama) =>
 		`Prossima preghiera: ${prayer} alle ${time}, iqama alle ${iqama}.`,
@@ -1164,7 +1300,37 @@ const en: Dictionnaire = {
 	jumuaReplacesDhuhr: 'It takes the place of Dhuhr every Friday.',
 	jumuaAt: (times) => `Friday prayer: ${times}`,
 	tabsLabel: 'Main navigation',
-	tabs: { today: 'Today', programme: 'Programme', prayers: 'Prayer times', info: 'Info' },
+	tabs: {
+		today: 'Today',
+		programme: 'Programme',
+		prayers: 'Prayer times',
+		live: 'Live',
+		info: 'Info'
+	},
+	live: {
+		title: 'The sermon, live',
+		intro: 'The Friday sermon, translated as it is given. Choose a language, then tap ‘Listen’.',
+		language: 'Translation language',
+		listen: 'Listen',
+		stop: 'Stop',
+		machine: 'Machine translation: it may contain mistakes.',
+		screen: 'The screen stays on while you listen: on a locked phone, the sound stops.',
+		subtitles: 'Subtitles',
+		noScript: 'Listening live needs JavaScript, which is turned off in this browser.',
+		states: {
+			arret: 'Tap ‘Listen’: the sound starts as soon as the broadcast begins.',
+			connexion: 'Connecting…',
+			attente:
+				'No broadcast at the moment. Keep the page open: the sound starts as soon as it begins.',
+			direct: 'Live.',
+			fini: 'The broadcast has ended. The page is waiting for the next one.',
+			reprise: 'The connection dropped. Trying again…',
+			perdu: 'The connection is lost. Tap ‘Listen’ to try again.',
+			plein: 'Too many people are listening right now. Try again in a moment.',
+			indisponible: 'This language is not available at the moment.',
+			format: 'This page is too old for this broadcast: reload it.'
+		}
+	},
 	nextPrayer: (prayer, time) => `Next prayer: ${prayer} at ${time}.`,
 	nextPrayerIqama: (prayer, time, iqama) => `Next prayer: ${prayer} at ${time}, iqama at ${iqama}.`,
 	nextPrayerJumua: (times) => `Next prayer: Friday prayer at ${times}.`,
@@ -1390,7 +1556,36 @@ const ar: Dictionnaire = {
 	jumuaReplacesDhuhr: 'تحلّ محلّ صلاة الظهر كل يوم جمعة.',
 	jumuaAt: (times) => `صلاة الجمعة: ${times}`,
 	tabsLabel: 'التنقل الرئيس',
-	tabs: { today: 'اليوم', programme: 'البرنامج', prayers: 'مواقيت الصلاة', info: 'معلومات' },
+	tabs: {
+		today: 'اليوم',
+		programme: 'البرنامج',
+		prayers: 'مواقيت الصلاة',
+		live: 'مباشر',
+		info: 'معلومات'
+	},
+	live: {
+		title: 'الخُطْبة مباشرةً',
+		intro: 'خُطْبة الجمعة، مترجمةً خلال إلقائها. اختر لغة، ثم اضغط «استمع».',
+		language: 'لغة التَّرْجَمَة',
+		listen: 'استمع',
+		stop: 'إيقاف',
+		machine: 'تَرْجَمَة آلية: قد تحتوي على أخطاء.',
+		screen: 'تبقى الشاشة قيد التشغيل خلال الاستماع: إذا قُفل الهاتف، يتوقف الصوت.',
+		subtitles: 'التَّرْجَمَة النصية',
+		noScript: 'يتطلب الاستماع المباشر JavaScript، وهو معطَّل في هذا المتصفح.',
+		states: {
+			arret: 'اضغط «استمع»: يبدأ الصوت فور بَدْء البث.',
+			connexion: 'جارٍ الاتصال…',
+			attente: 'لا يوجد بث في الوقت الحالي. أبقِ الصفحة مفتوحة: يبدأ الصوت فور بَدْء البث.',
+			direct: 'بث مباشر.',
+			fini: 'انتهى البث. تبقى الصفحة في انتظار البث التالي.',
+			reprise: 'انقطع الاتصال. جارٍ المحاولة من جديد…',
+			perdu: 'فُقد الاتصال. اضغط «استمع» للمحاولة من جديد.',
+			plein: 'عدد المستمعين كبير جدًا الآن. حاول مرة أخرى بعد قليل.',
+			indisponible: 'هذه اللغة غير متاحة حاليًا.',
+			format: 'هذه الصفحة قديمة بالنسبة لهذا البث: أعد تحميلها.'
+		}
+	},
 	nextPrayer: (prayer, time) => `الصلاة القادمة: ${prayer} في الساعة ${time}.`,
 	nextPrayerIqama: (prayer, time, iqama) =>
 		`الصلاة القادمة: ${prayer} في الساعة ${time}، الإقامة في الساعة ${iqama}.`,

@@ -51,6 +51,17 @@ describe('ce que le travailleur prend', () => {
 		expect(genreDeRequete(requete(url))).toBeNull();
 	});
 
+	it('leaves the listening view of the live broadcast to the browser', () => {
+		// Sans réseau, pas de direct : une copie dirait « pas de direct » à tort (ADR 0057).
+		for (const url of [
+			'https://jadwal.example/m/association?vue=direct',
+			'https://jadwal.example/m/association/de?vue=direct'
+		]) {
+			expect(genreDeRequete(requete(url))).toBeNull();
+		}
+		expect(genreDeRequete(requete('https://jadwal.example/m/association?vue=infos'))).toBe('page');
+	});
+
 	it('leaves the frame of the widget to the browser', () => {
 		expect(genreDeRequete(requete('https://jadwal.example/m/association?embed=1'))).toBeNull();
 	});

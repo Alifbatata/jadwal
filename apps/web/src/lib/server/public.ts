@@ -91,6 +91,11 @@ export interface OrganisationPublique {
 	website: string | null;
 	access_note: string | null;
 	announcement: string | null;
+	/**
+	 * Les langues vers lesquelles l'organisation fait traduire son direct (ADR 0056 amendée) : la
+	 * vue d'écoute n'offre que celles-là, croisées avec celles du relais (ADR 0057).
+	 */
+	live_language: string[];
 	/** Sert au plan de site : la date de ce qu'il décrit, jamais l'heure de la requête (ADR 0029). */
 	updated_at: string;
 }
@@ -112,7 +117,8 @@ export async function findOrganisation(slug: string): Promise<OrganisationPubliq
 		await publicDatabase().execute(sql`
 			select "id", "slug", "name", "time_zone", "accent_color", "default_language",
 				"enabled_language", "prayer_module", "address", "contact_phone", "contact_email",
-				"website", "access_note", "announcement", "updated_at"::text as updated_at
+				"website", "access_note", "announcement", "live_language",
+				"updated_at"::text as updated_at
 			from "organization" where "slug" = ${slug}
 		`)
 	)[0];

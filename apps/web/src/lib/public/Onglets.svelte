@@ -1,7 +1,8 @@
 <script lang="ts">
 	// La navigation principale de la page publique (étape 24, ADR 0052 et 0053,
 	// docs/maquettes/public-aujourdhui.md) : Aujourd'hui, Programme, Prières, Infos. Des liens, sans
-	// script, comme tout le côté public.
+	// script, comme tout le côté public. Depuis l'étape 25, « Direct » entre Prières et Infos, quand
+	// le direct est allumé (ADR 0057).
 	//
 	// Elle n'entre jamais dans le cadre du widget, qui encadre un programme et non une application :
 	// c'est l'appelant qui ne la rend pas en mode intégré, et `tests/aujourdhui.test.ts` le garde.
@@ -10,7 +11,7 @@
 	import { t, type Langue } from '#lib/i18n.js';
 	import { lienVue, type Adresse } from './liens.js';
 
-	export type Onglet = 'aujourdhui' | 'programme' | 'prieres' | 'infos';
+	export type Onglet = 'aujourdhui' | 'programme' | 'prieres' | 'direct' | 'infos';
 
 	let {
 		adresse,
@@ -18,7 +19,8 @@
 		courant,
 		exact = true,
 		avecPrieres = false,
-		avecInfos = false
+		avecInfos = false,
+		avecDirect = false
 	}: {
 		adresse: Adresse;
 		langue: Langue;
@@ -34,6 +36,8 @@
 		avecPrieres?: boolean;
 		/** L'onglet des infos, seulement si l'organisation en a saisi au moins une. */
 		avecInfos?: boolean;
+		/** L'onglet du direct, seulement s'il est allumé sur l'instance et qu'il reste une langue. */
+		avecDirect?: boolean;
 	} = $props();
 
 	const mots = $derived(t(langue));
@@ -43,6 +47,15 @@
 		...(avecPrieres
 			? [
 					['prieres', mots.tabs.prayers, lienVue(adresse, { vue: 'prieres' })] as [
+						Onglet,
+						string,
+						string
+					]
+				]
+			: []),
+		...(avecDirect
+			? [
+					['direct', mots.tabs.live, lienVue(adresse, { vue: 'direct' })] as [
 						Onglet,
 						string,
 						string

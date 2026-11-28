@@ -21,8 +21,14 @@
  *
  * - on arrive sur l'écran, et on en repart, par un vrai chargement de document : c'est lui qui
  *   porte les en-têtes ;
- * - le relais rend des morceaux de 9 600 octets, à 48 000 octets par seconde, et le son qui en
- *   sort fait 440 Hz quand on le lit à 24 kHz : la preuve de la fréquence ;
+ * - le relais rend des morceaux codés de 2 404 octets, à 12 020 octets par seconde (ADR 0057), et
+ *   le son qui en sort, décodé comme la page le fait, fait 440 Hz à 24 kHz : la preuve de la
+ *   fréquence ;
+ * - la page publique d'écoute, sans compte, dans un autre contexte : sans JavaScript, elle le
+ *   dit ; avec, elle offre les langues, attend le direct, reçoit le son codé (débit lu sur la
+ *   liaison), donne à jouer un son de 440 Hz, montre les sous-titres de sa langue, demande à
+ *   garder l'écran allumé, se rebranche après la chute du relais, dit la fin, et ne laisse jamais
+ *   le micro ouvert ;
  * - l'écran montre « En direct », la durée, le niveau du micro et la personne à l'écoute ;
  * - le relais tué puis relancé, le poste se rebranche seul ;
  * - « Arrêter le direct » finit le direct, et celui qui écoute l'apprend ;
@@ -69,7 +75,17 @@ const TONE_HZ = 440;
 /** Ce que le relais attend : 24 kHz, 16 bits, mono, par morceaux de 200 ms. */
 const RELAY_RATE = 24_000;
 const BYTES_PER_SECOND = RELAY_RATE * 2;
-const CHUNK_BYTES = BYTES_PER_SECOND / 5;
+/**
+ * Ce qu'il rend à ceux qui écoutent (ADR 0057) : IMA ADPCM, un demi-octet par échantillon et un
+ * en-tête de quatre octets par morceau. 2 404 octets pour 200 ms, 12 020 par seconde.
+ */
+const CHUNK_BYTES = BYTES_PER_SECOND / 5 / 4 + 4;
+const LISTENER_BYTES_PER_SECOND = CHUNK_BYTES * 5;
+
+// Le décodeur de la page d'écoute, tel quel : c'est lui que les téléphones exécutent.
+const { decoder } = await import(
+	pathToFileURL(join(webDir, 'src', 'lib', 'ecoute', 'ecoute.js')).href
+);
 
 // ---------------------------------------------------------------------------------------------
 // Le relevé
@@ -203,9 +219,12 @@ function listen(relayUrl, language) {
 	return heard;
 }
 
-/** La fréquence d'un son pur lu à 24 kHz : ses passages par zéro en montant, par seconde. */
-function frequencyOf(pcm) {
-	const samples = new Int16Array(pcm.buffer, pcm.byteOffset, Math.floor(pcm.byteLength / 2));
+/**
+ * La fréquence d'un son pur lu à 24 kHz : ses passages par zéro en montant, par seconde. Les
+ * paquets sont décodés un par un, comme la page le fait.
+ */
+function frequencyOf(packets) {
+	const samples = Int16Array.from(packets.flatMap((packet) => [...decoder(packet)]));
 	let crossings = 0;
 	let peak = 0;
 	for (let index = 1; index < samples.length; index += 1) {
@@ -213,6 +232,32 @@ function frequencyOf(pcm) {
 		peak = Math.max(peak, Math.abs(samples[index]));
 	}
 	return { hertz: (crossings * RELAY_RATE) / samples.length, peak: peak / 32768 };
+}
+
+/**
+ * Posé dans la page d'écoute avant son module : relève ce qu'elle donne à jouer au navigateur
+ * (chaque tampon, et sa fréquence) et ses demandes de garder l'écran allumé. Chrome sans
+ * interface n'a pas toujours de verrou d'écran : un faux le remplace alors, qui compte les
+ * demandes. Rien de cela n'est dans le module : c'est l'épreuve qui regarde.
+ */
+function instrumentListeningPage() {
+	const relevé = { joue: [], frequences: [], verrous: 0 };
+	Object.defineProperty(window, '__ecoute', { value: relevé });
+	const start = AudioBufferSourceNode.prototype.start;
+	AudioBufferSourceNode.prototype.start = function (...args) {
+		if (this.buffer && relevé.joue.length < 60) {
+			relevé.joue.push(Array.from(this.buffer.getChannelData(0)));
+			relevé.frequences.push(this.buffer.sampleRate);
+		}
+		return start.apply(this, args);
+	};
+	const sentinel = { release: async () => undefined, addEventListener: () => undefined };
+	const request = async () => {
+		relevé.verrous += 1;
+		return sentinel;
+	};
+	if ('wakeLock' in navigator) navigator.wakeLock.request = request;
+	else Object.defineProperty(navigator, 'wakeLock', { value: { request } });
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -436,6 +481,69 @@ async function main() {
 		);
 		await audit(page, 'l’écran « Diffuser », à l’arrêt');
 
+		// -----------------------------------------------------------------------------------
+		process.stdout.write('\nLa page d’écoute, sans compte, avant le direct\n');
+		const bare = await browser.newContext({ locale: 'fr-CH', javaScriptEnabled: false });
+		const bareEar = await bare.newPage();
+		await bareEar.goto(`${origin}/m/${SLUG}?vue=direct`);
+		check(
+			'sans JavaScript, elle le dit, et ne montre pas de bouton qui ne ferait rien',
+			(await bareEar.getByText('L’écoute en direct demande JavaScript').isVisible()) &&
+				!(await bareEar.getByRole('button', { name: 'Écouter' }).isVisible())
+		);
+		await bare.close();
+
+		const listening = await browser.newContext({ locale: 'fr-CH' });
+		await listening.addInitScript(instrumentListeningPage);
+		const ear = await listening.newPage();
+		const earErrors = [];
+		ear.on('console', (entry) => {
+			if (entry.type() === 'error') earErrors.push(`${entry.text()} [${entry.location().url}]`);
+		});
+		ear.on('pageerror', (error) => earErrors.push(String(error)));
+		/** Ce qui arrive du relais à la page, en octets, tel que Chrome le reçoit. */
+		const wire = [];
+		ear.on('websocket', (socket) =>
+			socket.on('framereceived', (frame) => {
+				if (typeof frame.payload !== 'string') {
+					wire.push({ at: performance.now(), bytes: frame.payload.length });
+				}
+			})
+		);
+		const earResponse = await ear.goto(`${origin}/m/${SLUG}?vue=direct`);
+		check(
+			'la page d’écoute ouvre la liaison vers le relais',
+			earResponse
+				.headers()
+				['content-security-policy']?.includes(`connect-src 'self' ${relayUrl}`) === true
+		);
+		check(
+			'et laisse le micro fermé',
+			earResponse.headers()['permissions-policy']?.includes('microphone=()') === true,
+			earResponse.headers()['permissions-policy']
+		);
+		const listenButton = ear.getByRole('button', { name: 'Écouter' });
+		await listenButton.waitFor({ timeout: 10_000 });
+		check(
+			'le module montre les commandes et retire la phrase « sans JavaScript »',
+			!(await ear.getByText('L’écoute en direct demande JavaScript').isVisible())
+		);
+		check(
+			'elle offre les langues du relais, chacune par son nom',
+			(await ear.getByRole('radio').count()) === LANGUAGES.length &&
+				(await ear.getByRole('radio', { name: 'Deutsch' }).count()) === 1
+		);
+		await ear.getByRole('radio', { name: 'Deutsch' }).check();
+		await audit(ear, 'la page d’écoute, à l’arrêt');
+		await listenButton.click();
+		await ear.getByText('Pas de direct en ce moment.').waitFor({ timeout: 10_000 });
+		check('branchée avant le direct, elle l’attend', true);
+		check(
+			'elle a demandé à garder l’écran allumé',
+			(await ear.evaluate(() => window.__ecoute.verrous)) >= 1
+		);
+		await audit(ear, 'la page d’écoute, en attente');
+
 		// Quelqu'un écoute déjà, en français.
 		let listener = listen(relayUrl, 'fr');
 		await until(() => listener.messages.length > 0, 'celui qui écoute attend le direct');
@@ -453,24 +561,78 @@ async function main() {
 		await until(() => listener.frames.length >= 21, 'quatre secondes de son arrivent', 20_000);
 		const frames = listener.frames.slice(0, 21);
 		check(
-			'le relais rend des morceaux de 200 ms (9 600 octets)',
+			'le relais rend des morceaux de 200 ms, codés (2 404 octets)',
 			frames.every((frame) => frame.bytes.length === CHUNK_BYTES),
 			[...new Set(frames.map((frame) => frame.bytes.length))].join(', ')
 		);
 		const elapsed = (frames.at(-1).at - frames[0].at) / 1000;
 		const pace = ((frames.length - 1) * CHUNK_BYTES) / elapsed;
 		check(
-			'au rythme du temps réel : 48 000 octets par seconde, à 5 % près',
-			Math.abs(pace - BYTES_PER_SECOND) / BYTES_PER_SECOND < 0.05,
+			'au rythme du temps réel : 12 020 octets par seconde, à 5 % près',
+			Math.abs(pace - LISTENER_BYTES_PER_SECOND) / LISTENER_BYTES_PER_SECOND < 0.05,
 			`${Math.round(pace)} octets par seconde sur ${elapsed.toFixed(2)} s`
 		);
-		const tone = frequencyOf(Buffer.concat(frames.map((frame) => frame.bytes)));
+		const tone = frequencyOf(frames.map((frame) => frame.bytes));
 		check(
 			`le son du micro, lu à 24 kHz, fait ${TONE_HZ} Hz, à 2 % près`,
 			Math.abs(tone.hertz - TONE_HZ) / TONE_HZ < 0.02,
 			`${tone.hertz.toFixed(1)} Hz, crête ${tone.peak.toFixed(2)}`
 		);
 		check('et il n’est pas un silence', tone.peak > 0.05, `crête ${tone.peak.toFixed(2)}`);
+
+		// La page d'écoute, en allemand, pendant le direct.
+		await ear.getByText('En direct.', { exact: true }).waitFor({ timeout: 15_000 });
+		check('la page d’écoute dit « En direct. »', true);
+		await until(
+			async () => (await ear.evaluate(() => window.__ecoute.joue.length)) >= 22,
+			'la page joue quatre secondes',
+			20_000
+		);
+		const played = await ear.evaluate(() => {
+			// Le premier tampon peut commencer au milieu du son : on part du deuxième.
+			const samples = window.__ecoute.joue.slice(1, 21).flat();
+			let crossings = 0;
+			let peak = 0;
+			for (let index = 1; index < samples.length; index += 1) {
+				if (samples[index - 1] < 0 && samples[index] >= 0) crossings += 1;
+				peak = Math.max(peak, Math.abs(samples[index]));
+			}
+			return {
+				hertz: (crossings * 24_000) / samples.length,
+				peak,
+				lengths: [...new Set(window.__ecoute.joue.map((buffer) => buffer.length))],
+				rates: [...new Set(window.__ecoute.frequences)]
+			};
+		});
+		check(
+			`ce que la page donne à jouer fait ${TONE_HZ} Hz, à 2 % près, à 24 kHz`,
+			Math.abs(played.hertz - TONE_HZ) / TONE_HZ < 0.02 &&
+				played.rates.length === 1 &&
+				played.rates[0] === RELAY_RATE,
+			`${played.hertz.toFixed(1)} Hz, crête ${played.peak.toFixed(2)}, tampons de ${played.lengths.join(', ')} échantillons`
+		);
+		const earFrames = wire.slice(1, 22);
+		const earElapsed = (earFrames.at(-1).at - earFrames[0].at) / 1000;
+		const earPace = ((earFrames.length - 1) * CHUNK_BYTES) / earElapsed;
+		check(
+			'elle reçoit le son codé : 12 020 octets par seconde, à 5 % près, quatre fois moins que le PCM',
+			earFrames.every((frame) => frame.bytes === CHUNK_BYTES) &&
+				Math.abs(earPace - LISTENER_BYTES_PER_SECOND) / LISTENER_BYTES_PER_SECOND < 0.05,
+			`${Math.round(earPace)} octets par seconde, soit ${((earPace * 60 * 35) / 1e6).toFixed(1)} Mo pour 35 minutes`
+		);
+		await ear.locator('[data-phrases] li').first().waitFor({ timeout: 10_000 });
+		const subtitle = await ear.locator('[data-phrases] li').first().innerText();
+		check(
+			'elle montre les sous-titres de sa langue, dans sa langue',
+			subtitle.includes('(de)') &&
+				(await ear.locator('[data-sous-titres]').getAttribute('lang')) === 'de',
+			subtitle
+		);
+		check(
+			'la mention de la traduction automatique est là',
+			await ear.getByText('Traduction automatique : elle peut contenir des erreurs.').isVisible()
+		);
+		await audit(ear, 'la page d’écoute, en direct');
 
 		const text = () => page.locator('main').innerText();
 		await until(
@@ -507,6 +669,14 @@ async function main() {
 		check('le poste se rebranche seul', true);
 		await until(() => listener.frames.length >= 5, 'le son repart vers celui qui écoute', 15_000);
 		check('et le son repart', true);
+		await ear.getByText('En direct.', { exact: true }).waitFor({ timeout: 30_000 });
+		const before = await ear.evaluate(() => window.__ecoute.joue.length);
+		await until(
+			async () => (await ear.evaluate(() => window.__ecoute.joue.length)) > before + 5,
+			'la page d’écoute rejoue du son',
+			15_000
+		);
+		check('la page d’écoute s’est rebranchée seule, et le son repart', true);
 
 		// -----------------------------------------------------------------------------------
 		process.stdout.write('\nLa fin\n');
@@ -515,6 +685,19 @@ async function main() {
 		check('« Arrêter le direct » finit le direct, et l’écran le dit', true);
 		await until(() => listener.messages.at(-1)?.live === false, 'celui qui écoute apprend la fin');
 		check('celui qui écoute l’apprend', true);
+		await ear.getByText('Le direct est terminé. La page attend le suivant.').waitFor({
+			timeout: 10_000
+		});
+		check('la page d’écoute dit que le direct est fini, et reste branchée', true);
+		await ear.getByRole('button', { name: 'Arrêter' }).click();
+		await ear.getByRole('button', { name: 'Écouter' }).waitFor({ timeout: 5_000 });
+		check('« Arrêter » la débranche, et le bouton redevient « Écouter »', true);
+		check(
+			'rien n’a été refusé par le navigateur sur la page d’écoute',
+			earErrors.length === 0,
+			earErrors.join(' | ').slice(0, 300)
+		);
+		await listening.close();
 		await until(() => relayLog.join('').includes('"reason":"requested"'), 'le relais le note');
 		check(
 			'le relais note un direct fini à la demande, pour cette organisation',

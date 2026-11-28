@@ -16,7 +16,7 @@
 	import Onglets, { type Onglet } from './Onglets.svelte';
 	import type { Adresse } from './liens.js';
 
-	type Vue = 'semaine' | 'cours' | 'mois' | 'prieres' | 'aujourdhui' | 'infos';
+	type Vue = 'semaine' | 'cours' | 'mois' | 'prieres' | 'aujourdhui' | 'infos' | 'direct';
 	/** Les vues du programme : celles que la liste des vues porte toujours. */
 	const DU_PROGRAMME: readonly Vue[] = ['semaine', 'cours', 'mois'];
 
@@ -35,6 +35,7 @@
 		avecFiltres = true,
 		avecPrieres = false,
 		avecInfos = false,
+		avecDirect = false,
 		vendredi
 	}: {
 		/** L'identifiant de l'organisation, pour l'adresse où le choix de la langue est envoyé. */
@@ -56,6 +57,8 @@
 		avecPrieres?: boolean;
 		/** L'onglet des infos, montré seulement si l'organisation en a saisi au moins une. */
 		avecInfos?: boolean;
+		/** L'onglet du direct, montré seulement s'il est allumé et qu'il reste une langue. */
+		avecDirect?: boolean;
 		/**
 		 * Le bloc de la prière du vendredi, rendu **entre le nom et les vues** : c'est la seule
 		 * chose qui passe devant la navigation, et c'est délibéré (docs/maquettes/public-vendredi.md).
@@ -88,6 +91,7 @@
 			exact={!programme || vue === 'semaine'}
 			{avecPrieres}
 			{avecInfos}
+			{avecDirect}
 		/>
 	{/if}
 

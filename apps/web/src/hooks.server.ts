@@ -251,10 +251,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// On ajoute à la politique existante au lieu de la remplacer : SvelteKit y a posé le nonce de
 	// son script de démarrage, et l'écraser bloquerait l'hydratation de toutes les pages.
 	const existing = response.headers.get('content-security-policy');
-	// L'écran « Diffuser », et lui seul, ouvre la liaison vers le relais et le micro (ADR 0056). Il
-	// le dit par `locals.relay`, posé quand il va être rendu : une redirection ou un refus sur la
-	// même adresse n'ouvrent rien.
-	const live = event.locals.relay ? liveHeaders(existing ?? '', event.locals.relay) : null;
+	// L'écran « Diffuser » ouvre la liaison vers le relais et le micro (ADR 0056), la vue d'écoute
+	// la liaison seule (ADR 0057), et rien d'autre ne les ouvre. Ils le disent par `locals.live`,
+	// posé quand la page va être rendue : une redirection ou un refus sur la même adresse
+	// n'ouvrent rien.
+	const live = event.locals.live ? liveHeaders(existing ?? '', event.locals.live) : null;
 	const policy = live?.contentSecurityPolicy ?? existing;
 	response.headers.set(
 		'content-security-policy',

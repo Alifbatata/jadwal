@@ -156,25 +156,36 @@ export function signBroadcastToken(
 }
 
 /**
- * Les deux en-têtes que l'écran « Diffuser » demande, et lui seul.
+ * Ce qu'une page du direct demande au hook d'ouvrir, sur sa réponse seule (`locals.live`) :
+ * l'écran « Diffuser » la liaison et le micro, la vue d'écoute la liaison seule (ADR 0057).
+ */
+export interface LiveOpening {
+	/** L'origine du relais : `ws://` ou `wss://`, hôte, port. */
+	readonly relay: string;
+	readonly microphone: boolean;
+}
+
+/**
+ * Les deux en-têtes que les pages du direct demandent, et elles seules.
  *
  * - `connect-src` reçoit l'origine du relais en toutes lettres : `'self'` ne vaut pas pour une
  *   liaison WebSocket dans tous les navigateurs, et le relais peut vivre sous un autre nom.
- * - `Permissions-Policy` ouvre le micro à la page elle-même. Partout ailleurs, il reste interdit.
+ * - `Permissions-Policy` ouvre le micro à la page elle-même, pour l'écran « Diffuser ». Partout
+ *   ailleurs, la vue d'écoute comprise, il reste interdit.
  */
 export function liveHeaders(
 	contentSecurityPolicy: string,
-	relay: string
+	opening: LiveOpening
 ): { contentSecurityPolicy: string; permissionsPolicy: string } {
 	const directives = contentSecurityPolicy
 		.split(';')
 		.map((directive) => directive.trim())
 		.filter((directive) => directive !== '');
 	const index = directives.findIndex((directive) => /^connect-src(\s|$)/.test(directive));
-	if (index === -1) directives.push(`connect-src 'self' ${relay}`);
-	else directives[index] = `${directives[index]} ${relay}`;
+	if (index === -1) directives.push(`connect-src 'self' ${opening.relay}`);
+	else directives[index] = `${directives[index]} ${opening.relay}`;
 	return {
 		contentSecurityPolicy: directives.join('; '),
-		permissionsPolicy: 'camera=(), microphone=(self), geolocation=(), payment=(), usb=()'
+		permissionsPolicy: `camera=(), microphone=${opening.microphone ? '(self)' : '()'}, geolocation=(), payment=(), usb=()`
 	};
 }

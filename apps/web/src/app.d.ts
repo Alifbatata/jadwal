@@ -39,11 +39,11 @@ declare global {
 			 */
 			langue?: import('#lib/i18n.js').Langue | undefined;
 			/**
-			 * L'adresse du relais du direct, posée par l'écran « Diffuser » quand il va être rendu, et
-			 * par lui seul. Le hook ouvre alors, sur cette réponse, le micro et la liaison vers le
-			 * relais ; partout ailleurs ils restent fermés (ADR 0056).
+			 * Ce qu'une page du direct ouvre, posé quand elle va être rendue : l'écran « Diffuser » la
+			 * liaison vers le relais et le micro (ADR 0056), la vue d'écoute la liaison seule
+			 * (ADR 0057). Partout ailleurs, les deux restent fermés.
 			 */
-			relay?: string | undefined;
+			live?: import('#lib/server/live.js').LiveOpening | undefined;
 		}
 	}
 }

@@ -33,6 +33,7 @@ import {
 	type BroadcastState,
 	type TokenAnswer
 } from '../src/lib/direct/session.js';
+import { decoder, Ecoute, type Etat, type PriseDEcoute } from '../src/lib/ecoute/ecoute.js';
 import { conditionsAcceptees } from './conditions-acceptees.js';
 import { productionEnvironment } from './environnement-de-production.js';
 import { frenchLeft, visibleText } from './textes-lus.js';
@@ -774,7 +775,32 @@ describe('un direct entier, du serveur web au relais', () => {
 		const elsewhere: unknown[] = [];
 		const stranger = new WebSocket(`${liveUrl}/listen/une-autre-organisation/fr`);
 		stranger.onmessage = (event) => elsewhere.push(event.data);
-		await until(() => heard.length > 0 && elsewhere.length > 0, 'les deux écoutes en attente');
+		// Et une troisième, en turc, par le code même de la page d'écoute (`ecoute.js`, ADR 0057).
+		const pageStates: Etat[] = [];
+		const pageSound: ArrayBuffer[] = [];
+		const pageText: string[] = [];
+		const page = new Ecoute(
+			`${liveUrl}/listen/${SLUG}/`,
+			{
+				// La prise de Node, comme celle du navigateur : le module n'en lit que `data`.
+				ouvrir: (adresse) => new WebSocket(adresse) as unknown as PriseDEcoute,
+				plusTard: (rappel, ms) => setTimeout(rappel, ms),
+				annuler: (minuterie) => clearTimeout(minuterie as NodeJS.Timeout)
+			},
+			{
+				etat: (etat) => void pageStates.push(etat),
+				texte: (texte) => void pageText.push(texte),
+				son: (paquet, frequence) => {
+					expect(frequence).toBe(24_000);
+					pageSound.push(paquet);
+				}
+			}
+		);
+		page.ecouter('tr');
+		await until(
+			() => heard.length > 0 && elsewhere.length > 0 && page.etat === 'attente',
+			'les trois écoutes en attente'
+		);
 		expect(heard[0]).toEqual({ type: 'state', live: false });
 
 		// Le poste : le code de la page, branché sur le vrai serveur web et le vrai relais.
@@ -802,11 +828,28 @@ describe('un direct entier, du serveur web au relais', () => {
 			expect(session.audio(sent.buffer.slice(chunk * 9600, (chunk + 1) * 9600))).toBe(true);
 		}
 
+		// Le son arrive codé pour les téléphones (ADR 0057) : quatre fois plus léger, et le décodeur
+		// de la page en rend le son envoyé, à la perte du codage près.
 		const sound = () => heard.filter((message) => message instanceof ArrayBuffer) as ArrayBuffer[];
-		const bytes = () => sound().reduce((total, part) => total + part.byteLength, 0);
-		await until(() => bytes() >= sent.byteLength, 'le son arrive à la personne qui écoute');
-		const received = Buffer.concat(sound().map((part) => Buffer.from(part)));
-		expect(received.equals(Buffer.from(sent.buffer))).toBe(true);
+		const decoded = () => sound().flatMap((part) => [...decoder(part)]);
+		await until(() => decoded().length >= sent.length, 'le son arrive à la personne qui écoute');
+		expect(decoded()).toHaveLength(sent.length);
+		const bytes = sound().reduce((total, part) => total + part.byteLength, 0);
+		expect(bytes).toBe(sent.byteLength / 4 + 5 * 4);
+		let signal = 0;
+		let noise = 0;
+		decoded().forEach((sample, index) => {
+			signal += (sent[index] as number) ** 2;
+			noise += (sample - (sent[index] as number)) ** 2;
+		});
+		expect(10 * Math.log10(signal / noise)).toBeGreaterThan(20);
+		// La page d'écoute, en turc, a le même son, et son texte.
+		await until(
+			() => pageSound.flatMap((part) => [...decoder(part)]).length >= sent.length,
+			'le son arrive à la page d’écoute'
+		);
+		await until(() => pageText.length > 0, 'le texte arrive à la page d’écoute');
+		expect(pageText[0]).toContain('(tr)');
 		expect(heard).toContainEqual(
 			expect.objectContaining({ type: 'state', live: true, languages: ['fr', 'tr'] })
 		);
@@ -822,7 +865,7 @@ describe('un direct entier, du serveur web au relais', () => {
 			() => session.state.listeners['fr'] === 1,
 			'le poste voit une personne en français'
 		);
-		expect(session.state.listeners).toEqual({ fr: 1, tr: 0 });
+		expect(session.state.listeners).toEqual({ fr: 1, tr: 1 });
 
 		session.stop();
 		await until(() => session.state.phase === 'ended', 'le relais confirme la fin');
@@ -837,6 +880,9 @@ describe('un direct entier, du serveur web au relais', () => {
 		expect(states.map((state) => state.phase)).toEqual(
 			expect.arrayContaining(['starting', 'live', 'ended'])
 		);
+		await until(() => page.etat === 'fini', 'la page d’écoute dit le direct fini');
+		expect(pageStates).toEqual(['connexion', 'attente', 'direct', 'fini']);
+		page.arreter();
 		listener.close();
 		stranger.close();
 
@@ -889,4 +935,154 @@ describe('un direct entier, du serveur web au relais', () => {
 		await until(() => session.state.phase === 'ended', 'le relais refuse');
 		expect(session.state.end).toEqual({ kind: 'refused', reason: 'languages' });
 	});
+});
+
+describe('l’écoute, dans la page publique (ADR 0057)', () => {
+	const PUBLIQUE = `/m/${SLUG}`;
+	const ECOUTE = `${PUBLIQUE}?vue=direct`;
+	/** Les langues offertes : celles de l'organisation (fr, tr, sq) que le relais sert (fr, de, tr). */
+	const OFFERTES = ['fr', 'tr'];
+
+	beforeAll(async () => {
+		// La page publique dans les cinq langues, pour l'épreuve des textes ; les langues du direct
+		// telles que le haut du fichier les a posées, quoi que les tests des Réglages en aient fait.
+		await maintenance((tx) =>
+			tx.execute(sql`
+				update "organization"
+				set "enabled_language" = array['fr', 'de', 'it', 'en', 'ar'],
+					"prayer_module" = true, "website" = 'https://association.example.test',
+					"live_language" = ${`{${LANGUES_DE_L_ORGANISATION.join(',')}}`}::text[]
+				where "id" = ${organizationId}
+			`)
+		);
+	});
+
+	afterAll(async () => {
+		await maintenance((tx) =>
+			tx.execute(sql`
+				update "organization"
+				set "enabled_language" = array['fr'], "prayer_module" = false, "website" = null
+				where "id" = ${organizationId}
+			`)
+		);
+	});
+
+	it('does not exist without the live settings: no tab, the week instead, nothing opened', async () => {
+		const accueil = await (await get(sans, PUBLIQUE)).text();
+		expect(accueil).not.toContain('vue=direct');
+		const vue = await get(sans, ECOUTE);
+		expect(vue.status).toBe(200);
+		const html = await vue.text();
+		expect(html).not.toContain('data-jadwal-ecoute');
+		expect(html).not.toContain('/m/ecoute.js');
+		expect(vue.headers.get('content-security-policy')).not.toContain('ws:');
+	});
+
+	it('has a « Direct » tab, between Prayers and Info, on every view of the public page', async () => {
+		for (const path of [PUBLIQUE, `${PUBLIQUE}?vue=aujourdhui`, ECOUTE]) {
+			const html = await (await get(avec, path)).text();
+			const tabs = html.match(/<nav class="onglets[^"]*"[\s\S]*?<\/nav>/)?.[0] ?? '';
+			// Les liens d'une page sont relatifs (`../m/…`) : on lit la fin de l'adresse.
+			expect(tabs, path).toMatch(/<a href="[^"]*m\/direct-essai\?vue=direct"[^>]*>Direct<\/a>/);
+			const noms = [...tabs.matchAll(/<a\b[^>]*>([^<]+)<\/a>/g)].map((match) => match[1]);
+			expect(noms, path).toEqual(['Aujourd’hui', 'Programme', 'Prières', 'Direct', 'Infos']);
+		}
+		// Dans le cadre du widget, rien : il encadre un programme, pas une application.
+		expect(await (await get(avec, `${PUBLIQUE}?embed=1`)).text()).not.toContain('vue=direct');
+	});
+
+	it('offers the languages of the organisation that the relay serves, by their own names', async () => {
+		const html = await (await get(avec, ECOUTE)).text();
+		const valeurs = [...html.matchAll(/<input\b[^>]*name="langue"[^>]*value="([a-z]+)"/g)].map(
+			(match) => match[1]
+		);
+		expect(valeurs).toEqual(OFFERTES);
+		expect(html).toMatch(/<label lang="fr"[^>]*>[\s\S]*?Français/);
+		expect(html).toMatch(/<label lang="tr"[^>]*>[\s\S]*?Türkçe/);
+		// La langue de la page est choisie d'avance.
+		expect(html).toMatch(/<input\b[^>]*value="fr"[^>]*checked/);
+		// Le module trouve où se brancher, jusqu'à la langue exclue, et ses textes.
+		expect(html).toContain(`data-relais="${liveUrl}/listen/${SLUG}/"`);
+		expect(html).toMatch(/data-textes="[^"]*ecouter[^"]*"/);
+		expect(html).toContain('Traduction automatique : elle peut contenir des erreurs.');
+		// Sans le module, la page le dit ; les commandes, qui ne feraient rien, sont cachées.
+		expect(html).toMatch(/<p class="sans-script[^"]*" data-sans-script="">/);
+		expect(html).toMatch(/<div data-avec-script="" hidden="">/);
+		expect(html).toMatch(/<script type="module" src="[^"]*m\/ecoute\.js"><\/script>/);
+	});
+
+	it('opens the way to the relay on this view only, and never the microphone', async () => {
+		const vue = await get(avec, ECOUTE);
+		expect(vue.headers.get('content-security-policy')).toContain(`connect-src 'self' ${liveUrl};`);
+		expect(vue.headers.get('permissions-policy')).toBe(
+			'camera=(), microphone=(), geolocation=(), payment=(), usb=()'
+		);
+		// Le reste de la politique d'une page publique tient : elle s'encadre toujours.
+		expect(vue.headers.get('content-security-policy')).toContain('frame-ancestors *');
+		for (const path of [PUBLIQUE, `${PUBLIQUE}?vue=infos`, `${PUBLIQUE}?vue=aujourdhui`]) {
+			const autre = await get(avec, path);
+			expect(autre.headers.get('content-security-policy'), path).not.toContain(liveUrl);
+			expect(await autre.text(), path).not.toContain('/m/ecoute.js');
+		}
+	});
+
+	it('shows the week, without tab, when none of the chosen languages is served', async () => {
+		await maintenance((tx) =>
+			tx.execute(sql`
+				update "organization" set "live_language" = array['sq'] where "id" = ${organizationId}
+			`)
+		);
+		try {
+			const vue = await get(avec, ECOUTE);
+			const html = await vue.text();
+			expect(html).not.toContain('data-jadwal-ecoute');
+			expect(html).not.toContain('vue=direct');
+			expect(vue.headers.get('content-security-policy')).not.toContain(liveUrl);
+		} finally {
+			await maintenance((tx) =>
+				tx.execute(sql`
+					update "organization"
+					set "live_language" = ${`{${LANGUES_DE_L_ORGANISATION.join(',')}}`}::text[]
+					where "id" = ${organizationId}
+				`)
+			);
+		}
+	});
+
+	it('serves the module as it is written, cached, and answers 304 to its fingerprint', async () => {
+		const source = await readFile(join(appDir, 'src', 'lib', 'ecoute', 'ecoute.js'), 'utf8');
+		const module = await fetch(`${avec}/m/ecoute.js`);
+		expect(module.status).toBe(200);
+		expect(module.headers.get('content-type')).toMatch(/^text\/javascript/);
+		expect(module.headers.get('cache-control')).toContain('max-age=3600');
+		expect(await module.text()).toBe(source);
+		const etag = module.headers.get('etag');
+		expect(etag).toMatch(/^"[\w-]{12}"$/);
+		const again = await fetch(`${avec}/m/ecoute.js`, { headers: { 'if-none-match': etag! } });
+		expect(again.status).toBe(304);
+	});
+
+	it.each(['de', 'it', 'en', 'ar'] as const)(
+		'leaves no French sentence on the listening view in %s',
+		async (language) => {
+			const keep = [ORGANISATION, 'Français', 'Türkçe'];
+			const french = await (await get(avec, ECOUTE)).text();
+			const other = await (await get(avec, `${PUBLIQUE}/${language}?vue=direct`)).text();
+			expect(other).toMatch(new RegExp(`<html\\b[^>]*\\blang="${language}"`));
+			expect(other).toContain('data-jadwal-ecoute');
+			expect(frenchLeft(french, other, keep)).toEqual([]);
+			// Les textes que le module montre viennent de la page, dans sa langue.
+			const textes = JSON.parse(
+				(other.match(/data-textes="([^"]*)"/)?.[1] ?? '{}').replaceAll('&quot;', '"')
+			) as Record<string, string>;
+			const francais = JSON.parse(
+				(french.match(/data-textes="([^"]*)"/)?.[1] ?? '{}').replaceAll('&quot;', '"')
+			) as Record<string, string>;
+			expect(Object.keys(textes).sort()).toEqual(Object.keys(francais).sort());
+			expect(Object.keys(textes)).toHaveLength(12);
+			for (const key of Object.keys(textes)) {
+				expect(textes[key], key).not.toBe(francais[key]);
+			}
+		}
+	);
 });

@@ -20,6 +20,8 @@
 	import Aujourdhui from '#lib/public/Aujourdhui.svelte';
 	import Annonce from '#lib/public/Annonce.svelte';
 	import Infos from '#lib/public/Infos.svelte';
+	import Ecoute from '#lib/public/Ecoute.svelte';
+	import { resolve } from '$app/paths';
 	import Seance from '#lib/public/Seance.svelte';
 	import { horaireEnClair, languesEnClair, rythmeEnClair } from '#lib/public/affichage.js';
 
@@ -161,11 +163,13 @@
 				? `${data.organisation.name} | ${mots.tabs.today}`
 				: data.vue === 'infos'
 					? `${data.organisation.name} | ${mots.tabs.info}`
-					: data.vue === 'prieres'
-						? `${data.organisation.name} | ${mots.prayersTitle}`
-						: data.vue === 'mois' && data.premierDuMois
-							? `${data.organisation.name} | ${monthName(data.langue, Number(data.premierDuMois.slice(0, 4)), Number(data.premierDuMois.slice(5, 7)))}`
-							: `${data.organisation.name} | ${mots.weekTitle}`
+					: data.vue === 'direct'
+						? `${data.organisation.name} | ${mots.live.title}`
+						: data.vue === 'prieres'
+							? `${data.organisation.name} | ${mots.prayersTitle}`
+							: data.vue === 'mois' && data.premierDuMois
+								? `${data.organisation.name} | ${monthName(data.langue, Number(data.premierDuMois.slice(0, 4)), Number(data.premierDuMois.slice(5, 7)))}`
+								: `${data.organisation.name} | ${mots.weekTitle}`
 	);
 </script>
 
@@ -189,6 +193,11 @@
 	{#each data.alternates as autre (autre.hreflang)}
 		<link rel="alternate" hreflang={autre.hreflang} href={autre.href} />
 	{/each}
+	<!-- Le module d'écoute, sur cette vue seule : un fichier de la même origine, jamais du code en
+	     ligne (voir `routes/m/ecoute.js`). Un module est différé d'office. -->
+	{#if data.direct}
+		<script type="module" src={resolve('/m/ecoute.js')}></script>
+	{/if}
 </svelte:head>
 
 <!-- Ce qui permet d'installer la page comme une application : jamais dans le cadre du widget
@@ -216,15 +225,19 @@
 		lienFiltre={(audience) => vers({ public: audience })}
 		lienLangue={(autre) => vers({ langue: autre })}
 		integre={data.integre}
-		avecFiltres={data.vue !== 'prieres' && data.vue !== 'aujourdhui' && data.vue !== 'infos'}
+		avecFiltres={data.vue !== 'prieres' &&
+			data.vue !== 'aujourdhui' &&
+			data.vue !== 'infos' &&
+			data.vue !== 'direct'}
 		avecPrieres={data.avecPrieres}
 		avecInfos={data.avecInfos}
+		avecDirect={data.avecDirect}
 	>
 		{#snippet vendredi()}
 			<!-- L'onglet des prières porte les sessions du vendredi dans son propre contenu, avec la
 			     langue du sermon : le bloc du haut les dirait une seconde fois. -->
 			<!-- « Aujourd'hui » donne elle-même la prière du vendredi, quand c'est un vendredi. -->
-			{#if data.vue !== 'prieres' && data.vue !== 'aujourdhui' && data.vue !== 'infos'}
+			{#if data.vue !== 'prieres' && data.vue !== 'aujourdhui' && data.vue !== 'infos' && data.vue !== 'direct'}
 				<Vendredi langue={data.langue} sessions={data.vendredi} />
 			{/if}
 		{/snippet}
@@ -306,6 +319,8 @@
 					{/each}
 				</section>
 			{/each}
+		{:else if data.vue === 'direct' && data.direct}
+			<Ecoute langue={data.langue} relais={data.direct.relais} langues={data.direct.langues} />
 		{:else if data.vue === 'infos' && data.infos}
 			<Infos
 				langue={data.langue}
