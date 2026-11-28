@@ -616,10 +616,7 @@ describe('l’annonce d’une séance déplacée puis annulée, dans les cinq la
 				'The ‘Tafsir’ session on Tuesday 06.10.2026 at 20:30 is cancelled.',
 				'The other sessions go ahead as usual.'
 			],
-			[
-				'أُلغي درس «Tafsir» يوم الثلاثاء 06.10.2026 في الساعة 20:30.',
-				'تُقام الحصص الأخرى كالمعتاد.'
-			]
+			['أُلغي درس «Tafsir» يوم الثلاثاء 06.10.2026 في الساعة 20:30.', 'تُقام الحصص الأخرى كالمعتاد.']
 		]);
 	});
 

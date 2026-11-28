@@ -123,9 +123,7 @@ describe('Arabic reviewed (step 22)', () => {
 	});
 
 	it('R3: the form sends nothing to the address', () => {
-		expect(accessRequestTexts.ar.privacy).toContain(
-			'لا يرسل هذا النموذج شيئًا إلى العنوان المذكور'
-		);
+		expect(accessRequestTexts.ar.privacy).toContain('لا يرسل هذا النموذج شيئًا إلى العنوان المذكور');
 		expect(accessRequestTexts.ar.privacy).not.toContain('لا يكتب');
 	});
 

@@ -2772,8 +2772,7 @@ describe('D1 : la prière du vendredi dans la langue de chaque message (relectur
 			`«${titre}»: Das Gebet vom ${de}, wird auf ${vers}, um 15:00 verschoben.`,
 		it: (titre, de, vers) => `«${titre}»: la preghiera di ${de} è spostata a ${vers} alle 15:00.`,
 		en: (titre, de, vers) => `‘${titre}’: the prayer on ${de} has been moved to ${vers} at 15:00.`,
-		ar: (titre, de, vers) =>
-			`«${titre}»: نُقلت الصلاة من يوم ${de} إلى يوم ${vers} في الساعة 15:00.`
+		ar: (titre, de, vers) => `«${titre}»: نُقلت الصلاة من يوم ${de} إلى يوم ${vers} في الساعة 15:00.`
 	};
 	const LES_AUTRES: Record<Langue, string> = {
 		fr: 'Les autres prières du vendredi ont lieu comme d’habitude.',

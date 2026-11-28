@@ -46,7 +46,7 @@
 		"eslint-plugin-svelte": "3.23.0",
 		"globals": "17.14.0",
 		"playwright-core": "1.63.0",
-		"prettier": "3.9.9",
+		"prettier": "3.10.1",
 		"prettier-plugin-svelte": "4.1.1",
 		"svelte": "catalog:",
 		"typescript": "catalog:",

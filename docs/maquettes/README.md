@@ -174,7 +174,7 @@ phrase, rien d'autre :
 | `de`   | `Seite nicht gefunden` | `Bitte prüfen Sie die Adresse.` |
 | `it`   | `Pagina non trovata`   | `Controlla l'indirizzo.`        |
 | `en`   | `Page not found`       | `Please check the address.`     |
-| `ar`   | `الصفحة غير موجودة`    | `تحقّق من العنوان.`             |
+| `ar`   | `الصفحة غير موجودة`    | `تحقّق من العنوان.`              |
 
 Elle ne dit pas si l'organisation a existé.
 
